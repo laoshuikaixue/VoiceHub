@@ -767,11 +767,6 @@ const availablePermissions = computed(() => [
     description: getPermissionOptionText('songsWrite', 'description')
   },
   {
-    value: 'card-codes:read',
-    label: getPermissionOptionText('cardCodesRead', 'label'),
-    description: getPermissionOptionText('cardCodesRead', 'description')
-  },
-  {
     value: 'song-quotas:read',
     label: getPermissionOptionText('songQuotasRead', 'label'),
     description: getPermissionOptionText('songQuotasRead', 'description')

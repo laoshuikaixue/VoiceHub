@@ -293,9 +293,7 @@
                 :key="song.id"
                 :class="[
                   'draggable-song relative group rounded-xl p-3 transition-all select-none',
-                  song.cardCodeId
-                    ? 'bg-warning-5 border border-warning-30'
-                    : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
+                  'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
                 ]"
                 draggable="true"
                 @dragend="dragEnd"
@@ -363,13 +361,6 @@
                       >
                         <MessageSquare :size="12" />
                       </button>
-                      <span
-                        v-if="song.cardCodeId"
-                        class="inline-flex items-center rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-[9px] font-bold text-warning whitespace-nowrap flex-shrink-0"
-                        :title="locale.cardPending"
-                      >
-                        {{ locale.cardPending }}
-                      </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="text-xs text-primary-80 truncate max-w-[150px] cursor-pointer hover:text-primary transition-colors"
@@ -600,10 +591,7 @@
                 :class="[
                   'scheduled-song relative group bg-bg-secondary border border-border-secondary-50 rounded-xl p-3 hover:border-border-tertiary transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-primary' : '',
-                  schedule.isDraft ? 'border-warning-30 bg-warning-5' : '',
-                  schedule.song && (schedule.song.cardCodeId || schedule.song.usedCardCode)
-                    ? 'border-warning-30 bg-warning-5'
-                    : ''
+                  schedule.isDraft ? 'border-warning-30 bg-warning-5' : ''
                 ]"
                 :data-schedule-id="schedule.id"
                 draggable="true"
@@ -686,14 +674,6 @@
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
-                      <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
-                      <span
-                        v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
-                        :title="locale.cardPending"
-                      >
-                        {{ locale.cardCode }}
-                      </span>
                     </div>
                     <div class="text-xs text-text-tertiary truncate">{{ schedule.song.artist }}</div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">

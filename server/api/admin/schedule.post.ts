@@ -5,7 +5,6 @@ import {
   createSongSelectedNotification,
   createReplaySongSelectedNotification
 } from '../../services/notificationService'
-import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
 
@@ -130,8 +129,7 @@ export default defineEventHandler(async (event) => {
           id: song.id,
           title: song.title,
           artist: song.artist,
-          requesterId: song.requesterId,
-          cardCodeId: song.cardCodeId
+          requesterId: song.requesterId
         }
       }
 
@@ -171,13 +169,6 @@ export default defineEventHandler(async (event) => {
         if (existingPublished.length > 0) {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知`)
         }
-
-        await redeemCardCodeForSchedule(tx, {
-          songId: schedule.song.id,
-          cardCodeId: schedule.song.cardCodeId,
-          operatorId: user.id,
-          at: createdSchedule.publishedAt || getServerDate()
-        })
       }
 
       return { schedule, shouldNotify, replayRequesterIds }

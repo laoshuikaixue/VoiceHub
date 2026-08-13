@@ -1,5 +1,4 @@
 import { db, eq, ne, schedules, songs, and } from "~/drizzle/db";
-import { restoreCardCodeAfterScheduleRemoval } from "~~/server/services/cardCodeLifecycleService";
 import { restoreReplayRequestsToPending } from "~~/server/utils/scheduleReplayBinding";
 import { getServerDate } from "~~/server/utils/serverTime";
 
@@ -44,7 +43,7 @@ export default defineEventHandler(async (event) => {
       if (!existingSchedule) return null;
 
       const song = await tx
-        .select({ cardCodeId: songs.cardCodeId, title: songs.title })
+        .select({ title: songs.title })
         .from(songs)
         .where(eq(songs.id, existingSchedule.songId))
         .limit(1)
@@ -73,22 +72,6 @@ export default defineEventHandler(async (event) => {
           .limit(1);
 
         if (otherSchedules.length === 0) {
-          if (song?.cardCodeId) {
-            const restoreResult = await restoreCardCodeAfterScheduleRemoval(tx, {
-              songId: existingSchedule.songId,
-              cardCodeId: song.cardCodeId,
-              operatorId: user.id,
-            });
-            if (
-              !restoreResult.changed &&
-              ["CONCURRENT_CHANGE", "MISSING_CARD_CODE"].includes(
-                String(restoreResult.reason || ""),
-              )
-            ) {
-              throw createError({ statusCode: 409, message: "点歌券返还失败，移除排期已终止" });
-            }
-          }
-
           const restoredCount = await restoreReplayRequestsToPending({
             tx,
             songIds: [existingSchedule.songId],

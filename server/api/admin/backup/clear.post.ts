@@ -4,8 +4,6 @@ import {
   apiKeyPermissions,
   apiKeys,
   apiLogs,
-  cardCodeRedeemLogs,
-  cardCodes,
   collaborationLogs,
   emailTemplates,
   notifications,
@@ -63,7 +61,6 @@ export default defineEventHandler(async (event) => {
       await db.delete(apiKeys).where(eq(apiKeys.createdByUserId, currentUserId))
       await db.delete(notifications).where(eq(notifications.userId, currentUserId))
       await db.delete(notificationSettings).where(eq(notificationSettings.userId, currentUserId))
-      await db.delete(cardCodeRedeemLogs).where(eq(cardCodeRedeemLogs.redeemedBy, currentUserId))
       await db.delete(userStatusLogs).where(eq(userStatusLogs.userId, currentUserId))
       await db.delete(songQuotaAccounts).where(eq(songQuotaAccounts.userId, currentUserId))
       await db.delete(userIdentities).where(eq(userIdentities.userId, currentUserId))
@@ -97,7 +94,6 @@ export default defineEventHandler(async (event) => {
         await db.delete(apiKeys)
         await db.delete(notifications)
         await db.delete(notificationSettings)
-        await db.delete(cardCodeRedeemLogs)
         await db.delete(collaborationLogs)
         await db.delete(songCollaborators)
         await db.delete(songReplayRequests)
@@ -110,7 +106,6 @@ export default defineEventHandler(async (event) => {
         await db.delete(songBlacklists)
         await db.delete(userIdentities)
         await db.delete(songs)
-        await db.delete(cardCodes)
         await db.delete(playTimes)
         await db.delete(semesters)
         await db.delete(requestTimes)
@@ -145,7 +140,6 @@ export default defineEventHandler(async (event) => {
         await db
           .delete(notificationSettings)
           .where(notInArray(notificationSettings.userId, preservedSuperAdminIds))
-        await db.delete(cardCodeRedeemLogs)
         await db.delete(collaborationLogs)
         await db.delete(songCollaborators)
         await db.delete(songReplayRequests)
@@ -162,7 +156,6 @@ export default defineEventHandler(async (event) => {
           .delete(userIdentities)
           .where(notInArray(userIdentities.userId, preservedSuperAdminIds))
         await db.delete(songs)
-        await db.delete(cardCodes)
         await db.delete(playTimes)
         await db.delete(semesters)
         await db.delete(requestTimes)

@@ -58,19 +58,13 @@
         <Clock :size="11" />
         <span>{{ locale.nextRefresh }} {{ formatRefreshTime(quota.nextRefreshAt) }}</span>
       </div>
-
-      <!-- 卡券绕过提示 -->
-      <div v-if="cardCodeActive" class="bypass-badge">
-        <Ticket :size="12" />
-        <span>{{ locale.cardCodeBypassesLimit }}</span>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { Clock, Crown, Infinity, Info, RefreshCw, Ticket } from '@lucide/vue'
+import { Clock, Crown, Infinity, Info, RefreshCw } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const { pages } = useLocale()
@@ -86,10 +80,6 @@ const props = defineProps({
     default: 0
   },
   isAdmin: {
-    type: Boolean,
-    default: false
-  },
-  cardCodeActive: {
     type: Boolean,
     default: false
   },
@@ -266,18 +256,7 @@ const formatRefreshTime = (isoString) => {
   align-items: center;
   gap: 4px;
   color: var(--text-tertiary);
-  font-size: 10px;
-}
-
-.bypass-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--primary-10, rgba(99, 102, 241, 0.1));
-  color: var(--primary);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
 }
 </style>

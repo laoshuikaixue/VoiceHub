@@ -2,43 +2,27 @@
 
 /* 模态框组件 */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  @apply fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center;
   background: var(--modal-backdrop);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal-backdrop);
   padding: var(--spacing-xl);
 }
 
 .modal-content {
+  @apply w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl;
   background: var(--modal-bg);
   border: 1px solid var(--modal-border);
-  border-radius: var(--radius-xl);
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
   box-shadow: var(--shadow-xl);
 }
 
 .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @apply flex items-center justify-between;
   padding: var(--spacing-xl) var(--spacing-2xl);
   border-bottom: 1px solid var(--modal-header-border);
 }
 
 .modal-title {
+  @apply m-0 font-semibold text-text-primary;
   font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin: 0;
 }
 
 .modal-body {
@@ -46,9 +30,7 @@
 }
 
 .modal-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  @apply flex items-center justify-end;
   gap: var(--spacing-md);
   padding: var(--spacing-xl) var(--spacing-2xl);
   border-top: 1px solid var(--modal-footer-border);
@@ -56,60 +38,32 @@
 
 /* 表格组件 */
 .table-container {
+  @apply overflow-hidden rounded-xl;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-}
-
-/* 加载动画 */
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--spinner-secondary);
-  border-top: 3px solid var(--spinner-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 /* 分页组件 */
 .pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply flex items-center justify-center;
   gap: var(--spacing-sm);
   padding: var(--spacing-xl);
 }
 
 .pagination-info {
-  font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  @apply text-sm text-text-tertiary;
   margin: 0 var(--spacing-lg);
 }
 
 /* 空状态 */
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  @apply flex flex-col items-center justify-center text-center text-text-tertiary;
   padding: var(--spacing-3xl) var(--spacing-xl);
-  text-align: center;
-  color: var(--text-tertiary);
 }
 
 .empty-state svg {
+  @apply mb-4;
   width: 48px;
   height: 48px;
-  margin-bottom: var(--spacing-lg);
   color: var(--text-disabled);
 }

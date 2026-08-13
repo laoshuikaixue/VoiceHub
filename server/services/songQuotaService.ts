@@ -1,7 +1,6 @@
 import { SERVER_ERROR_CODES } from "../config/constants.ts";
 import { createApiError } from "../utils/apiError.ts";
 import {
-  fingerprintQuotaAdjustment,
   fingerprintSongQuotaConsumption,
   getQuotaPeriodWindow,
   resolveQuotaReturn,
@@ -13,7 +12,6 @@ const ERROR_CODES = {
   negativeBalance: SERVER_ERROR_CODES.SONG_QUOTA_NEGATIVE_BALANCE,
   alreadyReturned: SERVER_ERROR_CODES.SONG_QUOTA_ALREADY_RETURNED,
   invalidAdjustment: SERVER_ERROR_CODES.SONG_QUOTA_INVALID_ADJUSTMENT,
-  cardUnavailable: SERVER_ERROR_CODES.SONG_QUOTA_LEGACY_CARD_UNAVAILABLE,
   idempotencyConflict: SERVER_ERROR_CODES.SONG_QUOTA_IDEMPOTENCY_CONFLICT,
 } as const;
 
@@ -44,7 +42,6 @@ type QuotaTransaction = Record<string, unknown> & {
 type QuotaSong = Record<string, unknown> & {
   id: number;
   requesterId: number;
-  cardCodeId: number | null;
   hitRequestId?: number | null;
   played?: boolean;
   quotaConsumed: boolean;
@@ -52,7 +49,6 @@ type QuotaSong = Record<string, unknown> & {
   quotaPeriodKey: string | null;
   quotaReturned: boolean;
 };
-type LegacyCard = Record<string, unknown> & { status: string };
 type PaginatedQuotaResult = {
   items: Array<Record<string, unknown>>;
   total: number;
@@ -74,13 +70,6 @@ type QuotaAdapter = {
   attachTransactionToSong?(transactionId: number, songId: number): Promise<QuotaTransaction | null>;
   lockSong?(songId: number): Promise<QuotaSong | null>;
   markSongReturned?(songId: number, transactionId: number): Promise<QuotaSong | null>;
-  lockLegacyCard?(cardId: number): Promise<LegacyCard | null>;
-  lockLegacyCardByCode?(code: string): Promise<LegacyCard | null>;
-  markLegacyCardConverted?(
-    cardId: number,
-    userId: number,
-    convertedAt: Date,
-  ): Promise<LegacyCard | null>;
   listTransactions?(input: Record<string, unknown>): Promise<PaginatedQuotaResult>;
   listAccounts?(input: Record<string, unknown>): Promise<PaginatedQuotaResult>;
   getAccountDetails?(userId: number): Promise<Record<string, unknown> | null>;
@@ -405,12 +394,6 @@ export async function executeSongWithdrawal(
     settings: QuotaSettings;
     now: Date;
     validateLockedSong?: (song: QuotaSong) => Promise<void>;
-    releaseLegacyCard: (input: {
-      songId: number;
-      cardCodeId: number;
-      operatorId: number;
-      now: Date;
-    }) => Promise<unknown>;
     deleteDraftSchedules: (song: QuotaSong) => Promise<void>;
     deleteSongRelations: (song: QuotaSong) => Promise<void>;
     decrementRequestTime: (song: QuotaSong) => Promise<void>;
@@ -430,34 +413,12 @@ export async function executeSongWithdrawal(
   await input.validateLockedSong?.(song);
 
   let quotaReturnResult: "RETURNED" | "EXPIRED" | "NOT_APPLICABLE" = "NOT_APPLICABLE";
-  if (song.cardCodeId) {
-    const releaseResult = await input.releaseLegacyCard({
-      songId: song.id,
-      cardCodeId: song.cardCodeId,
-      operatorId: input.operatorId,
-      now: input.now,
-    });
-    if (
-      !releaseResult ||
-      typeof releaseResult !== "object" ||
-      !("changed" in releaseResult) ||
-      releaseResult.changed !== true
-    ) {
-      throw createApiError(
-        409,
-        SERVER_ERROR_CODES.SONG_CARD_RELEASE_FAILED,
-        "点歌券释放失败，撤回已终止",
-        { releaseResult },
-      );
-    }
-  } else {
-    const result = await returnSongQuota(tx, {
-      songId: song.id,
-      settings: input.settings,
-      now: input.now,
-    });
-    quotaReturnResult = result?.status ?? "NOT_APPLICABLE";
-  }
+  const result = await returnSongQuota(tx, {
+    songId: song.id,
+    settings: input.settings,
+    now: input.now,
+  });
+  quotaReturnResult = result?.status ?? "NOT_APPLICABLE";
 
   await input.deleteDraftSchedules(song);
   await input.deleteSongRelations(song);
@@ -533,36 +494,6 @@ export async function adjustPermanentSongQuota(
   return { account: updated, transaction };
 }
 
-export async function convertLegacyCardToQuota(
-  tx: QuotaAdapter,
-  input: { userId: number; cardId?: number; cardCode?: string; now: Date },
-) {
-  if (!tx.markLegacyCardConverted) {
-    throw new Error("额度适配器不支持旧点歌券兑换");
-  }
-  const card = typeof input.cardCode === "string"
-    ? await tx.lockLegacyCardByCode?.(input.cardCode)
-    : typeof input.cardId === "number"
-      ? await tx.lockLegacyCard?.(input.cardId)
-      : null;
-  if (!card || card.status !== "AVAILABLE" || typeof card.id !== "number") {
-    throw createApiError(409, ERROR_CODES.cardUnavailable, "旧点歌券不可兑换");
-  }
-  const converted = await tx.markLegacyCardConverted(card.id, input.userId, input.now);
-  if (!converted) {
-    throw createApiError(409, ERROR_CODES.cardUnavailable, "旧点歌券不可兑换");
-  }
-  return adjustPermanentSongQuota(tx, {
-    userId: input.userId,
-    delta: 1,
-    source: "LEGACY_CARD_CONVERT",
-    now: input.now,
-    idempotencyKey: `legacy-card:${card.id}`,
-    requestFingerprint: fingerprintQuotaAdjustment({ userId: input.userId, delta: 1 }),
-    legacyCardId: card.id,
-  });
-}
-
 export function buildPublicSongQuotaTransaction(transaction: Record<string, unknown>) {
   return {
     id: transaction.id,
@@ -572,7 +503,6 @@ export function buildPublicSongQuotaTransaction(transaction: Record<string, unkn
     balanceAfter: transaction.balanceAfter,
     periodKey: transaction.periodKey,
     songId: transaction.songId,
-    legacyCardId: transaction.legacyCardId,
     publicDescription: transaction.publicDescription,
     createdAt: transaction.createdAt,
   };
@@ -645,7 +575,6 @@ export function buildAdminSongQuotaTransaction(transaction: Record<string, unkno
     balanceAfter: transaction.balanceAfter,
     periodKey: transaction.periodKey,
     songId: transaction.songId,
-    legacyCardId: transaction.legacyCardId,
     administratorId: transaction.administratorId,
     publicDescription: transaction.publicDescription,
     internalNote: transaction.internalNote,

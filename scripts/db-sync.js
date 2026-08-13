@@ -181,8 +181,6 @@ async function checkSchemaConsistency(sql) {
     'api_key_permissions',
     'api_logs',
     'BackupHistory',
-    'CardCode',
-    'CardCodeRedeemLog',
     'PasswordAuditLog',
     'PasswordRateLimit'
   ]
@@ -195,7 +193,7 @@ async function checkSchemaConsistency(sql) {
       'emailVerified',
       'tokenVersion'
     ],
-    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId', 'cardCodeId'],
+    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
       'instance_id',
@@ -213,9 +211,6 @@ async function checkSchemaConsistency(sql) {
       'enableReplayRequests',
       'enableCollaborativeSubmission',
       'enableSubmissionRemarks',
-      'enableCardCodeRequests',
-      'requireCardCodeForRequests',
-      'enableCardCodeLimitBypass',
       'captchaProvider',
       'turnstileSiteKey',
       'turnstileSecretKey',

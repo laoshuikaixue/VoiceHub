@@ -69,17 +69,14 @@ test('点歌额度策略迁移唯一启用的旧投稿限额', () => {
       enableSubmissionLimit: true,
       dailySubmissionLimit: null,
       weeklySubmissionLimit: 5,
-      monthlySubmissionLimit: null,
-      enableCardCodeRequests: true,
-      requireCardCodeForRequests: false
+      monthlySubmissionLimit: null
     }),
     {
       songQuotaEnabled: true,
       songQuotaPeriodType: 'WEEKLY',
       songQuotaPeriodAmount: 5,
       adminSongQuotaExempt: true,
-      blockOnSongQuotaInsufficient: true,
-      legacyCardConversionEnabled: true
+      blockOnSongQuotaInsufficient: true
     }
   )
 })
@@ -90,38 +87,32 @@ test('点歌额度策略遇到多个旧投稿限额时保持关闭', () => {
       enableSubmissionLimit: true,
       dailySubmissionLimit: 2,
       weeklySubmissionLimit: 5,
-      monthlySubmissionLimit: null,
-      enableCardCodeRequests: false,
-      requireCardCodeForRequests: true
+      monthlySubmissionLimit: null
     }),
     {
       songQuotaEnabled: false,
       songQuotaPeriodType: null,
       songQuotaPeriodAmount: null,
       adminSongQuotaExempt: true,
-      blockOnSongQuotaInsufficient: true,
-      legacyCardConversionEnabled: true
+      blockOnSongQuotaInsufficient: true
     }
   )
 })
 
-test('配置迁移在旧投稿限额关闭时保持额度关闭但保留旧券兑换', () => {
+test('配置迁移在旧投稿限额关闭时保持额度关闭', () => {
   assert.deepEqual(
     migrateLegacyQuotaSettings({
       enableSubmissionLimit: false,
       dailySubmissionLimit: 2,
       weeklySubmissionLimit: null,
-      monthlySubmissionLimit: null,
-      enableCardCodeRequests: true,
-      requireCardCodeForRequests: false
+      monthlySubmissionLimit: null
     }),
     {
       songQuotaEnabled: false,
       songQuotaPeriodType: null,
       songQuotaPeriodAmount: null,
       adminSongQuotaExempt: true,
-      blockOnSongQuotaInsufficient: true,
-      legacyCardConversionEnabled: true
+      blockOnSongQuotaInsufficient: true
     }
   )
 })

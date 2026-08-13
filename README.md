@@ -763,7 +763,6 @@ VoiceHub/
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
-│   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
@@ -1015,14 +1014,6 @@ VoiceHub/
 │   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
 │   │   │   │   ├── index.get.ts     # 分页搜索额度账户
 │   │   │   │   └── transactions.get.ts # 分页筛选全局额度流水
-│   │   │   ├── card-codes/          # 点歌券管理API
-│   │   │   │   ├── [id].put.ts      # 更新单张点歌券
-│   │   │   │   ├── create.post.ts   # 创建点歌券
-│   │   │   │   ├── delete.post.ts   # 删除点歌券
-│   │   │   │   ├── export.get.ts    # 导出点歌券
-│   │   │   │   ├── index.get.ts     # 获取点歌券列表
-│   │   │   │   ├── redeem-logs.get.ts # 获取点歌券日志
-│   │   │   │   └── update.post.ts   # 批量更新点歌券
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
 │   │   │   │   ├── performance.get.ts # 数据库性能监控
@@ -1147,8 +1138,6 @@ VoiceHub/
 │   │   │   └── search.get.ts        # Bilibili视频搜索
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
-│   │   ├── card-codes/     # 点歌券API
-│   │   │   └── validate.post.ts     # 验证点歌券可用性
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
@@ -1182,11 +1171,6 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── open/           # 开放API（无需认证）
-│   │   │   ├── card-codes/          # 点歌券开放API
-│   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
-│   │   │   ├── card-codes.delete.ts # 删除点歌券
-│   │   │   ├── card-codes.get.ts    # 获取点歌券列表
-│   │   │   ├── card-codes.patch.ts  # 更新点歌券
 │   │   │   ├── song-quotas/         # 点歌额度开放API
 │   │   │   │   ├── _shared.ts       # 严格校验、用户归属与限流
 │   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
@@ -1214,7 +1198,6 @@ VoiceHub/
 │   │   ├── site-config.get.ts       # 站点配置API
 │   │   ├── song-quota/     # 当前用户点歌额度API
 │   │   │   ├── index.get.ts         # 获取额度概览
-│   │   │   ├── redeem-card.post.ts  # 兑换旧点歌券
 │   │   │   └── transactions.get.ts  # 分页获取额度流水
 │   │   ├── songs/          # 歌曲相关API
 │   │   │   ├── [id]/                # 歌曲详情操作
@@ -1264,8 +1247,6 @@ VoiceHub/
 │   │       │   └── meow.post.ts     # MeoW账号操作
 │   │       ├── search.get.ts        # 搜索用户
 │   │       └── social-accounts.get.ts # 获取社交账号
-│   ├── card-codes/         # 点歌券相关
-│   │   └── statuses.ts     # 点歌券状态枚举定义
 │   ├── config/             # 服务端配置
 │   │   └── constants.ts    # 风控阈值与时间窗口常量
 │   ├── error.ts            # 全局错误处理
@@ -1282,8 +1263,6 @@ VoiceHub/
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
-│   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
-│   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
@@ -1302,8 +1281,6 @@ VoiceHub/
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
-│   │   ├── card-code-delete-handler.ts # 点歌券删除开放API处理器
-│   │   ├── card-code-validation-rate-limit.ts # 点歌券验证与兑换共享限流
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
@@ -1332,7 +1309,6 @@ VoiceHub/
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
-│   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具

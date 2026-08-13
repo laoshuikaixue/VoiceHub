@@ -2,7 +2,6 @@ import { and, asc, desc, eq, gte, ilike, isNull, lte, or, sql } from 'drizzle-or
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../app/drizzle/schema.ts'
 import {
-  cardCodes,
   songQuotaAccounts,
   songQuotaTransactions,
   songs,
@@ -109,32 +108,6 @@ export function createSongQuotaDrizzleAdapter(dbOrTx: SongQuotaDatabase) {
         .update(songs)
         .set({ quotaReturned: true, quotaReturnTransactionId: transactionId })
         .where(and(eq(songs.id, songId), eq(songs.quotaReturned, false)))
-        .returning()
-      return rows[0] ?? null
-    },
-    async lockLegacyCard(cardId: number) {
-      const rows = await dbOrTx
-        .select()
-        .from(cardCodes)
-        .where(eq(cardCodes.id, cardId))
-        .limit(1)
-        .for('update')
-      return rows[0] ?? null
-    },
-    async lockLegacyCardByCode(code: string) {
-      const rows = await dbOrTx
-        .select()
-        .from(cardCodes)
-        .where(eq(cardCodes.code, code))
-        .limit(1)
-        .for('update')
-      return rows[0] ?? null
-    },
-    async markLegacyCardConverted(cardId: number, userId: number, convertedAt: Date) {
-      const rows = await dbOrTx
-        .update(cardCodes)
-        .set({ status: 'CONVERTED', redeemedBy: userId, redeemedAt: convertedAt })
-        .where(and(eq(cardCodes.id, cardId), eq(cardCodes.status, 'AVAILABLE')))
         .returning()
       return rows[0] ?? null
     },

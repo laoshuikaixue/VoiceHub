@@ -3,8 +3,8 @@ import { createError } from 'h3'
 /**
  * 创建带「机器可读错误码」的 API 错误。
  *
- * 统一了此前分散在各处的 `createCardCodeError` 形态：
- * - `statusMessage` 存放稳定错误码（如 `CARD_CODE_INVALID_OR_USED`），
+ * 统一了此前分散在各处的错误创建形态：
+ * - `statusMessage` 存放稳定错误码（如 `COMMON_INVALID_PARAMS`），
  * - `data.code` 同步携带该码，供客户端按 code 本地化，
  * - `message` 为默认文案：本项目服务端统一以简体中文书写，仅用于服务端日志，
  *   以及客户端在 `serverErrors` 词典取不到对应 code 时的兜底展示。

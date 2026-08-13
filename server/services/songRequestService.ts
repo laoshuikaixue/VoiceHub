@@ -56,8 +56,7 @@ const songRequestBodySchema = z.object({
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
     z.number().int().positive('播出时段 ID 无效').nullable()
   ).optional(),
-  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional(),
-  cardCode: z.unknown().optional()
+  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
 }).strict()
 
 export async function requestSongForUser(

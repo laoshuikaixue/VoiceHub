@@ -201,37 +201,6 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
     }
 
-    // 点歌券点歌相关设置
-    if (body.enableCardCodeRequests !== undefined) {
-      if (typeof body.enableCardCodeRequests !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'enableCardCodeRequests 必须是布尔值'
-        })
-      }
-      updateData.enableCardCodeRequests = body.enableCardCodeRequests
-    }
-
-    if (body.requireCardCodeForRequests !== undefined) {
-      if (typeof body.requireCardCodeForRequests !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'requireCardCodeForRequests 必须是布尔值'
-        })
-      }
-      updateData.requireCardCodeForRequests = body.requireCardCodeForRequests
-    }
-
-    if (body.enableCardCodeLimitBypass !== undefined) {
-      if (typeof body.enableCardCodeLimitBypass !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'enableCardCodeLimitBypass 必须是布尔值'
-        })
-      }
-      updateData.enableCardCodeLimitBypass = body.enableCardCodeLimitBypass
-    }
-
     if (body.dailySubmissionLimit !== undefined) {
       if (
         body.dailySubmissionLimit !== null &&
@@ -274,8 +243,7 @@ export default defineEventHandler(async (event) => {
     const songQuotaBooleanFields = [
       'songQuotaEnabled',
       'adminSongQuotaExempt',
-      'blockOnSongQuotaInsufficient',
-      'legacyCardConversionEnabled'
+      'blockOnSongQuotaInsufficient'
     ]
     for (const field of songQuotaBooleanFields) {
       if (body[field] !== undefined) {

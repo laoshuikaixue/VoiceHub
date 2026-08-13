@@ -196,13 +196,4 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   animation: spin 1s linear infinite;
   opacity: 0.9;
 }
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 </style>

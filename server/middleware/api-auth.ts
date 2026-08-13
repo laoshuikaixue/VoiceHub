@@ -22,7 +22,6 @@ const truncateResponseBody = (responseBody: any, maxLength = 10000) => {
 }
 
 const OPEN_API_SENSITIVE_FIELDS = new Set([
-  'cardCode',
   'internalNote',
   'idempotencyKey',
   'externalReference'
@@ -361,17 +360,6 @@ function getRequiredPermission(pathname: string, method: string): string | null 
 
   if (normalizedPathname === '/api/open/song-quotas/transactions' && method === 'GET') {
     return 'song-quota-transactions:read'
-  }
-
-  if (normalizedPathname === '/api/open/card-codes' && method === 'GET') {
-    return 'card-codes:read'
-  }
-
-  if (
-    normalizedPathname === '/api/open/card-codes' ||
-    normalizedPathname.startsWith('/api/open/card-codes/')
-  ) {
-    return 'card-codes:write-disabled'
   }
 
   if (normalizedPathname.startsWith('/api/open/schedules')) {

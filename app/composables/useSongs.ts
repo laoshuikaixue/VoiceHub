@@ -166,7 +166,6 @@ export const useSongs = () => {
             cover: schedule.song.cover || null,
             musicPlatform: schedule.song.musicPlatform || null,
             musicId: schedule.song.musicId || null,
-            usedCardCode: schedule.song.usedCardCode === true,
             hasSubmissionNote: schedule.song.hasSubmissionNote === true,
             submissionNote: schedule.song.submissionNote || null,
             submissionNotePublic: schedule.song.submissionNotePublic === true
@@ -272,7 +271,6 @@ export const useSongs = () => {
     musicId?: string | null
     submissionNote?: string | null
     submissionNotePublic?: boolean
-    cardCode?: string | null
   }) => {
     if (!isAuthenticated.value) {
       showNotification(actionLocale.value.loginRequest, 'error')

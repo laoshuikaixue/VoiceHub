@@ -141,58 +141,6 @@ test('点歌管理员权限包含 SONG_ADMIN', () => {
   assert.equal(isSongAdministrator('SUPER_ADMIN'), true)
 })
 
-test('统一点歌契约兼容接收并忽略旧 cardCode 字段', () => {
-  assert.deepEqual(validateAdminSongAddBody({ title: 'Song', artist: 'Artist', cardCode: 'LEGACY' }, 7), {
-    title: 'Song',
-    artist: 'Artist',
-    requesterId: 7
-  })
-  const source = readFileSync(new URL('../../server/services/songRequestService.ts', import.meta.url), 'utf8')
-  assert.match(source, /cardCode:\s*z\.unknown\(\)\.optional\(\)/)
-  assert.doesNotMatch(source, /requestBody\.cardCode/)
-})
-
-test('投稿表单仅按旧券兑换开关展示入口并将券兑换为额度', () => {
-  const source = readFileSync(new URL('../../app/components/Songs/RequestForm.vue', import.meta.url), 'utf8')
-  assert.doesNotMatch(source, /enableCardCodeRequests|requireCardCodeForRequests|enableCardCodeLimitBypass/)
-  assert.match(source, /legacyCardConversionEnabled/)
-  assert.match(source, /const cardCodeEnabled = computed\(\(\) => legacyCardConversionEnabled\.value\)/)
-  assert.doesNotMatch(source, /\/api\/card-codes\/validate|validateCardCode|ensureCardCodeForSubmit/)
-
-  const siteConfigSource = readFileSync(
-    new URL('../../app/composables/useSiteConfig.js', import.meta.url),
-    'utf8'
-  )
-  assert.match(siteConfigSource, /const legacyCardConversionEnabled = computed/)
-  assert.match(siteConfigSource, /legacyCardConversionEnabled,/)
-
-  const publicSettingsSource = readFileSync(
-    new URL('../../server/utils/system-settings-defaults.ts', import.meta.url),
-    'utf8'
-  )
-  const publicSettings = publicSettingsSource.slice(
-    publicSettingsSource.indexOf('export const PUBLIC_SETTINGS_FIELDS')
-  )
-  assert.match(publicSettings, /'legacyCardConversionEnabled'/)
-  assert.doesNotMatch(
-    publicSettings,
-    /'enableCardCodeRequests'|'requireCardCodeForRequests'|'enableCardCodeLimitBypass'/
-  )
-
-  const saveStart = source.indexOf('const saveCardCode = async () =>')
-  const saveEnd = source.indexOf('const clearCardCode =', saveStart)
-  const saveBlock = source.slice(saveStart, saveEnd)
-  assert.match(saveBlock, /\$fetch\('\/api\/song-quota\/redeem-card',[\s\S]*?method:\s*'POST'/)
-  assert.match(saveBlock, /await \$fetch\('\/api\/song-quota',[\s\S]*?method:\s*'GET'/)
-  assert.ok(saveBlock.indexOf("'/api/song-quota/redeem-card'") < saveBlock.indexOf("'/api/song-quota'"))
-  assert.ok(saveBlock.indexOf("'/api/song-quota'") < saveBlock.lastIndexOf('clearCardCode()'))
-})
-
-test('投稿表单的所有投稿载荷均不再携带 cardCode', () => {
-  const source = readFileSync(new URL('../../app/components/Songs/RequestForm.vue', import.meta.url), 'utf8')
-  assert.doesNotMatch(source, /songData\.cardCode|cardCode:\s*cardCode\.value/)
-})
-
 test('导入子请求 ID 由意图批次、原始索引和源歌曲标识稳定派生', () => {
   assert.equal(
     createImportSongRequestId(' batch-1 ', 2, 35),
@@ -355,12 +303,23 @@ test('点歌请求幂等冲突错误码在常量和双语词典中同步', () =>
 
 
 test('投稿表单状态区读取统一额度并显示总、周期和永久额度', () => {
-  const source = readFileSync(new URL('../../app/components/Songs/RequestForm.vue', import.meta.url), 'utf8')
-  assert.match(source, /submissionStatus\.quota\?\.enabled/)
-  assert.match(source, /locale\.totalQuota[\s\S]*?submissionStatus\.quota\.totalBalance/)
-  assert.match(source, /locale\.periodicQuota[\s\S]*?submissionStatus\.quota\.periodicBalance/)
-  assert.match(source, /locale\.permanentQuota[\s\S]*?submissionStatus\.quota\.permanentBalance/)
-  assert.doesNotMatch(source, /submissionStatus\.(?:limitEnabled|dailyLimit|weeklyLimit|monthlyLimit|dailyUsed|weeklyUsed|monthlyUsed)/)
+  const formSource = readFileSync(new URL('../../app/components/Songs/RequestForm.vue', import.meta.url), 'utf8')
+  const displaySource = readFileSync(new URL('../../app/components/Songs/SongQuotaDisplay.vue', import.meta.url), 'utf8')
+
+  // RequestForm 通过 SongQuotaDisplay 组件传递额度数据
+  assert.match(formSource, /submissionStatus\.quota\?\.enabled/)
+  assert.match(formSource, /<SongQuotaDisplay[\s\S]*?submissionStatus\.quota/)
+
+  // SongQuotaDisplay 渲染额度文案和数值
+  assert.match(displaySource, /locale\.totalQuota/)
+  assert.match(displaySource, /quota\.totalBalance/)
+  assert.match(displaySource, /locale\.periodicQuota/)
+  assert.match(displaySource, /quota\.periodicBalance/)
+  assert.match(displaySource, /locale\.permanentQuota/)
+  assert.match(displaySource, /quota\.permanentBalance/)
+
+  // RequestForm 不再使用旧的投稿限额字段
+  assert.doesNotMatch(formSource, /submissionStatus\.(?:limitEnabled|dailyLimit|weeklyLimit|monthlyLimit|dailyUsed|weeklyUsed|monthlyUsed)/)
 })
 
 test('投稿表单仅在统一额度启用、余额为零且配置阻断时禁止投稿', () => {
@@ -373,7 +332,6 @@ test('投稿表单仅在统一额度启用、余额为零且配置阻断时禁�
   assert.match(block, /quota\.totalBalance\s*<=\s*0/)
   assert.match(block, /notifications\.quotaInsufficient/)
   assert.doesNotMatch(block, /limitEnabled|dailyLimit|weeklyLimit|monthlyLimit|dailyUsed|weeklyUsed|monthlyUsed/)
-  assert.doesNotMatch(block, /cardCodeLimitBypassActive|trimmedCardCode|cardCodeValidation/)
 })
 
 test('投稿表单统一额度文案保持双语结构一致', () => {

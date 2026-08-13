@@ -209,14 +209,6 @@
                           >
                             <Repeat2 :size="14"  />
                           </span>
-                          <!-- 点歌券标识 -->
-                          <span
-                            v-if="schedule.song.usedCardCode"
-                            class="card-code-tag"
-                            :title="locale.cardCodeUsed"
-                          >
-                            {{ locale.cardCodeUsed }}
-                          </span>
                           <button
                             v-if="schedule.song?.hasSubmissionNote && schedule.song?.submissionNote"
                             :aria-label="locale.viewSubmissionNote"
@@ -1940,15 +1932,6 @@ const vRipple = {
   gap: 1rem;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .error,
 .empty {
   padding: 2rem;
@@ -2898,21 +2881,6 @@ const vRipple = {
 .replay-badge:hover {
   background: var(--color-accent-alpha-25);
   border-color: var(--color-accent-alpha-50);
-}
-
-/* 点歌券标识 */
-.card-code-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  background: var(--card-code-bg);
-  border: 1px solid var(--card-code-border);
-  border-radius: 4px;
-  color: var(--card-code-text);
-  font-size: 0.7rem;
-  font-weight: 500;
-  flex-shrink: 0;
-  white-space: nowrap;
 }
 
 .song-meta {

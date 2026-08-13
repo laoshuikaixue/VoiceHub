@@ -123,7 +123,7 @@ export const useLocaleText = (
  * Extract the stable machine-readable error code from a thrown error / failed `$fetch`.
  * Errors created via `server/utils/apiError.ts#createApiError` carry the code in both
  * `statusMessage` and `data.code`; Nuxt/`$fetch` nests the server payload under `err.data`,
- * so we probe both depths. Mirrors the ad-hoc `getCardCodeErrorCode` this replaces.
+ * so we probe both depths.
  */
 export const extractErrorCode = (err: any): string => {
   if (!err) return ''

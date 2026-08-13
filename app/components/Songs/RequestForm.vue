@@ -172,7 +172,6 @@
                     :quota="submissionStatus.quota"
                     :period-amount="submissionStatus.quota.periodAmount"
                     :is-admin="auth.isAdmin.value"
-                    :card-code-active="!!trimmedCardCode"
                     compact
                   />
                 </div>
@@ -333,7 +332,7 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段、备注和点歌券 -->
+            <!-- 播出时段、备注 -->
             <div v-if="playTimeSelectionEnabled" class="form-row mb-4">
               <!-- 播出时段选择 -->
               <div class="form-group">
@@ -351,39 +350,16 @@
             </div>
 
             <div
-              v-if="enableSubmissionRemarks || cardCodeEnabled"
+              v-if="enableSubmissionRemarks"
               class="form-row submission-meta-row"
             >
-              <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
+              <div class="form-group submission-note-group">
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <label for="submission-note" class="text-[12px] font-bold text-text-secondary"
                       >{{ locale.submissionNote }}</label
                     >
                     <div class="flex items-center gap-2">
-                      <button
-                        v-if="cardCodeEnabled"
-                        :class="[
-                          'mobile-card-code-chip',
-                          trimmedCardCode
-                            ? cardCodeValidation.valid
-                              ? 'is-valid'
-                              : cardCodeValidation.valid === false
-                                ? 'is-invalid'
-                                : 'has-code'
-                            : cardCodeFieldMeta.required
-                              ? 'is-required'
-                              : ''
-                        ]"
-                        type="button"
-                        @click="openCardCodeModal"
-                      >
-                        <Loader2 v-if="cardCodeValidation.checking" :size="12" class="animate-spin" />
-                        <CircleX v-else-if="trimmedCardCode && cardCodeValidation.valid === false" :size="12" />
-                        <Check v-else-if="trimmedCardCode" :size="12" />
-                        <Plus v-else :size="12" />
-                        <span>{{ mobileCardCodeLabel }}</span>
-                      </button>
                       <label class="custom-checkbox-wrapper">
                         <input
                           v-model="submissionNotePublic"
@@ -407,95 +383,6 @@
                     <span>{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
-              </div>
-
-              <div
-                v-if="cardCodeEnabled"
-                :class="[
-                  'form-group card-code-form-group',
-                  { 'mobile-hidden-card-code-group': enableSubmissionRemarks }
-                ]"
-              >
-                <div class="desktop-card-code-panel">
-                  <div class="flex min-w-0 items-center gap-2">
-                    <div class="min-w-0">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-text-primary">{{ locale.cardCode }}</span>
-                        <span
-                          :class="[
-                            'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
-                            cardCodeFieldMeta.required
-                              ? 'border-warning-30 bg-warning-10 text-warning-300'
-                              : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
-                          ]"
-                        >
-                          {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
-                        </span>
-                      </div>
-                      <p
-                        :class="[
-                          'mt-1 truncate text-[11px]',
-                          cardCodeValidation.valid
-                            ? 'text-success-300'
-                            : cardCodeValidation.valid === false
-                              ? 'text-error-80'
-                              : cardCodeFieldMeta.required
-                                ? 'text-warning-300'
-                                : 'text-text-tertiary'
-                        ]"
-                      >
-                        {{ cardCodeStatusText }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex shrink-0 items-center gap-2">
-                    <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-warning-200 transition-all hover:border-warning-40 hover:bg-warning-15"
-                      type="button"
-                      @click="openCardCodeModal"
-                    >
-                      <Edit3 v-if="trimmedCardCode" :size="13" />
-                      <Plus v-else :size="13" />
-                      {{ trimmedCardCode ? locale.editCardCode : locale.addCardCode }}
-                    </button>
-                    <button
-                      v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary-80 text-text-tertiary transition-all hover:border-error-30 hover:text-error"
-                      :title="locale.clearCardCode"
-                      type="button"
-                      @click="clearCardCode"
-                    >
-                      <X :size="13" />
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  v-if="!enableSubmissionRemarks"
-                  :class="[
-                    'mobile-card-code-button',
-                    trimmedCardCode
-                      ? cardCodeValidation.valid
-                        ? 'is-valid'
-                        : cardCodeValidation.valid === false
-                          ? 'is-invalid'
-                          : 'has-code'
-                      : cardCodeFieldMeta.required
-                        ? 'is-required'
-                        : ''
-                  ]"
-                  type="button"
-                  @click="openCardCodeModal"
-                >
-                  <span class="flex min-w-0 items-center gap-2">
-                    <Loader2 v-if="cardCodeValidation.checking" :size="14" class="animate-spin" />
-                    <CircleX v-else-if="trimmedCardCode && cardCodeValidation.valid === false" :size="14" />
-                    <Check v-else-if="trimmedCardCode" :size="14" />
-                    <Plus v-else :size="14" />
-                    <span class="truncate">{{ cardCodeStatusText }}</span>
-                  </span>
-                  <ChevronRight :size="13" />
-                </button>
               </div>
             </div>
 
@@ -827,113 +714,6 @@
       :title="locale.addCollaboratorTitle"
       @select="handleUserSelect"
     />
-
-    <!-- 点歌券输入弹窗 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary-80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
-          @click.self="closeCardCodeModal"
-        >
-          <div
-            class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
-            @click.stop
-          >
-            <div class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4">
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
-                  <span
-                    :class="[
-                      'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
-                      cardCodeFieldMeta.required
-                        ? 'border-warning-30 bg-warning-10 text-warning-300'
-                        : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
-                    ]"
-                  >
-                    {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
-                  </span>
-                </div>
-                <p class="mt-1 text-[11px] text-text-tertiary">{{ cardCodeFieldMeta.helper }}</p>
-              </div>
-              <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary-60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
-                type="button"
-                @click="closeCardCodeModal"
-              >
-                <X :size="15" />
-              </button>
-            </div>
-
-            <div class="px-5 py-5">
-              <label
-                for="card-code-modal"
-                class="px-1 text-[10px] font-black uppercase tracking-widest text-text-disabled"
-              >
-                {{ locale.cardCodeLabel }}
-              </label>
-              <input
-                id="card-code-modal"
-                ref="cardCodeInputRef"
-                v-model="cardCodeDraft"
-                :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
-                type="text"
-                @keydown.enter.prevent="saveCardCode"
-              >
-              <p
-                :class="[
-                  'mt-2 px-1 text-[11px]',
-                  cardCodeValidation.valid
-                    ? 'text-success-300'
-                    : cardCodeValidation.valid === false
-                      ? 'text-error-80'
-                      : 'text-text-tertiary'
-                ]"
-              >
-                {{ cardCodeModalHint }}
-              </p>
-            </div>
-
-            <div
-              class="flex flex-col-reverse gap-2 border-t border-border-secondary-70 bg-bg-secondary-70 px-5 py-4 sm:flex-row sm:justify-end"
-            >
-              <button
-                class="rounded-lg px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:text-text-secondary"
-                type="button"
-                @click="closeCardCodeModal"
-              >
-                {{ locale.cancel }}
-              </button>
-              <button
-                v-if="trimmedCardCode"
-                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error-30 hover:text-error"
-                type="button"
-                @click="clearCardCode"
-              >
-                {{ locale.clear }}
-              </button>
-              <button
-                :disabled="cardCodeValidation.checking"
-                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-text-primary transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
-                type="button"
-                @click="saveCardCode"
-              >
-                {{ cardCodeValidation.checking ? locale.validatingCardCode : locale.save }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
 
     <Teleport to="body">
       <Transition
@@ -1327,9 +1107,7 @@ const {
   initSiteConfig,
   enableReplayRequests,
   enableCollaborativeSubmission,
-  enableSubmissionRemarks,
-  enableSubmissionLimit,
-  legacyCardConversionEnabled
+  enableSubmissionRemarks
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
@@ -1352,15 +1130,6 @@ const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
-const cardCode = ref('')
-const cardCodeDraft = ref('')
-const showCardCodeModal = ref(false)
-const cardCodeInputRef = ref(null)
-const cardCodeValidation = ref({
-  checking: false,
-  valid: null,
-  message: ''
-})
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
@@ -1407,115 +1176,6 @@ const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
-
-const cardCodeEnabled = computed(() => legacyCardConversionEnabled.value)
-
-const cardCodeFieldMeta = computed(() => ({
-  required: false,
-  helper: locale.value.cardCodeOptionalHelper,
-  placeholder: locale.value.cardCodePlaceholder
-}))
-
-const trimmedCardCode = computed(() => cardCode.value.trim())
-const cardCodeStatusText = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
-  if (trimmedCardCode.value) {
-    return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
-  }
-  return locale.value.cardCodeOptionalStatus
-})
-const mobileCardCodeLabel = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingShort
-  if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid === false) return locale.value.cardCodeInvalid
-    if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
-    return locale.value.cardCodeFilled
-  }
-  return locale.value.cardCodeOptionalShort
-})
-const cardCodeModalHint = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
-  if (cardCodeValidation.value.message) return cardCodeValidation.value.message
-  return locale.value.cardCodeSaveHint
-})
-
-const resetCardCodeValidation = () => {
-  cardCodeValidation.value = {
-    checking: false,
-    valid: null,
-    message: ''
-  }
-}
-
-const openCardCodeModal = async () => {
-  cardCodeDraft.value = cardCode.value
-  showCardCodeModal.value = true
-  await nextTick()
-  cardCodeInputRef.value?.focus()
-}
-
-const closeCardCodeModal = () => {
-  const draftChanged = cardCodeDraft.value.trim() !== cardCode.value.trim()
-  showCardCodeModal.value = false
-  cardCodeDraft.value = cardCode.value
-  if (draftChanged) {
-    resetCardCodeValidation()
-  }
-}
-
-const saveCardCode = async () => {
-  const draft = cardCodeDraft.value.trim().toUpperCase()
-  if (!draft) {
-    clearCardCode()
-    return
-  }
-
-  cardCodeValidation.value = {
-    checking: true,
-    valid: null,
-    message: locale.value.validatingCardCode
-  }
-
-  try {
-    const authConfig = auth.getAuthConfig()
-    const prevPermanentBalance = submissionStatus.value?.quota?.permanentBalance ?? 0
-    const result = await $fetch('/api/song-quota/redeem-card', {
-      method: 'POST',
-      body: { cardCode: draft },
-      ...authConfig
-    })
-    const addedAmount = result.permanentBalance - prevPermanentBalance
-    const quota = await $fetch('/api/song-quota', {
-      method: 'GET',
-      ...authConfig
-    })
-    submissionStatus.value = {
-      ...(submissionStatus.value || {}),
-      quota
-    }
-    clearCardCode()
-    if (window.$showNotification) {
-      window.$showNotification(callLocale('notifications.cardCodeRedeemed', '', addedAmount), 'success')
-    }
-  } catch (err) {
-    const message = localizeServerError(err, locale.value.cardCodeValidateFailed)
-    cardCodeValidation.value = {
-      checking: false,
-      valid: false,
-      message
-    }
-    if (window.$showNotification) {
-      window.$showNotification(message, 'error')
-    }
-  }
-}
-
-const clearCardCode = () => {
-  cardCode.value = ''
-  cardCodeDraft.value = ''
-  showCardCodeModal.value = false
-  resetCardCodeValidation()
-}
 
 // 投稿状态
 const submissionStatus = ref(null)
@@ -2261,18 +1921,6 @@ watch(enableSubmissionRemarks, (enabled) => {
   if (!enabled) {
     submissionNote.value = ''
     submissionNotePublic.value = true
-  }
-})
-
-watch(legacyCardConversionEnabled, (enabled) => {
-  if (!enabled) {
-    clearCardCode()
-  }
-})
-
-watch(cardCodeDraft, (value) => {
-  if (value.trim() !== cardCode.value.trim()) {
-    resetCardCodeValidation()
   }
 })
 
@@ -3619,10 +3267,6 @@ const resetForm = () => {
   collaborators.value = []
   submissionNote.value = ''
   submissionNotePublic.value = true
-  cardCode.value = ''
-  cardCodeDraft.value = ''
-  showCardCodeModal.value = false
-  resetCardCodeValidation()
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }
@@ -4957,16 +4601,7 @@ defineExpose({
   margin: 0;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 搜索结果列表 */
+/* ===== 组件自定义样式 ===== */
 .results-list {
   flex: 1;
   display: flex;

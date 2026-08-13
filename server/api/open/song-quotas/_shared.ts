@@ -67,7 +67,7 @@ export async function enforceOpenSongQuotaRateLimit(event: H3Event, apiKeyId: st
     if (!result.isAllowed) {
       const retryAfter = Math.max(1, Math.ceil((result.resetTime - getServerTimestamp()) / 1000))
       setResponseHeader(event, 'Retry-After', retryAfter)
-      throw createApiError(429, SERVER_ERROR_CODES.CARD_CODE_RATE_LIMITED, '额度 API 请求过于频繁')
+      throw createApiError(429, SERVER_ERROR_CODES.SONG_QUOTA_RATE_LIMITED, '额度 API 请求过于频繁')
     }
   }
 }

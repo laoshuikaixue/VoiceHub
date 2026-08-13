@@ -88,10 +88,9 @@ export function maskPublicScheduleData(data: PublicScheduleItem[]) {
   })
 }
 
-/** 移除匿名响应中的内部用户和点歌券标识，避免通过 ID 关联被脱敏的数据。 */
+/** 移除匿名响应中的内部用户标识，避免通过 ID 关联被脱敏的数据。 */
 export function stripAnonymousSongIdentifiers(song: MaskableSong) {
   delete song.requesterId
-  delete song.cardCodeId
 
   song.collaborators?.forEach((user) => delete user.id)
   song.replayRequesters?.forEach((user) => delete user.id)

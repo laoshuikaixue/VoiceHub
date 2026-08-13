@@ -8,7 +8,6 @@ import {
   requestTimes
 } from '~/drizzle/schema'
 import { and, eq, sql } from 'drizzle-orm'
-import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
 import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
 import { executeSongWithdrawal } from '~~/server/services/songQuotaService'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
@@ -196,8 +195,6 @@ export default defineEventHandler(async (event) => {
             throw createApiError(400, 'SONG_SCHEDULED_CANNOT_WITHDRAW', '已排期的歌曲不能撤回')
           }
         },
-        releaseLegacyCard: async (input) =>
-          releaseCardCodeAfterSongWithdrawal(tx, { ...input, at: input.now }),
         deleteDraftSchedules: async (lockedSong) => {
           await tx
             .delete(schedules)

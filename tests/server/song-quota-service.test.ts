@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { SERVER_ERROR_CODES } from "../../server/config/constants.ts";
 import {
@@ -11,7 +11,6 @@ import {
   buildPublicSongQuotaTransaction,
   buildSongQuotaAccountResponse,
   consumeSongQuota,
-  convertLegacyCardToQuota,
   executeSequentialSongImports,
   executeSongQuotaSubmission,
   executeSongWithdrawal,
@@ -440,6 +439,7 @@ test("额度投稿状态返回统一账户契约且管理员免额度无预计�
     totalBalance: 6,
     periodKey: "2026-W33",
     periodType: "WEEKLY",
+    periodAmount: 3,
     nextRefreshAt: "2026-08-16T16:00:00.000Z",
     estimatedConsumptionType: "PERIODIC",
     enabled: true,
@@ -670,7 +670,6 @@ test("额度撤回在同一事务返还当前周期额度并返回 RETURNED", as
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERIODIC",
     quotaPeriodKey: "2026-W33",
@@ -682,7 +681,6 @@ test("额度撤回在同一事务返还当前周期额度并返回 RETURNED", as
     operatorId: 7,
     settings: SETTINGS,
     now: NOW,
-    releaseLegacyCard: async () => assert.fail("不应释放旧券"),
     deleteDraftSchedules: async () => {},
     deleteSongRelations: async (song) => deleted.push(`relations:${song.id}`),
     decrementRequestTime: async () => {},
@@ -701,7 +699,6 @@ test("额度撤回跨周期只记录 EXPIRED 且永久额度跨期仍返还", as
   periodicStore.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERIODIC",
     quotaPeriodKey: "2026-W32",
@@ -712,7 +709,6 @@ test("额度撤回跨周期只记录 EXPIRED 且永久额度跨期仍返还", as
     operatorId: 7,
     settings: SETTINGS,
     now: NOW,
-    releaseLegacyCard: async () => {},
     deleteDraftSchedules: async () => {},
     deleteSongRelations: async () => {},
     decrementRequestTime: async () => {},
@@ -725,7 +721,6 @@ test("额度撤回跨周期只记录 EXPIRED 且永久额度跨期仍返还", as
   permanentStore.songs.set(11, {
     id: 11,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERMANENT",
     quotaPeriodKey: null,
@@ -736,7 +731,6 @@ test("额度撤回跨周期只记录 EXPIRED 且永久额度跨期仍返还", as
     operatorId: 7,
     settings: SETTINGS,
     now: NOW,
-    releaseLegacyCard: async () => {},
     deleteDraftSchedules: async () => {},
     deleteSongRelations: async () => {},
     decrementRequestTime: async () => {},
@@ -746,80 +740,31 @@ test("额度撤回跨周期只记录 EXPIRED 且永久额度跨期仍返还", as
   assert.equal(permanentStore.account.permanentBalance, 1);
 });
 
-test("额度撤回旧券歌曲只释放旧券且全链复用同一 now", async () => {
+test("额度撤回未消费额度的歌曲返回 NOT_APPLICABLE 并完成清理", async () => {
   const store = createStore(account({ periodKey: "2026-W33" }));
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: 9,
     quotaConsumed: false,
     quotaType: null,
     quotaPeriodKey: null,
     quotaReturned: false,
   });
-  const released = [];
+  const deleted = [];
   const result = await executeSongWithdrawal(store, {
     songId: 10,
     operatorId: 7,
     settings: SETTINGS,
     now: NOW,
-    releaseLegacyCard: async (input) => {
-      released.push(input);
-      return { changed: true, status: "AVAILABLE" };
-    },
-    deleteDraftSchedules: async () => {},
-    deleteSongRelations: async () => {},
+    deleteDraftSchedules: async () => deleted.push("drafts"),
+    deleteSongRelations: async () => deleted.push("relations"),
     decrementRequestTime: async () => {},
-    deleteSong: async () => {},
+    deleteSong: async () => deleted.push("song"),
   });
   assert.equal(result.quotaReturnResult, "NOT_APPLICABLE");
-  assert.deepEqual(released, [{ songId: 10, cardCodeId: 9, operatorId: 7, now: NOW }]);
-  assert.equal(released[0].now, NOW);
+  assert.equal(store.account.periodicBalance, 0);
+  assert.deepEqual(deleted, ["drafts", "relations", "song"]);
   assert.equal(store.transactions.length, 0);
-});
-
-test("额度撤回旧券任意 changed false 均失败且不执行删除", async () => {
-  const store = createStore(account({ periodKey: "2026-W33" }));
-  store.songs.set(10, {
-    id: 10,
-    requesterId: 7,
-    cardCodeId: 9,
-    quotaConsumed: false,
-    quotaType: null,
-    quotaPeriodKey: null,
-    quotaReturned: false,
-  });
-  let deleteCalls = 0;
-  await assert.rejects(
-    store.transaction((tx) =>
-      executeSongWithdrawal(tx, {
-        songId: 10,
-        operatorId: 7,
-        settings: SETTINGS,
-        now: NOW,
-        releaseLegacyCard: async () => ({
-          changed: false,
-          reason: "ALREADY_RELEASED",
-          status: "AVAILABLE",
-        }),
-        deleteDraftSchedules: async () => {
-          deleteCalls += 1;
-        },
-        deleteSongRelations: async () => {
-          deleteCalls += 1;
-        },
-        decrementRequestTime: async () => {
-          deleteCalls += 1;
-        },
-        deleteSong: async () => {
-          deleteCalls += 1;
-        },
-      }),
-    ),
-    (error) => error?.data?.code === "SONG_CARD_RELEASE_FAILED",
-  );
-  assert.equal(deleteCalls, 0);
-  assert.equal(store.songs.has(10), true);
 });
 
 test("额度撤回返还失败时不删除歌曲及关联数据", async () => {
@@ -827,7 +772,6 @@ test("额度撤回返还失败时不删除歌曲及关联数据", async () => {
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERIODIC",
     quotaPeriodKey: "2026-W33",
@@ -840,7 +784,6 @@ test("额度撤回返还失败时不删除歌曲及关联数据", async () => {
       operatorId: 7,
       settings: SETTINGS,
       now: NOW,
-      releaseLegacyCard: async () => {},
       deleteDraftSchedules: async () => {
         deleteCalls += 1;
       },
@@ -865,7 +808,6 @@ test("额度撤回并发重复请求仅一次返还且另一次失败", async ()
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERIODIC",
     quotaPeriodKey: "2026-W33",
@@ -876,7 +818,6 @@ test("额度撤回并发重复请求仅一次返还且另一次失败", async ()
     operatorId: 7,
     settings: SETTINGS,
     now: NOW,
-    releaseLegacyCard: async () => {},
     deleteDraftSchedules: async () => {},
     deleteSongRelations: async () => {},
     decrementRequestTime: async () => {},
@@ -900,7 +841,6 @@ test("额度撤回缺少草稿清理步骤时在任何状态变更前失败", as
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERIODIC",
     quotaPeriodKey: "2026-W33",
@@ -915,7 +855,6 @@ test("额度撤回缺少草稿清理步骤时在任何状态变更前失败", as
         operatorId: 7,
         settings: SETTINGS,
         now: NOW,
-        releaseLegacyCard: async () => {},
         deleteSongRelations: async () => {
           relationDeleteCalls += 1;
         },
@@ -937,7 +876,6 @@ test("额度撤回清理草稿失败时回滚额度返还且不删除后续关�
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     quotaConsumed: true,
     quotaType: "PERIODIC",
     quotaPeriodKey: "2026-W33",
@@ -952,7 +890,6 @@ test("额度撤回清理草稿失败时回滚额度返还且不删除后续关�
         operatorId: 7,
         settings: SETTINGS,
         now: NOW,
-        releaseLegacyCard: async () => {},
         deleteDraftSchedules: async () => {
           throw new Error("草稿清理失败");
         },
@@ -977,7 +914,6 @@ test("额度撤回在锁定歌曲后重验权限、播放状态和正式排期",
   store.songs.set(10, {
     id: 10,
     requesterId: 7,
-    cardCodeId: null,
     played: false,
     quotaConsumed: false,
     quotaType: null,
@@ -991,7 +927,6 @@ test("额度撤回在锁定歌曲后重验权限、播放状态和正式排期",
     settings: SETTINGS,
     now: NOW,
     validateLockedSong: async (song) => checks.push(`validate:${song.id}`),
-    releaseLegacyCard: async () => {},
     deleteDraftSchedules: async () => checks.push("drafts"),
     deleteSongRelations: async () => checks.push("relations"),
     decrementRequestTime: async () => {},
@@ -1030,21 +965,6 @@ test("删除排期仅锁定排期表避免 PostgreSQL 外连接行锁失败", ()
   const lockQuery = source.slice(lockStart, Math.min(...lockEndCandidates));
 
   assert.doesNotMatch(lockQuery, /leftJoin/);
-});
-
-test("删除草稿排期不会恢复正式排期产生的点歌券与重播状态", () => {
-  const source = readFileSync(
-    new URL("../../server/api/admin/schedule/remove.post.ts", import.meta.url),
-    "utf8",
-  );
-  const transaction = source.slice(source.indexOf("db.transaction"));
-  const publishedOnlyBranch = transaction.match(
-    /if \(!existingSchedule\.isDraft\)[\s\S]*?restoreReplayRequestsToPending\([\s\S]*?\n\s*\}/,
-  )?.[0];
-
-  assert.ok(publishedOnlyBranch, "草稿删除仍可能恢复点歌券或重播申请状态");
-  assert.match(publishedOnlyBranch, /restoreCardCodeAfterScheduleRemoval/);
-  assert.match(publishedOnlyBranch, /restoreReplayRequestsToPending/);
 });
 
 test("撤回歌曲会在同一事务删除草稿排期", () => {
@@ -1132,43 +1052,6 @@ test("播放状态写路径在歌曲锁内复用服务端时间", () => {
     assert.match(transaction, /at: now/);
     assert.doesNotMatch(transaction, /getBeijingTime\(\)|new Date\(\)/);
   }
-});
-
-test("旧券撤回仅允许释放 LOCKED 且属于该歌曲的券", () => {
-  const lifecycleSource = readFileSync(
-    new URL("../../server/services/cardCodeLifecycleService.ts", import.meta.url),
-    "utf8",
-  );
-  const releaseBlock = lifecycleSource.slice(
-    lifecycleSource.indexOf("export const releaseCardCodeAfterSongWithdrawal"),
-  );
-  assert.match(releaseBlock, /current\.status !== 'LOCKED'/);
-  assert.match(releaseBlock, /eq\(cardCodes\.status, 'LOCKED'\)/);
-  assert.match(releaseBlock, /eq\(songs\.id, songId\)/);
-  assert.match(releaseBlock, /eq\(songs\.cardCodeId, cardCodeId\)/);
-  assert.match(releaseBlock, /reason: 'CARD_NOT_OWNED_BY_SONG'/);
-  assert.doesNotMatch(releaseBlock, /\['LOCKED', 'REDEEMED'\]/);
-});
-
-test("旧券撤回 changed false 幂等状态明确且 API 不吞失败", () => {
-  const lifecycleSource = readFileSync(
-    new URL("../../server/services/cardCodeLifecycleService.ts", import.meta.url),
-    "utf8",
-  );
-  const releaseBlock = lifecycleSource.slice(
-    lifecycleSource.indexOf("export const releaseCardCodeAfterSongWithdrawal"),
-  );
-  assert.match(releaseBlock, /reason: 'ALREADY_RELEASED'/);
-  assert.match(releaseBlock, /reason: 'INVALID_STATUS'/);
-
-  const withdrawSource = readFileSync(
-    new URL("../../server/api/songs/withdraw.post.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(withdrawSource, /const now = getServerDate\(\)/);
-  assert.match(withdrawSource, /now,\s*validateLockedSong:[\s\S]*?releaseLegacyCard:/);
-  assert.match(withdrawSource, /releaseCardCodeAfterSongWithdrawal\(tx, \{ \.\.\.input, at: input\.now \}\)/);
-  assert.doesNotMatch(withdrawSource, /\['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'\]\.includes/);
 });
 
 test("撤回接口直接使用事务返回值避免额度结果被类型收窄", () => {
@@ -1313,36 +1196,6 @@ test("点歌额度服务拒绝幂等键相同但指纹不同的调整", async ()
   assert.equal(store.transactions.length, 1);
 });
 
-test("点歌额度服务将可用旧券兑换为永久额度", async () => {
-  const store = createStore();
-  store.cards.set(9, { id: 9, status: "AVAILABLE" });
-  const result = await convertLegacyCardToQuota(store, { userId: 7, cardId: 9, now: NOW });
-  assert.equal(result.account.permanentBalance, 1);
-  assert.equal(store.cards.get(9).status, "CONVERTED");
-  assert.equal(store.transactions.at(-1).source, "LEGACY_CARD_CONVERT");
-});
-
-test("CONVERTED 点歌券状态在服务端白名单、统计、导出与管理端契约同步", () => {
-  const root = new URL("../../", import.meta.url);
-  const statuses = readFileSync(new URL("server/card-codes/statuses.ts", root), "utf8");
-  const adminList = readFileSync(new URL("server/api/admin/card-codes/index.get.ts", root), "utf8");
-  const openList = readFileSync(new URL("server/api/open/card-codes.get.ts", root), "utf8");
-  const exportSource = readFileSync(
-    new URL("server/api/admin/card-codes/export.get.ts", root),
-    "utf8",
-  );
-  const manager = readFileSync(new URL("app/components/Admin/CardCodesManager.vue", root), "utf8");
-  assert.match(statuses, /CARD_CODE_STATUSES[^\n]*'CONVERTED'/);
-  assert.match(statuses, /CARD_CODE_MUTABLE_STATUSES[^\n]*'AVAILABLE'[^\n]*'INVALID'/);
-  assert.doesNotMatch(statuses.match(/CARD_CODE_MUTABLE_STATUSES[^\n]*/)?.[0] || "", /CONVERTED/);
-  assert.match(adminList, /converted:\s*0/);
-  assert.match(adminList, /row\.status === 'CONVERTED'/);
-  assert.match(openList, /converted:\s*0/);
-  assert.match(openList, /row\.status === 'CONVERTED'/);
-  assert.match(exportSource, /CONVERTED:\s*'已转换'/);
-  assert.match(manager, /CONVERTED/);
-});
-
 test("点歌额度服务查询流水委托给适配器", async () => {
   const store = createStore(account());
   await adjustPermanentSongQuota(store, {
@@ -1359,9 +1212,6 @@ test("点歌额度服务查询流水委托给适配器", async () => {
 });
 
 test("点歌额度错误码在常量和双语词典中完整同步", () => {
-  assert.equal(SERVER_ERROR_CODES.CARD_CODE_RATE_LIMITED, "CARD_CODE_RATE_LIMITED");
-  assert.equal(typeof zhServerErrors.CARD_CODE_RATE_LIMITED, "string");
-  assert.equal(typeof enServerErrors.CARD_CODE_RATE_LIMITED, "string");
   const expectedCodes = [
     "SONG_QUOTA_DISABLED",
     "SONG_QUOTA_INSUFFICIENT",
@@ -1369,7 +1219,6 @@ test("点歌额度错误码在常量和双语词典中完整同步", () => {
     "SONG_QUOTA_PERIOD_CONFIG_INVALID",
     "SONG_QUOTA_NEGATIVE_BALANCE",
     "SONG_QUOTA_IDEMPOTENCY_CONFLICT",
-    "SONG_QUOTA_LEGACY_CARD_UNAVAILABLE",
     "SONG_QUOTA_ALREADY_RETURNED",
   ];
   for (const code of expectedCodes) {
@@ -1400,7 +1249,6 @@ test("用户额度公开流水移除内部字段", () => {
     balanceAfter: 4,
     periodKey: null,
     songId: null,
-    legacyCardId: 9,
     publicDescription: "旧券兑换",
     internalNote: "内部备注",
     apiKeyId: "api-key",
@@ -1416,7 +1264,6 @@ test("用户额度公开流水移除内部字段", () => {
     balanceAfter: 4,
     periodKey: null,
     songId: null,
-    legacyCardId: 9,
     publicDescription: "旧券兑换",
     createdAt: NOW,
   });
@@ -1457,124 +1304,6 @@ test("用户额度流水接口固定当前用户归属并返回公开分页数�
 });
 
 
-test("旧券兑换按标准化券码归属当前用户并关联流水", async () => {
-  const store = createStore();
-  store.cards.set(9, { id: 9, code: "LEGACY-9", status: "AVAILABLE" });
-  const result = await store.transaction((tx) =>
-    convertLegacyCardToQuota(tx, { userId: 7, cardCode: "LEGACY-9", now: NOW }),
-  );
-  assert.equal(result.account.userId, 7);
-  assert.equal(result.account.permanentBalance, 1);
-  assert.equal(store.cards.get(9).redeemedBy, 7);
-  assert.equal(result.transaction.legacyCardId, 9);
-});
-
-test("旧券兑换拒绝不可用状态且不改变余额", async () => {
-  for (const status of ["LOCKED", "REDEEMED", "CONVERTED", "INVALID"]) {
-    const store = createStore(account());
-    store.cards.set(9, { id: 9, code: "LEGACY-9", status });
-    await assert.rejects(
-      store.transaction((tx) =>
-        convertLegacyCardToQuota(tx, { userId: 7, cardCode: "LEGACY-9", now: NOW }),
-      ),
-      (error) => error?.data?.code === "SONG_QUOTA_LEGACY_CARD_UNAVAILABLE",
-    );
-    assert.equal(store.account.permanentBalance, 0);
-    assert.equal(store.transactions.length, 0);
-  }
-});
-
-test("旧券兑换并发仅一次成功且永久额度只增加一次", async () => {
-  const store = createStore(account());
-  store.cards.set(9, { id: 9, code: "LEGACY-9", status: "AVAILABLE" });
-  const attempt = () => store.transaction((tx) =>
-    convertLegacyCardToQuota(tx, { userId: 7, cardCode: "LEGACY-9", now: NOW }),
-  );
-  const results = await Promise.allSettled([attempt(), attempt()]);
-  assert.equal(results.filter((item) => item.status === "fulfilled").length, 1);
-  assert.equal(results.filter((item) => item.status === "rejected").length, 1);
-  assert.equal(store.account.permanentBalance, 1);
-  assert.equal(store.transactions.filter((item) => item.source === "LEGACY_CARD_CONVERT").length, 1);
-});
-
-test("旧券兑换接口校验鉴权、开关并在串行化事务中绑定当前用户", () => {
-  const source = readFileSync(
-    new URL("../../server/api/song-quota/redeem-card.post.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(source, /if \(!user\)/);
-  assert.match(source, /createApiError\(401/);
-  assert.match(source, /legacyCardConversionEnabled/);
-  assert.match(source, /trim\(\)\.toUpperCase\(\)/);
-  assert.match(source, /runSongQuotaDrizzleTransaction/);
-  assert.match(source, /userId:\s*user\.id/);
-});
-
-
-test("旧券验证接口仅返回兑换资格且遵循兑换开关", () => {
-  const source = readFileSync(
-    new URL("../../server/api/card-codes/validate.post.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(source, /legacyCardConversionEnabled/);
-  assert.match(source, /eligible:\s*true/);
-  assert.doesNotMatch(source, /enableCardCodeRequests/);
-  assert.doesNotMatch(source, /id:\s*found\.id/);
-});
-
-
-test("旧券兑换与资格验证限制券码长度", () => {
-  const redeemSource = readFileSync(
-    new URL("../../server/api/song-quota/redeem-card.post.ts", import.meta.url),
-    "utf8",
-  );
-  const validateSource = readFileSync(
-    new URL("../../server/api/card-codes/validate.post.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(redeemSource, /CARD_CODE_TOO_LONG/);
-  assert.match(validateSource, /CARD_CODE_TOO_LONG/);
-});
-
-
-test("旧券兑换与资格验证在处理请求前复用同一分布式用户和 IP 限流", () => {
-  const redeemSource = readFileSync(
-    new URL("../../server/api/song-quota/redeem-card.post.ts", import.meta.url),
-    "utf8",
-  );
-  const validateSource = readFileSync(
-    new URL("../../server/api/card-codes/validate.post.ts", import.meta.url),
-    "utf8",
-  );
-  for (const source of [redeemSource, validateSource]) {
-    assert.match(source, /enforceCardCodeValidationRateLimit/);
-    assert.match(source, /await enforceCardCodeValidationRateLimit\(event, user\.id\)/);
-    assert.ok(
-      source.indexOf("await enforceCardCodeValidationRateLimit(event, user.id)") <
-        source.indexOf("readBody(event)"),
-    );
-  }
-});
-
-test("RequestForm 兑换成功后写回最新额度状态", () => {
-  const source = readFileSync(
-    new URL("../../app/components/Songs/RequestForm.vue", import.meta.url),
-    "utf8",
-  );
-  assert.match(source, /const quota = await \$fetch\('\/api\/song-quota'/);
-  assert.match(source, /submissionStatus\.value\s*=\s*\{[\s\S]*?quota/);
-});
-
-test("旧券验证限流错误使用稳定错误码供客户端本地化", () => {
-  const source = readFileSync(
-    new URL("../../server/utils/card-code-validation-rate-limit.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(source, /createApiError\(\s*429,\s*SERVER_ERROR_CODES\.CARD_CODE_RATE_LIMITED/);
-  assert.doesNotMatch(source, /throw createError\(/);
-});
-
-
 test("RequestForm 管理员判断包含 SONG_ADMIN 并统一复用认证管理员状态", () => {
   const source = readFileSync(
     new URL("../../app/components/Songs/RequestForm.vue", import.meta.url),
@@ -1583,17 +1312,6 @@ test("RequestForm 管理员判断包含 SONG_ADMIN 并统一复用认证管理�
   assert.doesNotMatch(source, /user\.role === 'SUPER_ADMIN' \|\| user\.role === 'ADMIN'/);
   assert.match(source, /v-if="user && auth\.isAdmin\.value"/);
   assert.match(source, /if \(user\.value && auth\.isAdmin\.value\)/);
-});
-
-test("CONVERTED 点歌券在单个、批量与开放 API 中通过条件更新保持终态", () => {
-  const root = new URL("../../", import.meta.url);
-  const single = readFileSync(new URL("server/api/admin/card-codes/[id].put.ts", root), "utf8");
-  const batch = readFileSync(new URL("server/api/admin/card-codes/update.post.ts", root), "utf8");
-  const open = readFileSync(new URL("server/api/open/card-codes.patch.ts", root), "utf8");
-
-  assert.match(single, /where\(and\(eq\(cardCodes\.id, id\), ne\(cardCodes\.status, 'CONVERTED'\)\)\)/);
-  assert.match(batch, /where\(and\(inArray\(cardCodes\.id, normalizedIds\), ne\(cardCodes\.status, 'CONVERTED'\)\)\)/);
-  assert.match(open, /where\(and\(inArray\(cardCodes\.id, ids\), ne\(cardCodes\.status, 'CONVERTED'\)\)\)/);
 });
 
 test("管理员额度响应脱敏且保留审计所需字段", async () => {
@@ -1611,7 +1329,6 @@ test("管理员额度响应脱敏且保留审计所需字段", async () => {
     balanceAfter: 5,
     periodKey: null,
     songId: null,
-    legacyCardId: null,
     administratorId: 1,
     publicDescription: "活动发放",
     internalNote: "工单 42",
@@ -1631,7 +1348,6 @@ test("管理员额度响应脱敏且保留审计所需字段", async () => {
     balanceAfter: 5,
     periodKey: null,
     songId: null,
-    legacyCardId: null,
     administratorId: 1,
     publicDescription: "活动发放",
     internalNote: "工单 42",
@@ -1871,22 +1587,14 @@ test("开放 API 永久额度调整要求幂等键、严格输入、归属与可
   assert.doesNotMatch(source, /PERIODIC|Date\.now\(\)|new Date\(\)/);
 });
 
-test("开放 API 日志对券码、备注、幂等键和外部单号脱敏", () => {
+test("开放 API 日志对备注、幂等键和外部单号脱敏", () => {
   const source = readFileSync(
     new URL("../../server/middleware/api-auth.ts", import.meta.url),
     "utf8",
   );
   assert.match(source, /sanitizeOpenApiRequestBody/);
-  for (const field of ["cardCode", "internalNote", "idempotencyKey", "externalReference"]) {
+  for (const field of ["internalNote", "idempotencyKey", "externalReference"]) {
     assert.match(source, new RegExp(field));
   }
   assert.match(source, /'\[REDACTED\]'/);
-});
-
-test("开放 API 旧券只保留查询且创建路由已移除", () => {
-  const root = new URL("../../", import.meta.url);
-  assert.equal(existsSync(new URL("server/api/open/card-codes.post.ts", root)), false);
-  const permissions = readFileSync(new URL("server/api/admin/api-keys/permissions.ts", root), "utf8");
-  assert.match(permissions, /card-codes:read/);
-  assert.doesNotMatch(permissions, /card-codes:write|card-codes:delete/);
 });

@@ -14,12 +14,6 @@
   font-display: swap; /* 确保字体加载期间文本可见 */
 }
 
-/* 链接样式 */
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
 /* 可选的微妙纹理效果 */
 body::before {
   content: '';
@@ -37,7 +31,7 @@ body::before {
 }
 
 /* 容器 */
-.container {
+.app-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -65,18 +59,13 @@ body::before {
 
 /* 卡片 */
 .card {
-  background: var(--card-bg);
+  @apply relative overflow-hidden rounded-xl border border-card-border bg-card-bg p-8;
   backdrop-filter: blur(12px);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-2xl);
   box-shadow:
     0 4px 6px var(--mask-10),
     0 1px 3px var(--mask-8),
     inset 0 1px 0 var(--overlay-5);
   transition: all var(--transition-normal);
-  position: relative;
-  overflow: hidden;
 }
 
 .card::before {
@@ -100,20 +89,10 @@ body::before {
 
 /* 按钮 */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @apply inline-flex cursor-pointer select-none items-center justify-center overflow-hidden rounded-lg border-0 text-sm font-semibold no-underline outline-none;
   padding: var(--spacing-md) var(--spacing-2xl);
-  font-weight: var(--font-semibold);
-  border-radius: var(--radius-lg);
   transition: all var(--transition-normal);
-  cursor: pointer;
-  text-decoration: none;
-  border: none;
-  outline: none;
-  font-size: var(--text-sm);
   position: relative;
-  overflow: hidden;
   box-shadow: 0 2px 4px var(--mask-10);
 }
 
@@ -184,32 +163,15 @@ body::before {
   display: none;
 }
 
-/* 列表样式 */
-.list-disc {
-  list-style-type: disc;
-  list-style-position: inside;
-}
-
-.list-none {
-  list-style-type: none;
-}
-
-.pl-5 {
-  padding-left: 1.25rem;
-}
-
 /* 表单 */
 .input {
-  width: 100%;
+  @apply relative w-full rounded-lg outline-none;
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--input-bg);
   border: 2px solid var(--input-border);
-  border-radius: var(--radius-lg);
   color: var(--input-text);
-  outline: none;
   transition: all var(--transition-normal);
   font-size: var(--text-sm);
-  position: relative;
   backdrop-filter: blur(8px);
 }
 
@@ -232,28 +194,18 @@ body::before {
 }
 
 .form-group {
+  @apply relative;
   margin-bottom: var(--spacing-lg);
-  position: relative;
 }
 
 .form-group label {
-  display: block;
+  @apply block font-semibold text-text-secondary;
   margin-bottom: var(--spacing-sm);
-  font-weight: var(--font-semibold);
-  color: var(--text-secondary);
   transition: color var(--transition-normal);
 }
 
 .form-group:focus-within label {
   color: var(--primary);
-}
-
-/* 玻璃态效果 */
-.glass {
-  background: var(--bg-secondary);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--radius-xl);
 }
 
 /* 手机设备上的优化 */

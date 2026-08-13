@@ -111,7 +111,7 @@ export function validateAdminSongAddBody(body: Record<string, unknown>, userId: 
   if (Object.prototype.hasOwnProperty.call(body, 'requester')) {
     throw createApiError(400, 'COMMON_INVALID_PARAMS', '不允许指定投稿人')
   }
-  const { cardCode: _cardCode, ...compatibleBody } = body
+  const compatibleBody = { ...body }
   return {
     ...compatibleBody,
     title: typeof body.title === 'string' ? body.title.trim() : body.title,

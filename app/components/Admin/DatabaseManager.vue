@@ -790,7 +790,6 @@ const restoreBackup = async () => {
       'semesters',
       'playTimes',
       'requestTimes',
-      'cardCodes',
       'songQuotaAccounts',
       'songs',
       'votes',
@@ -807,14 +806,12 @@ const restoreBackup = async () => {
       'songQuotaTransactions',
       'songQuotaSnapshots',
       'apiKeyPermissions',
-      'apiLogs',
-      'cardCodeRedeemLogs'
+      'apiLogs'
     ]
 
     const mappings = {
       users: {},
       songs: {},
-      cardCodes: {},
       quotaAccounts: {},
       quotaTransactions: {},
       apiKeys: {},
@@ -886,8 +883,6 @@ const restoreBackup = async () => {
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
-          if (response.newMappings.cardCodes)
-            Object.assign(mappings.cardCodes, response.newMappings.cardCodes)
           if (response.newMappings.quotaAccounts)
             Object.assign(mappings.quotaAccounts, response.newMappings.quotaAccounts)
           if (response.newMappings.quotaTransactions)

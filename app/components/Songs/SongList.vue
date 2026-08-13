@@ -226,14 +226,6 @@
                     {{ locale.scheduled }}
                   </span>
                   <span v-else-if="song.isReplay" :title="locale.replaySong" class="replay-tag"> {{ locale.replay }} </span>
-                  <!-- 点歌券标识 -->
-                  <span
-                    v-if="song.cardCodeId || song.usedCardCode"
-                    class="card-code-tag"
-                    :title="locale.cardCodeUsed"
-                  >
-                    {{ locale.cardCodeUsed }}
-                  </span>
                   <button
                     v-if="song.hasSubmissionNote && song.submissionNote"
                     :aria-label="locale.viewSubmissionNote"
@@ -2124,21 +2116,6 @@ const vRipple = {
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
   color: var(--color-accent-light);
-  margin-left: 0.5rem;
-  flex-shrink: 0;
-  align-self: center;
-}
-
-/* 点歌券标识 */
-.card-code-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.4rem;
-  background: var(--card-code-bg);
-  border: 1px solid var(--card-code-border);
-  border-radius: 4px;
-  font-size: 0.7rem;
-  color: var(--card-code-text);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;

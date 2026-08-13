@@ -427,12 +427,8 @@
   --data-analysis-scroll-thumb-hover: rgba(167, 139, 250, 0.4);
   /* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
   --schedule-list-divider: rgba(160, 160, 160, 0.4);
-  --schedule-list-title-shadow: rgba(167, 139, 250, 0.24);
-  --schedule-list-title-shadow-sm: rgba(167, 139, 250, 0.16);
-  /* 用途化变量 — 点歌券标识（CardCodeTag） */
-  --card-code-bg: rgba(251, 191, 36, 0.08);
-  --card-code-border: rgba(251, 191, 36, 0.2);
-  --card-code-text: #f59e0b;
+  --schedule-list-title-shadow: rgba(0, 179, 248, 0.3);
+  --schedule-list-title-shadow-sm: rgba(0, 179, 248, 0.2);
   /* 用途化变量 — 认证模块（Auth） */
   --auth-error-input-shadow: rgba(248, 113, 113, 0.08);
   /* 用途化变量 — 面板背景色（亮色模式） */

@@ -156,8 +156,6 @@ export function migrateLegacyQuotaSettings(settings: {
   dailySubmissionLimit: number | null
   weeklySubmissionLimit: number | null
   monthlySubmissionLimit: number | null
-  enableCardCodeRequests: boolean
-  requireCardCodeForRequests: boolean
 }) {
   const candidates = [
     ['DAILY', settings.dailySubmissionLimit],
@@ -174,9 +172,7 @@ export function migrateLegacyQuotaSettings(settings: {
     songQuotaPeriodType: selected?.[0] ?? null,
     songQuotaPeriodAmount: selected?.[1] ?? null,
     adminSongQuotaExempt: true,
-    blockOnSongQuotaInsufficient: true,
-    legacyCardConversionEnabled:
-      settings.enableCardCodeRequests || settings.requireCardCodeForRequests
+    blockOnSongQuotaInsufficient: true
   }
 }
 

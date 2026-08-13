@@ -217,3 +217,16 @@
     opacity: 1;
   }
 }
+
+/* 通用旋转动画 — 供各组件引用，避免重复定义 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes reverse-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}

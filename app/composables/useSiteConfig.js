@@ -24,7 +24,6 @@ const siteConfig = ref({
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
   enableSubmissionLimit: false,
-  legacyCardConversionEnabled: false,
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
@@ -86,7 +85,6 @@ export const useSiteConfig = () => {
         captchaProvider: 'graphic',
         turnstileSiteKey: '',
         enableSubmissionLimit: false,
-        legacyCardConversionEnabled: false,
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
@@ -123,9 +121,6 @@ export const useSiteConfig = () => {
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
-  const legacyCardConversionEnabled = computed(
-    () => siteConfig.value.legacyCardConversionEnabled === true
-  )
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
@@ -204,7 +199,6 @@ export const useSiteConfig = () => {
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
     enableSubmissionLimit,
-    legacyCardConversionEnabled,
     allowOAuthRegistration,
     captchaEnabled,
     captchaProvider,

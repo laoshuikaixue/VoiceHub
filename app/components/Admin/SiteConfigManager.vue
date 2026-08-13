@@ -539,7 +539,6 @@ const formData = ref({
   songQuotaPeriodAmount: 5,
   adminSongQuotaExempt: true,
   blockOnSongQuotaInsufficient: true,
-  legacyCardConversionEnabled: false,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
   forcePasswordChangeOnFirstLogin: false,
@@ -601,11 +600,6 @@ const songQuotaToggleSettings = computed(() => [
     key: 'blockOnSongQuotaInsufficient',
     label: locale.value?.blockOnSongQuotaInsufficient,
     description: locale.value?.blockOnSongQuotaInsufficientDesc
-  },
-  {
-    key: 'legacyCardConversionEnabled',
-    label: locale.value?.legacyCardConversionEnabled,
-    description: locale.value?.legacyCardConversionEnabledDesc
   }
 ])
 
@@ -739,7 +733,6 @@ const loadConfig = async () => {
       songQuotaPeriodAmount: data.songQuotaPeriodAmount ?? 5,
       adminSongQuotaExempt: data.adminSongQuotaExempt !== false,
       blockOnSongQuotaInsufficient: data.blockOnSongQuotaInsufficient !== false,
-      legacyCardConversionEnabled: !!data.legacyCardConversionEnabled,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
