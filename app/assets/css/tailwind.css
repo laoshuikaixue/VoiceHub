@@ -45,18 +45,19 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-light: var(--primary-light);
   --color-primary-border: var(--primary-border);
-  --color-success: var(--color-success);
-  --color-success-hover: var(--color-success-hover);
-  --color-success-light: var(--color-success-light);
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-success-light: var(--success-light);
   --color-success-border: var(--success-border);
-  --color-warning: var(--color-warning);
-  --color-warning-hover: var(--color-warning-hover);
-  --color-warning-light: var(--color-warning-light);
+  --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-light: var(--warning-light);
   --color-warning-border: var(--warning-border);
-  --color-error: var(--color-error);
-  --color-error-hover: var(--color-error-hover);
-  --color-error-light: var(--color-error-light);
+  --color-error: var(--error);
+  --color-error-hover: var(--error-hover);
+  --color-error-light: var(--error-light);
   --color-error-border: var(--error-border);
+  --color-danger: var(--error);
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
@@ -451,6 +452,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 6px);
 }
 
 :root {

@@ -1,5 +1,7 @@
 /* 通用组件样式 - 统一设计系统 */
 
+@reference "./tailwind.css";
+
 /* 模态框组件 */
 .modal-overlay {
   @apply fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center;

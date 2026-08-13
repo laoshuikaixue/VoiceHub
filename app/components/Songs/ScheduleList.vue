@@ -1949,6 +1949,8 @@ const vRipple = {
 .empty .icon {
   font-size: 3rem;
   opacity: 0.5;
+  display: block;
+  margin: 0 auto 1rem;
 }
 
 /* 排期内容区域 */
@@ -3274,7 +3276,7 @@ const vRipple = {
 
   .empty .icon {
     font-size: 2.5rem;
-    margin-bottom: 12px;
+    margin: 0 auto 12px;
   }
 
   /* 日期选择弹窗 */

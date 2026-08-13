@@ -76,12 +76,6 @@
   --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.03);
   --shadow-lg: 0 8px 12px rgba(0, 0, 0, 0.04);
   --shadow-xl: 0 16px 20px rgba(0, 0, 0, 0.06);
-  /* 圆角 */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
   /* 间距 */
   --spacing-xs: 4px;
   --spacing-sm: 8px;

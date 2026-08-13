@@ -6,7 +6,9 @@
 @import url('./themes/ClassicLight.css');
 @import url('./themes/ModernLight.css');
 
-/* @unocss; Tailwind CSS 单引擎验证 */
+@reference "./tailwind.css";
+
+/* Tailwind CSS 单引擎验证 */
 
 /* 字体显示策略优化 */
 @font-face {
@@ -31,7 +33,7 @@ body::before {
 }
 
 /* 容器 */
-.app-container {
+.container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
