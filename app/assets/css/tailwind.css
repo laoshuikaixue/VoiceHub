@@ -57,7 +57,7 @@
   --color-error-hover: var(--error-hover);
   --color-error-light: var(--error-light);
   --color-error-border: var(--error-border);
-  --color-danger: var(--error);
+  /* --color-danger: var(--error); // 冗余：与 --color-error 语义重复，无工具类使用，暂注释 */
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
@@ -202,7 +202,7 @@
   --color-text-success-70: var(--text-success-70);
   --color-text-success-80: var(--text-success-80);
   --color-text-warning-80: var(--text-warning-80);
-  --color-brand-blue: var(--color-accent);
+  /* --color-brand-blue: var(--color-accent); // 冗余别名，无工具类使用，暂注释
   --color-brand-blue-light: var(--color-accent-light);
   --color-brand-blue-hover: var(--color-accent-hover);
   --color-brand-blue-light-hover: var(--color-accent-light-hover);
@@ -232,12 +232,13 @@
   --color-brand-cyan: var(--color-cyan);
   --color-brand-teal: var(--color-teal);
   --color-brand-indigo: var(--color-indigo);
-  --color-brand-indigo-hover: var(--color-indigo-hover);
+  --color-brand-indigo-hover: var(--color-indigo-hover); */
+  --color-brand-yellow: var(--color-warning);
   --color-accent-light: var(--color-accent-light);
   --color-accent-hover: var(--color-accent-hover);
   --color-accent-light-hover: var(--color-accent-light-hover);
   --color-accent-glow: var(--color-accent-glow);
-  --color-color-accent: var(--color-accent);
+  /* --color-color-accent: var(--color-accent); // 冗余双前缀别名，无工具类使用，暂注释
   --color-color-accent-light: var(--color-accent-light);
   --color-color-accent-hover: var(--color-accent-hover);
   --color-color-accent-light-hover: var(--color-accent-light-hover);
@@ -252,53 +253,53 @@
   --color-color-accent-alpha-40: var(--color-accent-alpha-40);
   --color-color-accent-alpha-50: var(--color-accent-alpha-50);
   --color-color-accent-alpha-60: var(--color-accent-alpha-60);
-  --color-color-accent-alpha-80: var(--color-accent-alpha-80);
+  --color-color-accent-alpha-80: var(--color-accent-alpha-80); */
   --color-error-glow: var(--color-error-glow);
-  --color-color-error: var(--color-error);
+  /* --color-color-error: var(--color-error); // 冗余双前缀别名，暂注释
   --color-color-error-light: var(--color-error-light);
   --color-color-error-hover: var(--color-error-hover);
-  --color-color-error-glow: var(--color-error-glow);
+  --color-color-error-glow: var(--color-error-glow); */
   --color-success-glow: var(--color-success-glow);
-  --color-color-success: var(--color-success);
+  /* --color-color-success: var(--color-success); // 冗余双前缀别名，暂注释
   --color-color-success-light: var(--color-success-light);
   --color-color-success-hover: var(--color-success-hover);
-  --color-color-success-glow: var(--color-success-glow);
+  --color-color-success-glow: var(--color-success-glow); */
   --color-warning-glow: var(--color-warning-glow);
-  --color-color-warning: var(--color-warning);
+  /* --color-color-warning: var(--color-warning); // 冗余双前缀别名，暂注释
   --color-color-warning-light: var(--color-warning-light);
   --color-color-warning-hover: var(--color-warning-hover);
-  --color-color-warning-glow: var(--color-warning-glow);
-  --color-orange: var(--color-orange);
+  --color-color-warning-glow: var(--color-warning-glow); */
+  /* --color-orange: var(--color-orange); // 冗余别名，无工具类使用，暂注释
   --color-orange-light: var(--color-orange-light);
   --color-orange-hover: var(--color-orange-hover);
   --color-orange-glow: var(--color-orange-glow);
   --color-color-orange: var(--color-orange);
   --color-color-orange-light: var(--color-orange-light);
   --color-color-orange-hover: var(--color-orange-hover);
-  --color-color-orange-glow: var(--color-orange-glow);
+  --color-color-orange-glow: var(--color-orange-glow); */
   --color-collab: var(--color-collab);
   --color-collab-hover: var(--color-collab-hover);
   --color-collab-light: var(--color-collab-light);
   --color-collab-lighter: var(--color-collab-lighter);
   --color-collab-glow: var(--color-collab-glow);
-  --color-color-collab: var(--color-collab);
+  /* --color-color-collab: var(--color-collab); // 冗余双前缀别名，暂注释
   --color-color-collab-hover: var(--color-collab-hover);
   --color-color-collab-light: var(--color-collab-light);
   --color-color-collab-lighter: var(--color-collab-lighter);
-  --color-color-collab-glow: var(--color-collab-glow);
+  --color-color-collab-glow: var(--color-collab-glow); */
   --color-color-collab-10: var(--color-collab-10);
   --color-pink: var(--color-pink);
   --color-color-pink: var(--color-pink);
   --color-color-pink-alpha-10: var(--color-pink-alpha-10);
   --color-color-pink-alpha-20: var(--color-pink-alpha-20);
-  --color-cyan: var(--color-cyan);
+  /* --color-cyan: var(--color-cyan); // 冗余别名，无工具类使用，暂注释
   --color-color-cyan: var(--color-cyan);
   --color-teal: var(--color-teal);
   --color-color-teal: var(--color-teal);
   --color-indigo: var(--color-indigo);
   --color-indigo-hover: var(--color-indigo-hover);
   --color-color-indigo: var(--color-indigo);
-  --color-color-indigo-hover: var(--color-indigo-hover);
+  --color-color-indigo-hover: var(--color-indigo-hover); */
   --color-oauth-qq: var(--oauth-qq);
   --color-oauth-wx: var(--oauth-wx);
   --color-oauth-alipay: var(--oauth-alipay);
