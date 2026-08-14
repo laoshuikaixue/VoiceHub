@@ -1,6 +1,7 @@
 import { SERVER_ERROR_CODES } from "../config/constants.ts";
 import { createApiError } from "../utils/apiError.ts";
 import {
+  fingerprintQuotaAdjustment,
   fingerprintSongQuotaConsumption,
   getQuotaPeriodWindow,
   resolveQuotaReturn,
@@ -13,6 +14,7 @@ const ERROR_CODES = {
   alreadyReturned: SERVER_ERROR_CODES.SONG_QUOTA_ALREADY_RETURNED,
   invalidAdjustment: SERVER_ERROR_CODES.SONG_QUOTA_INVALID_ADJUSTMENT,
   idempotencyConflict: SERVER_ERROR_CODES.SONG_QUOTA_IDEMPOTENCY_CONFLICT,
+  cardUnavailable: SERVER_ERROR_CODES.CARD_CODE_UNAVAILABLE,
 } as const;
 
 type QuotaSettings = {
@@ -73,6 +75,9 @@ type QuotaAdapter = {
   listTransactions?(input: Record<string, unknown>): Promise<PaginatedQuotaResult>;
   listAccounts?(input: Record<string, unknown>): Promise<PaginatedQuotaResult>;
   getAccountDetails?(userId: number): Promise<Record<string, unknown> | null>;
+  lockCardByCode?(code: string): Promise<Record<string, unknown> | null>;
+  markCardConverted?(cardId: number, userId: number, now: Date): Promise<Record<string, unknown> | null>;
+  insertCardRedeemLog?(values: Record<string, unknown>): Promise<Record<string, unknown> | null>;
 };
 
 function requireAccount(account: QuotaAccount | null): QuotaAccount {
@@ -492,6 +497,44 @@ export async function adjustPermanentSongQuota(
     createdAt: input.now,
   });
   return { account: updated, transaction };
+}
+
+/**
+ * 旧点歌券 → 永久额度兑换。
+ * 校验卡密状态为 AVAILABLE，标记为 REDEEMED 并记录兑换日志，再调用
+ * adjustPermanentSongQuota 以 LEGACY_CARD_CONVERT 来源入账。
+ */
+export async function convertLegacyCardToQuota(
+  tx: QuotaAdapter,
+  input: { userId: number; cardCode: string; now: Date },
+) {
+  if (!tx.lockCardByCode || !tx.markCardConverted || !tx.insertCardRedeemLog) {
+    throw new Error("额度适配器不支持旧卡密兑换");
+  }
+  const card = await tx.lockCardByCode(input.cardCode);
+  if (!card || typeof card.id !== "number" || card.status !== "AVAILABLE") {
+    throw createApiError(409, ERROR_CODES.cardUnavailable, "卡密不可兑换");
+  }
+  const converted = await tx.markCardConverted(card.id, input.userId, input.now);
+  if (!converted) {
+    throw createApiError(409, ERROR_CODES.cardUnavailable, "卡密不可兑换");
+  }
+  const result = await adjustPermanentSongQuota(tx, {
+    userId: input.userId,
+    delta: 1,
+    source: "LEGACY_CARD_CONVERT",
+    now: input.now,
+    idempotencyKey: `legacy-card:${card.id}`,
+    requestFingerprint: fingerprintQuotaAdjustment({ userId: input.userId, delta: 1 }),
+  });
+  await tx.insertCardRedeemLog({
+    cardCodeId: card.id,
+    codeSnapshot: String(card.code ?? ""),
+    redeemedBy: input.userId,
+    redeemedAt: input.now,
+    source: "QUOTA_CONVERT",
+  });
+  return result;
 }
 
 export function buildPublicSongQuotaTransaction(transaction: Record<string, unknown>) {

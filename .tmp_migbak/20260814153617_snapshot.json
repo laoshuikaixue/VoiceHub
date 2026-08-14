@@ -1,6 +1,6 @@
 {
-  "id": "c48f1184-402b-427b-b247-910e7aa88c89",
-  "prevId": "e172600e-b0db-494a-a64e-9c32cc3d9e05",
+  "id": "199b62e1-32c0-4eb5-aaf5-9f65b0b88627",
+  "prevId": "37f1e737-a12c-477b-bb3f-e7c4d69edea2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -305,6 +305,268 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.CardCodeRedeemLog": {
+      "name": "CardCodeRedeemLog",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "cardCodeId": {
+          "name": "cardCodeId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codeSnapshot": {
+          "name": "codeSnapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redeemedBy": {
+          "name": "redeemedBy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redeemedAt": {
+          "name": "redeemedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'UNKNOWN'"
+        },
+        "songId": {
+          "name": "songId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "CardCodeRedeemLog_cardCodeId_idx": {
+          "name": "CardCodeRedeemLog_cardCodeId_idx",
+          "columns": [
+            {
+              "expression": "cardCodeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "CardCodeRedeemLog_redeemedBy_idx": {
+          "name": "CardCodeRedeemLog_redeemedBy_idx",
+          "columns": [
+            {
+              "expression": "redeemedBy",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "CardCodeRedeemLog_redeemedAt_idx": {
+          "name": "CardCodeRedeemLog_redeemedAt_idx",
+          "columns": [
+            {
+              "expression": "redeemedAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "CardCodeRedeemLog_cardCodeId_CardCode_id_fk": {
+          "name": "CardCodeRedeemLog_cardCodeId_CardCode_id_fk",
+          "tableFrom": "CardCodeRedeemLog",
+          "tableTo": "CardCode",
+          "columnsFrom": [
+            "cardCodeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "CardCodeRedeemLog_redeemedBy_User_id_fk": {
+          "name": "CardCodeRedeemLog_redeemedBy_User_id_fk",
+          "tableFrom": "CardCodeRedeemLog",
+          "tableTo": "User",
+          "columnsFrom": [
+            "redeemedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "CardCodeRedeemLog_songId_Song_id_fk": {
+          "name": "CardCodeRedeemLog_songId_Song_id_fk",
+          "tableFrom": "CardCodeRedeemLog",
+          "tableTo": "Song",
+          "columnsFrom": [
+            "songId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.CardCode": {
+      "name": "CardCode",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "card_code_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AVAILABLE'"
+        },
+        "lockedBy": {
+          "name": "lockedBy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lockedAt": {
+          "name": "lockedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "redeemedBy": {
+          "name": "redeemedBy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "redeemedAt": {
+          "name": "redeemedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "CardCode_lockedBy_User_id_fk": {
+          "name": "CardCode_lockedBy_User_id_fk",
+          "tableFrom": "CardCode",
+          "tableTo": "User",
+          "columnsFrom": [
+            "lockedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "CardCode_redeemedBy_User_id_fk": {
+          "name": "CardCode_redeemedBy_User_id_fk",
+          "tableFrom": "CardCode",
+          "tableTo": "User",
+          "columnsFrom": [
+            "redeemedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "CardCode_code_unique": {
+          "name": "CardCode_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2943,6 +3205,16 @@
       "values": [
         "SONG",
         "KEYWORD"
+      ]
+    },
+    "public.card_code_status": {
+      "name": "card_code_status",
+      "schema": "public",
+      "values": [
+        "AVAILABLE",
+        "LOCKED",
+        "REDEEMED",
+        "INVALID"
       ]
     },
     "public.collaborator_status": {

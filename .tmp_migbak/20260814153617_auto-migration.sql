@@ -1,6 +1,5 @@
 CREATE TYPE "public"."song_quota_source" AS ENUM('PERIOD_EXPIRED', 'PERIOD_GRANT', 'ADMIN_ADJUST', 'ADMIN_BULK_ADJUST', 'OPEN_API_ADJUST', 'SONG_REQUEST', 'SONG_WITHDRAW_RETURN', 'SONG_WITHDRAW_EXPIRED', 'LEGACY_CARD_CONVERT');--> statement-breakpoint
 CREATE TYPE "public"."song_quota_type" AS ENUM('PERIODIC', 'PERMANENT');--> statement-breakpoint
-ALTER TYPE "public"."card_code_status" ADD VALUE 'CONVERTED' BEFORE 'INVALID';--> statement-breakpoint
 CREATE TABLE "SongQuotaAccount" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"userId" integer NOT NULL,
@@ -25,7 +24,6 @@ CREATE TABLE "SongQuotaTransaction" (
 	"idempotencyKey" text,
 	"requestFingerprint" text,
 	"songId" integer,
-	"legacyCardId" integer,
 	"administratorId" integer,
 	"apiKeyId" uuid,
 	"publicDescription" text,
@@ -37,6 +35,9 @@ CREATE TABLE "SongQuotaTransaction" (
 	CONSTRAINT "song_quota_transaction_balance_after_nonnegative" CHECK ("SongQuotaTransaction"."balanceAfter" >= 0)
 );
 --> statement-breakpoint
+ALTER TABLE "Song" DROP CONSTRAINT "Song_cardCodeId_CardCode_id_fk";
+--> statement-breakpoint
+DROP INDEX "song_card_code_id_idx";--> statement-breakpoint
 ALTER TABLE "SystemSettings" ALTER COLUMN "enabledPlatforms" SET DEFAULT '["netease","tencent","bilibili","migu"]';--> statement-breakpoint
 ALTER TABLE "SystemSettings" ALTER COLUMN "platformOrder" SET DEFAULT '["netease","tencent","bilibili","migu"]';--> statement-breakpoint
 ALTER TABLE "Notification" ADD COLUMN "batchId" text;--> statement-breakpoint
@@ -60,16 +61,13 @@ ALTER TABLE "SystemSettings" ADD COLUMN "songQuotaPeriodType" text;--> statement
 ALTER TABLE "SystemSettings" ADD COLUMN "songQuotaPeriodAmount" integer;--> statement-breakpoint
 ALTER TABLE "SystemSettings" ADD COLUMN "adminSongQuotaExempt" boolean;--> statement-breakpoint
 ALTER TABLE "SystemSettings" ADD COLUMN "blockOnSongQuotaInsufficient" boolean;--> statement-breakpoint
-ALTER TABLE "SystemSettings" ADD COLUMN "legacyCardConversionEnabled" boolean;--> statement-breakpoint
 ALTER TABLE "SongQuotaAccount" ADD CONSTRAINT "SongQuotaAccount_userId_User_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "SongQuotaTransaction" ADD CONSTRAINT "SongQuotaTransaction_accountId_SongQuotaAccount_id_fk" FOREIGN KEY ("accountId") REFERENCES "public"."SongQuotaAccount"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "SongQuotaTransaction" ADD CONSTRAINT "SongQuotaTransaction_songId_Song_id_fk" FOREIGN KEY ("songId") REFERENCES "public"."Song"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "SongQuotaTransaction" ADD CONSTRAINT "SongQuotaTransaction_legacyCardId_CardCode_id_fk" FOREIGN KEY ("legacyCardId") REFERENCES "public"."CardCode"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "SongQuotaTransaction" ADD CONSTRAINT "SongQuotaTransaction_administratorId_User_id_fk" FOREIGN KEY ("administratorId") REFERENCES "public"."User"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "SongQuotaTransaction" ADD CONSTRAINT "SongQuotaTransaction_apiKeyId_api_keys_id_fk" FOREIGN KEY ("apiKeyId") REFERENCES "public"."api_keys"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "song_quota_transaction_account_created_at_idx" ON "SongQuotaTransaction" USING btree ("accountId","createdAt");--> statement-breakpoint
 CREATE INDEX "song_quota_transaction_song_id_idx" ON "SongQuotaTransaction" USING btree ("songId");--> statement-breakpoint
-CREATE INDEX "song_quota_transaction_legacy_card_id_idx" ON "SongQuotaTransaction" USING btree ("legacyCardId");--> statement-breakpoint
 CREATE INDEX "song_quota_transaction_administrator_id_idx" ON "SongQuotaTransaction" USING btree ("administratorId");--> statement-breakpoint
 CREATE INDEX "song_quota_transaction_api_key_id_idx" ON "SongQuotaTransaction" USING btree ("apiKeyId");--> statement-breakpoint
 ALTER TABLE "Song" ADD CONSTRAINT "Song_quotaTransactionId_SongQuotaTransaction_id_fk" FOREIGN KEY ("quotaTransactionId") REFERENCES "public"."SongQuotaTransaction"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -79,6 +77,10 @@ CREATE INDEX "notification_batch_id_idx" ON "Notification" USING btree ("batchId
 CREATE UNIQUE INDEX "song_quota_transaction_id_unique" ON "Song" USING btree ("quotaTransactionId");--> statement-breakpoint
 CREATE UNIQUE INDEX "song_quota_return_transaction_id_unique" ON "Song" USING btree ("quotaReturnTransactionId");--> statement-breakpoint
 CREATE UNIQUE INDEX "song_request_id_unique" ON "Song" USING btree ("requestId");--> statement-breakpoint
+ALTER TABLE "Song" DROP COLUMN "cardCodeId";--> statement-breakpoint
+ALTER TABLE "SystemSettings" DROP COLUMN "enableCardCodeRequests";--> statement-breakpoint
+ALTER TABLE "SystemSettings" DROP COLUMN "requireCardCodeForRequests";--> statement-breakpoint
+ALTER TABLE "SystemSettings" DROP COLUMN "enableCardCodeLimitBypass";--> statement-breakpoint
 ALTER TABLE "Song" ADD CONSTRAINT "song_quota_consumption_consistent" CHECK ((
     ("Song"."quotaConsumed" = false AND "Song"."quotaType" IS NULL AND "Song"."quotaTransactionId" IS NULL AND "Song"."quotaPeriodKey" IS NULL AND "Song"."quotaReturned" = false AND "Song"."quotaReturnTransactionId" IS NULL)
     OR

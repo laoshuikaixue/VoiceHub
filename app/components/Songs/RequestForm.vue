@@ -177,6 +177,17 @@
                 </div>
               </template>
             </div>
+
+            <!-- 旧点歌券兑换按钮 -->
+            <button
+              v-if="user && !auth.isAdmin.value"
+              class="redeem-card-btn"
+              type="button"
+              @click="showRedeemCardModal = true"
+            >
+              <Ticket class="redeem-card-icon" :size="14" aria-hidden="true" />
+              <span>{{ locale.redeemCard }}</span>
+            </button>
           </div>
 
           <!-- 音乐平台选择按钮 -->
@@ -1044,6 +1055,75 @@
         </div>
       </Transition>
     </Teleport>
+    <!-- 卡密兑换弹窗 -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showRedeemCardModal"
+          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+          @click.self="showRedeemCardModal = false"
+        >
+          <div
+            class="w-full max-w-sm bg-bg-secondary rounded-2xl border border-border-secondary-50 shadow-xl overflow-hidden"
+          >
+            <div class="px-6 pt-5 pb-4 flex items-center justify-between">
+              <h3 class="text-sm font-black text-text-primary">{{ locale.redeemCardTitle }}</h3>
+              <button
+                class="text-text-tertiary hover:text-text-secondary transition-colors"
+                type="button"
+                @click="showRedeemCardModal = false"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
+            <div class="px-6 pb-5 space-y-3">
+              <p class="text-[11px] text-text-tertiary">{{ locale.redeemCardHint }}</p>
+              <input
+                v-model.trim="redeemCardCode"
+                :disabled="redeemingCard"
+                :placeholder="locale.redeemCardPlaceholder"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary-30 uppercase"
+                maxlength="128"
+                @keyup.enter="handleRedeemCard"
+              >
+              <p
+                v-if="redeemCardError"
+                class="text-[11px] font-bold text-error-80"
+              >{{ redeemCardError }}</p>
+            </div>
+
+            <div
+              class="px-6 py-4 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end"
+            >
+              <button
+                class="px-5 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors"
+                type="button"
+                @click="showRedeemCardModal = false"
+              >
+                {{ locale.cancel }}
+              </button>
+              <button
+                :disabled="!redeemCardCode || redeemingCard"
+                class="px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50 inline-flex items-center gap-1.5"
+                type="button"
+                @click="handleRedeemCard"
+              >
+                <Loader2 v-if="redeemingCard" class="w-3.5 h-3.5 animate-spin" />
+                {{ redeemingCard ? locale.redemptionLoading : locale.redeemCardConfirm }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
     <!-- 隐藏的文件输入框 -->
     <input
       ref="fileInput"
@@ -1057,7 +1137,7 @@
 
 <script setup>
 import { Bell, Mic, History, X, Plus, Upload, ListMusic, Download, LogOut, Music, ChevronRight, Lock, Loader2, Check, Edit3, Play,
-  ExternalLink, CloudUpload, Heart, Crown, Ban, Search } from '@lucide/vue'
+  ExternalLink, CloudUpload, Heart, Crown, Ban, Search, Ticket } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
@@ -1212,6 +1292,12 @@ const searchError = ref('')
 
 // 手动输入相关
 const showManualModal = ref(false)
+
+// 卡密兑换相关
+const showRedeemCardModal = ref(false)
+const redeemCardCode = ref('')
+const redeemingCard = ref(false)
+const redeemCardError = ref('')
 
 const showBilibiliEpisodesModal = ref(false)
 const selectedBilibiliVideo = ref(null)
@@ -3294,6 +3380,36 @@ const fetchSubmissionStatus = async () => {
   }
 }
 
+// 兑换旧点歌券 → 永久额度
+const handleRedeemCard = async () => {
+  if (redeemingCard.value) return
+  const code = redeemCardCode.value.trim().toUpperCase()
+  if (!code) {
+    redeemCardError.value = locale.value.redeemCardEmpty
+    return
+  }
+  redeemCardError.value = ''
+  redeemingCard.value = true
+  try {
+    const authConfig = auth.getAuthConfig() || {}
+    await $fetch('/api/song-quota/redeem-card', {
+      method: 'POST',
+      body: { cardCode: code },
+      ...authConfig
+    })
+    showRedeemCardModal.value = false
+    redeemCardCode.value = ''
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.redeemCardSuccess, 'success')
+    }
+    fetchSubmissionStatus()
+  } catch (err) {
+    redeemCardError.value = localizeServerError(err) || locale.value.redeemCardEmpty
+  } finally {
+    redeemingCard.value = false
+  }
+}
+
 // 检查投稿限额
 const checkSubmissionLimit = () => {
   // 超级管理员不受投稿限制
@@ -3817,6 +3933,35 @@ defineExpose({
   padding: 0.4rem 0.75rem;
   margin-bottom: 0.5rem;
   border: 1px solid var(--overlay-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.redeem-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  background: var(--primary-10, rgba(99, 102, 241, 0.1));
+  border: 1px solid var(--primary-20, rgba(99, 102, 241, 0.2));
+  color: var(--primary);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.redeem-card-btn:hover {
+  background: var(--primary-20, rgba(99, 102, 241, 0.18));
+}
+
+.redeem-card-btn .redeem-card-icon {
+  flex-shrink: 0;
 }
 
 .admin-notice-horizontal {

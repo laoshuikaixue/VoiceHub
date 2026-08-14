@@ -190,6 +190,13 @@
             >
               <LazyAdminSongQuotaManager />
             </div>
+            <!-- 卡密管理 -->
+            <div
+              v-if="activeTab === 'card-codes' && permissions.canAccessPage('card-codes')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminCardCodesManager />
+            </div>
           </div>
         </main>
       </div>

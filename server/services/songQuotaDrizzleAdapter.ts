@@ -2,6 +2,8 @@ import { and, asc, desc, eq, gte, ilike, isNull, lte, or, sql } from 'drizzle-or
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../app/drizzle/schema.ts'
 import {
+  cardCodeRedeemLogs,
+  cardCodes,
   songQuotaAccounts,
   songQuotaTransactions,
   songs,
@@ -212,6 +214,27 @@ export function createSongQuotaDrizzleAdapter(dbOrTx: SongQuotaDatabase) {
         updatedAt: songQuotaAccounts.updatedAt
       }).from(users).leftJoin(songQuotaAccounts, eq(songQuotaAccounts.userId, users.id))
         .where(eq(users.id, userId)).limit(1)
+      return rows[0] ?? null
+    },
+    async lockCardByCode(code: string) {
+      const rows = await dbOrTx
+        .select()
+        .from(cardCodes)
+        .where(eq(cardCodes.code, code))
+        .limit(1)
+        .for('update')
+      return rows[0] ?? null
+    },
+    async markCardConverted(cardId: number, userId: number, now: Date) {
+      const rows = await dbOrTx
+        .update(cardCodes)
+        .set({ status: 'REDEEMED', redeemedBy: userId, redeemedAt: now, updatedAt: now })
+        .where(and(eq(cardCodes.id, cardId), eq(cardCodes.status, 'AVAILABLE')))
+        .returning()
+      return rows[0] ?? null
+    },
+    async insertCardRedeemLog(values: typeof cardCodeRedeemLogs.$inferInsert) {
+      const rows = await dbOrTx.insert(cardCodeRedeemLogs).values(values).returning()
       return rows[0] ?? null
     }
   }

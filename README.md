@@ -763,6 +763,7 @@ VoiceHub/
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   │   ├── CardCodesManager.vue   # 卡密管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
@@ -1014,6 +1015,14 @@ VoiceHub/
 │   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
 │   │   │   │   ├── index.get.ts     # 分页搜索额度账户
 │   │   │   │   └── transactions.get.ts # 分页筛选全局额度流水
+│   │   │   ├── card-codes/          # 卡密管理API（旧点歌券兑换）
+│   │   │   │   ├── _shared.ts       # 卡密管理员鉴权
+│   │   │   │   ├── create.post.ts   # 手动导入/自动生成卡密
+│   │   │   │   ├── delete.post.ts   # 批量删除卡密
+│   │   │   │   ├── export.get.ts    # 导出卡密 CSV
+│   │   │   │   ├── index.get.ts     # 分页筛选卡密列表
+│   │   │   │   ├── redeem-logs.get.ts # 卡密兑换日志查询
+│   │   │   │   └── update.post.ts   # 更新卡密状态/备注
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
 │   │   │   │   ├── performance.get.ts # 数据库性能监控
@@ -1198,6 +1207,7 @@ VoiceHub/
 │   │   ├── site-config.get.ts       # 站点配置API
 │   │   ├── song-quota/     # 当前用户点歌额度API
 │   │   │   ├── index.get.ts         # 获取额度概览
+│   │   │   ├── redeem-card.post.ts  # 旧点歌券卡密兑换为永久额度
 │   │   │   └── transactions.get.ts  # 分页获取额度流水
 │   │   ├── songs/          # 歌曲相关API
 │   │   │   ├── [id]/                # 歌曲详情操作
@@ -1249,6 +1259,8 @@ VoiceHub/
 │   │       └── social-accounts.get.ts # 获取社交账号
 │   ├── config/             # 服务端配置
 │   │   └── constants.ts    # 风控阈值与时间窗口常量
+│   ├── card-codes/         # 卡密状态常量
+│   │   └── statuses.ts     # 卡密状态枚举与可变状态集
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
 │   │   ├── 00.request-id.ts # 请求ID注入中间件
@@ -1268,6 +1280,7 @@ VoiceHub/
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
 │   │   ├── securityService.ts # 安全服务
+│   │   ├── cardCodeDeleteService.ts # 卡密批量删除服务
 │   │   ├── songQuotaService.ts # 用户点歌额度统一服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
@@ -1279,6 +1292,7 @@ VoiceHub/
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
+│   │   ├── card-code-redemption-rate-limit.ts # 卡密兑换限流工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
 │   │   ├── database-health.ts # 数据库健康检查

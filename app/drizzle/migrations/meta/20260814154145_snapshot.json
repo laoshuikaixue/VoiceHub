@@ -1,5 +1,5 @@
 {
-  "id": "e172600e-b0db-494a-a64e-9c32cc3d9e05",
+  "id": "a3e7d272-c229-4d21-854b-3cc0cfe861bb",
   "prevId": "37f1e737-a12c-477b-bb3f-e7c4d69edea2",
   "version": "7",
   "dialect": "postgresql",
@@ -366,11 +366,41 @@
         }
       },
       "indexes": {
-        "card_code_redeem_log_card_code_id_idx": {
-          "name": "card_code_redeem_log_card_code_id_idx",
+        "CardCodeRedeemLog_cardCodeId_idx": {
+          "name": "CardCodeRedeemLog_cardCodeId_idx",
           "columns": [
             {
               "expression": "cardCodeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "CardCodeRedeemLog_redeemedBy_idx": {
+          "name": "CardCodeRedeemLog_redeemedBy_idx",
+          "columns": [
+            {
+              "expression": "redeemedBy",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "CardCodeRedeemLog_redeemedAt_idx": {
+          "name": "CardCodeRedeemLog_redeemedAt_idx",
+          "columns": [
+            {
+              "expression": "redeemedAt",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1689,12 +1719,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "legacyCardId": {
-          "name": "legacyCardId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "administratorId": {
           "name": "administratorId",
           "type": "integer",
@@ -1776,21 +1800,6 @@
           "method": "btree",
           "with": {}
         },
-        "song_quota_transaction_legacy_card_id_idx": {
-          "name": "song_quota_transaction_legacy_card_id_idx",
-          "columns": [
-            {
-              "expression": "legacyCardId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "song_quota_transaction_administrator_id_idx": {
           "name": "song_quota_transaction_administrator_id_idx",
           "columns": [
@@ -1842,19 +1851,6 @@
           "tableTo": "Song",
           "columnsFrom": [
             "songId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "SongQuotaTransaction_legacyCardId_CardCode_id_fk": {
-          "name": "SongQuotaTransaction_legacyCardId_CardCode_id_fk",
-          "tableFrom": "SongQuotaTransaction",
-          "tableTo": "CardCode",
-          "columnsFrom": [
-            "legacyCardId"
           ],
           "columnsTo": [
             "id"
@@ -2153,12 +2149,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "cardCodeId": {
-          "name": "cardCodeId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "quotaConsumed": {
           "name": "quotaConsumed",
           "type": "boolean",
@@ -2200,21 +2190,6 @@
         }
       },
       "indexes": {
-        "song_card_code_id_idx": {
-          "name": "song_card_code_id_idx",
-          "columns": [
-            {
-              "expression": "cardCodeId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "song_quota_transaction_id_unique": {
           "name": "song_quota_transaction_id_unique",
           "columns": [
@@ -2298,19 +2273,6 @@
         }
       },
       "foreignKeys": {
-        "Song_cardCodeId_CardCode_id_fk": {
-          "name": "Song_cardCodeId_CardCode_id_fk",
-          "tableFrom": "Song",
-          "tableTo": "CardCode",
-          "columnsFrom": [
-            "cardCodeId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "Song_quotaTransactionId_SongQuotaTransaction_id_fk": {
           "name": "Song_quotaTransactionId_SongQuotaTransaction_id_fk",
           "tableFrom": "Song",
@@ -2581,27 +2543,6 @@
           "notNull": true,
           "default": false
         },
-        "enableCardCodeRequests": {
-          "name": "enableCardCodeRequests",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "requireCardCodeForRequests": {
-          "name": "requireCardCodeForRequests",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "enableCardCodeLimitBypass": {
-          "name": "enableCardCodeLimitBypass",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "songQuotaEnabled": {
           "name": "songQuotaEnabled",
           "type": "boolean",
@@ -2628,12 +2569,6 @@
         },
         "blockOnSongQuotaInsufficient": {
           "name": "blockOnSongQuotaInsufficient",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacyCardConversionEnabled": {
-          "name": "legacyCardConversionEnabled",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
@@ -3279,7 +3214,6 @@
         "AVAILABLE",
         "LOCKED",
         "REDEEMED",
-        "CONVERTED",
         "INVALID"
       ]
     },

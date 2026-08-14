@@ -18,6 +18,7 @@ export const songQuotaSourceEnum = pgEnum('song_quota_source', [
   'SONG_WITHDRAW_EXPIRED',
   'LEGACY_CARD_CONVERT'
 ]);
+export const cardCodeStatusEnum = pgEnum('card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']);
 
 
 // 用户表
@@ -690,6 +691,41 @@ export type SongQuotaAccount = typeof songQuotaAccounts.$inferSelect;
 export type NewSongQuotaAccount = typeof songQuotaAccounts.$inferInsert;
 export type SongQuotaTransaction = typeof songQuotaTransactions.$inferSelect;
 export type NewSongQuotaTransaction = typeof songQuotaTransactions.$inferInsert;
+
+// 卡密表（旧点歌券系统遗留，仅用于兑换成永久额度）
+export const cardCodes = pgTable('CardCode', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  code: text('code').notNull().unique(),
+  status: cardCodeStatusEnum('status').default('AVAILABLE').notNull(),
+  lockedBy: integer('lockedBy').references(() => users.id, { onDelete: 'set null' }),
+  lockedAt: timestamp('lockedAt'),
+  redeemedBy: integer('redeemedBy').references(() => users.id, { onDelete: 'set null' }),
+  redeemedAt: timestamp('redeemedAt'),
+  note: text('note'),
+});
+
+// 卡密兑换日志表
+export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  codeSnapshot: text('codeSnapshot').notNull(),
+  redeemedBy: integer('redeemedBy').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  redeemedAt: timestamp('redeemedAt').defaultNow().notNull(),
+  source: text('source').default('UNKNOWN').notNull(),
+  songId: integer('songId').references(() => songs.id, { onDelete: 'set null' })
+}, (table) => [
+  index('CardCodeRedeemLog_cardCodeId_idx').on(table.cardCodeId),
+  index('CardCodeRedeemLog_redeemedBy_idx').on(table.redeemedBy),
+  index('CardCodeRedeemLog_redeemedAt_idx').on(table.redeemedAt)
+]);
+
+export type CardCode = typeof cardCodes.$inferSelect;
+export type NewCardCode = typeof cardCodes.$inferInsert;
+export type CardCodeRedeemLog = typeof cardCodeRedeemLogs.$inferSelect;
+export type NewCardCodeRedeemLog = typeof cardCodeRedeemLogs.$inferInsert;
 
 // 自动备份历史记录表
 export const backupHistory = pgTable('BackupHistory', {
