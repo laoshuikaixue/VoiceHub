@@ -340,10 +340,10 @@ export default defineEventHandler(async (event) => {
 
             const userStatusLogData = {
               userId: validUserId,
-              previousStatus: record.previousStatus || null,
+              oldStatus: record.oldStatus || record.previousStatus || null,
               newStatus: record.newStatus,
               reason: record.reason || null,
-              changedBy: record.changedBy || null,
+              operatorId: record.operatorId || record.changedBy || null,
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
 

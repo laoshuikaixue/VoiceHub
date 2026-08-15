@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'songIds 必须为非空数组')
   }
 
-  const songIds = body.songIds.map(Number).filter((n) => !Number.isNaN(n))
+  const songIds = body.songIds.map(Number).filter((n) => Number.isInteger(n) && n > 0)
   const now = getServerDate()
 
   // 批量查询歌曲，避免 N+1
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
   for (const songId of songIds) {
     const song = songsMap.get(songId)
     if (!song) {
-      skipped.push({ songId, reason: '歌曲不存在' })
+      skipped.push({ songId, reason: '未处理' })
       continue
     }
     insertValues.push({ songId, title: song.title, artist: song.artist, createdAt: now, addedBy: user.id })
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
       if (insertedIds.has(v.songId)) {
         added.push({ songId: v.songId, title: v.title, artist: v.artist })
       } else {
-        skipped.push({ songId: v.songId, reason: '已在备选池中' })
+        skipped.push({ songId: v.songId, reason: '未处理' })
       }
     }
   }
