@@ -1411,6 +1411,17 @@
               <button
                 :class="[
                   'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
+                  autoScheduleAlgorithm === 'auto'
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
+                ]"
+                @click="autoScheduleAlgorithm = 'auto'"
+              >
+                {{ locale.algorithmAuto }}
+              </button>
+              <button
+                :class="[
+                  'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
                   autoScheduleAlgorithm === 'greedy'
                     ? 'bg-primary-10 border-primary-30 text-primary'
                     : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
@@ -1431,9 +1442,6 @@
                 {{ locale.algorithmExhaustive }}
               </button>
             </div>
-            <p class="text-[10px] text-text-disabled mt-1">
-              {{ locale.algorithmHint(autoScheduleAlgorithm) }}
-            </p>
           </div>
 
           <div class="text-[11px] text-text-disabled">
@@ -3296,7 +3304,7 @@ const openAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'greedy'
+  autoScheduleAlgorithm.value = 'auto'
   autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
@@ -3305,14 +3313,14 @@ const closeAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'greedy'
+  autoScheduleAlgorithm.value = 'auto'
   autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'greedy'
+  autoScheduleAlgorithm.value = 'auto'
   autoScheduleFixExisting.value = false
 }
 
@@ -3361,7 +3369,9 @@ const runAutoSchedule = () => {
   const candidates = autoScheduleCandidates.value
   const candidateIds = new Set(candidates.map((s) => s.id))
   const preSelected = buildPreSelected()
-  const fn = autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule
+  const fn = autoScheduleAlgorithm.value === 'auto'
+    ? (autoScheduleCandidates.value.length < 20 ? autoScheduleExhaustive : autoSchedule)
+    : (autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule)
   const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10)
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
@@ -3385,7 +3395,9 @@ const generateMorePlans = async () => {
 
   // 动态 plansCount：已有方案数 + 10，确保新增返回新的解
   const requestCount = autoSchedulePlans.value.length + 10
-  const fn = autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule
+  const fn = autoScheduleAlgorithm.value === 'auto'
+    ? (autoScheduleCandidates.value.length < 20 ? autoScheduleExhaustive : autoSchedule)
+    : (autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule)
   const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
