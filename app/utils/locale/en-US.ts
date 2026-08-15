@@ -2407,7 +2407,7 @@ export const admin = {
       candidateDurationsProgressTotal: '{0} song(s)',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: 'No matching song combination found',
-    autoScheduleNoMorePlans: 'No more unique plans available'
+      autoScheduleNoMorePlans: 'No more unique plans available'
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',

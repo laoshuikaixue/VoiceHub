@@ -143,7 +143,6 @@ export function autoSchedule(
   const seenSets = new Set<string>()
 
   const addUnique = (result: AutoScheduleResult) => {
-    if (result.songs.length === 0) return
     const key = result.songs.map((s) => s.id).sort().join(',')
     if (!seenSets.has(key)) {
       seenSets.add(key)
@@ -262,7 +261,8 @@ export function autoScheduleExhaustive(
     if (seenKeys.has(key)) return
     seenKeys.add(key)
     solutions.push({ songs: [...currentSongs], totalDuration: total, diff, absDiff })
-    if (absDiff > worstAbs) worstAbs = absDiff  // worstAbs 仅在被截断后由数组末位赋值或此处更新
+    // 更新最差阈值：首次记录或截断后数组末位的 absDiff 才是有效剪枝基准
+    if (worstAbs === Infinity || absDiff > worstAbs) worstAbs = absDiff
     if (solutions.length > maxSolutions) {
       solutions.sort((a, b) => a.absDiff - b.absDiff || b.songs.length - a.songs.length)
       solutions.splice(maxSolutions)

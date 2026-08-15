@@ -6,9 +6,8 @@ import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
 export default defineEventHandler(async (event) => {
   requireSongAdmin(event)
-  const user = event.context.user as any
 
-  const isSuperAdmin = user.role === 'SUPER_ADMIN'
+  const isSuperAdmin = event.context.user?.role === 'SUPER_ADMIN'
 
   const poolRows = await db.select().from(scheduleSongPool).orderBy(scheduleSongPool.createdAt)
 
@@ -71,7 +70,7 @@ export default defineEventHandler(async (event) => {
       cardCodeId: song.cardCodeId,
       usedCardCode: song.cardCodeId != null,
       hasSubmissionNote: song.submissionNote ? true : false,
-      submissionNote: (isSuperAdmin || song.requesterId === user.id) ? song.submissionNote : undefined,
+      submissionNote: isSuperAdmin ? song.submissionNote : undefined,
       addedBy: row.addedBy,
       addedByName: addedByUser?.name || addedByUser?.username || null,
       createdAt: row.createdAt
