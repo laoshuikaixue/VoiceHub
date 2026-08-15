@@ -5,7 +5,7 @@ import { eq, inArray, count } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
-// 返回有效计数（排除歌曲已删除的孤立记录）
+// 返回备选池有效记录数（innerJoin 排除歌曲已删除的孤立记录）
 const fetchPoolCount = async () => {
   const result = await db
     .select({ count: count() })

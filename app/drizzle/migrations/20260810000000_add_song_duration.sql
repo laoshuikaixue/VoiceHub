@@ -1,1 +1,0 @@
-ALTER TABLE "Song" ADD COLUMN "durationSeconds" integer;

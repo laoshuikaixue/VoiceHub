@@ -1589,7 +1589,7 @@ import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
-import { formatDuration } from '~/utils/timeUtils'
+import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
@@ -3214,6 +3214,30 @@ const autoSchedule = (direction, candidates) => {
           ids.add(song.id)
         }
       }
+    } else {
+      // 'over' 方向回填：尝试用更短的歌曲替换已选歌曲，在保持总时长 >= 目标的前提下尽量逼近
+      const selectedIds = new Set(result.map((s) => s.id))
+      const remaining = filteredCandidates.filter((s) => !selectedIds.has(s.id))
+        .sort((a, b) => a.durationSeconds - b.durationSeconds)
+      // 从最短的已选歌曲开始尝试替换（越短越有可能被替换掉仍保持 >= target）
+      for (let ri = result.length - 1; ri >= 0; ri--) {
+        const currentSong = result[ri]
+        const currentDuration = currentSong.durationSeconds
+        const totalWithoutThis = total - currentDuration
+        const minReplacement = targetSeconds - totalWithoutThis
+        if (minReplacement >= currentDuration) continue
+        for (let ii = 0; ii < remaining.length; ii++) {
+          const candidate = remaining[ii]
+          if (candidate.durationSeconds >= minReplacement && candidate.durationSeconds < currentDuration) {
+            result[ri] = candidate
+            total = totalWithoutThis + candidate.durationSeconds
+            selectedIds.delete(currentSong.id)
+            selectedIds.add(candidate.id)
+            remaining.splice(ii, 1)
+            break
+          }
+        }
+      }
     }
     const diff = total - targetSeconds
     return { songs: result, totalDuration: total, diff, absDiff: Math.abs(diff) }
@@ -3879,24 +3903,6 @@ const openCopyDateDialog = () => {
   showCopyDateDialog.value = true
 }
 
-const addDaysToString = (dateStr, days) => {
-  const parsed = parseDateValue(dateStr)
-  if (!parsed) return dateStr
-  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateStr)
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + days))
-  const pad = (n) => (n < 10 ? '0' + n : '' + n)
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`
-}
-
-const getDaysBetween = (startStr, endStr) => {
-  const startMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(startStr)
-  const endMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(endStr)
-  if (!startMatch || !endMatch) return -1
-  const start = new Date(Date.UTC(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]))).getTime()
-  const end = new Date(Date.UTC(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]))).getTime()
-  return Math.round((end - start) / 86400000)
-}
-
 const confirmMoveDate = async () => {
   const targetDate = moveTargetDate.value.trim()
 
@@ -4017,16 +4023,12 @@ const confirmCopyDate = async () => {
   const sourceDays = sourceSpan + 1
   const targetDays = targetSpan + 1
 
-  for (let i = 0; i < targetDays; i++) {
-    const srcDay = i % sourceDays
-    const srcDate = addDaysToString(fromStart, srcDay)
-    const tgtDate = addDaysToString(toStart, i)
-    if (srcDate === tgtDate) {
-      if (window.$showNotification) {
-        window.$showNotification(locale.value.errors.targetDateConflicts, 'warning')
-      }
-      return
+  // 检查源区间与目标区间是否有交集（整体范围检测，防止级联写入）
+  if (toStart <= fromEnd && fromStart <= toEnd) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.errors.targetDateConflicts, 'warning')
     }
+    return
   }
 
   confirmDialogTitle.value = locale.value.copyDateTitle

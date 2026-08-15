@@ -278,13 +278,6 @@
     {
       "idx": 39,
       "version": "7",
-      "when": 1786320000000,
-      "tag": "20260810000000_add_song_duration",
-      "breakpoints": true
-    },
-    {
-      "idx": 40,
-      "version": "7",
       "when": 1786406400000,
       "tag": "20260811000000_add_schedule_song_pool",
       "breakpoints": true
