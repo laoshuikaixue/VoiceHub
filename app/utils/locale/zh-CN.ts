@@ -2296,6 +2296,14 @@ export const admin = {
     resultOverTarget: (diff) => `超出目标 ${Math.floor(diff / 60)} 分 ${diff % 60} 秒`,
     tryAgain: '重新调整',
     confirmApply: '确认排期',
+    previousPlan: '上一个方案',
+    nextPlan: '下一个方案',
+    planIndicator: (current, total) => `方案 ${current} / ${total}`,
+    scheduleAlgorithm: '算法',
+    algorithmGreedy: '贪心',
+    algorithmExhaustive: '穷举',
+    algorithmHint: (algo) => algo === 'greedy' ? '快速贪心，适合候选较多时' : '系统遍历，更精确但候选不宜过多',
+    newPlan: '新增方案',
     fixExistingScheduled: '固定当前排期歌曲',
     fixExistingCount: (n) => `已固定 ${n} 首`,
     fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
@@ -2407,7 +2415,8 @@ export const admin = {
       allDurationsProgressTotal: '{0} 首歌',
       candidateDurationsProgressTotal: '{0} 首歌',
       allDurationsProgress: '{0} / {1}',
-      autoScheduleNoResult: '未能找到满足条件的歌曲组合'
+      autoScheduleNoResult: '未能找到满足条件的歌曲组合',
+    autoScheduleNoMorePlans: '已无更多不同方案'
     },
     playlistFilterModal: {
       title: '歌单重复过滤',

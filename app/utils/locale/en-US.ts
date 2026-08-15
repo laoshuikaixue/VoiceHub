@@ -2287,6 +2287,14 @@ export const admin = {
     resultOverTarget: (diff) => `${Math.floor(diff / 60)}m ${diff % 60}s over target`,
     tryAgain: 'Adjust Again',
     confirmApply: 'Apply',
+    previousPlan: 'Prev Plan',
+    nextPlan: 'Next Plan',
+    planIndicator: (current, total) => `Plan ${current} / ${total}`,
+    scheduleAlgorithm: 'Algorithm',
+    algorithmGreedy: 'Greedy',
+    algorithmExhaustive: 'Exhaustive',
+    algorithmHint: (algo) => algo === 'greedy' ? 'Fast greedy, good for large pools' : 'Systematic search, more precise but slower',
+    newPlan: 'New Plan',
     fixExistingScheduled: 'Fix Existing Scheduled Songs',
     fixExistingCount: (n) => `${n} fixed`,
     fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
@@ -2398,7 +2406,8 @@ export const admin = {
       allDurationsProgressTotal: '{0} song(s)',
       candidateDurationsProgressTotal: '{0} song(s)',
       allDurationsProgress: '{0} / {1}',
-      autoScheduleNoResult: 'No matching song combination found'
+      autoScheduleNoResult: 'No matching song combination found',
+    autoScheduleNoMorePlans: 'No more unique plans available'
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',

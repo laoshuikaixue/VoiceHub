@@ -1405,6 +1405,37 @@
             </div>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.scheduleAlgorithm }}</label>
+            <div class="flex gap-2">
+              <button
+                :class="[
+                  'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
+                  autoScheduleAlgorithm === 'greedy'
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
+                ]"
+                @click="autoScheduleAlgorithm = 'greedy'"
+              >
+                {{ locale.algorithmGreedy }}
+              </button>
+              <button
+                :class="[
+                  'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
+                  autoScheduleAlgorithm === 'exhaustive'
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
+                ]"
+                @click="autoScheduleAlgorithm = 'exhaustive'"
+              >
+                {{ locale.algorithmExhaustive }}
+              </button>
+            </div>
+            <p class="text-[10px] text-text-disabled mt-1">
+              {{ locale.algorithmHint(autoScheduleAlgorithm) }}
+            </p>
+          </div>
+
           <div class="text-[11px] text-text-disabled">
             {{ locale.availableCount(autoScheduleCandidates.length) }}
           </div>
@@ -1500,7 +1531,41 @@
             </div>
           </div>
 
-          <div class="flex gap-2 pt-1">
+          <!-- 方案导航 -->
+          <div class="flex items-center gap-2 pt-1">
+            <button
+              :disabled="currentPlanIndex <= 0 || generatingNewPlan"
+              class="flex-1 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              @click="goToPreviousPlan"
+            >
+              <ChevronLeft class="w-3.5 h-3.5" />
+              {{ locale.previousPlan }}
+            </button>
+            <span class="text-[10px] font-bold text-text-tertiary whitespace-nowrap">
+              {{ locale.planIndicator(currentPlanIndex + 1, autoSchedulePlans.length) }}
+            </span>
+            <button
+              :disabled="generatingNewPlan"
+              class="flex-1 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              @click="goToNextPlan"
+            >
+              <span v-if="generatingNewPlan" class="inline-block w-3.5 h-3.5 border-2 border-text-tertiary border-t-transparent rounded-full animate-spin" />
+              <span v-else-if="currentPlanIndex < autoSchedulePlans.length - 1">
+                {{ locale.nextPlan }}
+                <ChevronRight class="w-3.5 h-3.5" />
+              </span>
+              <span v-else-if="autoScheduleAlgorithm === 'exhaustive'" class="flex items-center gap-1.5">
+                <Plus class="w-3.5 h-3.5" />
+                {{ locale.newPlan }}
+              </span>
+              <span v-else class="opacity-30">
+                {{ locale.nextPlan }}
+                <ChevronRight class="w-3.5 h-3.5" />
+              </span>
+            </button>
+          </div>
+
+          <div class="flex gap-2">
             <button
               class="flex-1 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
               @click="resetAutoSchedule"
@@ -1612,6 +1677,7 @@ import {
   AlertTriangle,
   X as CloseIcon,
   ChevronRight,
+  ChevronLeft,
   MoreVertical,
   Calendar as CalendarIcon,
   ArrowLeft,
@@ -1643,7 +1709,7 @@ import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
-import { autoSchedule, poolCandidateFromItem } from '~/utils/autoSchedule'
+import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
@@ -1890,6 +1956,10 @@ const autoScheduleScheduledSeconds = computed(() => {
 })
 
 const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
+const autoSchedulePlans = ref([])
+const currentPlanIndex = ref(0)
+const autoScheduleAlgorithm = ref('greedy')
+const generatingNewPlan = ref(false)
 // 备选池
 const songPool = ref([])
 const poolLoading = ref(false)
@@ -3224,16 +3294,25 @@ const handleAutoScheduleEscape = (e) => {
 
 const openAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  autoSchedulePlans.value = []
+  currentPlanIndex.value = 0
+  autoScheduleAlgorithm.value = 'greedy'
   autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
 const closeAutoScheduleDialog = () => {
   showAutoScheduleDialog.value = false
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  autoSchedulePlans.value = []
+  currentPlanIndex.value = 0
+  autoScheduleAlgorithm.value = 'greedy'
   autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  autoSchedulePlans.value = []
+  currentPlanIndex.value = 0
+  autoScheduleAlgorithm.value = 'greedy'
   autoScheduleFixExisting.value = false
 }
 
@@ -3260,10 +3339,8 @@ const autoScheduleCandidates = computed(() => {
   return base
 })
 
-const runAutoSchedule = () => {
-  const candidates = autoScheduleCandidates.value
-  const candidateIds = new Set(candidates.map((s) => s.id))
-  const preSelected = autoScheduleFixExisting.value ? localScheduledSongs.value.filter(
+const buildPreSelected = () => {
+  return autoScheduleFixExisting.value ? localScheduledSongs.value.filter(
     (s) => typeof s.song.durationSeconds === 'number' && s.song.durationSeconds > 0
   ).map((s) => ({
     id: s.song.id,
@@ -3278,14 +3355,77 @@ const runAutoSchedule = () => {
     cover: s.song.cover || null,
     createdAt: s.song.createdAt || null
   })) : []
-  const result = autoSchedule(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected)
-  if (result.songs.length === 0) {
+}
+
+const runAutoSchedule = () => {
+  const candidates = autoScheduleCandidates.value
+  const candidateIds = new Set(candidates.map((s) => s.id))
+  const preSelected = buildPreSelected()
+  const fn = autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10)
+  const plansArray = Array.isArray(results) ? results : [results]
+  const first = plansArray[0]
+  if (!first || first.songs.length === 0) {
     if (window.$showNotification) {
       window.$showNotification(callLocale('autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')
     }
     return
   }
-  autoScheduleResult.value = { ...result, candidateIds }
+  autoSchedulePlans.value = plansArray.map((p) => ({ ...p, candidateIds }))
+  currentPlanIndex.value = 0
+  autoScheduleResult.value = autoSchedulePlans.value[0]
+}
+
+const generateMorePlans = async () => {
+  if (generatingNewPlan.value) return
+  generatingNewPlan.value = true
+  const candidates = autoScheduleCandidates.value
+  const candidateIds = new Set(candidates.map((s) => s.id))
+  const preSelected = buildPreSelected()
+
+  // 动态 plansCount：已有方案数 + 10，确保新增返回新的解
+  const requestCount = autoSchedulePlans.value.length + 10
+  const fn = autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount)
+  const plansArray = Array.isArray(results) ? results : [results]
+  const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
+  let addedCount = 0
+  let firstNewIndex = 0
+  for (const plan of plansArray) {
+    const key = plan.songs.map((s) => s.id).sort().join(',')
+    if (!existingKeys.has(key) && plan.songs.length > 0) {
+      autoSchedulePlans.value.push({ ...plan, candidateIds })
+      existingKeys.add(key)
+      if (addedCount === 0) firstNewIndex = autoSchedulePlans.value.length - 1
+      addedCount++
+    }
+  }
+  if (addedCount > 0) {
+    // 跳到第一个新增方案，不跳末尾
+    currentPlanIndex.value = firstNewIndex
+    autoScheduleResult.value = autoSchedulePlans.value[currentPlanIndex.value]
+  } else if (window.$showNotification) {
+    window.$showNotification(callLocale('autoScheduleNoMorePlans', '已无更多不同方案'), 'warning')
+  }
+  generatingNewPlan.value = false
+}
+
+// 切换到上一个方案
+const goToPreviousPlan = () => {
+  if (currentPlanIndex.value > 0) {
+    currentPlanIndex.value--
+    autoScheduleResult.value = autoSchedulePlans.value[currentPlanIndex.value]
+  }
+}
+
+// 切换到下一个方案；穷举模式下到末尾则新增方案
+const goToNextPlan = () => {
+  if (currentPlanIndex.value < autoSchedulePlans.value.length - 1) {
+    currentPlanIndex.value++
+    autoScheduleResult.value = autoSchedulePlans.value[currentPlanIndex.value]
+  } else if (autoScheduleAlgorithm.value === 'exhaustive') {
+    generateMorePlans()
+  }
 }
 
 const confirmAutoSchedule = () => {
