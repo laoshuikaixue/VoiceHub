@@ -6,18 +6,6 @@
  */
 import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
 
-interface CidRes {
-  code: number
-  message: string
-  data: {
-    pages: [
-      {
-        cid: string
-      }
-    ]
-  }
-}
-
 interface NoRefererPlayUrlRes {
   code: number
   message: string
@@ -67,17 +55,36 @@ export default defineEventHandler(async (event) => {
 
     if (!finalCid) {
       const target_url = 'https://api.bilibili.com/x/web-interface/view'
-      const resp1 = await $fetch<CidRes>(target_url, {
+      const resp1: any = await $fetch(target_url, {
         method: 'GET',
         params: { bvid },
         headers
       })
 
       if (!resp1?.data?.pages?.[0]?.cid) {
-        throw new Error('获取 CID 失败')
+        console.error('[Bilibili] CID 获取失败，响应:', JSON.stringify(resp1).slice(0, 300))
+        // 降级：去掉 Cookie 重试，部分场景 Cookie 反而触发风控
+        try {
+          const fallback: any = await $fetch(target_url, {
+            method: 'GET',
+            params: { bvid },
+            headers: {
+              Referer: 'https://www.bilibili.com/',
+              'User-Agent': headers['User-Agent']
+            }
+          })
+          if (fallback?.data?.pages?.[0]?.cid) {
+            finalCid = fallback.data.pages[0].cid
+          } else {
+            console.error('[Bilibili] 降级请求仍无 CID，响应:', JSON.stringify(fallback).slice(0, 300))
+            throw new Error('获取 CID 失败')
+          }
+        } catch (fallbackErr: any) {
+          throw new Error(`获取 CID 失败: ${fallbackErr?.message || '未知错误'}`)
+        }
+      } else {
+        finalCid = resp1.data.pages[0].cid
       }
-
-      finalCid = resp1.data.pages[0].cid
     }
 
     // 使用 platform=html5 参数绕过严格防盗链验证（允许前端使用 referrerpolicy="no-referrer"）
