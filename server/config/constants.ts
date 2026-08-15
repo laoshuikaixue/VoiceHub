@@ -377,6 +377,7 @@ export const PERMISSIONS = {
 // 用户角色常量
 export const USER_ROLES = {
   USER: 'USER',
+  SONG_ADMIN: 'SONG_ADMIN',
   ADMIN: 'ADMIN',
   SUPER_ADMIN: 'SUPER_ADMIN'
 } as const

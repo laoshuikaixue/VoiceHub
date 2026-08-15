@@ -2064,9 +2064,9 @@ export default defineEventHandler(async (event) => {
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
                         }
                         if (mode === 'merge') {
-                          await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing()
+                          await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] })
                         } else {
-                          await tx.insert(scheduleSongPool).values(poolData)
+                          await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] })
                         }
                         break
 

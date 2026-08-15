@@ -3057,6 +3057,14 @@ const refreshDuration = async (song) => {
           break
         }
       }
+      // 更新备选池
+      for (const p of songPool.value) {
+        if (p.songId === songId) { p.durationSeconds = result.durationSeconds; break }
+      }
+      // 更新重播申请
+      for (const r of replayRequests.value) {
+        if (r.id === songId) { r.durationSeconds = result.durationSeconds; break }
+      }
       if (window.$showNotification) {
         window.$showNotification(locale.value.messages.durationUpdated, 'success')
       }
@@ -3071,7 +3079,7 @@ const refreshDuration = async (song) => {
       window.$showNotification(localizeServerError(err), 'error')
     }
   } finally {
-    refreshingDuration.value[songId] = false
+    delete refreshingDuration.value[songId]
   }
 }
 

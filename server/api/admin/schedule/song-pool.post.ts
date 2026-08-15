@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
     const inserted = await db
       .insert(scheduleSongPool)
       .values(insertValues.map((v) => ({ songId: v.songId, createdAt: v.createdAt, addedBy: v.addedBy })))
-      .onConflictDoNothing()
+      .onConflictDoNothing({ target: [scheduleSongPool.songId] })
       .returning()
     const insertedIds = new Set(inserted.map((r) => r.songId))
     for (const v of insertValues) {

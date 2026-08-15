@@ -2416,7 +2416,7 @@ export const admin = {
       candidateDurationsProgressTotal: '{0} 首歌',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: '未能找到满足条件的歌曲组合',
-    autoScheduleNoMorePlans: '已无更多不同方案'
+      autoScheduleNoMorePlans: '已无更多不同方案'
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
