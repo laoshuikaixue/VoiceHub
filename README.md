@@ -971,6 +971,7 @@ VoiceHub/
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
+│       ├── autoSchedule.ts    # 自动排期算法
 │       ├── timeUtils.ts       # 时间工具
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
 │       └── url.ts             # URL处理工具
