@@ -374,7 +374,7 @@ export const useMusicSources = () => {
     error?: string
   }> => {
     try {
-      const metingUrl = `${source.baseUrl}/?server=netease&type=song&id=${id}`
+      const metingUrl = `${source.baseUrl}?server=netease&type=song&id=${id}`
 
       const response = await $fetch(metingUrl, {
         timeout: source.timeout || 8000,
@@ -2061,7 +2061,7 @@ export const useMusicSources = () => {
                 url = songInfo.data.url
               } else {
                 // 如果获取歌曲信息失败，直接使用 URL 类型的 API
-                const metingUrl = `${source.baseUrl}/?server=netease&type=url&id=${idParam}`
+                const metingUrl = `${source.baseUrl}?server=netease&type=url&id=${idParam}`
 
                 // 对于 Meting API，我们需要处理重定向
                 const response = await fetch(metingUrl, {
