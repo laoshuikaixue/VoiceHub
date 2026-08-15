@@ -2304,7 +2304,7 @@ export const admin = {
     algorithmGreedy: '贪心',
     algorithmExhaustive: '穷举',
     newPlan: '新增方案',
-    fixExistingScheduled: '固定当前排期歌曲',
+    fixExistingSelected: '固定已选歌曲',
     fixExistingCount: (n) => `已固定 ${n} 首`,
     fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
     fixExistingRemaining: (totalMin, fixedSec) => {

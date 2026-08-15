@@ -2295,7 +2295,7 @@ export const admin = {
     algorithmGreedy: 'Greedy',
     algorithmExhaustive: 'Exhaustive',
     newPlan: 'New Plan',
-    fixExistingScheduled: 'Fix Existing Scheduled Songs',
+    fixExistingSelected: 'Fix Selected Songs',
     fixExistingCount: (n) => `${n} fixed`,
     fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
     fixExistingRemaining: (totalMin, fixedSec) => {

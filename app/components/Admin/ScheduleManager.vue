@@ -1317,12 +1317,15 @@
             </div>
           </div>
 
-          <!-- 固定当前排期歌曲 -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ locale.fixExistingScheduled || '固定当前排期歌曲' }}</span>
+          <!-- 工具栏 -->
+          <div class="flex items-center gap-2 p-2 bg-bg-secondary-50 border border-border-secondary rounded-xl">
+            <div class="flex items-center gap-2 flex-1">
+              <Lock class="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+              <span class="text-[10px] font-bold text-text-secondary uppercase tracking-wider shrink-0">
+                {{ locale.fixExistingSelected }}
+              </span>
               <button
-                class="relative inline-flex items-center w-10 h-6 rounded-full transition-colors"
+                class="relative inline-flex items-center w-10 h-6 rounded-full transition-colors shrink-0"
                 :class="autoScheduleFixExisting ? 'bg-primary' : 'bg-bg-tertiary'"
                 @click="autoScheduleFixExisting = !autoScheduleFixExisting"
               >
@@ -1331,30 +1334,20 @@
                   :class="autoScheduleFixExisting ? 'translate-x-4' : 'translate-x-0.5'"
                 />
               </button>
-            </div>
-            <div
-              v-if="autoScheduleFixExisting && localScheduledSongs.length > 0"
-              class="flex flex-wrap items-center gap-2 px-2 py-2 bg-primary-10 border border-primary-20 rounded-lg"
-            >
-              <Lock class="w-3.5 h-3.5 text-primary shrink-0" />
-              <span class="text-[11px] font-bold text-primary">
-                {{ locale.fixExistingCount(localScheduledSongs.length) }}
-              </span>
-              <span v-if="autoScheduleScheduledSeconds > 0" class="text-[11px] text-text-tertiary font-bold">
-                {{ locale.fixExistingDuration(autoScheduleScheduledSeconds) }}
-              </span>
-              <span class="ml-auto text-[10px] font-bold text-text-tertiary">
+              <span
+                v-if="autoScheduleFixExisting && autoScheduleScheduledSeconds > 0"
+                class="text-[10px] font-bold text-primary"
+              >
+                {{ locale.fixExistingCount(localScheduledSongs.length) }} ·
                 {{ locale.fixExistingRemaining(autoScheduleTargetMinutes || 0, autoScheduleScheduledSeconds) }}
               </span>
+              <span v-else-if="autoScheduleFixExisting && localScheduledSongs.length === 0" class="text-[10px] text-text-disabled">
+                {{ locale.fixExistingNone }}
+              </span>
             </div>
-            <div v-else-if="autoScheduleFixExisting && localScheduledSongs.length === 0" class="text-[11px] text-text-disabled">
-              {{ locale.fixExistingNone }}
-            </div>
-          </div>
-          <div class="flex items-center justify-end">
             <button
               :disabled="refreshingAutoCandidates.running"
-              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               :title="locale.refreshCandidateDurations"
               @click="refreshAutoCandidateDurations"
             >
