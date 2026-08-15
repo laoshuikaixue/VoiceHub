@@ -3,9 +3,11 @@
  * 在候选池中选取总时长最接近目标的歌曲组合
  *
  * 策略：主路径按降序贪心 + 'under' 二次升序回填；辅路径随机采样；取 absDiff 更小的结果
+ *
  * @param direction 'under' 总时长不超过目标，'over' 总时长不低于目标
  * @param targetMinutes 目标总时长（分钟）
  * @param candidates 候选歌曲列表（需含 id 和 durationSeconds）
+ * @param preSelected 用户已固定的歌曲（总是保留，算法仅对剩余候选补齐剩余时长）
  */
 export type AutoScheduleDirection = 'under' | 'over'
 
@@ -21,6 +23,8 @@ export interface AutoScheduleCandidate {
   requester?: string | null
   cover?: string | null
   createdAt?: string | null
+  // UI 标记：是否为固定歌曲
+  isFixed?: boolean
 }
 
 export interface AutoScheduleResult {
@@ -33,19 +37,40 @@ export interface AutoScheduleResult {
 export function autoSchedule(
   direction: AutoScheduleDirection,
   targetMinutes: number,
-  candidates: AutoScheduleCandidate[]
+  candidates: AutoScheduleCandidate[],
+  preSelected: AutoScheduleCandidate[] = []
 ): AutoScheduleResult {
   const targetSeconds = Math.floor(targetMinutes * 60)
-  const filteredCandidates = candidates.filter(
-    (s) => typeof s.durationSeconds === 'number' && s.durationSeconds > 0
+
+  // 计算固定歌曲的总时长，从候选池中排除固定歌曲
+  const preSelectedIds = new Set(preSelected.map((s) => s.id))
+  const preSelectedSeconds = preSelected.reduce(
+    (sum, s) => sum + (typeof s.durationSeconds === 'number' ? s.durationSeconds : 0),
+    0
   )
 
-  if (filteredCandidates.length === 0) {
+  // 可用候选（排除固定歌曲）
+  const availableCandidates = candidates.filter(
+    (s) => !preSelectedIds.has(s.id) && typeof s.durationSeconds === 'number' && s.durationSeconds > 0
+  )
+
+  if (availableCandidates.length === 0 && preSelected.length === 0) {
     return { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   }
 
+  if (availableCandidates.length === 0) {
+    // 只有固定歌曲
+    const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
+    const total = preSelectedSeconds
+    const diff = total - targetSeconds
+    return { songs: fixedSongs, totalDuration: total, diff, absDiff: Math.abs(diff) }
+  }
+
+  // 剩余目标时长
+  const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
+
   // 建立 id → song 的 Map，避免随机路径中 O(n²) 查找
-  const songMap = new Map(filteredCandidates.map((s) => [s.id, s]))
+  const songMap = new Map(availableCandidates.map((s) => [s.id, s]))
 
   const runGreedy = (sorted: AutoScheduleCandidate[]) => {
     const result: AutoScheduleCandidate[] = []
@@ -54,24 +79,24 @@ export function autoSchedule(
     for (const song of sorted) {
       const newTotal = total + song.durationSeconds!
       if (direction === 'under') {
-        if (newTotal <= targetSeconds) {
+        if (newTotal <= remainingTarget) {
           result.push(song)
           total = newTotal
         }
       } else {
         result.push(song)
         total = newTotal
-        if (total >= targetSeconds) break
+        if (total >= remainingTarget) break
       }
     }
 
     if (direction === 'under') {
       const ids = new Set(result.map((s) => s.id))
-      for (const song of [...filteredCandidates].sort(
+      for (const song of [...availableCandidates].sort(
         (a, b) => a.durationSeconds! - b.durationSeconds!
       )) {
         if (ids.has(song.id)) continue
-        if (total + song.durationSeconds! <= targetSeconds) {
+        if (total + song.durationSeconds! <= remainingTarget) {
           result.push(song)
           total += song.durationSeconds!
           ids.add(song.id)
@@ -79,14 +104,13 @@ export function autoSchedule(
       }
     } else {
       const selectedIds = new Set(result.map((s) => s.id))
-      const remaining = filteredCandidates.filter((s) => !selectedIds.has(s.id))
+      const remaining = availableCandidates.filter((s) => !selectedIds.has(s.id))
         .sort((a, b) => a.durationSeconds! - b.durationSeconds!)
-      // 从最短的已选歌曲开始尝试替换，保持总时长 >= 目标的前提下尽量逼近
       for (let ri = result.length - 1; ri >= 0; ri--) {
         const currentSong = result[ri]
         const currentDuration = currentSong.durationSeconds!
         const totalWithoutThis = total - currentDuration
-        const minReplacement = targetSeconds - totalWithoutThis
+        const minReplacement = remainingTarget - totalWithoutThis
         if (minReplacement >= currentDuration) continue
         for (let ii = 0; ii < remaining.length; ii++) {
           const candidate = remaining[ii]
@@ -105,17 +129,17 @@ export function autoSchedule(
       }
     }
 
-    const diff = total - targetSeconds
-    return { songs: result, totalDuration: total, diff, absDiff: Math.abs(diff) }
+    const diff = (total + preSelectedSeconds) - targetSeconds
+    return { songs: result, totalDuration: total + preSelectedSeconds, diff, absDiff: Math.abs(diff) }
   }
 
   const r1 = runGreedy(
-    [...filteredCandidates].sort(
+    [...availableCandidates].sort(
       (a, b) => b.durationSeconds! - a.durationSeconds!
     )
   )
 
-  const shuffled = filteredCandidates.map((s) => s.id)
+  const shuffled = availableCandidates.map((s) => s.id)
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
@@ -131,7 +155,10 @@ export function autoSchedule(
         : r1.songs.length >= r2.songs.length
           ? r1
           : r2
-  return pick
+
+  // 合并固定歌曲到最终结果（pick.totalDuration 已包含 preSelectedSeconds）
+  const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
+  return { songs: [...fixedSongs, ...pick.songs], ...pick }
 }
 
 /**

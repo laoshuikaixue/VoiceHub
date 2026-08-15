@@ -2286,6 +2286,14 @@ export const admin = {
     resultOverTarget: (diff) => `${Math.floor(diff / 60)}m ${diff % 60}s over target`,
     tryAgain: 'Adjust Again',
     confirmApply: 'Apply',
+    fixExistingScheduled: 'Fix Existing Scheduled Songs',
+    fixExistingCount: (n) => `${n} fixed`,
+    fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
+    fixExistingRemaining: (totalMin, fixedSec) => {
+      const sec = Math.max(0, Math.floor(totalMin * 60 - fixedSec))
+      return `${Math.floor(sec / 60)}m ${String(Math.floor(sec % 60)).padStart(2, '0')}s left`
+    },
+    fixExistingNone: 'No scheduled songs yet',
     replaySong: 'Replay Song',
     replay: 'Replay',
     draft: 'Draft',

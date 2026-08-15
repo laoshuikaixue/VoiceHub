@@ -1317,8 +1317,40 @@
             </div>
           </div>
 
-
-
+          <!-- 固定当前排期歌曲 -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ locale.fixExistingScheduled || '固定当前排期歌曲' }}</span>
+              <button
+                class="relative inline-flex items-center w-10 h-6 rounded-full transition-colors"
+                :class="autoScheduleFixExisting ? 'bg-primary' : 'bg-bg-tertiary'"
+                @click="autoScheduleFixExisting = !autoScheduleFixExisting"
+              >
+                <span
+                  class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                  :class="autoScheduleFixExisting ? 'translate-x-4' : 'translate-x-0.5'"
+                />
+              </button>
+            </div>
+            <div
+              v-if="autoScheduleFixExisting && localScheduledSongs.length > 0"
+              class="flex flex-wrap items-center gap-2 px-2 py-2 bg-primary-10 border border-primary-20 rounded-lg"
+            >
+              <Lock class="w-3.5 h-3.5 text-primary shrink-0" />
+              <span class="text-[11px] font-bold text-primary">
+                {{ locale.fixExistingCount(localScheduledSongs.length) }}
+              </span>
+              <span v-if="autoScheduleScheduledSeconds > 0" class="text-[11px] text-text-tertiary font-bold">
+                {{ locale.fixExistingDuration(autoScheduleScheduledSeconds) }}
+              </span>
+              <span class="ml-auto text-[10px] font-bold text-text-tertiary">
+                {{ locale.fixExistingRemaining(autoScheduleTargetMinutes || 0, autoScheduleScheduledSeconds) }}
+              </span>
+            </div>
+            <div v-else-if="autoScheduleFixExisting && localScheduledSongs.length === 0" class="text-[11px] text-text-disabled">
+              {{ locale.fixExistingNone }}
+            </div>
+          </div>
           <div class="flex items-center justify-end">
             <button
               :disabled="refreshingAutoCandidates.running"
@@ -1433,7 +1465,16 @@
                 </div>
               </div>
               <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                <span class="text-sm font-bold text-text-primary truncate">{{ song.title }}</span>
+                <span class="text-sm font-bold text-text-primary truncate flex items-center gap-1.5">
+                  <span>{{ song.title }}</span>
+                  <span
+                    v-if="song.isFixed"
+                    class="inline-flex items-center gap-0.5 px-1 py-0.5 bg-primary-10 text-primary rounded text-[9px] font-bold border border-primary-20 shrink-0"
+                  >
+                    <Lock class="w-2.5 h-2.5" />
+                    固定
+                  </span>
+                </span>
                 <span class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
                   <span>{{ song.artist }}</span>
                   <span v-if="song.durationSeconds" class="text-text-disabled shrink-0">{{ formatDuration(song.durationSeconds) }}</span>
@@ -1575,7 +1616,8 @@ import {
   Copy,
   RefreshCcw,
   Sparkles,
-  FolderPlus
+  FolderPlus,
+  Lock
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
@@ -1826,6 +1868,15 @@ const openContextMenu = (e, side, song) => {
 const closeContextMenu = () => { contextMenuOpen.value = false }
 const autoScheduleTargetMinutes = ref(null)
 const autoScheduleDirection = ref('under')
+const autoScheduleFixExisting = ref(false)
+
+const autoScheduleScheduledSeconds = computed(() => {
+  if (!autoScheduleFixExisting.value) return 0
+  return localScheduledSongs.value.reduce((sum, s) => {
+    const dur = s.song && typeof s.song.durationSeconds === 'number' ? s.song.durationSeconds : 0
+    return sum + dur
+  }, 0)
+})
 
 const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
 // 备选池
@@ -3162,14 +3213,17 @@ const handleAutoScheduleEscape = (e) => {
 
 const openAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
 const closeAutoScheduleDialog = () => {
   showAutoScheduleDialog.value = false
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  autoScheduleFixExisting.value = false
 }
 
 const autoScheduleCandidates = computed(() => {
@@ -3197,8 +3251,23 @@ const autoScheduleCandidates = computed(() => {
 
 const runAutoSchedule = () => {
   const candidates = autoScheduleCandidates.value
-  const candidateIds = new Set(candidates.map((s) => s.id)) // 快照候选集 ID，确认时用于过滤
-  const result = autoSchedule(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates)
+  const candidateIds = new Set(candidates.map((s) => s.id))
+  const preSelected = autoScheduleFixExisting.value ? localScheduledSongs.value.filter(
+    (s) => typeof s.song.durationSeconds === 'number' && s.song.durationSeconds > 0
+  ).map((s) => ({
+    id: s.song.id,
+    songId: s.song.id,
+    title: s.song.title,
+    artist: s.song.artist,
+    durationSeconds: s.song.durationSeconds || 0,
+    replayRequestId: s.replayRequestId || null,
+    musicId: s.song.musicId || null,
+    musicPlatform: s.song.musicPlatform || null,
+    requester: s.song.requester || null,
+    cover: s.song.cover || null,
+    createdAt: s.song.createdAt || null
+  })) : []
+  const result = autoSchedule(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected)
   if (result.songs.length === 0) {
     if (window.$showNotification) {
       window.$showNotification(callLocale('autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')

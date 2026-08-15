@@ -2295,6 +2295,14 @@ export const admin = {
     resultOverTarget: (diff) => `超出目标 ${Math.floor(diff / 60)} 分 ${diff % 60} 秒`,
     tryAgain: '重新调整',
     confirmApply: '确认排期',
+    fixExistingScheduled: '固定当前排期歌曲',
+    fixExistingCount: (n) => `已固定 ${n} 首`,
+    fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
+    fixExistingRemaining: (totalMin, fixedSec) => {
+      const sec = Math.max(0, Math.floor(totalMin * 60 - fixedSec))
+      return `剩余 ${Math.floor(sec / 60)}分${String(Math.floor(sec % 60)).padStart(2, '0')}秒`
+    },
+    fixExistingNone: '当前无已排期歌曲',
     replaySong: '重播歌曲',
     replay: '重播',
     draft: '草稿',
