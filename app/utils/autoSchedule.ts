@@ -4,12 +4,12 @@
  *
  * 策略：主路径按降序贪心 + 'under' 二次升序回填；辅路径随机采样；取 absDiff 更小的结果
  *
- * @param direction 'under' 总时长不超过目标，'over' 总时长不低于目标
+ * @param direction 'under' 总时长不超过目标，'over' 总时长不低于目标，'middle' 相差最小（中间放）
  * @param targetMinutes 目标总时长（分钟）
  * @param candidates 候选歌曲列表（需含 id 和 durationSeconds）
  * @param preSelected 用户已固定的歌曲（总是保留，算法仅对剩余候选补齐剩余时长）
  */
-export type AutoScheduleDirection = 'under' | 'over'
+export type AutoScheduleDirection = 'under' | 'over' | 'middle'
 
 export interface AutoScheduleCandidate {
   id: number
@@ -72,13 +72,13 @@ export function autoSchedule(
   // 建立 id → song 的 Map，避免随机路径中 O(n²) 查找
   const songMap = new Map(availableCandidates.map((s) => [s.id, s]))
 
-  const runGreedy = (sorted: AutoScheduleCandidate[]) => {
+  const runGreedy = (sorted: AutoScheduleCandidate[], dir: 'under' | 'over') => {
     const result: AutoScheduleCandidate[] = []
     let total = 0
 
     for (const song of sorted) {
       const newTotal = total + song.durationSeconds!
-      if (direction === 'under') {
+      if (dir === 'under') {
         if (newTotal <= remainingTarget) {
           result.push(song)
           total = newTotal
@@ -90,7 +90,7 @@ export function autoSchedule(
       }
     }
 
-    if (direction === 'under') {
+    if (dir === 'under') {
       const ids = new Set(result.map((s) => s.id))
       for (const song of [...availableCandidates].sort(
         (a, b) => a.durationSeconds! - b.durationSeconds!
@@ -133,10 +133,8 @@ export function autoSchedule(
     return { songs: result, totalDuration: total + preSelectedSeconds, diff, absDiff: Math.abs(diff) }
   }
 
-  const r1 = runGreedy(
-    [...availableCandidates].sort(
-      (a, b) => b.durationSeconds! - a.durationSeconds!
-    )
+  const sortedByDuration = [...availableCandidates].sort(
+    (a, b) => b.durationSeconds! - a.durationSeconds!
   )
 
   const shuffled = availableCandidates.map((s) => s.id)
@@ -144,7 +142,17 @@ export function autoSchedule(
     const j = Math.floor(Math.random() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
-  const r2 = runGreedy(shuffled.map((id) => songMap.get(id)).filter(Boolean))
+  const shuffledSorted = shuffled.map((id) => songMap.get(id)).filter(Boolean)
+
+  let r1, r2
+  if (direction === 'middle') {
+    // 中间方向：分别跑 under/over 两种策略，取 absDiff 更小的结果
+    r1 = runGreedy(sortedByDuration, 'under')
+    r2 = runGreedy(sortedByDuration, 'over')
+  } else {
+    r1 = runGreedy(sortedByDuration, direction)
+    r2 = runGreedy(shuffledSorted, direction)
+  }
 
   // tiebreaker：absDiff 相同时优先取歌曲数较多的结果
   const pick =

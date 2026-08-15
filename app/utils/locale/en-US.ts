@@ -2277,6 +2277,7 @@ export const admin = {
     targetDurationPlaceholder: 'Enter target duration (minutes)',
     scheduleDirection: 'Duration Direction',
     directionUnder: 'Under Target',
+    directionMiddle: 'Closest',
     directionOver: 'Over Target',
     availableCount: (count) => `${count} candidate song(s) under current filters`,
     autoScheduleRun: 'Schedule',

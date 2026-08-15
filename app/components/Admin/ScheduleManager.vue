@@ -1383,6 +1383,17 @@
               <button
                 :class="[
                   'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
+                  autoScheduleDirection === 'middle'
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
+                ]"
+                @click="autoScheduleDirection = 'middle'"
+              >
+                {{ locale.directionMiddle }}
+              </button>
+              <button
+                :class="[
+                  'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
                   autoScheduleDirection === 'over'
                     ? 'bg-primary-10 border-primary-30 text-primary'
                     : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'

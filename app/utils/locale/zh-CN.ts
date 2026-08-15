@@ -2286,6 +2286,7 @@ export const admin = {
     targetDurationPlaceholder: '输入预期总时长（分钟）',
     scheduleDirection: '时长方向',
     directionUnder: '不超过目标',
+    directionMiddle: '相差最小',
     directionOver: '不低于目标',
     availableCount: (count) => `当前筛选下共 ${count} 首候选歌曲`,
     autoScheduleRun: '开始排期',
