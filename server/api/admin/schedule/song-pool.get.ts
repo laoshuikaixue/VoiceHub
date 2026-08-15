@@ -1,18 +1,12 @@
+import { defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, scheduleSongPool, users, votes } from '~/drizzle/schema'
 import { inArray, count } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '未授权访问')
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有歌曲管理员及以上权限才能管理备选池')
-  }
+  requireSongAdmin(event)
+  const user = event.context.user as any
 
   const isSuperAdmin = user.role === 'SUPER_ADMIN'
 

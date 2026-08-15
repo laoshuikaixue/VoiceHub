@@ -247,8 +247,8 @@ export function autoScheduleExhaustive(
   const maxNodes = 100000
   const maxSolutions = plansCount * 3
   // worstAbs 记录当前已收录方案中最差的 absDiff，作为剪枝阈值
-  // 初始值 0 确保首个方案能正确更新该值（Infinity 会导致 absDiff > Infinity 恒为 false 而永不更新）
-  let worstAbs = 0
+  // 初始值 Infinity 确保首个方案能被正确记录并更新该值（0 会导致找到完美解后后续方案被全部过滤）
+  let worstAbs = Infinity
   const currentSongs: AutoScheduleCandidate[] = []
 
   const record = (currentTotal: number) => {

@@ -1,30 +1,16 @@
-import { readBody } from 'h3'
+import { defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, scheduleSongPool } from '~/drizzle/schema'
-import { inArray, count, eq } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-
-// 返回有效计数（排除歌曲已删除的孤立记录）
-const fetchPoolCount = async () => {
-  const result = await db
-    .select({ count: count() })
-    .from(scheduleSongPool)
-    .innerJoin(songs, eq(scheduleSongPool.songId, songs.id))
-    .limit(1)
-  return result[0]?.count || 0
-}
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { fetchPoolCount } from '~~/server/utils/scheduleSongPool'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '未授权访问')
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有歌曲管理员及以上权限才能管理备选池')
-  }
+  requireSongAdmin(event)
+  const user = event.context.user as any
 
   const body = await readBody(event)
   if (!Array.isArray(body.songIds) || body.songIds.length === 0) {

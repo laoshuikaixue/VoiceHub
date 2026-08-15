@@ -7,7 +7,6 @@ import {
   notifications,
   playTimes,
   schedules,
-  scheduleSongPool,
   semesters,
   songBlacklists,
   songs,
@@ -18,6 +17,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
+import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -1208,52 +1208,7 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'scheduleSongPool': {
-            // songId + addedBy 外键映射
-            let validPoolSongId = record.songId
-            const mappedPoolSongId = songIdMapping.get(record.songId)
-            if (mappedPoolSongId) {
-              validPoolSongId = mappedPoolSongId
-            } else {
-              const songExists = await tx
-                .select()
-                .from(songs)
-                .where(eq(songs.id, record.songId))
-                .limit(1)
-              if (songExists.length === 0) {
-                console.warn(`备选池记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
-                stats.warnings.push(`备选池歌曲ID ${record.songId} 不存在`)
-                break
-              }
-              // mapping 未命中但歌曲存在时，使用数据库查到的 ID（merge 模式下可能已被重新分配）
-              validPoolSongId = songExists[0].id
-            }
-            let validPoolAddedBy = record.addedBy || null
-            if (validPoolAddedBy) {
-              const mappedAddedBy = userIdMapping.get(validPoolAddedBy)
-              if (mappedAddedBy) {
-                validPoolAddedBy = mappedAddedBy
-              } else {
-                const userExists = await tx
-                  .select()
-                  .from(users)
-                  .where(eq(users.id, validPoolAddedBy))
-                  .limit(1)
-                if (userExists.length === 0) {
-                  validPoolAddedBy = null
-                }
-              }
-            }
-            const poolData: any = {
-              songId: validPoolSongId,
-              addedBy: validPoolAddedBy,
-              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
-            }
-            if (mode === 'merge') {
-              await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] })
-            } else {
-              await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] })
-            }
-            stats.created++
+            await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
             break
           }
         }
