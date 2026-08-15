@@ -190,13 +190,41 @@ export default defineEventHandler(async (event) => {
     }
   } catch (err: any) {
     const errorMsg = err?.message || '未知错误'
-    console.error(`[时长刷新] 歌曲 #${songId} 获取时长失败:`, errorMsg)
+    const platformName = platform === 'netease' || platform === 'netease-podcast' ? '网易云' : platform === 'tencent' ? 'QQ音乐' : platform === 'migu' ? '咪咕' : platform === 'bilibili' ? 'Bilibili' : platform
+    const statusCode = err.statusCode || err.status || (err.response?.status as number | undefined)
+    // AbortError：请求超时或批量刷新中止
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      return {
+        success: false,
+        songId,
+        durationSeconds: null,
+        message: `${platformName} 响应超时`
+      }
+    }
+    // 404：平台限流或歌曲不存在
+    if (statusCode === 404) {
+      return {
+        success: false,
+        songId,
+        durationSeconds: null,
+        message: `${platformName} 未找到该歌曲`
+      }
+    }
+    if (statusCode === 403 || statusCode === 429) {
+      return {
+        success: false,
+        songId,
+        durationSeconds: null,
+        message: `${platformName} 接口被限制，请稍后重试`
+      }
+    }
+    console.error(`[时长刷新] 歌曲 #${songId} 获取时长失败 (${platformName}):`, errorMsg)
 
     return {
       success: false,
       songId,
       durationSeconds: null,
-      message: '获取时长失败，请稍后重试'
+      message: `${platformName} 接口异常，请稍后重试`
     }
   }
 })

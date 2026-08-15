@@ -4,7 +4,9 @@
  * 采用 platform=html5 获取对浏览器 <audio> 标签兼容性最好的直链
  * 同时转发客户端 IP，解决海外服务器获取到错误 CDN 节点导致访问慢的问题
  */
-import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
+import { defineEventHandler, getQuery, getRequestHeader } from 'h3'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 interface NoRefererPlayUrlRes {
   code: number
@@ -24,10 +26,7 @@ export default defineEventHandler(async (event) => {
   const cid = query.cid as string
 
   if (!bvid) {
-    throw createError({
-      statusCode: 400,
-      message: '缺少 id 参数'
-    })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少 id 参数')
   }
 
   // 提取客户端真实 IP，用于转发给 Bilibili 接口，以便分配最快 CDN 节点
@@ -110,9 +109,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('Bilibili playurl error:', error)
-    throw createError({
-      statusCode: 500,
-      message: error.message || '获取 Bilibili 音频链接失败'
-    })
+    throw createApiError(500, SERVER_ERROR_CODES.BILIBILI_PLAYURL_FAILED, error.message || '获取 Bilibili 音频链接失败')
   }
 })

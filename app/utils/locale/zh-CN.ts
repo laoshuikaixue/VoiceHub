@@ -3915,6 +3915,7 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: '动态验证码错误次数过多，请在 5 分钟后重试',
   AUTH_INCOMPLETE_PARAMS: '参数不完整',
   COMMON_INVALID_PARAMS: '参数错误',
+  BILIBILI_PLAYURL_FAILED: '获取 Bilibili 音频链接失败',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: '姓名、用户名、密码不能为空',
   AUTH_USERNAME_LENGTH_INVALID: '用户名长度需要在3-30个字符之间',
   AUTH_USERNAME_PATTERN_INVALID: '用户名仅可包含英文、数字、下划线和连字符',

@@ -57,6 +57,7 @@ export function autoSchedule(
   )
 
   const emptyResult: AutoScheduleResult = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+
   if (availableCandidates.length === 0 && preSelected.length === 0) {
     return plansCount === 1 ? emptyResult : [emptyResult]
   }
@@ -226,15 +227,18 @@ export function autoScheduleExhaustive(
     return plansCount === 1 ? result : [result]
   }
 
+  // 将时长收窄为 number 类型，消除后续的非空断言
+  type DurationCandidate = Omit<AutoScheduleCandidate, 'durationSeconds'> & { durationSeconds: number }
+
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
   // 按时长降序排列，大歌曲优先，利于剪枝
-  const sorted = [...availableCandidates].sort((a, b) => b.durationSeconds! - a.durationSeconds!)
+  const sorted = [...availableCandidates as DurationCandidate[]].sort((a, b) => b.durationSeconds - a.durationSeconds)
   const n = sorted.length
 
   // 后缀和：suffixSum[i] = sorted[i..n-1] 的时长之和，用于判定能否达到目标
   const suffixSum = new Array(n + 1).fill(0)
   for (let i = n - 1; i >= 0; i--) {
-    suffixSum[i] = suffixSum[i + 1] + sorted[i].durationSeconds!
+    suffixSum[i] = suffixSum[i + 1] + sorted[i].durationSeconds
   }
 
   const solutions: AutoScheduleResult[] = []
@@ -242,7 +246,9 @@ export function autoScheduleExhaustive(
   let nodeCount = 0
   const maxNodes = 100000
   const maxSolutions = plansCount * 3
-  let worstAbs = Infinity
+  // worstAbs 记录当前已收录方案中最差的 absDiff，作为剪枝阈值
+  // 初始值 0 确保首个方案能正确更新该值（Infinity 会导致 absDiff > Infinity 恒为 false 而永不更新）
+  let worstAbs = 0
   const currentSongs: AutoScheduleCandidate[] = []
 
   const record = (currentTotal: number) => {
@@ -256,7 +262,7 @@ export function autoScheduleExhaustive(
     if (seenKeys.has(key)) return
     seenKeys.add(key)
     solutions.push({ songs: [...currentSongs], totalDuration: total, diff, absDiff })
-    if (absDiff > worstAbs) worstAbs = absDiff
+    if (absDiff > worstAbs) worstAbs = absDiff  // worstAbs 仅在被截断后由数组末位赋值或此处更新
     if (solutions.length > maxSolutions) {
       solutions.sort((a, b) => a.absDiff - b.absDiff || b.songs.length - a.songs.length)
       solutions.splice(maxSolutions)
@@ -302,14 +308,14 @@ export function autoScheduleExhaustive(
 
     // 尝试包含 sorted[idx]
     if (direction === 'under') {
-      if (currentTotal + sorted[idx].durationSeconds! <= remainingTarget) {
+      if (currentTotal + sorted[idx].durationSeconds <= remainingTarget) {
         currentSongs.push(sorted[idx])
-        dfs(idx + 1, currentTotal + sorted[idx].durationSeconds!)
+        dfs(idx + 1, currentTotal + sorted[idx].durationSeconds)
         currentSongs.pop()
       }
     } else {
       currentSongs.push(sorted[idx])
-      dfs(idx + 1, currentTotal + sorted[idx].durationSeconds!)
+      dfs(idx + 1, currentTotal + sorted[idx].durationSeconds)
       currentSongs.pop()
     }
 

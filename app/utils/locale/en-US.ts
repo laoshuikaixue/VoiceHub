@@ -3906,6 +3906,7 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'Too many incorrect authenticator codes. Please try again in 5 minutes.',
   AUTH_INCOMPLETE_PARAMS: 'Incomplete parameters',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
+  BILIBILI_PLAYURL_FAILED: 'Failed to fetch Bilibili audio link',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
   AUTH_USERNAME_LENGTH_INVALID: 'Username must be between 3 and 30 characters',
   AUTH_USERNAME_PATTERN_INVALID: 'Username may only contain letters, numbers, underscores, and hyphens',
