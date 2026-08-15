@@ -35,6 +35,48 @@ export interface AutoScheduleResult {
   absDiff: number
 }
 
+/**
+ * 公共前置处理：计算目标秒数、排除固定歌曲、准备候选池
+ * 若无可用的候选歌曲，直接返回 earlyReturn 供调用方提前结束
+ */
+function prepareScheduleInput(
+  targetMinutes: number,
+  candidates: AutoScheduleCandidate[],
+  preSelected: AutoScheduleCandidate[],
+  plansCount: number
+): {
+  targetSeconds: number
+  preSelectedSeconds: number
+  availableCandidates: AutoScheduleCandidate[]
+  emptyResult: AutoScheduleResult
+  earlyReturn?: AutoScheduleResult | AutoScheduleResult[]
+} {
+  const targetSeconds = Math.floor(targetMinutes * 60)
+  const preSelectedIds = new Set(preSelected.map((s) => s.id))
+  const preSelectedSeconds = preSelected.reduce(
+    (sum, s) => sum + (typeof s.durationSeconds === 'number' ? s.durationSeconds : 0),
+    0
+  )
+
+  const availableCandidates = candidates.filter(
+    (s) => !preSelectedIds.has(s.id) && typeof s.durationSeconds === 'number' && s.durationSeconds > 0
+  )
+  const emptyResult: AutoScheduleResult = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+
+  if (availableCandidates.length === 0 && preSelected.length === 0) {
+    return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult, earlyReturn: plansCount === 1 ? emptyResult : [emptyResult] }
+  }
+  if (availableCandidates.length === 0) {
+    const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
+    const total = preSelectedSeconds
+    const diff = total - targetSeconds
+    const result: AutoScheduleResult = { songs: fixedSongs, totalDuration: total, diff, absDiff: Math.abs(diff) }
+    return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult, earlyReturn: plansCount === 1 ? result : [result] }
+  }
+
+  return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult }
+}
+
 export function autoSchedule(
   direction: AutoScheduleDirection,
   targetMinutes: number,
@@ -42,33 +84,9 @@ export function autoSchedule(
   preSelected: AutoScheduleCandidate[] = [],
   plansCount: number = 1
 ): AutoScheduleResult | AutoScheduleResult[] {
-  const targetSeconds = Math.floor(targetMinutes * 60)
-
-  // 计算固定歌曲的总时长，从候选池中排除固定歌曲
-  const preSelectedIds = new Set(preSelected.map((s) => s.id))
-  const preSelectedSeconds = preSelected.reduce(
-    (sum, s) => sum + (typeof s.durationSeconds === 'number' ? s.durationSeconds : 0),
-    0
-  )
-
-  // 可用候选（排除固定歌曲）
-  const availableCandidates = candidates.filter(
-    (s) => !preSelectedIds.has(s.id) && typeof s.durationSeconds === 'number' && s.durationSeconds > 0
-  )
-
-  const emptyResult: AutoScheduleResult = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
-
-  if (availableCandidates.length === 0 && preSelected.length === 0) {
-    return plansCount === 1 ? emptyResult : [emptyResult]
-  }
-
-  if (availableCandidates.length === 0) {
-    const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
-    const total = preSelectedSeconds
-    const diff = total - targetSeconds
-    const result: AutoScheduleResult = { songs: fixedSongs, totalDuration: total, diff, absDiff: Math.abs(diff) }
-    return plansCount === 1 ? result : [result]
-  }
+  const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
+  if (input.earlyReturn !== undefined) return input.earlyReturn
+  const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
   const songMap = new Map(availableCandidates.map((s) => [s.id, s]))
@@ -203,28 +221,9 @@ export function autoScheduleExhaustive(
   preSelected: AutoScheduleCandidate[] = [],
   plansCount: number = 1
 ): AutoScheduleResult | AutoScheduleResult[] {
-  const targetSeconds = Math.floor(targetMinutes * 60)
-  const preSelectedIds = new Set(preSelected.map((s) => s.id))
-  const preSelectedSeconds = preSelected.reduce(
-    (sum, s) => sum + (typeof s.durationSeconds === 'number' ? s.durationSeconds : 0),
-    0
-  )
-
-  const availableCandidates = candidates.filter(
-    (s) => !preSelectedIds.has(s.id) && typeof s.durationSeconds === 'number' && s.durationSeconds > 0
-  )
-
-  const emptyResult: AutoScheduleResult = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
-  if (availableCandidates.length === 0 && preSelected.length === 0) {
-    return plansCount === 1 ? emptyResult : [emptyResult]
-  }
-  if (availableCandidates.length === 0) {
-    const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
-    const total = preSelectedSeconds
-    const diff = total - targetSeconds
-    const result: AutoScheduleResult = { songs: fixedSongs, totalDuration: total, diff, absDiff: Math.abs(diff) }
-    return plansCount === 1 ? result : [result]
-  }
+  const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
+  if (input.earlyReturn !== undefined) return input.earlyReturn
+  const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
 
   // 将时长收窄为 number 类型，消除后续的非空断言
   type DurationCandidate = Omit<AutoScheduleCandidate, 'durationSeconds'> & { durationSeconds: number }

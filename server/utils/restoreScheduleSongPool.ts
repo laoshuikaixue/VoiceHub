@@ -49,10 +49,20 @@ export async function restoreScheduleSongPoolRecord(
     }
   }
 
+  let createdAt = new Date()
+  if (record.createdAt) {
+    const d = new Date(record.createdAt)
+    if (!Number.isNaN(d.getTime())) {
+      createdAt = d
+    } else {
+      console.warn(`备选池记录 createdAt "${record.createdAt}" 非法，使用当前时间`)
+    }
+  }
+
   const poolData = {
     songId: validPoolSongId,
     addedBy: validPoolAddedBy,
-    createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+    createdAt
   }
 
   await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] })

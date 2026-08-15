@@ -216,7 +216,7 @@
               </div>
               <button
                 class="hidden lg:flex p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-info hover:border-info-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
-                v-if="activeTab === 'normal' || activeTab === 'all'"
+                v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
                 :title="locale.addAllPending"
                 @click="moveAllToPool"
               >
@@ -243,7 +243,7 @@
               <div class="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
                 <div
                   class="h-full bg-primary rounded-full transition-all duration-300 ease-out"
-                  :style="{ width: `${Math.round((Number(refreshingAllDurations.progress.split('/')[0]) / Number(refreshingAllDurations.progress.split('/')[1])) * 100 || 0)}%` }"
+                  :style="{ width: `${refreshingAllDurations.total > 0 ? Math.round((refreshingAllDurations.done / refreshingAllDurations.total) * 100) : 0}%` }"
                 />
               </div>
               <span class="text-[10px] font-bold text-text-tertiary whitespace-nowrap">
@@ -503,7 +503,7 @@
 
                     <!-- 待排库：加入备选池按钮 -->
                     <button
-                      v-if="activeTab === 'normal' || activeTab === 'all'"
+                      v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
                       class="hidden lg:flex p-1.5 rounded-lg bg-info-10 border border-info-20 text-info hover:bg-info-20 transition-colors"
                       :title="locale.addSingleToPool"
                       @click.stop="addSingleToPool(song.id)"
@@ -524,7 +524,7 @@
                     <!-- 移动端加入备选池按钮 -->
                     <button
                       class="flex items-center justify-center lg:hidden p-2 rounded-full bg-info-10 text-info hover:bg-info-20 active:scale-95 transition-all flex-shrink-0"
-                      v-if="activeTab === 'normal' || activeTab === 'all'"
+                      v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
                       :title="locale.addSingleToPool"
                       @click.stop="addSingleToPool(song.id)"
                     >
@@ -781,7 +781,7 @@
                     : ''
                 ]"
                 :data-schedule-id="schedule.id"
-                draggable="true"
+                :draggable="true"
                 @dragend="dragEnd"
                 @dragleave="handleDragLeave"
                 @dragstart="dragScheduleStart($event, schedule)"
@@ -1008,7 +1008,7 @@
             </button>
             <button
               class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-info rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              v-if="activeTab === 'normal' || activeTab === 'all'"
+              v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
               :title="locale.addAllPending"
               @click="moveAllToPool"
             >
@@ -1914,7 +1914,7 @@ const replayModalSongId = ref(null)
 // 刷新时长状态（每首歌独立追踪）
 const refreshingDuration = ref({})
 // 批量刷新时长状态
-const refreshingAllDurations = ref({ running: false, progress: '', success: 0, fail: 0 })
+const refreshingAllDurations = ref({ running: false, progress: '', success: 0, fail: 0, done: 0, total: 0 })
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
 // 自动排期状态
 const showAutoScheduleDialog = ref(false)
@@ -3131,9 +3131,11 @@ const refreshAllDurations = async () => {
 
   refreshingAllDurations.value = {
     running: true,
-    progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`),
+    progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`, toRefresh.length),
     success: 0,
-    fail: 0
+    fail: 0,
+    done: 0,
+    total: toRefresh.length
   }
   let successCount = 0
   let failCount = 0
@@ -3181,6 +3183,7 @@ const refreshAllDurations = async () => {
           `${i + 1} / ${toRefresh.length}`,
           `${i + 1}`, `${toRefresh.length}`
         )
+        refreshingAllDurations.value.done = i + 1
         // 短暂延迟，避免请求过于密集；已取消时不再等待
         if (!signal.aborted) {
           await new Promise((resolve) => setTimeout(resolve, 150))
@@ -3189,7 +3192,7 @@ const refreshAllDurations = async () => {
     }
   } finally {
     refreshAllAbortController = null
-    refreshingAllDurations.value = { running: false, progress: '' }
+    refreshingAllDurations.value = { running: false, progress: '', done: 0, total: 0 }
   }
 
   if (window.$showNotification) {

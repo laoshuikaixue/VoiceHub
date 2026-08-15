@@ -18,6 +18,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const songIds = body.songIds.map(Number).filter((n) => Number.isInteger(n) && n > 0)
+  if (songIds.length === 0) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'songIds 全部无效')
+  }
+  if (songIds.length > 1000) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'songIds 数量不能超过 1000')
+  }
   const now = getServerDate()
 
   // 批量查询歌曲，避免 N+1
@@ -35,7 +41,7 @@ export default defineEventHandler(async (event) => {
   for (const songId of songIds) {
     const song = songsMap.get(songId)
     if (!song) {
-      skipped.push({ songId, reason: '未处理' })
+      skipped.push({ songId, reason: '歌曲不存在' })
       continue
     }
     insertValues.push({ songId, title: song.title, artist: song.artist, createdAt: now, addedBy: user.id })
@@ -54,7 +60,7 @@ export default defineEventHandler(async (event) => {
       if (insertedIds.has(v.songId)) {
         added.push({ songId: v.songId, title: v.title, artist: v.artist })
       } else {
-        skipped.push({ songId: v.songId, reason: '未处理' })
+        skipped.push({ songId: v.songId, reason: '已存在于备选池' })
       }
     }
   }
