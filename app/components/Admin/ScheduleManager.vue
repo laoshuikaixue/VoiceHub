@@ -1555,7 +1555,7 @@
                 {{ locale.nextPlan }}
                 <ChevronRight class="w-3.5 h-3.5" />
               </span>
-              <span v-else-if="autoScheduleAlgorithm === 'exhaustive'" class="flex items-center gap-1.5">
+              <span v-else-if="actualExhaustive" class="flex items-center gap-1.5">
                 <Plus class="w-3.5 h-3.5" />
                 {{ locale.newPlan }}
               </span>
@@ -1960,6 +1960,10 @@ const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 
 const autoSchedulePlans = ref([])
 const currentPlanIndex = ref(0)
 const autoScheduleAlgorithm = ref('greedy')
+const actualExhaustive = computed(() => {
+  return autoScheduleAlgorithm.value === 'exhaustive' ||
+    (autoScheduleAlgorithm.value === 'auto' && autoScheduleCandidates.value.length < 20)
+})
 const generatingNewPlan = ref(false)
 // 备选池
 const songPool = ref([])
@@ -3439,7 +3443,7 @@ const goToNextPlan = () => {
   if (currentPlanIndex.value < autoSchedulePlans.value.length - 1) {
     currentPlanIndex.value++
     autoScheduleResult.value = autoSchedulePlans.value[currentPlanIndex.value]
-  } else if (autoScheduleAlgorithm.value === 'exhaustive') {
+  } else if (actualExhaustive.value) {
     generateMorePlans()
   }
 }
