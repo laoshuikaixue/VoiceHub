@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   for (const songId of songIds) {
     const song = songsMap.get(songId)
     if (!song) {
-      skipped.push({ songId, reason: '歌曲不存在' })
+      skipped.push({ songId, reason: '歌曲不存在（无法加入备选池）' })
       continue
     }
     insertValues.push({ songId, title: song.title, artist: song.artist, createdAt: now, addedBy: user.id })

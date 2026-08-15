@@ -57,7 +57,8 @@ export default defineEventHandler(async (event) => {
       const resp1: any = await $fetch(target_url, {
         method: 'GET',
         params: { bvid },
-        headers
+        headers,
+        timeout: 10000
       })
 
       if (!resp1?.data?.pages?.[0]?.cid) {
@@ -70,7 +71,8 @@ export default defineEventHandler(async (event) => {
             headers: {
               Referer: 'https://www.bilibili.com/',
               'User-Agent': headers['User-Agent']
-            }
+            },
+            timeout: 10000
           })
           if (fallback?.data?.pages?.[0]?.cid) {
             finalCid = fallback.data.pages[0].cid
@@ -98,7 +100,8 @@ export default defineEventHandler(async (event) => {
         bvid,
         cid: finalCid
       },
-      headers
+      headers,
+      timeout: 10000
     })
 
     if (resp2.data?.durl?.length > 0) {

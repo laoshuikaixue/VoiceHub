@@ -112,7 +112,7 @@ export const scheduleSongPool = pgTable('ScheduleSongPool', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   songId: integer('songId').notNull().references(() => songs.id, { onDelete: 'cascade' }),
-  addedBy: integer('addedBy').references(() => users.id)
+  addedBy: integer('addedBy').references(() => users.id, { onDelete: 'set null' })
 }, (table) => [
   unique('schedule_song_pool_song_unique').on(table.songId)
 ]);

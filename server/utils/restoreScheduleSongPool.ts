@@ -65,6 +65,6 @@ export async function restoreScheduleSongPoolRecord(
     createdAt
   }
 
-  await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] })
-  onInserted?.()
+  const inserted = await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing({ target: [scheduleSongPool.songId] }).returning()
+  if (inserted.length > 0) onInserted?.()
 }
