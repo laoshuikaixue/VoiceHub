@@ -4174,6 +4174,7 @@ const confirmCopyDate = async () => {
     loading.value = true
     try {
       let totalCopied = 0
+      let succeededTargetDates = []
 
       for (let i = 0; i < targetDays; i++) {
         const srcDay = i % sourceDays
@@ -4191,6 +4192,7 @@ const confirmCopyDate = async () => {
 
         if (result?.copiedCount > 0) {
           totalCopied += result.copiedCount
+          succeededTargetDates.push(tgtDate)
         }
       }
 
@@ -4212,6 +4214,20 @@ const confirmCopyDate = async () => {
         )
       }
     } catch (error) {
+      // 回滚已成功写入的目标日期排期（服务端检查过目标日期原本为空，可安全删除）
+      if (succeededTargetDates.length > 0) {
+        try {
+          for (const dateStr of succeededTargetDates) {
+            await $fetch('/api/admin/schedule/remove-all-date', {
+              method: 'POST',
+              body: { date: dateStr },
+              ...auth.getAuthConfig()
+            })
+          }
+        } catch (rollbackError) {
+          console.error('回滚已复制的排期失败:', rollbackError)
+        }
+      }
       console.error('复制排期日期失败:', error)
       if (window.$showNotification) {
         const backendMessage =
@@ -4276,11 +4292,12 @@ const saveDraft = async () => {
       .map((s) => s.id)
 
     // 先写入全部草稿，全部成功后再删除旧排期
+    const newDraftIds = []
     for (let i = 0; i < localScheduledSongs.value.length; i++) {
       const song = localScheduledSongs.value[i]
 
       try {
-        await $fetch('/api/admin/schedule/draft', {
+        const created = await $fetch('/api/admin/schedule/draft', {
           method: 'POST',
           body: {
             songId: song.song.id,
@@ -4291,6 +4308,9 @@ const saveDraft = async () => {
           },
           ...auth.getAuthConfig()
         })
+        if (created?.id) {
+          newDraftIds.push(created.id)
+        }
       } catch (error) {
         console.error(`创建草稿排期失败 (歌曲: ${song.song.title}):`, error)
         throw error
@@ -4298,16 +4318,29 @@ const saveDraft = async () => {
     }
 
     // 全部写入成功后，删除旧排期和草稿
-    for (const scheduleId of existingScheduleIds) {
-      try {
+    try {
+      for (const scheduleId of existingScheduleIds) {
         await $fetch(`/api/admin/schedule/remove`, {
           method: 'POST',
           body: { scheduleId },
           ...auth.getAuthConfig()
         })
-      } catch (deleteError) {
-        console.warn('删除旧排期失败:', deleteError)
       }
+    } catch (deleteError) {
+      console.error('删除旧排期失败:', deleteError)
+      // 删除失败时回滚新建草稿
+      for (const draftId of newDraftIds) {
+        try {
+          await $fetch('/api/admin/schedule/remove', {
+            method: 'POST',
+            body: { scheduleId: draftId },
+            ...auth.getAuthConfig()
+          })
+        } catch (rollbackErr) {
+          console.error('回滚新建草稿失败:', rollbackErr)
+        }
+      }
+      throw deleteError
     }
 
     hasChanges.value = false

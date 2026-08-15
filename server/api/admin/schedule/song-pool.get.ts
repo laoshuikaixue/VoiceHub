@@ -14,6 +14,8 @@ export default defineEventHandler(async (event) => {
     throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有歌曲管理员及以上权限才能管理备选池')
   }
 
+  const isSuperAdmin = user.role === 'SUPER_ADMIN'
+
   const poolRows = await db.select().from(scheduleSongPool).orderBy(scheduleSongPool.createdAt)
 
   if (poolRows.length === 0) {
@@ -75,7 +77,7 @@ export default defineEventHandler(async (event) => {
       cardCodeId: song.cardCodeId,
       usedCardCode: song.cardCodeId != null,
       hasSubmissionNote: song.submissionNote ? true : false,
-      submissionNote: song.submissionNote,
+      submissionNote: (isSuperAdmin || song.requesterId === user.id) ? song.submissionNote : undefined,
       addedBy: row.addedBy,
       addedByName: addedByUser?.name || addedByUser?.username || null,
       createdAt: row.createdAt

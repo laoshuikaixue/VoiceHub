@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
     // 验证必填字段
     if (!title || !artist) {
-      throw createApiError(400, 'SONG_TITLE_ARTIST_REQUIRED', 'Title and artist are required')
+      throw createApiError(400, SERVER_ERROR_CODES.SONG_TITLE_ARTIST_REQUIRED, 'Title and artist are required')
     }
 
     // 校验时长范围（30秒~1小时）
