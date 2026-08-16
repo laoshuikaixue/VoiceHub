@@ -5,7 +5,6 @@
 .nitro
 .cache
 dist
-docs
 
 # Node dependencies
 node_modules
@@ -13,6 +12,9 @@ node_modules
 # Logs
 logs
 *.log
+
+# Test coverage
+coverage
 
 # Backups
 backups/

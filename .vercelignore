@@ -2,7 +2,12 @@
 node_modules
 .nuxt
 .output
+.data
+.nitro
+.cache
 .env
 .env.*
 !.env.example
+coverage
+backups
 README.md 

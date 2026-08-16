@@ -1,5 +1,8 @@
 .nuxt/
 .output/
+.data/
+.nitro/
+.cache/
 dist/
 node_modules/
 public/
@@ -8,12 +11,10 @@ coverage/
 *.min.css
 .DS_Store
 *.log
+pnpm-lock.yaml
 vendor/
 oh_modules/
 **/oh_modules/
-VoiceHub-hmos/oh_modules/
-VoiceHub-hmos/oh-package-lock.json5
 app/drizzle/
 **/build/
 **/.preview/
-VoiceHub-hmos/

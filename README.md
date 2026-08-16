@@ -586,7 +586,7 @@ pnpm run safe-migrate
 
 ### 升级与迁移
 
-有关如何升级现有部署和迁移数据，请参阅 [升级指南](UPGRADE.md)。
+有关如何升级现有部署和迁移数据，请参阅 [升级指南](docs/UPGRADE.md)。
 
 ## 系统配置
 
