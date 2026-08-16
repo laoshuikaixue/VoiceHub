@@ -2871,31 +2871,45 @@ const fetchSongPool = async () => {
 const moveAllToPool = async () => {
   const pendingSongIds = allUnscheduledSongs.value.map((s) => s.id)
   if (pendingSongIds.length === 0) return
-  try {
-    const result = await $fetch('/api/admin/schedule/song-pool', {
-      method: 'POST',
-      ...auth.getAuthConfig(),
-      body: { songIds: pendingSongIds }
-    })
-    await fetchSongPool()
-    const added = result.added || []
-    const skipped = result.skipped || []
-    if (added.length > 0) {
+
+  confirmDialogTitle.value = locale.value.addAllPendingConfirmTitle
+  confirmDialogMessage.value = locale.value.addAllPendingConfirmMessage(pendingSongIds.length)
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = locale.value.confirm
+
+  confirmAction.value = async () => {
+    try {
+      const result = await $fetch('/api/admin/schedule/song-pool', {
+        method: 'POST',
+        ...auth.getAuthConfig(),
+        body: { songIds: pendingSongIds }
+      })
+      await fetchSongPool()
+      const added = result.added || []
+      const skipped = result.skipped || []
+      if (added.length > 0) {
+        window.$showNotification && window.$showNotification(
+          `${locale.value.addAllPendingSuccess(added.length)}`,
+          'success'
+        )
+      }
+      if (skipped.length > 0) {
+        const reasons = skipped.map((s) => s.reason).join('、')
+        window.$showNotification && window.$showNotification(
+          `${locale.value.addAllPendingSkipped(skipped.length)}（${reasons}）`,
+          'warning'
+        )
+      }
+    } catch (err) {
+      console.error('移入备选池失败:', err)
       window.$showNotification && window.$showNotification(
-        `${locale.value.addAllPendingSuccess(added.length)}`,
-        'success'
+        locale.value.addAllPendingFailed,
+        'error'
       )
     }
-    if (skipped.length > 0) {
-      const reasons = skipped.map((s) => s.reason).join('、')
-      window.$showNotification && window.$showNotification(
-        `${locale.value.addAllPendingSkipped(skipped.length)}（${reasons}）`,
-        'warning'
-      )
-    }
-  } catch (err) {
-    console.error('移入备选池失败:', err)
   }
+
+  showConfirmDialog.value = true
 }
 
 // 单首加入备选池

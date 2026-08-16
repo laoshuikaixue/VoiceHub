@@ -278,8 +278,8 @@
     {
       "idx": 39,
       "version": "7",
-      "when": 1786406400000,
-      "tag": "20260811000000_add_schedule_song_pool",
+      "when": 1786809600000,
+      "tag": "20260816000000_add_schedule_song_pool",
       "breakpoints": true
     }
   ]

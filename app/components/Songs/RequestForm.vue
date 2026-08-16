@@ -627,7 +627,7 @@
                         <span class="similar-text">{{ locale.allEpisodesSubmitted }}</span>
                         <button
                           v-if="canResubmitBilibiliEpisodes(result)"
-                          :disabled="submitting"
+                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
@@ -643,14 +643,13 @@
                       >
                         <span class="similar-text">{{ locale.partialEpisodesSubmitted }}</span>
                         <button
-                          :disabled="submitting"
+                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                         >
                           {{ locale.chooseEpisodes }}
                         </button>
                       </div>
-                      <!-- 检查是否已存在相似歌曲 -->
                       <div v-else-if="getSimilarSong(result)" class="similar-song-info">
                         <!-- 根据歌曲状态显示不同的文本 -->
                         <span
@@ -669,7 +668,7 @@
                         <!-- 已播放且允许重播申请：管理员显示选择投稿，普通用户显示申请重播 -->
                         <button
                           v-if="getSimilarSong(result)?.played && enableReplayRequests"
-                          :disabled="submitting"
+                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
@@ -738,7 +737,7 @@
                       </button>
                       <button
                         v-else
-                        :disabled="submitting"
+                        :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
                         class="select-btn"
                         @click.stop.prevent="submitSong(result)"
                       >
@@ -761,7 +760,7 @@
                   <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
                     {{ locale.loginRequiredToSubmit }}
                   </button>
-                  <button v-else class="manual-submit-btn" type="button" @click="showManualModal = true">
+                  <button v-else :disabled="!canSubmitFromSearch" class="manual-submit-btn" type="button" @click="showManualModal = true">
                     {{ locale.manualSubmitLong }}
                   </button>
                 </div>
@@ -775,7 +774,7 @@
                 <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
                   {{ locale.loginRequiredToSubmit }}
                 </button>
-                <button v-else class="manual-submit-btn" type="button" @click="showManualModal = true">
+                <button v-else :disabled="!canSubmitFromSearch" class="manual-submit-btn" type="button" @click="showManualModal = true">
                   {{ locale.manualSubmit }}
                 </button>
               </div>
@@ -1318,7 +1317,7 @@
                 {{ locale.cancel }}
               </button>
               <button
-                :disabled="!canSubmitManualForm || submitting"
+                :disabled="(!canSubmitFromSearch || !canSubmitManualForm || submitting)"
                 class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
                 type="button"
                 @click="handleManualSubmit"
@@ -1647,6 +1646,8 @@ const loadingSubmissionStatus = ref(false)
 // 搜索相关
 const searching = ref(false)
 const searchResults = ref([])
+const restrictionCheckMap = ref(new Map())
+const restrictionChecking = ref(false)
 const selectedCover = ref('')
 const selectedUrl = ref('')
 const audioPlayer = useAudioPlayer() // 使用全局音频播放器
@@ -2622,6 +2623,8 @@ const handleSearch = async () => {
       }
 
       console.log('搜索成功，找到', results.data.length, '首歌曲')
+      // 异步预检服务端投稿限制（same-song / same-artist）
+      fetchRestrictionChecks()
     } else {
       searchResults.value = []
       const errorMsg = results && results.error ? results.error : locale.value.noMatchingSongs
@@ -3770,6 +3773,7 @@ const resetForm = () => {
   artist.value = ''
   preferredPlayTimeId.value = ''
   searchResults.value = []
+  restrictionCheckMap.value = new Map()
   selectedCover.value = ''
   selectedUrl.value = ''
   showManualModal.value = false
@@ -3941,6 +3945,95 @@ watch(manualPlayUrl, (newUrl) => {
 })
 
 // 计算属性：检查手动表单是否可以提交
+const canSubmitFromSearch = computed(() => {
+  // 复用 checkSubmissionLimit：包含管理员豁免、投稿关闭、时段名额、日/周/月限额及卡码绕过
+  return checkSubmissionLimit().canSubmit
+})
+
+// 预检服务端投稿限制（same-song / same-artist），避免用户点击按钮后才报错
+const checkSongRestriction = async (title, artist) => {
+  if (!auth.isAuthenticated.value) {
+    return { blocked: false, reason: null }
+  }
+  if (!title || !artist) {
+    return { blocked: false, reason: null }
+  }
+
+  try {
+    const authConfig = auth.getAuthConfig()
+    const result = await $fetch('/api/songs/check-restriction', {
+      method: 'POST',
+      body: { title, artist },
+      ...authConfig
+    })
+    return result
+  } catch (err) {
+    // 仅在鉴权失败时暴露异常，仍 fail-open 不阻断用户；其余错误静默降级
+    const status =
+      err && (err.statusCode || (err.data && err.data.statusCode))
+    if (status === 401) {
+      console.warn('投稿限制预检鉴权失败，未应用限制', err)
+    }
+    return { blocked: false, reason: null }
+  }
+}
+
+const isSongBlockedByRestriction = (result) => {
+  if (auth.isAdmin.value) return false
+  if (restrictionChecking.value) return false
+  const songTitle = result.song || result.title
+  const songArtist = result.singer || result.artist
+  const key = `${songTitle}||${songArtist}`
+  const check = restrictionCheckMap.value.get(key)
+  if (!check) return false
+  return check.blocked
+}
+
+const getRestrictionReason = (result) => {
+  const songTitle = result.song || result.title
+  const songArtist = result.singer || result.artist
+  const key = `${songTitle}||${songArtist}`
+  const check = restrictionCheckMap.value.get(key)
+  return check?.reason || null
+}
+
+const fetchRestrictionChecks = async () => {
+  // 每次搜索后清空旧预检结果，避免上一轮结果污染
+  restrictionCheckMap.value = new Map()
+  if (!auth.isAuthenticated.value || searchResults.value.length === 0) return
+
+  restrictionChecking.value = true
+  const authConfig = auth.getAuthConfig()
+
+  for (const result of searchResults.value) {
+    const songTitle = result.song || result.title
+    const songArtist = result.singer || result.artist
+    if (!songTitle || !songArtist) continue
+
+    const key = `${songTitle}||${songArtist}`
+    if (restrictionCheckMap.value.has(key)) continue
+
+    try {
+      const check = await $fetch('/api/songs/check-restriction', {
+        method: 'POST',
+        body: { title: songTitle, artist: songArtist },
+        ...authConfig
+      })
+      restrictionCheckMap.value.set(key, check)
+    } catch (err) {
+      // 仅在鉴权失败时暴露异常，仍 fail-open 不阻断用户；其余错误静默降级
+      const status =
+        err && (err.statusCode || (err.data && err.data.statusCode))
+      if (status === 401) {
+        console.warn('投稿限制预检鉴权失败，未应用限制', err)
+      }
+      restrictionCheckMap.value.set(key, { blocked: false, reason: null })
+    }
+  }
+
+  restrictionChecking.value = false
+}
+
 const canSubmitManualForm = computed(() => {
   // 必填字段检查
   if (!manualArtist.value.trim()) {

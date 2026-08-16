@@ -214,6 +214,11 @@ export const systemSettings = pgTable('SystemSettings', {
   enableCardCodeRequests: boolean('enableCardCodeRequests').default(false).notNull(),
   requireCardCodeForRequests: boolean('requireCardCodeForRequests').default(false).notNull(),
   enableCardCodeLimitBypass: boolean('enableCardCodeLimitBypass').default(false).notNull(),
+  // 重复投稿限制：对同一首歌/同一歌手，在其进入排期后的设定时间窗口内禁止再次投稿
+  enableSubmissionRestriction: boolean('enableSubmissionRestriction').default(false).notNull(),
+  submissionRestrictionScope: text('submissionRestrictionScope').default('all').notNull(),
+  sameSongRestrictionHours: integer('sameSongRestrictionHours'),
+  sameArtistRestrictionHours: integer('sameArtistRestrictionHours'),
   
   // 验证码配置
   captchaProvider: text('captchaProvider').default('graphic').notNull(),

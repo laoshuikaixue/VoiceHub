@@ -103,9 +103,13 @@ export function autoSchedule(
           total = newTotal
         }
       } else {
-        result.push(song)
-        total = newTotal
-        if (total >= remainingTarget) break
+        if (remainingTarget <= 0) {
+          // 已选歌曲时长已超过目标，无需再追加
+        } else {
+          result.push(song)
+          total = newTotal
+          if (total >= remainingTarget) break
+        }
       }
     }
 
@@ -129,6 +133,12 @@ export function autoSchedule(
         const currentSong = result[ri]
         const currentDuration = currentSong.durationSeconds!
         const totalWithoutThis = total - currentDuration
+        // 移除当前歌后仍满足约束，直接移除（更优解）
+        if (totalWithoutThis >= remainingTarget) {
+          result.splice(ri, 1)
+          total = totalWithoutThis
+          break
+        }
         const minReplacement = remainingTarget - totalWithoutThis
         if (minReplacement >= currentDuration) continue
         for (let ii = 0; ii < remaining.length; ii++) {

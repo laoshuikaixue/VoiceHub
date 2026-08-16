@@ -341,6 +341,10 @@ export default defineEventHandler(async (event) => {
               try {
                 await db.$transaction(
                   async (tx) => {
+                    const stats = {
+                      created: 0,
+                      warnings: restoreResults.details.warnings
+                    }
                     // 根据表名选择恢复策略
                     switch (tableName) {
                       case 'users':
@@ -1145,6 +1149,10 @@ export default defineEventHandler(async (event) => {
                           'enableCardCodeRequests',
                           'requireCardCodeForRequests',
                           'enableCardCodeLimitBypass',
+                          'enableSubmissionRestriction',
+                          'submissionRestrictionScope',
+                          'sameSongRestrictionHours',
+                          'sameArtistRestrictionHours',
                           'hideStudentInfo',
                           'smtpEnabled',
                           'smtpHost',
