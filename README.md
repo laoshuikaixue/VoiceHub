@@ -764,7 +764,8 @@ VoiceHub/
 │   │   │   ├── OAuthBindingsModal.vue # OAuth 绑定详情弹窗
 │   │   │   ├── OperationsDashboard.vue # 运维监控面板
 │   │   │   ├── Ops/                     # 运维看板通用展示组件
-│   │   │   │   └── OpsPanel.vue          # 统一状态面板壳
+│   │   │   │   ├── OpsPanel.vue          # 统一状态面板壳
+│   │   │   │   └── OpsTimeChart.vue      # 运维指标时间趋势图
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
