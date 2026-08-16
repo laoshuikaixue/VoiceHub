@@ -6,31 +6,30 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-      - JWT_SECRET=your-jwt-secret-here
-      - NODE_ENV=production
-      - SKIP_BUILD=true
+      DATABASE_URL: postgresql://user:password@postgres:5432/voicehub
+      JWT_SECRET: your-jwt-secret-here
+      NODE_ENV: production
+      SKIP_BUILD: true
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-
+  
   postgres:
-    build:
-      context: .
-      dockerfile: Dockerfile-postgres
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=voicehub
+    image: postgres:18-alpine
+    restart: unless-stopped
+    shm_size: 1gb
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: voicehub
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U user -d voicehub']
-      interval: 5s
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "voicehub"]
+      interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
 volumes:
   postgres_data:

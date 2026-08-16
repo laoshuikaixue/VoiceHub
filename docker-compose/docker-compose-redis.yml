@@ -20,6 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-postgres
+    shm_size: 1gb
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
@@ -27,8 +28,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U user -d voicehub']
-      interval: 5s
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "voicehub"]
+      interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped

@@ -97,7 +97,7 @@
 - **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
 - **Vue 3**：响应式前端框架，使用Composition API
 - **TypeScript**：类型安全的JavaScript，提供完整的类型定义
-- **UNO CSS**：实用优先的CSS框架，响应式设计
+- **TailwindCSS**：实用优先的CSS框架，响应式设计
 - **Vue Router**：前端路由管理
 
 ### 后端技术
@@ -109,7 +109,6 @@
 - **Redis**：可选的分布式短期状态服务，仅用于验证码、限流和临时安全状态
 - **JWT**：标准JWT认证机制，支持24小时token有效期
 - **bcrypt**：密码加密，安全的哈希算法
-- **Multer**：文件上传处理，支持多种存储方式
 
 ## 系统架构
 
@@ -732,7 +731,6 @@ VoiceHub/
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
 │       ├── docker-build.yml   # Docker 镜像构建
-│       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
 │       ├── nix.yml            # Nix 构建校验
 │       └── update-nix-pnpm-hash.yml # 自动同步 pnpmDeps 哈希
 ├── app/                       # Nuxt 4 应用主目录
@@ -751,9 +749,9 @@ VoiceHub/
 │   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       ├── year-review.css    # 年度回顾样式
 │   │       └── themes/            # 主题目录
-│   │           ├── dark.css         # 深色主题设计变量
-│   │           ├── light.css        # 亮色主题设计变量
-│   │           └── ModernLight.css # 现代浅色主题设计变量
+│   │       │   ├── ClassicDark.css   # 深色主题设计变量
+│   │       │   ├── ClassicLight.css  # 亮色主题设计变量
+│   │       │   └── ModernLight.css   # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
@@ -787,6 +785,7 @@ VoiceHub/
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   │   ├── SongManagement.vue     # 歌曲管理
+│   │   │   ├── SongQuotaManager.vue  # 点歌额度管理
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
@@ -1375,7 +1374,6 @@ VoiceHub/
 - **`app/components/`**: Vue组件库，按功能模块组织
   - **`Account/`**: 账号管理组件（社交账号绑定等）
   - **`Admin/`**: 管理后台组件（排期、用户、数据分析等）
-  - **`Admin_Backup/`**: 管理组件备份目录
   - **`AMLL/`**: Apple Music-Like Lyrics歌词播放器组件
   - **`Auth/`**: 认证相关组件（登录、OAuth绑定等）
   - **`Common/`**: 通用业务组件
