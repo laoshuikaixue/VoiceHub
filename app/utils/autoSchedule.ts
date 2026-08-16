@@ -127,9 +127,10 @@ export function autoSchedule(
       }
     } else {
       const selectedIds = new Set(result.map((s) => s.id))
-      const remaining = availableCandidates.filter((s) => !selectedIds.has(s.id))
+      let remaining = availableCandidates.filter((s) => !selectedIds.has(s.id))
         .sort((a, b) => a.durationSeconds! - b.durationSeconds!)
-      for (let ri = result.length - 1; ri >= 0; ri--) {
+      let ri = result.length - 1
+      search: while (ri >= 0) {
         const currentSong = result[ri]
         const currentDuration = currentSong.durationSeconds!
         const totalWithoutThis = total - currentDuration
@@ -137,10 +138,17 @@ export function autoSchedule(
         if (totalWithoutThis >= remainingTarget) {
           result.splice(ri, 1)
           total = totalWithoutThis
-          break
+          selectedIds.delete(currentSong.id)
+          remaining = availableCandidates.filter((s) => !selectedIds.has(s.id))
+            .sort((a, b) => a.durationSeconds! - b.durationSeconds!)
+          ri = result.length - 1
+          continue
         }
         const minReplacement = remainingTarget - totalWithoutThis
-        if (minReplacement >= currentDuration) continue
+        if (minReplacement >= currentDuration) {
+          ri--
+          continue
+        }
         for (let ii = 0; ii < remaining.length; ii++) {
           const candidate = remaining[ii]
           if (
@@ -152,9 +160,11 @@ export function autoSchedule(
             selectedIds.delete(currentSong.id)
             selectedIds.add(candidate.id)
             remaining.splice(ii, 1)
-            break
+            ri = result.length - 1
+            break search
           }
         }
+        ri--
       }
     }
 

@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { scheduleSongPool, songs, users } from '~/drizzle/schema'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 /**
  * 恢复单条备选池记录（含 songId + addedBy 外键映射校验）
@@ -49,7 +50,7 @@ export async function restoreScheduleSongPoolRecord(
     }
   }
 
-  let createdAt = new Date()
+  let createdAt = getServerDate()
   if (record.createdAt) {
     const d = new Date(record.createdAt)
     if (!Number.isNaN(d.getTime())) {

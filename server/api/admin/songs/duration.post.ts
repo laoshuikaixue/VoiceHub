@@ -116,6 +116,14 @@ export default defineEventHandler(async (event) => {
       const parts = musicId.split(':')
       const bvid = parts[0]
       const page = parts.length > 2 ? Number(parts[2]) : 1
+      if (parts.length > 2 && (!Number.isInteger(page) || page < 1)) {
+        return {
+          success: false,
+          songId,
+          durationSeconds: null,
+          message: `哔哩哔哩视频 ID 格式无效：${musicId}`
+        }
+      }
       const viewResp: any = await $fetch(
         'https://api.bilibili.com/x/web-interface/view',
         {
