@@ -246,10 +246,10 @@
       <section>
         <OpsPanel :title="locale.application.routePerformance" :subtitle="locale.application.routePerformanceDetail" :status="routePerformancePanelStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!routePerformanceRows.length && !initialOperationsLoading" :refreshable="false">
           <div class="overflow-x-auto">
-            <table class="data-table min-w-[1080px]">
-              <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>403</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+            <table class="data-table min-w-[1020px]">
+              <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>403</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in routePerformanceRows" :key="item.route"><td>{{ item.method }}</td><td>{{ item.route }}</td><td>{{ item.qps }}</td><td>{{ item.p50 }}</td><td>{{ item.p95 }}</td><td>{{ item.p99 }}</td><td>{{ item.clientErrors }}</td><td>{{ item.status401 }}</td><td>{{ item.status403 }}</td><td>{{ item.status429 }}</td><td>{{ item.serverErrors }}</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
+                <tr v-for="item in routePerformanceRows" :key="item.route"><td>{{ item.method }}</td><td>{{ item.route }}</td><td>{{ item.p50 }}</td><td>{{ item.p95 }}</td><td>{{ item.p99 }}</td><td>{{ item.clientErrors }}</td><td>{{ item.status401 }}</td><td>{{ item.status403 }}</td><td>{{ item.status429 }}</td><td>{{ item.serverErrors }}</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
               </tbody>
             </table>
           </div>
@@ -263,7 +263,11 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <OpsPanel :title="locale.application.latencyBreakdown" :subtitle="locale.application.latencyBreakdownDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+        <OpsPanel :title="locale.application.latencyBreakdown" :subtitle="locale.application.latencyBreakdownDetail" :status="applicationLatencyStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!applicationLatencyBreakdown.length && !initialOperationsLoading" :refreshable="false">
+          <dl class="server-resource-list">
+            <div v-for="item in applicationLatencyBreakdown" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </OpsPanel>
         <OpsPanel :title="locale.application.musicApiPerformance" :subtitle="locale.application.musicApiPerformanceDetail" :status="dependenciesModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!musicApiRows.some((item) => item.status !== '未探测') && !initialOperationsLoading" :refreshable="false">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[720px]">
@@ -299,7 +303,7 @@
         </dl>
       </OpsPanel>
 
-      <section v-if="visibleInfraTrendPanels.length" class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <section v-if="visibleInfraTrendPanels.length" class="ops-adaptive-panel-grid ops-adaptive-panel-grid--wide">
         <article v-for="panel in visibleInfraTrendPanels" :key="panel.title" class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && hasTimelineMetric(panel.field) ? `${formatChartValue(trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field), panel.unit)} ${panel.unit}` : '暂无数据' }}</span></div>
           <OpsTimeChart v-if="panel.available && hasTimelineMetric(panel.field)" :points="runtimeTimeline" :field="panel.field" :title="panel.title" :unit="panel.unit" :labels="trendChartLabels" />
@@ -367,8 +371,6 @@
           </dl>
         </OpsPanel>
       </section>
-
-      <OpsPanel v-if="isSelfHostedRuntime" :title="locale.server.restartEvents" :subtitle="locale.server.restartEventsDetail" status="unknown" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
 
     </template>
 
@@ -523,7 +525,7 @@
           <OpsTimeChart :points="businessOperationTimeline" field="schedules_created" :title="trendChartLabels.schedulesCreated" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
         </OpsPanel>
 
-        <OpsPanel class="xl:col-span-5" :title="locale.business.capacityPlanning" :subtitle="locale.business.capacityPlanningDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
+        <OpsPanel class="xl:col-span-5" :title="locale.business.capacityPlanning" :subtitle="locale.business.capacityPlanningDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasBusinessCapacityData && !initialOperationsLoading" :refreshable="false">
           <dl class="detail-grid">
             <div v-for="item in businessCapacityMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
@@ -544,8 +546,8 @@
         <Icon name="music" :size="16" />
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <OpsPanel v-for="panel in businessMetricGroups" :key="panel.title" :title="panel.title" :subtitle="panel.detail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+      <section class="ops-adaptive-panel-grid">
+        <OpsPanel v-for="panel in businessMetricGroups" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="panel.status" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
           <dl class="server-resource-list">
             <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ businessGroupValue(item) }}</dd></div>
           </dl>
@@ -555,10 +557,8 @@
     </template>
 
     <template v-else-if="activeGroup === 'security'">
-      <OpsPanel title="风险事件摘要" subtitle="风险事件处置统计尚无独立采集来源。" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
-
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-7" title="当前活跃风险" subtitle="优先展示当前采集窗口内需要关注的认证、验证码和限流信号。" :status="securityModuleStatus" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+      <section>
+        <OpsPanel title="风险事件摘要" subtitle="优先展示当前采集窗口内需要关注的认证、验证码和限流信号。" :status="securityModuleStatus" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="risk-distribution">
             <aside class="risk-total" :class="{ 'risk-total--active': activeRiskCount }">
               <div class="risk-total__eyebrow">
@@ -601,8 +601,16 @@
           </div>
         </OpsPanel>
 
-        <OpsPanel class="xl:col-span-5" title="异常行为账户" subtitle="按用户维度识别短时刷歌、刷票和投稿限额触发。" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
       </section>
+
+      <OpsPanel title="异常行为账户 · 高频活动" :subtitle="`${securityActivityWindowLabel} · 按点歌与投票次数排序，仅用于排查，不直接判定违规。`" :status="highFrequencyAccountsPanelStatus" :updated-at="highFrequencyAccountsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!highFrequencyAccountRows.length && !initialOperationsLoading" empty-text="当前时间范围内暂无账户活动数据。" :refreshable="false" @refresh="loadOperationsData">
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[860px]">
+            <thead><tr><th>排名</th><th>账号</th><th>姓名</th><th>年级</th><th>班级</th><th>点歌</th><th>投票</th><th>活动总数</th><th>最近活动</th></tr></thead>
+            <tbody><tr v-for="(item, index) in highFrequencyAccountRows" :key="item.userId"><td>{{ index + 1 }}</td><td>{{ item.username }}</td><td>{{ item.name || '--' }}</td><td>{{ item.grade || '--' }}</td><td>{{ item.class || '--' }}</td><td>{{ item.songRequests }}</td><td>{{ item.votes }}</td><td><strong>{{ item.totalActions }}</strong></td><td>{{ formatTimestamp(item.lastActiveAt) }}</td></tr></tbody>
+          </table>
+        </div>
+      </OpsPanel>
 
       <section class="subsection-heading">
         <div><h3>{{ locale.audit.securitySignals }}</h3><p>{{ locale.audit.securitySignalsDetail }}</p></div>
@@ -618,7 +626,9 @@
         </dl>
       </OpsPanel>
 
-      <OpsPanel :title="locale.audit.signalRate" :subtitle="locale.audit.signalRateDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+      <OpsPanel :title="locale.audit.signalRate" :subtitle="`${locale.audit.signalRateDetail} · ${securityActivityWindowLabel}`" :status="securitySignalTrendStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('security_signals') && !initialOperationsLoading" empty-text="当前时间范围内暂无安全信号趋势数据。" :refreshable="false" @refresh="loadOperationsData">
+        <OpsTimeChart :points="requestBehaviorTimeline" field="security_signals" :title="locale.audit.signalRate" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
+      </OpsPanel>
 
       <OpsPanel :title="locale.audit.recentHighRiskEvents" :subtitle="locale.audit.recentHighRiskEventsDetail" :status="securityAuditPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!highRiskSecurityEvents.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <dl class="server-resource-list"><div v-for="item in highRiskSecurityEvents.slice(0, 10)" :key="`${item.at}-${item.event}`"><dt>{{ item.event }}<small class="block">{{ item.summary }}</small></dt><dd>{{ formatTimestamp(item.at) }}</dd></div></dl>
@@ -883,7 +893,7 @@
       </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <OpsPanel :title="locale.logCenter.logContext" :subtitle="locale.logCenter.logContextDetail" :status="logContextPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!selectedLogEntry && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <OpsPanel :title="locale.logCenter.logContext" :subtitle="locale.logCenter.logContextDetail" :status="logContextPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!logContextFields.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="detail-grid">
             <div v-for="item in logContextFields" :key="item"><dt>{{ item }}</dt><dd>{{ logContextValue(item) }}</dd></div>
           </dl>
@@ -936,8 +946,12 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <OpsPanel :title="locale.dependencies.p95Latency" :subtitle="locale.dependencies.p95LatencyDetail" status="unknown" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
-        <OpsPanel :title="locale.dependencies.platformErrorRate" :subtitle="locale.dependencies.platformErrorRateDetail" status="unknown" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+        <OpsPanel :title="locale.dependencies.p95Latency" :subtitle="locale.dependencies.p95LatencyDetail" :status="dependenciesModuleStatus" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!dependencyLatencyRows.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <dl class="server-resource-list"><div v-for="item in dependencyLatencyRows" :key="item.source"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div></dl>
+        </OpsPanel>
+        <OpsPanel :title="locale.dependencies.platformErrorRate" :subtitle="locale.dependencies.platformErrorRateDetail" :status="dependenciesModuleStatus" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!dependencyErrorRateRows.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <dl class="server-resource-list"><div v-for="item in dependencyErrorRateRows" :key="item.source"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div></dl>
+        </OpsPanel>
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -960,7 +974,7 @@
         <Icon name="warning" :size="16" />
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <section class="ops-adaptive-panel-grid">
         <OpsPanel v-for="panel in dependencyErrorPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="dependencySourceStatus(panel.source)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencySourceEmpty(panel.source) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="error-code-layout">
             <dl class="error-code-legend"><div v-for="item in dependencyErrorCodes" :key="item"><dt>{{ item }}</dt><dd>{{ dependencyErrorCodeValue(panel.source, item) }}</dd></div></dl>
@@ -1867,6 +1881,13 @@ const databaseTrendStatus = (panel) => {
 const securityAuditEvents = computed(() => runtimeDatabaseMetrics.value?.securityEvents || [])
 const highRiskSecurityEvents = computed(() => securityAuditEvents.value.filter((item) => ['FAILURE', 'ERROR', 'WARNING'].includes(String(item.severity).toUpperCase())))
 const ipBehaviorRows = computed(() => runtimeDatabaseMetrics.value?.ipBehavior || [])
+const highFrequencyAccountRows = computed(() => (runtimeDatabaseMetrics.value?.highFrequencyAccounts || []).map((item) => ({
+  ...item,
+  songRequests: Number(item.songRequests || 0),
+  votes: Number(item.votes || 0),
+  totalActions: Number(item.totalActions || 0)
+})))
+const securityActivityWindowLabel = computed(() => `近 ${timelineHours.value} 小时`)
 const securityEventsUpdatedAt = computed(() => securityAuditEvents.value.length ? formatTimestamp(securityAuditEvents.value[0]?.at) : securityUpdatedAt.value)
 const securityAuditPanelStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
@@ -1881,11 +1902,22 @@ const ipBehaviorPanelStatus = computed(() => {
 })
 const requestBehaviorTimeline = computed(() => runtimeDatabaseMetrics.value?.requestBehaviorTimeline || [])
 const requestBehaviorUpdatedAt = computed(() => requestBehaviorTimeline.value.length ? formatTimestamp(requestBehaviorTimeline.value[requestBehaviorTimeline.value.length - 1]?.at) : diagnosticMetricsUpdatedAt.value)
+const highFrequencyAccountsUpdatedAt = computed(() => {
+  const timestamps = highFrequencyAccountRows.value.map((item) => Date.parse(item.lastActiveAt || '')).filter(Number.isFinite)
+  return timestamps.length ? formatTimestamp(Math.max(...timestamps)) : requestBehaviorUpdatedAt.value
+})
+const highFrequencyAccountsPanelStatus = computed(() => moduleFetchErrors.value.metrics ? 'error' : 'unknown')
 const hasRequestBehaviorMetric = (field) => requestBehaviorTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
 const requestTrendPanelStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
   if (!requestBehaviorTimeline.value.length) return 'unknown'
   return requestBehaviorTimeline.value.some((point) => Number(point.server_errors) > 0) ? 'error' : requestBehaviorTimeline.value.some((point) => Number(point.errors) > 0) ? 'warning' : 'ok'
+})
+const securitySignalTrendStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!requestBehaviorTimeline.value.length) return 'unknown'
+  if (requestBehaviorTimeline.value.some((point) => Number(point.server_errors) > 0)) return 'error'
+  return requestBehaviorTimeline.value.some((point) => Number(point.security_signals) > 0) ? 'warning' : 'ok'
 })
 const businessOperationTimeline = computed(() => runtimeDatabaseMetrics.value?.businessTimeline || [])
 const businessTimelineUpdatedAt = computed(() => businessOperationTimeline.value.length ? formatTimestamp(businessOperationTimeline.value[businessOperationTimeline.value.length - 1]?.at) : diagnosticMetricsUpdatedAt.value)
@@ -1988,7 +2020,6 @@ const routePerformanceRows = computed(() => {
     return {
       method: bucket.method,
       route: bucket.route,
-      qps: 'N/A',
       p50: percentileValue(durations, 0.5),
       p95: percentileValue(durations, 0.95),
       p99: percentileValue(durations, 0.99),
@@ -2150,10 +2181,6 @@ const dependencyMetricValue = (label, detail) => {
     if (detail === locale.value.dependencies?.connectionUsage) return operationsData.value.pool?.utilization == null ? '--' : formatPercent(operationsData.value.pool.utilization)
     if (detail === locale.value.dependencies?.lastSuccess) return databaseSnapshot.value?.timestamp ? formatTimestamp(databaseSnapshot.value.timestamp) : '--'
   }
-  if (label === locale.value.dependencies?.neonPostgresql && detail === locale.value.dependencies?.coldStartP95) {
-    const connectionInfo = databaseSnapshot.value?.connectionInfo
-    return connectionInfo?.serverlessMode ? 'N/A · auto-suspend enabled' : 'N/A'
-  }
   if (label === locale.value.services?.redis) {
     if (!runtimeRedisMetrics.value?.configured) return '--'
     if (detail === locale.value.dependencies?.availability) return runtimeRedisMetrics.value.connected ? '正常' : '异常'
@@ -2180,6 +2207,7 @@ const dependencyMetricValue = (label, detail) => {
   if (!metric) return dependencySourceForLabel(label) ? '未采集调用' : '--'
   if (!Number(metric.calls)) return '未调用'
   if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : formatPercent(metric.successRate)
+  if (detail === locale.value.dependencies?.errorRate) return metric.successRate == null ? '--' : formatPercent(Math.max(0, 100 - Number(metric.successRate)))
   if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : formatPercent(metric.emptyResultRate)
   if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : formatPercent(metric.semanticFailureRate)
   if (detail === locale.value.dependencies?.p95LatencyShort) return metric.p95DurationMs == null ? '--' : `${Math.round(Number(metric.p95DurationMs))} ms`
@@ -2192,6 +2220,16 @@ const dependencySourceStatus = (source) => {
   if (moduleFetchErrors.value.metrics) return 'error'
   return musicSourceStatuses.value.find((item) => item.source === source)?.status || 'unknown'
 }
+const dependencyLatencyRows = computed(() => enabledMusicSourceKeys.value.flatMap((source) => {
+  const metric = dependencyMetrics.value[source]
+  if (!Number(metric?.calls) || metric?.p95DurationMs == null) return []
+  return [{ source, label: musicSourceLabel(source), value: formatMilliseconds(metric.p95DurationMs) }]
+}))
+const dependencyErrorRateRows = computed(() => enabledMusicSourceKeys.value.flatMap((source) => {
+  const metric = dependencyMetrics.value[source]
+  if (!Number(metric?.calls) || metric?.successRate == null) return []
+  return [{ source, label: musicSourceLabel(source), value: formatPercent(Math.max(0, 100 - Number(metric.successRate))) }]
+}))
 const dependencySourceEmpty = (source) => {
   const metric = dependencyMetrics.value[source]
   return !metric || !Number(metric.calls) || metric.successRate == null
@@ -2237,20 +2275,14 @@ const dependencyProtectionValue = (title, item) => {
     if (item === locale.value.dependencies?.cacheHits) return String(cache.hits)
     if (item === locale.value.dependencies?.cacheMisses) return String(cache.misses)
     if (item === locale.value.dependencies?.cacheEvictions) return String(cache.evictions)
-    if (item === locale.value.dependencies?.cacheResponseP95) {
-      const durations = Object.values(dependencyMetrics.value).map((metric) => Number(metric?.averageDurationMs || 0)).filter(Boolean)
-      return durations.length ? formatMilliseconds(Math.max(...durations)) : 'N/A'
-    }
     if (item === locale.value.dependencies?.cacheHitRate) {
       const total = cache.hits + cache.misses
-      return total ? `${(cache.hits / total * 100).toFixed(1)}%` : 'N/A'
+      return total ? `${(cache.hits / total * 100).toFixed(1)}%` : '--'
     }
   }
   if (title === locale.value.dependencies?.fallbackHits) {
     if (item === locale.value.dependencies?.providerFallbacks) return String(Object.values(dependencyMetrics.value).reduce((total, metric) => total + Number(metric?.fallbacks || 0), 0))
     if (item === locale.value.dependencies?.retryAttempts) return String(Object.values(dependencyMetrics.value).reduce((total, metric) => total + Number(metric?.retries || 0), 0))
-    if (item === locale.value.dependencies?.circuitBreakerOpens) return 'N/A'
-    if (item === locale.value.dependencies?.cachedResponseFallbacks) return cache ? String(cache.misses) : '--'
     if ([locale.value.overview?.neteaseSource, locale.value.overview?.tencentSource, locale.value.overview?.bilibiliSource, locale.value.overview?.miguSource].includes(item)) {
       return dependencyMetricValue(item, locale.value.dependencies?.semanticFailureRate)
     }
@@ -2396,8 +2428,6 @@ const runtimeDeploymentTarget = computed(() => {
   return runtime.nitroPreset || systemSnapshot.value?.nitroPreset || (isServerlessRuntime.value ? 'Serverless' : 'Node 服务')
 })
 const healthLiveDetails = computed(() => [
-  { label: locale.value.overview?.sloBudget, value: '--' },
-  { label: locale.value.overview?.errorBudgetBurn, value: '--' },
   { label: locale.value.overview?.collectionStatus, value: collectionStatusText.value }
 ])
 
@@ -2405,14 +2435,11 @@ const backupStatusFields = computed(() => [
   { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
   { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? backupResultText(latestBackup.value) : '--' },
   { label: locale.value.overview?.lastBackupSize, value: formatBytes(latestBackup.value?.backupSize) },
-  { label: locale.value.overview?.backupStorageUsage, value: 'N/A' },
   { label: locale.value.overview?.backupExportedTables, value: backupSnapshot.value?.exportedTables != null ? String(backupSnapshot.value.exportedTables) : '--' },
   { label: locale.value.overview?.backupSkippedTables, value: backupSnapshot.value?.skippedTables != null ? String(backupSnapshot.value.skippedTables) : '--' },
   { label: locale.value.overview?.backupIntegrityCheck, value: backupSnapshot.value?.checksum ? `SHA-256 ${backupSnapshot.value.checksum.slice(0, 12)}...` : '--' },
-  { label: locale.value.overview?.lastRestoreDrill, value: latestBackupRestore.value ? formatTimestamp(latestBackupRestore.value.at) : 'N/A' },
-  { label: locale.value.overview?.lastBackupScheduleAt, value: latestBackup.value ? formatTimestamp(latestBackup.value.createdAt) : '--' },
-  { label: locale.value.overview?.expectedBackupInterval, value: 'N/A' },
-  { label: locale.value.overview?.backupScheduleMisses, value: 'N/A' }
+  { label: locale.value.overview?.lastRestoreDrill, value: latestBackupRestore.value ? formatTimestamp(latestBackupRestore.value.at) : '--' },
+  { label: locale.value.overview?.lastBackupScheduleAt, value: latestBackup.value ? formatTimestamp(latestBackup.value.createdAt) : '--' }
 ])
 
 const backupTargetPanels = computed(() => [
@@ -2518,6 +2545,16 @@ const applicationLatencyDetails = computed(() => [
   { label: locale.value.application?.responseMax, value: runtimeTimeline.value.length ? formatMilliseconds(Math.max(...runtimeTimeline.value.map((item) => Number(item.max_duration_ms || item.p95Ms || 0)))) : '--' }
 ])
 
+const applicationLatencyBreakdown = computed(() => {
+  const http = runtimeHttpMetrics.value
+  if (!http || !Number(http.recentRequests)) return []
+  return [
+    { label: locale.value.application?.requestTotal, value: String(http.recentRequests) },
+    { label: locale.value.application?.responseP50, value: formatMilliseconds(http.p50Ms) },
+    { label: locale.value.application?.responseP95, value: formatMilliseconds(http.p95Ms) },
+    { label: locale.value.application?.responseP99, value: formatMilliseconds(http.p99Ms) }
+  ]
+})
 const applicationAuthenticationStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
   const http = runtimeHttpMetrics.value
@@ -2544,8 +2581,6 @@ const applicationDetailPanels = computed(() => [
     status: applicationAuthenticationStatus.value,
     empty: !runtimeHttpMetrics.value && !runtimeOAuthMetrics.value,
     items: [
-      { label: locale.value.application?.jwtIssued, value: '--' },
-      { label: locale.value.application?.jwtVerified, value: '--' },
       { label: locale.value.application?.invalidTokens, value: runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : '--' },
       { label: locale.value.application?.oauthSuccessRate, value: runtimeOAuthMetrics.value?.successRate != null ? formatPercent(runtimeOAuthMetrics.value.successRate) : '--' }
     ]
@@ -2557,8 +2592,6 @@ const applicationDetailPanels = computed(() => [
     status: applicationSseStatus(runtimeSseMetrics.value?.music),
     empty: !runtimeSseMetrics.value?.music,
     items: [
-      { label: locale.value.application?.musicSyncReconnects, value: '--' },
-      { label: locale.value.application?.musicSyncLatency, value: '--' },
       { label: locale.value.application?.musicSyncHeartbeatTimeouts, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
       { label: locale.value.application?.musicSyncDeliveryFailures, value: runtimeSseMetrics.value?.music?.broadcastFailures != null ? String(runtimeSseMetrics.value.music.broadcastFailures) : '--' }
     ]
@@ -2586,8 +2619,7 @@ const applicationDetailPanels = computed(() => [
     items: [
       { label: locale.value.application?.adminProgressSseActiveConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' },
       { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: runtimeSseMetrics.value?.progress?.heartbeatFailures != null ? String(runtimeSseMetrics.value.progress.heartbeatFailures) : '--' },
-      { label: locale.value.application?.adminProgressSseAverageLifetime, value: formatMilliseconds(runtimeSseMetrics.value?.progress?.averageLifetimeMs) },
-      { label: locale.value.application?.adminProgressSseUnclosedConnections, value: '--' }
+      { label: locale.value.application?.adminProgressSseAverageLifetime, value: formatMilliseconds(runtimeSseMetrics.value?.progress?.averageLifetimeMs) }
     ]
   }
 ])
@@ -2785,18 +2817,6 @@ const runtimeGuardPanels = computed(() => [
       { label: locale.value.server?.ssrWarmupDuration, value: formatMilliseconds(runtimeSsrPrewarm.value?.lastDurationMs) },
       { label: locale.value.server?.ssrWarmupFailures, value: runtimeSsrPrewarm.value?.failures != null ? String(runtimeSsrPrewarm.value.failures) : '--' }
     ]
-  },
-  {
-    icon: 'monitoring',
-    source: 'metrics',
-    title: locale.value.server?.egressLocation,
-    detail: locale.value.server?.egressLocationDetail,
-    empty: true,
-    items: [
-      { label: locale.value.server?.egressLastLocation, value: '--' },
-      { label: locale.value.server?.egressCacheAge, value: '--' },
-      { label: locale.value.server?.egressLookupFailures, value: '--' }
-    ]
   }
 ])
 const visibleRuntimeGuardPanels = computed(() => runtimeGuardPanels.value.filter(panel => !panel.empty))
@@ -2923,16 +2943,25 @@ const businessGoldenMetrics = computed(() => [
 
 const businessQueueMetrics = computed(() => [
   { label: locale.value.business?.pendingQueueLength, value: businessQueueSnapshot.value?.pendingCount != null ? String(businessQueueSnapshot.value.pendingCount) : '--' },
-  { label: locale.value.business?.queueProcessingRate, value: 'N/A' },
-  { label: locale.value.business?.queueOldestAge, value: businessQueueSnapshot.value?.oldestCreatedAt ? formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt) : '--' },
-  { label: locale.value.business?.queueBacklogGrowth, value: 'N/A' }
+  { label: locale.value.business?.queueOldestAge, value: businessQueueSnapshot.value?.oldestCreatedAt ? formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt) : '--' }
 ])
 
+const peakBucketRate = (timeline, field) => {
+  if (timeline.length < 2) return null
+  const rates = timeline.slice(1).map((point, index) => {
+    const seconds = (Date.parse(point.at) - Date.parse(timeline[index].at)) / 1000
+    return Number.isFinite(seconds) && seconds > 0 ? Number(point[field] || 0) / seconds : null
+  }).filter(Number.isFinite)
+  return rates.length ? Math.max(...rates) : null
+}
+const peakRequestQps = computed(() => peakBucketRate(runtimeTimeline.value, 'requests'))
+const peakScheduleQps = computed(() => peakBucketRate(businessOperationTimeline.value, 'schedules_created'))
+const hasBusinessCapacityData = computed(() => peakRequestQps.value != null || peakScheduleQps.value != null || operationsData.value.pool?.utilization != null)
+
 const businessCapacityMetrics = computed(() => [
-  { label: locale.value.business?.peakRequestQps, value: runtimeTimeline.value.length ? String(Math.max(...runtimeTimeline.value.map((item) => Number(item.requests || 0)))) : '--' },
-  { label: locale.value.business?.peakScheduleQps, value: runtimeBusinessMetrics.value.schedule_save?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.schedule_save.requestsPerSecond) : '--' },
-  { label: locale.value.business?.dbPoolHeadroom, value: operationsData.value.pool?.utilization != null ? `${Math.max(0, 100 - Number(operationsData.value.pool.utilization)).toFixed(1)}%` : '--' },
-  { label: locale.value.business?.serverlessConcurrencyHeadroom, value: 'N/A' }
+  { label: locale.value.business?.peakRequestQps, value: peakRequestQps.value == null ? '--' : peakRequestQps.value.toFixed(3) },
+  { label: locale.value.business?.peakScheduleQps, value: peakScheduleQps.value == null ? '--' : peakScheduleQps.value.toFixed(3) },
+  { label: locale.value.business?.dbPoolHeadroom, value: operationsData.value.pool?.utilization != null ? `${Math.max(0, 100 - Number(operationsData.value.pool.utilization)).toFixed(1)}%` : '--' }
 ])
 
 const businessMetricGroups = computed(() => [
@@ -2940,49 +2969,36 @@ const businessMetricGroups = computed(() => [
     icon: 'music',
     title: locale.value.business?.requestWorkflow,
     detail: locale.value.business?.requestWorkflowDetail,
+    status: performanceModuleStatus.value,
     items: [
       locale.value.business?.songAndVoteRequests,
       locale.value.business?.requestSuccessRate,
-      locale.value.business?.scheduleOperations,
-      locale.value.business?.quotaTriggers,
-      locale.value.business?.dedupHits,
-      locale.value.business?.replayRequests
+      locale.value.business?.scheduleOperations
     ]
   },
   {
     icon: 'activity',
     title: locale.value.business?.mediaPipeline,
     detail: locale.value.business?.mediaPipelineDetail,
-    items: [
-      locale.value.business?.musicSearchApiAvailability,
-      locale.value.business?.playUrlFailures,
-      locale.value.business?.qualitySwitches,
-      locale.value.business?.downloadCountAndBytes
-    ]
-  },
-  {
-    icon: 'bell',
-    title: locale.value.business?.growthAndDelivery,
-    detail: locale.value.business?.growthAndDeliveryDetail,
-    items: [
-      locale.value.business?.notificationPushes,
-      locale.value.business?.notificationDeliveryRate,
-      locale.value.business?.dailyActiveUsers,
-      locale.value.business?.newUsers
-    ]
+    status: dependenciesModuleStatus.value,
+    items: [locale.value.business?.musicSearchApiAvailability]
   }
 ])
 
 const businessGroupValue = (label) => {
   const request = runtimeBusinessMetrics.value.song_request
+  const vote = runtimeBusinessMetrics.value.vote
   const schedule = runtimeBusinessMetrics.value.schedule_save
+  const sampledSources = enabledMusicSourceKeys.value
+    .map((source) => dependencyMetrics.value[source])
+    .filter((metric) => Number(metric?.calls) > 0 && metric?.successRate != null)
   const values = new Map([
     [locale.value.business?.requestSuccessRate, formatPercent(request?.successRate)],
-    [locale.value.business?.songAndVoteRequests, request?.calls != null ? String(request.calls) : '--'],
+    [locale.value.business?.songAndVoteRequests, request?.calls != null || vote?.calls != null ? String(Number(request?.calls || 0) + Number(vote?.calls || 0)) : '--'],
     [locale.value.business?.scheduleOperations, schedule?.calls != null ? String(schedule.calls) : '--'],
-    [locale.value.business?.musicSearchApiAvailability, dependencyMetrics.value ? `${Object.values(dependencyMetrics.value).filter((item) => item?.successRate != null && item.successRate >= 95).length}` : '--']
+    [locale.value.business?.musicSearchApiAvailability, sampledSources.length ? `${sampledSources.filter((item) => Number(item.successRate) >= 95).length}/${sampledSources.length}` : '--']
   ])
-  return values.get(label) || 'N/A'
+  return values.get(label) || '--'
 }
 
 const securityUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
@@ -3076,7 +3092,6 @@ const securitySignalsPanelStatus = computed(() => {
 const requestSummaryItems = computed(() => [
   { icon: 'warning', label: locale.value.debug?.statusCode, detail: locale.value.debug?.statusCodeDetail, value: selectedDebugRequest.value?.status ?? 'N/A' },
   { icon: 'clock', label: locale.value.debug?.duration, detail: locale.value.debug?.durationDetail, value: selectedDebugRequest.value ? formatMilliseconds(selectedDebugRequest.value.durationMs) : 'N/A' },
-  { icon: 'user', label: locale.value.debug?.user, detail: locale.value.debug?.userDetail, value: 'N/A' },
   { icon: 'layers', label: locale.value.application?.route, detail: locale.value.debug?.routeDetail, value: selectedDebugRequest.value?.route || 'N/A' },
   { icon: 'clock', label: locale.value.debug?.occurredAt, detail: locale.value.debug?.occurredAtDetail, value: selectedDebugRequest.value ? formatTimestamp(selectedDebugRequest.value.at) : 'N/A' },
   { icon: 'external-link', label: locale.value.debug?.relatedLinks, detail: locale.value.debug?.relatedLinksDetail, value: selectedDebugRequest.value?.requestId || 'N/A' }
@@ -3089,16 +3104,17 @@ const logCenterMetrics = computed(() => [
   { icon: 'layers', label: locale.value.logCenter?.requestTraces, detail: locale.value.logCenter?.requestTracesDetail, value: String(new Set(logEntries.value.map((item) => item.requestId).filter(Boolean)).size) }
 ])
 
-const logContextFields = computed(() => [
-  locale.value.overview?.logRequestId,
-  locale.value.logCenter?.traceId,
-  locale.value.logCenter?.instanceId,
-  locale.value.overview?.logHost,
-  locale.value.application?.route,
-  locale.value.debug?.user,
-  locale.value.debug?.statusCode,
-  locale.value.logCenter?.sourceIp
-])
+const logContextFields = computed(() => {
+  const item = selectedLogEntry.value
+  if (!item) return []
+  return [
+    item.requestId ? locale.value.overview?.logRequestId : null,
+    operationsData.value.status?.instance?.instanceId ? locale.value.logCenter?.instanceId : null,
+    item.route ? locale.value.application?.route : null,
+    item.status != null ? locale.value.debug?.statusCode : null,
+    item.ip ? locale.value.logCenter?.sourceIp : null
+  ].filter(Boolean)
+})
 
 const logContextValue = (label) => {
   const item = selectedLogEntry.value
@@ -3107,10 +3123,7 @@ const logContextValue = (label) => {
     [locale.value.overview?.logRequestId, item.requestId || 'N/A'],
     [locale.value.application?.route, item.route || 'N/A'],
     [locale.value.debug?.statusCode, item.status ?? 'N/A'],
-    [locale.value.overview?.logHost, 'N/A'],
-    [locale.value.debug?.user, 'N/A'],
-    [locale.value.logCenter?.sourceIp, 'N/A'],
-    [locale.value.logCenter?.traceId, 'N/A'],
+    [locale.value.logCenter?.sourceIp, item.ip || 'N/A'],
     [locale.value.logCenter?.instanceId, operationsData.value.status?.instance?.instanceId || 'N/A']
   ])
   return values.get(label) || 'N/A'
@@ -3125,27 +3138,27 @@ const dependencyHealthCards = computed(() => [
   {
     icon: 'success',
     label: locale.value.dependencies?.oauth,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.loginSuccessRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.loginSuccessRate]
   },
   {
     icon: 'database',
     label: locale.value.dependencies?.neonPostgresql,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.connectionUsage, locale.value.dependencies?.coldStartP95, locale.value.dependencies?.lastSuccess]
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.connectionUsage, locale.value.dependencies?.lastSuccess]
   },
   {
     icon: 'server',
     label: locale.value.services?.redis,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.cacheHitRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.cacheHitRate]
   },
   {
     icon: 'bell',
     label: locale.value.dependencies?.smtp,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.smtpFailureRate, locale.value.dependencies?.p95LatencyShort, locale.value.dependencies?.lastSuccess]
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.smtpFailureRate]
   },
   {
     icon: 'bell-ring',
     label: locale.value.dependencies?.notificationService,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.notificationSuccessRate, locale.value.dependencies?.notificationQueue, locale.value.dependencies?.lastSuccess]
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.notificationSuccessRate]
   }
 ])
 
@@ -3155,18 +3168,15 @@ const musicSourceHealthDetails = computed(() => [
   locale.value.dependencies?.errorRate,
   locale.value.dependencies?.parseSuccessRate,
   locale.value.dependencies?.emptyResultRate,
-  locale.value.dependencies?.semanticFailureRate,
-  locale.value.dependencies?.circuitBreakerState,
-  locale.value.dependencies?.lastSuccess
+  locale.value.dependencies?.semanticFailureRate
 ])
 
 const dependencyMetricGroups = (item) => {
   const details = (item.details || []).filter(Boolean)
-  if (details.length >= 8) {
+  if (details.length > 4) {
     return [
       { key: 'availability', label: locale.value.dependencies?.metricGroupAvailability, details: details.slice(0, 2) },
-      { key: 'quality', label: locale.value.dependencies?.metricGroupQuality, details: details.slice(2, 6) },
-      { key: 'stability', label: locale.value.dependencies?.metricGroupStability, details: details.slice(6) }
+      { key: 'quality', label: locale.value.dependencies?.metricGroupQuality, details: details.slice(2) }
     ]
   }
   return [
@@ -3227,12 +3237,7 @@ const dependencySlotTooltip = (row, index) => {
   return `时间：${formatTimestamp(detail.at)}\n音源：${row.label}\n状态：${status}${value}`
 }
 
-const dependencyErrorCodes = computed(() => [
-  locale.value.dependencies?.rateLimited,
-  locale.value.dependencies?.notFound,
-  locale.value.dependencies?.upstreamErrors,
-  locale.value.dependencies?.timeoutErrors
-])
+const dependencyErrorCodes = computed(() => [locale.value.dependencies?.timeoutErrors])
 const dependencyErrorCodeValue = (source, item) => {
   const metric = dependencyMetrics.value[source]
   if (!metric || !Number(metric.calls)) return '--'
@@ -3249,8 +3254,6 @@ const dependencyProtectionPanels = computed(() => [
     items: [
       locale.value.dependencies?.providerFallbacks,
       locale.value.dependencies?.retryAttempts,
-      locale.value.dependencies?.circuitBreakerOpens,
-      locale.value.dependencies?.cachedResponseFallbacks,
       ...enabledMusicSourceKeys.value.map((source) => musicSourceLabel(source))
     ]
   },
@@ -3263,7 +3266,6 @@ const dependencyProtectionPanels = computed(() => [
       locale.value.dependencies?.cacheHits,
       locale.value.dependencies?.cacheMisses,
       locale.value.dependencies?.cacheEvictions,
-      locale.value.dependencies?.cacheResponseP95,
       locale.value.dependencies?.cacheHitRate
     ]
   },
@@ -3276,8 +3278,7 @@ const dependencyProtectionPanels = computed(() => [
       locale.value.dependencies?.smtpAcceptedRate,
       locale.value.dependencies?.meowEligibleTargets,
       locale.value.dependencies?.meowSkippedTargets,
-      locale.value.dependencies?.meowTransportFailureRate,
-      locale.value.dependencies?.notificationQueue
+      locale.value.dependencies?.meowTransportFailureRate
     ]
   }
 ])
@@ -4037,8 +4038,18 @@ const dependencyProtectionPanelStatus = (panel) => {
 
 .server-resource-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
   gap: 1rem;
+}
+
+.ops-adaptive-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+}
+
+.ops-adaptive-panel-grid--wide {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
 }
 
 .server-resource-list {
@@ -5506,7 +5517,7 @@ const dependencyProtectionPanelStatus = (panel) => {
   }
 
   .server-resource-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   }
 
   .risk-distribution {
@@ -5565,7 +5576,7 @@ const dependencyProtectionPanelStatus = (panel) => {
   }
 
   .server-resource-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   }
 
   .audit-filters {

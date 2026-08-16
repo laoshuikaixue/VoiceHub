@@ -232,7 +232,7 @@ export class DatabaseManager {
   async getPersistedRequestSamples() {
     const result = await db.execute(sql`
       SELECT "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
-        "response_time_ms" AS "durationMs",
+        "response_time_ms" AS "durationMs", "ip_address" AS ip,
         substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
       FROM api_logs
       WHERE "api_key_id" IS NULL
@@ -246,7 +246,7 @@ export class DatabaseManager {
   async getRecentApiLogs() {
     return await db.execute(sql`
       SELECT "id", "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
-        "response_time_ms" AS "durationMs",
+        "response_time_ms" AS "durationMs", "ip_address" AS ip,
         left(CASE
           WHEN nullif("error_message", '') IS NOT NULL THEN "error_message"
           WHEN nullif("response_body", '') IS NOT NULL THEN "response_body"
@@ -264,7 +264,7 @@ export class DatabaseManager {
     if (!normalized) return []
     return await db.execute(sql`
       SELECT "id", "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
-        "response_time_ms" AS "durationMs",
+        "response_time_ms" AS "durationMs", "ip_address" AS ip,
         left(CASE
           WHEN nullif("error_message", '') IS NOT NULL THEN "error_message"
           WHEN nullif("response_body", '') IS NOT NULL THEN "response_body"
@@ -324,12 +324,48 @@ export class DatabaseManager {
         count(*)::int AS requests,
         count(*) FILTER (WHERE status_code >= 400)::int AS errors,
         count(*) FILTER (WHERE status_code >= 500)::int AS server_errors,
+        count(*) FILTER (WHERE status_code = 401)::int AS status_401,
+        count(*) FILTER (WHERE status_code = 403)::int AS status_403,
+        count(*) FILTER (WHERE status_code = 429)::int AS status_429,
+        count(*) FILTER (WHERE status_code IN (401, 403, 429) OR status_code >= 500)::int AS security_signals,
         count(DISTINCT ip_address)::int AS unique_clients,
         count(*) FILTER (WHERE endpoint NOT LIKE '/api/admin/%')::int AS user_requests
       FROM api_logs
       WHERE created_at >= now() - (${hours} * interval '1 hour')
       GROUP BY date_trunc('hour', created_at)
       ORDER BY at ASC
+    `)
+  }
+
+  async getHighFrequencyAccountActivity(hours = 24) {
+    return await db.execute(sql`
+      WITH activity AS (
+        SELECT "requesterId" AS user_id, count(*)::int AS song_requests,
+          0::int AS votes, max("createdAt") AS last_active_at
+        FROM "Song"
+        WHERE "createdAt" >= now() - (${hours} * interval '1 hour')
+        GROUP BY "requesterId"
+        UNION ALL
+        SELECT "userId" AS user_id, 0::int AS song_requests,
+          count(*)::int AS votes, max("createdAt") AS last_active_at
+        FROM "Vote"
+        WHERE "createdAt" >= now() - (${hours} * interval '1 hour')
+        GROUP BY "userId"
+      ), totals AS (
+        SELECT user_id, sum(song_requests)::int AS song_requests,
+          sum(votes)::int AS votes, max(last_active_at) AS last_active_at
+        FROM activity
+        GROUP BY user_id
+      )
+      SELECT totals.user_id AS "userId", users.username, users.name,
+        users.grade, users.class, users.role,
+        totals.song_requests AS "songRequests", totals.votes,
+        (totals.song_requests + totals.votes)::int AS "totalActions",
+        totals.last_active_at AS "lastActiveAt"
+      FROM totals
+      INNER JOIN "User" users ON users.id = totals.user_id
+      ORDER BY "totalActions" DESC, totals.last_active_at DESC
+      LIMIT 20
     `)
   }
 

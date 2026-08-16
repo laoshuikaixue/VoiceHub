@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
   const timelineHours = [1, 6, 24].includes(Number(query.timelineHours)) ? Number(query.timelineHours) : 24
   void triggerMusicSourceProbe()
 
-  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, dependencyTimeline, redis, backup, sentry, requestDiagnostics, securityEvents, ipBehavior, requestBehaviorTimeline, businessTimeline, sentryTrace] = await Promise.allSettled([
+  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, dependencyTimeline, redis, backup, sentry, requestDiagnostics, securityEvents, ipBehavior, requestBehaviorTimeline, highFrequencyAccounts, businessTimeline, sentryTrace] = await Promise.allSettled([
     databaseManager.getConnectionPoolStatus(),
     databaseManager.getPerformanceMetrics(),
     databaseManager.getDiagnostics(),
@@ -176,6 +176,7 @@ export default defineEventHandler(async (event) => {
     databaseManager.getSecurityAuditEvents(),
     databaseManager.getIpBehaviorTimeline(),
     databaseManager.getRequestBehaviorTimeline(timelineHours),
+    databaseManager.getHighFrequencyAccountActivity(timelineHours),
     databaseManager.getBusinessOperationTimeline(timelineHours),
     requestId ? getSentryTrace(requestId) : Promise.resolve({ configured: false, available: false, spans: [] })
   ])
@@ -219,6 +220,7 @@ export default defineEventHandler(async (event) => {
         securityEvents: securityEvents.status === 'fulfilled' ? securityEvents.value : null,
         ipBehavior: ipBehavior.status === 'fulfilled' ? ipBehavior.value : null,
         requestBehaviorTimeline: requestBehaviorTimeline.status === 'fulfilled' ? requestBehaviorTimeline.value : null,
+        highFrequencyAccounts: highFrequencyAccounts.status === 'fulfilled' ? highFrequencyAccounts.value : null,
         businessTimeline: businessTimeline.status === 'fulfilled' ? businessTimeline.value : null
       },
       sentry: sentry.status === 'fulfilled' ? sentry.value : { configured: false, issues: [] },
