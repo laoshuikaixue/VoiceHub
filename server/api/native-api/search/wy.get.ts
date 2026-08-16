@@ -1,6 +1,7 @@
 import { wyEapiRequest } from '../../../utils/native_wy'
 import { formatPlayTime, sizeFormate } from '../../../utils/native_common'
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
     offset
   }
 
-  const startedAt = Date.now()
+  const startedAt = getServerTimestamp()
   try {
     const result: any = await wyEapiRequest('/api/cloudsearch/pc', data)
 
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    recordDependencyCall('netease', { success: list.length > 0, emptyResult: list.length === 0, semanticFailure: false, durationMs: Date.now() - startedAt })
+    recordDependencyCall('netease', { success: list.length > 0, emptyResult: list.length === 0, semanticFailure: false, durationMs: getServerTimestamp() - startedAt })
     return {
       list,
       total: result.result?.songCount || 0,
@@ -89,7 +90,7 @@ export default defineEventHandler(async (event) => {
       source: 'wy'
     }
   } catch (err) {
-    recordDependencyCall('netease', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: err instanceof Error ? err.message : String(err) })
+    recordDependencyCall('netease', { success: false, semanticFailure: true, durationMs: getServerTimestamp() - startedAt, error: err instanceof Error ? err.message : String(err) })
     console.error(err)
     throw createError({ statusCode: 500, message: 'Internal Server Error' })
   }

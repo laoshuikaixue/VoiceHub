@@ -8,6 +8,7 @@ import {
   normalizeQqCookie
 } from '~~/server/utils/qq_music_sdk'
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
@@ -126,7 +127,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '暂不支持的平台' })
   }
 
-  const startedAt = Date.now()
+  const startedAt = getServerTimestamp()
 
   const normalized = normalizeTxMusicId(musicId)
   let playableInfo: Awaited<ReturnType<typeof getTxSongPlayableInfo>>
@@ -136,7 +137,7 @@ export default defineEventHandler(async (event) => {
     recordDependencyCall('tencent', {
       success: false,
       semanticFailure: true,
-      durationMs: Date.now() - startedAt,
+      durationMs: getServerTimestamp() - startedAt,
       error: error?.message || String(error)
     })
     throw error
@@ -167,7 +168,7 @@ export default defineEventHandler(async (event) => {
         )
         recordDependencyCall('tencent', {
           success: true,
-          durationMs: Date.now() - startedAt,
+          durationMs: getServerTimestamp() - startedAt,
           retries: attempts.filter((item) => item.status === 'error').length,
           fallbacks: attempts.filter((item) => item.status === 'error').length
         })
@@ -187,7 +188,7 @@ export default defineEventHandler(async (event) => {
       )
       recordDependencyCall('tencent', {
         success: true,
-        durationMs: Date.now() - startedAt,
+        durationMs: getServerTimestamp() - startedAt,
         retries: attempts.filter((item) => item.status === 'error').length,
         fallbacks: attempts.filter((item) => item.status === 'error').length
       })
@@ -209,7 +210,7 @@ export default defineEventHandler(async (event) => {
   recordDependencyCall('tencent', {
     success: false,
     semanticFailure: true,
-    durationMs: Date.now() - startedAt,
+    durationMs: getServerTimestamp() - startedAt,
     retries: attempts.filter((item) => item.status === 'error').length,
     fallbacks: attempts.filter((item) => item.status === 'error').length,
     error: errors.join('; ')

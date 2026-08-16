@@ -1,4 +1,5 @@
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 // 将 PQ 基础链接的路径替换为高音质资源路径
 function upgradeUrl(url: string, quality: string) {
   let upgraded = url
@@ -105,7 +106,7 @@ export default defineEventHandler(async (event) => {
   const toneFlag = VALID_TONE_FLAGS.includes(query.toneFlag as string) ? (query.toneFlag as string) : 'PQ';
 
   if (!contentId) throw createError({ statusCode: 400, message: 'Missing contentId' });
-  const startedAt = Date.now()
+  const startedAt = getServerTimestamp()
 
   try {
     const headers = {
@@ -126,7 +127,7 @@ export default defineEventHandler(async (event) => {
     const ab = await res.arrayBuffer(), data = await mr(ab);
     let url = decodeURIComponent(data?.data?.url ?? '');
     if (!url) {
-      recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: '播放链接为空' })
+      recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: getServerTimestamp() - startedAt, error: '播放链接为空' })
       return {
         success: false,
         url: '',
@@ -137,7 +138,7 @@ export default defineEventHandler(async (event) => {
     url = (url.split('?')[0] as string).replace(/^http:\/\//, 'https://');
     const { url: finalUrl, quality: actualQuality } = await resolveAvailableUrl(url, toneFlag)
 
-    recordDependencyCall('migu', { success: true, durationMs: Date.now() - startedAt })
+    recordDependencyCall('migu', { success: true, durationMs: getServerTimestamp() - startedAt })
     return {
       success: true,
       url: finalUrl,
@@ -149,7 +150,7 @@ export default defineEventHandler(async (event) => {
     recordDependencyCall('migu', {
       success: false,
       semanticFailure: true,
-      durationMs: Date.now() - startedAt,
+      durationMs: getServerTimestamp() - startedAt,
       error: err?.message || String(err)
     })
     console.error('[migu/playurl.get] 获取播放链接失败:', err)

@@ -5,6 +5,7 @@
 import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
 import xss from 'xss'
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 interface SongInfo {
   id: number
@@ -92,7 +93,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const target_url = `https://api.bilibili.com/x/web-interface/search/type`
-  const startedAt = Date.now()
+  const startedAt = getServerTimestamp()
 
   try {
     const resp = await $fetch<SearchRes>(target_url, {
@@ -119,7 +120,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!resp.data?.result) {
-      recordDependencyCall('bilibili', { success: false, emptyResult: true, durationMs: Date.now() - startedAt })
+      recordDependencyCall('bilibili', { success: false, emptyResult: true, durationMs: getServerTimestamp() - startedAt })
       return []
     }
 
@@ -151,10 +152,10 @@ export default defineEventHandler(async (event) => {
       })
     )
 
-    recordDependencyCall('bilibili', { success: results.length > 0, emptyResult: results.length === 0, durationMs: Date.now() - startedAt })
+    recordDependencyCall('bilibili', { success: results.length > 0, emptyResult: results.length === 0, durationMs: getServerTimestamp() - startedAt })
     return results
   } catch (error: any) {
-    recordDependencyCall('bilibili', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: error.message || String(error) })
+    recordDependencyCall('bilibili', { success: false, semanticFailure: true, durationMs: getServerTimestamp() - startedAt, error: error.message || String(error) })
     console.error('Bilibili search error:', error)
     throw createError({
       statusCode: 500,

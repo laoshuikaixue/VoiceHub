@@ -1,5 +1,7 @@
-import { defineEventHandler, createError, getQuery } from 'h3'
-import { verifyAdminAuth } from '~~/server/utils/auth'
+import { defineEventHandler, getQuery } from 'h3'
+import { verifyUserAuth } from '~~/server/utils/auth'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getOperationsMetrics, observeRuntimeDeployment, persistOperationsDatabaseSnapshot, triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
 import { getRedisMetrics, getRedisStats } from '~~/server/utils/redis'
 import { databaseManager } from '~~/server/utils/database-manager'
@@ -144,10 +146,9 @@ const getBackupMonitorStatus = async () => {
 
 export default defineEventHandler(async (event) => {
   observeRuntimeDeployment(event.node.req.headers)
-  const authResult = await verifyAdminAuth(event)
-  if (!authResult.success) {
-    throw createError({ statusCode: 401, message: authResult.message })
-  }
+  const authResult = await verifyUserAuth(event)
+  if (!authResult.success || !authResult.user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '未登录或登录已失效')
+  if (authResult.user.role !== 'SUPER_ADMIN') throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '仅超级管理员可查看运维监控')
 
   const query = getQuery(event)
   if (String(query.sentryOnly || '') === '1') {

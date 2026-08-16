@@ -269,45 +269,17 @@
       "breakpoints": true
     },
     {
-      "idx": 38,
-      "version": "7",
-      "when": 1785669366654,
-      "tag": "20260802180000_add_operations_metric_buckets",
-      "breakpoints": true
-    },
-    {
-      "idx": 39,
-      "version": "7",
-      "when": 1785738600000,
-      "tag": "20260803143000_add_operations_dependency_buckets",
-      "breakpoints": true
-    },
-    {
-      "idx": 40,
-      "version": "7",
-      "when": 1785763825061,
-      "tag": "20260803235900_add_admin_operation_logs",
-      "breakpoints": true
-    },
-    {
-      "idx": 41,
-      "version": "7",
-      "when": 1785844800000,
-      "tag": "20260804120000_add_resource_metrics",
-      "breakpoints": true
-    },
-    {
-      "idx": 42,
-      "version": "7",
-      "when": 1785853800000,
-      "tag": "20260804223000_add_user_sessions",
-      "breakpoints": true
-    },
-    {
       "idx": 43,
       "version": "7",
       "when": 1786269600000,
       "tag": "20260809000000_add_platform_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1786897061914,
+      "tag": "20260816161741_operations-monitoring",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,6 @@
 import { formatPlayTime } from '../../../utils/native_common'
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 /**
  * 咪咕网页 v5 搜索接口
@@ -134,7 +135,7 @@ export default defineEventHandler(async (event) => {
   const page = parseInt((query.page as string) || '1')
   const limit = parseInt((query.limit as string) || '30')
   let fallbacks = 0
-  const startedAt = Date.now()
+  const startedAt = getServerTimestamp()
 
   if (!str) {
     throw createError({ statusCode: 400, message: 'Missing search query' })
@@ -151,7 +152,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const list = result?.list || []
-    recordDependencyCall('migu', { success: list.length > 0, emptyResult: list.length === 0, durationMs: Date.now() - startedAt, fallbacks })
+    recordDependencyCall('migu', { success: list.length > 0, emptyResult: list.length === 0, durationMs: getServerTimestamp() - startedAt, fallbacks })
     return {
       ...result,
       page,
@@ -159,7 +160,7 @@ export default defineEventHandler(async (event) => {
       source: 'mg'
     }
   } catch (err: any) {
-    recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, fallbacks, error: err?.message || String(err) })
+    recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: getServerTimestamp() - startedAt, fallbacks, error: err?.message || String(err) })
     console.error('[mg.get] 咪咕搜索失败:', err)
     throw createError({
       statusCode: err.statusCode || 500,

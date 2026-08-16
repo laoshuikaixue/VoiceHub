@@ -1,5 +1,6 @@
 import { db, testConnection } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 // 数据库健康检查
 export async function checkDatabaseHealth() {
@@ -172,7 +173,7 @@ export async function getDatabaseDiagnostics() {
     diagnosticQuery(sql`SELECT queryid::text AS query_id, left(query, 300) AS query, calls, round(mean_exec_time::numeric, 2) AS average_duration_ms, round(max_exec_time::numeric, 2) AS maximum_duration_ms FROM pg_stat_statements WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database()) ORDER BY mean_exec_time DESC LIMIT 20`)
   ])
 
-  return { activity, locks, tables, size, slowQueries, collectedAt: new Date().toISOString() }
+  return { activity, locks, tables, size, slowQueries, collectedAt: getServerDate().toISOString() }
 }
 
 // 数据库备份状态检查（模拟）

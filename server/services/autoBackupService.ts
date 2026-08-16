@@ -1,4 +1,5 @@
 import { db } from '~/drizzle/db'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import {
   backupHistory,
   systemSettings,
@@ -423,14 +424,14 @@ export async function executeUploads(prepared: {
 
   // 并行上传，每个完成后立即更新对应方法的结果
   const tasks = enabledMethods.map(async ({ name, fn }, index) => {
-    const startedAt = Date.now()
+    const startedAt = getServerTimestamp()
     try {
       await fn()
-      recordBackupTarget(name, true, Date.now() - startedAt)
+      recordBackupTarget(name, true, getServerTimestamp() - startedAt)
       await updateMethodResult(index, { method: name, success: true })
       return { method: name, success: true }
     } catch (error: any) {
-      recordBackupTarget(name, false, Date.now() - startedAt)
+      recordBackupTarget(name, false, getServerTimestamp() - startedAt)
       console.error(`${name} 备份失败:`, error)
       const errMsg = error.message || String(error) || 'Unknown error'
       await updateMethodResult(index, { method: name, success: false, error: errMsg })

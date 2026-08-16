@@ -6,6 +6,7 @@
  */
 import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 interface CidRes {
   code: number
@@ -42,7 +43,7 @@ export default defineEventHandler(async (event) => {
       message: '缺少 id 参数'
     })
   }
-  const startedAt = Date.now()
+  const startedAt = getServerTimestamp()
 
   // 提取客户端真实 IP，用于转发给 Bilibili 接口，以便分配最快 CDN 节点
   const forwardedFor = getRequestHeader(event, 'x-forwarded-for')
@@ -99,7 +100,7 @@ export default defineEventHandler(async (event) => {
 
     if (resp2.data?.durl?.length > 0) {
       const url = resp2.data.durl[0].url
-      recordDependencyCall('bilibili', { success: true, durationMs: Date.now() - startedAt })
+      recordDependencyCall('bilibili', { success: true, durationMs: getServerTimestamp() - startedAt })
       return { url, pay: false }
     } else {
       throw new Error(`获取歌曲链接失败: ${resp2.message || '未知错误'}`)
@@ -108,7 +109,7 @@ export default defineEventHandler(async (event) => {
     recordDependencyCall('bilibili', {
       success: false,
       semanticFailure: true,
-      durationMs: Date.now() - startedAt,
+      durationMs: getServerTimestamp() - startedAt,
       error: error?.message || String(error)
     })
     console.error('Bilibili playurl error:', error)

@@ -243,8 +243,8 @@
       </section>
       </OpsPanel>
 
-      <section>
-        <OpsPanel :title="locale.application.routePerformance" :subtitle="locale.application.routePerformanceDetail" :status="routePerformancePanelStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!routePerformanceRows.length && !initialOperationsLoading" :refreshable="false">
+      <section class="route-performance-section">
+        <OpsPanel class="xl:col-span-8" :title="locale.application.routePerformance" :subtitle="locale.application.routePerformanceDetail" :status="routePerformancePanelStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!routePerformanceRows.length && !initialOperationsLoading" :refreshable="false">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1020px]">
               <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>403</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
@@ -5319,6 +5319,8 @@ const dependencyProtectionPanelStatus = (panel) => {
 
 .ops-module-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; }.ops-module-summary__value { font-family: var(--ops-mono); font-size: 1.3rem; font-weight: 650; line-height: 1.1; }.ops-module-summary p { margin: .6rem 0 0; color: var(--ops-text-3); font-size: .67rem; line-height: 1.5; }
 .ops-tone--ok { color: var(--ops-ok); }.ops-tone--warning { color: var(--ops-warning); }.ops-tone--error { color: var(--ops-error); }.ops-tone--unknown { color: var(--ops-text-2); }
+.route-performance-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+@media (min-width: 1280px) { .route-performance-section { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
 .ops-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .65rem; }
 .ops-metric-item { display: flex; min-height: 6.2rem; flex-direction: column; gap: .45rem; border: 1px solid var(--ops-line); border-radius: 4px; padding: .8rem; background: #0e1217; }
 .ops-metric-item--overview { min-height: 5.7rem; }

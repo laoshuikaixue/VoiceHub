@@ -97,6 +97,7 @@ export const songs = pgTable('Song', {
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
+  index('song_created_at_idx').on(table.createdAt),
   index('song_requester_id_idx').on(table.requesterId)
 ]);
 
@@ -108,7 +109,8 @@ export const votes = pgTable('Vote', {
   userId: integer('userId').notNull(),
 }, (table) => [
   unique('vote_song_user_unique').on(table.songId, table.userId),
-  index('vote_user_song_idx').on(table.userId, table.songId)
+  index('vote_user_song_idx').on(table.userId, table.songId),
+  index('vote_created_at_idx').on(table.createdAt)
 ]);
 
 // 排期表

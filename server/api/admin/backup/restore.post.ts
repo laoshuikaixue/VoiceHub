@@ -1,4 +1,5 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { db } from '~/drizzle/db'
 import {
   apiKeyPermissions,
@@ -35,7 +36,7 @@ import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 const BACKUP_RESTORE_CLEAR_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'card_code_redeem_logs', 'notifications', 'notification_settings', 'user_status_logs', 'user_identities', 'users', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'songs', 'card_codes', 'song_blacklists', 'email_templates', 'play_times', 'semesters', 'request_times', 'system_settings']
 
 export default defineEventHandler(async (event) => {
-  const restoreStartedAt = Date.now()
+  const restoreStartedAt = getServerTimestamp()
   try {
     // 验证管理员权限
     const user = event.context.user
@@ -2551,7 +2552,7 @@ export default defineEventHandler(async (event) => {
       ipAddress: event.node.req.socket?.remoteAddress || 'unknown',
       userAgent: String(event.node.req.headers['user-agent'] || '').slice(0, 500),
       statusCode: restoreResults.success ? 200 : 500,
-      responseTimeMs: Math.max(0, Date.now() - restoreStartedAt),
+      responseTimeMs: Math.max(0, getServerTimestamp() - restoreStartedAt),
       errorMessage: `backup_restore mode=${mode} restored=${restoreResults.details.recordsRestored || 0} errors=${restoreResults.details.errors.length}`
     })
     await recordAdminOperation(event, {
@@ -2584,7 +2585,7 @@ export default defineEventHandler(async (event) => {
       ipAddress: event.node.req.socket?.remoteAddress || 'unknown',
       userAgent: String(event.node.req.headers['user-agent'] || '').slice(0, 500),
       statusCode: Number(error?.statusCode) || 500,
-      responseTimeMs: Math.max(0, Date.now() - restoreStartedAt),
+      responseTimeMs: Math.max(0, getServerTimestamp() - restoreStartedAt),
       errorMessage: `backup_restore_failed mode=${mode} reason=${String(error?.message || 'unknown').slice(0, 300)}`
     })
     console.error('恢复数据库备份失败:', error)

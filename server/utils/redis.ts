@@ -1,4 +1,5 @@
 import { createClient, type RedisClientType } from 'redis'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 const DEFAULT_KEY_PREFIX = 'voicehub:v2:'
 const CONNECT_TIMEOUT_MS = 5000
@@ -181,7 +182,7 @@ export async function getRedisMetrics() {
   const base = getRedisStats()
   if (!base.configured) return { ...base, metrics: null }
 
-  const now = Date.now()
+  const now = getServerTimestamp()
   if (metricsCache && metricsCache.expiresAt > now) {
     return { ...getRedisStats(), metrics: metricsCache.value }
   }

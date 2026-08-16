@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()
@@ -230,7 +231,7 @@ export default defineEventHandler(async (event) => {
   )
 
   // 存储连接
-  const connectedAt = Date.now()
+  const connectedAt = getServerTimestamp()
   musicConnections.set(connectionId, response)
 
   // 监听客户端断开连接（改进错误处理）
@@ -238,7 +239,7 @@ export default defineEventHandler(async (event) => {
     if (musicConnections.has(connectionId)) {
       musicConnections.delete(connectionId)
       musicConnectionStats.closedConnections += 1
-      musicConnectionStats.totalLifetimeMs += Date.now() - connectedAt
+      musicConnectionStats.totalLifetimeMs += getServerTimestamp() - connectedAt
     }
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval)

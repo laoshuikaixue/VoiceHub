@@ -4,6 +4,7 @@ import { readFileSync, statfsSync } from 'node:fs'
 import { sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { getInstanceId } from '~~/server/utils/instance-id'
+import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 
 const WINDOW_MS = 5 * 60 * 1000
 const eventLoopHistogram = monitorEventLoopDelay({ resolution: 20 })
@@ -21,7 +22,7 @@ const readSystemCpuTimes = () => cpus().reduce((result, cpu) => {
 let systemCpuSnapshot = readSystemCpuTimes()
 
 const state = {
-  startedAt: Date.now(),
+  startedAt: getServerTimestamp(),
   observedDeploymentTarget: null as 'edgeone' | null,
   totalRequests: 0,
   clientErrors: 0,
@@ -69,7 +70,7 @@ const gcObserver = new PerformanceObserver((list) => {
 gcObserver.observe({ entryTypes: ['gc'] })
 
 const prune = () => {
-  const cutoff = Date.now() - WINDOW_MS
+  const cutoff = getServerTimestamp() - WINDOW_MS
   state.samples = state.samples.filter((sample) => sample.at >= cutoff)
   state.businessSamples = state.businessSamples.filter((sample) => sample.at >= cutoff)
   state.oauthSamples = state.oauthSamples.filter((sample) => sample.at >= cutoff)
@@ -92,7 +93,7 @@ export const finishOperationRequest = (startedAt: number, statusCode: number) =>
   if (statusCode >= 500) state.serverErrors += 1
   const context = state.requestContext.get(startedAt)
   state.requestContext.delete(startedAt)
-  state.samples.push({ at: Date.now(), status: statusCode, durationMs, ...context })
+  state.samples.push({ at: getServerTimestamp(), status: statusCode, durationMs, ...context })
   if (state.samples.length > 5000) state.samples = state.samples.slice(-5000)
   prune()
 }
@@ -285,7 +286,7 @@ export const getOperationsMetrics = () => {
   const oauthSuccesses = state.oauthSamples.filter((sample) => sample.success).length
   const bucketSize = WINDOW_MS / 12
   const timeline = Array.from({ length: 12 }, (_, index) => {
-    const start = Date.now() - WINDOW_MS + index * bucketSize
+    const start = getServerTimestamp() - WINDOW_MS + index * bucketSize
     const bucket = state.samples.filter((sample) => sample.at >= start && sample.at < start + bucketSize)
     const errors = bucket.filter((sample) => sample.status >= 500).length
     return {
@@ -387,7 +388,7 @@ export const getOperationsMetrics = () => {
     backups: Object.fromEntries(state.backups),
     backupSnapshot: state.backupSnapshot,
     cache: { ...state.cache },
-    collectedAt: new Date().toISOString()
+    collectedAt: getServerDate().toISOString()
   }
   histogram.reset()
   return result
@@ -495,7 +496,7 @@ export const recordBackupTarget = (target: string, success: boolean, durationMs:
 }
 
 export const recordBackupSnapshot = (snapshot: { exportedTables: number; skippedTables: number; checksum: string }) => {
-  state.backupSnapshot = { ...snapshot, collectedAt: new Date().toISOString() }
+  state.backupSnapshot = { ...snapshot, collectedAt: getServerDate().toISOString() }
 }
 
 export const recordCacheAccess = (hit: boolean) => {
@@ -516,11 +517,11 @@ export const recordSsrPrewarm = (success: boolean, durationMs: number) => {
 }
 
 export const recordBusinessOperation = (operation: 'song_request' | 'schedule_save' | 'vote', success: boolean) => {
-  state.businessSamples.push({ at: Date.now(), operation, success })
+  state.businessSamples.push({ at: getServerTimestamp(), operation, success })
   prune()
 }
 
 export const recordOAuthOperation = (success: boolean) => {
-  state.oauthSamples.push({ at: Date.now(), success })
+  state.oauthSamples.push({ at: getServerTimestamp(), success })
   prune()
 }
