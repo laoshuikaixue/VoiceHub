@@ -101,13 +101,9 @@ export default defineEventHandler(async (event) => {
       db.select({ label: userSessions.deviceType, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))).groupBy(userSessions.deviceType).orderBy(desc(count()))
     ])
 
-    const maskedIp = (ip: string) => ip.includes('.')
-      ? `${ip.split('.').slice(0, 3).join('.')}.*`
-      : ip.includes(':') ? `${ip.split(':').filter(Boolean).slice(0, 3).join(':')}:*` : '已掩码'
     const sessions = rows.map((row) => ({
       ...row,
       displayName: row.name || row.username,
-      ipAddress: maskedIp(row.ipAddress),
       operatingSystem: parseOperatingSystem(row.userAgent),
       isCurrentSession: row.id === currentSessionId,
       status: sessionState(row.lastActiveAt, now)

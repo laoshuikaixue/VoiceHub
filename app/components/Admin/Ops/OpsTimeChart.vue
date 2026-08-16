@@ -43,13 +43,16 @@
           @blur="activePoint = null"
           @pointerenter="activePoint = point"
         ><i /></button>
-        <template v-if="activePoint">
-          <i class="ops-chart__guide" :style="{ left: `${activePoint.xPercent}%` }" />
-          <div class="ops-chart__tooltip" :style="{ left: `${tooltipLeft}%` }">
-            <time>{{ formatTooltipTime(activePoint.at) }}</time>
-            <div><span>{{ title }}</span><strong>{{ formatValue(activePoint.value) }}</strong></div>
+        <Transition name="chart-hover">
+          <div v-if="activePoint" class="ops-chart__interaction">
+            <i class="ops-chart__guide" :style="{ left: `${activePoint.xPercent}%` }" />
+            <i class="ops-chart__active-point" :style="{ left: `${activePoint.xPercent}%`, bottom: `${activePoint.yPercent}%` }" />
+            <div class="ops-chart__tooltip" :style="{ left: `${tooltipLeft}%` }">
+              <time>{{ formatTooltipTime(activePoint.at) }}</time>
+              <div><span>{{ title }}</span><strong>{{ formatValue(activePoint.value) }}</strong></div>
+            </div>
           </div>
-        </template>
+        </Transition>
       </div>
       <div class="ops-chart__x-axis">
         <time v-for="label in axisLabels" :key="`${label.index}-${label.at}`" :style="{ left: `${label.left}%` }">{{ formatAxisTime(label.at) }}</time>
@@ -209,43 +212,51 @@ const activateNearestPoint = (event) => {
 </script>
 
 <style scoped>
-.ops-chart { --chart-color: #38bdf8; --chart-rgb: 56, 189, 248; min-width: 0; color: var(--chart-color); }
+.ops-chart { --chart-color: var(--ops-info, #38bdf8); --chart-rgb: 56, 189, 248; min-width: 0; color: var(--chart-color); }
 .ops-chart--danger { --chart-color: #fb7185; --chart-rgb: 251, 113, 133; }
 .ops-chart--warning { --chart-color: #fbbf24; --chart-rgb: 251, 191, 36; }
 .ops-chart--success { --chart-color: #34d399; --chart-rgb: 52, 211, 153; }
-.ops-chart__summary { display: flex; min-height: 3.1rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid rgba(148, 163, 184, .1); padding: .15rem .1rem .75rem; }
-.ops-chart__legend { display: flex; min-width: 0; align-items: center; gap: .5rem; color: #cbd5e1; font-size: .75rem; font-weight: 650; }
+.ops-chart__summary { display: flex; min-height: 3.1rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid var(--ops-line-soft, rgba(148, 163, 184, .1)); padding: .15rem .1rem .75rem; }
+.ops-chart__legend { display: flex; min-width: 0; align-items: center; gap: .5rem; color: var(--ops-text-1, #cbd5e1); font-size: .75rem; font-weight: 650; }
 .ops-chart__legend i { width: 1.25rem; height: 2px; flex: none; background: var(--chart-color); box-shadow: 0 0 10px rgba(var(--chart-rgb), .28); }
 .ops-chart__legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ops-chart__summary dl { display: grid; grid-template-columns: repeat(4, minmax(4.2rem, auto)); gap: .35rem; margin: 0; }
-.ops-chart__summary dl div { border-left: 1px solid rgba(148, 163, 184, .1); padding-left: .6rem; }
-.ops-chart__summary dt { color: #64748b; font-size: .625rem; font-weight: 600; }
-.ops-chart__summary dd { margin: .12rem 0 0; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .6875rem; font-weight: 700; white-space: nowrap; }
+.ops-chart__summary dl div { border-left: 1px solid var(--ops-line-soft, rgba(148, 163, 184, .1)); padding-left: .6rem; }
+.ops-chart__summary dt { color: var(--ops-text-2, #64748b); font-size: .625rem; font-weight: 600; }
+.ops-chart__summary dd { margin: .12rem 0 0; color: var(--ops-text-1, #e2e8f0); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .6875rem; font-weight: 700; white-space: nowrap; }
 .ops-chart__body { position: relative; margin-top: .75rem; padding-left: 3.9rem; }
-.ops-chart__y-axis { position: absolute; top: 0; bottom: 1.7rem; left: 0; display: flex; width: 3.45rem; flex-direction: column; justify-content: space-between; color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .625rem; text-align: right; }
-.ops-chart__plot { position: relative; height: 13.75rem; overflow: hidden; border-bottom: 1px solid rgba(148, 163, 184, .24); background-color: rgba(15, 23, 42, .16); background-image: linear-gradient(to right, rgba(148, 163, 184, .075) 1px, transparent 1px); background-size: 25% 100%; cursor: crosshair; }
+.ops-chart__y-axis { position: absolute; top: 0; bottom: 1.7rem; left: 0; display: flex; width: 3.45rem; flex-direction: column; justify-content: space-between; color: var(--ops-text-2, #64748b); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .625rem; text-align: right; }
+.ops-chart__plot { position: relative; height: 13.75rem; overflow: hidden; border-bottom: 1px solid var(--ops-line-strong, rgba(148, 163, 184, .24)); background-color: color-mix(in srgb, var(--ops-control, #0e1217) 45%, transparent); background-image: linear-gradient(to right, var(--ops-line-soft, rgba(148, 163, 184, .075)) 1px, transparent 1px); background-size: 25% 100%; cursor: crosshair; }
 .ops-chart__grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
-.ops-chart__grid i { border-top: 1px dashed rgba(148, 163, 184, .14); }
+.ops-chart__grid i { border-top: 1px dashed var(--ops-line, rgba(148, 163, 184, .14)); }
 .ops-chart__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--chart-color); pointer-events: none; }
-.ops-chart__svg polygon { stroke: none; }
-.ops-chart__svg polyline { fill: none; stroke: currentColor; stroke-width: 2.25; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.ops-chart__svg polygon { stroke: none; animation: chart-area-in .45s ease-out both; }
+.ops-chart__svg polyline { fill: none; stroke: currentColor; stroke-width: 2.25; stroke-dasharray: 1400; stroke-dashoffset: 1400; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; animation: chart-line-in .65s cubic-bezier(.22, 1, .36, 1) forwards; }
 .ops-chart__point { position: absolute; bottom: 0; left: var(--point-x); z-index: 2; width: max(18px, calc(100% / 48)); height: 100%; transform: translateX(-50%); border: 0; padding: 0; background: transparent; cursor: crosshair; }
-.ops-chart__point i { position: absolute; bottom: var(--point-y); left: 50%; width: 6px; height: 6px; transform: translate(-50%, 50%); border: 1px solid var(--chart-color); border-radius: 50%; background: #11151b; opacity: .45; transition: width .12s ease, height .12s ease, opacity .12s ease, box-shadow .12s ease; }
+.ops-chart__point i { position: absolute; bottom: var(--point-y); left: 50%; width: 6px; height: 6px; transform: translate(-50%, 50%); border: 1px solid var(--chart-color); border-radius: 50%; background: var(--ops-panel, #11151b); opacity: .45; transition: width .12s ease, height .12s ease, opacity .12s ease, box-shadow .12s ease; }
 .ops-chart__point:hover i,
 .ops-chart__point:focus-visible i,
 .ops-chart__point.is-active i { width: 10px; height: 10px; opacity: 1; box-shadow: 0 0 0 4px rgba(var(--chart-rgb), .14); outline: none; }
 .ops-chart__point:focus-visible { outline: 1px dashed rgba(var(--chart-rgb), .55); outline-offset: -1px; }
-.ops-chart__guide { position: absolute; inset-block: 0; z-index: 3; border-left: 1px dashed rgba(var(--chart-rgb), .72); pointer-events: none; }
-.ops-chart__tooltip { position: absolute; top: .55rem; z-index: 4; min-width: 11rem; transform: translateX(-50%); border: 1px solid rgba(var(--chart-rgb), .34); border-radius: 6px; padding: .6rem .7rem; background: rgba(12, 16, 22, .96); color: #e5e7eb; box-shadow: 0 10px 24px rgba(0, 0, 0, .28); pointer-events: none; }
-.ops-chart__tooltip time { display: block; margin-bottom: .4rem; color: #94a3b8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .625rem; }
+.ops-chart__interaction { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.ops-chart__guide { position: absolute; inset-block: 0; border-left: 1px dashed rgba(var(--chart-rgb), .72); transition: left .18s cubic-bezier(.22, 1, .36, 1); }
+.ops-chart__active-point { position: absolute; width: 11px; height: 11px; transform: translate(-50%, 50%); border: 2px solid var(--ops-panel, #11151b); border-radius: 50%; background: var(--chart-color); box-shadow: 0 0 0 4px rgba(var(--chart-rgb), .18), 0 0 14px rgba(var(--chart-rgb), .32); transition: left .18s cubic-bezier(.22, 1, .36, 1), bottom .18s cubic-bezier(.22, 1,.36, 1); }
+.ops-chart__tooltip { position: absolute; top: .55rem; min-width: 11rem; transform: translateX(-50%); border: 1px solid rgba(var(--chart-rgb), .34); border-radius: 6px; padding: .6rem .7rem; background: color-mix(in srgb, var(--ops-panel, #11151b) 96%, transparent); color: var(--ops-text-1, #e5e7eb); box-shadow: var(--ops-shadow-lg, 0 10px 24px rgba(0, 0, 0, .28)); transition: left .18s cubic-bezier(.22, 1, .36, 1); }
+.ops-chart__tooltip time { display: block; margin-bottom: .4rem; color: var(--ops-text-2, #94a3b8); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .625rem; }
 .ops-chart__tooltip div { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.ops-chart__tooltip span { overflow: hidden; color: #94a3b8; font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
-.ops-chart__tooltip strong { color: #f8fafc; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; white-space: nowrap; }
-.ops-chart__x-axis { position: relative; height: 1.7rem; color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .625rem; }
+.ops-chart__tooltip span { overflow: hidden; color: var(--ops-text-2, #94a3b8); font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
+.ops-chart__tooltip strong { color: var(--ops-text-1, #f8fafc); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; white-space: nowrap; }
+.ops-chart__x-axis { position: relative; height: 1.7rem; color: var(--ops-text-2, #64748b); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .625rem; }
 .ops-chart__x-axis time { position: absolute; top: .5rem; transform: translateX(-50%); white-space: nowrap; }
 .ops-chart__x-axis time:first-child { transform: none; }
 .ops-chart__x-axis time:last-child { transform: translateX(-100%); }
-.ops-chart__footer { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid rgba(148, 163, 184, .08); padding: .55rem .1rem 0; color: #64748b; font-size: .625rem; }
+.ops-chart__footer { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--ops-line-soft, rgba(148, 163, 184, .08)); padding: .55rem .1rem 0; color: var(--ops-text-2, #64748b); font-size: .625rem; }
+.chart-hover-enter-active,
+.chart-hover-leave-active { transition: opacity .14s ease, transform .14s ease; }
+.chart-hover-enter-from,
+.chart-hover-leave-to { transform: translateY(-3px); opacity: 0; }
+@keyframes chart-line-in { to { stroke-dashoffset: 0; } }
+@keyframes chart-area-in { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 640px) {
   .ops-chart__summary { align-items: flex-start; flex-direction: column; }
   .ops-chart__summary dl { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -256,5 +267,14 @@ const activateNearestPoint = (event) => {
   .ops-chart__x-axis time:nth-child(even) { display: none; }
   .ops-chart__footer span:first-child { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .ops-chart__point i { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .ops-chart__svg polygon,
+  .ops-chart__svg polyline { animation: none; stroke-dashoffset: 0; }
+  .ops-chart__point i,
+  .ops-chart__guide,
+  .ops-chart__active-point,
+  .ops-chart__tooltip,
+  .chart-hover-enter-active,
+  .chart-hover-leave-active { transition: none; }
+}
 </style>

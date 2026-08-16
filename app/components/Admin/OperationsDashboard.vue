@@ -100,7 +100,7 @@
         </div>
       </section>
 
-      <OpsPanel :title="locale.overview.deploymentMode" :subtitle="locale.overview.deploymentModeDetail" :status="systemModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system" :empty="!systemSnapshot && !initialOperationsLoading" :refreshable="false">
+      <OpsPanel v-if="initialOperationsLoading || deploymentModeRows.length" :title="locale.overview.deploymentMode" :subtitle="locale.overview.deploymentModeDetail" :status="systemModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system" :empty="!runtimeEnvironmentKnown && !initialOperationsLoading" :refreshable="false">
         <div class="deployment-mode-grid">
           <div v-for="item in deploymentModeRows" :key="item.label" class="deployment-mode-card">
             <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
@@ -287,20 +287,20 @@
     </template>
 
     <template v-else-if="activeGroup === 'infra'">
-      <OpsPanel title="服务器摘要" subtitle="当前实例与进程概览" :status="infraCombinedStatus" :updated-at="infraCombinedUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!systemSnapshot && !runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+      <OpsPanel :title="isServerlessRuntime ? '运行实例摘要' : '服务器摘要'" :subtitle="isServerlessRuntime ? '当前函数实例与进程概览' : '当前实例与进程概览'" :status="infraCombinedStatus" :updated-at="infraCombinedUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!systemSnapshot && !runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <dl class="detail-grid">
           <div v-for="item in serverSummaryDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
         </dl>
       </OpsPanel>
 
-      <OpsPanel title="运行指标" subtitle="CPU、进程内存与 Node.js 运行指标" :status="infraMetricsStatus" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+      <OpsPanel v-if="initialOperationsLoading || serverMetrics.length" :title="isServerlessRuntime ? '函数运行指标' : '运行指标'" :subtitle="isServerlessRuntime ? '当前函数实例可观测的调用与执行耗时' : 'CPU、进程内存与 Node.js 运行指标'" :status="infraMetricsStatus" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <dl class="detail-grid">
           <div v-for="item in serverMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value || '--' }}</dd></div>
         </dl>
       </OpsPanel>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
+      <section v-if="visibleInfraTrendPanels.length" class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article v-for="panel in visibleInfraTrendPanels" :key="panel.title" class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && hasTimelineMetric(panel.field) ? `${formatChartValue(trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field), panel.unit)} ${panel.unit}` : '暂无数据' }}</span></div>
           <OpsTimeChart v-if="panel.available && hasTimelineMetric(panel.field)" :points="runtimeTimeline" :field="panel.field" :title="panel.title" :unit="panel.unit" :labels="trendChartLabels" />
           <div v-else class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
@@ -352,23 +352,23 @@
         </OpsPanel>
       </section>
 
-      <section class="server-resource-grid">
-        <OpsPanel v-for="panel in serverResourcePanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="infraDetailPanelStatus(panel)" :updated-at="infraDetailPanelUpdatedAt(panel)" :pending="initialOperationsLoading" :error="infraDetailPanelError(panel)" :empty="panel.empty && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+      <section v-if="visibleServerResourcePanels.length" class="server-resource-grid">
+        <OpsPanel v-for="panel in visibleServerResourcePanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="infraDetailPanelStatus(panel)" :updated-at="infraDetailPanelUpdatedAt(panel)" :pending="initialOperationsLoading" :error="infraDetailPanelError(panel)" :refreshable="false" @refresh="loadOperationsData">
           <dl class="server-resource-list">
             <div v-for="item in panel.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </OpsPanel>
       </section>
 
-      <section class="server-resource-grid">
-        <OpsPanel v-for="panel in runtimeGuardPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="infraDetailPanelStatus(panel)" :updated-at="infraDetailPanelUpdatedAt(panel)" :pending="initialOperationsLoading" :error="infraDetailPanelError(panel)" :empty="panel.empty && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+      <section v-if="visibleRuntimeGuardPanels.length" class="server-resource-grid">
+        <OpsPanel v-for="panel in visibleRuntimeGuardPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="infraDetailPanelStatus(panel)" :updated-at="infraDetailPanelUpdatedAt(panel)" :pending="initialOperationsLoading" :error="infraDetailPanelError(panel)" :empty="panel.empty && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="server-resource-list">
             <div v-for="item in panel.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </OpsPanel>
       </section>
 
-      <OpsPanel :title="locale.server.restartEvents" :subtitle="locale.server.restartEventsDetail" status="unknown" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
+      <OpsPanel v-if="isSelfHostedRuntime" :title="locale.server.restartEvents" :subtitle="locale.server.restartEventsDetail" status="unknown" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
 
     </template>
 
@@ -435,10 +435,10 @@
         <OpsPanel class="xl:col-span-2" :title="`${locale.database.tableHealth} · 容量与活跃度`" subtitle="使用 PostgreSQL 统计视图估算行数，避免对业务表执行高频 COUNT(*)。" :status="databaseTablesPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics?.tables?.available || !databaseTableRows.length" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[680px]">
-              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio != null ? formatPercent(item.dead_row_ratio) : 'N/A' }}</td><td>N/A</td></tr>
-                <tr v-if="!databaseTableRows.length"><td colspan="6" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio != null ? formatPercent(item.dead_row_ratio) : 'N/A' }}</td></tr>
+                <tr v-if="!databaseTableRows.length"><td colspan="5" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
               </tbody>
             </table>
           </div>
@@ -2375,10 +2375,17 @@ const overviewSignals = computed(() => [
 
 const isServerlessRuntime = computed(() => {
   const runtime = runtimeMetrics.value?.runtime || runtimeMetrics.value || {}
+  if (typeof runtime.serverless === 'boolean') return runtime.serverless
   const mode = String(runtime.deploymentTarget || runtime.nitroPreset || systemSnapshot.value?.nitroPreset || '').toLowerCase()
   if (publicRuntimeConfig.isNetlify) return true
   return ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
 })
+const runtimeEnvironmentKnown = computed(() => Boolean(
+  publicRuntimeConfig.isNetlify
+  || runtimeMetrics.value?.runtime
+  || systemSnapshot.value?.nitroPreset
+))
+const isSelfHostedRuntime = computed(() => runtimeEnvironmentKnown.value && !isServerlessRuntime.value)
 const runtimeDeploymentTarget = computed(() => {
   const runtime = runtimeMetrics.value?.runtime || runtimeMetrics.value || {}
   const target = String(runtime.deploymentTarget || '').toLowerCase()
@@ -2439,10 +2446,13 @@ const backupConfigFields = computed(() => [
   { label: locale.value.overview?.backupTargetEmail, value: backupMonitorStatus.value?.targets?.email ? '已启用' : '未启用' }
 ])
 
-const deploymentModeRows = computed(() => [
-  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: isServerlessRuntime.value ? '不适用' : systemSnapshot.value?.platform ? '已检测到' : locale.value.overview?.detectionPending },
-  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? `已检测到（${runtimeDeploymentTarget.value}）` : '不适用' }
-])
+const deploymentModeRows = computed(() => {
+  if (!runtimeEnvironmentKnown.value) return []
+  if (isServerlessRuntime.value) {
+    return [{ icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: `已检测到（${runtimeDeploymentTarget.value}）` }]
+  }
+  return [{ icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: '已检测到' }]
+})
 
 const dependencyRows = computed(() => [
   {
@@ -2478,7 +2488,6 @@ const alertRules = computed(() => [
   { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleDatabaseConnections, detail: locale.value.overview?.ruleDatabaseConnectionsDetail },
   { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleSongSuccess, detail: locale.value.overview?.ruleSongSuccessDetail },
   { priority: 'P1', tone: 'alert-priority--high', label: locale.value.overview?.ruleResponseP95, detail: locale.value.overview?.ruleResponseP95Detail },
-  { priority: 'P1', tone: 'alert-priority--high', label: locale.value.overview?.ruleColdStarts, detail: locale.value.overview?.ruleColdStartsDetail },
   { priority: 'P2', tone: 'alert-priority--medium', label: locale.value.overview?.ruleNodeMemory, detail: locale.value.overview?.ruleNodeMemoryDetail },
   { priority: 'P2', tone: 'alert-priority--medium', label: locale.value.overview?.ruleMusicSources, detail: locale.value.overview?.ruleMusicSourcesDetail }
 ])
@@ -2590,77 +2599,87 @@ const serverSummaryDetails = computed(() => [
   { label: locale.value.runtime?.processPid, value: runtimeMetrics.value?.runtime?.processId != null ? String(runtimeMetrics.value.runtime.processId) : '--' }
 ])
 
-const serverMetrics = computed(() => (isServerlessRuntime.value ? [
-  { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : '--' },
-  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: formatMilliseconds(runtimeMetrics.value?.http?.p95Ms) },
-  { icon: 'refresh', label: '冷启动次数', detail: '当前实例可见的冷启动次数', value: '--' },
-  { icon: 'warning', label: '内存超限错误', detail: '函数因内存限制终止的次数', value: '--' }
-] : [
+const serverMetrics = computed(() => {
+  if (!runtimeEnvironmentKnown.value) return []
+  if (isServerlessRuntime.value) {
+    return [
+      { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : '--', available: runtimeMetrics.value?.http?.recentRequests != null },
+      { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: formatMilliseconds(runtimeMetrics.value?.http?.p95Ms), available: runtimeMetrics.value?.http?.p95Ms != null }
+    ].filter(item => item.available)
+  }
+  return [
   {
     icon: 'activity',
     label: locale.value.metrics?.cpuUsage,
     detail: locale.value.server?.cpuUsageDetail,
-    value: runtimeMetrics.value?.resources?.cpuUsagePercent != null ? formatPercent(runtimeMetrics.value.resources.cpuUsagePercent) : '--'
+    value: runtimeMetrics.value?.resources?.cpuUsagePercent != null ? formatPercent(runtimeMetrics.value.resources.cpuUsagePercent) : '--',
+    available: runtimeMetrics.value?.resources?.cpuUsagePercent != null
   },
   {
     icon: 'monitoring',
     label: locale.value.metrics?.systemMemory,
     detail: locale.value.server?.systemMemoryDetail,
-    value: runtimeMetrics.value?.resources?.memoryUsedBytes != null ? `${formatBytes(runtimeMetrics.value.resources.memoryUsedBytes)} 常驻内存` : '--'
+    value: runtimeMetrics.value?.resources?.memoryUsedBytes != null ? `${formatBytes(runtimeMetrics.value.resources.memoryUsedBytes)} 常驻内存` : '--',
+    available: runtimeMetrics.value?.resources?.memoryUsedBytes != null
   },
   {
     icon: 'database',
     label: locale.value.metrics?.diskUsage,
     detail: locale.value.server?.diskUsageDetail,
-    value: runtimeMetrics.value?.resources?.diskUsedBytes != null ? `${formatBytes(runtimeMetrics.value.resources.diskUsedBytes)} 已用` : '--'
+    value: runtimeMetrics.value?.resources?.diskUsedBytes != null ? `${formatBytes(runtimeMetrics.value.resources.diskUsedBytes)} 已用` : '--',
+    available: runtimeMetrics.value?.resources?.diskUsedBytes != null
   },
   {
     icon: 'activity',
     label: locale.value.server?.networkIngress,
     detail: locale.value.server?.networkIngressDetail,
-    value: runtimeMetrics.value?.resources?.networkRxBytes != null ? `${formatBytes(runtimeMetrics.value.resources.networkRxBytes)} 累计` : '--'
+    value: runtimeMetrics.value?.resources?.networkRxBytes != null ? `${formatBytes(runtimeMetrics.value.resources.networkRxBytes)} 累计` : '--',
+    available: runtimeMetrics.value?.resources?.networkRxBytes != null
   },
   {
     icon: 'activity',
     label: locale.value.server?.networkEgress,
     detail: locale.value.server?.networkEgressDetail,
-    value: runtimeMetrics.value?.resources?.networkTxBytes != null ? `${formatBytes(runtimeMetrics.value.resources.networkTxBytes)} 累计` : '--'
+    value: runtimeMetrics.value?.resources?.networkTxBytes != null ? `${formatBytes(runtimeMetrics.value.resources.networkTxBytes)} 累计` : '--',
+    available: runtimeMetrics.value?.resources?.networkTxBytes != null
   },
   {
     icon: 'database',
     label: locale.value.server?.diskIo,
     detail: locale.value.server?.diskIoDetail,
-    value: runtimeMetrics.value?.resources?.diskTotalBytes != null ? formatBytes(runtimeMetrics.value.resources.diskTotalBytes) : '--'
-  },
-  {
-    icon: 'refresh',
-    label: locale.value.server?.containerRestarts,
-    detail: locale.value.server?.containerRestartsDetail,
-    value: '--'
+    value: runtimeMetrics.value?.resources?.diskTotalBytes != null ? formatBytes(runtimeMetrics.value.resources.diskTotalBytes) : '--',
+    available: runtimeMetrics.value?.resources?.diskTotalBytes != null
   },
   {
     icon: 'activity',
     label: locale.value.application?.eventLoopDelay,
     detail: locale.value.application?.eventLoopDelayDetail,
-    value: formatMilliseconds(runtimeEventLoopMetrics.value?.p99Ms)
+    value: formatMilliseconds(runtimeEventLoopMetrics.value?.p99Ms),
+    available: runtimeEventLoopMetrics.value?.p99Ms != null
   },
   {
     icon: 'clock',
     label: locale.value.application?.gcPause,
     detail: locale.value.application?.gcPauseDetail,
-    value: formatMilliseconds(runtimeGcMetrics.value?.averagePauseMs)
+    value: formatMilliseconds(runtimeGcMetrics.value?.averagePauseMs),
+    available: runtimeGcMetrics.value?.averagePauseMs != null
   }
-]))
+  ].filter(item => item.available)
+})
 
-const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
-  { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
-  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: 'ms', field: 'p95Ms', available: true }
-] : [
-  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '%', field: 'cpu_usage_percent', available: true },
-  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', field: 'memory_used_mb', available: true },
-  { title: '磁盘使用趋势', detail: '服务器工作目录所在文件系统的已用容量。', unit: 'MB', field: 'disk_used_mb', available: true },
-  { title: locale.value.server?.networkTrend, detail: 'Linux 网络接口每分钟接收流量；其他运行平台保持未采集。', unit: 'MB/分钟', field: 'network_rx_mb', available: true }
-]))
+const infraTrendPanels = computed(() => {
+  if (!runtimeEnvironmentKnown.value) return []
+  return isServerlessRuntime.value ? [
+    { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
+    { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势。', unit: 'ms', field: 'p95Ms', available: true }
+  ] : [
+    { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '%', field: 'cpu_usage_percent', available: true },
+    { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', field: 'memory_used_mb', available: true },
+    { title: '磁盘使用趋势', detail: '服务器工作目录所在文件系统的已用容量。', unit: 'MB', field: 'disk_used_mb', available: true },
+    { title: locale.value.server?.networkTrend, detail: 'Linux 网络接口每分钟接收流量；其他运行平台保持未采集。', unit: 'MB/分钟', field: 'network_rx_mb', available: true }
+  ]
+})
+const visibleInfraTrendPanels = computed(() => infraTrendPanels.value.filter(panel => panel.available && hasTimelineMetric(panel.field)))
 
 const serverRuntimeDetails = computed(() => [
   { label: '部署运行模式', value: runtimeDeploymentTarget.value },
@@ -2679,6 +2698,7 @@ const serverResourcePanels = computed(() => [
   {
     icon: 'activity',
     source: 'system',
+    selfHostedOnly: true,
     title: locale.value.server?.cpuDetails,
     detail: locale.value.server?.cpuDetailsDetail,
     empty: isServerlessRuntime.value || runtimeMetrics.value?.resources?.cpuCores == null,
@@ -2693,6 +2713,7 @@ const serverResourcePanels = computed(() => [
   {
     icon: 'monitoring',
     source: 'system',
+    selfHostedOnly: true,
     title: locale.value.server?.systemMemoryDetails,
     detail: locale.value.server?.systemMemoryDetailsDetail,
     empty: isServerlessRuntime.value || runtimeMetrics.value?.resources?.memoryTotalBytes == null,
@@ -2705,6 +2726,7 @@ const serverResourcePanels = computed(() => [
   {
     icon: 'database',
     source: 'system',
+    selfHostedOnly: true,
     title: locale.value.server?.diskDetails,
     detail: locale.value.server?.diskDetailsDetail,
     empty: isServerlessRuntime.value || runtimeMetrics.value?.resources?.diskTotalBytes == null,
@@ -2733,6 +2755,9 @@ const serverResourcePanels = computed(() => [
     ]
   }
 ])
+const visibleServerResourcePanels = computed(() => serverResourcePanels.value.filter(panel =>
+  (!panel.selfHostedOnly || isSelfHostedRuntime.value) && !panel.empty
+))
 
 const runtimeGuardPanels = computed(() => [
   {
@@ -2774,6 +2799,7 @@ const runtimeGuardPanels = computed(() => [
     ]
   }
 ])
+const visibleRuntimeGuardPanels = computed(() => runtimeGuardPanels.value.filter(panel => !panel.empty))
 
 const databasePoolDetails = computed(() => [
   { label: locale.value.server?.poolUtilization, value: formatPercent(operationsData.value.pool?.utilization) },
@@ -3279,8 +3305,8 @@ const dependencyProtectionPanelStatus = (panel) => {
 .operations-dashboard {
   --ops-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   width: 100%;
-  background: #0b0e13;
-  color: #e5e7eb;
+  background: var(--ops-canvas, #0b0e13);
+  color: var(--ops-text-1, #e5e7eb);
   letter-spacing: 0;
 }
 
@@ -5205,17 +5231,22 @@ const dependencyProtectionPanelStatus = (panel) => {
 
 /* 运维看板统一状态令牌与顶部状态脊。 */
 .operations-dashboard {
-  --ops-ok: #34d399;
-  --ops-warning: #fbbf24;
-  --ops-error: #fb7185;
-  --ops-unknown: #94a3b8;
-  --ops-info: #22d3ee;
-  --ops-text-1: #e5e7eb;
-  --ops-text-2: #94a3b8;
-  --ops-text-3: #94a3b8;
-  --ops-panel: #11151b;
-  --ops-line: rgba(148, 163, 184, .12);
-  --ops-line-strong: rgba(34, 211, 238, .5);
+  --ops-ok: var(--success, #34d399);
+  --ops-warning: var(--warning, #fbbf24);
+  --ops-error: var(--error, #fb7185);
+  --ops-unknown: var(--text-tertiary, #94a3b8);
+  --ops-info: var(--info, #22d3ee);
+  --ops-text-1: var(--text-primary, #e5e7eb);
+  --ops-text-2: var(--text-secondary, #94a3b8);
+  --ops-text-3: var(--text-tertiary, #94a3b8);
+  --ops-canvas: var(--bg-primary, #0b0e13);
+  --ops-panel: var(--card-bg, #11151b);
+  --ops-control: var(--input-bg, #0e1217);
+  --ops-line: var(--card-border, rgba(148, 163, 184, .12));
+  --ops-line-soft: color-mix(in srgb, var(--ops-line) 58%, transparent);
+  --ops-line-strong: var(--card-hover-border, rgba(34, 211, 238, .5));
+  --ops-shadow: var(--shadow-sm, none);
+  --ops-shadow-lg: var(--shadow-lg, 0 10px 24px rgba(0, 0, 0, .28));
   position: relative;
   color: var(--ops-text-1);
 }
@@ -5617,7 +5648,6 @@ const dependencyProtectionPanelStatus = (panel) => {
 /* ===== 视觉精修层：统一质感、状态氛围与反馈动效，不改结构 ===== */
 /* 修复：--ops-control 被多处引用但从未定义，导航分组标签与参考表背景失效 */
 .operations-dashboard {
-  --ops-control: #0d1218;
   --ops-radius: 8px;
   --spine-accent: var(--ops-unknown);
 }
@@ -5644,8 +5674,8 @@ const dependencyProtectionPanelStatus = (panel) => {
 .ops-status-spine__countdown { background: linear-gradient(90deg, color-mix(in srgb, var(--ops-info) 25%, transparent), var(--ops-info)); box-shadow: 0 0 8px color-mix(in srgb, var(--ops-info) 55%, transparent); }
 
 /* 刷新主按钮强调色 */
-.refresh-button { border-color: color-mix(in srgb, var(--ops-info) 30%, transparent); color: var(--ops-info); background: color-mix(in srgb, var(--ops-info) 9%, #0e1217); }
-.refresh-button:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ops-info) 60%, transparent); background: color-mix(in srgb, var(--ops-info) 15%, #0e1217); }
+.refresh-button { border-color: color-mix(in srgb, var(--ops-info) 30%, transparent); color: var(--ops-info); background: color-mix(in srgb, var(--ops-info) 9%, var(--ops-control)); }
+.refresh-button:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ops-info) 60%, transparent); background: color-mix(in srgb, var(--ops-info) 15%, var(--ops-control)); }
 .auto-refresh-toggle > span.is-enabled { box-shadow: 0 0 6px color-mix(in srgb, var(--ops-info) 70%, transparent); }
 
 /* 恢复加载/刷新旋转反馈（此前 animation:none 导致加载无反馈；reduced-motion 用户仍由上方媒体查询压制） */
@@ -5670,9 +5700,9 @@ const dependencyProtectionPanelStatus = (panel) => {
 .group-navigation,
 .monitoring-reference,
 .ops-empty-panel {
-  border-color: rgba(148, 163, 184, .13);
+  border-color: var(--ops-line);
   border-radius: var(--ops-radius);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(148, 163, 184, .05);
+  box-shadow: var(--ops-shadow);
 }
 .panel:hover,
 .signal-card:hover,
@@ -5680,13 +5710,13 @@ const dependencyProtectionPanelStatus = (panel) => {
 .deployment-mode-card:hover,
 .service-row:hover {
   border-color: color-mix(in srgb, var(--ops-info) 32%, var(--ops-line));
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(148, 163, 184, .06);
+  box-shadow: var(--ops-shadow-lg);
   transform: translateY(-1px);
 }
 
 /* 指标小卡与内部块统一质感 */
-.ops-metric-item { border-radius: var(--ops-radius); background: #0d1117; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
-.ops-metric-item:hover { border-color: color-mix(in srgb, var(--ops-info) 30%, transparent); box-shadow: 0 4px 14px rgba(0, 0, 0, .3); transform: translateY(-1px); }
+.ops-metric-item { border-radius: var(--ops-radius); background: var(--ops-control); transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.ops-metric-item:hover { border-color: color-mix(in srgb, var(--ops-info) 30%, transparent); box-shadow: var(--ops-shadow-lg); transform: translateY(-1px); }
 .server-health-details > div,
 .server-health-inspection__note,
 .risk-summary-grid > div,
@@ -5704,5 +5734,162 @@ const dependencyProtectionPanelStatus = (panel) => {
 .data-table tbody tr:hover td { background: rgba(148,163,184,.04); }
 .log-result-row, .operation-log-row { cursor: pointer; }
 
-/* 图表柱子渐变填充 */
+</style>
+
+<style>
+:root[data-theme$='Light'] .operations-dashboard {
+  background: var(--ops-canvas);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .panel,
+:root[data-theme$='Light'] .operations-dashboard .signal-card,
+:root[data-theme$='Light'] .operations-dashboard .metric-card,
+:root[data-theme$='Light'] .operations-dashboard .deployment-mode-card,
+:root[data-theme$='Light'] .operations-dashboard .dependency-card,
+:root[data-theme$='Light'] .operations-dashboard .server-summary-strip,
+:root[data-theme$='Light'] .operations-dashboard .operations-loading-state,
+:root[data-theme$='Light'] .operations-dashboard .group-navigation,
+:root[data-theme$='Light'] .operations-dashboard .server-health-score,
+:root[data-theme$='Light'] .operations-dashboard .server-health-details > div,
+:root[data-theme$='Light'] .operations-dashboard .server-health-inspection__note,
+:root[data-theme$='Light'] .operations-dashboard .risk-total,
+:root[data-theme$='Light'] .operations-dashboard .risk-summary-grid > div,
+:root[data-theme$='Light'] .operations-dashboard .risk-level-row,
+:root[data-theme$='Light'] .operations-dashboard .risk-levels__empty,
+:root[data-theme$='Light'] .operations-dashboard .operation-log-detail-row td,
+:root[data-theme$='Light'] .operations-dashboard .log-detail-row td {
+  border-color: var(--ops-line);
+  background: var(--ops-panel);
+  box-shadow: var(--ops-shadow);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .refresh-button,
+:root[data-theme$='Light'] .operations-dashboard .auto-refresh-toggle,
+:root[data-theme$='Light'] .operations-dashboard .request-id-shortcut,
+:root[data-theme$='Light'] .operations-dashboard .status-badge,
+:root[data-theme$='Light'] .operations-dashboard .table-action,
+:root[data-theme$='Light'] .operations-dashboard .log-level-filter,
+:root[data-theme$='Light'] .operations-dashboard .log-level-filter button,
+:root[data-theme$='Light'] .operations-dashboard .operation-log-filters .filter-field,
+:root[data-theme$='Light'] .operations-dashboard .ops-refresh-interval > div,
+:root[data-theme$='Light'] .operations-dashboard .ops-timeline-range > div,
+:root[data-theme$='Light'] .operations-dashboard .operation-log-select > div {
+  border-color: var(--ops-line);
+  color: var(--ops-text-1);
+  background: var(--ops-control);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .panel-title,
+:root[data-theme$='Light'] .operations-dashboard .subsection-heading h3,
+:root[data-theme$='Light'] .operations-dashboard .deployment-mode-card strong,
+:root[data-theme$='Light'] .operations-dashboard .server-summary-strip strong,
+:root[data-theme$='Light'] .operations-dashboard .health-score-ring strong,
+:root[data-theme$='Light'] .operations-dashboard .analysis-donut strong,
+:root[data-theme$='Light'] .operations-dashboard .detail-grid dd,
+:root[data-theme$='Light'] .operations-dashboard .summary-grid dd,
+:root[data-theme$='Light'] .operations-dashboard .server-resource-list dd,
+:root[data-theme$='Light'] .operations-dashboard .status-list strong,
+:root[data-theme$='Light'] .operations-dashboard .analysis-legend strong,
+:root[data-theme$='Light'] .operations-dashboard .peak-list strong,
+:root[data-theme$='Light'] .operations-dashboard .log-detail-grid strong,
+:root[data-theme$='Light'] .operations-dashboard .log-detail-grid dd {
+  color: var(--ops-text-1);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .panel-description,
+:root[data-theme$='Light'] .operations-dashboard .deployment-mode-card p,
+:root[data-theme$='Light'] .operations-dashboard .server-summary-strip span,
+:root[data-theme$='Light'] .operations-dashboard .subsection-heading p,
+:root[data-theme$='Light'] .operations-dashboard .metric-label,
+:root[data-theme$='Light'] .operations-dashboard .metric-detail,
+:root[data-theme$='Light'] .operations-dashboard .detail-grid dt,
+:root[data-theme$='Light'] .operations-dashboard .summary-grid dt,
+:root[data-theme$='Light'] .operations-dashboard .server-resource-list dt,
+:root[data-theme$='Light'] .operations-dashboard .status-list,
+:root[data-theme$='Light'] .operations-dashboard .panel-copy,
+:root[data-theme$='Light'] .operations-dashboard .analysis-legend span,
+:root[data-theme$='Light'] .operations-dashboard .chart-axis-label,
+:root[data-theme$='Light'] .operations-dashboard .chart-time-labels,
+:root[data-theme$='Light'] .operations-dashboard .peak-list span,
+:root[data-theme$='Light'] .operations-dashboard .log-detail-grid dt,
+:root[data-theme$='Light'] .operations-dashboard .log-detail-grid pre {
+  color: var(--ops-text-2);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .log-detail-grid pre,
+:root[data-theme$='Light'] .operations-dashboard .operation-log-detail-grid pre,
+:root[data-theme$='Light'] .operations-dashboard .runtime-bars i::after {
+  border-color: var(--ops-line);
+  background: var(--ops-control);
+  color: var(--ops-text-1);
+  box-shadow: var(--ops-shadow-lg);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .metric-card:hover,
+:root[data-theme$='Light'] .operations-dashboard .signal-card:hover,
+:root[data-theme$='Light'] .operations-dashboard .deployment-mode-card:hover,
+:root[data-theme$='Light'] .operations-dashboard .service-row:hover,
+:root[data-theme$='Light'] .operations-dashboard .log-result-row:hover,
+:root[data-theme$='Light'] .operations-dashboard .operation-log-row:hover,
+:root[data-theme$='Light'] .operations-dashboard .operation-log-row--expanded {
+  background: var(--bg-hover);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .audit-filters,
+:root[data-theme$='Light'] .operations-dashboard .overview-event-filters,
+:root[data-theme$='Light'] .operations-dashboard .overview-log-filters,
+:root[data-theme$='Light'] .operations-dashboard .log-config,
+:root[data-theme$='Light'] .operations-dashboard .diagnostic-search-grid,
+:root[data-theme$='Light'] .operations-dashboard .log-search-grid {
+  border-color: var(--ops-line);
+  background: var(--ops-panel);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .filter-field,
+:root[data-theme$='Light'] .operations-dashboard .server-health-score__track,
+:root[data-theme$='Light'] .operations-dashboard .server-health-inspection__badge {
+  border-color: var(--ops-line);
+  color: var(--ops-text-2);
+  background: var(--ops-control);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .filter-field input {
+  color: var(--ops-text-1);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .filter-field input::placeholder,
+:root[data-theme$='Light'] .operations-dashboard .operations-loading-state p,
+:root[data-theme$='Light'] .operations-dashboard .log-config__title,
+:root[data-theme$='Light'] .operations-dashboard .empty-cell {
+  color: var(--ops-text-2);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .data-table thead {
+  color: var(--ops-text-2);
+  background: var(--table-header-bg);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .data-table th,
+:root[data-theme$='Light'] .operations-dashboard .data-table td,
+:root[data-theme$='Light'] .operations-dashboard .server-resource-list > div,
+:root[data-theme$='Light'] .operations-dashboard .health-live-row,
+:root[data-theme$='Light'] .operations-dashboard .analysis-legend > div,
+:root[data-theme$='Light'] .operations-dashboard .peak-list > div {
+  border-color: var(--ops-line);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .data-table td {
+  color: var(--ops-text-2);
+}
+
+:root[data-theme$='Light'] .operations-dashboard .health-score-ring,
+:root[data-theme$='Light'] .operations-dashboard .analysis-donut {
+  border-color: var(--ops-line);
+  box-shadow: none;
+}
+
+:root[data-theme$='Light'] .operations-dashboard .empty-progress,
+:root[data-theme$='Light'] .operations-dashboard .histogram-placeholder {
+  background: var(--bg-tertiary);
+}
 </style>
