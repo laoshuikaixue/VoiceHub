@@ -874,7 +874,6 @@ const BOOT_PROGRESS = {
   FINALIZING: 88,
   COMPLETE: 100
 }
-const MIN_BOOT_TIME_MS = 720
 const BOOT_EXIT_DELAY_MS = 180
 const BOOT_SLOW_THRESHOLD_MS = 8000
 const showBootLoading = ref(true)
@@ -906,12 +905,10 @@ const waitForFirstPaint = async () => {
   })
 }
 
-const finishBootLoading = async (startedAt) => {
+const finishBootLoading = async () => {
   setBootState({ progress: BOOT_PROGRESS.COMPLETE, message: locale.value.bootMessages.COMPLETE })
 
-  const elapsed = Date.now() - startedAt
-  const restTime = Math.max(0, MIN_BOOT_TIME_MS - elapsed)
-  await new Promise((resolve) => setTimeout(resolve, restTime + BOOT_EXIT_DELAY_MS))
+  await new Promise((resolve) => setTimeout(resolve, BOOT_EXIT_DELAY_MS))
 
   showBootLoading.value = false
 }
@@ -1420,8 +1417,6 @@ if (import.meta.client) {
 
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
-  const bootStartedAt = Date.now()
-
   const queryTab = route.query.tab
   const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
   if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
@@ -1519,7 +1514,7 @@ onMounted(async () => {
         bootSlowTimer = null
       }
 
-      await finishBootLoading(bootStartedAt)
+      await finishBootLoading()
     }
   }
 })

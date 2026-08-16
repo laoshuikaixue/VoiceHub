@@ -1,5 +1,5 @@
 {
   "buildCommand": "node scripts/deploy.js",
   "installCommand": "pnpm install --frozen-lockfile || pnpm install",
-  "nodeVersion": "24.5.0"
+  "nodeVersion": "24.18.0"
 }
