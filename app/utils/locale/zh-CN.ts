@@ -509,7 +509,8 @@ export const pages = {
       operations: '运维监控',
       'music-source': '音源控制',
       database: '数据库操作',
-      'api-keys': 'API密钥管理'
+      'api-keys': 'API密钥管理',
+      'card-codes': '点歌券管理'
     },
     roles: {
       USER: '普通用户',

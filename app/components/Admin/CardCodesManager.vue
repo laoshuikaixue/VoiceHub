@@ -280,7 +280,10 @@
         <div class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-4 space-y-3">
           <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
           <ul class="space-y-2 text-[12px] leading-relaxed text-text-tertiary">
-            <li v-for="tip in locale.quickTips" :key="tip">· {{ tip }}</li>
+            <li v-for="tip in locale.quickTips" :key="tip" class="flex items-start gap-2">
+              <span class="shrink-0 text-text-disabled">·</span>
+              <span>{{ tip }}</span>
+            </li>
           </ul>
         </div>
       </section>

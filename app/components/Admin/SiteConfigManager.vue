@@ -568,12 +568,14 @@ import {
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
+const { refreshSiteConfig } = useSiteConfig()
 const { siteConfig: locale } = useLocale()
 
 const loading = ref(true)
@@ -940,6 +942,8 @@ const saveConfig = async () => {
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
+    // 刷新前端模块级缓存，避免首页等页面继续使用旧配置
+    await refreshSiteConfig()
     showNotification(locale.value?.saveSuccess || '系统设置已保存', 'success')
 
     setTimeout(() => {

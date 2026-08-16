@@ -99,7 +99,7 @@
           <div class="flex items-start justify-between mb-6">
             <div
               :class="[
-                'p-3 rounded-xl bg-bg-primary border border-border-secondary transition-all',
+                'p-3 rounded-xl bg-bg-primary border border-border-secondary transition-all flex items-center justify-center',
                 playTime.enabled ? 'text-primary border-primary-20' : 'text-text-secondary'
               ]"
             >

@@ -6,7 +6,7 @@
     }"
     :style="{
       '--amll-lp-color': 'rgb(var(--main-cover-color, 239 239 239))',
-      '--amll-lp-hover-bg-color': 'var(--overlay-8)',
+      '--amll-lp-hover-bg-color': 'var(--lyrics-modal-surface, rgba(255, 255, 255, 0.1))',
       '--amll-lyric-left-padding': settings.lyricAlignRight.value
         ? ''
         : `${settings.lyricHorizontalOffset.value}px`,
@@ -151,7 +151,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
 :deep(.am-lyric .lyric-line.current),
 :deep(.am-lyric .lyric-line.is-current) {
   mix-blend-mode: plus-lighter;
-  color: var(--overlay-95);
+  color: var(--lyrics-modal-text, #ffffff);
   text-shadow: 0 2px 12px var(--overlay-6);
   will-change: transform, opacity, color;
 }
@@ -163,7 +163,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   :deep(.am-lyric .is-active),
   :deep(.am-lyric .lyric-line.current),
   :deep(.am-lyric .lyric-line.is-current) {
-    color: var(--text-primary);
+    color: var(--lyrics-modal-text, #ffffff);
     text-shadow: 0 4px 18px var(--mask-35);
   }
 }

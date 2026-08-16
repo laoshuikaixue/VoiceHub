@@ -40,7 +40,7 @@
                 <span v-else>{{ userInitials }}</span>
               </div>
               <div
-                class="absolute -bottom-1 -right-1 p-2 bg-bg-secondary border border-border-secondary rounded-full text-primary shadow-xl"
+                class="absolute -bottom-1 -right-1 p-2 bg-bg-secondary border border-border-secondary rounded-full text-primary shadow-xl flex items-center justify-center"
               >
                 <User :size="16" />
               </div>

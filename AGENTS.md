@@ -38,6 +38,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 组件取文案用 `useLocale()` 分区 + `useLocaleText`/`useSafeLocale`，禁止自行实现 `callLocale`/`getNestedMessage` 等取值函数
 - 服务端错误码本地化：服务端 `createApiError` 抛码 → 客户端 `useServerErrors().localize(err)` 展示；动态值用第四参 `{ params: [...] }`，词典值用 `{0}`/`{1}` 占位符
 - 新增错误码须三处同步：`SERVER_ERROR_CODES` + zh/en 的 `serverErrors`（键完全对齐）
+- 英文长文本须考虑页面布局排布：按钮/Tab/徽章/菜单/开关标签等空间受限位置优先使用缩写（如 Previous → Prev），避免溢出或换行错位；描述性文本（Desc/Placeholder/Hint/Message 等）可自然换行不受限；缩写仅调整 en-US 词典值，键名与词典结构保持不变
 
 ## 3. 项目关键模式
 

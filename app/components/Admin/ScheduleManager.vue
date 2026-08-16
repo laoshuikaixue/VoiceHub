@@ -439,7 +439,7 @@
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors"
+                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors flex items-center justify-center"
                       :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
@@ -448,7 +448,7 @@
 
                     <!-- 移动端添加按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0 flex items-center justify-center"
                       @click.stop="addSongToSchedule(song)"
                     >
                       <Plus class="w-5 h-5" />
@@ -456,7 +456,7 @@
 
                     <!-- 菜单按钮 -->
                     <div
-                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors flex items-center justify-center"
                     >
                       <MoreVertical class="w-4 h-4" />
                     </div>
@@ -766,14 +766,14 @@
 
                     <!-- 移动端删除按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0 flex items-center justify-center"
                       @click.stop="removeSongFromSchedule(schedule)"
                     >
                       <Minus class="w-5 h-5" />
                     </button>
 
                     <div
-                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors flex items-center justify-center"
                     >
                       <MoreVertical class="w-4 h-4" />
                     </div>

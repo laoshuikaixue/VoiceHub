@@ -61,6 +61,11 @@ export default defineEventHandler(async (event) => {
           newValues.redeemedAt = null
         } else if (status === 'INVALID') {
           newValues.status = 'INVALID'
+          // 作废时清理锁定与核销信息，与批量更新行为一致
+          newValues.lockedBy = null
+          newValues.lockedAt = null
+          newValues.redeemedBy = null
+          newValues.redeemedAt = null
         }
       }
 

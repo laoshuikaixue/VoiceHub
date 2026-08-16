@@ -84,7 +84,7 @@
         />
 
         <button
-          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all shadow-sm"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all shadow-sm flex items-center justify-center"
           @click="loadUsers(1)"
         >
           <RefreshCw :size="14" />
@@ -104,7 +104,7 @@
             </p>
           </div>
           <button
-            class="p-2 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all"
+            class="p-2 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all flex items-center justify-center"
             :title="locale.organization.refresh"
             @click="loadUserTree"
           >
@@ -365,7 +365,7 @@
                       <Edit2 :size="13" />
                     </button>
                     <button
-                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
                       :title="locale.actions.viewSongs"
                       @click="viewUserSongs(user)"
                     >
@@ -373,7 +373,7 @@
                     </button>
                     <button
                       :disabled="isSelf(user)"
-                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-warning transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-warning transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn flex items-center justify-center"
                       :title="locale.actions.resetPassword"
                       @click="resetPassword(user)"
                     >

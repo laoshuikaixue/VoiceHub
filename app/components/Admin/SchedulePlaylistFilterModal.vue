@@ -23,7 +23,7 @@
           <div class="flex items-center justify-between p-6 border-b border-border-secondary-50">
             <h3 class="text-lg font-black text-text-primary tracking-tight">{{ locale.title }}</h3>
             <button
-              class="p-2 rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+              class="p-2 rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex items-center justify-center"
               @click="close"
             >
               <X class="w-4 h-4" />
@@ -117,7 +117,7 @@
                   </div>
                   
                   <button
-                    class="p-2.5 rounded-xl bg-error-10 text-error hover:bg-error-20 border border-error-20 transition-all flex-shrink-0"
+                    class="p-2.5 rounded-xl bg-error-10 text-error hover:bg-error-20 border border-error-20 transition-all flex-shrink-0 flex items-center justify-center"
                     @click="removeCustomPlaylist(index)"
                   >
                     <Trash2 class="w-4 h-4" />
