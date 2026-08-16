@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getCookie, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -131,7 +132,7 @@ export default defineEventHandler(async (event) => {
   response.write(`data: ${JSON.stringify({ connected: true, id })}\n\n`)
 
   // 存储连接
-  const connectedAt = Date.now()
+  const connectedAt = getServerTimestamp()
   let cleanedUp = false
   let heartbeatInterval: ReturnType<typeof setInterval> | null = null
   connections.set(id, response)
@@ -141,7 +142,7 @@ export default defineEventHandler(async (event) => {
     cleanedUp = true
     if (connections.delete(id)) {
       progressConnectionStats.closedConnections += 1
-      progressConnectionStats.totalLifetimeMs += Date.now() - connectedAt
+      progressConnectionStats.totalLifetimeMs += getServerTimestamp() - connectedAt
     }
     if (heartbeatInterval) clearInterval(heartbeatInterval)
   }
