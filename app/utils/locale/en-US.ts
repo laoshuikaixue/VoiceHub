@@ -1770,6 +1770,20 @@ export const admin = {
     goToDiagnosis: 'Diagnose',
     logCount: 'Logs:',
     itemCount: 'Items:',
+    trendChart: {
+      latest: 'Latest',
+      average: 'Average',
+      peak: 'Peak',
+      change: 'Change',
+      range: 'Range',
+      samples: 'valid samples',
+      countUnit: 'events',
+      requestCount: 'Request Count',
+      schedulesCreated: 'Schedules Created',
+      schedulesPlayed: 'Schedules Played',
+      errorRequests: 'Error Requests',
+      userRequests: 'User Requests'
+    },
     groups: {
       monitoring: 'Monitoring',
       debugTools: 'Debug Tools',

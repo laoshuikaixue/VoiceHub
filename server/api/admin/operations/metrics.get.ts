@@ -14,13 +14,31 @@ let sentryRequestInFlight: Promise<any> | null = null
 const SENTRY_CACHE_TTL_MS = 2 * 60 * 1000
 const SENTRY_FAILURE_CACHE_TTL_MS = 15 * 1000
 
-const maskIpAddress = (value: unknown) => {
-  const ip = String(value || '')
-  if (!ip) return ''
-  if (ip.includes(':')) return `${ip.split(':').filter(Boolean).slice(0, 3).join(':')}::*`
-  const parts = ip.split('.')
-  return parts.length === 4 ? `${parts[0]}.${parts[1]}.*.*` : ip
+const sensitiveLogField = /token|password|secret|authorization|cookie|api[_-]?key/i
+const redactLogValue = (value: unknown, key = ''): unknown => {
+  if (sensitiveLogField.test(key)) return '***'
+  if (Array.isArray(value)) return value.map((item) => redactLogValue(item))
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([childKey, childValue]) => [childKey, redactLogValue(childValue, childKey)]))
+  }
+  return value
 }
+const redactLogText = (value: unknown) => {
+  const raw = String(value || '')
+  try {
+    return JSON.stringify(redactLogValue(JSON.parse(raw)))
+  } catch {
+    return raw
+      .replace(/("[^"]*(?:token|password|secret|authorization|cookie|api[_-]?key)[^"]*"\s*:\s*")[^"]*"/gi, '$1***"')
+      .replace(/((?:token|password|secret|authorization|cookie|api[_-]?key)\s*[:=]\s*)[^,;\s}&]+/gi, '$1***')
+      .replace(/([?&](?:token|password|secret|api[_-]?key)=)[^&\s]+/gi, '$1***')
+      .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer ***')
+  }
+}
+
+const sanitizeLogEntries = (entries: unknown) => Array.isArray(entries)
+  ? entries.map((entry: any) => ({ ...entry, message: redactLogText(entry?.message) }))
+  : null
 
 const getSentryIssues = async () => {
   const token = process.env.SENTRY_AUTH_TOKEN?.trim()
@@ -194,18 +212,18 @@ export default defineEventHandler(async (event) => {
         businessQueue: businessQueue.status === 'fulfilled' ? businessQueue.value : null,
         apiKeyUsage: apiKeyUsage.status === 'fulfilled' ? apiKeyUsage.value : null,
         persistedRequests: persistedRequests.status === 'fulfilled' ? persistedRequests.value : null,
-        recentLogs: recentLogs.status === 'fulfilled' ? recentLogs.value : null,
+        recentLogs: recentLogs.status === 'fulfilled' ? sanitizeLogEntries(recentLogs.value) : null,
         timeline: timeline.status === 'fulfilled' ? timeline.value : null,
         dependencyTimeline: dependencyTimeline.status === 'fulfilled' ? dependencyTimeline.value : null,
         logArchive,
-        securityEvents: securityEvents.status === 'fulfilled' ? securityEvents.value.map((item: any) => ({ ...item, ip: maskIpAddress(item.ip) })) : null,
-        ipBehavior: ipBehavior.status === 'fulfilled' ? ipBehavior.value.map((item: any) => ({ ...item, ip: maskIpAddress(item.ip) })) : null,
+        securityEvents: securityEvents.status === 'fulfilled' ? securityEvents.value : null,
+        ipBehavior: ipBehavior.status === 'fulfilled' ? ipBehavior.value : null,
         requestBehaviorTimeline: requestBehaviorTimeline.status === 'fulfilled' ? requestBehaviorTimeline.value : null,
         businessTimeline: businessTimeline.status === 'fulfilled' ? businessTimeline.value : null
       },
       sentry: sentry.status === 'fulfilled' ? sentry.value : { configured: false, issues: [] },
       diagnostic: requestDiagnostics.status === 'fulfilled'
-        ? { requestId, entries: requestDiagnostics.value, trace: sentryTrace.status === 'fulfilled' ? sentryTrace.value : { configured: false, available: false, spans: [] } }
+        ? { requestId, entries: sanitizeLogEntries(requestDiagnostics.value) || [], trace: sentryTrace.status === 'fulfilled' ? sentryTrace.value : { configured: false, available: false, spans: [] } }
         : { requestId, entries: [], trace: sentryTrace.status === 'fulfilled' ? sentryTrace.value : { configured: false, available: false, spans: [] } }
     }
   }

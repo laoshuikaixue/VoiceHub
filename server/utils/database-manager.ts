@@ -245,8 +245,13 @@ export class DatabaseManager {
 
   async getRecentApiLogs() {
     return await db.execute(sql`
-      SELECT "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
-        "response_time_ms" AS "durationMs", "error_message" AS "errorMessage",
+      SELECT "id", "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
+        "response_time_ms" AS "durationMs",
+        left(CASE
+          WHEN nullif("error_message", '') IS NOT NULL THEN "error_message"
+          WHEN nullif("response_body", '') IS NOT NULL THEN "response_body"
+          ELSE concat("method", ' ', "endpoint", ' -> ', "status_code")
+        END, 4000) AS message,
         substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
       FROM api_logs
       ORDER BY "created_at" DESC
@@ -258,8 +263,13 @@ export class DatabaseManager {
     const normalized = String(requestId || '').trim()
     if (!normalized) return []
     return await db.execute(sql`
-      SELECT "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
-        "response_time_ms" AS "durationMs", "error_message" AS "errorMessage",
+      SELECT "id", "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
+        "response_time_ms" AS "durationMs",
+        left(CASE
+          WHEN nullif("error_message", '') IS NOT NULL THEN "error_message"
+          WHEN nullif("response_body", '') IS NOT NULL THEN "response_body"
+          ELSE concat("method", ' ', "endpoint", ' -> ', "status_code")
+        END, 4000) AS message,
         substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
       FROM api_logs
       WHERE "error_message" LIKE ${`%requestId=${normalized}%`}

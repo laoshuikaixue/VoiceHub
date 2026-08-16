@@ -302,17 +302,7 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && hasTimelineMetric(panel.field) ? `${formatChartValue(trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field), panel.unit)} ${panel.unit}` : '暂无数据' }}</span></div>
-          <div v-if="panel.available && hasTimelineMetric(panel.field)" class="ops-time-chart">
-            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks(panel.field)" :key="tick">{{ tick }} {{ panel.unit }}</span></div>
-            <div class="ops-time-chart__plot">
-              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks(panel.field)" :key="tick" /></div>
-              <svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(runtimeTimeline, panel.field)" /><polyline :points="chartLinePoints(runtimeTimeline, panel.field)" /></svg>
-              <div class="ops-time-chart__points"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="chartPointStyle(index, runtimeTimeline.length, trendValue(point, panel.field), panel.field)" @mouseenter="showChartTooltip(panel.field, panel.title, point, trendValue(point, panel.field), panel.unit, index, runtimeTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
-              <i v-if="chartTooltip.visible && chartTooltip.key === panel.field" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" />
-              <div v-if="chartTooltip.visible && chartTooltip.key === panel.field" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
-            </div>
-            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(runtimeTimeline[0]?.at) }}</span><span>{{ formatChartTime(runtimeTimeline[runtimeTimeline.length - 1]?.at) }}</span></div>
-          </div>
+          <OpsTimeChart v-if="panel.available && hasTimelineMetric(panel.field)" :points="runtimeTimeline" :field="panel.field" :title="panel.title" :unit="panel.unit" :labels="trendChartLabels" />
           <div v-else class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
       </section>
@@ -409,17 +399,7 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <OpsPanel v-for="panel in databaseTrendPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="databaseTrendStatus(panel)" :updated-at="databaseTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasDatabaseTimelineMetric(panel.field) && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
-          <div class="ops-time-chart">
-            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks(panel.field, databaseTimeline)" :key="tick">{{ tick }} {{ panel.unit }}</span></div>
-            <div class="ops-time-chart__plot">
-              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks(panel.field, databaseTimeline)" :key="tick" /></div>
-              <svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(databaseTimeline, panel.field)" /><polyline :points="chartLinePoints(databaseTimeline, panel.field)" /></svg>
-              <div class="ops-time-chart__points"><i v-for="(point, index) in databaseTimeline" :key="point.at" :style="chartPointStyle(index, databaseTimeline.length, trendValue(point, panel.field), panel.field, databaseTimeline)" @mouseenter="showChartTooltip(`database-${panel.field}`, panel.title, point, trendValue(point, panel.field), panel.unit, index, databaseTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
-              <i v-if="chartTooltip.visible && chartTooltip.key === `database-${panel.field}`" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" />
-              <div v-if="chartTooltip.visible && chartTooltip.key === `database-${panel.field}`" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
-            </div>
-            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(databaseTimeline[0]?.at) }}</span><span>{{ formatChartTime(databaseTimeline[databaseTimeline.length - 1]?.at) }}</span></div>
-          </div>
+          <OpsTimeChart :points="databaseTimeline" :field="panel.field" :title="panel.title" :unit="panel.unit" :labels="trendChartLabels" />
         </OpsPanel>
       </section>
 
@@ -533,24 +513,14 @@
         </OpsPanel>
 
         <OpsPanel class="xl:col-span-8" :title="locale.business.requestRateTrend" subtitle="近 5 分钟请求样本" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
-          <div v-if="hasTimelineMetric('requests')" class="ops-time-chart">
-            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('requests')" :key="tick">{{ tick }} 次</span></div>
-            <div class="ops-time-chart__plot">
-              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('requests')" :key="tick" /></div>
-              <svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(runtimeTimeline, 'requests')" /><polyline :points="chartLinePoints(runtimeTimeline, 'requests')" /></svg>
-              <div class="ops-time-chart__points"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="chartPointStyle(index, runtimeTimeline.length, point.requests, 'requests')" @mouseenter="showChartTooltip('business-requests', '请求数', point, point.requests, '次', index, runtimeTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
-              <i v-if="chartTooltip.visible && chartTooltip.key === 'business-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" />
-              <div v-if="chartTooltip.visible && chartTooltip.key === 'business-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
-            </div>
-            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(runtimeTimeline[0]?.at) }}</span><span>{{ formatChartTime(runtimeTimeline[runtimeTimeline.length - 1]?.at) }}</span></div>
-          </div>
+          <OpsTimeChart v-if="hasTimelineMetric('requests')" :points="runtimeTimeline" field="requests" :title="trendChartLabels.requestCount" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
           <div v-else class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </OpsPanel>
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <OpsPanel class="xl:col-span-7" :title="locale.business.scheduleRateTrend" :subtitle="locale.business.scheduleRateTrendDetail" :status="businessTimelinePanelStatus" :updated-at="businessTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasBusinessTimelineMetric('schedules_created') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
-          <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick" /></div><svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(businessOperationTimeline, 'schedules_created')" /><polyline :points="chartLinePoints(businessOperationTimeline, 'schedules_created')" /></svg><div class="ops-time-chart__points"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="chartPointStyle(index, businessOperationTimeline.length, point.schedules_created, 'schedules_created', businessOperationTimeline)" @mouseenter="showChartTooltip('schedule-created', '新增排期', point, point.schedules_created, '次', index, businessOperationTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
+          <OpsTimeChart :points="businessOperationTimeline" field="schedules_created" :title="trendChartLabels.schedulesCreated" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
         </OpsPanel>
 
         <OpsPanel class="xl:col-span-5" :title="locale.business.capacityPlanning" :subtitle="locale.business.capacityPlanningDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
@@ -563,7 +533,7 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <OpsPanel class="xl:col-span-8" :title="locale.business.operationOutcomes" :subtitle="locale.business.operationOutcomesDetail" :status="businessTimelinePanelStatus" :updated-at="businessTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!businessOperationTimeline.length && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
-          <div v-if="hasBusinessTimelineMetric('schedules_played')" class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick" /></div><svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(businessOperationTimeline, 'schedules_played')" /><polyline :points="chartLinePoints(businessOperationTimeline, 'schedules_played')" /></svg><div class="ops-time-chart__points"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="chartPointStyle(index, businessOperationTimeline.length, point.schedules_played, 'schedules_played', businessOperationTimeline)" @mouseenter="showChartTooltip('schedule-played', '已播排期', point, point.schedules_played, '次', index, businessOperationTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
+          <OpsTimeChart v-if="hasBusinessTimelineMetric('schedules_played')" :points="businessOperationTimeline" field="schedules_played" :title="trendChartLabels.schedulesPlayed" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
           <dl class="detail-grid"><div v-for="item in businessOutcomeTotals" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div></dl>
         </OpsPanel>
 
@@ -655,11 +625,11 @@
       </OpsPanel>
 
       <OpsPanel :title="locale.audit.eventList" :subtitle="locale.audit.eventListDetail" :status="securityAuditPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!securityAuditEvents.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
-        <div class="overflow-x-auto"><table class="data-table min-w-[900px]"><thead><tr><th>时间</th><th>来源</th><th>事件</th><th>结果</th><th>IP</th><th>Request ID</th><th>摘要</th></tr></thead><tbody><tr v-for="item in securityAuditEvents.slice(0, 50)" :key="`${item.at}-${item.event}-${item.requestId || ''}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.source }}</td><td class="font-mono">{{ item.event }}</td><td>{{ item.severity }}</td><td class="font-mono">{{ maskIpAddress(item.ip) }}</td><td class="font-mono">{{ item.requestId || '--' }}</td><td>{{ item.summary }}</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="data-table min-w-[900px]"><thead><tr><th>时间</th><th>来源</th><th>事件</th><th>结果</th><th>IP</th><th>Request ID</th><th>摘要</th></tr></thead><tbody><tr v-for="item in securityAuditEvents.slice(0, 50)" :key="`${item.at}-${item.event}-${item.requestId || ''}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.source }}</td><td class="font-mono">{{ item.event }}</td><td>{{ item.severity }}</td><td class="font-mono">{{ item.ip || '--' }}</td><td class="font-mono">{{ item.requestId || '--' }}</td><td>{{ item.summary }}</td></tr></tbody></table></div>
       </OpsPanel>
 
       <OpsPanel :title="locale.audit.ipBehaviorTimeline" :subtitle="locale.audit.ipBehaviorTimelineDetail" :status="ipBehaviorPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!ipBehaviorRows.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
-        <div class="overflow-x-auto"><table class="data-table min-w-[760px]"><thead><tr><th>IP</th><th>请求数</th><th>4xx</th><th>5xx</th><th>最近路由</th><th>首次出现</th><th>最近出现</th></tr></thead><tbody><tr v-for="item in ipBehaviorRows" :key="item.ip"><td class="font-mono">{{ maskIpAddress(item.ip) }}</td><td>{{ item.requests }}</td><td>{{ item.client_errors }}</td><td :class="{ 'text-rose-400': Number(item.server_errors) > 0 }">{{ item.server_errors }}</td><td>{{ item.last_route }}</td><td>{{ formatTimestamp(item.first_seen) }}</td><td>{{ formatTimestamp(item.last_seen) }}</td></tr></tbody></table></div>
+        <div class="overflow-x-auto"><table class="data-table min-w-[760px]"><thead><tr><th>IP</th><th>请求数</th><th>4xx</th><th>5xx</th><th>最近路由</th><th>首次出现</th><th>最近出现</th></tr></thead><tbody><tr v-for="item in ipBehaviorRows" :key="item.ip"><td class="font-mono">{{ item.ip || '--' }}</td><td>{{ item.requests }}</td><td>{{ item.client_errors }}</td><td :class="{ 'text-rose-400': Number(item.server_errors) > 0 }">{{ item.server_errors }}</td><td>{{ item.last_route }}</td><td>{{ formatTimestamp(item.first_seen) }}</td><td>{{ formatTimestamp(item.last_seen) }}</td></tr></tbody></table></div>
       </OpsPanel>
     </template>
 
@@ -842,7 +812,7 @@
           </div>
         </OpsPanel>
         <OpsPanel :title="locale.debug.errorTrend" :subtitle="locale.debug.errorTrendDetail" :status="requestTrendPanelStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('errors') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
-        <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick" /></div><svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(requestBehaviorTimeline, 'errors')" /><polyline :points="chartLinePoints(requestBehaviorTimeline, 'errors')" /></svg><div class="ops-time-chart__points"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="chartPointStyle(index, requestBehaviorTimeline.length, point.errors, 'errors', requestBehaviorTimeline)" @mouseenter="showChartTooltip('request-errors', '错误请求', point, point.errors, '次', index, requestBehaviorTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
+        <OpsTimeChart :points="requestBehaviorTimeline" field="errors" :title="trendChartLabels.errorRequests" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
         </OpsPanel>
       </section>
 
@@ -873,7 +843,7 @@
       </section>
 
       <OpsPanel :title="locale.debug.userRequestTimeline" :subtitle="locale.debug.userRequestTimelineDetail" :status="requestTrendPanelStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('user_requests') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
-        <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick" /></div><svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(requestBehaviorTimeline, 'user_requests')" /><polyline :points="chartLinePoints(requestBehaviorTimeline, 'user_requests')" /></svg><div class="ops-time-chart__points"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="chartPointStyle(index, requestBehaviorTimeline.length, point.user_requests, 'user_requests', requestBehaviorTimeline)" @mouseenter="showChartTooltip('user-requests', '用户侧请求', point, point.user_requests, '次', index, requestBehaviorTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
+        <OpsTimeChart :points="requestBehaviorTimeline" field="user_requests" :title="trendChartLabels.userRequests" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
       </OpsPanel>
     </template>
 
@@ -957,17 +927,7 @@
       </section>
 
       <OpsPanel :title="locale.dependencies.semanticFailureTrend" :subtitle="locale.dependencies.semanticFailureTrendDetail" :status="dependenciesModuleStatus" :updated-at="dependencyTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasDependencyTimelineMetric('semantic_failure_rate') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
-        <div class="ops-time-chart">
-          <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('semantic_failure_rate', dependencyAggregateTimeline)" :key="tick">{{ tick }} %</span></div>
-          <div class="ops-time-chart__plot">
-            <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('semantic_failure_rate', dependencyAggregateTimeline)" :key="tick" /></div>
-            <svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(dependencyAggregateTimeline, 'semantic_failure_rate')" /><polyline :points="chartLinePoints(dependencyAggregateTimeline, 'semantic_failure_rate')" /></svg>
-            <div class="ops-time-chart__points"><i v-for="(point, index) in dependencyAggregateTimeline" :key="point.at" :style="chartPointStyle(index, dependencyAggregateTimeline.length, point.semantic_failure_rate, 'semantic_failure_rate', dependencyAggregateTimeline)" @mouseenter="showChartTooltip('dependency-semantic-failure', locale.dependencies.semanticFailureTrend, point, point.semantic_failure_rate, '%', index, dependencyAggregateTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
-            <i v-if="chartTooltip.visible && chartTooltip.key === 'dependency-semantic-failure'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" />
-            <div v-if="chartTooltip.visible && chartTooltip.key === 'dependency-semantic-failure'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
-          </div>
-          <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(dependencyAggregateTimeline[0]?.at) }}</span><span>{{ formatChartTime(dependencyAggregateTimeline[dependencyAggregateTimeline.length - 1]?.at) }}</span></div>
-        </div>
+        <OpsTimeChart :points="dependencyAggregateTimeline" field="semantic_failure_rate" :title="locale.dependencies.semanticFailureTrend" unit="%" :labels="trendChartLabels" />
       </OpsPanel>
 
       <section class="subsection-heading">
@@ -982,17 +942,7 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <OpsPanel :title="locale.dependencies.callVolumeTrend" :subtitle="locale.dependencies.callVolumeTrendDetail" :status="dependenciesModuleStatus" :updated-at="dependencyTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasDependencyTimelineMetric('calls') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
-          <div class="ops-time-chart">
-            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('calls', dependencyAggregateTimeline)" :key="tick">{{ tick }} 次</span></div>
-            <div class="ops-time-chart__plot">
-              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('calls', dependencyAggregateTimeline)" :key="tick" /></div>
-              <svg class="ops-time-chart__line" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon :points="chartAreaPoints(dependencyAggregateTimeline, 'calls')" /><polyline :points="chartLinePoints(dependencyAggregateTimeline, 'calls')" /></svg>
-              <div class="ops-time-chart__points"><i v-for="(point, index) in dependencyAggregateTimeline" :key="point.at" :style="chartPointStyle(index, dependencyAggregateTimeline.length, point.calls, 'calls', dependencyAggregateTimeline)" @mouseenter="showChartTooltip('dependency-call-volume', locale.dependencies.callVolumeTrend, point, point.calls, '次', index, dependencyAggregateTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
-              <i v-if="chartTooltip.visible && chartTooltip.key === 'dependency-call-volume'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.barLeft}%` }" />
-              <div v-if="chartTooltip.visible && chartTooltip.key === 'dependency-call-volume'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
-            </div>
-            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(dependencyAggregateTimeline[0]?.at) }}</span><span>{{ formatChartTime(dependencyAggregateTimeline[dependencyAggregateTimeline.length - 1]?.at) }}</span></div>
-          </div>
+          <OpsTimeChart :points="dependencyAggregateTimeline" field="calls" :title="locale.dependencies.callVolumeTrend" :unit="trendChartLabels.countUnit" :labels="trendChartLabels" />
         </OpsPanel>
         <OpsPanel title="当前调用健康度" subtitle="仅表示本实例当前采集周期的被动调用结果，不代表 24 小时可用性。" :status="dependenciesModuleStatus" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!knownMusicSourceStatuses.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="dependency-uptime-list">
@@ -1060,6 +1010,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import OpsPanel from '~/components/Admin/Ops/OpsPanel.vue'
+import OpsTimeChart from '~/components/Admin/Ops/OpsTimeChart.vue'
 import UserActivityPanel from '~/components/Admin/UserActivityPanel.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
@@ -1068,6 +1019,7 @@ import { useToast } from '~/composables/useToast'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.operations || {})
+const trendChartLabels = computed(() => locale.value.trendChart || {})
 const { showToast } = useToast()
 const { enabledPlatforms: enabledMusicPlatforms, loadPlatformConfig } = usePlatformConfig()
 const publicRuntimeConfig = useRuntimeConfig().public || {}
@@ -1547,7 +1499,15 @@ const normalizeLogEntry = (item) => {
     message: item.message || item.errorMessage || (status >= 500 ? 'HTTP 服务端错误' : status >= 400 ? 'HTTP 客户端错误' : '请求完成')
   }
 }
-const normalizedLogEntries = computed(() => logSourceEntries.value.map(normalizeLogEntry))
+const normalizedLogEntries = computed(() => {
+  const seen = new Set()
+  return logSourceEntries.value.map(normalizeLogEntry).filter((item) => {
+    const key = `${item.source || 'http'}-${item.at}-${item.method || ''}-${item.route || ''}-${item.status ?? ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+})
 const logKey = (item) => item.id || `${item.source || 'http'}-${item.at}-${item.requestId || item.route}`
 const recentErrorLogEntries = computed(() => normalizedLogEntries.value
   .filter((item) => item.level === 'error' || item.level === 'warn')
@@ -1657,42 +1617,8 @@ const copyDiagnosticRequestId = async () => {
     textarea?.remove()
   }
 }
-const chartTooltip = ref({ visible: false, key: '', time: '', series: '', value: '', unit: '', left: 50, barLeft: 50 })
 const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
 const hasTimelineMetric = (field) => runtimeTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
-const chartTicks = (field, points = runtimeTimeline.value) => {
-  const maximum = Math.max(...points.map((point) => Number(point?.[field] || 0)), 0)
-  const isTrafficMetric = field === 'network_rx_mb' || field === 'network_tx_mb'
-  const isRateMetric = String(field).includes('_rate')
-  const precision = isTrafficMetric ? 2 : isRateMetric ? 1 : 0
-  const top = isTrafficMetric || isRateMetric
-    ? (maximum > 0 ? Number(Math.max(10 ** -precision, maximum < 1 ? Math.ceil(maximum * (10 ** precision)) / (10 ** precision) : Math.ceil(maximum)).toFixed(precision)) : 1)
-    : Math.max(1, Math.ceil(maximum))
-  const middle = Number((top / 2).toFixed(precision))
-  return [...new Set([top, middle, 0])]
-}
-const chartValueRatio = (value, field, points) => {
-  const top = Number(chartTicks(field, points)[0]) || 1
-  return Math.min(1, Math.max(0, Number(value || 0) / top))
-}
-const chartCoordinates = (points, field) => points.map((point, index) => {
-  const x = points.length > 1 ? index / (points.length - 1) * 1000 : 500
-  const y = 96 - chartValueRatio(point?.[field], field, points) * 92
-  return `${x.toFixed(2)},${y.toFixed(2)}`
-})
-const chartLinePoints = (points, field) => chartCoordinates(points, field).join(' ')
-const chartAreaPoints = (points, field) => {
-  const coordinates = chartCoordinates(points, field)
-  if (!coordinates.length) return ''
-  const firstX = coordinates[0].split(',')[0]
-  const lastX = coordinates[coordinates.length - 1].split(',')[0]
-  return `${firstX},100 ${coordinates.join(' ')} ${lastX},100`
-}
-const chartPointStyle = (index, total, value, field, points = runtimeTimeline.value) => ({
-  '--chart-point-y': `${4 + chartValueRatio(value, field, points) * 92}%`,
-  '--chart-point-x': `${total > 1 ? index / (total - 1) * 100 : 50}%`
-})
-const formatChartTime = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'
 const formatChartValue = (value, unit = '') => {
   const numericValue = Number(value)
   if (!Number.isFinite(numericValue)) return '--'
@@ -1700,26 +1626,6 @@ const formatChartValue = (value, unit = '') => {
   if (unit === '%') return numericValue.toFixed(1).replace(/\.0$/, '')
   return String(Math.round(numericValue))
 }
-const showChartTooltip = (key, series, point, value, unit, index, total, event) => {
-  const barElement = event?.currentTarget
-  const plotElement = barElement?.closest('.ops-time-chart__plot')
-  const barRect = barElement?.getBoundingClientRect?.()
-  const plotRect = plotElement?.getBoundingClientRect?.()
-  const left = barRect && plotRect && plotRect.width > 0
-    ? ((barRect.left + barRect.width / 2 - plotRect.left) / plotRect.width) * 100
-    : ((index + 0.5) / Math.max(total, 1)) * 100
-  chartTooltip.value = {
-    visible: true,
-    key,
-    time: formatChartTime(point?.at),
-    series,
-    value: formatChartValue(value, unit),
-    unit,
-    barLeft: left,
-    left: Math.min(90, Math.max(10, left))
-  }
-}
-const hideChartTooltip = () => { chartTooltip.value.visible = false }
 const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
 const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
 const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
@@ -1961,13 +1867,6 @@ const databaseTrendStatus = (panel) => {
 const securityAuditEvents = computed(() => runtimeDatabaseMetrics.value?.securityEvents || [])
 const highRiskSecurityEvents = computed(() => securityAuditEvents.value.filter((item) => ['FAILURE', 'ERROR', 'WARNING'].includes(String(item.severity).toUpperCase())))
 const ipBehaviorRows = computed(() => runtimeDatabaseMetrics.value?.ipBehavior || [])
-const maskIpAddress = (value) => {
-  const ip = String(value || '')
-  if (!ip) return '--'
-  if (ip.includes(':')) return `${ip.split(':').filter(Boolean).slice(0, 3).join(':')}::*`
-  const parts = ip.split('.')
-  return parts.length === 4 ? `${parts[0]}.${parts[1]}.*.*` : ip
-}
 const securityEventsUpdatedAt = computed(() => securityAuditEvents.value.length ? formatTimestamp(securityAuditEvents.value[0]?.at) : securityUpdatedAt.value)
 const securityAuditPanelStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
@@ -5454,28 +5353,6 @@ const dependencyProtectionPanelStatus = (panel) => {
 .table-action:hover,
 .request-id-shortcut:focus-within,
 .log-level-filter button:hover { border-color: rgba(34, 211, 238, 0.5); }
-
-.ops-time-chart { position: relative; min-height: 14.5rem; padding: .65rem .35rem .35rem 2.85rem; }
-.ops-time-chart__y-axis { position: absolute; top: .65rem; bottom: 1.75rem; left: 0; display: flex; width: 2.45rem; flex-direction: column; justify-content: space-between; color: #94a3b8; font-family: var(--ops-mono); font-size: .6875rem; font-weight: 500; text-align: right; }
-.ops-time-chart__plot { position: relative; height: 12rem; border-bottom: 1px solid rgba(148, 163, 184, .2); background: rgba(148, 163, 184, .018); }
-.ops-time-chart__grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
-.ops-time-chart__grid i { display: block; border-top: 1px dashed rgba(148, 163, 184, .13); }
-.ops-time-chart__line { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.ops-time-chart__line polygon { fill: rgba(56, 189, 248, .09); stroke: none; }
-.ops-time-chart__line polyline { fill: none; stroke: #38bdf8; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
-.ops-time-chart__points { position: absolute; inset: 0; }
-.ops-time-chart__points i { position: absolute; bottom: var(--chart-point-y); left: var(--chart-point-x); z-index: 1; width: max(12px, calc(100% / 48)); height: 100%; max-height: 2.5rem; transform: translate(-50%, 50%); cursor: crosshair; }
-.ops-time-chart__points i::after { position: absolute; bottom: 50%; left: 50%; width: 7px; height: 7px; border: 1px solid #38bdf8; border-radius: 50%; background: #11151b; content: ''; transform: translate(-50%, 50%); opacity: .72; transition: width .12s ease, height .12s ease, opacity .12s ease; }
-.ops-time-chart__points i:hover::after { width: 10px; height: 10px; border-color: #22d3ee; opacity: 1; }
-.ops-time-chart__guide { position: absolute; top: 0; bottom: 0; z-index: 2; border-left: 1px dashed rgba(34, 211, 238, .72); pointer-events: none; }
-.ops-chart-tooltip { position: absolute; top: .45rem; z-index: 3; min-width: 10rem; transform: translateX(-50%); border: 1px solid rgba(34, 211, 238, .28); border-radius: 6px; padding: .55rem .65rem; background: #11151b; color: #e5e7eb; box-shadow: 0 8px 20px rgba(0, 0, 0, .22); pointer-events: none; }
-.ops-chart-tooltip time { display: block; margin-bottom: .35rem; color: #94a3b8; font-size: .6875rem; }
-.ops-chart-tooltip dl,
-.ops-chart-tooltip dl div { margin: 0; }
-.ops-chart-tooltip dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: center; }
-.ops-chart-tooltip dt { overflow: hidden; color: #94a3b8; font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
-.ops-chart-tooltip dd { margin: 0; color: #f8fafc; font-family: var(--ops-mono); font-size: .75rem; font-weight: 700; text-align: right; white-space: nowrap; }
-.ops-time-chart__x-axis { display: flex; justify-content: space-between; margin-top: .5rem; color: #94a3b8; font-family: var(--ops-mono); font-size: .6875rem; }
 
 @media (min-width: 1024px) { .ops-status-spine { grid-template-columns: minmax(18rem, 1fr) auto; align-items: center; }.ops-status-spine__actions { justify-content: flex-end; } }
 @media (prefers-reduced-motion: reduce) { .operations-dashboard *, .operations-dashboard *::before, .operations-dashboard *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

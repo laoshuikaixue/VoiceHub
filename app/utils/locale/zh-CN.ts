@@ -1779,6 +1779,20 @@ export const admin = {
     goToDiagnosis: '诊断',
     logCount: '日志数：',
     itemCount: '项目数：',
+    trendChart: {
+      latest: '最新',
+      average: '均值',
+      peak: '峰值',
+      change: '区间变化',
+      range: '时间范围',
+      samples: '个有效采样点',
+      countUnit: '次',
+      requestCount: '请求数',
+      schedulesCreated: '新增排期',
+      schedulesPlayed: '已播排期',
+      errorRequests: '错误请求',
+      userRequests: '用户侧请求'
+    },
     groups: {
       monitoring: '运行监控',
       debugTools: '调试工具',
