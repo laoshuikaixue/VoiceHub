@@ -402,6 +402,7 @@ async function checkSchemaConsistency(sql) {
   return true
 }
 
+<<<<<<< HEAD
 async function repairSchemaWithPush(sql) {
   // 先补齐枚举值，再执行 push
   await ensureUserStatusEnumValues(sql)
@@ -426,6 +427,8 @@ async function repairSchemaWithPush(sql) {
   return true
 }
 
+=======
+>>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 async function main() {
   log('🔄 数据库同步', 'cyan')
 
@@ -471,21 +474,16 @@ async function main() {
           } else {
             warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
           }
-          log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
-          if (!(await repairSchemaWithPush(sql))) {
-            err('数据库同步完全失败。请检查数据库连接或迁移文件。')
-            process.exit(1)
-          }
+          err('部署期间禁止自动执行 push --force。请检查数据库连接、迁移记录和迁移文件。')
+          process.exit(1)
         }
       } else {
         warn('检测到 legacy 数据库迁移记录为空，检查schema并写入迁移基线。')
         const schemaConsistent = await checkSchemaConsistency(sql)
 
         if (!schemaConsistent) {
-          log('🔄 legacy schema不完整，尝试使用 push --force 进行同步...', 'cyan')
-          if (!(await repairSchemaWithPush(sql))) {
-            process.exit(1)
-          }
+          err('部署期间禁止自动执行 push --force。请先在维护窗口修复 legacy 数据库结构。')
+          process.exit(1)
         } else {
           await seedMissingMigrationRecords(sql)
         }

@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { useSiteConfig } from './useSiteConfig'
 import { BUILTIN_PLATFORMS } from '~/utils/platforms'
 
+<<<<<<< HEAD
 /** 插件音源信息（platform 为带前缀的插件标识 plugin:<id>，也是搜索/播放时的路由键） */
 export type PluginPlatformInfo = {
   platform: string
@@ -15,6 +16,8 @@ export type PluginPlatformInfo = {
   id?: string
 }
 
+=======
+>>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 const cache = {
   enabledPlatforms: ref<string[]>([...BUILTIN_PLATFORMS]),
   platformOrder: ref<string[]>([...BUILTIN_PLATFORMS]),

@@ -5,6 +5,11 @@ import { db } from '~/drizzle/db'
 import { apiLogs } from '~/drizzle/schema'
 import { sql } from 'drizzle-orm'
 import { getInstanceId } from '~~/server/utils/instance-id'
+<<<<<<< HEAD
+=======
+import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { clearRequestDatabaseContext, enterRequestDatabaseContext } from '~~/server/utils/request-database-context'
+>>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 
 const getPathname = (url = '') => url.split('?')[0]
 
@@ -28,7 +33,13 @@ const persistMinuteBucket = (statusCode: number, durationMs: number) => {
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('request', (event) => {
+<<<<<<< HEAD
     if (event.node.req.url?.startsWith('/api/admin/operations/metrics')) return
+=======
+    observeRuntimeDeployment(event.node.req.headers)
+    clearRequestDatabaseContext()
+    if (isMonitoringRequest(event.node.req.url) || isMusicSourceProbeRequest(event)) return
+>>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
     const startedAt = startOperationRequest()
     event.context.operationsMetricsStartedAt = startedAt
     const requestId = String(event.node.req.headers['x-request-id'] || event.node.req.headers['x-correlation-id'] || randomUUID())
