@@ -31,7 +31,7 @@ function safeExec(command, options = {}) {
   try {
     execSync(command, { stdio: 'inherit', ...options })
     return true
-  } catch (e) {
+  } catch {
     return false
   }
 }
@@ -174,7 +174,8 @@ async function columnExists(sql, tableName, columnName) {
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
     ['user_status', ['graduate']],
-    ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']]
+    ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']],
+    ['payment_order_status', ['PENDING', 'PAID', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'FAILED', 'REFUND_REQUESTED', 'REFUNDING', 'REFUNDED']]
   ]
   const requiredTables = [
     'api_keys',
@@ -184,7 +185,13 @@ async function checkSchemaConsistency(sql) {
     'CardCode',
     'CardCodeRedeemLog',
     'PasswordAuditLog',
-    'PasswordRateLimit'
+    'PasswordRateLimit',
+    'PaymentSettings',
+    'PaymentPlan',
+    'PaymentProviderInstance',
+    'PaymentOrder',
+    'PaymentOrderCard',
+    'PaymentAuditLog'
   ]
   const requiredColumns = {
     User: [
@@ -351,8 +358,11 @@ async function main() {
         process.exit(1)
       }
       if (!(await checkSchemaConsistency(sql))) {
-        err('空库迁移后数据库schema仍不完整')
-        process.exit(1)
+        warn('空库标准迁移后检测到新增结构，使用 schema push 补齐')
+        if (!(await repairSchemaWithPush(sql))) {
+          err('空库数据库schema同步失败')
+          process.exit(1)
+        }
       }
       ok('空库迁移完成')
     } else {
