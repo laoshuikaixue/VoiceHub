@@ -170,6 +170,73 @@ async function columnExists(sql, tableName, columnName) {
   return result[0]?.exists === true
 }
 
+async function ensurePaymentSchema(sql) {
+  await sql.unsafe(`
+    DO $$ BEGIN
+      CREATE TYPE "public"."payment_order_status" AS ENUM ('PENDING','PAID','COMPLETED','EXPIRED','CANCELLED','FAILED','REFUND_REQUESTED','REFUNDING','REFUNDED');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+    CREATE TABLE IF NOT EXISTS "PaymentSettings" (
+      "id" serial PRIMARY KEY, "enabled" boolean DEFAULT false NOT NULL, "currency" varchar(3) DEFAULT 'CNY' NOT NULL,
+      "productNamePrefix" text DEFAULT 'VoiceHub 点歌券' NOT NULL, "productNameSuffix" text DEFAULT '' NOT NULL,
+      "minAmountCents" integer DEFAULT 100 NOT NULL, "maxAmountCents" integer, "dailyLimitCents" integer,
+      "orderTimeoutMinutes" integer DEFAULT 30 NOT NULL, "maxPendingOrders" integer DEFAULT 3 NOT NULL,
+      "loadBalanceStrategy" varchar(20) DEFAULT 'round-robin' NOT NULL, "visibleMethods" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "helpText" text, "helpImageUrl" text, "cancelLimitEnabled" boolean DEFAULT true NOT NULL,
+      "cancelWindowMinutes" integer DEFAULT 60 NOT NULL, "cancelMaxCount" integer DEFAULT 5 NOT NULL,
+      "createdAt" timestamptz DEFAULT now() NOT NULL, "updatedAt" timestamptz DEFAULT now() NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS "PaymentPlan" (
+      "id" serial PRIMARY KEY, "name" varchar(100) NOT NULL, "description" text DEFAULT '' NOT NULL,
+      "priceCents" integer NOT NULL, "originalPriceCents" integer, "currency" varchar(3) DEFAULT 'CNY' NOT NULL,
+      "cardCount" integer DEFAULT 1 NOT NULL, "features" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "forSale" boolean DEFAULT true NOT NULL, "sortOrder" integer DEFAULT 0 NOT NULL,
+      "createdAt" timestamptz DEFAULT now() NOT NULL, "updatedAt" timestamptz DEFAULT now() NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS "PaymentProviderInstance" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), "providerKey" varchar(30) NOT NULL, "name" varchar(100) NOT NULL,
+      "configEncrypted" text NOT NULL, "supportedMethods" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "enabled" boolean DEFAULT true NOT NULL, "paymentMode" varchar(20) DEFAULT '' NOT NULL,
+      "sortOrder" integer DEFAULT 0 NOT NULL, "limits" jsonb DEFAULT '{}'::jsonb NOT NULL,
+      "refundEnabled" boolean DEFAULT false NOT NULL, "allowUserRefund" boolean DEFAULT false NOT NULL,
+      "createdAt" timestamptz DEFAULT now() NOT NULL, "updatedAt" timestamptz DEFAULT now() NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS "PaymentOrder" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), "outTradeNo" varchar(64) NOT NULL UNIQUE,
+      "userId" integer NOT NULL REFERENCES "User"("id") ON DELETE RESTRICT, "userName" varchar(100) NOT NULL,
+      "userEmail" varchar(255), "planId" integer REFERENCES "PaymentPlan"("id") ON DELETE SET NULL,
+      "planName" varchar(100) NOT NULL, "cardCount" integer NOT NULL, "amountCents" integer NOT NULL,
+      "payAmountCents" integer NOT NULL, "feeRate" integer DEFAULT 0 NOT NULL, "currency" varchar(3) DEFAULT 'CNY' NOT NULL,
+      "paymentMethod" varchar(30) NOT NULL, "providerInstanceId" uuid REFERENCES "PaymentProviderInstance"("id") ON DELETE SET NULL,
+      "providerKey" varchar(30) NOT NULL, "providerSnapshot" jsonb DEFAULT '{}'::jsonb NOT NULL,
+      "paymentTradeNo" varchar(128), "payUrl" text, "qrCode" text, "clientSecret" text,
+      "status" "payment_order_status" DEFAULT 'PENDING' NOT NULL, "refundAmountCents" integer DEFAULT 0 NOT NULL,
+      "refundReason" text, "refundId" varchar(128), "refundRequestedAt" timestamptz, "refundedAt" timestamptz,
+      "expiresAt" timestamptz NOT NULL, "paidAt" timestamptz, "completedAt" timestamptz, "failedAt" timestamptz,
+      "failedReason" text, "clientIp" varchar(64), "sourceUrl" text,
+      "createdAt" timestamptz DEFAULT now() NOT NULL, "updatedAt" timestamptz DEFAULT now() NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS "PaymentOrderCard" (
+      "id" serial PRIMARY KEY, "orderId" uuid NOT NULL REFERENCES "PaymentOrder"("id") ON DELETE CASCADE,
+      "cardCodeId" integer NOT NULL REFERENCES "CardCode"("id") ON DELETE RESTRICT,
+      "createdAt" timestamptz DEFAULT now() NOT NULL, CONSTRAINT "payment_order_card_unique" UNIQUE ("orderId", "cardCodeId")
+    );
+    CREATE TABLE IF NOT EXISTS "PaymentAuditLog" (
+      "id" serial PRIMARY KEY, "orderId" uuid NOT NULL REFERENCES "PaymentOrder"("id") ON DELETE CASCADE,
+      "action" varchar(50) NOT NULL, "detail" jsonb DEFAULT '{}'::jsonb NOT NULL,
+      "operator" varchar(100) DEFAULT 'system' NOT NULL, "createdAt" timestamptz DEFAULT now() NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS "payment_plan_sale_sort_idx" ON "PaymentPlan" ("forSale", "sortOrder");
+    CREATE INDEX IF NOT EXISTS "payment_provider_key_idx" ON "PaymentProviderInstance" ("providerKey");
+    CREATE INDEX IF NOT EXISTS "payment_provider_enabled_sort_idx" ON "PaymentProviderInstance" ("enabled", "sortOrder");
+    CREATE INDEX IF NOT EXISTS "payment_order_user_created_idx" ON "PaymentOrder" ("userId", "createdAt");
+    CREATE INDEX IF NOT EXISTS "payment_order_status_expires_idx" ON "PaymentOrder" ("status", "expiresAt");
+    CREATE INDEX IF NOT EXISTS "payment_order_provider_paid_idx" ON "PaymentOrder" ("providerInstanceId", "paidAt");
+    CREATE INDEX IF NOT EXISTS "payment_order_card_code_idx" ON "PaymentOrderCard" ("cardCodeId");
+    CREATE INDEX IF NOT EXISTS "payment_audit_order_idx" ON "PaymentAuditLog" ("orderId", "createdAt");
+  `)
+}
+
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
@@ -316,6 +383,16 @@ async function checkSchemaConsistency(sql) {
 }
 
 async function repairSchemaWithPush(sql) {
+  try {
+    await ensurePaymentSchema(sql)
+    if (await checkSchemaConsistency(sql)) {
+      await seedMissingMigrationRecords(sql)
+      ok('支付数据库结构已自动补齐')
+      return true
+    }
+  } catch (error) {
+    warn(`支付数据库结构自动补齐失败，将继续使用 schema push: ${error.message}`)
+  }
   const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
   if (
     !safeExec(pushCommand, {
