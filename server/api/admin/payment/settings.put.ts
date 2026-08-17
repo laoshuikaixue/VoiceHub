@@ -17,7 +17,7 @@ export default defineEventHandler(async event => {
     enabled: typeof body.enabled === 'boolean' ? body.enabled : current.enabled,
     currency: typeof body.currency === 'string' && /^[A-Z]{3}$/.test(body.currency) ? body.currency : current.currency,
     productNamePrefix: typeof body.productNamePrefix === 'string' ? body.productNamePrefix.slice(0, 100) : current.productNamePrefix,
-    productNameSuffix: typeof body.productNameSuffix === 'string' ? body.productNameSuffix.slice(0, 100) : current.productNameSuffix,
+    productNameSuffix: typeof body.currency === 'string' && /^[A-Z]{3}$/.test(body.currency) ? body.currency : current.productNameSuffix,
     minAmountCents: Number.isInteger(body.minAmountCents) ? body.minAmountCents : current.minAmountCents,
     maxAmountCents: body.maxAmountCents == null ? null : Number(body.maxAmountCents),
     dailyLimitCents: body.dailyLimitCents == null ? null : Number(body.dailyLimitCents),

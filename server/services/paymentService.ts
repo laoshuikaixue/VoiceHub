@@ -49,16 +49,30 @@ const startOfToday = () => {
   return date
 }
 
+const getProviderLimits = (limits: Record<string, any> | null, method: string) => {
+  const methodLimits = limits?.[method]
+  if (methodLimits && typeof methodLimits === 'object') {
+    return {
+      minAmountCents: Math.round(Number(methodLimits.singleMin || 0) * 100),
+      maxAmountCents: Math.round(Number(methodLimits.singleMax || 0) * 100),
+      dailyLimitCents: Math.round(Number(methodLimits.dailyLimit || 0) * 100)
+    }
+  }
+  return {
+    minAmountCents: Number(limits?.minAmountCents || 0),
+    maxAmountCents: Number(limits?.maxAmountCents || 0),
+    dailyLimitCents: Number(limits?.dailyLimitCents || 0)
+  }
+}
+
 const selectProvider = async (method: string, amountCents: number, strategy: string) => {
   const providers = await db.select().from(paymentProviderInstances)
     .where(eq(paymentProviderInstances.enabled, true)).orderBy(asc(paymentProviderInstances.sortOrder))
   const eligible = []
   for (const provider of providers) {
     if (!provider.supportedMethods.includes(method)) continue
-    const min = Number(provider.limits?.minAmountCents || 0)
-    const max = Number(provider.limits?.maxAmountCents || 0)
+    const { minAmountCents: min, maxAmountCents: max, dailyLimitCents: dailyLimit } = getProviderLimits(provider.limits, method)
     if ((min && amountCents < min) || (max && amountCents > max)) continue
-    const dailyLimit = Number(provider.limits?.dailyLimitCents || 0)
     const [daily] = await db.select({ total: sum(paymentOrders.payAmountCents) }).from(paymentOrders)
       .where(and(eq(paymentOrders.providerInstanceId, provider.id), gte(paymentOrders.paidAt, startOfToday()), inArray(paymentOrders.status, [...PAID_STATUSES])))
     const dailyAmount = Number(daily?.total || 0)

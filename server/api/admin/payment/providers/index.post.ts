@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { paymentProviderInstances } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
-import { encryptPaymentConfig } from '~~/server/utils/paymentCrypto'
+import { encryptPaymentConfig, maskPaymentConfig } from '~~/server/utils/paymentCrypto'
 import { isPaymentProviderKey, PAYMENT_PROVIDER_CONFIG_FIELDS, PAYMENT_PROVIDER_METHODS } from '~~/server/config/payment'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'

@@ -689,7 +689,7 @@ export const paymentSettings = pgTable('PaymentSettings', {
   currency: varchar('currency', { length: 3 }).default('CNY').notNull(),
   productNamePrefix: text('productNamePrefix').default('VoiceHub 点歌券').notNull(),
   productNameSuffix: text('productNameSuffix').default('').notNull(),
-  minAmountCents: integer('minAmountCents').default(100).notNull(),
+  minAmountCents: integer('minAmountCents').default(1).notNull(),
   maxAmountCents: integer('maxAmountCents'),
   dailyLimitCents: integer('dailyLimitCents'),
   balanceRechargeMultiplier: numeric('balanceRechargeMultiplier', { precision: 12, scale: 4 }).default('1').notNull(),
