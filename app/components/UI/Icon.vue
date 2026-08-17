@@ -16,6 +16,13 @@
       <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
     </g>
 
+    <!-- 支付卡片 -->
+    <g v-else-if="name === 'credit-card'">
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+      <path d="M6 15h2" />
+    </g>
+
     <!-- 聚合登录平台图标 -->
     <g
       v-else-if="name === 'oauth-qq'"

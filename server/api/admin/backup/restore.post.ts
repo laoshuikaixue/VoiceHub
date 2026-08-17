@@ -10,6 +10,12 @@ import {
   emailTemplates,
   notificationSettings,
   notifications,
+  paymentAuditLogs,
+  paymentOrderCards,
+  paymentOrders,
+  paymentPlans,
+  paymentProviderInstances,
+  paymentSettings,
   playTimes,
   requestTimes,
   schedules,
@@ -177,6 +183,12 @@ export default defineEventHandler(async (event) => {
       console.log('清空现有数据...')
       try {
         if (shouldOverwriteSuperAdmin) {
+          await db.delete(paymentAuditLogs)
+          await db.delete(paymentOrderCards)
+          await db.delete(paymentOrders)
+          await db.delete(paymentPlans)
+          await db.delete(paymentProviderInstances)
+          await db.delete(paymentSettings)
           await db.delete(apiLogs)
           await db.delete(apiKeyPermissions)
           await db.delete(apiKeys)
@@ -200,6 +212,12 @@ export default defineEventHandler(async (event) => {
           await db.delete(requestTimes)
           await db.delete(systemSettings)
         } else {
+          await db.delete(paymentAuditLogs)
+          await db.delete(paymentOrderCards)
+          await db.delete(paymentOrders)
+          await db.delete(paymentPlans)
+          await db.delete(paymentProviderInstances)
+          await db.delete(paymentSettings)
           const preservedUsers = await db
             .select({ id: users.id })
             .from(users)
@@ -285,6 +303,9 @@ export default defineEventHandler(async (event) => {
     // 定义恢复顺序（考虑外键依赖）
     const restoreOrder = [
       'systemSettings',
+      'paymentSettings',
+      'paymentPlans',
+      'paymentProviderInstances',
       'playTimes',
       'semesters',
       'requestTimes',
@@ -294,6 +315,9 @@ export default defineEventHandler(async (event) => {
       'userStatusLogs',
       'songBlacklist',
       'cardCodes',
+      'paymentOrders',
+      'paymentOrderCards',
+      'paymentAuditLogs',
       'songs',
       'songCollaborators',
       'collaborationLogs',
@@ -2368,6 +2392,34 @@ export default defineEventHandler(async (event) => {
 
                         // API日志通常不需要检查重复，直接创建新记录
                         await tx.insert(apiLogs).values(apiLogData)
+                        break
+
+                      case 'paymentSettings': {
+                        const paymentSettingsData = { ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined }
+                        const existing = await tx.select({ id: paymentSettings.id }).from(paymentSettings).limit(1)
+                        if (existing[0]) await tx.update(paymentSettings).set(paymentSettingsData).where(eq(paymentSettings.id, existing[0].id))
+                        else await tx.insert(paymentSettings).values(paymentSettingsData)
+                        break
+                      }
+
+                      case 'paymentPlans':
+                        await tx.insert(paymentPlans).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined })
+                        break
+
+                      case 'paymentProviderInstances':
+                        await tx.insert(paymentProviderInstances).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined })
+                        break
+
+                      case 'paymentOrders':
+                        await tx.insert(paymentOrders).values({ ...record, userId: userIdMapping.get(record.userId) || record.userId, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined, expiresAt: new Date(record.expiresAt), paidAt: record.paidAt ? new Date(record.paidAt) : null, completedAt: record.completedAt ? new Date(record.completedAt) : null, failedAt: record.failedAt ? new Date(record.failedAt) : null, refundedAt: record.refundedAt ? new Date(record.refundedAt) : null })
+                        break
+
+                      case 'paymentOrderCards':
+                        await tx.insert(paymentOrderCards).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined })
+                        break
+
+                      case 'paymentAuditLogs':
+                        await tx.insert(paymentAuditLogs).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined })
                         break
 
                       // 其他表的处理逻辑...

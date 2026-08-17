@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -11,6 +11,17 @@ export const cardCodeStatusEnum = pgEnum('card_code_status', [
   'LOCKED',
   'REDEEMED',
   'INVALID'
+]);
+export const paymentOrderStatusEnum = pgEnum('payment_order_status', [
+  'PENDING',
+  'PAID',
+  'COMPLETED',
+  'EXPIRED',
+  'CANCELLED',
+  'FAILED',
+  'REFUND_REQUESTED',
+  'REFUNDING',
+  'REFUNDED'
 ]);
 
 // 用户表
@@ -670,3 +681,129 @@ export const backupHistory = pgTable('BackupHistory', {
 
 export type BackupHistory = typeof backupHistory.$inferSelect;
 export type NewBackupHistory = typeof backupHistory.$inferInsert;
+
+// 支付系统设置
+export const paymentSettings = pgTable('PaymentSettings', {
+  id: serial('id').primaryKey(),
+  enabled: boolean('enabled').default(false).notNull(),
+  currency: varchar('currency', { length: 3 }).default('CNY').notNull(),
+  productNamePrefix: text('productNamePrefix').default('VoiceHub 点歌券').notNull(),
+  productNameSuffix: text('productNameSuffix').default('').notNull(),
+  minAmountCents: integer('minAmountCents').default(100).notNull(),
+  maxAmountCents: integer('maxAmountCents'),
+  dailyLimitCents: integer('dailyLimitCents'),
+  orderTimeoutMinutes: integer('orderTimeoutMinutes').default(30).notNull(),
+  maxPendingOrders: integer('maxPendingOrders').default(3).notNull(),
+  loadBalanceStrategy: varchar('loadBalanceStrategy', { length: 20 }).default('round-robin').notNull(),
+  visibleMethods: jsonb('visibleMethods').$type<string[]>().default([]).notNull(),
+  helpText: text('helpText'),
+  helpImageUrl: text('helpImageUrl'),
+  cancelLimitEnabled: boolean('cancelLimitEnabled').default(true).notNull(),
+  cancelWindowMinutes: integer('cancelWindowMinutes').default(60).notNull(),
+  cancelMaxCount: integer('cancelMaxCount').default(5).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+});
+
+// 可售点歌券套餐
+export const paymentPlans = pgTable('PaymentPlan', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description').default('').notNull(),
+  priceCents: integer('priceCents').notNull(),
+  originalPriceCents: integer('originalPriceCents'),
+  currency: varchar('currency', { length: 3 }).default('CNY').notNull(),
+  cardCount: integer('cardCount').default(1).notNull(),
+  features: jsonb('features').$type<string[]>().default([]).notNull(),
+  forSale: boolean('forSale').default(true).notNull(),
+  sortOrder: integer('sortOrder').default(0).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [index('payment_plan_sale_sort_idx').on(table.forSale, table.sortOrder)]);
+
+// 支付服务商实例，configEncrypted 为 AES-GCM 加密 JSON
+export const paymentProviderInstances = pgTable('PaymentProviderInstance', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  providerKey: varchar('providerKey', { length: 30 }).notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  configEncrypted: text('configEncrypted').notNull(),
+  supportedMethods: jsonb('supportedMethods').$type<string[]>().default([]).notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+  paymentMode: varchar('paymentMode', { length: 20 }).default('').notNull(),
+  sortOrder: integer('sortOrder').default(0).notNull(),
+  limits: jsonb('limits').$type<Record<string, number | null>>().default({}).notNull(),
+  refundEnabled: boolean('refundEnabled').default(false).notNull(),
+  allowUserRefund: boolean('allowUserRefund').default(false).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  index('payment_provider_key_idx').on(table.providerKey),
+  index('payment_provider_enabled_sort_idx').on(table.enabled, table.sortOrder)
+]);
+
+// 支付订单
+export const paymentOrders = pgTable('PaymentOrder', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  outTradeNo: varchar('outTradeNo', { length: 64 }).notNull().unique(),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  userName: varchar('userName', { length: 100 }).notNull(),
+  userEmail: varchar('userEmail', { length: 255 }),
+  planId: integer('planId').references(() => paymentPlans.id, { onDelete: 'set null' }),
+  planName: varchar('planName', { length: 100 }).notNull(),
+  cardCount: integer('cardCount').notNull(),
+  amountCents: integer('amountCents').notNull(),
+  payAmountCents: integer('payAmountCents').notNull(),
+  feeRate: integer('feeRate').default(0).notNull(),
+  currency: varchar('currency', { length: 3 }).default('CNY').notNull(),
+  paymentMethod: varchar('paymentMethod', { length: 30 }).notNull(),
+  providerInstanceId: uuid('providerInstanceId').references(() => paymentProviderInstances.id, { onDelete: 'set null' }),
+  providerKey: varchar('providerKey', { length: 30 }).notNull(),
+  providerSnapshot: jsonb('providerSnapshot').$type<Record<string, unknown>>().default({}).notNull(),
+  paymentTradeNo: varchar('paymentTradeNo', { length: 128 }),
+  payUrl: text('payUrl'),
+  qrCode: text('qrCode'),
+  clientSecret: text('clientSecret'),
+  status: paymentOrderStatusEnum('status').default('PENDING').notNull(),
+  refundAmountCents: integer('refundAmountCents').default(0).notNull(),
+  refundReason: text('refundReason'),
+  refundId: varchar('refundId', { length: 128 }),
+  refundRequestedAt: timestamp('refundRequestedAt', { withTimezone: true }),
+  refundedAt: timestamp('refundedAt', { withTimezone: true }),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  paidAt: timestamp('paidAt', { withTimezone: true }),
+  completedAt: timestamp('completedAt', { withTimezone: true }),
+  failedAt: timestamp('failedAt', { withTimezone: true }),
+  failedReason: text('failedReason'),
+  clientIp: varchar('clientIp', { length: 64 }),
+  sourceUrl: text('sourceUrl'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  index('payment_order_user_created_idx').on(table.userId, table.createdAt),
+  index('payment_order_status_expires_idx').on(table.status, table.expiresAt),
+  index('payment_order_provider_paid_idx').on(table.providerInstanceId, table.paidAt)
+]);
+
+export const paymentOrderCards = pgTable('PaymentOrderCard', {
+  id: serial('id').primaryKey(),
+  orderId: uuid('orderId').notNull().references(() => paymentOrders.id, { onDelete: 'cascade' }),
+  cardCodeId: integer('cardCodeId').notNull().references(() => cardCodes.id, { onDelete: 'restrict' }),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  unique('payment_order_card_unique').on(table.orderId, table.cardCodeId),
+  index('payment_order_card_code_idx').on(table.cardCodeId)
+]);
+
+export const paymentAuditLogs = pgTable('PaymentAuditLog', {
+  id: serial('id').primaryKey(),
+  orderId: uuid('orderId').notNull().references(() => paymentOrders.id, { onDelete: 'cascade' }),
+  action: varchar('action', { length: 50 }).notNull(),
+  detail: jsonb('detail').$type<Record<string, unknown>>().default({}).notNull(),
+  operator: varchar('operator', { length: 100 }).default('system').notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [index('payment_audit_order_idx').on(table.orderId, table.createdAt)]);
+
+export type PaymentSettings = typeof paymentSettings.$inferSelect;
+export type PaymentPlan = typeof paymentPlans.$inferSelect;
+export type PaymentProviderInstance = typeof paymentProviderInstances.$inferSelect;
+export type PaymentOrder = typeof paymentOrders.$inferSelect;

@@ -764,6 +764,7 @@ VoiceHub/
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
 │   │   │   ├── CardCodesManager.vue   # 点歌券管理
+│   │   │   ├── PaymentManager.vue     # 支付设置、服务商、套餐与订单管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
@@ -921,6 +922,9 @@ VoiceHub/
 │   │   │   └── error.vue      # 认证错误页面
 │   │   ├── change-password.vue # 修改密码页面
 │   │   ├── dashboard.vue       # 用户仪表盘
+│   │   ├── payment.vue         # 点歌券购买、订单与已购点歌券
+│   │   ├── payment/            # 支付结果页
+│   │   │   └── result.vue      # 支付结果与主动查单
 │   │   ├── forgot-password.vue # 找回密码页面
 │   │   ├── index.vue           # 首页
 │   │   ├── login.vue           # 登录页面
@@ -976,6 +980,8 @@ VoiceHub/
 │       └── url.ts             # URL处理工具
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
+│   │   ├── payment/         # 用户支付、订单、回调 API
+│   │   ├── admin/payment/   # 支付后台管理 API
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── api-keys/            # API密钥管理API
 │   │   │   │   ├── [id].delete.ts   # 删除API密钥
@@ -1264,7 +1270,8 @@ VoiceHub/
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
-│   │   └── redis-lifecycle.ts # Redis短期状态连接生命周期
+│   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
+│   │   └── payment-expiry.ts # 支付订单超时查单与过期处理
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
@@ -1276,6 +1283,8 @@ VoiceHub/
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
+│   │   ├── paymentProviders.ts # 五类支付服务商适配
+│   │   ├── paymentService.ts # 支付订单、发券与退款生命周期
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
@@ -1296,6 +1305,8 @@ VoiceHub/
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
+│   │   ├── paymentAuth.ts  # 支付用户与管理员权限
+│   │   ├── paymentCrypto.ts # 支付配置 AES-GCM 加解密
 │   │   ├── jwt-enhanced.ts # JWT工具
 │   │   ├── log-manager.ts  # 日志管理工具
 │   │   ├── native_common.ts # 原生API通用工具

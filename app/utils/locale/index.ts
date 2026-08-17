@@ -275,6 +275,7 @@ export function useLocale() {
     composableErrors: withFallback('composableErrors'),
     songs: withFallback('songs'),
     admin: withFallback('admin'),
+    payment: withFallback('payment'),
     yearReview: withFallback('yearReview'),
     serverErrors: withFallback('serverErrors'),
     theme: withFallback('theme') as unknown as typeof import('./zh-CN').theme,

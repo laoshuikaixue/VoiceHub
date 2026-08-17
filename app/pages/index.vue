@@ -123,6 +123,10 @@
                       <Icon name="user" :size="16" />
                       <span>{{ locale.account }}</span>
                     </NuxtLink>
+                    <NuxtLink class="action-item" to="/payment">
+                      <Icon name="credit-card" :size="16" />
+                      <span>{{ paymentLocale.title }}</span>
+                    </NuxtLink>
                     <NuxtLink v-if="isAdmin" class="action-item" to="/dashboard">
                       <Icon name="settings" :size="16" />
                       <span>{{ locale.dashboard }}</span>
@@ -857,7 +861,7 @@ import { useThemeImage } from '~/composables/useThemeImage'
 const config = useRuntimeConfig()
 const router = useRouter()
 const route = useRoute()
-const { pages, common, currentLocale, setLocale, supportedLocales, isFollowingSystem, followSystemLocale } =
+const { pages, common, payment: paymentLocale, currentLocale, setLocale, supportedLocales, isFollowingSystem, followSystemLocale } =
   useLocale()
 const locale = computed(() => pages.value?.home || {})
 const getHomeText = (section, key, ...args) => formatLocaleValue(locale.value?.[section]?.[key], ...args)

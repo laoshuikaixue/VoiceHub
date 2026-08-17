@@ -189,6 +189,12 @@
             >
               <LazyAdminCardCodesManager />
             </div>
+            <div
+              v-if="activeTab === 'payment' && permissions.canAccessPage('payment')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminPaymentManager />
+            </div>
           </div>
         </main>
       </div>

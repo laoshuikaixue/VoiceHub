@@ -5,6 +5,12 @@ import {
   cardCodes,
   notificationSettings,
   notifications,
+  paymentAuditLogs,
+  paymentOrderCards,
+  paymentOrders,
+  paymentPlans,
+  paymentProviderInstances,
+  paymentSettings,
   playTimes,
   schedules,
   semesters,
@@ -1204,6 +1210,40 @@ export default defineEventHandler(async (event) => {
             }
             break
           }
+
+          case 'paymentSettings': {
+            const data = { ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined }
+            const existing = await tx.query.paymentSettings.findFirst({})
+            if (existing) await tx.update(paymentSettings).set(data).where(eq(paymentSettings.id, existing.id))
+            else await tx.insert(paymentSettings).values(data)
+            stats.updated++
+            break
+          }
+
+          case 'paymentPlans':
+            await tx.insert(paymentPlans).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined })
+            stats.created++
+            break
+
+          case 'paymentProviderInstances':
+            await tx.insert(paymentProviderInstances).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined })
+            stats.created++
+            break
+
+          case 'paymentOrders':
+            await tx.insert(paymentOrders).values({ ...record, userId: userIdMapping.get(record.userId) || record.userId, expiresAt: new Date(record.expiresAt), createdAt: record.createdAt ? new Date(record.createdAt) : undefined, updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined, paidAt: record.paidAt ? new Date(record.paidAt) : null, completedAt: record.completedAt ? new Date(record.completedAt) : null, failedAt: record.failedAt ? new Date(record.failedAt) : null, refundedAt: record.refundedAt ? new Date(record.refundedAt) : null })
+            stats.created++
+            break
+
+          case 'paymentOrderCards':
+            await tx.insert(paymentOrderCards).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined })
+            stats.created++
+            break
+
+          case 'paymentAuditLogs':
+            await tx.insert(paymentAuditLogs).values({ ...record, createdAt: record.createdAt ? new Date(record.createdAt) : undefined })
+            stats.created++
+            break
         }
       })
       stats.processed++

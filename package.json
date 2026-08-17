@@ -34,6 +34,7 @@
     "init-help": "pnpm run db:push && pnpm run create-admin"
   },
   "dependencies": {
+    "@airwallex/components-sdk": "^1.20.2",
     "@applemusic-like-lyrics/core": "^0.5.2",
     "@applemusic-like-lyrics/lyric": "^0.4.1",
     "@applemusic-like-lyrics/vue": "^0.5.2",

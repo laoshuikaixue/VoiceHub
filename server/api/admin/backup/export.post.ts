@@ -10,6 +10,12 @@ import {
   emailTemplates,
   notifications,
   notificationSettings,
+  paymentAuditLogs,
+  paymentOrderCards,
+  paymentOrders,
+  paymentPlans,
+  paymentProviderInstances,
+  paymentSettings,
   playTimes,
   requestTimes,
   schedules,
@@ -151,6 +157,12 @@ export default defineEventHandler(async (event) => {
         },
         description: '点歌券日志'
       },
+      paymentSettings: { query: async () => db.select().from(paymentSettings), description: '支付设置' },
+      paymentPlans: { query: async () => db.select().from(paymentPlans), description: '支付套餐' },
+      paymentProviderInstances: { query: async () => db.select().from(paymentProviderInstances), description: '支付通道' },
+      paymentOrders: { query: async () => db.select().from(paymentOrders), description: '支付订单' },
+      paymentOrderCards: { query: async () => db.select().from(paymentOrderCards), description: '支付订单点歌券关联' },
+      paymentAuditLogs: { query: async () => db.select().from(paymentAuditLogs), description: '支付审计日志' },
       votes: {
         query: async () => {
           const votesData = await db.select().from(votes)
