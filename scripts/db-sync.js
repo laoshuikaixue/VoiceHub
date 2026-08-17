@@ -319,7 +319,8 @@ async function repairSchemaWithPush(sql) {
   const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
   if (
     !safeExec(pushCommand, {
-      env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
+      env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' },
+      input: '\n'.repeat(20)
     })
   ) {
     err('数据库schema修复失败')
