@@ -138,25 +138,16 @@ const allPoints = computed(() => props.points.map((point, index) => {
 }))
 const validPoints = computed(() => allPoints.value.filter((point) => point.value != null))
 
-const segmentPoints = computed(() => {
-  const segments = []
-  let current = []
-  allPoints.value.forEach((point) => {
-    if (point.value == null) {
-      if (current.length) segments.push(current)
-      current = []
-      return
-    }
-    current.push(point)
-  })
-  if (current.length) segments.push(current)
-  return segments
-})
-const lineSegments = computed(() => segmentPoints.value.map((segment) => segment.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ')))
-const areaSegments = computed(() => segmentPoints.value.map((segment) => {
+// 缺失采样不生成点，但保留相邻有效点之间的时间跨度并继续连线。
+const lineSegments = computed(() => validPoints.value.length > 1
+  ? [validPoints.value.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ')]
+  : [])
+const areaSegments = computed(() => {
+  const segment = validPoints.value
+  if (!segment.length) return []
   const line = segment.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ')
-  return `${segment[0].x.toFixed(2)},220 ${line} ${segment[segment.length - 1].x.toFixed(2)},220`
-}))
+  return [`${segment[0].x.toFixed(2)},220 ${line} ${segment[segment.length - 1].x.toFixed(2)},220`]
+})
 
 const latestValue = computed(() => collectedValues.value.at(-1) ?? null)
 const peakValue = computed(() => collectedValues.value.length ? Math.max(...collectedValues.value) : null)

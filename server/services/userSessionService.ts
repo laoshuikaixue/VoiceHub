@@ -86,7 +86,7 @@ export async function syncAuthenticatedUserSession(
 
   try {
     const existing = await db
-      .select({ id: userSessions.id, revokedAt: userSessions.revokedAt })
+      .select({ id: userSessions.id, revokedAt: userSessions.revokedAt, userAgent: userSessions.userAgent })
       .from(userSessions)
       .where(eq(userSessions.id, sessionId))
       .limit(1)
@@ -97,18 +97,17 @@ export async function syncAuthenticatedUserSession(
     }
 
     if (existing[0]) {
+      const updateData = {
+        tokenVersion: payload.tokenVersion ?? user.tokenVersion ?? 0,
+        ipAddress,
+        lastPath: requestPath,
+        lastActiveAt: now,
+        expiresAt: sessionExpiry(payload),
+        ...(existing[0].userAgent && existing[0].userAgent !== 'Unknown' ? {} : { userAgent, browser, deviceType })
+      }
       await db
         .update(userSessions)
-        .set({
-          tokenVersion: payload.tokenVersion ?? user.tokenVersion ?? 0,
-          ipAddress,
-          userAgent,
-          browser,
-          deviceType,
-          lastPath: requestPath,
-          lastActiveAt: now,
-          expiresAt: sessionExpiry(payload)
-        })
+        .set(updateData)
         .where(and(eq(userSessions.id, sessionId), isNull(userSessions.revokedAt)))
     } else {
       await db.insert(userSessions).values({

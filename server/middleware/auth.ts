@@ -15,6 +15,7 @@ import {
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
 import { syncAuthenticatedUserSession } from '../services/userSessionService'
+import { updateRequestDatabaseUser } from '~~/server/utils/request-database-context'
 
 function clearAuthCookie(event: H3Event) {
   setCookie(event, 'auth-token', '', {
@@ -237,6 +238,7 @@ export default defineEventHandler(async (event) => {
       requirePasswordChange,
       ...passwordSetupState
     }
+    updateRequestDatabaseUser(user.id)
 
     const sessionActive = await syncAuthenticatedUserSession(event, decoded, user)
     if (!sessionActive) {

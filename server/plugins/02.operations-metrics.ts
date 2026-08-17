@@ -6,6 +6,7 @@ import { apiLogs, systemSettings } from '~/drizzle/schema'
 import { sql } from 'drizzle-orm'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { enterRequestDatabaseContext } from '~~/server/utils/request-database-context'
 
 const getPathname = (url = '') => url.split('?')[0]
 const MUSIC_SOURCE_PROBE_HEADER = 'x-voicehub-operations-probe'
@@ -126,12 +127,14 @@ export default defineNitroPlugin((nitroApp) => {
 
   nitroApp.hooks.hook('request', (event) => {
     observeRuntimeDeployment(event.node.req.headers)
+    enterRequestDatabaseContext({ route: event.node.req.url?.split('?')[0] || '/', requestId: '', userId: null })
     if (isMonitoringRequest(event.node.req.url) || isMusicSourceProbeRequest(event)) return
     const startedAt = startOperationRequest()
     event.context.operationsMetricsStartedAt = startedAt
     const requestId = String(event.node.req.headers['x-request-id'] || event.node.req.headers['x-correlation-id'] || randomUUID())
     event.node.res.setHeader('x-request-id', requestId)
     event.context.operationsMetricsRequestId = requestId
+    enterRequestDatabaseContext({ route: event.node.req.url?.split('?')[0] || '/', requestId, userId: null })
     setOperationRequestContext(startedAt, {
       route: event.node.req.url?.split('?')[0],
       requestId
@@ -141,7 +144,7 @@ export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('afterResponse', (event) => {
     const startedAt = event.context.operationsMetricsStartedAt
     if (typeof startedAt === 'number') {
-      finishOperationRequest(startedAt, event.node.res.statusCode || 200)
+      finishOperationRequest(startedAt, event.node.res.statusCode || 200, event.context.user?.id)
       const path = getPathname(event.node.req.url)
       const success = (event.node.res.statusCode || 200) < 400
       if (path === '/api/songs/request' || path === '/api/open/songs/request') recordBusinessOperation('song_request', success)

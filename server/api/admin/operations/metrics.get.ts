@@ -2,7 +2,7 @@ import { defineEventHandler, getQuery } from 'h3'
 import { verifyUserAuth } from '~~/server/utils/auth'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { getOperationsMetrics, observeRuntimeDeployment, persistOperationsDatabaseSnapshot, triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
+import { getOperationsMetrics, getTurnstileConfiguration, observeRuntimeDeployment, persistOperationsDatabaseSnapshot, triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
 import { getRedisMetrics, getRedisStats } from '~~/server/utils/redis'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getMusicSseStats } from '~~/server/api/music/websocket'
@@ -182,7 +182,14 @@ export default defineEventHandler(async (event) => {
     requestId ? getSentryTrace(requestId) : Promise.resolve({ configured: false, available: false, spans: [] })
   ])
 
-  const operationsMetrics = getOperationsMetrics()
+  const [metricsSnapshot, turnstileConfiguration] = await Promise.all([
+    Promise.resolve(getOperationsMetrics()),
+    getTurnstileConfiguration()
+  ])
+  const operationsMetrics = {
+    ...metricsSnapshot,
+    turnstile: { ...metricsSnapshot.turnstile, configured: turnstileConfiguration }
+  }
   if (database.status === 'fulfilled' || diagnostics.status === 'fulfilled') {
     persistOperationsDatabaseSnapshot({
       queriesExecuted: database.status === 'fulfilled' ? database.value.queriesExecuted : null,

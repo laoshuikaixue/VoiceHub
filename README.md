@@ -1330,6 +1330,7 @@ VoiceHub/
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── request-database-context.ts # 请求与数据库查询关联上下文
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
 │   │   ├── serverTime.ts   # 服务器时间工具

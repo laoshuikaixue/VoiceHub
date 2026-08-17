@@ -3,6 +3,7 @@ import { cpus, freemem, hostname, loadavg, totalmem } from 'node:os'
 import { readFileSync, statfsSync } from 'node:fs'
 import { sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
+import { systemSettings } from '~/drizzle/schema'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 
@@ -28,8 +29,8 @@ const state = {
   clientErrors: 0,
   serverErrors: 0,
   activeRequests: 0,
-  samples: [] as Array<{ at: number; status: number; durationMs: number; route?: string; requestId?: string }>,
-  requestContext: new Map<number, { route?: string; requestId?: string }>(),
+  samples: [] as Array<{ at: number; status: number; durationMs: number; route?: string; requestId?: string; userId?: number | null }>,
+  requestContext: new Map<number, { route?: string; requestId?: string; userId?: number | null }>(),
   businessSamples: [] as Array<{ at: number; operation: string; success: boolean }>,
   oauthSamples: [] as Array<{ at: number; success: boolean }>,
   dependencies: new Map<string, {
@@ -61,6 +62,20 @@ export const setMusicSourceProbeRunner = (runner: ((force?: boolean) => Promise<
 
 export const triggerMusicSourceProbe = (force = false) => musicSourceProbeRunner?.(force)
 
+export const getTurnstileConfiguration = async () => {
+  try {
+    const rows = await db.select({
+      provider: systemSettings.captchaProvider,
+      siteKey: systemSettings.turnstileSiteKey,
+      secretKey: systemSettings.turnstileSecretKey
+    }).from(systemSettings).limit(1)
+    const settings = rows[0]
+    return Boolean(settings?.provider === 'turnstile' && settings.siteKey && settings.secretKey)
+  } catch {
+    return null
+  }
+}
+
 const gcObserver = new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
     state.gc.count += 1
@@ -85,7 +100,7 @@ export const setOperationRequestContext = (startedAt: number, context: { route?:
   state.requestContext.set(startedAt, context)
 }
 
-export const finishOperationRequest = (startedAt: number, statusCode: number) => {
+export const finishOperationRequest = (startedAt: number, statusCode: number, userId?: number | null) => {
   const durationMs = Math.max(0, performance.now() - startedAt)
   state.activeRequests = Math.max(0, state.activeRequests - 1)
   state.totalRequests += 1
@@ -93,7 +108,7 @@ export const finishOperationRequest = (startedAt: number, statusCode: number) =>
   if (statusCode >= 500) state.serverErrors += 1
   const context = state.requestContext.get(startedAt)
   state.requestContext.delete(startedAt)
-  state.samples.push({ at: getServerTimestamp(), status: statusCode, durationMs, ...context })
+  state.samples.push({ at: getServerTimestamp(), status: statusCode, durationMs, ...context, userId: userId ?? context?.userId ?? null })
   if (state.samples.length > 5000) state.samples = state.samples.slice(-5000)
   prune()
 }
@@ -369,7 +384,7 @@ export const getOperationsMetrics = () => {
       .filter((sample) => sample.status >= 400)
       .slice(-20)
       .reverse()
-      .map((sample) => ({ at: new Date(sample.at).toISOString(), status: sample.status, durationMs: Math.round(sample.durationMs), route: sample.route || 'unknown', requestId: sample.requestId || null })),
+      .map((sample) => ({ at: new Date(sample.at).toISOString(), status: sample.status, durationMs: Math.round(sample.durationMs), route: sample.route || 'unknown', requestId: sample.requestId || null, userId: sample.userId ?? null })),
     eventLoop,
     gc: {
       count: state.gc.count,
