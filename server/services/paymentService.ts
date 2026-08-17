@@ -95,7 +95,9 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
       .where(and(eq(paymentOrders.userId, user.id), gte(paymentOrders.paidAt, startOfToday()), inArray(paymentOrders.status, [...PAID_STATUSES])))
     if (Number(daily?.total || 0) + plan.priceCents > settings.dailyLimitCents) throw createApiError(429, SERVER_ERROR_CODES.PAYMENT_DAILY_LIMIT, '今日购买金额已达上限')
   }
-  const providerRow = await selectProvider(method, plan.priceCents, settings.loadBalanceStrategy)
+  const feeRate = Number(settings.rechargeFeeRate || 0)
+  const payAmountCents = Math.round(plan.priceCents * (1 + feeRate / 100))
+  const providerRow = await selectProvider(method, payAmountCents, settings.loadBalanceStrategy)
   const config = decryptPaymentConfig(providerRow.configEncrypted)
   const provider = createPaymentProvider(providerRow.providerKey, { ...config, paymentMode: providerRow.paymentMode })
   const outTradeNo = makeTradeNo()
@@ -106,7 +108,7 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   const [order] = await db.insert(paymentOrders).values({
     outTradeNo, userId: user.id, userName: user.name || user.username, userEmail: user.email || null,
     planId: plan.id, planName: plan.name, cardCount: plan.cardCount, amountCents: plan.priceCents,
-    payAmountCents: plan.priceCents, currency: plan.currency, paymentMethod: method,
+    payAmountCents, feeRate: Math.round(feeRate * 100), currency: plan.currency, paymentMethod: method,
     providerInstanceId: providerRow.id, providerKey: providerRow.providerKey,
     providerSnapshot: { id: providerRow.id, name: providerRow.name, providerKey: providerRow.providerKey, configEncrypted: providerRow.configEncrypted, paymentMode: providerRow.paymentMode },
     expiresAt, clientIp: getClientIP(event), sourceUrl: getHeader(event, 'referer') || null
@@ -114,10 +116,10 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   if (!order) throw new Error('支付订单创建失败')
   try {
     const result = await provider.create({
-      outTradeNo, amountCents: plan.priceCents, currency: plan.currency,
+      outTradeNo, amountCents: payAmountCents, currency: plan.currency,
       subject: `${settings.productNamePrefix}${plan.name}${settings.productNameSuffix}`,
       method, notifyUrl: `${origin}/api/payment/webhook/${providerRow.providerKey}`,
-      returnUrl: `${origin}/payment/result`, clientIp: getClientIP(event), mobile
+      returnUrl: `${origin}/payment/result`, clientIp: getClientIP(event), mobile: mobile && !(method === 'alipay' && settings.alipayForceQrCode)
     })
     const [updated] = await db.update(paymentOrders).set({
       paymentTradeNo: result.tradeNo || null, payUrl: result.payUrl || null,
@@ -194,8 +196,18 @@ export const cancelPaymentOrder = async (orderId: string, userId: number) => {
   if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '支付订单不存在')
   if (order.status !== 'PENDING') throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '当前订单状态不可取消')
   if (settings.cancelLimitEnabled) {
+    const now = getServerDate()
+    const unitMinutes = settings.cancelWindowUnit === 'day' ? 1440 : settings.cancelWindowUnit === 'hour' ? 60 : 1
     const since = getServerDate()
-    since.setTime(since.getTime() - settings.cancelWindowMinutes * 60000)
+    if (settings.cancelWindowMode === 'fixed') {
+      if (settings.cancelWindowUnit === 'day') since.setHours(0, 0, 0, 0)
+      else if (settings.cancelWindowUnit === 'hour') since.setMinutes(0, 0, 0)
+      else since.setSeconds(0, 0)
+      const bucketSize = Math.max(1, settings.cancelWindowMinutes) * unitMinutes * 60000
+      since.setTime(since.getTime() - (Math.floor((now.getTime() - since.getTime()) / bucketSize) * bucketSize))
+    } else {
+      since.setTime(now.getTime() - Math.max(1, settings.cancelWindowMinutes) * unitMinutes * 60000)
+    }
     const [cancelled] = await db.select({ value: count() }).from(paymentAuditLogs)
       .innerJoin(paymentOrders, eq(paymentOrders.id, paymentAuditLogs.orderId))
       .where(and(eq(paymentOrders.userId, userId), eq(paymentAuditLogs.action, 'CANCELLED'), gte(paymentAuditLogs.createdAt, since)))

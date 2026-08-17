@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, index, integer, jsonb, numeric, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -692,6 +692,9 @@ export const paymentSettings = pgTable('PaymentSettings', {
   minAmountCents: integer('minAmountCents').default(100).notNull(),
   maxAmountCents: integer('maxAmountCents'),
   dailyLimitCents: integer('dailyLimitCents'),
+  balanceRechargeMultiplier: numeric('balanceRechargeMultiplier', { precision: 12, scale: 4 }).default('1').notNull(),
+  subscriptionUsdToCnyRate: numeric('subscriptionUsdToCnyRate', { precision: 12, scale: 4 }).default('0').notNull(),
+  rechargeFeeRate: numeric('rechargeFeeRate', { precision: 8, scale: 4 }).default('0').notNull(),
   orderTimeoutMinutes: integer('orderTimeoutMinutes').default(30).notNull(),
   maxPendingOrders: integer('maxPendingOrders').default(3).notNull(),
   loadBalanceStrategy: varchar('loadBalanceStrategy', { length: 20 }).default('round-robin').notNull(),
@@ -700,7 +703,11 @@ export const paymentSettings = pgTable('PaymentSettings', {
   helpImageUrl: text('helpImageUrl'),
   cancelLimitEnabled: boolean('cancelLimitEnabled').default(true).notNull(),
   cancelWindowMinutes: integer('cancelWindowMinutes').default(60).notNull(),
+  cancelWindowUnit: varchar('cancelWindowUnit', { length: 10 }).default('minute').notNull(),
+  cancelWindowMode: varchar('cancelWindowMode', { length: 10 }).default('rolling').notNull(),
   cancelMaxCount: integer('cancelMaxCount').default(5).notNull(),
+  alipayForceQrCode: boolean('alipayForceQrCode').default(false).notNull(),
+  alipayMobileDeepLink: boolean('alipayMobileDeepLink').default(false).notNull(),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
 });

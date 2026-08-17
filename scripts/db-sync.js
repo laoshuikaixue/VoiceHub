@@ -180,12 +180,22 @@ async function ensurePaymentSchema(sql) {
       "id" serial PRIMARY KEY, "enabled" boolean DEFAULT false NOT NULL, "currency" varchar(3) DEFAULT 'CNY' NOT NULL,
       "productNamePrefix" text DEFAULT 'VoiceHub 点歌券' NOT NULL, "productNameSuffix" text DEFAULT '' NOT NULL,
       "minAmountCents" integer DEFAULT 100 NOT NULL, "maxAmountCents" integer, "dailyLimitCents" integer,
+      "balanceRechargeMultiplier" numeric(12,4) DEFAULT 1 NOT NULL, "subscriptionUsdToCnyRate" numeric(12,4) DEFAULT 0 NOT NULL,
+      "rechargeFeeRate" numeric(8,4) DEFAULT 0 NOT NULL,
       "orderTimeoutMinutes" integer DEFAULT 30 NOT NULL, "maxPendingOrders" integer DEFAULT 3 NOT NULL,
       "loadBalanceStrategy" varchar(20) DEFAULT 'round-robin' NOT NULL, "visibleMethods" jsonb DEFAULT '[]'::jsonb NOT NULL,
       "helpText" text, "helpImageUrl" text, "cancelLimitEnabled" boolean DEFAULT true NOT NULL,
-      "cancelWindowMinutes" integer DEFAULT 60 NOT NULL, "cancelMaxCount" integer DEFAULT 5 NOT NULL,
+      "cancelWindowMinutes" integer DEFAULT 60 NOT NULL, "cancelWindowUnit" varchar(10) DEFAULT 'minute' NOT NULL, "cancelWindowMode" varchar(10) DEFAULT 'rolling' NOT NULL, "cancelMaxCount" integer DEFAULT 5 NOT NULL,
+      "alipayForceQrCode" boolean DEFAULT false NOT NULL, "alipayMobileDeepLink" boolean DEFAULT false NOT NULL,
       "createdAt" timestamptz DEFAULT now() NOT NULL, "updatedAt" timestamptz DEFAULT now() NOT NULL
     );
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "balanceRechargeMultiplier" numeric(12,4) DEFAULT 1 NOT NULL;
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "subscriptionUsdToCnyRate" numeric(12,4) DEFAULT 0 NOT NULL;
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "rechargeFeeRate" numeric(8,4) DEFAULT 0 NOT NULL;
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "alipayForceQrCode" boolean DEFAULT false NOT NULL;
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "alipayMobileDeepLink" boolean DEFAULT false NOT NULL;
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "cancelWindowUnit" varchar(10) DEFAULT 'minute' NOT NULL;
+    ALTER TABLE "PaymentSettings" ADD COLUMN IF NOT EXISTS "cancelWindowMode" varchar(10) DEFAULT 'rolling' NOT NULL;
     CREATE TABLE IF NOT EXISTS "PaymentPlan" (
       "id" serial PRIMARY KEY, "name" varchar(100) NOT NULL, "description" text DEFAULT '' NOT NULL,
       "priceCents" integer NOT NULL, "originalPriceCents" integer, "currency" varchar(3) DEFAULT 'CNY' NOT NULL,
