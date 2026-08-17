@@ -47,8 +47,24 @@ function fileExists(p) {
 function ensureDrizzleFiles() {
   if (!fileExists('drizzle.config.ts')) throw new Error('Drizzle 配置文件不存在')
   if (!fileExists('app/drizzle/schema.ts')) throw new Error('Schema 文件不存在')
-  if (!fileExists('app/drizzle/migrations/meta/_journal.json'))
+  const journalPath = 'app/drizzle/migrations/meta/_journal.json'
+  if (!fileExists(journalPath))
     throw new Error('Drizzle journal 文件不存在')
+
+  const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'))
+  const entries = Array.isArray(journal.entries) ? journal.entries : []
+  const missingMigrations = entries
+    .map((entry) => `app/drizzle/migrations/${entry.tag}.sql`)
+    .filter((migrationPath) => !fileExists(migrationPath))
+  if (missingMigrations.length > 0) {
+    throw new Error(`Drizzle journal 引用了缺失的迁移文件: ${missingMigrations.join(', ')}`)
+  }
+
+  const latestEntry = entries.at(-1)
+  if (latestEntry) {
+    const latestSnapshot = `app/drizzle/migrations/meta/${latestEntry.tag.replace(/_.+$/, '')}_snapshot.json`
+    if (!fileExists(latestSnapshot)) throw new Error(`最新迁移缺少 snapshot: ${latestSnapshot}`)
+  }
 }
 
 function createSqlClient() {
