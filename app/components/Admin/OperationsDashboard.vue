@@ -67,20 +67,32 @@
 
     <template v-if="activeGroup === 'overview'">
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="sloAvailabilityStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!operationsData.status && !initialOperationsLoading" :refreshable="false">
-          <div class="health-layout">
-            <div class="health-score-wrap">
-              <div class="health-score-ring">
-                <strong>{{ availabilitySli }}</strong>
-                <span>{{ locale.overview.availabilitySli }}</span>
+        <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="sloAvailabilityStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+          <div class="slo-health" :class="`slo-health--${sloAvailabilityStatus}`">
+            <div class="slo-health__main">
+              <aside class="slo-health__summary">
+                <div class="slo-health__score" :style="{ '--slo-score': `${sloHealthProgress * 3.6}deg` }">
+                  <div><strong>{{ sloHealthStatusLabel }}</strong><span>{{ sloHealthScoreDisplay === '--' ? '--' : `${sloHealthScoreDisplay} ${locale.overview.sloScoreUnit}` }}</span></div>
+                </div>
+                <p><span>{{ locale.overview.sloHealthState }}</span><strong>{{ sloHealthStatusLabel }}</strong></p>
+                <small>{{ sloHealthCoverage }}</small>
+              </aside>
+
+              <div class="slo-health__realtime">
+                <div class="slo-health__heading"><i /><strong>{{ locale.overview.sloRealtimeMetrics }}</strong><span :title="locale.overview.sloScoringHint"><Icon name="info" :size="13" /></span></div>
+                <div class="slo-health__metrics">
+                  <div v-for="item in sloHealthMetrics" :key="item.key" class="slo-health-metric" :class="`slo-health-metric--${item.status}`">
+                    <div><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div>
+                    <div class="slo-health-metric__track"><i :style="{ width: `${item.score ?? 0}%` }" /></div>
+                    <small>{{ item.score == null ? locale.overview.sloNotScored : `${locale.overview.sloMetricScore} ${Math.round(item.score)}` }}</small>
+                  </div>
+                </div>
               </div>
-              <p>{{ availabilitySli === '--' ? locale.noData : locale.overview.availabilitySli }}</p>
             </div>
-            <div class="health-live-details">
-              <div class="health-live-details__title">{{ locale.overview.healthRealtime }}</div>
-              <div v-for="item in healthLiveDetails" :key="item.label" class="health-live-row">
-                <span>{{ item.label }}</span><strong>{{ item.value }}</strong>
-              </div>
+
+            <div class="slo-health__advice">
+              <span><Icon name="info" :size="15" /></span>
+              <div><strong>{{ locale.overview.sloRecommendations }}</strong><p v-for="item in sloHealthRecommendations" :key="item">{{ item }}</p></div>
             </div>
           </div>
           <p class="metric-formula">{{ locale.overview.sloFormula }}</p>
@@ -1751,12 +1763,6 @@ const systemModuleStatus = computed(() => {
   if (initialOperationsLoading.value || !operationsData.value.status) return 'unknown'
   return operationsData.value.status.status === 'ok' ? 'ok' : 'error'
 })
-const sloAvailabilityStatus = computed(() => {
-  if (initialOperationsLoading.value) return 'unknown'
-  if (systemModuleStatus.value === 'error' || healthScorePanelStatus.value === 'error') return 'error'
-  if (systemModuleStatus.value === 'unknown' || healthScorePanelStatus.value === 'unknown') return 'unknown'
-  return healthScorePanelStatus.value
-})
 const performanceModuleStatus = computed(() => {
   const statuses = [applicationHttpStatus.value, applicationLatencyStatus.value, applicationEventLoopStatus.value]
   const knownStatuses = statuses.filter((status) => status !== 'unknown')
@@ -2110,11 +2116,83 @@ const musicApiRows = computed(() => [
 const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : '采集正常')
-const availabilitySli = computed(() => {
+const clampScore = (value) => Math.min(100, Math.max(0, value))
+const scoreLowerIsBetter = (value, good, warning, critical) => {
+  if (value <= good) return 100
+  if (value <= warning) return 100 - ((value - good) / (warning - good)) * 25
+  if (value <= critical) return 75 - ((value - warning) / (critical - warning)) * 35
+  return clampScore(40 - ((value - critical) / critical) * 40)
+}
+const sloMetricStatus = (score) => score == null ? 'unknown' : score >= 90 ? 'ok' : score >= 70 ? 'warning' : 'error'
+const sloDependencySuccessRate = computed(() => {
+  const samples = enabledMusicSourceKeys.value
+    .map((source) => dependencyMetrics.value?.[source])
+    .filter((metric) => Number(metric?.calls) > 0 && Number.isFinite(Number(metric?.successRate)))
+  const calls = samples.reduce((total, metric) => total + Number(metric.calls), 0)
+  if (!calls) return null
+  return samples.reduce((total, metric) => total + Number(metric.successRate) * Number(metric.calls), 0) / calls
+})
+const sloHealthMetrics = computed(() => {
   const total = Number(runtimeHttpMetrics.value?.recentRequests)
   const errors = Number(runtimeHttpMetrics.value?.recent5xx)
-  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(errors)) return '--'
-  return `${Math.max(0, (1 - errors / total) * 100).toFixed(1)}%`
+  const availability = Number.isFinite(total) && total > 0 && Number.isFinite(errors)
+    ? Math.max(0, (1 - errors / total) * 100)
+    : null
+  const p95Value = runtimeHttpMetrics.value?.p95Ms
+  const p95 = p95Value != null && Number.isFinite(Number(p95Value)) ? Number(p95Value) : null
+  const eventLoopValue = runtimeEventLoopMetrics.value?.p99Ms
+  const eventLoopP99 = eventLoopValue != null && Number.isFinite(Number(eventLoopValue)) ? Number(eventLoopValue) : null
+  const dependencyRate = sloDependencySuccessRate.value
+  const availabilityScore = availability == null ? null : clampScore(100 - (100 - availability) * 20)
+  const latencyScore = p95 == null ? null : scoreLowerIsBetter(p95, 300, 800, 1500)
+  const eventLoopScore = eventLoopP99 == null ? null : scoreLowerIsBetter(eventLoopP99, 50, 200, 500)
+  const dependencyScore = dependencyRate == null ? null : clampScore(dependencyRate >= 95
+    ? 75 + ((dependencyRate - 95) / 5) * 25
+    : (dependencyRate / 95) * 75)
+
+  return [
+    { key: 'availability', label: locale.value.overview?.availabilitySli, value: availability == null ? '--' : `${availability.toFixed(2)}%`, score: availabilityScore, weight: 45 },
+    { key: 'latency', label: locale.value.overview?.sloP95Latency, value: p95 == null ? '--' : formatMilliseconds(p95), score: latencyScore, weight: 25 },
+    { key: 'eventLoop', label: locale.value.overview?.sloEventLoopP99, value: eventLoopP99 == null ? '--' : formatMilliseconds(eventLoopP99), score: eventLoopScore, weight: 15 },
+    { key: 'dependencies', label: locale.value.overview?.sloDependencySuccess, value: dependencyRate == null ? '--' : `${dependencyRate.toFixed(1)}%`, score: dependencyScore, weight: 15 }
+  ].map((item) => ({ ...item, status: sloMetricStatus(item.score) }))
+})
+const sloHealthScore = computed(() => {
+  const known = sloHealthMetrics.value.filter((item) => item.score != null)
+  const totalWeight = known.reduce((total, item) => total + item.weight, 0)
+  if (!totalWeight) return null
+  return known.reduce((total, item) => total + item.score * item.weight, 0) / totalWeight
+})
+const sloHealthProgress = computed(() => sloHealthScore.value == null ? 0 : clampScore(sloHealthScore.value))
+const sloHealthScoreDisplay = computed(() => sloHealthScore.value == null ? '--' : Math.round(sloHealthScore.value))
+const sloAvailabilityStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (initialOperationsLoading.value || sloHealthScore.value == null) return 'unknown'
+  return sloHealthScore.value >= 90 ? 'ok' : sloHealthScore.value >= 70 ? 'warning' : 'error'
+})
+const sloHealthStatusLabel = computed(() => ({
+  ok: locale.value.overview?.sloHealthy,
+  warning: locale.value.overview?.sloAttention,
+  error: locale.value.overview?.sloRisk,
+  unknown: locale.value.overview?.sloPending
+}[sloAvailabilityStatus.value] || locale.value.overview?.sloPending))
+const sloHealthCoverage = computed(() => {
+  const known = sloHealthMetrics.value.filter((item) => item.score != null).length
+  return `${locale.value.overview?.sloCoverage} ${known}/${sloHealthMetrics.value.length}`
+})
+const sloHealthRecommendations = computed(() => {
+  const messages = locale.value.overview || {}
+  const recommendations = []
+  for (const metric of sloHealthMetrics.value) {
+    if (metric.status === 'unknown') continue
+    if (metric.key === 'availability' && metric.status !== 'ok') recommendations.push(messages.sloAdviceAvailability)
+    if (metric.key === 'latency' && metric.status !== 'ok') recommendations.push(messages.sloAdviceLatency)
+    if (metric.key === 'eventLoop' && metric.status !== 'ok') recommendations.push(messages.sloAdviceEventLoop)
+    if (metric.key === 'dependencies' && metric.status !== 'ok') recommendations.push(messages.sloAdviceDependencies)
+  }
+  if (sloHealthMetrics.value.some((item) => item.status === 'unknown')) recommendations.push(messages.sloAdviceCoverage)
+  if (!recommendations.length) recommendations.push(messages.sloAdviceHealthy)
+  return [...new Set(recommendations.filter(Boolean))].slice(0, 3)
 })
 const formatBytes = (value) => {
   const bytes = Number(value)
@@ -2515,10 +2593,6 @@ const runtimeDeploymentTarget = computed(() => {
   if (target === 'cloudflare') return 'Cloudflare Serverless'
   return runtime.nitroPreset || systemSnapshot.value?.nitroPreset || (isServerlessRuntime.value ? 'Serverless' : 'Node 服务')
 })
-const healthLiveDetails = computed(() => [
-  { label: locale.value.overview?.collectionStatus, value: collectionStatusText.value }
-])
-
 const backupStatusFields = computed(() => [
   { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
   { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? backupResultText(latestBackup.value) : '--' },
@@ -3789,6 +3863,161 @@ const dependencyProtectionPanelStatus = (panel) => {
   color: rgb(113 113 122);
   font-size: 0.625rem;
   font-weight: 600;
+}
+
+.slo-health {
+  --slo-accent: var(--ops-unknown);
+  padding: 1.1rem;
+}
+
+.slo-health--ok { --slo-accent: var(--ops-ok); }
+.slo-health--warning { --slo-accent: var(--ops-warning); }
+.slo-health--error { --slo-accent: var(--ops-error); }
+
+.slo-health__main {
+  display: grid;
+  min-width: 0;
+  gap: 1.2rem;
+}
+
+.slo-health__summary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.slo-health__score {
+  display: grid;
+  width: 7.5rem;
+  height: 7.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--slo-accent) var(--slo-score), var(--ops-line) 0);
+}
+
+.slo-health__score::before {
+  grid-area: 1 / 1;
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: 50%;
+  background: var(--ops-panel);
+  content: '';
+}
+
+.slo-health__score > div {
+  z-index: 1;
+  grid-area: 1 / 1;
+  text-align: center;
+}
+
+.slo-health__score strong,
+.slo-health__score span {
+  display: block;
+}
+
+.slo-health__score strong {
+  max-width: 5rem;
+  color: var(--ops-text-1);
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.slo-health__score span {
+  margin-top: 0.4rem;
+  color: var(--ops-text-2);
+  font-family: var(--ops-mono);
+  font-size: 0.65rem;
+}
+
+.slo-health__summary > p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.slo-health__summary > p strong { color: var(--slo-accent); }
+.slo-health__summary > small { margin-top: 0.25rem; color: var(--ops-text-2); font-size: 0.625rem; }
+
+.slo-health__realtime {
+  min-width: 0;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 1rem;
+}
+
+.slo-health__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.slo-health__heading > i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--slo-accent);
+}
+
+.slo-health__heading > span { display: inline-flex; color: var(--ops-text-2); }
+
+.slo-health__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 0.85rem;
+  margin-top: 1rem;
+}
+
+.slo-health-metric { min-width: 0; }
+.slo-health-metric > div:first-child { display: grid; min-height: 2.45rem; align-content: space-between; gap: 0.25rem; }
+.slo-health-metric span { overflow: hidden; color: var(--ops-text-2); font-size: 0.625rem; text-overflow: ellipsis; white-space: nowrap; }
+.slo-health-metric strong { color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 0.9rem; }
+.slo-health-metric small { display: block; margin-top: 0.3rem; color: var(--ops-text-2); font-size: 0.5625rem; }
+
+.slo-health-metric__track {
+  height: 0.25rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ops-line);
+}
+
+.slo-health-metric__track i { display: block; height: 100%; background: var(--ops-unknown); transition: width 0.35s ease; }
+.slo-health-metric--ok .slo-health-metric__track i { background: var(--ops-ok); }
+.slo-health-metric--warning .slo-health-metric__track i { background: var(--ops-warning); }
+.slo-health-metric--error .slo-health-metric__track i { background: var(--ops-error); }
+
+.slo-health__advice {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: 0.65rem;
+  margin-top: 1.1rem;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 0.9rem;
+}
+
+.slo-health__advice > span {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--slo-accent);
+  background: color-mix(in srgb, var(--slo-accent) 10%, transparent);
+}
+
+.slo-health__advice strong { color: var(--ops-text-1); font-size: 0.6875rem; }
+.slo-health__advice p { margin: 0.35rem 0 0; color: var(--ops-text-2); font-size: 0.625rem; line-height: 1.5; }
+
+@media (min-width: 640px) {
+  .slo-health__main { grid-template-columns: 8.5rem minmax(0, 1fr); align-items: center; }
+  .slo-health__realtime { border-top: 0; border-left: 1px solid var(--ops-line); padding: 0 0 0 1.15rem; }
 }
 
 .health-layout {

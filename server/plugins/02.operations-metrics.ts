@@ -6,7 +6,7 @@ import { apiLogs, systemSettings } from '~/drizzle/schema'
 import { sql } from 'drizzle-orm'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { enterRequestDatabaseContext } from '~~/server/utils/request-database-context'
+import { clearRequestDatabaseContext, enterRequestDatabaseContext } from '~~/server/utils/request-database-context'
 
 const getPathname = (url = '') => url.split('?')[0]
 const MUSIC_SOURCE_PROBE_HEADER = 'x-voicehub-operations-probe'
@@ -127,7 +127,7 @@ export default defineNitroPlugin((nitroApp) => {
 
   nitroApp.hooks.hook('request', (event) => {
     observeRuntimeDeployment(event.node.req.headers)
-    enterRequestDatabaseContext({ route: event.node.req.url?.split('?')[0] || '/', requestId: '', userId: null })
+    clearRequestDatabaseContext()
     if (isMonitoringRequest(event.node.req.url) || isMusicSourceProbeRequest(event)) return
     const startedAt = startOperationRequest()
     event.context.operationsMetricsStartedAt = startedAt

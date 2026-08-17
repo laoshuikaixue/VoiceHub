@@ -13,7 +13,7 @@ type QueryObservation = RequestDatabaseContext & {
   observedAt: number
 }
 
-const requestStorage = new AsyncLocalStorage<RequestDatabaseContext>()
+const requestStorage = new AsyncLocalStorage<RequestDatabaseContext | null>()
 const observations: QueryObservation[] = []
 const MAX_OBSERVATIONS = 2000
 const OBSERVATION_WINDOW_MS = 10 * 60 * 1000
@@ -27,6 +27,10 @@ export const normalizeDatabaseQuery = (query: unknown) => String(query || '')
 
 export const enterRequestDatabaseContext = (context: RequestDatabaseContext) => {
   requestStorage.enterWith(context)
+}
+
+export const clearRequestDatabaseContext = () => {
+  requestStorage.enterWith(null)
 }
 
 export const updateRequestDatabaseUser = (userId: number | null | undefined) => {
