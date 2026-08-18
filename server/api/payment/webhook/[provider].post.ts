@@ -27,7 +27,12 @@ export default defineEventHandler(async event => {
       }
       if (providerKey === 'wxpay') return { code: 'SUCCESS', message: '成功' }
       return { success: true, orderId: order.id }
-    } catch {
+    } catch (error) {
+      console.error('[payment webhook] 处理服务商实例失败', {
+        providerKey,
+        instanceId: instance.id,
+        error: error instanceof Error ? error.message : String(error)
+      })
       continue
     }
   }

@@ -672,6 +672,22 @@ VoiceHub 实现了细粒度的权限控制系统：
 | NUXT_PUBLIC_HOST       | 否   | 用于 CORS 和反向代理的主机名验证                        | `your-app.com`                                                                                                                                  |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
+### 支付回调域名配置
+
+启用支付功能时，建议设置 `NUXT_PUBLIC_HOST` 为正式公网域名。系统会使用该地址生成支付宝、微信支付和易支付的异步通知地址，以及支付完成后的返回地址。不要将 Pages、Vercel 或 Netlify 的临时预览域名作为生产回调地址。
+
+```env
+NUXT_PUBLIC_HOST=https://voicehub.example.com
+```
+
+配置后请重新部署，并重新创建支付订单。已经创建的订单会继续使用创建时保存的回调地址。支付服务商后台应配置对应的接口，例如：
+
+```text
+https://voicehub.example.com/api/payment/webhook/alipay
+https://voicehub.example.com/api/payment/webhook/wxpay
+https://voicehub.example.com/api/payment/webhook/easypay
+```
+
 Redis 不参与歌曲、排期、点赞或用户资料缓存。迁移旧部署时可先执行 dry-run：
 
 ```bash

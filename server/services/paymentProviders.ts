@@ -108,24 +108,39 @@ class EasyPayProvider implements PaymentProvider {
       body: formEncode({ act: 'order', pid: this.config.pid, key: this.config.pkey, out_trade_no: outTradeNo })
     })
     const row = data.data || data
-    const paid = row.trade_status === 'TRADE_SUCCESS' || Number(row.status) === 1
+    const paid = row.trade_status !== undefined && row.trade_status !== ''
+      ? row.trade_status === 'TRADE_SUCCESS'
+      : Number(row.status) === 1
     return { status: paid ? 'paid' as const : 'pending' as const, tradeNo: row.trade_no, amountCents: Math.round(Number(row.money || 0) * 100) }
   }
   async verify(rawBody: string) {
     const params = Object.fromEntries(new URLSearchParams(rawBody))
     if (!params.sign || easyPaySign(params, this.config.pkey) !== params.sign) throw new Error('易支付回调签名无效')
     if (!params.out_trade_no) throw new Error('易支付回调缺少订单号')
+    if (!params.pid || String(params.pid) !== String(this.config.pid)) throw new Error('易支付回调商户 PID 不匹配')
     return { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountCents: Math.round(Number(params.money) * 100), success: params.trade_status === 'TRADE_SUCCESS' }
   }
   async refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number) {
-    const params: Record<string, string> = { pid: this.config.pid, key: this.config.pkey, money: money(amountCents) }
-    if (tradeNo) params.trade_no = tradeNo
-    else params.out_trade_no = outTradeNo
-    const data = await requestJson(`${normalizeBase(this.config.apiBase)}/api.php?act=refund`, {
-      method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: formEncode(params)
-    })
-    if (Number(data.code) !== 1) throw new Error(data.msg || '易支付退款失败')
-    return { refundId: tradeNo || outTradeNo }
+    const identifiers = [
+      { key: 'out_trade_no', value: outTradeNo, refundId: outTradeNo },
+      ...(tradeNo ? [{ key: 'trade_no', value: tradeNo, refundId: tradeNo }] : [])
+    ]
+    let lastError: Error | undefined
+    for (const identifier of identifiers) {
+      const params: Record<string, string> = { pid: this.config.pid, key: this.config.pkey, money: money(amountCents), [identifier.key]: identifier.value }
+      try {
+        const data = await requestJson(`${normalizeBase(this.config.apiBase)}/api.php?act=refund`, {
+          method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: formEncode(params)
+        })
+        if (Number(data.code) === 1) return { refundId: identifier.refundId }
+        lastError = new Error(data.msg || '易支付退款失败')
+        if (!/订单|order|not found|不存在/i.test(lastError.message)) throw lastError
+      } catch (error: any) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        if (!/订单|order|not found|不存在/i.test(lastError.message) || identifier === identifiers[identifiers.length - 1]) throw lastError
+      }
+    }
+    throw lastError || new Error('易支付退款失败')
   }
 }
 
@@ -206,6 +221,7 @@ class AlipayProvider implements PaymentProvider {
     const params = Object.fromEntries(new URLSearchParams(rawBody))
     if (!alipayVerify(params, this.config.publicKey)) throw new Error('支付宝回调签名无效')
     if (!params.out_trade_no) throw new Error('支付宝回调缺少订单号')
+    if (!params.app_id || String(params.app_id) !== String(this.config.appId)) throw new Error('支付宝回调应用 ID 不匹配')
     return { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountCents: Math.round(Number(params.total_amount) * 100), success: ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(params.trade_status || '') }
   }
   async refund(outTradeNo: string, _tradeNo: string | undefined, amountCents: number, reason: string) {
@@ -261,6 +277,8 @@ class WxPayProvider implements PaymentProvider {
     const plain = Buffer.concat([decipher.update(ciphertext.subarray(0, -16)), decipher.final()])
     const data = JSON.parse(plain.toString('utf8'))
     if (!data.out_trade_no) throw new Error('微信支付回调缺少订单号')
+    if (String(data.appid || '') !== String(this.config.appId) || String(data.mchid || '') !== String(this.config.mchId)) throw new Error('微信支付回调商户信息不匹配')
+    if (String(data.amount?.currency || 'CNY').toUpperCase() !== 'CNY') throw new Error('微信支付回调币种不匹配')
     return { outTradeNo: data.out_trade_no, tradeNo: data.transaction_id, amountCents: Number(data.amount?.total || 0), success: data.trade_state === 'SUCCESS' }
   }
   async refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string, totalAmountCents = amountCents) {

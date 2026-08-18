@@ -67,19 +67,22 @@ const normalizePublicOrigin = (value: unknown) => {
 }
 
 const resolvePublicOrigin = (event: H3Event) => {
-  const configured = [
-    process.env.NUXT_PUBLIC_HOST,
+  const explicit = normalizePublicOrigin(process.env.NUXT_PUBLIC_HOST)
+  if (explicit) return explicit
+  const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',')[0].trim()
+  const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',')[0].trim()
+  if (forwardedHost) return normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`)
+  const requestUrl = getRequestURL(event)
+  const requestOrigin = normalizePublicOrigin(`${requestUrl.protocol}//${requestUrl.host}`)
+  if (requestOrigin && !/pages\.dev$|vercel\.app$|netlify\.app$/i.test(requestUrl.hostname)) return requestOrigin
+  const platformOrigin = [
     process.env.VERCEL_PROJECT_PRODUCTION_URL,
     process.env.URL,
     process.env.CF_PAGES_URL,
     process.env.DEPLOY_PRIME_URL,
     process.env.VERCEL_URL
   ].map(normalizePublicOrigin).find(Boolean)
-  if (configured) return configured
-  const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',')[0].trim()
-  const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',')[0].trim()
-  if (forwardedHost) return normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`)
-  const requestUrl = getRequestURL(event)
+  if (platformOrigin) return platformOrigin
   return `${requestUrl.protocol}//${requestUrl.host}`
 }
 
@@ -263,6 +266,12 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
   if (result.status === 'paid') {
     if (!Number.isInteger(result.amountCents) || result.amountCents <= 0) throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '支付查询未返回有效金额')
     return fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents, success: true }, 'verify')
+  }
+  if (order.status === 'PENDING' && order.expiresAt <= getServerDate()) {
+    const [expired] = await db.update(paymentOrders).set({ status: 'EXPIRED', updatedAt: getServerDate() })
+      .where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'PENDING'))).returning()
+    if (expired) await addPaymentAudit(order.id, 'EXPIRED')
+    return expired || order
   }
   return order
 }
