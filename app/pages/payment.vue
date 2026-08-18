@@ -10,7 +10,19 @@
 
     <main class="payment-main mx-auto max-w-6xl px-4 py-8">
       <div class="payment-intro"><div><p class="payment-eyebrow">VoiceHub</p><h1>{{ locale.title }}</h1><p>选择适合你的点歌券套餐，支付完成后自动发放。</p></div><div class="payment-intro-icon"><Ticket :size="25" /></div></div>
-      <div class="payment-tabs mb-7 flex overflow-x-auto">
+      <section v-if="resultOrder" class="payment-result-panel">
+        <div class="result-icon" :class="resultOrder.status === 'COMPLETED' ? 'success' : resultOrder.status === 'EXPIRED' ? 'expired' : 'failed'"><Check v-if="resultOrder.status === 'COMPLETED'" :size="34" /><Clock3 v-else-if="resultOrder.status === 'EXPIRED'" :size="34" /><X v-else :size="34" /></div>
+        <h2>{{ resultOrder.status === 'COMPLETED' ? '支付成功' : resultOrder.status === 'EXPIRED' ? '订单已过期' : '支付失败' }}</h2>
+        <p v-if="resultOrder.status === 'EXPIRED'" class="result-message">订单已超时，请重新创建订单</p>
+        <div class="result-details"><div><span>订单 ID</span><b>#{{ resultOrder.id }}</b></div><div><span>订单编号</span><b>{{ resultOrder.outTradeNo }}</b></div><div><span>充值金额</span><b>{{ formatMoney(resultOrder.payAmountCents, resultOrder.currency) }}</b></div><div><span>支付方式</span><b>{{ methodLabels[resultOrder.paymentMethod] || resultOrder.paymentMethod }}</b></div><div><span>状态</span><b>{{ statusText(resultOrder.status) }}</b></div></div>
+        <div class="result-actions"><button class="action-primary" @click="resultOrder = null">确认</button><button v-if="resultOrder.status !== 'EXPIRED'" class="action-button" @click="activeTab = 'orders'; resultOrder = null">查看订单</button></div>
+      </section>
+      <section v-else-if="checkoutOrder" class="checkout-panel">
+        <div v-if="checkoutOrder.qrCode" class="checkout-qr"><h2>扫码支付</h2><div class="qr-frame"><img :src="qrImage" alt="支付二维码" /></div><p>请使用手机扫码完成支付</p></div>
+        <div v-else class="checkout-popup"><AppSpinner /><p>支付页面已在新窗口打开，请在新窗口中完成支付后返回此页面</p><button class="action-button" @click="reopenPayment">重新打开支付页面</button></div>
+        <div class="checkout-countdown">{{ countdownText }}<small>等待支付…</small></div><button class="checkout-cancel" @click="cancelCheckout">取消订单</button>
+      </section>
+      <div v-if="!checkoutOrder && !resultOrder" class="payment-tabs mb-7 flex overflow-x-auto">
         <button v-for="tab in tabs" :key="tab.id" class="payment-tab" :class="{ active: activeTab === tab.id }" @click="activeTab = tab.id">
           {{ tab.label }}
         </button>
@@ -19,7 +31,7 @@
       <div v-if="loading" class="flex justify-center py-20"><AppSpinner :label="common.loading" /></div>
       <div v-else-if="errorMessage" class="rounded-lg border border-error-30 bg-error-10 p-4 text-sm text-error">{{ errorMessage }}</div>
 
-      <section v-else-if="activeTab === 'plans'">
+      <section v-else-if="!checkoutOrder && !resultOrder && activeTab === 'plans'">
         <div v-if="!config.enabled" class="py-20 text-center text-text-tertiary">{{ locale.disabled }}</div>
         <div v-else-if="!plans.length" class="py-20 text-center text-text-tertiary">{{ locale.emptyPlans }}</div>
         <div v-else class="plan-grid">
@@ -35,7 +47,7 @@
         <p v-if="config.helpText" class="payment-help mt-6 whitespace-pre-wrap">{{ config.helpText }}</p>
       </section>
 
-      <section v-else-if="activeTab === 'orders'" class="payment-list">
+      <section v-else-if="!checkoutOrder && !resultOrder && activeTab === 'orders'" class="payment-list">
         <div v-if="!orders.length" class="py-20 text-center text-text-tertiary">{{ locale.noOrders }}</div>
         <article v-for="order in orders" :key="order.id" class="order-card">
           <div class="flex flex-wrap items-start justify-between gap-3">
@@ -54,7 +66,7 @@
         </article>
       </section>
 
-      <section v-else class="payment-list">
+      <section v-else-if="!checkoutOrder && !resultOrder" class="payment-list">
         <div v-if="!cards.length" class="py-20 text-center text-text-tertiary">{{ locale.noCards }}</div>
         <article v-for="card in cards" :key="card.id" class="card-code-card">
           <div><p class="text-xs text-text-tertiary">{{ locale.cardCode }}</p><code class="mt-1 block break-all text-base font-black text-primary">{{ card.code }}</code></div>
@@ -84,18 +96,20 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import QRCode from 'qrcode'
-import { ArrowLeft, Check, Copy, CreditCard, ExternalLink, RefreshCw, Ticket, Undo2, User, X } from '@lucide/vue'
+import { ArrowLeft, Check, Clock3, Copy, CreditCard, ExternalLink, RefreshCw, Ticket, Undo2, User, X } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { useToast } from '~/composables/useToast'
 
 const sections = useLocale(); const locale = computed(() => sections.payment.value); const common = computed(() => sections.common.value)
 const { localize } = useServerErrors()
+const { showToast } = useToast()
 const route = useRoute()
 const config = ref({ enabled: false, methods: [] }); const plans = ref([]); const orders = ref([]); const cards = ref([])
 const selectedMethods = reactive({}); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
-const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); let pollTimer = null
+const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); let pollTimer = null; let countdownTimer = null
 const tabs = computed(() => [{ id: 'plans', label: locale.value.title }, { id: 'orders', label: locale.value.orders }, { id: 'cards', label: locale.value.cards }])
 const methodLabels = { alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }
 const methodOptions = computed(() => config.value.methods.map(value => ({ value, label: methodLabels[value] || value })))
@@ -118,39 +132,54 @@ const load = async () => {
     const returnedOrderId = String(route.query.order || '')
     if (returnedOrderId) {
       activeTab.value = 'orders'
-      try { await $fetch(`/api/payment/orders/${encodeURIComponent(returnedOrderId)}/verify`, { method: 'POST' }); await loadOrders() } catch {}
+      try { await $fetch(`/api/payment/orders/${encodeURIComponent(returnedOrderId)}/verify`, { method: 'POST' }); await loadOrders(); resultOrder.value = orders.value.find(item => item.id === returnedOrderId) || null } catch {}
     }
   } catch (error) { errorMessage.value = localize(error, common.value.loadFailed) } finally { loading.value = false }
 }
 const openPay = async order => {
+  checkoutOrder.value = order
   const deepLink = order.providerData?.deepLink
   if (deepLink) {
-    qrOrder.value = order; qrImage.value = ''
+    qrImage.value = ''
     try { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }) } catch {}
     startPolling(order)
     window.location.assign(deepLink)
     return
   }
-  if (order.payUrl) { window.location.assign(order.payUrl); return }
-  if (order.qrCode) { qrOrder.value = order; qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
+  if (order.payUrl && !order.qrCode) {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    if (isMobile) {
+      window.location.assign(order.payUrl)
+    } else {
+      const popup = window.open(order.payUrl, 'voicehub-payment', 'popup=yes,width=480,height=760,resizable=yes,scrollbars=yes')
+      if (!popup) window.location.assign(order.payUrl)
+    }
+    startPolling(order)
+    return
+  }
+  if (order.qrCode) { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
   if (order.clientSecret && order.paymentMethod === 'airwallex') {
     const data = order.providerData || {}; const sdk = await import('@airwallex/components-sdk'); const initialized = await sdk.init({ env: data.environment === 'prod' ? 'prod' : 'demo', enabledElements: ['payments'], locale: navigator.language.startsWith('zh') ? 'zh' : 'en' })
     initialized.payments?.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment?order=${encodeURIComponent(order.id)}` })
   }
 }
 const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: matchMedia('(max-width: 768px)').matches } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
-const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); if (orders.value.find(item => item.id === order.id)?.status === 'COMPLETED') closeQr() } catch (error) { errorMessage.value = localize(error) } }
-const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); await loadOrders() } catch (error) { errorMessage.value = localize(error) } }
+const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
+const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); showToast('订单已取消', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const startRefund = order => { refundOrder.value = order; refundReason.value = '' }
-const submitRefund = async () => { try { await $fetch(`/api/payment/orders/${refundOrder.value.id}/refund`, { method: 'POST', body: { reason: refundReason.value } }); refundOrder.value = null; await loadOrders() } catch (error) { errorMessage.value = localize(error) } }
+const submitRefund = async () => { try { await $fetch(`/api/payment/orders/${refundOrder.value.id}/refund`, { method: 'POST', body: { reason: refundReason.value } }); refundOrder.value = null; showToast('退款申请已提交', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const copyCard = async code => navigator.clipboard.writeText(code)
-const startPolling = order => { clearInterval(pollTimer); pollTimer = setInterval(() => verify(order), 3000) }
+const startPolling = order => { clearInterval(pollTimer); clearInterval(countdownTimer); countdown.value = Math.max(0, Math.floor((new Date(order.expiresAt).getTime() - Date.now()) / 1000)); pollTimer = setInterval(() => verify(order), 3000); countdownTimer = setInterval(() => { countdown.value = Math.max(0, countdown.value - 1) }, 1000) }
+const countdownText = computed(() => `${String(Math.floor(countdown.value / 60)).padStart(2, '0')}:${String(countdown.value % 60).padStart(2, '0')}`)
+const reopenPayment = () => { if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'popup=yes,width=480,height=760,resizable=yes,scrollbars=yes') }
+const cancelCheckout = async () => { if (checkoutOrder.value) { await cancelOrder(checkoutOrder.value); checkoutOrder.value = null; clearInterval(pollTimer); clearInterval(countdownTimer) } }
 const closeQr = () => { qrOrder.value = null; qrImage.value = ''; clearInterval(pollTimer) }
-onMounted(load); onUnmounted(() => clearInterval(pollTimer))
+onMounted(load); onUnmounted(() => { clearInterval(pollTimer); clearInterval(countdownTimer) })
 </script>
 
 <style scoped>
 .payment-header { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); }
+.checkout-panel,.payment-result-panel{max-width:52rem;margin:0 auto 1.5rem;padding:2rem;border:1px solid var(--border-secondary);border-radius:.9rem;background:var(--bg-secondary);box-shadow:var(--shadow-sm);text-align:center}.checkout-qr h2,.payment-result-panel h2{color:var(--text-primary);font-size:1.35rem;font-weight:850}.qr-frame{display:flex;width:17rem;height:17rem;margin:1.25rem auto;align-items:center;justify-content:center;border:2px solid var(--primary);border-radius:.7rem;background:#fff;padding:.8rem}.qr-frame img{width:100%;height:100%;object-fit:contain}.checkout-qr p,.checkout-popup p{color:var(--text-tertiary);font-size:.8rem}.checkout-popup{display:grid;justify-items:center;gap:1rem;padding:1rem}.checkout-countdown{margin-top:1.25rem;color:var(--text-primary);font-size:1.8rem;font-weight:850}.checkout-countdown small{display:block;color:var(--text-tertiary);font-size:.72rem;font-weight:500}.checkout-cancel{width:100%;margin-top:1rem;padding:.7rem;border:1px solid var(--border-secondary);border-radius:.55rem;color:var(--text-secondary);font-size:.8rem}.result-icon{display:flex;width:4.5rem;height:4.5rem;margin:0 auto 1rem;align-items:center;justify-content:center;border-radius:50%}.result-icon.success{background:var(--success-light);color:var(--success)}.result-icon.failed{background:var(--error-light);color:var(--error)}.result-details{display:grid;gap:.65rem;margin:1.5rem auto;padding:1.1rem 1.25rem;border:1px solid var(--border-secondary);border-radius:.7rem;text-align:left}.result-details div{display:flex;justify-content:space-between;gap:1rem;font-size:.78rem}.result-details span{color:var(--text-tertiary)}.result-details b{overflow-wrap:anywhere;color:var(--text-primary);font-weight:700;text-align:right}.result-actions{display:flex;justify-content:center;gap:.7rem}.result-actions button{min-width:8rem;justify-content:center}
 .payment-header a { color: var(--text-secondary); transition: color .2s; }
 .payment-header a:hover { color: var(--primary); }
 .payment-main { min-height: calc(100vh - 73px); }
@@ -199,4 +228,6 @@ onMounted(load); onUnmounted(() => clearInterval(pollTimer))
 @media (max-width: 900px) { .plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .payment-main { padding-top: 1.25rem; } .payment-intro { padding: 1rem; } .payment-intro-icon { width: 2.5rem; height: 2.5rem; } .plan-grid { grid-template-columns: 1fr; } .plan-card:hover { transform: none; } .order-card .border-t { align-items: flex-start; flex-direction: column; } .order-card .border-t > div:last-child { width: 100%; } .order-card .border-t button { flex: 1; justify-content: center; } }
 :global(:root[data-theme='ClassicDark']) .payment-intro { background: var(--bg-secondary); }
+.result-icon.expired{background:var(--warning-light);color:var(--warning)}.result-message{margin-top:.45rem;color:var(--text-tertiary);font-size:.82rem}
+textarea{color:var(--text-primary);caret-color:var(--primary);background:var(--bg-secondary)!important}textarea::placeholder{color:var(--text-tertiary);opacity:1}textarea:focus{border-color:var(--primary);outline:2px solid var(--primary-10);outline-offset:0}
 </style>
