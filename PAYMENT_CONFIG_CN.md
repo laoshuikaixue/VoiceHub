@@ -196,11 +196,12 @@ https://你的域名/api/payment/webhook/{providerKey}
 ### Webhook 检查清单
 
 1. 使用公网 HTTPS 域名，不要填写本地 IP 或 `localhost`。
-2. 服务商后台的通知地址必须与管理界面显示的地址完全一致。
-3. 防火墙、反向代理和 WAF 需要允许支付平台的 POST 请求。
-4. Stripe 和 Airwallex 的 Webhook Secret 必须填写对应端点生成的密钥。
-5. 修改域名后要重新核对所有服务商回调地址。
-6. 回调重复到达是正常网络行为，系统应以订单状态和上游订单号幂等处理，不会重复发券。
+2. 在 EdgeOne、Vercel、Netlify、Cloudflare Pages 等托管或反向代理环境中，建议设置 `NUXT_PUBLIC_HOST=https://你的公网域名`。系统也会识别平台提供的生产域名变量（如 `VERCEL_PROJECT_PRODUCTION_URL`、`URL`、`CF_PAGES_URL`），避免把内部 endpoint 或临时部署域名写入回调地址。
+3. 服务商后台的通知地址必须与管理界面显示的地址完全一致。
+4. 防火墙、反向代理和 WAF 需要允许支付平台的 POST 请求。
+5. Stripe 和 Airwallex 的 Webhook Secret 必须填写对应端点生成的密钥。
+6. 修改域名后要重新核对所有服务商回调地址。
+7. 回调重复到达是正常网络行为，系统应以订单状态和上游订单号幂等处理，不会重复发券。
 
 ## 支付流程与订单状态
 

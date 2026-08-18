@@ -55,6 +55,34 @@ const startOfToday = () => {
   return date
 }
 
+const normalizePublicOrigin = (value: unknown) => {
+  const raw = String(value || '').trim().replace(/\/$/, '')
+  if (!raw) return ''
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`)
+    return url.origin
+  } catch {
+    return ''
+  }
+}
+
+const resolvePublicOrigin = (event: H3Event) => {
+  const configured = [
+    process.env.NUXT_PUBLIC_HOST,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.URL,
+    process.env.CF_PAGES_URL,
+    process.env.DEPLOY_PRIME_URL,
+    process.env.VERCEL_URL
+  ].map(normalizePublicOrigin).find(Boolean)
+  if (configured) return configured
+  const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',')[0].trim()
+  const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',')[0].trim()
+  if (forwardedHost) return normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`)
+  const requestUrl = getRequestURL(event)
+  return `${requestUrl.protocol}//${requestUrl.host}`
+}
+
 const getProviderLimits = (limits: Record<string, any> | null, method: string) => {
   const methodLimits = limits?.[method]
   if (methodLimits && typeof methodLimits === 'object') {
@@ -123,8 +151,7 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   const outTradeNo = makeTradeNo()
   const expiresAt = getServerDate()
   expiresAt.setTime(expiresAt.getTime() + settings.orderTimeoutMinutes * 60000)
-  const requestUrl = getRequestURL(event)
-  const origin = `${requestUrl.protocol}//${requestUrl.host}`
+  const origin = resolvePublicOrigin(event)
   const [order] = await db.insert(paymentOrders).values({
     outTradeNo, userId: user.id, userName: user.name || user.username, userEmail: user.email || null,
     planId: plan.id, planName: plan.name, cardCount: plan.cardCount, amountCents: plan.priceCents,
