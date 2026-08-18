@@ -129,7 +129,6 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.PAYMENT_AUTH_REQUIRED, '请先登录后购买')
   const settings = await getPaymentSettings()
   if (!settings.enabled) throw createApiError(403, SERVER_ERROR_CODES.PAYMENT_DISABLED, '支付系统未启用')
-  if (!settings.visibleMethods.includes(method)) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_METHOD_INVALID, '支付方式不可用')
   const [plan] = await db.select().from(paymentPlans).where(and(eq(paymentPlans.id, planId), eq(paymentPlans.forSale, true))).limit(1)
   if (!plan) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_PLAN_NOT_FOUND, '套餐不存在或已下架')
   if (plan.priceCents < settings.minAmountCents || (settings.maxAmountCents && plan.priceCents > settings.maxAmountCents)) {

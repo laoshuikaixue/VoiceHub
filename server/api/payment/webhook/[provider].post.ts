@@ -16,12 +16,16 @@ export default defineEventHandler(async event => {
     try {
       const provider = createPaymentProvider(providerKey, { ...decryptPaymentConfig(instance.configEncrypted), paymentMode: instance.paymentMode })
       const notification = await provider.verify(rawBody, headers, Object.fromEntries(getQuery(event) as any))
-      if (!notification) return { success: true }
+      if (!notification) {
+        if (providerKey === 'wxpay') return { code: 'SUCCESS', message: '成功' }
+        return { success: true }
+      }
       const order = await fulfillPaymentOrder(notification, `webhook:${providerKey}`, instance.id)
       if (providerKey === 'easypay' || providerKey === 'alipay') {
         setResponseHeader(event, 'content-type', 'text/plain; charset=utf-8')
         return 'success'
       }
+      if (providerKey === 'wxpay') return { code: 'SUCCESS', message: '成功' }
       return { success: true, orderId: order.id }
     } catch {
       continue

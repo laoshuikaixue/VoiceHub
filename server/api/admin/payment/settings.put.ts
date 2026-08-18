@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { paymentSettings } from '~/drizzle/schema'
-import { PAYMENT_METHODS } from '~~/server/config/payment'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
 import { getPaymentSettings } from '~~/server/services/paymentService'
 import { createApiError } from '~~/server/utils/apiError'
@@ -12,7 +11,6 @@ export default defineEventHandler(async event => {
   requirePaymentAdmin(event)
   const current = await getPaymentSettings()
   const body = await readBody(event)
-  const visibleMethods = Array.isArray(body.visibleMethods) ? body.visibleMethods.filter((item: unknown) => PAYMENT_METHODS.includes(item as any)) : current.visibleMethods
   const values = {
     enabled: typeof body.enabled === 'boolean' ? body.enabled : current.enabled,
     currency: typeof body.currency === 'string' && /^[A-Z]{3}$/.test(body.currency) ? body.currency : current.currency,
@@ -27,7 +25,7 @@ export default defineEventHandler(async event => {
     orderTimeoutMinutes: Number.isInteger(body.orderTimeoutMinutes) ? body.orderTimeoutMinutes : current.orderTimeoutMinutes,
     maxPendingOrders: Number.isInteger(body.maxPendingOrders) ? body.maxPendingOrders : current.maxPendingOrders,
     loadBalanceStrategy: ['round-robin', 'least-amount'].includes(body.loadBalanceStrategy) ? body.loadBalanceStrategy : current.loadBalanceStrategy,
-    visibleMethods, helpText: typeof body.helpText === 'string' ? body.helpText : null,
+    helpText: typeof body.helpText === 'string' ? body.helpText : null,
     helpImageUrl: typeof body.helpImageUrl === 'string' ? body.helpImageUrl : null,
     cancelLimitEnabled: typeof body.cancelLimitEnabled === 'boolean' ? body.cancelLimitEnabled : current.cancelLimitEnabled,
     cancelWindowMinutes: Number.isInteger(body.cancelWindowMinutes) ? body.cancelWindowMinutes : current.cancelWindowMinutes,
