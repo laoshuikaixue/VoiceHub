@@ -67,14 +67,18 @@ const normalizePublicOrigin = (value: unknown) => {
 }
 
 const resolvePublicOrigin = (event: H3Event) => {
-  const explicit = normalizePublicOrigin(process.env.NUXT_PUBLIC_HOST)
-  if (explicit) return explicit
   const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',')[0].trim()
   const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',')[0].trim()
-  if (forwardedHost) return normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`)
   const requestUrl = getRequestURL(event)
   const requestOrigin = normalizePublicOrigin(`${requestUrl.protocol}//${requestUrl.host}`)
-  if (requestOrigin && !/pages\.dev$|vercel\.app$|netlify\.app$/i.test(requestUrl.hostname)) return requestOrigin
+  const forwardedOrigin = forwardedHost ? normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`) : ''
+  const previewHost = (forwardedHost || requestUrl.hostname).replace(/:\d+$/, '')
+  const previewDeployment = process.env.VERCEL_ENV === 'preview' || process.env.CONTEXT === 'deploy-preview' || process.env.EDGEONE_ENV === 'preview'
+  if (previewDeployment || (previewHost && /(?:pages\.dev|pages-[\w-]+\.pages-scf-[\w-]+\.qcloudteo\.com|vercel\.app|netlify\.app)$/i.test(previewHost))) return forwardedOrigin || requestOrigin
+  const explicit = normalizePublicOrigin(process.env.NUXT_PUBLIC_HOST)
+  if (explicit) return explicit
+  if (forwardedOrigin) return forwardedOrigin
+  if (requestOrigin) return requestOrigin
   const platformOrigin = [
     process.env.VERCEL_PROJECT_PRODUCTION_URL,
     process.env.URL,

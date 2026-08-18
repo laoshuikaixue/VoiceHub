@@ -682,6 +682,8 @@ NUXT_PUBLIC_HOST=https://voicehub.example.com
 
 配置后请重新部署，并重新创建支付订单。已经创建的订单会继续使用创建时保存的回调地址。支付服务商后台应配置对应的接口，例如：
 
+预览环境会自动优先使用当前 Preview 域名生成回调地址，便于测试不同分支；生产环境仍建议显式配置正式域名。
+
 ```text
 https://voicehub.example.com/api/payment/webhook/alipay
 https://voicehub.example.com/api/payment/webhook/wxpay

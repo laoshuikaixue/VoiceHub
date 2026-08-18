@@ -9,9 +9,14 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async event => {
   const providerKey = getRouterParam(event, 'provider') || ''
+  const contentLength = Number(getHeader(event, 'content-length') || 0)
+  if (Number.isFinite(contentLength) && contentLength > 1024 * 1024) {
+    throw createApiError(413, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '支付回调请求体过大')
+  }
   const query = Object.fromEntries(Object.entries(getQuery(event)).map(([key, value]) => [key, String(value ?? '')]))
   const requestBody = await readRawBody(event, 'utf8') || ''
   const rawBody = requestBody || new URLSearchParams(query).toString()
+  if (rawBody.length > 1024 * 1024) throw createApiError(413, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '支付回调请求体过大')
   const headers = Object.fromEntries(Object.entries(getHeaders(event)).map(([key, value]) => [key.toLowerCase(), String(value)]))
   const instances = await db.select().from(paymentProviderInstances).where(eq(paymentProviderInstances.providerKey, providerKey))
   for (const instance of instances) {

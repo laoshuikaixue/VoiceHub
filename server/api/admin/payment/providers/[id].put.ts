@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { paymentProviderInstances } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
 import { decryptPaymentConfig, encryptPaymentConfig, maskPaymentConfig } from '~~/server/utils/paymentCrypto'
-import { PAYMENT_PROVIDER_METHODS } from '~~/server/config/payment'
+import { PAYMENT_PROVIDER_CONFIG_FIELDS, PAYMENT_PROVIDER_METHODS } from '~~/server/config/payment'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -16,6 +16,8 @@ export default defineEventHandler(async event => {
   const body = await readBody(event)
   const oldConfig = decryptPaymentConfig(current.configEncrypted)
   const config = Object.fromEntries(Object.entries({ ...oldConfig, ...(body.config || {}) }).map(([key, value]) => [key, value === '********' ? oldConfig[key] : value]))
+  const missing = (PAYMENT_PROVIDER_CONFIG_FIELDS[current.providerKey] || []).filter(key => !String(config[key] || '').trim())
+  if (missing.length) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付服务商配置不完整', { params: [missing.join(', ')] })
   const allowedMethods = PAYMENT_PROVIDER_METHODS[current.providerKey] || []
   const [updated] = await db.update(paymentProviderInstances).set({
     name: typeof body.name === 'string' ? body.name.slice(0, 100) : current.name,
