@@ -1080,6 +1080,7 @@ const notificationTabRef = ref(null)
 const hasInitializedAuthData = ref(isClientAuthenticated.value)
 
 let refreshInterval = null
+let isBootstrapping = false
 
 // 添加通知相关变量
 const userNotifications = computed(() => notificationsService?.notifications?.value || [])
@@ -1383,6 +1384,7 @@ watch(activeTab, (newTab) => {
 watch(
   () => [auth?.isAuthenticated?.value || false, user.value?.id ?? null, user.value?.role || ''],
   async ([newAuthState, newUserId, newRole], [oldAuthState, oldUserId, oldRole] = []) => {
+    if (isBootstrapping) return
     const identityChanged = newUserId !== oldUserId || newRole !== oldRole
 
     if (newAuthState && (!oldAuthState || identityChanged)) {
@@ -1476,6 +1478,7 @@ if (import.meta.client) {
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   const bootStartedAt = Date.now()
+  isBootstrapping = true
 
   const queryTab = route.query.tab
   const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
@@ -1568,6 +1571,7 @@ onMounted(async () => {
     await Promise.allSettled([songs.fetchPublicSchedules(), songs.fetchSongCount()])
     await updateSongCounts()
   } finally {
+    isBootstrapping = false
     if (isFirstVisit) {
       if (bootSlowTimer) {
         clearTimeout(bootSlowTimer)

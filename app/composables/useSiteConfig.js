@@ -38,6 +38,7 @@ const siteConfig = ref({
 
 const isLoaded = ref(false)
 const isLoading = ref(false)
+let siteConfigPromise = null
 
 const getImageDisplayUrl = (url) => {
   const normalizedUrl = typeof url === 'string' ? url.trim() : ''
@@ -54,54 +55,64 @@ const getImageDisplayUrl = (url) => {
 export const useSiteConfig = () => {
   // 获取站点配置
   const fetchSiteConfig = async () => {
-    if (isLoading.value) return
+    if (isLoaded.value) return siteConfig.value
+    if (siteConfigPromise) return siteConfigPromise
+
+    siteConfigPromise = (async () => {
+      try {
+        isLoading.value = true
+
+        const response = await fetch('/api/site-config')
+        if (!response.ok) {
+          throw new Error('获取站点配置失败')
+        }
+
+        const data = await response.json()
+        siteConfig.value = data
+        isLoaded.value = true
+      } catch (error) {
+        console.error('获取站点配置失败:', error)
+
+        // 使用默认配置
+        siteConfig.value = {
+          siteTitle: '校园广播站点歌系统',
+          siteLogoUrl: '/favicon.ico',
+          schoolLogoHomeUrl: '',
+          schoolLogoPrintUrl: '',
+          siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
+          submissionGuidelines: defaultSubmissionGuidelines,
+          icpNumber: '',
+          gonganNumber: '',
+          enableReplayRequests: false,
+          enableCollaborativeSubmission: true,
+          enableSubmissionRemarks: false,
+          allowOAuthRegistration: false,
+          captchaEnabled: false,
+          captchaProvider: 'graphic',
+          turnstileSiteKey: '',
+          enableSubmissionLimit: false,
+          enableCardCodeRequests: false,
+          requireCardCodeForRequests: false,
+          enableCardCodeLimitBypass: false,
+          githubOAuthEnabled: false,
+          casdoorOAuthEnabled: false,
+          googleOAuthEnabled: false,
+          aggregateOAuthEnabled: false,
+          aggregateOAuthLoginType: 'qq',
+          customOAuthEnabled: false,
+          customOAuthDisplayName: ''
+        }
+        isLoaded.value = true
+      } finally {
+        isLoading.value = false
+      }
+      return siteConfig.value
+    })()
 
     try {
-      isLoading.value = true
-
-      const response = await fetch('/api/site-config')
-      if (!response.ok) {
-        throw new Error('获取站点配置失败')
-      }
-
-      const data = await response.json()
-      siteConfig.value = data
-      isLoaded.value = true
-    } catch (error) {
-      console.error('获取站点配置失败:', error)
-
-      // 使用默认配置
-      siteConfig.value = {
-        siteTitle: '校园广播站点歌系统',
-        siteLogoUrl: '/favicon.ico',
-        schoolLogoHomeUrl: '',
-        schoolLogoPrintUrl: '',
-        siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
-        submissionGuidelines: defaultSubmissionGuidelines,
-        icpNumber: '',
-        gonganNumber: '',
-        enableReplayRequests: false,
-        enableCollaborativeSubmission: true,
-        enableSubmissionRemarks: false,
-        allowOAuthRegistration: false,
-        captchaEnabled: false,
-        captchaProvider: 'graphic',
-        turnstileSiteKey: '',
-        enableSubmissionLimit: false,
-        enableCardCodeRequests: false,
-        requireCardCodeForRequests: false,
-        enableCardCodeLimitBypass: false,
-        githubOAuthEnabled: false,
-        casdoorOAuthEnabled: false,
-        googleOAuthEnabled: false,
-        aggregateOAuthEnabled: false,
-        aggregateOAuthLoginType: 'qq',
-        customOAuthEnabled: false,
-        customOAuthDisplayName: ''
-      }
-      isLoaded.value = true
+      return await siteConfigPromise
     } finally {
-      isLoading.value = false
+      siteConfigPromise = null
     }
   }
 

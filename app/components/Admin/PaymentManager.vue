@@ -78,7 +78,7 @@ import { BarChart3, ClipboardList, CreditCard, DollarSign, Eye, EyeOff, Package,
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'; import CustomSelect from '~/components/UI/Common/CustomSelect.vue'; import { useLocale } from '~/utils/locale'; import { useServerErrors } from '~/composables/useLocaleText'; import { useToast } from '~/composables/useToast'
 const Field = defineComponent({ props: { modelValue: [String, Number], label: String, placeholder: String, step: [String, Number], min: [String, Number], max: [String, Number], type: { type: String, default: 'text' } }, emits: ['update:modelValue'], setup(props, { emit }) { return () => h('label', { class: 'field' }, [h('span', props.label), h('input', { class: 'input w-full', value: props.modelValue ?? '', placeholder: props.placeholder, step: props.step, min: props.min, max: props.max, type: props.type, onInput: event => emit('update:modelValue', props.type === 'number' ? Number(event.target.value) : event.target.value) })]) } })
 const sections = useLocale(); const locale = computed(() => sections.payment.value); const { localize } = useServerErrors(); const { showToast } = useToast(); const activeTab = ref('dashboard'); const loading = ref(true); const saving = ref(false); const errorMessage = ref('')
-const settings = ref({ visibleMethods: [] }); const providers = ref([]); const plans = ref([]); const orders = ref([]); const dashboard = ref({}); const dashboardDays = ref(30); const dashboardLoading = ref(false); const providerDraft = ref(null); const providerVisible = ref({}); const providerSaving = ref(false); const planDraft = ref(null); const refundDraft = ref(null); const orderFilters = ref({ keyword: '', status: '', method: '', page: 1, pageSize: 20 }); const orderTotal = ref(0); const ordersLoading = ref(false); const selectedOrder = ref(null); const selectedAuditLogs = ref([])
+const settings = ref({ visibleMethods: [] }); const providers = ref([]); const plans = ref([]); const orders = ref([]); const dashboard = ref({}); const dashboardDays = ref(30); const dashboardLoading = ref(false); const providerDraft = ref(null); const providerVisible = ref({}); const providerSaving = ref(false); const planDraft = ref(null); const refundDraft = ref(null); const orderFilters = ref({ keyword: '', status: '', method: '', page: 1, pageSize: 20 }); const orderTotal = ref(0); const ordersLoading = ref(false); const selectedOrder = ref(null); const selectedAuditLogs = ref([]); const loadedTabs = ref({ dashboard: false, orders: false, plans: false })
 const tabIcons = { dashboard: BarChart3, orders: ClipboardList, plans: Package, settings: CreditCard }
 const tabs = computed(() => ['dashboard', 'orders', 'plans', 'settings'].map(id => ({ id, label: locale.value.admin[id], icon: tabIcons[id] })))
 const methods = ['alipay','wxpay','stripe','airwallex']; const methodLabel = value => ({ alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }[value] || value)
@@ -148,35 +148,36 @@ const averageDashboardAmount = computed(() => moneyAmount(dashboard.value.avgAmo
 const revenuePoints = computed(() => { const rows = dashboard.value.daily || []; const values = rows.map(item => Number(item.amount?.[dashboardCurrency.value] || 0)); const max = Math.max(1, ...values); return values.map((value, index) => `${rows.length === 1 ? 500 : index * 1000 / (rows.length - 1)},${210 - value / max * 180}`).join(' ') })
 const api = async (url, options) => { try { return await $fetch(url, options) } catch (error) { errorMessage.value = localize(error); throw error } }
 const loadDashboard = async () => { dashboardLoading.value = true; try { dashboard.value = await api('/api/admin/payment/dashboard', { query: { days: dashboardDays.value } }) } finally { dashboardLoading.value = false } }
-const loadOrders = async () => { ordersLoading.value = true; try { const result = await api('/api/admin/payment/orders', { query: orderFilters.value }); orders.value = result.items; orderTotal.value = result.total } finally { ordersLoading.value = false } }
+const loadOrders = async () => { ordersLoading.value = true; try { const result = await api('/api/admin/payment/orders', { query: orderFilters.value }); orders.value = result.items; orderTotal.value = result.total; loadedTabs.value.orders = true } finally { ordersLoading.value = false } }
+const loadPlans = async () => { plans.value = await api('/api/admin/payment/plans'); loadedTabs.value.plans = true }
 const resetAndLoadOrders = () => { orderFilters.value.page = 1; loadOrders() }
 const changeOrderPage = page => { orderFilters.value.page = page; loadOrders() }
 const formatDateTime = value => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value)) : '-'
 const statusLabel = status => ({ PENDING:'待支付',PAID:'已支付',COMPLETED:'已完成',EXPIRED:'已过期',CANCELLED:'已取消',FAILED:'失败',REFUND_REQUESTED:'申请退款',REFUNDING:'退款中',REFUNDED:'已退款' }[status] || status)
 const statusClass = status => ({ PENDING:'pending',PAID:'paid',COMPLETED:'completed',EXPIRED:'neutral',CANCELLED:'neutral',FAILED:'failed',REFUND_REQUESTED:'refund',REFUNDING:'refund',REFUNDED:'refunded' }[status] || 'neutral')
 const showOrderDetail = async order => { selectedOrder.value = order; selectedAuditLogs.value = []; try { const result = await api(`/api/admin/payment/orders/${order.id}`); selectedOrder.value = result.order; selectedAuditLogs.value = result.auditLogs || [] } catch {} }
-const loadAll = async () => {
+const loadCore = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
     const results = await Promise.allSettled([
       $fetch('/api/admin/payment/settings'),
-      $fetch('/api/admin/payment/providers'),
-      $fetch('/api/admin/payment/plans'),
-      $fetch('/api/admin/payment/orders', { query: orderFilters.value }),
-      $fetch('/api/admin/payment/dashboard', { query: { days: dashboardDays.value } })
+      $fetch('/api/admin/payment/providers')
     ])
-    const [settingsResult, providersResult, plansResult, ordersResult, dashboardResult] = results
+    const [settingsResult, providersResult] = results
     if (settingsResult.status === 'fulfilled') settings.value = settingsResult.value
     if (providersResult.status === 'fulfilled') providers.value = providersResult.value
-    if (plansResult.status === 'fulfilled') plans.value = plansResult.value
-    if (ordersResult.status === 'fulfilled') { orders.value = ordersResult.value.items; orderTotal.value = ordersResult.value.total }
-    if (dashboardResult.status === 'fulfilled') dashboard.value = dashboardResult.value
     if (results.every(result => result.status === 'rejected')) errorMessage.value = localize(results[0].reason)
   } finally {
     loading.value = false
   }
 }
+const ensureActiveTabLoaded = async tab => {
+  if (tab === 'dashboard' && !loadedTabs.value.dashboard) { await loadDashboard(); loadedTabs.value.dashboard = true }
+  if (tab === 'orders' && !loadedTabs.value.orders) await loadOrders()
+  if (tab === 'plans' && !loadedTabs.value.plans) await loadPlans()
+}
+watch(activeTab, tab => { ensureActiveTabLoaded(tab) })
 const saveSettings = async () => { saving.value=true; try { const visibleMethods = enabledProviderMethods.value; settings.value = await api('/api/admin/payment/settings', { method:'PUT', body:{ ...settings.value, currency: settings.value.currency || 'CNY', productNameSuffix: settings.value.currency || 'CNY', minAmountCents: Number(settings.value.minAmountCents) || 1, maxPendingOrders: Number(settings.value.maxPendingOrders) || 3, visibleMethods } }); await Promise.all(providers.value.map(provider => api(`/api/admin/payment/providers/${provider.id}`, { method:'PUT', body: provider }))); showToast('支付设置保存成功', 'success') } finally { saving.value=false } }
 const cloneData = value => JSON.parse(JSON.stringify(toRaw(value)))
 const normalizeProviderLimits = (providerKey, source = {}) => {
@@ -240,7 +241,7 @@ const removePlan = async plan => { if (!confirm(`删除 ${plan.name}？`)) retur
 const verifyOrder = async order => { await api(`/api/admin/payment/orders/${order.id}/verify`,{method:'POST'}); await loadOrders() }
 const openRefund = order => { refundDraft.value={id:order.id,amountCents:order.payAmountCents-order.refundAmountCents,reason:'管理员退款'} }
 const refundOrder = async () => { await api(`/api/admin/payment/orders/${refundDraft.value.id}/refund`,{method:'POST',body:refundDraft.value}); refundDraft.value=null; await loadOrders() }
-onMounted(() => { siteOrigin.value = window.location.origin; loadAll() })
+onMounted(async () => { siteOrigin.value = window.location.origin; await loadCore(); await ensureActiveTabLoaded(activeTab.value) })
 </script>
 
 <style scoped>
