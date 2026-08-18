@@ -728,6 +728,7 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
 
 ```
 VoiceHub/
+├── PAYMENT_CONFIG_CN.md        # 支付配置指南
 ├── .github/                   # GitHub 配置目录
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建

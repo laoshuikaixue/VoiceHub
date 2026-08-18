@@ -4075,6 +4075,7 @@ export const serverErrors = {
   PAYMENT_DAILY_LIMIT: 'Daily purchase limit reached',
   PAYMENT_PROVIDER_UNAVAILABLE: 'No payment provider is available',
   PAYMENT_CREATE_FAILED: 'Failed to create payment order',
+  PAYMENT_QUERY_FAILED: 'Failed to query payment status. Please try again later',
   PAYMENT_ORDER_NOT_FOUND: 'Payment order not found',
   PAYMENT_AMOUNT_MISMATCH: 'Payment amount does not match the order',
   PAYMENT_ORDER_STATE_INVALID: 'This order cannot perform that action',

@@ -4084,6 +4084,7 @@ export const serverErrors = {
   PAYMENT_DAILY_LIMIT: '今日购买金额已达上限',
   PAYMENT_PROVIDER_UNAVAILABLE: '暂无可用支付通道',
   PAYMENT_CREATE_FAILED: '创建支付订单失败',
+  PAYMENT_QUERY_FAILED: '查询支付状态失败，请稍后重试',
   PAYMENT_ORDER_NOT_FOUND: '支付订单不存在',
   PAYMENT_AMOUNT_MISMATCH: '支付金额与订单不一致',
   PAYMENT_ORDER_STATE_INVALID: '当前订单状态不可执行此操作',

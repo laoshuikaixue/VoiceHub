@@ -198,8 +198,33 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
   const [order] = await db.select().from(paymentOrders).where(and(...conditions)).limit(1)
   if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '支付订单不存在')
   if (order.status === 'COMPLETED' || order.status === 'REFUNDED') return order
-  const { provider } = await getOrderProvider(order)
-  const result = await provider.query(order.outTradeNo, order.paymentTradeNo || undefined)
+  let provider
+  let row
+  try {
+    ({ provider, row } = await getOrderProvider(order))
+  } catch (error: any) {
+    if (error?.statusCode) throw error
+    console.error('[payment] 读取订单支付通道失败', {
+      orderId: order.id,
+      outTradeNo: order.outTradeNo,
+      providerKey: order.providerKey,
+      message: error?.message || String(error)
+    })
+    throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '支付通道配置读取失败')
+  }
+  let result
+  try {
+    result = await provider.query(order.outTradeNo, order.paymentTradeNo || undefined)
+  } catch (error: any) {
+    console.error('[payment] 查询订单状态失败', {
+      orderId: order.id,
+      outTradeNo: order.outTradeNo,
+      providerId: row?.id,
+      providerKey: order.providerKey,
+      message: error?.message || String(error)
+    })
+    throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '查询支付状态失败')
+  }
   if (result.status === 'paid') return fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents || order.payAmountCents, success: true }, 'verify')
   return order
 }
