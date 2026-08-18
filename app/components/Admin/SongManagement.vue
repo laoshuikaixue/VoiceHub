@@ -1067,13 +1067,13 @@
 
 <script setup>
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   Search,
   Plus,

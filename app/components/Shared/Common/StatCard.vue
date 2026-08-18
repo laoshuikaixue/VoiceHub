@@ -80,7 +80,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   Users,
   Music,

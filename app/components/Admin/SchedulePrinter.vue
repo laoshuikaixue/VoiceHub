@@ -425,7 +425,7 @@ import {
   AlignLeft,
   RefreshCw
 } from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 // 导入子组件

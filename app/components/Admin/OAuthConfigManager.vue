@@ -338,7 +338,7 @@ import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import {
   AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS,
   getAggregateOAuthLoginTypesOrDefault

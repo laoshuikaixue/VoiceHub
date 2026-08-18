@@ -636,9 +636,9 @@ import {
   Users,
   X
 } from '@lucide/vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { useToast } from '~/composables/useToast'

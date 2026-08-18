@@ -416,7 +416,7 @@ import {
 import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 
 const auth = useAuth()

@@ -491,8 +491,8 @@ import {
   CheckCircle2,
   AlertCircle
 } from '@lucide/vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'

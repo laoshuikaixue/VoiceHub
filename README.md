@@ -838,7 +838,7 @@ VoiceHub/
 │   │   │   ├── ScheduleList.vue       # 排期列表展示
 │   │   │   ├── SongList.vue           # 歌曲列表
 │   │   │   └── SongQuotaDisplay.vue  # 点歌额度展示
-│   │   ├── UI/                # 通用UI组件
+│   │   ├── Shared/            # 通用UI组件
 │   │   │   ├── AudioPlayer/   # 音频播放器组件模块
 │   │   │   │   ├── AudioElement.vue   # 音频元素组件
 │   │   │   │   ├── PlayerControls.vue # 播放器控制组件
@@ -1428,7 +1428,7 @@ VoiceHub/
   - **`Notifications/`**: 通知系统组件
   - **`Player/`**: 播放器相关组件
   - **`Songs/`**: 歌曲相关组件（点歌、导入、歌单等）
-  - **`UI/`**: 通用UI组件（播放器、对话框、进度条等）
+  - **`Shared/`**: 通用UI组件（播放器、对话框、进度条等）
   - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用

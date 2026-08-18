@@ -70,7 +70,7 @@
 <script setup>
 import { CircleX, Heart, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 // Props

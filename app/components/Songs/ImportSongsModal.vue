@@ -306,7 +306,7 @@
 import { Check, X, Info, Download, RefreshCw, TriangleAlert, ListMusic, Search } from '@lucide/vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { convertToHttps } from '~/utils/url'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

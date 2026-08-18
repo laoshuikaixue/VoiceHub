@@ -66,7 +66,7 @@
 <script setup>
 import { SkipBack, Pause, Play, SkipForward } from '@lucide/vue'
 import { computed, ref } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

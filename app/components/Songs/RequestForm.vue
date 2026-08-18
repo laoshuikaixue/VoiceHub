@@ -615,7 +615,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <Search class="search-svg" :size="120" aria-hidden="true" />
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" />
                 </div>
               </div>
             </Transition>
@@ -1148,9 +1148,10 @@ import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
+import { useThemeImage } from '~/composables/useThemeImage'
 import { useLocale } from '~/utils/locale'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
@@ -1216,6 +1217,7 @@ const submitting = ref(false)
 const voting = ref(false)
 
 const { getAvailablePlatforms, loadPlatformConfig, loaded: platformConfigLoaded } = usePlatformConfig()
+const { getSearchIcon } = useThemeImage()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
 // 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
@@ -4830,12 +4832,11 @@ defineExpose({
 }
 
 .search-svg {
-  width: 25%;
-  max-width: 300px;
-  min-width: 150px;
+  width: 30%;
+  max-width: 400px;
+  min-width: 200px;
   height: auto;
   object-fit: contain;
-  opacity: 0.8;
 }
 
 /* 手动输入触发按钮 */

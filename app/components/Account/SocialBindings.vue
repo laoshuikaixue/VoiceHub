@@ -276,7 +276,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { AlertCircle, Loader2, Mail, Share2, Smartphone } from '@lucide/vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

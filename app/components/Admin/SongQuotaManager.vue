@@ -380,9 +380,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { Loader2, RefreshCw, Save, Search } from '@lucide/vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 

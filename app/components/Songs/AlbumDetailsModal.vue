@@ -292,7 +292,7 @@
 <script setup>
 import { Disc3, X, Search, CircleX, Music, Clock, Heart, Pause, Play } from '@lucide/vue'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'

@@ -238,7 +238,7 @@ import {
   MoreHorizontal
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 
 const props = defineProps({
   columns: { type: Array, required: true },

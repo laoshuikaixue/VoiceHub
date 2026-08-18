@@ -420,8 +420,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search } from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 

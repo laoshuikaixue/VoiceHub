@@ -538,7 +538,7 @@ import { computed, ref, watch, reactive, onUnmounted } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrlResult } from '~/utils/musicUrl'
 import { useLocale } from '~/utils/locale'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   X as CloseIcon,
   Check,

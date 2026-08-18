@@ -73,7 +73,7 @@
 import { Lightbulb } from '@lucide/vue'
 import { onMounted, ref, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

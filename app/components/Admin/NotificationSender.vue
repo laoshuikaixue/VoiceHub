@@ -500,7 +500,7 @@ import {
   MessageSquare,
   Loader2,
   BellRing, Bell} from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import NotificationHistory from '~/components/Admin/NotificationHistory.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'

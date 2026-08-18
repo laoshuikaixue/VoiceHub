@@ -289,7 +289,7 @@
 <script setup>
 import { Archive, ArrowRight, BookOpen, CalendarDays, CircleAlert, CircleCheck, History, Info, Pencil, Plus, Star, Trash2, X } from '@lucide/vue'
 import { onMounted, ref, computed } from 'vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 

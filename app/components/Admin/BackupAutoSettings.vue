@@ -330,10 +330,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2, Check } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
-import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
-import InputField from '~/components/UI/Common/InputField.vue'
-import PasswordField from '~/components/UI/Common/PasswordField.vue'
-import MethodCard from '~/components/UI/Common/MethodCard.vue'
+import CollapsibleSection from '~/components/Shared/Common/CollapsibleSection.vue'
+import InputField from '~/components/Shared/Common/InputField.vue'
+import PasswordField from '~/components/Shared/Common/PasswordField.vue'
+import MethodCard from '~/components/Shared/Common/MethodCard.vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false }

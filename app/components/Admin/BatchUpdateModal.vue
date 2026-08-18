@@ -904,7 +904,7 @@ import {
   Music
 } from '@lucide/vue'
 
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 
 const props = defineProps({
   show: Boolean,

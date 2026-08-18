@@ -480,7 +480,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'

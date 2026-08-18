@@ -236,8 +236,8 @@
 import { X } from '@lucide/vue'
 import { ref, computed, watch } from 'vue'
 import { useSemesters } from '~/composables/useSemesters'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import LoadingState from '~/components/UI/Common/LoadingState.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import LoadingState from '~/components/Shared/Common/LoadingState.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

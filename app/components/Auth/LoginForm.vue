@@ -244,7 +244,7 @@ import {
 } from '~/utils/webauthn'
 import { CalendarDays, CircleAlert, Eye, EyeOff, Fingerprint, Loader2, LockKeyhole, Undo2, User, UserPlus } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
 import { useLocale } from '~/utils/locale'

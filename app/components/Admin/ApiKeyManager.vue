@@ -621,11 +621,11 @@ import {
   X
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))

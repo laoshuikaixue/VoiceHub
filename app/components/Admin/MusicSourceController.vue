@@ -156,7 +156,7 @@ import {
   RotateCcw,
   CheckCircle2
 } from '@lucide/vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { usePlatformConfig, DEFAULT_PLATFORMS } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'

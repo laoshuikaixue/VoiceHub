@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { RefreshCw, MessageCircle, CircleX, User, ThumbsUp } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { fetchNetease } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'

@@ -126,7 +126,7 @@
 
 <script lang="ts" setup>
 import { Check } from '@lucide/vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { computed } from 'vue'
 import { useLocale } from '~/utils/locale'
 

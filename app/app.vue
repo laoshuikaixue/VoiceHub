@@ -32,7 +32,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
 import { useImportantNotification } from '~/composables/useImportantNotification'
-import ImportantNotificationModal from '~/components/UI/ImportantNotificationModal.vue'
+import ImportantNotificationModal from '~/components/Shared/ImportantNotificationModal.vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()

@@ -612,7 +612,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   TrendingUp,
   Users,
@@ -633,7 +633,7 @@ import {
   X
 } from '@lucide/vue'
 import { useSemesters } from '~/composables/useSemesters'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 // 使用学期管理 composable
