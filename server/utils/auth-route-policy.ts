@@ -42,7 +42,7 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
 ]
 
 export const PUBLIC_API_PREFIX_ROUTES: readonly RoutePolicy[] = [
-  { path: '/api/payment/webhook/', methods: ['POST'] },
+  { path: '/api/payment/webhook/', methods: [...GET_METHODS, 'POST'] },
   { path: '/api/proxy/', methods: GET_METHODS },
   { path: '/api/bilibili/', methods: GET_METHODS },
   { path: '/api/api-enhanced/', methods: [...GET_METHODS, ...WRITE_METHODS] },

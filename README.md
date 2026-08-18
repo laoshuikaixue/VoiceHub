@@ -998,6 +998,7 @@ VoiceHub/
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
 │   │   ├── payment/         # 用户支付、订单、回调 API
+│   │   │   └── webhook/     # 支付服务商 GET/POST 异步通知入口
 │   │   ├── admin/payment/   # 支付后台管理 API
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── api-keys/            # API密钥管理API

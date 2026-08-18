@@ -9,13 +9,15 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async event => {
   const providerKey = getRouterParam(event, 'provider') || ''
-  const rawBody = await readRawBody(event, 'utf8') || ''
+  const query = Object.fromEntries(Object.entries(getQuery(event)).map(([key, value]) => [key, String(value ?? '')]))
+  const requestBody = await readRawBody(event, 'utf8') || ''
+  const rawBody = requestBody || new URLSearchParams(query).toString()
   const headers = Object.fromEntries(Object.entries(getHeaders(event)).map(([key, value]) => [key.toLowerCase(), String(value)]))
   const instances = await db.select().from(paymentProviderInstances).where(eq(paymentProviderInstances.providerKey, providerKey))
   for (const instance of instances) {
     try {
       const provider = createPaymentProvider(providerKey, { ...decryptPaymentConfig(instance.configEncrypted), paymentMode: instance.paymentMode })
-      const notification = await provider.verify(rawBody, headers, Object.fromEntries(getQuery(event) as any))
+      const notification = await provider.verify(rawBody, headers, query)
       if (!notification) {
         if (providerKey === 'wxpay') return { code: 'SUCCESS', message: '成功' }
         return { success: true }

@@ -15,7 +15,7 @@
         <h2>{{ resultOrder.status === 'COMPLETED' ? '支付成功' : resultOrder.status === 'EXPIRED' ? '订单已过期' : '支付失败' }}</h2>
         <p v-if="resultOrder.status === 'EXPIRED'" class="result-message">订单已超时，请重新创建订单</p>
         <div class="result-details"><div><span>订单 ID</span><b>#{{ resultOrder.id }}</b></div><div><span>订单编号</span><b>{{ resultOrder.outTradeNo }}</b></div><div><span>充值金额</span><b>{{ formatMoney(resultOrder.payAmountCents, resultOrder.currency) }}</b></div><div><span>支付方式</span><b>{{ methodLabels[resultOrder.paymentMethod] || resultOrder.paymentMethod }}</b></div><div><span>状态</span><b>{{ statusText(resultOrder.status) }}</b></div></div>
-        <div class="result-actions"><button class="action-primary" @click="resultOrder = null">确认</button><button v-if="resultOrder.status !== 'EXPIRED'" class="action-button" @click="activeTab = 'orders'; resultOrder = null">查看订单</button></div>
+        <div class="result-actions"><button class="action-primary" @click="closeResult(false)">确认</button><button v-if="resultOrder.status !== 'EXPIRED'" class="action-button" @click="closeResult(true)">查看订单</button></div>
       </section>
       <section v-else-if="checkoutOrder" class="checkout-panel">
         <div v-if="checkoutOrder.qrCode" class="checkout-qr"><h2>扫码支付</h2><div class="qr-frame"><img :src="qrImage" alt="支付二维码" /></div><p>请使用手机扫码完成支付</p></div>
@@ -94,7 +94,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import { ArrowLeft, Check, Clock3, Copy, CreditCard, ExternalLink, RefreshCw, Ticket, Undo2, User, X } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
@@ -107,6 +107,7 @@ const sections = useLocale(); const locale = computed(() => sections.payment.val
 const { localize } = useServerErrors()
 const { showToast } = useToast()
 const route = useRoute()
+const router = useRouter()
 const config = ref({ enabled: false, methods: [] }); const plans = ref([]); const orders = ref([]); const cards = ref([])
 const selectedMethods = reactive({}); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
 const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); let pollTimer = null; let countdownTimer = null
@@ -151,13 +152,13 @@ const openPay = async order => {
     if (isMobile) {
       window.location.assign(order.payUrl)
     } else {
-      const popup = window.open(order.payUrl, 'voicehub-payment', 'popup=yes,width=480,height=760,resizable=yes,scrollbars=yes')
+      const popup = window.open(order.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes')
       if (!popup) window.location.assign(order.payUrl)
     }
     startPolling(order)
     return
   }
-  if (order.qrCode) { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
+  if (order.qrCode) { checkoutOrder.value = order; qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
   if (order.clientSecret && order.paymentMethod === 'airwallex') {
     const data = order.providerData || {}; const sdk = await import('@airwallex/components-sdk'); const initialized = await sdk.init({ env: data.environment === 'prod' ? 'prod' : 'demo', enabledElements: ['payments'], locale: navigator.language.startsWith('zh') ? 'zh' : 'en' })
     initialized.payments?.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment?order=${encodeURIComponent(order.id)}` })
@@ -171,7 +172,8 @@ const submitRefund = async () => { try { await $fetch(`/api/payment/orders/${ref
 const copyCard = async code => navigator.clipboard.writeText(code)
 const startPolling = order => { clearInterval(pollTimer); clearInterval(countdownTimer); countdown.value = Math.max(0, Math.floor((new Date(order.expiresAt).getTime() - Date.now()) / 1000)); pollTimer = setInterval(() => verify(order), 3000); countdownTimer = setInterval(() => { countdown.value = Math.max(0, countdown.value - 1) }, 1000) }
 const countdownText = computed(() => `${String(Math.floor(countdown.value / 60)).padStart(2, '0')}:${String(countdown.value % 60).padStart(2, '0')}`)
-const reopenPayment = () => { if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'popup=yes,width=480,height=760,resizable=yes,scrollbars=yes') }
+const reopenPayment = () => { if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes') }
+const closeResult = async showOrders => { resultOrder.value = null; activeTab.value = showOrders ? 'orders' : 'plans'; await router.replace({ path: '/payment', query: {} }) }
 const cancelCheckout = async () => { if (checkoutOrder.value) { await cancelOrder(checkoutOrder.value); checkoutOrder.value = null; clearInterval(pollTimer); clearInterval(countdownTimer) } }
 const closeQr = () => { qrOrder.value = null; qrImage.value = ''; clearInterval(pollTimer) }
 onMounted(load); onUnmounted(() => { clearInterval(pollTimer); clearInterval(countdownTimer) })
