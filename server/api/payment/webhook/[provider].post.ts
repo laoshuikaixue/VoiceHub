@@ -17,7 +17,7 @@ export default defineEventHandler(async event => {
       const provider = createPaymentProvider(providerKey, { ...decryptPaymentConfig(instance.configEncrypted), paymentMode: instance.paymentMode })
       const notification = await provider.verify(rawBody, headers, Object.fromEntries(getQuery(event) as any))
       if (!notification) return { success: true }
-      const order = await fulfillPaymentOrder(notification, `webhook:${providerKey}`)
+      const order = await fulfillPaymentOrder(notification, `webhook:${providerKey}`, instance.id)
       if (providerKey === 'easypay' || providerKey === 'alipay') {
         setResponseHeader(event, 'content-type', 'text/plain; charset=utf-8')
         return 'success'

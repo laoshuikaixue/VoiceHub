@@ -61,6 +61,12 @@ const requestJson = async (url: string, init: RequestInit) => {
 
 const formEncode = (values: Record<string, string>) => new URLSearchParams(values).toString()
 const money = (cents: number) => (cents / 100).toFixed(2)
+const assertRecentWebhookTimestamp = (value: string, label: string) => {
+  const raw = String(value || '')
+  const numeric = Number(raw)
+  const parsed = Number.isFinite(numeric) ? (numeric < 1e12 ? numeric * 1000 : numeric) : Date.parse(raw)
+  if (!Number.isFinite(parsed) || Math.abs(getServerTimestamp() - parsed) > 5 * 60 * 1000) throw new Error(`${label}回调时间戳无效或已过期`)
+}
 const normalizeBase = (value: string) => value.trim().replace(/\/(submit|mapi|api)\.php\/?$/i, '').replace(/\/$/, '')
 
 const easyPaySign = (params: Record<string, string>, key: string) => {
@@ -207,6 +213,7 @@ class WxPayProvider implements PaymentProvider {
     const timestamp = headers['wechatpay-timestamp'] || ''
     const nonce = headers['wechatpay-nonce'] || ''
     const signature = headers['wechatpay-signature'] || ''
+    assertRecentWebhookTimestamp(timestamp, '微信支付')
     if (!createVerify('RSA-SHA256').update(`${timestamp}\n${nonce}\n${rawBody}\n`).verify(this.config.publicKey, signature, 'base64')) throw new Error('微信支付回调签名无效')
     const event = JSON.parse(rawBody)
     if (event.event_type !== 'TRANSACTION.SUCCESS') return null
@@ -251,7 +258,9 @@ class StripeProvider implements PaymentProvider {
   }
   async verify(rawBody: string, headers: Record<string, string>) {
     const signature = headers['stripe-signature'] || ''
-    const parts = Object.fromEntries(signature.split(',').map(item => item.split('=', 2)))
+    const parts: Record<string, string> = {}
+    for (const item of signature.split(',')) { const [key, value] = item.split('=', 2); if (key && value && !parts[key]) parts[key] = value }
+    assertRecentWebhookTimestamp(parts.t || '', 'Stripe')
     const expected = createHmac('sha256', this.config.webhookSecret).update(`${parts.t}.${rawBody}`).digest('hex')
     if (!parts.v1 || !timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1))) throw new Error('Stripe 回调签名无效')
     const event = JSON.parse(rawBody)
@@ -299,6 +308,7 @@ class AirwallexProvider implements PaymentProvider {
   async verify(rawBody: string, headers: Record<string, string>) {
     const timestamp = headers['x-timestamp'] || ''
     const signature = headers['x-signature'] || ''
+    assertRecentWebhookTimestamp(timestamp, 'Airwallex')
     const expected = createHmac('sha256', this.config.webhookSecret).update(timestamp + rawBody).digest('hex')
     if (!signature || !timingSafeEqual(Buffer.from(expected), Buffer.from(signature.toLowerCase()))) throw new Error('Airwallex 回调签名无效')
     const event = JSON.parse(rawBody)

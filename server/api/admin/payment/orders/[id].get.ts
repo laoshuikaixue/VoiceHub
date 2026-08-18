@@ -11,5 +11,7 @@ export default defineEventHandler(async event => {
   if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '支付订单不存在')
   const auditLogs = await db.select().from(paymentAuditLogs).where(eq(paymentAuditLogs.orderId, id))
   const cards = await db.select({ id: cardCodes.id, code: cardCodes.code, status: cardCodes.status }).from(paymentOrderCards).innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, id))
-  return { order, auditLogs, cards }
+  const snapshot = order.providerSnapshot || {}
+  const safeOrder = { ...order, providerSnapshot: Object.fromEntries(Object.entries(snapshot).filter(([key]) => key !== 'configEncrypted')) }
+  return { order: safeOrder, auditLogs, cards }
 })

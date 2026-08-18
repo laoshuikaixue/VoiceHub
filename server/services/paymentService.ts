@@ -26,6 +26,12 @@ export const toPublicPaymentOrder = (order: typeof paymentOrders.$inferSelect) =
   return { ...safe, providerData: snapshot.checkout || undefined }
 }
 
+export const toAdminPaymentOrder = (order: typeof paymentOrders.$inferSelect) => {
+  const snapshot = order.providerSnapshot || {}
+  const safeSnapshot = Object.fromEntries(Object.entries(snapshot).filter(([key]) => key !== 'configEncrypted'))
+  return { ...order, providerSnapshot: safeSnapshot }
+}
+
 export const getPaymentSettings = async () => {
   const existing = await db.select().from(paymentSettings).limit(1)
   if (existing[0]) return existing[0]
@@ -95,7 +101,6 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.PAYMENT_AUTH_REQUIRED, '请先登录后购买')
   const settings = await getPaymentSettings()
   if (!settings.enabled) throw createApiError(403, SERVER_ERROR_CODES.PAYMENT_DISABLED, '支付系统未启用')
-  if (!settings.visibleMethods.includes(method)) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_METHOD_INVALID, '支付方式不可用')
   const [plan] = await db.select().from(paymentPlans).where(and(eq(paymentPlans.id, planId), eq(paymentPlans.forSale, true))).limit(1)
   if (!plan) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_PLAN_NOT_FOUND, '套餐不存在或已下架')
   if (plan.priceCents < settings.minAmountCents || (settings.maxAmountCents && plan.priceCents > settings.maxAmountCents)) {
@@ -150,9 +155,10 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   }
 }
 
-export const fulfillPaymentOrder = async (notification: PaymentNotification, operator = 'webhook') => {
+export const fulfillPaymentOrder = async (notification: PaymentNotification, operator = 'webhook', providerInstanceId?: string) => {
   const [order] = await db.select().from(paymentOrders).where(eq(paymentOrders.outTradeNo, notification.outTradeNo)).limit(1)
   if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '支付订单不存在')
+  if (providerInstanceId && order.providerInstanceId !== providerInstanceId) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '支付回调服务商与订单不匹配')
   if (notification.amountCents !== order.payAmountCents) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH, '支付金额与订单不一致')
   if (order.status === 'COMPLETED' || order.status === 'REFUNDED') return order
   if (!notification.success) {
@@ -225,7 +231,10 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
     })
     throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '查询支付状态失败')
   }
-  if (result.status === 'paid') return fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents || order.payAmountCents, success: true }, 'verify')
+  if (result.status === 'paid') {
+    if (!Number.isInteger(result.amountCents) || result.amountCents <= 0) throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '支付查询未返回有效金额')
+    return fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents, success: true }, 'verify')
+  }
   return order
 }
 
@@ -268,7 +277,10 @@ export const processPaymentRefund = async (orderId: string, amountCents: number,
   const cards = await db.select({ id: cardCodes.id, status: cardCodes.status }).from(paymentOrderCards)
     .innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, order.id))
   if (cards.some(card => card.status !== 'AVAILABLE')) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_BENEFIT_USED, '点歌券已使用，无法原路退款')
-  await db.update(paymentOrders).set({ status: 'REFUNDING', refundReason: reason, updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
+  const initialStatus = order.status
+  const [claimed] = await db.update(paymentOrders).set({ status: 'REFUNDING', refundReason: reason, updatedAt: getServerDate() })
+    .where(and(eq(paymentOrders.id, order.id), inArray(paymentOrders.status, ['COMPLETED', 'REFUND_REQUESTED']))).returning({ id: paymentOrders.id })
+  if (!claimed) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '退款请求正在处理中')
   try {
     const result = await provider.refund(order.outTradeNo, order.paymentTradeNo || undefined, amountCents, reason, order.payAmountCents)
     await db.transaction(async tx => {
@@ -277,7 +289,7 @@ export const processPaymentRefund = async (orderId: string, amountCents: number,
       await tx.insert(paymentAuditLogs).values({ orderId: order.id, action: result.pending ? 'REFUNDING' : 'REFUNDED', detail: { amountCents, reason }, operator })
     })
   } catch (error: any) {
-    await db.update(paymentOrders).set({ status: 'COMPLETED', failedReason: error.message, updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
+    await db.update(paymentOrders).set({ status: initialStatus, failedReason: error.message, updatedAt: getServerDate() }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'REFUNDING')))
     await addPaymentAudit(order.id, 'REFUND_FAILED', { error: error.message }, operator)
     throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_REFUND_FAILED, '退款请求失败')
   }
@@ -291,7 +303,8 @@ export const expirePaymentOrders = async () => {
       const { provider } = await getOrderProvider(order)
       const result = await provider.query(order.outTradeNo, order.paymentTradeNo || undefined)
       if (result.status === 'paid') {
-        await fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents || order.payAmountCents, success: true }, 'expiry-check')
+        if (!Number.isInteger(result.amountCents) || result.amountCents <= 0) continue
+        await fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents, success: true }, 'expiry-check')
         continue
       }
     } catch (error: any) {

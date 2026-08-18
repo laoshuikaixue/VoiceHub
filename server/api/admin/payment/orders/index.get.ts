@@ -2,7 +2,7 @@ import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { paymentOrders } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
-import { expirePaymentOrders } from '~~/server/services/paymentService'
+import { expirePaymentOrders, toAdminPaymentOrder } from '~~/server/services/paymentService'
 
 export default defineEventHandler(async event => {
   requirePaymentAdmin(event); await expirePaymentOrders()
@@ -14,5 +14,5 @@ export default defineEventHandler(async event => {
   const where = filters.length ? and(...filters) : undefined
   const [total] = await db.select({ value: count() }).from(paymentOrders).where(where)
   const items = await db.select().from(paymentOrders).where(where).orderBy(desc(paymentOrders.createdAt)).limit(pageSize).offset((page - 1) * pageSize)
-  return { items, total: Number(total?.value || 0), page, pageSize }
+  return { items: items.map(toAdminPaymentOrder), total: Number(total?.value || 0), page, pageSize }
 })

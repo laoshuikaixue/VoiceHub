@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { paymentProviderInstances } from '~/drizzle/schema'
 import { getPaymentSettings } from '~~/server/services/paymentService'
+import { PAYMENT_METHODS } from '~~/server/config/payment'
 
 export default defineEventHandler(async () => {
   const settings = await getPaymentSettings()
@@ -11,7 +12,7 @@ export default defineEventHandler(async () => {
   return {
     enabled: settings.enabled,
     currency: settings.currency,
-    methods: settings.visibleMethods.filter(method => available.has(method)),
+    methods: PAYMENT_METHODS.filter(method => available.has(method)),
     helpText: settings.helpText,
     helpImageUrl: settings.helpImageUrl
   }

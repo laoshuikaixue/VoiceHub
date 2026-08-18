@@ -19,7 +19,9 @@ export default defineEventHandler(async event => {
     ? await db.select({ allowed: paymentProviderInstances.allowUserRefund }).from(paymentProviderInstances).where(eq(paymentProviderInstances.id, order.providerInstanceId)).limit(1)
     : []
   if (!provider?.allowed) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_REFUND_UNSUPPORTED, '该支付通道不支持用户申请退款')
-  await db.update(paymentOrders).set({ status: 'REFUND_REQUESTED', refundReason: reason || '用户申请退款', refundRequestedAt: getServerDate(), updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
+  const [requested] = await db.update(paymentOrders).set({ status: 'REFUND_REQUESTED', refundReason: reason || '用户申请退款', refundRequestedAt: getServerDate(), updatedAt: getServerDate() })
+    .where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'COMPLETED'))).returning({ id: paymentOrders.id })
+  if (!requested) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '退款申请正在处理中')
   await addPaymentAudit(order.id, 'REFUND_REQUESTED', { reason }, `user:${user.id}`)
   return { success: true }
 })
