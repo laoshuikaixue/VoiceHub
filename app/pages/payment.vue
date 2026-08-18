@@ -82,6 +82,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import QRCode from 'qrcode'
 import { ArrowLeft, Check, Copy, CreditCard, ExternalLink, RefreshCw, Ticket, Undo2, User, X } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
@@ -91,6 +92,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
 
 const sections = useLocale(); const locale = computed(() => sections.payment.value); const common = computed(() => sections.common.value)
 const { localize } = useServerErrors()
+const route = useRoute()
 const config = ref({ enabled: false, methods: [] }); const plans = ref([]); const orders = ref([]); const cards = ref([])
 const selectedMethods = reactive({}); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
 const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); let pollTimer = null
@@ -113,14 +115,27 @@ const load = async () => {
     config.value = paymentConfig; plans.value = paymentPlans
     for (const plan of plans.value) selectedMethods[plan.id] = config.value.methods[0] || ''
     await loadOrders()
+    const returnedOrderId = String(route.query.order || '')
+    if (returnedOrderId) {
+      activeTab.value = 'orders'
+      try { await $fetch(`/api/payment/orders/${encodeURIComponent(returnedOrderId)}/verify`, { method: 'POST' }); await loadOrders() } catch {}
+    }
   } catch (error) { errorMessage.value = localize(error, common.value.loadFailed) } finally { loading.value = false }
 }
 const openPay = async order => {
+  const deepLink = order.providerData?.deepLink
+  if (deepLink) {
+    qrOrder.value = order; qrImage.value = ''
+    try { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }) } catch {}
+    startPolling(order)
+    window.location.assign(deepLink)
+    return
+  }
   if (order.payUrl) { window.location.assign(order.payUrl); return }
   if (order.qrCode) { qrOrder.value = order; qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
   if (order.clientSecret && order.paymentMethod === 'airwallex') {
     const data = order.providerData || {}; const sdk = await import('@airwallex/components-sdk'); const initialized = await sdk.init({ env: data.environment === 'prod' ? 'prod' : 'demo', enabledElements: ['payments'], locale: navigator.language.startsWith('zh') ? 'zh' : 'en' })
-    initialized.payments?.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment/result?order=${order.id}` })
+    initialized.payments?.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment?order=${encodeURIComponent(order.id)}` })
   }
 }
 const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: matchMedia('(max-width: 768px)').matches } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }

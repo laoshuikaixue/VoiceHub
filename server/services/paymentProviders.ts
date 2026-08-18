@@ -4,7 +4,6 @@ import {
   createSign,
   createVerify,
   randomBytes,
-  randomUUID,
   timingSafeEqual
 } from 'node:crypto'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
@@ -19,6 +18,8 @@ export interface PaymentCreateRequest {
   returnUrl: string
   clientIp: string
   mobile: boolean
+  alipayForceQrCode?: boolean
+  alipayMobileDeepLink?: boolean
 }
 
 export interface PaymentCreateResult {
@@ -53,6 +54,7 @@ export interface PaymentProvider {
 const requestJson = async (url: string, init: RequestInit) => {
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(15000) })
   const text = await response.text()
+  if (text.length > 1024 * 1024) throw new Error('支付服务响应过大')
   let data: any
   try { data = text ? JSON.parse(text) : {} } catch { data = { message: text } }
   if (!response.ok) throw new Error(`支付服务 HTTP ${response.status}: ${data?.message || text.slice(0, 300)}`)
@@ -66,6 +68,10 @@ const assertRecentWebhookTimestamp = (value: string, label: string) => {
   const numeric = Number(raw)
   const parsed = Number.isFinite(numeric) ? (numeric < 1e12 ? numeric * 1000 : numeric) : Date.parse(raw)
   if (!Number.isFinite(parsed) || Math.abs(getServerTimestamp() - parsed) > 5 * 60 * 1000) throw new Error(`${label}回调时间戳无效或已过期`)
+}
+const deterministicRequestId = (...parts: string[]) => {
+  const hex = createHash('sha256').update(parts.join('\u0000')).digest('hex').slice(0, 32)
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${((parseInt(hex.slice(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0')}${hex.slice(18, 20)}-${hex.slice(20)}`
 }
 const normalizeBase = (value: string) => value.trim().replace(/\/(submit|mapi|api)\.php\/?$/i, '').replace(/\/$/, '')
 
@@ -156,11 +162,40 @@ class AlipayProvider implements PaymentProvider {
     return result
   }
   async create(req: PaymentCreateRequest) {
-    const result = await this.call('alipay.trade.precreate', {
+    if (!req.mobile && this.config.paymentMode === 'redirect') return { payUrl: this.pagePayUrl(req) }
+    if (req.mobile && !req.alipayForceQrCode && !req.alipayMobileDeepLink) {
+      const params: Record<string, string> = {
+        app_id: this.config.appId, method: 'alipay.trade.wap.pay', format: 'JSON', charset: 'utf-8', sign_type: 'RSA2',
+        timestamp: getServerDate().toISOString().slice(0, 19).replace('T', ' '), version: '1.0',
+        notify_url: req.notifyUrl, return_url: req.returnUrl,
+        biz_content: JSON.stringify({ out_trade_no: req.outTradeNo, total_amount: money(req.amountCents), subject: req.subject, product_code: 'QUICK_WAP_WAY', timeout_express: '30m' })
+      }
+      params.sign = alipaySign(params, this.config.privateKey)
+      return { payUrl: `${this.gateway}?${formEncode(params)}` }
+    }
+    let result
+    try {
+      result = await this.call('alipay.trade.precreate', {
       out_trade_no: req.outTradeNo, total_amount: money(req.amountCents), subject: req.subject,
       timeout_express: '30m'
-    }, req.notifyUrl)
-    return { tradeNo: result.trade_no, qrCode: result.qr_code }
+      }, req.notifyUrl)
+    } catch (error) {
+      if (req.mobile) throw error
+      return { payUrl: this.pagePayUrl(req) }
+    }
+    const extra = req.mobile && req.alipayMobileDeepLink
+      ? { deepLink: `alipayqr://platformapi/startapp?saId=10000007&qrcode=${encodeURIComponent(result.qr_code)}` }
+      : undefined
+    return { tradeNo: result.trade_no, qrCode: result.qr_code, extra }
+  }
+  private pagePayUrl(req: PaymentCreateRequest) {
+    const params: Record<string, string> = {
+      app_id: this.config.appId, method: 'alipay.trade.page.pay', format: 'JSON', charset: 'utf-8', sign_type: 'RSA2',
+      timestamp: getServerDate().toISOString().slice(0, 19).replace('T', ' '), version: '1.0', notify_url: req.notifyUrl, return_url: req.returnUrl,
+      biz_content: JSON.stringify({ out_trade_no: req.outTradeNo, product_code: 'FAST_INSTANT_TRADE_PAY', total_amount: money(req.amountCents), subject: req.subject, timeout_express: '30m' })
+    }
+    params.sign = alipaySign(params, this.config.privateKey)
+    return `${this.gateway}?${formEncode(params)}`
   }
   async query(outTradeNo: string) {
     const result = await this.call('alipay.trade.query', { out_trade_no: outTradeNo })
@@ -242,8 +277,8 @@ class StripeProvider implements PaymentProvider {
   }
   async create(req: PaymentCreateRequest) {
     const session = await this.call('/checkout/sessions', {
-      mode: 'payment', success_url: `${req.returnUrl}?order=${encodeURIComponent(req.outTradeNo)}`,
-      cancel_url: `${req.returnUrl}?order=${encodeURIComponent(req.outTradeNo)}&cancelled=1`,
+      mode: 'payment', success_url: req.returnUrl,
+      cancel_url: `${req.returnUrl}&cancelled=1`,
       'line_items[0][price_data][currency]': req.currency.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(req.amountCents),
       'line_items[0][price_data][product_data][name]': req.subject, 'line_items[0][quantity]': '1',
       client_reference_id: req.outTradeNo, 'metadata[out_trade_no]': req.outTradeNo
@@ -296,7 +331,7 @@ class AirwallexProvider implements PaymentProvider {
     return requestJson(`${this.base}${path}`, { method, headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', ...(this.config.accountId ? { 'x-on-behalf-of': this.config.accountId } : {}) }, body: payload ? JSON.stringify(payload) : undefined })
   }
   async create(req: PaymentCreateRequest) {
-    const result = await this.call('/pa/payment_intents/create', { request_id: randomUUID(), amount: req.amountCents / 100, currency: req.currency, merchant_order_id: req.outTradeNo, return_url: req.returnUrl, metadata: { order_id: req.outTradeNo } })
+    const result = await this.call('/pa/payment_intents/create', { request_id: deterministicRequestId('payment-intent', req.outTradeNo, String(req.amountCents), req.currency), amount: req.amountCents / 100, currency: req.currency, merchant_order_id: req.outTradeNo, return_url: req.returnUrl, metadata: { order_id: req.outTradeNo } })
     return { tradeNo: result.id, clientSecret: result.client_secret, extra: { environment: this.base.includes('api-demo') ? 'demo' : 'prod', currency: req.currency, countryCode: this.config.countryCode || 'CN' } }
   }
   async query(_outTradeNo: string, tradeNo?: string) {
@@ -319,7 +354,7 @@ class AirwallexProvider implements PaymentProvider {
   }
   async refund(_outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string) {
     if (!tradeNo) throw new Error('Airwallex 退款缺少 PaymentIntent')
-    const result = await this.call('/pa/refunds/create', { request_id: randomUUID(), payment_intent_id: tradeNo, amount: amountCents / 100, reason })
+    const result = await this.call('/pa/refunds/create', { request_id: deterministicRequestId('refund', tradeNo, String(amountCents)), payment_intent_id: tradeNo, amount: amountCents / 100, reason })
     return { refundId: result.id, pending: result.status !== 'SETTLED' }
   }
   async cancel(_outTradeNo: string, tradeNo?: string) { if (tradeNo) await this.call(`/pa/payment_intents/${encodeURIComponent(tradeNo)}/cancel`) }

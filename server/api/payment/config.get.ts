@@ -12,7 +12,7 @@ export default defineEventHandler(async () => {
   return {
     enabled: settings.enabled,
     currency: settings.currency,
-    methods: PAYMENT_METHODS.filter(method => available.has(method)),
+    methods: settings.visibleMethods.filter(method => available.has(method)),
     helpText: settings.helpText,
     helpImageUrl: settings.helpImageUrl
   }
