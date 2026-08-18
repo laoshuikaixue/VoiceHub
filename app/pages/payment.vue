@@ -114,6 +114,10 @@ const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null
 const tabs = computed(() => [{ id: 'plans', label: locale.value.title }, { id: 'orders', label: locale.value.orders }, { id: 'cards', label: locale.value.cards }])
 const methodLabels = { alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }
 const methodOptions = computed(() => config.value.methods.map(value => ({ value, label: methodLabels[value] || value })))
+const checkoutStorageKey = 'voicehub-payment-checkout'
+const getSavedCheckoutId = () => { try { return sessionStorage.getItem(checkoutStorageKey) || '' } catch { return '' } }
+const saveCheckoutId = id => { try { sessionStorage.setItem(checkoutStorageKey, id) } catch {} }
+const clearSavedCheckout = () => { try { sessionStorage.removeItem(checkoutStorageKey) } catch {} }
 const formatMoney = (cents, currency = 'CNY') => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100)
 const formatDate = value => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const statusText = status => ({ PENDING: locale.value.pending, PAID: locale.value.paid, COMPLETED: locale.value.completed, EXPIRED: locale.value.expired, CANCELLED: locale.value.cancelled, FAILED: locale.value.failed, REFUND_REQUESTED: locale.value.refundRequested, REFUNDING: locale.value.refunding, REFUNDED: locale.value.refunded }[status] || status)
@@ -133,12 +137,18 @@ const load = async () => {
     const returnedOrderId = String(route.query.order || '')
     if (returnedOrderId) {
       activeTab.value = 'orders'
-      try { await $fetch(`/api/payment/orders/${encodeURIComponent(returnedOrderId)}/verify`, { method: 'POST' }); await loadOrders(); resultOrder.value = orders.value.find(item => item.id === returnedOrderId) || null } catch {}
+      try { await $fetch(`/api/payment/orders/${encodeURIComponent(returnedOrderId)}/verify`, { method: 'POST' }); await loadOrders(); const returnedOrder = orders.value.find(item => item.id === returnedOrderId); if (returnedOrder && ['PENDING', 'PAID'].includes(returnedOrder.status)) await restoreCheckout(returnedOrder); else resultOrder.value = returnedOrder || null } catch {}
+    } else {
+      const savedOrderId = getSavedCheckoutId()
+      const savedOrder = savedOrderId ? orders.value.find(item => item.id === savedOrderId && ['PENDING', 'PAID'].includes(item.status)) : null
+      if (savedOrder) await restoreCheckout(savedOrder)
+      else if (savedOrderId) clearSavedCheckout()
     }
   } catch (error) { errorMessage.value = localize(error, common.value.loadFailed) } finally { loading.value = false }
 }
 const openPay = async order => {
   checkoutOrder.value = order
+  saveCheckoutId(order.id)
   const deepLink = order.providerData?.deepLink
   if (deepLink) {
     qrImage.value = ''
@@ -164,8 +174,16 @@ const openPay = async order => {
     initialized.payments?.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment?order=${encodeURIComponent(order.id)}` })
   }
 }
+const restoreCheckout = async order => {
+  checkoutOrder.value = order
+  countdown.value = Math.max(0, Math.floor((new Date(order.expiresAt).getTime() - Date.now()) / 1000))
+  if (order.qrCode) {
+    try { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }) } catch { qrImage.value = '' }
+  } else qrImage.value = ''
+  startPolling(order)
+}
 const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: matchMedia('(max-width: 768px)').matches } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
-const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
+const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
 const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); showToast('订单已取消', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const startRefund = order => { refundOrder.value = order; refundReason.value = '' }
 const submitRefund = async () => { try { await $fetch(`/api/payment/orders/${refundOrder.value.id}/refund`, { method: 'POST', body: { reason: refundReason.value } }); refundOrder.value = null; showToast('退款申请已提交', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
@@ -174,7 +192,7 @@ const startPolling = order => { clearInterval(pollTimer); clearInterval(countdow
 const countdownText = computed(() => `${String(Math.floor(countdown.value / 60)).padStart(2, '0')}:${String(countdown.value % 60).padStart(2, '0')}`)
 const reopenPayment = () => { if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes') }
 const closeResult = async showOrders => { resultOrder.value = null; activeTab.value = showOrders ? 'orders' : 'plans'; await router.replace({ path: '/payment', query: {} }) }
-const cancelCheckout = async () => { if (checkoutOrder.value) { await cancelOrder(checkoutOrder.value); checkoutOrder.value = null; clearInterval(pollTimer); clearInterval(countdownTimer) } }
+const cancelCheckout = async () => { if (checkoutOrder.value) { await cancelOrder(checkoutOrder.value); checkoutOrder.value = null; clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } }
 const closeQr = () => { qrOrder.value = null; qrImage.value = ''; clearInterval(pollTimer) }
 onMounted(load); onUnmounted(() => { clearInterval(pollTimer); clearInterval(countdownTimer) })
 </script>
