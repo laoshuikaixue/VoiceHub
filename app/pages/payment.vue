@@ -19,7 +19,7 @@
         <div class="result-actions"><button class="action-primary" @click="closeResult(false)">确认</button><button v-if="resultOrder.status !== 'EXPIRED' && resultOrder.status !== 'CANCELLED'" class="action-button" @click="closeResult(true)">查看订单</button></div>
       </section>
       <section v-else-if="checkoutOrder" class="checkout-panel">
-        <div v-if="checkoutOrder.qrCode" class="checkout-qr"><h2>扫码支付</h2><div class="qr-frame"><img :src="qrImage" alt="支付二维码" /></div><p>请使用手机扫码完成支付</p></div>
+        <div v-if="checkoutOrder.qrCode" class="checkout-qr"><h2>{{ checkoutMethodLabel }}扫码支付</h2><div class="qr-frame" :class="`brand-${paymentBrand(checkoutOrder.paymentMethod)}`"><img :src="qrImage" :alt="`${checkoutMethodLabel}支付二维码`" /><span v-if="checkoutPaymentIcon" class="qr-brand-icon"><img :src="checkoutPaymentIcon" :alt="`${checkoutMethodLabel}图标`" /></span></div><p>请使用手机打开{{ checkoutMethodLabel }}，扫描二维码完成支付</p><button type="button" class="reopen-payment" :class="`brand-${paymentBrand(checkoutOrder.paymentMethod)}`" @click="reopenPayment"><ExternalLink :size="15" />重新打开支付页面</button></div>
         <div v-else-if="isStripeCheckout" class="checkout-stripe"><h2>Stripe 安全支付</h2><p>请选择 Stripe 支持的支付方式完成付款</p><div ref="stripeMount" class="stripe-element" /><p v-if="stripeError" class="stripe-error">{{ stripeError }}</p><button class="action-primary stripe-pay-button" :disabled="!stripeReady || stripeProcessing" @click="confirmStripePayment"><RefreshCw v-if="stripeProcessing" :size="16" class="animate-spin" />{{ stripeProcessing ? '处理中…' : '确认支付' }}</button></div>
         <div v-else class="checkout-popup"><AppSpinner /><p>{{ checkoutOrder.providerKey === 'airwallex' ? '请打开 Airwallex 收银台完成支付后返回此页面' : '支付页面已在新窗口打开，请在新窗口中完成支付后返回此页面' }}</p><button class="action-button" @click="reopenPayment">重新打开支付页面</button></div>
         <div class="checkout-countdown">{{ countdownText }}<small>等待支付…</small></div><button class="checkout-cancel" @click="cancelCheckout">取消订单</button>
@@ -54,7 +54,6 @@
             <button type="button" class="buy-button" @click="beginPurchase(plan)"><CreditCard :size="16" />{{ locale.buy }}</button>
           </article>
         </div>
-        <section v-if="config.helpText || config.helpImageUrl" class="payment-help mt-6"><h2>支付帮助</h2><img v-if="config.helpImageUrl" :src="config.helpImageUrl" alt="支付帮助" @error="$event.target.style.display = 'none'" /><p v-if="config.helpText" class="whitespace-pre-wrap">{{ config.helpText }}</p></section>
       </section>
 
       <section v-else-if="!checkoutOrder && !resultOrder && activeTab === 'orders'" class="payment-list">
@@ -67,7 +66,7 @@
           <div class="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-border-secondary pt-4">
             <div><p class="text-xs text-text-tertiary">{{ formatDate(order.createdAt) }}</p><p class="mt-1 text-lg font-black">{{ formatMoney(order.payAmountCents, order.currency) }}</p></div>
             <div class="flex flex-wrap gap-2">
-              <button v-if="order.status === 'PENDING' && order.payUrl" class="action-primary" @click="openPay(order)"><ExternalLink :size="15" />{{ locale.payNow }}</button>
+              <button v-if="order.status === 'PENDING' && (order.payUrl || order.qrCode || order.clientSecret)" class="action-primary" @click="openPay(order)"><ExternalLink :size="15" />{{ locale.payNow }}</button>
               <button v-if="['PENDING','PAID','FAILED'].includes(order.status)" class="action-button" @click="verify(order)"><RefreshCw :size="15" />{{ locale.verify }}</button>
               <button v-if="order.status === 'PENDING'" class="action-button text-error" @click="cancelOrder(order)"><X :size="15" />{{ locale.cancel }}</button>
               <button v-if="order.status === 'COMPLETED'" class="action-button" @click="startRefund(order)"><Undo2 :size="15" />{{ locale.refund }}</button>
@@ -83,6 +82,8 @@
           <button class="shrink-0 p-2 text-text-tertiary hover:text-primary" :title="locale.copy" @click="copyCard(card.code)"><Copy :size="18" /></button>
         </article>
       </section>
+
+      <section v-if="config.helpText || config.helpImageUrl" class="payment-help mt-6" aria-label="支付帮助"><h2>支付帮助</h2><img v-if="config.helpImageUrl" :src="config.helpImageUrl" alt="支付帮助" @error="$event.target.style.display = 'none'" /><p v-if="config.helpText" class="whitespace-pre-wrap">{{ config.helpText }}</p></section>
     </main>
 
     <Teleport to="body">
@@ -119,12 +120,39 @@ const route = useRoute()
 const router = useRouter()
 const config = ref({ enabled: false, methods: [], methodLabels: {} }); const plans = ref([]); const orders = ref([]); const cards = ref([])
 const purchasePlan = ref(null); const purchaseMethod = ref(''); const purchaseQuantity = ref(1); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
-const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); const stripeMount = ref(null); const stripeReady = ref(false); const stripeProcessing = ref(false); const stripeError = ref(''); let stripeInstance = null; let stripeElements = null; let stripePaymentElement = null; let pollTimer = null; let countdownTimer = null
+const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); const stripeMount = ref(null); const stripeReady = ref(false); const stripeProcessing = ref(false); const stripeError = ref(''); let stripeInstance = null; let stripeElements = null; let stripePaymentElement = null; let pollTimer = null; let countdownTimer = null; const verifyingOrderIds = new Set()
 const tabs = computed(() => [{ id: 'plans', label: locale.value.title }, { id: 'orders', label: locale.value.orders }, { id: 'cards', label: locale.value.cards }])
 const methodLabels = { alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }
 const methodOptions = computed(() => config.value.methods.map(value => ({ value, label: config.value.methodLabels?.[value] || methodLabels[value] || value })))
 const paymentBrand = method => ({ alipay: 'alipay', wxpay: 'wxpay', stripe: 'stripe', airwallex: 'airwallex' }[method] || 'default')
 const paymentIcon = method => ({ alipay: '/assets/payment/alipay.svg', wxpay: '/assets/payment/wxpay.svg', stripe: '/assets/payment/stripe.svg', airwallex: '/assets/payment/airwallex.svg' }[method] || '')
+const checkoutMethodLabel = computed(() => config.value.methodLabels?.[checkoutOrder.value?.paymentMethod] || methodLabels[checkoutOrder.value?.paymentMethod] || '支付')
+const checkoutPaymentIcon = computed(() => paymentIcon(checkoutOrder.value?.paymentMethod))
+const toHttpPaymentUrl = value => {
+  const raw = String(value || '').trim()
+  if (!/^https?:\/\//i.test(raw)) return ''
+  try {
+    const url = new URL(raw)
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : ''
+  } catch {
+    return ''
+  }
+}
+const openPaymentWindow = value => {
+  const url = toHttpPaymentUrl(value)
+  if (!url) return false
+  const popup = window.open('', 'voicehub-payment', 'width=1120,height=840,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes')
+  if (!popup) return false
+  try {
+    popup.opener = null
+    popup.location.replace(url)
+    return true
+  } catch {
+    try { popup.close() } catch {}
+    return false
+  }
+}
+const createPaymentQrImage = value => QRCode.toDataURL(value, { width: 320, margin: 1, errorCorrectionLevel: 'H' })
 const isStripeCheckout = computed(() => checkoutOrder.value?.providerKey === 'stripe' && Boolean(checkoutOrder.value?.clientSecret))
 const checkoutStorageKey = 'voicehub-payment-checkout'
 const dismissedResultStorageKey = 'voicehub-payment-dismissed-result'
@@ -181,23 +209,30 @@ const openPay = async order => {
   const deepLink = order.providerData?.deepLink
   if (deepLink) {
     qrImage.value = ''
-    try { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }) } catch {}
+    try { qrImage.value = await createPaymentQrImage(order.qrCode) } catch {}
     startPolling(order)
-    window.location.assign(deepLink)
+    if (/^alipayqr:\/\//i.test(String(deepLink))) window.location.assign(deepLink)
     return
   }
   if (order.payUrl && !order.qrCode) {
     const isMobile = isMobilePaymentClient()
     if (isMobile) {
-      window.location.assign(order.payUrl)
+      const url = toHttpPaymentUrl(order.payUrl)
+      if (url) window.location.assign(url)
     } else {
-      const popup = window.open(order.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes')
-      if (!popup) window.location.assign(order.payUrl)
+      if (!openPaymentWindow(order.payUrl)) {
+        const url = toHttpPaymentUrl(order.payUrl)
+        if (url) window.location.assign(url)
+      }
     }
     startPolling(order)
     return
   }
-  if (order.qrCode) { checkoutOrder.value = order; qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
+  if (order.qrCode) {
+    checkoutOrder.value = order
+    try { qrImage.value = await createPaymentQrImage(order.qrCode) } catch { qrImage.value = ''; showToast('支付二维码生成失败，请重新打开支付页面', 'error') }
+    startPolling(order)
+  }
 }
 const launchAirwallexCheckout = async order => {
   const data = order.providerData || {}
@@ -244,7 +279,7 @@ const restoreCheckout = async order => {
   checkoutOrder.value = order
   countdown.value = Math.max(0, Math.floor((new Date(order.expiresAt).getTime() - Date.now()) / 1000))
   if (order.qrCode) {
-    try { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }) } catch { qrImage.value = '' }
+    try { qrImage.value = await createPaymentQrImage(order.qrCode) } catch { qrImage.value = '' }
   } else qrImage.value = ''
   if (order.providerKey === 'stripe' && order.clientSecret) await mountStripeCheckout(order)
   startPolling(order)
@@ -254,14 +289,41 @@ const setPurchaseQuantity = value => { const quantity = Math.trunc(Number(value)
 const beginPurchase = plan => { errorMessage.value = ''; purchasePlan.value = plan; purchaseQuantity.value = 1; purchaseMethod.value = methodOptions.value[0]?.value || '' }
 const cancelPurchase = () => { if (creatingId.value) return; purchasePlan.value = null; purchaseMethod.value = ''; purchaseQuantity.value = 1 }
 const buy = async plan => { if (!purchaseMethod.value) return; setPurchaseQuantity(purchaseQuantity.value); creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, quantity: purchaseQuantity.value, method: purchaseMethod.value, mobile: isMobilePaymentClient() } }); purchasePlan.value = null; purchaseMethod.value = ''; purchaseQuantity.value = 1; orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
-const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
+const verify = async order => {
+  if (!order?.id || verifyingOrderIds.has(order.id)) return
+  verifyingOrderIds.add(order.id)
+  try {
+    await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' })
+    await loadOrders()
+    const latest = orders.value.find(item => item.id === order.id)
+    if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) {
+      resultOrder.value = latest
+      checkoutOrder.value = null
+      clearStripeCheckout()
+      clearSavedCheckout()
+      clearInterval(pollTimer)
+      clearInterval(countdownTimer)
+    }
+  } catch (error) {
+    errorMessage.value = localize(error)
+  } finally {
+    verifyingOrderIds.delete(order.id)
+  }
+}
 const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); showToast('订单已取消', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const startRefund = order => { refundOrder.value = order; refundReason.value = '' }
 const submitRefund = async () => { try { await $fetch(`/api/payment/orders/${refundOrder.value.id}/refund`, { method: 'POST', body: { reason: refundReason.value } }); refundOrder.value = null; showToast('退款申请已提交', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const copyCard = async code => navigator.clipboard.writeText(code)
 const startPolling = order => { clearInterval(pollTimer); clearInterval(countdownTimer); countdown.value = Math.max(0, Math.floor((new Date(order.expiresAt).getTime() - Date.now()) / 1000)); pollTimer = setInterval(() => verify(order), 3000); countdownTimer = setInterval(() => { countdown.value = Math.max(0, countdown.value - 1) }, 1000) }
 const countdownText = computed(() => `${String(Math.floor(countdown.value / 60)).padStart(2, '0')}:${String(countdown.value % 60).padStart(2, '0')}`)
-const reopenPayment = () => { if (isStripeCheckout.value) mountStripeCheckout(checkoutOrder.value); else if (checkoutOrder.value?.providerKey === 'airwallex') launchAirwallexCheckout(checkoutOrder.value).catch(error => { errorMessage.value = error instanceof Error ? error.message : 'Airwallex 收银台打开失败' }); else if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes') }
+const reopenPayment = () => {
+  const order = checkoutOrder.value
+  if (!order) return
+  if (isStripeCheckout.value) { mountStripeCheckout(order); return }
+  if (order.providerKey === 'airwallex') { launchAirwallexCheckout(order).catch(error => { errorMessage.value = error instanceof Error ? error.message : 'Airwallex 收银台打开失败' }); return }
+  const paymentUrl = order.payUrl || order.qrCode
+  if (!openPaymentWindow(paymentUrl)) showToast('支付页面地址不可用或浏览器阻止了支付窗口，请刷新订单后重试', 'error')
+}
 const closeResult = async showOrders => { const orderId = resultOrder.value?.id; if (orderId) dismissResult(orderId); resultOrder.value = null; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer); const target = showOrders ? 'orders' : 'plans'; window.history.replaceState(window.history.state, '', window.location.pathname + window.location.hash); await router.replace({ path: '/payment', query: {} }); activeTab.value = target }
 const cancelCheckout = () => {
   const order = checkoutOrder.value
@@ -296,7 +358,7 @@ onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTi
 
 <style scoped>
 .payment-header { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); }
-.checkout-panel,.payment-result-panel{width:100%;margin:0 0 1.5rem;padding:2rem;border:1px solid var(--border-secondary);border-radius:.9rem;background:var(--bg-secondary);box-shadow:var(--shadow-sm);text-align:center}.checkout-qr h2,.payment-result-panel h2{color:var(--text-primary);font-size:1.35rem;font-weight:850}.qr-frame{display:flex;width:17rem;height:17rem;margin:1.25rem auto;align-items:center;justify-content:center;border:2px solid var(--primary);border-radius:.7rem;background:#fff;padding:.8rem}.qr-frame img{width:100%;height:100%;object-fit:contain}.checkout-qr p,.checkout-popup p{color:var(--text-tertiary);font-size:.8rem}.checkout-popup{display:grid;justify-items:center;gap:1rem;padding:1rem}.checkout-countdown{margin-top:1.25rem;color:var(--text-primary);font-size:1.8rem;font-weight:850}.checkout-countdown small{display:block;color:var(--text-tertiary);font-size:.72rem;font-weight:500}.checkout-cancel{width:100%;margin-top:1rem;padding:.7rem;border:1px solid var(--border-secondary);border-radius:.55rem;color:var(--text-secondary);font-size:.8rem}.result-icon{display:flex;width:4.5rem;height:4.5rem;margin:0 auto 1rem;align-items:center;justify-content:center;border-radius:50%}.result-icon.success{background:var(--success-light);color:var(--success)}.result-icon.failed{background:var(--error-light);color:var(--error)}.result-details{max-width:48rem;display:grid;gap:.65rem;margin:1.5rem auto;padding:1.1rem 1.25rem;border:1px solid var(--border-secondary);border-radius:.7rem;text-align:left}.result-details div{display:flex;justify-content:space-between;gap:1rem;font-size:.78rem}.result-details span{color:var(--text-tertiary)}.result-details b{overflow-wrap:anywhere;color:var(--text-primary);font-weight:700;text-align:right}.result-actions{display:flex;justify-content:center;gap:.7rem}.result-actions button{min-width:8rem;justify-content:center}
+.checkout-panel,.payment-result-panel{width:100%;margin:0 0 1.5rem;padding:2rem;border:1px solid var(--border-secondary);border-radius:.9rem;background:var(--bg-secondary);box-shadow:var(--shadow-sm);text-align:center}.checkout-qr h2,.payment-result-panel h2{color:var(--text-primary);font-size:1.35rem;font-weight:850}.qr-frame{position:relative;display:flex;width:17rem;height:17rem;margin:1.25rem auto;align-items:center;justify-content:center;border:2px solid var(--primary);border-radius:.7rem;background:#fff;padding:.8rem}.qr-frame.brand-wxpay{border-color:#07c160}.qr-frame.brand-alipay{border-color:#1677ff}.qr-frame img{width:100%;height:100%;object-fit:contain}.qr-brand-icon{position:absolute;display:flex;width:2.7rem;height:2.7rem;align-items:center;justify-content:center;border:3px solid #fff;border-radius:50%;background:#fff;box-shadow:0 .18rem .55rem rgb(0 0 0 / 20%)}.qr-brand-icon img{width:100%;height:100%;object-fit:contain}.checkout-qr p,.checkout-popup p{color:var(--text-tertiary);font-size:.8rem}.reopen-payment{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:2.45rem;margin-top:.9rem;padding:0 .9rem;border:1px solid var(--primary);border-radius:.55rem;background:var(--bg-secondary);color:var(--primary);font-size:.78rem;font-weight:700;transition:background .15s,color .15s,border-color .15s}.reopen-payment:hover{background:var(--primary-10)}.reopen-payment.brand-wxpay{border-color:#07c160;color:#07c160}.reopen-payment.brand-wxpay:hover{background:rgb(7 193 96 / 10%)}.reopen-payment.brand-alipay{border-color:#1677ff;color:#1677ff}.reopen-payment.brand-alipay:hover{background:rgb(22 119 255 / 10%)}.checkout-popup{display:grid;justify-items:center;gap:1rem;padding:1rem}.checkout-countdown{margin-top:1.25rem;color:var(--text-primary);font-size:1.8rem;font-weight:850}.checkout-countdown small{display:block;color:var(--text-tertiary);font-size:.72rem;font-weight:500}.checkout-cancel{width:100%;margin-top:1rem;padding:.7rem;border:1px solid var(--border-secondary);border-radius:.55rem;color:var(--text-secondary);font-size:.8rem}.result-icon{display:flex;width:4.5rem;height:4.5rem;margin:0 auto 1rem;align-items:center;justify-content:center;border-radius:50%}.result-icon.success{background:var(--success-light);color:var(--success)}.result-icon.failed{background:var(--error-light);color:var(--error)}.result-details{max-width:48rem;display:grid;gap:.65rem;margin:1.5rem auto;padding:1.1rem 1.25rem;border:1px solid var(--border-secondary);border-radius:.7rem;text-align:left}.result-details div{display:flex;justify-content:space-between;gap:1rem;font-size:.78rem}.result-details span{color:var(--text-tertiary)}.result-details b{overflow-wrap:anywhere;color:var(--text-primary);font-weight:700;text-align:right}.result-actions{display:flex;justify-content:center;gap:.7rem}.result-actions button{min-width:8rem;justify-content:center}
 .checkout-stripe{max-width:38rem;margin:0 auto;text-align:left}.checkout-stripe h2{text-align:center;color:var(--text-primary);font-size:1.2rem;font-weight:850}.checkout-stripe>p{margin:.5rem 0 1.25rem;text-align:center;color:var(--text-tertiary);font-size:.8rem}.stripe-element{min-height:13rem;border:1px solid var(--border-secondary);border-radius:.65rem;background:var(--bg-primary);padding:1rem}.stripe-error{margin-top:.75rem!important;color:var(--error)!important;text-align:left!important}.stripe-pay-button{width:100%;justify-content:center;margin-top:1rem}
 .payment-header a { color: var(--text-secondary); transition: color .2s; }
 .payment-header a:hover { color: var(--primary); }
