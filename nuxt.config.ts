@@ -42,7 +42,16 @@ const backendSentryDsnDefault =
   'https://2fca0c8a939c8909e02c082ec847e8e8@o4508946125619200.ingest.de.sentry.io/4511244961448016'
 const frontendSentryDsnDefault =
   'https://3c4fe5353816bcdce36e7cc28703c8fa@o4508946125619200.ingest.de.sentry.io/4511244934774864'
-const sentryRuntimeEnabled = process.env.NODE_ENV === 'production'
+// Sentry 仅在生产环境启用；Vercel/Netlify 预览部署（测试环境）自动关闭，避免收集测试错误
+// 可显式设置 SENTRY_ENABLED=true/false 强制覆盖，未设置时按 NODE_ENV 与部署环境判断
+const isPreviewDeployment =
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.CONTEXT === 'deploy-preview' ||
+  process.env.CONTEXT === 'branch-deploy'
+const sentryRuntimeEnabled =
+  process.env.SENTRY_ENABLED !== undefined
+    ? process.env.SENTRY_ENABLED === 'true'
+    : process.env.NODE_ENV === 'production' && !isPreviewDeployment
 const jwtSecret = process.env.JWT_SECRET || ''
 
 // 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
