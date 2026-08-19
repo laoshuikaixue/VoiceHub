@@ -83,7 +83,7 @@
       <div v-if="providerDraft" class="modal" @click.self="providerDraft = null"><form class="dialog provider-dialog" @submit.prevent="saveProvider"><div class="dialog-title"><div><h2>{{ providerDraft.id ? '编辑支付服务商' : '添加支付服务商' }}</h2><p class="dialog-subtitle">配置密钥、通道和回调参数后即可启用。</p></div><button type="button" class="dialog-close" @click="providerDraft = null">×</button></div><div class="grid gap-4 sm:grid-cols-2"><div><label>服务商类型</label><CustomSelect v-model="providerDraft.providerKey" :options="providerOptions" :disabled="!!providerDraft.id" /></div><Field v-model="providerDraft.name" label="服务商名称" placeholder="例如：主支付通道" /><Field v-model.number="providerDraft.sortOrder" type="number" label="排序" min="0" /></div><div class="provider-options"><label class="check"><input v-model="providerDraft.enabled" type="checkbox" />启用服务商</label><label class="check"><input v-model="providerDraft.refundEnabled" type="checkbox" />允许退款</label><label class="check" :class="{ disabled: !providerDraft.refundEnabled }"><input v-model="providerDraft.allowUserRefund" type="checkbox" :disabled="!providerDraft.refundEnabled" />允许用户申请退款</label></div><div v-if="providerDraft.providerKey === 'easypay' || providerDraft.providerKey === 'alipay'" class="provider-section"><div class="section-title">支付模式</div><div class="segmented"><button v-for="mode in paymentModes" :key="mode.value" type="button" :class="{ active: providerDraft.paymentMode === mode.value }" @click="providerDraft.paymentMode = mode.value">{{ mode.label }}</button></div></div><div class="provider-section"><div class="section-title">支持的支付方式</div><div class="method-list"><label v-for="method in providerMethods" :key="method" class="method-chip" :class="{ selected: providerDraft.supportedMethods.includes(method) }"><input v-model="providerDraft.supportedMethods" type="checkbox" :value="method" />{{ methodLabel(method) }}</label></div></div><div v-if="providerDraft.providerKey === 'easypay'" class="provider-section"><div class="section-title">易支付自定义渠道</div><div class="grid gap-3 sm:grid-cols-3"><Field v-model="providerDraft.config.cid" label="通用渠道 ID" placeholder="可选" /><Field v-model="providerDraft.config.cidAlipay" label="支付宝渠道 ID" placeholder="可选" /><Field v-model="providerDraft.config.cidWxpay" label="微信渠道 ID" placeholder="可选" /></div><p class="field-hint">留空时使用服务商默认渠道；支付模式可在上方切换为二维码或弹窗。</p></div><div class="provider-section"><div class="section-title">服务商参数</div><div class="grid gap-4 sm:grid-cols-2"><label v-for="field in providerFields" :key="field.key" class="field"><span>{{ field.label }}<em v-if="field.optional">（可选）</em><i v-else> *</i></span><div class="relative"><textarea v-if="field.textarea" v-model="providerDraft.config[field.key]" class="input w-full font-mono text-xs" rows="4" :placeholder="fieldPlaceholder(field)" /><CustomSelect v-else-if="field.options" v-model="providerDraft.config[field.key]" :options="field.options" /><input v-else v-model="providerDraft.config[field.key]" class="input w-full" :type="field.sensitive && !providerVisible[field.key] ? 'password' : 'text'" :placeholder="fieldPlaceholder(field)" autocomplete="new-password" data-1p-ignore /></div><small v-if="field.hint">{{ field.hint }}</small><button v-if="field.sensitive" type="button" class="secret-toggle" :title="providerVisible[field.key] ? '隐藏' : '显示'" @click="providerVisible[field.key] = !providerVisible[field.key]"><Eye v-if="!providerVisible[field.key]" :size="15" /><EyeOff v-else :size="15" /></button></label></div></div><div class="provider-section"><div class="section-title">回调地址</div><div class="callback-list"><div><span>异步通知地址</span><code>{{ callbackUrl(providerDraft.providerKey) }}</code></div><div><span>同步跳转地址</span><code>{{ returnUrl }}</code></div></div><p class="field-hint">请将异步通知地址配置到对应支付服务商后台，支付完成后系统会自动更新订单。</p></div><div class="provider-section"><div class="section-title">按支付方式限额（元）</div><div v-for="method in providerMethods" :key="method" class="limit-row"><b>{{ methodLabel(method) }}</b><Field v-model.number="providerDraft.limits[method].singleMin" type="number" min="0" step="0.01" label="单笔最低" placeholder="不限制" /><Field v-model.number="providerDraft.limits[method].singleMax" type="number" min="0" step="0.01" label="单笔最高" placeholder="不限制" /><Field v-model.number="providerDraft.limits[method].dailyLimit" type="number" min="0" step="0.01" label="每日限额" placeholder="不限制" /></div><p class="field-hint">留空或填 0 表示不限制；限额只影响当前服务商，不改变全局支付设置。</p></div><div class="dialog-actions"><button type="button" class="small-button" @click="providerDraft = null">取消</button><button class="primary-button" :disabled="providerSaving">{{ providerSaving ? '保存中…' : '保存服务商' }}</button></div></form></div>
       <div v-if="planDraft" class="modal" @click.self="planDraft = null"><form class="dialog plan-dialog" @submit.prevent="savePlan"><div class="dialog-title"><div><h2>点歌券套餐</h2><p class="dialog-subtitle">配置套餐价格、有效期和展示内容</p></div><button type="button" class="dialog-close" @click="planDraft = null">×</button></div><div class="plan-form-grid"><Field v-model="planDraft.name" label="套餐名称" placeholder="例如：基础套餐" /><Field v-model="planDraft.description" label="套餐描述" placeholder="简短描述套餐内容" /><Field v-model.number="planDraft.priceYuan" type="number" min="0.01" step="0.01" label="价格（元）" /><Field v-model.number="planDraft.originalPriceYuan" type="number" min="0" step="0.01" label="原价（元）" placeholder="可选" /><Field v-model.number="planDraft.cardCount" type="number" min="1" step="1" label="点歌券数量" /><div class="field"><span>有效期</span><div class="plan-inline"><input v-model="planDraft.validityValue" class="input" type="number" min="1" step="1" placeholder="留空不限时"><CustomSelect v-model="planDraft.validityUnit" :options="validityUnitOptions" :disabled="planDraft.validityValue === '' || planDraft.validityValue === null" /></div></div><Field v-model.number="planDraft.sortOrder" type="number" min="0" step="1" label="排序" /><Field v-model="planDraft.currency" label="币种标志" placeholder="CNY" /><label class="field plan-features-field"><span>功能特性</span><textarea v-model="planDraft.featuresText" class="input" rows="4" placeholder="每行填写一项功能特性" /></label></div><div class="dialog-actions"><button type="button" class="small-button" @click="planDraft = null">取消</button><button class="primary-button">保存套餐</button></div></form></div>
       <div v-if="refundDraft" class="modal" @click.self="refundDraft = null"><form class="dialog" @submit.prevent="refundOrder"><h2>订单退款</h2><Field v-model.number="refundDraft.amountCents" type="number" label="退款金额（分）" /><Field v-model="refundDraft.reason" label="原因" /><div class="dialog-actions"><button type="button" class="small-button" @click="refundDraft = null">取消</button><button class="primary-button">退款</button></div></form></div>
-      <div v-if="selectedOrder" class="modal" @click.self="selectedOrder = null"><div class="dialog order-detail-dialog"><div class="dialog-title"><h2>订单详情</h2><button type="button" @click="selectedOrder = null">×</button></div><div class="detail-grid"><div><small>订单 ID</small><b>{{ selectedOrder.id }}</b></div><div><small>订单编号</small><b>{{ selectedOrder.outTradeNo }}</b></div><div><small>状态</small><span class="status-badge" :class="statusClass(selectedOrder.status)">{{ statusLabel(selectedOrder.status) }}</span></div><div><small>实付金额</small><b>{{ money(selectedOrder.payAmountCents, selectedOrder.currency) }}</b></div><div><small>用户</small><b>{{ selectedOrder.userEmail || selectedOrder.userName }}</b></div><div><small>支付方式</small><b>{{ methodLabel(selectedOrder.paymentMethod) }}</b></div><div><small>创建时间</small><b>{{ formatDateTime(selectedOrder.createdAt) }}</b></div><div><small>过期时间</small><b>{{ formatDateTime(selectedOrder.expiresAt) }}</b></div></div><div v-if="selectedAuditLogs.length" class="audit-list"><h3>审计日志</h3><div v-for="log in selectedAuditLogs" :key="log.id"><b>{{ log.action }}</b><span>{{ formatDateTime(log.createdAt) }}</span></div></div></div></div>
+      <div v-if="selectedOrder" class="modal" @click.self="selectedOrder = null"><div class="dialog order-detail-dialog"><div class="dialog-title"><h2>订单详情</h2><button type="button" @click="selectedOrder = null">×</button></div><div class="detail-grid"><div><small>订单 ID</small><b>{{ selectedOrder.id }}</b></div><div><small>订单编号</small><b>{{ selectedOrder.outTradeNo }}</b></div><div><small>状态</small><span class="status-badge" :class="statusClass(selectedOrder.status)">{{ statusLabel(selectedOrder.status) }}</span></div><div><small>实付金额</small><b>{{ money(selectedOrder.payAmountCents, selectedOrder.currency) }}</b></div><div><small>用户</small><b>{{ selectedOrder.userEmail || selectedOrder.userName }}</b></div><div><small>支付方式</small><b>{{ methodLabel(selectedOrder.paymentMethod) }}</b></div><div><small>创建时间</small><b>{{ formatDateTime(selectedOrder.createdAt) }}</b></div><div><small>过期时间</small><b>{{ formatDateTime(selectedOrder.expiresAt) }}</b></div></div><div class="audit-list"><h3>审计日志</h3><div v-if="selectedAuditLogs.length" v-for="log in selectedAuditLogs" :key="log.id" class="audit-row"><div><b>{{ auditActionLabel(log.action) }}</b><small>{{ auditDetailText(log.detail) }}</small></div><span>{{ formatDateTime(log.createdAt) }} · {{ log.operator || 'system' }}</span></div><p v-else class="audit-empty">暂无审计记录</p></div></div></div>
     </Teleport>
   </div>
 </template>
@@ -97,17 +97,24 @@ const sections = useLocale(); const locale = computed(() => sections.payment.val
 const settings = ref({}); const providers = ref([]); const plans = ref([]); const orders = ref([]); const dashboard = ref({}); const dashboardDays = ref(30); const dashboardLoading = ref(false); const providerDraft = ref(null); const providerVisible = ref({}); const providerSaving = ref(false); const planDraft = ref(null); const refundDraft = ref(null); const orderFilters = ref({ keyword: '', status: '', method: '', page: 1, pageSize: 20 }); const orderTotal = ref(0); const ordersLoading = ref(false); const selectedOrder = ref(null); const selectedAuditLogs = ref([]); const loadedTabs = ref({ dashboard: false, orders: false, plans: false }); const draggingProviderId = ref(null)
 const tabIcons = { dashboard: BarChart3, orders: ClipboardList, plans: Package, settings: CreditCard }
 const tabs = computed(() => ['dashboard', 'orders', 'plans', 'settings'].map(id => ({ id, label: locale.value.admin[id], icon: tabIcons[id] })))
-const methods = ['alipay','wxpay','stripe','airwallex']; const methodLabel = value => ({ alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }[value] || value)
+const methods = ['alipay','wxpay','stripe','airwallex']; const methodLabel = value => ({ alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }[value] || providerDraft.value?.config?.customMethods?.find(item => item.type === value)?.label || value)
 const currencyOptions = [{ value: 'CNY', label: 'CNY（人民币）' }, { value: 'USD', label: 'USD（美元）' }]
 const providerOptions = [{ value: 'easypay', label: '易支付（兼容协议）' }, { value: 'alipay', label: '支付宝官方' }, { value: 'wxpay', label: '微信支付官方' }, { value: 'stripe', label: 'Stripe' }, { value: 'airwallex', label: 'Airwallex' }]
 const providerMethodsMap = { easypay: ['alipay','wxpay'], alipay: ['alipay'], wxpay: ['wxpay'], stripe: ['stripe'], airwallex: ['airwallex'] }
-const providerMethods = computed(() => providerMethodsMap[providerDraft.value?.providerKey] || [])
+const providerMethods = computed(() => {
+  const base = providerMethodsMap[providerDraft.value?.providerKey] || []
+  const custom = providerDraft.value?.providerKey === 'easypay' && Array.isArray(providerDraft.value?.config?.customMethods)
+    ? providerDraft.value.config.customMethods.map(item => item.type).filter(Boolean)
+    : []
+  return [...base, ...custom]
+})
 const paymentCurrencyOptions = ['CNY','HKD','USD','EUR','GBP','AUD','CAD','SGD','JPY','KRW','NZD'].map(value => ({ value, label: value }))
 const providerFieldMap = {
   easypay: [
     { key:'pid', label:'商户 PID' },
     { key:'pkey', label:'商户密钥 PKey', sensitive:true },
-    { key:'apiBase', label:'API 基础地址', placeholder:'https://pay.example.com', hint:'填写易支付站点地址，无需附加 submit.php。' }
+    { key:'apiBase', label:'API 基础地址', placeholder:'https://pay.example.com', hint:'填写易支付站点地址，无需附加 submit.php。' },
+    { key:'customMethodsText', label:'自定义支付方式', textarea:true, optional:true, placeholder:'显示名称|type|渠道 ID（每行一项）', hint:'例如：云闪付|unionpay|1001。type 会作为易支付接口参数提交；渠道 ID 可留空。' }
   ],
   alipay: [
     { key:'appId', label:'应用 App ID' },
@@ -175,7 +182,9 @@ const changeOrderPage = page => { orderFilters.value.page = page; loadOrders() }
 const formatDateTime = value => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value)) : '-'
 const statusLabel = status => ({ PENDING:'待支付',PAID:'已支付',COMPLETED:'已完成',EXPIRED:'已过期',CANCELLED:'已取消',FAILED:'失败',REFUND_REQUESTED:'申请退款',REFUNDING:'退款中',REFUNDED:'已退款' }[status] || status)
 const statusClass = status => ({ PENDING:'pending',PAID:'paid',COMPLETED:'completed',EXPIRED:'neutral',CANCELLED:'neutral',FAILED:'failed',REFUND_REQUESTED:'refund',REFUNDING:'refund',REFUNDED:'refunded' }[status] || 'neutral')
-const showOrderDetail = async order => { selectedOrder.value = order; selectedAuditLogs.value = []; try { const result = await api(`/api/admin/payment/orders/${order.id}`); selectedOrder.value = result.order; selectedAuditLogs.value = result.auditLogs || [] } catch {} }
+const auditActionLabel = action => ({ CREATED:'创建订单',CREATE_FAILED:'创建失败',FULFILLED:'支付完成并发券',PAYMENT_FAILED:'支付失败',EXPIRED:'订单过期',CANCELLED:'取消订单',REFUND_REQUESTED:'用户申请退款',REFUNDING:'退款处理中',REFUNDED:'退款完成',REFUND_FAILED:'退款失败' }[action] || action)
+const auditDetailText = detail => { if (!detail || typeof detail !== 'object' || !Object.keys(detail).length) return '无附加信息'; return Object.entries(detail).map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`).join(' · ') }
+const showOrderDetail = async order => { selectedOrder.value = order; selectedAuditLogs.value = []; try { const result = await api(`/api/admin/payment/orders/${order.id}`); selectedOrder.value = result.order; selectedAuditLogs.value = Array.isArray(result.auditLogs) ? result.auditLogs : [] } catch (error) { showToast(localize(error, '订单详情加载失败'), 'error') } }
 const loadCore = async () => {
   loading.value = true
   tabErrors.value.settings = ''
@@ -240,16 +249,37 @@ const editProvider = provider => {
   const key = provider?.providerKey || 'easypay'
   const draft = provider ? cloneData(provider) : { providerKey:key, name:'', supportedMethods:[...(providerMethodsMap[key] || [])], enabled:true, sortOrder:0, refundEnabled:false, allowUserRefund:false, paymentMode:'qrcode' }
   draft.config = cloneData(provider?.config || {})
+  if (key === 'easypay') {
+    if (!Array.isArray(draft.config.customMethods)) draft.config.customMethods = []
+    draft.config.customMethodsText = draft.config.customMethods.map(item => [item.label, item.type, item.cid || ''].join('|')).join('\n')
+  }
   draft.limits = normalizeProviderLimits(key, provider?.limits || {})
   applyProviderDefaults(draft)
   providerVisible.value = {}
   providerDraft.value = draft
 }
+const addEasyPayMethod = () => {
+  if (!providerDraft.value || providerDraft.value.providerKey !== 'easypay') return
+  if (!Array.isArray(providerDraft.value.config.customMethods)) providerDraft.value.config.customMethods = []
+  providerDraft.value.config.customMethods.push({ type: '', label: '', cid: '' })
+}
+const removeEasyPayMethod = index => { providerDraft.value?.config?.customMethods?.splice(index, 1) }
+const parseEasyPayCustomMethods = value => {
+  const rows = String(value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean)
+  const types = new Set()
+  return rows.map(row => {
+    const [label = '', type = '', cid = ''] = row.split('|').map(item => item.trim())
+    const normalizedType = type.toLowerCase()
+    if (!label || label.length > 30 || !/^[a-z][a-z0-9_-]{1,28}$/.test(normalizedType) || ['alipay', 'wxpay', 'stripe', 'airwallex'].includes(normalizedType) || cid.length > 64 || types.has(normalizedType)) throw new Error('自定义支付方式格式无效，请使用“显示名称|type|渠道 ID”，且 type 不能重复')
+    types.add(normalizedType)
+    return { label, type: normalizedType, ...(cid ? { cid } : {}) }
+  })
+}
 watch(() => providerDraft.value?.providerKey, key => {
   if (!providerDraft.value || providerDraft.value.id) return
   providerDraft.value.supportedMethods = [...(providerMethodsMap[key] || [])]
   providerDraft.value.paymentMode = key === 'easypay' ? 'qrcode' : ''
-  providerDraft.value.config = {}
+    providerDraft.value.config = key === 'easypay' ? { customMethods: [] } : {}
   providerDraft.value.limits = normalizeProviderLimits(key)
   applyProviderDefaults(providerDraft.value)
 })
@@ -265,12 +295,19 @@ const saveProvider = async () => {
   if (missing.length) return showToast(`请填写${missing[0].label}`, 'error')
   providerSaving.value = true
   try {
-    const body = { ...toRaw(providerDraft.value), config:toRaw(providerDraft.value.config), limits:cleanProviderLimits(providerDraft.value.limits) }
+    const config = cloneData(providerDraft.value.config)
+    let supportedMethods = [...providerDraft.value.supportedMethods]
+    if (providerDraft.value.providerKey === 'easypay') {
+      config.customMethods = parseEasyPayCustomMethods(config.customMethodsText)
+      delete config.customMethodsText
+      supportedMethods = [...new Set([...supportedMethods, ...config.customMethods.map(item => item.type)])]
+    }
+    const body = { ...toRaw(providerDraft.value), supportedMethods, config, limits:cleanProviderLimits(providerDraft.value.limits) }
     await api(providerDraft.value.id ? `/api/admin/payment/providers/${providerDraft.value.id}` : '/api/admin/payment/providers', { method:providerDraft.value.id ? 'PUT' : 'POST', body })
     providerDraft.value = null
     providers.value = await api('/api/admin/payment/providers')
     showToast('支付服务商保存成功', 'success')
-  } finally { providerSaving.value = false }
+  } catch (error) { showToast(error instanceof Error ? error.message : localize(error, '支付服务商保存失败'), 'error') } finally { providerSaving.value = false }
 }
 const removeProvider = async provider => { if (!confirm(`删除 ${provider.name}？`)) return; await api(`/api/admin/payment/providers/${provider.id}`,{method:'DELETE'}); providers.value=await api('/api/admin/payment/providers'); showToast('支付服务商已删除', 'success') }
 const validityUnitOptions = [{ value: 'day', label: '天' }, { value: 'month', label: '月' }, { value: 'year', label: '年' }]

@@ -7,5 +7,12 @@ import { decryptPaymentConfig, maskPaymentConfig } from '~~/server/utils/payment
 export default defineEventHandler(async event => {
   requirePaymentAdmin(event)
   const rows = await db.select().from(paymentProviderInstances).orderBy(asc(paymentProviderInstances.sortOrder))
-  return rows.map(({ configEncrypted, ...row }) => ({ ...row, config: maskPaymentConfig(decryptPaymentConfig(configEncrypted)) }))
+  return rows.map(({ configEncrypted, ...row }) => {
+    try {
+      return { ...row, config: maskPaymentConfig(decryptPaymentConfig(configEncrypted)) }
+    } catch (error) {
+      console.error('[payment provider] 解密服务商配置失败', { providerKey: row.providerKey, instanceId: row.id, error: String(error) })
+      return { ...row, config: {}, configError: true }
+    }
+  })
 })

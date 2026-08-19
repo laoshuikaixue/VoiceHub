@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { paymentProviderInstances } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
 import { decryptPaymentConfig, encryptPaymentConfig, maskPaymentConfig } from '~~/server/utils/paymentCrypto'
-import { getPaymentProviderConfigError, PAYMENT_PROVIDER_CONFIG_FIELDS, PAYMENT_PROVIDER_METHODS } from '~~/server/config/payment'
+import { getPaymentProviderAllowedMethods, getPaymentProviderConfigError, normalizeEasyPayCustomMethods, PAYMENT_PROVIDER_CONFIG_FIELDS } from '~~/server/config/payment'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -15,18 +15,22 @@ export default defineEventHandler(async event => {
   if (!current) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_PROVIDER_UNAVAILABLE, '支付服务商不存在')
   const body = await readBody(event)
   const oldConfig = decryptPaymentConfig(current.configEncrypted)
-  const config = Object.fromEntries(Object.entries({ ...oldConfig, ...(body.config || {}) }).map(([key, value]) => [key, value === '********' ? oldConfig[key] : value]))
+  const patchConfig = body?.config && typeof body.config === 'object' && !Array.isArray(body.config) ? body.config : {}
+  const config = Object.fromEntries(Object.entries({ ...oldConfig, ...patchConfig }).map(([key, value]) => [key, value === '********' ? oldConfig[key] : value]))
+  if (current.providerKey === 'easypay' && Object.prototype.hasOwnProperty.call(patchConfig, 'customMethods')) config.customMethods = normalizeEasyPayCustomMethods(patchConfig.customMethods)
   const missing = (PAYMENT_PROVIDER_CONFIG_FIELDS[current.providerKey] || []).filter(key => !String(config[key] || '').trim())
   if (missing.length) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付服务商配置不完整', { params: [missing.join(', ')] })
   const configError = getPaymentProviderConfigError(current.providerKey, config)
   if (configError) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, configError)
-  const allowedMethods = PAYMENT_PROVIDER_METHODS[current.providerKey] || []
+  const allowedMethods = getPaymentProviderAllowedMethods(current.providerKey, config)
+  const supportedMethods = Array.isArray(body.supportedMethods) ? body.supportedMethods.filter((item: string) => allowedMethods.includes(item)) : current.supportedMethods.filter(item => allowedMethods.includes(item))
+  if (!supportedMethods.length) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '至少启用一种支付方式')
   const refundEnabled = typeof body.refundEnabled === 'boolean' ? body.refundEnabled : current.refundEnabled
   const allowUserRefund = refundEnabled && (typeof body.allowUserRefund === 'boolean' ? body.allowUserRefund : current.allowUserRefund)
   const [updated] = await db.update(paymentProviderInstances).set({
     name: typeof body.name === 'string' ? body.name.slice(0, 100) : current.name,
     configEncrypted: encryptPaymentConfig(config),
-    supportedMethods: Array.isArray(body.supportedMethods) ? body.supportedMethods.filter((item: string) => allowedMethods.includes(item)) : current.supportedMethods,
+    supportedMethods,
     enabled: typeof body.enabled === 'boolean' ? body.enabled : current.enabled,
     paymentMode: typeof body.paymentMode === 'string' ? body.paymentMode : current.paymentMode,
     sortOrder: Number.isInteger(body.sortOrder) ? body.sortOrder : current.sortOrder,

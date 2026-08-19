@@ -11,7 +11,8 @@ import {
   paymentSettings
 } from '~/drizzle/schema'
 import { decryptPaymentConfig } from '~~/server/utils/paymentCrypto'
-import { createPaymentProvider, type PaymentNotification } from './paymentProviders'
+import { getPaymentProviderAllowedMethods } from '~~/server/config/payment'
+import { createPaymentProvider, type PaymentNotification, type PaymentRefundNotification } from './paymentProviders'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
@@ -70,8 +71,8 @@ const resolvePublicOrigin = (event: H3Event) => {
   const explicit = normalizePublicOrigin(process.env.NUXT_PUBLIC_HOST)
   if (explicit) return explicit
 
-  const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',')[0].trim()
-  const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',')[0].trim()
+  const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',').at(0)?.trim() || ''
+  const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',').at(0)?.trim() || ''
   const requestUrl = getRequestURL(event)
   const requestOrigin = normalizePublicOrigin(`${requestUrl.protocol}//${requestUrl.host}`)
   const forwardedOrigin = forwardedHost ? normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`) : ''
@@ -110,6 +111,17 @@ const selectProvider = async (method: string, amountCents: number, strategy: str
   const eligible = []
   for (const provider of providers) {
     if (!provider.supportedMethods.includes(method)) continue
+    let config: Record<string, unknown>
+    try {
+      config = decryptPaymentConfig(provider.configEncrypted)
+      if (!getPaymentProviderAllowedMethods(provider.providerKey, config).includes(method)) {
+        console.error('[payment provider] 服务商支付方式配置不一致', { providerKey: provider.providerKey, instanceId: provider.id, method })
+        continue
+      }
+    } catch (error) {
+      console.error('[payment provider] 跳过无法读取配置的服务商', { providerKey: provider.providerKey, instanceId: provider.id, error: String(error) })
+      continue
+    }
     const { minAmountCents: min, maxAmountCents: max, dailyLimitCents: dailyLimit } = getProviderLimits(provider.limits, method)
     if ((min && amountCents < min) || (max && amountCents > max)) continue
     const [daily] = await db.select({ total: sum(paymentOrders.payAmountCents) }).from(paymentOrders)
@@ -170,7 +182,7 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
       outTradeNo, amountCents: payAmountCents, currency: plan.currency,
       subject: `${settings.productNamePrefix}${plan.name}${settings.productNameSuffix}`,
       method, notifyUrl: `${origin}/api/payment/webhook/${providerRow.providerKey}`,
-      returnUrl: `${origin}/payment?order=${encodeURIComponent(order.id)}`, clientIp: getClientIP(event), mobile,
+      returnUrl: `${origin}/payment?order=${encodeURIComponent(order.id)}`, expiresAt, clientIp: getClientIP(event), mobile,
       alipayForceQrCode: method === 'alipay' ? settings.alipayForceQrCode : false,
       alipayMobileDeepLink: method === 'alipay' ? settings.alipayMobileDeepLink : false
     })
@@ -195,10 +207,6 @@ export const fulfillPaymentOrder = async (notification: PaymentNotification, ope
   if (providerInstanceId && order.providerInstanceId !== providerInstanceId) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '支付回调服务商与订单不匹配')
   if (notification.amountCents !== order.payAmountCents) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH, '支付金额与订单不一致')
   if (order.status === 'COMPLETED' || order.status === 'REFUNDED') return order
-  if (order.status === 'PENDING' && order.expiresAt <= getServerDate()) {
-    await db.update(paymentOrders).set({ status: 'EXPIRED', updatedAt: getServerDate() }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'PENDING')))
-    throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '支付订单已过期')
-  }
   if (!notification.success) {
     await db.update(paymentOrders).set({ status: 'FAILED', failedAt: getServerDate(), failedReason: '支付服务商返回失败', updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
     await addPaymentAudit(order.id, 'PAYMENT_FAILED', {}, operator)
@@ -256,6 +264,33 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
     })
     throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '支付通道配置读取失败')
   }
+  if (order.status === 'REFUNDING' && provider.queryRefund) {
+    try {
+      const refund = await provider.queryRefund(order.outTradeNo, order.refundId || undefined)
+      if (refund.status !== 'pending') {
+        const refunded = refund.status === 'paid'
+        const [updated] = await db.update(paymentOrders).set({
+          status: refunded ? 'REFUNDED' : 'COMPLETED',
+          refundId: refund.refundId || order.refundId,
+          refundAmountCents: refunded ? order.refundAmountCents : 0,
+          refundedAt: refunded ? getServerDate() : null,
+          updatedAt: getServerDate()
+        }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'REFUNDING'))).returning()
+        if (updated) {
+          if (refunded) {
+            const cards = await db.select({ id: cardCodes.id }).from(paymentOrderCards)
+              .innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, order.id))
+            if (cards.length) await db.update(cardCodes).set({ status: 'INVALID', updatedAt: getServerDate() }).where(inArray(cardCodes.id, cards.map(card => card.id)))
+          }
+          await addPaymentAudit(order.id, refunded ? 'REFUNDED' : 'REFUND_FAILED', { refundId: refund.refundId || order.refundId }, 'refund-query')
+          return updated
+        }
+      }
+    } catch (error) {
+      console.warn('[payment] 查询退款状态失败', { orderId: order.id, error: error instanceof Error ? error.message : String(error) })
+    }
+    return order
+  }
   let result
   try {
     result = await provider.query(order.outTradeNo, order.paymentTradeNo || undefined)
@@ -270,8 +305,9 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
     throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '查询支付状态失败')
   }
   if (result.status === 'paid') {
-    if (!Number.isInteger(result.amountCents) || result.amountCents <= 0) throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '支付查询未返回有效金额')
-    return fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents, success: true }, 'verify')
+    const amountCents = result.amountCents
+    if (typeof amountCents !== 'number' || !Number.isSafeInteger(amountCents) || amountCents <= 0) throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_QUERY_FAILED, '支付查询未返回有效金额')
+    return fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents, success: true }, 'verify')
   }
   if (order.status === 'PENDING' && order.expiresAt <= getServerDate()) {
     const [expired] = await db.update(paymentOrders).set({ status: 'EXPIRED', updatedAt: getServerDate() })
@@ -306,8 +342,21 @@ export const cancelPaymentOrder = async (orderId: string, userId: number) => {
     if (Number(cancelled?.value || 0) >= settings.cancelMaxCount) throw createApiError(429, SERVER_ERROR_CODES.PAYMENT_CANCEL_LIMIT, '取消订单操作过于频繁')
   }
   const { provider } = await getOrderProvider(order)
-  if (provider.cancel) await provider.cancel(order.outTradeNo, order.paymentTradeNo || undefined).catch(() => undefined)
-  await db.update(paymentOrders).set({ status: 'CANCELLED', updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
+  if (provider.cancel) {
+    try {
+      await provider.cancel(order.outTradeNo, order.paymentTradeNo || undefined)
+    } catch (error) {
+      console.error('[payment] 关闭支付订单失败', { orderId: order.id, error: error instanceof Error ? error.message : String(error) })
+      throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_PROVIDER_UNAVAILABLE, '支付平台关闭订单失败，请稍后重试')
+    }
+  }
+  const [cancelled] = await db.update(paymentOrders).set({ status: 'CANCELLED', updatedAt: getServerDate() })
+    .where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'PENDING'))).returning()
+  if (!cancelled) {
+    const [latest] = await db.select().from(paymentOrders).where(eq(paymentOrders.id, order.id)).limit(1)
+    if (latest?.status === 'COMPLETED' || latest?.status === 'REFUNDED' || latest?.status === 'PAID') return latest
+    throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '订单状态已发生变化，请刷新后重试')
+  }
   await addPaymentAudit(order.id, 'CANCELLED', {}, `user:${userId}`)
 }
 
@@ -339,6 +388,23 @@ export const processPaymentRefund = async (orderId: string, amountCents: number,
   }
 }
 
+export const fulfillPaymentRefund = async (notification: PaymentRefundNotification, providerInstanceId?: string) => {
+  const [order] = await db.select().from(paymentOrders).where(and(eq(paymentOrders.outTradeNo, notification.outTradeNo), eq(paymentOrders.refundId, notification.refundId))).limit(1)
+  if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '退款订单不存在')
+  if (providerInstanceId && order.providerInstanceId !== providerInstanceId) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '退款回调服务商与订单不匹配')
+  if (order.status === 'REFUNDED') return order
+  if (order.status !== 'REFUNDING') throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '退款订单状态无效')
+  if (!notification.success) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '退款回调状态无效')
+  const [updated] = await db.update(paymentOrders).set({ status: 'REFUNDED', refundedAt: getServerDate(), updatedAt: getServerDate() })
+    .where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'REFUNDING'))).returning()
+  if (!updated) return order
+  const cards = await db.select({ id: cardCodes.id }).from(paymentOrderCards)
+    .innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, order.id))
+  if (cards.length) await db.update(cardCodes).set({ status: 'INVALID', updatedAt: getServerDate() }).where(inArray(cardCodes.id, cards.map(card => card.id)))
+  await addPaymentAudit(order.id, 'REFUNDED', { refundId: notification.refundId }, 'refund-webhook:wxpay')
+  return updated
+}
+
 export const expirePaymentOrders = async () => {
   const candidates = await db.select().from(paymentOrders).where(and(eq(paymentOrders.status, 'PENDING'), lte(paymentOrders.expiresAt, getServerDate()))).limit(100)
   let expiredCount = 0
@@ -347,8 +413,9 @@ export const expirePaymentOrders = async () => {
       const { provider } = await getOrderProvider(order)
       const result = await provider.query(order.outTradeNo, order.paymentTradeNo || undefined)
       if (result.status === 'paid') {
-        if (!Number.isInteger(result.amountCents) || result.amountCents <= 0) continue
-        await fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents: result.amountCents, success: true }, 'expiry-check')
+        const amountCents = result.amountCents
+        if (typeof amountCents !== 'number' || !Number.isSafeInteger(amountCents) || amountCents <= 0) continue
+        await fulfillPaymentOrder({ outTradeNo: order.outTradeNo, tradeNo: result.tradeNo, amountCents, success: true }, 'expiry-check')
         continue
       }
     } catch (error: any) {
@@ -362,4 +429,15 @@ export const expirePaymentOrders = async () => {
     }
   }
   return expiredCount
+}
+
+export const reconcilePaymentRefunds = async () => {
+  const orders = await db.select({ id: paymentOrders.id }).from(paymentOrders)
+    .where(eq(paymentOrders.status, 'REFUNDING')).limit(100)
+  for (const order of orders) {
+    try { await verifyPaymentOrder(order.id) } catch (error) {
+      console.warn('[payment] 退款状态检查失败', { orderId: order.id, error: error instanceof Error ? error.message : String(error) })
+    }
+  }
+  return orders.length
 }

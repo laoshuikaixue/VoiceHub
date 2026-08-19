@@ -16,7 +16,7 @@
         <p v-if="resultOrder.status === 'EXPIRED'" class="result-message">订单已超时，请重新创建订单</p>
         <p v-else-if="resultOrder.status === 'CANCELLED'" class="result-message">您已取消本次支付</p>
         <div class="result-details"><div><span>订单 ID</span><b>#{{ resultOrder.id }}</b></div><div><span>订单编号</span><b>{{ resultOrder.outTradeNo }}</b></div><div><span>充值金额</span><b>{{ formatMoney(resultOrder.payAmountCents, resultOrder.currency) }}</b></div><div><span>支付方式</span><b>{{ methodLabels[resultOrder.paymentMethod] || resultOrder.paymentMethod }}</b></div><div><span>状态</span><b>{{ statusText(resultOrder.status) }}</b></div></div>
-        <div class="result-actions"><button class="action-primary" @click="closeResult(false)">确认</button><button v-if="resultOrder.status !== 'EXPIRED'" class="action-button" @click="closeResult(true)">查看订单</button></div>
+        <div class="result-actions"><button class="action-primary" @click="closeResult(false)">确认</button><button v-if="resultOrder.status !== 'EXPIRED' && resultOrder.status !== 'CANCELLED'" class="action-button" @click="closeResult(true)">查看订单</button></div>
       </section>
       <section v-else-if="checkoutOrder" class="checkout-panel">
         <div v-if="checkoutOrder.qrCode" class="checkout-qr"><h2>扫码支付</h2><div class="qr-frame"><img :src="qrImage" alt="支付二维码" /></div><p>请使用手机扫码完成支付</p></div>
@@ -46,7 +46,7 @@
             <div class="plan-buy"><label>支付方式</label><CustomSelect v-model="selectedMethods[plan.id]" :options="methodOptions" /><button class="buy-button" :disabled="creatingId === plan.id || !selectedMethods[plan.id]" @click="buy(plan)"><RefreshCw v-if="creatingId === plan.id" :size="16" class="animate-spin" /><CreditCard v-else :size="16" />{{ locale.buy }}</button></div>
           </article>
         </div>
-        <p v-if="config.helpText" class="payment-help mt-6 whitespace-pre-wrap">{{ config.helpText }}</p>
+        <section v-if="config.helpText || config.helpImageUrl" class="payment-help mt-6"><h2>支付帮助</h2><img v-if="config.helpImageUrl" :src="config.helpImageUrl" alt="支付帮助" @error="$event.target.style.display = 'none'" /><p v-if="config.helpText" class="whitespace-pre-wrap">{{ config.helpText }}</p></section>
       </section>
 
       <section v-else-if="!checkoutOrder && !resultOrder && activeTab === 'orders'" class="payment-list">
@@ -110,12 +110,12 @@ const { localize } = useServerErrors()
 const { showToast } = useToast()
 const route = useRoute()
 const router = useRouter()
-const config = ref({ enabled: false, methods: [] }); const plans = ref([]); const orders = ref([]); const cards = ref([])
+const config = ref({ enabled: false, methods: [], methodLabels: {} }); const plans = ref([]); const orders = ref([]); const cards = ref([])
 const selectedMethods = reactive({}); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
 const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); const stripeMount = ref(null); const stripeReady = ref(false); const stripeProcessing = ref(false); const stripeError = ref(''); let stripeInstance = null; let stripeElements = null; let stripePaymentElement = null; let pollTimer = null; let countdownTimer = null
 const tabs = computed(() => [{ id: 'plans', label: locale.value.title }, { id: 'orders', label: locale.value.orders }, { id: 'cards', label: locale.value.cards }])
 const methodLabels = { alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }
-const methodOptions = computed(() => config.value.methods.map(value => ({ value, label: methodLabels[value] || value })))
+const methodOptions = computed(() => config.value.methods.map(value => ({ value, label: config.value.methodLabels?.[value] || methodLabels[value] || value })))
 const isStripeCheckout = computed(() => checkoutOrder.value?.providerKey === 'stripe' && Boolean(checkoutOrder.value?.clientSecret))
 const checkoutStorageKey = 'voicehub-payment-checkout'
 const dismissedResultStorageKey = 'voicehub-payment-dismissed-result'
@@ -124,6 +124,7 @@ const saveCheckoutId = id => { try { sessionStorage.setItem(checkoutStorageKey, 
 const clearSavedCheckout = () => { try { sessionStorage.removeItem(checkoutStorageKey) } catch {} }
 const getDismissedResultId = () => { try { return sessionStorage.getItem(dismissedResultStorageKey) || '' } catch { return '' } }
 const dismissResult = id => { try { sessionStorage.setItem(dismissedResultStorageKey, id) } catch {} }
+const isMobilePaymentClient = () => /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent)
 const formatMoney = (cents, currency = 'CNY') => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100)
 const formatDate = value => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const statusText = status => ({ PENDING: locale.value.pending, PAID: locale.value.paid, COMPLETED: locale.value.completed, EXPIRED: locale.value.expired, CANCELLED: locale.value.cancelled, FAILED: locale.value.failed, REFUND_REQUESTED: locale.value.refundRequested, REFUNDING: locale.value.refunding, REFUNDED: locale.value.refunded }[status] || status)
@@ -174,7 +175,7 @@ const openPay = async order => {
     return
   }
   if (order.payUrl && !order.qrCode) {
-    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    const isMobile = isMobilePaymentClient()
     if (isMobile) {
       window.location.assign(order.payUrl)
     } else {
@@ -236,7 +237,7 @@ const restoreCheckout = async order => {
   if (order.providerKey === 'stripe' && order.clientSecret) await mountStripeCheckout(order)
   startPolling(order)
 }
-const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: matchMedia('(max-width: 768px)').matches } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
+const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: isMobilePaymentClient() } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
 const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
 const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); showToast('订单已取消', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const startRefund = order => { refundOrder.value = order; refundReason.value = '' }
@@ -246,7 +247,33 @@ const startPolling = order => { clearInterval(pollTimer); clearInterval(countdow
 const countdownText = computed(() => `${String(Math.floor(countdown.value / 60)).padStart(2, '0')}:${String(countdown.value % 60).padStart(2, '0')}`)
 const reopenPayment = () => { if (isStripeCheckout.value) mountStripeCheckout(checkoutOrder.value); else if (checkoutOrder.value?.providerKey === 'airwallex') launchAirwallexCheckout(checkoutOrder.value).catch(error => { errorMessage.value = error instanceof Error ? error.message : 'Airwallex 收银台打开失败' }); else if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes') }
 const closeResult = async showOrders => { const orderId = resultOrder.value?.id; if (orderId) dismissResult(orderId); resultOrder.value = null; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer); const target = showOrders ? 'orders' : 'plans'; window.history.replaceState(window.history.state, '', window.location.pathname + window.location.hash); await router.replace({ path: '/payment', query: {} }); activeTab.value = target }
-const cancelCheckout = async () => { if (!checkoutOrder.value) return; const orderId = checkoutOrder.value.id; await cancelOrder(checkoutOrder.value); const cancelledOrder = orders.value.find(item => item.id === orderId); if (cancelledOrder?.status === 'CANCELLED') resultOrder.value = cancelledOrder; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) }
+const cancelCheckout = () => {
+  const order = checkoutOrder.value
+  if (!order) return
+  checkoutOrder.value = null
+  resultOrder.value = { ...order, status: 'CANCELLED' }
+  clearStripeCheckout()
+  clearSavedCheckout()
+  clearInterval(pollTimer)
+  clearInterval(countdownTimer)
+  void completeCheckoutCancellation(order)
+}
+const completeCheckoutCancellation = async order => {
+  try {
+    await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' })
+    await loadOrders()
+    const latest = orders.value.find(item => item.id === order.id)
+    if (latest && latest.status !== 'CANCELLED') resultOrder.value = latest
+    else showToast('订单已取消', 'success')
+  } catch (error) {
+    resultOrder.value = null
+    checkoutOrder.value = order
+    saveCheckoutId(order.id)
+    await restoreCheckout(order)
+    errorMessage.value = localize(error)
+    showToast(errorMessage.value, 'error')
+  }
+}
 const closeQr = () => { qrOrder.value = null; qrImage.value = ''; clearInterval(pollTimer) }
 onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) })
 </script>
@@ -291,7 +318,7 @@ onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTi
 .buy-button { display: inline-flex; min-height: 2.55rem; align-items: center; justify-content: center; gap: .4rem; margin-top: .15rem; border-radius: .55rem; background: var(--primary); color: white; font-size: .78rem; font-weight: 800; transition: filter .2s, transform .2s; }
 .buy-button:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
 .buy-button:disabled { cursor: not-allowed; opacity: .45; }
-.payment-help { padding: .85rem 1rem; border: 1px solid var(--border-secondary); border-radius: .65rem; background: var(--bg-secondary); color: var(--text-tertiary); font-size: .74rem; line-height: 1.65; }
+.payment-help { display:grid; gap:.75rem; padding:1rem; border:1px solid var(--border-secondary); border-radius:.65rem; background:var(--bg-secondary); color:var(--text-tertiary); font-size:.74rem; line-height:1.65; }.payment-help h2{color:var(--text-primary);font-size:.9rem;font-weight:800}.payment-help p{margin:0}.payment-help img{display:block;max-width:100%;max-height:28rem;margin:auto;border:1px solid var(--border-secondary);border-radius:.5rem;object-fit:contain}
 .payment-list { display: grid; gap: .75rem; }
 .order-card,.card-code-card { border: 1px solid var(--border-secondary); border-radius: .75rem; background: var(--bg-secondary); box-shadow: var(--shadow-sm); }
 .order-card { padding: 1rem; }

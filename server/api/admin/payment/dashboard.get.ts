@@ -1,29 +1,30 @@
-import { and, count, desc, gte, inArray, sql, sum } from 'drizzle-orm'
+import { and, gte, inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { paymentOrders } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 
+const completedStatuses = ['COMPLETED', 'REFUND_REQUESTED', 'REFUNDING', 'REFUNDED'] as const
+const toNumber = (value: unknown) => Number(value || 0) || 0
+const paymentDate = (order: any) => order.paidAt || order.completedAt || order.createdAt
+
 export default defineEventHandler(async event => {
-  requirePaymentAdmin(event); const days = Math.min(365, Math.max(1, Number(getQuery(event).days) || 30)); const now = getServerTimestamp(); const since = getServerDate(); since.setTime(now - days * 86400000); const todaySince = getServerDate(); todaySince.setHours(0, 0, 0, 0)
-  const completed = ['COMPLETED', 'REFUND_REQUESTED', 'REFUNDING', 'REFUNDED'] as const
-  const periodWhere = and(gte(paymentOrders.createdAt, since), inArray(paymentOrders.status, [...completed]))
-  const [summary, todaySummary] = await Promise.all([
-    db.select({ orderCount: count(), revenueCents: sum(paymentOrders.payAmountCents), refundCents: sum(paymentOrders.refundAmountCents) }).from(paymentOrders).where(periodWhere),
-    db.select({ orderCount: count(), revenueCents: sum(paymentOrders.payAmountCents) }).from(paymentOrders).where(and(gte(paymentOrders.createdAt, todaySince), inArray(paymentOrders.status, [...completed])))
-  ])
-  const [period] = summary; const [today] = todaySummary
-  const [byMethod, dailyRows, avgRows, topRows] = await Promise.all([
-    db.select({ method: paymentOrders.paymentMethod, currency: paymentOrders.currency, orders: count(), revenueCents: sum(paymentOrders.payAmountCents) }).from(paymentOrders).where(periodWhere).groupBy(paymentOrders.paymentMethod, paymentOrders.currency),
-    db.select({ date: sql<string>`to_char(coalesce(${paymentOrders.paidAt}, ${paymentOrders.completedAt}, ${paymentOrders.createdAt}), 'YYYY-MM-DD')`, currency: paymentOrders.currency, orders: count(), revenueCents: sum(paymentOrders.payAmountCents) }).from(paymentOrders).where(and(gte(sql`coalesce(${paymentOrders.paidAt}, ${paymentOrders.completedAt}, ${paymentOrders.createdAt})`, since), inArray(paymentOrders.status, [...completed]))).groupBy(sql`to_char(coalesce(${paymentOrders.paidAt}, ${paymentOrders.completedAt}, ${paymentOrders.createdAt}), 'YYYY-MM-DD')`, paymentOrders.currency).orderBy(sql`to_char(coalesce(${paymentOrders.paidAt}, ${paymentOrders.completedAt}, ${paymentOrders.createdAt}), 'YYYY-MM-DD')`),
-    db.select({ currency: paymentOrders.currency, orders: count(), revenueCents: sum(paymentOrders.payAmountCents) }).from(paymentOrders).where(periodWhere).groupBy(paymentOrders.currency),
-    db.select({ userId: paymentOrders.userId, userName: paymentOrders.userName, userEmail: paymentOrders.userEmail, currency: paymentOrders.currency, revenueCents: sum(paymentOrders.payAmountCents) }).from(paymentOrders).where(periodWhere).groupBy(paymentOrders.userId, paymentOrders.userName, paymentOrders.userEmail, paymentOrders.currency).orderBy(desc(sum(paymentOrders.payAmountCents))).limit(10)
-  ])
-  const dailyMap = new Map<string, { date: string; orders: number; amount: Record<string, number> }>()
-  for (const row of dailyRows) { const item = dailyMap.get(row.date) || { date: row.date, orders: 0, amount: {} }; item.orders += Number(row.orders || 0); item.amount[row.currency] = Number(row.revenueCents || 0) / 100; dailyMap.set(row.date, item) }
-  const todayAmount = Number(today?.revenueCents || 0) / 100; const totalAmount = Number(period?.revenueCents || 0) / 100
-  const avgAmount = Object.fromEntries(avgRows.map(row => [row.currency, Number(row.revenueCents || 0) / Math.max(1, Number(row.orders || 1)) / 100]))
-  const paymentMethods = byMethod.map(row => ({ type: row.method, currency: row.currency, count: Number(row.orders || 0), amount: Number(row.revenueCents || 0) / 100 }))
-  const topUsers = topRows.map(row => ({ userId: row.userId, name: row.userName || row.userEmail || `用户 #${row.userId}`, email: row.userEmail, currency: row.currency, amount: Number(row.revenueCents || 0) / 100 }))
-  return { days, orderCount: Number(period?.orderCount || 0), revenueCents: Number(period?.revenueCents || 0), refundCents: Number(period?.refundCents || 0), todayCount: Number(today?.orderCount || 0), todayAmount, totalAmount, avgAmount, byMethod, paymentMethods, topUsers, daily: [...dailyMap.values()] }
+  requirePaymentAdmin(event)
+  const days = Math.min(365, Math.max(1, Number(getQuery(event).days) || 30))
+  const since = getServerDate()
+  since.setTime(getServerTimestamp() - days * 86400000)
+  const today = getServerDate()
+  today.setHours(0, 0, 0, 0)
+  const orders = await db.select({ id: paymentOrders.id, userId: paymentOrders.userId, userName: paymentOrders.userName, userEmail: paymentOrders.userEmail, paymentMethod: paymentOrders.paymentMethod, currency: paymentOrders.currency, payAmountCents: paymentOrders.payAmountCents, refundAmountCents: paymentOrders.refundAmountCents, paidAt: paymentOrders.paidAt, completedAt: paymentOrders.completedAt, createdAt: paymentOrders.createdAt }).from(paymentOrders).where(and(gte(paymentOrders.createdAt, since), inArray(paymentOrders.status, [...completedStatuses])))
+  const revenueByCurrency = new Map(); const methods = new Map(); const users = new Map(); const daily = new Map(); let todayCount = 0; let todayCents = 0
+  for (const order of orders) {
+    const currency = order.currency || 'CNY'; const cents = toNumber(order.payAmountCents); const refundCents = toNumber(order.refundAmountCents)
+    const summary = revenueByCurrency.get(currency) || { count: 0, cents: 0, refunds: 0 }; summary.count += 1; summary.cents += cents; summary.refunds += refundCents; revenueByCurrency.set(currency, summary)
+    const methodKey = `${order.paymentMethod}:${currency}`; const method = methods.get(methodKey) || { type: order.paymentMethod, currency, count: 0, cents: 0 }; method.count += 1; method.cents += cents; methods.set(methodKey, method)
+    const userKey = `${order.userId}:${currency}`; const user = users.get(userKey) || { userId: order.userId, name: order.userName, email: order.userEmail, currency, cents: 0 }; user.cents += cents; users.set(userKey, user)
+    const date = paymentDate(order); if (date >= today) { todayCount += 1; todayCents += cents }
+    const dayKey = date.toISOString().slice(0, 10); const day = daily.get(dayKey) || { date: dayKey, orders: 0, amount: {} }; day.orders += 1; day.amount[currency] = toNumber(day.amount[currency]) + cents / 100; daily.set(dayKey, day)
+  }
+  const avgAmount = Object.fromEntries([...revenueByCurrency].map(([currency, value]) => [currency, value.count ? value.cents / value.count / 100 : 0])); const totalCents = [...revenueByCurrency.values()].reduce((total, value) => total + value.cents, 0); const refundCents = [...revenueByCurrency.values()].reduce((total, value) => total + value.refunds, 0)
+  return { days, orderCount: orders.length, revenueCents: totalCents, refundCents, todayCount, todayAmount: todayCents / 100, totalAmount: totalCents / 100, avgAmount, byMethod: [...methods.values()].map(item => ({ method: item.type, currency: item.currency, orders: item.count, revenueCents: item.cents })), paymentMethods: [...methods.values()].map(item => ({ type: item.type, currency: item.currency, count: item.count, amount: item.cents / 100 })), topUsers: [...users.values()].sort((left, right) => right.cents - left.cents).slice(0, 10).map(item => ({ ...item, amount: item.cents / 100 })), daily: [...daily.values()].sort((left, right) => left.date.localeCompare(right.date)) }
 })

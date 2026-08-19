@@ -710,6 +710,14 @@ https://voicehub.example.com/api/payment/webhook/wxpay
 
 H5 支付需在微信商户平台配置业务域名。可选填写“ H5 应用名称”和“ H5 网站地址”，网站地址必须为该已备案的 HTTPS 域名；系统会把支付后的 `redirect_url` 自动带回订单结果页。JSAPI 需要每位用户的 OpenID 和公众号/小程序授权流程，当前系统未启用该流程。
 
+如启用微信退款，请将服务商中的“退款通知地址”填写为：
+
+```text
+https://voicehub.example.com/api/payment/refund-webhook/wxpay
+```
+
+该端点会验签、解密退款通知并更新订单和点歌券状态；未收到通知时，常驻部署仍会周期性查询退款状态。
+
 ### Stripe 支付配置
 
 在“支付设置 → 服务商管理”添加 Stripe 服务商，填写 Stripe Dashboard 中的 `Secret Key`、`Publishable Key` 和该回调端点对应的 `Webhook Secret`。用户支付时使用 Stripe Payment Element，支付信息不会经过 VoiceHub 服务器。
@@ -1048,7 +1056,8 @@ VoiceHub/
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
 │   │   ├── payment/         # 用户支付、订单、回调 API
-│   │   │   └── webhook/     # 支付服务商 GET/POST 异步通知入口
+│   │   │   ├── webhook/     # 支付服务商 GET/POST 异步通知入口
+│   │   │   └── refund-webhook/ # 支付服务商退款异步通知入口
 │   │   ├── admin/payment/   # 支付后台管理 API
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── api-keys/            # API密钥管理API
@@ -1412,6 +1421,7 @@ VoiceHub/
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
+│       ├── payment-config.test.ts # 支付服务商配置与自定义方式测试
 │       ├── password-policy.test.ts # 密码策略测试
 │       └── token-version-policy.test.ts # 令牌版本策略测试
 ├── types/                 # TypeScript类型定义

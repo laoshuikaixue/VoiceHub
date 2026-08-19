@@ -16,6 +16,7 @@ export interface PaymentCreateRequest {
   method: string
   notifyUrl: string
   returnUrl: string
+  expiresAt: Date
   clientIp: string
   mobile: boolean
   alipayForceQrCode?: boolean
@@ -43,11 +44,18 @@ export interface PaymentNotification {
   success: boolean
 }
 
+export interface PaymentRefundNotification {
+  outTradeNo: string
+  refundId: string
+  success: boolean
+}
+
 export interface PaymentProvider {
   create(request: PaymentCreateRequest): Promise<PaymentCreateResult>
   query(outTradeNo: string, tradeNo?: string): Promise<PaymentQueryResult>
   verify(rawBody: string, headers: Record<string, string>, query?: Record<string, string>): Promise<PaymentNotification | null>
   refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string, totalAmountCents?: number): Promise<{ refundId?: string; pending?: boolean }>
+  queryRefund?(outTradeNo: string, refundId?: string): Promise<{ status: 'pending' | 'paid' | 'failed'; refundId?: string }>
   cancel?(outTradeNo: string, tradeNo?: string): Promise<void>
 }
 
@@ -63,6 +71,7 @@ const requestJson = async (url: string, init: RequestInit) => {
 
 const formEncode = (values: Record<string, string>) => new URLSearchParams(values).toString()
 const money = (cents: number) => (cents / 100).toFixed(2)
+const getTimeoutExpress = (expiresAt: Date) => `${Math.max(1, Math.ceil((expiresAt.getTime() - getServerTimestamp()) / 60000))}m`
 const assertCny = (currency: string, label: string) => {
   if (String(currency || '').toUpperCase() !== 'CNY') throw new Error(`${label}仅支持人民币（CNY）套餐`)
 }
@@ -94,11 +103,12 @@ class EasyPayProvider implements PaymentProvider {
   async create(req: PaymentCreateRequest) {
     const base = normalizeBase(this.config.apiBase)
     const params: Record<string, string> = {
-      pid: this.config.pid, type: req.method === 'wxpay' ? 'wxpay' : 'alipay',
+      pid: this.config.pid, type: req.method === 'wxpay' ? 'wxpay' : req.method === 'alipay' ? 'alipay' : req.method,
       out_trade_no: req.outTradeNo, notify_url: req.notifyUrl, return_url: req.returnUrl,
       name: req.subject, money: money(req.amountCents), clientip: req.clientIp
     }
-    const channel = req.method === 'wxpay' ? this.config.cidWxpay : this.config.cidAlipay
+    const customMethod = Array.isArray(this.config.customMethods) ? this.config.customMethods.find((item: any) => item?.type === req.method) : null
+    const channel = customMethod?.cid || (req.method === 'wxpay' ? this.config.cidWxpay : req.method === 'alipay' ? this.config.cidAlipay : '')
     if (channel || this.config.cid) params.cid = channel || this.config.cid
     if (req.mobile) params.device = 'mobile'
     params.sign = easyPaySign(params, this.config.pkey)
@@ -199,7 +209,7 @@ class AlipayProvider implements PaymentProvider {
         app_id: this.config.appId, method: 'alipay.trade.wap.pay', format: 'JSON', charset: 'utf-8', sign_type: 'RSA2',
         timestamp: getServerDate().toISOString().slice(0, 19).replace('T', ' '), version: '1.0',
         notify_url: req.notifyUrl, return_url: req.returnUrl,
-        biz_content: JSON.stringify({ out_trade_no: req.outTradeNo, total_amount: money(req.amountCents), subject: req.subject, product_code: 'QUICK_WAP_WAY', timeout_express: '30m' })
+        biz_content: JSON.stringify({ out_trade_no: req.outTradeNo, total_amount: money(req.amountCents), subject: req.subject, product_code: 'QUICK_WAP_WAY', timeout_express: getTimeoutExpress(req.expiresAt) })
       }
       params.sign = alipaySign(params, this.config.privateKey)
       return { payUrl: `${this.gateway}?${formEncode(params)}` }
@@ -208,7 +218,7 @@ class AlipayProvider implements PaymentProvider {
     try {
       result = await this.call('alipay.trade.precreate', {
       out_trade_no: req.outTradeNo, total_amount: money(req.amountCents), subject: req.subject,
-      timeout_express: '30m'
+      timeout_express: getTimeoutExpress(req.expiresAt)
       }, req.notifyUrl)
     } catch (error) {
       if (req.mobile) throw error
@@ -223,7 +233,7 @@ class AlipayProvider implements PaymentProvider {
     const params: Record<string, string> = {
       app_id: this.config.appId, method: 'alipay.trade.page.pay', format: 'JSON', charset: 'utf-8', sign_type: 'RSA2',
       timestamp: getServerDate().toISOString().slice(0, 19).replace('T', ' '), version: '1.0', notify_url: req.notifyUrl, return_url: req.returnUrl,
-      biz_content: JSON.stringify({ out_trade_no: req.outTradeNo, product_code: 'FAST_INSTANT_TRADE_PAY', total_amount: money(req.amountCents), subject: req.subject, timeout_express: '30m' })
+      biz_content: JSON.stringify({ out_trade_no: req.outTradeNo, product_code: 'FAST_INSTANT_TRADE_PAY', total_amount: money(req.amountCents), subject: req.subject, timeout_express: getTimeoutExpress(req.expiresAt) })
     }
     params.sign = alipaySign(params, this.config.privateKey)
     return `${this.gateway}?${formEncode(params)}`
@@ -253,6 +263,7 @@ class AlipayProvider implements PaymentProvider {
   }
   async refund(outTradeNo: string, _tradeNo: string | undefined, amountCents: number, reason: string) {
     const result = await this.call('alipay.trade.refund', { out_trade_no: outTradeNo, refund_amount: money(amountCents), refund_reason: reason, out_request_no: `${outTradeNo}-${getServerTimestamp()}` })
+    if (result.fund_change !== 'Y') throw new Error('支付宝未确认退款成功')
     return { refundId: result.trade_no }
   }
   async cancel(outTradeNo: string) { await this.call('alipay.trade.close', { out_trade_no: outTradeNo }) }
@@ -279,7 +290,7 @@ class WxPayProvider implements PaymentProvider {
     assertPositiveCents(req.amountCents, '微信支付官方')
     const type = req.mobile ? 'h5' : 'native'
     const path = `/v3/pay/transactions/${type}`
-    const payload: any = { appid: this.config.appId, mchid: this.config.mchId, description: req.subject, out_trade_no: req.outTradeNo, notify_url: req.notifyUrl, amount: { total: req.amountCents, currency: req.currency } }
+    const payload: any = { appid: this.config.appId, mchid: this.config.mchId, description: req.subject, out_trade_no: req.outTradeNo, notify_url: req.notifyUrl, time_expire: req.expiresAt.toISOString(), amount: { total: req.amountCents, currency: req.currency } }
     if (type === 'h5') {
       const h5Info: Record<string, string> = { type: 'Wap' }
       const appName = String(this.config.h5AppName || '').trim()
@@ -308,7 +319,7 @@ class WxPayProvider implements PaymentProvider {
     const amount = Number(result.amount?.total)
     return { status, tradeNo: result.transaction_id, ...(Number.isSafeInteger(amount) && amount > 0 ? { amountCents: amount } : {}) }
   }
-  async verify(rawBody: string, headers: Record<string, string>) {
+  private async decryptWebhook(rawBody: string, headers: Record<string, string>) {
     const timestamp = headers['wechatpay-timestamp'] || ''
     const nonce = headers['wechatpay-nonce'] || ''
     const signature = headers['wechatpay-signature'] || ''
@@ -317,10 +328,12 @@ class WxPayProvider implements PaymentProvider {
     let signatureValid = false
     try { signatureValid = createVerify('RSA-SHA256').update(`${timestamp}\n${nonce}\n${rawBody}\n`).verify(this.config.publicKey, signature, 'base64') } catch { throw new Error('微信支付回调验签配置无效') }
     if (!signatureValid) throw new Error('微信支付回调签名无效')
+    const serial = String(headers['wechatpay-serial'] || '').trim()
+    if (this.config.publicKeyId && serial !== String(this.config.publicKeyId).trim()) throw new Error('微信支付回调证书序列号不匹配')
     let event: any
     try { event = JSON.parse(rawBody) } catch { throw new Error('微信支付回调数据格式无效') }
-    if (event.event_type !== 'TRANSACTION.SUCCESS') return null
     const resource = event.resource
+    if (resource?.algorithm && resource.algorithm !== 'AEAD_AES_256_GCM') throw new Error('微信支付回调加密算法不支持')
     if (!resource?.nonce || !resource?.ciphertext || typeof resource.ciphertext !== 'string') throw new Error('微信支付回调缺少加密资源')
     const key = Buffer.from(String(this.config.apiV3Key || ''), 'utf8')
     if (key.length !== 32) throw new Error('微信支付 API v3 密钥长度必须为 32 个字符')
@@ -331,15 +344,35 @@ class WxPayProvider implements PaymentProvider {
     decipher.setAuthTag(ciphertext.subarray(ciphertext.length - 16))
     const plain = Buffer.concat([decipher.update(ciphertext.subarray(0, -16)), decipher.final()])
     const data = JSON.parse(plain.toString('utf8'))
+    return { event, data }
+  }
+  async verify(rawBody: string, headers: Record<string, string>) {
+    const { event, data } = await this.decryptWebhook(rawBody, headers)
+    if (event.event_type !== 'TRANSACTION.SUCCESS') return null
     if (!data.out_trade_no) throw new Error('微信支付回调缺少订单号')
     if (String(data.appid || '') !== String(this.config.appId) || String(data.mchid || '') !== String(this.config.mchId)) throw new Error('微信支付回调商户信息不匹配')
     if (String(data.amount?.currency || 'CNY').toUpperCase() !== 'CNY') throw new Error('微信支付回调币种不匹配')
     const amountCents = assertPositiveCents(data.amount?.total, '微信支付回调')
     return { outTradeNo: data.out_trade_no, tradeNo: data.transaction_id, amountCents, success: data.trade_state === 'SUCCESS' }
   }
+  async verifyRefund(rawBody: string, headers: Record<string, string>): Promise<PaymentRefundNotification | null> {
+    const { event, data } = await this.decryptWebhook(rawBody, headers)
+    if (event.event_type !== 'REFUND.SUCCESS') return null
+    if (!data.out_trade_no || !data.out_refund_no) throw new Error('微信支付退款回调缺少订单号')
+    if (String(data.mchid || '') !== String(this.config.mchId)) throw new Error('微信支付退款回调商户信息不匹配')
+    if (String(data.refund_status || '').toUpperCase() !== 'SUCCESS') throw new Error('微信支付退款回调状态无效')
+    return { outTradeNo: data.out_trade_no, refundId: data.out_refund_no, success: true }
+  }
   async refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string, totalAmountCents = amountCents) {
-    const result = await this.call('POST', '/v3/refund/domestic/refunds', { out_refund_no: `${outTradeNo}-${getServerTimestamp()}`, ...(tradeNo ? { transaction_id: tradeNo } : { out_trade_no: outTradeNo }), reason, amount: { refund: amountCents, total: totalAmountCents, currency: 'CNY' }, notify_url: this.config.refundNotifyUrl })
-    return { refundId: result.refund_id, pending: result.status !== 'SUCCESS' }
+    const outRefundNo = `${outTradeNo}-R${getServerTimestamp()}`
+    const result = await this.call('POST', '/v3/refund/domestic/refunds', { out_refund_no: outRefundNo, ...(tradeNo ? { transaction_id: tradeNo } : { out_trade_no: outTradeNo }), reason, amount: { refund: amountCents, total: totalAmountCents, currency: 'CNY' }, notify_url: this.config.refundNotifyUrl })
+    return { refundId: outRefundNo, pending: result.status !== 'SUCCESS' }
+  }
+  async queryRefund(outTradeNo: string, refundId?: string) {
+    const outRefundNo = String(refundId || `${outTradeNo}-${getServerTimestamp()}`).trim()
+    const result = await this.call('GET', `/v3/refund/domestic/refunds/${encodeURIComponent(outRefundNo)}`)
+    const status = String(result.status || '').toUpperCase()
+    return { refundId: result.out_refund_no || outRefundNo, status: status === 'SUCCESS' ? 'paid' as const : ['CLOSED', 'ABNORMAL'].includes(status) ? 'failed' as const : 'pending' as const }
   }
   async cancel(outTradeNo: string) { await this.call('POST', `/v3/pay/transactions/out-trade-no/${encodeURIComponent(outTradeNo)}/close`, { mchid: this.config.mchId }) }
 }
