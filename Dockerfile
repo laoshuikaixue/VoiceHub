@@ -12,7 +12,7 @@ ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     set -eux; \
     export CI=true; \
-    npx pnpm@latest-10; \
+    npm install -g pnpm@latest-10; \
     pnpm config set store-dir /pnpm/store; \
     pnpm install --frozen-lockfile
 
@@ -31,7 +31,7 @@ ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     set -eux; \
     export CI=true; \
-    npx pnpm@latest-10; \
+    npm install -g pnpm@latest-10; \
     pnpm config set store-dir /pnpm/store; \
     pnpm install --prod --frozen-lockfile
 
