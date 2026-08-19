@@ -1133,52 +1133,103 @@
           <CloseIcon class="w-5 h-5" />
         </button>
       </div>
-      <div class="p-6 space-y-4">
-        <div class="space-y-3">
-          <div>
-            <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
-              {{ locale.copyDateSourceRange }}
-            </div>
-            <div class="space-y-1.5">
-              <div class="gap-3 flex items-center">
-                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
-                <input
-                  v-model="copyFromStart"
-                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                  type="date"
-                />
-              </div>
-              <div class="gap-3 flex items-center">
-                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
-                <input
-                  v-model="copyFromEnd"
-                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                  type="date"
-                />
-              </div>
+      <div class="p-4 space-y-3">
+        <!-- 复制方式选择器 -->
+        <div class="flex items-center gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
+          <button
+            :class="[
+              'flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all border',
+              copyMode === 'single'
+                ? 'bg-primary-hover border-primary text-text-primary shadow-md shadow-[var(--primary-glow)]'
+                : 'border-transparent text-text-tertiary hover:text-text-secondary'
+            ]"
+            @click="switchCopyMode('single')"
+          >
+            {{ locale.singleDayCopy }}
+          </button>
+          <button
+            :class="[
+              'flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all border',
+              copyMode === 'cycle'
+                ? 'bg-primary-hover border-primary text-text-primary shadow-md shadow-[var(--primary-glow)]'
+                : 'border-transparent text-text-tertiary hover:text-text-secondary'
+            ]"
+            @click="switchCopyMode('cycle')"
+          >
+            {{ locale.cycleCopy }}
+          </button>
+        </div>
+
+        <!-- 源日期 -->
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
+            {{ copyMode === 'single' ? locale.cycleCopySourceDate : locale.copyDateSourceRange }}
+          </div>
+          <!-- 单天模式：只显示一个源日期 -->
+          <div v-if="copyMode === 'single'" class="space-y-1.5">
+            <div class="gap-3 flex items-center">
+              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
+              <input
+                v-model="copyFromStart"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                type="date"
+              />
             </div>
           </div>
-          <div>
-            <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
-              {{ locale.copyDateTargetRange }}
+          <!-- 周期模式：显示源日期范围 -->
+          <div v-else class="space-y-1.5">
+            <div class="gap-3 flex items-center">
+              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
+              <input
+                v-model="copyFromStart"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                type="date"
+              />
             </div>
-            <div class="space-y-1.5">
-              <div class="gap-3 flex items-center">
-                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
-                <input
-                  v-model="copyToStart"
-                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                  type="date"
-                />
-              </div>
-              <div class="gap-3 flex items-center">
-                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
-                <input
-                  v-model="copyToEnd"
-                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                  type="date"
-                />
-              </div>
+            <div class="gap-3 flex items-center">
+              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
+              <input
+                v-model="copyFromEnd"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                type="date"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 目标日期 -->
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
+            {{ locale.copyDateTargetRange }}
+          </div>
+          <!-- 单天模式：只显示一个目标日期 -->
+          <div v-if="copyMode === 'single'" class="space-y-1.5">
+            <div class="gap-3 flex items-center">
+              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetSingleDate }}</span>
+              <input
+                v-model="copySingleTargetDate"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                type="date"
+              />
+            </div>
+          </div>
+          <!-- 周期模式：显示目标日期范围 -->
+          <div v-else class="space-y-1.5">
+            <div class="gap-3 flex items-center">
+              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetStart }}</span>
+              <input
+                v-model="copyToStart"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                type="date"
+              />
+            </div>
+            <div class="gap-3 flex items-center">
+              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetEnd }}</span>
+              <input
+                v-model="copyToEnd"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                type="date"
+              />
             </div>
           </div>
         </div>
@@ -1984,10 +2035,12 @@ const poolSongIds = computed(() => new Set(songPool.value.map((p) => p.songId)))
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const showCopyDateDialog = ref(false)
+const copyMode = ref('single')
 const copyFromStart = ref('')
 const copyFromEnd = ref('')
 const copyToStart = ref('')
 const copyToEnd = ref('')
+const copySingleTargetDate = ref('')
 const submissionRemarkDialog = ref({
   show: false,
   songId: null,
@@ -4054,11 +4107,17 @@ const openCopyDateDialog = () => {
 
   const baseDate = selectedDate.value
   const nextWeek = addDaysToString(baseDate, 7)
+  copyMode.value = 'single'
   copyFromStart.value = baseDate
   copyFromEnd.value = baseDate
   copyToStart.value = nextWeek
   copyToEnd.value = nextWeek
+  copySingleTargetDate.value = nextWeek
   showCopyDateDialog.value = true
+}
+
+const switchCopyMode = (mode) => {
+  copyMode.value = mode
 }
 
 const confirmMoveDate = async () => {
@@ -4153,6 +4212,98 @@ const confirmMoveDate = async () => {
 }
 
 const confirmCopyDate = async () => {
+  if (copyMode.value === 'single') {
+    const sourceDate = copyFromStart.value.trim()
+    const targetDate = copySingleTargetDate.value.trim()
+
+    if (!parseDateValue(sourceDate) || !parseDateValue(targetDate)) {
+      if (window.$showNotification) {
+        window.$showNotification(
+          callLocale('errors.invalidTargetDate', '日期无效，请使用 YYYY-MM-DD 格式并确保日期有效'),
+          'error'
+        )
+      }
+      return
+    }
+
+    if (sourceDate === targetDate) {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.errors.sameTargetDate, 'warning')
+      }
+      return
+    }
+
+    // API 会检查目标日期是否已有排期，此处不需要重复检测
+
+    // 检查源日期是否有可复制的排期
+    const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
+      if (!schedule.playDate) return false
+      return getScheduleDateValue(schedule.playDate) === sourceDate
+    })
+
+    confirmDialogTitle.value = locale.value.copyDateTitle
+    confirmDialogMessage.value = callLocale(
+      'confirmations.copyDateSingleMessage',
+      `确定将 ${sourceDate} 的排期复制到 ${targetDate} 吗？`,
+      sourceDate,
+      targetDate
+    )
+    confirmDialogType.value = 'warning'
+    confirmDialogConfirmText.value = locale.value.confirmations.copyDateConfirm
+    showCopyDateDialog.value = false
+
+    confirmAction.value = async () => {
+      loading.value = true
+      try {
+        let totalCopied = 0
+
+        if (sourceSchedules.length > 0) {
+          // 源日期有排期，调用API复制
+          const result = await $fetch('/api/admin/schedule/copy', {
+            method: 'POST',
+            body: { fromDate: sourceDate, toDate: targetDate },
+            ...auth.getAuthConfig()
+          })
+          totalCopied = result?.copiedCount || 0
+        }
+
+        await loadData()
+        updateLocalScheduledSongs()
+
+        if (window.$showNotification) {
+          window.$showNotification(
+            totalCopied > 0
+              ? callLocale(
+                  'messages.copyDateSuccess',
+                  `已复制 ${totalCopied} 首歌曲到 ${targetDate}`,
+                  totalCopied,
+                  targetDate,
+                  targetDate
+                )
+              : locale.value.errors.noCopyableSongs,
+            totalCopied > 0 ? 'success' : 'warning'
+          )
+        }
+      } catch (error) {
+        console.error('复制排期日期失败:', error)
+        if (window.$showNotification) {
+          const backendMessage =
+            getThrownMessage(error) || formatLocaleValue(locale.value?.unknown) || '未知错误'
+          window.$showNotification(
+            callLocale('errors.copyDateFailed', `复制失败: ${backendMessage}`, backendMessage),
+            'error'
+          )
+        }
+      } finally {
+        loading.value = false
+      }
+    }
+
+    showConfirmDialog.value = true
+    return
+  }
+
+  // --- 周期模式（原有逻辑） ---
   const fromStart = copyFromStart.value.trim()
   const fromEnd = copyFromEnd.value.trim()
   const toStart = copyToStart.value.trim()
