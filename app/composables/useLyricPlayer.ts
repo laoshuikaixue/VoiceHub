@@ -157,8 +157,8 @@ export const useLyricPlayer = () => {
     try {
       // 解析 CSS 变量为实际颜色值（Canvas 无法直接解析）
       const resolved = resolveCssVariables(config.value)
-      
-      // 设置字体大小和行高
+
+        // 设置字体大小和行高
       lyricPlayer.value.setLyricLineStyle({
         fontSize: resolved.fontSize,
         lineHeight: resolved.lineHeight

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
 import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 /**
  * 创建API Key
@@ -24,6 +25,9 @@ export default defineEventHandler(async (event) => {
   // 检查用户权限 - 只有超级管理员可以管理 API Key
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
+    if (user) {
+      await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.CREATE', targetType: 'API_KEY', result: 'FAILURE', summary: '管理员创建 API Key 被拒绝', failureCode: 'HTTP_403' })
+    }
     throw createError({
       statusCode: 403,
       message: '只有超级管理员可以管理 API Key'
@@ -134,6 +138,17 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'API_KEY.CREATE',
+      targetType: 'API_KEY',
+      targetId: result.id,
+      targetLabel: result.name,
+      result: 'SUCCESS',
+      summary: '管理员创建了 API Key',
+      changes: { name: result.name, permissions: result.permissions, enabled: true }
+    })
+
     return {
       success: true,
       message: 'API Key创建成功',
@@ -141,6 +156,9 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     if (error.statusCode) {
+      if (shouldRecordAdminOperationFailure(error)) {
+        await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.CREATE', targetType: 'API_KEY', result: 'FAILURE', summary: '管理员创建 API Key 失败', failureCode: getAdminOperationFailureCode(error, 'API_KEY_CREATE_FAILED') })
+      }
       throw error
     }
 
@@ -151,6 +169,8 @@ export default defineEventHandler(async (event) => {
         message: `请求参数验证失败：${error.errors.map((e: any) => e.message).join(', ')}`
       })
     }
+
+    await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.CREATE', targetType: 'API_KEY', result: 'FAILURE', summary: '管理员创建 API Key 失败', failureCode: getAdminOperationFailureCode(error, 'API_KEY_CREATE_FAILED') })
 
     throw createError({
       statusCode: 500,

@@ -90,6 +90,7 @@ export default defineNuxtConfig({
       // Tailwind 3 / Windi CSS compact preset — 完全兼容 Tailwind 类名
       () => import('@unocss/preset-wind3').then(m => m.presetWind3())
     ],
+    blocklist: ['[00:00.00]'],
     // 将 Tailwind 语义化颜色映射到 CSS 变量，实现主题自适应
     theme: {
       colors: {

@@ -14,8 +14,10 @@ declare global {
 }
 
 const getDeploymentTarget = (): string => {
+  if (process.env.VOICEHUB_DEPLOYMENT_TARGET?.toLowerCase() === 'edgeone') return 'edgeone'
   if (process.env.NETLIFY === 'true') return 'netlify'
   if (process.env.VERCEL) return 'vercel'
+  if (process.env.EDGEONE || process.env.EDGEONE_PAGES || process.env.EDGEONE_ENV) return 'edgeone'
   if (process.env.NITRO_PRESET?.includes('cloudflare')) return 'cloudflare'
   return 'self-hosted-node'
 }
@@ -210,6 +212,11 @@ export default defineNitroPlugin((nitroApp) => {
 
     return globalThis.__voicehubSentryServerInitializing
   }
+
+  // 在请求开始前初始化，确保正常请求也能进入 Sentry Performance 采样链路。
+  nitroApp.hooks.hook('request', async () => {
+    await ensureSentryInitialized()
+  })
 
   nitroApp.hooks.hook('error', async (error, context) => {
     if (!shouldCaptureServerError(error)) {

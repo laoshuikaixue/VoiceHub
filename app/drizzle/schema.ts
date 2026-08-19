@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, real, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -38,6 +38,30 @@ export const users = pgTable('User', {
   statusChangedBy: integer('statusChangedBy'),
 });
 
+// 用户登录会话：用于在线状态、设备来源与单会话撤销。
+export const userSessions = pgTable('user_sessions', {
+  id: uuid('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenVersion: integer('token_version').default(0).notNull(),
+  ipAddress: text('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  browser: varchar('browser', { length: 64 }).default('Unknown').notNull(),
+  deviceType: varchar('device_type', { length: 32 }).default('unknown').notNull(),
+  lastPath: varchar('last_path', { length: 500 }),
+  startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revokedBy: integer('revoked_by'),
+  revocationReason: varchar('revocation_reason', { length: 255 })
+}, (table) => [
+  index('user_sessions_user_active_idx').on(table.userId, table.lastActiveAt),
+  index('user_sessions_last_active_idx').on(table.lastActiveAt),
+  index('user_sessions_expires_at_idx').on(table.expiresAt),
+  index('user_sessions_browser_idx').on(table.browser),
+  index('user_sessions_device_type_idx').on(table.deviceType)
+]);
+
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
   id: serial('id').primaryKey(),
@@ -73,6 +97,7 @@ export const songs = pgTable('Song', {
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
+  index('song_created_at_idx').on(table.createdAt),
   index('song_requester_id_idx').on(table.requesterId)
 ]);
 
@@ -84,7 +109,8 @@ export const votes = pgTable('Vote', {
   userId: integer('userId').notNull(),
 }, (table) => [
   unique('vote_song_user_unique').on(table.songId, table.userId),
-  index('vote_user_song_idx').on(table.userId, table.songId)
+  index('vote_user_song_idx').on(table.userId, table.songId),
+  index('vote_created_at_idx').on(table.createdAt)
 ]);
 
 // 排期表
@@ -311,6 +337,31 @@ export const apiLogs = pgTable('api_logs', {
   errorMessage: text('error_message'),
 });
 
+// 管理操作审计日志表：仅追加，不提供更新或删除能力
+export const adminOperationLogs = pgTable('admin_operation_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  actorId: integer('actor_id').notNull(),
+  actorRole: varchar('actor_role', { length: 32 }).notNull(),
+  action: varchar('action', { length: 100 }).notNull(),
+  targetType: varchar('target_type', { length: 64 }).notNull(),
+  targetId: text('target_id'),
+  targetLabel: varchar('target_label', { length: 255 }),
+  result: varchar('result', { length: 16 }).notNull(),
+  summary: text('summary').notNull(),
+  failureCode: varchar('failure_code', { length: 100 }),
+  changes: jsonb('changes').$type<Record<string, unknown> | null>(),
+  ipAddress: text('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  requestId: varchar('request_id', { length: 128 }),
+}, (table) => [
+  index('admin_operation_logs_created_at_idx').on(table.createdAt),
+  index('admin_operation_logs_actor_created_at_idx').on(table.actorId, table.createdAt),
+  index('admin_operation_logs_action_created_at_idx').on(table.action, table.createdAt),
+  index('admin_operation_logs_target_created_at_idx').on(table.targetType, table.targetId, table.createdAt),
+  index('admin_operation_logs_request_id_idx').on(table.requestId),
+]);
+
 // 用户状态变更日志表
 export const userStatusLogs = pgTable('user_status_logs', {
   id: serial('id').primaryKey(),
@@ -428,10 +479,18 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   statusLogs: many(userStatusLogs),
     collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),
+  sessions: many(userSessions),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
     references: [users.id],
   }),
+}));
+
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSessions.userId],
+    references: [users.id]
+  })
 }));
 
 export const userIdentitiesRelations = relations(userIdentities, ({ one }) => ({
@@ -623,6 +682,8 @@ export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type Re
 export type NewRequestTime = typeof requestTimes.$inferInsert;
 export type UserIdentity = typeof userIdentities.$inferSelect;
 export type NewUserIdentity = typeof userIdentities.$inferInsert;
+export type UserSession = typeof userSessions.$inferSelect;
+export type NewUserSession = typeof userSessions.$inferInsert;
 // 卡密表
 export const cardCodes = pgTable('CardCode', {
   id: serial('id').primaryKey(),
@@ -670,3 +731,48 @@ export const backupHistory = pgTable('BackupHistory', {
 
 export type BackupHistory = typeof backupHistory.$inferSelect;
 export type NewBackupHistory = typeof backupHistory.$inferInsert;
+
+// 分钟级运行指标，供运维面板在跨实例、重启后读取趋势。
+export const operationsMetricBuckets = pgTable('operations_metric_buckets', {
+  bucketStart: timestamp('bucket_start', { withTimezone: true }).notNull(),
+  instanceId: varchar('instance_id', { length: 128 }).notNull(),
+  requestCount: integer('request_count').default(0).notNull(),
+  clientErrorCount: integer('client_error_count').default(0).notNull(),
+  serverErrorCount: integer('server_error_count').default(0).notNull(),
+  totalDurationMs: integer('total_duration_ms').default(0).notNull(),
+  maxDurationMs: integer('max_duration_ms').default(0).notNull(),
+  cpuUsagePercent: real('cpu_usage_percent'),
+  memoryUsedBytes: bigint('memory_used_bytes', { mode: 'number' }),
+  memoryTotalBytes: bigint('memory_total_bytes', { mode: 'number' }),
+  diskUsedBytes: bigint('disk_used_bytes', { mode: 'number' }),
+  diskTotalBytes: bigint('disk_total_bytes', { mode: 'number' }),
+  networkRxBytes: bigint('network_rx_bytes', { mode: 'number' }),
+  networkTxBytes: bigint('network_tx_bytes', { mode: 'number' }),
+  databaseQueryTotal: bigint('database_query_total', { mode: 'number' }),
+  databaseActiveConnections: integer('database_active_connections'),
+  databaseTotalConnections: integer('database_total_connections'),
+  databaseSlowQueryCount: integer('database_slow_query_count')
+}, (table) => [
+  unique('operations_metric_buckets_instance_bucket_unique').on(table.bucketStart, table.instanceId),
+  index('operations_metric_buckets_bucket_start_idx').on(table.bucketStart)
+]);
+
+// 按音乐源聚合的分钟级调用指标，避免将用户、歌曲等高基数字段写入监控表。
+export const operationsDependencyBuckets = pgTable('operations_dependency_buckets', {
+  bucketStart: timestamp('bucket_start', { withTimezone: true }).notNull(),
+  instanceId: varchar('instance_id', { length: 128 }).notNull(),
+  source: varchar('source', { length: 32 }).notNull(),
+  callCount: integer('call_count').default(0).notNull(),
+  successCount: integer('success_count').default(0).notNull(),
+  emptyResultCount: integer('empty_result_count').default(0).notNull(),
+  semanticFailureCount: integer('semantic_failure_count').default(0).notNull(),
+  timeoutCount: integer('timeout_count').default(0).notNull(),
+  retryCount: integer('retry_count').default(0).notNull(),
+  fallbackCount: integer('fallback_count').default(0).notNull(),
+  totalDurationMs: integer('total_duration_ms').default(0).notNull(),
+  maxDurationMs: integer('max_duration_ms').default(0).notNull()
+}, (table) => [
+  unique('operations_dependency_buckets_instance_source_bucket_unique').on(table.bucketStart, table.instanceId, table.source),
+  index('operations_dependency_buckets_bucket_start_idx').on(table.bucketStart),
+  index('operations_dependency_buckets_source_bucket_start_idx').on(table.source, table.bucketStart)
+]);

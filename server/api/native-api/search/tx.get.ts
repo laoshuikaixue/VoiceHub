@@ -1,6 +1,8 @@
 import { createTxSearchBody, txRequest, txSignedRequest } from '../../../utils/native_tx'
 import { decodeName, formatPlayTime, sizeFormate } from '../../../utils/native_common'
 import { searchQqMusic } from '~~/server/utils/qq_music_sdk'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 const stripHtml = (value: unknown) => String(value ?? '').replace(/[<>]/g, '')
 
@@ -69,6 +71,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = createTxSearchBody(str, page, limit)
+  const startedAt = getServerTimestamp()
+  let retries = 0
+  let fallbacks = 0
 
   let result: any
   try {
@@ -78,6 +83,7 @@ export default defineEventHandler(async (event) => {
       const list = formatSdkSearchList(sdkList)
 
       if (list.length > 0) {
+        recordDependencyCall('tencent', { success: true, durationMs: getServerTimestamp() - startedAt, retries, fallbacks })
         return {
           list,
           total: sdkResult?.song?.totalnum || sdkResult?.data?.song?.totalnum || list.length,
@@ -87,12 +93,15 @@ export default defineEventHandler(async (event) => {
         }
       }
     } catch (sdkErr) {
+      fallbacks += 1
       console.warn('[tx.get] qq-music-api 搜索失败，回退到原生搜索:', sdkErr)
     }
 
     try {
       result = await txSignedRequest(body)
     } catch (signedErr) {
+      retries += 1
+      fallbacks += 1
       console.warn('[tx.get] 签名请求失败，回退到普通请求:', signedErr)
       result = await txRequest('https://u.y.qq.com/cgi-bin/musicu.fcg', body)
     }
@@ -167,6 +176,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    recordDependencyCall('tencent', { success: list.length > 0, emptyResult: list.length === 0, durationMs: getServerTimestamp() - startedAt, retries, fallbacks })
     return {
       list,
       total: service?.data?.meta?.sum ?? list.length,
@@ -175,6 +185,7 @@ export default defineEventHandler(async (event) => {
       source: 'tx'
     }
   } catch (err) {
+    recordDependencyCall('tencent', { success: false, semanticFailure: true, durationMs: getServerTimestamp() - startedAt, retries, fallbacks, error: err instanceof Error ? err.message : String(err) })
     console.error(err)
     throw createError({ statusCode: 500, message: 'Internal Server Error' })
   }

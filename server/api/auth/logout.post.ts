@@ -1,8 +1,12 @@
+import { getRequestHeader, getRequestURL, setCookie } from 'h3'
+import { revokeCurrentUserSession } from '~~/server/services/userSessionService'
+
 export default defineEventHandler(async (event) => {
   try {
     console.log('[Auth] User logout requested')
 
-    // 获取当前用户信息（如果存在）
+    await revokeCurrentUserSession(event)
+
     // 清除cookie
     const isSecure =
       getRequestURL(event).protocol === 'https:' ||

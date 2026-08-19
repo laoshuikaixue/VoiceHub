@@ -4,9 +4,33 @@ import { eq } from 'drizzle-orm'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()
+const musicConnectionStats = {
+  closedConnections: 0,
+  totalLifetimeMs: 0,
+  heartbeatFailures: 0,
+  broadcasts: 0,
+  messagesSent: 0,
+  broadcastFailures: 0,
+  totalBroadcastWriteMs: 0
+}
+
+export const getMusicSseStats = () => ({
+  activeConnections: musicConnections.size,
+  averageLifetimeMs: musicConnectionStats.closedConnections
+    ? Math.round(musicConnectionStats.totalLifetimeMs / musicConnectionStats.closedConnections)
+    : null,
+  heartbeatFailures: musicConnectionStats.heartbeatFailures,
+  broadcasts: musicConnectionStats.broadcasts,
+  messagesSent: musicConnectionStats.messagesSent,
+  broadcastFailures: musicConnectionStats.broadcastFailures,
+  averageBroadcastWriteMs: musicConnectionStats.broadcasts
+    ? Number((musicConnectionStats.totalBroadcastWriteMs / musicConnectionStats.broadcasts).toFixed(2))
+    : null
+})
 
 // 音乐状态接口
 interface MusicState {
@@ -21,89 +45,119 @@ interface MusicState {
 
 // 广播音乐状态到所有连接的客户端（改进错误处理）
 export function broadcastMusicState(state: MusicState) {
+  const startedAt = performance.now()
   const message = JSON.stringify({
     type: 'music_state_update',
     data: state
   })
 
   const deadConnections: string[] = []
+  let sent = 0
+  let failures = 0
 
   musicConnections.forEach((connection, id) => {
     try {
       // 检查连接是否仍然有效
       if (connection.destroyed || connection.writableEnded) {
         deadConnections.push(id)
+        failures += 1
         return
       }
 
       connection.write(`data: ${message}\n\n`)
+      sent += 1
     } catch (error) {
       // 忽略常见的连接错误，避免日志污染
       if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE' && error.code !== 'ENOTFOUND') {
         console.error(`Failed to send music state to connection ${id}:`, error.message)
       }
       deadConnections.push(id)
+      failures += 1
     }
   })
 
   // 清理死连接
   deadConnections.forEach((id) => musicConnections.delete(id))
+  musicConnectionStats.broadcasts += 1
+  musicConnectionStats.messagesSent += sent
+  musicConnectionStats.broadcastFailures += failures
+  musicConnectionStats.totalBroadcastWriteMs += Math.max(0, performance.now() - startedAt)
 }
 
 // 发送播放列表更新（改进错误处理）
 export function broadcastPlaylistUpdate(playlist: any[]) {
+  const startedAt = performance.now()
   const message = JSON.stringify({
     type: 'playlist_update',
     data: { playlist }
   })
 
   const deadConnections: string[] = []
+  let sent = 0
+  let failures = 0
 
   musicConnections.forEach((connection, id) => {
     try {
       if (connection.destroyed || connection.writableEnded) {
         deadConnections.push(id)
+        failures += 1
         return
       }
 
       connection.write(`data: ${message}\n\n`)
+      sent += 1
     } catch (error) {
       if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE' && error.code !== 'ENOTFOUND') {
         console.error(`Failed to send playlist update to connection ${id}:`, error.message)
       }
       deadConnections.push(id)
+      failures += 1
     }
   })
 
   deadConnections.forEach((id) => musicConnections.delete(id))
+  musicConnectionStats.broadcasts += 1
+  musicConnectionStats.messagesSent += sent
+  musicConnectionStats.broadcastFailures += failures
+  musicConnectionStats.totalBroadcastWriteMs += Math.max(0, performance.now() - startedAt)
 }
 
 // 发送歌曲切换通知（改进错误处理）
 export function broadcastSongChange(songInfo: any) {
+  const startedAt = performance.now()
   const message = JSON.stringify({
     type: 'song_change',
     data: songInfo
   })
 
   const deadConnections: string[] = []
+  let sent = 0
+  let failures = 0
 
   musicConnections.forEach((connection, id) => {
     try {
       if (connection.destroyed || connection.writableEnded) {
         deadConnections.push(id)
+        failures += 1
         return
       }
 
       connection.write(`data: ${message}\n\n`)
+      sent += 1
     } catch (error) {
       if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE' && error.code !== 'ENOTFOUND') {
         console.error(`Failed to send song change to connection ${id}:`, error.message)
       }
       deadConnections.push(id)
+      failures += 1
     }
   })
 
   deadConnections.forEach((id) => musicConnections.delete(id))
+  musicConnectionStats.broadcasts += 1
+  musicConnectionStats.messagesSent += sent
+  musicConnectionStats.broadcastFailures += failures
+  musicConnectionStats.totalBroadcastWriteMs += Math.max(0, performance.now() - startedAt)
 }
 
 // WebSocket事件处理器
@@ -177,12 +231,15 @@ export default defineEventHandler(async (event) => {
   )
 
   // 存储连接
+  const connectedAt = getServerTimestamp()
   musicConnections.set(connectionId, response)
 
   // 监听客户端断开连接（改进错误处理）
   const cleanup = () => {
     if (musicConnections.has(connectionId)) {
       musicConnections.delete(connectionId)
+      musicConnectionStats.closedConnections += 1
+      musicConnectionStats.totalLifetimeMs += getServerTimestamp() - connectedAt
     }
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval)
@@ -228,6 +285,7 @@ export default defineEventHandler(async (event) => {
         })}\n\n`
       )
     } catch (error) {
+      musicConnectionStats.heartbeatFailures += 1
       // 忽略常见的连接错误
       if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE') {
         console.error(`Heartbeat failed for connection ${connectionId}:`, error.message)

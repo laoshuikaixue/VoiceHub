@@ -7,6 +7,8 @@ import {
   getQqCookieDiagnostic,
   normalizeQqCookie
 } from '~~/server/utils/qq_music_sdk'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
@@ -125,8 +127,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '暂不支持的平台' })
   }
 
+  const startedAt = getServerTimestamp()
+
   const normalized = normalizeTxMusicId(musicId)
-  const playableInfo = await getTxSongPlayableInfo(musicId)
+  let playableInfo: Awaited<ReturnType<typeof getTxSongPlayableInfo>>
+  try {
+    playableInfo = await getTxSongPlayableInfo(musicId)
+  } catch (error: any) {
+    recordDependencyCall('tencent', {
+      success: false,
+      semanticFailure: true,
+      durationMs: getServerTimestamp() - startedAt,
+      error: error?.message || String(error)
+    })
+    throw error
+  }
   const mediaId = String(
     body?.mediaId ||
       body?.strMediaMid ||
@@ -151,6 +166,12 @@ export default defineEventHandler(async (event) => {
           await resolveTxWithHuibq(playableInfo.songmid, huibqQuality),
           source
         )
+        recordDependencyCall('tencent', {
+          success: true,
+          durationMs: getServerTimestamp() - startedAt,
+          retries: attempts.filter((item) => item.status === 'error').length,
+          fallbacks: attempts.filter((item) => item.status === 'error').length
+        })
         return {
           success: true,
           url,
@@ -165,6 +186,12 @@ export default defineEventHandler(async (event) => {
         await resolveTxWithDreamMeting(playableInfo.songmid),
         source
       )
+      recordDependencyCall('tencent', {
+        success: true,
+        durationMs: getServerTimestamp() - startedAt,
+        retries: attempts.filter((item) => item.status === 'error').length,
+        fallbacks: attempts.filter((item) => item.status === 'error').length
+      })
       return {
         success: true,
         url,
@@ -180,6 +207,14 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  recordDependencyCall('tencent', {
+    success: false,
+    semanticFailure: true,
+    durationMs: getServerTimestamp() - startedAt,
+    retries: attempts.filter((item) => item.status === 'error').length,
+    fallbacks: attempts.filter((item) => item.status === 'error').length,
+    error: errors.join('; ')
+  })
   throw createError({
     statusCode: 502,
     message: `QQ 音乐播放链接解析失败：${errors.join('；')}（实验源 ${TX_DISABLED_EXPERIMENTAL_SOURCES.join('/')} 默认禁用）`

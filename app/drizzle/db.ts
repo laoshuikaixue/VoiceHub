@@ -5,6 +5,7 @@ import * as schema from './schema.ts';
 import {config} from 'dotenv';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import {recordDatabaseQueryStart} from '~~/server/utils/request-database-context';
 
 // 加载环境变量（优先使用工作目录的 .env，确保构建后运行时能正确加载）
 config({ path: path.resolve(process.cwd(), '.env') });
@@ -53,7 +54,7 @@ const getDatabaseConfig = () => {
         application_name: 'voicehub-app'
       },
       onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
-      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
+      debug: (_connection: number, query: string) => recordDatabaseQueryStart(query)
     };
   } else {
     // 标准 PostgreSQL 数据库配置
@@ -71,7 +72,7 @@ const getDatabaseConfig = () => {
         application_name: 'voicehub-app'
       },
       onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
-      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
+      debug: (_connection: number, query: string) => recordDatabaseQueryStart(query)
     };
   }
 };

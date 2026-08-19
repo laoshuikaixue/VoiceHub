@@ -47,8 +47,19 @@
                 @click="onNavigate(item.id)"
               >
                 <!-- 菜单图标 -->
+                <Icon
+                  v-if="item.iconName"
+                  :name="item.iconName"
+                  :size="18"
+                  :class-name="
+                    activeTab === item.id
+                      ? 'text-blue-400'
+                      : 'text-zinc-500 group-hover:text-zinc-300'
+                  "
+                />
                 <component
                   :is="item.icon"
+                  v-else
                   :size="18"
                   :class="
                     activeTab === item.id
@@ -137,6 +148,7 @@ import {
   Ticket
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import Icon from '~/components/UI/Icon.vue'
 
 const avatarError = ref(false)
 const { admin } = useLocale()
@@ -204,6 +216,11 @@ const menuGroups = computed(() => [
       { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
       { icon: ListMusic, label: locale.value.menu?.musicSource || '音源控制', id: 'music-source' },
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
+      {
+        iconName: 'monitoring',
+        label: locale.value.menu?.operations || '运维监控',
+        id: 'operations'
+      },
       { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' }
     ]
   },
