@@ -84,11 +84,21 @@ export default defineEventHandler(async (event) => {
 
     // 有草稿但未请求覆盖，返回信息供前端询问用户
     if (draftCount.length > 0 && !overwritingDrafts) {
-      return { draftCount: draftCount.length, overwriteDrafts: false }
+      throw createError({
+        statusCode: 409,
+        message: '目标日期已存在草稿，请确认是否覆盖。',
+        data: { draftCount: draftCount.length, requiresConfirmation: true }
+      })
     }
+
+    let replacedDrafts = []
 
     // 清除目标日期草稿（如用户确认覆盖）
     if (overwritingDrafts) {
+      replacedDrafts = await tx
+        .select()
+        .from(schedules)
+        .where(and(gte(schedules.playDate, toStart), lte(schedules.playDate, toEnd), eq(schedules.isDraft, true)))
       await tx.delete(schedules).where(and(gte(schedules.playDate, toStart), lte(schedules.playDate, toEnd)))
     }
 
@@ -105,14 +115,15 @@ export default defineEventHandler(async (event) => {
       .orderBy(schedules.sequence)
 
     if (sourceSchedules.length === 0) {
-      return { copiedCount: 0 }
+      return { copiedCount: 0, createdScheduleIds: [], replacedDrafts }
     }
 
     let copiedCount = 0
+    const createdScheduleIds = []
     const now = getServerDate()
 
     for (const source of sourceSchedules) {
-      await tx
+      const inserted = await tx
         .insert(schedules)
         .values({
           songId: source.songId,
@@ -123,11 +134,13 @@ export default defineEventHandler(async (event) => {
           publishedAt: null,
           updatedAt: now
         })
+        .returning({ id: schedules.id })
 
       copiedCount++
+      if (inserted[0]) createdScheduleIds.push(inserted[0].id)
     }
 
-    return { copiedCount }
+    return { copiedCount, createdScheduleIds, replacedDrafts }
   })
 
   console.log(`[Performance] 复制排期耗时: ${Date.now() - startTime}ms`)
@@ -137,6 +150,8 @@ export default defineEventHandler(async (event) => {
     fromDate,
     toDate,
     copiedCount: copyResult.copiedCount ?? 0,
+    createdScheduleIds: copyResult.createdScheduleIds ?? [],
+    replacedDrafts: copyResult.replacedDrafts ?? [],
     draftCount: copyResult.draftCount,
     overwriteDrafts: copyResult.overwriteDrafts
   }

@@ -217,7 +217,7 @@ export function autoSchedule(
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
   const finalPlans = plans
     .slice(0, plansCount)
-    .map((p) => ({ songs: [...fixedSongs, ...p.songs], ...p }))
+    .map((p) => ({ ...p, songs: [...fixedSongs, ...p.songs] }))
 
   if (plansCount === 1) {
     return finalPlans[0] || emptyResult
@@ -273,6 +273,8 @@ export function autoScheduleExhaustive(
     if (currentSongs.length === 0) return
     const total = currentTotal + preSelectedSeconds
     const diff = total - targetSeconds
+    if (direction === 'over' && total < targetSeconds) return
+    if (direction === 'under' && total > targetSeconds) return
     const absDiff = Math.abs(diff)
     // 已有比当前差的方案则不记录
     if (absDiff >= worstAbs && solutions.length > 0) return
@@ -348,8 +350,8 @@ export function autoScheduleExhaustive(
 
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
   const finalPlans = solutions.slice(0, plansCount).map((p) => ({
-    songs: [...fixedSongs, ...p.songs],
-    ...p
+    ...p,
+    songs: [...fixedSongs, ...p.songs]
   }))
 
   return plansCount === 1 ? (finalPlans[0] || emptyResult) : finalPlans

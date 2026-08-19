@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, scheduleSongPool } from '~/drizzle/schema'
-import { inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -25,25 +25,32 @@ export default defineEventHandler(async (event) => {
   const now = getServerDate()
   // 批量查询歌曲，避免 N+1
   const songsRows = await db.select().from(songs).where(inArray(songs.id, songIds))
-  // 补全缺失时长
+  // 时长补全放到响应后的后台任务，避免批量加入时串行等待外部平台
   const missingDurationSongs = songsRows.filter(
     (s) => s.durationSeconds == null && s.musicPlatform && s.musicId
   )
   const frontendDurationMap = new Map((body.songDurations || []).map((item) => [item.songId, Number(item.durationSeconds)]))
   const durationTolerance = 3
-  for (const song of missingDurationSongs) {
-    const duration = await fetchSongDuration(song.musicPlatform, song.musicId)
-    if (duration != null) {
-      const frontendDuration = frontendDurationMap.get(song.id)
-      if (frontendDuration != null && Math.abs(duration - frontendDuration) > durationTolerance) {
-        console.warn(`[备选池] 歌曲 #${song.id} 前端时长 ${frontendDuration}s 与后端获取 ${duration}s 不一致，以后端为准`)
+  if (missingDurationSongs.length > 0) {
+    const durationTask = (async () => {
+      for (const song of missingDurationSongs) {
+        const duration = await fetchSongDuration(song.musicPlatform, song.musicId)
+        if (duration != null) {
+          const frontendDuration = frontendDurationMap.get(song.id)
+          if (frontendDuration != null && Math.abs(duration - frontendDuration) > durationTolerance) {
+            console.warn(`[备选池] 歌曲 #${song.id} 前端时长 ${frontendDuration}s 与后端获取 ${duration}s 不一致，以后端为准`)
+          }
+          await db.update(songs).set({ durationSeconds: duration }).where(eq(songs.id, song.id))
+        }
       }
-      await db.update(songs).set({ durationSeconds: duration }).where(eq(songs.id, song.id))
+    })()
+    if (typeof event.waitUntil === 'function') {
+      event.waitUntil(durationTask)
+    } else {
+      durationTask.catch((error) => console.error('[备选池] 后台补全时长失败:', error))
     }
   }
-  // 重新查询确保拿到最新时长
-  const refreshedSongs = await db.select().from(songs).where(inArray(songs.id, songIds))
-  const refreshedMap = new Map(refreshedSongs.map((s) => [s.id, s]))
+  const refreshedMap = new Map(songsRows.map((s) => [s.id, s]))
   // 构建待插入值和跳过列表
   const insertValues = []
   const skipped = []

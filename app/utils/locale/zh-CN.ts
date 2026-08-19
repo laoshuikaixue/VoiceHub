@@ -1445,6 +1445,9 @@ export const pages = {
       cardCodeRequiredForSite: '本站点已启用仅点歌券投稿，请提供有效点歌券',
       cardCodeTooLong: '点歌券不能超过100个字符',
       notifications: {
+        restrictionSameSong: '该歌曲处于投稿限制冷却期，请稍后再试',
+        restrictionSameArtist: '该歌手处于投稿限制冷却期，请稍后再试',
+        restrictionGeneric: '该歌曲或歌手处于投稿限制冷却期，请稍后再试',
         exportSuccess: '导出成功',
         validatingCookie: '正在验证Cookie有效性...',
         importSuccess: '导入成功',
@@ -2395,6 +2398,7 @@ export const admin = {
       moveDateMessage: (sourceDate: string, count: number, targetDate: string) => `确定将 ${sourceDate} 的所有 ${count} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
       moveDateConfirm: '确认迁移',
       copyDateMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number) => `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？源排期将循环复用至填满目标区间。`,
+      copyDateOverwriteMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number, draftDays: number) => `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？目标区间内有 ${draftDays} 个日期的草稿将被覆盖。源排期将循环复用至填满目标区间。`,
       copyDateConfirm: '确认复制',
       copyDateSingleMessage: (sourceDate: string, targetDate: string) => `确定将 ${sourceDate} 的排期复制到 ${targetDate} 吗？`,
       copyDateSingleConfirm: '确认复制',

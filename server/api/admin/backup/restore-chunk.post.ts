@@ -18,6 +18,7 @@ import {
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
+import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -686,7 +687,7 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'systemSettings': {
-            const systemSettingsData: any = {}
+            let systemSettingsData: any = {}
             const fields = [
               'enablePlayTimeSelection',
               'instanceId',
@@ -772,6 +773,7 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
             })
+            systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
             if (mode === 'merge') {
               const existing = await tx.query.systemSettings.findFirst()

@@ -79,7 +79,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const currentSemester = await getCurrentSemesterName()
 
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
 
     const isBilibili =
       requestBody.musicPlatform === 'bilibili' ||
@@ -162,7 +162,10 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           eq(schedules.isDraft, false),
           or(
             and(lte(schedules.playDate, now), gte(schedules.playDate, cutoff)),
-            and(gt(schedules.playDate, now), gte(schedules.createdAt, cutoff))
+            and(
+              gt(schedules.playDate, now),
+              or(gte(schedules.publishedAt, cutoff), gte(schedules.createdAt, cutoff))
+            )
           ),
           ...(scopeFilter ? [scopeFilter] : [])
         )
@@ -170,6 +173,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           .select({
             sPlayDate: schedules.playDate,
             sCreatedAt: schedules.createdAt,
+            sPublishedAt: schedules.publishedAt,
             songTitle: songs.title,
             songArtist: songs.artist,
             songRequesterId: songs.requesterId
@@ -181,10 +185,13 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         for (const scheduled of scheduledSongs) {
           const playDate = scheduled.sPlayDate instanceof Date ? scheduled.sPlayDate : new Date(scheduled.sPlayDate)
           const createdAt = scheduled.sCreatedAt instanceof Date ? scheduled.sCreatedAt : new Date(scheduled.sCreatedAt)
+          const publishedAt = scheduled.sPublishedAt
+            ? (scheduled.sPublishedAt instanceof Date ? scheduled.sPublishedAt : new Date(scheduled.sPublishedAt))
+            : null
           // 已播放歌曲：窗口从播放时间起算；未播放歌曲：窗口从排期时间起算
           const windowStart = playDate.getTime() <= now.getTime()
             ? playDate.getTime()
-            : createdAt.getTime()
+            : (publishedAt || createdAt).getTime()
           const songWindowMs = (windowStart + (sameSongHours || 0) * 3600000) - now.getTime()
           const artistWindowMs = (windowStart + (sameArtistHours || 0) * 3600000) - now.getTime()
           const songWindowActive = (sameSongHours || 0) > 0 && songWindowMs > 0
@@ -547,7 +554,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const submitPlatform = song.musicPlatform
     const submitMusicId = song.musicId
     if (submitDuration && submitPlatform && submitMusicId) {
-      setImmediate(async () => {
+      const durationValidationTask = (async () => {
         try {
           const result = await validateSongDurationOnSubmit(song.id, submitPlatform, submitMusicId, submitDuration)
           if (result === 'clear') {
@@ -556,7 +563,12 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         } catch (err) {
           console.error(`[投稿校验] 后台校验 #${song.id} 异常:`, err)
         }
-      })
+      })()
+      if (typeof event.waitUntil === 'function') {
+        event.waitUntil(durationValidationTask)
+      } else {
+        durationValidationTask.catch((err) => console.error(`[投稿校验] 后台任务 #${song.id} 异常:`, err))
+      }
     }
 
     for (const notification of notificationsToSend) {

@@ -3616,7 +3616,7 @@ const runAutoSchedule = () => {
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
     if (window.$showNotification) {
-      window.$showNotification(callLocale('autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')
+      window.$showNotification(callLocale('messages.autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')
     }
     return
   }
@@ -3656,7 +3656,7 @@ const generateMorePlans = async () => {
     currentPlanIndex.value = firstNewIndex
     autoScheduleResult.value = autoSchedulePlans.value[currentPlanIndex.value]
   } else if (window.$showNotification) {
-    window.$showNotification(callLocale('autoScheduleNoMorePlans', '已无更多不同方案'), 'warning')
+    window.$showNotification(callLocale('messages.autoScheduleNoMorePlans', '已无更多不同方案'), 'warning')
   }
   generatingNewPlan.value = false
 }
@@ -4549,14 +4549,15 @@ const confirmCopyDate = async () => {
   confirmDialogTitle.value = locale.value.copyDateTitle
   confirmDialogMessage.value = hasDraftOverlap
     ? callLocale(
-        'confirmations.copyDateMessage',
+        'confirmations.copyDateOverwriteMessage',
         `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？${draftTargetDates.length} 个目标日期有草稿将被覆盖。源排期将循环复用至填满目标区间。`,
         fromStart,
         fromEnd,
         sourceDays,
         toStart,
         toEnd,
-        targetDays
+        targetDays,
+        draftTargetDates.length
       )
     : callLocale(
         'confirmations.copyDateMessage',
@@ -4576,7 +4577,8 @@ const confirmCopyDate = async () => {
     loading.value = true
     try {
       let totalCopied = 0
-      let succeededTargetDates = []
+      let succeededScheduleIds = []
+      let replacedDrafts = []
 
       for (let i = 0; i < targetDays; i++) {
         const srcDay = i % sourceDays
@@ -4594,10 +4596,9 @@ const confirmCopyDate = async () => {
           ...auth.getAuthConfig()
         })
 
-        if (result?.copiedCount > 0) {
-          totalCopied += result.copiedCount
-          succeededTargetDates.push(tgtDate)
-        }
+        totalCopied += result?.copiedCount || 0
+        succeededScheduleIds.push(...(result?.createdScheduleIds || []))
+        replacedDrafts.push(...(result?.replacedDrafts || []))
       }
 
       await loadData()
@@ -4618,16 +4619,14 @@ const confirmCopyDate = async () => {
         )
       }
     } catch (error) {
-      // 回滚已成功写入的目标日期排期（服务端检查过目标日期原本为空，可安全删除）
-      if (succeededTargetDates.length > 0) {
+      // 只回滚本批创建的排期，并恢复本批覆盖的草稿，避免误删并发变更
+      if (succeededScheduleIds.length > 0 || replacedDrafts.length > 0) {
         try {
-          for (const dateStr of succeededTargetDates) {
-            await $fetch('/api/admin/schedule/remove-all-date', {
-              method: 'POST',
-              body: { date: dateStr },
-              ...auth.getAuthConfig()
-            })
-          }
+          await $fetch('/api/admin/schedule/remove-all-date', {
+            method: 'POST',
+            body: { scheduleIds: succeededScheduleIds, restoreSchedules: replacedDrafts },
+            ...auth.getAuthConfig()
+          })
         } catch (rollbackError) {
           console.error('回滚已复制的排期失败:', rollbackError)
         }

@@ -13,6 +13,7 @@ import {
   playTimes,
   requestTimes,
   schedules,
+  scheduleSongPool,
   semesters,
   songBlacklists,
   songCollaborators,
@@ -29,6 +30,7 @@ import path from 'path'
 import { SmtpService } from '../../../services/smtpService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
+import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -1121,7 +1123,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'systemSettings':
                         // 动态构建系统设置数据，自动跳过不存在的字段
-                        const systemSettingsData = {}
+                        let systemSettingsData = {}
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
                           'instanceId',
@@ -1211,6 +1213,7 @@ export default defineEventHandler(async (event) => {
                             systemSettingsData[field] = record[field]
                           }
                         })
+                        systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
                         if (mode === 'merge') {
                           // 检查是否存在系统设置记录（通常只有一条记录）

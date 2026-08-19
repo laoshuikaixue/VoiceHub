@@ -49,7 +49,10 @@ export default defineEventHandler(async (event) => {
     eq(schedules.isDraft, false),
     or(
       and(lte(schedules.playDate, now), gte(schedules.playDate, cutoff)),
-      and(gt(schedules.playDate, now), gte(schedules.createdAt, cutoff))
+      and(
+        gt(schedules.playDate, now),
+        or(gte(schedules.publishedAt, cutoff), gte(schedules.createdAt, cutoff))
+      )
     ),
     ...(scopeFilter ? [scopeFilter] : [])
   )
@@ -58,6 +61,7 @@ export default defineEventHandler(async (event) => {
     .select({
       sPlayDate: schedules.playDate,
       sCreatedAt: schedules.createdAt,
+      sPublishedAt: schedules.publishedAt,
       songTitle: songs.title,
       songArtist: songs.artist,
       songRequesterId: songs.requesterId
@@ -69,9 +73,12 @@ export default defineEventHandler(async (event) => {
   for (const scheduled of scheduledSongs) {
     const playDate = scheduled.sPlayDate instanceof Date ? scheduled.sPlayDate : new Date(scheduled.sPlayDate)
     const createdAt = scheduled.sCreatedAt instanceof Date ? scheduled.sCreatedAt : new Date(scheduled.sCreatedAt)
+    const publishedAt = scheduled.sPublishedAt
+      ? (scheduled.sPublishedAt instanceof Date ? scheduled.sPublishedAt : new Date(scheduled.sPublishedAt))
+      : null
     const windowStart = playDate.getTime() <= now.getTime()
       ? playDate.getTime()
-      : createdAt.getTime()
+      : (publishedAt || createdAt).getTime()
     const songWindowMs = (windowStart + (sameSongHours || 0) * 3600000) - now.getTime()
     const artistWindowMs = (windowStart + (sameArtistHours || 0) * 3600000) - now.getTime()
     const songWindowActive = (sameSongHours || 0) > 0 && songWindowMs > 0
@@ -82,17 +89,17 @@ export default defineEventHandler(async (event) => {
     const scheduledTitleNorm = normalizeForMatch(scheduled.songTitle || '')
     const scheduledArtistNorm = normalizeForMatch(scheduled.songArtist || '')
 
-    if (artistWindowActive && scheduledArtistNorm === normalizedArtist) {
-      return {
-        blocked: true,
-        reason: 'sameArtist'
-      }
-    }
-
     if (songWindowActive && scheduledTitleNorm === normalizedTitle && scheduledArtistNorm === normalizedArtist) {
       return {
         blocked: true,
         reason: 'sameSong'
+      }
+    }
+
+    if (artistWindowActive && scheduledArtistNorm === normalizedArtist) {
+      return {
+        blocked: true,
+        reason: 'sameArtist'
       }
     }
   }

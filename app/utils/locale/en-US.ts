@@ -1436,6 +1436,9 @@ export const pages = {
       cardCodeRequiredForSite: 'This site requires a valid request card to submit songs',
       cardCodeTooLong: 'Request card code cannot exceed 100 characters',
       notifications: {
+        restrictionSameSong: 'This song is in a submission cooldown period. Please try again later',
+        restrictionSameArtist: 'This artist is in a submission cooldown period. Please try again later',
+        restrictionGeneric: 'This song or artist is in a submission cooldown period. Please try again later',
         exportSuccess: 'Export successful',
         validatingCookie: 'Validating cookie...',
         importSuccess: 'Import successful',
@@ -2386,6 +2389,7 @@ export const admin = {
       moveDateMessage: (sourceDate: string, count: number, targetDate: string) => `Move all ${count} songs from ${sourceDate} to ${targetDate}? Order and content will be preserved.`,
       moveDateConfirm: 'Move',
       copyDateMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number) => `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Source will cycle to fill.`,
+      copyDateOverwriteMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number, draftDays: number) => `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Drafts on ${draftDays} target date(s) will be overwritten. Source will cycle to fill.`,
       copyDateConfirm: 'Copy',
       copyDateSingleMessage: (sourceDate: string, targetDate: string) => `Copy the schedule from ${sourceDate} to ${targetDate}?`,
       copyDateSingleConfirm: 'Copy',

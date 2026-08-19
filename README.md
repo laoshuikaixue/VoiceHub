@@ -1241,6 +1241,7 @@ VoiceHub/
 │   │   │   ├── import.post.ts       # 导入歌曲
 │   │   │   ├── index.get.ts         # 歌曲列表
 │   │   │   ├── public.get.ts        # 公开歌曲列表
+│   │   │   ├── check-restriction.post.ts # 检查重复投稿限制
 │   │   │   ├── request.post.ts      # 点歌请求
 │   │   │   ├── replay.post.ts       # 提交重播申请
 │   │   │   ├── replay.delete.ts     # 撤回重播申请
@@ -1339,6 +1340,8 @@ VoiceHub/
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
+│   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
+│   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请

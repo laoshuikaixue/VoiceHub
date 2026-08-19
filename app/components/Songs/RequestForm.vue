@@ -738,6 +738,7 @@
                       <button
                         v-else
                         :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
+                        :title="isSongBlockedByRestriction(result) ? getRestrictionMessage(getRestrictionReason(result)) : ''"
                         class="select-btn"
                         @click.stop.prevent="submitSong(result)"
                       >
@@ -3247,7 +3248,7 @@ const submitSong = async (result, options = {}) => {
   if (!auth.isAdmin.value) {
     const restrictionCheck = await checkSongRestriction(title.value, artist.value)
     if (restrictionCheck.blocked) {
-      const reason = getRestrictionReason({ song: title.value, artist: artist.value }) || '该歌曲/歌手处于投稿限制冷却期'
+      const reason = getRestrictionMessage(restrictionCheck.reason)
       error.value = reason
       if (window.$showNotification) {
         window.$showNotification(reason, 'warning')
@@ -3363,7 +3364,7 @@ const handleSubmit = async () => {
   if (!auth.isAdmin.value) {
     const restrictionCheck = await checkSongRestriction(title.value, artist.value)
     if (restrictionCheck.blocked) {
-      error.value = '该歌曲/歌手处于投稿限制冷却期'
+      error.value = getRestrictionMessage(restrictionCheck.reason)
       submitting.value = false
       return
     }
@@ -3727,7 +3728,7 @@ const handleManualSubmit = async () => {
   if (!auth.isAdmin.value) {
     const restrictionCheck = await checkSongRestriction(title.value, manualArtist.value)
     if (restrictionCheck.blocked) {
-      error.value = '该歌曲/歌手处于投稿限制冷却期'
+      error.value = getRestrictionMessage(restrictionCheck.reason)
       submitting.value = false
       return
     }
@@ -4027,6 +4028,12 @@ const getRestrictionReason = (result) => {
   const key = `${songTitle}||${songArtist}`
   const check = restrictionCheckMap.value.get(key)
   return check?.reason || null
+}
+
+const getRestrictionMessage = (reason) => {
+  if (reason === 'sameSong') return locale.value.notifications?.restrictionSameSong
+  if (reason === 'sameArtist') return locale.value.notifications?.restrictionSameArtist
+  return locale.value.notifications?.restrictionGeneric
 }
 
 const fetchRestrictionChecks = async () => {
@@ -6944,5 +6951,4 @@ defineExpose({
   opacity: 1;
 }
 </style>
-
 

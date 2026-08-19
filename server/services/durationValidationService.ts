@@ -21,11 +21,7 @@ export async function validateSongDurationOnSubmit(
   try {
     const actualDuration = await fetchSongDuration(platform, musicId)
 
-    if (actualDuration == null) {
-      // API拿不到 → 清除
-      console.log(`[投稿校验] #${songId} API未返回有效时长，清除durationSeconds`)
-      return 'clear'
-    }
+    if (actualDuration == null) return 'nocheck'
 
     if (Math.abs(actualDuration - storedDurationSeconds) > DURATION_TOLERANCE_SECONDS) {
       // 差异超过容差 → 清除
