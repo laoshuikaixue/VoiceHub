@@ -63,6 +63,14 @@ const requestJson = async (url: string, init: RequestInit) => {
 
 const formEncode = (values: Record<string, string>) => new URLSearchParams(values).toString()
 const money = (cents: number) => (cents / 100).toFixed(2)
+const assertCny = (currency: string, label: string) => {
+  if (String(currency || '').toUpperCase() !== 'CNY') throw new Error(`${label}仅支持人民币（CNY）套餐`)
+}
+const assertPositiveCents = (value: unknown, label: string) => {
+  const cents = Number(value)
+  if (!Number.isSafeInteger(cents) || cents <= 0) throw new Error(`${label}金额无效`)
+  return cents
+}
 const assertRecentWebhookTimestamp = (value: string, label: string) => {
   const raw = String(value || '')
   const numeric = Number(raw)
@@ -157,7 +165,13 @@ const alipayVerify = (params: Record<string, string>, publicKey: string) => {
 class AlipayProvider implements PaymentProvider {
   private gateway: string
   constructor(private config: Record<string, any>) {
-    this.gateway = config.gateway || 'https://openapi.alipay.com/gateway.do'
+    const gateway = String(config.gateway || 'https://openapi.alipay.com/gateway.do').trim()
+    let parsed: URL
+    try { parsed = new URL(gateway) } catch { throw new Error('支付宝网关地址无效') }
+    if (parsed.protocol !== 'https:' || !['openapi.alipay.com', 'openapi-sandbox.dl.alipaydev.com'].includes(parsed.hostname) || parsed.pathname !== '/gateway.do') {
+      throw new Error('支付宝网关仅允许使用官方正式或沙箱网关')
+    }
+    this.gateway = parsed.toString()
   }
   private async call(method: string, biz: Record<string, unknown>, notifyUrl?: string, returnUrl?: string) {
     const params: Record<string, string> = {
@@ -177,6 +191,8 @@ class AlipayProvider implements PaymentProvider {
     return result
   }
   async create(req: PaymentCreateRequest) {
+    assertCny(req.currency, '支付宝官方支付')
+    assertPositiveCents(req.amountCents, '支付宝官方支付')
     if (!req.mobile && this.config.paymentMode === 'redirect') return { payUrl: this.pagePayUrl(req) }
     if (req.mobile && !req.alipayForceQrCode && !req.alipayMobileDeepLink) {
       const params: Record<string, string> = {
@@ -213,16 +229,27 @@ class AlipayProvider implements PaymentProvider {
     return `${this.gateway}?${formEncode(params)}`
   }
   async query(outTradeNo: string) {
-    const result = await this.call('alipay.trade.query', { out_trade_no: outTradeNo })
-    const status: PaymentQueryResult['status'] = ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(result.trade_status) ? 'paid' : 'pending'
-    return { status, tradeNo: result.trade_no, amountCents: Math.round(Number(result.total_amount || 0) * 100) }
+    let result: any
+    try {
+      result = await this.call('alipay.trade.query', { out_trade_no: outTradeNo })
+    } catch (error) {
+      if (/ACQ\.TRADE_NOT_EXIST|交易不存在|TRADE_NOT_EXIST/i.test(error instanceof Error ? error.message : String(error))) return { status: 'pending' as const }
+      throw error
+    }
+    const status: PaymentQueryResult['status'] = ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(result.trade_status)
+      ? 'paid'
+      : result.trade_status === 'TRADE_CLOSED' ? 'failed' : 'pending'
+    const amount = Number(result.total_amount)
+    return { status, tradeNo: result.trade_no, ...(Number.isFinite(amount) && amount > 0 ? { amountCents: Math.round(amount * 100) } : {}) }
   }
   async verify(rawBody: string) {
     const params = Object.fromEntries(new URLSearchParams(rawBody))
     if (!alipayVerify(params, this.config.publicKey)) throw new Error('支付宝回调签名无效')
     if (!params.out_trade_no) throw new Error('支付宝回调缺少订单号')
     if (!params.app_id || String(params.app_id) !== String(this.config.appId)) throw new Error('支付宝回调应用 ID 不匹配')
-    return { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountCents: Math.round(Number(params.total_amount) * 100), success: ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(params.trade_status || '') }
+    if (params.currency && String(params.currency).toUpperCase() !== 'CNY') throw new Error('支付宝回调币种不匹配')
+    const amountCents = assertPositiveCents(Math.round(Number(params.total_amount) * 100), '支付宝回调')
+    return { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountCents, success: ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(params.trade_status || '') }
   }
   async refund(outTradeNo: string, _tradeNo: string | undefined, amountCents: number, reason: string) {
     const result = await this.call('alipay.trade.refund', { out_trade_no: outTradeNo, refund_amount: money(amountCents), refund_reason: reason, out_request_no: `${outTradeNo}-${getServerTimestamp()}` })
@@ -248,38 +275,67 @@ class WxPayProvider implements PaymentProvider {
     })
   }
   async create(req: PaymentCreateRequest) {
+    assertCny(req.currency, '微信支付官方')
+    assertPositiveCents(req.amountCents, '微信支付官方')
     const type = req.mobile ? 'h5' : 'native'
     const path = `/v3/pay/transactions/${type}`
     const payload: any = { appid: this.config.appId, mchid: this.config.mchId, description: req.subject, out_trade_no: req.outTradeNo, notify_url: req.notifyUrl, amount: { total: req.amountCents, currency: req.currency } }
-    if (type === 'h5') payload.scene_info = { payer_client_ip: req.clientIp, h5_info: { type: 'Wap' } }
+    if (type === 'h5') {
+      const h5Info: Record<string, string> = { type: 'Wap' }
+      const appName = String(this.config.h5AppName || '').trim()
+      if (appName) h5Info.app_name = appName.slice(0, 64)
+      const appUrl = String(this.config.h5AppUrl || '').trim()
+      if (appUrl) {
+        let parsed: URL
+        try { parsed = new URL(appUrl) } catch { throw new Error('微信支付 H5 网站地址无效') }
+        if (parsed.protocol !== 'https:') throw new Error('微信支付 H5 网站地址必须使用 HTTPS')
+        h5Info.app_url = parsed.toString()
+      }
+      payload.scene_info = { payer_client_ip: req.clientIp, h5_info: h5Info }
+    }
     const result = await this.call('POST', path, payload)
-    return type === 'native' ? { qrCode: result.code_url } : { payUrl: result.h5_url }
+    if (type === 'native') {
+      if (!result.code_url) throw new Error('微信支付未返回二维码链接')
+      return { qrCode: result.code_url }
+    }
+    if (!result.h5_url) throw new Error('微信支付未返回 H5 支付链接')
+    return { payUrl: `${result.h5_url}${String(result.h5_url).includes('?') ? '&' : '?'}redirect_url=${encodeURIComponent(req.returnUrl)}` }
   }
   async query(outTradeNo: string) {
     const result = await this.call('GET', `/v3/pay/transactions/out-trade-no/${encodeURIComponent(outTradeNo)}?mchid=${encodeURIComponent(this.config.mchId)}`)
-    const status: PaymentQueryResult['status'] = result.trade_state === 'SUCCESS' ? 'paid' : result.trade_state === 'NOTPAY' ? 'pending' : 'failed'
-    return { status, tradeNo: result.transaction_id, amountCents: Number(result.amount?.total || 0) }
+    const state = String(result.trade_state || '').toUpperCase()
+    const status: PaymentQueryResult['status'] = state === 'SUCCESS' ? 'paid' : ['CLOSED', 'PAYERROR'].includes(state) ? 'failed' : 'pending'
+    const amount = Number(result.amount?.total)
+    return { status, tradeNo: result.transaction_id, ...(Number.isSafeInteger(amount) && amount > 0 ? { amountCents: amount } : {}) }
   }
   async verify(rawBody: string, headers: Record<string, string>) {
     const timestamp = headers['wechatpay-timestamp'] || ''
     const nonce = headers['wechatpay-nonce'] || ''
     const signature = headers['wechatpay-signature'] || ''
+    if (!timestamp || !nonce || !signature) throw new Error('微信支付回调缺少验签请求头')
     assertRecentWebhookTimestamp(timestamp, '微信支付')
-    if (!createVerify('RSA-SHA256').update(`${timestamp}\n${nonce}\n${rawBody}\n`).verify(this.config.publicKey, signature, 'base64')) throw new Error('微信支付回调签名无效')
-    const event = JSON.parse(rawBody)
+    let signatureValid = false
+    try { signatureValid = createVerify('RSA-SHA256').update(`${timestamp}\n${nonce}\n${rawBody}\n`).verify(this.config.publicKey, signature, 'base64') } catch { throw new Error('微信支付回调验签配置无效') }
+    if (!signatureValid) throw new Error('微信支付回调签名无效')
+    let event: any
+    try { event = JSON.parse(rawBody) } catch { throw new Error('微信支付回调数据格式无效') }
     if (event.event_type !== 'TRANSACTION.SUCCESS') return null
     const resource = event.resource
-    const key = Buffer.from(this.config.apiV3Key)
+    if (!resource?.nonce || !resource?.ciphertext || typeof resource.ciphertext !== 'string') throw new Error('微信支付回调缺少加密资源')
+    const key = Buffer.from(String(this.config.apiV3Key || ''), 'utf8')
+    if (key.length !== 32) throw new Error('微信支付 API v3 密钥长度必须为 32 个字符')
+    const ciphertext = Buffer.from(resource.ciphertext, 'base64')
+    if (ciphertext.length <= 16) throw new Error('微信支付回调密文无效')
     const decipher = (await import('node:crypto')).createDecipheriv('aes-256-gcm', key, Buffer.from(resource.nonce))
     decipher.setAAD(Buffer.from(resource.associated_data || ''))
-    const ciphertext = Buffer.from(resource.ciphertext, 'base64')
     decipher.setAuthTag(ciphertext.subarray(ciphertext.length - 16))
     const plain = Buffer.concat([decipher.update(ciphertext.subarray(0, -16)), decipher.final()])
     const data = JSON.parse(plain.toString('utf8'))
     if (!data.out_trade_no) throw new Error('微信支付回调缺少订单号')
     if (String(data.appid || '') !== String(this.config.appId) || String(data.mchid || '') !== String(this.config.mchId)) throw new Error('微信支付回调商户信息不匹配')
     if (String(data.amount?.currency || 'CNY').toUpperCase() !== 'CNY') throw new Error('微信支付回调币种不匹配')
-    return { outTradeNo: data.out_trade_no, tradeNo: data.transaction_id, amountCents: Number(data.amount?.total || 0), success: data.trade_state === 'SUCCESS' }
+    const amountCents = assertPositiveCents(data.amount?.total, '微信支付回调')
+    return { outTradeNo: data.out_trade_no, tradeNo: data.transaction_id, amountCents, success: data.trade_state === 'SUCCESS' }
   }
   async refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string, totalAmountCents = amountCents) {
     const result = await this.call('POST', '/v3/refund/domestic/refunds', { out_refund_no: `${outTradeNo}-${getServerTimestamp()}`, ...(tradeNo ? { transaction_id: tradeNo } : { out_trade_no: outTradeNo }), reason, amount: { refund: amountCents, total: totalAmountCents, currency: 'CNY' }, notify_url: this.config.refundNotifyUrl })
@@ -290,54 +346,93 @@ class WxPayProvider implements PaymentProvider {
 
 class StripeProvider implements PaymentProvider {
   constructor(private config: Record<string, any>) {}
-  private async call(path: string, values?: Record<string, string>, method = 'POST') {
-    return requestJson(`https://api.stripe.com/v1${path}`, { method, headers: { authorization: `Bearer ${this.config.secretKey}`, 'content-type': 'application/x-www-form-urlencoded' }, body: values ? formEncode(values) : undefined })
+  private async call(path: string, values?: Record<string, string>, method = 'POST', idempotencyKey?: string) {
+    return requestJson(`https://api.stripe.com/v1${path}`, {
+      method,
+      headers: {
+        authorization: `Bearer ${this.config.secretKey}`,
+        'content-type': 'application/x-www-form-urlencoded',
+        ...(idempotencyKey ? { 'idempotency-key': idempotencyKey } : {})
+      },
+      body: values ? formEncode(values) : undefined
+    })
   }
   async create(req: PaymentCreateRequest) {
-    const session = await this.call('/checkout/sessions', {
-      mode: 'payment', success_url: req.returnUrl,
-      cancel_url: `${req.returnUrl}&cancelled=1`,
-      'line_items[0][price_data][currency]': req.currency.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(req.amountCents),
-      'line_items[0][price_data][product_data][name]': req.subject, 'line_items[0][quantity]': '1',
-      client_reference_id: req.outTradeNo, 'metadata[out_trade_no]': req.outTradeNo
-    })
-    return { tradeNo: session.id, payUrl: session.url }
+    const intent = await this.call('/payment_intents', {
+      amount: String(req.amountCents),
+      currency: req.currency.toLowerCase(),
+      description: req.subject,
+      'metadata[out_trade_no]': req.outTradeNo,
+      'automatic_payment_methods[enabled]': 'true'
+    }, 'POST', `voicehub-payment-${req.outTradeNo}`)
+    if (!intent.id || !intent.client_secret) throw new Error('Stripe 未返回支付意图')
+    return {
+      tradeNo: intent.id,
+      clientSecret: intent.client_secret,
+      extra: { publishableKey: this.config.publishableKey, currency: req.currency }
+    }
   }
   async query(_outTradeNo: string, tradeNo?: string) {
     if (!tradeNo) return { status: 'pending' as const }
-    const session = await this.call(`/checkout/sessions/${encodeURIComponent(tradeNo)}`, undefined, 'GET')
-    const status: PaymentQueryResult['status'] = session.payment_status === 'paid' ? 'paid' : 'pending'
-    return { status, tradeNo: session.payment_intent, amountCents: session.amount_total }
+    const intent = await this.call(`/payment_intents/${encodeURIComponent(tradeNo)}`, undefined, 'GET')
+    const status: PaymentQueryResult['status'] = intent.status === 'succeeded' ? 'paid' : intent.status === 'canceled' ? 'failed' : 'pending'
+    return { status, tradeNo: intent.id, amountCents: intent.amount }
   }
   async verify(rawBody: string, headers: Record<string, string>) {
     const signature = headers['stripe-signature'] || ''
-    const parts: Record<string, string> = {}
-    for (const item of signature.split(',')) { const [key, value] = item.split('=', 2); if (key && value && !parts[key]) parts[key] = value }
-    assertRecentWebhookTimestamp(parts.t || '', 'Stripe')
-    const expected = createHmac('sha256', this.config.webhookSecret).update(`${parts.t}.${rawBody}`).digest('hex')
-    if (!parts.v1 || !timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1))) throw new Error('Stripe 回调签名无效')
+    const timestamp = signature.split(',').map(item => item.split('=', 2)).find(([key]) => key === 't')?.[1] || ''
+    const signatures = signature.split(',').flatMap(item => {
+      const [key, value] = item.split('=', 2)
+      return key === 'v1' && value ? [value] : []
+    })
+    assertRecentWebhookTimestamp(timestamp, 'Stripe')
+    const expected = createHmac('sha256', this.config.webhookSecret).update(`${timestamp}.${rawBody}`).digest('hex')
+    const verified = signatures.some(value => {
+      const actual = Buffer.from(value)
+      const expectedBuffer = Buffer.from(expected)
+      return actual.length === expectedBuffer.length && timingSafeEqual(expectedBuffer, actual)
+    })
+    if (!verified) throw new Error('Stripe 回调签名无效')
     const event = JSON.parse(rawBody)
-    if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.async_payment_failed'].includes(event.type)) return null
-    const session = event.data.object
-    const outTradeNo = session.client_reference_id || session.metadata?.out_trade_no
+    if (!['payment_intent.succeeded', 'payment_intent.payment_failed', 'checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.async_payment_failed'].includes(event.type)) return null
+    const payment = event.data.object
+    const outTradeNo = payment.metadata?.out_trade_no || payment.client_reference_id
     if (!outTradeNo) throw new Error('Stripe 回调缺少订单号')
-    return { outTradeNo, tradeNo: session.payment_intent || session.id, amountCents: session.amount_total, success: event.type !== 'checkout.session.async_payment_failed' && session.payment_status === 'paid' }
+    const failed = event.type === 'payment_intent.payment_failed' || event.type === 'checkout.session.async_payment_failed'
+    return { outTradeNo, tradeNo: payment.id || payment.payment_intent, amountCents: payment.amount || payment.amount_total, success: !failed && (payment.status === 'succeeded' || payment.payment_status === 'paid') }
   }
   async refund(_outTradeNo: string, tradeNo: string | undefined, amountCents: number) {
     if (!tradeNo) throw new Error('Stripe 退款缺少 PaymentIntent')
     const result = await this.call('/refunds', { payment_intent: tradeNo, amount: String(amountCents) })
     return { refundId: result.id, pending: result.status !== 'succeeded' }
   }
+  async cancel(_outTradeNo: string, tradeNo?: string) {
+    if (tradeNo) await this.call(`/payment_intents/${encodeURIComponent(tradeNo)}/cancel`)
+  }
 }
 
 const airwallexTokens = new Map<string, { token: string; expires: number }>()
+const normalizeAirwallexBase = (value: unknown) => {
+  const raw = String(value || 'https://api.airwallex.com/api/v1').trim()
+  let url: URL
+  try { url = new URL(raw) } catch { throw new Error('Airwallex API 地址无效') }
+  if (url.protocol !== 'https:' || !['api.airwallex.com', 'api-demo.airwallex.com'].includes(url.hostname) || url.pathname.replace(/\/$/, '') !== '/api/v1' || url.search || url.hash) {
+    throw new Error('Airwallex API 地址仅支持正式或测试环境的 /api/v1 HTTPS 地址')
+  }
+  return url.origin + '/api/v1'
+}
+const normalizeAirwallexCountry = (value: unknown) => {
+  const country = String(value || 'CN').trim().toUpperCase()
+  if (!/^[A-Z]{2}$/.test(country)) throw new Error('Airwallex 国家/地区代码必须为两个大写字母')
+  return country
+}
 class AirwallexProvider implements PaymentProvider {
   private base: string
   constructor(private config: Record<string, any>) {
-    this.base = config.apiBase || 'https://api-demo.airwallex.com/api/v1'
+    this.base = normalizeAirwallexBase(config.apiBase)
   }
   private async token() {
-    const cacheKey = `${this.base}|${this.config.clientId}|${this.config.accountId || ''}`
+    const cacheKey = `${this.base}|${this.config.clientId}|${this.config.accountId || ''}|${createHash('sha256').update(String(this.config.apiKey || '')).digest('hex').slice(0, 16)}`
     const cached = airwallexTokens.get(cacheKey)
     if (cached && cached.expires > getServerTimestamp() + 60000) return cached.token
     const data = await requestJson(`${this.base}/authentication/login`, { method: 'POST', headers: { 'x-client-id': this.config.clientId, 'x-api-key': this.config.apiKey, ...(this.config.accountId ? { 'x-login-as': this.config.accountId } : {}) } })
@@ -349,8 +444,21 @@ class AirwallexProvider implements PaymentProvider {
     return requestJson(`${this.base}${path}`, { method, headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', ...(this.config.accountId ? { 'x-on-behalf-of': this.config.accountId } : {}) }, body: payload ? JSON.stringify(payload) : undefined })
   }
   async create(req: PaymentCreateRequest) {
-    const result = await this.call('/pa/payment_intents/create', { request_id: deterministicRequestId('payment-intent', req.outTradeNo, String(req.amountCents), req.currency), amount: req.amountCents / 100, currency: req.currency, merchant_order_id: req.outTradeNo, return_url: req.returnUrl, metadata: { order_id: req.outTradeNo } })
-    return { tradeNo: result.id, clientSecret: result.client_secret, extra: { environment: this.base.includes('api-demo') ? 'demo' : 'prod', currency: req.currency, countryCode: this.config.countryCode || 'CN' } }
+    const currency = String(this.config.currency || req.currency).trim().toUpperCase()
+    if (!/^[A-Z]{3}$/.test(currency)) throw new Error('Airwallex 支付币种无效')
+    if (currency !== String(req.currency).toUpperCase()) throw new Error(`Airwallex 服务商币种 ${currency} 与套餐币种 ${req.currency} 不一致`)
+    const countryCode = normalizeAirwallexCountry(this.config.countryCode)
+    const result = await this.call('/pa/payment_intents/create', {
+      request_id: deterministicRequestId('payment-intent', req.outTradeNo, String(req.amountCents), currency),
+      amount: req.amountCents / 100,
+      currency,
+      merchant_order_id: req.outTradeNo,
+      return_url: req.returnUrl,
+      ...(String(this.config.descriptor || '').trim() ? { descriptor: String(this.config.descriptor).trim().slice(0, 64) } : {}),
+      metadata: { order_id: req.outTradeNo }
+    })
+    if (!result.id || !result.client_secret) throw new Error('Airwallex 未返回支付意图')
+    return { tradeNo: result.id, clientSecret: result.client_secret, extra: { environment: this.base.includes('api-demo') ? 'demo' : 'prod', currency, countryCode } }
   }
   async query(_outTradeNo: string, tradeNo?: string) {
     if (!tradeNo) return { status: 'pending' as const }
@@ -360,14 +468,18 @@ class AirwallexProvider implements PaymentProvider {
   }
   async verify(rawBody: string, headers: Record<string, string>) {
     const timestamp = headers['x-timestamp'] || ''
-    const signature = headers['x-signature'] || ''
+    const signature = String(headers['x-signature'] || '').trim().toLowerCase()
     assertRecentWebhookTimestamp(timestamp, 'Airwallex')
     const expected = createHmac('sha256', this.config.webhookSecret).update(timestamp + rawBody).digest('hex')
-    if (!signature || !timingSafeEqual(Buffer.from(expected), Buffer.from(signature.toLowerCase()))) throw new Error('Airwallex 回调签名无效')
+    const expectedBuffer = Buffer.from(expected)
+    const signatureBuffer = Buffer.from(signature)
+    if (!signature || signatureBuffer.length !== expectedBuffer.length || !timingSafeEqual(expectedBuffer, signatureBuffer)) throw new Error('Airwallex 回调签名无效')
     const event = JSON.parse(rawBody)
     if (!['payment_intent.succeeded', 'payment_intent.cancelled'].includes(event.name)) return null
     const intent = event.data.object
     if (!intent.merchant_order_id) throw new Error('Airwallex 回调缺少订单号')
+    if (event.name === 'payment_intent.succeeded' && String(intent.status || '').toUpperCase() !== 'SUCCEEDED') throw new Error('Airwallex 成功回调的支付状态无效')
+    if (event.name === 'payment_intent.cancelled' && String(intent.status || '').toUpperCase() !== 'CANCELLED') throw new Error('Airwallex 取消回调的支付状态无效')
     return { outTradeNo: intent.merchant_order_id, tradeNo: intent.id, amountCents: Math.round(Number(intent.amount) * 100), success: event.name === 'payment_intent.succeeded' }
   }
   async refund(_outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string) {

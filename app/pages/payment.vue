@@ -11,15 +11,17 @@
     <main class="payment-main mx-auto max-w-6xl px-4 py-8">
       <div class="payment-intro"><div><p class="payment-eyebrow">VoiceHub</p><h1>{{ locale.title }}</h1><p>选择适合你的点歌券套餐，支付完成后自动发放。</p></div><div class="payment-intro-icon"><Ticket :size="25" /></div></div>
       <section v-if="resultOrder" class="payment-result-panel">
-        <div class="result-icon" :class="resultOrder.status === 'COMPLETED' ? 'success' : resultOrder.status === 'EXPIRED' ? 'expired' : 'failed'"><Check v-if="resultOrder.status === 'COMPLETED'" :size="34" /><Clock3 v-else-if="resultOrder.status === 'EXPIRED'" :size="34" /><X v-else :size="34" /></div>
-        <h2>{{ resultOrder.status === 'COMPLETED' ? '支付成功' : resultOrder.status === 'EXPIRED' ? '订单已过期' : '支付失败' }}</h2>
+        <div class="result-icon" :class="resultOrder.status === 'COMPLETED' ? 'success' : resultOrder.status === 'EXPIRED' ? 'expired' : resultOrder.status === 'CANCELLED' ? 'cancelled' : 'failed'"><Check v-if="resultOrder.status === 'COMPLETED'" :size="34" /><Clock3 v-else-if="resultOrder.status === 'EXPIRED'" :size="34" /><X v-else :size="34" /></div>
+        <h2>{{ resultOrder.status === 'COMPLETED' ? '支付成功' : resultOrder.status === 'EXPIRED' ? '订单已过期' : resultOrder.status === 'CANCELLED' ? '订单已取消' : '支付失败' }}</h2>
         <p v-if="resultOrder.status === 'EXPIRED'" class="result-message">订单已超时，请重新创建订单</p>
+        <p v-else-if="resultOrder.status === 'CANCELLED'" class="result-message">您已取消本次支付</p>
         <div class="result-details"><div><span>订单 ID</span><b>#{{ resultOrder.id }}</b></div><div><span>订单编号</span><b>{{ resultOrder.outTradeNo }}</b></div><div><span>充值金额</span><b>{{ formatMoney(resultOrder.payAmountCents, resultOrder.currency) }}</b></div><div><span>支付方式</span><b>{{ methodLabels[resultOrder.paymentMethod] || resultOrder.paymentMethod }}</b></div><div><span>状态</span><b>{{ statusText(resultOrder.status) }}</b></div></div>
         <div class="result-actions"><button class="action-primary" @click="closeResult(false)">确认</button><button v-if="resultOrder.status !== 'EXPIRED'" class="action-button" @click="closeResult(true)">查看订单</button></div>
       </section>
       <section v-else-if="checkoutOrder" class="checkout-panel">
         <div v-if="checkoutOrder.qrCode" class="checkout-qr"><h2>扫码支付</h2><div class="qr-frame"><img :src="qrImage" alt="支付二维码" /></div><p>请使用手机扫码完成支付</p></div>
-        <div v-else class="checkout-popup"><AppSpinner /><p>支付页面已在新窗口打开，请在新窗口中完成支付后返回此页面</p><button class="action-button" @click="reopenPayment">重新打开支付页面</button></div>
+        <div v-else-if="isStripeCheckout" class="checkout-stripe"><h2>Stripe 安全支付</h2><p>请选择 Stripe 支持的支付方式完成付款</p><div ref="stripeMount" class="stripe-element" /><p v-if="stripeError" class="stripe-error">{{ stripeError }}</p><button class="action-primary stripe-pay-button" :disabled="!stripeReady || stripeProcessing" @click="confirmStripePayment"><RefreshCw v-if="stripeProcessing" :size="16" class="animate-spin" />{{ stripeProcessing ? '处理中…' : '确认支付' }}</button></div>
+        <div v-else class="checkout-popup"><AppSpinner /><p>{{ checkoutOrder.providerKey === 'airwallex' ? '请打开 Airwallex 收银台完成支付后返回此页面' : '支付页面已在新窗口打开，请在新窗口中完成支付后返回此页面' }}</p><button class="action-button" @click="reopenPayment">重新打开支付页面</button></div>
         <div class="checkout-countdown">{{ countdownText }}<small>等待支付…</small></div><button class="checkout-cancel" @click="cancelCheckout">取消订单</button>
       </section>
       <div v-if="!checkoutOrder && !resultOrder" class="payment-tabs mb-7 flex overflow-x-auto">
@@ -93,7 +95,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import { ArrowLeft, Check, Clock3, Copy, CreditCard, ExternalLink, RefreshCw, Ticket, Undo2, User, X } from '@lucide/vue'
@@ -110,14 +112,18 @@ const route = useRoute()
 const router = useRouter()
 const config = ref({ enabled: false, methods: [] }); const plans = ref([]); const orders = ref([]); const cards = ref([])
 const selectedMethods = reactive({}); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
-const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); let pollTimer = null; let countdownTimer = null
+const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); const stripeMount = ref(null); const stripeReady = ref(false); const stripeProcessing = ref(false); const stripeError = ref(''); let stripeInstance = null; let stripeElements = null; let stripePaymentElement = null; let pollTimer = null; let countdownTimer = null
 const tabs = computed(() => [{ id: 'plans', label: locale.value.title }, { id: 'orders', label: locale.value.orders }, { id: 'cards', label: locale.value.cards }])
 const methodLabels = { alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }
 const methodOptions = computed(() => config.value.methods.map(value => ({ value, label: methodLabels[value] || value })))
+const isStripeCheckout = computed(() => checkoutOrder.value?.providerKey === 'stripe' && Boolean(checkoutOrder.value?.clientSecret))
 const checkoutStorageKey = 'voicehub-payment-checkout'
+const dismissedResultStorageKey = 'voicehub-payment-dismissed-result'
 const getSavedCheckoutId = () => { try { return sessionStorage.getItem(checkoutStorageKey) || '' } catch { return '' } }
 const saveCheckoutId = id => { try { sessionStorage.setItem(checkoutStorageKey, id) } catch {} }
 const clearSavedCheckout = () => { try { sessionStorage.removeItem(checkoutStorageKey) } catch {} }
+const getDismissedResultId = () => { try { return sessionStorage.getItem(dismissedResultStorageKey) || '' } catch { return '' } }
+const dismissResult = id => { try { sessionStorage.setItem(dismissedResultStorageKey, id) } catch {} }
 const formatMoney = (cents, currency = 'CNY') => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100)
 const formatDate = value => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const statusText = status => ({ PENDING: locale.value.pending, PAID: locale.value.paid, COMPLETED: locale.value.completed, EXPIRED: locale.value.expired, CANCELLED: locale.value.cancelled, FAILED: locale.value.failed, REFUND_REQUESTED: locale.value.refundRequested, REFUNDING: locale.value.refunding, REFUNDED: locale.value.refunded }[status] || status)
@@ -135,10 +141,11 @@ const load = async () => {
     for (const plan of plans.value) selectedMethods[plan.id] = config.value.methods[0] || ''
     await loadOrders()
     const returnedOrderId = String(route.query.order || '')
-    if (returnedOrderId) {
+    if (returnedOrderId && returnedOrderId !== getDismissedResultId()) {
       activeTab.value = 'orders'
       try { await $fetch(`/api/payment/orders/${encodeURIComponent(returnedOrderId)}/verify`, { method: 'POST' }); await loadOrders(); const returnedOrder = orders.value.find(item => item.id === returnedOrderId); if (returnedOrder && ['PENDING', 'PAID'].includes(returnedOrder.status)) await restoreCheckout(returnedOrder); else resultOrder.value = returnedOrder || null } catch {}
     } else {
+      if (returnedOrderId) await router.replace({ path: '/payment', query: {} })
       const savedOrderId = getSavedCheckoutId()
       const savedOrder = savedOrderId ? orders.value.find(item => item.id === savedOrderId && ['PENDING', 'PAID'].includes(item.status)) : null
       if (savedOrder) await restoreCheckout(savedOrder)
@@ -149,6 +156,15 @@ const load = async () => {
 const openPay = async order => {
   checkoutOrder.value = order
   saveCheckoutId(order.id)
+  if (order.providerKey === 'stripe' && order.clientSecret) {
+    await mountStripeCheckout(order)
+    startPolling(order)
+    return
+  }
+  if (order.providerKey === 'airwallex' && order.clientSecret) {
+    try { await launchAirwallexCheckout(order); startPolling(order) } catch (error) { errorMessage.value = error instanceof Error ? error.message : 'Airwallex 支付组件加载失败' }
+    return
+  }
   const deepLink = order.providerData?.deepLink
   if (deepLink) {
     qrImage.value = ''
@@ -169,10 +185,47 @@ const openPay = async order => {
     return
   }
   if (order.qrCode) { checkoutOrder.value = order; qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }); startPolling(order); return }
-  if (order.clientSecret && order.paymentMethod === 'airwallex') {
-    const data = order.providerData || {}; const sdk = await import('@airwallex/components-sdk'); const initialized = await sdk.init({ env: data.environment === 'prod' ? 'prod' : 'demo', enabledElements: ['payments'], locale: navigator.language.startsWith('zh') ? 'zh' : 'en' })
-    initialized.payments?.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment?order=${encodeURIComponent(order.id)}` })
+}
+const launchAirwallexCheckout = async order => {
+  const data = order.providerData || {}
+  if (!order.clientSecret || !order.paymentTradeNo) throw new Error('Airwallex 支付订单信息不完整')
+  const sdk = await import('@airwallex/components-sdk')
+  const initialized = await sdk.init({ env: data.environment === 'prod' ? 'prod' : 'demo', enabledElements: ['payments'], locale: navigator.language.startsWith('zh') ? 'zh' : 'en' })
+  if (!initialized?.payments?.redirectToCheckout) throw new Error('Airwallex 收银台初始化失败')
+  await initialized.payments.redirectToCheckout({ intent_id: order.paymentTradeNo, client_secret: order.clientSecret, currency: data.currency || order.currency, country_code: data.countryCode || 'CN', successUrl: `${location.origin}/payment?order=${encodeURIComponent(order.id)}` })
+}
+const clearStripeCheckout = () => { try { stripePaymentElement?.destroy() } catch {} stripePaymentElement = null; stripeElements = null; stripeInstance = null; stripeReady.value = false; stripeProcessing.value = false; stripeError.value = '' }
+const mountStripeCheckout = async order => {
+  clearStripeCheckout()
+  const data = order.providerData || {}
+  if (!data.publishableKey || !order.clientSecret) { stripeError.value = 'Stripe 支付配置不完整'; return }
+  try {
+    const { loadStripe } = await import('@stripe/stripe-js/pure')
+    stripeInstance = await loadStripe(data.publishableKey)
+    if (!stripeInstance) throw new Error('Stripe SDK 加载失败')
+    await nextTick()
+    if (!stripeMount.value) throw new Error('Stripe 支付组件未加载')
+    const darkTheme = document.documentElement.getAttribute('data-theme') === 'ClassicDark'
+    stripeElements = stripeInstance.elements({ clientSecret: order.clientSecret, appearance: { theme: darkTheme ? 'night' : 'stripe', variables: { borderRadius: '8px' } } })
+    stripePaymentElement = stripeElements.create('payment', { layout: 'tabs' })
+    stripePaymentElement.mount(stripeMount.value)
+    stripePaymentElement.on('ready', () => { stripeReady.value = true })
+  } catch (error) {
+    stripeError.value = error instanceof Error ? error.message : 'Stripe 支付组件加载失败'
   }
+}
+const confirmStripePayment = async () => {
+  if (!checkoutOrder.value || !stripeInstance || !stripeElements || stripeProcessing.value) return
+  stripeProcessing.value = true
+  stripeError.value = ''
+  try {
+    const result = await stripeInstance.confirmPayment({ elements: stripeElements, confirmParams: { return_url: `${location.origin}/payment?order=${encodeURIComponent(checkoutOrder.value.id)}` }, redirect: 'if_required' })
+    if (result.error) { stripeError.value = result.error.message || '支付未完成'; return }
+    await verify(checkoutOrder.value)
+    if (checkoutOrder.value) showToast('支付已提交，正在确认状态', 'success')
+  } catch (error) {
+    stripeError.value = error instanceof Error ? error.message : 'Stripe 支付确认失败'
+  } finally { stripeProcessing.value = false }
 }
 const restoreCheckout = async order => {
   checkoutOrder.value = order
@@ -180,26 +233,28 @@ const restoreCheckout = async order => {
   if (order.qrCode) {
     try { qrImage.value = await QRCode.toDataURL(order.qrCode, { width: 320, margin: 1 }) } catch { qrImage.value = '' }
   } else qrImage.value = ''
+  if (order.providerKey === 'stripe' && order.clientSecret) await mountStripeCheckout(order)
   startPolling(order)
 }
 const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: matchMedia('(max-width: 768px)').matches } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
-const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
+const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
 const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); showToast('订单已取消', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const startRefund = order => { refundOrder.value = order; refundReason.value = '' }
 const submitRefund = async () => { try { await $fetch(`/api/payment/orders/${refundOrder.value.id}/refund`, { method: 'POST', body: { reason: refundReason.value } }); refundOrder.value = null; showToast('退款申请已提交', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const copyCard = async code => navigator.clipboard.writeText(code)
 const startPolling = order => { clearInterval(pollTimer); clearInterval(countdownTimer); countdown.value = Math.max(0, Math.floor((new Date(order.expiresAt).getTime() - Date.now()) / 1000)); pollTimer = setInterval(() => verify(order), 3000); countdownTimer = setInterval(() => { countdown.value = Math.max(0, countdown.value - 1) }, 1000) }
 const countdownText = computed(() => `${String(Math.floor(countdown.value / 60)).padStart(2, '0')}:${String(countdown.value % 60).padStart(2, '0')}`)
-const reopenPayment = () => { if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes') }
-const closeResult = async showOrders => { resultOrder.value = null; activeTab.value = showOrders ? 'orders' : 'plans'; await router.replace({ path: '/payment', query: {} }) }
-const cancelCheckout = async () => { if (checkoutOrder.value) { await cancelOrder(checkoutOrder.value); checkoutOrder.value = null; clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } }
+const reopenPayment = () => { if (isStripeCheckout.value) mountStripeCheckout(checkoutOrder.value); else if (checkoutOrder.value?.providerKey === 'airwallex') launchAirwallexCheckout(checkoutOrder.value).catch(error => { errorMessage.value = error instanceof Error ? error.message : 'Airwallex 收银台打开失败' }); else if (checkoutOrder.value?.payUrl) window.open(checkoutOrder.value.payUrl, 'voicehub-payment', 'width=1100,height=820,resizable=yes,scrollbars=yes,menubar=yes,toolbar=yes') }
+const closeResult = async showOrders => { const orderId = resultOrder.value?.id; if (orderId) dismissResult(orderId); resultOrder.value = null; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer); const target = showOrders ? 'orders' : 'plans'; window.history.replaceState(window.history.state, '', window.location.pathname + window.location.hash); await router.replace({ path: '/payment', query: {} }); activeTab.value = target }
+const cancelCheckout = async () => { if (!checkoutOrder.value) return; const orderId = checkoutOrder.value.id; await cancelOrder(checkoutOrder.value); const cancelledOrder = orders.value.find(item => item.id === orderId); if (cancelledOrder?.status === 'CANCELLED') resultOrder.value = cancelledOrder; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) }
 const closeQr = () => { qrOrder.value = null; qrImage.value = ''; clearInterval(pollTimer) }
-onMounted(load); onUnmounted(() => { clearInterval(pollTimer); clearInterval(countdownTimer) })
+onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) })
 </script>
 
 <style scoped>
 .payment-header { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); }
-.checkout-panel,.payment-result-panel{max-width:52rem;margin:0 auto 1.5rem;padding:2rem;border:1px solid var(--border-secondary);border-radius:.9rem;background:var(--bg-secondary);box-shadow:var(--shadow-sm);text-align:center}.checkout-qr h2,.payment-result-panel h2{color:var(--text-primary);font-size:1.35rem;font-weight:850}.qr-frame{display:flex;width:17rem;height:17rem;margin:1.25rem auto;align-items:center;justify-content:center;border:2px solid var(--primary);border-radius:.7rem;background:#fff;padding:.8rem}.qr-frame img{width:100%;height:100%;object-fit:contain}.checkout-qr p,.checkout-popup p{color:var(--text-tertiary);font-size:.8rem}.checkout-popup{display:grid;justify-items:center;gap:1rem;padding:1rem}.checkout-countdown{margin-top:1.25rem;color:var(--text-primary);font-size:1.8rem;font-weight:850}.checkout-countdown small{display:block;color:var(--text-tertiary);font-size:.72rem;font-weight:500}.checkout-cancel{width:100%;margin-top:1rem;padding:.7rem;border:1px solid var(--border-secondary);border-radius:.55rem;color:var(--text-secondary);font-size:.8rem}.result-icon{display:flex;width:4.5rem;height:4.5rem;margin:0 auto 1rem;align-items:center;justify-content:center;border-radius:50%}.result-icon.success{background:var(--success-light);color:var(--success)}.result-icon.failed{background:var(--error-light);color:var(--error)}.result-details{display:grid;gap:.65rem;margin:1.5rem auto;padding:1.1rem 1.25rem;border:1px solid var(--border-secondary);border-radius:.7rem;text-align:left}.result-details div{display:flex;justify-content:space-between;gap:1rem;font-size:.78rem}.result-details span{color:var(--text-tertiary)}.result-details b{overflow-wrap:anywhere;color:var(--text-primary);font-weight:700;text-align:right}.result-actions{display:flex;justify-content:center;gap:.7rem}.result-actions button{min-width:8rem;justify-content:center}
+.checkout-panel,.payment-result-panel{width:100%;margin:0 0 1.5rem;padding:2rem;border:1px solid var(--border-secondary);border-radius:.9rem;background:var(--bg-secondary);box-shadow:var(--shadow-sm);text-align:center}.checkout-qr h2,.payment-result-panel h2{color:var(--text-primary);font-size:1.35rem;font-weight:850}.qr-frame{display:flex;width:17rem;height:17rem;margin:1.25rem auto;align-items:center;justify-content:center;border:2px solid var(--primary);border-radius:.7rem;background:#fff;padding:.8rem}.qr-frame img{width:100%;height:100%;object-fit:contain}.checkout-qr p,.checkout-popup p{color:var(--text-tertiary);font-size:.8rem}.checkout-popup{display:grid;justify-items:center;gap:1rem;padding:1rem}.checkout-countdown{margin-top:1.25rem;color:var(--text-primary);font-size:1.8rem;font-weight:850}.checkout-countdown small{display:block;color:var(--text-tertiary);font-size:.72rem;font-weight:500}.checkout-cancel{width:100%;margin-top:1rem;padding:.7rem;border:1px solid var(--border-secondary);border-radius:.55rem;color:var(--text-secondary);font-size:.8rem}.result-icon{display:flex;width:4.5rem;height:4.5rem;margin:0 auto 1rem;align-items:center;justify-content:center;border-radius:50%}.result-icon.success{background:var(--success-light);color:var(--success)}.result-icon.failed{background:var(--error-light);color:var(--error)}.result-details{max-width:48rem;display:grid;gap:.65rem;margin:1.5rem auto;padding:1.1rem 1.25rem;border:1px solid var(--border-secondary);border-radius:.7rem;text-align:left}.result-details div{display:flex;justify-content:space-between;gap:1rem;font-size:.78rem}.result-details span{color:var(--text-tertiary)}.result-details b{overflow-wrap:anywhere;color:var(--text-primary);font-weight:700;text-align:right}.result-actions{display:flex;justify-content:center;gap:.7rem}.result-actions button{min-width:8rem;justify-content:center}
+.checkout-stripe{max-width:38rem;margin:0 auto;text-align:left}.checkout-stripe h2{text-align:center;color:var(--text-primary);font-size:1.2rem;font-weight:850}.checkout-stripe>p{margin:.5rem 0 1.25rem;text-align:center;color:var(--text-tertiary);font-size:.8rem}.stripe-element{min-height:13rem;border:1px solid var(--border-secondary);border-radius:.65rem;background:var(--bg-primary);padding:1rem}.stripe-error{margin-top:.75rem!important;color:var(--error)!important;text-align:left!important}.stripe-pay-button{width:100%;justify-content:center;margin-top:1rem}
 .payment-header a { color: var(--text-secondary); transition: color .2s; }
 .payment-header a:hover { color: var(--primary); }
 .payment-main { min-height: calc(100vh - 73px); }
@@ -246,8 +301,11 @@ onMounted(load); onUnmounted(() => { clearInterval(pollTimer); clearInterval(cou
 .action-button:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-hover); }
 .action-primary { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.25rem; padding: 0 .8rem; border-radius: .5rem; background: var(--primary); color: white; font-size: .75rem; font-weight: 700; }
 @media (max-width: 900px) { .plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .payment-main { padding-top: 1.25rem; } .payment-intro { padding: 1rem; } .payment-intro-icon { width: 2.5rem; height: 2.5rem; } .plan-grid { grid-template-columns: 1fr; } .plan-card:hover { transform: none; } .order-card .border-t { align-items: flex-start; flex-direction: column; } .order-card .border-t > div:last-child { width: 100%; } .order-card .border-t button { flex: 1; justify-content: center; } }
+@media (max-width: 600px) { .payment-main { padding-top: 1.25rem; } .payment-intro { padding: 1rem; } .payment-intro-icon { width: 2.5rem; height: 2.5rem; } .checkout-panel,.payment-result-panel{padding:1.25rem 1rem}.plan-grid { grid-template-columns: 1fr; } .plan-card:hover { transform: none; } .order-card .border-t { align-items: flex-start; flex-direction: column; } .order-card .border-t > div:last-child { width: 100%; } .order-card .border-t button { flex: 1; justify-content: center; } }
 :global(:root[data-theme='ClassicDark']) .payment-intro { background: var(--bg-secondary); }
 .result-icon.expired{background:var(--warning-light);color:var(--warning)}.result-message{margin-top:.45rem;color:var(--text-tertiary);font-size:.82rem}
 textarea{color:var(--text-primary);caret-color:var(--primary);background:var(--bg-secondary)!important}textarea::placeholder{color:var(--text-tertiary);opacity:1}textarea:focus{border-color:var(--primary);outline:2px solid var(--primary-10);outline-offset:0}
+</style>
+<style scoped>
+.result-icon.cancelled{background:var(--bg-tertiary);color:var(--text-tertiary)}
 </style>

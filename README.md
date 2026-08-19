@@ -682,13 +682,61 @@ NUXT_PUBLIC_HOST=https://voicehub.example.com
 
 配置后请重新部署，并重新创建支付订单。已经创建的订单会继续使用创建时保存的回调地址。支付服务商后台应配置对应的接口，例如：
 
-预览环境会自动优先使用当前 Preview 域名生成回调地址，便于测试不同分支；生产环境仍建议显式配置正式域名。
+未配置 `NUXT_PUBLIC_HOST` 时，系统才会回退使用当前 Preview、Vercel、Netlify 或 Pages 域名生成回调地址。只要配置了正式域名，所有环境都会优先使用它，避免临时预览域名下线后导致异步通知 404。
 
 ```text
 https://voicehub.example.com/api/payment/webhook/alipay
 https://voicehub.example.com/api/payment/webhook/wxpay
 https://voicehub.example.com/api/payment/webhook/easypay
 ```
+
+### 支付宝官方支付配置
+
+在“支付设置 → 服务商管理”添加“支付宝官方”，填写开放平台应用的 App ID、应用私钥和支付宝公钥。系统只支持人民币套餐。桌面端优先使用当面付二维码；若应用没有当面付权限会自动回退至电脑网站支付。移动端使用手机网站支付（WAP）。请在支付宝开放平台签约与应用匹配的产品，并配置异步通知地址：
+
+```text
+https://voicehub.example.com/api/payment/webhook/alipay
+```
+
+默认使用正式网关 `https://openapi.alipay.com/gateway.do`；联调时可填写支付宝沙箱网关 `https://openapi-sandbox.dl.alipaydev.com/gateway.do`。支付完成后浏览器同步跳转只用于展示结果，订单发放始终以已验签的异步通知或服务端主动查询为准。
+
+### 微信支付官方配置
+
+在“支付设置 → 服务商管理”添加“微信支付官方”，填写 App ID、商户号、商户 API 私钥、API v3 密钥、微信支付公钥、微信支付公钥 ID 与商户证书序列号。系统只支持人民币套餐。桌面端使用 Native 扫码支付，移动端使用 H5 支付；在商户平台开通对应产品，并填写异步通知地址：
+
+```text
+https://voicehub.example.com/api/payment/webhook/wxpay
+```
+
+H5 支付需在微信商户平台配置业务域名。可选填写“ H5 应用名称”和“ H5 网站地址”，网站地址必须为该已备案的 HTTPS 域名；系统会把支付后的 `redirect_url` 自动带回订单结果页。JSAPI 需要每位用户的 OpenID 和公众号/小程序授权流程，当前系统未启用该流程。
+
+### Stripe 支付配置
+
+在“支付设置 → 服务商管理”添加 Stripe 服务商，填写 Stripe Dashboard 中的 `Secret Key`、`Publishable Key` 和该回调端点对应的 `Webhook Secret`。用户支付时使用 Stripe Payment Element，支付信息不会经过 VoiceHub 服务器。
+
+Stripe Dashboard 的 **Developers → Webhooks** 中添加以下端点，并订阅事件：
+
+```text
+https://voicehub.example.com/api/payment/webhook/stripe
+payment_intent.succeeded
+payment_intent.payment_failed
+```
+
+回调地址必须使用 HTTPS。银行卡、Link、支付宝、微信支付等具体方式由 Stripe 账户、币种、地区与 Dashboard 中启用的方式自动决定。
+
+### Airwallex 支付配置
+
+在“支付设置 → 服务商管理”添加 Airwallex，填写 `Client ID`、`API Key` 和 `Webhook Secret`。正式环境使用 `https://api.airwallex.com/api/v1`，测试环境使用 `https://api-demo.airwallex.com/api/v1`；API 地址必须与密钥环境一致。`国家/地区代码`使用两位 ISO 代码，`支付币种`必须与套餐币种一致，单账户 Scoped API Key 可不填写账户 ID。
+
+Airwallex Dashboard 的 Webhook 端点填写：
+
+```text
+https://voicehub.example.com/api/payment/webhook/airwallex
+payment_intent.succeeded
+payment_intent.cancelled
+```
+
+Airwallex 收银台由官方 Components SDK 唤起，支付完成后通过 Webhook 验签和主动查询双重确认。退款会使用原 Payment Intent，并按 Airwallex 返回的 `RECEIVED`、`ACCEPTED`、`SETTLED` 或 `FAILED` 状态更新订单。
 
 Redis 不参与歌曲、排期、点赞或用户资料缓存。迁移旧部署时可先执行 dry-run：
 
