@@ -2242,6 +2242,7 @@ export const admin = {
     addAllPending: '将全部待排歌曲移入备选池',
     moveAllToPool: '全部移入',
     addSingleToPool: '加入备选池',
+    alreadyInPool: '已在备选池',
     removeFromPool: '从备选池移除',
     addToSchedule: '加入排期',
     poolEmptyHint: '备选池为空，从待排库中点击 + 添加',

@@ -2233,6 +2233,7 @@ export const admin = {
     addAllPending: 'Move all pending songs to backup pool',
     moveAllToPool: 'Move All',
     addSingleToPool: 'Add to Pool',
+    alreadyInPool: 'Already in pool',
     removeFromPool: 'Remove from Pool',
     addToSchedule: 'Add to Schedule',
     poolEmptyHint: 'Backup pool is empty, click + in pending list to add',

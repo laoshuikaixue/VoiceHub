@@ -504,8 +504,9 @@
                     <!-- 待排库：加入备选池按钮 -->
                     <button
                       v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                      class="hidden lg:flex p-1.5 rounded-lg bg-info-10 border border-info-20 text-info hover:bg-info-20 transition-colors"
-                      :title="locale.addSingleToPool"
+                      class="hidden lg:flex p-1.5 rounded-lg bg-info-10 border border-info-20 text-info hover:bg-info-20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-info-10"
+                      :disabled="poolSongIds.has(song.id)"
+                      :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
                       @click.stop="addSingleToPool(song.id)"
                     >
                       <FolderPlus class="w-3.5 h-3.5" />
@@ -523,9 +524,10 @@
 
                     <!-- 移动端加入备选池按钮 -->
                     <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-info-10 text-info hover:bg-info-20 active:scale-95 transition-all flex-shrink-0"
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-info-10 text-info hover:bg-info-20 active:scale-95 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                       v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                      :title="locale.addSingleToPool"
+                      :disabled="poolSongIds.has(song.id)"
+                      :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
                       @click.stop="addSingleToPool(song.id)"
                     >
                       <FolderPlus class="w-5 h-5" />
@@ -1613,7 +1615,8 @@
       <template v-if="contextMenuSide === 'left'">
         <button
           v-if="activeTab === 'normal' || activeTab === 'all'"
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          :disabled="poolSongIds.has(contextMenuSong.id)"
           @click="addSingleToPool(contextMenuSong.id); contextMenuOpen = false"
         >
           <FolderPlus class="w-3 h-3" />
@@ -1976,6 +1979,8 @@ const generatingNewPlan = ref(false)
 // 备选池
 const songPool = ref([])
 const poolLoading = ref(false)
+// 备选池已包含的歌曲 ID 集合，用于禁用重复加入按钮
+const poolSongIds = computed(() => new Set(songPool.value.map((p) => p.songId)))
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const showCopyDateDialog = ref(false)
