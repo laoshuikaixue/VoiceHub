@@ -118,12 +118,12 @@ class EasyPayProvider implements PaymentProvider {
   constructor(private config: Record<string, any>) {}
   async create(req: PaymentCreateRequest) {
     const base = safeProviderBase(this.config.apiBase, '易支付')
+    const customMethod = Array.isArray(this.config.customMethods) ? this.config.customMethods.find((item: any) => item?.type === req.method) : null
     const params: Record<string, string> = {
-      pid: this.config.pid, type: req.method === 'wxpay' ? 'wxpay' : req.method === 'alipay' ? 'alipay' : req.method,
+      pid: this.config.pid, type: customMethod?.upstreamType || (req.method === 'wxpay' ? 'wxpay' : req.method === 'alipay' ? 'alipay' : req.method),
       out_trade_no: req.outTradeNo, notify_url: req.notifyUrl, return_url: req.returnUrl,
       name: req.subject, money: money(req.amountCents), clientip: req.clientIp
     }
-    const customMethod = Array.isArray(this.config.customMethods) ? this.config.customMethods.find((item: any) => item?.type === req.method) : null
     const channel = customMethod?.cid || (req.method === 'wxpay' ? this.config.cidWxpay : req.method === 'alipay' ? this.config.cidAlipay : '')
     if (channel || this.config.cid) params.cid = channel || this.config.cid
     if (req.mobile) params.device = 'mobile'

@@ -7,10 +7,13 @@ import {
   normalizeEasyPayCustomMethods
 } from '../../server/config/payment.ts'
 
-test('易支付自定义方式会归一化并保留渠道 ID', () => {
+test('易支付自定义方式会归一化上游 type 并保留渠道 ID', () => {
   assert.deepEqual(normalizeEasyPayCustomMethods([
-    { label: ' 云闪付 ', type: 'UnionPay', cid: ' channel-1 ' }
-  ]), [{ label: '云闪付', type: 'unionpay', cid: 'channel-1' }])
+    { label: ' 云闪付 ', type: 'UnionPay', upstreamType: 'Up_UnionPay', cid: ' channel-1 ' }
+  ]), [{ label: '云闪付', type: 'unionpay', upstreamType: 'up_unionpay', cid: 'channel-1' }])
+  assert.deepEqual(normalizeEasyPayCustomMethods([
+    { label: '信用卡', type: 'credit_card' }
+  ]), [{ label: '信用卡', type: 'credit_card', upstreamType: 'credit_card' }])
 })
 
 test('易支付自定义方式拒绝非法、重复和官方方式', () => {
@@ -49,4 +52,10 @@ test('易支付 API 地址拒绝非公网 HTTPS 目标', () => {
 test('易支付 API 地址支持公网 HTTPS 子目录', () => {
   assert.equal(getPaymentProviderConfigError('easypay', { apiBase: 'https://pay.example.com/gateway' }), null)
   assert.equal(getPaymentProviderConfigError('easypay', { apiBase: 'https://pay.example.com/gateway/mapi.php' }), null)
+})
+
+test('易支付渠道 ID 为可选字段且拒绝空白和超长值', () => {
+  assert.equal(getPaymentProviderConfigError('easypay', { cidAlipay: '', cidWxpay: 'wx-1001' }), null)
+  assert.ok(getPaymentProviderConfigError('easypay', { cidAlipay: 'invalid channel' }))
+  assert.ok(getPaymentProviderConfigError('easypay', { cidWxpay: 'x'.repeat(65) }))
 })

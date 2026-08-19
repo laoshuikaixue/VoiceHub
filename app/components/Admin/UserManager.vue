@@ -2425,9 +2425,8 @@ const loadXLSX = async () => {
     try {
       // 使用多个可靠的CDN源，如果一个失败可以尝试另一个
       const cdnUrls = [
-        'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+        'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js',
+        'https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js'
       ]
 
       // 尝试加载第一个CDN

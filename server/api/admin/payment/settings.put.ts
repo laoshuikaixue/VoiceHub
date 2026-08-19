@@ -25,8 +25,8 @@ export default defineEventHandler(async event => {
     orderTimeoutMinutes: Number.isInteger(body.orderTimeoutMinutes) ? body.orderTimeoutMinutes : current.orderTimeoutMinutes,
     maxPendingOrders: Number.isInteger(body.maxPendingOrders) ? body.maxPendingOrders : current.maxPendingOrders,
     loadBalanceStrategy: ['round-robin', 'least-amount'].includes(body.loadBalanceStrategy) ? body.loadBalanceStrategy : current.loadBalanceStrategy,
-    helpText: typeof body.helpText === 'string' ? body.helpText : null,
-    helpImageUrl: typeof body.helpImageUrl === 'string' ? body.helpImageUrl : null,
+    helpText: typeof body.helpText === 'string' ? body.helpText.slice(0, 10000) : null,
+    helpImageUrl: typeof body.helpImageUrl === 'string' ? body.helpImageUrl.slice(0, 2048) : null,
     cancelLimitEnabled: typeof body.cancelLimitEnabled === 'boolean' ? body.cancelLimitEnabled : current.cancelLimitEnabled,
     cancelWindowMinutes: Number.isInteger(body.cancelWindowMinutes) ? body.cancelWindowMinutes : current.cancelWindowMinutes,
     cancelWindowUnit: ['minute', 'hour', 'day'].includes(body.cancelWindowUnit) ? body.cancelWindowUnit : (current.cancelWindowUnit || 'minute'),
@@ -36,7 +36,9 @@ export default defineEventHandler(async event => {
     alipayMobileDeepLink: typeof body.alipayMobileDeepLink === 'boolean' ? body.alipayMobileDeepLink : current.alipayMobileDeepLink,
     updatedAt: getServerDate()
   }
-  if (values.minAmountCents < 1 || values.orderTimeoutMinutes < 1 || values.maxPendingOrders < 1 || values.cancelWindowMinutes < 1 || values.cancelMaxCount < 1 || Number(values.balanceRechargeMultiplier) <= 0 || Number(values.subscriptionUsdToCnyRate) < 0 || Number(values.rechargeFeeRate) < 0 || Number(values.rechargeFeeRate) > 100 || (values.maxAmountCents && values.maxAmountCents < values.minAmountCents)) {
+  const validInteger = (value: unknown, minimum = 0) => Number.isSafeInteger(value) && Number(value) >= minimum
+  const validDecimal = (value: unknown, minimum = 0) => Number.isFinite(Number(value)) && Number(value) >= minimum
+  if (!validInteger(values.minAmountCents, 1) || (values.maxAmountCents !== null && !validInteger(values.maxAmountCents, 1)) || (values.dailyLimitCents !== null && !validInteger(values.dailyLimitCents, 1)) || !validInteger(values.orderTimeoutMinutes, 1) || !validInteger(values.maxPendingOrders, 1) || !validInteger(values.cancelWindowMinutes, 1) || !validInteger(values.cancelMaxCount, 1) || !validDecimal(values.balanceRechargeMultiplier, Number.EPSILON) || !validDecimal(values.subscriptionUsdToCnyRate) || !validDecimal(values.rechargeFeeRate) || Number(values.rechargeFeeRate) > 100 || (values.maxAmountCents !== null && values.maxAmountCents < values.minAmountCents)) {
     throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付配置参数无效')
   }
   const [updated] = await db.update(paymentSettings).set(values).where(eq(paymentSettings.id, current.id)).returning()

@@ -81,30 +81,32 @@ const resolvePublicOrigin = (event: H3Event) => {
   ].map(normalizePublicOrigin).find(Boolean)
   if (platformOrigin) return platformOrigin
 
-  // 仅在没有部署地址时兼容反向代理；生产环境应配置 NUXT_PUBLIC_HOST。
-  const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',').at(0)?.trim() || ''
-  const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',').at(0)?.trim() || ''
+  // 没有明确部署地址时只使用当前请求的 Host。转发头可由客户端伪造，不能直接用于支付回调地址。
   const requestUrl = getRequestURL(event)
   const requestOrigin = normalizePublicOrigin(`${requestUrl.protocol}//${requestUrl.host}`)
-  const forwardedOrigin = forwardedHost ? normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`) : ''
-  if (forwardedOrigin) return forwardedOrigin
   if (requestOrigin) return requestOrigin
   return `${requestUrl.protocol}//${requestUrl.host}`
 }
 
 const getProviderLimits = (limits: Record<string, any> | null, method: string) => {
+  const normalizeLimit = (value: unknown, unit = 1) => {
+    const number = Number(value)
+    if (!Number.isFinite(number) || number <= 0) return 0
+    const normalized = Math.round(number * unit)
+    return Number.isSafeInteger(normalized) ? normalized : 0
+  }
   const methodLimits = limits?.[method]
   if (methodLimits && typeof methodLimits === 'object') {
     return {
-      minAmountCents: Math.round(Number(methodLimits.singleMin || 0) * 100),
-      maxAmountCents: Math.round(Number(methodLimits.singleMax || 0) * 100),
-      dailyLimitCents: Math.round(Number(methodLimits.dailyLimit || 0) * 100)
+      minAmountCents: normalizeLimit(methodLimits.singleMin, 100),
+      maxAmountCents: normalizeLimit(methodLimits.singleMax, 100),
+      dailyLimitCents: normalizeLimit(methodLimits.dailyLimit, 100)
     }
   }
   return {
-    minAmountCents: Number(limits?.minAmountCents || 0),
-    maxAmountCents: Number(limits?.maxAmountCents || 0),
-    dailyLimitCents: Number(limits?.dailyLimitCents || 0)
+    minAmountCents: normalizeLimit(limits?.minAmountCents),
+    maxAmountCents: normalizeLimit(limits?.maxAmountCents),
+    dailyLimitCents: normalizeLimit(limits?.dailyLimitCents)
   }
 }
 

@@ -19,6 +19,13 @@ export const PAYMENT_PROVIDER_CONFIG_FIELDS: Record<string, string[]> = {
   airwallex: ['clientId', 'apiKey', 'webhookSecret']
 }
 
+export const isPaymentMode = (providerKey: string, value: unknown) => {
+  const mode = String(value || '')
+  if (providerKey === 'easypay') return ['', 'qrcode', 'popup'].includes(mode)
+  if (providerKey === 'alipay') return ['', 'redirect'].includes(mode)
+  return mode === ''
+}
+
 export const isPaymentProviderKey = (value: unknown): value is typeof PAYMENT_PROVIDER_KEYS[number] =>
   typeof value === 'string' && PAYMENT_PROVIDER_KEYS.includes(value as any)
 
@@ -30,6 +37,7 @@ export const isPaymentMethodIdentifier = (value: unknown) =>
 
 export interface EasyPayCustomMethod {
   type: string
+  upstreamType?: string
   label: string
   cid?: string
 }
@@ -42,11 +50,12 @@ export const normalizeEasyPayCustomMethods = (value: unknown): EasyPayCustomMeth
   for (const item of value) {
     if (!item || typeof item !== 'object') return null
     const type = String((item as any).type || '').trim().toLowerCase()
+    const upstreamType = String((item as any).upstreamType || type).trim().toLowerCase()
     const label = String((item as any).label || '').trim()
     const cid = String((item as any).cid || '').trim()
-    if (!/^[a-z][a-z0-9_-]{1,28}$/.test(type) || PAYMENT_METHODS.includes(type as any) || !label || label.length > 30 || cid.length > 64 || seen.has(type)) return null
+    if (!/^[a-z][a-z0-9_-]{1,28}$/.test(type) || !/^[a-z][a-z0-9_-]{1,28}$/.test(upstreamType) || PAYMENT_METHODS.includes(type as any) || !label || label.length > 30 || cid.length > 64 || seen.has(type)) return null
     seen.add(type)
-    result.push({ type, label, ...(cid ? { cid } : {}) })
+    result.push({ type, upstreamType, label, ...(cid ? { cid } : {}) })
   }
   return result
 }
@@ -60,6 +69,7 @@ export const getPaymentProviderAllowedMethods = (providerKey: string, config: Re
 
 export const getPaymentProviderConfigError = (providerKey: string, config: Record<string, unknown>) => {
   if (providerKey === 'easypay' && normalizeEasyPayCustomMethods(config.customMethods) === null) return '易支付自定义支付方式无效'
+  if (providerKey === 'easypay' && ['cid', 'cidAlipay', 'cidWxpay'].some(key => !/^\S{0,64}$/.test(String(config[key] || '').trim()))) return '易支付渠道 ID 格式无效'
   if (providerKey === 'easypay' && config.apiBase) {
     try {
       const url = new URL(String(config.apiBase).replace(/\/(submit|mapi|api)\.php\/?$/i, ''))

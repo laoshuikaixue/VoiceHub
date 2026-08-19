@@ -1543,7 +1543,7 @@ const loadXLSX = async () => {
     }
 
     const script = document.createElement('script')
-    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
     script.onload = resolve
     script.onerror = (error) => {
       console.error('加载XLSX库失败:', error)

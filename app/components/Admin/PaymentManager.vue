@@ -40,15 +40,15 @@
       </section>
       <section class="settings-section">
         <div class="section-heading"><h3>启用的服务商类别</h3><span>管理 EasyPay、官方支付宝、官方微信等服务商类型；具体实例在下方单独管理</span></div>
-        <div class="provider-enable-list"><label v-for="option in providerOptions" :key="option.value" class="provider-enable-row" :class="{ selected: isProviderTypeEnabled(option.value) }"><span class="provider-enable-main"><button type="button" class="switch small" :class="{ active: isProviderTypeEnabled(option.value) }" :aria-pressed="isProviderTypeEnabled(option.value)" @click="toggleProviderType(option.value)"><span /></button><span><b>{{ option.label }}</b><small>{{ providers.filter(provider => provider.providerKey === option.value).length }} 个服务商实例，{{ providers.filter(provider => provider.providerKey === option.value && provider.enabled).length }} 个已启用</small></span></span><span class="provider-state">{{ isProviderTypeEnabled(option.value) ? '已启用' : '已停用' }}</span></label></div>
+        <div class="provider-enable-list"><label v-for="option in providerOptions" :key="option.value" class="provider-enable-row" :class="{ selected: isProviderTypeEnabled(option.value) }"><span class="provider-enable-main"><button type="button" class="switch small" :class="{ active: isProviderTypeEnabled(option.value) }" :aria-pressed="isProviderTypeEnabled(option.value)" @click="toggleProviderType(option.value)"><span /></button><span><b>{{ option.label }}</b><small>{{ providers.filter(provider => provider.providerKey === option.value).length }} 个服务商实例，{{ providers.filter(provider => provider.providerKey === option.value && provider.enabled).length }} 个已启用</small></span></span><span class="provider-state" :class="{ disabled: !isProviderTypeEnabled(option.value) }">{{ isProviderTypeEnabled(option.value) ? '已启用' : '已停用' }}</span></label></div>
       </section>
       <section id="payment-help" class="settings-section help-section"><div class="section-heading"><h3>帮助内容</h3><span>为用户提供支付说明</span></div><div class="help-grid"><div class="help-image"><span>帮助图片链接</span><input v-model="settings.helpImageUrl" class="input" placeholder="上传或输入图片链接"><div v-if="settings.helpImageUrl" class="help-preview"><img :src="settings.helpImageUrl" alt="帮助图片预览"></div></div><textarea v-model="settings.helpText" rows="5" class="input help-input" placeholder="输入帮助说明文本..." /></div></section>
       <section class="settings-section provider-inline">
-        <div class="section-heading provider-heading"><div><h3>服务商管理</h3><span>可拖动调整优先级，服务商支持独立启用或禁用</span></div><button type="button" class="small-button" @click="editProvider()"><Plus :size="14" />添加服务商</button></div>
+        <div class="section-heading provider-heading"><div><h3>服务商管理</h3><span>可拖动调整服务商顺序，并独立启用或禁用</span></div><button type="button" class="small-button" @click="editProvider()"><Plus :size="14" />添加服务商</button></div>
         <div v-if="providers.length" class="provider-management-list">
           <article v-for="provider in providers" :key="provider.id" class="provider-management-row" :class="{ dragging: draggingProviderId === provider.id }" draggable="true" @dragstart="startProviderDrag(provider)" @dragover.prevent @drop="dropProvider(provider)">
-            <button type="button" class="provider-drag-handle" title="拖动调整优先级" aria-label="拖动调整优先级"><GripVertical :size="18" /></button>
-            <div class="provider-main"><div class="provider-title"><b>{{ provider.name }}</b><span class="provider-type">{{ provider.providerKey }}</span><span class="provider-status" :class="{ enabled: provider.enabled }">{{ provider.enabled ? '已启用' : '已禁用' }}</span></div><div class="provider-method-tags"><span v-for="method in provider.supportedMethods" :key="method" class="provider-method-tag">{{ methodLabel(method) }}</span><span class="provider-order">优先级 {{ provider.sortOrder }}</span></div><small>退款：{{ provider.refundEnabled ? '支持' : '不支持' }} · 用户退款：{{ provider.allowUserRefund ? '允许' : '不允许' }}</small></div>
+            <button type="button" class="provider-drag-handle" title="拖动调整顺序" aria-label="拖动调整顺序"><GripVertical :size="18" /></button>
+            <div class="provider-main"><div class="provider-title"><b>{{ provider.name }}</b><span class="provider-type">{{ providerTypeLabel(provider.providerKey) }}</span><span class="provider-mode">{{ providerModeLabel(provider) }}</span><span class="provider-status" :class="{ enabled: provider.enabled }">{{ provider.enabled ? '已启用' : '已禁用' }}</span></div><div class="provider-method-tags"><span v-for="method in provider.supportedMethods" :key="method" class="provider-method-tag">{{ methodLabel(method) }}</span></div><small>退款：{{ provider.refundEnabled ? '支持' : '不支持' }} · 用户退款：{{ provider.allowUserRefund ? '允许' : '不允许' }}</small></div>
             <div class="provider-actions">
               <label class="provider-action-toggle"><span>支付</span><button type="button" class="switch small" :class="{ active: provider.enabled }" :aria-pressed="provider.enabled" :title="provider.enabled ? '禁用服务商' : '启用服务商'" @click.stop="toggleProviderEnabled(provider)"><span /></button></label>
               <label class="provider-action-toggle"><span>退款</span><button type="button" class="switch small refund-toggle" :class="{ active: provider.refundEnabled }" :aria-pressed="provider.refundEnabled" :title="provider.refundEnabled ? '关闭退款' : '启用退款'" @click.stop="toggleProviderRefund(provider)"><span /></button></label>
@@ -80,7 +80,44 @@
     </section>
 
     <Teleport to="body">
-      <div v-if="providerDraft" class="modal" @click.self="providerDraft = null"><form class="dialog provider-dialog" @submit.prevent="saveProvider"><div class="dialog-title"><div><h2>{{ providerDraft.id ? '编辑支付服务商' : '添加支付服务商' }}</h2><p class="dialog-subtitle">配置密钥、通道和回调参数后即可启用。</p></div><button type="button" class="dialog-close" @click="providerDraft = null">×</button></div><div class="grid gap-4 sm:grid-cols-2"><div><label>服务商类型</label><CustomSelect v-model="providerDraft.providerKey" :options="providerOptions" :disabled="!!providerDraft.id" /></div><Field v-model="providerDraft.name" label="服务商名称" placeholder="例如：主支付通道" /><Field v-model.number="providerDraft.sortOrder" type="number" label="排序" min="0" /></div><div class="provider-options"><label class="check"><input v-model="providerDraft.enabled" type="checkbox" />启用服务商</label><label class="check"><input v-model="providerDraft.refundEnabled" type="checkbox" />允许退款</label><label class="check" :class="{ disabled: !providerDraft.refundEnabled }"><input v-model="providerDraft.allowUserRefund" type="checkbox" :disabled="!providerDraft.refundEnabled" />允许用户申请退款</label></div><div v-if="providerDraft.providerKey === 'easypay' || providerDraft.providerKey === 'alipay'" class="provider-section"><div class="section-title">支付模式</div><div class="segmented"><button v-for="mode in paymentModes" :key="mode.value" type="button" :class="{ active: providerDraft.paymentMode === mode.value }" @click="providerDraft.paymentMode = mode.value">{{ mode.label }}</button></div></div><div class="provider-section"><div class="section-title">支持的支付方式</div><div class="method-list"><label v-for="method in providerMethods" :key="method" class="method-chip" :class="{ selected: providerDraft.supportedMethods.includes(method) }"><input v-model="providerDraft.supportedMethods" type="checkbox" :value="method" />{{ methodLabel(method) }}</label></div></div><div v-if="providerDraft.providerKey === 'easypay'" class="provider-section"><div class="section-title">易支付自定义渠道</div><div class="grid gap-3 sm:grid-cols-3"><Field v-model="providerDraft.config.cid" label="通用渠道 ID" placeholder="可选" /><Field v-model="providerDraft.config.cidAlipay" label="支付宝渠道 ID" placeholder="可选" /><Field v-model="providerDraft.config.cidWxpay" label="微信渠道 ID" placeholder="可选" /></div><p class="field-hint">留空时使用服务商默认渠道；支付模式可在上方切换为二维码或弹窗。</p></div><div class="provider-section"><div class="section-title">服务商参数</div><div class="grid gap-4 sm:grid-cols-2"><label v-for="field in providerFields" :key="field.key" class="field"><span>{{ field.label }}<em v-if="field.optional">（可选）</em><i v-else> *</i></span><div class="relative"><textarea v-if="field.textarea" v-model="providerDraft.config[field.key]" class="input w-full font-mono text-xs" rows="4" :placeholder="fieldPlaceholder(field)" /><CustomSelect v-else-if="field.options" v-model="providerDraft.config[field.key]" :options="field.options" /><input v-else v-model="providerDraft.config[field.key]" class="input w-full" :type="field.sensitive && !providerVisible[field.key] ? 'password' : 'text'" :placeholder="fieldPlaceholder(field)" autocomplete="new-password" data-1p-ignore /></div><small v-if="field.hint">{{ field.hint }}</small><button v-if="field.sensitive" type="button" class="secret-toggle" :title="providerVisible[field.key] ? '隐藏' : '显示'" @click="providerVisible[field.key] = !providerVisible[field.key]"><Eye v-if="!providerVisible[field.key]" :size="15" /><EyeOff v-else :size="15" /></button></label></div></div><div class="provider-section"><div class="section-title">回调地址</div><div class="callback-list"><div><span>异步通知地址</span><code>{{ callbackUrl(providerDraft.providerKey) }}</code></div><div><span>同步跳转地址</span><code>{{ returnUrl }}</code></div></div><p class="field-hint">请将异步通知地址配置到对应支付服务商后台，支付完成后系统会自动更新订单。</p></div><div class="provider-section"><div class="section-title">按支付方式限额（元）</div><div v-for="method in providerMethods" :key="method" class="limit-row"><b>{{ methodLabel(method) }}</b><Field v-model.number="providerDraft.limits[method].singleMin" type="number" min="0" step="0.01" label="单笔最低" placeholder="不限制" /><Field v-model.number="providerDraft.limits[method].singleMax" type="number" min="0" step="0.01" label="单笔最高" placeholder="不限制" /><Field v-model.number="providerDraft.limits[method].dailyLimit" type="number" min="0" step="0.01" label="每日限额" placeholder="不限制" /></div><p class="field-hint">留空或填 0 表示不限制；限额只影响当前服务商，不改变全局支付设置。</p></div><div class="dialog-actions"><button type="button" class="small-button" @click="providerDraft = null">取消</button><button class="primary-button" :disabled="providerSaving">{{ providerSaving ? '保存中…' : '保存服务商' }}</button></div></form></div>
+      <div v-if="providerDraft" class="modal" @click.self="providerDraft = null">
+        <form class="dialog provider-dialog" @submit.prevent="saveProvider">
+          <div class="dialog-title">
+            <div><h2>{{ providerDraft.id ? '编辑支付服务商' : '添加支付服务商' }}</h2><p class="dialog-subtitle">配置密钥、通道和回调参数后即可启用。</p></div>
+            <button type="button" class="dialog-close" @click="providerDraft = null">×</button>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div><label>服务商类型</label><CustomSelect v-model="providerDraft.providerKey" :options="providerOptions" :disabled="!!providerDraft.id" /></div>
+            <Field v-model="providerDraft.name" label="服务商名称" placeholder="例如：主支付通道" />
+            <Field v-model.number="providerDraft.sortOrder" type="number" label="排序" min="0" />
+          </div>
+          <div class="provider-options"><label class="check"><input v-model="providerDraft.enabled" type="checkbox" />启用服务商</label><label class="check"><input v-model="providerDraft.refundEnabled" type="checkbox" />允许退款</label><label class="check" :class="{ disabled: !providerDraft.refundEnabled }"><input v-model="providerDraft.allowUserRefund" type="checkbox" :disabled="!providerDraft.refundEnabled" />允许用户申请退款</label></div>
+          <div v-if="providerDraft.providerKey === 'easypay' || providerDraft.providerKey === 'alipay'" class="provider-section"><div class="section-title">支付模式</div><div class="segmented"><button v-for="mode in paymentModes" :key="mode.value" type="button" :class="{ active: providerDraft.paymentMode === mode.value }" @click="providerDraft.paymentMode = mode.value">{{ mode.label }}</button></div></div>
+          <div class="provider-section"><div class="section-title">支持的支付方式</div><div class="method-list"><label v-for="method in providerMethods" :key="method" class="method-chip" :class="{ selected: providerDraft.supportedMethods.includes(method) }"><input v-model="providerDraft.supportedMethods" type="checkbox" :value="method" />{{ methodLabel(method) }}</label></div></div>
+          <div v-if="providerDraft.providerKey === 'easypay'" class="provider-section easypay-channel-section">
+            <div class="section-title">易支付渠道 ID（可选）</div>
+            <div class="grid gap-3 sm:grid-cols-2"><Field v-model="providerDraft.config.cidAlipay" label="支付宝渠道 ID" placeholder="可选" /><Field v-model="providerDraft.config.cidWxpay" label="微信渠道 ID" placeholder="可选" /></div>
+            <div class="channel-fallback"><Field v-model="providerDraft.config.cid" label="通用渠道 ID" placeholder="可选" /><p class="field-hint">未填写时使用服务商默认渠道；专用渠道 ID 优先于通用渠道 ID。</p></div>
+          </div>
+          <div v-if="providerDraft.providerKey === 'easypay'" class="provider-section easypay-custom-section">
+            <div class="section-title"><span>易支付自定义支付方式</span><button type="button" class="add-method-button" @click="addEasyPayMethod"><Plus :size="14" />添加方式</button></div>
+            <p class="field-hint">添加当前易支付服务商额外支持的支付方式。支付方式会作为接口的 type 参数提交，渠道 ID 可选。</p>
+            <div v-if="providerDraft.config.customMethods.length" class="custom-method-list">
+              <div v-for="(item, index) in providerDraft.config.customMethods" :key="`custom-method-${index}`" class="custom-method-row">
+                <Field v-model="item.type" label="支付方式" placeholder="credit_card" />
+                <Field v-model="item.upstreamType" label="上游 type" placeholder="credit_card" />
+                <Field v-model="item.label" label="显示名称" placeholder="如：信用卡" />
+                <button type="button" class="remove-method-button" @click="removeEasyPayMethod(index)"><Trash2 :size="14" />删除</button>
+              </div>
+            </div>
+            <div v-else class="custom-method-empty">暂未添加自定义支付方式，点击右上角“添加方式”开始配置。</div>
+          </div>
+          <div class="provider-section"><div class="section-title">服务商参数</div><div class="grid gap-4 sm:grid-cols-2"><label v-for="field in providerFields" :key="field.key" class="field"><span>{{ field.label }}<em v-if="field.optional">（可选）</em><i v-else> *</i></span><div class="relative"><textarea v-if="field.textarea" v-model="providerDraft.config[field.key]" class="input w-full font-mono text-xs" rows="4" :placeholder="fieldPlaceholder(field)" /><CustomSelect v-else-if="field.options" v-model="providerDraft.config[field.key]" :options="field.options" /><input v-else v-model="providerDraft.config[field.key]" class="input w-full" :type="field.sensitive && !providerVisible[field.key] ? 'password' : 'text'" :placeholder="fieldPlaceholder(field)" autocomplete="new-password" data-1p-ignore /></div><small v-if="field.hint">{{ field.hint }}</small><button v-if="field.sensitive" type="button" class="secret-toggle" :title="providerVisible[field.key] ? '隐藏' : '显示'" @click="providerVisible[field.key] = !providerVisible[field.key]"><Eye v-if="!providerVisible[field.key]" :size="15" /><EyeOff v-else :size="15" /></button></label></div></div>
+          <div class="provider-section"><div class="section-title">回调地址</div><div class="callback-list"><div><span>异步通知地址</span><code>{{ callbackUrl(providerDraft.providerKey) }}</code></div><div><span>同步跳转地址</span><code>{{ returnUrl }}</code></div></div><p class="field-hint">请将异步通知地址配置到对应支付服务商后台，支付完成后系统会自动更新订单。</p></div>
+          <div class="provider-section"><div class="section-title">按支付方式限额（元）</div><div v-for="method in providerMethods" :key="method" class="limit-row"><b>{{ methodLabel(method) }}</b><Field v-model.number="providerDraft.limits[method].singleMin" type="number" min="0" step="0.01" label="单笔最低" placeholder="不限制" /><Field v-model.number="providerDraft.limits[method].singleMax" type="number" min="0" step="0.01" label="单笔最高" placeholder="不限制" /><Field v-model.number="providerDraft.limits[method].dailyLimit" type="number" min="0" step="0.01" label="每日限额" placeholder="不限制" /></div><p class="field-hint">留空或填 0 表示不限制；限额只影响当前服务商，不改变全局支付设置。</p></div>
+          <div class="dialog-actions"><button type="button" class="small-button" @click="providerDraft = null">取消</button><button class="primary-button" :disabled="providerSaving">{{ providerSaving ? '保存中…' : '保存服务商' }}</button></div>
+        </form>
+      </div>
       <div v-if="planDraft" class="modal" @click.self="planDraft = null"><form class="dialog plan-dialog" @submit.prevent="savePlan"><div class="dialog-title"><div><h2>点歌券套餐</h2><p class="dialog-subtitle">配置套餐价格、有效期和展示内容</p></div><button type="button" class="dialog-close" @click="planDraft = null">×</button></div><div class="plan-form-grid"><Field v-model="planDraft.name" label="套餐名称" placeholder="例如：基础套餐" /><Field v-model="planDraft.description" label="套餐描述" placeholder="简短描述套餐内容" /><Field v-model.number="planDraft.priceYuan" type="number" min="0.01" step="0.01" label="价格（元）" /><Field v-model.number="planDraft.originalPriceYuan" type="number" min="0" step="0.01" label="原价（元）" placeholder="可选" /><Field v-model.number="planDraft.cardCount" type="number" min="1" step="1" label="点歌券数量" /><div class="field"><span>有效期</span><div class="plan-inline"><input v-model="planDraft.validityValue" class="input" type="number" min="1" step="1" placeholder="留空不限时"><CustomSelect v-model="planDraft.validityUnit" :options="validityUnitOptions" :disabled="planDraft.validityValue === '' || planDraft.validityValue === null" /></div></div><Field v-model.number="planDraft.sortOrder" type="number" min="0" step="1" label="排序" /><Field v-model="planDraft.currency" label="币种标志" placeholder="CNY" /><label class="field plan-features-field"><span>功能特性</span><textarea v-model="planDraft.featuresText" class="input" rows="4" placeholder="每行填写一项功能特性" /></label></div><div class="dialog-actions"><button type="button" class="small-button" @click="planDraft = null">取消</button><button class="primary-button">保存套餐</button></div></form></div>
       <div v-if="refundDraft" class="modal" @click.self="refundDraft = null"><form class="dialog" @submit.prevent="refundOrder"><h2>订单退款</h2><Field v-model.number="refundDraft.amountCents" type="number" label="退款金额（分）" /><Field v-model="refundDraft.reason" label="原因" /><div class="dialog-actions"><button type="button" class="small-button" @click="refundDraft = null">取消</button><button class="primary-button">退款</button></div></form></div>
       <div v-if="selectedOrder" class="modal" @click.self="selectedOrder = null"><div class="dialog order-detail-dialog"><div class="dialog-title"><h2>订单详情</h2><button type="button" @click="selectedOrder = null">×</button></div><div class="detail-grid"><div><small>订单 ID</small><b>{{ selectedOrder.id }}</b></div><div><small>订单编号</small><b>{{ selectedOrder.outTradeNo }}</b></div><div><small>状态</small><span class="status-badge" :class="statusClass(selectedOrder.status)">{{ statusLabel(selectedOrder.status) }}</span></div><div><small>实付金额</small><b>{{ money(selectedOrder.payAmountCents, selectedOrder.currency) }}</b></div><div><small>用户</small><b>{{ selectedOrder.userEmail || selectedOrder.userName }}</b></div><div><small>支付方式</small><b>{{ methodLabel(selectedOrder.paymentMethod) }}</b></div><div><small>创建时间</small><b>{{ formatDateTime(selectedOrder.createdAt) }}</b></div><div><small>过期时间</small><b>{{ formatDateTime(selectedOrder.expiresAt) }}</b></div></div><div class="audit-list"><h3>审计日志</h3><div v-if="selectedAuditLogs.length" v-for="log in selectedAuditLogs" :key="log.id" class="audit-row"><div><b>{{ auditActionLabel(log.action) }}</b><small>{{ auditDetailText(log.detail) }}</small></div><span>{{ formatDateTime(log.createdAt) }} · {{ log.operator || 'system' }}</span></div><p v-else class="audit-empty">暂无审计记录</p></div></div></div>
@@ -99,7 +136,13 @@ const tabIcons = { dashboard: BarChart3, orders: ClipboardList, plans: Package, 
 const tabs = computed(() => ['dashboard', 'orders', 'plans', 'settings'].map(id => ({ id, label: locale.value.admin[id], icon: tabIcons[id] })))
 const methods = ['alipay','wxpay','stripe','airwallex']; const methodLabel = value => ({ alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }[value] || providerDraft.value?.config?.customMethods?.find(item => item.type === value)?.label || value)
 const currencyOptions = [{ value: 'CNY', label: 'CNY（人民币）' }, { value: 'USD', label: 'USD（美元）' }]
-const providerOptions = [{ value: 'easypay', label: '易支付（兼容协议）' }, { value: 'alipay', label: '支付宝官方' }, { value: 'wxpay', label: '微信支付官方' }, { value: 'stripe', label: 'Stripe' }, { value: 'airwallex', label: 'Airwallex' }]
+const providerOptions = [{ value: 'easypay', label: '易支付' }, { value: 'alipay', label: '支付宝官方' }, { value: 'wxpay', label: '微信支付官方' }, { value: 'stripe', label: 'Stripe' }, { value: 'airwallex', label: 'Airwallex' }]
+const providerTypeLabel = key => providerOptions.find(option => option.value === key)?.label || key
+const providerModeLabel = provider => {
+  if (provider.providerKey === 'wxpay') return 'Native / H5'
+  if (provider.providerKey === 'stripe' || provider.providerKey === 'airwallex') return '内嵌支付'
+  return ({ qrcode: '二维码', popup: '弹窗', redirect: '跳转', '': '二维码' }[provider.paymentMode] || provider.paymentMode || '自动')
+}
 const providerMethodsMap = { easypay: ['alipay','wxpay'], alipay: ['alipay'], wxpay: ['wxpay'], stripe: ['stripe'], airwallex: ['airwallex'] }
 const providerMethods = computed(() => {
   const base = providerMethodsMap[providerDraft.value?.providerKey] || []
@@ -113,8 +156,7 @@ const providerFieldMap = {
   easypay: [
     { key:'pid', label:'商户 PID' },
     { key:'pkey', label:'商户密钥 PKey', sensitive:true },
-    { key:'apiBase', label:'API 基础地址', placeholder:'https://pay.example.com', hint:'填写易支付站点地址，无需附加 submit.php。' },
-    { key:'customMethodsText', label:'自定义支付方式', textarea:true, optional:true, placeholder:'显示名称|type|渠道 ID（每行一项）', hint:'例如：云闪付|unionpay|1001。type 会作为易支付接口参数提交；渠道 ID 可留空。' }
+    { key:'apiBase', label:'API 基础地址', placeholder:'https://pay.example.com', hint:'填写易支付站点地址，无需附加 submit.php。' }
   ],
   alipay: [
     { key:'appId', label:'应用 App ID' },
@@ -253,11 +295,14 @@ const toggleProviderEnabled = async provider => { const previous = provider.enab
 const toggleProviderRefund = async provider => { const previous = provider.refundEnabled; const previousUserRefund = provider.allowUserRefund; provider.refundEnabled = !previous; if (!provider.refundEnabled) provider.allowUserRefund = false; try { await persistProvider(provider); showToast(provider.refundEnabled ? '退款功能已启用' : '退款功能已禁用', 'success') } catch { provider.refundEnabled = previous; provider.allowUserRefund = previousUserRefund } }
 const toggleProviderUserRefund = async provider => { if (!provider.refundEnabled) return; const previous = provider.allowUserRefund; provider.allowUserRefund = !previous; try { await persistProvider(provider); showToast(provider.allowUserRefund ? '已允许用户申请退款' : '已关闭用户退款申请', 'success') } catch { provider.allowUserRefund = previous } }
 const startProviderDrag = provider => { draggingProviderId.value = provider.id }
-const dropProvider = async target => { const sourceId = draggingProviderId.value; draggingProviderId.value = null; if (!sourceId || sourceId === target.id) return; const sourceIndex = providers.value.findIndex(item => item.id === sourceId); const targetIndex = providers.value.findIndex(item => item.id === target.id); if (sourceIndex < 0 || targetIndex < 0) return; const next = [...providers.value]; const [moved] = next.splice(sourceIndex, 1); next.splice(targetIndex, 0, moved); next.forEach((provider, index) => { provider.sortOrder = index * 10 }); providers.value = next; try { await Promise.all(next.map(persistProvider)); showToast('服务商优先级已更新', 'success') } catch { providers.value = await api('/api/admin/payment/providers') } }
+const dropProvider = async target => { const sourceId = draggingProviderId.value; draggingProviderId.value = null; if (!sourceId || sourceId === target.id) return; const sourceIndex = providers.value.findIndex(item => item.id === sourceId); const targetIndex = providers.value.findIndex(item => item.id === target.id); if (sourceIndex < 0 || targetIndex < 0) return; const next = [...providers.value]; const [moved] = next.splice(sourceIndex, 1); next.splice(targetIndex, 0, moved); next.forEach((provider, index) => { provider.sortOrder = index * 10 }); providers.value = next; try { await Promise.all(next.map(persistProvider)); showToast('服务商顺序已更新', 'success') } catch { providers.value = await api('/api/admin/payment/providers') } }
 const cloneData = value => JSON.parse(JSON.stringify(toRaw(value)))
 const normalizeProviderLimits = (providerKey, source = {}) => {
   const result = {}
-  for (const method of providerMethodsMap[providerKey] || []) {
+  const customMethods = providerKey === 'easypay' && Array.isArray(providerDraft.value?.config?.customMethods)
+    ? providerDraft.value.config.customMethods.map(item => item.type).filter(Boolean)
+    : []
+  for (const method of [...(providerMethodsMap[providerKey] || []), ...customMethods]) {
     const current = source?.[method]
     if (current && typeof current === 'object') result[method] = { singleMin:current.singleMin || '', singleMax:current.singleMax || '', dailyLimit:current.dailyLimit || '' }
     else result[method] = {
@@ -279,7 +324,6 @@ const editProvider = provider => {
   draft.config = cloneData(provider?.config || {})
   if (key === 'easypay') {
     if (!Array.isArray(draft.config.customMethods)) draft.config.customMethods = []
-    draft.config.customMethodsText = draft.config.customMethods.map(item => [item.label, item.type, item.cid || ''].join('|')).join('\n')
   }
   draft.limits = normalizeProviderLimits(key, provider?.limits || {})
   applyProviderDefaults(draft)
@@ -289,18 +333,22 @@ const editProvider = provider => {
 const addEasyPayMethod = () => {
   if (!providerDraft.value || providerDraft.value.providerKey !== 'easypay') return
   if (!Array.isArray(providerDraft.value.config.customMethods)) providerDraft.value.config.customMethods = []
-  providerDraft.value.config.customMethods.push({ type: '', label: '', cid: '' })
+  if (providerDraft.value.config.customMethods.length >= 20) return showToast('最多添加 20 种自定义支付方式', 'error')
+  providerDraft.value.config.customMethods.push({ type: '', upstreamType: '', label: '' })
 }
 const removeEasyPayMethod = index => { providerDraft.value?.config?.customMethods?.splice(index, 1) }
 const parseEasyPayCustomMethods = value => {
-  const rows = String(value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean)
+  const rows = Array.isArray(value) ? value : []
   const types = new Set()
   return rows.map(row => {
-    const [label = '', type = '', cid = ''] = row.split('|').map(item => item.trim())
+    const label = String(row?.label || '').trim()
+    const type = String(row?.type || '').trim()
+    const cid = String(row?.cid || '').trim()
+    const upstreamType = String(row?.upstreamType || type).trim().toLowerCase()
     const normalizedType = type.toLowerCase()
-    if (!label || label.length > 30 || !/^[a-z][a-z0-9_-]{1,28}$/.test(normalizedType) || ['alipay', 'wxpay', 'stripe', 'airwallex'].includes(normalizedType) || cid.length > 64 || types.has(normalizedType)) throw new Error('自定义支付方式格式无效，请使用“显示名称|type|渠道 ID”，且 type 不能重复')
+    if (!label || label.length > 30 || !/^[a-z][a-z0-9_-]{1,28}$/.test(normalizedType) || !/^[a-z][a-z0-9_-]{1,28}$/.test(upstreamType) || ['alipay', 'wxpay', 'stripe', 'airwallex'].includes(normalizedType) || cid.length > 64 || types.has(normalizedType)) throw new Error('请检查自定义支付方式：支付方式和上游 type 需使用 2 至 29 位字母、数字、下划线或连字符，且不能重复')
     types.add(normalizedType)
-    return { label, type: normalizedType, ...(cid ? { cid } : {}) }
+    return { label, type: normalizedType, upstreamType, ...(cid ? { cid } : {}) }
   })
 }
 watch(() => providerDraft.value?.providerKey, key => {
@@ -311,6 +359,13 @@ watch(() => providerDraft.value?.providerKey, key => {
   providerDraft.value.limits = normalizeProviderLimits(key)
   applyProviderDefaults(providerDraft.value)
 })
+watch(() => providerDraft.value?.config?.customMethods, customMethods => {
+  if (!providerDraft.value || !Array.isArray(customMethods)) return
+  for (const item of customMethods) {
+    const method = String(item?.type || '').trim().toLowerCase()
+    if (method && !providerDraft.value.limits[method]) providerDraft.value.limits[method] = { singleMin:'', singleMax:'', dailyLimit:'' }
+  }
+}, { deep:true })
 watch(() => providerDraft.value?.refundEnabled, enabled => { if (providerDraft.value && !enabled) providerDraft.value.allowUserRefund = false })
 const cleanProviderLimits = limits => Object.fromEntries(Object.entries(limits || {}).flatMap(([method, values]) => {
   const clean = Object.fromEntries(Object.entries(values || {}).filter(([, value]) => Number(value) > 0).map(([key, value]) => [key, Number(value)]))
@@ -326,8 +381,7 @@ const saveProvider = async () => {
     const config = cloneData(providerDraft.value.config)
     let supportedMethods = [...providerDraft.value.supportedMethods]
     if (providerDraft.value.providerKey === 'easypay') {
-      config.customMethods = parseEasyPayCustomMethods(config.customMethodsText)
-      delete config.customMethodsText
+      config.customMethods = parseEasyPayCustomMethods(config.customMethods)
       supportedMethods = [...new Set([...supportedMethods, ...config.customMethods.map(item => item.type)])]
     }
     const body = { ...toRaw(providerDraft.value), supportedMethods, config, limits:cleanProviderLimits(providerDraft.value.limits) }
@@ -391,4 +445,15 @@ onMounted(async () => { if (!siteOrigin.value) siteOrigin.value = window.locatio
 @media (max-width:640px){.help-grid{grid-template-columns:1fr}.provider-dialog>.dialog-title{padding:1rem}.provider-dialog>.grid,.provider-dialog>.provider-options,.provider-dialog>.provider-section{margin:0 1rem}.limit-row{grid-template-columns:1fr 1fr}.limit-row>b{grid-column:1/-1}.callback-list>div{grid-template-columns:1fr}.provider-dialog>.dialog-actions{padding:1rem}}
 @media (max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.dashboard-columns{grid-template-columns:1fr}.orders-filters{flex-wrap:wrap}.search-box{min-width:100%}.order-refresh{margin-left:0}}
 @media (max-width:640px){.stats-grid{grid-template-columns:1fr}.dashboard-toolbar{justify-content:space-between}.range-switch{flex:1}.range-switch button{flex:1}.revenue-chart{height:auto}.revenue-chart svg{height:auto;aspect-ratio:10 / 3}.orders-pagination{align-items:flex-start;flex-wrap:wrap}.page-buttons{margin-left:0}.detail-grid{grid-template-columns:1fr}.filter-select{width:calc(50% - .35rem)}}
+</style>
+<style scoped>
+.provider-title{flex-wrap:wrap}
+.provider-type,.provider-mode{padding:.15rem .4rem;border-radius:.35rem;background:var(--bg-tertiary);color:var(--text-tertiary);font-size:.68rem}
+.provider-mode{color:var(--primary)}
+.provider-state.disabled{color:var(--success)}
+</style>
+<style scoped>
+.easypay-custom-section .section-title{display:flex;align-items:center;justify-content:space-between;gap:1rem}.channel-fallback{display:grid;grid-template-columns:1fr 1fr;align-items:end;gap:1rem;margin-top:.8rem}.channel-fallback .field-hint{margin:0;padding-bottom:.55rem}.add-method-button,.remove-method-button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:2.15rem;border:1px solid var(--border-secondary);border-radius:.55rem;padding:0 .7rem;background:var(--bg-secondary);font-size:.72rem;font-weight:750}.add-method-button{border-color:var(--primary);color:var(--primary)}.add-method-button:hover{background:var(--primary-10)}.custom-method-list{display:grid;gap:.7rem;margin-top:.9rem}.custom-method-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;align-items:end;gap:.65rem;padding:.75rem;border:1px solid var(--border-secondary);border-radius:.65rem;background:var(--bg-secondary)}.remove-method-button{color:var(--error)}.remove-method-button:hover{border-color:var(--error);background:var(--error-10)}.custom-method-empty{margin-top:.9rem;padding:1rem;border:1px dashed var(--border-tertiary);border-radius:.65rem;color:var(--text-tertiary);font-size:.75rem;text-align:center}
+@media (max-width:760px){.channel-fallback{grid-template-columns:1fr}.channel-fallback .field-hint{padding-bottom:0}.custom-method-row{grid-template-columns:1fr 1fr}.remove-method-button{width:100%}}
+@media (max-width:520px){.easypay-custom-section .section-title{align-items:flex-start;flex-direction:column}.custom-method-row{grid-template-columns:1fr}}
 </style>

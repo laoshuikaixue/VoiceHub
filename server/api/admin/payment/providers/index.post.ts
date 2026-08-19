@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { paymentProviderInstances } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
 import { encryptPaymentConfig, maskPaymentConfig } from '~~/server/utils/paymentCrypto'
-import { getPaymentProviderAllowedMethods, getPaymentProviderConfigError, isPaymentProviderKey, normalizeEasyPayCustomMethods, PAYMENT_PROVIDER_CONFIG_FIELDS } from '~~/server/config/payment'
+import { getPaymentProviderAllowedMethods, getPaymentProviderConfigError, isPaymentMode, isPaymentProviderKey, normalizeEasyPayCustomMethods, PAYMENT_PROVIDER_CONFIG_FIELDS } from '~~/server/config/payment'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
@@ -16,6 +16,7 @@ export default defineEventHandler(async event => {
   if (missing.length) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付服务商配置不完整', { params: [missing.join(', ')] })
   const configError = getPaymentProviderConfigError(body.providerKey, body.config)
   if (configError) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, configError)
+  if (!isPaymentMode(body.providerKey, body.paymentMode)) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付模式无效')
   if (body.providerKey === 'easypay') body.config.customMethods = normalizeEasyPayCustomMethods(body.config.customMethods)
   const allowedMethods = getPaymentProviderAllowedMethods(body.providerKey, body.config)
   const supportedMethods = Array.isArray(body.supportedMethods) ? body.supportedMethods.filter((item: string) => allowedMethods.includes(item)) : allowedMethods

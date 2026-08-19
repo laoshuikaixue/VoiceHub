@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { paymentProviderInstances } from '~/drizzle/schema'
 import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
 import { decryptPaymentConfig, encryptPaymentConfig, maskPaymentConfig } from '~~/server/utils/paymentCrypto'
-import { getPaymentProviderAllowedMethods, getPaymentProviderConfigError, normalizeEasyPayCustomMethods, PAYMENT_PROVIDER_CONFIG_FIELDS } from '~~/server/config/payment'
+import { getPaymentProviderAllowedMethods, getPaymentProviderConfigError, isPaymentMode, normalizeEasyPayCustomMethods, PAYMENT_PROVIDER_CONFIG_FIELDS } from '~~/server/config/payment'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -22,6 +22,8 @@ export default defineEventHandler(async event => {
   if (missing.length) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付服务商配置不完整', { params: [missing.join(', ')] })
   const configError = getPaymentProviderConfigError(current.providerKey, config)
   if (configError) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, configError)
+  const paymentMode = typeof body.paymentMode === 'string' ? body.paymentMode : current.paymentMode
+  if (!isPaymentMode(current.providerKey, paymentMode)) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '支付模式无效')
   const allowedMethods = getPaymentProviderAllowedMethods(current.providerKey, config)
   const supportedMethods = Array.isArray(body.supportedMethods) ? body.supportedMethods.filter((item: string) => allowedMethods.includes(item)) : current.supportedMethods.filter(item => allowedMethods.includes(item))
   if (!supportedMethods.length) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_CONFIG_INVALID, '至少启用一种支付方式')
@@ -32,7 +34,7 @@ export default defineEventHandler(async event => {
     configEncrypted: encryptPaymentConfig(config),
     supportedMethods,
     enabled: typeof body.enabled === 'boolean' ? body.enabled : current.enabled,
-    paymentMode: typeof body.paymentMode === 'string' ? body.paymentMode : current.paymentMode,
+    paymentMode,
     sortOrder: Number.isInteger(body.sortOrder) ? body.sortOrder : current.sortOrder,
     limits: body.limits && typeof body.limits === 'object' ? body.limits : current.limits,
     refundEnabled,
