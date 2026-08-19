@@ -9,7 +9,7 @@
     </header>
 
     <main class="payment-main mx-auto max-w-6xl px-4 py-8">
-      <div class="payment-intro"><div><p class="payment-eyebrow">VoiceHub</p><h1>{{ locale.title }}</h1><p>选择适合你的点歌券套餐，支付完成后自动发放。</p></div><div class="payment-intro-icon"><Ticket :size="25" /></div></div>
+      <div v-if="!purchasePlan && !checkoutOrder && !resultOrder" class="payment-intro"><div><p class="payment-eyebrow">VoiceHub</p><h1>{{ locale.title }}</h1><p>选择适合你的点歌券套餐，支付完成后自动发放。</p></div><div class="payment-intro-icon"><Ticket :size="25" /></div></div>
       <section v-if="resultOrder" class="payment-result-panel">
         <div class="result-icon" :class="resultOrder.status === 'COMPLETED' ? 'success' : resultOrder.status === 'EXPIRED' ? 'expired' : resultOrder.status === 'CANCELLED' ? 'cancelled' : 'failed'"><Check v-if="resultOrder.status === 'COMPLETED'" :size="34" /><Clock3 v-else-if="resultOrder.status === 'EXPIRED'" :size="34" /><X v-else :size="34" /></div>
         <h2>{{ resultOrder.status === 'COMPLETED' ? '支付成功' : resultOrder.status === 'EXPIRED' ? '订单已过期' : resultOrder.status === 'CANCELLED' ? '订单已取消' : '支付失败' }}</h2>
@@ -24,7 +24,7 @@
         <div v-else class="checkout-popup"><AppSpinner /><p>{{ checkoutOrder.providerKey === 'airwallex' ? '请打开 Airwallex 收银台完成支付后返回此页面' : '支付页面已在新窗口打开，请在新窗口中完成支付后返回此页面' }}</p><button class="action-button" @click="reopenPayment">重新打开支付页面</button></div>
         <div class="checkout-countdown">{{ countdownText }}<small>等待支付…</small></div><button class="checkout-cancel" @click="cancelCheckout">取消订单</button>
       </section>
-      <div v-if="!checkoutOrder && !resultOrder" class="payment-tabs mb-7 flex overflow-x-auto">
+      <div v-if="!purchasePlan && !checkoutOrder && !resultOrder" class="payment-tabs mb-7 flex overflow-x-auto">
         <button v-for="tab in tabs" :key="tab.id" class="payment-tab" :class="{ active: activeTab === tab.id }" @click="activeTab = tab.id">
           {{ tab.label }}
         </button>
@@ -33,17 +33,25 @@
       <div v-if="loading" class="flex justify-center py-20"><AppSpinner :label="common.loading" /></div>
       <div v-else-if="errorMessage" class="rounded-lg border border-error-30 bg-error-10 p-4 text-sm text-error">{{ errorMessage }}</div>
 
+      <section v-else-if="purchasePlan" class="purchase-confirmation">
+        <button type="button" class="purchase-back" @click="cancelPurchase"><ArrowLeft :size="16" />返回套餐</button>
+        <section class="purchase-summary"><div class="purchase-summary-head"><div><p>套餐 ID #{{ purchasePlan.id }}</p><h2>{{ purchasePlan.name }}</h2><span>{{ purchasePlan.description || '灵活购买点歌券' }}</span></div><span class="plan-badge">{{ purchasePlan.cardCount }} {{ locale.cardsCount }}</span></div><div class="purchase-price"><b>{{ formatMoney(purchasePlan.priceCents, purchasePlan.currency) }}</b><del v-if="hasDiscount(purchasePlan)">{{ formatMoney(purchasePlan.originalPriceCents, purchasePlan.currency) }}</del><em v-if="hasDiscount(purchasePlan)">-{{ discountPercent(purchasePlan) }}%</em></div><div class="purchase-details"><div><span>点歌券数量</span><b>{{ purchasePlan.cardCount }} 张</b></div><div><span>有效期</span><b>{{ validityText(purchasePlan) }}</b></div><div><span>套餐币种</span><b>{{ purchasePlan.currency }}</b></div><div><span>购买金额</span><b>{{ formatMoney(purchasePlan.priceCents, purchasePlan.currency) }}</b></div></div><ul v-if="purchasePlan.features?.length" class="purchase-features"><li v-for="feature in purchasePlan.features" :key="feature"><Check :size="15" />{{ feature }}</li></ul></section>
+        <section class="purchase-methods"><h2>支付方式</h2><div class="purchase-method-grid"><button v-for="method in methodOptions" :key="method.value" type="button" class="purchase-method" :class="{ active: purchaseMethod === method.value }" @click="purchaseMethod = method.value"><CreditCard :size="19" /><span>{{ method.label }}</span></button></div></section>
+        <button type="button" class="purchase-submit" :disabled="creatingId === purchasePlan.id || !purchaseMethod" @click="buy(purchasePlan)"><RefreshCw v-if="creatingId === purchasePlan.id" :size="17" class="animate-spin" />{{ creatingId === purchasePlan.id ? '创建订单中…' : `确认支付 ${formatMoney(purchasePlan.priceCents, purchasePlan.currency)}` }}</button>
+        <button type="button" class="purchase-cancel" @click="cancelPurchase">取消</button>
+      </section>
+
       <section v-else-if="!checkoutOrder && !resultOrder && activeTab === 'plans'">
         <div v-if="!config.enabled" class="py-20 text-center text-text-tertiary">{{ locale.disabled }}</div>
         <div v-else-if="!plans.length" class="py-20 text-center text-text-tertiary">{{ locale.emptyPlans }}</div>
         <div v-else class="plan-grid">
           <article v-for="plan in plans" :key="plan.id" class="plan-card">
             <div class="plan-card-top"><div class="plan-card-title"><span class="plan-icon"><Ticket :size="18" /></span><div><h2>{{ plan.name }}</h2><p>{{ plan.description || '灵活购买点歌券' }}</p></div></div><span class="plan-badge">{{ plan.cardCount }} {{ locale.cardsCount }}</span></div>
-            <div class="plan-price"><span>{{ formatMoney(plan.priceCents, plan.currency) }}</span><del v-if="plan.originalPriceCents">{{ formatMoney(plan.originalPriceCents, plan.currency) }}</del></div>
+            <div class="plan-price"><span>{{ formatMoney(plan.priceCents, plan.currency) }}</span><del v-if="hasDiscount(plan)">{{ formatMoney(plan.originalPriceCents, plan.currency) }}</del><b v-if="hasDiscount(plan)" class="plan-discount">-{{ discountPercent(plan) }}%</b></div>
             <div class="plan-divider" />
             <div class="plan-benefit"><Check :size="16" /><span>{{ locale.cardsCount }} <b>{{ plan.cardCount }}</b></span></div>
             <ul v-if="plan.features?.length" class="plan-features"><li v-for="feature in plan.features" :key="feature"><Check :size="15" />{{ feature }}</li></ul>
-            <div class="plan-buy"><label>支付方式</label><CustomSelect v-model="selectedMethods[plan.id]" :options="methodOptions" /><button class="buy-button" :disabled="creatingId === plan.id || !selectedMethods[plan.id]" @click="buy(plan)"><RefreshCw v-if="creatingId === plan.id" :size="16" class="animate-spin" /><CreditCard v-else :size="16" />{{ locale.buy }}</button></div>
+            <button type="button" class="buy-button" @click="beginPurchase(plan)"><CreditCard :size="16" />{{ locale.buy }}</button>
           </article>
         </div>
         <section v-if="config.helpText || config.helpImageUrl" class="payment-help mt-6"><h2>支付帮助</h2><img v-if="config.helpImageUrl" :src="config.helpImageUrl" alt="支付帮助" @error="$event.target.style.display = 'none'" /><p v-if="config.helpText" class="whitespace-pre-wrap">{{ config.helpText }}</p></section>
@@ -60,7 +68,7 @@
             <div><p class="text-xs text-text-tertiary">{{ formatDate(order.createdAt) }}</p><p class="mt-1 text-lg font-black">{{ formatMoney(order.payAmountCents, order.currency) }}</p></div>
             <div class="flex flex-wrap gap-2">
               <button v-if="order.status === 'PENDING' && order.payUrl" class="action-primary" @click="openPay(order)"><ExternalLink :size="15" />{{ locale.payNow }}</button>
-              <button v-if="['PENDING','PAID','FAILED','EXPIRED'].includes(order.status)" class="action-button" @click="verify(order)"><RefreshCw :size="15" />{{ locale.verify }}</button>
+              <button v-if="['PENDING','PAID','FAILED'].includes(order.status)" class="action-button" @click="verify(order)"><RefreshCw :size="15" />{{ locale.verify }}</button>
               <button v-if="order.status === 'PENDING'" class="action-button text-error" @click="cancelOrder(order)"><X :size="15" />{{ locale.cancel }}</button>
               <button v-if="order.status === 'COMPLETED'" class="action-button" @click="startRefund(order)"><Undo2 :size="15" />{{ locale.refund }}</button>
             </div>
@@ -95,12 +103,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import { ArrowLeft, Check, Clock3, Copy, CreditCard, ExternalLink, RefreshCw, Ticket, Undo2, User, X } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { useToast } from '~/composables/useToast'
@@ -111,7 +118,7 @@ const { showToast } = useToast()
 const route = useRoute()
 const router = useRouter()
 const config = ref({ enabled: false, methods: [], methodLabels: {} }); const plans = ref([]); const orders = ref([]); const cards = ref([])
-const selectedMethods = reactive({}); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
+const purchasePlan = ref(null); const purchaseMethod = ref(''); const loading = ref(true); const errorMessage = ref(''); const activeTab = ref('plans'); const creatingId = ref(null)
 const qrOrder = ref(null); const qrImage = ref(''); const refundOrder = ref(null); const refundReason = ref(''); const checkoutOrder = ref(null); const resultOrder = ref(null); const countdown = ref(1800); const stripeMount = ref(null); const stripeReady = ref(false); const stripeProcessing = ref(false); const stripeError = ref(''); let stripeInstance = null; let stripeElements = null; let stripePaymentElement = null; let pollTimer = null; let countdownTimer = null
 const tabs = computed(() => [{ id: 'plans', label: locale.value.title }, { id: 'orders', label: locale.value.orders }, { id: 'cards', label: locale.value.cards }])
 const methodLabels = { alipay: '支付宝', wxpay: '微信支付', stripe: 'Stripe', airwallex: 'Airwallex' }
@@ -126,6 +133,8 @@ const getDismissedResultId = () => { try { return sessionStorage.getItem(dismiss
 const dismissResult = id => { try { sessionStorage.setItem(dismissedResultStorageKey, id) } catch {} }
 const isMobilePaymentClient = () => /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent)
 const formatMoney = (cents, currency = 'CNY') => new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100)
+const hasDiscount = plan => Number(plan?.originalPriceCents) > Number(plan?.priceCents) && Number(plan?.priceCents) >= 0
+const discountPercent = plan => Math.round((1 - Number(plan.priceCents) / Number(plan.originalPriceCents)) * 100)
 const formatDate = value => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const statusText = status => ({ PENDING: locale.value.pending, PAID: locale.value.paid, COMPLETED: locale.value.completed, EXPIRED: locale.value.expired, CANCELLED: locale.value.cancelled, FAILED: locale.value.failed, REFUND_REQUESTED: locale.value.refundRequested, REFUNDING: locale.value.refunding, REFUNDED: locale.value.refunded }[status] || status)
 const statusClass = status => status === 'COMPLETED' ? 'border-success-30 bg-success-10 text-success' : ['FAILED','EXPIRED','CANCELLED'].includes(status) ? 'border-error-30 bg-error-10 text-error' : 'border-warning-30 bg-warning-10 text-warning'
@@ -139,7 +148,6 @@ const load = async () => {
   try {
     const [paymentConfig, paymentPlans] = await Promise.all([$fetch('/api/payment/config'), $fetch('/api/payment/plans')])
     config.value = paymentConfig; plans.value = paymentPlans
-    for (const plan of plans.value) selectedMethods[plan.id] = config.value.methods[0] || ''
     await loadOrders()
     const returnedOrderId = String(route.query.order || '')
     if (returnedOrderId && returnedOrderId !== getDismissedResultId()) {
@@ -237,7 +245,10 @@ const restoreCheckout = async order => {
   if (order.providerKey === 'stripe' && order.clientSecret) await mountStripeCheckout(order)
   startPolling(order)
 }
-const buy = async plan => { creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: selectedMethods[plan.id], mobile: isMobilePaymentClient() } }); orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
+const validityText = plan => plan?.validityValue ? `${plan.validityValue}${({ day: '天', month: '月', year: '年' }[plan.validityUnit] || '天')}` : '不限时'
+const beginPurchase = plan => { errorMessage.value = ''; purchasePlan.value = plan; purchaseMethod.value = methodOptions.value[0]?.value || '' }
+const cancelPurchase = () => { if (creatingId.value) return; purchasePlan.value = null; purchaseMethod.value = '' }
+const buy = async plan => { if (!purchaseMethod.value) return; creatingId.value = plan.id; try { const order = await $fetch('/api/payment/orders', { method: 'POST', body: { planId: plan.id, method: purchaseMethod.value, mobile: isMobilePaymentClient() } }); purchasePlan.value = null; purchaseMethod.value = ''; orders.value.unshift(order); await openPay(order) } catch (error) { errorMessage.value = localize(error, locale.value.createFailed) } finally { creatingId.value = null } }
 const verify = async order => { try { await $fetch(`/api/payment/orders/${order.id}/verify`, { method: 'POST' }); await loadOrders(); const latest = orders.value.find(item => item.id === order.id); if (latest && ['COMPLETED','FAILED','EXPIRED','CANCELLED'].includes(latest.status)) { resultOrder.value = latest; checkoutOrder.value = null; clearStripeCheckout(); clearSavedCheckout(); clearInterval(pollTimer); clearInterval(countdownTimer) } } catch (error) { errorMessage.value = localize(error) } }
 const cancelOrder = async order => { try { await $fetch(`/api/payment/orders/${order.id}/cancel`, { method: 'POST' }); showToast('订单已取消', 'success'); await loadOrders() } catch (error) { errorMessage.value = localize(error); showToast(errorMessage.value, 'error') } }
 const startRefund = order => { refundOrder.value = order; refundReason.value = '' }
@@ -306,6 +317,7 @@ onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTi
 .plan-price { display: flex; align-items: baseline; gap: .55rem; margin-top: 1.1rem; }
 .plan-price span { color: var(--text-primary); font-size: 1.8rem; font-weight: 900; letter-spacing: 0; }
 .plan-price del { color: var(--text-disabled); font-size: .72rem; }
+.plan-discount { display: inline-flex; align-items: center; min-height: 1.35rem; border-radius: .35rem; background: var(--success-light); padding: 0 .42rem; color: var(--success); font-size: .68rem; font-weight: 800; }
 .plan-divider { height: 1px; margin: 1rem 0 .85rem; background: var(--border-secondary); }
 .plan-benefit { display: flex; align-items: center; gap: .45rem; color: var(--text-secondary); font-size: .76rem; }
 .plan-benefit svg { color: var(--success); }
@@ -318,6 +330,7 @@ onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTi
 .buy-button { display: inline-flex; min-height: 2.55rem; align-items: center; justify-content: center; gap: .4rem; margin-top: .15rem; border-radius: .55rem; background: var(--primary); color: white; font-size: .78rem; font-weight: 800; transition: filter .2s, transform .2s; }
 .buy-button:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
 .buy-button:disabled { cursor: not-allowed; opacity: .45; }
+.purchase-confirmation{display:grid;max-width:56rem;gap:1rem;margin:0 auto}.purchase-back{display:inline-flex;width:max-content;align-items:center;gap:.4rem;color:var(--text-secondary);font-size:.78rem;font-weight:700}.purchase-back:hover{color:var(--primary)}.purchase-summary,.purchase-methods{border:1px solid var(--border-secondary);border-radius:.85rem;background:var(--bg-secondary);box-shadow:var(--shadow-sm)}.purchase-summary{padding:1.45rem}.purchase-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.purchase-summary-head p{color:var(--text-tertiary);font-size:.68rem;font-weight:700}.purchase-summary-head h2{margin:.3rem 0;color:var(--text-primary);font-size:1.2rem;font-weight:850}.purchase-summary-head span{color:var(--text-tertiary);font-size:.78rem}.purchase-price{display:flex;align-items:baseline;gap:.55rem;margin-top:1.25rem}.purchase-price b{color:var(--success);font-size:2rem;font-weight:900}.purchase-price del{color:var(--text-disabled);font-size:.82rem}.purchase-price em{border-radius:.35rem;background:var(--success-light);padding:.2rem .42rem;color:var(--success);font-size:.68rem;font-style:normal;font-weight:800}.purchase-details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin-top:1.45rem;padding-top:1.1rem;border-top:1px solid var(--border-secondary)}.purchase-details div{display:grid;gap:.35rem}.purchase-details span{color:var(--text-tertiary);font-size:.7rem}.purchase-details b{color:var(--text-primary);font-size:.86rem}.purchase-features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;margin-top:1.1rem;color:var(--text-secondary);font-size:.74rem}.purchase-features li{display:flex;gap:.4rem}.purchase-features svg{flex:none;color:var(--success)}.purchase-methods{padding:1.25rem}.purchase-methods h2{margin-bottom:.85rem;color:var(--text-primary);font-size:.88rem;font-weight:800}.purchase-method-grid{display:flex;flex-wrap:wrap;gap:.75rem}.purchase-method{display:inline-flex;min-width:12rem;min-height:3.7rem;align-items:center;justify-content:center;gap:.6rem;border:1px solid var(--border-secondary);border-radius:.6rem;background:var(--bg-primary);color:var(--text-secondary);font-size:.88rem;font-weight:800;transition:border-color .15s,background .15s,color .15s}.purchase-method:hover{border-color:var(--primary);color:var(--primary)}.purchase-method.active{border-color:var(--primary);background:var(--primary-10);color:var(--primary)}.purchase-submit,.purchase-cancel{display:flex;width:100%;min-height:3.1rem;align-items:center;justify-content:center;gap:.45rem;border-radius:.65rem;font-size:.88rem;font-weight:800}.purchase-submit{background:var(--primary);color:white;box-shadow:var(--shadow-sm)}.purchase-submit:disabled{cursor:not-allowed;opacity:.5}.purchase-cancel{border:1px solid var(--border-secondary);background:var(--bg-secondary);color:var(--text-secondary)}.purchase-cancel:hover{border-color:var(--primary);color:var(--primary)}
 .payment-help { display:grid; gap:.75rem; padding:1rem; border:1px solid var(--border-secondary); border-radius:.65rem; background:var(--bg-secondary); color:var(--text-tertiary); font-size:.74rem; line-height:1.65; }.payment-help h2{color:var(--text-primary);font-size:.9rem;font-weight:800}.payment-help p{margin:0}.payment-help img{display:block;max-width:100%;max-height:28rem;margin:auto;border:1px solid var(--border-secondary);border-radius:.5rem;object-fit:contain}
 .payment-list { display: grid; gap: .75rem; }
 .order-card,.card-code-card { border: 1px solid var(--border-secondary); border-radius: .75rem; background: var(--bg-secondary); box-shadow: var(--shadow-sm); }
@@ -328,7 +341,7 @@ onMounted(load); onUnmounted(() => { clearStripeCheckout(); clearInterval(pollTi
 .action-button:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-hover); }
 .action-primary { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.25rem; padding: 0 .8rem; border-radius: .5rem; background: var(--primary); color: white; font-size: .75rem; font-weight: 700; }
 @media (max-width: 900px) { .plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .payment-main { padding-top: 1.25rem; } .payment-intro { padding: 1rem; } .payment-intro-icon { width: 2.5rem; height: 2.5rem; } .checkout-panel,.payment-result-panel{padding:1.25rem 1rem}.plan-grid { grid-template-columns: 1fr; } .plan-card:hover { transform: none; } .order-card .border-t { align-items: flex-start; flex-direction: column; } .order-card .border-t > div:last-child { width: 100%; } .order-card .border-t button { flex: 1; justify-content: center; } }
+@media (max-width: 600px) { .payment-main { padding-top: 1.25rem; } .payment-intro { padding: 1rem; } .payment-intro-icon { width: 2.5rem; height: 2.5rem; } .checkout-panel,.payment-result-panel{padding:1.25rem 1rem}.plan-grid { grid-template-columns: 1fr; } .plan-card:hover { transform: none; } .purchase-summary{padding:1.1rem}.purchase-summary-head{flex-direction:column}.purchase-details,.purchase-features{grid-template-columns:1fr 1fr}.purchase-method{min-width:100%;width:100%}.order-card .border-t { align-items: flex-start; flex-direction: column; } .order-card .border-t > div:last-child { width: 100%; } .order-card .border-t button { flex: 1; justify-content: center; } }
 :global(:root[data-theme='ClassicDark']) .payment-intro { background: var(--bg-secondary); }
 .result-icon.expired{background:var(--warning-light);color:var(--warning)}.result-message{margin-top:.45rem;color:var(--text-tertiary);font-size:.82rem}
 textarea{color:var(--text-primary);caret-color:var(--primary);background:var(--bg-secondary)!important}textarea::placeholder{color:var(--text-tertiary);opacity:1}textarea:focus{border-color:var(--primary);outline:2px solid var(--primary-10);outline-offset:0}

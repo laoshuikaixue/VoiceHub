@@ -58,6 +58,7 @@ export const getPaymentProviderAllowedMethods = (providerKey: string, config: Re
 
 export const getPaymentProviderConfigError = (providerKey: string, config: Record<string, unknown>) => {
   if (providerKey === 'easypay' && normalizeEasyPayCustomMethods(config.customMethods) === null) return '易支付自定义支付方式无效'
+  if (providerKey === 'stripe' && config.currency !== undefined && !/^[A-Z]{3}$/.test(String(config.currency).trim().toUpperCase())) return 'Stripe 支付币种无效'
   if (providerKey === 'alipay' && config.gateway) {
     try {
       const gateway = new URL(String(config.gateway))

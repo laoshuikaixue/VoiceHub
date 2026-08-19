@@ -208,9 +208,10 @@ export const fulfillPaymentOrder = async (notification: PaymentNotification, ope
   if (notification.amountCents !== order.payAmountCents) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH, '支付金额与订单不一致')
   if (order.status === 'COMPLETED' || order.status === 'REFUNDED') return order
   if (!notification.success) {
-    await db.update(paymentOrders).set({ status: 'FAILED', failedAt: getServerDate(), failedReason: '支付服务商返回失败', updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
-    await addPaymentAudit(order.id, 'PAYMENT_FAILED', {}, operator)
-    return order
+    const [failed] = await db.update(paymentOrders).set({ status: 'FAILED', failedAt: getServerDate(), failedReason: '支付服务商返回失败', updatedAt: getServerDate() })
+      .where(and(eq(paymentOrders.id, order.id), inArray(paymentOrders.status, ['PENDING', 'PAID']))).returning()
+    if (failed) await addPaymentAudit(order.id, 'PAYMENT_FAILED', {}, operator)
+    return failed || order
   }
   await db.transaction(async tx => {
     const claimed = await tx.update(paymentOrders).set({ status: 'PAID', paymentTradeNo: notification.tradeNo || order.paymentTradeNo, paidAt: order.paidAt || getServerDate(), updatedAt: getServerDate() })
@@ -224,8 +225,9 @@ export const fulfillPaymentOrder = async (notification: PaymentNotification, ope
         await tx.insert(paymentOrderCards).values({ orderId: order.id, cardCodeId: card.id })
       }
     }
-    await tx.update(paymentOrders).set({ status: 'COMPLETED', completedAt: getServerDate(), updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
-    await tx.insert(paymentAuditLogs).values({ orderId: order.id, action: 'FULFILLED', detail: { cardCount: order.cardCount }, operator })
+    const [completed] = await tx.update(paymentOrders).set({ status: 'COMPLETED', completedAt: getServerDate(), updatedAt: getServerDate() })
+      .where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'PAID'))).returning({ id: paymentOrders.id })
+    if (completed) await tx.insert(paymentAuditLogs).values({ orderId: order.id, action: 'FULFILLED', detail: { cardCount: order.cardCount }, operator })
   })
   const [completed] = await db.select().from(paymentOrders).where(eq(paymentOrders.id, order.id)).limit(1)
   if (!completed) throw new Error('支付订单履约后查询失败')

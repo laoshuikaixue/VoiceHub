@@ -427,12 +427,17 @@ class StripeProvider implements PaymentProvider {
     })
     if (!verified) throw new Error('Stripe 回调签名无效')
     const event = JSON.parse(rawBody)
-    if (!['payment_intent.succeeded', 'payment_intent.payment_failed', 'checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.async_payment_failed'].includes(event.type)) return null
+    if (!['payment_intent.succeeded', 'payment_intent.payment_failed'].includes(event.type)) return null
     const payment = event.data.object
-    const outTradeNo = payment.metadata?.out_trade_no || payment.client_reference_id
+    const outTradeNo = payment.metadata?.out_trade_no
     if (!outTradeNo) throw new Error('Stripe 回调缺少订单号')
-    const failed = event.type === 'payment_intent.payment_failed' || event.type === 'checkout.session.async_payment_failed'
-    return { outTradeNo, tradeNo: payment.id || payment.payment_intent, amountCents: payment.amount || payment.amount_total, success: !failed && (payment.status === 'succeeded' || payment.payment_status === 'paid') }
+    const amountCents = Number(payment.amount)
+    if (!Number.isSafeInteger(amountCents) || amountCents <= 0) throw new Error('Stripe 回调金额无效')
+    const callbackCurrency = String(payment.currency || '').trim().toUpperCase()
+    const configuredCurrency = String(this.config.currency || 'CNY').trim().toUpperCase()
+    if (!/^[A-Z]{3}$/.test(callbackCurrency) || callbackCurrency !== configuredCurrency) throw new Error('Stripe 回调币种不匹配')
+    const failed = event.type === 'payment_intent.payment_failed'
+    return { outTradeNo, tradeNo: payment.id, amountCents, success: !failed && payment.status === 'succeeded' }
   }
   async refund(_outTradeNo: string, tradeNo: string | undefined, amountCents: number) {
     if (!tradeNo) throw new Error('Stripe 退款缺少 PaymentIntent')
@@ -513,7 +518,12 @@ class AirwallexProvider implements PaymentProvider {
     if (!intent.merchant_order_id) throw new Error('Airwallex 回调缺少订单号')
     if (event.name === 'payment_intent.succeeded' && String(intent.status || '').toUpperCase() !== 'SUCCEEDED') throw new Error('Airwallex 成功回调的支付状态无效')
     if (event.name === 'payment_intent.cancelled' && String(intent.status || '').toUpperCase() !== 'CANCELLED') throw new Error('Airwallex 取消回调的支付状态无效')
-    return { outTradeNo: intent.merchant_order_id, tradeNo: intent.id, amountCents: Math.round(Number(intent.amount) * 100), success: event.name === 'payment_intent.succeeded' }
+    const amountCents = Math.round(Number(intent.amount) * 100)
+    if (!Number.isSafeInteger(amountCents) || amountCents <= 0) throw new Error('Airwallex 回调金额无效')
+    const configuredCurrency = String(this.config.currency || '').trim().toUpperCase()
+    const callbackCurrency = String(intent.currency || '').trim().toUpperCase()
+    if (!/^[A-Z]{3}$/.test(callbackCurrency) || (configuredCurrency && callbackCurrency !== configuredCurrency)) throw new Error('Airwallex 回调币种不匹配')
+    return { outTradeNo: intent.merchant_order_id, tradeNo: intent.id, amountCents, success: event.name === 'payment_intent.succeeded' }
   }
   async refund(_outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string) {
     if (!tradeNo) throw new Error('Airwallex 退款缺少 PaymentIntent')
