@@ -2389,6 +2389,7 @@ export const admin = {
       copyDateConfirm: 'Copy',
       copyDateSingleMessage: (sourceDate: string, targetDate: string) => `Copy the schedule from ${sourceDate} to ${targetDate}?`,
       copyDateSingleConfirm: 'Copy',
+      copyDateOverwriteDraftConfirm: (draftCount: number) => `${draftCount} draft(s) on target date will be overwritten. Continue?`,
       deleteScheduleTitle: 'Delete Schedule',
       deleteScheduleMessage: 'Delete all schedules for this day? This cannot be recovered.',
       deleteScheduleConfirm: 'Delete',

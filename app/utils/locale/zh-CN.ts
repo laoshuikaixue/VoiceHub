@@ -2398,6 +2398,7 @@ export const admin = {
       copyDateConfirm: '确认复制',
       copyDateSingleMessage: (sourceDate: string, targetDate: string) => `确定将 ${sourceDate} 的排期复制到 ${targetDate} 吗？`,
       copyDateSingleConfirm: '确认复制',
+      copyDateOverwriteDraftConfirm: (draftCount: number) => `目标日期 ${draftCount} 首草稿将被覆盖，确定继续？`,
       deleteScheduleTitle: '删除排期',
       deleteScheduleMessage: '确定要删除当天的所有排期吗？此操作不可恢复。',
       deleteScheduleConfirm: '确认删除',

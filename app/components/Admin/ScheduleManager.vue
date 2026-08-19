@@ -4241,6 +4241,50 @@ const confirmCopyDate = async () => {
       return getScheduleDateValue(schedule.playDate) === sourceDate
     })
 
+    // 检查目标日期是否有草稿
+    const targetDateDrafts = drafts.value.filter((d) => d.playDate && getScheduleDateValue(d.playDate) === targetDate)
+    if (targetDateDrafts.length > 0) {
+      confirmDialogTitle.value = locale.value.copyDateTitle
+      confirmDialogMessage.value = callLocale('confirmations.copyDateOverwriteDraftConfirm', '目标日期有草稿将被覆盖，确定继续？', targetDateDrafts.length)
+      confirmDialogType.value = 'warning'
+      confirmDialogConfirmText.value = locale.value.confirmations.copyDateSingleConfirm
+      showCopyDateDialog.value = false
+      confirmAction.value = async () => {
+        loading.value = true
+        try {
+          let totalCopied = 0
+          if (sourceSchedules.length > 0) {
+            const result = await $fetch('/api/admin/schedule/copy', {
+              method: 'POST',
+              body: { fromDate: sourceDate, toDate: targetDate, overwriteDrafts: true },
+              ...auth.getAuthConfig()
+            })
+            totalCopied = result?.copiedCount || 0
+          }
+          await loadData()
+          updateLocalScheduledSongs()
+          if (window.$showNotification) {
+            window.$showNotification(
+              totalCopied > 0
+                ? callLocale('messages.copyDateSuccess', `已复制 ${totalCopied} 首歌曲到 ${targetDate}`, totalCopied, targetDate, targetDate)
+                : locale.value.errors.noCopyableSongs,
+              totalCopied > 0 ? 'success' : 'warning'
+            )
+          }
+        } catch (error) {
+          console.error('复制排期日期失败:', error)
+          if (window.$showNotification) {
+            const backendMessage = getThrownMessage(error) || formatLocaleValue(locale.value?.unknown) || '未知错误'
+            window.$showNotification(callLocale('errors.copyDateFailed', `复制失败: ${backendMessage}`, backendMessage), 'error')
+          }
+        } finally {
+          loading.value = false
+        }
+      }
+      showConfirmDialog.value = true
+      return
+    }
+
     confirmDialogTitle.value = locale.value.copyDateTitle
     confirmDialogMessage.value = callLocale(
       'confirmations.copyDateSingleMessage',
@@ -4261,7 +4305,7 @@ const confirmCopyDate = async () => {
           // 源日期有排期，调用API复制
           const result = await $fetch('/api/admin/schedule/copy', {
             method: 'POST',
-            body: { fromDate: sourceDate, toDate: targetDate },
+            body: { fromDate: sourceDate, toDate: targetDate, overwriteDrafts: true },
             ...auth.getAuthConfig()
           })
           totalCopied = result?.copiedCount || 0
@@ -4340,18 +4384,40 @@ const confirmCopyDate = async () => {
     return
   }
 
+  // 检查目标日期是否有草稿
+  const draftTargetDates = []
+  for (let i = 0; i < targetDays; i++) {
+    const tgtDate = addDaysToString(toStart, i)
+    const tgtDrafts = drafts.value.filter((d) => d.playDate && getScheduleDateValue(d.playDate) === tgtDate)
+    if (tgtDrafts.length > 0) {
+      draftTargetDates.push(tgtDate)
+    }
+  }
+
+  const hasDraftOverlap = draftTargetDates.length > 0
   confirmDialogTitle.value = locale.value.copyDateTitle
-  confirmDialogMessage.value = callLocale(
-    'confirmations.copyDateMessage',
-    `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？源排期将循环复用至填满目标区间。`,
-    fromStart,
-    fromEnd,
-    sourceDays,
-    toStart,
-    toEnd,
-    targetDays
-  )
-  confirmDialogType.value = 'warning'
+  confirmDialogMessage.value = hasDraftOverlap
+    ? callLocale(
+        'confirmations.copyDateMessage',
+        `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？${draftTargetDates.length} 个目标日期有草稿将被覆盖。源排期将循环复用至填满目标区间。`,
+        fromStart,
+        fromEnd,
+        sourceDays,
+        toStart,
+        toEnd,
+        targetDays
+      )
+    : callLocale(
+        'confirmations.copyDateMessage',
+        `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？源排期将循环复用至填满目标区间。`,
+        fromStart,
+        fromEnd,
+        sourceDays,
+        toStart,
+        toEnd,
+        targetDays
+      )
+  confirmDialogType.value = hasDraftOverlap ? 'warning' : 'warning'
   confirmDialogConfirmText.value = locale.value.confirmations.copyDateConfirm
   showCopyDateDialog.value = false
 
@@ -4365,12 +4431,14 @@ const confirmCopyDate = async () => {
         const srcDay = i % sourceDays
         const srcDate = addDaysToString(fromStart, srcDay)
         const tgtDate = addDaysToString(toStart, i)
+        const overwriteDrafts = draftTargetDates.includes(tgtDate)
 
         const result = await $fetch('/api/admin/schedule/copy', {
           method: 'POST',
           body: {
             fromDate: srcDate,
-            toDate: tgtDate
+            toDate: tgtDate,
+            overwriteDrafts
           },
           ...auth.getAuthConfig()
         })
