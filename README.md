@@ -1496,6 +1496,7 @@ VoiceHub/
 - **`public/`**: 静态文件
 - **`public/images/`**: 备案图标等与主题无关的图片
 - **`public/assets/`**: 不随主题切换的公共资源（如 `logo.png`）
+- **`public/assets/payment/`**: 支付方式品牌图标（支付宝、微信、Stripe、Airwallex）
 - **`public/themes/{ClassicDark,ClassicLight}/`**: 随主题切换的 SVG 图片资源（Logo、搜索图标、点赞图标）
 
 ### 主题系统

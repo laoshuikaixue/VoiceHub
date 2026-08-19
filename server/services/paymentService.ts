@@ -141,14 +141,18 @@ const selectProvider = async (method: string, amountCents: number, strategy: str
 const makeTradeNo = () => `VH${getServerTimestamp()}${randomBytes(5).toString('hex').toUpperCase()}`
 const makeCardCode = () => `PAY-${randomBytes(10).toString('hex').toUpperCase()}`
 
-export const createPaymentOrder = async (event: H3Event, planId: number, method: string, mobile: boolean) => {
+export const createPaymentOrder = async (event: H3Event, planId: number, method: string, mobile: boolean, quantity = 1) => {
   const user = event.context.user
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.PAYMENT_AUTH_REQUIRED, '请先登录后购买')
   const settings = await getPaymentSettings()
   if (!settings.enabled) throw createApiError(403, SERVER_ERROR_CODES.PAYMENT_DISABLED, '支付系统未启用')
   const [plan] = await db.select().from(paymentPlans).where(and(eq(paymentPlans.id, planId), eq(paymentPlans.forSale, true))).limit(1)
   if (!plan) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_PLAN_NOT_FOUND, '套餐不存在或已下架')
-  if (plan.priceCents < settings.minAmountCents || (settings.maxAmountCents && plan.priceCents > settings.maxAmountCents)) {
+  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 99) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '购买数量无效')
+  const amountCents = plan.priceCents * quantity
+  const cardCount = plan.cardCount * quantity
+  if (!Number.isSafeInteger(amountCents) || !Number.isSafeInteger(cardCount)) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_INVALID, '订单金额或点歌券数量过大')
+  if (amountCents < settings.minAmountCents || (settings.maxAmountCents && amountCents > settings.maxAmountCents)) {
     throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_INVALID, '套餐金额超出允许范围')
   }
   const [pending] = await db.select({ value: count() }).from(paymentOrders)
@@ -157,10 +161,11 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   if (settings.dailyLimitCents) {
     const [daily] = await db.select({ total: sum(paymentOrders.payAmountCents) }).from(paymentOrders)
       .where(and(eq(paymentOrders.userId, user.id), gte(paymentOrders.paidAt, startOfToday()), inArray(paymentOrders.status, [...PAID_STATUSES])))
-    if (Number(daily?.total || 0) + plan.priceCents > settings.dailyLimitCents) throw createApiError(429, SERVER_ERROR_CODES.PAYMENT_DAILY_LIMIT, '今日购买金额已达上限')
+    if (Number(daily?.total || 0) + amountCents > settings.dailyLimitCents) throw createApiError(429, SERVER_ERROR_CODES.PAYMENT_DAILY_LIMIT, '今日购买金额已达上限')
   }
   const feeRate = Number(settings.rechargeFeeRate || 0)
-  const payAmountCents = Math.round(plan.priceCents * (1 + feeRate / 100))
+  const payAmountCents = Math.round(amountCents * (1 + feeRate / 100))
+  if (!Number.isSafeInteger(payAmountCents) || payAmountCents <= 0) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_INVALID, '订单金额无效')
   const providerRow = await selectProvider(method, payAmountCents, settings.loadBalanceStrategy)
   const config = decryptPaymentConfig(providerRow.configEncrypted)
   const provider = createPaymentProvider(providerRow.providerKey, { ...config, paymentMode: providerRow.paymentMode })
@@ -170,7 +175,7 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   const origin = resolvePublicOrigin(event)
   const [order] = await db.insert(paymentOrders).values({
     outTradeNo, userId: user.id, userName: user.name || user.username, userEmail: user.email || null,
-    planId: plan.id, planName: plan.name, cardCount: plan.cardCount, amountCents: plan.priceCents,
+    planId: plan.id, planName: plan.name, cardCount, amountCents,
     payAmountCents, feeRate: Math.round(feeRate * 100), currency: plan.currency, paymentMethod: method,
     providerInstanceId: providerRow.id, providerKey: providerRow.providerKey,
     providerSnapshot: { id: providerRow.id, name: providerRow.name, providerKey: providerRow.providerKey, configEncrypted: providerRow.configEncrypted, paymentMode: providerRow.paymentMode },
@@ -180,7 +185,7 @@ export const createPaymentOrder = async (event: H3Event, planId: number, method:
   try {
     const result = await provider.create({
       outTradeNo, amountCents: payAmountCents, currency: plan.currency,
-      subject: `${settings.productNamePrefix}${plan.name}${settings.productNameSuffix}`,
+      subject: `${settings.productNamePrefix}${plan.name}${settings.productNameSuffix}${quantity > 1 ? ` x${quantity}` : ''}`,
       method, notifyUrl: `${origin}/api/payment/webhook/${providerRow.providerKey}`,
       returnUrl: `${origin}/payment?order=${encodeURIComponent(order.id)}`, expiresAt, clientIp: getClientIP(event), mobile,
       alipayForceQrCode: method === 'alipay' ? settings.alipayForceQrCode : false,
