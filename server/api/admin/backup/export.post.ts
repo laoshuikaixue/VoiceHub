@@ -28,7 +28,7 @@ import {
 import { inArray } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { maskSystemSettingsSecrets } from '~/server/api/admin/system-settings/secretMask'
+import { maskSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   try {
