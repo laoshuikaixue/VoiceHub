@@ -6,6 +6,7 @@ import {
   randomBytes,
   timingSafeEqual
 } from 'node:crypto'
+import { isIP } from 'node:net'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 
 export interface PaymentCreateRequest {
@@ -55,7 +56,7 @@ export interface PaymentProvider {
   query(outTradeNo: string, tradeNo?: string): Promise<PaymentQueryResult>
   verify(rawBody: string, headers: Record<string, string>, query?: Record<string, string>): Promise<PaymentNotification | null>
   refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string, totalAmountCents?: number): Promise<{ refundId?: string; pending?: boolean }>
-  queryRefund?(outTradeNo: string, refundId?: string): Promise<{ status: 'pending' | 'paid' | 'failed'; refundId?: string }>
+  queryRefund?(outTradeNo: string, refundId?: string, tradeNo?: string): Promise<{ status: 'pending' | 'paid' | 'failed'; refundId?: string }>
   cancel?(outTradeNo: string, tradeNo?: string): Promise<void>
 }
 
@@ -92,6 +93,21 @@ const deterministicRequestId = (...parts: string[]) => {
 }
 const normalizeBase = (value: string) => value.trim().replace(/\/(submit|mapi|api)\.php\/?$/i, '').replace(/\/$/, '')
 
+const assertSafeProviderBase = (value: string, label: string) => {
+  let url: URL
+  try { url = new URL(value) } catch { throw new Error(`${label}地址无效`) }
+  const host = url.hostname.toLowerCase()
+  const ip = isIP(host.replace(/^\[|\]$/g, ''))
+  const privateIpv4 = ip === 4 && /^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)
+  const privateIpv6 = ip === 6 && (/^(::|fc|fd|fe80:)/i.test(host.replace(/^\[|\]$/g, '')) || host === '[::1]')
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || privateIpv4 || privateIpv6 || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) {
+    throw new Error(`${label}地址必须使用 HTTPS 公网地址`)
+  }
+  return url
+}
+
+const safeProviderBase = (value: string, label: string) => assertSafeProviderBase(normalizeBase(value), label).toString().replace(/\/$/, '')
+
 const easyPaySign = (params: Record<string, string>, key: string) => {
   const source = Object.keys(params).filter(k => k !== 'sign' && k !== 'sign_type' && params[k] !== '')
     .sort().map(k => `${k}=${params[k]}`).join('&') + key
@@ -101,7 +117,7 @@ const easyPaySign = (params: Record<string, string>, key: string) => {
 class EasyPayProvider implements PaymentProvider {
   constructor(private config: Record<string, any>) {}
   async create(req: PaymentCreateRequest) {
-    const base = normalizeBase(this.config.apiBase)
+    const base = safeProviderBase(this.config.apiBase, '易支付')
     const params: Record<string, string> = {
       pid: this.config.pid, type: req.method === 'wxpay' ? 'wxpay' : req.method === 'alipay' ? 'alipay' : req.method,
       out_trade_no: req.outTradeNo, notify_url: req.notifyUrl, return_url: req.returnUrl,
@@ -121,7 +137,8 @@ class EasyPayProvider implements PaymentProvider {
     return { tradeNo: data.trade_no, payUrl: req.mobile && data.payurl2 ? data.payurl2 : data.payurl, qrCode: data.qrcode }
   }
   async query(outTradeNo: string) {
-    const data = await requestJson(`${normalizeBase(this.config.apiBase)}/api.php`, {
+    const base = safeProviderBase(this.config.apiBase, '易支付')
+    const data = await requestJson(`${base}/api.php`, {
       method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: formEncode({ act: 'order', pid: this.config.pid, key: this.config.pkey, out_trade_no: outTradeNo })
     })
@@ -147,7 +164,8 @@ class EasyPayProvider implements PaymentProvider {
     for (const identifier of identifiers) {
       const params: Record<string, string> = { pid: this.config.pid, key: this.config.pkey, money: money(amountCents), [identifier.key]: identifier.value }
       try {
-        const data = await requestJson(`${normalizeBase(this.config.apiBase)}/api.php?act=refund`, {
+        const base = safeProviderBase(this.config.apiBase, '易支付')
+        const data = await requestJson(`${base}/api.php?act=refund`, {
           method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: formEncode(params)
         })
         if (Number(data.code) === 1) return { refundId: identifier.refundId }
@@ -262,9 +280,17 @@ class AlipayProvider implements PaymentProvider {
     return { outTradeNo: params.out_trade_no, tradeNo: params.trade_no, amountCents, success: ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(params.trade_status || '') }
   }
   async refund(outTradeNo: string, _tradeNo: string | undefined, amountCents: number, reason: string) {
-    const result = await this.call('alipay.trade.refund', { out_trade_no: outTradeNo, refund_amount: money(amountCents), refund_reason: reason, out_request_no: `${outTradeNo}-${getServerTimestamp()}` })
+    const outRequestNo = `${outTradeNo}-refund`
+    const result = await this.call('alipay.trade.refund', { out_trade_no: outTradeNo, refund_amount: money(amountCents), refund_reason: reason, out_request_no: outRequestNo })
     if (result.fund_change !== 'Y') throw new Error('支付宝未确认退款成功')
-    return { refundId: result.trade_no }
+    return { refundId: outRequestNo }
+  }
+  async queryRefund(outTradeNo: string, refundId?: string) {
+    const outRequestNo = refundId || `${outTradeNo}-refund`
+    const result = await this.call('alipay.trade.fastpay.refund.query', { out_trade_no: outTradeNo, out_request_no: outRequestNo })
+    const refundedAmount = Number(result.refund_amount || 0)
+    const status = String(result.refund_status || '').toUpperCase()
+    return { refundId: outRequestNo, status: status === 'REFUND_SUCCESS' || refundedAmount > 0 ? 'paid' as const : 'pending' as const }
   }
   async cancel(outTradeNo: string) { await this.call('alipay.trade.close', { out_trade_no: outTradeNo }) }
 }
@@ -364,12 +390,12 @@ class WxPayProvider implements PaymentProvider {
     return { outTradeNo: data.out_trade_no, refundId: data.out_refund_no, success: true }
   }
   async refund(outTradeNo: string, tradeNo: string | undefined, amountCents: number, reason: string, totalAmountCents = amountCents) {
-    const outRefundNo = `${outTradeNo}-R${getServerTimestamp()}`
+    const outRefundNo = `${outTradeNo}-refund`
     const result = await this.call('POST', '/v3/refund/domestic/refunds', { out_refund_no: outRefundNo, ...(tradeNo ? { transaction_id: tradeNo } : { out_trade_no: outTradeNo }), reason, amount: { refund: amountCents, total: totalAmountCents, currency: 'CNY' }, notify_url: this.config.refundNotifyUrl })
     return { refundId: outRefundNo, pending: result.status !== 'SUCCESS' }
   }
   async queryRefund(outTradeNo: string, refundId?: string) {
-    const outRefundNo = String(refundId || `${outTradeNo}-${getServerTimestamp()}`).trim()
+    const outRefundNo = String(refundId || `${outTradeNo}-refund`).trim()
     const result = await this.call('GET', `/v3/refund/domestic/refunds/${encodeURIComponent(outRefundNo)}`)
     const status = String(result.status || '').toUpperCase()
     return { refundId: result.out_refund_no || outRefundNo, status: status === 'SUCCESS' ? 'paid' as const : ['CLOSED', 'ABNORMAL'].includes(status) ? 'failed' as const : 'pending' as const }
@@ -441,8 +467,18 @@ class StripeProvider implements PaymentProvider {
   }
   async refund(_outTradeNo: string, tradeNo: string | undefined, amountCents: number) {
     if (!tradeNo) throw new Error('Stripe 退款缺少 PaymentIntent')
-    const result = await this.call('/refunds', { payment_intent: tradeNo, amount: String(amountCents) })
+    const result = await this.call('/refunds', { payment_intent: tradeNo, amount: String(amountCents) }, 'POST', `voicehub-refund-${tradeNo}`)
     return { refundId: result.id, pending: result.status !== 'succeeded' }
+  }
+  async queryRefund(_outTradeNo: string, refundId?: string, tradeNo?: string) {
+    let result
+    if (refundId) result = await this.call(`/refunds/${encodeURIComponent(refundId)}`, undefined, 'GET')
+    else if (tradeNo) {
+      const refunds = await this.call(`/refunds?payment_intent=${encodeURIComponent(tradeNo)}&limit=1`, undefined, 'GET')
+      result = Array.isArray(refunds.data) ? refunds.data[0] : null
+      if (!result) return { status: 'pending' as const }
+    } else return { status: 'pending' as const }
+    return { refundId: result.id || refundId, status: result.status === 'succeeded' ? 'paid' as const : ['failed', 'canceled'].includes(result.status) ? 'failed' as const : 'pending' as const }
   }
   async cancel(_outTradeNo: string, tradeNo?: string) {
     if (tradeNo) await this.call(`/payment_intents/${encodeURIComponent(tradeNo)}/cancel`)
@@ -529,6 +565,12 @@ class AirwallexProvider implements PaymentProvider {
     if (!tradeNo) throw new Error('Airwallex 退款缺少 PaymentIntent')
     const result = await this.call('/pa/refunds/create', { request_id: deterministicRequestId('refund', tradeNo, String(amountCents)), payment_intent_id: tradeNo, amount: amountCents / 100, reason })
     return { refundId: result.id, pending: result.status !== 'SETTLED' }
+  }
+  async queryRefund(_outTradeNo: string, refundId?: string) {
+    if (!refundId) return { status: 'pending' as const }
+    const result = await this.call(`/pa/refunds/${encodeURIComponent(refundId)}`, undefined, 'GET')
+    const status = String(result.status || '').toUpperCase()
+    return { refundId: result.id || refundId, status: status === 'SETTLED' ? 'paid' as const : ['FAILED', 'CANCELLED', 'REJECTED'].includes(status) ? 'failed' as const : 'pending' as const }
   }
   async cancel(_outTradeNo: string, tradeNo?: string) { if (tradeNo) await this.call(`/pa/payment_intents/${encodeURIComponent(tradeNo)}/cancel`) }
 }

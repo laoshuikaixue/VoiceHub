@@ -71,6 +71,17 @@ const resolvePublicOrigin = (event: H3Event) => {
   const explicit = normalizePublicOrigin(process.env.NUXT_PUBLIC_HOST)
   if (explicit) return explicit
 
+  // 平台提供的部署地址比请求头可信，且能覆盖 Preview/分支部署场景。
+  const platformOrigin = [
+    process.env.DEPLOY_PRIME_URL,
+    process.env.VERCEL_URL,
+    process.env.CF_PAGES_URL,
+    process.env.URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ].map(normalizePublicOrigin).find(Boolean)
+  if (platformOrigin) return platformOrigin
+
+  // 仅在没有部署地址时兼容反向代理；生产环境应配置 NUXT_PUBLIC_HOST。
   const forwardedHost = String(getHeader(event, 'x-forwarded-host') || '').split(',').at(0)?.trim() || ''
   const forwardedProto = String(getHeader(event, 'x-forwarded-proto') || '').split(',').at(0)?.trim() || ''
   const requestUrl = getRequestURL(event)
@@ -78,14 +89,6 @@ const resolvePublicOrigin = (event: H3Event) => {
   const forwardedOrigin = forwardedHost ? normalizePublicOrigin(`${forwardedProto || 'https'}://${forwardedHost}`) : ''
   if (forwardedOrigin) return forwardedOrigin
   if (requestOrigin) return requestOrigin
-  const platformOrigin = [
-    process.env.VERCEL_PROJECT_PRODUCTION_URL,
-    process.env.URL,
-    process.env.CF_PAGES_URL,
-    process.env.DEPLOY_PRIME_URL,
-    process.env.VERCEL_URL
-  ].map(normalizePublicOrigin).find(Boolean)
-  if (platformOrigin) return platformOrigin
   return `${requestUrl.protocol}//${requestUrl.host}`
 }
 
@@ -273,7 +276,7 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
   }
   if (order.status === 'REFUNDING' && provider.queryRefund) {
     try {
-      const refund = await provider.queryRefund(order.outTradeNo, order.refundId || undefined)
+      const refund = await provider.queryRefund(order.outTradeNo, order.refundId || undefined, order.paymentTradeNo || undefined)
       if (refund.status !== 'pending') {
         const refunded = refund.status === 'paid'
         const [updated] = await db.update(paymentOrders).set({
@@ -288,6 +291,10 @@ export const verifyPaymentOrder = async (orderId: string, userId?: number) => {
             const cards = await db.select({ id: cardCodes.id }).from(paymentOrderCards)
               .innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, order.id))
             if (cards.length) await db.update(cardCodes).set({ status: 'INVALID', updatedAt: getServerDate() }).where(inArray(cardCodes.id, cards.map(card => card.id)))
+          } else {
+            const cards = await db.select({ id: cardCodes.id }).from(paymentOrderCards)
+              .innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, order.id))
+            if (cards.length) await db.update(cardCodes).set({ status: 'AVAILABLE', updatedAt: getServerDate() }).where(and(inArray(cardCodes.id, cards.map(card => card.id)), eq(cardCodes.status, 'LOCKED')))
           }
           await addPaymentAudit(order.id, refunded ? 'REFUNDED' : 'REFUND_FAILED', { refundId: refund.refundId || order.refundId }, 'refund-query')
           return updated
@@ -377,10 +384,15 @@ export const processPaymentRefund = async (orderId: string, amountCents: number,
   const cards = await db.select({ id: cardCodes.id, status: cardCodes.status }).from(paymentOrderCards)
     .innerJoin(cardCodes, eq(cardCodes.id, paymentOrderCards.cardCodeId)).where(eq(paymentOrderCards.orderId, order.id))
   if (cards.some(card => card.status !== 'AVAILABLE')) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_BENEFIT_USED, '点歌券已使用，无法原路退款')
-  const initialStatus = order.status
   const [claimed] = await db.update(paymentOrders).set({ status: 'REFUNDING', refundReason: reason, updatedAt: getServerDate() })
     .where(and(eq(paymentOrders.id, order.id), inArray(paymentOrders.status, ['COMPLETED', 'REFUND_REQUESTED']))).returning({ id: paymentOrders.id })
   if (!claimed) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '退款请求正在处理中')
+  const lockedCards = await db.update(cardCodes).set({ status: 'LOCKED', updatedAt: getServerDate() })
+    .where(and(inArray(cardCodes.id, cards.map(card => card.id)), eq(cardCodes.status, 'AVAILABLE'))).returning({ id: cardCodes.id })
+  if (lockedCards.length !== cards.length) {
+    await db.update(paymentOrders).set({ status: order.status, updatedAt: getServerDate() }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'REFUNDING')))
+    throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_BENEFIT_USED, '点歌券状态已变化，无法退款')
+  }
   try {
     const result = await provider.refund(order.outTradeNo, order.paymentTradeNo || undefined, amountCents, reason, order.payAmountCents)
     await db.transaction(async tx => {
@@ -389,7 +401,8 @@ export const processPaymentRefund = async (orderId: string, amountCents: number,
       await tx.insert(paymentAuditLogs).values({ orderId: order.id, action: result.pending ? 'REFUNDING' : 'REFUNDED', detail: { amountCents, reason }, operator })
     })
   } catch (error: any) {
-    await db.update(paymentOrders).set({ status: initialStatus, failedReason: error.message, updatedAt: getServerDate() }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'REFUNDING')))
+    // 第三方响应未知时保留 REFUNDING，避免重试造成重复退款；后台查单可最终收敛状态。
+    await db.update(paymentOrders).set({ status: 'REFUNDING', failedReason: error.message, updatedAt: getServerDate() }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'REFUNDING')))
     await addPaymentAudit(order.id, 'REFUND_FAILED', { error: error.message }, operator)
     throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_REFUND_FAILED, '退款请求失败')
   }

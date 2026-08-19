@@ -1,3 +1,5 @@
+import { isIP } from 'node:net'
+
 export const PAYMENT_PROVIDER_KEYS = ['easypay', 'alipay', 'wxpay', 'stripe', 'airwallex'] as const
 export const PAYMENT_METHODS = ['alipay', 'wxpay', 'stripe', 'airwallex'] as const
 
@@ -58,6 +60,16 @@ export const getPaymentProviderAllowedMethods = (providerKey: string, config: Re
 
 export const getPaymentProviderConfigError = (providerKey: string, config: Record<string, unknown>) => {
   if (providerKey === 'easypay' && normalizeEasyPayCustomMethods(config.customMethods) === null) return '易支付自定义支付方式无效'
+  if (providerKey === 'easypay' && config.apiBase) {
+    try {
+      const url = new URL(String(config.apiBase).replace(/\/(submit|mapi|api)\.php\/?$/i, ''))
+      const host = url.hostname.toLowerCase()
+      const ip = isIP(host.replace(/^\[|\]$/g, ''))
+      const privateIpv4 = ip === 4 && /^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)
+      const privateIpv6 = ip === 6 && (/^(::|fc|fd|fe80:)/i.test(host.replace(/^\[|\]$/g, '')) || host === '[::1]')
+      if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || privateIpv4 || privateIpv6 || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) return '易支付 API 地址必须使用 HTTPS 公网地址'
+    } catch { return '易支付 API 地址无效' }
+  }
   if (providerKey === 'stripe' && config.currency !== undefined && !/^[A-Z]{3}$/.test(String(config.currency).trim().toUpperCase())) return 'Stripe 支付币种无效'
   if (providerKey === 'alipay' && config.gateway) {
     try {

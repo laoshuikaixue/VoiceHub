@@ -1,2 +1,30 @@
-import { eq } from 'drizzle-orm'; import { db } from '~/drizzle/db'; import { paymentOrders } from '~/drizzle/schema'; import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'; import { createApiError } from '~~/server/utils/apiError'; import { SERVER_ERROR_CODES } from '~~/server/config/constants'; import { addPaymentAudit, getOrderProvider } from '~~/server/services/paymentService'; import { getServerDate } from '~~/server/utils/serverTime'
-export default defineEventHandler(async event => { const admin = requirePaymentAdmin(event); const id = getRouterParam(event, 'id') || ''; const [order] = await db.select().from(paymentOrders).where(eq(paymentOrders.id, id)).limit(1); if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '支付订单不存在'); if (order.status !== 'PENDING') throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '当前订单不可取消'); const { provider } = await getOrderProvider(order); if (provider.cancel) await provider.cancel(order.outTradeNo, order.paymentTradeNo || undefined).catch(() => undefined); await db.update(paymentOrders).set({ status: 'CANCELLED', updatedAt: getServerDate() }).where(eq(paymentOrders.id, id)); await addPaymentAudit(id, 'CANCELLED', {}, `admin:${admin.id}`); return { success: true } })
+import { and, eq } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { paymentOrders } from '~/drizzle/schema'
+import { requirePaymentAdmin } from '~~/server/utils/paymentAuth'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { addPaymentAudit, getOrderProvider } from '~~/server/services/paymentService'
+import { getServerDate } from '~~/server/utils/serverTime'
+
+export default defineEventHandler(async event => {
+  const admin = requirePaymentAdmin(event)
+  const id = getRouterParam(event, 'id') || ''
+  const [order] = await db.select().from(paymentOrders).where(eq(paymentOrders.id, id)).limit(1)
+  if (!order) throw createApiError(404, SERVER_ERROR_CODES.PAYMENT_ORDER_NOT_FOUND, '支付订单不存在')
+  if (order.status !== 'PENDING') throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '当前订单不可取消')
+  const { provider } = await getOrderProvider(order)
+  if (provider.cancel) {
+    try {
+      await provider.cancel(order.outTradeNo, order.paymentTradeNo || undefined)
+    } catch (error) {
+      console.error('[payment] 管理员关闭订单失败', { orderId: id, error: error instanceof Error ? error.message : String(error) })
+      throw createApiError(502, SERVER_ERROR_CODES.PAYMENT_PROVIDER_UNAVAILABLE, '支付平台关闭订单失败，请稍后重试')
+    }
+  }
+  const [cancelled] = await db.update(paymentOrders).set({ status: 'CANCELLED', updatedAt: getServerDate() })
+    .where(and(eq(paymentOrders.id, id), eq(paymentOrders.status, 'PENDING'))).returning({ id: paymentOrders.id })
+  if (!cancelled) throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '订单状态已发生变化，请刷新后重试')
+  await addPaymentAudit(id, 'CANCELLED', {}, `admin:${admin.id}`)
+  return { success: true }
+})

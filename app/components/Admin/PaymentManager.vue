@@ -19,7 +19,7 @@
     <form v-else-if="activeTab === 'settings'" class="payment-settings payment-tab-panel" @submit.prevent="saveSettings">
       <header class="settings-header">
         <div><h2>支付设置</h2><p>配置支付系统选项与用户端展示内容</p></div>
-        <a href="https://github.com/Wei-Shaw/sub2api/blob/main/docs/PAYMENT_CN.md" class="guide-link" target="_blank" rel="noopener noreferrer">↗ 支付配置指南</a>
+        <a href="https://github.com/laoshuikaixue/VoiceHub/blob/main/PAYMENT_CONFIG_CN.md" class="guide-link" target="_blank" rel="noopener noreferrer">↗ 支付配置指南</a>
       </header>
       <section class="settings-section settings-enable">
         <div><h3>启用支付</h3><p>启用或禁用支付系统</p></div>
@@ -175,7 +175,7 @@ const averageDashboardAmount = computed(() => moneyAmount(dashboard.value.avgAmo
 const chartY = (index, total) => 24 + (index / total) * 220
 const formatChartValue = value => moneyAmount(value, dashboardCurrency.value)
 const revenueChart = computed(() => {
-  const rows = (Array.isArray(dashboard.value.daily) ? dashboard.value.daily : []).filter(item => item && typeof item.date === 'string' && item.date.length >= 7)
+  const rows = (Array.isArray(dashboard.value.daily) ? dashboard.value.daily : []).filter(item => item && typeof item.date === 'string' && item.date.length >= 7).sort((left, right) => left.date.localeCompare(right.date))
   const values = rows.map(item => Math.max(0, Number(item.amount?.[dashboardCurrency.value]) || 0))
   const orderValues = rows.map(item => Math.max(0, Number(item.orders) || 0))
   const maxRevenue = Math.max(1, ...values)
@@ -184,7 +184,7 @@ const revenueChart = computed(() => {
     const x = rows.length === 1 ? 500 : 48 + index / (rows.length - 1) * 904
     const revenueY = 244 - values[index] / maxRevenue * 220
     const ordersY = 244 - orderValues[index] / maxOrders * 220
-    return { date: item.date.slice(5), x, left: x / 10, revenue: values[index], orders: orderValues[index], revenueY, ordersY }
+    return { date: item.date.slice(5), x, left: x / 10, labelLeft: ((x - 48) / 904) * 100, revenue: values[index], orders: orderValues[index], revenueY, ordersY }
   })
   const path = key => points.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(2)},${point[key].toFixed(2)}`).join(' ')
   const revenuePath = path('revenueY')
@@ -370,6 +370,10 @@ onMounted(async () => { if (!siteOrigin.value) siteOrigin.value = window.locatio
 </style>
 <style scoped>
 .chart-area{fill:var(--success);opacity:.12}.chart-dot{fill:var(--bg-secondary);stroke:var(--success);stroke-width:2;vector-effect:non-scaling-stroke}
+</style>
+<style scoped>
+.chart-labels{direction:ltr;flex-direction:row}
+.chart-labels span{direction:ltr;writing-mode:horizontal-tb;transform:none}
 </style>
 <style scoped>
 .plan-dialog{max-width:42rem;padding:0;gap:0}.plan-dialog>.dialog-title{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-secondary)}.plan-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.35rem 1.5rem}.plan-form-grid .field>span{display:block;margin-bottom:.45rem;color:var(--text-secondary);font-size:.78rem;font-weight:650}.plan-inline{display:grid;grid-template-columns:1fr 7rem;gap:.5rem}.plan-features-field{grid-column:1/-1}.plan-features-field textarea{width:100%;resize:vertical}.plan-sale{margin:0 1.5rem 1rem;color:var(--text-secondary);font-size:.8rem}.plan-dialog>.dialog-actions{padding:1rem 1.5rem;border-top:1px solid var(--border-secondary)}

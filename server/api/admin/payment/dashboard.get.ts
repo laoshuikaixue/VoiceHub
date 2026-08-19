@@ -7,6 +7,12 @@ import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 const completedStatuses = ['COMPLETED', 'REFUND_REQUESTED', 'REFUNDING', 'REFUNDED'] as const
 const toNumber = (value: unknown) => Number(value || 0) || 0
 const paymentDate = (order: any) => order.paidAt || order.completedAt || order.createdAt
+const localDateKey = (value: Date) => {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export default defineEventHandler(async event => {
   requirePaymentAdmin(event)
@@ -23,14 +29,14 @@ export default defineEventHandler(async event => {
     const methodKey = `${order.paymentMethod}:${currency}`; const method = methods.get(methodKey) || { type: order.paymentMethod, currency, count: 0, cents: 0 }; method.count += 1; method.cents += cents; methods.set(methodKey, method)
     const userKey = `${order.userId}:${currency}`; const user = users.get(userKey) || { userId: order.userId, name: order.userName, email: order.userEmail, currency, cents: 0 }; user.cents += cents; users.set(userKey, user)
     const date = paymentDate(order); if (date >= today) { todayCount += 1; todayCents += cents }
-    const dayKey = date.toISOString().slice(0, 10); const day = daily.get(dayKey) || { date: dayKey, orders: 0, amount: {} }; day.orders += 1; day.amount[currency] = toNumber(day.amount[currency]) + cents / 100; daily.set(dayKey, day)
+    const dayKey = localDateKey(date); const day = daily.get(dayKey) || { date: dayKey, orders: 0, amount: {} }; day.orders += 1; day.amount[currency] = toNumber(day.amount[currency]) + cents / 100; daily.set(dayKey, day)
   }
   const avgAmount = Object.fromEntries([...revenueByCurrency].map(([currency, value]) => [currency, value.count ? value.cents / value.count / 100 : 0])); const totalCents = [...revenueByCurrency.values()].reduce((total, value) => total + value.cents, 0); const refundCents = [...revenueByCurrency.values()].reduce((total, value) => total + value.refunds, 0)
   const dailyRows = []
   for (let index = 0; index < days; index += 1) {
     const date = getServerDate()
     date.setTime(since.getTime() + index * 86400000)
-    const key = date.toISOString().slice(0, 10)
+    const key = localDateKey(date)
     dailyRows.push(daily.get(key) || { date: key, orders: 0, amount: {} })
   }
   return { days, orderCount: orders.length, revenueCents: totalCents, refundCents, todayCount, todayAmount: todayCents / 100, totalAmount: totalCents / 100, avgAmount, byMethod: [...methods.values()].map(item => ({ method: item.type, currency: item.currency, orders: item.count, revenueCents: item.cents })), paymentMethods: [...methods.values()].map(item => ({ type: item.type, currency: item.currency, count: item.count, amount: item.cents / 100 })), topUsers: [...users.values()].sort((left, right) => right.cents - left.cents).slice(0, 10).map(item => ({ ...item, amount: item.cents / 100 })), daily: dailyRows }

@@ -201,10 +201,12 @@ async function ensurePaymentSchema(sql) {
     CREATE TABLE IF NOT EXISTS "PaymentPlan" (
       "id" serial PRIMARY KEY, "name" varchar(100) NOT NULL, "description" text DEFAULT '' NOT NULL,
       "priceCents" integer NOT NULL, "originalPriceCents" integer, "currency" varchar(3) DEFAULT 'CNY' NOT NULL,
-      "cardCount" integer DEFAULT 1 NOT NULL, "features" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "cardCount" integer DEFAULT 1 NOT NULL, "validityValue" integer, "validityUnit" varchar(10), "features" jsonb DEFAULT '[]'::jsonb NOT NULL,
       "forSale" boolean DEFAULT true NOT NULL, "sortOrder" integer DEFAULT 0 NOT NULL,
       "createdAt" timestamptz DEFAULT now() NOT NULL, "updatedAt" timestamptz DEFAULT now() NOT NULL
     );
+    ALTER TABLE "PaymentPlan" ADD COLUMN IF NOT EXISTS "validityValue" integer;
+    ALTER TABLE "PaymentPlan" ADD COLUMN IF NOT EXISTS "validityUnit" varchar(10);
     CREATE TABLE IF NOT EXISTS "PaymentProviderInstance" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(), "providerKey" varchar(30) NOT NULL, "name" varchar(100) NOT NULL,
       "configEncrypted" text NOT NULL, "supportedMethods" jsonb DEFAULT '[]'::jsonb NOT NULL,
