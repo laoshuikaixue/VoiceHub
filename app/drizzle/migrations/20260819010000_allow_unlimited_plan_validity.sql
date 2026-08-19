@@ -1,0 +1,4 @@
+ALTER TABLE "PaymentPlan" ALTER COLUMN "validityValue" DROP NOT NULL;
+ALTER TABLE "PaymentPlan" ALTER COLUMN "validityValue" DROP DEFAULT;
+ALTER TABLE "PaymentPlan" ALTER COLUMN "validityUnit" DROP NOT NULL;
+ALTER TABLE "PaymentPlan" ALTER COLUMN "validityUnit" DROP DEFAULT;

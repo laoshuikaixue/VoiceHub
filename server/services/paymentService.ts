@@ -197,6 +197,10 @@ export const fulfillPaymentOrder = async (notification: PaymentNotification, ope
   if (providerInstanceId && order.providerInstanceId !== providerInstanceId) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_WEBHOOK_INVALID, '支付回调服务商与订单不匹配')
   if (notification.amountCents !== order.payAmountCents) throw createApiError(400, SERVER_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH, '支付金额与订单不一致')
   if (order.status === 'COMPLETED' || order.status === 'REFUNDED') return order
+  if (order.status === 'PENDING' && order.expiresAt <= getServerDate()) {
+    await db.update(paymentOrders).set({ status: 'EXPIRED', updatedAt: getServerDate() }).where(and(eq(paymentOrders.id, order.id), eq(paymentOrders.status, 'PENDING')))
+    throw createApiError(409, SERVER_ERROR_CODES.PAYMENT_ORDER_STATE_INVALID, '支付订单已过期')
+  }
   if (!notification.success) {
     await db.update(paymentOrders).set({ status: 'FAILED', failedAt: getServerDate(), failedReason: '支付服务商返回失败', updatedAt: getServerDate() }).where(eq(paymentOrders.id, order.id))
     await addPaymentAudit(order.id, 'PAYMENT_FAILED', {}, operator)

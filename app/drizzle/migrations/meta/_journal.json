@@ -281,6 +281,13 @@
       "when": 1787145600000,
       "tag": "20260819000000_add_payment_system",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787149200000,
+      "tag": "20260819010000_allow_unlimited_plan_validity",
+      "breakpoints": true
     }
   ]
 }
