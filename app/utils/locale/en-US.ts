@@ -1900,6 +1900,10 @@ export const admin = {
       musicIdPlaceholder: 'Enter the platform identifier',
       coverUrl: 'Cover URL (optional)',
       playUrl: 'Play URL (optional)',
+      duration: 'Duration (sec)',
+      durationPlaceholder: 'e.g. 240',
+      durationHint: 'Range 30–3600 sec; use the button to fetch from the platform',
+      refreshDuration: 'Refresh',
       validUrl: 'Valid URL',
       saving: 'Saving...',
       saveChanges: 'Save Changes',
@@ -2042,7 +2046,8 @@ export const admin = {
       validatingCoverUrl: 'Validating cover URL, please wait...',
       validatingPlayUrl: 'Validating play URL, please wait...',
       updateSuccess: 'Song updated',
-      addSuccess: 'Song added'
+      addSuccess: 'Song added',
+      durationRefreshed: 'Duration fetched and filled in'
     },
     errors: {
       remarkVisibilityUpdateFailed: 'Failed to update remark visibility',
@@ -2059,7 +2064,10 @@ export const admin = {
       semesterRequired: 'Please select a semester',
       coverUrlInvalid: 'Invalid cover URL. Please check and try again',
       playUrlInvalid: 'Invalid play URL. Please check and try again',
-      addFailed: 'Add failed'
+      addFailed: 'Add failed',
+      durationRefreshFailed: (message: string) => `Failed to refresh duration: ${message || 'unknown error'}`,
+      durationInvalidRange: 'Duration must be between 30 and 3600 seconds',
+      durationPlatformRequired: 'Fill in music platform and ID first to refresh duration'
     }
   },
   dataAnalysis: {

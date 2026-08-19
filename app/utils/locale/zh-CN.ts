@@ -1909,6 +1909,10 @@ export const admin = {
       musicIdPlaceholder: '输入平台唯一标识符',
       coverUrl: '封面URL (可选)',
       playUrl: '播放地址URL (可选)',
+      duration: '时长 (秒)',
+      durationPlaceholder: '例如: 240',
+      durationHint: '取值范围 30–3600 秒，可通过右侧按钮从平台刷新',
+      refreshDuration: '刷新',
       validUrl: 'URL有效',
       saving: '保存中...',
       saveChanges: '保存更改',
@@ -2051,7 +2055,8 @@ export const admin = {
       validatingCoverUrl: '正在验证封面URL，请稍候...',
       validatingPlayUrl: '正在验证播放地址URL，请稍候...',
       updateSuccess: '歌曲信息更新成功',
-      addSuccess: '歌曲添加成功'
+      addSuccess: '歌曲添加成功',
+      durationRefreshed: '时长获取成功，已自动填入'
     },
     errors: {
       remarkVisibilityUpdateFailed: '更新备注可见性失败',
@@ -2068,7 +2073,10 @@ export const admin = {
       semesterRequired: '请选择学期',
       coverUrlInvalid: '歌曲封面URL无效，请检查后重试',
       playUrlInvalid: '播放地址URL无效，请检查后重试',
-      addFailed: '添加失败'
+      addFailed: '添加失败',
+      durationRefreshFailed: (message: string) => `时长刷新失败: ${message || '未知错误'}`,
+      durationInvalidRange: '时长需在 30–3600 秒之间',
+      durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长'
     }
   },
   dataAnalysis: {

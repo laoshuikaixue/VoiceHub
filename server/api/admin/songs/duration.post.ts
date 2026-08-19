@@ -10,12 +10,32 @@ import {
   normalizeTxMusicId,
   txHeaders
 } from '~~/server/utils/native_tx'
+import { fetchSongDuration } from '~~/server/utils/songDurationFetcher'
 
 export default defineEventHandler(async (event) => {
   requireSongAdmin(event)
 
   const body = await readBody(event)
-  const songId = body?.songId == null ? null : Number(body.songId)
+
+  // 新增歌曲场景：未传 songId 时按平台+音乐ID获取时长，仅返回不写入
+  if (body?.songId == null) {
+    const platform = body?.platform
+    const musicId = body?.musicId
+    if (!platform || !musicId) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.SONG_DURATION_PLATFORM_REQUIRED,
+        '缺少平台或音乐 ID 信息，无法获取时长'
+      )
+    }
+    const durationSeconds = await fetchSongDuration(String(platform), String(musicId))
+    if (durationSeconds == null) {
+      return { success: false, songId: null, durationSeconds: null, message: '未获取到有效时长' }
+    }
+    return { success: true, songId: null, durationSeconds, message: '时长获取成功' }
+  }
+
+  const songId = body.songId == null ? null : Number(body.songId)
 
   if (!Number.isFinite(songId) || songId < 1) {
     throw createApiError(400, SERVER_ERROR_CODES.SONG_INVALID_ID, '歌曲 ID 无效')

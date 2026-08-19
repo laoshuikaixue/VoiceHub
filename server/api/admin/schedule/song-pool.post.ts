@@ -29,9 +29,15 @@ export default defineEventHandler(async (event) => {
   const missingDurationSongs = songsRows.filter(
     (s) => s.durationSeconds == null && s.musicPlatform && s.musicId
   )
+  const frontendDurationMap = new Map((body.songDurations || []).map((item) => [item.songId, Number(item.durationSeconds)]))
+  const durationTolerance = 3
   for (const song of missingDurationSongs) {
     const duration = await fetchSongDuration(song.musicPlatform, song.musicId)
     if (duration != null) {
+      const frontendDuration = frontendDurationMap.get(song.id)
+      if (frontendDuration != null && Math.abs(duration - frontendDuration) > durationTolerance) {
+        console.warn(`[备选池] 歌曲 #${song.id} 前端时长 ${frontendDuration}s 与后端获取 ${duration}s 不一致，以后端为准`)
+      }
       await db.update(songs).set({ durationSeconds: duration }).where(eq(songs.id, song.id))
     }
   }

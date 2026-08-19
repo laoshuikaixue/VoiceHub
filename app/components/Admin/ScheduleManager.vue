@@ -1283,7 +1283,6 @@
   <div
     v-if="showAutoScheduleDialog"
     class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
-    @click="closeAutoScheduleDialog"
   >
     <div
       class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden mx-4"
@@ -1441,14 +1440,22 @@
             {{ locale.availableCount(autoScheduleCandidates.length) }}
           </div>
 
-          <button
-            :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoScheduleCandidates.length === 0"
-            class="w-full py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            @click="runAutoSchedule"
-          >
-            <Sparkles class="w-3.5 h-3.5" />
-            {{ locale.autoScheduleRun }}
-          </button>
+          <div class="flex gap-2">
+            <button
+              class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+              @click="closeAutoScheduleDialog"
+            >
+              {{ locale.cancel }}
+            </button>
+            <button
+              :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoScheduleCandidates.length === 0"
+              class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              @click="runAutoSchedule"
+            >
+              <Sparkles class="w-3.5 h-3.5" />
+              {{ locale.autoScheduleRun }}
+            </button>
+          </div>
         </div>
 
         <!-- 结果区 -->
@@ -1550,7 +1557,7 @@
               class="flex-1 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
               @click="goToNextPlan"
             >
-              <span v-if="generatingNewPlan" class="inline-block w-3.5 h-3.5 border-2 border-text-tertiary border-t-transparent rounded-full animate-spin" />
+              <Loader2 v-if="generatingNewPlan" class="w-3.5 h-3.5 animate-spin" />
               <span v-else-if="currentPlanIndex < autoSchedulePlans.length - 1">
                 {{ locale.nextPlan }}
                 <ChevronRight class="w-3.5 h-3.5" />
@@ -1693,6 +1700,7 @@ import {
   Trash2,
   Copy,
   RefreshCcw,
+  Loader2,
   Sparkles,
   FolderPlus,
   Lock
