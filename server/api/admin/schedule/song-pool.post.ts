@@ -29,11 +29,30 @@ export default defineEventHandler(async (event) => {
   const missingDurationSongs = songsRows.filter(
     (s) => s.durationSeconds == null && s.musicPlatform && s.musicId
   )
-  const frontendDurationMap = new Map((body.songDurations || []).map((item) => [item.songId, Number(item.durationSeconds)]))
+  const frontendDurationMap = new Map(
+    (Array.isArray(body.songDurations) ? body.songDurations : [])
+      .map((item) => [Number(item?.songId), Number(item?.durationSeconds)])
+      .filter(([songId, duration]) => Number.isInteger(songId) && Number.isFinite(duration))
+  )
   const durationTolerance = 3
+  const clientDurationUpdates = missingDurationSongs
+    .map((song) => {
+      const duration = frontendDurationMap.get(song.id)
+      return Number.isInteger(duration) && duration >= 30 && duration <= 3600
+        ? { song, duration }
+        : null
+    })
+    .filter(Boolean)
+  await Promise.all(
+    clientDurationUpdates.map(({ song, duration }) =>
+      db.update(songs).set({ durationSeconds: duration }).where(eq(songs.id, song.id))
+    )
+  )
   if (missingDurationSongs.length > 0) {
     const durationTask = (async () => {
-      for (const song of missingDurationSongs) {
+      for (const song of missingDurationSongs.filter(
+        (item) => !clientDurationUpdates.some((update) => update.song.id === item.id)
+      )) {
         const duration = await fetchSongDuration(song.musicPlatform, song.musicId)
         if (duration != null) {
           const frontendDuration = frontendDurationMap.get(song.id)

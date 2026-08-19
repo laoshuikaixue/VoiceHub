@@ -86,7 +86,8 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       String(requestBody.musicId || '').startsWith('BV') ||
       String(requestBody.musicId || '').startsWith('av')
 
-    if (isBilibili && requestBody.musicId) {
+    // 普通用户沿用同一学期内同一首歌只能投稿一次的规则；管理员可按需重复投稿。
+    if (isBilibili && requestBody.musicId && !isAdmin) {
       let fullMusicId = String(requestBody.musicId)
       const bvId = fullMusicId.split(':')[0]
 
@@ -119,7 +120,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           message: `《${requestBody.title}》已经在列表中，不能重复投稿`
         })
       }
-    } else {
+    } else if (!isAdmin) {
       const allSongs = await db
         .select({
           id: songs.id,

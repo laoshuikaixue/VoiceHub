@@ -217,7 +217,8 @@
               <button
                 class="hidden lg:flex p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-info hover:border-info-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                 v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                :title="locale.addAllPending"
+                :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+                :title="locale.addCurrentPage"
                 @click="moveAllToPool"
               >
                 <FolderPlus class="w-3.5 h-3.5" />
@@ -225,7 +226,7 @@
               <button
                 class="hidden lg:flex items-center justify-center p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="refreshingAllDurations.running"
-                :title="refreshingAllDurations.running ? `${locale.refreshAllDurations} (${refreshingAllDurations.progress})` : locale.refreshAllDurations"
+                :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
                 @click="refreshAllDurations"
               >
                 <RefreshCcw
@@ -236,25 +237,27 @@
             </div>
 
             <!-- 批量刷新时长进度 -->
-            <div
-              v-if="refreshingAllDurations.running"
-              class="flex items-center gap-3 mt-2 px-1 lg:px-0"
-            >
-              <div class="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+            <div v-if="refreshingAllDurations.running" class="mt-2 rounded-xl border border-primary-20 bg-primary-5 px-3 py-2.5">
+              <div class="flex items-center justify-between gap-3 text-[10px] font-bold">
+                <span class="flex min-w-0 items-center gap-1.5 text-primary">
+                  <RefreshCcw class="h-3.5 w-3.5 shrink-0 animate-spin" />
+                  <span class="truncate">{{ refreshingAllDurations.currentTitle || locale.refreshPageDurations }}</span>
+                </span>
+                <span class="shrink-0 text-text-secondary">{{ refreshingAllDurations.done }} / {{ refreshingAllDurations.total }}</span>
+              </div>
+              <div class="mt-2 h-2 overflow-hidden rounded-full bg-bg-tertiary">
                 <div
-                  class="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                  class="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
                   :style="{ width: `${refreshingAllDurations.total > 0 ? Math.round((refreshingAllDurations.done / refreshingAllDurations.total) * 100) : 0}%` }"
                 />
               </div>
-              <span class="text-[10px] font-bold text-text-tertiary whitespace-nowrap">
-                {{ refreshingAllDurations.progress }}
-              </span>
-              <span class="text-[10px] font-bold text-primary whitespace-nowrap">
-                ✓{{ refreshingAllDurations.success }}
-              </span>
-              <span v-if="refreshingAllDurations.fail > 0" class="text-[10px] font-bold text-warning whitespace-nowrap">
-                ✗{{ refreshingAllDurations.fail }}
-              </span>
+              <div class="mt-1.5 flex items-center justify-between text-[10px] font-bold">
+                <span class="text-text-tertiary">{{ refreshingAllDurations.progress }}</span>
+                <span class="flex items-center gap-2">
+                  <span class="text-success">✓ {{ refreshingAllDurations.success }}</span>
+                  <span class="text-warning">✗ {{ refreshingAllDurations.fail }}</span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -698,7 +701,7 @@
                   />
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
-                    >{{ locale.refreshAllDurations }}{{
+                    >{{ locale.refreshPageDurations }}{{
                       refreshingAllDurations.running
                         ? ` (${refreshingAllDurations.progress})`
                         : ''
@@ -1040,7 +1043,8 @@
             <button
               class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-info rounded-xl flex items-center justify-center active:scale-95 transition-all"
               v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-              :title="locale.addAllPending"
+              :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+              :title="locale.addCurrentPage"
               @click="moveAllToPool"
             >
               <FolderPlus class="w-5 h-5" />
@@ -1056,7 +1060,7 @@
             <button
               class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="refreshingAllDurations.running"
-              :title="refreshingAllDurations.running ? `${locale.refreshAllDurations} (${refreshingAllDurations.progress})` : locale.refreshAllDurations"
+              :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
               @click="refreshAllDurations"
             >
               <RefreshCcw class="w-5 h-5" :class="{ 'animate-spin': refreshingAllDurations.running }" />
@@ -2022,7 +2026,7 @@ const replayModalSongId = ref(null)
 // 刷新时长状态（每首歌独立追踪）
 const refreshingDuration = ref({})
 // 批量刷新时长状态
-const refreshingAllDurations = ref({ running: false, progress: '', success: 0, fail: 0, done: 0, total: 0 })
+const refreshingAllDurations = ref({ running: false, progress: '', currentTitle: '', success: 0, fail: 0, done: 0, total: 0 })
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
 // 行内编辑歌曲时长状态
 const editingDuration = ref({})
@@ -2413,7 +2417,8 @@ const manualSelectedDate = ref('')
 const pageStates = reactive({
   normal: 1,
   replay: 1,
-  all: 1
+  all: 1,
+  pool: 1
 })
 const currentPage = computed({
   get: () => pageStates[activeTab.value] || 1,
@@ -3029,6 +3034,7 @@ const resetAllPages = () => {
   pageStates.normal = 1
   pageStates.replay = 1
   pageStates.all = 1
+  pageStates.pool = 1
 }
 
 // 监听排序选项变化，重置分页
@@ -3086,27 +3092,36 @@ const fetchSongPool = async () => {
 
 // 从待排库批量移入备选池
 const moveAllToPool = async () => {
-  const pendingSongIds = allUnscheduledSongs.value.map((s) => s.id)
+  const pageSongs = filteredUnscheduledSongs.value.filter((song) => !poolSongIds.value.has(song.id))
+  const pendingSongIds = pageSongs.map((s) => s.id)
   if (pendingSongIds.length === 0) return
 
-  confirmDialogTitle.value = locale.value.addAllPendingConfirmTitle
-  confirmDialogMessage.value = locale.value.addAllPendingConfirmMessage(pendingSongIds.length)
+  confirmDialogTitle.value = locale.value.addCurrentPageConfirmTitle
+  confirmDialogMessage.value = locale.value.addCurrentPageConfirmMessage(pendingSongIds.length, currentPage.value)
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = locale.value.confirm
 
   confirmAction.value = async () => {
     try {
+      const songDurations = (await Promise.all(
+        pageSongs
+          .filter((song) => !song.durationSeconds && song.playUrl)
+          .map(async (song) => {
+            const durationSeconds = await readClientAudioDuration(song)
+            return durationSeconds ? { songId: song.id, durationSeconds } : null
+          })
+      )).filter(Boolean)
       const result = await $fetch('/api/admin/schedule/song-pool', {
         method: 'POST',
         ...auth.getAuthConfig(),
-        body: { songIds: pendingSongIds }
+        body: { songIds: pendingSongIds, songDurations }
       })
       await fetchSongPool()
       const added = result.added || []
       const skipped = result.skipped || []
       if (added.length > 0) {
         window.$showNotification && window.$showNotification(
-          `${locale.value.addAllPendingSuccess(added.length)}`,
+          `${locale.value.addCurrentPageSuccess(added.length)}`,
           'success'
         )
       }
@@ -3261,6 +3276,61 @@ const loadPlayTimes = async () => {
   }
 }
 
+const readClientAudioDuration = (song, signal) => {
+  if (!import.meta.client || !song?.playUrl) return Promise.resolve(null)
+
+  return new Promise((resolve) => {
+    const audio = new Audio()
+    let settled = false
+    const timeoutId = window.setTimeout(() => finish(null), 8000)
+
+    const cleanup = () => {
+      window.clearTimeout(timeoutId)
+      audio.onloadedmetadata = null
+      audio.onerror = null
+      audio.src = ''
+      audio.load()
+      signal?.removeEventListener('abort', abort)
+    }
+    const finish = (duration) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      resolve(Number.isFinite(duration) && duration >= 30 && duration <= 3600 ? Math.floor(duration) : null)
+    }
+    const abort = () => finish(null)
+
+    if (signal?.aborted) {
+      finish(null)
+      return
+    }
+    signal?.addEventListener('abort', abort, { once: true })
+    audio.preload = 'metadata'
+    audio.onloadedmetadata = () => finish(audio.duration)
+    audio.onerror = () => finish(null)
+    audio.src = convertToHttps(song.playUrl)
+  })
+}
+
+const requestSongDuration = async (song, signal) => {
+  const clientDuration = await readClientAudioDuration(song, signal)
+  if (clientDuration != null) {
+    return await $fetch('/api/admin/songs/duration', {
+      method: 'POST',
+      body: { songId: song.id, durationSeconds: clientDuration },
+      signal,
+      ...auth.getAuthConfig()
+    })
+  }
+
+  return await $fetch('/api/admin/songs/duration', {
+    method: 'POST',
+    body: { songId: song.id },
+    signal,
+    ...auth.getAuthConfig()
+  })
+}
+
 // 刷新歌曲时长
 const refreshDuration = async (song) => {
   const songId = song.id
@@ -3273,11 +3343,7 @@ const refreshDuration = async (song) => {
 
   refreshingDuration.value[songId] = true
   try {
-    const result = await $fetch('/api/admin/songs/duration', {
-      method: 'POST',
-      body: { songId },
-      ...auth.getAuthConfig()
-    })
+    const result = await requestSongDuration(song)
 
     if (result.success && result.durationSeconds) {
       // 更新待排歌曲列表
@@ -3322,27 +3388,17 @@ const refreshDuration = async (song) => {
 let refreshAllAbortController = null
 let refreshAutoCandidatesAbortController = null
 
-// 批量刷新所有待排+已排歌曲的时长
+// 批量刷新当前页待排歌曲的时长
 const refreshAllDurations = async () => {
   // 中止上次未完成的批量刷新
   refreshAllAbortController?.abort()
   refreshAllAbortController = new AbortController()
   const { signal } = refreshAllAbortController
 
-  // 收集所有有平台+音乐 ID 的歌曲，用 Set 去重（O(n) 而非 O(n²)）
+  // 只处理当前页歌曲，避免一次刷新扫描全部待排数据
   const targetIds = new Set()
   const targets = []
-
-  // 已排歌曲
-  for (const schedule of localScheduledSongs.value) {
-    const s = schedule.song
-    if (s && s.musicPlatform && s.musicId && !targetIds.has(s.id)) {
-      targetIds.add(s.id)
-      targets.push(s)
-    }
-  }
-  // 待排歌曲
-  for (const song of songs.value) {
+  for (const song of filteredUnscheduledSongs.value) {
     if (song.musicPlatform && song.musicId && !targetIds.has(song.id)) {
       targetIds.add(song.id)
       targets.push(song)
@@ -3356,17 +3412,12 @@ const refreshAllDurations = async () => {
     return
   }
 
-  const toRefresh = targets.length > 100 ? targets.slice(0, 100) : targets
-  if (toRefresh.length < targets.length && window.$showNotification) {
-    window.$showNotification(
-      callLocale('allDurationsCapped', '候选歌曲较多，本次仅刷新前 100 首'),
-      'warning'
-    )
-  }
+  const toRefresh = targets
 
   refreshingAllDurations.value = {
     running: true,
     progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`, toRefresh.length),
+    currentTitle: '',
     success: 0,
     fail: 0,
     done: 0,
@@ -3378,15 +3429,11 @@ const refreshAllDurations = async () => {
   try {
     for (let i = 0; i < toRefresh.length; i++) {
       const song = toRefresh[i]
+      refreshingAllDurations.value.currentTitle = song.title || song.artist || ''
       try {
         if (signal.aborted) break
 
-        const result = await $fetch('/api/admin/songs/duration', {
-          method: 'POST',
-          body: { songId: song.id },
-          signal,
-          ...auth.getAuthConfig()
-        })
+        const result = await requestSongDuration(song, signal)
 
         if (result.success && result.durationSeconds) {
           // 更新已排歌曲列表
@@ -3400,6 +3447,9 @@ const refreshAllDurations = async () => {
           const songIndex = songs.value.findIndex((s) => s.id === song.id)
           if (songIndex !== -1) {
             songs.value[songIndex].durationSeconds = result.durationSeconds
+          }
+          for (const poolItem of songPool.value) {
+            if (poolItem.songId === song.id) poolItem.durationSeconds = result.durationSeconds
           }
           successCount++
           refreshingAllDurations.value.success = successCount
@@ -3427,7 +3477,7 @@ const refreshAllDurations = async () => {
     }
   } finally {
     refreshAllAbortController = null
-    refreshingAllDurations.value = { running: false, progress: '', done: 0, total: 0 }
+    refreshingAllDurations.value = { running: false, progress: '', currentTitle: '', done: 0, total: 0, success: 0, fail: 0 }
   }
 
   if (window.$showNotification) {
@@ -3478,12 +3528,7 @@ const refreshAutoCandidateDurations = async () => {
     try {
       if (signal.aborted) break
 
-      const result = await $fetch('/api/admin/songs/duration', {
-        method: 'POST',
-        body: { songId: song.id },
-        signal,
-        ...auth.getAuthConfig()
-      })
+      const result = await requestSongDuration(song, signal)
 
       if (result.success && result.durationSeconds) {
         const dur = result.durationSeconds

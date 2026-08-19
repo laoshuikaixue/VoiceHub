@@ -916,11 +916,6 @@ const saveRestrictionSettings = async () => {
   const songHours = sameSongRestrictionHours.value
   const artistHours = sameArtistRestrictionHours.value
 
-  if (enabled && !(songHours || artistHours)) {
-    error.value = locale.value.restrictionAtLeastOne
-    return
-  }
-
   try {
     await submitRestrictionSettings({
       enableSubmissionRestriction: enabled,

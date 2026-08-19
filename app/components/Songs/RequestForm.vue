@@ -665,14 +665,22 @@
                         >
                         <span v-else class="similar-text">{{ locale.songExists }}</span>
 
-                        <!-- 已播放且允许重播申请：管理员显示选择投稿，普通用户显示申请重播 -->
+                        <!-- 管理员可直接重复投稿；普通用户仅可申请重播已播放歌曲。 -->
                         <button
-                          v-if="getSimilarSong(result)?.played && enableReplayRequests"
+                          v-if="auth.isAdmin.value"
+                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
+                          class="select-btn"
+                          @click.stop.prevent="submitSong(result)"
+                        >
+                          {{ locale.chooseSubmit }}
+                        </button>
+                        <button
+                          v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
                           :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
-                          {{ auth.isAdmin.value ? locale.chooseSubmit : locale.requestReplay }}
+                          {{ locale.requestReplay }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -1649,6 +1657,7 @@ const searching = ref(false)
 const searchResults = ref([])
 const restrictionCheckMap = ref(new Map())
 const restrictionChecking = ref(false)
+let restrictionCheckRequestId = 0
 const selectedCover = ref('')
 const selectedUrl = ref('')
 const audioPlayer = useAudioPlayer() // 使用全局音频播放器
@@ -3122,7 +3131,7 @@ const submitSong = async (result, options = {}) => {
   let replayTargetSong = null
 
   // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
-  if (auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
+  if (!auth.isAdmin.value && auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
     // 对于哔哩哔哩多P视频，使用 musicId 进行精确匹配
     if (platform.value === 'bilibili' && result.musicId) {
       // 构建完整的 musicId
@@ -3244,20 +3253,6 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
-  // 检查投稿限制（重复排期冷却）
-  if (!auth.isAdmin.value) {
-    const restrictionCheck = await checkSongRestriction(title.value, artist.value)
-    if (restrictionCheck.blocked) {
-      const reason = getRestrictionMessage(restrictionCheck.reason)
-      error.value = reason
-      if (window.$showNotification) {
-        window.$showNotification(reason, 'warning')
-      }
-      submitting.value = false
-      return
-    }
-  }
-
   // 管理员不受黑名单限制
   if (!auth.isAdmin.value) {
     try {
@@ -3360,15 +3355,6 @@ const handleSubmit = async () => {
     return
   }
 
-  // 检查投稿限制（重复排期冷却）
-  if (!auth.isAdmin.value) {
-    const restrictionCheck = await checkSongRestriction(title.value, artist.value)
-    if (restrictionCheck.blocked) {
-      error.value = getRestrictionMessage(restrictionCheck.reason)
-      submitting.value = false
-      return
-    }
-  }
   submitting.value = true
   error.value = ''
 
@@ -3724,15 +3710,6 @@ const handleManualSubmit = async () => {
     return
   }
 
-  // 检查投稿限制（重复排期冷却）
-  if (!auth.isAdmin.value) {
-    const restrictionCheck = await checkSongRestriction(title.value, manualArtist.value)
-    if (restrictionCheck.blocked) {
-      error.value = getRestrictionMessage(restrictionCheck.reason)
-      submitting.value = false
-      return
-    }
-  }
   submitting.value = true
   error.value = ''
 
@@ -3983,34 +3960,6 @@ const canSubmitFromSearch = computed(() => {
   return checkSubmissionLimit().canSubmit
 })
 
-// 预检服务端投稿限制（same-song / same-artist），避免用户点击按钮后才报错
-const checkSongRestriction = async (title, artist) => {
-  if (!auth.isAuthenticated.value) {
-    return { blocked: false, reason: null }
-  }
-  if (!title || !artist) {
-    return { blocked: false, reason: null }
-  }
-
-  try {
-    const authConfig = auth.getAuthConfig()
-    const result = await $fetch('/api/songs/check-restriction', {
-      method: 'POST',
-      body: { title, artist },
-      ...authConfig
-    })
-    return result
-  } catch (err) {
-    // 仅在鉴权失败时暴露异常，仍 fail-open 不阻断用户；其余错误静默降级
-    const status =
-      err && (err.statusCode || (err.data && err.data.statusCode))
-    if (status === 401) {
-      console.warn('投稿限制预检鉴权失败，未应用限制', err)
-    }
-    return { blocked: false, reason: null }
-  }
-}
-
 const isSongBlockedByRestriction = (result) => {
   if (auth.isAdmin.value) return false
   if (restrictionChecking.value) return false
@@ -4031,6 +3980,7 @@ const getRestrictionReason = (result) => {
 }
 
 const getRestrictionMessage = (reason) => {
+  if (reason === 'duplicateSong') return locale.value.notifications?.duplicateSong
   if (reason === 'sameSong') return locale.value.notifications?.restrictionSameSong
   if (reason === 'sameArtist') return locale.value.notifications?.restrictionSameArtist
   return locale.value.notifications?.restrictionGeneric
@@ -4038,39 +3988,61 @@ const getRestrictionMessage = (reason) => {
 
 const fetchRestrictionChecks = async () => {
   // 每次搜索后清空旧预检结果，避免上一轮结果污染
+  const requestId = ++restrictionCheckRequestId
   restrictionCheckMap.value = new Map()
-  if (!auth.isAuthenticated.value || searchResults.value.length === 0) return
-
-  restrictionChecking.value = true
-  const authConfig = auth.getAuthConfig()
-
-  for (const result of searchResults.value) {
-    const songTitle = result.song || result.title
-    const songArtist = result.singer || result.artist
-    if (!songTitle || !songArtist) continue
-
-    const key = `${songTitle}||${songArtist}`
-    if (restrictionCheckMap.value.has(key)) continue
-
-    try {
-      const check = await $fetch('/api/songs/check-restriction', {
-        method: 'POST',
-        body: { title: songTitle, artist: songArtist },
-        ...authConfig
-      })
-      restrictionCheckMap.value.set(key, check)
-    } catch (err) {
-      // 仅在鉴权失败时暴露异常，仍 fail-open 不阻断用户；其余错误静默降级
-      const status =
-        err && (err.statusCode || (err.data && err.data.statusCode))
-      if (status === 401) {
-        console.warn('投稿限制预检鉴权失败，未应用限制', err)
-      }
-      restrictionCheckMap.value.set(key, { blocked: false, reason: null })
-    }
+  if (!auth.isAuthenticated.value || searchResults.value.length === 0) {
+    restrictionChecking.value = false
+    return
   }
 
-  restrictionChecking.value = false
+  restrictionChecking.value = true
+  const uniqueResults = []
+  const resultKeys = new Set()
+  for (const result of searchResults.value) {
+    const title = result.song || result.title
+    const artist = result.singer || result.artist
+    const key = `${title}||${artist}`
+    if (!title || !artist || resultKeys.has(key)) continue
+    resultKeys.add(key)
+    uniqueResults.push({
+      key,
+      title,
+      artist,
+      musicPlatform: result.actualMusicPlatform || result.musicPlatform || '',
+      musicId: result.musicId || ''
+    })
+  }
+
+  if (uniqueResults.length === 0) {
+    if (requestId === restrictionCheckRequestId) {
+      restrictionChecking.value = false
+    }
+    return
+  }
+
+  try {
+    const authConfig = auth.getAuthConfig()
+    const response = await $fetch('/api/songs/check-restriction', {
+      method: 'POST',
+      body: { songs: uniqueResults },
+      ...authConfig
+    })
+    const checks = Array.isArray(response?.checks) ? response.checks : []
+    if (requestId === restrictionCheckRequestId) {
+      uniqueResults.forEach((result, index) => {
+        restrictionCheckMap.value.set(result.key, checks[index] || { blocked: false, reason: null })
+      })
+    }
+  } catch (err) {
+    const status = err && (err.statusCode || (err.data && err.data.statusCode))
+    if (status === 401) {
+      console.warn('投稿限制预检鉴权失败，未应用限制', err)
+    }
+  } finally {
+    if (requestId === restrictionCheckRequestId) {
+      restrictionChecking.value = false
+    }
+  }
 }
 
 const canSubmitManualForm = computed(() => {

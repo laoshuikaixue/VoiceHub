@@ -47,6 +47,30 @@ export default defineEventHandler(async (event) => {
   }
 
   const s = song[0]
+
+  // 浏览器可直接读取已有播放地址时，只由服务端负责校验并保存结果。
+  if (body?.durationSeconds !== undefined) {
+    const durationSeconds = Number(body.durationSeconds)
+    if (!Number.isInteger(durationSeconds) || durationSeconds < 30 || durationSeconds > 3600) {
+      return {
+        success: false,
+        songId,
+        durationSeconds: null,
+        message: '时长需在 30 秒至 1 小时之间'
+      }
+    }
+
+    if (s.durationSeconds !== durationSeconds) {
+      await db.update(songs).set({ durationSeconds }).where(eq(songs.id, songId))
+    }
+    return {
+      success: true,
+      songId,
+      durationSeconds,
+      message: s.durationSeconds === durationSeconds ? '时长未变化' : '时长获取成功'
+    }
+  }
+
   const platform = s.musicPlatform
   const musicId = s.musicId
 

@@ -892,10 +892,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 重复投稿限制交叉校验：时长>0 视同启用；启用时至少保留一个时长
-    const nextEnableRestriction = body.enableSubmissionRestriction !== undefined
-      ? body.enableSubmissionRestriction
-      : settings?.enableSubmissionRestriction ?? false
+    // 重复投稿限制交叉校验：未设置时长时保留本学期同一首歌不可重复投稿的旧规则。
     const nextSameSongHours = body.sameSongRestrictionHours !== undefined
       ? body.sameSongRestrictionHours
       : settings?.sameSongRestrictionHours ?? null
@@ -913,13 +910,6 @@ export default defineEventHandler(async (event) => {
         400,
         SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
         '关闭重复投稿限制时，同一首歌和同一歌手的限制时间必须同时清空'
-      )
-    }
-    if (nextEnableRestriction && !anyRestrictionHoursPositive) {
-      throw createApiError(
-        400,
-        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
-        '启用重复投稿限制时，同一首歌或同一歌手的限制时间必须至少设置一个'
       )
     }
     // 时长>0 且 enable 未显式提交 ⇒ 自动开启，维持"时长与开关自洽"不变量
