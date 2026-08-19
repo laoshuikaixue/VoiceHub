@@ -58,7 +58,7 @@
                 :disabled="bindingEmail"
                 type="email"
                 :placeholder="locale.emailPlaceholder"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary-30 w-full sm:w-auto"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-primary-30 w-full sm:w-auto"
               >
               <button
                 :disabled="!newEmail || bindingEmail"
@@ -88,7 +88,7 @@
                 maxlength="6"
                 :placeholder="locale.emailCodePlaceholder"
                 :class="[
-                  'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
+                  'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center text-text-primary placeholder:text-text-tertiary focus:outline-none transition-all',
                   emailCodeError
                     ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                     : 'border-border-secondary focus:border-primary-30'
@@ -188,7 +188,7 @@
                 :disabled="binding"
                 type="text"
                 :placeholder="locale.meowIdPlaceholder"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary-30 w-full sm:w-auto"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-primary-30 w-full sm:w-auto"
               >
               <button
                 :disabled="!meowUserId || binding"
@@ -219,7 +219,7 @@
                   maxlength="6"
                   :placeholder="locale.codePlaceholder"
                   :class="[
-                    'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
+                    'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center text-text-primary placeholder:text-text-tertiary focus:outline-none transition-all',
                     verificationCodeError
                       ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                       : 'border-border-secondary focus:border-primary-30'
