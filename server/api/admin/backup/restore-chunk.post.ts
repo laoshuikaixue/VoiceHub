@@ -716,7 +716,6 @@ export default defineEventHandler(async (event) => {
               'sameSongRestrictionHours',
               'sameArtistRestrictionHours',
               'enableRequestTimeLimitation',
-              'requestTimeLimitation',
               'forceBlockAllRequests',
               'forcePasswordChangeOnFirstLogin',
               'smtpEnabled',

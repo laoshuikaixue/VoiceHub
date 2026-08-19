@@ -3243,6 +3243,20 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
+  // 检查投稿限制（重复排期冷却）
+  if (!auth.isAdmin.value) {
+    const restrictionCheck = await checkSongRestriction(title.value, artist.value)
+    if (restrictionCheck.blocked) {
+      const reason = getRestrictionReason({ song: title.value, artist: artist.value }) || '该歌曲/歌手处于投稿限制冷却期'
+      error.value = reason
+      if (window.$showNotification) {
+        window.$showNotification(reason, 'warning')
+      }
+      submitting.value = false
+      return
+    }
+  }
+
   // 管理员不受黑名单限制
   if (!auth.isAdmin.value) {
     try {
@@ -3345,6 +3359,15 @@ const handleSubmit = async () => {
     return
   }
 
+  // 检查投稿限制（重复排期冷却）
+  if (!auth.isAdmin.value) {
+    const restrictionCheck = await checkSongRestriction(title.value, artist.value)
+    if (restrictionCheck.blocked) {
+      error.value = '该歌曲/歌手处于投稿限制冷却期'
+      submitting.value = false
+      return
+    }
+  }
   submitting.value = true
   error.value = ''
 
@@ -3700,6 +3723,15 @@ const handleManualSubmit = async () => {
     return
   }
 
+  // 检查投稿限制（重复排期冷却）
+  if (!auth.isAdmin.value) {
+    const restrictionCheck = await checkSongRestriction(title.value, manualArtist.value)
+    if (restrictionCheck.blocked) {
+      error.value = '该歌曲/歌手处于投稿限制冷却期'
+      submitting.value = false
+      return
+    }
+  }
   submitting.value = true
   error.value = ''
 
@@ -6912,3 +6944,5 @@ defineExpose({
   opacity: 1;
 }
 </style>
+
+

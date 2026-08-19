@@ -288,6 +288,7 @@
 
     <!-- 重复投稿限制面板 -->
     <div
+      v-if="isAdmin"
       class="bg-bg-secondary-20 border border-border-secondary rounded-3xl p-8 space-y-6"
     >
       <div class="flex items-center justify-between border-b border-border-secondary-50 pb-4">

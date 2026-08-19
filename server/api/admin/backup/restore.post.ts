@@ -1140,7 +1140,6 @@ export default defineEventHandler(async (event) => {
                           'monthlySubmissionLimit',
                           'showBlacklistKeywords',
                           'enableRequestTimeLimitation',
-                          'requestTimeLimitation',
                           'forceBlockAllRequests',
                           'forcePasswordChangeOnFirstLogin',
                           'enableReplayRequests',
