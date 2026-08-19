@@ -1,5 +1,4 @@
 import wasm from 'vite-plugin-wasm'
-import topLevelAwait from 'vite-plugin-top-level-await'
 import { fileURLToPath } from 'url'
 
 // 解析自定义 SEO 和 PWA 配置
@@ -854,7 +853,7 @@ export default defineNuxtConfig({
 
   // Vite 配置
   vite: {
-    plugins: [wasm(), topLevelAwait()],
+    plugins: [wasm()],
     optimizeDeps: {
       include: ['drizzle-orm'],
       exclude: [
