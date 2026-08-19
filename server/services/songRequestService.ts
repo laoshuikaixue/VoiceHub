@@ -12,6 +12,7 @@ import {
 } from '~/drizzle/db'
 import { and, eq, gte, gt, inArray, lt, lte, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
+import { validateSongDurationOnSubmit } from '~~/server/services/durationValidationService'
 import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import {
@@ -40,7 +41,7 @@ const songRequestBodySchema = z.object({
   bilibiliCid: z.string().trim().max(100, 'Bilibili CID 不能超过100个字符').optional().nullable(),
   bilibiliPage: z.union([z.string(), z.number()]).optional().nullable(),
   playUrl: z.string().trim().max(2000, '播放链接不能超过2000个字符').optional().nullable(),
-  durationSeconds: z.number().int().min(30, '时长不能低于30秒').max(3600, '时长不能超过1小时').optional().nullable(),
+  durationSeconds: z.number().int().min(0, '时长不能为负数').max(7200, '时长不能超过2小时').optional().nullable(),
   submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
@@ -540,6 +541,23 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
 
       return newSong
     })
+
+    // 投后立即校验歌曲时长（不阻塞请求响应）
+    const submitDuration = song.durationSeconds
+    const submitPlatform = song.musicPlatform
+    const submitMusicId = song.musicId
+    if (submitDuration && submitPlatform && submitMusicId) {
+      setImmediate(async () => {
+        try {
+          const result = await validateSongDurationOnSubmit(song.id, submitPlatform, submitMusicId, submitDuration)
+          if (result === 'clear') {
+            await db.update(songs).set({ durationSeconds: null }).where(eq(songs.id, song.id))
+          }
+        } catch (err) {
+          console.error(`[投稿校验] 后台校验 #${song.id} 异常:`, err)
+        }
+      })
+    }
 
     for (const notification of notificationsToSend) {
       try {

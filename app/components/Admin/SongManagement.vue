@@ -963,8 +963,8 @@
                   v-if="showEditModal"
                   v-model="editForm.durationSeconds"
                   type="number"
-                  min="30"
-                  max="3600"
+                  min="0"
+                  max="7200"
                   :placeholder="locale.editModal.durationPlaceholder"
                   class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
                 />
@@ -972,8 +972,8 @@
                   v-else
                   v-model="addForm.durationSeconds"
                   type="number"
-                  min="30"
-                  max="3600"
+                  min="0"
+                  max="7200"
                   :placeholder="locale.editModal.durationPlaceholder"
                   class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
                 />

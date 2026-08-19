@@ -2415,6 +2415,8 @@ export const admin = {
       durationUpdated: 'Duration refreshed',
       durationFailed: 'Failed to get duration',
       durationNoPlatform: 'Song missing platform or music ID, cannot get duration',
+      durationInvalid: 'Invalid duration, enter a number between 0-7200',
+      editDuration: 'Click to edit duration',
       allDurationsUpdated: (count: number) => `${count} song(s) duration refreshed`,
       allDurationsPartial: (ok: number, fail: number) => `Refresh done: ${ok} succeeded, ${fail} failed`,
       allDurationsFailed: 'Bulk duration refresh failed',

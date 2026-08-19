@@ -57,11 +57,11 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.SONG_TITLE_ARTIST_REQUIRED, 'Title and artist are required')
     }
 
-    // 校验时长范围（30秒~1小时）
+    // 校验时长范围（0秒~2小时，允许管理员输入任意合理值，后台会二次校验）
     if (durationSeconds !== null && durationSeconds !== undefined) {
       const d = Number(durationSeconds)
-      if (!Number.isFinite(d) || d < 30 || d > 3600) {
-        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'Invalid song duration (30s–1h)')
+      if (!Number.isFinite(d) || d < 0 || d > 7200) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'Invalid song duration (0s–2h)')
       }
     }
 

@@ -154,7 +154,7 @@ export function getBeijingEndOfMonth(date?: Date): Date {
  */
 export function formatDuration(seconds: number): string {
   const total = Number(seconds)
-  if (!isFinite(total) || total <= 0) return ''
+  if (!isFinite(total) || total < 0) return ''
   const minutes = Math.floor(total / 60)
   const secs = Math.floor(total % 60)
   return `${minutes}:${secs.toString().padStart(2, '0')}`

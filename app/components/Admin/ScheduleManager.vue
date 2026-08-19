@@ -445,10 +445,25 @@
                     </div>
                     <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
                       <span>{{ song.artist }}</span>
+                      <!-- 时长显示 / 行内编辑 -->
                       <span
-                        v-if="song.durationSeconds"
-                        class="text-text-disabled shrink-0"
+                        v-if="song.durationSeconds && !editingDuration[song.id]"
+                        class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
+                        :title="locale.editDuration || '点击编辑时长'"
+                        @click.stop="startEditDuration(song)"
                       >{{ formatDuration(song.durationSeconds) }}</span>
+                      <input
+                        v-else-if="editingDuration[song.id]"
+                        ref="editingDurationInput"
+                        v-model="editingDurationValue"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="w-14 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                        placeholder="秒"
+                        @blur="saveDurationEdit(song)"
+                        @keydown="handleDurationKeydown($event, song)"
+                      >
                     </div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
@@ -875,9 +890,23 @@
                     <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
                       <span>{{ schedule.song.artist }}</span>
                       <span
-                        v-if="schedule.song.durationSeconds"
-                        class="text-text-disabled shrink-0"
+                        v-if="schedule.song.durationSeconds && !editingDuration[schedule.song.id]"
+                        class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
+                        :title="locale.editDuration || '点击编辑时长'"
+                        @click.stop="startEditDuration(schedule.song)"
                       >{{ formatDuration(schedule.song.durationSeconds) }}</span>
+                      <input
+                        v-else-if="editingDuration[schedule.song.id]"
+                        ref="editingDurationInput"
+                        v-model="editingDurationValue"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="w-14 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                        placeholder="秒"
+                        @blur="saveDurationEdit(schedule.song)"
+                        @keydown="handleDurationKeydown($event, schedule.song)"
+                      >
                     </div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <span
@@ -1580,7 +1609,24 @@
                 </span>
                 <span class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
                   <span>{{ song.artist }}</span>
-                  <span v-if="song.durationSeconds" class="text-text-disabled shrink-0">{{ formatDuration(song.durationSeconds) }}</span>
+                  <span
+                    v-if="song.durationSeconds && !editingDuration[song.id]"
+                    class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
+                    :title="locale.editDuration || '点击编辑时长'"
+                    @click.stop="startEditDuration(song)"
+                  >{{ formatDuration(song.durationSeconds) }}</span>
+                  <input
+                    v-else-if="editingDuration[song.id]"
+                    ref="editingDurationInput"
+                    v-model="editingDurationValue"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    class="w-14 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                    placeholder="秒"
+                    @blur="saveDurationEdit(song)"
+                    @keydown="handleDurationKeydown($event, song)"
+                  >
                   <span v-if="song.requester" class="text-text-disabled">|</span>
                   <span v-if="song.requester" class="text-text-tertiary truncate">{{ song.requester }}</span>
                   <span v-if="song.voteCount != null" class="ml-auto flex items-center gap-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 px-1.5 py-0.5 rounded-md border border-border-secondary-50 shrink-0">
@@ -1978,6 +2024,111 @@ const refreshingDuration = ref({})
 // 批量刷新时长状态
 const refreshingAllDurations = ref({ running: false, progress: '', success: 0, fail: 0, done: 0, total: 0 })
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
+// 行内编辑歌曲时长状态
+const editingDuration = ref({})
+const editingDurationValue = ref('')
+const editingDurationInput = ref(null)
+
+// 开始编辑歌曲时长
+const startEditDuration = (song) => {
+  if (editingDuration.value[song.id]) return
+  editingDuration.value[song.id] = true
+  editingDurationValue.value = String(song.durationSeconds || '')
+  nextTick(() => {
+    if (editingDurationInput.value) {
+      editingDurationInput.value.focus()
+      editingDurationInput.value.select()
+    }
+  })
+}
+
+// 保存编辑的歌曲时长
+const saveDurationEdit = async (song) => {
+  const raw = editingDurationValue.value.trim()
+  if (raw === '') {
+    // 清空时长
+    await updateSongDuration(song.id, null)
+    delete editingDuration.value[song.id]
+    editingDurationValue.value = ''
+    return
+  }
+
+  const seconds = parseInt(raw, 10)
+  if (!Number.isInteger(seconds) || seconds < 0 || seconds > 7200) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.messages?.durationInvalid || '时长无效（0-7200秒）', 'error')
+    }
+    return
+  }
+
+  await updateSongDuration(song.id, seconds)
+  delete editingDuration.value[song.id]
+  editingDurationValue.value = ''
+}
+
+// 通用：更新歌曲时长并同步所有列表
+const updateSongDuration = async (songId, durationSeconds) => {
+  try {
+    await $fetch(`/api/songs/${songId}`, {
+      method: 'PUT',
+      body: { durationSeconds },
+      ...(auth ? auth.getAuthConfig?.() : {})
+    })
+
+    const normalized = durationSeconds ?? null
+    // 更新待排歌曲列表
+    const pendingIdx = songs.value.findIndex((s) => s.id === songId)
+    if (pendingIdx !== -1) {
+      songs.value[pendingIdx].durationSeconds = normalized
+    }
+    // 更新已排歌曲列表
+    for (const schedule of localScheduledSongs.value) {
+      if (schedule.song && schedule.song.id === songId) {
+        schedule.song.durationSeconds = normalized
+        break
+      }
+    }
+    // 更新备选池
+    for (const p of songPool.value) {
+      if (p.songId === songId) { p.durationSeconds = normalized; break }
+    }
+    // 更新重播申请
+    for (const r of replayRequests.value) {
+      if (r.id === songId) { r.durationSeconds = normalized; break }
+    }
+    // 更新自动排期候选
+    if (autoScheduleCandidates.value) {
+      const cand = autoScheduleCandidates.value.find((c) => c.id === songId)
+      if (cand) cand.durationSeconds = normalized
+    }
+
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.messages?.durationUpdated || '时长已更新', 'success')
+    }
+  } catch (err) {
+    console.error('更新时长失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification(localizeServerError(err), 'error')
+    }
+  }
+}
+
+// 取消编辑
+const cancelEditDuration = (songId) => {
+  delete editingDuration.value[songId]
+  editingDurationValue.value = ''
+}
+
+// 键盘事件处理
+const handleDurationKeydown = (event, song) => {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    saveDurationEdit(song)
+  } else if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelEditDuration(song.id)
+  }
+}
 // 自动排期状态
 const showAutoScheduleDialog = ref(false)
 const contextMenuOpen = ref(false)
