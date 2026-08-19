@@ -2,10 +2,10 @@ import { asc, and, eq, inArray } from 'drizzle-orm'
 import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songBlacklists, songs } from '~/drizzle/schema'
-import { executeSequentialSongImports } from '~~/server/services/songQuotaService'
-import { requestSongForUser } from '~~/server/services/songRequestService'
-import { createApiError } from '~~/server/utils/apiError'
-import { createImportSongRequestId } from '~~/server/utils/song-request-policy'
+import { executeSequentialSongImports } from '#server/services/songQuotaService'
+import { requestSongForUser } from '#server/services/songRequestService'
+import { createApiError } from '#server/utils/apiError'
+import { createImportSongRequestId } from '#server/utils/song-request-policy'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

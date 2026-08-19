@@ -1,8 +1,8 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { maskSystemSettingsSecrets } from './secretMask'
-import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
-import { ensureSongQuotaSettingsMigrated } from '~~/server/utils/system-settings-helper'
+import { maskSystemSettingsSecrets } from '#server/api/admin/system-settings/secretMask'
+import { SYSTEM_SETTINGS_DEFAULTS } from '#server/utils/system-settings-defaults'
+import { ensureSongQuotaSettingsMigrated } from '#server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

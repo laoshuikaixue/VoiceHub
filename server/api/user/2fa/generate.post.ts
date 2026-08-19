@@ -2,7 +2,7 @@ import otplib from 'otplib'
 const { authenticator } = otplib
 import QRCode from 'qrcode'
 import { db, userIdentities, eq, and } from '~/drizzle/db'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

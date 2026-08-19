@@ -1,15 +1,15 @@
 import { getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
 import {
   buildAdminSongQuotaTransaction,
   listSongQuotaTransactions
-} from '~~/server/services/songQuotaService'
+} from '#server/services/songQuotaService'
 import {
   adminSongQuotaTransactionQuerySchema,
   requireSongQuotaAdministrator,
   throwInvalidSongQuotaInput
-} from './_shared'
+} from '#server/api/admin/song-quotas/_shared'
 
 export default defineEventHandler(async (event) => {
   requireSongQuotaAdministrator(event)

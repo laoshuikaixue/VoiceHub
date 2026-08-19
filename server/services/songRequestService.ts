@@ -10,22 +10,22 @@ import {
 } from '~/drizzle/db'
 import { and, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
 import { createError } from 'h3'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 import {
   createCollaborationInvitationNotification,
   sendCollaborationInvitationExternalNotification
-} from '~~/server/services/notificationService'
-import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
-import { executeSongQuotaSubmission } from '~~/server/services/songQuotaService'
-import { getClientIP } from '~~/server/utils/ip-utils'
+} from '#server/services/notificationService'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
+import { executeSongQuotaSubmission } from '#server/services/songQuotaService'
+import { getClientIP } from '#server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
+import { getServerDate } from '#server/utils/serverTime'
 import {
   executeIdempotentSongRequest,
   fingerprintSongRequestPayload,
   isSongAdministrator
-} from '~~/server/utils/song-request-policy'
+} from '#server/utils/song-request-policy'
 import { z } from 'zod'
 
 type SongRequestUser = {

@@ -2,9 +2,9 @@ import nodemailer from 'nodemailer'
 import { db } from '~/drizzle/db'
 import { emailTemplates, users } from '~/drizzle/schema'
 import { and, eq, isNotNull } from 'drizzle-orm'
-import { getSiteTitle } from '~~/server/utils/siteUtils'
-import { formatIPForEmail } from '~~/server/utils/ip-utils'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getSiteTitle } from '#server/utils/siteUtils'
+import { formatIPForEmail } from '#server/utils/ip-utils'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 const HTML_ESCAPE_MAP: Record<string, string> = {
   '&': '&amp;',

@@ -1,4 +1,4 @@
-import { getQqLoginQr } from '~~/server/utils/qq_music_sdk'
+import { getQqLoginQr } from '#server/utils/qq_music_sdk'
 
 export default defineEventHandler(async () => {
   try {

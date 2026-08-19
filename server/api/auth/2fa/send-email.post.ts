@@ -1,18 +1,18 @@
 import { db, users, eq } from '~/drizzle/db'
-import { SmtpService } from '~~/server/services/smtpService'
-import { getClientIP } from '~~/server/utils/ip-utils'
+import { SmtpService } from '#server/services/smtpService'
+import { getClientIP } from '#server/utils/ip-utils'
 import {
   delStoreIfValue,
   getStore,
   hashStateCode,
   parseStoreJson,
   setStore
-} from '~~/server/utils/captchaStore'
+} from '#server/utils/captchaStore'
 
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { createApiError } from '~~/server/utils/apiError'
+import { getServerTimestamp } from '#server/utils/serverTime'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<Record<string, unknown> | null>(event)

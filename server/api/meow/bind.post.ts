@@ -3,7 +3,7 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { getServerTimestamp } from '#server/utils/serverTime'
 import {
   delStore,
   delStoreIfValue,
@@ -13,7 +13,7 @@ import {
   parseStoreJson,
   setStore,
   verifyStateCode
-} from '~~/server/utils/captchaStore'
+} from '#server/utils/captchaStore'
 import { randomInt } from 'node:crypto'
 
 // 生成6位数字验证码

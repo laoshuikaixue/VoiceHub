@@ -1,5 +1,5 @@
-import { getInstanceId } from '~~/server/utils/instance-id'
-import { isTelemetryEnabled } from '~~/server/utils/telemetry'
+import { getInstanceId } from '#server/utils/instance-id'
+import { isTelemetryEnabled } from '#server/utils/telemetry'
 
 export default defineEventHandler(async (event) => {
   setHeader(event, 'Cache-Control', 'no-store')

@@ -1,11 +1,11 @@
 import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { runSongQuotaDrizzleTransaction } from '~~/server/services/songQuotaDrizzleAdapter'
-import { convertLegacyCardToQuota } from '~~/server/services/songQuotaService'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { createApiError } from '~~/server/utils/apiError'
-import { enforceCardCodeRedemptionRateLimit } from '~~/server/utils/card-code-redemption-rate-limit'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { runSongQuotaDrizzleTransaction } from '#server/services/songQuotaDrizzleAdapter'
+import { convertLegacyCardToQuota } from '#server/services/songQuotaService'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
+import { enforceCardCodeRedemptionRateLimit } from '#server/utils/card-code-redemption-rate-limit'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

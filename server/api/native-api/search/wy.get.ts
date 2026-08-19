@@ -1,5 +1,5 @@
-import { wyEapiRequest } from '../../../utils/native_wy'
-import { formatPlayTime, sizeFormate } from '../../../utils/native_common'
+import { wyEapiRequest } from '#server/utils/native_wy'
+import { formatPlayTime, sizeFormate } from '#server/utils/native_common'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

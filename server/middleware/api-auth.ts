@@ -1,16 +1,16 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq, sql } from 'drizzle-orm'
-import { ApiLogService } from '~~/server/services/apiLogService'
+import { ApiLogService } from '#server/services/apiLogService'
 import {
   API_ERROR_CODES,
   API_ERROR_MESSAGES,
   API_KEY_CONSTANTS,
   HTTP_STATUS
-} from '~~/server/config/constants'
+} from '#server/config/constants'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { getIPBlockRemainingTime, isIPBlocked } from '~~/server/services/securityService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { verifyApiKey } from '~~/server/utils/apiKeyUtils'
+import { getIPBlockRemainingTime, isIPBlocked } from '#server/services/securityService'
+import { getClientIP } from '#server/utils/ip-utils'
+import { verifyApiKey } from '#server/utils/apiKeyUtils'
 
 const truncateResponseBody = (responseBody: any, maxLength = 10000) => {
   try {

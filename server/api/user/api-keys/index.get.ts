@@ -1,7 +1,7 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 

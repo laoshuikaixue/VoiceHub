@@ -1,8 +1,8 @@
 import { and, isNotNull, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { verifyBindingToken } from '~~/server/utils/oauth-token'
-import { createApiError } from '~~/server/utils/apiError'
+import { verifyBindingToken } from '#server/utils/oauth-token'
+import { createApiError } from '#server/utils/apiError'
 
 const smartSort = (a: string, b: string) => {
   const gradeOrder: Record<string, number> = {

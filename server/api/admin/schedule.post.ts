@@ -4,9 +4,9 @@ import { and, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import {
   createSongSelectedNotification,
   createReplaySongSelectedNotification
-} from '../../services/notificationService'
-import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
-import { getServerDate } from '~~/server/utils/serverTime'
+} from '#server/services/notificationService'
+import { fulfillReplayRequestsForSchedule } from '#server/utils/scheduleReplayBinding'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

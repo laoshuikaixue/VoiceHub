@@ -1,7 +1,7 @@
 import { generateAuthenticationOptions } from '@simplewebauthn/server'
-import { setWebAuthnChallenge } from '~~/server/utils/webauthn-token'
-import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
-import { createApiError } from '~~/server/utils/apiError'
+import { setWebAuthnChallenge } from '#server/utils/webauthn-token'
+import { getWebAuthnConfig } from '#server/utils/webauthn-config'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const { rpID } = getWebAuthnConfig(event)

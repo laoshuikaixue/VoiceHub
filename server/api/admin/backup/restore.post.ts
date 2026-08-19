@@ -26,7 +26,7 @@ import {
 } from '~/drizzle/schema'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { SmtpService } from '../../../services/smtpService'
+import { SmtpService } from '#server/services/smtpService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

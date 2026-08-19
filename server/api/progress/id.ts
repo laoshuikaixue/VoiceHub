@@ -1,5 +1,5 @@
 import { createError, defineEventHandler } from 'h3'
-import { generateProgressId } from './events'
+import { generateProgressId } from '#server/api/progress/events'
 
 export default defineEventHandler((event) => {
   // 检查认证

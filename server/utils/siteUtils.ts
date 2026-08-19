@@ -1,4 +1,4 @@
-import { getSystemSettingsCached } from './system-settings-helper'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 /**
  * 获取站点标题

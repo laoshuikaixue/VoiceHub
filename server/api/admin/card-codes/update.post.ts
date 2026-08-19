@@ -2,9 +2,9 @@ import { readBody } from 'h3'
 import { and, inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { cardCodeRedeemLogs, cardCodes } from '~/drizzle/schema'
-import { CARD_CODE_MUTABLE_STATUSES } from '../../../card-codes/statuses'
-import { getServerDate } from '~~/server/utils/serverTime'
-import { requireCardCodeAdministrator } from './_shared'
+import { CARD_CODE_MUTABLE_STATUSES } from '#server/card-codes/statuses'
+import { getServerDate } from '#server/utils/serverTime'
+import { requireCardCodeAdministrator } from '#server/api/admin/card-codes/_shared'
 
 export default defineEventHandler(async (event) => {
   const user = requireCardCodeAdministrator(event)

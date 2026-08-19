@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import type { SystemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { migrateLegacyQuotaSettings } from '~~/server/utils/song-quota-policy'
+import { migrateLegacyQuotaSettings } from '#server/utils/song-quota-policy'
 
 export async function ensureSongQuotaSettingsMigrated(
   settings: SystemSettings

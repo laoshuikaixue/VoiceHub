@@ -1,10 +1,10 @@
 import { db, userIdentities, eq, and, users, systemSettings } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { getClientIP } from '#server/utils/ip-utils'
+import { getServerTimestamp } from '#server/utils/serverTime'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { verifyBindingToken } from '~~/server/utils/oauth-token'
-import { isSecureRequest } from '~~/server/utils/request-utils'
+import { verifyBindingToken } from '#server/utils/oauth-token'
+import { isSecureRequest } from '#server/utils/request-utils'
 import {
   delStore,
   delStoreIfValue,
@@ -12,15 +12,15 @@ import {
   incrStore,
   parseStoreJson,
   verifyStateCode
-} from '~~/server/utils/captchaStore'
+} from '#server/utils/captchaStore'
 import otplib from 'otplib'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 import {
   computeRequirePasswordChange,
   resolveRequirePasswordChange
-} from '~~/server/utils/system-settings-helper'
-import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
-import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
+} from '#server/utils/system-settings-helper'
+import { getPasswordSetupState } from '#server/utils/initial-password-policy'
+import { canBindOAuthIdentity } from '#server/utils/auth-route-policy'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5

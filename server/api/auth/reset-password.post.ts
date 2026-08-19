@@ -2,18 +2,18 @@ import crypto from 'node:crypto'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { updateUserPassword } from '~~/server/services/userService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { createApiError } from '~~/server/utils/apiError'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { updateUserPassword } from '#server/services/userService'
+import { getClientIP } from '#server/utils/ip-utils'
+import { checkDistributedRateLimit } from '#server/utils/rateLimiter'
+import { getServerTimestamp } from '#server/utils/serverTime'
+import { createApiError } from '#server/utils/apiError'
 import { getPasswordPolicyViolation } from '~/utils/password-policy'
 import {
   PASSWORD_AUDIT_ACTIONS,
   getPasswordAuditContext,
   recordPasswordAudit
-} from '~~/server/services/passwordSecurityService'
+} from '#server/services/passwordSecurityService'
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)

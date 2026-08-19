@@ -5,8 +5,8 @@ import {
   maskPublicScheduleData,
   stripAnonymousSongIdentifiersFromSchedules,
   type PublicScheduleItem
-} from '../../utils/studentMask'
-import { verifyUserAuth } from '../../utils/auth'
+} from '#server/utils/studentMask'
+import { verifyUserAuth } from '#server/utils/auth'
 
 const formatDisplayName = (
   user: { name?: string | null; grade?: string | null; class?: string | null },

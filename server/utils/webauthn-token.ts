@@ -1,5 +1,5 @@
 import { getCookie, setCookie, deleteCookie, type H3Event } from 'h3'
-import { JWTEnhanced } from './jwt-enhanced'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
 
 const COOKIE_NAME = 'webauthn_challenge'
 

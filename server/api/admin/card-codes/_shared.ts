@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
 
 const CARD_ADMIN_ROLES = ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN']
 

@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { getStatusText } from '~~/server/utils/user'
+import { getStatusText } from '#server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {

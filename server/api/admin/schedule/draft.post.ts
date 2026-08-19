@@ -1,8 +1,8 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { createApiError } from '~~/server/utils/apiError'
+import { getClientIP } from '#server/utils/ip-utils'
+import { createApiError } from '#server/utils/apiError'
 
 // 输入验证函数
 function validateInput(body: any) {

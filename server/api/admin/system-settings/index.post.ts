@@ -1,17 +1,17 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
-import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from '#server/api/admin/system-settings/secretMask'
+import { SYSTEM_SETTINGS_DEFAULTS } from '#server/utils/system-settings-defaults'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
   normalizeAggregateOAuthLoginTypes
-} from '~~/server/utils/oauth-providers'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, SONG_QUOTA_PERIODS } from '~~/server/config/constants'
-import { mergeAndValidateSongQuotaSettings } from '~~/server/utils/song-quota-policy'
-import { ensureSongQuotaSettingsMigrated } from '~~/server/utils/system-settings-helper'
+} from '#server/utils/oauth-providers'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, SONG_QUOTA_PERIODS } from '#server/config/constants'
+import { mergeAndValidateSongQuotaSettings } from '#server/utils/song-quota-policy'
+import { ensureSongQuotaSettingsMigrated } from '#server/utils/system-settings-helper'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）

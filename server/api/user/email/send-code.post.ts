@@ -1,12 +1,12 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { SmtpService } from '~~/server/services/smtpService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { delStoreIfValue, hashStateCode, setStore } from '~~/server/utils/captchaStore'
+import { SmtpService } from '#server/services/smtpService'
+import { getClientIP } from '#server/utils/ip-utils'
+import { getServerTimestamp } from '#server/utils/serverTime'
+import { delStoreIfValue, hashStateCode, setStore } from '#server/utils/captchaStore'
 import { randomInt } from 'node:crypto'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 function generateCode(): string {
   return randomInt(100000, 1000000).toString()

@@ -1,11 +1,11 @@
 import { getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
 import {
   buildPublicSongQuotaTransaction,
   listSongQuotaTransactions
-} from '~~/server/services/songQuotaService'
-import { createApiError } from '~~/server/utils/apiError'
+} from '#server/services/songQuotaService'
+import { createApiError } from '#server/utils/apiError'
 
 const parsePositiveInteger = (value: unknown, fallback: number, maximum: number) => {
   const parsed = typeof value === 'string' ? Number.parseInt(value, 10) : Number.NaN

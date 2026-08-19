@@ -1,12 +1,12 @@
 import { and, asc, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
 import {
   serializeNotificationSender,
   shouldCheckImportantNotification
-} from '~~/server/utils/important-notification-policy'
+} from '#server/utils/important-notification-policy'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

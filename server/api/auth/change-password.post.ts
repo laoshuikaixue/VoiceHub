@@ -2,19 +2,19 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
-import { updateUserPassword } from '../../services/userService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { createApiError } from '~~/server/utils/apiError'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { isSecureRequest } from '~~/server/utils/request-utils'
+import { recordLoginFailure, recordLoginSuccess } from '#server/services/securityService'
+import { updateUserPassword } from '#server/services/userService'
+import { getClientIP } from '#server/utils/ip-utils'
+import { createApiError } from '#server/utils/apiError'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { isSecureRequest } from '#server/utils/request-utils'
 import { getPasswordPolicyViolation } from '~/utils/password-policy'
 import {
   PASSWORD_AUDIT_ACTIONS,
   consumePasswordRateLimit,
   getPasswordAuditContext,
   recordPasswordAudit
-} from '~~/server/services/passwordSecurityService'
+} from '#server/services/passwordSecurityService'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份

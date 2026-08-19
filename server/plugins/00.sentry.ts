@@ -5,8 +5,8 @@ import {
   isExpectedUpstreamMusicError,
   stringifyErrorValue
 } from '~~/app/utils/sentryUpstreamMusicErrors'
-import { getInstanceIdInfo } from '../utils/instance-id'
-import { isTelemetryEnabled, isTelemetryEnabledCached } from '../utils/telemetry'
+import { getInstanceIdInfo } from '#server/utils/instance-id'
+import { isTelemetryEnabled, isTelemetryEnabledCached } from '#server/utils/telemetry'
 
 declare global {
   var __voicehubSentryServerInitialized: boolean | undefined

@@ -4,13 +4,13 @@ import { inArray, and, asc, eq, gte, lte } from 'drizzle-orm'
 import {
   createSongSelectedNotification,
   createReplaySongSelectedNotification
-} from '~~/server/services/notificationService'
-import { getClientIP } from '~~/server/utils/ip-utils'
+} from '#server/services/notificationService'
+import { getClientIP } from '#server/utils/ip-utils'
 import {
   fulfillReplayRequestsForSchedule,
   restoreReplayRequestsToPending
-} from '~~/server/utils/scheduleReplayBinding'
-import { getServerDate } from '~~/server/utils/serverTime'
+} from '#server/utils/scheduleReplayBinding'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

@@ -2,7 +2,7 @@ import { readBody } from 'h3'
 import { inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
-import { requireCardCodeAdministrator } from './_shared'
+import { requireCardCodeAdministrator } from '#server/api/admin/card-codes/_shared'
 
 const MAX_BATCH_COUNT = 10000
 

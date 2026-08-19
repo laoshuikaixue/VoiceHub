@@ -1,9 +1,9 @@
 import { generateRegistrationOptions } from '@simplewebauthn/server'
 import { isoUint8Array } from '@simplewebauthn/server/helpers'
-import { setWebAuthnChallenge } from '~~/server/utils/webauthn-token'
-import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
+import { setWebAuthnChallenge } from '#server/utils/webauthn-token'
+import { getWebAuthnConfig } from '#server/utils/webauthn-config'
 import { db, eq, and, userIdentities } from '~/drizzle/db'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

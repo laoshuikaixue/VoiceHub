@@ -22,9 +22,9 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { uploadToS3 } from '~~/server/utils/s3Client'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { uploadToS3 } from '#server/utils/s3Client'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 
 /** 外部服务调用超时（毫秒） */

@@ -1,12 +1,12 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { SmtpService } from '~~/server/services/smtpService'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
-import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { createApiError } from '~~/server/utils/apiError'
+import { SmtpService } from '#server/services/smtpService'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { formatIPForEmail, getClientIP } from '#server/utils/ip-utils'
+import { checkDistributedRateLimit } from '#server/utils/rateLimiter'
+import { getServerTimestamp } from '#server/utils/serverTime'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)

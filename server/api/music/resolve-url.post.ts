@@ -2,11 +2,11 @@ import {
   getTxSongPlayableInfo,
   normalizeTxMusicId,
   upgradeTxAudioUrl
-} from '~~/server/utils/native_tx'
+} from '#server/utils/native_tx'
 import {
   getQqCookieDiagnostic,
   normalizeQqCookie
-} from '~~/server/utils/qq_music_sdk'
+} from '#server/utils/qq_music_sdk'
 
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']

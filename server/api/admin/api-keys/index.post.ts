@@ -1,8 +1,8 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { apiPermissionSchema } from './permissions'
-import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
+import { apiPermissionSchema } from '#server/api/admin/api-keys/permissions'
+import { generateApiKey, hashApiKey } from '#server/utils/apiKeyUtils'
 
 /**
  * 创建API Key

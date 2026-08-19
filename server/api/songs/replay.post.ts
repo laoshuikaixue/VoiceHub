@@ -1,6 +1,6 @@
 import { and, db, desc, eq, songs, songReplayRequests, semesters, playTimes } from '~/drizzle/db'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
-import { createApiError } from '~~/server/utils/apiError'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
+import { createApiError } from '#server/utils/apiError'
 import { z } from 'zod'
 
 const replayRequestSchema = z.object({

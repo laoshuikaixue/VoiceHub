@@ -1,4 +1,4 @@
-import { disconnectRedis, getRedisClient, isRedisConfigured } from '~~/server/utils/redis'
+import { disconnectRedis, getRedisClient, isRedisConfigured } from '#server/utils/redis'
 
 export default defineNitroPlugin((nitroApp) => {
   if (isRedisConfigured()) {

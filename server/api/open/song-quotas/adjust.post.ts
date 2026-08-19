@@ -1,16 +1,16 @@
 import { getHeader, readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { runSongQuotaDrizzleTransaction } from '~~/server/services/songQuotaDrizzleAdapter'
-import { adjustPermanentSongQuota } from '~~/server/services/songQuotaService'
-import { fingerprintQuotaAdjustment } from '~~/server/utils/song-quota-policy'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { runSongQuotaDrizzleTransaction } from '#server/services/songQuotaDrizzleAdapter'
+import { adjustPermanentSongQuota } from '#server/services/songQuotaService'
+import { fingerprintQuotaAdjustment } from '#server/utils/song-quota-policy'
+import { getServerDate } from '#server/utils/serverTime'
 import {
   enforceOpenSongQuotaRateLimit,
   openSongQuotaAdjustmentSchema,
   requireOpenSongQuotaApiKey,
   requireOpenSongQuotaUser,
   throwInvalidOpenSongQuotaInput
-} from './_shared'
+} from '#server/api/open/song-quotas/_shared'
 
 export default defineEventHandler(async (event) => {
   const apiKey = requireOpenSongQuotaApiKey(event)

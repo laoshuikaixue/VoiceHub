@@ -1,4 +1,4 @@
-import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { MUSIC_SOURCE_PLATFORMS } from '#server/config/constants'
 
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,

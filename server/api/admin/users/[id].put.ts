@@ -2,14 +2,14 @@ import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { updateUserPassword } from '~~/server/services/userService'
-import { createSystemNotification } from '~~/server/services/notificationService'
+import { updateUserPassword } from '#server/services/userService'
+import { createSystemNotification } from '#server/services/notificationService'
 import {
   PASSWORD_AUDIT_ACTIONS,
   getPasswordAuditContext
-} from '~~/server/services/passwordSecurityService'
-import { createApiError } from '~~/server/utils/apiError'
-import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+} from '#server/services/passwordSecurityService'
+import { createApiError } from '#server/utils/apiError'
+import { getAdminPasswordViolation } from '#server/utils/admin-password-policy'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {

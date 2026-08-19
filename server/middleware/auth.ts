@@ -1,19 +1,19 @@
-import { JWTEnhanced } from '../utils/jwt-enhanced'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
 import type { H3Event } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
-import { isSupportedOAuthProvider } from '../services/oauthConfigService'
-import { isSecureRequest } from '../utils/request-utils'
-import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
+import { isUserBlocked, getUserBlockRemainingTime } from '#server/services/securityService'
+import { isSupportedOAuthProvider } from '#server/services/oauthConfigService'
+import { isSecureRequest } from '#server/utils/request-utils'
+import { resolveRequirePasswordChange } from '#server/utils/system-settings-helper'
 import {
   isPublicApiPath,
   shouldBlockDuringPasswordChange,
   shouldBypassPublicApiAuthentication
-} from '../utils/auth-route-policy'
-import { getPasswordSetupState } from '../utils/initial-password-policy'
-import { createApiError } from '../utils/apiError'
+} from '#server/utils/auth-route-policy'
+import { getPasswordSetupState } from '#server/utils/initial-password-policy'
+import { createApiError } from '#server/utils/apiError'
 
 function clearAuthCookie(event: H3Event) {
   setCookie(event, 'auth-token', '', {

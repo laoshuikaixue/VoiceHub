@@ -1,6 +1,6 @@
 import { db, eq, and, userIdentities } from '~/drizzle/db'
-import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
-import { createApiError } from '~~/server/utils/apiError'
+import { getWebAuthnConfig } from '#server/utils/webauthn-config'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

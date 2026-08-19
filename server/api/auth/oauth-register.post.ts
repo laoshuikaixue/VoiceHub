@@ -1,12 +1,12 @@
 import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { verifyBindingToken } from '~~/server/utils/oauth-token'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { verifyBindingToken } from '#server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
-import { isSecureRequest } from '~~/server/utils/request-utils'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { isSecureRequest } from '#server/utils/request-utils'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册

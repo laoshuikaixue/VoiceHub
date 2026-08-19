@@ -1,14 +1,14 @@
 import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { runSongQuotaDrizzleTransaction } from '~~/server/services/songQuotaDrizzleAdapter'
-import { adjustPermanentSongQuotaByOperation } from '~~/server/services/songQuotaService'
-import { fingerprintQuotaAdjustment } from '~~/server/utils/song-quota-policy'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { runSongQuotaDrizzleTransaction } from '#server/services/songQuotaDrizzleAdapter'
+import { adjustPermanentSongQuotaByOperation } from '#server/services/songQuotaService'
+import { fingerprintQuotaAdjustment } from '#server/utils/song-quota-policy'
+import { getServerDate } from '#server/utils/serverTime'
 import {
   adminSongQuotaAdjustmentSchema,
   requireSongQuotaAdministrator,
   throwInvalidSongQuotaInput
-} from './_shared'
+} from '#server/api/admin/song-quotas/_shared'
 
 export default defineEventHandler(async (event) => {
   const administrator = requireSongQuotaAdministrator(event)

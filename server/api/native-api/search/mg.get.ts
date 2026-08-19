@@ -1,4 +1,4 @@
-import { formatPlayTime } from '../../../utils/native_common'
+import { formatPlayTime } from '#server/utils/native_common'
 
 /**
  * 咪咕网页 v5 搜索接口

@@ -1,8 +1,8 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { createApiError } from '~~/server/utils/apiError'
+import { getClientIP } from '#server/utils/ip-utils'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法

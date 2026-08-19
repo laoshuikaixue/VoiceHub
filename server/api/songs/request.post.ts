@@ -1,5 +1,5 @@
-import { requestSongForUser } from '~~/server/services/songRequestService'
-import { createApiError } from '~~/server/utils/apiError'
+import { requestSongForUser } from '#server/services/songRequestService'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

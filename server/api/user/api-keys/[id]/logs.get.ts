@@ -2,7 +2,7 @@ import { apiKeyPermissions, apiKeys, apiLogs, db } from '~/drizzle/db'
 import { and, count, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 const apiKeyIdSchema = z.string().uuid('无效的令牌 ID')

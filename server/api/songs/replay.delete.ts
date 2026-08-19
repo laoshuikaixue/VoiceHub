@@ -1,5 +1,5 @@
 import { and, db, eq, songReplayRequests } from '~/drizzle/db'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 1. 检查用户认证

@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import { z } from 'zod'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
 
 const ADMINISTRATOR_ROLES = ['ADMIN', 'SUPER_ADMIN']
 const QUOTA_TYPES = ['PERIODIC', 'PERMANENT'] as const

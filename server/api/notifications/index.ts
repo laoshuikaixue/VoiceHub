@@ -2,7 +2,7 @@ import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { notifications, songCollaborators, songs } from '~/drizzle/schema'
-import { serializeNotificationSender } from '~~/server/utils/important-notification-policy'
+import { serializeNotificationSender } from '#server/utils/important-notification-policy'
 
 const serializeNotification = <T extends {
   senderId: number | null

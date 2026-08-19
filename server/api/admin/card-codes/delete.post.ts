@@ -1,6 +1,6 @@
 import { readBody } from 'h3'
-import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
-import { requireCardCodeAdministrator } from './_shared'
+import { deleteCardCodesByIds } from '#server/services/cardCodeDeleteService'
+import { requireCardCodeAdministrator } from '#server/api/admin/card-codes/_shared'
 
 const parseIds = (body: any): number[] => {
   const rawIds = Array.isArray(body?.ids) ? body.ids : body?.id !== undefined ? [body.id] : []

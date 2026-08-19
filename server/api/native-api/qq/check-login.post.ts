@@ -3,7 +3,7 @@ import {
   getQqCookieDiagnostic,
   getQqUserAvatar,
   normalizeQqCookie
-} from '~~/server/utils/qq_music_sdk'
+} from '#server/utils/qq_music_sdk'
 
 const getSessionCookie = (session: any) => {
   if (typeof session?.cookie === 'string') return session.cookie

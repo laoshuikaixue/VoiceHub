@@ -1,9 +1,9 @@
 import { db } from '~/drizzle/db'
-import { createSongPlayedNotification } from '~~/server/services/notificationService'
+import { createSongPlayedNotification } from '#server/services/notificationService'
 import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, asc, inArray } from 'drizzle-orm'
-import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { restoreReplayRequestsToPending } from '#server/utils/scheduleReplayBinding'
+import { getServerDate } from '#server/utils/serverTime'
 import { z } from 'zod'
 
 const markPlayedSchema = z.object({

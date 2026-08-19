@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { MUSIC_SOURCE_PLATFORMS } from '#server/config/constants'
 
 const DEFAULT_PLATFORMS = [...MUSIC_SOURCE_PLATFORMS]
 

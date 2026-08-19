@@ -1,12 +1,12 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { getAggregateOAuthLoginTypesOrDefault } from '~~/server/utils/oauth-providers'
+import { getAggregateOAuthLoginTypesOrDefault } from '#server/utils/oauth-providers'
 
-export type { OAuthProvider } from '~~/server/utils/oauth-providers'
+export type { OAuthProvider } from '#server/utils/oauth-providers'
 export {
   SUPPORTED_OAUTH_PROVIDERS,
   isSupportedOAuthProvider
-} from '~~/server/utils/oauth-providers'
+} from '#server/utils/oauth-providers'
 
 export interface ProviderRuntimeConfig {
   clientId?: string

@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

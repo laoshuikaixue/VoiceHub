@@ -2,11 +2,11 @@ import { setResponseHeader, type H3Event } from 'h3'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, users } from '~/drizzle/db'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { createApiError } from '~~/server/utils/apiError'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
+import { getClientIP } from '#server/utils/ip-utils'
+import { checkDistributedRateLimit } from '#server/utils/rateLimiter'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 const positiveUserId = z.coerce.number().int().positive().max(2_147_483_647)
 const positiveIntegerQuery = (fallback: number, maximum: number) =>

@@ -1,14 +1,14 @@
 import { getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
-import { getSongQuotaAccountDetails } from '~~/server/services/songQuotaService'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
+import { getSongQuotaAccountDetails } from '#server/services/songQuotaService'
 import {
   enforceOpenSongQuotaRateLimit,
   openSongQuotaAccountQuerySchema,
   requireOpenSongQuotaApiKey,
   requireOpenSongQuotaUser,
   throwInvalidOpenSongQuotaInput
-} from './_shared'
+} from '#server/api/open/song-quotas/_shared'
 
 export default defineEventHandler(async (event) => {
   const apiKey = event.context.apiKey

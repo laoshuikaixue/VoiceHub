@@ -4,8 +4,8 @@ import { and, eq, ne } from 'drizzle-orm'
 import {
   createSongSelectedNotification,
   createReplaySongSelectedNotification
-} from '~~/server/services/notificationService'
-import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
+} from '#server/services/notificationService'
+import { fulfillReplayRequestsForSchedule } from '#server/utils/scheduleReplayBinding'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {

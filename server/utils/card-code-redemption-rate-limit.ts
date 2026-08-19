@@ -1,9 +1,9 @@
 import { setResponseHeader, type H3Event } from 'h3'
-import { SERVER_ERROR_CODES } from '../config/constants'
-import { createApiError } from './apiError'
-import { getClientIP } from './ip-utils'
-import { checkDistributedRateLimit } from './rateLimiter'
-import { getServerTimestamp } from './serverTime'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
+import { getClientIP } from '#server/utils/ip-utils'
+import { checkDistributedRateLimit } from '#server/utils/rateLimiter'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 const USER_BURST_LIMIT = 5
 const USER_BURST_WINDOW_MS = 60 * 1000

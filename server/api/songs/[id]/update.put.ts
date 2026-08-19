@@ -7,8 +7,8 @@ import {
   songReplayRequests
 } from '~/drizzle/schema'
 import { eq, or, and } from 'drizzle-orm'
-import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
-import { createApiError } from '~~/server/utils/apiError'
+import { createSubmissionNoteClearedNotification } from '#server/services/notificationService'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   try {

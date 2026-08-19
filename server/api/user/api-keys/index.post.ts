@@ -1,8 +1,8 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
-import { createApiError } from '~~/server/utils/apiError'
+import { generateApiKey, hashApiKey } from '#server/utils/apiKeyUtils'
+import { createApiError } from '#server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 

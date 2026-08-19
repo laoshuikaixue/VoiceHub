@@ -1,4 +1,4 @@
-import { getServerTimestamp } from './serverTime'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 // 简易的内存限流器实现，带有最大容量限制防止内存溢出
 // 如果项目扩展为多实例/Serverless，建议替换为 Redis 或基于数据库的实现

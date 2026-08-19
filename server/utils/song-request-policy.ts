@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { createApiError } from './apiError.ts'
+import { createApiError } from '#server/utils/apiError'
 
 const ADMINISTRATOR_ROLES = ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN']
 

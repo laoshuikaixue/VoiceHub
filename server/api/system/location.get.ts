@@ -1,4 +1,4 @@
-import { getServerLocation } from '../../utils/geo'
+import { getServerLocation } from '#server/utils/geo'
 
 export default defineEventHandler(async (event) => {
   // 缓存 1 小时，避免频繁请求外部 IP 服务

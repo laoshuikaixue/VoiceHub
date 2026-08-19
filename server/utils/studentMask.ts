@@ -1,4 +1,4 @@
-import { maskStudentName } from './siteUtils'
+import { maskStudentName } from '#server/utils/siteUtils'
 
 /**
  * 可脱敏的用户/参与者接口

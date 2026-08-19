@@ -1,13 +1,13 @@
 import { db } from '~/drizzle/db'
-import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
 import {
   buildSongQuotaAccountResponse,
   getSongQuotaAccount
-} from '~~/server/services/songQuotaService'
-import { createApiError } from '~~/server/utils/apiError'
-import { getServerDate } from '~~/server/utils/serverTime'
-import { isSongAdministrator } from '~~/server/utils/song-request-policy'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+} from '#server/services/songQuotaService'
+import { createApiError } from '#server/utils/apiError'
+import { getServerDate } from '#server/utils/serverTime'
+import { isSongAdministrator } from '#server/utils/song-request-policy'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 const PERIOD_TYPES = ['DAILY', 'WEEKLY', 'MONTHLY'] as const
 

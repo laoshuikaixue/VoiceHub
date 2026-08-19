@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
-import { prepareBackup, executeUploads, acquireBackupLock, releaseBackupLock } from '~~/server/services/autoBackupService'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { prepareBackup, executeUploads, acquireBackupLock, releaseBackupLock } from '#server/services/autoBackupService'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
 
 export default defineEventHandler(async () => {
   acquireBackupLock()

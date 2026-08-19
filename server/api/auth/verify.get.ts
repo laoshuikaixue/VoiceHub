@@ -1,9 +1,9 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
-import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
-import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { createApiError } from '#server/utils/apiError'
+import { resolveRequirePasswordChange } from '#server/utils/system-settings-helper'
+import { getPasswordSetupState } from '#server/utils/initial-password-policy'
 
 export default defineEventHandler(async (event) => {
   const authUser = event.context.user

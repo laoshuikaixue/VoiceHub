@@ -2,8 +2,8 @@ import { defineEventHandler, getRouterParam } from 'h3'
 import { eq, desc } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { backupHistory } from '~/drizzle/schema'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
 
 /** 60 秒超时阈值 */
 const TIMEOUT_THRESHOLD_MS = 60_000

@@ -1,8 +1,8 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
-import { ensureSongQuotaSettingsMigrated } from '../utils/system-settings-helper'
-import { getInstanceId } from '../utils/instance-id'
+import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '#server/utils/system-settings-defaults'
+import { ensureSongQuotaSettingsMigrated } from '#server/utils/system-settings-helper'
+import { getInstanceId } from '#server/utils/instance-id'
 
 export default defineEventHandler(async () => {
   try {

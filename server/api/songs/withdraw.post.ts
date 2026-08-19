@@ -8,11 +8,11 @@ import {
   requestTimes
 } from '~/drizzle/schema'
 import { and, eq, sql } from 'drizzle-orm'
-import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
-import { executeSongWithdrawal } from '~~/server/services/songQuotaService'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
-import { createApiError } from '~~/server/utils/apiError'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
+import { executeSongWithdrawal } from '#server/services/songQuotaService'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
+import { createApiError } from '#server/utils/apiError'
+import { getServerDate } from '#server/utils/serverTime'
 
 const SONG_QUOTA_PERIOD_TYPES = ['DAILY', 'WEEKLY', 'MONTHLY'] as const
 

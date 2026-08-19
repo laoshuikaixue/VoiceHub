@@ -1,6 +1,6 @@
-import { requestSongForUser } from '~~/server/services/songRequestService'
-import { createApiError } from '~~/server/utils/apiError'
-import { isSongAdministrator, validateAdminSongAddBody } from '~~/server/utils/song-request-policy'
+import { requestSongForUser } from '#server/services/songRequestService'
+import { createApiError } from '#server/utils/apiError'
+import { isSongAdministrator, validateAdminSongAddBody } from '#server/utils/song-request-policy'
 
 export default defineEventHandler(async (event) => {
   if (event.node.req.method !== 'POST') {

@@ -1,8 +1,8 @@
 import { and, eq, gte, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { getClientIP } from '#server/utils/ip-utils'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

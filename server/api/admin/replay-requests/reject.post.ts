@@ -1,6 +1,6 @@
 import { db, songReplayRequests, songs } from '~/drizzle/db'
 import { eq, and } from 'drizzle-orm'
-import { createReplayRequestRejectedNotification } from '~~/server/services/notificationService'
+import { createReplayRequestRejectedNotification } from '#server/services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查管理员权限

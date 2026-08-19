@@ -1,6 +1,6 @@
 import { createError } from 'h3'
-import type { ProviderRuntimeConfig } from '~~/server/services/oauthConfigService'
-import { isSafeAggregateOAuthUrl } from '~~/server/utils/oauth-providers'
+import type { ProviderRuntimeConfig } from '#server/services/oauthConfigService'
+import { isSafeAggregateOAuthUrl } from '#server/utils/oauth-providers'
 
 const getObjectByPath = (source: any, path?: string): any => {
   if (!source || !path) return undefined

@@ -4,15 +4,15 @@ import { users } from '~/drizzle/schema'
 import {
   createBatchSystemNotifications,
   createSystemNotification
-} from '~~/server/services/notificationService'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+} from '#server/services/notificationService'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
 import {
   canSendSystemNotification,
   NOTIFICATION_CONTENT_MAX_LENGTH,
   NOTIFICATION_TITLE_MAX_LENGTH,
   resolveImportantFlag
-} from '~~/server/utils/important-notification-policy'
+} from '#server/utils/important-notification-policy'
 
 type NotificationFilter = {
   grade?: unknown

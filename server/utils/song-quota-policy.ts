@@ -3,7 +3,7 @@ import {
   SONG_QUOTA_PERIODS,
   type SongQuotaPeriod,
   type SongQuotaType
-} from '../config/constants.ts'
+} from '#server/config/constants'
 
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000

@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { RedisClientType } from 'redis'
-import { buildRedisKey, getRedisClient, isRedisConfigured } from './redis'
-import { getServerTimestamp } from './serverTime'
+import { buildRedisKey, getRedisClient, isRedisConfigured } from '#server/utils/redis'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 interface MemoryRecord {
   value: string

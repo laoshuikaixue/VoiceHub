@@ -5,16 +5,16 @@ import {
   getOAuthStateCookieNames,
   getRedirectUri,
   getSafeOAuthReturnPath
-} from '~~/server/utils/oauth'
-import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
+} from '#server/utils/oauth'
+import { getOAuthStrategy } from '#server/utils/oauth-strategies'
 import {
   getOAuthBaseConfig,
   getProviderRuntimeConfig,
   isOAuthProviderEnabled,
   isSupportedOAuthProvider
-} from '~~/server/services/oauthConfigService'
-import { getRequestOrigin, getSafeRequestProtocol } from '~~/server/utils/request-utils'
-import { createApiError } from '~~/server/utils/apiError'
+} from '#server/services/oauthConfigService'
+import { getRequestOrigin, getSafeRequestProtocol } from '#server/utils/request-utils'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')

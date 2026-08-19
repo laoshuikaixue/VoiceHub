@@ -1,7 +1,7 @@
 import { db, users } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
-import { requestSongForUser } from '~~/server/services/songRequestService'
-import { createApiError } from '~~/server/utils/apiError'
+import { requestSongForUser } from '#server/services/songRequestService'
+import { createApiError } from '#server/utils/apiError'
 
 const ALLOWED_FIELDS = [
   'title',

@@ -10,16 +10,16 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq, gte, inArray } from 'drizzle-orm'
-import { sendBatchMeowNotifications, sendMeowNotificationToUser } from './meowNotificationService'
-import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtpService'
+import { sendBatchMeowNotifications, sendMeowNotificationToUser } from '#server/services/meowNotificationService'
+import { sendBatchEmailNotifications, sendEmailNotificationToUser } from '#server/services/smtpService'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 import {
   createNotificationSenderSnapshot,
   resolveNotificationSource,
   shouldDeliverSystemNotification,
   type NotificationSenderInput
-} from '~~/server/utils/important-notification-policy'
+} from '#server/utils/important-notification-policy'
 import { randomUUID } from 'node:crypto'
 
 /**

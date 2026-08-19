@@ -2,7 +2,7 @@ import { getQuery } from 'h3'
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
-import { requireCardCodeAdministrator } from './_shared'
+import { requireCardCodeAdministrator } from '#server/api/admin/card-codes/_shared'
 
 export default defineEventHandler(async (event) => {
   requireCardCodeAdministrator(event)
