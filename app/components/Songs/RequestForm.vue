@@ -3348,19 +3348,23 @@ const submitSong = async (result, options = {}) => {
     }
   }
 
-  // 确保获取完整的URL
-  if (!selectedUrl.value && result.musicId) {
-    const fullResult = await getAudioUrl(result)
-    result = fullResult
-    selectedUrl.value = fullResult.url || ''
-  }
-
   const actualMusicPlatform = result.actualMusicPlatform || result.musicPlatform || platform.value
-  const submissionDurationSeconds = await resolveSubmissionDuration(
-    result,
-    actualMusicPlatform,
-    selectedUrl.value
-  )
+  let submissionDurationSeconds = normalizeDurationToSeconds(result.duration, actualMusicPlatform)
+
+  // 只有平台接口没有有效时长时，才获取播放地址并读取音频元数据。
+  if (submissionDurationSeconds === null) {
+    if (!result.url && !result.file && !selectedUrl.value && result.musicId) {
+      const fullResult = await getAudioUrl(result)
+      result = fullResult
+      selectedUrl.value = fullResult.url || ''
+    }
+
+    submissionDurationSeconds = await resolveSubmissionDuration(
+      result,
+      actualMusicPlatform,
+      selectedUrl.value
+    )
+  }
 
   // 处理 Bilibili 分 P 信息
   let bilibiliCid = result.bilibiliCid
