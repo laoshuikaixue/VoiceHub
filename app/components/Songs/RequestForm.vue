@@ -124,7 +124,13 @@
           </div>
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
-            v-if="user && submissionStatus && (submissionStatus.limitEnabled || submissionStatus.timeLimitationEnabled || submissionStatus.submissionClosed)"
+            v-if="
+              user &&
+              submissionStatus &&
+              (submissionStatus.limitEnabled ||
+                submissionStatus.timeLimitationEnabled ||
+                submissionStatus.submissionClosed)
+            "
             class="submission-status-horizontal"
           >
             <!-- 超级管理员提示 -->
@@ -258,16 +264,16 @@
                       :src="convertToHttps(neteaseUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    >
+                    />
                     <span class="user-name">{{ neteaseUser?.nickname || locale.loggedIn }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio" > {{ locale.single }}
+                      <input v-model="searchType" :value="1" type="radio" /> {{ locale.single }}
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio" > {{ locale.podcast }}
+                      <input v-model="searchType" :value="1009" type="radio" /> {{ locale.podcast }}
                     </label>
                   </div>
 
@@ -386,7 +392,9 @@
               <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <label for="submission-note" class="text-[12px] font-bold text-text-secondary"
+                    <label
+                      for="submission-note"
+                      class="text-[12px] font-bold text-text-secondary"
                       >{{ locale.submissionNote }}</label
                     >
                     <div class="flex items-center gap-2">
@@ -470,7 +478,9 @@
                   <div class="flex min-w-0 items-center gap-2">
                     <div class="min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-text-primary">{{ locale.cardCode }}</span>
+                        <span class="text-xs font-black text-text-primary">{{
+                          locale.cardCode
+                        }}</span>
                         <span
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
@@ -627,7 +637,9 @@
                         <span class="similar-text">{{ locale.allEpisodesSubmitted }}</span>
                         <button
                           v-if="canResubmitBilibiliEpisodes(result)"
-                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
+                          :disabled="
+                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                          "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
@@ -643,7 +655,9 @@
                       >
                         <span class="similar-text">{{ locale.partialEpisodesSubmitted }}</span>
                         <button
-                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
+                          :disabled="
+                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                          "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                         >
@@ -668,7 +682,9 @@
                         <!-- 管理员可直接重复投稿；普通用户仅可申请重播已播放歌曲。 -->
                         <button
                           v-if="auth.isAdmin.value"
-                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
+                          :disabled="
+                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                          "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                         >
@@ -676,7 +692,9 @@
                         </button>
                         <button
                           v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
-                          :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
+                          :disabled="
+                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                          "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
@@ -745,8 +763,14 @@
                       </button>
                       <button
                         v-else
-                        :disabled="!canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting"
-                        :title="isSongBlockedByRestriction(result) ? getRestrictionMessage(getRestrictionReason(result)) : ''"
+                        :disabled="
+                          !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                        "
+                        :title="
+                          isSongBlockedByRestriction(result)
+                            ? getRestrictionMessage(getRestrictionReason(result))
+                            : ''
+                        "
                         class="select-btn"
                         @click.stop.prevent="submitSong(result)"
                       >
@@ -766,10 +790,21 @@
 
                 <!-- 手动输入按钮 -->
                 <div class="no-results-action">
-                  <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
+                  <button
+                    v-if="!user"
+                    class="manual-submit-btn"
+                    type="button"
+                    @click="handleLoginRedirect"
+                  >
                     {{ locale.loginRequiredToSubmit }}
                   </button>
-                  <button v-else :disabled="!canSubmitFromSearch" class="manual-submit-btn" type="button" @click="showManualModal = true">
+                  <button
+                    v-else
+                    :disabled="!canSubmitFromSearch"
+                    class="manual-submit-btn"
+                    type="button"
+                    @click="showManualModal = true"
+                  >
                     {{ locale.manualSubmitLong }}
                   </button>
                 </div>
@@ -780,10 +815,21 @@
                 <div class="empty-icon">🔍</div>
                 <p class="empty-text">{{ locale.noResults }}</p>
                 <p class="empty-hint">{{ locale.noResultsHint }}</p>
-                <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
+                <button
+                  v-if="!user"
+                  class="manual-submit-btn"
+                  type="button"
+                  @click="handleLoginRedirect"
+                >
                   {{ locale.loginRequiredToSubmit }}
                 </button>
-                <button v-else :disabled="!canSubmitFromSearch" class="manual-submit-btn" type="button" @click="showManualModal = true">
+                <button
+                  v-else
+                  :disabled="!canSubmitFromSearch"
+                  class="manual-submit-btn"
+                  type="button"
+                  @click="showManualModal = true"
+                >
                   {{ locale.manualSubmit }}
                 </button>
               </div>
@@ -791,7 +837,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" >
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" />
                 </div>
               </div>
             </Transition>
@@ -921,7 +967,9 @@
             class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
             @click.stop
           >
-            <div class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4">
+            <div
+              class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4"
+            >
               <div>
                 <div class="flex items-center gap-2">
                   <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
@@ -1046,12 +1094,13 @@
                 />
               </div>
 
-              <h3 class="mt-6 text-xl font-bold text-text-primary tracking-tight">{{ locale.audioMatch }}</h3>
+              <h3 class="mt-6 text-xl font-bold text-text-primary tracking-tight">
+                {{ locale.audioMatch }}
+              </h3>
 
               <p class="mt-2 text-sm text-text-tertiary max-w-[260px]">
                 {{
-                  audioMatchStatus ||
-                  (audioMatchError ? audioMatchError : locale.audioMatchHint)
+                  audioMatchStatus || (audioMatchError ? audioMatchError : locale.audioMatchHint)
                 }}
               </p>
 
@@ -1092,7 +1141,9 @@
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
               <div class="border-t border-border-secondary-60 pt-5">
-                <h4 class="text-sm font-semibold text-text-secondary mb-4">{{ locale.audioMatchResults }}</h4>
+                <h4 class="text-sm font-semibold text-text-secondary mb-4">
+                  {{ locale.audioMatchResults }}
+                </h4>
                 <div class="space-y-2">
                   <button
                     v-for="match in audioMatchResults"
@@ -1119,7 +1170,9 @@
                         </div>
                       </div>
                       <div class="min-w-0 text-left flex-1">
-                        <p class="truncate text-sm font-medium text-text-primary">{{ match.name }}</p>
+                        <p class="truncate text-sm font-medium text-text-primary">
+                          {{ match.name }}
+                        </p>
                         <p class="truncate text-xs text-text-tertiary mt-0.5">{{ match.artist }}</p>
                       </div>
                       <div class="shrink-0 text-right">
@@ -1166,7 +1219,9 @@
                 >
                   <Edit3 :size="24" />
                 </div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.manualTitle }}</h3>
+                <h3 class="text-xl font-black text-text-primary tracking-tight">
+                  {{ locale.manualTitle }}
+                </h3>
               </div>
               <button
                 class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
@@ -1181,7 +1236,8 @@
               <div class="grid grid-cols-1 gap-6">
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                  <label
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.songName }}</label
                   >
                   <div class="relative group">
@@ -1326,7 +1382,7 @@
                 {{ locale.cancel }}
               </button>
               <button
-                :disabled="(!canSubmitFromSearch || !canSubmitManualForm || submitting)"
+                :disabled="!canSubmitFromSearch || !canSubmitManualForm || submitting"
                 class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
                 type="button"
                 @click="handleManualSubmit"
@@ -1443,7 +1499,11 @@ const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
 
-const { getAvailablePlatforms, loadPlatformConfig, loaded: platformConfigLoaded } = usePlatformConfig()
+const {
+  getAvailablePlatforms,
+  loadPlatformConfig,
+  loaded: platformConfigLoaded
+} = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
 // 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
@@ -1513,7 +1573,9 @@ const cardCodeStatusText = computed(() => {
     }
     return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
   }
-  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredStatus : locale.value.cardCodeOptionalStatus
+  return cardCodeFieldMeta.value.required
+    ? locale.value.cardCodeRequiredStatus
+    : locale.value.cardCodeOptionalStatus
 })
 const mobileCardCodeLabel = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingShort
@@ -1522,7 +1584,9 @@ const mobileCardCodeLabel = computed(() => {
     if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
     return locale.value.cardCodeFilled
   }
-  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredShort : locale.value.cardCodeOptionalShort
+  return cardCodeFieldMeta.value.required
+    ? locale.value.cardCodeRequiredShort
+    : locale.value.cardCodeOptionalShort
 })
 const cardCodeModalHint = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
@@ -1875,7 +1939,12 @@ const initializeAudioMatch = async () => {
           case 'bufferhealth': {
             const progress = Math.min(1, Number(event.data.health) || 0)
             const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
-            audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', currentSeconds, AUDIO_MATCH_DURATION)
+            audioMatchStatus.value = callLocale(
+              'audioMatchRecordingProgress',
+              '',
+              currentSeconds,
+              AUDIO_MATCH_DURATION
+            )
             break
           }
           case 'finished':
@@ -1905,7 +1974,12 @@ const initializeAudioMatch = async () => {
 
         // 提高更新频率以改善用户体验
         if (bufIndex % bufferSize === 0) {
-          audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', currentSeconds, AUDIO_MATCH_DURATION)
+          audioMatchStatus.value = callLocale(
+            'audioMatchRecordingProgress',
+            '',
+            currentSeconds,
+            AUDIO_MATCH_DURATION
+          )
         }
 
         if (bufIndex + channelL.length > maxLength) {
@@ -2032,7 +2106,12 @@ const startAudioMatchRecording = async () => {
     }
   }
 
-  audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', '0.0', AUDIO_MATCH_DURATION)
+  audioMatchStatus.value = callLocale(
+    'audioMatchRecordingProgress',
+    '',
+    '0.0',
+    AUDIO_MATCH_DURATION
+  )
   audioMatchRecording.value = true
   audioMatchRecorderNode.port.postMessage({
     message: 'start',
@@ -2204,7 +2283,10 @@ const handleImportData = async (event) => {
   } catch (e) {
     console.error('导入失败', e)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('notifications.importFailed', '', getErrorMessage(e)), 'error')
+      window.$showNotification(
+        callLocale('notifications.importFailed', '', getErrorMessage(e)),
+        'error'
+      )
     }
   } finally {
     checkingNeteaseLogin.value = false
@@ -2439,7 +2521,10 @@ const handleEpisodeVote = async (episode) => {
     })
   } catch (err) {
     if (window.$showNotification) {
-      window.$showNotification(getErrorMessage(err) || locale.value.notifications.likeFailed, 'error')
+      window.$showNotification(
+        getErrorMessage(err) || locale.value.notifications.likeFailed,
+        'error'
+      )
     }
   } finally {
     voting.value = false
@@ -2499,9 +2584,7 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played
-        ? locale.value.playedCannotLike
-        : locale.value.scheduledCannotLike
+      const message = song.played ? locale.value.playedCannotLike : locale.value.scheduledCannotLike
       window.$showNotification(message, 'warning')
     }
     return
@@ -2696,33 +2779,20 @@ const getAudioUrl = async (result) => {
       }
     }
 
-    // 对于 vkeys v3（QQ音乐），调用统一的 getSongUrl 获取播放链接
     if (sourceType === 'vkeys-v3') {
       try {
         const songId = result.musicId || result.id
         if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
         const { getQuality } = useAudioQuality()
-        const quality = getQuality(platform.value) || 8
-        const urlResult = await musicSources.getSongUrl(songId, quality, 'tencent')
-
-        if (urlResult && urlResult.success && urlResult.url) {
+        const urlResult = await musicSources.getSongUrl(songId, getQuality('tencent'), 'tencent')
+        if (urlResult?.success && urlResult.url) {
           result.url = urlResult.url
           result.hasUrl = true
-
-          // 更新搜索结果中的对应项
-          const index = searchResults.value.findIndex(
-            (item) => (item.musicId || item.id) === (result.musicId || result.id)
-          )
-          if (index !== -1) {
-            searchResults.value[index] = { ...result }
-          }
           return result
-        } else {
-          // vkeys v3 未获取到有效链接，继续回退逻辑
         }
-      } catch (qqV3Error) {
-        // vkeys v3 获取失败，继续回退其它逻辑
+      } catch (error) {
+        console.warn('vkeys v3 获取播放链接失败:', error)
       }
     }
 
@@ -3065,10 +3135,13 @@ const handleShowLogin = () => {
 const handleLoginRedirect = async () => {
   if (title.value.trim()) {
     try {
-      sessionStorage.setItem('pending_search', JSON.stringify({
-        title: title.value.trim(),
-        platform: platform.value
-      }))
+      sessionStorage.setItem(
+        'pending_search',
+        JSON.stringify({
+          title: title.value.trim(),
+          platform: platform.value
+        })
+      )
     } catch {
       // 浏览器禁用会话存储时仍可继续登录。
     }
@@ -3185,7 +3258,8 @@ const submitSong = async (result, options = {}) => {
     console.log('打开 Bilibili 剧集列表:', result)
     selectedBilibiliVideo.value = result
     bilibiliEpisodes.value = result.pages
-    bilibiliEpisodeSubmitOptions.value = options.replayRequest === true ? { replayRequest: true } : {}
+    bilibiliEpisodeSubmitOptions.value =
+      options.replayRequest === true ? { replayRequest: true } : {}
     showBilibiliEpisodesModal.value = true
     return
   }
@@ -3199,7 +3273,12 @@ const submitSong = async (result, options = {}) => {
   let replayTargetSong = null
 
   // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
-  if (!auth.isAdmin.value && auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
+  if (
+    !auth.isAdmin.value &&
+    auth.isAuthenticated.value &&
+    songService.songs.value &&
+    songService.songs.value.length > 0
+  ) {
     // 对于哔哩哔哩多P视频，使用 musicId 进行精确匹配
     if (platform.value === 'bilibili' && result.musicId) {
       // 构建完整的 musicId
@@ -3225,10 +3304,7 @@ const submitSong = async (result, options = {}) => {
         const allowOverride = options.replayRequest === true && existingSong.played
         if (!allowOverride) {
           if (window.$showNotification) {
-            window.$showNotification(
-              locale.value.notifications.duplicateSong,
-              'warning'
-            )
+            window.$showNotification(locale.value.notifications.duplicateSong, 'warning')
           }
           return
         }
@@ -3248,10 +3324,7 @@ const submitSong = async (result, options = {}) => {
         const allowOverride = options.replayRequest === true && existingSong.played
         if (!allowOverride) {
           if (window.$showNotification) {
-            window.$showNotification(
-              locale.value.notifications.duplicateSong,
-              'warning'
-            )
+            window.$showNotification(locale.value.notifications.duplicateSong, 'warning')
           }
           return
         }
@@ -3278,7 +3351,9 @@ const submitSong = async (result, options = {}) => {
       }
 
       if (!replayTargetSong) {
-        throw new Error(locale.value.notifications?.replayOriginalNotFound || '未找到可申请重播的原歌曲')
+        throw new Error(
+          locale.value.notifications?.replayOriginalNotFound || '未找到可申请重播的原歌曲'
+        )
       }
 
       const replayResult = await songService.requestReplay(replayTargetSong.id, {
@@ -3294,8 +3369,10 @@ const submitSong = async (result, options = {}) => {
       // 服务端错误按错误码本地化；replayRequestFailed 是带参数的词典函数，需用 formatLocaleValue 求值
       const replayErrorMessage = localizeServerError(err)
       error.value =
-        formatLocaleValue(locale.value.notifications?.replayRequestFailed, replayErrorMessage || '') ||
-        replayErrorMessage
+        formatLocaleValue(
+          locale.value.notifications?.replayRequestFailed,
+          replayErrorMessage || ''
+        ) || replayErrorMessage
       if (window.$showNotification) {
         window.$showNotification(error.value, 'error')
       }
@@ -3687,7 +3764,10 @@ const handleAlbumSongVote = async (song) => {
   } catch (error) {
     console.error('点赞失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(getErrorMessage(error) || locale.value.notifications.likeFailedRetry, 'error')
+      window.$showNotification(
+        getErrorMessage(error) || locale.value.notifications.likeFailedRetry,
+        'error'
+      )
     }
   } finally {
     voting.value = false
@@ -3939,12 +4019,15 @@ const checkSubmissionLimit = () => {
     }
   }
 
-
   if (!submissionStatus.value.limitEnabled) {
     return { canSubmit: true, message: '' }
   }
 
-  if (cardCodeLimitBypassActive.value && trimmedCardCode.value && cardCodeValidation.value.valid === true) {
+  if (
+    cardCodeLimitBypassActive.value &&
+    trimmedCardCode.value &&
+    cardCodeValidation.value.valid === true
+  ) {
     return { canSubmit: true, message: '' }
   }
 
@@ -4534,7 +4617,9 @@ defineExpose({
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .login-required-notice .login-link-btn:hover {
@@ -4946,7 +5031,11 @@ defineExpose({
   display: block;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, var(--color-accent-light) 0%, var(--color-accent-light-hover) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-accent-light) 0%,
+    var(--color-accent-light-hover) 100%
+  );
   border-radius: 2px;
   animation: wave 1.2s ease-in-out infinite;
 }
@@ -4992,7 +5081,11 @@ defineExpose({
 }
 
 .audio-match-primary-btn {
-  background: linear-gradient(135deg, var(--color-accent-hover) 0%, var(--color-accent-light-hover) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-hover) 0%,
+    var(--color-accent-light-hover) 100%
+  );
   border: none;
   border-radius: 12px;
   padding: 0.875rem 2rem;

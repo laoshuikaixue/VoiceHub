@@ -279,9 +279,7 @@ const { audioPlayer: audioPlayerLocale } = useLocale()
 // 歌词非活跃行颜色 — 随主题切换
 const theme = useTheme()
 const inactiveColor = computed(() =>
-  theme.currentTheme.value === 'ClassicDark'
-    ? 'var(--overlay-60)'
-    : 'var(--mask-60)'
+  theme.currentTheme.value === 'ClassicDark' ? 'var(--overlay-60)' : 'var(--mask-60)'
 )
 
 const props = defineProps({
@@ -538,13 +536,9 @@ const trySwitchPlaybackSource = async () => {
     excludeSources.push(failedSource)
   }
 
-  // 旧的播放对象可能没有记录来源；QQ 音乐最常见的坏链接来自 DreamMeting 重定向。
-  if (
-    song.musicPlatform === 'tencent' &&
-    !failedSource &&
-    !excludeSources.includes('music.3e0.cn')
-  ) {
-    excludeSources.push('music.3e0.cn')
+  // 旧播放对象可能没有记录来源；QQ 音乐按当前内置解析器重新取链。
+  if (song.musicPlatform === 'tencent' && !failedSource && !excludeSources.includes('vkeys')) {
+    excludeSources.push('vkeys')
   }
 
   if (!excludeSources.length) {
@@ -919,9 +913,7 @@ const handleLoaded = async () => {
 
     // 检查歌词是否加载成功
     const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
-    const hasValidLyrics =
-      harmonyLyrics &&
-      control.lyrics.currentLyrics.value.length > 0
+    const hasValidLyrics = harmonyLyrics && control.lyrics.currentLyrics.value.length > 0
 
     if (hasValidLyrics) {
       // 使用专门的歌词更新方法
@@ -1253,13 +1245,16 @@ const cyclePlayMode = () => {
   const current = control.playMode.value
   if (current === 'order') {
     control.setPlayMode('loopOne')
-    if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.loopOneEnabled, 'info')
+    if (window.$showNotification)
+      window.$showNotification(audioPlayerLocale.value.loopOneEnabled, 'info')
   } else if (current === 'loopOne') {
     control.setPlayMode('off')
-    if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.singleEnabled, 'info')
+    if (window.$showNotification)
+      window.$showNotification(audioPlayerLocale.value.singleEnabled, 'info')
   } else {
     control.setPlayMode('order')
-    if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.listLoopEnabled, 'info')
+    if (window.$showNotification)
+      window.$showNotification(audioPlayerLocale.value.listLoopEnabled, 'info')
   }
 }
 
@@ -2871,7 +2866,11 @@ const getFirstChar = (text) => {
 .quality-option.active {
   color: var(--color-accent);
   background:
-    linear-gradient(135deg, var(--audio-player-quality-active-bg-start), var(--audio-player-quality-active-bg-mid)),
+    linear-gradient(
+      135deg,
+      var(--audio-player-quality-active-bg-start),
+      var(--audio-player-quality-active-bg-mid)
+    ),
     var(--audio-player-quality-active-bg-end);
   border: 1px solid var(--audio-player-quality-active-border);
   font-weight: 600;
