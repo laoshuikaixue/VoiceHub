@@ -1658,6 +1658,7 @@ const searchResults = ref([])
 const restrictionCheckMap = ref(new Map())
 const restrictionChecking = ref(false)
 let restrictionCheckRequestId = 0
+const restrictionAbortController = ref(null)
 const selectedCover = ref('')
 const selectedUrl = ref('')
 const audioPlayer = useAudioPlayer() // 使用全局音频播放器
@@ -3989,6 +3990,8 @@ const getRestrictionMessage = (reason) => {
 const fetchRestrictionChecks = async () => {
   // 每次搜索后清空旧预检结果，避免上一轮结果污染
   const requestId = ++restrictionCheckRequestId
+  restrictionAbortController.value?.abort()
+  restrictionAbortController.value = new AbortController()
   restrictionCheckMap.value = new Map()
   if (!auth.isAuthenticated.value || searchResults.value.length === 0) {
     restrictionChecking.value = false
@@ -4025,6 +4028,7 @@ const fetchRestrictionChecks = async () => {
     const response = await $fetch('/api/songs/check-restriction', {
       method: 'POST',
       body: { songs: uniqueResults },
+      signal: restrictionAbortController.value.signal,
       ...authConfig
     })
     const checks = Array.isArray(response?.checks) ? response.checks : []
@@ -4035,7 +4039,7 @@ const fetchRestrictionChecks = async () => {
     }
   } catch (err) {
     const status = err && (err.statusCode || (err.data && err.data.statusCode))
-    if (status === 401) {
+    if (status === 401 && requestId === restrictionCheckRequestId) {
       console.warn('投稿限制预检鉴权失败，未应用限制', err)
     }
   } finally {
