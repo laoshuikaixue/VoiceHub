@@ -29,8 +29,10 @@ export const siteConfig = {
   visualIdentity: '视觉识别',
   siteLogoUrl: '站点 Logo URL',
   siteLogoPlaceholder: '请输入Logo图片URL',
-  schoolLogoHome: '首页学校 Logo URL (大尺寸)',
-  schoolLogoHomePlaceholder: '请输入首页学校Logo URL',
+  schoolLogoHome: '首页学校 Logo URL（深色模式）',
+  schoolLogoHomePlaceholder: '请先输入深色模式学校 Logo URL',
+  schoolLogoHomeLight: '首页学校 Logo URL（浅色模式）',
+  schoolLogoHomeLightPlaceholder: '请输入浅色模式学校 Logo URL',
   schoolLogoPrint: '打印排期 Logo URL (小尺寸)',
   schoolLogoPrintPlaceholder: '请输入打印页学校Logo URL',
 

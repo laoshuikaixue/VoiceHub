@@ -1,5 +1,32 @@
 import { computed, ref, readonly } from 'vue'
 import { getAggregateOAuthLoginTypesOrDefault, getProviderDisplayName } from '~/utils/oauth'
+import { useTheme } from '~/composables/useTheme'
+
+const THEME_LOGO_SEPARATOR = '||'
+
+// 兼容旧配置：没有分隔符时，地址只归入深色；浅色运行时回退到深色。
+export const splitThemeLogoUrl = (value) => {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  if (!normalized) return { dark: '', light: '' }
+
+  const separatorIndex = normalized.indexOf(THEME_LOGO_SEPARATOR)
+  if (separatorIndex < 0) return { dark: normalized, light: '' }
+
+  const dark = normalized.slice(0, separatorIndex).trim()
+  const light = normalized.slice(separatorIndex + THEME_LOGO_SEPARATOR.length).trim()
+  return {
+    dark: dark || light,
+    light: light || dark
+  }
+}
+
+export const joinThemeLogoUrl = (dark, light) => {
+  const normalizedDark = typeof dark === 'string' ? dark.trim() : ''
+  const normalizedLight = typeof light === 'string' ? light.trim() : ''
+  if (!normalizedDark && !normalizedLight) return ''
+  if (!normalizedLight || normalizedLight === normalizedDark) return normalizedDark || normalizedLight
+  return `${normalizedDark}||${normalizedLight}`
+}
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -52,6 +79,7 @@ const getImageDisplayUrl = (url) => {
 }
 
 export const useSiteConfig = () => {
+  const { isDark } = useTheme()
   // 获取站点配置
   const fetchSiteConfig = async () => {
     if (isLoading.value) return
@@ -108,7 +136,10 @@ export const useSiteConfig = () => {
   // 计算属性
   const siteTitle = computed(() => siteConfig.value.siteTitle || '校园广播站点歌系统')
   const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
-  const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
+  const schoolLogoHomeUrl = computed(() => {
+    const logos = splitThemeLogoUrl(siteConfig.value.schoolLogoHomeUrl)
+    return (isDark.value ? logos.dark : logos.light) || logos.dark || logos.light || ''
+  })
   const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
   const schoolLogoHomeDisplayUrl = computed(() => getImageDisplayUrl(schoolLogoHomeUrl.value))
   const schoolLogoPrintDisplayUrl = computed(() => getImageDisplayUrl(schoolLogoPrintUrl.value))
