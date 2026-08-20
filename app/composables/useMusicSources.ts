@@ -1421,15 +1421,10 @@ export const useMusicSources = () => {
     try {
       console.log(`[${source.name}] 请求URL:`, finalUrl)
       // v3 请求使用简单请求，不携带任何会触发预检的自定义头
-      const requestHeaders = {
-        'Content-Type': 'application/json',
-        ...source.headers
-      } as Record<string, string>
-
       response = await $fetch(finalUrl, {
         timeout: source.timeout || config.value.timeout,
         signal,
-        headers: requestHeaders
+        headers: source.headers
       })
       console.log(`[${source.name}] API响应:`, response)
 
@@ -1453,10 +1448,7 @@ export const useMusicSources = () => {
           response = await $fetch(fallbackUrl, {
             timeout: source.timeout || config.value.timeout,
             signal,
-            headers: {
-              'Content-Type': 'application/json',
-              ...source.headers
-            }
+            headers: source.headers
           })
           console.log(`[${source.name}] 备用API响应:`, response)
 
