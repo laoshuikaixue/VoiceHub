@@ -1323,11 +1323,11 @@
                         :class="
                           selectedUserDetail.identities?.length > 0 ? 'text-success' : 'text-text-tertiary'
                         "
-                        :title="selectedUserDetail.identities?.length > 0 ? formatMessage(locale.detail.bound, selectedUserDetail.identities.map(id => id.provider).join(', ')) : locale.detail.unbound"
+                        :title="selectedUserDetail.identities?.length > 0 ? formatMessage(locale.detail.bound, selectedUserDetail.identities.map(id => getOAuthProviderName(id.provider)).join(', ')) : locale.detail.unbound"
                       >
                         {{
                           selectedUserDetail.identities?.length > 0
-                            ? formatMessage(locale.detail.bound, selectedUserDetail.identities.map(id => id.provider).join(', '))
+                            ? formatMessage(locale.detail.bound, selectedUserDetail.identities.map(id => getOAuthProviderName(id.provider)).join(', '))
                             : locale.detail.unbound
                         }}
                       </div>
@@ -1572,6 +1572,7 @@ import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
+import { getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
@@ -1589,6 +1590,13 @@ const getRoleName = (role) => {
   return locale.value?.roles?.[aliases[role]] || role
 }
 const getStatusName = (status) => locale.value?.statuses?.[status] || status
+const getOAuthProviderName = (provider) => {
+  const normalizedProvider = String(provider || '').trim().toLowerCase()
+  if (normalizedProvider.startsWith('aggregate:')) {
+    return getAggregateOAuthLoginTypeName(normalizedProvider.slice('aggregate:'.length))
+  }
+  return getProviderDisplayName(normalizedProvider)
+}
 const getErrorDetail = (error) =>
   error?.data?.message || error?.message || error?.statusMessage || locale.value?.detail?.unknown || '未知错误'
 
