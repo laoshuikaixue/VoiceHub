@@ -453,7 +453,7 @@
                         pattern="[0-9:]*"
                         class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
                         :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                        @blur="saveDurationEdit(song)"
+                        @focusout="saveDurationEdit(song)"
                         @keydown="handleDurationKeydown($event, song)"
                       >
                     </div>
@@ -896,7 +896,7 @@
                         pattern="[0-9:]*"
                         class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
                         :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                        @blur="saveDurationEdit(schedule.song)"
+                        @focusout="saveDurationEdit(schedule.song)"
                         @keydown="handleDurationKeydown($event, schedule.song)"
                       >
                     </div>
@@ -1633,7 +1633,7 @@
                     pattern="[0-9:]*"
                     class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
                     :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                    @blur="saveDurationEdit(song)"
+                    @focusout="saveDurationEdit(song)"
                     @keydown="handleDurationKeydown($event, song)"
                   >
                   <span v-if="song.requester" class="text-text-disabled">|</span>
@@ -2037,6 +2037,7 @@ const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0,
 const editingDuration = ref({})
 const editingDurationValue = ref('')
 const editingDurationInput = ref(null)
+const durationSaveInFlight = new Set()
 
 const formatDurationInput = (seconds) => {
   const total = Number(seconds)
@@ -2073,46 +2074,56 @@ const startEditDuration = (song) => {
     ? ''
     : formatDurationInput(song.durationSeconds)
   nextTick(() => {
-    if (editingDurationInput.value) {
-      editingDurationInput.value.focus()
-      editingDurationInput.value.select()
+    const input = Array.isArray(editingDurationInput.value)
+      ? editingDurationInput.value[0]
+      : editingDurationInput.value
+    if (input) {
+      input.focus()
+      input.select()
     }
   })
 }
 
 // 保存编辑的歌曲时长
 const saveDurationEdit = async (song) => {
-  const raw = editingDurationValue.value.trim()
-  if (raw === '') {
-    if (song.durationSeconds == null) {
+  if (!editingDuration.value[song.id] || durationSaveInFlight.has(song.id)) return
+  durationSaveInFlight.add(song.id)
+
+  try {
+    const raw = editingDurationValue.value.trim()
+    if (raw === '') {
+      if (song.durationSeconds == null) {
+        cancelEditDuration(song.id)
+        return
+      }
+      // 清空时长
+      const updated = await updateSongDuration(song.id, null)
+      if (!updated) return
+      delete editingDuration.value[song.id]
+      editingDurationValue.value = ''
+      return
+    }
+
+    const seconds = parseDurationInput(raw)
+    if (seconds == null) {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.messages?.durationInvalid || '时长格式无效，请输入 分:秒 或 时:分:秒', 'error')
+      }
+      return
+    }
+
+    if (seconds === Number(song.durationSeconds)) {
       cancelEditDuration(song.id)
       return
     }
-    // 清空时长
-    const updated = await updateSongDuration(song.id, null)
+
+    const updated = await updateSongDuration(song.id, seconds)
     if (!updated) return
     delete editingDuration.value[song.id]
     editingDurationValue.value = ''
-    return
+  } finally {
+    durationSaveInFlight.delete(song.id)
   }
-
-  const seconds = parseDurationInput(raw)
-  if (seconds == null) {
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.messages?.durationInvalid || '时长格式无效，请输入 分:秒 或 时:分:秒', 'error')
-    }
-    return
-  }
-
-  if (seconds === Number(song.durationSeconds)) {
-    cancelEditDuration(song.id)
-    return
-  }
-
-  const updated = await updateSongDuration(song.id, seconds)
-  if (!updated) return
-  delete editingDuration.value[song.id]
-  editingDurationValue.value = ''
 }
 
 // 通用：更新歌曲时长并同步所有列表
