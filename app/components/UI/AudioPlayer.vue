@@ -921,7 +921,6 @@ const handleLoaded = async () => {
     const harmonyLyrics = control.lyrics.getFormattedLyricsForHarmonyOS()
     const hasValidLyrics =
       harmonyLyrics &&
-      harmonyLyrics !== '[00:00.00]暂无歌词' &&
       control.lyrics.currentLyrics.value.length > 0
 
     if (hasValidLyrics) {
