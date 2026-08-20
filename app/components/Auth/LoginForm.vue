@@ -302,6 +302,8 @@
       </button>
     </form>
 
+    <AuthOAuthQuickLogin v-if="!isBindMode" />
+
     <div v-if="!isBindMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
@@ -327,6 +329,18 @@
       @success="handle2FASuccess"
       @cancel="show2FA = false"
     />
+
+    <!-- 绑定已有账户前的二次确认 -->
+    <ConfirmDialog
+      v-model:show="showBindConfirm"
+      :title="locale.confirmBindTitle"
+      :message="bindConfirmMessage"
+      type="warning"
+      :confirm-text="locale.confirmBind"
+      :loading="bindConfirmLoading"
+      @confirm="handleBindConfirm"
+      @cancel="showBindConfirm = false"
+    />
   </div>
 </template>
 
@@ -351,6 +365,8 @@ import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
+import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
@@ -407,6 +423,19 @@ const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 const showCreateMode = ref(false)
+const showBindConfirm = ref(false)
+const bindConfirmLoading = ref(false)
+
+// 二次确认文案：将第三方账号与当前输入的账户绑定
+const bindConfirmMessage = computed(() => {
+  if (!isBindMode.value || showCreateMode.value) return ''
+  return formatLocale(
+    locale.value.confirmBindMessage,
+    providerName.value,
+    providerUsername.value,
+    username.value
+  )
+})
 
 const passwordStrength = usePasswordStrength(password)
 
@@ -524,6 +553,18 @@ const handleLogin = async () => {
   }
 
   error.value = ''
+
+  // 绑定已有账户前先弹二次确认，确认后才真正发起绑定请求
+  if (isBindMode.value && !showCreateMode.value) {
+    showBindConfirm.value = true
+    return
+  }
+
+  await performLogin()
+}
+
+// 发起登录/绑定请求，成功后跳转；返回 'success' | '2fa' | 'failed'
+const performLogin = async () => {
   loading.value = true
 
   // 构建请求体，包含验证码信息
@@ -556,12 +597,13 @@ const handleLogin = async () => {
       tempToken2FA.value = response.tempToken || ''
       maskedEmail2FA.value = response.maskedEmail || ''
       show2FA.value = true
-      return
+      return '2fa'
     }
 
     // 登录成功，刷新认证状态
     await auth.initAuth(true)
-    return redirectAfterLogin()
+    await redirectAfterLogin()
+    return 'success'
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
@@ -589,8 +631,22 @@ const handleLogin = async () => {
     if (err.statusCode === 401) {
       password.value = ''
     }
+    return 'failed'
   } finally {
     loading.value = false
+  }
+}
+
+// 确认弹窗确认后执行绑定请求；失败或进入 2FA 时关闭弹窗
+const handleBindConfirm = async () => {
+  bindConfirmLoading.value = true
+  try {
+    const result = await performLogin()
+    if (result !== 'success') {
+      showBindConfirm.value = false
+    }
+  } finally {
+    bindConfirmLoading.value = false
   }
 }
 

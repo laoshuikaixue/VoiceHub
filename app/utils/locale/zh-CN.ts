@@ -786,7 +786,11 @@ export const pages = {
       usernameLengthInvalid: '用户名长度需要在3-30个字符之间',
       usernamePatternInvalid: '用户名仅可包含英文、数字、下划线和连字符',
       registerPasswordTooShort: '密码长度至少为8个字符',
-      registerPasswordMismatch: '两次输入的密码不一致'
+      registerPasswordMismatch: '两次输入的密码不一致',
+      confirmBind: '确认绑定',
+      confirmBindTitle: '确认绑定',
+      confirmBindMessage: (providerName: string, providerUsername: string, username: string) =>
+        `确认将 ${providerName} 账号「${providerUsername}」与账户「${username}」绑定？绑定后即可使用 ${providerName} 直接登录。`
     },
     oauthButtons: {
       divider: '或使用第三方账号登录',
@@ -794,6 +798,8 @@ export const pages = {
       customOAuthProvider: '第三方 OAuth',
       aggregateOAuthProvider: '聚合登录',
       aggregateProviderName: (providerName: string) => `${providerName} 登录`,
+      quickLoginWx: '使用微信登录',
+      quickLoginQq: '使用QQ登录',
       aggregateLoginTypes: {
         qq: 'QQ',
         wx: '微信',

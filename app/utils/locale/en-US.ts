@@ -775,7 +775,11 @@ export const pages = {
       usernameLengthInvalid: 'Username must be 3-30 characters long',
       usernamePatternInvalid: 'Username may only contain letters, numbers, underscores, and hyphens',
       registerPasswordTooShort: 'Password must be at least 8 characters',
-      registerPasswordMismatch: 'The two passwords do not match'
+      registerPasswordMismatch: 'The two passwords do not match',
+      confirmBind: 'Confirm Bind',
+      confirmBindTitle: 'Confirm Binding',
+      confirmBindMessage: (providerName: string, providerUsername: string, username: string) =>
+        `Bind the ${providerName} account "${providerUsername}" to "${username}"? You can then sign in with ${providerName} directly.`
     },
     oauthButtons: {
       divider: 'Or sign in with a third-party account',
@@ -783,6 +787,8 @@ export const pages = {
       customOAuthProvider: 'Third-Party OAuth',
       aggregateOAuthProvider: 'Aggregate OAuth',
       aggregateProviderName: (providerName: string) => `${providerName} Sign-In`,
+      quickLoginWx: 'WeChat Sign-In',
+      quickLoginQq: 'QQ Sign-In',
       aggregateLoginTypes: {
         qq: 'QQ',
         wx: 'WeChat',
