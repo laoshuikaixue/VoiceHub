@@ -125,6 +125,10 @@ export default defineEventHandler(async (event) => {
       playUrl: song.playUrl,
       musicPlatform: song.musicPlatform,
       musicId: song.musicId,
+      durationSeconds: (() => {
+        const d = song.durationSeconds ? Number(song.durationSeconds) : null
+        return d !== null && Number.isFinite(d) && d >= 30 && d <= 3600 ? d : null
+      })(),
       createdAt: new Date(),
       updatedAt: new Date()
     })

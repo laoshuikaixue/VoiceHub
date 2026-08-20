@@ -4,19 +4,9 @@
  * 采用 platform=html5 获取对浏览器 <audio> 标签兼容性最好的直链
  * 同时转发客户端 IP，解决海外服务器获取到错误 CDN 节点导致访问慢的问题
  */
-import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
-
-interface CidRes {
-  code: number
-  message: string
-  data: {
-    pages: [
-      {
-        cid: string
-      }
-    ]
-  }
-}
+import { defineEventHandler, getQuery, getRequestHeader } from 'h3'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 interface NoRefererPlayUrlRes {
   code: number
@@ -36,10 +26,7 @@ export default defineEventHandler(async (event) => {
   const cid = query.cid as string
 
   if (!bvid) {
-    throw createError({
-      statusCode: 400,
-      message: '缺少 id 参数'
-    })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少 id 参数')
   }
 
   // 提取客户端真实 IP，用于转发给 Bilibili 接口，以便分配最快 CDN 节点
@@ -67,17 +54,38 @@ export default defineEventHandler(async (event) => {
 
     if (!finalCid) {
       const target_url = 'https://api.bilibili.com/x/web-interface/view'
-      const resp1 = await $fetch<CidRes>(target_url, {
+      const resp1: any = await $fetch(target_url, {
         method: 'GET',
         params: { bvid },
-        headers
+        headers,
+        timeout: 10000
       })
 
       if (!resp1?.data?.pages?.[0]?.cid) {
-        throw new Error('获取 CID 失败')
+        console.error('[Bilibili] CID 获取失败，响应:', JSON.stringify(resp1).slice(0, 300))
+        // 降级：去掉 Cookie 重试，部分场景 Cookie 反而触发风控
+        try {
+          const fallback: any = await $fetch(target_url, {
+            method: 'GET',
+            params: { bvid },
+            headers: {
+              Referer: 'https://www.bilibili.com/',
+              'User-Agent': headers['User-Agent']
+            },
+            timeout: 10000
+          })
+          if (fallback?.data?.pages?.[0]?.cid) {
+            finalCid = fallback.data.pages[0].cid
+          } else {
+            console.error('[Bilibili] 降级请求仍无 CID，响应:', JSON.stringify(fallback).slice(0, 300))
+            throw new Error('获取 CID 失败')
+          }
+        } catch (fallbackErr: any) {
+          throw new Error(`获取 CID 失败: ${fallbackErr?.message || '未知错误'}`)
+        }
+      } else {
+        finalCid = resp1.data.pages[0].cid
       }
-
-      finalCid = resp1.data.pages[0].cid
     }
 
     // 使用 platform=html5 参数绕过严格防盗链验证（允许前端使用 referrerpolicy="no-referrer"）
@@ -92,7 +100,8 @@ export default defineEventHandler(async (event) => {
         bvid,
         cid: finalCid
       },
-      headers
+      headers,
+      timeout: 10000
     })
 
     if (resp2.data?.durl?.length > 0) {
@@ -103,9 +112,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('Bilibili playurl error:', error)
-    throw createError({
-      statusCode: 500,
-      message: error.message || '获取 Bilibili 音频链接失败'
-    })
+    throw createApiError(500, SERVER_ERROR_CODES.BILIBILI_PLAYURL_FAILED, error.message || '获取 Bilibili 音频链接失败')
   }
 })

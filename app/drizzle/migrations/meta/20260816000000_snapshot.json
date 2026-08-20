@@ -1,6 +1,6 @@
 {
-  "id": "11ed7f2d-74a9-4bd6-a8b6-9fd0c2374c04",
-  "prevId": "819a0221-a4c5-4ff2-bd7e-710dd1c39700",
+  "id": "86154d0e-9f5a-425c-b992-a6c9e355af5e",
+  "prevId": "37f1e737-a12c-477b-bb3f-e7c4d69edea2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -766,14 +766,65 @@
           "primaryKey": false,
           "notNull": true
         },
+        "batchId": {
+          "name": "batchId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SYSTEM'"
+        },
+        "senderId": {
+          "name": "senderId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "senderName": {
+          "name": "senderName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "senderUsername": {
+          "name": "senderUsername",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "message": {
           "name": "message",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
+        "important": {
+          "name": "important",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "read": {
           "name": "read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "userDeleted": {
+          "name": "userDeleted",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -792,7 +843,62 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "notification_user_important_read_created_idx": {
+          "name": "notification_user_important_read_created_idx",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "userDeleted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "important",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "read",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_batch_id_idx": {
+          "name": "notification_batch_id_idx",
+          "columns": [
+            {
+              "expression": "batchId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -1082,6 +1188,79 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ScheduleSongPool": {
+      "name": "ScheduleSongPool",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "songId": {
+          "name": "songId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "addedBy": {
+          "name": "addedBy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ScheduleSongPool_songId_Song_id_fk": {
+          "name": "ScheduleSongPool_songId_Song_id_fk",
+          "tableFrom": "ScheduleSongPool",
+          "tableTo": "Song",
+          "columnsFrom": [
+            "songId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ScheduleSongPool_addedBy_User_id_fk": {
+          "name": "ScheduleSongPool_addedBy_User_id_fk",
+          "tableFrom": "ScheduleSongPool",
+          "tableTo": "User",
+          "columnsFrom": [
+            "addedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "schedule_song_pool_song_unique": {
+          "name": "schedule_song_pool_song_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "songId"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1641,6 +1820,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "durationSeconds": {
+          "name": "durationSeconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "submissionNote": {
           "name": "submissionNote",
           "type": "text",
@@ -1994,6 +2179,32 @@
           "notNull": true,
           "default": false
         },
+        "enableSubmissionRestriction": {
+          "name": "enableSubmissionRestriction",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "submissionRestrictionScope": {
+          "name": "submissionRestrictionScope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'all'"
+        },
+        "sameSongRestrictionHours": {
+          "name": "sameSongRestrictionHours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sameArtistRestrictionHours": {
+          "name": "sameArtistRestrictionHours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "captchaProvider": {
           "name": "captchaProvider",
           "type": "text",
@@ -2246,6 +2457,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "enabledPlatforms": {
+          "name": "enabledPlatforms",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[\"netease\",\"tencent\",\"bilibili\",\"migu\"]'"
+        },
+        "platformOrder": {
+          "name": "platformOrder",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[\"netease\",\"tencent\",\"bilibili\",\"migu\"]'"
         }
       },
       "indexes": {},

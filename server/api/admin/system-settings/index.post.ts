@@ -227,6 +227,57 @@ export default defineEventHandler(async (event) => {
       updateData.enableCardCodeLimitBypass = body.enableCardCodeLimitBypass
     }
 
+    // 重复投稿限制
+    if (body.enableSubmissionRestriction !== undefined) {
+      if (typeof body.enableSubmissionRestriction !== 'boolean') {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'enableSubmissionRestriction 必须是布尔值'
+        )
+      }
+      updateData.enableSubmissionRestriction = body.enableSubmissionRestriction
+    }
+
+    if (body.submissionRestrictionScope !== undefined) {
+      if (body.submissionRestrictionScope !== 'self' && body.submissionRestrictionScope !== 'all') {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'submissionRestrictionScope 必须是 self 或 all'
+        )
+      }
+      updateData.submissionRestrictionScope = body.submissionRestrictionScope
+    }
+
+    if (body.sameSongRestrictionHours !== undefined) {
+      if (
+        body.sameSongRestrictionHours !== null &&
+        (!Number.isInteger(body.sameSongRestrictionHours) || body.sameSongRestrictionHours < 1 || body.sameSongRestrictionHours > 720)
+      ) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'sameSongRestrictionHours 必须是 1-720 的正整数或 null'
+        )
+      }
+      updateData.sameSongRestrictionHours = body.sameSongRestrictionHours
+    }
+
+    if (body.sameArtistRestrictionHours !== undefined) {
+      if (
+        body.sameArtistRestrictionHours !== null &&
+        (!Number.isInteger(body.sameArtistRestrictionHours) || body.sameArtistRestrictionHours < 1 || body.sameArtistRestrictionHours > 720)
+      ) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'sameArtistRestrictionHours 必须是 1-720 的正整数或 null'
+        )
+      }
+      updateData.sameArtistRestrictionHours = body.sameArtistRestrictionHours
+    }
+
     if (body.dailySubmissionLimit !== undefined) {
       if (
         body.dailySubmissionLimit !== null &&
@@ -839,6 +890,31 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         message: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空'
       })
+    }
+
+    // 重复投稿限制交叉校验：未设置时长时保留本学期同一首歌不可重复投稿的旧规则。
+    const nextSameSongHours = body.sameSongRestrictionHours !== undefined
+      ? body.sameSongRestrictionHours
+      : settings?.sameSongRestrictionHours ?? null
+    const nextSameArtistHours = body.sameArtistRestrictionHours !== undefined
+      ? body.sameArtistRestrictionHours
+      : settings?.sameArtistRestrictionHours ?? null
+
+    const anyRestrictionHoursPositive =
+      (typeof nextSameSongHours === 'number' && nextSameSongHours >= 1) ||
+      (typeof nextSameArtistHours === 'number' && nextSameArtistHours >= 1)
+
+    // 显式关闭但仍有有效时长：拒绝，提示用户先清除时长
+    if (body.enableSubmissionRestriction === false && anyRestrictionHoursPositive) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '关闭重复投稿限制时，同一首歌和同一歌手的限制时间必须同时清空'
+      )
+    }
+    // 时长>0 且 enable 未显式提交 ⇒ 自动开启，维持"时长与开关自洽"不变量
+    if (anyRestrictionHoursPositive && body.enableSubmissionRestriction === undefined) {
+      updateData.enableSubmissionRestriction = true
     }
 
     if (!settings) {

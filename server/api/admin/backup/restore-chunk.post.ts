@@ -17,6 +17,8 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
+import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
+import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -339,10 +341,10 @@ export default defineEventHandler(async (event) => {
 
             const userStatusLogData = {
               userId: validUserId,
-              previousStatus: record.previousStatus || null,
+              oldStatus: record.oldStatus || record.previousStatus || null,
               newStatus: record.newStatus,
               reason: record.reason || null,
-              changedBy: record.changedBy || null,
+              operatorId: record.operatorId || record.changedBy || null,
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
 
@@ -512,6 +514,7 @@ export default defineEventHandler(async (event) => {
               'cover',
               'musicPlatform',
               'musicId',
+              'durationSeconds',
               'submissionNote',
               'submissionNotePublic'
             ]
@@ -684,7 +687,7 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'systemSettings': {
-            const systemSettingsData: any = {}
+            let systemSettingsData: any = {}
             const fields = [
               'enablePlayTimeSelection',
               'instanceId',
@@ -709,8 +712,11 @@ export default defineEventHandler(async (event) => {
               'enableCardCodeRequests',
               'requireCardCodeForRequests',
               'enableCardCodeLimitBypass',
+              'enableSubmissionRestriction',
+              'submissionRestrictionScope',
+              'sameSongRestrictionHours',
+              'sameArtistRestrictionHours',
               'enableRequestTimeLimitation',
-              'requestTimeLimitation',
               'forceBlockAllRequests',
               'forcePasswordChangeOnFirstLogin',
               'smtpEnabled',
@@ -767,6 +773,7 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
             })
+            systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
             if (mode === 'merge') {
               const existing = await tx.query.systemSettings.findFirst()
@@ -1202,6 +1209,11 @@ export default defineEventHandler(async (event) => {
               await tx.insert(votes).values(voteData)
               stats.created++
             }
+            break
+          }
+
+          case 'scheduleSongPool': {
+            await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
             break
           }
         }

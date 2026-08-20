@@ -60,6 +60,7 @@ export default defineEventHandler(async (event) => {
         title: songs.title,
         artist: songs.artist,
         semester: songs.semester,
+        durationSeconds: songs.durationSeconds,
         createdAt: songs.createdAt,
         played: songs.played
       })

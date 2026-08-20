@@ -66,6 +66,7 @@ export const songs = pgTable('Song', {
   playUrl: text('playUrl'),
   musicPlatform: text('musicPlatform'),
   musicId: text('musicId'),
+  durationSeconds: integer('durationSeconds'),
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
   hitRequestId: integer(),
@@ -105,6 +106,19 @@ export const schedules = pgTable('Schedule', {
   index('schedule_published_song_idx').on(table.isDraft, table.songId, table.playDate),
   index('schedule_published_date_idx').on(table.isDraft, table.playDate)
 ]);
+
+// 排期备选池表
+export const scheduleSongPool = pgTable('ScheduleSongPool', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  songId: integer('songId').notNull().references(() => songs.id, { onDelete: 'cascade' }),
+  addedBy: integer('addedBy').references(() => users.id, { onDelete: 'set null' })
+}, (table) => [
+  unique('schedule_song_pool_song_unique').on(table.songId)
+]);
+
+export type ScheduleSongPool = typeof scheduleSongPool.$inferSelect;
+export type NewScheduleSongPool = typeof scheduleSongPool.$inferInsert;
 
 // 通知表
 export const notifications = pgTable('Notification', {
@@ -200,6 +214,11 @@ export const systemSettings = pgTable('SystemSettings', {
   enableCardCodeRequests: boolean('enableCardCodeRequests').default(false).notNull(),
   requireCardCodeForRequests: boolean('requireCardCodeForRequests').default(false).notNull(),
   enableCardCodeLimitBypass: boolean('enableCardCodeLimitBypass').default(false).notNull(),
+  // 重复投稿限制：对同一首歌/同一歌手，在其进入排期后的设定时间窗口内禁止再次投稿
+  enableSubmissionRestriction: boolean('enableSubmissionRestriction').default(false).notNull(),
+  submissionRestrictionScope: text('submissionRestrictionScope').default('all').notNull(),
+  sameSongRestrictionHours: integer('sameSongRestrictionHours'),
+  sameArtistRestrictionHours: integer('sameArtistRestrictionHours'),
   
   // 验证码配置
   captchaProvider: text('captchaProvider').default('graphic').notNull(),

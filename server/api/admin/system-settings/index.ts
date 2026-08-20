@@ -49,6 +49,10 @@ export default defineEventHandler(async (event) => {
           showBlacklistKeywords: false,
           enableCollaborativeSubmission: true,
           enableSubmissionRemarks: false,
+          enableSubmissionRestriction: false,
+          submissionRestrictionScope: 'all',
+          sameSongRestrictionHours: null,
+          sameArtistRestrictionHours: null,
           enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
           platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS])
         })

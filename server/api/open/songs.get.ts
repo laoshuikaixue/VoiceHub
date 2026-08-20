@@ -76,6 +76,7 @@ export default defineEventHandler(async (event) => {
         playUrl: songs.playUrl,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
+        durationSeconds: songs.durationSeconds,
         preferredPlayTimeId: songs.preferredPlayTimeId,
         requester: {
           id: users.id,
@@ -211,6 +212,7 @@ export default defineEventHandler(async (event) => {
         cover: song.cover || null,
         musicPlatform: song.musicPlatform || null,
         musicId: song.musicId || null,
+        durationSeconds: song.durationSeconds || null,
         playUrl: song.playUrl || null,
         preferredPlayTimeId: song.preferredPlayTimeId
       }

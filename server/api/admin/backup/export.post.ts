@@ -13,6 +13,7 @@ import {
   playTimes,
   requestTimes,
   schedules,
+  scheduleSongPool,
   semesters,
   songBlacklists,
   songCollaborators,
@@ -24,8 +25,10 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
+import { inArray } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { maskSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -176,6 +179,24 @@ export default defineEventHandler(async (event) => {
           }))
         },
         description: '投票数据'
+      },
+      scheduleSongPool: {
+        query: async () => {
+          const poolData = await db.select().from(scheduleSongPool)
+          if (poolData.length === 0) return []
+          const poolSongIds = poolData.map((row) => row.songId)
+          const songsData = await db.select({
+            id: songs.id,
+            title: songs.title,
+            artist: songs.artist
+          }).from(songs).where(inArray(songs.id, poolSongIds))
+          const songsMap = new Map(songsData.map((s) => [s.id, s]))
+          return poolData.map((row) => ({
+            ...row,
+            song: songsMap.get(row.songId) || null
+          }))
+        },
+        description: '排期备选池'
       },
       schedules: {
         query: async () => {
@@ -401,7 +422,10 @@ export default defineEventHandler(async (event) => {
     // 如果包含系统数据，添加系统设置表
     if (includeSystemData) {
       tablesToBackup.systemSettings = {
-        query: () => db.select().from(systemSettings),
+        query: async () => {
+          const settings = await db.select().from(systemSettings)
+          return settings.map((s) => maskSystemSettingsSecrets(s))
+        },
         description: '系统设置'
       }
     }

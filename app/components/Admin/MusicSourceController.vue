@@ -157,11 +157,11 @@ import {
   CheckCircle2
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import { usePlatformConfig, DEFAULT_PLATFORMS } from '~/composables/usePlatformConfig'
+import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { DEFAULT_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { refreshPlatformConfig } = usePlatformConfig()
