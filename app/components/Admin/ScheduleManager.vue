@@ -440,7 +440,14 @@
                       <!-- 时长显示 / 行内编辑 -->
                       <span
                         v-if="song.durationSeconds && !editingDuration[song.id]"
-                        class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
+                        :class="[
+                          'shrink-0 px-1 rounded transition-colors cursor-pointer',
+                          durationRefreshStatus[song.id] === 'success'
+                            ? 'text-success bg-success-10'
+                            : durationRefreshStatus[song.id] === 'error'
+                              ? 'text-error bg-error-10'
+                              : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
+                        ]"
                         :title="locale.messages?.editDuration || '点击编辑时长'"
                         @click.stop="startEditDuration(song)"
                       >{{ formatDuration(song.durationSeconds) }}</span>
@@ -682,7 +689,7 @@
                 <button
                   :disabled="refreshingAllDurations.running"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
-                  @click="refreshAllDurations"
+                  @click="refreshAllDurations('scheduled')"
                 >
                   <RefreshCcw
                     class="w-3.5 h-3.5"
@@ -883,7 +890,14 @@
                       <span>{{ schedule.song.artist }}</span>
                       <span
                         v-if="schedule.song.durationSeconds && !editingDuration[schedule.song.id]"
-                        class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
+                        :class="[
+                          'shrink-0 px-1 rounded transition-colors cursor-pointer',
+                          durationRefreshStatus[schedule.song.id] === 'success'
+                            ? 'text-success bg-success-10'
+                            : durationRefreshStatus[schedule.song.id] === 'error'
+                              ? 'text-error bg-error-10'
+                              : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
+                        ]"
                         :title="locale.messages?.editDuration || '点击编辑时长'"
                         @click.stop="startEditDuration(schedule.song)"
                       >{{ formatDuration(schedule.song.durationSeconds) }}</span>
@@ -2031,6 +2045,8 @@ const replayModalRequests = ref([])
 const replayModalSongId = ref(null)
 // 刷新时长状态（每首歌独立追踪）
 const refreshingDuration = ref({})
+// 时长刷新结果状态（用于颜色标记：'success' | 'error' | null）
+const durationRefreshStatus = ref({})
 // 批量刷新时长状态
 const refreshingAllDurations = ref({ running: false, progress: '', done: 0, total: 0 })
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
@@ -3443,6 +3459,51 @@ const resolveClientAudioDuration = async (song, signal) => {
   return null
 }
 
+/**
+ * 并发执行任务列表，限制同时进行数。
+ * @param {Array<{fn:(signal)=>Promise, signal:AbortSignal}>} items
+ * @param {number} concurrency 并发数，默认 3
+ * @param {(done:number,total:number)=>void} [onProgress] 进度回调
+ * @returns {Promise<Array<{ok:boolean,result:any}>>} 保持原始顺序
+ */
+const runConcurrent = async (items, concurrency = 3, onProgress, onItemComplete) => {
+  const results = new Array(items.length)
+  let nextIndex = 0
+  let completed = 0
+  let aborted = false
+
+  const worker = async () => {
+    while (nextIndex < items.length && !aborted) {
+      const idx = nextIndex++
+      const item = items[idx]
+      let entry
+      try {
+        if (item.signal?.aborted) {
+          aborted = true
+          entry = { ok: false, result: null }
+        } else {
+          const res = await item.fn(item.signal)
+          entry = { ok: true, result: res }
+        }
+      } catch (err) {
+        entry = { ok: false, result: err }
+      }
+      results[idx] = entry
+      completed++
+      onProgress?.(completed, items.length)
+      onItemComplete?.(idx, entry)
+    }
+  }
+
+  const workers = []
+  for (let i = 0; i < Math.min(concurrency, items.length); i++) {
+    workers.push(worker())
+  }
+
+  await Promise.all(workers)
+  return results
+}
+
 const requestSongDuration = async (song, signal) => {
   const clientDuration = await resolveClientAudioDuration(song, signal)
   if (clientDuration != null) {
@@ -3472,6 +3533,8 @@ const refreshDuration = async (song) => {
     return
   }
 
+  // 清除上次刷新状态
+  delete durationRefreshStatus.value[songId]
   refreshingDuration.value[songId] = true
   try {
     const result = await requestSongDuration(song)
@@ -3497,16 +3560,37 @@ const refreshDuration = async (song) => {
       for (const r of replayRequests.value) {
         if (r.id === songId) { r.durationSeconds = result.durationSeconds; break }
       }
+      // 标记成功，3 秒后清除颜色标记
+      durationRefreshStatus.value[songId] = 'success'
+      setTimeout(() => {
+        if (durationRefreshStatus.value[songId] === 'success') {
+          delete durationRefreshStatus.value[songId]
+        }
+      }, 3000)
       if (window.$showNotification) {
         window.$showNotification(locale.value.messages.durationUpdated, 'success')
       }
     } else {
+      // 标记失败
+      durationRefreshStatus.value[songId] = 'error'
+      setTimeout(() => {
+        if (durationRefreshStatus.value[songId] === 'error') {
+          delete durationRefreshStatus.value[songId]
+        }
+      }, 3000)
       if (window.$showNotification) {
         window.$showNotification(locale.value.messages.durationFailed, 'error')
       }
     }
   } catch (err) {
     console.error('刷新时长失败:', err)
+    // 标记失败
+    durationRefreshStatus.value[songId] = 'error'
+    setTimeout(() => {
+      if (durationRefreshStatus.value[songId] === 'error') {
+        delete durationRefreshStatus.value[songId]
+      }
+    }, 3000)
     if (window.$showNotification) {
       window.$showNotification(localizeServerError(err), 'error')
     }
@@ -3519,20 +3603,32 @@ const refreshDuration = async (song) => {
 let refreshAllAbortController = null
 let refreshAutoCandidatesAbortController = null
 
-// 批量刷新当前页待排歌曲的时长
-const refreshAllDurations = async () => {
+// 批量刷新歌曲时长
+// source: 'pending' = 待排库（默认），'scheduled' = 播放顺序
+const refreshAllDurations = async (source = 'pending') => {
   // 中止上次未完成的批量刷新
   refreshAllAbortController?.abort()
   refreshAllAbortController = new AbortController()
   const { signal } = refreshAllAbortController
 
-  // 只处理当前页歌曲，避免一次刷新扫描全部待排数据
-  const targetIds = new Set()
+  // 根据 source 确定目标歌曲列表
   const targets = []
-  for (const song of filteredUnscheduledSongs.value) {
-    if (song.musicPlatform && song.musicId && !targetIds.has(song.id)) {
-      targetIds.add(song.id)
-      targets.push(song)
+  if (source === 'scheduled') {
+    const seen = new Set()
+    for (const schedule of localScheduledSongs.value) {
+      const song = schedule.song
+      if (song?.musicPlatform && song?.musicId && !seen.has(song.id)) {
+        seen.add(song.id)
+        targets.push(song)
+      }
+    }
+  } else {
+    const seen = new Set()
+    for (const song of filteredUnscheduledSongs.value) {
+      if (song.musicPlatform && song.musicId && !seen.has(song.id)) {
+        seen.add(song.id)
+        targets.push(song)
+      }
     }
   }
 
@@ -3554,52 +3650,71 @@ const refreshAllDurations = async () => {
   let successCount = 0
   let failCount = 0
 
-  try {
-    for (let i = 0; i < toRefresh.length; i++) {
-      const song = toRefresh[i]
-      try {
-        if (signal.aborted) break
-
-        const result = await requestSongDuration(song, signal)
-
-        if (result.success && result.durationSeconds) {
-          // 更新已排歌曲列表
-          for (const schedule of localScheduledSongs.value) {
-            if (schedule.song && schedule.song.id === song.id) {
-              schedule.song.durationSeconds = result.durationSeconds
-              break
-            }
-          }
-          // 更新待排歌曲列表
-          const songIndex = songs.value.findIndex((s) => s.id === song.id)
-          if (songIndex !== -1) {
-            songs.value[songIndex].durationSeconds = result.durationSeconds
-          }
-          for (const poolItem of songPool.value) {
-            if (poolItem.songId === song.id) poolItem.durationSeconds = result.durationSeconds
-          }
-          successCount++
-        } else {
-          failCount++
-        }
-      } catch (err) {
-        if (signal.aborted) break
-        console.error(`批量刷新时长失败 #${song.id}:`, err)
-        failCount++
-      } finally {
-        refreshingAllDurations.value.progress = callLocale(
-          'allDurationsProgress',
-          `${i + 1} / ${toRefresh.length}`,
-          `${i + 1}`, `${toRefresh.length}`
-        )
-        refreshingAllDurations.value.done = i + 1
-        // 短暂延迟，避免请求过于密集；已取消时不再等待
-        if (!signal.aborted) {
-          await new Promise((resolve) => setTimeout(resolve, 150))
+  // 将单首歌结果写入 UI 状态（先获取到的先显示）
+  const applyRefreshResult = (song, result) => {
+    if (result.success && result.durationSeconds) {
+      const dur = result.durationSeconds
+      // 更新已排歌曲列表
+      for (const schedule of localScheduledSongs.value) {
+        if (schedule.song && schedule.song.id === song.id) {
+          schedule.song.durationSeconds = dur
+          break
         }
       }
+      // 更新待排歌曲列表
+      const songIndex = songs.value.findIndex((s) => s.id === song.id)
+      if (songIndex !== -1) {
+        songs.value[songIndex].durationSeconds = dur
+      }
+      for (const poolItem of songPool.value) {
+        if (poolItem.songId === song.id) poolItem.durationSeconds = dur
+      }
+      // 标记成功（颜色统一在全部完成后清除）
+      durationRefreshStatus.value[song.id] = 'success'
+      successCount++
+    } else {
+      // 标记失败
+      durationRefreshStatus.value[song.id] = 'error'
+      failCount++
     }
+  }
+
+  const resultsPromise = runConcurrent(
+    toRefresh.map((song) => ({
+      fn: async (sig) => {
+        if (sig.aborted) return { songId: song.id, aborted: true }
+        const r = await requestSongDuration(song, sig)
+        return { songId: song.id, ...r }
+      },
+      signal
+    })),
+    3,
+    (completed) => {
+      refreshingAllDurations.value.done = completed
+    },
+    (idx, entry) => {
+      const song = toRefresh[idx]
+      if (!song || !entry || entry.aborted) return
+      applyRefreshResult(song, entry.result)
+      // 同时更新完成数和进度提示
+      refreshingAllDurations.value.done = successCount + failCount
+      refreshingAllDurations.value.progress = callLocale(
+        'allDurationsProgressWithCount',
+        `${successCount + failCount}/${toRefresh.length}（成功${successCount} 失败${failCount}）`,
+        `${successCount + failCount}`, `${toRefresh.length}`, `${successCount}`, `${failCount}`
+      )
+    }
+  )
+
+  try {
+    // 等所有歌曲处理完
+    await resultsPromise
   } finally {
+    // 等待 2 秒后统一清除颜色标记
+    await new Promise((r) => setTimeout(r, 2000))
+    for (const song of toRefresh) {
+      delete durationRefreshStatus.value[song.id]
+    }
     refreshAllAbortController = null
     refreshingAllDurations.value = { running: false, progress: '', done: 0, total: 0 }
   }
@@ -3647,47 +3762,63 @@ const refreshAutoCandidateDurations = async () => {
   let successCount = 0
   let failCount = 0
 
-  for (let i = 0; i < toRefresh.length; i++) {
-    const song = toRefresh[i]
-    try {
-      if (signal.aborted) break
-
-      const result = await requestSongDuration(song, signal)
-
-      if (result.success && result.durationSeconds) {
-        const dur = result.durationSeconds
-        // 更新 songs.value
-        const songIdx = songs.value.findIndex((s) => s.id === song.id)
-        if (songIdx !== -1) songs.value[songIdx].durationSeconds = dur
-        // 更新 replayRequests.value
-        for (const r of replayRequests.value) {
-          if (r.id === song.id) { r.durationSeconds = dur; break }
-        }
-        // 更新 songPool.value
-        for (const p of songPool.value) {
-          if (p.songId === song.id) { p.durationSeconds = dur; break }
-        }
-        successCount++
-        refreshingAutoCandidates.value.success = successCount
-      } else {
-        failCount++
-        refreshingAutoCandidates.value.fail = failCount
+  // 将单首歌结果写入 UI 状态（先获取到的先显示）
+  const applyRefreshResult = (song, result) => {
+    if (result.success && result.durationSeconds) {
+      const dur = result.durationSeconds
+      const songIdx = songs.value.findIndex((s) => s.id === song.id)
+      if (songIdx !== -1) songs.value[songIdx].durationSeconds = dur
+      for (const r of replayRequests.value) {
+        if (r.id === song.id) { r.durationSeconds = dur; break }
       }
-    } catch (err) {
-      if (signal.aborted) break
-      console.error(`刷新候选歌曲时长失败 #${song.id}:`, err)
+      for (const p of songPool.value) {
+        if (p.songId === song.id) { p.durationSeconds = dur; break }
+      }
+      durationRefreshStatus.value[song.id] = 'success'
+      successCount++
+    } else {
+      durationRefreshStatus.value[song.id] = 'error'
       failCount++
-      refreshingAutoCandidates.value.fail = failCount
-    } finally {
-      refreshingAutoCandidates.value.progress = `${i + 1} / ${toRefresh.length}`
-      if (!signal.aborted) {
-        await new Promise((resolve) => setTimeout(resolve, 150))
-      }
     }
   }
 
-  refreshAutoCandidatesAbortController = null
-  refreshingAutoCandidates.value = { running: false, progress: '' }
+  const resultsPromise = runConcurrent(
+    toRefresh.map((song) => ({
+      fn: async (sig) => {
+        if (sig.aborted) return { songId: song.id, aborted: true }
+        const r = await requestSongDuration(song, sig)
+        return { songId: song.id, ...r }
+      },
+      signal
+    })),
+    3,
+    (completed) => {
+      refreshingAutoCandidates.value.success = completed - failCount
+      refreshingAutoCandidates.value.fail = failCount
+      refreshingAutoCandidates.value.progress = `${completed} / ${toRefresh.length}`
+    },
+    (idx, entry) => {
+      const song = toRefresh[idx]
+      if (!song || !entry || entry.aborted) return
+      applyRefreshResult(song, entry.result)
+      refreshingAutoCandidates.value.success = successCount
+      refreshingAutoCandidates.value.fail = failCount
+      refreshingAutoCandidates.value.progress = `${successCount + failCount} / ${toRefresh.length}`
+    }
+  )
+
+  try {
+    // 等所有歌曲处理完
+    await resultsPromise
+  } finally {
+    // 等待 2 秒后统一清除颜色标记
+    await new Promise((r) => setTimeout(r, 2000))
+    for (const song of toRefresh) {
+      delete durationRefreshStatus.value[song.id]
+    }
+    refreshAutoCandidatesAbortController = null
+    refreshingAutoCandidates.value = { running: false, progress: '' }
+  }
 
   if (window.$showNotification) {
     if (successCount > 0 && failCount === 0) {
