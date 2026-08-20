@@ -48,16 +48,20 @@ export default defineEventHandler(async (event) => {
 
   const s = song[0]
 
-  // 浏览器可直接读取已有播放地址时，只由服务端负责校验并保存结果。
-  if (body?.durationSeconds !== undefined) {
+  // 浏览器读取或管理员手动输入时，只由服务端负责校验并保存结果。
+  if (Object.prototype.hasOwnProperty.call(body || {}, 'durationSeconds')) {
+    if (body.durationSeconds === null) {
+      await db.update(songs).set({ durationSeconds: null }).where(eq(songs.id, songId))
+      return { success: true, songId, durationSeconds: null, message: '时长已清空' }
+    }
+
     const durationSeconds = Number(body.durationSeconds)
-    if (!Number.isInteger(durationSeconds) || durationSeconds < 30 || durationSeconds > 3600) {
-      return {
-        success: false,
-        songId,
-        durationSeconds: null,
-        message: '时长需在 30 秒至 1 小时之间'
-      }
+    if (!Number.isInteger(durationSeconds) || durationSeconds < 0 || durationSeconds > 7200) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '时长需在 0 秒至 2 小时之间'
+      )
     }
 
     if (s.durationSeconds !== durationSeconds) {

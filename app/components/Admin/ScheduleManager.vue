@@ -224,7 +224,7 @@
                 <FolderPlus class="w-3.5 h-3.5" />
               </button>
               <button
-                class="hidden lg:flex items-center justify-center p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                class="hidden lg:flex items-center justify-center gap-1 p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
                 :disabled="refreshingAllDurations.running"
                 :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
                 @click="refreshAllDurations"
@@ -233,31 +233,20 @@
                   class="w-3.5 h-3.5"
                   :class="{ 'animate-spin': refreshingAllDurations.running }"
                 />
+                <span
+                  v-if="refreshingAllDurations.running"
+                  class="text-[9px] font-bold tabular-nums whitespace-nowrap"
+                >{{ refreshingAllDurations.done }}/{{ refreshingAllDurations.total }}</span>
+                <span
+                  v-if="refreshingAllDurations.running"
+                  class="absolute inset-x-0 bottom-0 h-0.5 bg-bg-tertiary"
+                >
+                  <span
+                    class="block h-full bg-primary transition-[width] duration-300"
+                    :style="{ width: `${refreshingAllDurations.total > 0 ? Math.round((refreshingAllDurations.done / refreshingAllDurations.total) * 100) : 0}%` }"
+                  />
+                </span>
               </button>
-            </div>
-
-            <!-- 批量刷新时长进度 -->
-            <div v-if="refreshingAllDurations.running" class="mt-2 rounded-xl border border-primary-20 bg-primary-5 px-3 py-2.5">
-              <div class="flex items-center justify-between gap-3 text-[10px] font-bold">
-                <span class="flex min-w-0 items-center gap-1.5 text-primary">
-                  <RefreshCcw class="h-3.5 w-3.5 shrink-0 animate-spin" />
-                  <span class="truncate">{{ refreshingAllDurations.currentTitle || locale.refreshPageDurations }}</span>
-                </span>
-                <span class="shrink-0 text-text-secondary">{{ refreshingAllDurations.done }} / {{ refreshingAllDurations.total }}</span>
-              </div>
-              <div class="mt-2 h-2 overflow-hidden rounded-full bg-bg-tertiary">
-                <div
-                  class="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
-                  :style="{ width: `${refreshingAllDurations.total > 0 ? Math.round((refreshingAllDurations.done / refreshingAllDurations.total) * 100) : 0}%` }"
-                />
-              </div>
-              <div class="mt-1.5 flex items-center justify-between text-[10px] font-bold">
-                <span class="text-text-tertiary">{{ refreshingAllDurations.progress }}</span>
-                <span class="flex items-center gap-2">
-                  <span class="text-success">✓ {{ refreshingAllDurations.success }}</span>
-                  <span class="text-warning">✗ {{ refreshingAllDurations.fail }}</span>
-                </span>
-              </div>
             </div>
           </div>
 
@@ -452,7 +441,7 @@
                       <span
                         v-if="song.durationSeconds && !editingDuration[song.id]"
                         class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
-                        :title="locale.editDuration || '点击编辑时长'"
+                        :title="locale.messages?.editDuration || '点击编辑时长'"
                         @click.stop="startEditDuration(song)"
                       >{{ formatDuration(song.durationSeconds) }}</span>
                       <input
@@ -460,10 +449,10 @@
                         ref="editingDurationInput"
                         v-model="editingDurationValue"
                         type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        class="w-14 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                        placeholder="秒"
+                        inputmode="text"
+                        pattern="[0-9:]*"
+                        class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                        :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
                         @blur="saveDurationEdit(song)"
                         @keydown="handleDurationKeydown($event, song)"
                       >
@@ -895,7 +884,7 @@
                       <span
                         v-if="schedule.song.durationSeconds && !editingDuration[schedule.song.id]"
                         class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
-                        :title="locale.editDuration || '点击编辑时长'"
+                        :title="locale.messages?.editDuration || '点击编辑时长'"
                         @click.stop="startEditDuration(schedule.song)"
                       >{{ formatDuration(schedule.song.durationSeconds) }}</span>
                       <input
@@ -903,10 +892,10 @@
                         ref="editingDurationInput"
                         v-model="editingDurationValue"
                         type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        class="w-14 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                        placeholder="秒"
+                        inputmode="text"
+                        pattern="[0-9:]*"
+                        class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                        :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
                         @blur="saveDurationEdit(schedule.song)"
                         @keydown="handleDurationKeydown($event, schedule.song)"
                       >
@@ -1402,6 +1391,22 @@
             </div>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.targetSongCount }}</label>
+            <div class="flex gap-2">
+              <input
+                v-model.number="autoScheduleTargetSongCount"
+                type="number"
+                min="1"
+                step="1"
+                :placeholder="locale.targetSongCountPlaceholder"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                @keydown.enter="runAutoSchedule"
+              />
+              <span class="flex items-center text-xs text-text-disabled px-1">{{ locale.songCountUnit }}</span>
+            </div>
+          </div>
+
           <!-- 工具栏 -->
           <div class="flex items-center gap-2 p-2 bg-bg-secondary-50 border border-border-secondary rounded-xl">
             <div class="flex items-center gap-2 flex-1">
@@ -1616,7 +1621,7 @@
                   <span
                     v-if="song.durationSeconds && !editingDuration[song.id]"
                     class="text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary cursor-pointer shrink-0 px-1 rounded transition-colors"
-                    :title="locale.editDuration || '点击编辑时长'"
+                    :title="locale.messages?.editDuration || '点击编辑时长'"
                     @click.stop="startEditDuration(song)"
                   >{{ formatDuration(song.durationSeconds) }}</span>
                   <input
@@ -1624,10 +1629,10 @@
                     ref="editingDurationInput"
                     v-model="editingDurationValue"
                     type="text"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    class="w-14 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                    placeholder="秒"
+                    inputmode="text"
+                    pattern="[0-9:]*"
+                    class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                    :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
                     @blur="saveDurationEdit(song)"
                     @keydown="handleDurationKeydown($event, song)"
                   >
@@ -2026,18 +2031,47 @@ const replayModalSongId = ref(null)
 // 刷新时长状态（每首歌独立追踪）
 const refreshingDuration = ref({})
 // 批量刷新时长状态
-const refreshingAllDurations = ref({ running: false, progress: '', currentTitle: '', success: 0, fail: 0, done: 0, total: 0 })
+const refreshingAllDurations = ref({ running: false, progress: '', done: 0, total: 0 })
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
 // 行内编辑歌曲时长状态
 const editingDuration = ref({})
 const editingDurationValue = ref('')
 const editingDurationInput = ref(null)
 
+const formatDurationInput = (seconds) => {
+  const total = Number(seconds)
+  if (!Number.isInteger(total) || total < 0) return ''
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const remainingSeconds = total % 60
+  const paddedSeconds = String(remainingSeconds).padStart(2, '0')
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${paddedSeconds}`
+    : `${minutes}:${paddedSeconds}`
+}
+
+const parseDurationInput = (value) => {
+  const parts = value.split(':')
+  if (parts.length !== 2 && parts.length !== 3) return null
+  if (parts.some((part) => !/^\d+$/.test(part))) return null
+
+  const values = parts.map(Number)
+  const hours = parts.length === 3 ? values[0] : 0
+  const minutes = parts.length === 3 ? values[1] : values[0]
+  const seconds = parts.length === 3 ? values[2] : values[1]
+  if (minutes > 59 || seconds > 59) return null
+
+  const total = hours * 3600 + minutes * 60 + seconds
+  return total <= 7200 ? total : null
+}
+
 // 开始编辑歌曲时长
 const startEditDuration = (song) => {
   if (editingDuration.value[song.id]) return
   editingDuration.value[song.id] = true
-  editingDurationValue.value = String(song.durationSeconds || '')
+  editingDurationValue.value = song.durationSeconds == null
+    ? ''
+    : formatDurationInput(song.durationSeconds)
   nextTick(() => {
     if (editingDurationInput.value) {
       editingDurationInput.value.focus()
@@ -2050,22 +2084,33 @@ const startEditDuration = (song) => {
 const saveDurationEdit = async (song) => {
   const raw = editingDurationValue.value.trim()
   if (raw === '') {
+    if (song.durationSeconds == null) {
+      cancelEditDuration(song.id)
+      return
+    }
     // 清空时长
-    await updateSongDuration(song.id, null)
+    const updated = await updateSongDuration(song.id, null)
+    if (!updated) return
     delete editingDuration.value[song.id]
     editingDurationValue.value = ''
     return
   }
 
-  const seconds = parseInt(raw, 10)
-  if (!Number.isInteger(seconds) || seconds < 0 || seconds > 7200) {
+  const seconds = parseDurationInput(raw)
+  if (seconds == null) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.messages?.durationInvalid || '时长无效（0-7200秒）', 'error')
+      window.$showNotification(locale.value.messages?.durationInvalid || '时长格式无效，请输入 分:秒 或 时:分:秒', 'error')
     }
     return
   }
 
-  await updateSongDuration(song.id, seconds)
+  if (seconds === Number(song.durationSeconds)) {
+    cancelEditDuration(song.id)
+    return
+  }
+
+  const updated = await updateSongDuration(song.id, seconds)
+  if (!updated) return
   delete editingDuration.value[song.id]
   editingDurationValue.value = ''
 }
@@ -2073,9 +2118,9 @@ const saveDurationEdit = async (song) => {
 // 通用：更新歌曲时长并同步所有列表
 const updateSongDuration = async (songId, durationSeconds) => {
   try {
-    await $fetch(`/api/songs/${songId}`, {
-      method: 'PUT',
-      body: { durationSeconds },
+    await $fetch('/api/admin/songs/duration', {
+      method: 'POST',
+      body: { songId, durationSeconds },
       ...(auth ? auth.getAuthConfig?.() : {})
     })
 
@@ -2109,11 +2154,13 @@ const updateSongDuration = async (songId, durationSeconds) => {
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages?.durationUpdated || '时长已更新', 'success')
     }
+    return true
   } catch (err) {
     console.error('更新时长失败:', err)
     if (window.$showNotification) {
       window.$showNotification(localizeServerError(err), 'error')
     }
+    return false
   }
 }
 
@@ -2162,6 +2209,7 @@ const openContextMenu = (e, side, song) => {
 }
 const closeContextMenu = () => { contextMenuOpen.value = false }
 const autoScheduleTargetMinutes = ref(null)
+const autoScheduleTargetSongCount = ref(null)
 const autoScheduleDirection = ref('under')
 const autoScheduleFixExisting = ref(false)
 
@@ -3417,9 +3465,6 @@ const refreshAllDurations = async () => {
   refreshingAllDurations.value = {
     running: true,
     progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`, toRefresh.length),
-    currentTitle: '',
-    success: 0,
-    fail: 0,
     done: 0,
     total: toRefresh.length
   }
@@ -3429,7 +3474,6 @@ const refreshAllDurations = async () => {
   try {
     for (let i = 0; i < toRefresh.length; i++) {
       const song = toRefresh[i]
-      refreshingAllDurations.value.currentTitle = song.title || song.artist || ''
       try {
         if (signal.aborted) break
 
@@ -3452,16 +3496,13 @@ const refreshAllDurations = async () => {
             if (poolItem.songId === song.id) poolItem.durationSeconds = result.durationSeconds
           }
           successCount++
-          refreshingAllDurations.value.success = successCount
         } else {
           failCount++
-          refreshingAllDurations.value.fail = failCount
         }
       } catch (err) {
         if (signal.aborted) break
         console.error(`批量刷新时长失败 #${song.id}:`, err)
         failCount++
-        refreshingAllDurations.value.fail = failCount
       } finally {
         refreshingAllDurations.value.progress = callLocale(
           'allDurationsProgress',
@@ -3477,7 +3518,7 @@ const refreshAllDurations = async () => {
     }
   } finally {
     refreshAllAbortController = null
-    refreshingAllDurations.value = { running: false, progress: '', currentTitle: '', done: 0, total: 0, success: 0, fail: 0 }
+    refreshingAllDurations.value = { running: false, progress: '', done: 0, total: 0 }
   }
 
   if (window.$showNotification) {
@@ -3589,6 +3630,7 @@ const openAutoScheduleDialog = () => {
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
   autoScheduleAlgorithm.value = 'auto'
+  autoScheduleTargetSongCount.value = null
   autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
@@ -3598,6 +3640,7 @@ const closeAutoScheduleDialog = () => {
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
   autoScheduleAlgorithm.value = 'auto'
+  autoScheduleTargetSongCount.value = null
   autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
@@ -3605,6 +3648,7 @@ const resetAutoSchedule = () => {
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
   autoScheduleAlgorithm.value = 'auto'
+  autoScheduleTargetSongCount.value = null
   autoScheduleFixExisting.value = false
 }
 
@@ -3656,7 +3700,10 @@ const runAutoSchedule = () => {
   const fn = autoScheduleAlgorithm.value === 'auto'
     ? (autoScheduleCandidates.value.length < 20 ? autoScheduleExhaustive : autoSchedule)
     : (autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule)
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10)
+  const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
+    ? Math.floor(autoScheduleTargetSongCount.value)
+    : null
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
@@ -3682,7 +3729,10 @@ const generateMorePlans = async () => {
   const fn = autoScheduleAlgorithm.value === 'auto'
     ? (autoScheduleCandidates.value.length < 20 ? autoScheduleExhaustive : autoSchedule)
     : (autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule)
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount)
+  const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
+    ? Math.floor(autoScheduleTargetSongCount.value)
+    : null
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
   let addedCount = 0

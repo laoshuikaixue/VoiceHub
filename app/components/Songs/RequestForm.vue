@@ -3087,6 +3087,73 @@ const normalizeDurationToSeconds = (duration, actualMusicPlatform) => {
     : Math.floor(d)
 }
 
+const SUBMISSION_AUDIO_DURATION_TIMEOUT_MS = 8000
+
+// 播放地址未提供时长时，仅加载媒体元数据，不启动播放。
+const readAudioDuration = (url) => {
+  if (!url || typeof document === 'undefined') return Promise.resolve(null)
+
+  return new Promise((resolve) => {
+    const audio = document.createElement('audio')
+    let settled = false
+    let timeoutId = null
+
+    const cleanup = () => {
+      audio.onloadedmetadata = null
+      audio.ondurationchange = null
+      audio.onerror = null
+      audio.onabort = null
+      if (timeoutId !== null) window.clearTimeout(timeoutId)
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+    }
+
+    const finish = (duration) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      resolve(duration)
+    }
+
+    const handleMetadata = () => {
+      const duration = Number(audio.duration)
+      if (Number.isFinite(duration) && duration > 0) {
+        finish(Math.floor(duration))
+      }
+    }
+
+    audio.preload = 'metadata'
+    audio.onloadedmetadata = handleMetadata
+    audio.ondurationchange = handleMetadata
+    audio.onerror = () => finish(null)
+    audio.onabort = () => finish(null)
+    timeoutId = window.setTimeout(() => finish(null), SUBMISSION_AUDIO_DURATION_TIMEOUT_MS)
+
+    try {
+      audio.src = url
+      audio.load()
+    } catch {
+      finish(null)
+    }
+  })
+}
+
+const resolveSubmissionDuration = async (result, actualMusicPlatform, fallbackUrl = '') => {
+  const apiDuration = normalizeDurationToSeconds(result.duration, actualMusicPlatform)
+  if (apiDuration !== null) return apiDuration
+
+  const audioDuration = await readAudioDuration(result.url || result.file || fallbackUrl)
+  if (audioDuration === null) return null
+
+  // 保持 result.duration 与各平台搜索结果的单位一致，后续统一转换为秒。
+  result.duration =
+    actualMusicPlatform === 'netease' || actualMusicPlatform === 'netease-podcast'
+      ? audioDuration * 1000
+      : audioDuration
+  return audioDuration
+}
+
 // 提交选中的歌曲
 const submitSong = async (result, options = {}) => {
   // 防止重复点击和重复提交
@@ -3284,8 +3351,16 @@ const submitSong = async (result, options = {}) => {
   // 确保获取完整的URL
   if (!selectedUrl.value && result.musicId) {
     const fullResult = await getAudioUrl(result)
+    result = fullResult
     selectedUrl.value = fullResult.url || ''
   }
+
+  const actualMusicPlatform = result.actualMusicPlatform || result.musicPlatform || platform.value
+  const submissionDurationSeconds = await resolveSubmissionDuration(
+    result,
+    actualMusicPlatform,
+    selectedUrl.value
+  )
 
   // 处理 Bilibili 分 P 信息
   let bilibiliCid = result.bilibiliCid
@@ -3307,9 +3382,9 @@ const submitSong = async (result, options = {}) => {
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
       cover: selectedCover.value,
-      musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
+      musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
-      durationSeconds: normalizeDurationToSeconds(result.duration, result.actualMusicPlatform || result.musicPlatform),
+      durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id),

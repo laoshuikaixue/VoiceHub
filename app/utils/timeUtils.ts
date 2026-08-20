@@ -150,14 +150,17 @@ export function getBeijingEndOfMonth(date?: Date): Date {
 }
 
 /**
- * 格式化歌曲/音频时长（秒 → 分:秒）
+ * 格式化歌曲/音频时长（秒 → 分:秒 / 时:分:秒）
  */
 export function formatDuration(seconds: number): string {
   const total = Number(seconds)
   if (!isFinite(total) || total < 0) return ''
-  const minutes = Math.floor(total / 60)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
   const secs = Math.floor(total % 60)
-  return `${minutes}:${secs.toString().padStart(2, '0')}`
+  const minuteText = hours > 0 ? minutes.toString().padStart(2, '0') : String(minutes)
+  const secondText = secs.toString().padStart(2, '0')
+  return hours > 0 ? `${hours}:${minuteText}:${secondText}` : `${minuteText}:${secondText}`
 }
 
 /**
