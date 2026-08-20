@@ -1828,6 +1828,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
 import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
+import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
@@ -3164,9 +3165,9 @@ const moveAllToPool = async () => {
     try {
       const songDurations = (await Promise.all(
         pageSongs
-          .filter((song) => !song.durationSeconds && song.playUrl)
+          .filter((song) => !song.durationSeconds && song.musicPlatform && song.musicId)
           .map(async (song) => {
-            const durationSeconds = await readClientAudioDuration(song)
+            const durationSeconds = await resolveClientAudioDuration(song)
             return durationSeconds ? { songId: song.id, durationSeconds } : null
           })
       )).filter(Boolean)
@@ -3335,8 +3336,8 @@ const loadPlayTimes = async () => {
   }
 }
 
-const readClientAudioDuration = (song, signal) => {
-  if (!import.meta.client || !song?.playUrl) return Promise.resolve(null)
+const readClientAudioDuration = (song, signal, sourceUrl = song?.playUrl) => {
+  if (!import.meta.client || !sourceUrl) return Promise.resolve(null)
 
   return new Promise((resolve) => {
     const audio = new Audio()
@@ -3367,12 +3368,76 @@ const readClientAudioDuration = (song, signal) => {
     audio.preload = 'metadata'
     audio.onloadedmetadata = () => finish(audio.duration)
     audio.onerror = () => finish(null)
-    audio.src = convertToHttps(song.playUrl)
+    audio.src = convertToHttps(sourceUrl)
   })
 }
 
+// 按播放器相同的音源解析顺序读取时长，失败后切换到其他音源。
+const resolveClientAudioDuration = async (song, signal) => {
+  if (!import.meta.client || !song?.musicPlatform || !song?.musicId) return null
+
+  const excludeSources = []
+  const hasPlayUrl = Boolean(song.playUrl && String(song.playUrl).trim())
+  let ignoreProvidedUrl = !hasPlayUrl
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (signal?.aborted) return null
+
+    let candidate
+    try {
+      candidate = await getMusicUrlResult(
+        song.musicPlatform,
+        song.musicId,
+        song.playUrl,
+        {
+          ignoreProvidedUrl,
+          excludeSources,
+          musicInfo: {
+            name: song.title,
+            artist: song.artist,
+            album: song.album || undefined
+          }
+        }
+      )
+    } catch {
+      if (!ignoreProvidedUrl && hasPlayUrl) {
+        ignoreProvidedUrl = true
+        continue
+      }
+      return null
+    }
+
+    const sourceUrl = candidate?.url
+    if (!sourceUrl || (song.musicPlatform === 'tencent' && isKnownInvalidQqAudioUrl(sourceUrl))) {
+      if (candidate?.source === 'play-url') {
+        ignoreProvidedUrl = true
+      } else if (candidate?.source && !excludeSources.includes(candidate.source)) {
+        excludeSources.push(candidate.source)
+      }
+      continue
+    }
+
+    const duration = await readClientAudioDuration(song, signal, sourceUrl)
+    if (signal?.aborted) return null
+    const isNetease = song.musicPlatform === 'netease' || song.musicPlatform === 'netease-podcast'
+    if (duration != null && !(isNetease && duration === 30)) {
+      return duration
+    }
+
+    if (candidate.source === 'play-url') {
+      ignoreProvidedUrl = true
+    } else if (candidate.source && !excludeSources.includes(candidate.source)) {
+      excludeSources.push(candidate.source)
+    } else {
+      ignoreProvidedUrl = true
+    }
+  }
+
+  return null
+}
+
 const requestSongDuration = async (song, signal) => {
-  const clientDuration = await readClientAudioDuration(song, signal)
+  const clientDuration = await resolveClientAudioDuration(song, signal)
   if (clientDuration != null) {
     return await $fetch('/api/admin/songs/duration', {
       method: 'POST',

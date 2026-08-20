@@ -1628,7 +1628,6 @@ const handleRequest = async (songData) => {
       }
 
       // 强制刷新歌曲列表
-      console.log('???????????')
       await refreshSongs()
 
       // 刷新投稿状态

@@ -209,6 +209,16 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 网易云固定返回 30 秒时通常是试听片段，不作为歌曲完整时长。
+    if ((platform === 'netease' || platform === 'netease-podcast') && durationSeconds === 30) {
+      return {
+        success: false,
+        songId,
+        durationSeconds: null,
+        message: '网易云返回试听片段时长，未写入'
+      }
+    }
+
     // 校验时长范围（合理的歌曲时长：30秒~1小时）
     if (durationSeconds < 30 || durationSeconds > 3600) {
       console.warn(`[时长刷新] 歌曲 #${songId} 时长异常：${durationSeconds}s，跳过写入`)
