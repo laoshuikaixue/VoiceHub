@@ -22,8 +22,10 @@ export const siteConfig = {
   visualIdentity: 'Visual Identity',
   siteLogoUrl: 'Site Logo URL',
   siteLogoPlaceholder: 'Enter the logo image URL',
-  schoolLogoHome: 'Home School Logo URL (Large)',
-  schoolLogoHomePlaceholder: 'Enter the home school logo URL',
+  schoolLogoHome: 'Home School Logo URL (Dark)',
+  schoolLogoHomePlaceholder: 'Enter the dark-mode school logo URL first',
+  schoolLogoHomeLight: 'Home School Logo URL (Light)',
+  schoolLogoHomeLightPlaceholder: 'Enter the light-mode school logo URL',
   schoolLogoPrint: 'Print Schedule Logo URL (Small)',
   schoolLogoPrintPlaceholder: 'Enter the print page school logo URL',
 
