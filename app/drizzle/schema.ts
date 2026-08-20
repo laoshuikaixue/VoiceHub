@@ -52,6 +52,19 @@ export const playTimes = pgTable('PlayTime', {
   description: text('description'),
 });
 
+// 年级班级配置表（选择器选项来源，优先于从用户提取）
+export const gradeClass = pgTable(
+  'GradeClass',
+  {
+    id: serial('id').primaryKey(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    grade: text('grade').notNull(),
+    class: text('class').notNull(),
+  },
+  (table) => [unique('GradeClass_grade_class_unique').on(table.grade, table.class)],
+);
+
 // 歌曲表
 export const songs = pgTable('Song', {
   id: serial('id').primaryKey(),

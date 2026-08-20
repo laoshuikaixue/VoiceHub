@@ -10,6 +10,7 @@ import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
+import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 
 const REGISTER_RATE_LIMIT = 5
 const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
@@ -119,13 +120,9 @@ export default defineEventHandler(async (event) => {
   }
 
   if (selectedGrade && selectedClass) {
-    const existingClass = await db.query.users.findFirst({
-      where: (t, { eq, and }) =>
-        and(eq(t.status, 'active'), eq(t.grade, selectedGrade), eq(t.class, selectedClass)),
-      columns: { id: true }
-    })
+    const valid = await isGradeClassValid(selectedGrade, selectedClass)
 
-    if (!existingClass) {
+    if (!valid) {
       throw createApiError(400, 'AUTH_GRADE_CLASS_MUST_EXIST', '请选择系统内已存在的年级和班级')
     }
   }

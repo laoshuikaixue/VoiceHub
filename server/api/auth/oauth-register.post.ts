@@ -8,6 +8,7 @@ import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair } from '~~/server/utils/register-validation'
+import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -52,13 +53,9 @@ export default defineEventHandler(async (event) => {
   }
 
   if (selectedGrade && selectedClass) {
-    const existingClass = await db.query.users.findFirst({
-      where: (t, { eq, and }) =>
-        and(eq(t.status, 'active'), eq(t.grade, selectedGrade), eq(t.class, selectedClass)),
-      columns: { id: true }
-    })
+    const valid = await isGradeClassValid(selectedGrade, selectedClass)
 
-    if (!existingClass) {
+    if (!valid) {
       throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
     }
   }

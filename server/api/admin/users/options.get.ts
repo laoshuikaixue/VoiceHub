@@ -1,25 +1,8 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-
-// 智能排序函数
-const smartSort = (a: string, b: string) => {
-  const gradeOrder: Record<string, number> = {
-    '初一': 1, '初二': 2, '初三': 3,
-    '高一': 4, '高二': 5, '高三': 6,
-    '大一': 7, '大二': 8, '大三': 9, '大四': 10,
-    '教师': 99, '教职工': 99
-  }
-
-  const weightA = gradeOrder[a]
-  const weightB = gradeOrder[b]
-
-  if (weightA !== undefined && weightB !== undefined) return weightA - weightB
-  if (weightA !== undefined) return -1
-  if (weightB !== undefined) return 1
-
-  return a.localeCompare(b, 'zh-CN', { numeric: true })
-}
+import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
+import { smartSort } from '~~/server/utils/grade-class-core'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -45,32 +28,10 @@ export default defineEventHandler(async (event) => {
       })
       .from(users)
 
-    const gradesSet = new Set<string>()
-    const classesMap = new Map<string, { grade: string | null, class: string }>()
-
-    for (const treeUser of treeUsers) {
-      const gradeValue = treeUser.grade?.trim() || ''
-      const classValue = treeUser.class?.trim() || ''
-
-      if (gradeValue) {
-        gradesSet.add(gradeValue)
-      }
-
-      if (classValue) {
-        const classKey = `${gradeValue}:${classValue}`
-        if (!classesMap.has(classKey)) {
-          classesMap.set(classKey, {
-            grade: gradeValue || null,
-            class: classValue
-          })
-        }
-      }
-    }
-
-    const grades = Array.from(gradesSet).sort(smartSort)
-    const classes = Array.from(classesMap.values()).sort((a, b) =>
-      a.class.localeCompare(b.class, 'zh-CN', { numeric: true })
-    )
+    // 年级班级选项：配置优先，未配置时回退到用户提取（组织结构树不受影响，始终基于真实用户）
+    const options = await fetchGradeClassOptions()
+    const grades = [...new Set(options.map((item) => item.grade))].sort(smartSort)
+    const classes = options.map((item) => ({ grade: item.grade, class: item.class }))
 
     return {
       success: true,

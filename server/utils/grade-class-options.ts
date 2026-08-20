@@ -1,44 +1,40 @@
 import { and, isNotNull, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
+import { users, gradeClass } from '~/drizzle/schema'
+import { resolveGradeClassOptions, type GradeClassOption } from './grade-class-core'
 
-const smartSort = (a: string, b: string) => {
-  const gradeOrder: Record<string, number> = {
-    '初一': 1, '初二': 2, '初三': 3,
-    '高一': 4, '高二': 5, '高三': 6,
-    '大一': 7, '大二': 8, '大三': 9, '大四': 10,
-    '教师': 99, '教职工': 99
-  }
-
-  const weightA = gradeOrder[a]
-  const weightB = gradeOrder[b]
-
-  if (weightA !== undefined && weightB !== undefined) return weightA - weightB
-  if (weightA !== undefined) return -1
-  if (weightB !== undefined) return 1
-
-  return a.localeCompare(b, 'zh-CN', { numeric: true })
-}
-
-export interface GradeClassOption {
-  grade: string
-  class: string
-}
-
-// 从现有 active 用户中提取去重后的年级班级选项（注册表单与 OAuth 注册共用）
+// 年级班级选项：优先读管理员配置表，未配置时从 active 用户中提取（注册表单与 OAuth 注册共用）
 export async function fetchGradeClassOptions(): Promise<GradeClassOption[]> {
-  const rows = await db
-    .selectDistinct({
-      grade: users.grade,
-      class: users.class
-    })
-    .from(users)
-    .where(and(eq(users.status, 'active'), isNotNull(users.grade), isNotNull(users.class)))
+  const [configRows, userRows] = await Promise.all([
+    db.select({
+      grade: gradeClass.grade,
+      class: gradeClass.class
+    }).from(gradeClass),
+    db
+      .selectDistinct({
+        grade: users.grade,
+        class: users.class
+      })
+      .from(users)
+      .where(and(eq(users.status, 'active'), isNotNull(users.grade), isNotNull(users.class)))
+  ])
 
-  return rows
-    .filter((item): item is { grade: string, class: string } => Boolean(item.grade?.trim()) && Boolean(item.class?.trim()))
-    .sort((a, b) => {
-      const gradeResult = smartSort(a.grade, b.grade)
-      return gradeResult || smartSort(a.class, b.class)
+  return resolveGradeClassOptions(configRows, userRows)
+}
+
+// 组合合法性校验：配置表命中或现有 active 用户命中均可（与选项数据源语义一致）
+export async function isGradeClassValid(grade: string, studentClass: string): Promise<boolean> {
+  const [configHit, userHit] = await Promise.all([
+    db.query.gradeClass.findFirst({
+      where: (t, { eq: eq_, and: and_ }) => and_(eq_(t.grade, grade), eq_(t.class, studentClass)),
+      columns: { id: true }
+    }),
+    db.query.users.findFirst({
+      where: (t, { eq: eq_, and: and_ }) =>
+        and_(eq_(t.status, 'active'), eq_(t.grade, grade), eq_(t.class, studentClass)),
+      columns: { id: true }
     })
+  ])
+
+  return Boolean(configHit || userHit)
 }

@@ -790,6 +790,7 @@ VoiceHub/
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserApprovalModal.vue  # 用户注册审核弹窗
+│   │   │   ├── GradeClassManager.vue  # 年级班级配置管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
 │   │   ├── AMLL/              # Apple Music-Like Lyrics组件
@@ -1032,6 +1033,11 @@ VoiceHub/
 │   │   │   │   ├── [id].patch.ts    # 更新黑名单项
 │   │   │   │   ├── index.get.ts     # 获取黑名单列表
 │   │   │   │   └── index.post.ts    # 添加黑名单项
+│   │   │   ├── grade-class/         # 年级班级配置API
+│   │   │   │   ├── [id].delete.ts   # 删除配置项
+│   │   │   │   ├── by-grade.delete.ts # 按年级删除配置
+│   │   │   │   ├── index.get.ts     # 获取配置列表
+│   │   │   │   └── index.post.ts    # 新增配置项
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
 │   │   │   │   ├── create.post.ts   # 创建点歌券
@@ -1326,6 +1332,7 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
+│   │   ├── grade-class-core.ts # 年级班级选项纯函数（排序/兜底，可单测）
 │   │   ├── grade-class-options.ts # 年级班级选项提取工具（注册表单共用）
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略

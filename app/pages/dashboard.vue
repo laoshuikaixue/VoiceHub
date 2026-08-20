@@ -151,6 +151,14 @@
               <LazyAdminBlacklistManager />
             </div>
 
+            <!-- 年级班级管理 -->
+            <div
+              v-if="activeTab === 'grade-class' && permissions.canAccessPage('grade-class')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminGradeClassManager />
+            </div>
+
             <!-- 站点配置 -->
             <div
               v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')"
