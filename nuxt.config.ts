@@ -742,6 +742,12 @@ export default defineNuxtConfig({
       wasm: true,
       asyncContext: true
     },
+    // @applemusic-like-lyrics/lyric 的 WASM 模块含顶层 await，需保留现代 ESM 语法。
+    esbuild: {
+      options: {
+        target: 'esnext'
+      }
+    },
     externals: {
       inline: ssrInlineLyricPackages
     },
