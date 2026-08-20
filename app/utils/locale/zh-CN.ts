@@ -2433,7 +2433,7 @@ export const admin = {
       scheduleDeleted: '排期已删除！',
       schedulePublished: '排期发布成功，通知已发送！',
       draftPublished: (title: string) => `草稿《${title}》发布成功，通知已发送！`,
-      durationUpdated: '时长获取成功',
+      durationUpdated: '时长已更新',
       durationFailed: '获取时长失败',
       durationNoPlatform: '歌曲缺少平台或音乐 ID 信息，无法获取时长',
       durationInvalid: '时长格式无效，请输入 分:秒 或 时:分:秒（最长 2 小时）',

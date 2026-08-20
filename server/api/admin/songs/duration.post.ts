@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       songId,
       durationSeconds,
-      message: s.durationSeconds === durationSeconds ? '时长未变化' : '时长获取成功'
+      message: s.durationSeconds === durationSeconds ? '时长未变化' : '时长更新成功'
     }
   }
 

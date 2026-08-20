@@ -2424,7 +2424,7 @@ export const admin = {
       scheduleDeleted: 'Schedule deleted!',
       schedulePublished: 'Schedule published and notifications sent!',
       draftPublished: (title: string) => `Draft "${title}" published and notifications sent!`,
-      durationUpdated: 'Duration refreshed',
+      durationUpdated: 'Duration updated',
       durationFailed: 'Failed to get duration',
       durationNoPlatform: 'Song missing platform or music ID, cannot get duration',
       durationInvalid: 'Invalid duration. Use M:SS or H:MM:SS (max 2 hours)',
