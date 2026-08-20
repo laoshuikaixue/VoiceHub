@@ -4,13 +4,13 @@ import { useTheme } from '~/composables/useTheme'
 
 const THEME_LOGO_SEPARATOR = '||'
 
-// 兼容旧配置：没有分隔符时，同一个地址用于两种主题。
+// 兼容旧配置：没有分隔符时，地址只归入深色；浅色运行时回退到深色。
 export const splitThemeLogoUrl = (value) => {
   const normalized = typeof value === 'string' ? value.trim() : ''
   if (!normalized) return { dark: '', light: '' }
 
   const separatorIndex = normalized.indexOf(THEME_LOGO_SEPARATOR)
-  if (separatorIndex < 0) return { dark: normalized, light: normalized }
+  if (separatorIndex < 0) return { dark: normalized, light: '' }
 
   const dark = normalized.slice(0, separatorIndex).trim()
   const light = normalized.slice(separatorIndex + THEME_LOGO_SEPARATOR.length).trim()
