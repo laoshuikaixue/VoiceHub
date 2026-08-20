@@ -3379,6 +3379,11 @@ const resolveClientAudioDuration = async (song, signal) => {
   const excludeSources = []
   const hasPlayUrl = Boolean(song.playUrl && String(song.playUrl).trim())
   let ignoreProvidedUrl = !hasPlayUrl
+  const isPodcast =
+    song.musicPlatform === 'netease-podcast' ||
+    song.sourceInfo?.type === 'voice' ||
+    (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
+  const mediaId = song.sourceInfo?.strMediaMid || song.sourceInfo?.mediaId || song.sourceInfo?.mediaMid
 
   for (let attempt = 0; attempt < 3; attempt++) {
     if (signal?.aborted) return null
@@ -3390,6 +3395,8 @@ const resolveClientAudioDuration = async (song, signal) => {
         song.musicId,
         song.playUrl,
         {
+          unblock: isPodcast ? false : undefined,
+          mediaId,
           ignoreProvidedUrl,
           excludeSources,
           musicInfo: {
