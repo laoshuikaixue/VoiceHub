@@ -52,19 +52,7 @@ const AGGREGATE_REQUEST_HEADERS = {
 }
 
 const fetchAggregateEndpoint = async (url: string): Promise<any> => {
-  let lastError: any
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      return await $fetch<any>(url, { headers: AGGREGATE_REQUEST_HEADERS })
-    } catch (error: any) {
-      lastError = error
-      const responseBody = error?.data || error?.response?._data
-      // 只对明确的安全挑战页重试，避免放大真实的凭据或参数错误。
-      if (attempt === 0 && isAggregateSecurityChallenge(responseBody)) continue
-      throw error
-    }
-  }
-  throw lastError
+  return $fetch<any>(url, { headers: AGGREGATE_REQUEST_HEADERS })
 }
 
 const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
@@ -443,10 +431,13 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       })
       if (isAggregateSecurityChallenge(responseBody)) {
         throw new Error(
-          '聚合登录供应商的安全防护拦截了服务器请求，请将服务器出口 IP 加白或更换供应商接口地址'
+          '聚合登录供应商的安全防护拦截了服务器请求，请将服务器出口 IP 加白或更换供应商接口地址',
+          { cause: e }
         )
       }
-      throw new Error(providerMessage ? `令牌请求失败：${providerMessage}` : '令牌请求失败')
+      throw new Error(providerMessage ? `令牌请求失败：${providerMessage}` : '令牌请求失败', {
+        cause: e
+      })
     }
 
     if (!isAggregateSuccessCode(tokenResponse?.code)) {
