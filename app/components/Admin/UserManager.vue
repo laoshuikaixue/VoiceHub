@@ -322,6 +322,15 @@
                     {{ getStatusName('active') }}
                   </div>
                   <div
+                    v-else-if="user.status === 'pending'"
+                    class="flex items-center gap-1.5 text-info font-black uppercase text-[10px] tracking-widest"
+                  >
+                    <div
+                      class="w-1.5 h-1.5 rounded-full bg-info shadow-[0_0_8px_var(--info-50)]"
+                    />
+                    {{ getStatusName('pending') }}
+                  </div>
+                  <div
                     v-else-if="user.status === 'withdrawn'"
                     class="flex items-center gap-1.5 text-error font-black uppercase text-[10px] tracking-widest"
                   >
@@ -363,6 +372,14 @@
                       @click="editUser(user)"
                     >
                       <Edit2 :size="13" />
+                    </button>
+                    <button
+                      v-if="user.status === 'pending'"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
+                      :title="locale.actions.approve"
+                      @click="openApproval(user)"
+                    >
+                      <ClipboardCheck :size="13" />
                     </button>
                     <button
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
@@ -430,6 +447,13 @@
                     class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success-50)]"
                   />
                   {{ getStatusName('active') }}
+                </div>
+                <div
+                  v-else-if="user.status === 'pending'"
+                  class="flex items-center gap-1.5 text-info font-black uppercase text-[10px] tracking-widest"
+                >
+                  <div class="w-1.5 h-1.5 rounded-full bg-info" />
+                  {{ getStatusName('pending') }}
                 </div>
                 <div
                   v-else-if="user.status === 'withdrawn'"
@@ -513,6 +537,13 @@
                 @click="editUser(user)"
               >
                 <Edit2 :size="12" /> {{ locale.actions.edit }}
+              </button>
+              <button
+                v-if="user.status === 'pending'"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
+                @click="openApproval(user)"
+              >
+                <ClipboardCheck :size="12" /> {{ locale.actions.approve }}
               </button>
               <button
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
@@ -1085,6 +1116,14 @@
       @close="closeUserSongsModal"
     />
 
+    <!-- 用户注册审核模态框 -->
+    <UserApprovalModal
+      :show="showApprovalModal"
+      :user="userToApprove"
+      @close="showApprovalModal = false"
+      @success="handleApprovalSuccess"
+    />
+
     <!-- 用户详细信息模态框 -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
@@ -1564,12 +1603,14 @@ import {
   Hash,
   AtSign,
   Briefcase,
-  Link
+  Link,
+  ClipboardCheck
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
+import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
@@ -1603,6 +1644,8 @@ const getErrorDetail = (error) =>
 // 响应式数据
 const loading = ref(false)
 const users = ref([])
+const showApprovalModal = ref(false)
+const userToApprove = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
 const statusFilter = ref('')
@@ -1656,6 +1699,7 @@ const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?
 const statusFilterOptions = computed(() => [
   { label: locale.value?.allStatus || '全部状态', value: '' },
   { label: getStatusName('active'), value: 'active' },
+  { label: getStatusName('pending'), value: 'pending' },
   { label: getStatusName('withdrawn'), value: 'withdrawn' },
   { label: getStatusName('graduate'), value: 'graduate' }
 ])
@@ -2032,6 +2076,22 @@ const editUser = (user) => {
     status: user.status || 'active',
     grade: user.grade || '',
     class: user.class || ''
+  }
+}
+
+const openApproval = (user) => {
+  userToApprove.value = user
+  showApprovalModal.value = true
+}
+
+const handleApprovalSuccess = (result) => {
+  void loadUsers(currentPage.value, pageSize.value)
+  if (window.$showNotification) {
+    const message =
+      result?.action === 'approve'
+        ? locale.value.approval?.approveSuccess
+        : locale.value.approval?.rejectSuccess
+    window.$showNotification(message, 'success')
   }
 }
 

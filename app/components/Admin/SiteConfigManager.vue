@@ -440,6 +440,45 @@
             </div>
           </div>
 
+          <!-- 允许注册开关 -->
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="allow-register"
+                  v-model="formData.allowRegister"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+                />
+              </div>
+              <label for="allow-register" class="cursor-pointer">
+                <p class="text-xs font-bold text-text-primary">{{ locale.allowRegister }}</p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
+                  {{ locale.allowRegisterDesc }}
+                </p>
+              </label>
+            </div>
+
+            <div v-if="formData.allowRegister" class="flex items-start gap-4 pt-2 border-t border-border-secondary">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="register-requires-approval"
+                  v-model="formData.registerRequiresApproval"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+                />
+              </div>
+              <label for="register-requires-approval" class="cursor-pointer">
+                <p class="text-xs font-bold text-text-primary">
+                  {{ locale.registerRequiresApproval }}
+                </p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
+                  {{ locale.registerRequiresApprovalDesc }}
+                </p>
+              </label>
+            </div>
+          </div>
+
           <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
@@ -635,6 +674,8 @@ const formData = ref({
   turnstileSiteKey: '',
   turnstileSecretKey: '',
   captchaMaxFailures: 3,
+  allowRegister: false,
+  registerRequiresApproval: true,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -861,6 +902,8 @@ const loadConfig = async () => {
       turnstileSecretKey: undefined,
       captchaMaxFailures: data.captchaMaxFailures ?? 3,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
+      allowRegister: !!data.allowRegister,
+      registerRequiresApproval: data.registerRequiresApproval !== false,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
       githubOAuthEnabled: !!data.githubOAuthEnabled,

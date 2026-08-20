@@ -155,7 +155,9 @@ export default defineEventHandler(async (event) => {
           ? '该账号已退学，限制访问'
           : user.status === 'graduate'
             ? '该账号已毕业，限制访问'
-            : '该账号已被禁用'
+            : user.status === 'pending'
+              ? '账号待管理员审核，请耐心等待'
+              : '该账号已被禁用'
 
       return sendError(
         event,

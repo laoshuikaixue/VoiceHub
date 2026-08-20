@@ -1164,6 +1164,8 @@ export default defineEventHandler(async (event) => {
                           'smtpFromEmail',
                           'smtpFromName',
                           'allowOAuthRegistration',
+                          'allowRegister',
+                          'registerRequiresApproval',
                           'oauthRedirectUri',
                           'oauthStateSecret',
                           'oauthProviders',

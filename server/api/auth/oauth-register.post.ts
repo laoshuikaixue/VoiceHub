@@ -7,6 +7,7 @@ import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { validateGradeClassPair } from '~~/server/utils/register-validation'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -45,8 +46,9 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, validationError.code, validationError.message)
   }
 
-  if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_TOGETHER, '年级和班级需要同时选择，或全部留空')
+  const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
+  if (gradeClassError) {
+    throw createApiError(400, gradeClassError.code, gradeClassError.message)
   }
 
   if (selectedGrade && selectedClass) {
@@ -97,7 +99,7 @@ export default defineEventHandler(async (event) => {
           class: selectedClass || null,
           password: hashedPassword,
           role: 'USER',
-          status: 'active',
+          status: config?.registerRequiresApproval ? 'pending' : 'active',
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,
@@ -124,6 +126,14 @@ export default defineEventHandler(async (event) => {
 
     // 清除绑定令牌
     deleteCookie(event, 'binding-token')
+
+    // 需要审核时：不签发登录态，等待管理员审核
+    if (config?.registerRequiresApproval) {
+      return {
+        success: true,
+        pendingApproval: true
+      }
+    }
 
     // 生成JWT令牌
     const token = JWTEnhanced.generateToken(result.id, 'USER', result.tokenVersion)

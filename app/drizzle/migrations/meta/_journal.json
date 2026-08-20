@@ -281,6 +281,20 @@
       "when": 1786809600000,
       "tag": "20260816000000_add_schedule_song_pool",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787244030377,
+      "tag": "20260820164030_auto-migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787244422522,
+      "tag": "20260820164702_auto-migration",
+      "breakpoints": true
     }
   ]
 }

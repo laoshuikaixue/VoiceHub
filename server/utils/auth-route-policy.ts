@@ -20,6 +20,8 @@ export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
 
 export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/auth/login', methods: ['POST'] },
+  { path: '/api/auth/register', methods: ['POST'] },
+  { path: '/api/auth/grade-class-options', methods: GET_METHODS },
   { path: '/api/auth/bind', methods: ['POST'] },
   { path: '/api/auth/oauth-register', methods: ['POST'] },
   { path: '/api/auth/2fa/verify', methods: ['POST'] },

@@ -3,7 +3,7 @@ import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
-export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn', 'graduate']);
+export const userStatusEnum = pgEnum('user_status', ['active', 'pending', 'withdrawn', 'graduate', 'rejected']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
 export const cardCodeStatusEnum = pgEnum('card_code_status', [
@@ -36,6 +36,8 @@ export const users = pgTable('User', {
   status: userStatusEnum('status').default('active').notNull(),
   statusChangedAt: timestamp('statusChangedAt').defaultNow(),
   statusChangedBy: integer('statusChangedBy'),
+  // 注册时可选填写的备注，管理员审核时可修改
+  remark: text('remark'),
 });
 
 // 播出时段表
@@ -225,6 +227,10 @@ export const systemSettings = pgTable('SystemSettings', {
   turnstileSiteKey: text('turnstileSiteKey'),
   turnstileSecretKey: text('turnstileSecretKey'),
   
+  // 注册配置
+  allowRegister: boolean('allowRegister').default(false).notNull(),
+  registerRequiresApproval: boolean('registerRequiresApproval').default(true).notNull(),
+
   // OAuth 配置
   allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),
   oauthRedirectUri: text('oauthRedirectUri'),
