@@ -85,6 +85,7 @@ export default defineEventHandler(async (event) => {
           rr.user_id,
           rr.submission_note,
           rr.submission_note_public,
+          rr.submission_note_public_status,
           rr.preferred_play_time_id
         FROM song_replay_requests rr
       ),
