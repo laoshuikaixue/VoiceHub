@@ -555,6 +555,16 @@ export default defineEventHandler(async (event) => {
       updateData.registerRequiresApproval = body.registerRequiresApproval
     }
 
+    if (body.oauthRegisterRequiresApproval !== undefined) {
+      if (typeof body.oauthRegisterRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'oauthRegisterRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.oauthRegisterRequiresApproval = body.oauthRegisterRequiresApproval
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string'

@@ -477,6 +477,25 @@
                 </p>
               </label>
             </div>
+
+            <div v-if="formData.allowOAuthRegistration" class="flex items-start gap-4 pt-2 border-t border-border-secondary">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="oauth-register-requires-approval"
+                  v-model="formData.oauthRegisterRequiresApproval"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+                />
+              </div>
+              <label for="oauth-register-requires-approval" class="cursor-pointer">
+                <p class="text-xs font-bold text-text-primary">
+                  {{ locale.oauthRegisterRequiresApproval }}
+                </p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
+                  {{ locale.oauthRegisterRequiresApprovalDesc }}
+                </p>
+              </label>
+            </div>
           </div>
 
           <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
@@ -676,6 +695,7 @@ const formData = ref({
   captchaMaxFailures: 3,
   allowRegister: false,
   registerRequiresApproval: true,
+  oauthRegisterRequiresApproval: true,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -904,6 +924,7 @@ const loadConfig = async () => {
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       allowRegister: !!data.allowRegister,
       registerRequiresApproval: data.registerRequiresApproval !== false,
+      oauthRegisterRequiresApproval: data.oauthRegisterRequiresApproval !== false,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
       githubOAuthEnabled: !!data.githubOAuthEnabled,

@@ -97,7 +97,7 @@ export default defineEventHandler(async (event) => {
           class: selectedClass || null,
           password: hashedPassword,
           role: 'USER',
-          status: config?.registerRequiresApproval ? 'pending' : 'active',
+          status: config?.oauthRegisterRequiresApproval ? 'pending' : 'active',
           remark: remark || null,
           createdAt: now,
           updatedAt: now,
@@ -127,7 +127,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 需要审核时：不签发登录态，等待管理员审核
-    if (config?.registerRequiresApproval) {
+    if (config?.oauthRegisterRequiresApproval) {
       return {
         success: true,
         pendingApproval: true

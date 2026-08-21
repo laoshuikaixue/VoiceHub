@@ -81,6 +81,8 @@ export const siteConfig = {
   allowRegisterDesc: '开启后，登录页将显示注册入口，用户可通过用户名和密码自助注册账号。',
   registerRequiresApproval: '注册需要管理员审核',
   registerRequiresApprovalDesc: '开启后，新注册的用户需管理员在用户管理中审核通过后才能登录。',
+  oauthRegisterRequiresApproval: '第三方注册需管理员审核',
+  oauthRegisterRequiresApprovalDesc: '开启后，通过第三方（GitHub/聚合登录等）新创建的用户同样需审核后才能登录。',
   showBlacklistKeywords: '显示黑名单具体关键词',
   showBlacklistKeywordsDesc: '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
   forcePasswordChangeOnFirstLogin: '首次登录强制修改密码',

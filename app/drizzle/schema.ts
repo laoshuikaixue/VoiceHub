@@ -243,6 +243,7 @@ export const systemSettings = pgTable('SystemSettings', {
   // 注册配置
   allowRegister: boolean('allowRegister').default(false).notNull(),
   registerRequiresApproval: boolean('registerRequiresApproval').default(true).notNull(),
+  oauthRegisterRequiresApproval: boolean('oauthRegisterRequiresApproval').default(true).notNull(),
 
   // OAuth 配置
   allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),

@@ -72,6 +72,8 @@ export const siteConfig = {
   allowRegisterDesc: 'When enabled, a registration entry appears on the login page so users can sign up with a username and password.',
   registerRequiresApproval: 'Require Admin Approval for Registration',
   registerRequiresApprovalDesc: 'When enabled, new registrations must be approved by an admin before they can sign in.',
+  oauthRegisterRequiresApproval: 'Require Admin Approval for Third-party Registration',
+  oauthRegisterRequiresApprovalDesc: 'When enabled, accounts created via third-party login (GitHub, aggregate login, etc.) also require admin approval before sign-in.',
   showBlacklistKeywords: 'Show Exact Keyword',
   showBlacklistKeywordsDesc: 'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
   forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
