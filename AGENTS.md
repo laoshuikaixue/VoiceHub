@@ -22,7 +22,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 模态框用 `<Teleport to="body">`
 - 图标用 `<Icon name="..." />`，name 需在 `Icon.vue` 中有定义；图标语义必须符合实际功能（如音源控制用 `ListMusic`），禁止使用语义不符的图标
 - 项目未开启组件自动导入，模板中使用的自定义组件（含 `Icon`）必须在 `<script setup>` 中显式导入；漏导入不会报错，会被渲染成无内容的原生未知标签（如 `<icon>`），表现为占位但不显示
-- 下拉选择统一复用 `~/components/UI/Common/CustomSelect.vue`；多选使用其 `multiple` 模式，禁止为普通业务配置新增原生 `<select>`
+- 下拉选择统一复用 `~/components/Shared/Common/CustomSelect.vue`；多选使用其 `multiple` 模式，禁止为普通业务配置新增原生 `<select>`
 - 状态管理用 Composables，不用 Pinia
 
 ### 2.3. 后端
@@ -61,7 +61,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - QQ 音乐专辑链接不可点击
 
 ### 3.5. 加载动画
-- 加载转圈统一用 `~/components/UI/Common/AppSpinner.vue`（scoped CSS 实现，不依赖 UnoCSS utility），支持 `size`（直径 px，默认 32）、`borderWidth`、`label` 属性；复杂加载状态（标题/进度/步骤）用 `LoadingState.vue`（其 circle 类型内部复用 AppSpinner）
+- 加载转圈统一用 `~/components/Shared/Common/AppSpinner.vue`（scoped CSS 实现，不依赖 UnoCSS utility），支持 `size`（直径 px，默认 32）、`borderWidth`、`label` 属性；复杂加载状态（标题/进度/步骤）用 `LoadingState.vue`（其 circle 类型内部复用 AppSpinner）
 - 禁止手写 `border-*-20/30 border-t-primary rounded-full animate-spin` 或自建 `.loading-spinner` 圆环类；此写法依赖 UnoCSS 生成的 border 工具类，preflight 未设置 `border-style: solid` 时整个圆环不可见
 - 按钮内加载态可用 Lucide 图标（`Loader2`/`RefreshCw` 等）+ `animate-spin`；错误语义色（如网易云红色转圈）保留专用类
 - 全局 border 重置：`main.css` 的 `*` 规则含 `border-style: solid; border-width: 0`，勿删除

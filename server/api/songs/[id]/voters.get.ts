@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   try {

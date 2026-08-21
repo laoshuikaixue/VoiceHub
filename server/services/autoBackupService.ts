@@ -5,8 +5,6 @@ import {
   apiKeys,
   apiKeyPermissions,
   apiLogs,
-  cardCodeRedeemLogs,
-  cardCodes,
   collaborationLogs,
   emailTemplates,
   notifications,
@@ -24,9 +22,9 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { uploadToS3 } from '~~/server/utils/s3Client'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { uploadToS3 } from '#server/utils/s3Client'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 
 /** 外部服务调用超时（毫秒） */
@@ -130,8 +128,6 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     notificationSettings: { query: () => db.select().from(notificationSettings), description: '通知设置' },
     songBlacklists: { query: () => db.select().from(songBlacklists), description: '歌曲黑名单' },
     votes: { query: () => db.select().from(votes), description: '投票数据' },
-    cardCodes: { query: () => db.select().from(cardCodes), description: '点歌券数据' },
-    cardCodeRedeemLogs: { query: () => db.select().from(cardCodeRedeemLogs), description: '点歌券日志' },
     songCollaborators: { query: () => db.select().from(songCollaborators), description: '联合投稿人' },
     collaborationLogs: { query: () => db.select().from(collaborationLogs), description: '联合投稿审计日志' },
     songReplayRequests: { query: () => db.select().from(songReplayRequests), description: '歌曲重播申请' },

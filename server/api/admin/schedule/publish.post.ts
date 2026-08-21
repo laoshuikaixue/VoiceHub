@@ -1,9 +1,11 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
-import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
-import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
-import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
+import {
+  createSongSelectedNotification,
+  createReplaySongSelectedNotification
+} from '#server/services/notificationService'
+import { fulfillReplayRequestsForSchedule } from '#server/utils/scheduleReplayBinding'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
@@ -49,8 +51,7 @@ export default defineEventHandler(async (event) => {
           id: songs.id,
           title: songs.title,
           artist: songs.artist,
-          requesterId: songs.requesterId,
-          cardCodeId: songs.cardCodeId
+          requesterId: songs.requesterId
         }
       })
       .from(schedules)
@@ -74,6 +75,16 @@ export default defineEventHandler(async (event) => {
 
     // 使用事务包装更新排期和重播申请状态操作，保证原子性
     const publishResult = await db.transaction(async (tx) => {
+      const lockedSongs = await tx
+        .select({ id: songs.id })
+        .from(songs)
+        .where(eq(songs.id, draft.song.id))
+        .limit(1)
+        .for('update')
+      if (lockedSongs.length === 0) {
+        throw createError({ statusCode: 404, message: '歌曲不存在' })
+      }
+
       // 更新草稿为已发布状态
       const publishedAt = new Date(getBeijingTimestamp())
 
@@ -121,32 +132,37 @@ export default defineEventHandler(async (event) => {
 
       if (replayBinding) {
         replayRequesterIds = replayBinding.replayRequesterIds
-        console.log(`发布排期：重播申请 #${replayBinding.replayRequestId} 绑定到排期 #${body.scheduleId}`)
+        console.log(
+          `发布排期：重播申请 #${replayBinding.replayRequestId} 绑定到排期 #${body.scheduleId}`
+        )
       }
 
       if (existingPublished.length > 0) {
         console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知`)
       }
 
-      await redeemCardCodeForSchedule(tx, {
-        songId: draft.song.id,
-        cardCodeId: draft.song.cardCodeId,
-        operatorId: user.id,
-        at: publishedAt
-      })
-
-      return { schedule, shouldNotify, replayRequesterIds, replayRequestId: replayBinding?.replayRequestId ?? null }
+      return {
+        schedule,
+        shouldNotify,
+        replayRequesterIds,
+        replayRequestId: replayBinding?.replayRequestId ?? null
+      }
     })
 
     // 发送重播申请已安排通知
     if (publishResult.replayRequesterIds?.length > 0) {
       for (const replayUserId of publishResult.replayRequesterIds) {
         try {
-          await createReplaySongSelectedNotification(replayUserId, draft.song.id, {
-            title: draft.song.title,
-            artist: draft.song.artist,
-            playDate: publishResult.schedule.playDate
-          }, publishResult.schedule.id)
+          await createReplaySongSelectedNotification(
+            replayUserId,
+            draft.song.id,
+            {
+              title: draft.song.title,
+              artist: draft.song.artist,
+              playDate: publishResult.schedule.playDate
+            },
+            publishResult.schedule.id
+          )
         } catch (error) {
           console.error(`发送重播安排通知给用户 ${replayUserId} 失败:`, error)
         }

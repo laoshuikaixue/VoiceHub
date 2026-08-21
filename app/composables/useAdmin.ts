@@ -17,6 +17,7 @@ export const useAdmin = () => {
 
   const loading = ref(false)
   const error = ref('')
+  let pendingAddSongIdentity: { payload: string; key: string } | null = null
 
   // 创建歌曲排期
   const createSchedule = async (
@@ -421,17 +422,27 @@ export const useAdmin = () => {
 
     loading.value = true
     error.value = ''
+    const payload = JSON.stringify(songData)
+    const requestIdentity = pendingAddSongIdentity?.payload === payload
+      ? pendingAddSongIdentity
+      : { payload, key: crypto.randomUUID() }
+    pendingAddSongIdentity = requestIdentity
 
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
 
       const data = await $fetch('/api/songs/add', {
         method: 'POST',
         body: songData,
-        ...authConfig
+        ...authConfig,
+        headers: {
+          'Idempotency-Key': requestIdentity.key
+        }
       })
 
+      if (pendingAddSongIdentity === requestIdentity) {
+        pendingAddSongIdentity = null
+      }
       return data
     } catch (err: any) {
       error.value = err.message || failed('addSong')

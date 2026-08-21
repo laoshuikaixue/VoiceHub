@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3'
-import { saveCaptcha } from '~~/server/utils/captcha'
+import { saveCaptcha } from '#server/utils/captcha'
 import svgCaptcha from 'svg-captcha'
 
 export default defineEventHandler(async () => {

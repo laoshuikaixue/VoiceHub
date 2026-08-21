@@ -1,11 +1,11 @@
-import { updateUserPassword } from '~~/server/services/userService'
+import { updateUserPassword } from '#server/services/userService'
 import {
   PASSWORD_AUDIT_ACTIONS,
   getPasswordAuditContext,
   recordPasswordAudit
-} from '~~/server/services/passwordSecurityService'
-import { createApiError } from '~~/server/utils/apiError'
-import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+} from '#server/services/passwordSecurityService'
+import { createApiError } from '#server/utils/apiError'
+import { getAdminPasswordViolation } from '#server/utils/admin-password-policy'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限

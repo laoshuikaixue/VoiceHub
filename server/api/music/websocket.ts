@@ -1,9 +1,9 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { db, users } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
-import { createApiError } from '~~/server/utils/apiError'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { resolveRequirePasswordChange } from '#server/utils/system-settings-helper'
+import { createApiError } from '#server/utils/apiError'
 
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()

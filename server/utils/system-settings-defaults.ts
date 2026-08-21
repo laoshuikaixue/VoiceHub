@@ -1,4 +1,4 @@
-import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { MUSIC_SOURCE_PLATFORMS } from '#server/config/constants'
 
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
@@ -28,10 +28,12 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enableReplayRequests: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
-  // 卡密点歌相关
-  enableCardCodeRequests: false,
-  requireCardCodeForRequests: false,
-  enableCardCodeLimitBypass: false,
+  // 点歌额度（song-quota）
+  songQuotaEnabled: false,
+  songQuotaPeriodType: 'DAILY',
+  songQuotaPeriodAmount: 5,
+  adminSongQuotaExempt: true,
+  blockOnSongQuotaInsufficient: true,
   // 重复投稿限制
   enableSubmissionRestriction: false,
   submissionRestrictionScope: 'all',
@@ -82,9 +84,11 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enableReplayRequests',
   'enableCollaborativeSubmission',
   'enableSubmissionRemarks',
-  'enableCardCodeRequests',
-  'requireCardCodeForRequests',
-  'enableCardCodeLimitBypass',
+  'songQuotaEnabled',
+  'songQuotaPeriodType',
+  'songQuotaPeriodAmount',
+  'adminSongQuotaExempt',
+  'blockOnSongQuotaInsufficient',
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
   'forcePasswordChangeOnFirstLogin',

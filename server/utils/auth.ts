@@ -1,5 +1,5 @@
 import { getCookie, getHeader, setCookie, getRequestURL, getRequestHeader } from 'h3'
-import { JWTEnhanced } from './jwt-enhanced'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
 import { db, eq, users } from '~/drizzle/db'
 
 interface AuthResult {

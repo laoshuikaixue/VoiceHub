@@ -2,7 +2,7 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songBlacklists } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)

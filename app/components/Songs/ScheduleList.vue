@@ -7,29 +7,31 @@
         <!-- 移动端日期导航按钮 -->
         <div class="mobile-date-nav">
           <div class="nav-capsule">
-            <button :disabled="currentDateIndex === 0" class="nav-btn prev" @click="previousDate">
-              <Icon :size="18" name="chevron-left" />
+            <button :aria-label="locale.previousDate" :disabled="currentDateIndex === 0" class="nav-btn prev" @click="previousDate">
+              <ChevronLeft :size="18" />
             </button>
             <div class="current-date-display" @click="toggleDatePicker">
               <span class="date-text" v-html="currentDateFormatted" />
-              <Icon :size="12" class="dropdown-icon" name="chevron-down" />
+              <ChevronDown :size="12" class="dropdown-icon" />
             </div>
             <button
+              :aria-label="locale.nextDate"
               :disabled="currentDateIndex >= availableDates.length - 1"
               class="nav-btn next"
               @click="nextDate"
             >
-              <Icon :size="18" name="chevron-right" />
+              <ChevronRight :size="18" />
             </button>
           </div>
           <button
             v-if="isNeteaseLoggedIn"
+            :aria-label="locale.addToPlaylist"
             class="mobile-action-btn"
             type="button"
             :title="locale.addToPlaylist"
             @click="handleAddToPlaylistClick"
           >
-            <Icon :size="20" color="var(--text-primary)" name="music" />
+            <Music :size="20" color="var(--text-primary)" />
           </button>
         </div>
 
@@ -40,7 +42,9 @@
             <div class="date-picker-content">
               <div class="date-picker-header">
                 <h3>{{ locale.chooseDate }}</h3>
-                <button class="close-btn" @click="showDatePicker = false">×</button>
+                <button :aria-label="locale.close" class="close-btn" @click="showDatePicker = false">
+                  <X :size="18" aria-hidden="true" />
+                </button>
               </div>
               <div class="date-picker-list">
                 <div
@@ -90,7 +94,7 @@
             type="button"
             @click="handleAddToPlaylistClick"
           >
-            <Icon :size="18" color="var(--text-primary)" name="music" />
+            <Music :size="18" color="var(--text-primary)" />
             <span>{{ locale.addToPlaylist }}</span>
           </button>
         </div>
@@ -107,13 +111,13 @@
           </div>
 
           <div v-else-if="!schedules || schedules.length === 0" key="empty-all" class="empty">
-            <div class="icon mb-4">🎵</div>
+            <Music class="icon mb-4" :size="48" aria-hidden="true" />
             <p>{{ locale.emptyAll }}</p>
             <p class="text-sm text-text-muted">{{ locale.emptyAllDesc }}</p>
           </div>
 
           <div v-else-if="currentDateSchedules.length === 0" key="empty-date" class="empty">
-            <div class="icon mb-4">📅</div>
+            <CalendarDays class="icon mb-4" :size="48" aria-hidden="true" />
             <p>{{ locale.emptyDate }}</p>
             <p>{{ locale.emptyDateDesc }}</p>
           </div>
@@ -175,16 +179,16 @@
                           class="play-button-overlay"
                         >
                           <button
+                            :aria-label="isCurrentPlaying(schedule.song.id) ? locale.pause : locale.play"
                             :title="isCurrentPlaying(schedule.song.id) ? locale.pause : locale.play"
                             class="play-button"
                           >
-                            <Icon
+                            <Pause
                               v-if="isCurrentPlaying(schedule.song.id)"
                               :size="16"
                               color="white"
-                              name="pause"
-                            />
-                            <Icon v-else :size="16" color="white" name="play" />
+                              />
+                            <Play v-else :size="16" color="white" />
                           </button>
                         </div>
                       </div>
@@ -203,23 +207,16 @@
                             class="replay-badge"
                             :title="locale.replaySong"
                           >
-                            <Icon name="repeat" :size="14" />
-                          </span>
-                          <!-- 点歌券标识 -->
-                          <span
-                            v-if="schedule.song.usedCardCode"
-                            class="card-code-tag"
-                            :title="locale.cardCodeUsed"
-                          >
-                            {{ locale.cardCodeUsed }}
+                            <Repeat2 :size="14"  />
                           </span>
                           <button
                             v-if="schedule.song?.hasSubmissionNote && schedule.song?.submissionNote"
+                            :aria-label="locale.viewSubmissionNote"
                             class="submission-note-trigger"
                             :title="locale.viewSubmissionNote"
                             @click.stop="openSubmissionNote(schedule.song)"
                           >
-                            <Icon :size="14" name="message-circle" />
+                            <MessageCircle :size="14" />
                           </button>
                         </h3>
                         <div class="song-meta">
@@ -325,16 +322,17 @@
               <div
                 class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
               >
-                <Icon name="music" :size="24" />
+                <Music :size="24"  />
               </div>
               <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.addToPlaylist }}</h3>
             </div>
             <button
+              aria-label="关闭歌单弹窗"
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               type="button"
               @click="closePlaylistModal"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -347,7 +345,7 @@
               <div
                 class="w-20 h-20 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-6"
               >
-                <Icon name="music" :size="40" class="text-text-tertiary opacity-20" />
+                <Music :size="40" class="text-text-tertiary opacity-20"  />
               </div>
               <p class="text-text-tertiary font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
               <button
@@ -374,7 +372,7 @@
                     alt="avatar"
                     class="w-full h-full object-cover"
                   >
-                  <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-text-tertiary" />
+                  <User v-else :size="24" class="w-full h-full p-3 text-text-tertiary"  />
                 </div>
                 <div class="flex-1 min-w-0">
                   <span
@@ -404,17 +402,18 @@
                       class="flex-1"
                     />
                     <button
+                      :aria-label="locale.refreshPlaylist"
                       :disabled="playlistsLoading"
                       class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-bg-primary border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
                       :title="locale.refreshPlaylist"
                       type="button"
                       @click="reloadPlaylists"
                     >
-                      <Icon
-                        name="refresh"
+                      <RefreshCw
+                       
                         :size="16"
                         :class="{ 'animate-spin': playlistsLoading }"
-                      />
+                       />
                     </button>
                   </div>
 
@@ -425,7 +424,7 @@
                       type="button"
                       @click="handleDeletePlaylist"
                     >
-                      <Icon name="trash" :size="14" />
+                      <Trash2 :size="14"  />
                       {{ locale.deletePlaylist }}
                     </button>
                   </div>
@@ -512,7 +511,7 @@
                   v-if="neteaseSongs.length === 0"
                   class="flex flex-col items-center justify-center py-12 bg-bg-primary-30 border border-dashed border-border-secondary rounded-3xl text-text-disabled"
                 >
-                  <Icon name="music" :size="32" class="mb-3 opacity-20" />
+                  <Music :size="32" class="mb-3 opacity-20"  />
                   <p class="text-[10px] font-black uppercase tracking-widest">
                     {{ locale.noNeteaseSongs }}
                   </p>
@@ -538,7 +537,7 @@
                           : 'border-border-secondary group-hover:border-border-tertiary'
                       ]"
                     >
-                      <Icon v-if="isSongSelected(song.id)" name="check" :size="12" />
+                      <Check v-if="isSongSelected(song.id)" :size="12"  />
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="text-sm font-bold truncate text-text-primary">
@@ -574,8 +573,8 @@
                 type="button"
                 @click="handleAddSongsToPlaylist"
               >
-                <Icon v-if="playlistActionLoading" name="loader" :size="16" class="animate-spin" />
-                <Icon v-else name="plus" :size="16" />
+                <Loader2 v-if="playlistActionLoading" :size="16" class="animate-spin"  />
+                <Plus v-else :size="16"  />
                 <span>{{ playlistActionLoading ? locale.adding : locale.confirmAdd }}</span>
               </button>
             </div>
@@ -624,8 +623,8 @@
         <div class="submission-note-modal" @click.stop>
           <div class="submission-note-header">
             <h4>{{ locale.submissionNote }}</h4>
-            <button @click="closeSubmissionNote">
-              <Icon :size="14" name="close" />
+            <button aria-label="关闭投稿备注" @click="closeSubmissionNote">
+              <X :size="14" />
             </button>
           </div>
           <div class="submission-note-meta">
@@ -644,15 +643,15 @@
 </template>
 
 <script setup>
+import { ChevronLeft, ChevronDown, ChevronRight, Music, CalendarDays, Pause, Play, MessageCircle, X, User, RefreshCw, Trash2, Check, Plus, Loader2,
+  Repeat2 } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioQuality } from '~/composables/useAudioQuality'
-import Icon from '~/components/UI/Icon.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
@@ -1933,15 +1932,6 @@ const vRipple = {
   gap: 1rem;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .error,
 .empty {
   padding: 2rem;
@@ -1959,6 +1949,8 @@ const vRipple = {
 .empty .icon {
   font-size: 3rem;
   opacity: 0.5;
+  display: block;
+  margin: 0 auto 1rem;
 }
 
 /* 排期内容区域 */
@@ -2893,21 +2885,6 @@ const vRipple = {
   border-color: var(--color-accent-alpha-50);
 }
 
-/* 点歌券标识 */
-.card-code-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  background: var(--card-code-bg);
-  border: 1px solid var(--card-code-border);
-  border-radius: 4px;
-  color: var(--card-code-text);
-  font-size: 0.7rem;
-  font-weight: 500;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
 .song-meta {
   display: flex;
   justify-content: space-between;
@@ -3299,7 +3276,7 @@ const vRipple = {
 
   .empty .icon {
     font-size: 2.5rem;
-    margin-bottom: 12px;
+    margin: 0 auto 12px;
   }
 
   /* 日期选择弹窗 */
@@ -3546,15 +3523,6 @@ const vRipple = {
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
-}
-
-.current-date-mobile:after {
-  content: '▼';
-  font-size: 10px;
-  opacity: 0.7;
-  margin-left: 5px;
-  display: inline-block;
-  vertical-align: middle;
 }
 
 .current-date-mobile:hover {

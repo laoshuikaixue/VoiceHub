@@ -49,8 +49,6 @@ export interface Song {
   scheduled?: boolean
   scheduleDate?: string
   schedulePlayed?: boolean
-  cardCodeId?: number | null
-  usedCardCode?: boolean
 }
 
 export interface Schedule {
@@ -71,11 +69,10 @@ export interface Schedule {
     musicPlatform?: string | null
     musicId?: string | null
     playUrl?: string | null
+    durationSeconds?: number | null
     hasSubmissionNote?: boolean
     submissionNote?: string | null
     submissionNotePublic?: boolean
-    cardCodeId?: number | null
-    usedCardCode?: boolean
   }
 }
 
@@ -157,9 +154,6 @@ export interface SystemSettings {
   enableReplayRequests?: boolean
   enableCollaborativeSubmission?: boolean
   enableSubmissionRemarks?: boolean
-  enableCardCodeRequests?: boolean
-  requireCardCodeForRequests?: boolean
-  enableCardCodeLimitBypass?: boolean
 }
 
 export interface RequestTime {

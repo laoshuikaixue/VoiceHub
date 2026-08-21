@@ -1,24 +1,24 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { verifyBindingToken } from '~~/server/utils/oauth-token'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { verifyBindingToken } from '#server/utils/oauth-token'
 import {
   isAccountLocked,
   isUserBlocked,
   getUserBlockRemainingTime,
   recordLoginFailure,
   recordLoginSuccess
-} from '~~/server/services/securityService'
-import { getClientIP } from '~~/server/utils/ip-utils'
+} from '#server/services/securityService'
+import { getClientIP } from '#server/utils/ip-utils'
 import { and } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { isSecureRequest } from '~~/server/utils/request-utils'
+import { isSecureRequest } from '#server/utils/request-utils'
 import {
   computeRequirePasswordChange,
   resolveRequirePasswordChange
-} from '~~/server/utils/system-settings-helper'
-import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
-import { createApiError } from '~~/server/utils/apiError'
+} from '#server/utils/system-settings-helper'
+import { canBindOAuthIdentity } from '#server/utils/auth-route-policy'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<Record<string, unknown> | null>(event)

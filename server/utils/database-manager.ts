@@ -3,8 +3,8 @@ import { sql } from 'drizzle-orm'
 import {
   getConnectionPoolStatus,
   getDatabaseMetrics
-} from './database-health'
-import { getServerTimestamp } from './serverTime'
+} from '#server/utils/database-health'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 /**
  * 数据库管理器

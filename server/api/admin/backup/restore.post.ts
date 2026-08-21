@@ -18,6 +18,8 @@ import {
   songBlacklists,
   songCollaborators,
   songReplayRequests,
+  songQuotaAccounts,
+  songQuotaTransactions,
   songs,
   systemSettings,
   userIdentities,
@@ -27,7 +29,7 @@ import {
 } from '~/drizzle/schema'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { SmtpService } from '../../../services/smtpService'
+import { SmtpService } from '#server/services/smtpService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
@@ -84,7 +86,7 @@ export default defineEventHandler(async (event) => {
 
       try {
         backupData = JSON.parse(fileData)
-      } catch (error) {
+      } catch {
         throw createError({
           statusCode: 400,
           message: '备份文件格式错误'
@@ -130,7 +132,7 @@ export default defineEventHandler(async (event) => {
       try {
         const fileContent = await fs.readFile(filepath, 'utf8')
         backupData = JSON.parse(fileContent)
-      } catch (error) {
+      } catch {
         throw createError({
           statusCode: 404,
           message: '备份文件不存在或格式错误'
@@ -192,6 +194,8 @@ export default defineEventHandler(async (event) => {
           await db.delete(scheduleSongPool)
           await db.delete(schedules)
           await db.delete(votes)
+          await db.delete(songQuotaTransactions)
+          await db.delete(songQuotaAccounts)
           await db.delete(songs)
           await db.delete(cardCodes)
           await db.delete(songBlacklists)
@@ -265,6 +269,8 @@ export default defineEventHandler(async (event) => {
           await db.delete(scheduleSongPool)
           await db.delete(schedules)
           await db.delete(votes)
+          await db.delete(songQuotaTransactions)
+          await db.delete(songQuotaAccounts)
           await db.delete(songs)
           await db.delete(cardCodes)
           await db.delete(songBlacklists)
@@ -285,6 +291,10 @@ export default defineEventHandler(async (event) => {
     const userIdMapping = new Map() // 备份ID -> 当前数据库ID
     const songIdMapping = new Map() // 备份ID -> 当前数据库ID
     const cardCodeIdMapping = new Map() // 备份ID -> 当前数据库ID
+    const quotaAccountIdMapping = new Map()
+    const quotaTransactionIdMapping = new Map()
+    const restoredQuotaTransactions = new Map()
+    const pendingSongQuotaSnapshots = []
 
     // 定义恢复顺序（考虑外键依赖）
     const restoreOrder = [
@@ -298,6 +308,7 @@ export default defineEventHandler(async (event) => {
       'userStatusLogs',
       'songBlacklist',
       'cardCodes',
+      'songQuotaAccounts',
       'songs',
       'songCollaborators',
       'collaborationLogs',
@@ -309,6 +320,7 @@ export default defineEventHandler(async (event) => {
       'notificationSettings',
       'notifications',
       'apiKeys',
+      'songQuotaTransactions',
       'apiKeyPermissions',
       'apiLogs'
     ]
@@ -704,6 +716,34 @@ export default defineEventHandler(async (event) => {
                         }
                         break
 
+                      case 'songQuotaAccounts': {
+                        const mappedUserId = userIdMapping.get(record.userId) || record.userId
+                        const userExists = await tx
+                          .select({ id: users.id })
+                          .from(users)
+                          .where(eq(users.id, mappedUserId))
+                          .limit(1)
+                        if (userExists.length === 0) return
+                        const accountData = {
+                          userId: mappedUserId,
+                          periodicBalance: record.periodicBalance ?? 0,
+                          permanentBalance: record.permanentBalance ?? 0,
+                          periodKey: record.periodKey || null,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+                        }
+                        const existingAccount = await tx
+                          .select({ id: songQuotaAccounts.id })
+                          .from(songQuotaAccounts)
+                          .where(eq(songQuotaAccounts.userId, mappedUserId))
+                          .limit(1)
+                        const restoredAccount = existingAccount.length > 0
+                          ? (await tx.update(songQuotaAccounts).set(accountData).where(eq(songQuotaAccounts.id, existingAccount[0].id)).returning({ id: songQuotaAccounts.id }))[0]
+                          : (await tx.insert(songQuotaAccounts).values(mode === 'replace' && record.id ? { ...accountData, id: record.id } : accountData).returning({ id: songQuotaAccounts.id }))[0]
+                        if (record.id && restoredAccount?.id) quotaAccountIdMapping.set(record.id, restoredAccount.id)
+                        break
+                      }
+
                       case 'cardCodes': {
                         const cardCodeData: any = {}
                         const cardCodeFields = ['code', 'status', 'note']
@@ -840,31 +880,16 @@ export default defineEventHandler(async (event) => {
                           }
                         }
 
-                        let validCardCodeId = record.cardCodeId || null
-                        if (record.cardCodeId) {
-                          const mappedCardCodeId = cardCodeIdMapping.get(record.cardCodeId)
-                          if (mappedCardCodeId) {
-                            validCardCodeId = mappedCardCodeId
-                          } else {
-                            const cardCodeExists = await tx
-                              .select({ id: cardCodes.id })
-                              .from(cardCodes)
-                              .where(eq(cardCodes.id, record.cardCodeId))
-                              .limit(1)
-                            if (cardCodeExists.length === 0) {
-                              console.warn(
-                                `歌曲 ${record.title} 的点歌券ID ${record.cardCodeId} 不存在，将设为null`
-                              )
-                              validCardCodeId = null
-                            }
-                          }
-                        }
-
                         // 动态构建歌曲数据，自动跳过不存在的字段
                         const songData = {
-                          requesterId: validRequesterId, // 必需字段
-                          preferredPlayTimeId: validPreferredPlayTimeId, // 已验证的字段
-                          cardCodeId: validCardCodeId
+                          requesterId: validRequesterId,
+                          preferredPlayTimeId: validPreferredPlayTimeId,
+                          quotaConsumed: false,
+                          quotaType: null,
+                          quotaTransactionId: null,
+                          quotaPeriodKey: null,
+                          quotaReturned: false,
+                          quotaReturnTransactionId: null
                         }
 
                         // 基本字段
@@ -875,6 +900,8 @@ export default defineEventHandler(async (event) => {
                           'cover',
                           'musicPlatform',
                           'musicId',
+                          'requestId',
+                          'fingerprint',
                           'durationSeconds',
                           'submissionNote',
                           'submissionNotePublic'
@@ -1000,6 +1027,7 @@ export default defineEventHandler(async (event) => {
                         // 建立歌曲ID映射
                         if (record.id && createdSong.id) {
                           songIdMapping.set(record.id, createdSong.id)
+                          pendingSongQuotaSnapshots.push({ backupSongId: record.id, songId: createdSong.id, record })
                         }
                         break
 
@@ -1147,9 +1175,11 @@ export default defineEventHandler(async (event) => {
                           'enableReplayRequests',
                           'enableCollaborativeSubmission',
                           'enableSubmissionRemarks',
-                          'enableCardCodeRequests',
-                          'requireCardCodeForRequests',
-                          'enableCardCodeLimitBypass',
+                          'songQuotaEnabled',
+                          'songQuotaPeriodType',
+                          'songQuotaPeriodAmount',
+                          'adminSongQuotaExempt',
+                          'blockOnSongQuotaInsufficient',
                           'enableSubmissionRestriction',
                           'submissionRestrictionScope',
                           'sameSongRestrictionHours',
@@ -2270,6 +2300,43 @@ export default defineEventHandler(async (event) => {
                         }
                         break
 
+                      case 'songQuotaTransactions': {
+                        const mappedAccountId = quotaAccountIdMapping.get(record.accountId) || record.accountId
+                        const accountExists = await tx.select({ id: songQuotaAccounts.id }).from(songQuotaAccounts).where(eq(songQuotaAccounts.id, mappedAccountId)).limit(1)
+                        if (accountExists.length === 0) return
+                        const mappedSongId = record.songId ? songIdMapping.get(record.songId) || record.songId : null
+                        const mappedAdministratorId = record.administratorId ? userIdMapping.get(record.administratorId) || record.administratorId : null
+                        const transactionData = {
+                          accountId: mappedAccountId,
+                          quotaType: record.quotaType,
+                          source: record.source,
+                          delta: record.delta,
+                          balanceAfter: record.balanceAfter,
+                          periodKey: record.periodKey || null,
+                          idempotencyKey: record.idempotencyKey || null,
+                          requestFingerprint: record.requestFingerprint || null,
+                          songId: mappedSongId,
+                          administratorId: mappedAdministratorId,
+                          apiKeyId: record.apiKeyId || null,
+                          publicDescription: record.publicDescription || null,
+                          internalNote: record.internalNote || null,
+                          externalReference: record.externalReference || null,
+                          snapshot: record.snapshot || null,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                        }
+                        const existingTransaction = record.idempotencyKey
+                          ? await tx.select({ id: songQuotaTransactions.id }).from(songQuotaTransactions).where(eq(songQuotaTransactions.idempotencyKey, record.idempotencyKey)).limit(1)
+                          : []
+                        const restoredTransaction = existingTransaction.length > 0
+                          ? (await tx.update(songQuotaTransactions).set(transactionData).where(eq(songQuotaTransactions.id, existingTransaction[0].id)).returning({ id: songQuotaTransactions.id }))[0]
+                          : (await tx.insert(songQuotaTransactions).values(mode === 'replace' && record.id ? { ...transactionData, id: record.id } : transactionData).returning({ id: songQuotaTransactions.id }))[0]
+                        if (record.id && restoredTransaction?.id) {
+                          quotaTransactionIdMapping.set(record.id, restoredTransaction.id)
+                          restoredQuotaTransactions.set(restoredTransaction.id, { ...transactionData, id: restoredTransaction.id })
+                        }
+                        break
+                      }
+
                       case 'apiKeyPermissions':
                         // 验证外键约束 - apiKeyId
                         const validApiKeyPermissionApiKeyId = record.apiKeyId
@@ -2480,6 +2547,32 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    for (const pending of pendingSongQuotaSnapshots) {
+      const record = pending.record
+      if (!record.quotaConsumed) continue
+      const quotaTransactionId = quotaTransactionIdMapping.get(record.quotaTransactionId)
+      const quotaReturnTransactionId = record.quotaReturned
+        ? quotaTransactionIdMapping.get(record.quotaReturnTransactionId)
+        : null
+      const consumed = restoredQuotaTransactions.get(quotaTransactionId)
+      const returned = quotaReturnTransactionId ? restoredQuotaTransactions.get(quotaReturnTransactionId) : null
+      const consumptionValid = consumed?.source === 'SONG_REQUEST' && consumed.delta < 0 && consumed.songId === pending.songId && consumed.quotaType === record.quotaType
+      const returnValid = !record.quotaReturned || (returned && ((returned.source === 'SONG_WITHDRAW_RETURN' && returned.delta > 0) || (returned.source === 'SONG_WITHDRAW_EXPIRED' && returned.delta === 0)) && returned.songId === pending.songId && returned.quotaType === record.quotaType)
+      if (!consumptionValid || !returnValid) {
+        restoreResults.details.errors.push(`歌曲 ${pending.backupSongId} 额度快照一致性校验失败`)
+        continue
+      }
+      await db.update(songs).set({
+        quotaConsumed: true,
+        quotaType: record.quotaType,
+        quotaTransactionId,
+        quotaPeriodKey: record.quotaPeriodKey || null,
+        quotaReturned: record.quotaReturned === true,
+        quotaReturnTransactionId
+      }).where(eq(songs.id, pending.songId))
+    }
+    console.log('✅ 已回填歌曲额度快照')
+
     console.log(`✅ 数据恢复完成`)
     console.log(`📊 处理了 ${restoreResults.details.tablesProcessed} 个表`)
     console.log(`📊 恢复了 ${restoreResults.details.recordsRestored} 条记录`)
@@ -2502,7 +2595,9 @@ export default defineEventHandler(async (event) => {
       'SongBlacklist',
       'SongReplayRequest',
       'RequestTime',
-      'EmailTemplate'
+      'EmailTemplate',
+      'SongQuotaAccount',
+      'SongQuotaTransaction'
     ]
 
     for (const tableName of tablesToReset) {

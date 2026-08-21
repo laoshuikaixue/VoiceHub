@@ -266,6 +266,7 @@
                 <span v-else class="truncate">{{ song.title }}</span>
                 <button
                   v-if="song.hasSubmissionNote && song.submissionNote"
+                  :aria-label="locale.actions.viewRemark"
                   class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all"
                   :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
@@ -356,6 +357,7 @@
               class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
             >
               <button
+                :aria-label="locale.actions.edit"
                 class="p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.edit"
                 @click="editSong(song)"
@@ -365,6 +367,7 @@
 
               <button
                 v-if="!song.played"
+                :aria-label="locale.actions.markPlayed"
                 class="p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
@@ -373,6 +376,7 @@
               </button>
               <button
                 v-else
+                :aria-label="locale.actions.markUnplayed"
                 class="p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
@@ -381,6 +385,7 @@
               </button>
 
               <button
+                :aria-label="locale.actions.reject"
                 class="p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
@@ -388,6 +393,7 @@
                 <X :size="14" />
               </button>
               <button
+                :aria-label="locale.actions.deleteSong"
                 class="p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
@@ -488,6 +494,7 @@
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
             <h3 class="text-xl font-black text-text-primary">{{ locale.rejectDialog.title }}</h3>
             <button
+              aria-label="关闭拒绝歌曲弹窗"
               class="text-text-tertiary hover:text-text-secondary transition-colors"
               @click="cancelReject"
             >
@@ -713,6 +720,7 @@
                   </template></span
                 >
                 <button
+                  aria-label="清除已选用户"
                   class="text-text-disabled hover:text-text-tertiary"
                   @click="showEditModal ? clearSelectedEditUser() : clearSelectedUser()"
                 >
@@ -734,6 +742,7 @@
                   >
                     {{ getCollaboratorDisplayName(collaborator) }}
                     <button
+                      aria-label="移除协作者"
                       class="text-text-tertiary hover:text-error transition-colors"
                       @click="removeEditCollaborator(collaborator.id)"
                     >
@@ -1108,13 +1117,13 @@
 
 <script setup>
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   Search,
   Plus,
@@ -2059,8 +2068,6 @@ const saveAddSong = async () => {
     await addSong({
       title: addForm.value.title,
       artist: addForm.value.artist,
-      requester: addForm.value.requester,
-      semester: addForm.value.semester,
       preferredPlayTimeId:
         addForm.value.preferredPlayTimeId === 'none'
           ? null

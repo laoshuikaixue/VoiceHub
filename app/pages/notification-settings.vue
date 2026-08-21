@@ -7,6 +7,7 @@
       <div class="max-w-[1000px] mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
           <button
+            aria-label="返回首页"
             class="p-2 hover:bg-bg-secondary rounded-xl transition-all text-text-tertiary hover:text-text-primary"
             @click="goBack"
           >

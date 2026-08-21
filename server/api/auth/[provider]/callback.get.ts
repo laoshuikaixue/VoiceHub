@@ -6,25 +6,25 @@ import {
   getRedirectUri,
   getSafeOAuthReturnPath,
   verifyCompactOAuthState
-} from '~~/server/utils/oauth'
-import { generateBindingToken } from '~~/server/utils/oauth-token'
+} from '#server/utils/oauth'
+import { generateBindingToken } from '#server/utils/oauth-token'
 import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
-import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { getOAuthStrategy } from '#server/utils/oauth-strategies'
+import { isUserBlocked, getUserBlockRemainingTime } from '#server/services/securityService'
 import {
   getOAuthBaseConfig,
   getProviderRuntimeConfig,
   isOAuthProviderEnabled,
   isSupportedOAuthProvider
-} from '~~/server/services/oauthConfigService'
-import { getClientIP } from '~~/server/utils/ip-utils'
+} from '#server/services/oauthConfigService'
+import { getClientIP } from '#server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import type { H3Event } from 'h3'
-import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
-import { createApiError } from '~~/server/utils/apiError'
-import { computeRequirePasswordChange } from '~~/server/utils/system-settings-helper'
-import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
+import { getRequestOrigin, isSecureRequest } from '#server/utils/request-utils'
+import { createApiError } from '#server/utils/apiError'
+import { computeRequirePasswordChange } from '#server/utils/system-settings-helper'
+import { canBindOAuthIdentity } from '#server/utils/auth-route-policy'
 
 const getSingleQueryValue = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined

@@ -1,4 +1,4 @@
-import { getQqUserAvatar } from '~~/server/utils/qq_music_sdk'
+import { getQqUserAvatar } from '#server/utils/qq_music_sdk'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

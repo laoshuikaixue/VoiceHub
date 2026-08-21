@@ -1,5 +1,5 @@
 import { db, eq, and, userIdentities, sql } from '~/drizzle/db'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

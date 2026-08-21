@@ -6,84 +6,14 @@
 @import url('./themes/ClassicLight.css');
 @import url('./themes/ModernLight.css');
 
-@unocss;
+@reference "./tailwind.css";
 
-/* 防止浏览器自动应用深色主题 */
-:root {
-  color-scheme: light dark;
-}
-
-/* 全局控件默认强调色 — 跟随主题主色调，但允许显式 accent-* 类覆盖 */
-input[type="checkbox"]:not([class*="accent-"]),
-input[type="radio"]:not([class*="accent-"]),
-input[type="range"]:not([class*="accent-"]) {
-  accent-color: var(--accent-color);
-}
-
-/* 流体背景与全局样式 */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  /* UnoCSS preflight 未重置 border-style，补齐后 utility 边框与加载转圈才能渲染 */
-  border-style: solid;
-  border-width: 0;
-}
+/* Tailwind CSS 单引擎验证 */
 
 /* 字体显示策略优化 */
 @font-face {
   font-family: 'MiSans';
   font-display: swap; /* 确保字体加载期间文本可见 */
-}
-
-body {
-  font-family:
-    'MiSans',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Open Sans',
-    sans-serif;
-  color: var(--text-primary);
-  background-color: var(--bg-primary);
-  line-height: 1.6;
-  overflow-x: hidden;
-  font-size: var(--text-base);
-  /* 字体渲染优化 */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-body {
-  font-family:
-    'MiSans',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Open Sans',
-    sans-serif;
-}
-
-/* 链接样式 */
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-/* 简洁现代背景 */
-body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
 }
 
 /* 可选的微妙纹理效果 */
@@ -110,115 +40,6 @@ body::before {
   padding: 1rem;
 }
 
-/* 常用工具类 */
-.flex {
-  display: flex;
-}
-.flex-col {
-  flex-direction: column;
-}
-.items-center {
-  align-items: center;
-}
-.justify-between {
-  justify-content: space-between;
-}
-.justify-center {
-  justify-content: center;
-}
-.gap-2 {
-  gap: var(--spacing-sm);
-}
-.gap-4 {
-  gap: var(--spacing-lg);
-}
-.gap-6 {
-  gap: var(--spacing-2xl);
-}
-
-.grid {
-  display: grid;
-}
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-.grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-/* 间距 */
-.mt-2 {
-  margin-top: var(--spacing-sm);
-}
-.mt-4 {
-  margin-top: var(--spacing-lg);
-}
-.mt-6 {
-  margin-top: var(--spacing-2xl);
-}
-.mt-8 {
-  margin-top: var(--spacing-3xl);
-}
-.mb-2 {
-  margin-bottom: var(--spacing-sm);
-}
-.mb-4 {
-  margin-bottom: var(--spacing-lg);
-}
-.mb-6 {
-  margin-bottom: var(--spacing-2xl);
-}
-.mb-8 {
-  margin-bottom: var(--spacing-3xl);
-}
-.ml-2 {
-  margin-left: var(--spacing-sm);
-}
-.ml-4 {
-  margin-left: var(--spacing-lg);
-}
-.mr-2 {
-  margin-right: var(--spacing-sm);
-}
-.mr-4 {
-  margin-right: var(--spacing-lg);
-}
-
-.p-2 {
-  padding: var(--spacing-sm);
-}
-.p-4 {
-  padding: var(--spacing-lg);
-}
-.p-6 {
-  padding: var(--spacing-2xl);
-}
-.p-8 {
-  padding: var(--spacing-3xl);
-}
-
-/* 文本 */
-.text-center {
-  text-align: center;
-}
-.text-sm {
-  font-size: var(--text-sm);
-}
-.text-lg {
-  font-size: var(--text-lg);
-}
-.text-xl {
-  font-size: var(--text-xl);
-}
-.text-2xl {
-  font-size: var(--text-2xl);
-}
-.text-3xl {
-  font-size: var(--text-3xl);
-}
-.font-bold {
-  font-weight: var(--font-bold);
-}
 .text-primary {
   color: var(--primary);
 }
@@ -240,18 +61,13 @@ body::before {
 
 /* 卡片 */
 .card {
-  background: var(--card-bg);
+  @apply relative overflow-hidden rounded-xl border border-card-border bg-card-bg p-8;
   backdrop-filter: blur(12px);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-2xl);
   box-shadow:
     0 4px 6px var(--mask-10),
     0 1px 3px var(--mask-8),
     inset 0 1px 0 var(--overlay-5);
   transition: all var(--transition-normal);
-  position: relative;
-  overflow: hidden;
 }
 
 .card::before {
@@ -275,20 +91,10 @@ body::before {
 
 /* 按钮 */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @apply inline-flex cursor-pointer select-none items-center justify-center overflow-hidden rounded-lg border-0 text-sm font-semibold no-underline outline-none;
   padding: var(--spacing-md) var(--spacing-2xl);
-  font-weight: var(--font-semibold);
-  border-radius: var(--radius-lg);
   transition: all var(--transition-normal);
-  cursor: pointer;
-  text-decoration: none;
-  border: none;
-  outline: none;
-  font-size: var(--text-sm);
   position: relative;
-  overflow: hidden;
   box-shadow: 0 2px 4px var(--mask-10);
 }
 
@@ -359,32 +165,15 @@ body::before {
   display: none;
 }
 
-/* 列表样式 */
-.list-disc {
-  list-style-type: disc;
-  list-style-position: inside;
-}
-
-.list-none {
-  list-style-type: none;
-}
-
-.pl-5 {
-  padding-left: 1.25rem;
-}
-
 /* 表单 */
 .input {
-  width: 100%;
+  @apply relative w-full rounded-lg outline-none;
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--input-bg);
   border: 2px solid var(--input-border);
-  border-radius: var(--radius-lg);
   color: var(--input-text);
-  outline: none;
   transition: all var(--transition-normal);
   font-size: var(--text-sm);
-  position: relative;
   backdrop-filter: blur(8px);
 }
 
@@ -407,62 +196,18 @@ body::before {
 }
 
 .form-group {
+  @apply relative;
   margin-bottom: var(--spacing-lg);
-  position: relative;
 }
 
 .form-group label {
-  display: block;
+  @apply block font-semibold text-text-secondary;
   margin-bottom: var(--spacing-sm);
-  font-weight: var(--font-semibold);
-  color: var(--text-secondary);
   transition: color var(--transition-normal);
 }
 
 .form-group:focus-within label {
   color: var(--primary);
-}
-
-/* 响应式 */
-@media (min-width: 640px) {
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .sm\:flex-row {
-    flex-direction: row;
-  }
-  .sm\:items-center {
-    align-items: center;
-  }
-  .sm\:justify-between {
-    justify-content: space-between;
-  }
-}
-
-@media (min-width: 768px) {
-  .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .md\:flex-row {
-    flex-direction: row;
-  }
-}
-
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .lg\:flex-row {
-    flex-direction: row;
-  }
-}
-
-/* 玻璃态效果 */
-.glass {
-  background: var(--bg-secondary);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-secondary);
-  border-radius: var(--radius-xl);
 }
 
 /* 手机设备上的优化 */
@@ -486,7 +231,7 @@ body::before {
   }
 }
 
-/* 重置 fixed 元素外边距：space-y-* 布局规则会给子元素加 margin-top，导致弹窗遮罩定位偏移 */
-.fixed {
+/* 防止 space-y-* 改变全屏遮罩定位 */
+.fixed.inset-0 {
   margin: 0 !important;
 }

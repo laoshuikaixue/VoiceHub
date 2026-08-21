@@ -1,15 +1,15 @@
 import { db } from '~/drizzle/db'
 import { schedules, semesters, songs, votes } from '~/drizzle/schema'
 import { and, count, eq } from 'drizzle-orm'
-import { createSongVotedNotification } from '../../services/notificationService'
+import { createSongVotedNotification } from '#server/services/notificationService'
 import {
   isSongProtected,
   getSongProtectRemainingSeconds,
   recordSongVote,
   recordUserVoteActivity
-} from '~~/server/services/securityService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { createApiError } from '~~/server/utils/apiError'
+} from '#server/services/securityService'
+import { getClientIP } from '#server/utils/ip-utils'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

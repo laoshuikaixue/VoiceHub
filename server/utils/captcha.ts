@@ -12,7 +12,7 @@ import {
   hashStateCode,
   setStore,
   verifyStateCode
-} from './captchaStore'
+} from '#server/utils/captchaStore'
 
 const keyOf = (id: string) => `captcha:${id}`
 // 与生成端保持一致：5 分钟有效

@@ -129,9 +129,10 @@
                 <div v-else class="flex items-center gap-2 mb-0.5">
                   <span class="text-xs font-medium text-text-secondary">{{ cred.providerUsername }}</span>
                   <button
+                    :aria-label="locale.rename"
                     class="text-text-tertiary hover:text-text-secondary opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
-                    @click.stop="startEditing(cred)"
                     :title="locale.rename"
+                    @click.stop="startEditing(cred)"
                   >
                     <Pencil :size="12" />
                   </button>
@@ -153,6 +154,7 @@
               <div class="flex items-center gap-1">
                 <template v-if="editingId === cred.id">
                   <button
+                    :aria-label="locale.save"
                     class="text-text-tertiary hover:text-success transition-colors p-1"
                     :disabled="isRenaming"
                     @click.stop="saveEditing(cred.id)"
@@ -161,10 +163,11 @@
                     <Check :size="14" />
                   </button>
                   <button
+                    :aria-label="locale.cancel"
                     class="text-text-tertiary hover:text-text-primary transition-colors p-1"
                     :disabled="isRenaming"
-                    @click.stop="cancelEditing"
                     :title="locale.cancel"
+                    @click.stop="cancelEditing"
                   >
                     <X :size="14" />
                   </button>
@@ -208,8 +211,8 @@ import {
   X,
   AlertTriangle
 } from '@lucide/vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import Icon from '~/components/UI/Icon.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
+import Icon from '~/components/Shared/Icon.vue'
 import { useToast } from '~/composables/useToast'
 import { getAggregateOAuthLoginTypeIcon, getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'

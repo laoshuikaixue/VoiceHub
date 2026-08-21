@@ -2,8 +2,8 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songCollaborators, collaborationLogs, songs } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
-import { createCollaborationResponseNotification } from '~~/server/services/notificationService'
-import { createApiError } from '~~/server/utils/apiError'
+import { createCollaborationResponseNotification } from '#server/services/notificationService'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

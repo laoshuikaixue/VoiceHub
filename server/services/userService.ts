@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { passwordAuditLogs, users } from '~/drizzle/schema'
 import { and, eq, sql } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 interface PasswordAuditContext {
   action: string

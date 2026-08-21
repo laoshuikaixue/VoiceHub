@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { getServerTimestamp } from '#server/utils/serverTime'
 import {
   delStore,
   delStoreIfValue,
@@ -9,8 +9,8 @@ import {
   incrStore,
   parseStoreJson,
   verifyStateCode
-} from '~~/server/utils/captchaStore'
-import { createApiError } from '~~/server/utils/apiError'
+} from '#server/utils/captchaStore'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {

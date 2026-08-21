@@ -1,12 +1,12 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
-import { maskSystemSettingsSecrets } from './secretMask'
+import { SYSTEM_SETTINGS_DEFAULTS } from '#server/utils/system-settings-defaults'
+import { maskSystemSettingsSecrets } from '#server/api/admin/system-settings/secretMask'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl
-} from '~~/server/utils/oauth-providers'
+} from '#server/utils/oauth-providers'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

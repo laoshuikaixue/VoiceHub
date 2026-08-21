@@ -1,8 +1,8 @@
 import { verifyRegistrationResponse } from '@simplewebauthn/server'
-import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/webauthn-token'
-import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
+import { getWebAuthnChallenge, clearWebAuthnChallenge } from '#server/utils/webauthn-token'
+import { getWebAuthnConfig } from '#server/utils/webauthn-config'
 import { db, userIdentities } from '~/drizzle/db'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 const VALID_TRANSPORTS = ['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb']
 

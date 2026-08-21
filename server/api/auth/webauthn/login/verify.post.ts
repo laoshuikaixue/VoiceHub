@@ -1,10 +1,10 @@
 import { verifyAuthenticationResponse } from '@simplewebauthn/server'
-import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/webauthn-token'
-import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
+import { getWebAuthnChallenge, clearWebAuthnChallenge } from '#server/utils/webauthn-token'
+import { getWebAuthnConfig } from '#server/utils/webauthn-config'
 import { db, eq, and, userIdentities } from '~/drizzle/db'
 import { defineEventHandler, setCookie } from 'h3'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { createApiError } from '~~/server/utils/apiError'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)

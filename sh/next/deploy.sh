@@ -130,7 +130,7 @@ echo -e "${BLUE}安装目录: $PROJECT_DIR${NC}"
 echo ""
 
 # ============================================
-# 步骤 2: 检查并安装 Node.js 22+
+# 步骤 2: 检查并安装 Node.js 24+
 # ============================================
 echo -e "${YELLOW}[2/9] 检查 Node.js 版本...${NC}"
 
@@ -139,10 +139,10 @@ if command -v node &> /dev/null; then
     NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
     echo -e "当前 Node.js 版本: $(node -v)"
     
-    if [[ $NODE_VERSION -ge 22 ]]; then
-        echo -e "${GREEN}✓ Node.js 版本满足要求 (>= 22)${NC}"
+    if [[ $NODE_VERSION -ge 24 ]]; then
+        echo -e "${GREEN}✓ Node.js 版本满足要求 (>= 24)${NC}"
     else
-        echo -e "${YELLOW}! Node.js 版本过低，需要升级到 22+${NC}"
+        echo -e "${YELLOW}! Node.js 版本过低，需要升级到 24+${NC}"
         NODE_NEED_INSTALL=true
     fi
 else
@@ -151,10 +151,10 @@ else
 fi
 
 if [[ "$NODE_NEED_INSTALL" == "true" ]]; then
-    echo -e "${YELLOW}正在安装 Node.js 22...${NC}"
+    echo -e "${YELLOW}正在安装 Node.js 26...${NC}"
     
-    # 安装 NodeSource Node.js 22.x
-    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+    # 安装 NodeSource Node.js 26.x
+    curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
     
     # 安装 Node.js
     sudo apt-get install -y nodejs

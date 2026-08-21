@@ -2,7 +2,7 @@ import { getRequestHeader } from 'h3'
 import { db } from '~/drizzle/db'
 import { passwordAuditLogs, passwordRateLimits } from '~/drizzle/schema'
 import { lte, sql } from 'drizzle-orm'
-import { getClientIP } from '~~/server/utils/ip-utils'
+import { getClientIP } from '#server/utils/ip-utils'
 
 export const PASSWORD_AUDIT_ACTIONS = {
   INITIAL_PASSWORD: 'INITIAL_PASSWORD',

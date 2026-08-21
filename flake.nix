@@ -39,11 +39,11 @@
               inherit (finalAttrs) pname version src;
               inherit pnpm;
               fetcherVersion = 4;
-              hash = "sha256-ZmeNq2vrimowd/Li2X8sAAXwevAGrybK4ZzLWqChcGI=";
+              hash = "sha256-m4G1J/Zt4jn8Fv0k8jwVS2aKPVa7va5rbljoAmpQ3/Y=";
             };
 
             nativeBuildInputs = [
-              pkgs.nodejs_24
+              pkgs.nodejs_26
               pkgs.pnpmConfigHook
               pnpm
               pkgs.makeWrapper
@@ -79,7 +79,7 @@
 
               cp -r scripts            "$out/lib/voicehub/"
 
-              makeWrapper ${pkgs.nodejs_24}/bin/node "$out/bin/voicehub" \
+              makeWrapper ${pkgs.nodejs_26}/bin/node "$out/bin/voicehub" \
                 --add-flags ".output/server/index.mjs" \
                 --chdir "$out/lib/voicehub" \
                 --set PREBUILT true \
@@ -94,7 +94,7 @@
               homepage = "https://github.com/laoshuikaixue/VoiceHub";
               license = licenses.gpl3Only;
               mainProgram = "voicehub";
-              platforms = pkgs.nodejs_24.meta.platforms;
+              platforms = pkgs.nodejs_26.meta.platforms;
             };
           });
 
@@ -108,7 +108,7 @@
           devShells = {
             default = pkgs.mkShell {
               buildInputs = [
-                pkgs.nodejs_24
+                pkgs.nodejs_26
                 pnpm
                 pkgs.postgresql_15
                 pkgs.git
@@ -145,7 +145,7 @@
                   buildScript = pkgs.writeShellApplication {
                     name = "voicehub-build";
                     runtimeInputs = [
-                      pkgs.nodejs_24
+                      pkgs.nodejs_26
                       pnpm
                       pkgs.git
                       pkgs.cacert
@@ -183,7 +183,7 @@
         , ...
         }:
         let
-          nodejs = pkgs.nodejs_24;
+          nodejs = pkgs.nodejs_26;
           pnpm = pkgs.pnpm_10.override {
             version = "10.29.3";
             hash = "sha256-p09NvT9afKh00AQTUnHwtpe2g78f0vwhM5YRYc0lspw=";

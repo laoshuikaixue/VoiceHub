@@ -1,10 +1,12 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte, ne } from 'drizzle-orm'
-import { createSongSelectedNotification, createReplaySongSelectedNotification } from '../../services/notificationService'
-import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
-import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
-import { getServerDate } from '~~/server/utils/serverTime'
+import {
+  createSongSelectedNotification,
+  createReplaySongSelectedNotification
+} from '#server/services/notificationService'
+import { fulfillReplayRequestsForSchedule } from '#server/utils/scheduleReplayBinding'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -56,6 +58,16 @@ export default defineEventHandler(async (event) => {
     }
 
     const transactionResult = await db.transaction(async (tx) => {
+      const lockedSongs = await tx
+        .select({ id: songs.id })
+        .from(songs)
+        .where(eq(songs.id, body.songId))
+        .limit(1)
+        .for('update')
+      if (lockedSongs.length === 0) {
+        throw createError({ statusCode: 404, message: '歌曲不存在' })
+      }
+
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1
 
@@ -117,8 +129,7 @@ export default defineEventHandler(async (event) => {
           id: song.id,
           title: song.title,
           artist: song.artist,
-          requesterId: song.requesterId,
-          cardCodeId: song.cardCodeId
+          requesterId: song.requesterId
         }
       }
 
@@ -158,13 +169,6 @@ export default defineEventHandler(async (event) => {
         if (existingPublished.length > 0) {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知`)
         }
-
-        await redeemCardCodeForSchedule(tx, {
-          songId: schedule.song.id,
-          cardCodeId: schedule.song.cardCodeId,
-          operatorId: user.id,
-          at: createdSchedule.publishedAt || getServerDate()
-        })
       }
 
       return { schedule, shouldNotify, replayRequesterIds }
@@ -188,11 +192,16 @@ export default defineEventHandler(async (event) => {
     if (!isDraft && transactionResult.replayRequesterIds.length > 0) {
       for (const replayUserId of transactionResult.replayRequesterIds) {
         try {
-          await createReplaySongSelectedNotification(replayUserId, song.id, {
-            title: song.title,
-            artist: song.artist,
-            playDate: transactionResult.schedule.playDate
-          }, transactionResult.schedule.id)
+          await createReplaySongSelectedNotification(
+            replayUserId,
+            song.id,
+            {
+              title: song.title,
+              artist: song.artist,
+              playDate: transactionResult.schedule.playDate
+            },
+            transactionResult.schedule.id
+          )
         } catch (error) {
           console.error(`发送重播安排通知给用户 ${replayUserId} 失败:`, error)
         }

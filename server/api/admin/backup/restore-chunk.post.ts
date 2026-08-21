@@ -1,14 +1,22 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import {
-  cardCodeRedeemLogs,
-  cardCodes,
+  apiKeyPermissions,
+  apiKeys,
+  apiLogs,
+  collaborationLogs,
+  emailTemplates,
   notificationSettings,
   notifications,
   playTimes,
+  requestTimes,
   schedules,
   semesters,
   songBlacklists,
+  songCollaborators,
+  songReplayRequests,
+  songQuotaAccounts,
+  songQuotaTransactions,
   songs,
   systemSettings,
   userIdentities,
@@ -61,9 +69,14 @@ export default defineEventHandler(async (event) => {
   const songIdMapping = new Map(
     Object.entries(mappings?.songs || {}).map(([k, v]) => [Number(k), Number(v)])
   )
-  const cardCodeIdMapping = new Map(
-    Object.entries(mappings?.cardCodes || {}).map(([k, v]) => [Number(k), Number(v)])
+  const quotaAccountIdMapping = new Map(
+    Object.entries(mappings?.quotaAccounts || {}).map(([k, v]) => [Number(k), Number(v)])
   )
+  const quotaTransactionIdMapping = new Map(
+    Object.entries(mappings?.quotaTransactions || {}).map(([k, v]) => [Number(k), Number(v)])
+  )
+  const apiKeyIdMapping = new Map(Object.entries(mappings?.apiKeys || {}))
+  const collaboratorIdMapping = new Map(Object.entries(mappings?.collaborators || {}))
   const preservedSuperAdminIds = new Set(
     (mappings?.meta?.preservedSuperAdminIds || []).map((id) => Number(id))
   )
@@ -75,7 +88,11 @@ export default defineEventHandler(async (event) => {
   const newMappings = {
     users: {},
     songs: {},
-    cardCodes: {}
+    cardCodes: {},
+    quotaAccounts: {},
+    quotaTransactions: {},
+    apiKeys: {},
+    collaborators: {}
   }
 
   const stats = {
@@ -87,6 +104,53 @@ export default defineEventHandler(async (event) => {
   }
 
   console.log(`处理批次: ${tableName}, ${records.length} 条记录`)
+
+  const validateQuotaSnapshots = async () => {
+    await db.transaction(async (tx) => {
+      for (const record of records) {
+        if (!record.quotaConsumed) continue
+        const mappedSongId = songIdMapping.get(record.id)
+        const quotaTransactionId = quotaTransactionIdMapping.get(record.quotaTransactionId)
+        const quotaReturnTransactionId = record.quotaReturned
+          ? quotaTransactionIdMapping.get(record.quotaReturnTransactionId)
+          : null
+        if (!mappedSongId || !quotaTransactionId)
+          throw new Error(`歌曲 ${record.id} 额度快照一致性校验失败`)
+        const consumed = await tx.query.songQuotaTransactions.findFirst({
+          where: eq(songQuotaTransactions.id, quotaTransactionId)
+        })
+        const returned = quotaReturnTransactionId
+          ? await tx.query.songQuotaTransactions.findFirst({
+              where: eq(songQuotaTransactions.id, quotaReturnTransactionId)
+            })
+          : null
+        const consumptionValid =
+          consumed?.source === 'SONG_REQUEST' &&
+          consumed.delta < 0 &&
+          consumed.songId === mappedSongId &&
+          consumed.quotaType === record.quotaType
+        const returnValid =
+          !record.quotaReturned ||
+          (returned &&
+            ((returned.source === 'SONG_WITHDRAW_RETURN' && returned.delta > 0) ||
+              (returned.source === 'SONG_WITHDRAW_EXPIRED' && returned.delta === 0)) &&
+            returned.songId === mappedSongId &&
+            returned.quotaType === record.quotaType)
+        if (!consumptionValid || !returnValid)
+          throw new Error(`歌曲 ${record.id} 额度快照一致性校验失败`)
+      }
+    })
+  }
+
+  if (tableName === 'songQuotaSnapshotsPreflight') {
+    await validateQuotaSnapshots()
+    return {
+      success: true,
+      message: '额度快照预检完成',
+      newMappings,
+      stats
+    }
+  }
 
   for (const record of records) {
     try {
@@ -183,7 +247,7 @@ export default defineEventHandler(async (event) => {
                         .returning()
                     )[0]
                   }
-                } catch (error) {
+                } catch {
                   console.warn(`用户 ${record.username} 使用原始ID创建失败，使用自动生成ID`)
                   createdUser = (await tx.insert(users).values(buildUserData(true)).returning())[0]
                 }
@@ -378,6 +442,47 @@ export default defineEventHandler(async (event) => {
             break
           }
 
+          case 'songQuotaAccounts': {
+            const mappedUserId = userIdMapping.get(record.userId) || record.userId
+            const userExists = await tx.query.users.findFirst({
+              where: eq(users.id, mappedUserId)
+            })
+            if (!userExists) return
+            const accountData: any = {
+              userId: mappedUserId,
+              periodicBalance: record.periodicBalance ?? 0,
+              permanentBalance: record.permanentBalance ?? 0,
+              periodKey: record.periodKey || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+            const existing = await tx.query.songQuotaAccounts.findFirst({
+              where: eq(songQuotaAccounts.userId, mappedUserId)
+            })
+            const restored = existing
+              ? (
+                  await tx
+                    .update(songQuotaAccounts)
+                    .set(accountData)
+                    .where(eq(songQuotaAccounts.id, existing.id))
+                    .returning()
+                )[0]
+              : (
+                  await tx
+                    .insert(songQuotaAccounts)
+                    .values(
+                      mode === 'replace' && record.id
+                        ? { ...accountData, id: record.id }
+                        : accountData
+                    )
+                    .returning()
+                )[0]
+            if (existing) stats.updated++
+            else stats.created++
+            if (record.id && restored?.id) newMappings.quotaAccounts[record.id] = restored.id
+            break
+          }
+
           case 'cardCodes': {
             const cardCodeData: any = {}
             const cardCodeFields = ['code', 'status', 'note']
@@ -485,26 +590,16 @@ export default defineEventHandler(async (event) => {
               }
             }
 
-            let validCardCodeId = record.cardCodeId || null
-            if (record.cardCodeId) {
-              const mappedCardCodeId = cardCodeIdMapping.get(record.cardCodeId)
-              if (mappedCardCodeId) {
-                validCardCodeId = mappedCardCodeId
-              } else {
-                const cardCodeExists = await tx.query.cardCodes.findFirst({
-                  where: eq(cardCodes.id, record.cardCodeId)
-                })
-                if (!cardCodeExists) {
-                  validCardCodeId = null
-                }
-              }
-            }
-
             const songData: any = {
               requesterId: validRequesterId,
               preferredPlayTimeId: validPreferredPlayTimeId,
-              cardCodeId: validCardCodeId,
-              played: record.hasOwnProperty('played') ? record.played : false
+              played: record.hasOwnProperty('played') ? record.played : false,
+              quotaConsumed: false,
+              quotaType: null,
+              quotaTransactionId: null,
+              quotaPeriodKey: null,
+              quotaReturned: false,
+              quotaReturnTransactionId: null
             }
 
             const songFields = [
@@ -514,6 +609,8 @@ export default defineEventHandler(async (event) => {
               'cover',
               'musicPlatform',
               'musicId',
+              'requestId',
+              'fingerprint',
               'durationSeconds',
               'submissionNote',
               'submissionNotePublic'
@@ -567,7 +664,7 @@ export default defineEventHandler(async (event) => {
                         .returning()
                     )[0]
                   }
-                } catch (error) {
+                } catch {
                   createdSong = (await tx.insert(songs).values(songData).returning())[0]
                 }
                 stats.created++
@@ -599,6 +696,107 @@ export default defineEventHandler(async (event) => {
             if (record.id && createdSong.id) {
               newMappings.songs[record.id] = createdSong.id
             }
+            break
+          }
+
+          case 'songQuotaTransactions': {
+            const mappedAccountId = quotaAccountIdMapping.get(record.accountId) || record.accountId
+            const accountExists = await tx.query.songQuotaAccounts.findFirst({
+              where: eq(songQuotaAccounts.id, mappedAccountId)
+            })
+            if (!accountExists) return
+            const transactionData: any = {
+              accountId: mappedAccountId,
+              quotaType: record.quotaType,
+              source: record.source,
+              delta: record.delta,
+              balanceAfter: record.balanceAfter,
+              periodKey: record.periodKey || null,
+              idempotencyKey: record.idempotencyKey || null,
+              requestFingerprint: record.requestFingerprint || null,
+              songId: record.songId ? songIdMapping.get(record.songId) || null : null,
+              administratorId: record.administratorId
+                ? userIdMapping.get(record.administratorId) || null
+                : null,
+              apiKeyId: apiKeyIdMapping.get(record.apiKeyId) || null,
+              publicDescription: record.publicDescription || null,
+              internalNote: record.internalNote || null,
+              externalReference: record.externalReference || null,
+              snapshot: record.snapshot || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+            const existing = record.idempotencyKey
+              ? await tx.query.songQuotaTransactions.findFirst({
+                  where: eq(songQuotaTransactions.idempotencyKey, record.idempotencyKey)
+                })
+              : null
+            const restored = existing
+              ? (
+                  await tx
+                    .update(songQuotaTransactions)
+                    .set(transactionData)
+                    .where(eq(songQuotaTransactions.id, existing.id))
+                    .returning()
+                )[0]
+              : (
+                  await tx
+                    .insert(songQuotaTransactions)
+                    .values(
+                      mode === 'replace' && record.id
+                        ? { ...transactionData, id: record.id }
+                        : transactionData
+                    )
+                    .returning()
+                )[0]
+            if (existing) stats.updated++
+            else stats.created++
+            if (record.id && restored?.id) newMappings.quotaTransactions[record.id] = restored.id
+            break
+          }
+
+          case 'songQuotaSnapshots': {
+            if (!record.quotaConsumed) break
+            const mappedSongId = songIdMapping.get(record.id)
+            const quotaTransactionId = quotaTransactionIdMapping.get(record.quotaTransactionId)
+            const quotaReturnTransactionId = record.quotaReturned
+              ? quotaTransactionIdMapping.get(record.quotaReturnTransactionId)
+              : null
+            if (!mappedSongId || !quotaTransactionId)
+              throw new Error(`歌曲 ${record.id} 额度快照一致性校验失败`)
+            const consumed = await tx.query.songQuotaTransactions.findFirst({
+              where: eq(songQuotaTransactions.id, quotaTransactionId)
+            })
+            const returned = quotaReturnTransactionId
+              ? await tx.query.songQuotaTransactions.findFirst({
+                  where: eq(songQuotaTransactions.id, quotaReturnTransactionId)
+                })
+              : null
+            const consumptionValid =
+              consumed?.source === 'SONG_REQUEST' &&
+              consumed.delta < 0 &&
+              consumed.songId === mappedSongId &&
+              consumed.quotaType === record.quotaType
+            const returnValid =
+              !record.quotaReturned ||
+              (returned &&
+                ((returned.source === 'SONG_WITHDRAW_RETURN' && returned.delta > 0) ||
+                  (returned.source === 'SONG_WITHDRAW_EXPIRED' && returned.delta === 0)) &&
+                returned.songId === mappedSongId &&
+                returned.quotaType === record.quotaType)
+            if (!consumptionValid || !returnValid)
+              throw new Error(`歌曲 ${record.id} 额度快照一致性校验失败`)
+            await tx
+              .update(songs)
+              .set({
+                quotaConsumed: true,
+                quotaType: record.quotaType,
+                quotaTransactionId,
+                quotaPeriodKey: record.quotaPeriodKey || null,
+                quotaReturned: record.quotaReturned === true,
+                quotaReturnTransactionId
+              })
+              .where(eq(songs.id, mappedSongId))
+            stats.updated++
             break
           }
 
@@ -709,9 +907,11 @@ export default defineEventHandler(async (event) => {
               'enableReplayRequests',
               'enableCollaborativeSubmission',
               'enableSubmissionRemarks',
-              'enableCardCodeRequests',
-              'requireCardCodeForRequests',
-              'enableCardCodeLimitBypass',
+              'songQuotaEnabled',
+              'songQuotaPeriodType',
+              'songQuotaPeriodAmount',
+              'adminSongQuotaExempt',
+              'blockOnSongQuotaInsufficient',
               'enableSubmissionRestriction',
               'submissionRestrictionScope',
               'sameSongRestrictionHours',
@@ -1093,6 +1293,188 @@ export default defineEventHandler(async (event) => {
             break
           }
 
+          case 'requestTimes': {
+            const data: any = {
+              name: record.name,
+              startTime: record.startTime ? new Date(record.startTime) : null,
+              endTime: record.endTime ? new Date(record.endTime) : null,
+              enabled: record.enabled !== false,
+              description: record.description || null,
+              expected: record.expected || 0,
+              accepted: record.accepted || 0,
+              past: record.past === true,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+            const existing = await tx.query.requestTimes.findFirst({
+              where: eq(requestTimes.name, record.name)
+            })
+            if (existing) {
+              await tx.update(requestTimes).set(data).where(eq(requestTimes.id, existing.id))
+              stats.updated++
+            } else {
+              await tx
+                .insert(requestTimes)
+                .values(mode === 'replace' && record.id ? { ...data, id: record.id } : data)
+              stats.created++
+            }
+            break
+          }
+
+          case 'songCollaborators': {
+            const data: any = {
+              id: record.id,
+              songId: songIdMapping.get(record.songId) || record.songId,
+              userId: userIdMapping.get(record.userId) || record.userId,
+              status: record.status || 'PENDING',
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+            const restored = (
+              await tx
+                .insert(songCollaborators)
+                .values(data)
+                .onConflictDoUpdate({ target: songCollaborators.id, set: data })
+                .returning()
+            )[0]
+            if (record.id && restored?.id) newMappings.collaborators[record.id] = restored.id
+            stats.created++
+            break
+          }
+
+          case 'collaborationLogs': {
+            const data: any = {
+              id: record.id,
+              collaboratorId:
+                collaboratorIdMapping.get(record.collaboratorId) || record.collaboratorId,
+              action: record.action,
+              operatorId: userIdMapping.get(record.operatorId) || record.operatorId,
+              ipAddress: record.ipAddress || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+            await tx
+              .insert(collaborationLogs)
+              .values(data)
+              .onConflictDoUpdate({ target: collaborationLogs.id, set: data })
+            stats.created++
+            break
+          }
+
+          case 'songReplayRequests': {
+            const data: any = {
+              songId: songIdMapping.get(record.songId) || record.songId,
+              userId: userIdMapping.get(record.userId) || record.userId,
+              status: record.status || 'PENDING',
+              preferredPlayTimeId: record.preferredPlayTimeId || null,
+              submissionNote: record.submissionNote || null,
+              submissionNotePublic: record.submissionNotePublic === true,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+            await tx
+              .insert(songReplayRequests)
+              .values(mode === 'replace' && record.id ? { ...data, id: record.id } : data)
+              .onConflictDoNothing()
+            stats.created++
+            break
+          }
+
+          case 'emailTemplates': {
+            const data: any = {
+              key: record.key,
+              name: record.name,
+              subject: record.subject,
+              html: record.html,
+              updatedByUserId: record.updatedByUserId
+                ? userIdMapping.get(record.updatedByUserId) || null
+                : null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+            const existing = await tx.query.emailTemplates.findFirst({
+              where: eq(emailTemplates.key, record.key)
+            })
+            if (existing) {
+              await tx.update(emailTemplates).set(data).where(eq(emailTemplates.id, existing.id))
+              stats.updated++
+            } else {
+              await tx
+                .insert(emailTemplates)
+                .values(mode === 'replace' && record.id ? { ...data, id: record.id } : data)
+              stats.created++
+            }
+            break
+          }
+
+          case 'apiKeys': {
+            const data: any = {
+              name: record.name,
+              description: record.description || null,
+              keyHash: record.keyHash,
+              keyPrefix: record.keyPrefix,
+              isActive: record.isActive !== false,
+              expiresAt: record.expiresAt ? new Date(record.expiresAt) : null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
+              lastUsedAt: record.lastUsedAt ? new Date(record.lastUsedAt) : null,
+              createdByUserId: userIdMapping.get(record.createdByUserId) || record.createdByUserId,
+              usageCount: record.usageCount || 0
+            }
+            const existing = await tx.query.apiKeys.findFirst({
+              where: eq(apiKeys.keyHash, record.keyHash)
+            })
+            const restored = existing
+              ? (
+                  await tx.update(apiKeys).set(data).where(eq(apiKeys.id, existing.id)).returning()
+                )[0]
+              : (
+                  await tx
+                    .insert(apiKeys)
+                    .values(mode === 'replace' && record.id ? { ...data, id: record.id } : data)
+                    .returning()
+                )[0]
+            if (existing) stats.updated++
+            else stats.created++
+            if (record.id && restored?.id) newMappings.apiKeys[record.id] = restored.id
+            break
+          }
+
+          case 'apiKeyPermissions': {
+            const data: any = {
+              apiKeyId: apiKeyIdMapping.get(record.apiKeyId) || record.apiKeyId,
+              permission: record.permission,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+            await tx
+              .insert(apiKeyPermissions)
+              .values(mode === 'replace' && record.id ? { ...data, id: record.id } : data)
+              .onConflictDoNothing()
+            stats.created++
+            break
+          }
+
+          case 'apiLogs': {
+            const data: any = {
+              apiKeyId: apiKeyIdMapping.get(record.apiKeyId) || record.apiKeyId || null,
+              endpoint: record.endpoint,
+              method: record.method,
+              ipAddress: record.ipAddress,
+              userAgent: record.userAgent || null,
+              statusCode: record.statusCode,
+              responseTimeMs: record.responseTimeMs,
+              requestBody: record.requestBody || null,
+              responseBody: record.responseBody || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              errorMessage: record.errorMessage || null
+            }
+            await tx
+              .insert(apiLogs)
+              .values(mode === 'replace' && record.id ? { ...data, id: record.id } : data)
+              .onConflictDoNothing()
+            stats.created++
+            break
+          }
+
           case 'cardCodeRedeemLogs': {
             let validCardCodeId = record.cardCodeId || null
             if (record.cardCodeId) {
@@ -1227,7 +1609,8 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    success: true,
+    success: stats.errors === 0,
+    message: stats.errors === 0 ? '分块恢复完成' : '分块恢复存在一致性错误',
     newMappings,
     stats
   }

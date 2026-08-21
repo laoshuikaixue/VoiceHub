@@ -23,17 +23,18 @@
                 <div
                   class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
-                  <Icon name="history" :size="20" />
+                  <History :size="20"  />
                 </div>
                 {{ locale.recentTitle }}
               </h3>
               <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.recentDesc }}</p>
             </div>
             <button
+              aria-label="关闭最近播放弹窗"
               class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -43,7 +44,7 @@
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
             >
-              <Icon name="refresh" :size="32" class="animate-spin mb-4 text-primary" />
+              <RefreshCw :size="32" class="animate-spin mb-4 text-primary"  />
               <div class="text-[10px] font-black uppercase tracking-widest">
                 {{ locale.loadingRecent }}
               </div>
@@ -56,7 +57,7 @@
               <div
                 class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center text-error mb-4"
               >
-                <Icon name="alert-triangle" :size="32" />
+                <TriangleAlert :size="32"  />
               </div>
               <p class="text-sm text-text-tertiary mb-6">{{ error }}</p>
               <button
@@ -71,7 +72,7 @@
               v-else-if="songs.length === 0"
               class="flex flex-col items-center justify-center py-20 text-text-disabled"
             >
-              <Icon name="music" :size="48" class="mb-4 opacity-20" />
+              <Music :size="48" class="mb-4 opacity-20"  />
               <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noRecent }}</p>
             </div>
 
@@ -97,7 +98,7 @@
                     <div
                       class="w-8 h-8 rounded-full bg-bg-secondary-20 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-30"
                     >
-                      <Icon name="play" :size="14" class="fill-current" />
+                      <Play :size="14" class="fill-current"  />
                     </div>
                   </div>
                 </div>
@@ -125,7 +126,7 @@
                     v-if="songsLoadingForSimilar"
                     class="flex items-center gap-2 px-3 py-1 bg-bg-tertiary-50 rounded-lg"
                   >
-                    <Icon name="refresh" :size="10" class="animate-spin text-text-tertiary" />
+                    <RefreshCw :size="10" class="animate-spin text-text-tertiary"  />
                     <span class="text-[10px] text-text-tertiary font-black uppercase">{{ locale.checking }}</span>
                   </div>
                   <template v-else-if="getSimilarSong(item.data)">
@@ -174,13 +175,13 @@
                             : handleLike(getSimilarSong(item.data))
                         "
                       >
-                        <Icon
-                          name="heart"
+                        <Heart
+                         
                           :size="10"
                           :class="[
                             getSimilarSong(item.data)?.voted ? 'text-error fill-current' : ''
                           ]"
-                        />
+                         />
                         {{ getSimilarSong(item.data)?.voted ? locale.liked : locale.like }}
                       </button>
                     </div>
@@ -207,7 +208,7 @@
             <div
               class="flex items-center gap-2 text-[10px] font-black text-text-disabled uppercase tracking-widest"
             >
-              <Icon name="info" :size="12" />
+              <Info :size="12"  />
               {{ locale.recentSource }}
             </div>
             <button
@@ -224,10 +225,10 @@
 </template>
 
 <script setup>
+import { History, X, RefreshCw, TriangleAlert, Music, Play, Heart, Info } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { getRecentSongs } from '~/utils/neteaseApi'
 import { convertToHttps } from '~/utils/url'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => {
@@ -240,9 +241,6 @@ const locale = computed(() => {
     monthDay: base.monthDay || emptyText
   })
 })
-import { useSongs } from '~/composables/useSongs'
-import { useAuth } from '~/composables/useAuth'
-import { useSemesters } from '~/composables/useSemesters'
 
 const props = defineProps({
   show: Boolean,

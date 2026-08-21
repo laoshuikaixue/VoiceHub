@@ -5,8 +5,8 @@ import {
   maskPublicScheduleData,
   stripAnonymousSongIdentifiersFromSchedules,
   type PublicScheduleItem
-} from '../../utils/studentMask'
-import { verifyUserAuth } from '../../utils/auth'
+} from '#server/utils/studentMask'
+import { verifyUserAuth } from '#server/utils/auth'
 
 const formatDisplayName = (
   user: { name?: string | null; grade?: string | null; class?: string | null },
@@ -149,7 +149,6 @@ export default defineEventHandler(async (event) => {
         s."playUrl",
         s.semester,
         s."requesterId",
-        s."cardCodeId" IS NOT NULL AS "usedCardCode",
         s."createdAt",
         s."submissionNote",
         s."submissionNotePublic",
@@ -278,8 +277,6 @@ export default defineEventHandler(async (event) => {
           voteCount: Number(row.voteCount || 0),
           played: row.songPlayed === true,
           cover: row.cover || null,
-          cardCodeId: null,
-          usedCardCode: row.usedCardCode === true,
           musicPlatform: row.musicPlatform || null,
           musicId: row.musicId || null,
           durationSeconds: row.durationSeconds || null,

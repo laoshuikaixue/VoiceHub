@@ -19,7 +19,7 @@
     <!-- 移动端投稿须知 -->
     <div class="rules-section mobile-only-rules">
       <h3 class="rules-title">
-        <Icon :size="16" class="rules-icon" name="bell" />
+        <Bell :size="16" class="rules-icon" />
         {{ locale.guidelinesTitle }}
       </h3>
       <div class="rules-content">
@@ -55,7 +55,7 @@
                 :placeholder="locale.searchPlaceholder"
                 required
                 type="text"
-              />
+              >
               <button
                 :disabled="loading || searching || !title.trim()"
                 class="search-button"
@@ -71,7 +71,7 @@
                 type="button"
                 @click="openAudioMatchModal"
               >
-                <Icon :size="16" name="mic" />
+                <Mic :size="16" />
                 <span class="btn-text">{{ locale.audioMatchShort }}</span>
               </button>
             </div>
@@ -82,7 +82,7 @@
               :title="locale.importFromPast"
               @click="showImportSongsModal = true"
             >
-              <Icon :size="16" name="history" />
+              <History :size="16" />
               <span class="btn-text">{{ locale.importFromPast }}</span>
             </button>
           </div>
@@ -98,7 +98,7 @@
                   type="button"
                   @click="removeCollaborator(user.id)"
                 >
-                  <Icon :size="12" name="close" />
+                  <X :size="12" />
                 </button>
               </div>
               <button
@@ -106,7 +106,7 @@
                 type="button"
                 @click="showUserSearchModal = true"
               >
-                <Icon :size="14" name="plus" />
+                <Plus :size="14" />
                 {{ locale.add }}
               </button>
             </div>
@@ -127,7 +127,7 @@
             v-if="
               user &&
               submissionStatus &&
-              (submissionStatus.limitEnabled ||
+              (submissionStatus.quota?.enabled ||
                 submissionStatus.timeLimitationEnabled ||
                 submissionStatus.submissionClosed)
             "
@@ -135,16 +135,16 @@
           >
             <!-- 超级管理员提示 -->
             <div
-              v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')"
+              v-if="user && auth.isAdmin.value"
               class="admin-notice-horizontal"
             >
-              <span class="admin-icon">👑</span>
+              <Crown class="admin-icon" :size="14" aria-hidden="true" />
               <span class="admin-text">{{ locale.adminUnlimited }}</span>
             </div>
 
             <!-- 投稿关闭提示 -->
             <div v-else-if="submissionStatus.submissionClosed" class="submission-closed-notice">
-              <span class="closed-icon">🚫</span>
+              <Ban class="closed-icon" :size="14" aria-hidden="true" />
               <span class="closed-text">
                 {{
                   submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod
@@ -172,47 +172,28 @@
                 </span>
               </div>
 
-              <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
-                <span class="status-label">{{ locale.todayRequests }}</span>
-                <span class="status-value"
-                  >{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span
-                >
-                <span class="status-remaining"
-                  >{{ locale.remaining }}
-                  {{ Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed) }}</span
-                >
-              </div>
-
-              <div v-if="submissionStatus.weeklyLimit" class="status-item-horizontal">
-                <span class="status-label">{{ locale.weeklyRequests }}</span>
-                <span class="status-value"
-                  >{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span
-                >
-                <span class="status-remaining"
-                  >{{ locale.remaining }}
-                  {{
-                    Math.max(0, submissionStatus.weeklyLimit - submissionStatus.weeklyUsed)
-                  }}</span
-                >
-              </div>
-
-              <div v-if="submissionStatus.monthlyLimit" class="status-item-horizontal">
-                <span class="status-label">{{ locale.monthlyRequests }}</span>
-                <span class="status-value"
-                  >{{ submissionStatus.monthlyUsed }} / {{ submissionStatus.monthlyLimit }}</span
-                >
-                <span class="status-remaining"
-                  >{{ locale.remaining }}
-                  {{
-                    Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
-                  }}</span
-                >
-              </div>
-              <div v-if="cardCodeLimitBypassActive" class="status-item-horizontal">
-                <span class="status-label">{{ locale.cardCodeLabel }}</span>
-                <span class="status-value">{{ locale.cardCodeBypassesLimit }}</span>
-              </div>
+              <template v-if="submissionStatus.quota?.enabled">
+                <div class="status-item-horizontal quota-display-wrapper">
+                  <SongQuotaDisplay
+                    :quota="submissionStatus.quota"
+                    :period-amount="submissionStatus.quota.periodAmount"
+                    :is-admin="auth.isAdmin.value"
+                    compact
+                  />
+                </div>
+              </template>
             </div>
+
+            <!-- 旧点歌券兑换按钮 -->
+            <button
+              v-if="user && !auth.isAdmin.value"
+              class="redeem-card-btn"
+              type="button"
+              @click="showRedeemCardModal = true"
+            >
+              <Ticket class="redeem-card-icon" :size="14" aria-hidden="true" />
+              <span>{{ locale.redeemCard }}</span>
+            </button>
           </div>
 
           <!-- 音乐平台选择按钮 -->
@@ -249,7 +230,7 @@
                     {{ locale.loginNow }}
                   </button>
                   <button class="import-btn" type="button" @click="handleImportClick">
-                    <Icon :size="14" name="upload" />
+                    <Upload :size="14" />
                     {{ locale.importData }}
                   </button>
                 </div>
@@ -284,7 +265,7 @@
                       type="button"
                       @click="showRecentSongsModal = true"
                     >
-                      <Icon :size="14" name="history" />
+                      <History :size="14" />
                       <span>{{ locale.recent }}</span>
                     </button>
                     <button
@@ -293,7 +274,7 @@
                       type="button"
                       @click="showPlaylistModal = true"
                     >
-                      <Icon :size="14" name="playlist" />
+                      <ListMusic :size="14" />
                       <span>{{ locale.playlist }}</span>
                     </button>
                     <button
@@ -303,7 +284,7 @@
                       type="button"
                       @click="handleExportData"
                     >
-                      <Icon :size="14" name="download" />
+                      <Download :size="14" />
                     </button>
                     <button
                       class="action-btn-compact text-error hover:text-error hover:bg-error-10"
@@ -312,7 +293,7 @@
                       type="button"
                       @click="handleLogoutNetease"
                     >
-                      <Icon :size="14" name="logout" />
+                      <LogOut :size="14" />
                     </button>
                   </div>
                 </div>
@@ -344,9 +325,9 @@
                       :src="convertToHttps(qqMusicUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
+                    >
                     <div v-else class="qq-user-avatar">
-                      <Icon :size="14" name="music" />
+                      <Music :size="14" />
                     </div>
                     <span class="user-name">{{ qqMusicUser?.nickname || locale.qqLoggedIn }}</span>
                   </div>
@@ -359,7 +340,7 @@
                       type="button"
                       @click="handleLogoutQQMusic"
                     >
-                      <Icon :size="14" name="logout" />
+                      <LogOut :size="14" />
                     </button>
                   </div>
                 </div>
@@ -368,7 +349,7 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段、备注和点歌券 -->
+            <!-- 播出时段、备注 -->
             <div v-if="playTimeSelectionEnabled" class="form-row mb-4">
               <!-- 播出时段选择 -->
               <div class="form-group">
@@ -386,10 +367,10 @@
             </div>
 
             <div
-              v-if="enableSubmissionRemarks || cardCodeEnabled"
+              v-if="enableSubmissionRemarks"
               class="form-row submission-meta-row"
             >
-              <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
+              <div class="form-group submission-note-group">
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <label
@@ -398,58 +379,14 @@
                       >{{ locale.submissionNote }}</label
                     >
                     <div class="flex items-center gap-2">
-                      <button
-                        v-if="cardCodeEnabled"
-                        :class="[
-                          'mobile-card-code-chip',
-                          trimmedCardCode
-                            ? cardCodeValidation.valid
-                              ? 'is-valid'
-                              : cardCodeValidation.valid === false
-                                ? 'is-invalid'
-                                : 'has-code'
-                            : cardCodeFieldMeta.required
-                              ? 'is-required'
-                              : ''
-                        ]"
-                        type="button"
-                        @click="openCardCodeModal"
-                      >
-                        <Icon
-                          :size="12"
-                          :name="
-                            cardCodeValidation.checking
-                              ? 'loader'
-                              : trimmedCardCode
-                                ? cardCodeValidation.valid === false
-                                  ? 'close'
-                                  : 'check'
-                                : 'plus'
-                          "
-                        />
-                        <span>{{ mobileCardCodeLabel }}</span>
-                      </button>
                       <label class="custom-checkbox-wrapper">
                         <input
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-                        />
+                        >
                         <span class="custom-checkbox-box">
-                          <svg
-                            class="custom-checkbox-icon"
-                            viewBox="0 0 12 10"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M1 5L4.5 8.5L11 1.5"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                          </svg>
+                          <Check class="custom-checkbox-icon" />
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                       </label>
@@ -465,104 +402,6 @@
                     <span>{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
-              </div>
-
-              <div
-                v-if="cardCodeEnabled"
-                :class="[
-                  'form-group card-code-form-group',
-                  { 'mobile-hidden-card-code-group': enableSubmissionRemarks }
-                ]"
-              >
-                <div class="desktop-card-code-panel">
-                  <div class="flex min-w-0 items-center gap-2">
-                    <div class="min-w-0">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-text-primary">{{
-                          locale.cardCode
-                        }}</span>
-                        <span
-                          :class="[
-                            'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
-                            cardCodeFieldMeta.required
-                              ? 'border-warning-30 bg-warning-10 text-warning-300'
-                              : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
-                          ]"
-                        >
-                          {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
-                        </span>
-                      </div>
-                      <p
-                        :class="[
-                          'mt-1 truncate text-[11px]',
-                          cardCodeValidation.valid
-                            ? 'text-success-300'
-                            : cardCodeValidation.valid === false
-                              ? 'text-error-80'
-                              : cardCodeFieldMeta.required
-                                ? 'text-warning-300'
-                                : 'text-text-tertiary'
-                        ]"
-                      >
-                        {{ cardCodeStatusText }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex shrink-0 items-center gap-2">
-                    <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-warning-200 transition-all hover:border-warning-40 hover:bg-warning-15"
-                      type="button"
-                      @click="openCardCodeModal"
-                    >
-                      <Icon :size="13" :name="trimmedCardCode ? 'edit' : 'plus'" />
-                      {{ trimmedCardCode ? locale.editCardCode : locale.addCardCode }}
-                    </button>
-                    <button
-                      v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary-80 text-text-tertiary transition-all hover:border-error-30 hover:text-error"
-                      :title="locale.clearCardCode"
-                      type="button"
-                      @click="clearCardCode"
-                    >
-                      <Icon :size="13" name="close" />
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  v-if="!enableSubmissionRemarks"
-                  :class="[
-                    'mobile-card-code-button',
-                    trimmedCardCode
-                      ? cardCodeValidation.valid
-                        ? 'is-valid'
-                        : cardCodeValidation.valid === false
-                          ? 'is-invalid'
-                          : 'has-code'
-                      : cardCodeFieldMeta.required
-                        ? 'is-required'
-                        : ''
-                  ]"
-                  type="button"
-                  @click="openCardCodeModal"
-                >
-                  <span class="flex min-w-0 items-center gap-2">
-                    <Icon
-                      :size="14"
-                      :name="
-                        cardCodeValidation.checking
-                          ? 'loader'
-                          : trimmedCardCode
-                            ? cardCodeValidation.valid === false
-                              ? 'close'
-                              : 'check'
-                            : 'plus'
-                      "
-                    />
-                    <span class="truncate">{{ cardCodeStatusText }}</span>
-                  </span>
-                  <Icon :size="13" name="chevron-right" />
-                </button>
               </div>
             </div>
 
@@ -590,10 +429,10 @@
                         :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
-                      />
+                      >
                       <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
-                          <Icon name="play" :size="20" class="play-icon" />
+                          <Play :size="20" class="play-icon"  />
                         </div>
                       </div>
                     </div>
@@ -608,12 +447,12 @@
                       >
                         <span class="album-label">{{ locale.album }}</span>
                         <span class="album-name">{{ result.album }}</span>
-                        <Icon
+                        <ExternalLink
                           v-if="isNeteaseAlbum(result)"
-                          name="external-link"
+                         
                           :size="12"
                           class="album-link-icon"
-                        />
+                         />
                       </p>
                     </div>
                     <div class="result-actions">
@@ -624,7 +463,7 @@
                         :title="locale.uploadToNeteaseCloud"
                         @click.stop.prevent="openUploadDialog(result)"
                       >
-                        <Icon name="cloud-upload" :size="18" />
+                        <CloudUpload :size="18"  />
                       </button>
 
                       <!-- 多P视频的特殊处理 -->
@@ -733,16 +572,7 @@
                               : handleLikeFromSearch(getSimilarSong(result), result)
                           "
                         >
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                            />
-                          </svg>
+                          <Heart />
                           {{
                             getSimilarSong(result)?.played
                               ? locale.played
@@ -812,7 +642,7 @@
 
               <!-- 空状态 -->
               <div v-else-if="!searching && hasSearched" key="empty" class="empty-state">
-                <div class="empty-icon">🔍</div>
+                <Search class="empty-icon" :size="40" aria-hidden="true" />
                 <p class="empty-text">{{ locale.noResults }}</p>
                 <p class="empty-hint">{{ locale.noResultsHint }}</p>
                 <button
@@ -948,115 +778,6 @@
       @select="handleUserSelect"
     />
 
-    <!-- 点歌券输入弹窗 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary-80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
-          @click.self="closeCardCodeModal"
-        >
-          <div
-            class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
-            @click.stop
-          >
-            <div
-              class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4"
-            >
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
-                  <span
-                    :class="[
-                      'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
-                      cardCodeFieldMeta.required
-                        ? 'border-warning-30 bg-warning-10 text-warning-300'
-                        : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
-                    ]"
-                  >
-                    {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
-                  </span>
-                </div>
-                <p class="mt-1 text-[11px] text-text-tertiary">{{ cardCodeFieldMeta.helper }}</p>
-              </div>
-              <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary-60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
-                type="button"
-                @click="closeCardCodeModal"
-              >
-                <Icon :size="15" name="close" />
-              </button>
-            </div>
-
-            <div class="px-5 py-5">
-              <label
-                for="card-code-modal"
-                class="px-1 text-[10px] font-black uppercase tracking-widest text-text-disabled"
-              >
-                {{ locale.cardCodeLabel }}
-              </label>
-              <input
-                id="card-code-modal"
-                ref="cardCodeInputRef"
-                v-model="cardCodeDraft"
-                :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
-                type="text"
-                @keydown.enter.prevent="saveCardCode"
-              />
-              <p
-                :class="[
-                  'mt-2 px-1 text-[11px]',
-                  cardCodeValidation.valid
-                    ? 'text-success-300'
-                    : cardCodeValidation.valid === false
-                      ? 'text-error-80'
-                      : 'text-text-tertiary'
-                ]"
-              >
-                {{ cardCodeModalHint }}
-              </p>
-            </div>
-
-            <div
-              class="flex flex-col-reverse gap-2 border-t border-border-secondary-70 bg-bg-secondary-70 px-5 py-4 sm:flex-row sm:justify-end"
-            >
-              <button
-                class="rounded-lg px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:text-text-secondary"
-                type="button"
-                @click="closeCardCodeModal"
-              >
-                {{ locale.cancel }}
-              </button>
-              <button
-                v-if="trimmedCardCode"
-                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error-30 hover:text-error"
-                type="button"
-                @click="clearCardCode"
-              >
-                {{ locale.clear }}
-              </button>
-              <button
-                :disabled="cardCodeValidation.checking"
-                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-text-primary transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
-                type="button"
-                @click="saveCardCode"
-              >
-                {{ cardCodeValidation.checking ? locale.validatingCardCode : locale.save }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-300 ease-out"
@@ -1086,7 +807,7 @@
                         : 'bg-primary-10 text-primary'
                   "
                 >
-                  <Icon :size="32" name="mic" />
+                  <Mic :size="32" />
                 </div>
                 <div
                   v-if="audioMatchRecording"
@@ -1161,7 +882,7 @@
                           v-if="match.cover"
                           :src="match.cover"
                           class="w-full h-full object-cover"
-                        />
+                        >
                         <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
                           class="absolute inset-0 bg-bg-primary-50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
@@ -1246,7 +967,7 @@
                       class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-tertiary font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
-                    />
+                    >
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                       <Lock class="w-4 h-4 text-text-disabled" />
                     </div>
@@ -1267,7 +988,7 @@
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
-                  />
+                  >
                 </div>
 
                 <!-- 歌曲封面地址 -->
@@ -1289,7 +1010,7 @@
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1338,7 +1059,7 @@
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1394,22 +1115,91 @@
         </div>
       </Transition>
     </Teleport>
+    <!-- 卡密兑换弹窗 -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showRedeemCardModal"
+          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+          @click.self="showRedeemCardModal = false"
+        >
+          <div
+            class="w-full max-w-sm bg-bg-secondary rounded-2xl border border-border-secondary-50 shadow-xl overflow-hidden"
+          >
+            <div class="px-6 pt-5 pb-4 flex items-center justify-between">
+              <h3 class="text-sm font-black text-text-primary">{{ locale.redeemCardTitle }}</h3>
+              <button
+                class="text-text-tertiary hover:text-text-secondary transition-colors"
+                type="button"
+                @click="showRedeemCardModal = false"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
+            <div class="px-6 pb-5 space-y-3">
+              <p class="text-[11px] text-text-tertiary">{{ locale.redeemCardHint }}</p>
+              <input
+                v-model.trim="redeemCardCode"
+                :disabled="redeemingCard"
+                :placeholder="locale.redeemCardPlaceholder"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary-30 uppercase"
+                maxlength="128"
+                @keyup.enter="handleRedeemCard"
+              >
+              <p
+                v-if="redeemCardError"
+                class="text-[11px] font-bold text-error-80"
+              >{{ redeemCardError }}</p>
+            </div>
+
+            <div
+              class="px-6 py-4 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end"
+            >
+              <button
+                class="px-5 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors"
+                type="button"
+                @click="showRedeemCardModal = false"
+              >
+                {{ locale.cancel }}
+              </button>
+              <button
+                :disabled="!redeemCardCode || redeemingCard"
+                class="px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50 inline-flex items-center gap-1.5"
+                type="button"
+                @click="handleRedeemCard"
+              >
+                <Loader2 v-if="redeemingCard" class="w-3.5 h-3.5 animate-spin" />
+                {{ redeemingCard ? locale.redemptionLoading : locale.redeemCardConfirm }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
     <!-- 隐藏的文件输入框 -->
     <input
       ref="fileInput"
       accept=".json"
-      style="display: none"
+      class="hidden"
       type="file"
       @change="handleImportData"
-    />
+    >
   </div>
 </template>
 
 <script setup>
+import { Bell, Mic, History, X, Plus, Upload, ListMusic, Download, LogOut, Music, ChevronRight, Lock, Loader2, Check, Edit3, Play,
+  ExternalLink, CloudUpload, Heart, Crown, Ban, Search, Ticket } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { X, Lock, Loader2, Check, Edit3, Music, Play } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
-import { useThemeImage } from '~/composables/useThemeImage'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -1418,10 +1208,10 @@ import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
+import { useThemeImage } from '~/composables/useThemeImage'
 import { useLocale } from '~/utils/locale'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import Icon from '../UI/Icon.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
@@ -1435,6 +1225,7 @@ import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
 import AlbumDetailsModal from './AlbumDetailsModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
+import SongQuotaDisplay from './SongQuotaDisplay.vue'
 import UserSearchModal from '../Common/UserSearchModal.vue'
 import NeteaseUploadDialog from './NeteaseUploadDialog.vue'
 
@@ -1450,7 +1241,6 @@ const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const { t: callLocale } = useLocaleText(locale)
 const { localize: localizeServerError } = useServerErrors()
-const { getSearchIcon } = useThemeImage()
 
 // 站点配置
 const {
@@ -1458,11 +1248,7 @@ const {
   initSiteConfig,
   enableReplayRequests,
   enableCollaborativeSubmission,
-  enableSubmissionRemarks,
-  enableSubmissionLimit,
-  enableCardCodeRequests,
-  requireCardCodeForRequests,
-  enableCardCodeLimitBypass
+  enableSubmissionRemarks
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
@@ -1485,25 +1271,13 @@ const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
-const cardCode = ref('')
-const cardCodeDraft = ref('')
-const showCardCodeModal = ref(false)
-const cardCodeInputRef = ref(null)
-const cardCodeValidation = ref({
-  checking: false,
-  valid: null,
-  message: ''
-})
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
 
-const {
-  getAvailablePlatforms,
-  loadPlatformConfig,
-  loaded: platformConfigLoaded
-} = usePlatformConfig()
+const { getAvailablePlatforms, loadPlatformConfig, loaded: platformConfigLoaded } = usePlatformConfig()
+const { getSearchIcon } = useThemeImage()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
 // 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
@@ -1545,173 +1319,6 @@ const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
 
-const cardCodeEnabled = computed(
-  () => enableCardCodeRequests.value || requireCardCodeForRequests.value
-)
-const cardCodeLimitBypassActive = computed(
-  () => enableSubmissionLimit.value && cardCodeEnabled.value && enableCardCodeLimitBypass.value
-)
-
-const cardCodeFieldMeta = computed(() => ({
-  required: requireCardCodeForRequests.value,
-  helper: requireCardCodeForRequests.value
-    ? cardCodeLimitBypassActive.value
-      ? locale.value.cardCodeRequiredBypassHelper
-      : locale.value.cardCodeRequiredHelper
-    : cardCodeLimitBypassActive.value
-      ? locale.value.cardCodeOptionalBypassHelper
-      : locale.value.cardCodeOptionalHelper,
-  placeholder: locale.value.cardCodePlaceholder
-}))
-
-const trimmedCardCode = computed(() => cardCode.value.trim())
-const cardCodeStatusText = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
-  if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid && cardCodeLimitBypassActive.value) {
-      return locale.value.cardCodeAvailableBypass
-    }
-    return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
-  }
-  return cardCodeFieldMeta.value.required
-    ? locale.value.cardCodeRequiredStatus
-    : locale.value.cardCodeOptionalStatus
-})
-const mobileCardCodeLabel = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingShort
-  if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid === false) return locale.value.cardCodeInvalid
-    if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
-    return locale.value.cardCodeFilled
-  }
-  return cardCodeFieldMeta.value.required
-    ? locale.value.cardCodeRequiredShort
-    : locale.value.cardCodeOptionalShort
-})
-const cardCodeModalHint = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
-  if (cardCodeValidation.value.message) return cardCodeValidation.value.message
-  return locale.value.cardCodeSaveHint
-})
-
-const resetCardCodeValidation = () => {
-  cardCodeValidation.value = {
-    checking: false,
-    valid: null,
-    message: ''
-  }
-}
-
-const openCardCodeModal = async () => {
-  cardCodeDraft.value = cardCode.value
-  showCardCodeModal.value = true
-  await nextTick()
-  cardCodeInputRef.value?.focus()
-}
-
-const closeCardCodeModal = () => {
-  const draftChanged = cardCodeDraft.value.trim() !== cardCode.value.trim()
-  showCardCodeModal.value = false
-  cardCodeDraft.value = cardCode.value
-  if (draftChanged) {
-    resetCardCodeValidation()
-  }
-}
-
-const validateCardCode = async (code) => {
-  const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : ''
-  if (!normalizedCode) {
-    resetCardCodeValidation()
-    return !requireCardCodeForRequests.value
-  }
-
-  cardCodeValidation.value = {
-    checking: true,
-    valid: null,
-    message: locale.value.validatingCardCode
-  }
-
-  try {
-    const response = await $fetch('/api/card-codes/validate', {
-      method: 'POST',
-      body: { cardCode: normalizedCode },
-      ...auth.getAuthConfig()
-    })
-
-    cardCodeValidation.value = {
-      checking: false,
-      valid: true,
-      message: locale.value.cardCodeAvailable
-    }
-    return true
-  } catch (err) {
-    const message = localizeServerError(err, locale.value.cardCodeValidateFailed)
-    cardCodeValidation.value = {
-      checking: false,
-      valid: false,
-      message
-    }
-    if (window.$showNotification) {
-      window.$showNotification(message, 'error')
-    }
-    return false
-  }
-}
-
-const saveCardCode = async () => {
-  const draft = cardCodeDraft.value.trim().toUpperCase()
-  if (requireCardCodeForRequests.value && !draft) {
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
-    }
-    return
-  }
-
-  if (!draft) {
-    clearCardCode()
-    return
-  }
-
-  if (!(await validateCardCode(draft))) {
-    return
-  }
-
-  cardCode.value = draft
-  showCardCodeModal.value = false
-}
-
-const clearCardCode = () => {
-  cardCode.value = ''
-  cardCodeDraft.value = ''
-  showCardCodeModal.value = false
-  resetCardCodeValidation()
-}
-
-const ensureCardCodeForSubmit = async () => {
-  if (!cardCodeEnabled.value) {
-    return true
-  }
-
-  if (!trimmedCardCode.value) {
-    if (!requireCardCodeForRequests.value) {
-      return true
-    }
-
-    await openCardCodeModal()
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
-    }
-    return false
-  }
-
-  // 已验证过且未变动则跳过重复验证
-  if (cardCodeValidation.value.valid === true) {
-    return true
-  }
-
-  return await validateCardCode(trimmedCardCode.value)
-}
-
 // 投稿状态
 const submissionStatus = ref(null)
 const loadingSubmissionStatus = ref(false)
@@ -1751,6 +1358,12 @@ const searchError = ref('')
 
 // 手动输入相关
 const showManualModal = ref(false)
+
+// 卡密兑换相关
+const showRedeemCardModal = ref(false)
+const redeemCardCode = ref('')
+const redeemingCard = ref(false)
+const redeemCardError = ref('')
 
 const showBilibiliEpisodesModal = ref(false)
 const selectedBilibiliVideo = ref(null)
@@ -2478,18 +2091,6 @@ watch(enableSubmissionRemarks, (enabled) => {
   if (!enabled) {
     submissionNote.value = ''
     submissionNotePublic.value = true
-  }
-})
-
-watch([enableCardCodeRequests, requireCardCodeForRequests], ([enabled, required]) => {
-  if (!enabled && !required) {
-    clearCardCode()
-  }
-})
-
-watch(cardCodeDraft, (value) => {
-  if (value.trim() !== cardCode.value.trim()) {
-    resetCardCodeValidation()
   }
 })
 
@@ -3382,11 +2983,6 @@ const submitSong = async (result, options = {}) => {
     }
   }
 
-  if (!(await ensureCardCodeForSubmit())) {
-    submitting.value = false
-    return false
-  }
-
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -3472,10 +3068,6 @@ const submitSong = async (result, options = {}) => {
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
-    // 如果用户填写了点歌券，传递给后端
-    if (cardCode.value && cardCode.value.trim()) {
-      songData.cardCode = cardCode.value.trim()
-    }
 
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
@@ -3497,10 +3089,6 @@ const submitSong = async (result, options = {}) => {
 // 直接提交表单
 const handleSubmit = async () => {
   if (submitting.value) return
-
-  if (!(await ensureCardCodeForSubmit())) {
-    return
-  }
 
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
@@ -3527,9 +3115,6 @@ const handleSubmit = async () => {
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id)
-    }
-    if (cardCode.value && cardCode.value.trim()) {
-      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -3856,10 +3441,6 @@ const handleManualSubmit = async () => {
     return
   }
 
-  if (!(await ensureCardCodeForSubmit())) {
-    return
-  }
-
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -3917,10 +3498,6 @@ const handleManualSubmit = async () => {
       submissionNotePublic: submissionNotePublic.value
     }
 
-    if (cardCode.value && cardCode.value.trim()) {
-      songData.cardCode = cardCode.value.trim()
-    }
-
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
@@ -3954,10 +3531,6 @@ const resetForm = () => {
   collaborators.value = []
   submissionNote.value = ''
   submissionNotePublic.value = true
-  cardCode.value = ''
-  cardCodeDraft.value = ''
-  showCardCodeModal.value = false
-  resetCardCodeValidation()
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }
@@ -3985,10 +3558,40 @@ const fetchSubmissionStatus = async () => {
   }
 }
 
+// 兑换旧点歌券 → 永久额度
+const handleRedeemCard = async () => {
+  if (redeemingCard.value) return
+  const code = redeemCardCode.value.trim().toUpperCase()
+  if (!code) {
+    redeemCardError.value = locale.value.redeemCardEmpty
+    return
+  }
+  redeemCardError.value = ''
+  redeemingCard.value = true
+  try {
+    const authConfig = auth.getAuthConfig() || {}
+    await $fetch('/api/song-quota/redeem-card', {
+      method: 'POST',
+      body: { cardCode: code },
+      ...authConfig
+    })
+    showRedeemCardModal.value = false
+    redeemCardCode.value = ''
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.redeemCardSuccess, 'success')
+    }
+    fetchSubmissionStatus()
+  } catch (err) {
+    redeemCardError.value = localizeServerError(err) || locale.value.redeemCardEmpty
+  } finally {
+    redeemingCard.value = false
+  }
+}
+
 // 检查投稿限额
 const checkSubmissionLimit = () => {
   // 超级管理员不受投稿限制
-  if (user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')) {
+  if (user.value && auth.isAdmin.value) {
     return { canSubmit: true, message: '' }
   }
 
@@ -4019,42 +3622,11 @@ const checkSubmissionLimit = () => {
     }
   }
 
-  if (!submissionStatus.value.limitEnabled) {
-    return { canSubmit: true, message: '' }
-  }
-
-  if (
-    cardCodeLimitBypassActive.value &&
-    trimmedCardCode.value &&
-    cardCodeValidation.value.valid === true
-  ) {
-    return { canSubmit: true, message: '' }
-  }
-
-  const { dailyLimit, weeklyLimit, monthlyLimit, dailyUsed, weeklyUsed, monthlyUsed } =
-    submissionStatus.value
-
-  // 检查日限额
-  if (dailyLimit && dailyUsed >= dailyLimit) {
+  const quota = submissionStatus.value.quota
+  if (quota?.enabled && quota.insufficientBlocked && quota.totalBalance <= 0) {
     return {
       canSubmit: false,
-      message: callLocale('notifications.dailyLimitReached', '', dailyUsed, dailyLimit)
-    }
-  }
-
-  // 检查周限额
-  if (weeklyLimit && weeklyUsed >= weeklyLimit) {
-    return {
-      canSubmit: false,
-      message: callLocale('notifications.weeklyLimitReached', '', weeklyUsed, weeklyLimit)
-    }
-  }
-
-  // 检查月限额
-  if (monthlyLimit && monthlyUsed >= monthlyLimit) {
-    return {
-      canSubmit: false,
-      message: callLocale('notifications.monthlyLimitReached', '', monthlyUsed, monthlyLimit)
+      message: callLocale('notifications.quotaInsufficient', '')
     }
   }
 
@@ -4633,6 +4205,35 @@ defineExpose({
   padding: 0.4rem 0.75rem;
   margin-bottom: 0.5rem;
   border: 1px solid var(--overlay-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.redeem-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  background: var(--primary-10, rgba(99, 102, 241, 0.1));
+  border: 1px solid var(--primary-20, rgba(99, 102, 241, 0.2));
+  color: var(--primary);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.redeem-card-btn:hover {
+  background: var(--primary-20, rgba(99, 102, 241, 0.18));
+}
+
+.redeem-card-btn .redeem-card-icon {
+  flex-shrink: 0;
 }
 
 .admin-notice-horizontal {
@@ -5425,16 +5026,7 @@ defineExpose({
   margin: 0;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 搜索结果列表 */
+/* ===== 组件自定义样式 ===== */
 .results-list {
   flex: 1;
   display: flex;
@@ -5518,12 +5110,11 @@ defineExpose({
 }
 
 .search-svg {
-  width: 25%;
-  max-width: 300px;
-  min-width: 150px;
+  width: 30%;
+  max-width: 400px;
+  min-width: 200px;
   height: auto;
   object-fit: contain;
-  opacity: 0.8;
 }
 
 /* 手动输入触发按钮 */

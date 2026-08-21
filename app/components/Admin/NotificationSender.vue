@@ -380,7 +380,7 @@
                     class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-warning-300 bg-warning-10 text-warning"
                     aria-hidden="true"
                   >
-                    <Icon name="bell-ring" :size="17" />
+                    <BellRing :size="17"  />
                   </div>
                   <div class="min-w-0 flex-1">
                     <h4
@@ -428,7 +428,7 @@
                     class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary-20 bg-primary-hover-10 text-primary"
                     aria-hidden="true"
                   >
-                    <Icon name="bell" :size="17" />
+                    <Bell :size="17"  />
                   </div>
                   <div class="min-w-0 flex-1">
                     <h4
@@ -498,10 +498,9 @@ import {
   AlertTriangle,
   Eye,
   MessageSquare,
-  Loader2
-} from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Icon from '~/components/UI/Icon.vue'
+  Loader2,
+  BellRing, Bell} from '@lucide/vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import NotificationHistory from '~/components/Admin/NotificationHistory.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'

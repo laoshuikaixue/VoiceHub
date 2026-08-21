@@ -1,15 +1,17 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
-import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from '#server/api/admin/system-settings/secretMask'
+import { SYSTEM_SETTINGS_DEFAULTS } from '#server/utils/system-settings-defaults'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
   normalizeAggregateOAuthLoginTypes
-} from '~~/server/utils/oauth-providers'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+} from '#server/utils/oauth-providers'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, SONG_QUOTA_PERIODS } from '#server/config/constants'
+import { mergeAndValidateSongQuotaSettings } from '#server/utils/song-quota-policy'
+import { ensureSongQuotaSettingsMigrated } from '#server/utils/system-settings-helper'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -113,6 +115,9 @@ export default defineEventHandler(async (event) => {
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
+    if (settings) {
+      settings = await ensureSongQuotaSettingsMigrated(settings)
+    }
 
     if (body.telemetryEnabled !== undefined) {
       if (typeof body.telemetryEnabled !== 'boolean') {
@@ -194,37 +199,6 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
-    }
-
-    // 点歌券点歌相关设置
-    if (body.enableCardCodeRequests !== undefined) {
-      if (typeof body.enableCardCodeRequests !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'enableCardCodeRequests 必须是布尔值'
-        })
-      }
-      updateData.enableCardCodeRequests = body.enableCardCodeRequests
-    }
-
-    if (body.requireCardCodeForRequests !== undefined) {
-      if (typeof body.requireCardCodeForRequests !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'requireCardCodeForRequests 必须是布尔值'
-        })
-      }
-      updateData.requireCardCodeForRequests = body.requireCardCodeForRequests
-    }
-
-    if (body.enableCardCodeLimitBypass !== undefined) {
-      if (typeof body.enableCardCodeLimitBypass !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'enableCardCodeLimitBypass 必须是布尔值'
-        })
-      }
-      updateData.enableCardCodeLimitBypass = body.enableCardCodeLimitBypass
     }
 
     // 重复投稿限制
@@ -315,6 +289,49 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
+    }
+
+    const songQuotaBooleanFields = [
+      'songQuotaEnabled',
+      'adminSongQuotaExempt',
+      'blockOnSongQuotaInsufficient'
+    ]
+    for (const field of songQuotaBooleanFields) {
+      if (body[field] !== undefined) {
+        if (typeof body[field] !== 'boolean') {
+          throw createApiError(
+            400,
+            SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+            `${field} 必须是布尔值`,
+            { params: [field] }
+          )
+        }
+        updateData[field] = body[field]
+      }
+    }
+
+    if (body.songQuotaPeriodType !== undefined) {
+      if (!SONG_QUOTA_PERIODS.includes(body.songQuotaPeriodType)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'songQuotaPeriodType 必须是 DAILY、WEEKLY 或 MONTHLY',
+          { params: ['songQuotaPeriodType'] }
+        )
+      }
+      updateData.songQuotaPeriodType = body.songQuotaPeriodType
+    }
+
+    if (body.songQuotaPeriodAmount !== undefined) {
+      if (!Number.isInteger(body.songQuotaPeriodAmount) || body.songQuotaPeriodAmount <= 0) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'songQuotaPeriodAmount 必须是正整数',
+          { params: ['songQuotaPeriodAmount'] }
+        )
+      }
+      updateData.songQuotaPeriodAmount = body.songQuotaPeriodAmount
     }
 
     if (body.showBlacklistKeywords !== undefined) {
@@ -878,18 +895,15 @@ export default defineEventHandler(async (event) => {
       updateData.customOAuthAvatarField = body.customOAuthAvatarField
     }
 
-    // 验证每日、每周和每月限额三选一逻辑
-    const limitSettings = [
-      body.dailySubmissionLimit,
-      body.weeklySubmissionLimit,
-      body.monthlySubmissionLimit
-    ].filter((limit) => limit !== undefined && limit !== null)
-
-    if (body.enableSubmissionLimit && limitSettings.length > 1) {
-      throw createError({
-        statusCode: 400,
-        message: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空'
-      })
+    const quotaCurrentSettings = settings ?? SYSTEM_SETTINGS_DEFAULTS
+    const quotaResult = mergeAndValidateSongQuotaSettings(quotaCurrentSettings, updateData)
+    if (!quotaResult.validation.valid) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '点歌额度周期配置无效',
+        { params: [quotaResult.validation.reason] }
+      )
     }
 
     // 重复投稿限制交叉校验：未设置时长时保留本学期同一首歌不可重复投稿的旧规则。

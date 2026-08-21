@@ -1,6 +1,6 @@
 import { asc, db, eq, playTimes } from '~/drizzle/db'
 import type { PlayTime } from '~/drizzle/schema'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   try {

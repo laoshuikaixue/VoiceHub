@@ -1517,7 +1517,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   Check,
   UserPlus,
@@ -1566,11 +1566,11 @@ import {
   Briefcase,
   Link
 } from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 

@@ -42,7 +42,9 @@
           </div>
 
           <div class="flex-1 space-y-2">
-            <h3 class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors">
+            <h3
+              class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors"
+            >
               {{ card.title }}
             </h3>
             <p class="text-xs text-text-tertiary leading-relaxed font-medium">
@@ -69,7 +71,13 @@
         <div
           :class="[
             'absolute -right-4 -bottom-4 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none',
-            card.isDanger ? 'bg-error-5' : card.colorClass === 'primary' ? 'bg-primary-5' : card.colorClass === 'warning' ? 'bg-warning-5' : 'bg-success-5'
+            card.isDanger
+              ? 'bg-error-5'
+              : card.colorClass === 'primary'
+                ? 'bg-primary-5'
+                : card.colorClass === 'warning'
+                  ? 'bg-warning-5'
+                  : 'bg-success-5'
           ]"
         />
       </div>
@@ -91,12 +99,17 @@
       v-if="activeModal === 'backup'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div
+        class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
+        @click="activeModal = 'none'"
+      />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.backupTitle }}</h3>
+          <h3 class="text-xl font-black text-text-primary tracking-tight">
+            {{ locale.backupTitle }}
+          </h3>
           <button
             class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
@@ -120,7 +133,7 @@
                     v-model="createForm[item.key]"
                     type="checkbox"
                     class="w-4 h-4 rounded border-border-secondary bg-bg-secondary"
-                  >
+                  />
                 </div>
                 <div>
                   <p
@@ -139,7 +152,9 @@
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+        <div
+          class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end"
+        >
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -162,12 +177,17 @@
       v-if="activeModal === 'restore'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div
+        class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
+        @click="activeModal = 'none'"
+      />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.restoreTitle }}</h3>
+          <h3 class="text-xl font-black text-text-primary tracking-tight">
+            {{ locale.restoreTitle }}
+          </h3>
           <button
             class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
@@ -197,11 +217,12 @@
               class="hidden"
               type="file"
               @change="handleFileSelect"
-            >
+            />
           </div>
 
           <div class="space-y-3">
-            <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+            <label
+              class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
               >{{ locale.restoreMode }}</label
             >
             <div class="grid grid-cols-2 gap-3">
@@ -222,7 +243,9 @@
                 >
                   {{ locale.restoreModes?.merge?.title ?? '合并恢复' }}
                 </h6>
-                <p class="text-[9px] text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}</p>
+                <p class="text-[9px] text-text-disabled uppercase mt-0.5">
+                  {{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}
+                </p>
               </button>
               <button
                 :class="[
@@ -241,7 +264,9 @@
                 >
                   {{ locale.restoreModes?.replace?.title ?? '覆盖恢复' }}
                 </h6>
-                <p class="text-[9px] text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}</p>
+                <p class="text-[9px] text-text-disabled uppercase mt-0.5">
+                  {{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}
+                </p>
               </button>
             </div>
           </div>
@@ -255,7 +280,7 @@
                 v-model="restoreForm.overwriteSuperAdmin"
                 type="checkbox"
                 class="mt-0.5 accent-emerald-500"
-              >
+              />
               <div>
                 <p class="text-xs font-bold text-text-primary">{{ locale.overwriteSuperAdmin }}</p>
                 <p class="text-[10px] text-text-tertiary mt-1">
@@ -265,16 +290,16 @@
             </label>
           </div>
 
-          <div
-            class="p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
-          >
+          <div class="p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3">
             <AlertCircle class="text-warning shrink-0 mt-0.5 w-4 h-4" />
             <p class="text-[10px] text-text-tertiary leading-normal font-medium">
               {{ locale.replaceWarning }}
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+        <div
+          class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end"
+        >
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -297,12 +322,17 @@
       v-if="activeModal === 'reset-seq'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div
+        class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
+        @click="activeModal = 'none'"
+      />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.resetSequenceTitle }}</h3>
+          <h3 class="text-xl font-black text-text-primary tracking-tight">
+            {{ locale.resetSequenceTitle }}
+          </h3>
           <button
             class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
@@ -312,7 +342,8 @@
         </div>
         <div class="p-8 space-y-6">
           <div class="space-y-2">
-            <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+            <label
+              class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
               >{{ locale.selectTargetTable }}</label
             >
             <CustomSelect
@@ -340,7 +371,9 @@
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+        <div
+          class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end"
+        >
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -363,12 +396,17 @@
       v-if="activeModal === 'reset-db'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div
+        class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
+        @click="activeModal = 'none'"
+      />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-error tracking-tight">{{ locale.dangerResetTitle }}</h3>
+          <h3 class="text-xl font-black text-error tracking-tight">
+            {{ locale.dangerResetTitle }}
+          </h3>
           <button
             class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
@@ -386,8 +424,7 @@
             </h4>
             <p class="text-xs text-text-tertiary mt-2 font-medium leading-relaxed">
               {{ locale.dangerResetPrefix }}
-              <span class="text-text-secondary font-bold"
-                >{{ locale.dangerResetScope }}</span
+              <span class="text-text-secondary font-bold">{{ locale.dangerResetScope }}</span
               >。
             </p>
           </div>
@@ -408,7 +445,7 @@
               type="text"
               :placeholder="locale.confirmCodePlaceholder"
               class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-error-40 text-center font-mono placeholder:text-text-secondary"
-            >
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-3 pt-2">
@@ -436,17 +473,14 @@
     </div>
 
     <!-- 自动备份设置 -->
-    <BackupAutoSettings
-      :visible="activeModal === 'auto-backup'"
-      @close="activeModal = 'none'"
-    />
+    <BackupAutoSettings :visible="activeModal === 'auto-backup'" @close="activeModal = 'none'" />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
@@ -685,7 +719,8 @@ const createBackup = async () => {
           method: 'GET',
           credentials: 'include'
         })
-        if (!downloadResponse.ok) throw new Error(getErrorMessage('downloadFailed', downloadResponse.status))
+        if (!downloadResponse.ok)
+          throw new Error(getErrorMessage('downloadFailed', downloadResponse.status))
         const blob = await downloadResponse.blob()
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -742,7 +777,8 @@ const restoreBackup = async () => {
           hasSuperAdminInBackup: fileHasSuperAdmin
         }
       })
-      if (!clearResult.success) throw new Error(clearResult.message || getErrorMessage('clearDataFailed'))
+      if (!clearResult.success)
+        throw new Error(clearResult.message || getErrorMessage('clearDataFailed'))
       preservedSuperAdminIds = clearResult.preservedSuperAdminIds || []
       temporaryPreservedUserId = clearResult.temporaryPreservedUserId || null
     }
@@ -753,6 +789,8 @@ const restoreBackup = async () => {
       'systemSettings',
       'semesters',
       'playTimes',
+      'requestTimes',
+      'songQuotaAccounts',
       'songs',
       'scheduleSongPool',
       'votes',
@@ -760,12 +798,25 @@ const restoreBackup = async () => {
       'notificationSettings',
       'notifications',
       'songBlacklist',
-      'userStatusLogs'
+      'userStatusLogs',
+      'songCollaborators',
+      'collaborationLogs',
+      'songReplayRequests',
+      'emailTemplates',
+      'apiKeys',
+      'songQuotaTransactions',
+      'songQuotaSnapshots',
+      'apiKeyPermissions',
+      'apiLogs'
     ]
 
     const mappings = {
       users: {},
       songs: {},
+      quotaAccounts: {},
+      quotaTransactions: {},
+      apiKeys: {},
+      collaborators: {},
       meta: {
         preservedSuperAdminIds,
         temporaryPreservedUserId
@@ -776,14 +827,33 @@ const restoreBackup = async () => {
     let totalRecords = 0
 
     for (const tableName of tableOrder) {
-      if (backupData.data[tableName] && Array.isArray(backupData.data[tableName])) {
-        totalRecords += backupData.data[tableName].length
-      }
+      const records =
+        tableName === 'songQuotaSnapshots' ? backupData.data.songs : backupData.data[tableName]
+      if (Array.isArray(records)) totalRecords += records.length
     }
 
     for (const tableName of tableOrder) {
-      const records = backupData.data[tableName]
+      const records =
+        tableName === 'songQuotaSnapshots' ? backupData.data.songs : backupData.data[tableName]
       if (!records || !Array.isArray(records) || records.length === 0) continue
+
+      if (tableName === 'songQuotaSnapshots') {
+        const preflightResponse = await $fetch('/api/admin/backup/restore-chunk', {
+          method: 'POST',
+          body: {
+            tableName: 'songQuotaSnapshotsPreflight',
+            records,
+            mappings,
+            mode: restoreForm.value.mode,
+            overwriteSuperAdmin: restoreForm.value.overwriteSuperAdmin,
+            hasSuperAdminInBackup: fileHasSuperAdmin
+          }
+        })
+        if (!preflightResponse.success)
+          throw new Error(
+            preflightResponse.message || getErrorMessage('restoreTableFailed', tableName)
+          )
+      }
 
       for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE)
@@ -809,10 +879,19 @@ const restoreBackup = async () => {
           }
         })
 
-        if (!response.success) throw new Error(response.message || getErrorMessage('restoreTableFailed', tableName))
+        if (!response.success)
+          throw new Error(response.message || getErrorMessage('restoreTableFailed', tableName))
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
+          if (response.newMappings.quotaAccounts)
+            Object.assign(mappings.quotaAccounts, response.newMappings.quotaAccounts)
+          if (response.newMappings.quotaTransactions)
+            Object.assign(mappings.quotaTransactions, response.newMappings.quotaTransactions)
+          if (response.newMappings.apiKeys)
+            Object.assign(mappings.apiKeys, response.newMappings.apiKeys)
+          if (response.newMappings.collaborators)
+            Object.assign(mappings.collaborators, response.newMappings.collaborators)
         }
         totalProcessed += chunk.length
       }
@@ -824,7 +903,9 @@ const restoreBackup = async () => {
       body: { table: 'all' }
     })
     if (!sequenceResult.success) {
-      throw new Error(sequenceResult.message || sequenceResult.error || getErrorMessage('fixSequenceFailed'))
+      throw new Error(
+        sequenceResult.message || sequenceResult.error || getErrorMessage('fixSequenceFailed')
+      )
     }
 
     restoreProgress.value = getProgressMessage('reloadingSmtp')

@@ -2,7 +2,7 @@ import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, votes } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, gte, lt, sql } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查用户是否登录

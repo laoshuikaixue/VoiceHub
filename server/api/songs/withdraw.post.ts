@@ -8,14 +8,18 @@ import {
   requestTimes
 } from '~/drizzle/schema'
 import { and, eq, sql } from 'drizzle-orm'
-import {
-  getTimeRange,
-  isCardCodeLimitBypassActive,
-  type LimitType
-} from '~~/server/utils/submissionLimit'
-import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
-import { createApiError } from '~~/server/utils/apiError'
+import { createSongQuotaDrizzleAdapter } from '#server/services/songQuotaDrizzleAdapter'
+import { executeSongWithdrawal } from '#server/services/songQuotaService'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
+import { createApiError } from '#server/utils/apiError'
+import { getServerDate } from '#server/utils/serverTime'
+
+const SONG_QUOTA_PERIOD_TYPES = ['DAILY', 'WEEKLY', 'MONTHLY'] as const
+
+const resolveSongQuotaPeriodType = (value: unknown) =>
+  SONG_QUOTA_PERIOD_TYPES.includes(value as (typeof SONG_QUOTA_PERIOD_TYPES)[number])
+    ? (value as (typeof SONG_QUOTA_PERIOD_TYPES)[number])
+    : 'DAILY'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -42,7 +46,6 @@ export default defineEventHandler(async (event) => {
   // 检查是否是用户自己的投稿或联合投稿
   const isRequester = song.requesterId === user.id
   let isCollaborator = false
-  let collaboratorRecord = null
 
   if (!isRequester) {
     const collabResult = await db
@@ -53,7 +56,6 @@ export default defineEventHandler(async (event) => {
 
     if (collabResult.length > 0) {
       isCollaborator = true
-      collaboratorRecord = collabResult[0]
     }
   }
 
@@ -88,15 +90,51 @@ export default defineEventHandler(async (event) => {
     !isRequester &&
     !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
   ) {
-    await db.delete(songCollaborators).where(eq(songCollaborators.id, collaboratorRecord.id))
+    await db.transaction(async (tx) => {
+      const lockedSongs = await tx
+        .select()
+        .from(songs)
+        .where(eq(songs.id, body.songId))
+        .limit(1)
+        .for('update')
+      const lockedSong = lockedSongs[0]
+      if (!lockedSong) {
+        throw createApiError(404, 'SONG_NOT_FOUND', '歌曲不存在')
+      }
 
-    // 记录日志
-    await db.insert(collaborationLogs).values({
-      collaboratorId: collaboratorRecord.id,
-      action: 'LEAVE',
-      operatorId: user.id,
-      ipAddress:
-        (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
+      const lockedCollaborators = await tx
+        .select()
+        .from(songCollaborators)
+        .where(
+          and(eq(songCollaborators.songId, lockedSong.id), eq(songCollaborators.userId, user.id))
+        )
+        .limit(1)
+      const lockedCollaborator = lockedCollaborators[0]
+      if (lockedSong.requesterId === user.id || !lockedCollaborator) {
+        throw createApiError(403, 'SONG_WITHDRAW_OWN_ONLY', '只能撤回自己的投稿或退出联合投稿')
+      }
+      if (lockedSong.played) {
+        throw createApiError(400, 'SONG_PLAYED_CANNOT_WITHDRAW', '已播放的歌曲不能撤回')
+      }
+
+      const publishedSchedules = await tx
+        .select({ id: schedules.id })
+        .from(schedules)
+        .where(and(eq(schedules.songId, lockedSong.id), eq(schedules.isDraft, false)))
+        .limit(1)
+      if (publishedSchedules.length > 0) {
+        throw createApiError(400, 'SONG_SCHEDULED_CANNOT_WITHDRAW', '已排期的歌曲不能撤回')
+      }
+
+      await tx.delete(songCollaborators).where(eq(songCollaborators.id, lockedCollaborator.id))
+      await tx.insert(collaborationLogs).values({
+        collaboratorId: lockedCollaborator.id,
+        action: 'LEAVE',
+        operatorId: user.id,
+        ipAddress:
+          (event.node.req.headers['x-forwarded-for'] as string) ||
+          event.node.req.socket.remoteAddress
+      })
     })
 
     return {
@@ -106,81 +144,89 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 如果是主投稿人撤回（删除歌曲）
-  // 获取系统设置以检查限制类型
   const settings = await getSystemSettingsCached()
-
-  // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
-  let canReturnQuota = false
-
-  const cardCodeDidNotUseOrdinaryQuota = isCardCodeLimitBypassActive(settings) && !!song.cardCodeId
-
-  if (settings?.enableSubmissionLimit && !cardCodeDidNotUseOrdinaryQuota) {
-    let activeLimit: { type: LimitType; value: number | null } | null = null
-    if (settings.dailySubmissionLimit !== null && settings.dailySubmissionLimit !== undefined) {
-      activeLimit = { type: 'daily', value: settings.dailySubmissionLimit }
-    } else if (
-      settings.weeklySubmissionLimit !== null &&
-      settings.weeklySubmissionLimit !== undefined
-    ) {
-      activeLimit = { type: 'weekly', value: settings.weeklySubmissionLimit }
-    } else if (
-      settings.monthlySubmissionLimit !== null &&
-      settings.monthlySubmissionLimit !== undefined
-    ) {
-      activeLimit = { type: 'monthly', value: settings.monthlySubmissionLimit }
-    }
-
-    if (activeLimit?.value && activeLimit.value > 0) {
-      const { start, end } = getTimeRange(activeLimit.type)
-      canReturnQuota = song.createdAt >= start && song.createdAt <= end
-    }
+  const quotaSettings = {
+    songQuotaEnabled: settings?.songQuotaEnabled === true,
+    songQuotaPeriodType: resolveSongQuotaPeriodType(settings?.songQuotaPeriodType),
+    songQuotaPeriodAmount: settings?.songQuotaPeriodAmount || 1,
+    adminSongQuotaExempt: settings?.adminSongQuotaExempt !== false,
+    blockOnSongQuotaInsufficient: settings?.blockOnSongQuotaInsufficient !== false
   }
-
-  // 投稿关联数据一起进入事务，避免撤回失败时只删掉一部分数据。
-  try {
-    await db.transaction(async (tx) => {
-      await tx.delete(songCollaborators).where(eq(songCollaborators.songId, body.songId))
-      await tx.delete(votes).where(eq(votes.songId, body.songId))
-
-      if (song.hitRequestId) {
-        await tx
-          .update(requestTimes)
-          .set({
-            accepted: sql`GREATEST(0, accepted - 1)`
-          })
-          .where(eq(requestTimes.id, song.hitRequestId))
-        console.log(`已减少投稿时段 ${song.hitRequestId} 的接纳数量`)
-      }
-
-      if (song.cardCodeId) {
-        const releaseResult = await releaseCardCodeAfterSongWithdrawal(tx, {
-          songId: song.id,
-          cardCodeId: song.cardCodeId,
-          operatorId: user.id
-        })
-        if (
-          !releaseResult.changed &&
-          ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(String(releaseResult.reason || ''))
-        ) {
-          throw createApiError(409, 'SONG_CARD_RELEASE_FAILED', '点歌券释放失败，撤回已终止')
+  const withdrawalResult = await db
+    .transaction(async (tx) => {
+      const now = getServerDate()
+      return await executeSongWithdrawal(createSongQuotaDrizzleAdapter(tx), {
+        songId: body.songId,
+        operatorId: user.id,
+        settings: quotaSettings,
+        now,
+        validateLockedSong: async (lockedSong) => {
+          const lockedIsRequester = lockedSong.requesterId === user.id
+          let lockedIsCollaborator = false
+          if (!lockedIsRequester) {
+            const rows = await tx
+              .select({ id: songCollaborators.id })
+              .from(songCollaborators)
+              .where(
+                and(
+                  eq(songCollaborators.songId, lockedSong.id),
+                  eq(songCollaborators.userId, user.id)
+                )
+              )
+              .limit(1)
+            lockedIsCollaborator = rows.length > 0
+          }
+          if (
+            !lockedIsRequester &&
+            !lockedIsCollaborator &&
+            !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+          ) {
+            throw createApiError(403, 'SONG_WITHDRAW_OWN_ONLY', '只能撤回自己的投稿或退出联合投稿')
+          }
+          if (lockedSong.played) {
+            throw createApiError(400, 'SONG_PLAYED_CANNOT_WITHDRAW', '已播放的歌曲不能撤回')
+          }
+          const publishedSchedules = await tx
+            .select({ id: schedules.id })
+            .from(schedules)
+            .where(and(eq(schedules.songId, lockedSong.id), eq(schedules.isDraft, false)))
+            .limit(1)
+          if (publishedSchedules.length > 0) {
+            throw createApiError(400, 'SONG_SCHEDULED_CANNOT_WITHDRAW', '已排期的歌曲不能撤回')
+          }
+        },
+        deleteDraftSchedules: async (lockedSong) => {
+          await tx
+            .delete(schedules)
+            .where(and(eq(schedules.songId, lockedSong.id), eq(schedules.isDraft, true)))
+        },
+        deleteSongRelations: async (lockedSong) => {
+          await tx.delete(songCollaborators).where(eq(songCollaborators.songId, lockedSong.id))
+          await tx.delete(votes).where(eq(votes.songId, lockedSong.id))
+        },
+        decrementRequestTime: async (lockedSong) => {
+          if (!lockedSong.hitRequestId) return
+          await tx
+            .update(requestTimes)
+            .set({ accepted: sql`GREATEST(0, accepted - 1)` })
+            .where(eq(requestTimes.id, lockedSong.hitRequestId))
+        },
+        deleteSong: async (lockedSong) => {
+          await tx.delete(songs).where(eq(songs.id, lockedSong.id))
         }
-      }
+      })
+    })
+    .catch((txErr: any) => {
+      console.error('撤回事务失败:', txErr)
+      if (txErr?.data?.code || txErr?.statusCode) throw txErr
+      throw createApiError(500, 'SONG_OPERATION_FAILED', '撤回歌曲失败，请稍后重试')
+    })
 
-      // 删除歌曲（在事务内）
-      await tx.delete(songs).where(eq(songs.id, body.songId))
-    })
-  } catch (txErr: any) {
-    console.error('撤回事务失败:', txErr)
-    throw createError({
-      statusCode: txErr.statusCode || 500,
-      message: txErr.message || '撤回歌曲失败，请稍后重试'
-    })
-  }
+  const { quotaReturnResult } = withdrawalResult
 
   return {
-    message: canReturnQuota ? '歌曲已成功撤回，投稿配额已返还' : '歌曲已成功撤回',
+    message: quotaReturnResult === 'RETURNED' ? '歌曲已成功撤回，投稿配额已返还' : '歌曲已成功撤回',
     songId: body.songId,
-    quotaReturned: canReturnQuota
+    quotaReturnResult
   }
 })

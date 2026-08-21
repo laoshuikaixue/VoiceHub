@@ -76,12 +76,6 @@
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
-  /* 圆角 */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
   /* 间距 */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -237,19 +231,19 @@
   /* === Alpha (--color-accent) ===
    以下为 --color-accent 的各透明度变体（alpha-前缀 + 透明度百分比）===
    --color-accent-alpha-10 ~ --color-accent-alpha-80 对应原 --color-accent-* 系列 === */
-  --color-accent-alpha-10: rgba(11, 90, 254, 0.08);
+  --color-accent-alpha-10: rgba(11, 90, 254, 0.1);
   --color-accent-alpha-12: rgba(11, 90, 254, 0.12);
   --color-accent-alpha-15: rgba(11, 90, 254, 0.15);
   --color-accent-alpha-18: rgba(11, 90, 254, 0.18);
-  --color-accent-alpha-20: rgba(11, 90, 254, 0.16);
+  --color-accent-alpha-20: rgba(11, 90, 254, 0.2);
   --color-accent-alpha-22: rgba(11, 90, 254, 0.22);
   --color-accent-alpha-25: rgba(11, 90, 254, 0.25);
-  --color-accent-alpha-30: rgba(11, 90, 254, 0.25);
-  --color-accent-alpha-40: rgba(11, 90, 254, 0.3);
-  --color-accent-alpha-50: rgba(11, 90, 254, 0.4);
-  --color-accent-alpha-60: rgba(11, 90, 254, 0.5);
+  --color-accent-alpha-30: rgba(11, 90, 254, 0.3);
+  --color-accent-alpha-40: rgba(11, 90, 254, 0.4);
+  --color-accent-alpha-50: rgba(11, 90, 254, 0.5);
+  --color-accent-alpha-60: rgba(11, 90, 254, 0.6);
   --color-accent-alpha-65: rgba(11, 90, 254, 0.65);
-  --color-accent-alpha-80: rgba(11, 90, 254, 0.6);
+  --color-accent-alpha-80: rgba(11, 90, 254, 0.8);
 
   /* 用途化变量 — 通知/状态/场景语义色（用途命名，替代原 --color-brand-* 颜色命名）
    ═══════════════════════════════════════════════════════════════
@@ -429,10 +423,6 @@
   --schedule-list-divider: rgba(217, 217, 217, 0.5);
   --schedule-list-title-shadow: rgba(0, 179, 248, 0.3);
   --schedule-list-title-shadow-sm: rgba(0, 179, 248, 0.2);
-  /* 用途化变量 — 点歌券标识（CardCodeTag） */
-  --card-code-bg: rgba(245, 158, 11, 0.1);
-  --card-code-border: rgba(245, 158, 11, 0.25);
-  --card-code-text: #fcd34d;
   /* 用途化变量 — 认证模块（Auth） */
   --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
   /* 用途化变量 — 面板背景色（深色模式） */

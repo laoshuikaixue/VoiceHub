@@ -1,6 +1,6 @@
-import { resolveQqNativeLyric, resolveQqSdkLyric } from '~~/server/utils/qq_music_sdk'
-import { getTxSongPlayableInfo } from '~~/server/utils/native_tx'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { resolveQqNativeLyric, resolveQqSdkLyric } from '#server/utils/qq_music_sdk'
+import { getTxSongPlayableInfo } from '#server/utils/native_tx'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

@@ -6,7 +6,7 @@ import {
   search
 } from '@sansenjian/qq-music-api/sdk'
 import { getUserAvatar } from '@sansenjian/qq-music-api/services'
-import { txHeaders, txRequest, upgradeTxAudioUrl, zzcSign } from '~~/server/utils/native_tx'
+import { txHeaders, txRequest, upgradeTxAudioUrl, zzcSign } from '#server/utils/native_tx'
 import { inflateRawSync, inflateSync, unzipSync } from 'node:zlib'
 
 type QqSdkResponse = {

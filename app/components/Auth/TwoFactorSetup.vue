@@ -64,10 +64,11 @@
               <code class="px-3 py-2 bg-bg-secondary rounded-lg text-text-secondary font-mono text-sm border border-border-secondary select-all">
                 {{ secret }}
               </code>
-              <button 
-                @click="copySecret"
+              <button
+                :aria-label="locale.copyKey"
                 class="p-2 hover:bg-bg-tertiary rounded-lg text-text-tertiary transition-colors"
                 :title="locale.copyKey"
+                @click="copySecret"
               >
                 <Copy :size="16" />
               </button>

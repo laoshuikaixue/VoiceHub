@@ -5,7 +5,6 @@
 .nitro
 .cache
 dist
-docs
 
 # Node dependencies
 node_modules
@@ -13,6 +12,9 @@ node_modules
 # Logs
 logs
 *.log
+
+# Test coverage
+coverage
 
 # Backups
 backups/
@@ -45,3 +47,11 @@ result
 # Tencent Cloud EdgeOne
 .edgeone/*
 .tef_dist/*
+
+# 迁移过程临时产物
+.tmp_migbak/
+.tmp_reintrospect/
+.tmp_*.exp
+
+# npm 残留锁文件（项目已切换到 pnpm）
+package-lock.json

@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { getAutoBackupConfig } from '#server/services/autoBackupService'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

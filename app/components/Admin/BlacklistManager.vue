@@ -315,7 +315,7 @@
 
 <script setup>
 import { onMounted, reactive, ref, computed } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   ShieldAlert,
   Music,
@@ -333,7 +333,7 @@ import {
   ChevronDown
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
@@ -549,15 +549,6 @@ onMounted(() => {
 .animate-in {
   animation-duration: 0.5s;
   animation-fill-mode: both;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .animate-spin {

@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getQuery, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { count, desc, eq } from 'drizzle-orm'
-import { getStatusText } from '~~/server/utils/user'
+import { getStatusText } from '#server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {

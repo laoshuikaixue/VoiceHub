@@ -51,9 +51,6 @@ const siteConfig = ref({
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
   enableSubmissionLimit: false,
-  enableCardCodeRequests: false,
-  requireCardCodeForRequests: false,
-  enableCardCodeLimitBypass: false,
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
@@ -116,9 +113,6 @@ export const useSiteConfig = () => {
         captchaProvider: 'graphic',
         turnstileSiteKey: '',
         enableSubmissionLimit: false,
-        enableCardCodeRequests: false,
-        requireCardCodeForRequests: false,
-        enableCardCodeLimitBypass: false,
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
@@ -158,13 +152,6 @@ export const useSiteConfig = () => {
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
-  const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
-  const requireCardCodeForRequests = computed(
-    () => siteConfig.value.requireCardCodeForRequests === true
-  )
-  const enableCardCodeLimitBypass = computed(
-    () => siteConfig.value.enableCardCodeLimitBypass === true
-  )
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
@@ -243,9 +230,6 @@ export const useSiteConfig = () => {
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
     enableSubmissionLimit,
-    enableCardCodeRequests,
-    requireCardCodeForRequests,
-    enableCardCodeLimitBypass,
     allowOAuthRegistration,
     captchaEnabled,
     captchaProvider,

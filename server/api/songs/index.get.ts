@@ -1,12 +1,12 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { getServerTimestamp } from '#server/utils/serverTime'
 import {
   maskSongsInfo,
   stripAnonymousSongIdentifiers,
   type MaskableSong
-} from '~~/server/utils/studentMask'
+} from '#server/utils/studentMask'
 
 interface SongResponse extends MaskableSong {
   id: number

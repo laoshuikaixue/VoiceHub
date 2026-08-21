@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { createApiError } from '#server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { getAutoBackupConfig } from '#server/services/autoBackupService'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
 function normalizePath(p: string): string {

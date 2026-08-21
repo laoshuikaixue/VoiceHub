@@ -53,6 +53,7 @@
         </div>
         <div class="flex items-center gap-3">
           <button
+            :aria-label="locale.refresh"
             :disabled="isLoading"
             class="p-2.5 bg-bg-secondary-50 border border-border-secondary rounded-full text-text-tertiary hover:text-text-primary transition-all group disabled:opacity-50 flex items-center justify-center"
             @click="refreshAllData"
@@ -193,6 +194,7 @@
               </div>
               <button
                 v-if="panelStates.trends.error"
+                :aria-label="locale.retry"
                 class="p-2 text-error hover:text-error transition-colors"
                 :title="locale.retry"
                 @click="loadTrends"
@@ -546,7 +548,7 @@
         @mouseleave="handleTooltipMouseLeave"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200"
+          class="bg-bg-secondary-90 border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl animate-in fade-in zoom-in duration-200"
         >
           <div
             class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary-10 to-transparent"
@@ -610,7 +612,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import {
   TrendingUp,
   Users,
@@ -631,7 +633,7 @@ import {
   X
 } from '@lucide/vue'
 import { useSemesters } from '~/composables/useSemesters'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 // 使用学期管理 composable

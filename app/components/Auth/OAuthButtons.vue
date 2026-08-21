@@ -10,6 +10,7 @@
         v-for="provider in enabledProviders"
         :key="provider.key"
         type="button"
+        :aria-label="formatLocale(locale.loginWith, provider.name)"
         :class="providerButtonClass(provider)"
         :title="formatLocale(locale.loginWith, provider.name)"
         @click="loginWith(provider)"
@@ -31,7 +32,7 @@
 <script setup>
 import { Shield } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
-import Icon from '~/components/UI/Icon.vue'
+import Icon from '~/components/Shared/Icon.vue'
 import { getAggregateOAuthLoginTypeIcon } from '~/utils/oauth'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()

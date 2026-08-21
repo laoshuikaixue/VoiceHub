@@ -10,75 +10,76 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq, gte, inArray } from 'drizzle-orm'
-import { sendBatchMeowNotifications, sendMeowNotificationToUser } from './meowNotificationService'
-import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtpService'
+import { sendBatchMeowNotifications, sendMeowNotificationToUser } from '#server/services/meowNotificationService'
+import { sendBatchEmailNotifications, sendEmailNotificationToUser } from '#server/services/smtpService'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 import {
   createNotificationSenderSnapshot,
   resolveNotificationSource,
   shouldDeliverSystemNotification,
   type NotificationSenderInput
-} from '~~/server/utils/important-notification-policy'
+} from '#server/utils/important-notification-policy'
 import { randomUUID } from 'node:crypto'
 
 /**
  * 创建联合投稿邀请通知
  */
+type CollaborationNotificationDatabase = Pick<typeof db, 'select' | 'insert'>
+
 export async function createCollaborationInvitationNotification(
+  dbOrTx: CollaborationNotificationDatabase,
   inviterId: number,
   inviteeId: number,
   songId: number,
   songTitle: string
 ) {
+  const inviter = await dbOrTx
+    .select()
+    .from(users)
+    .where(eq(users.id, inviterId))
+    .limit(1)
+    .then((res) => res[0])
+  const inviterName = inviter?.name || '未知用户'
+  const message = `用户 ${inviterName} 邀请您共同投稿歌曲《${songTitle}》。`
+  const notificationResult = await dbOrTx
+    .insert(notifications)
+    .values({
+      userId: inviteeId,
+      type: 'COLLABORATION_INVITE',
+      message,
+      songId
+    })
+    .returning()
+  const notification = notificationResult[0]
+  if (!notification) {
+    throw new Error('联合投稿站内通知创建失败')
+  }
+  return { notification, inviterName, message }
+}
+
+export async function sendCollaborationInvitationExternalNotification(
+  inviteeId: number,
+  songTitle: string,
+  inviterName: string,
+  message: string
+) {
   try {
-    const inviter = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, inviterId))
-      .limit(1)
-      .then((res) => res[0])
-    const message = `用户 ${inviter?.name || '未知用户'} 邀请您共同投稿歌曲《${songTitle}》。`
-
-    // 创建通知
-    const notificationResult = await db
-      .insert(notifications)
-      .values({
-        userId: inviteeId,
-        type: 'COLLABORATION_INVITE',
-        message,
-        songId
-      })
-      .returning()
-
-    // 发送外部通知（MeoW, Email等）
-    try {
-      await sendMeowNotificationToUser(inviteeId, '收到联合投稿邀请', message)
-    } catch (error) {
-      console.error('发送 MeoW 通知失败:', error)
-    }
-
-    // 同步发送邮件通知
-    try {
-      await sendEmailNotificationToUser(
-        inviteeId,
-        '收到联合投稿邀请',
-        message,
-        undefined,
-        'notification.collaborationInvite',
-        {
-          inviterName: inviter?.name || '未知用户',
-          songTitle
-        }
-      )
-    } catch (error) {
-      console.error('发送邮件通知失败:', error)
-    }
-
-    return notificationResult[0]
+    await sendMeowNotificationToUser(inviteeId, '收到联合投稿邀请', message)
   } catch (error) {
-    console.error('创建联合投稿邀请通知失败:', error)
-    return null
+    console.error('发送 MeoW 通知失败:', error)
+  }
+  try {
+    await sendEmailNotificationToUser(
+      inviteeId,
+      '收到联合投稿邀请',
+      message,
+      undefined,
+      'notification.collaborationInvite',
+      { inviterName, songTitle }
+    )
+  } catch (error) {
+    console.error('发送邮件通知失败:', error)
   }
 }
 

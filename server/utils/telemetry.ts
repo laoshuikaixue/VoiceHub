@@ -1,8 +1,8 @@
 import { asc } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
-import { getServerTimestamp } from './serverTime'
+import { SYSTEM_SETTINGS_DEFAULTS } from '#server/utils/system-settings-defaults'
+import { getServerTimestamp } from '#server/utils/serverTime'
 
 let telemetryEnabledCache: boolean | null = null
 let telemetryEnabledCacheExpiresAt = 0

@@ -1,9 +1,10 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
-import { getInstanceId } from '../utils/instance-id'
+import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '#server/utils/system-settings-defaults'
+import { ensureSongQuotaSettingsMigrated } from '#server/utils/system-settings-helper'
+import { getInstanceId } from '#server/utils/instance-id'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0] || null
@@ -15,6 +16,8 @@ export default defineEventHandler(async (event) => {
         .returning()
 
       settings = newSettings[0] || null
+    } else {
+      settings = await ensureSongQuotaSettingsMigrated(settings)
     }
 
     if (!settings) {

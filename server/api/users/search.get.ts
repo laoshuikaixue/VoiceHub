@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, ilike, or, ne, eq } from 'drizzle-orm'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getSystemSettingsCached } from '#server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 验证用户登录

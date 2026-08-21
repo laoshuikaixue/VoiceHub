@@ -523,7 +523,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style lang="scss" scoped>
+<style lang="css" scoped>
 .lyric {
   position: relative;
   width: 100%;

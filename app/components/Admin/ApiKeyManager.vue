@@ -621,11 +621,11 @@ import {
   X
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import ConfirmDialog from '~/components/Shared/ConfirmDialog.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
@@ -767,19 +767,19 @@ const availablePermissions = computed(() => [
     description: getPermissionOptionText('songsWrite', 'description')
   },
   {
-    value: 'card-codes:read',
-    label: getPermissionOptionText('cardCodesRead', 'label'),
-    description: getPermissionOptionText('cardCodesRead', 'description')
+    value: 'song-quotas:read',
+    label: getPermissionOptionText('songQuotasRead', 'label'),
+    description: getPermissionOptionText('songQuotasRead', 'description')
   },
   {
-    value: 'card-codes:write',
-    label: getPermissionOptionText('cardCodesWrite', 'label'),
-    description: getPermissionOptionText('cardCodesWrite', 'description')
+    value: 'song-quotas:adjust',
+    label: getPermissionOptionText('songQuotasAdjust', 'label'),
+    description: getPermissionOptionText('songQuotasAdjust', 'description')
   },
   {
-    value: 'card-codes:delete',
-    label: getPermissionOptionText('cardCodesDelete', 'label'),
-    description: getPermissionOptionText('cardCodesDelete', 'description')
+    value: 'song-quota-transactions:read',
+    label: getPermissionOptionText('songQuotaTransactionsRead', 'label'),
+    description: getPermissionOptionText('songQuotaTransactionsRead', 'description')
   },
   {
     value: 'backup:execute',

@@ -130,7 +130,7 @@
                 <td class="px-3 py-3 align-top font-mono text-text-primary">
                   <div class="flex max-w-full items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2">
                     <span class="block min-w-0 flex-1 truncate text-xs tracking-[0.08em]" :title="item.code">{{ item.code }}</span>
-                    <button class="shrink-0 text-text-tertiary hover:text-text-primary transition-colors" :title="locale.copy" @click="copyCode(item.code)">
+                    <button class="shrink-0 text-text-tertiary hover:text-text-primary transition-colors" :aria-label="locale.copy" :title="locale.copy" @click="copyCode(item.code)">
                       <Copy :size="14" />
                     </button>
                   </div>
@@ -420,8 +420,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search } from '@lucide/vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 
@@ -700,19 +700,10 @@ const exportCodes = async () => {
 const updateStatus = async (ids, status) => {
   saving.value = true
   try {
-    if (Array.isArray(ids) && ids.length === 1) {
-      // 单条更新走新的 PUT 接口，便于更精细的审计
-      const id = ids[0]
-      await $fetch(`/api/admin/card-codes/${id}`, {
-        method: 'PUT',
-        body: { status }
-      })
-    } else {
-      await $fetch('/api/admin/card-codes/update', {
-        method: 'POST',
-        body: { ids, status }
-      })
-    }
+    await $fetch('/api/admin/card-codes/update', {
+      method: 'POST',
+      body: { ids, status }
+    })
 
     showToast(getNestedMessage('messages', 'statusUpdated'), 'success')
     await Promise.all([fetchCodes(), fetchRedeemLogs()])
@@ -746,6 +737,8 @@ const applyBulkStatus = async () => {
   await updateStatus(selectedIds.value, bulkStatus.value)
   clearSelection()
 }
+
+const createFormCount = computed(() => generateForm.value.count)
 
 const createCodes = async () => {
   saving.value = true
@@ -793,8 +786,6 @@ const createCodes = async () => {
     saving.value = false
   }
 }
-
-const createFormCount = computed(() => generateForm.value.count)
 
 const fillDemoCodes = () => {
   createMode.value = 'manual'

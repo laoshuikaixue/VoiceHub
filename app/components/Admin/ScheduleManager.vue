@@ -8,21 +8,12 @@
           class="p-2 text-text-tertiary hover:text-text-secondary disabled:opacity-30 transition-colors"
           @click="scrollDates('left')"
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <polyline points="15,18 9,12 15,6" />
-          </svg>
+          <ChevronLeft class="w-5 h-5" />
         </button>
 
         <div
           ref="dateSelector"
-          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 overscroll-x-contain"
-          style="overscroll-behavior-x: contain; touch-action: pan-x"
+          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 overscroll-x-contain touch-pan-x"
         >
           <button
             v-for="date in availableDates"
@@ -49,15 +40,7 @@
           class="p-2 text-text-tertiary hover:text-text-secondary disabled:opacity-30 transition-colors"
           @click="scrollDates('right')"
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <polyline points="9,18 15,12 9,6" />
-          </svg>
+          <ChevronRight class="w-5 h-5" />
         </button>
 
         <!-- 操作按钮组 -->
@@ -345,9 +328,7 @@
                 :key="song.id"
                 :class="[
                   'draggable-song relative group rounded-xl p-3 transition-all select-none',
-                  song.cardCodeId
-                    ? 'bg-warning-5 border border-warning-30'
-                    : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
+                  'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
                 ]"
                 :draggable="true"
                 @dragend="dragEnd"
@@ -415,13 +396,6 @@
                       >
                         <MessageSquare :size="12" />
                       </button>
-                      <span
-                        v-if="song.cardCodeId"
-                        class="inline-flex items-center rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-[9px] font-bold text-warning whitespace-nowrap flex-shrink-0"
-                        :title="locale.cardPending"
-                      >
-                        {{ locale.cardPending }}
-                      </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="text-xs text-primary-80 truncate max-w-[150px] cursor-pointer hover:text-primary transition-colors"
@@ -791,10 +765,7 @@
                 :class="[
                   'scheduled-song relative group bg-bg-secondary border border-border-secondary-50 rounded-xl p-3 hover:border-border-tertiary transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-primary' : '',
-                  schedule.isDraft ? 'border-warning-30 bg-warning-5' : '',
-                  schedule.song && (schedule.song.cardCodeId || schedule.song.usedCardCode)
-                    ? 'border-warning-30 bg-warning-5'
-                    : ''
+                  schedule.isDraft ? 'border-warning-30 bg-warning-5' : ''
                 ]"
                 :data-schedule-id="schedule.id"
                 :draggable="true"
@@ -870,21 +841,13 @@
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-10 text-primary border border-primary-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
-                        <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
+                        <Repeat2 :size="10" class="flex-shrink-0"  />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
-                      <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
-                      <span
-                        v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
-                        :title="locale.cardPending"
-                      >
-                        {{ locale.cardCode }}
-                      </span>
                     </div>
                     <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
                       <span>{{ schedule.song.artist }}</span>
@@ -1791,6 +1754,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch, inject } from 'vue'
 import {
+  ChevronLeft,
   Search,
   Save,
   Send,
@@ -1808,7 +1772,6 @@ import {
   AlertTriangle,
   X as CloseIcon,
   ChevronRight,
-  ChevronLeft,
   MoreVertical,
   Calendar as CalendarIcon,
   ArrowLeft,
@@ -1822,6 +1785,7 @@ import {
   MessageSquare,
   Trash2,
   Copy,
+  Repeat2,
   RefreshCcw,
   Loader2,
   Sparkles,
@@ -1830,11 +1794,10 @@ import {
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
-import ConfirmDialog from '../UI/ConfirmDialog.vue'
-import Icon from '~/components/UI/Icon.vue'
-import Pagination from '~/components/UI/Common/Pagination.vue'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import LoadingState from '~/components/UI/Common/LoadingState.vue'
+import ConfirmDialog from '../Shared/ConfirmDialog.vue'
+import Pagination from '~/components/Shared/Common/Pagination.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
+import LoadingState from '~/components/Shared/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'

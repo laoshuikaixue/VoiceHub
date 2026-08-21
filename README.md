@@ -97,7 +97,7 @@
 - **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
 - **Vue 3**：响应式前端框架，使用Composition API
 - **TypeScript**：类型安全的JavaScript，提供完整的类型定义
-- **UNO CSS**：实用优先的CSS框架，响应式设计
+- **TailwindCSS**：实用优先的CSS框架，响应式设计
 - **Vue Router**：前端路由管理
 
 ### 后端技术
@@ -109,7 +109,6 @@
 - **Redis**：可选的分布式短期状态服务，仅用于验证码、限流和临时安全状态
 - **JWT**：标准JWT认证机制，支持24小时token有效期
 - **bcrypt**：密码加密，安全的哈希算法
-- **Multer**：文件上传处理，支持多种存储方式
 
 ## 系统架构
 
@@ -139,7 +138,7 @@
 
 ### Linux 服务器部署
 
-本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
+本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 26、配置环境变量、安装依赖和构建项目。
 
 **一键命令：**
 
@@ -465,7 +464,7 @@ nix run .#build                # 在项目目录中执行，生成 .output 目�
 
 #### 前提条件
 
-- Node.js 20+
+- Node.js 24+
 - PostgreSQL 数据库（推荐使用 Neon）
 - Redis 数据库（可选；多实例或 Serverless 部署建议配置）
 
@@ -586,7 +585,7 @@ pnpm run safe-migrate
 
 ### 升级与迁移
 
-有关如何升级现有部署和迁移数据，请参阅 [升级指南](UPGRADE.md)。
+有关如何升级现有部署和迁移数据，请参阅 [升级指南](docs/UPGRADE.md)。
 
 ## 系统配置
 
@@ -729,10 +728,15 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
 ```
 VoiceHub/
 ├── .github/                   # GitHub 配置目录
+│   ├── ISSUE_TEMPLATE/        # Issue 提交模板
+│   │   ├── bug_report.yml
+│   │   ├── config.yml
+│   │   ├── feature_request.yml
+│   │   ├── question.yml
+│   │   └── security_report.yml
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
 │       ├── docker-build.yml   # Docker 镜像构建
-│       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
 │       ├── nix.yml            # Nix 构建校验
 │       └── update-nix-pnpm-hash.yml # 自动同步 pnpmDeps 哈希
 ├── app/                       # Nuxt 4 应用主目录
@@ -746,14 +750,15 @@ VoiceHub/
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
+│   │       ├── tailwind.css       # Tailwind 样式入口
 │   │       ├── theme-protection.css # 主题保护样式（浏览器兼容性）
 │   │       ├── transitions.css    # 过渡动画样式
 │   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       ├── year-review.css    # 年度回顾样式
 │   │       └── themes/            # 主题目录
-│   │           ├── dark.css         # 深色主题设计变量
-│   │           ├── light.css        # 亮色主题设计变量
-│   │           └── ModernLight.css # 现代浅色主题设计变量
+│   │           ├── ClassicDark.css   # 深色主题设计变量
+│   │           ├── ClassicLight.css  # 亮色主题设计变量
+│   │           └── ModernLight.css   # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
@@ -763,7 +768,7 @@ VoiceHub/
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
-│   │   │   ├── CardCodesManager.vue   # 点歌券管理
+│   │   │   ├── CardCodesManager.vue   # 卡密管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
@@ -787,6 +792,7 @@ VoiceHub/
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   │   ├── SongManagement.vue     # 歌曲管理
+│   │   │   ├── SongQuotaManager.vue  # 点歌额度管理
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
@@ -831,8 +837,9 @@ VoiceHub/
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
 │   │   │   ├── RequestForm.vue        # 点歌表单
 │   │   │   ├── ScheduleList.vue       # 排期列表展示
-│   │   │   └── SongList.vue           # 歌曲列表
-│   │   ├── UI/                # 通用UI组件
+│   │   │   ├── SongList.vue           # 歌曲列表
+│   │   │   └── SongQuotaDisplay.vue  # 点歌额度展示
+│   │   ├── Shared/            # 通用UI组件
 │   │   │   ├── AudioPlayer/   # 音频播放器组件模块
 │   │   │   │   ├── AudioElement.vue   # 音频元素组件
 │   │   │   │   ├── PlayerControls.vue # 播放器控制组件
@@ -916,12 +923,17 @@ VoiceHub/
 │   │   └── useUserFilters.ts  # 用户过滤器hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
+│   │   ├── relations.ts        # 数据表关系定义
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
+│   │       ├── schema.ts       # 迁移跟踪 schema
+│   │       ├── relations.ts    # 迁移跟踪关系定义
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
 │   │   └── default.vue         # 默认布局模板
+│   ├── lib/                   # 前端工具库
+│   │   └── utils.ts           # 通用工具函数
 │   ├── middleware/            # 中间件
 │   │   └── auth.global.ts      # 全局认证中间件
 │   ├── pages/                 # 页面组件（Nuxt 4路由）
@@ -941,6 +953,8 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
+│   │   ├── sentry.client.ts    # 客户端Sentry错误追踪插件
+│   │   ├── theme.client.ts     # 客户端主题管理插件
 │   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
@@ -1031,14 +1045,20 @@ VoiceHub/
 │   │   │   │   ├── [id].patch.ts    # 更新黑名单项
 │   │   │   │   ├── index.get.ts     # 获取黑名单列表
 │   │   │   │   └── index.post.ts    # 添加黑名单项
-│   │   │   ├── card-codes/          # 点歌券管理API
-│   │   │   │   ├── [id].put.ts      # 更新单张点歌券
-│   │   │   │   ├── create.post.ts   # 创建点歌券
-│   │   │   │   ├── delete.post.ts   # 删除点歌券
-│   │   │   │   ├── export.get.ts    # 导出点歌券
-│   │   │   │   ├── index.get.ts     # 获取点歌券列表
-│   │   │   │   ├── redeem-logs.get.ts # 获取点歌券日志
-│   │   │   │   └── update.post.ts   # 批量更新点歌券
+│   │   │   ├── song-quotas/         # 用户点歌额度管理API
+│   │   │   │   ├── [userId].get.ts  # 获取用户额度详情
+│   │   │   │   ├── _shared.ts       # 管理员额度鉴权与输入校验
+│   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
+│   │   │   │   ├── index.get.ts     # 分页搜索额度账户
+│   │   │   │   └── transactions.get.ts # 分页筛选全局额度流水
+│   │   │   ├── card-codes/          # 卡密管理API（旧点歌券兑换）
+│   │   │   │   ├── _shared.ts       # 卡密管理员鉴权
+│   │   │   │   ├── create.post.ts   # 手动导入/自动生成卡密
+│   │   │   │   ├── delete.post.ts   # 批量删除卡密
+│   │   │   │   ├── export.get.ts    # 导出卡密 CSV
+│   │   │   │   ├── index.get.ts     # 分页筛选卡密列表
+│   │   │   │   ├── redeem-logs.get.ts # 卡密兑换日志查询
+│   │   │   │   └── update.post.ts   # 更新卡密状态/备注
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
 │   │   │   │   ├── performance.get.ts # 数据库性能监控
@@ -1130,7 +1150,7 @@ VoiceHub/
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
-│   │   │       ├── options.ts       # 用户管理选项
+│   │   │       ├── options.get.ts   # 用户管理选项
 │   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── api-enhanced/          # 网易云音乐API
 │   │   │   └── netease/           # 网易云增强接口代理
@@ -1168,8 +1188,6 @@ VoiceHub/
 │   │   │   └── search.get.ts        # Bilibili视频搜索
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
-│   │   ├── card-codes/     # 点歌券API
-│   │   │   └── validate.post.ts     # 验证点歌券可用性
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
@@ -1181,11 +1199,14 @@ VoiceHub/
 │   │   │   ├── lyric/               # 歌词API
 │   │   │   │   ├── mg.get.ts        # 咪咕音乐歌词
 │   │   │   │   └── tx.get.ts        # 腾讯音乐歌词
+│   │   │   ├── migu/                # 咪咕音乐API
+│   │   │   │   └── playurl.get.ts   # 获取咪咕播放链接
 │   │   │   ├── qq/                  # QQ音乐账号API
 │   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
 │   │   │   │   └── login-qr.get.ts  # 获取登录二维码
 │   │   │   └── search/              # 搜索API
+│   │   │       ├── mg.get.ts        # 咪咕音乐搜索
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
 │   │   ├── platform-config/  # 平台管理公开API
@@ -1204,12 +1225,11 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── open/           # 开放API（无需认证）
-│   │   │   ├── card-codes/          # 点歌券开放API
-│   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
-│   │   │   ├── card-codes.delete.ts # 删除点歌券
-│   │   │   ├── card-codes.get.ts    # 获取点歌券列表
-│   │   │   ├── card-codes.patch.ts  # 更新点歌券
-│   │   │   ├── card-codes.post.ts   # 创建点歌券
+│   │   │   ├── song-quotas/         # 点歌额度开放API
+│   │   │   │   ├── _shared.ts       # 严格校验、用户归属与限流
+│   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
+│   │   │   │   ├── index.get.ts     # 查询用户额度
+│   │   │   │   └── transactions.get.ts # 查询用户额度流水
 │   │   │   ├── songs/               # 歌曲相关开放API
 │   │   │   │   ├── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   │   └── request.post.ts  # 使用个人集成令牌投稿歌曲
@@ -1232,6 +1252,10 @@ VoiceHub/
 │   │   │   ├── current.get.ts       # 获取当前学期
 │   │   │   └── options.get.ts       # 获取学期选项
 │   │   ├── site-config.get.ts       # 站点配置API
+│   │   ├── song-quota/     # 当前用户点歌额度API
+│   │   │   ├── index.get.ts         # 获取额度概览
+│   │   │   ├── redeem-card.post.ts  # 旧点歌券卡密兑换为永久额度
+│   │   │   └── transactions.get.ts  # 分页获取额度流水
 │   │   ├── songs/          # 歌曲相关API
 │   │   │   ├── [id]/                # 歌曲详情操作
 │   │   │   │   ├── update.put.ts    # 更新歌曲信息
@@ -1280,10 +1304,10 @@ VoiceHub/
 │   │       │   └── meow.post.ts     # MeoW账号操作
 │   │       ├── search.get.ts        # 搜索用户
 │   │       └── social-accounts.get.ts # 获取社交账号
-│   ├── card-codes/         # 点歌券相关
-│   │   └── statuses.ts     # 点歌券状态枚举定义
 │   ├── config/             # 服务端配置
 │   │   └── constants.ts    # 风控阈值与时间窗口常量
+│   ├── card-codes/         # 卡密状态常量
+│   │   └── statuses.ts     # 卡密状态枚举与可变状态集
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
 │   │   ├── 00.request-id.ts # 请求ID注入中间件
@@ -1298,14 +1322,15 @@ VoiceHub/
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
-│   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
-│   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
+│   │   ├── cardCodeDeleteService.ts # 点歌券/卡密删除服务
 │   │   ├── durationValidationService.ts # 歌曲时长验证服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
 │   │   ├── securityService.ts # 安全服务
+│   │   ├── songQuotaDrizzleAdapter.ts # 点歌额度 Drizzle 存储适配器
+│   │   ├── songQuotaService.ts # 用户点歌额度统一服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
@@ -1316,15 +1341,17 @@ VoiceHub/
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
+│   │   ├── card-code-redemption-rate-limit.ts # 卡密兑换限流工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
-│   │   ├── card-code-delete-handler.ts # 点歌券删除开放API处理器
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
+│   │   ├── song-quota-policy.ts # 点歌额度周期、扣减、返还与迁移策略
+│   │   ├── song-request-policy.ts # 点歌投稿策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
@@ -1351,7 +1378,6 @@ VoiceHub/
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
-│   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
@@ -1362,53 +1388,78 @@ VoiceHub/
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行 Nuxt 构建
 │   ├── check-deploy.js    # 部署前检查
-│   ├── clear-database.js  # 清空数据库
+│   ├── clear-database.js  # 清空数据库并重建管理员
 │   ├── create-admin.js    # 创建管理员账户
 │   ├── db-sync.js         # 数据库同步
-│   ├── deploy.js          # 一键部署脚本
-│   ├── drizzle/           # Drizzle 迁移辅助脚本
-│   │   └── migrations/
+│   ├── deploy.js          # 部署脚本
+│   ├── migrate-legacy-card-to-quota.js # 旧卡密数据迁移到点歌额度
 │   ├── netlify-build.js   # Netlify 构建脚本
 │   ├── postinstall.js     # 安装后脚本
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
-│   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
-├── tests/                 # 自动化测试
-│   └── server/             # 服务端策略与安全测试
-│       ├── auth-route-policy.test.ts # 强制改密路由策略测试
-│       ├── important-notification-policy.test.ts # 重要通知策略测试
-│       ├── initial-password-policy.test.ts # 初始密码状态策略测试
-│       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
-│       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
-│       ├── password-policy.test.ts # 密码策略测试
-│       └── token-version-policy.test.ts # 令牌版本策略测试
-├── types/                 # TypeScript类型定义
-│   ├── global.d.ts         # 全局类型定义
-│   └── index.ts            # 通用类型定义
-├── .env.example           # 环境变量示例文件
-├── .gitignore             # Git忽略文件配置
-├── .vercelignore          # Vercel部署忽略文件
-├── docker-compose/        # Docker Compose配置目录
-├── docker-compose.yml     # Docker编排文件
-├── Dockerfile             # Docker构建文件
-├── Dockerfile-postgres    # PostgreSQL Docker构建文件
-├── drizzle.config.ts      # Drizzle配置文件
-├── edgeone.json           # EdgeOne Pages 部署配置
-├── eslint.config.mjs      # ESLint 配置
-├── flake.lock             # Nix flake锁定文件
-├── flake.nix              # Nix构建与NixOS模块配置
-├── fnos/                  # 飞牛 OS 安装包相关配置
-├── LICENSE                # 开源许可证文件
-├── netlify.toml           # Netlify部署配置
-├── nuxt.config.ts         # Nuxt 4主配置文件
-├── package.json           # Node.js项目配置和依赖
-├── pnpm-lock.yaml         # pnpm 依赖锁定文件
-├── pnpm-workspace.yaml    # pnpm 依赖构建许可配置
-├── README.md              # 项目说明文档
-├── sh/                    # 一键部署脚本目录
-├── tsconfig.json          # TypeScript配置文件
-├── UPGRADE.md             # 升级指南
-└── vercel.json            # Vercel部署配置
+├── docker-compose/            # Docker Compose 配置目录
+│   ├── docker-compose.yml     # 默认编排
+│   ├── docker-compose-redis.yml # 启用 Redis 编排
+│   ├── docker-compose-prebuild-github.yml # 预构建镜像（GitHub）
+│   ├── docker-compose-prebuild-github-redis.yml # 预构建镜像（GitHub + Redis）
+│   ├── docker-compose-prebuild-nju.yml # 预构建镜像（NJU）
+│   ├── docker-compose-prebuild-nju-redis.yml # 预构建镜像（NJU + Redis）
+│   └── README.md              # 编排说明
+├── docs/                      # 文档目录
+│   └── UPGRADE.md             # 升级与迁移说明
+├── fnos/                      # FnOS 安装包二进制结构
+│   ├── app/ui/config          # FnOS UI 入口配置
+│   ├── cmd/main               # 主程序
+│   └── manifest               # 安装包清单
+├── public/                    # 前端静态资源目录
+│   ├── assets/                # 站点 Logo 等静态图片
+│   │   ├── logo-144.png
+│   │   └── logo.png
+│   ├── audio-match/           # 音频指纹匹配资源
+│   │   ├── afp.js
+│   │   ├── afp.wasm.js
+│   │   └── rec.js
+│   ├── images/                # 图片资源
+│   │   └── beian.png          # 备案图标
+│   ├── themes/                # 主题图片（SVG 随主题切换）
+│   │   ├── ClassicDark/{logo,search,thumbs-up}.svg
+│   │   ├── ClassicLight/{logo,search,thumbs-up}.svg
+│   │   └── ModernLight/{logo,search,thumbs-up}.svg
+│   ├── favicon.ico            # 网站图标
+│   └── robots.txt             # 搜索引擎爬虫配置
+├── sh/                        # 一键部署脚本目录
+├── tests/                     # 自动化测试
+│   └── server/                # 服务端策略与安全测试
+├── types/                     # TypeScript类型定义
+│   ├── global.d.ts            # 全局类型定义
+│   └── index.ts               # 通用类型定义
+├── .dockerignore             # Docker忽略文件
+├── .env.example              # 环境变量示例文件
+├── .gitignore                # Git忽略文件配置
+├── .oxlintrc.json            # OXLint 配置
+├── .prettierignore           # Prettier忽略文件
+├── .prettierrc               # Prettier配置
+├── .vercelignore             # Vercel部署忽略文件
+├── AGENTS.md                 # Agent 行为规范
+├── CODE_OF_CONDUCT.md        # 贡献者行为准则
+├── CODE_OF_CONDUCT.zh-CN.md  # 贡献者行为准则（简体中文）
+├── components.json           # shadcn/ui 组件配置
+├── docker-compose.yml        # Docker编排文件
+├── Dockerfile                # Docker构建文件
+├── drizzle.config.ts         # Drizzle配置文件
+├── edgeone.json              # EdgeOne 边缘计算配置
+├── eslint.config.mjs         # ESLint 配置
+├── flake.lock                # Nix flake锁定文件
+├── flake.nix                 # Nix构建与NixOS模块配置
+├── LICENSE                   # 开源许可证文件
+├── netlify.toml              # Netlify部署配置
+├── nuxt.config.ts            # Nuxt 4主配置文件
+├── package.json              # Node.js项目配置和依赖
+├── pnpm-lock.yaml            # pnpm 依赖锁定文件
+├── pnpm-workspace.yaml       # pnpm 依赖构建许可配置
+├── README.md                 # 项目说明文档
+├── tsconfig.json             # TypeScript配置文件
+└── vercel.json               # Vercel部署配置
 ```
 
 ### 目录说明
@@ -1424,7 +1475,7 @@ VoiceHub/
   - **`Notifications/`**: 通知系统组件
   - **`Player/`**: 播放器相关组件
   - **`Songs/`**: 歌曲相关组件（点歌、导入、歌单等）
-  - **`UI/`**: 通用UI组件（播放器、对话框、进度条等）
+  - **`Shared/`**: 通用UI组件（播放器、对话框、进度条等）
   - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用

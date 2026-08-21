@@ -17,15 +17,15 @@
   >
     <Transition name="fade" mode="out-in">
       <div v-if="lyricManager.loading.value" class="lyric-message-container">
-        <Icon name="loader" :size="32" class="spin-animation" />
+        <Loader2 :size="32" class="spin-animation"  />
         <div class="message-text">{{ locale.loading }}</div>
       </div>
       <div v-else-if="lyricManager.error.value" class="lyric-message-container">
-        <Icon name="alert-circle" :size="32" />
+        <CircleX :size="32"  />
         <div class="message-text">{{ lyricManager.error.value }}</div>
       </div>
       <div v-else-if="!lyricLines || lyricLines.length === 0" class="lyric-message-container">
-        <Icon name="music" :size="48" style="opacity: 0.5" />
+        <Music :size="48" class="opacity-50" />
         <div class="message-text">{{ locale.empty }}</div>
       </div>
       <LyricPlayer
@@ -55,9 +55,9 @@
 </template>
 
 <script setup lang="ts">
+import { Loader2, CircleX, Music } from '@lucide/vue'
 import { ref, computed } from 'vue'
 import LyricPlayer, { type LyricPlayerRef } from '~/components/AMLL/LyricPlayer.vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLyricManager } from '~/composables/useLyricManager'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
@@ -195,14 +195,5 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
 .spin-animation {
   animation: spin 1s linear infinite;
   opacity: 0.9;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

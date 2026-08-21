@@ -53,6 +53,7 @@
             <Activity :size="18" class="text-primary" /> {{ locale.recentActivities }}
           </h3>
           <button
+            :aria-label="locale.refreshActivities"
             class="p-2 text-text-tertiary hover:text-text-secondary transition-colors"
             :disabled="loadingActivities"
             @click="refreshActivities"
@@ -189,7 +190,6 @@
           >
             <component :is="action.icon" :size="18" />
             {{ action.label }}
-            <ExternalLink v-if="action.primary" :size="14" class="ml-auto opacity-50" />
           </button>
         </div>
       </div>
@@ -205,7 +205,6 @@ import {
   Bell,
   Calendar,
   Clock,
-  ExternalLink,
   Heart,
   Inbox,
   Loader2,

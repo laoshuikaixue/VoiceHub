@@ -1,13 +1,13 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '#server/config/constants'
+import { createApiError } from '#server/utils/apiError'
 import {
   canSendSystemNotification,
   NOTIFICATION_SOURCES
-} from '~~/server/utils/important-notification-policy'
-import { resolveNotificationBatchReference } from '~~/server/utils/notification-history-policy'
+} from '#server/utils/important-notification-policy'
+import { resolveNotificationBatchReference } from '#server/utils/notification-history-policy'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

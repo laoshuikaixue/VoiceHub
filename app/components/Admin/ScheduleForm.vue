@@ -32,7 +32,7 @@
           v-if="song?.preferredPlayTime"
           class="mt-3 p-3 bg-bg-secondary-5 rounded-lg text-sm flex items-start gap-2"
         >
-          <div class="text-base">💡</div>
+          <Lightbulb class="mt-0.5 shrink-0" :size="16" aria-hidden="true" />
           <div>
             {{ locale.preferredPlayTime }}
             <span class="font-medium text-info">
@@ -70,9 +70,10 @@
 </template>
 
 <script setup>
+import { Lightbulb } from '@lucide/vue'
 import { onMounted, ref, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
@@ -98,7 +99,7 @@ const commonLocale = computed(() => common.value || {})
 const locale = computed(() => useSafeLocale(common.value?.scheduleForm || {}))
 const scheduleTitle = computed(() => {
   const title = locale.value?.title
-  if (typeof title === 'string') return title.replace(/{0}/g, props.song?.title || '')
+  if (typeof title === 'string') return title.replace(/\{0\}/g, props.song?.title || '')
   if (typeof title === 'function') return title(props.song?.title || '')
   return ''
 })

@@ -228,12 +228,14 @@
             <div class="flex gap-2">
               <button
                 v-show="!slot.past"
+                aria-label="编辑投稿时段"
                 class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
                 @click="editRequestTime(slot)"
               >
                 <Edit2 :size="14" />
               </button>
               <button
+                :aria-label="locale.delete"
                 class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error hover:border-error-30 transition-all"
                 @click="confirmDelete(slot)"
               >
@@ -414,7 +416,11 @@
             <h3 class="text-xl font-black text-text-primary">
               {{ editingRequestTime ? locale.editTitle : locale.addTitle }}
             </h3>
-            <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="cancelForm">
+            <button
+              aria-label="关闭投稿时段弹窗"
+              class="text-text-tertiary hover:text-text-secondary transition-colors"
+              @click="cancelForm"
+            >
               <X :size="20" />
             </button>
           </div>

@@ -30,6 +30,7 @@
           >
             <div class="flex items-center gap-3">
               <button
+                aria-label="打开移动端菜单"
                 class="lg:hidden p-2 text-text-tertiary hover:bg-bg-tertiary rounded-lg transition-colors"
                 @click="toggleSidebar"
               >
@@ -181,6 +182,13 @@
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminApiKeyManager />
+            </div>
+            <!-- 额度管理 -->
+            <div
+              v-if="activeTab === 'song-quotas' && permissions.canAccessPage('song-quotas')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSongQuotaManager />
             </div>
             <!-- 卡密管理 -->
             <div

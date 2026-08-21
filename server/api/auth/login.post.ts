@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, and, systemSettings } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
 import {
   getAccountLockRemainingTime,
   getIPBlockRemainingTime,
@@ -13,16 +13,16 @@ import {
   getUserBlockRemainingTime,
   //导入失败计数查询函数
   getLoginFailureCount
-} from '../../services/securityService'
+} from '#server/services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
-import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { getClientIP } from '#server/utils/ip-utils'
+import { resolveRequirePasswordChange } from '#server/utils/system-settings-helper'
+import { getPasswordSetupState } from '#server/utils/initial-password-policy'
 
 // 导入验证码校验函数
-import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
+import { verifyAndConsumeCaptcha } from '#server/utils/captcha'
 import type { SystemSettings } from '~/drizzle/schema'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()

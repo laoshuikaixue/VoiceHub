@@ -1,6 +1,6 @@
-import { createTxSearchBody, txRequest, txSignedRequest } from '../../../utils/native_tx'
-import { decodeName, formatPlayTime, sizeFormate } from '../../../utils/native_common'
-import { searchQqMusic } from '~~/server/utils/qq_music_sdk'
+import { createTxSearchBody, txRequest, txSignedRequest } from '#server/utils/native_tx'
+import { decodeName, formatPlayTime, sizeFormate } from '#server/utils/native_common'
+import { searchQqMusic } from '#server/utils/qq_music_sdk'
 
 const stripHtml = (value: unknown) => String(value ?? '').replace(/[<>]/g, '')
 

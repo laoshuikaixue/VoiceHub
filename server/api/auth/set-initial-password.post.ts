@@ -2,19 +2,19 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
-import { updateUserPassword } from '~~/server/services/userService'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { isSecureRequest } from '~~/server/utils/request-utils'
+import { createApiError } from '#server/utils/apiError'
+import { updateUserPassword } from '#server/services/userService'
+import { JWTEnhanced } from '#server/utils/jwt-enhanced'
+import { isSecureRequest } from '#server/utils/request-utils'
 import { getPasswordPolicyViolation } from '~/utils/password-policy'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { canSetInitialPassword } from '~~/server/utils/initial-password-policy'
+import { getClientIP } from '#server/utils/ip-utils'
+import { canSetInitialPassword } from '#server/utils/initial-password-policy'
 import {
   PASSWORD_AUDIT_ACTIONS,
   consumePasswordRateLimit,
   getPasswordAuditContext,
   recordPasswordAudit
-} from '~~/server/services/passwordSecurityService'
+} from '#server/services/passwordSecurityService'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

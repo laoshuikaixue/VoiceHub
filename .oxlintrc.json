@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {},
+  "ignorePatterns": [
+    "public/audio-match/**",
+    ".nuxt/**",
+    ".output/**",
+    ".nitro/**",
+    ".data/**",
+    "dist/**",
+    ".cache/**",
+    "app/drizzle/migrations/**",
+    "scripts/drizzle/migrations/**"
+  ],
+  "env": {
+    "builtin": true
+  }
+}

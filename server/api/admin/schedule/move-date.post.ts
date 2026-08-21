@@ -1,9 +1,9 @@
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
-import { createSystemNotification } from '~~/server/services/notificationService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { createSystemNotification } from '#server/services/notificationService'
+import { getClientIP } from '#server/utils/ip-utils'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user

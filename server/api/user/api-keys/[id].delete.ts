@@ -1,7 +1,7 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { createApiError } from '~~/server/utils/apiError'
+import { createApiError } from '#server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 const apiKeyIdSchema = z.string().uuid('无效的令牌 ID')

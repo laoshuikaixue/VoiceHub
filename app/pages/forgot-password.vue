@@ -10,9 +10,7 @@
         </div>
         
         <div v-if="success" class="success-container">
-          <svg class="success-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+          <CircleCheck class="success-icon" />
           <p class="success-message">{{ successMessage }}</p>
           <NuxtLink to="/login" class="back-link-btn">{{ locale.backLogin }}</NuxtLink>
         </div>
@@ -21,10 +19,7 @@
           <div class="form-group" v-if="step === 1">
             <label for="username">{{ locale.username }}</label>
             <div class="input-wrapper">
-              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <User class="input-icon" />
               <input
                 id="username"
                 v-model="username"
@@ -43,9 +38,7 @@
               {{ locale.detectedEmailPrefix }}<strong class="text-[var(--primary)]">{{ maskedEmail }}</strong>
             </p>
             <div class="input-wrapper">
-              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-              </svg>
+              <Mail class="input-icon" />
               <input
                 id="email"
                 v-model="email"
@@ -59,27 +52,23 @@
           </div>
 
           <div v-if="error" class="error-container">
-            <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" x2="12" y1="8" y2="12" />
-              <line x1="12" x2="12.01" y1="16" y2="16" />
-            </svg>
+            <CircleAlert class="error-icon" />
             <span class="error-message">{{ error }}</span>
           </div>
 
           <button :disabled="loading" class="submit-btn" type="submit">
-            <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416" stroke-dashoffset="31.416" stroke-linecap="round" stroke-width="2">
-                <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite" values="0 31.416;15.708 15.708;0 31.416"/>
-                <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
-              </circle>
-            </svg>
+            <Loader2 v-if="loading" class="size-5 animate-spin" />
             <span v-if="loading">{{ step === 1 ? locale.verifying : locale.sending }}</span>
             <span v-else>{{ step === 1 ? locale.nextStep : locale.sendResetEmail }}</span>
           </button>
           
           <div class="form-footer">
-            <button v-if="step === 2" type="button" @click="step = 1; error = '';" class="back-link mr-4" style="background: none; border: none; cursor: pointer;">
+            <button
+              v-if="step === 2"
+              type="button"
+              class="back-link mr-4 border-0 bg-transparent cursor-pointer"
+              @click="step = 1; error = '';"
+            >
               {{ locale.previousStep }}
             </button>
             <NuxtLink to="/login" class="back-link">{{ locale.backLogin }}</NuxtLink>
@@ -92,7 +81,8 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
+import { CircleAlert, CircleCheck, Loader2, Mail, User } from '@lucide/vue'
 import { ref, onMounted, computed } from 'vue'
 import { useLocale } from '~/utils/locale'
 
@@ -380,10 +370,6 @@ const handleSubmit = async () => {
   transform: none;
 }
 
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-}
 
 .form-footer {
   margin-top: 16px;

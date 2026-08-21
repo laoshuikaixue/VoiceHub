@@ -1,17 +1,16 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
-import { inArray, and, eq, gte, lte } from 'drizzle-orm'
-import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
-import { getClientIP } from '~~/server/utils/ip-utils'
+import { inArray, and, asc, eq, gte, lte } from 'drizzle-orm'
 import {
-  redeemCardCodeForSchedule,
-  restoreCardCodeAfterScheduleRemoval
-} from '~~/server/services/cardCodeLifecycleService'
+  createSongSelectedNotification,
+  createReplaySongSelectedNotification
+} from '#server/services/notificationService'
+import { getClientIP } from '#server/utils/ip-utils'
 import {
   fulfillReplayRequestsForSchedule,
   restoreReplayRequestsToPending
-} from '~~/server/utils/scheduleReplayBinding'
-import { getServerDate } from '~~/server/utils/serverTime'
+} from '#server/utils/scheduleReplayBinding'
+import { getServerDate } from '#server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -58,7 +57,8 @@ export default defineEventHandler(async (event) => {
       return {
         songId,
         sequence,
-        replayRequestId: Number.isInteger(replayRequestId) && replayRequestId > 0 ? replayRequestId : null
+        replayRequestId:
+          Number.isInteger(replayRequestId) && replayRequestId > 0 ? replayRequestId : null
       }
     })
 
@@ -108,6 +108,18 @@ export default defineEventHandler(async (event) => {
 
     // 开始事务
     await db.transaction(async (tx) => {
+      if (songIds.length > 0) {
+        const lockedSongs = await tx
+          .select({ id: songs.id })
+          .from(songs)
+          .where(inArray(songs.id, songIds))
+          .orderBy(asc(songs.id))
+          .for('update')
+        if (lockedSongs.length !== new Set(songIds).size) {
+          throw createError({ statusCode: 404, message: '部分歌曲不存在' })
+        }
+      }
+
       // 1. 构建查询条件：指定日期 + (可选)指定时段
       const whereConditions = [
         gte(schedules.playDate, startOfDay),
@@ -136,11 +148,9 @@ export default defineEventHandler(async (event) => {
         .select({
           songId: schedules.songId,
           isDraft: schedules.isDraft,
-          replayRequestId: schedules.replayRequestId,
-          cardCodeId: songs.cardCodeId
+          replayRequestId: schedules.replayRequestId
         })
         .from(schedules)
-        .leftJoin(songs, eq(schedules.songId, songs.id))
         .where(and(...whereConditions))
 
       // 记录被删除的已发布排期的重播绑定，同歌重发时回写，避免重播标识丢失
@@ -170,34 +180,6 @@ export default defineEventHandler(async (event) => {
         const finalRestoreIds = songsToRestore.filter((id) => !songsWithOtherSchedules.has(id))
 
         if (finalRestoreIds.length > 0) {
-          const finalRestoreIdSet = new Set(finalRestoreIds)
-          const restoreCardCodeMap = new Map<number, number>()
-          for (const deletedSchedule of schedulesToDelete) {
-            if (
-              !deletedSchedule.isDraft &&
-              deletedSchedule.cardCodeId &&
-              finalRestoreIdSet.has(deletedSchedule.songId)
-            ) {
-              restoreCardCodeMap.set(deletedSchedule.songId, deletedSchedule.cardCodeId)
-            }
-          }
-
-          for (const [songId, cardCodeId] of restoreCardCodeMap) {
-            const restoreResult = await restoreCardCodeAfterScheduleRemoval(tx, {
-              songId,
-              cardCodeId,
-              operatorId: user.id
-            })
-            if (
-              !restoreResult.changed &&
-              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(
-                String(restoreResult.reason || '')
-              )
-            ) {
-              throw createError({ statusCode: 409, message: '点歌券返还失败，发布排期已终止' })
-            }
-          }
-
           // 恢复重播申请（每人仅恢复最新一条，避免违反部分唯一索引）
           await restoreReplayRequestsToPending({
             tx,
@@ -265,13 +247,6 @@ export default defineEventHandler(async (event) => {
           })
           existingPublishedSongIds.add(item.songId)
         }
-
-        await redeemCardCodeForSchedule(tx, {
-          songId: song.id,
-          cardCodeId: song.cardCodeId,
-          operatorId: user.id,
-          at: publishedAt
-        })
       }
     })
 

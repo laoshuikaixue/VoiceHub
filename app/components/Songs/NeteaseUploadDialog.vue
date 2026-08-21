@@ -17,10 +17,11 @@
               {{ locale.title }}
             </h3>
             <button
+              aria-label="关闭网易云上传弹窗"
               class="text-text-tertiary hover:text-text-secondary transition-colors"
               @click="closeDialog"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -152,8 +153,8 @@
 </template>
 
 <script setup lang="ts">
+import { X } from '@lucide/vue'
 import { ref, watch, onMounted, computed } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useAudioQuality, QUALITY_OPTIONS } from '~/composables/useAudioQuality'
 import { useToast } from '~/composables/useToast'
 import CryptoJS from 'crypto-js'

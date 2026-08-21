@@ -91,50 +91,6 @@
   filter: blur(6px);
 }
 
-/* 布局过渡 */
-.layout-enter-active,
-.layout-leave-active {
-  transition: all 0.3s ease-in-out;
-}
-
-.layout-enter-from,
-.layout-leave-to {
-  opacity: 0;
-  transform: scale(0.98);
-}
-
-/* 加载动画 */
-.page-loading {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 3px solid var(--overlay-10);
-  border-top: 3px solid var(--color-indigo);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 /* 特殊效果：从首页到后台的滑动效果 */
 .slide-left-enter-active,
 .slide-left-leave-active {
@@ -229,8 +185,6 @@
 @media (prefers-reduced-motion: reduce) {
   .page-enter-active,
   .page-leave-active,
-  .layout-enter-active,
-  .layout-leave-active,
   .slide-left-enter-active,
   .slide-left-leave-active,
   .slide-right-enter-active,
@@ -261,5 +215,18 @@
   }
   100% {
     opacity: 1;
+  }
+}
+
+/* 通用旋转动画 — 供各组件引用，避免重复定义 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes reverse-spin {
+  to {
+    transform: rotate(-360deg);
   }
 }

@@ -34,7 +34,7 @@
                   v-else
                   class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
-                  <Icon name="play" :size="24" />
+                  <Play :size="24"  />
                 </div>
               </div>
               <div class="min-w-0">
@@ -47,10 +47,11 @@
               </div>
             </div>
             <button
+              :aria-label="locale.close"
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -63,7 +64,7 @@
               <div
                 class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
-                <Icon name="play" :size="32" class="opacity-20" />
+                <Play :size="32" class="opacity-20"  />
               </div>
               <p class="text-sm font-bold uppercase tracking-widest">{{ locale.empty }}</p>
             </div>
@@ -97,7 +98,7 @@
                     class="flex items-center gap-3 mt-1 text-[10px] text-text-tertiary font-bold uppercase tracking-wider"
                   >
                     <span class="flex items-center">
-                      <Icon name="clock" :size="10" class="mr-1" />
+                      <Clock :size="10" class="mr-1"  />
                       {{ formatDuration(episode.duration) }}
                     </span>
                   </div>
@@ -107,14 +108,13 @@
                 <div class="ml-2 sm:ml-4 shrink-0 flex items-center gap-2 sm:gap-3">
                   <!-- 预听/暂停按钮 -->
                   <button
+                    :aria-label="isCurrentEpisode(episode) && isPlaying ? locale.pause : locale.preview"
                     class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-bg-tertiary text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary transition-all active:scale-95"
                     :title="isCurrentEpisode(episode) && isPlaying ? locale.pause : locale.preview"
                     @click.stop="togglePlay(episode)"
                   >
-                    <Icon
-                      :name="isCurrentEpisode(episode) && isPlaying ? 'pause' : 'play'"
-                      :size="16"
-                    />
+                    <Pause v-if="isCurrentEpisode(episode) && isPlaying" :size="16" />
+                    <Play v-else :size="16" />
                   </button>
 
                   <template v-if="getEpisodeStatus(episode).played">
@@ -167,11 +167,11 @@
                         @click.stop="voteEpisode(episode)"
                       >
                         <span class="flex items-center justify-center gap-1">
-                          <Icon
-                            name="heart"
+                          <Heart
+                           
                             :size="12"
                             :class="getEpisodeStatus(episode).voted ? 'fill-current' : ''"
-                          />
+                           />
                           <span>{{ getEpisodeStatus(episode).voted ? locale.liked : locale.like }}</span>
                         </span>
                       </button>
@@ -200,8 +200,8 @@
 </template>
 
 <script setup>
+import { Play, X, Clock, Heart, Pause } from '@lucide/vue'
 import { ref, computed } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useLocale } from '~/utils/locale'

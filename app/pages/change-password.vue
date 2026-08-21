@@ -22,39 +22,15 @@
             <h3>{{ locale.tipsTitle }}</h3>
             <div class="tip-list">
               <div class="tip-item">
-                <svg
-                  class="tip-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                >
-                  <polyline points="20,6 9,17 4,12" />
-                </svg>
+                <Check class="tip-icon" />
                 <span>{{ locale.tipMinLength }}</span>
               </div>
               <div class="tip-item">
-                <svg
-                  class="tip-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                >
-                  <polyline points="20,6 9,17 4,12" />
-                </svg>
+                <Check class="tip-icon" />
                 <span>{{ locale.tipCase }}</span>
               </div>
               <div class="tip-item">
-                <svg
-                  class="tip-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                >
-                  <polyline points="20,6 9,17 4,12" />
-                </svg>
+                <Check class="tip-icon" />
                 <span>{{ locale.tipSpecial }}</span>
               </div>
             </div>
@@ -78,13 +54,11 @@
 
           <div class="form-footer">
             <NuxtLink v-if="!requirePasswordChange" class="back-link" to="/">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="15,18 9,12 15,6" />
-              </svg>
+              <ChevronLeft />
               {{ locale.backToHome }}
             </NuxtLink>
             <button v-else class="back-link logout-link" type="button" @click="auth.logout()">
-              <Icon class="shrink-0" name="logout" :size="16" aria-hidden="true" />
+              <LogOut class="shrink-0" :size="16" aria-hidden="true"  />
               {{ locale.logout }}
             </button>
           </div>
@@ -95,8 +69,8 @@
 </template>
 
 <script setup>
+import { Check, ChevronLeft, LogOut } from '@lucide/vue'
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 import { useThemeImage } from '~/composables/useThemeImage'
 

@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
-import { createSongRejectedNotification } from '../../../services/notificationService'
+import { createSongRejectedNotification } from '#server/services/notificationService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

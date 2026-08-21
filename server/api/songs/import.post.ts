@@ -1,8 +1,11 @@
-import { defineEventHandler, createError, readBody } from 'h3'
+import { asc, and, eq, inArray } from 'drizzle-orm'
+import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { songs, semesters, songBlacklists } from '~/drizzle/schema'
-import { eq, inArray, and, asc } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
+import { songBlacklists, songs } from '~/drizzle/schema'
+import { executeSequentialSongImports } from '#server/services/songQuotaService'
+import { requestSongForUser } from '#server/services/songRequestService'
+import { createApiError } from '#server/utils/apiError'
+import { createImportSongRequestId } from '#server/utils/song-request-policy'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -11,116 +14,35 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { songIds } = body
-
-  if (!songIds || !Array.isArray(songIds) || songIds.length === 0) {
+  const { songIds, importBatchId } = body || {}
+  if (!Array.isArray(songIds) || songIds.length === 0) {
     throw createApiError(400, 'SONG_SELECT_TO_IMPORT', '请选择要导入的歌曲')
   }
 
-  // 获取当前活跃学期
-  const activeSemester = await db
-    .select()
-    .from(semesters)
-    .where(eq(semesters.isActive, true))
-    .limit(1)
-    .then((res) => res[0])
-
-  const currentSemesterName = activeSemester?.name
-
-  if (!currentSemesterName) {
-    throw createApiError(400, 'SONG_NO_ACTIVE_SEMESTER_IMPORT', '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。')
-  }
-
-  // 获取原始歌曲数据，确保只能获取自己投稿的歌曲，并按创建时间排序
   const originalSongs = await db
     .select()
     .from(songs)
-    .where(
-      and(
-        inArray(songs.id, songIds),
-        eq(songs.requesterId, user.id) // 强制检查所有权
-      )
-    )
-    .orderBy(asc(songs.createdAt)) // 按创建时间正序排列，保持原有顺序
+    .where(and(inArray(songs.id, songIds), eq(songs.requesterId, user.id)))
+    .orderBy(asc(songs.createdAt))
 
-  if (originalSongs.length === 0) {
-    return { success: true, count: 0, results: { total: 0, success: 0, failed: 0, details: [] } }
-  }
-
-  // 获取黑名单
   const blacklistItems = await db
     .select()
     .from(songBlacklists)
     .where(eq(songBlacklists.isActive, true))
 
-  // 获取当前学期已存在的歌曲，用于排重
-  const existingSongs = await db
-    .select({
-      title: songs.title,
-      artist: songs.artist
-    })
-    .from(songs)
-    .where(eq(songs.semester, currentSemesterName))
-
-  const existingSet = new Set(
-    existingSongs.map((s) => `${s.title.toLowerCase().trim()}|${s.artist.toLowerCase().trim()}`)
-  )
-
-  const results = {
-    total: originalSongs.length,
-    success: 0,
-    failed: 0,
-    details: [] as string[]
-  }
-
-  const songsToInsert: (typeof songs.$inferInsert)[] = []
-
-  for (const song of originalSongs) {
-    const songKey = `${song.title.toLowerCase().trim()}|${song.artist.toLowerCase().trim()}`
-
-    // 1. 检查是否重复
-    if (existingSet.has(songKey)) {
-      results.failed++
-      results.details.push(`《${song.title}》: 当前学期已存在，跳过`)
-      continue
-    }
-
-    // 2. 检查黑名单
+  const results = await executeSequentialSongImports(originalSongs, async (song, index) => {
     const songFullName = `${song.title} - ${song.artist || ''}`.toLowerCase()
-    let isBlocked = false
-    let blockReason = ''
-
-    for (const item of blacklistItems) {
-      if (item.type === 'SONG') {
-        if (songFullName.includes(item.value.toLowerCase())) {
-          isBlocked = true
-          blockReason = item.reason || '黑名单歌曲'
-          break
-        }
-      } else if (item.type === 'KEYWORD') {
-        if (songFullName.includes(item.value.toLowerCase())) {
-          isBlocked = true
-          blockReason = item.reason || '包含违规关键词'
-          break
-        }
-      }
+    const blocked = blacklistItems.find((item) =>
+      (item.type === 'SONG' || item.type === 'KEYWORD') &&
+      songFullName.includes(item.value.toLowerCase())
+    )
+    if (blocked) {
+      throw new Error(blocked.reason || (blocked.type === 'SONG' ? '黑名单歌曲' : '包含违规关键词'))
     }
 
-    if (isBlocked) {
-      results.failed++
-      results.details.push(`《${song.title}》: ${blockReason}，跳过`)
-      continue
-    }
-
-    // 3. 准备插入数据
-    songsToInsert.push({
+    return requestSongForUser(event, user, {
       title: song.title,
       artist: song.artist,
-      requesterId: user.id, // 强制使用当前登录用户的ID
-      played: false,
-      playedAt: null,
-      semester: currentSemesterName,
-      preferredPlayTimeId: null, // 重置偏好时间
       cover: song.cover,
       playUrl: song.playUrl,
       musicPlatform: song.musicPlatform,
@@ -128,24 +50,21 @@ export default defineEventHandler(async (event) => {
       durationSeconds: (() => {
         const d = song.durationSeconds ? Number(song.durationSeconds) : null
         return d !== null && Number.isFinite(d) && d >= 30 && d <= 3600 ? d : null
-      })(),
-      createdAt: new Date(),
-      updatedAt: new Date()
+      })()
+    }, {
+      requestId: createImportSongRequestId(importBatchId, index, song.id)
     })
+  })
 
-    // 将即将插入的歌曲也加入判重集合，防止同一次请求中有重复歌曲
-    existingSet.add(songKey)
-  }
-
-  // 批量插入
-  if (songsToInsert.length > 0) {
-    await db.insert(songs).values(songsToInsert)
-    results.success = songsToInsert.length
-  }
-
+  const songTitleById = new Map(originalSongs.map((song) => [song.id, song.title]))
   return {
     success: true,
     count: results.success,
-    results
+    results: {
+      ...results,
+      details: results.details
+        .filter((detail) => !detail.success)
+        .map((detail) => `《${songTitleById.get(detail.sourceId) || '未知歌曲'}》: ${detail.error}`)
+    }
   }
 })
