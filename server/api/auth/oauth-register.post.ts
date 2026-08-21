@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
   const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
+  const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
@@ -97,6 +98,7 @@ export default defineEventHandler(async (event) => {
           password: hashedPassword,
           role: 'USER',
           status: config?.registerRequiresApproval ? 'pending' : 'active',
+          remark: remark || null,
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,

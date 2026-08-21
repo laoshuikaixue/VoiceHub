@@ -242,8 +242,8 @@
         </div>
       </div>
 
-      <!-- 备注字段 - 仅注册模式下显示（可选） -->
-      <div v-if="showRegisterMode" class="form-group">
+      <!-- 备注字段 - 仅注册/创建模式下显示（可选） -->
+      <div v-if="showRegisterMode || showCreateMode" class="form-group">
         <label for="remark">{{ locale.remarkLabel }}</label>
         <div class="input-wrapper">
           <svg
@@ -760,7 +760,8 @@ const handleRegisterOAuth = async () => {
         grade: grade.value,
         class: studentClass.value,
         password: password.value,
-        confirmPassword: confirmPassword.value
+        confirmPassword: confirmPassword.value,
+        remark: remark.value.trim()
       }
     })
 
