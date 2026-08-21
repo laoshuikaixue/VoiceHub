@@ -134,8 +134,23 @@ export default defineEventHandler(async (event) => {
           : null
     }
 
-    if ('submissionNotePublic' in body) {
-      updateData.submissionNotePublic = body.submissionNotePublic === true
+    if ('submissionNotePublicStatus' in body) {
+      // 公开留言审核动作：approved=通过并公开；rejected=拒绝（保持不公开）；其他值=撤销公开
+      const st = body.submissionNotePublicStatus
+      if (st === 'approved') {
+        updateData.submissionNotePublic = true
+        updateData.submissionNotePublicStatus = 'approved'
+      } else if (st === 'rejected') {
+        updateData.submissionNotePublicStatus = 'rejected'
+      } else {
+        updateData.submissionNotePublic = false
+        updateData.submissionNotePublicStatus = null
+      }
+    } else if ('submissionNotePublic' in body) {
+      // 兼容旧语义：置 true 视为通过审核，置 false 视为撤销公开
+      const notePublic = body.submissionNotePublic === true
+      updateData.submissionNotePublic = notePublic
+      updateData.submissionNotePublicStatus = notePublic ? 'approved' : null
     }
 
     const currentRequesterId = updateData.requesterId || existingSong.requesterId
@@ -144,13 +159,31 @@ export default defineEventHandler(async (event) => {
     if ('replayRequestId' in body) {
       const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
       if (replayRequestId) {
+        const replaySet: Record<string, unknown> = { updatedAt: new Date() }
+        if ('submissionNotePublicStatus' in body) {
+          const st = body.submissionNotePublicStatus
+          if (st === 'approved') {
+            replaySet.submissionNotePublic = true
+            replaySet.submissionNotePublicStatus = 'approved'
+          } else if (st === 'rejected') {
+            replaySet.submissionNotePublicStatus = 'rejected'
+          } else {
+            replaySet.submissionNotePublic = false
+            replaySet.submissionNotePublicStatus = null
+          }
+        } else {
+          const notePublic = body.submissionNotePublic === true
+          replaySet.submissionNotePublic = notePublic
+          replaySet.submissionNotePublicStatus = notePublic ? 'approved' : null
+        }
         await db
           .update(songReplayRequests)
-          .set({ submissionNotePublic: body.submissionNotePublic === true, updatedAt: new Date() })
+          .set(replaySet)
           .where(
             and(eq(songReplayRequests.id, replayRequestId), eq(songReplayRequests.songId, songId))
           )
         delete updateData.submissionNotePublic
+        delete updateData.submissionNotePublicStatus
       }
     }
 

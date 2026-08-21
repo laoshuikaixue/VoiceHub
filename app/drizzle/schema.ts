@@ -84,6 +84,8 @@ export const songs = pgTable('Song', {
   durationSeconds: integer('durationSeconds'),
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
+  // 公开留言审核状态：'pending' | 'approved' | 'rejected' | null（null 表示未启用审核或不涉及）
+  submissionNotePublicStatus: text('submissionNotePublicStatus'),
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
 }, (table) => [
@@ -244,6 +246,8 @@ export const systemSettings = pgTable('SystemSettings', {
   allowRegister: boolean('allowRegister').default(false).notNull(),
   registerRequiresApproval: boolean('registerRequiresApproval').default(true).notNull(),
   oauthRegisterRequiresApproval: boolean('oauthRegisterRequiresApproval').default(true).notNull(),
+  // 投稿公开留言审核
+  submissionNoteRequiresApproval: boolean('submissionNoteRequiresApproval').default(false).notNull(),
 
   // OAuth 配置
   allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),
@@ -411,6 +415,7 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   preferredPlayTimeId: integer('preferred_play_time_id'),
   submissionNote: text('submission_note'),
   submissionNotePublic: boolean('submission_note_public').default(false).notNull(),
+  submissionNotePublicStatus: text('submission_note_public_status'),
 }, (table) => [
   // 同一用户对同一首歌同时最多一条待处理申请；历史申请（FULFILLED/REJECTED）允许多条
   uniqueIndex('song_replay_requests_pending_song_user_unique')

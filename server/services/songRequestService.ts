@@ -337,8 +337,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const rawSubmissionNote = requestBody.submissionNote || ''
     const submissionNote =
       systemSettingsData?.enableSubmissionRemarks && rawSubmissionNote ? rawSubmissionNote : null
-    const submissionNotePublic =
-      submissionNote !== null ? requestBody.submissionNotePublic !== false : false
+    // 公开留言审核：开关开启时投稿不立即公开，进入待审后由管理员通过
+    const noteRequiresApproval = systemSettingsData?.submissionNoteRequiresApproval === true
+    const wantsPublic = submissionNote !== null ? requestBody.submissionNotePublic !== false : false
+    const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
+    const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? 'pending' : null
 
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
@@ -473,6 +476,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
+          submissionNotePublicStatus,
           hitRequestId: hitRequestTime?.id || null
         })
         .returning()

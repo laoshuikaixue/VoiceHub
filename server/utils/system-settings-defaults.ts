@@ -52,6 +52,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   allowRegister: false,
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
+  submissionNoteRequiresApproval: false,
   captchaEnabled: false, // 默认关闭图形验证码
   captchaMaxFailures: 3, //触发阈值
   captchaProvider: 'graphic', // 默认使用图形验证码
@@ -96,6 +97,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'allowRegister',
   'registerRequiresApproval',
   'oauthRegisterRequiresApproval',
+  'submissionNoteRequiresApproval',
   'githubOAuthEnabled',
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',

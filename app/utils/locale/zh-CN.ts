@@ -42,6 +42,8 @@ export const siteConfig = {
   enableCollaborativeDesc: '允许用户添加联合投稿人并发起协作投稿',
   enableRemarks: '启用投稿备注留言',
   enableRemarksDesc: '允许用户在投稿时附加公开或仅管理员可见的备注',
+  submissionNoteRequiresApproval: '投稿公开留言需审核',
+  submissionNoteRequiresApprovalDesc: '开启后，用户投稿时勾选的公开留言需管理员在歌曲管理中通过后才能展示给其他用户',
   enableCardCodeRequests: '启用点歌券点歌',
   enableCardCodeLimitBypass: '允许点歌券突破投稿限额',
   enableCardCodeLimitBypassDesc: '开启后，有效点歌券投稿不占普通额度，并可在日、周或月额度用完后继续投稿',
@@ -1502,6 +1504,7 @@ export const pages = {
         monthlyLimitReached: (used: number, limit: number) => `本月投稿已达上限 (${used}/${limit})`
       },
       publicToUsers: '公开给已登录用户',
+      submissionNoteApprovalHint: '公开留言需管理员审核通过后展示',
       coverAlt: '封面',
       albumDetailsTitle: '点击查看专辑详情',
       album: '专辑：',
@@ -2541,7 +2544,11 @@ export const admin = {
       title: '投稿备注留言',
       publicRemark: '公开备注',
       adminOnly: '仅管理员可见',
-      updating: '更新中...'
+      updating: '更新中...',
+      statusPending: '待审核',
+      statusRejected: '已拒绝',
+      approveButton: '通过',
+      rejectButton: '拒绝'
     },
     errors: {
       remarkVisibilityUpdateFailed: '更新备注可见性失败',

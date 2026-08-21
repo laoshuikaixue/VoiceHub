@@ -225,6 +225,7 @@ export default defineEventHandler(async (event) => {
         s."playUrl",
         s."submissionNote",
         s."submissionNotePublic",
+        s."submissionNotePublicStatus",
         s."preferredPlayTimeId",
         u.id AS "requesterId",
         u.name AS "requesterName",
@@ -302,9 +303,13 @@ export default defineEventHandler(async (event) => {
           }))
         : []
       const isRequester = Boolean(user && Number(row.requesterId) === user.id)
+      // 公开留言审核：待审/已拒绝的不对普通用户公开（管理员与投稿人始终可见完整备注与状态）
+      const notePublic = 
+        row.submissionNotePublic === true &&
+        row.submissionNotePublicStatus !== 'pending' &&
+        row.submissionNotePublicStatus !== 'rejected'
       const canViewSubmissionNote =
-        Boolean(row.submissionNote) &&
-        (row.submissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
+        Boolean(row.submissionNote) && (notePublic || Boolean(user && (isAdmin || isRequester)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
       const song: SongResponse = {
         id: Number(row.id),
@@ -344,6 +349,7 @@ export default defineEventHandler(async (event) => {
         hasSubmissionNote: canViewSubmissionNote,
         submissionNote: canViewSubmissionNote ? row.submissionNote : null,
         submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
+        submissionNotePublicStatus: canViewSubmissionNote ? (row.submissionNotePublicStatus || null) : null,
         preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null
       }
 

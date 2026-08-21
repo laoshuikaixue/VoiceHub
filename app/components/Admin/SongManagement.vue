@@ -464,8 +464,11 @@
       :content="submissionRemarkDialog.content"
       :is-public="submissionRemarkDialog.isPublic"
       :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
+      :note-status="submissionRemarkDialog.status"
       @close="submissionRemarkDialog.show = false"
       @update:is-public="updateSubmissionNotePublic"
+      @approve="updateSubmissionNotePublicStatus('approved')"
+      @reject="updateSubmissionNotePublicStatus('rejected')"
     />
 
     <!-- 驳回歌曲对话框 -->
@@ -1243,7 +1246,8 @@ const submissionRemarkDialog = ref({
   songTitle: '',
   content: '',
   isPublic: false,
-  isUpdatingPublic: false
+  isUpdatingPublic: false,
+  status: null
 })
 
 // 驳回歌曲相关
@@ -1514,6 +1518,55 @@ const getStatusText = (song) => {
   return getNestedMessage('options', 'pending')
 }
 
+const updateSubmissionNotePublicStatus = async (status) => {
+  const dialogData = submissionRemarkDialog.value
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  dialogData.isUpdatingPublic = true
+
+  try {
+    const updatePayload = {
+      title: dialogData.title,
+      artist: dialogData.artist,
+      submissionNotePublicStatus: status
+    }
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
+
+    const songIndex = songs.value.findIndex((s) => s.id === dialogData.songId)
+    if (songIndex !== -1) {
+      songs.value[songIndex].submissionNotePublicStatus = status
+      if (status === 'approved') {
+        songs.value[songIndex].submissionNotePublic = true
+      }
+    }
+    dialogData.status = status
+    if (status === 'approved') {
+      dialogData.isPublic = true
+    }
+
+    if (window.$showNotification) {
+      window.$showNotification(
+        getNestedMessage('messages', 'remarkVisibilityUpdated'),
+        'success'
+      )
+    }
+  } catch (error) {
+    console.error('更新备注审核状态失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(
+        getNestedMessage('errors', 'remarkVisibilityUpdateFailed'),
+        'error'
+      )
+    }
+  } finally {
+    dialogData.isUpdatingPublic = false
+  }
+}
+
 const getCollaboratorDisplayName = (user) => {
   return user?.displayName || user?.name || user?.username || getLocaleMessage('unknownUser')
 }
@@ -1528,7 +1581,8 @@ const openSubmissionRemark = (song) => {
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
     content: song.submissionNote,
-    isPublic: song.submissionNotePublic === true
+    isPublic: song.submissionNotePublic === true,
+    status: song.submissionNotePublicStatus || null
   }
 }
 
@@ -1555,7 +1609,9 @@ const updateSubmissionNotePublic = async (isPublic) => {
     const songIndex = songs.value.findIndex((s) => s.id === dialogData.songId)
     if (songIndex !== -1) {
       songs.value[songIndex].submissionNotePublic = isPublic
+      songs.value[songIndex].submissionNotePublicStatus = isPublic ? 'approved' : null
     }
+    dialogData.status = isPublic ? 'approved' : null
 
     if (window.$showNotification) {
       window.$showNotification(getNestedMessage('messages', 'remarkVisibilityUpdated'), 'success')

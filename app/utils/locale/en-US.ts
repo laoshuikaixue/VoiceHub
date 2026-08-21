@@ -34,6 +34,8 @@ export const siteConfig = {
   enableCollaborativeDesc: 'Allow users to add collaborators and submit requests together',
   enableRemarks: 'Enable Request Remarks',
   enableRemarksDesc: 'Allow users to add public or admin-only notes when submitting requests',
+  submissionNoteRequiresApproval: 'Require Approval for Public Notes',
+  submissionNoteRequiresApprovalDesc: 'When enabled, public notes submitted with song requests must be approved in Song Management before being shown to other users',
   enableCardCodeRequests: 'Enable Request Cards',
   enableCardCodeLimitBypass: 'Request cards bypass limits',
   enableCardCodeLimitBypassDesc: 'Valid request-card submissions do not use regular quota and remain available after daily, weekly, or monthly limits are reached.',
@@ -1493,6 +1495,7 @@ export const pages = {
         monthlyLimitReached: (used: number, limit: number) => `Monthly submission limit reached (${used}/${limit})`
       },
       publicToUsers: 'Public to signed-in users',
+      submissionNoteApprovalHint: 'Public note will show after admin approval.',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',
       album: 'Album: ',
@@ -2531,7 +2534,11 @@ export const admin = {
       title: 'Request Remark',
       publicRemark: 'Public Remark',
       adminOnly: 'Admin Only',
-      updating: 'Updating...'
+      updating: 'Updating...',
+      statusPending: 'Pending',
+      statusRejected: 'Rejected',
+      approveButton: 'Approve',
+      rejectButton: 'Reject'
     },
     errors: {
       remarkVisibilityUpdateFailed: 'Failed to update remark visibility',

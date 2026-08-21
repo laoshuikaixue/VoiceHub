@@ -61,7 +61,8 @@ const siteConfig = ref({
   aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
   customOAuthDisplayName: '',
-  allowRegister: false
+  allowRegister: false,
+  submissionNoteRequiresApproval: false
 })
 
 const isLoaded = ref(false)
@@ -127,7 +128,8 @@ export const useSiteConfig = () => {
         aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
         customOAuthDisplayName: '',
-        allowRegister: false
+        allowRegister: false,
+        submissionNoteRequiresApproval: false
       }
       isLoaded.value = true
     } finally {
@@ -169,6 +171,9 @@ export const useSiteConfig = () => {
   )
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const allowRegister = computed(() => siteConfig.value.allowRegister === true)
+  const submissionNoteRequiresApproval = computed(
+    () => siteConfig.value.submissionNoteRequiresApproval === true
+  )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
@@ -251,6 +256,7 @@ export const useSiteConfig = () => {
     enableCardCodeLimitBypass,
     allowOAuthRegistration,
     allowRegister,
+    submissionNoteRequiresApproval,
     captchaEnabled,
     captchaProvider,
     turnstileSiteKey,

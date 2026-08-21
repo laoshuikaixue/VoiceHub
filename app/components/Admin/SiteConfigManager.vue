@@ -184,6 +184,21 @@
           </div>
 
           <div
+            v-if="formData.enableSubmissionRemarks"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
+          >
+            <div>
+              <p class="text-xs font-bold text-text-primary">{{ locale.submissionNoteRequiresApproval }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.submissionNoteRequiresApprovalDesc }}</p>
+            </div>
+            <input
+              v-model="formData.submissionNoteRequiresApproval"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
+
+          <div
             class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
@@ -675,6 +690,7 @@ const formData = ref({
   showBeianIcon: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
+  submissionNoteRequiresApproval: false,
   enableReplayRequests: false,
   enableSubmissionLimit: false,
   // 点歌券点歌设置
@@ -903,6 +919,7 @@ const loadConfig = async () => {
       showBeianIcon: !!data.showBeianIcon,
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
+      submissionNoteRequiresApproval: !!data.submissionNoteRequiresApproval,
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
       // 点歌券点歌设置
