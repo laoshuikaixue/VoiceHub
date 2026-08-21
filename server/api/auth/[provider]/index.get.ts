@@ -23,7 +23,11 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createApiError(400, 'AUTH_UNSUPPORTED_OAUTH_PROVIDER', '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2')
+    throw createApiError(
+      400,
+      'AUTH_UNSUPPORTED_OAUTH_PROVIDER',
+      '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
+    )
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -61,7 +65,11 @@ export default defineEventHandler(async (event) => {
       throw new Error('unsupported protocol')
     }
   } catch {
-    throw createApiError(400, 'AUTH_OAUTH_REDIRECT_INVALID', 'OAuth 重定向 URI 配置无效，请在管理员后台检查配置')
+    throw createApiError(
+      400,
+      'AUTH_OAUTH_REDIRECT_INVALID',
+      'OAuth 重定向 URI 配置无效，请在管理员后台检查配置'
+    )
   }
 
   const returnTo = getSafeOAuthReturnPath(query.redirect)
@@ -124,10 +132,14 @@ export default defineEventHandler(async (event) => {
       message: error?.message
     })
     // 区分服务端配置缺失与上游未开通，避免误导管理员排查方向
+    const isSecurityChallenge =
+      typeof error?.message === 'string' && error.message.includes('安全防护拦截')
     const errorMessage =
       statusCode === 500
         ? '聚合登录配置不完整，请联系管理员检查配置。'
-        : '当前登录方式暂不可用，可能尚未在聚合登录服务中开通。请尝试其他登录方式或联系管理员。'
+        : isSecurityChallenge
+          ? error.message
+          : '当前登录方式暂不可用，可能尚未在聚合登录服务中开通。请尝试其他登录方式或联系管理员。'
     return sendRedirect(
       event,
       `/auth/error?code=AGGREGATE_LOGIN_UNAVAILABLE&message=${encodeURIComponent(errorMessage)}`

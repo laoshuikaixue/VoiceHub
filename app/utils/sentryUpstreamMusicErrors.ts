@@ -3,9 +3,6 @@ const MAX_ERROR_CAUSE_DEPTH = 3
 export const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
   'QQ 音乐播放链接解析失败：',
   '返回已知无效音频链接',
-  'music.3e0.cn 未返回播放重定向',
-  'Huibq 返回',
-  'Huibq 未返回播放链接',
   'qq-music-api 未返回歌词',
   '[tx.lyric] qq-music-api 歌词接口失败',
   'The operation was aborted due to timeout',

@@ -119,10 +119,20 @@
           <div>
             <label :class="labelClass">{{ locale.schoolLogoHome }}</label>
             <input
-              v-model="formData.schoolLogoHomeUrl"
+              v-model="formData.schoolLogoHomeDarkUrl"
               type="text"
               :placeholder="locale.schoolLogoHomePlaceholder"
               :class="inputClass"
+            />
+          </div>
+          <div>
+            <label :class="labelClass">{{ locale.schoolLogoHomeLight }}</label>
+            <input
+              v-model="formData.schoolLogoHomeLightUrl"
+              type="text"
+              :disabled="!String(formData.schoolLogoHomeDarkUrl || '').trim()"
+              :placeholder="locale.schoolLogoHomeLightPlaceholder"
+              :class="[inputClass, 'disabled:cursor-not-allowed disabled:opacity-50']"
             />
           </div>
           <div>
@@ -494,7 +504,7 @@ import {
 import AppSpinner from '~/components/Shared/Common/AppSpinner.vue'
 import CustomSelect from '~/components/Shared/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
-import { useSiteConfig } from '~/composables/useSiteConfig'
+import { joinThemeLogoUrl, splitThemeLogoUrl, useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
@@ -524,7 +534,8 @@ const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissi
 const formData = ref({
   siteTitle: '',
   siteLogoUrl: '',
-  schoolLogoHomeUrl: '',
+  schoolLogoHomeDarkUrl: '',
+  schoolLogoHomeLightUrl: '',
   schoolLogoPrintUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
@@ -715,10 +726,12 @@ const loadConfig = async () => {
 
     const data = await response.json()
 
+    const schoolLogoHome = splitThemeLogoUrl(data.schoolLogoHomeUrl)
     formData.value = {
       siteTitle: data.siteTitle || '',
       siteLogoUrl: data.siteLogoUrl || '',
-      schoolLogoHomeUrl: data.schoolLogoHomeUrl || '',
+      schoolLogoHomeDarkUrl: schoolLogoHome.dark,
+      schoolLogoHomeLightUrl: schoolLogoHome.light,
       schoolLogoPrintUrl: data.schoolLogoPrintUrl || '',
       siteDescription: data.siteDescription || '',
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines.value,
@@ -789,13 +802,23 @@ const loadConfig = async () => {
 const saveConfig = async () => {
   try {
     saving.value = true
+    const schoolLogoHomeDarkUrl = (formData.value.schoolLogoHomeDarkUrl || '').trim()
+    const schoolLogoHomeLightUrl = schoolLogoHomeDarkUrl
+      ? (formData.value.schoolLogoHomeLightUrl || '').trim()
+      : ''
     const configToSave = {
       ...formData.value,
+      schoolLogoHomeUrl: joinThemeLogoUrl(
+        schoolLogoHomeDarkUrl,
+        schoolLogoHomeLightUrl
+      ),
       siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || 'VoiceHub',
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
         (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value
     }
+    delete configToSave.schoolLogoHomeDarkUrl
+    delete configToSave.schoolLogoHomeLightUrl
 
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
@@ -815,7 +838,11 @@ const saveConfig = async () => {
     }
 
     saveSuccess.value = true
-    formData.value = { ...configToSave }
+    formData.value = {
+      ...formData.value,
+      siteTitle: configToSave.siteTitle,
+      siteLogoUrl: configToSave.siteLogoUrl
+    }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
     // 刷新前端模块级缓存，避免首页等页面继续使用旧配置

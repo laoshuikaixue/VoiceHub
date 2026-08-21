@@ -11,6 +11,8 @@ import {
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
 const INVALID_TX_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
+const HYW_TX_URL = 'http://103.79.184.97/api/music/url'
+const HYW_CARD_KEY = 'PYPW-QFRL-3DBF-95O6'
 
 const txQualityMap: Record<string, string> = {
   '4': '128k',
@@ -31,6 +33,35 @@ const txQualityMap: Record<string, string> = {
 const normalizeTxQuality = (quality: unknown) => {
   const key = String(quality ?? TX_MUSICU_FALLBACK_QUALITY).toLowerCase()
   return txQualityMap[key] || '320k'
+}
+
+const resolveTxWithHyw = async (songmid: string, quality: unknown) => {
+  const qualityMap: Record<string, string> = {
+    '4': '128k',
+    '8': '320k',
+    '10': 'flac',
+    '11': 'master',
+    '14': 'master'
+  }
+  const query = new URLSearchParams({
+    source: 'tx',
+    songId: songmid,
+    songmid,
+    platform: 'tx',
+    quality: qualityMap[String(quality)] || String(quality || '128k'),
+    key: HYW_CARD_KEY
+  })
+  const response = await fetch(`${HYW_TX_URL}?${query.toString()}`, {
+    signal: AbortSignal.timeout(8000),
+    headers: { Accept: 'application/json', 'X-Card-Key': HYW_CARD_KEY }
+  })
+  if (!response.ok) throw new Error(`HYW 返回 ${response.status}`)
+  const data: any = await response.json()
+  const url = typeof data?.url === 'string' ? data.url.trim() : ''
+  if (data?.code !== 200 || !/^https?:\/\//i.test(url)) {
+    throw new Error(data?.message || 'HYW 未返回播放链接')
+  }
+  return upgradeTxAudioUrl(url)
 }
 
 const resolveTxWithDreamMeting = async (songmid: string) => {
@@ -76,7 +107,7 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
 
 const validateResolvedTxUrl = (url: string, source: string) => {
   const normalizedUrl = upgradeTxAudioUrl(url.trim())
-  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0];
+  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0]
   if (urlWithoutParams.endsWith(INVALID_TX_AUDIO_URL_SUFFIX)) {
     throw new Error(`${source} 返回已知无效音频链接`)
   }
@@ -136,7 +167,7 @@ export default defineEventHandler(async (event) => {
   const huibqQuality = normalizeTxQuality(body?.quality)
   const errors: string[] = []
   const attempts: Array<{ source: string; status: string; error?: string }> = []
-  const tryResolvers = ['huibq', 'music.3e0.cn']
+  const tryResolvers = ['huibq', 'music.3e0.cn', 'hyw-tx']
 
   for (const source of tryResolvers) {
     if (excludedSources.has(source)) {
@@ -149,6 +180,21 @@ export default defineEventHandler(async (event) => {
       if (source === 'huibq') {
         const url = validateResolvedTxUrl(
           await resolveTxWithHuibq(playableInfo.songmid, huibqQuality),
+          source
+        )
+        return {
+          success: true,
+          url,
+          source,
+          normalizedMusicId: playableInfo.songmid,
+          idType: normalized.idType,
+          ...buildResolveMeta(cookie, [...attempts, { source, status: 'success' }], mediaId)
+        }
+      }
+
+      if (source === 'hyw-tx') {
+        const url = validateResolvedTxUrl(
+          await resolveTxWithHyw(playableInfo.songmid, body?.quality),
           source
         )
         return {

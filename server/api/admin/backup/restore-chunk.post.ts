@@ -25,6 +25,8 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
+import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
+import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -86,6 +88,7 @@ export default defineEventHandler(async (event) => {
   const newMappings = {
     users: {},
     songs: {},
+    cardCodes: {},
     quotaAccounts: {},
     quotaTransactions: {},
     apiKeys: {},
@@ -402,10 +405,10 @@ export default defineEventHandler(async (event) => {
 
             const userStatusLogData = {
               userId: validUserId,
-              previousStatus: record.previousStatus || null,
+              oldStatus: record.oldStatus || record.previousStatus || null,
               newStatus: record.newStatus,
               reason: record.reason || null,
-              changedBy: record.changedBy || null,
+              operatorId: record.operatorId || record.changedBy || null,
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
 
@@ -480,6 +483,83 @@ export default defineEventHandler(async (event) => {
             break
           }
 
+          case 'cardCodes': {
+            const cardCodeData: any = {}
+            const cardCodeFields = ['code', 'status', 'note']
+            cardCodeFields.forEach((field) => {
+              if (record.hasOwnProperty(field)) {
+                cardCodeData[field] = record[field]
+              }
+            })
+
+            if (!cardCodeData.code) return
+
+            const mapUserId = async (field: 'lockedBy' | 'redeemedBy') => {
+              if (!record[field]) return null
+              const mappedUserId = userIdMapping.get(record[field])
+              if (mappedUserId) return mappedUserId
+              if (mode === 'merge') return null
+              const userExists = await tx.query.users.findFirst({
+                where: eq(users.id, record[field])
+              })
+              return userExists ? record[field] : null
+            }
+
+            cardCodeData.lockedBy = await mapUserId('lockedBy')
+            cardCodeData.redeemedBy = await mapUserId('redeemedBy')
+            cardCodeData.lockedAt = record.lockedAt ? new Date(record.lockedAt) : null
+            cardCodeData.redeemedAt = record.redeemedAt ? new Date(record.redeemedAt) : null
+            cardCodeData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()
+            cardCodeData.updatedAt = record.updatedAt ? new Date(record.updatedAt) : new Date()
+
+            let restoredCardCode
+            if (mode === 'merge') {
+              const existing = await tx.query.cardCodes.findFirst({
+                where: eq(cardCodes.code, cardCodeData.code)
+              })
+              if (existing) {
+                restoredCardCode = (
+                  await tx
+                    .update(cardCodes)
+                    .set(cardCodeData)
+                    .where(eq(cardCodes.id, existing.id))
+                    .returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredCardCode = (await tx.insert(cardCodes).values(cardCodeData).returning())[0]
+                stats.created++
+              }
+            } else {
+              const existing = await tx.query.cardCodes.findFirst({
+                where: eq(cardCodes.id, record.id)
+              })
+              if (existing) {
+                restoredCardCode = (
+                  await tx
+                    .update(cardCodes)
+                    .set(cardCodeData)
+                    .where(eq(cardCodes.id, record.id))
+                    .returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredCardCode = (
+                  await tx
+                    .insert(cardCodes)
+                    .values({ ...cardCodeData, id: record.id })
+                    .returning()
+                )[0]
+                stats.created++
+              }
+            }
+
+            if (record.id && restoredCardCode?.id) {
+              newMappings.cardCodes[record.id] = restoredCardCode.id
+            }
+            break
+          }
+
           case 'songs': {
             let validRequesterId = record.requesterId
             let validPreferredPlayTimeId = record.preferredPlayTimeId
@@ -531,6 +611,7 @@ export default defineEventHandler(async (event) => {
               'musicId',
               'requestId',
               'fingerprint',
+              'durationSeconds',
               'submissionNote',
               'submissionNotePublic'
             ]
@@ -804,7 +885,7 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'systemSettings': {
-            const systemSettingsData: any = {}
+            let systemSettingsData: any = {}
             const fields = [
               'enablePlayTimeSelection',
               'instanceId',
@@ -831,8 +912,11 @@ export default defineEventHandler(async (event) => {
               'songQuotaPeriodAmount',
               'adminSongQuotaExempt',
               'blockOnSongQuotaInsufficient',
+              'enableSubmissionRestriction',
+              'submissionRestrictionScope',
+              'sameSongRestrictionHours',
+              'sameArtistRestrictionHours',
               'enableRequestTimeLimitation',
-              'requestTimeLimitation',
               'forceBlockAllRequests',
               'forcePasswordChangeOnFirstLogin',
               'smtpEnabled',
@@ -889,6 +973,7 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
             })
+            systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
             if (mode === 'merge') {
               const existing = await tx.query.systemSettings.findFirst()
@@ -1390,6 +1475,79 @@ export default defineEventHandler(async (event) => {
             break
           }
 
+          case 'cardCodeRedeemLogs': {
+            let validCardCodeId = record.cardCodeId || null
+            if (record.cardCodeId) {
+              const mappedCardCodeId = cardCodeIdMapping.get(record.cardCodeId)
+              if (mappedCardCodeId) {
+                validCardCodeId = mappedCardCodeId
+              } else {
+                const cardCodeExists = await tx.query.cardCodes.findFirst({
+                  where: eq(cardCodes.id, record.cardCodeId)
+                })
+                if (!cardCodeExists) validCardCodeId = null
+              }
+            }
+
+            let validRedeemedBy = record.redeemedBy
+            if (record.redeemedBy) {
+              const mappedUserId = userIdMapping.get(record.redeemedBy)
+              if (mappedUserId) {
+                validRedeemedBy = mappedUserId
+              } else {
+                const userExists = await tx.query.users.findFirst({
+                  where: eq(users.id, record.redeemedBy)
+                })
+                if (!userExists) return
+              }
+            } else return
+
+            let validSongId = record.songId || null
+            if (record.songId) {
+              const mappedSongId = songIdMapping.get(record.songId)
+              if (mappedSongId) {
+                validSongId = mappedSongId
+              } else {
+                const songExists = await tx.query.songs.findFirst({
+                  where: eq(songs.id, record.songId)
+                })
+                if (!songExists) validSongId = null
+              }
+            }
+
+            const logData: any = {
+              cardCodeId: validCardCodeId,
+              codeSnapshot: record.codeSnapshot,
+              redeemedBy: validRedeemedBy,
+              redeemedAt: record.redeemedAt ? new Date(record.redeemedAt) : new Date(),
+              source: record.source || 'UNKNOWN',
+              songId: validSongId,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (!logData.codeSnapshot) return
+
+            if (mode === 'merge') {
+              await tx.insert(cardCodeRedeemLogs).values(logData)
+              stats.created++
+            } else {
+              const existing = await tx.query.cardCodeRedeemLogs.findFirst({
+                where: eq(cardCodeRedeemLogs.id, record.id)
+              })
+              if (existing) {
+                await tx
+                  .update(cardCodeRedeemLogs)
+                  .set(logData)
+                  .where(eq(cardCodeRedeemLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(cardCodeRedeemLogs).values({ ...logData, id: record.id })
+                stats.created++
+              }
+            }
+            break
+          }
+
           case 'votes': {
             let validUserId = record.userId
             if (record.userId) {
@@ -1433,6 +1591,11 @@ export default defineEventHandler(async (event) => {
               await tx.insert(votes).values(voteData)
               stats.created++
             }
+            break
+          }
+
+          case 'scheduleSongPool': {
+            await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
             break
           }
         }

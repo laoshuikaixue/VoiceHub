@@ -28,11 +28,17 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enableReplayRequests: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
+  // 点歌额度（song-quota）
   songQuotaEnabled: false,
   songQuotaPeriodType: 'DAILY',
   songQuotaPeriodAmount: 5,
   adminSongQuotaExempt: true,
   blockOnSongQuotaInsufficient: true,
+  // 重复投稿限制
+  enableSubmissionRestriction: false,
+  submissionRestrictionScope: 'all',
+  sameSongRestrictionHours: null,
+  sameArtistRestrictionHours: null,
   enableRequestTimeLimitation: false,
   forceBlockAllRequests: false,
   forcePasswordChangeOnFirstLogin: false,

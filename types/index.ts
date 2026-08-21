@@ -69,6 +69,7 @@ export interface Schedule {
     musicPlatform?: string | null
     musicId?: string | null
     playUrl?: string | null
+    durationSeconds?: number | null
     hasSubmissionNote?: boolean
     submissionNote?: string | null
     submissionNotePublic?: boolean

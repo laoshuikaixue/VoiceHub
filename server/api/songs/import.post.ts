@@ -46,7 +46,11 @@ export default defineEventHandler(async (event) => {
       cover: song.cover,
       playUrl: song.playUrl,
       musicPlatform: song.musicPlatform,
-      musicId: song.musicId
+      musicId: song.musicId,
+      durationSeconds: (() => {
+        const d = song.durationSeconds ? Number(song.durationSeconds) : null
+        return d !== null && Number.isFinite(d) && d >= 30 && d <= 3600 ? d : null
+      })()
     }, {
       requestId: createImportSongRequestId(importBatchId, index, song.id)
     })
