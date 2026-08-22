@@ -3,7 +3,7 @@ import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
-export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn', 'graduate']);
+export const userStatusEnum = pgEnum('user_status', ['active', 'pending', 'withdrawn', 'graduate', 'rejected']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
 export const cardCodeStatusEnum = pgEnum('card_code_status', [
@@ -14,29 +14,35 @@ export const cardCodeStatusEnum = pgEnum('card_code_status', [
 ]);
 
 // 用户表
-export const users = pgTable('User', {
-  id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  username: text('username').notNull(),
-  name: text('name'),
-  grade: text('grade'),
-  class: text('class'),
-  role: text('role').default('USER').notNull(),
-  password: text('password').notNull(),
-  email: text('email'),
-  emailVerified: boolean('emailVerified').default(false),
-  lastLogin: timestamp('lastLogin'),
-  lastLoginIp: text('lastLoginIp'),
-  passwordChangedAt: timestamp('passwordChangedAt'),
-  forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
-  tokenVersion: integer('tokenVersion').default(0).notNull(),
-  meowNickname: text('meowNickname'),
-  meowBoundAt: timestamp('meowBoundAt'),
-  status: userStatusEnum('status').default('active').notNull(),
-  statusChangedAt: timestamp('statusChangedAt').defaultNow(),
-  statusChangedBy: integer('statusChangedBy'),
-});
+export const users = pgTable(
+  'User',
+  {
+    id: serial('id').primaryKey(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    username: text('username').notNull(),
+    name: text('name'),
+    grade: text('grade'),
+    class: text('class'),
+    role: text('role').default('USER').notNull(),
+    password: text('password').notNull(),
+    email: text('email'),
+    emailVerified: boolean('emailVerified').default(false),
+    lastLogin: timestamp('lastLogin'),
+    lastLoginIp: text('lastLoginIp'),
+    passwordChangedAt: timestamp('passwordChangedAt'),
+    forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
+    tokenVersion: integer('tokenVersion').default(0).notNull(),
+    meowNickname: text('meowNickname'),
+    meowBoundAt: timestamp('meowBoundAt'),
+    status: userStatusEnum('status').default('active').notNull(),
+    statusChangedAt: timestamp('statusChangedAt').defaultNow(),
+    statusChangedBy: integer('statusChangedBy'),
+    // 注册时可选填写的备注，管理员审核时可修改
+    remark: text('remark'),
+  },
+  (table) => [uniqueIndex('User_username_unique').on(table.username)],
+);
 
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
@@ -49,6 +55,19 @@ export const playTimes = pgTable('PlayTime', {
   enabled: boolean('enabled').default(true).notNull(),
   description: text('description'),
 });
+
+// 年级班级配置表（选择器选项来源，优先于从用户提取）
+export const gradeClass = pgTable(
+  'GradeClass',
+  {
+    id: serial('id').primaryKey(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    grade: text('grade').notNull(),
+    class: text('class').notNull(),
+  },
+  (table) => [unique('GradeClass_grade_class_unique').on(table.grade, table.class)],
+);
 
 // 歌曲表
 export const songs = pgTable('Song', {
@@ -69,6 +88,8 @@ export const songs = pgTable('Song', {
   durationSeconds: integer('durationSeconds'),
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
+  // 公开留言审核状态：'pending' | 'approved' | 'rejected' | null（null 表示未启用审核或不涉及）
+  submissionNotePublicStatus: text('submissionNotePublicStatus'),
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
 }, (table) => [
@@ -225,6 +246,13 @@ export const systemSettings = pgTable('SystemSettings', {
   turnstileSiteKey: text('turnstileSiteKey'),
   turnstileSecretKey: text('turnstileSecretKey'),
   
+  // 注册配置
+  allowRegister: boolean('allowRegister').default(false).notNull(),
+  registerRequiresApproval: boolean('registerRequiresApproval').default(true).notNull(),
+  oauthRegisterRequiresApproval: boolean('oauthRegisterRequiresApproval').default(true).notNull(),
+  // 投稿公开留言审核
+  submissionNoteRequiresApproval: boolean('submissionNoteRequiresApproval').default(false).notNull(),
+
   // OAuth 配置
   allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),
   oauthRedirectUri: text('oauthRedirectUri'),
@@ -334,6 +362,9 @@ export const apiLogs = pgTable('api_logs', {
 export const userStatusLogs = pgTable('user_status_logs', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull(),
+  // 审计快照：用户被删除后仍可追溯（如注册审核拒绝）
+  username: text('username'),
+  name: text('name'),
   oldStatus: userStatusEnum('old_status'),
   newStatus: userStatusEnum('new_status').notNull(),
   reason: text('reason'),
@@ -391,6 +422,7 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   preferredPlayTimeId: integer('preferred_play_time_id'),
   submissionNote: text('submission_note'),
   submissionNotePublic: boolean('submission_note_public').default(false).notNull(),
+  submissionNotePublicStatus: text('submission_note_public_status'),
 }, (table) => [
   // 同一用户对同一首歌同时最多一条待处理申请；历史申请（FULFILLED/REJECTED）允许多条
   uniqueIndex('song_replay_requests_pending_song_user_unique')

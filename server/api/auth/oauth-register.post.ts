@@ -7,6 +7,8 @@ import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { validateGradeClassPair } from '~~/server/utils/register-validation'
+import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -21,8 +23,12 @@ export default defineEventHandler(async (event) => {
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
   const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
+  const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
+  if (remark.length > 200) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, '备注不能超过 200 个字符')
+  }
   if (!bindingToken) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_SESSION_EXPIRED, '注册会话已过期，请重新通过第三方登录发起')
   }
@@ -45,18 +51,15 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, validationError.code, validationError.message)
   }
 
-  if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_TOGETHER, '年级和班级需要同时选择，或全部留空')
+  const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
+  if (gradeClassError) {
+    throw createApiError(400, gradeClassError.code, gradeClassError.message)
   }
 
   if (selectedGrade && selectedClass) {
-    const existingClass = await db.query.users.findFirst({
-      where: (t, { eq, and }) =>
-        and(eq(t.status, 'active'), eq(t.grade, selectedGrade), eq(t.class, selectedClass)),
-      columns: { id: true }
-    })
+    const valid = await isGradeClassValid(selectedGrade, selectedClass)
 
-    if (!existingClass) {
+    if (!valid) {
       throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
     }
   }
@@ -87,7 +90,7 @@ export default defineEventHandler(async (event) => {
       const hashedPassword = await bcrypt.hash(password, 10)
       const now = getBeijingTime()
 
-      // 创建用户
+      // 创建用户（onConflictDoNothing 兜底并发用户名竞态）
       const insertedUser = (await tx
         .insert(users)
         .values({
@@ -97,17 +100,19 @@ export default defineEventHandler(async (event) => {
           class: selectedClass || null,
           password: hashedPassword,
           role: 'USER',
-          status: 'active',
+          status: config?.oauthRegisterRequiresApproval ? 'pending' : 'active',
+          remark: remark || null,
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,
           lastLogin: now,
           forcePasswordChange: false
         })
+        .onConflictDoNothing()
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
       if (!insertedUser) {
-        throw new Error('Failed to create user')
+        throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
       }
 
       // 关联OAuth身份
@@ -124,6 +129,14 @@ export default defineEventHandler(async (event) => {
 
     // 清除绑定令牌
     deleteCookie(event, 'binding-token')
+
+    // 需要审核时：不签发登录态，等待管理员审核
+    if (config?.oauthRegisterRequiresApproval) {
+      return {
+        success: true,
+        pendingApproval: true
+      }
+    }
 
     // 生成JWT令牌
     const token = JWTEnhanced.generateToken(result.id, 'USER', result.tokenVersion)
@@ -149,6 +162,8 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (e: any) {
+    // 业务错误码（如用户名冲突 409）直接透传
+    if (e?.statusCode) throw e
     console.error('OAuth register error:', e)
     throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, e.message || '注册失败，请稍后重试')
   }

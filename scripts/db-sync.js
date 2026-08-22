@@ -173,7 +173,7 @@ async function columnExists(sql, tableName, columnName) {
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
-    ['user_status', ['graduate']],
+    ['user_status', ['graduate', 'pending', 'rejected']],
     ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']]
   ]
   const requiredTables = [
@@ -184,7 +184,8 @@ async function checkSchemaConsistency(sql) {
     'CardCode',
     'CardCodeRedeemLog',
     'PasswordAuditLog',
-    'PasswordRateLimit'
+    'PasswordRateLimit',
+    'GradeClass'
   ]
   const requiredColumns = {
     User: [
@@ -193,9 +194,11 @@ async function checkSchemaConsistency(sql) {
       'statusChangedBy',
       'email',
       'emailVerified',
-      'tokenVersion'
+      'tokenVersion',
+      'remark'
     ],
-    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId', 'cardCodeId'],
+    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
+    song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
       'instance_id',
@@ -221,6 +224,10 @@ async function checkSchemaConsistency(sql) {
       'turnstileSecretKey',
       'forcePasswordChangeOnFirstLogin',
       'allowOAuthRegistration',
+      'allowRegister',
+      'registerRequiresApproval',
+      'oauthRegisterRequiresApproval',
+      'submissionNoteRequiresApproval',
       'oauthRedirectUri',
       'oauthStateSecret',
       'oauthProviders',

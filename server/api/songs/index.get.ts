@@ -46,6 +46,8 @@ interface SongResponse extends MaskableSong {
   hasSubmissionNote?: boolean
   submissionNote?: string | null
   submissionNotePublic?: boolean
+  submissionNotePublicStatus?: string | null
+  replayRequestId?: number | null
 }
 
 const formatDisplayName = (
@@ -150,6 +152,12 @@ export default defineEventHandler(async (event) => {
         WHERE $1::int IS NOT NULL AND user_id = $1
         ORDER BY song_id, created_at DESC
       ),
+      latest_replay AS (
+        SELECT DISTINCT ON (song_id) song_id, id
+        FROM song_replay_requests
+        WHERE status IN ('PENDING', 'FULFILLED')
+        ORDER BY song_id, created_at DESC
+      ),
       accepted_collaborators AS (
         SELECT
           sc.song_id,
@@ -225,6 +233,7 @@ export default defineEventHandler(async (event) => {
         s."playUrl",
         s."submissionNote",
         s."submissionNotePublic",
+        s."submissionNotePublicStatus",
         s."preferredPlayTimeId",
         u.id AS "requesterId",
         u.name AS "requesterName",
@@ -246,6 +255,7 @@ export default defineEventHandler(async (event) => {
         cur.status AS "replayRequestStatus",
         cur.updated_at AS "replayRequestUpdatedAt",
         (cur.song_id IS NOT NULL) AS "replayRequested",
+        lr.id AS "replayRequestId",
         COALESCE(ac.collaborators, '[]'::jsonb) AS collaborators,
         COALESCE(rr.requesters, '[]'::jsonb) AS "replayRequesters",
         COALESCE(
@@ -264,6 +274,7 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN published_schedule ps ON ps."songId" = s.id
       LEFT JOIN replay_counts rc ON rc.song_id = s.id
       LEFT JOIN current_user_replay cur ON cur.song_id = s.id
+      LEFT JOIN latest_replay lr ON lr.song_id = s.id
       LEFT JOIN accepted_collaborators ac ON ac.song_id = s.id
       LEFT JOIN replay_requesters rr ON rr.song_id = s.id
       ${whereSql}
@@ -302,9 +313,13 @@ export default defineEventHandler(async (event) => {
           }))
         : []
       const isRequester = Boolean(user && Number(row.requesterId) === user.id)
+      // 公开留言审核：待审/已拒绝的不对普通用户公开（管理员与投稿人始终可见完整备注与状态）
+      const notePublic = 
+        row.submissionNotePublic === true &&
+        row.submissionNotePublicStatus !== 'pending' &&
+        row.submissionNotePublicStatus !== 'rejected'
       const canViewSubmissionNote =
-        Boolean(row.submissionNote) &&
-        (row.submissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
+        Boolean(row.submissionNote) && (notePublic || Boolean(user && (isAdmin || isRequester)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
       const song: SongResponse = {
         id: Number(row.id),
@@ -344,6 +359,8 @@ export default defineEventHandler(async (event) => {
         hasSubmissionNote: canViewSubmissionNote,
         submissionNote: canViewSubmissionNote ? row.submissionNote : null,
         submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
+        submissionNotePublicStatus: canViewSubmissionNote ? (row.submissionNotePublicStatus || null) : null,
+        replayRequestId: row.replayRequestId ? Number(row.replayRequestId) : null,
         preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null
       }
 

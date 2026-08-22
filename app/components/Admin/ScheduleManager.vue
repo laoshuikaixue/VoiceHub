@@ -1358,8 +1358,11 @@
     :content="submissionRemarkDialog.content"
     :is-public="submissionRemarkDialog.isPublic"
     :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
+    :note-status="submissionRemarkDialog.status"
     @close="submissionRemarkDialog.show = false"
     @update:is-public="updateSubmissionNotePublic"
+    @approve="updateSubmissionNotePublicStatus('approved')"
+    @reject="updateSubmissionNotePublicStatus('rejected')"
   />
 
   <SchedulePlaylistFilterModal
@@ -2281,7 +2284,8 @@ const submissionRemarkDialog = ref({
   songTitle: '',
   content: '',
   isPublic: true,
-  isUpdatingPublic: false
+  isUpdatingPublic: false,
+  status: null
 })
 
 const openReplayModal = (song) => {
@@ -2309,7 +2313,65 @@ const openSubmissionRemark = (song, scheduleReplayRequestId = null) => {
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
     content: song.submissionNote,
-    isPublic: song.submissionNotePublic === true
+    isPublic: song.submissionNotePublic === true,
+    status: song.submissionNotePublicStatus || null
+  }
+}
+
+const updateSubmissionNotePublicStatus = async (status) => {
+  const dialogData = submissionRemarkDialog.value
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  dialogData.isUpdatingPublic = true
+
+  try {
+    const updatePayload = {
+      title: dialogData.title,
+      artist: dialogData.artist,
+      submissionNotePublicStatus: status
+    }
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
+
+    const applyLocal = (song) => {
+      song.submissionNotePublicStatus = status
+      if (status === 'approved') song.submissionNotePublic = true
+    }
+    if (songsService && songsService.songs && songsService.songs.value) {
+      const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
+      if (songIndex !== -1) applyLocal(songsService.songs.value[songIndex])
+    }
+    for (const scheduleList of [localScheduledSongs.value, publicSchedules.value]) {
+      const scheduleIndex = scheduleList.findIndex(
+        (s) => s.song && s.song.id === dialogData.songId
+      )
+      if (scheduleIndex !== -1) applyLocal(scheduleList[scheduleIndex].song)
+    }
+    const replayIndex = replayRequests.value.findIndex((s) => s.id === dialogData.songId)
+    if (replayIndex !== -1) applyLocal(replayRequests.value[replayIndex])
+
+    dialogData.status = status
+    if (status === 'approved') dialogData.isPublic = true
+
+    if (window.$showNotification) {
+      window.$showNotification(
+        getNestedMessage('messages', 'remarkVisibilityUpdated'),
+        'success'
+      )
+    }
+  } catch (error) {
+    console.error('更新备注审核状态失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(
+        getNestedMessage('errors', 'remarkVisibilityUpdateFailed'),
+        'error'
+      )
+    }
+  } finally {
+    dialogData.isUpdatingPublic = false
   }
 }
 

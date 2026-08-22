@@ -55,7 +55,11 @@ export default defineEventHandler(async (event) => {
 
   const rawSubmissionNote = parsedBody.data.submissionNote || ''
   const submissionNote = settings.enableSubmissionRemarks && rawSubmissionNote ? rawSubmissionNote : null
-  const submissionNotePublic = submissionNote !== null ? parsedBody.data.submissionNotePublic !== false : false
+  // 公开留言审核：开关开启时申请留言不立即公开，进入待审后由管理员通过
+  const noteRequiresApproval = settings.submissionNoteRequiresApproval === true
+  const wantsPublic = submissionNote !== null ? parsedBody.data.submissionNotePublic !== false : false
+  const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
+  const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? 'pending' : null
 
   // 4. 检查歌曲和学期
   const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -116,7 +120,8 @@ export default defineEventHandler(async (event) => {
       userId: user.id,
       preferredPlayTimeId: preferredPlayTime?.id || null,
       submissionNote,
-      submissionNotePublic
+      submissionNotePublic,
+      submissionNotePublicStatus
     })
     return { success: true, message: latestRequest ? '重新申请重播成功' : '申请重播成功' }
   } catch (error: any) {

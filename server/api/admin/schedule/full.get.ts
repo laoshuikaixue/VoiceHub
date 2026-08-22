@@ -250,7 +250,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取重播申请元数据（按 ID 索引，展示时排期按 replayRequestId 取对应记录）
-    const replayMetadataByIdMap = new Map<number, { submissionNote: string | null; submissionNotePublic: boolean; preferredPlayTimeId: number | null }>()
+    const replayMetadataByIdMap = new Map<number, { submissionNote: string | null; submissionNotePublic: boolean; submissionNotePublicStatus: string | null; preferredPlayTimeId: number | null }>()
     if (songIds.length > 0) {
       const replayMetaData = await db
         .select()
@@ -266,6 +266,7 @@ export default defineEventHandler(async (event) => {
         replayMetadataByIdMap.set(row.id, {
           submissionNote: row.submissionNote,
           submissionNotePublic: row.submissionNotePublic,
+          submissionNotePublicStatus: row.submissionNotePublicStatus,
           preferredPlayTimeId: row.preferredPlayTimeId
         })
       }
@@ -386,6 +387,7 @@ export default defineEventHandler(async (event) => {
             createdAt: schedule.songCreatedAt,
             submissionNote: hasReplayMeta ? replayMeta.submissionNote : null,
             submissionNotePublic: hasReplayMeta ? replayMeta.submissionNotePublic : false,
+            submissionNotePublicStatus: hasReplayMeta ? (replayMeta.submissionNotePublicStatus || null) : null,
             hasSubmissionNote: hasReplayMeta && !!replayMeta.submissionNote,
             preferredPlayTimeId: hasReplayMeta ? replayMeta.preferredPlayTimeId : null,
             // 重播申请信息

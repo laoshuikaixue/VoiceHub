@@ -46,8 +46,8 @@ export default defineEventHandler(async (event) => {
       .select({
         id: userStatusLogs.id,
         userId: userStatusLogs.userId,
-        userName: users.name,
-        userUsername: users.username,
+        userName: userStatusLogs.name,
+        userUsername: userStatusLogs.username,
         oldStatus: userStatusLogs.oldStatus,
         newStatus: userStatusLogs.newStatus,
         reason: userStatusLogs.reason,
@@ -67,8 +67,8 @@ export default defineEventHandler(async (event) => {
         .select({
           id: userStatusLogs.id,
           userId: userStatusLogs.userId,
-          userName: users.name,
-          userUsername: users.username,
+          userName: userStatusLogs.name,
+          userUsername: userStatusLogs.username,
           oldStatus: userStatusLogs.oldStatus,
           newStatus: userStatusLogs.newStatus,
           reason: userStatusLogs.reason,

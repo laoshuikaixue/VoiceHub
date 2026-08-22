@@ -6,6 +6,8 @@
 export function getStatusText(status: string | null | undefined): string {
   const statusMap: Record<string, string> = {
     active: '正常',
+    pending: '待审核',
+    rejected: '已拒绝',
     withdrawn: '退学',
     graduate: '毕业生',
   };

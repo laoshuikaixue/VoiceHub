@@ -134,32 +134,74 @@ export default defineEventHandler(async (event) => {
           : null
     }
 
-    if ('submissionNotePublic' in body) {
-      updateData.submissionNotePublic = body.submissionNotePublic === true
+    if ('submissionNotePublicStatus' in body) {
+      // 公开留言审核动作：approved=通过并公开；rejected=拒绝（保持不公开）；其他值=撤销公开
+      const st = body.submissionNotePublicStatus
+      if (st === 'approved') {
+        updateData.submissionNotePublic = true
+        updateData.submissionNotePublicStatus = 'approved'
+      } else if (st === 'rejected') {
+        updateData.submissionNotePublicStatus = 'rejected'
+      } else {
+        updateData.submissionNotePublic = false
+        updateData.submissionNotePublicStatus = null
+      }
+    } else if ('submissionNotePublic' in body) {
+      // 兼容旧语义：置 true 视为通过审核，置 false 视为撤销公开
+      const notePublic = body.submissionNotePublic === true
+      updateData.submissionNotePublic = notePublic
+      updateData.submissionNotePublicStatus = notePublic ? 'approved' : null
     }
 
     const currentRequesterId = updateData.requesterId || existingSong.requesterId
 
-    // 如果指定了 replayRequestId，则更新对应重播申请的备注可见性，且不再改动歌曲本身的备注可见性
+    // 如果指定了 replayRequestId 且本次携带备注可见性变更，则更新对应重播申请（条件更新，避免隐性重置）
+    let replaySet: Record<string, unknown> | null = null
     if ('replayRequestId' in body) {
       const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
-      if (replayRequestId) {
-        await db
-          .update(songReplayRequests)
-          .set({ submissionNotePublic: body.submissionNotePublic === true, updatedAt: new Date() })
-          .where(
-            and(eq(songReplayRequests.id, replayRequestId), eq(songReplayRequests.songId, songId))
-          )
+      const hasNoteVisibilityChange =
+        'submissionNotePublicStatus' in body || 'submissionNotePublic' in body
+      if (replayRequestId && hasNoteVisibilityChange) {
+        replaySet = { updatedAt: new Date() }
+        if ('submissionNotePublicStatus' in body) {
+          const st = body.submissionNotePublicStatus
+          if (st === 'approved') {
+            replaySet.submissionNotePublic = true
+            replaySet.submissionNotePublicStatus = 'approved'
+          } else if (st === 'rejected') {
+            replaySet.submissionNotePublicStatus = 'rejected'
+          } else {
+            replaySet.submissionNotePublic = false
+            replaySet.submissionNotePublicStatus = null
+          }
+        } else {
+          const notePublic = body.submissionNotePublic === true
+          replaySet.submissionNotePublic = notePublic
+          replaySet.submissionNotePublicStatus = notePublic ? 'approved' : null
+        }
         delete updateData.submissionNotePublic
+        delete updateData.submissionNotePublicStatus
       }
     }
 
-    // 更新歌曲
-    const updatedSongResult = await db
-      .update(songs)
-      .set(updateData)
-      .where(eq(songs.id, songId))
-      .returning()
+    // 歌曲更新与重播申请更新放入同一事务，保证一致性
+    const updatedSongResult = await db.transaction(async (tx) => {
+      if (replaySet) {
+        const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
+        await tx
+          .update(songReplayRequests)
+          .set(replaySet)
+          .where(
+            and(eq(songReplayRequests.id, replayRequestId), eq(songReplayRequests.songId, songId))
+          )
+      }
+      const result = await tx
+        .update(songs)
+        .set(updateData)
+        .where(eq(songs.id, songId))
+        .returning()
+      return result[0]
+    })
 
     // 处理联合投稿人
     if ('collaborators' in body && Array.isArray(body.collaborators)) {

@@ -534,6 +534,47 @@ export default defineEventHandler(async (event) => {
       updateData.allowOAuthRegistration = body.allowOAuthRegistration
     }
 
+    // 注册配置字段
+    if (body.allowRegister !== undefined) {
+      if (typeof body.allowRegister !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowRegister 必须是布尔值'
+        })
+      }
+      updateData.allowRegister = body.allowRegister
+    }
+
+    if (body.registerRequiresApproval !== undefined) {
+      if (typeof body.registerRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'registerRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.registerRequiresApproval = body.registerRequiresApproval
+    }
+
+    if (body.oauthRegisterRequiresApproval !== undefined) {
+      if (typeof body.oauthRegisterRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'oauthRegisterRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.oauthRegisterRequiresApproval = body.oauthRegisterRequiresApproval
+    }
+
+    if (body.submissionNoteRequiresApproval !== undefined) {
+      if (typeof body.submissionNoteRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'submissionNoteRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.submissionNoteRequiresApproval = body.submissionNoteRequiresApproval
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string'

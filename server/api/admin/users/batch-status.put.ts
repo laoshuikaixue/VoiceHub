@@ -49,6 +49,14 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 待审核用户不得通过批量状态接口直接置为 active（须走注册审核流程）
+    if (sourceStatusFilter === 'pending' && status === 'active') {
+      throw createError({
+        statusCode: 400,
+        message: '待审核用户需通过注册审核流程处理'
+      })
+    }
+
     if (!reason || reason.trim().length === 0) {
       throw createError({
         statusCode: 400,

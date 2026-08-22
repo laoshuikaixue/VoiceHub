@@ -434,6 +434,7 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
+                          :disabled="submissionNoteRequiresApproval"
                         />
                         <span class="custom-checkbox-box">
                           <svg
@@ -453,6 +454,12 @@
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                       </label>
+                      <p
+                        v-if="submissionNoteRequiresApproval"
+                        class="text-[11px] text-warning mt-1"
+                      >
+                        {{ locale.submissionNoteApprovalHint }}
+                      </p>
                     </div>
                   </div>
                   <textarea
@@ -1462,7 +1469,8 @@ const {
   enableSubmissionLimit,
   enableCardCodeRequests,
   requireCardCodeForRequests,
-  enableCardCodeLimitBypass
+  enableCardCodeLimitBypass,
+  submissionNoteRequiresApproval
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
