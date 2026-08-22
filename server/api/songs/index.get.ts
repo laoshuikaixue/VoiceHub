@@ -46,6 +46,8 @@ interface SongResponse extends MaskableSong {
   hasSubmissionNote?: boolean
   submissionNote?: string | null
   submissionNotePublic?: boolean
+  submissionNotePublicStatus?: string | null
+  replayRequestId?: number | null
 }
 
 const formatDisplayName = (
@@ -150,6 +152,12 @@ export default defineEventHandler(async (event) => {
         WHERE $1::int IS NOT NULL AND user_id = $1
         ORDER BY song_id, created_at DESC
       ),
+      latest_replay AS (
+        SELECT DISTINCT ON (song_id) song_id, id
+        FROM song_replay_requests
+        WHERE status IN ('PENDING', 'FULFILLED')
+        ORDER BY song_id, created_at DESC
+      ),
       accepted_collaborators AS (
         SELECT
           sc.song_id,
@@ -247,6 +255,7 @@ export default defineEventHandler(async (event) => {
         cur.status AS "replayRequestStatus",
         cur.updated_at AS "replayRequestUpdatedAt",
         (cur.song_id IS NOT NULL) AS "replayRequested",
+        lr.id AS "replayRequestId",
         COALESCE(ac.collaborators, '[]'::jsonb) AS collaborators,
         COALESCE(rr.requesters, '[]'::jsonb) AS "replayRequesters",
         COALESCE(
@@ -265,6 +274,7 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN published_schedule ps ON ps."songId" = s.id
       LEFT JOIN replay_counts rc ON rc.song_id = s.id
       LEFT JOIN current_user_replay cur ON cur.song_id = s.id
+      LEFT JOIN latest_replay lr ON lr.song_id = s.id
       LEFT JOIN accepted_collaborators ac ON ac.song_id = s.id
       LEFT JOIN replay_requesters rr ON rr.song_id = s.id
       ${whereSql}
@@ -350,6 +360,7 @@ export default defineEventHandler(async (event) => {
         submissionNote: canViewSubmissionNote ? row.submissionNote : null,
         submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
         submissionNotePublicStatus: canViewSubmissionNote ? (row.submissionNotePublicStatus || null) : null,
+        replayRequestId: row.replayRequestId ? Number(row.replayRequestId) : null,
         preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null
       }
 

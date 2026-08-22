@@ -6,27 +6,27 @@ import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查认证和权限
+    // 妫€鏌ヨ璇佸拰鏉冮檺
     const user = event.context.user
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        message: '没有权限访问'
+        message: '娌℃湁鏉冮檺璁块棶'
       })
     }
 
     const query = getQuery(event)
     const { page = '1', limit = '50', search, status, operatorId } = query
 
-    // 构建筛选条件
+    // 鏋勫缓绛涢€夋潯浠?
     const whereConditions = []
 
-    // 状态筛选
+    // 鐘舵€佺瓫閫?
     if (status && typeof status === 'string' && status.trim()) {
       whereConditions.push(eq(userStatusLogs.newStatus, status.trim()))
     }
 
-    // 操作员筛选
+    // 鎿嶄綔鍛樼瓫閫?
     if (operatorId && typeof operatorId === 'string' && operatorId.trim()) {
       const numOperatorId = parseInt(operatorId.trim())
       if (!isNaN(numOperatorId)) {
@@ -36,18 +36,18 @@ export default defineEventHandler(async (event) => {
 
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
-    // 分页参数
+    // 鍒嗛〉鍙傛暟
     const pageNum = Math.max(1, parseInt(page as string) || 1)
     const limitNum = Math.max(1, parseInt(limit as string) || 50)
     const skip = (pageNum - 1) * limitNum
 
-    // 构建基础查询
+    // 鏋勫缓鍩虹鏌ヨ
     let baseQuery = db
       .select({
         id: userStatusLogs.id,
         userId: userStatusLogs.userId,
-        userName: users.name,
-        userUsername: users.username,
+        userName: userStatusLogs.name,
+        userUsername: userStatusLogs.username,
         oldStatus: userStatusLogs.oldStatus,
         newStatus: userStatusLogs.newStatus,
         reason: userStatusLogs.reason,
@@ -59,16 +59,16 @@ export default defineEventHandler(async (event) => {
       .from(userStatusLogs)
       .leftJoin(users, eq(userStatusLogs.userId, users.id))
 
-    // 如果有搜索条件，需要额外的join来搜索操作员信息
+    // 濡傛灉鏈夋悳绱㈡潯浠讹紝闇€瑕侀澶栫殑join鏉ユ悳绱㈡搷浣滃憳淇℃伅
     if (search && typeof search === 'string' && search.trim()) {
       const searchTerm = search.trim()
-      // 这里需要重新构建查询以支持搜索用户名和操作员名
+      // 杩欓噷闇€瑕侀噸鏂版瀯寤烘煡璇互鏀寔鎼滅储鐢ㄦ埛鍚嶅拰鎿嶄綔鍛樺悕
       baseQuery = db
         .select({
           id: userStatusLogs.id,
           userId: userStatusLogs.userId,
-          userName: users.name,
-          userUsername: users.username,
+          userName: userStatusLogs.name,
+          userUsername: userStatusLogs.username,
           oldStatus: userStatusLogs.oldStatus,
           newStatus: userStatusLogs.newStatus,
           reason: userStatusLogs.reason,
@@ -93,7 +93,7 @@ export default defineEventHandler(async (event) => {
       baseQuery = baseQuery.where(whereClause)
     }
 
-    // 获取总数
+    // 鑾峰彇鎬绘暟
     const totalQuery = db
       .select({ count: count() })
       .from(userStatusLogs)
@@ -120,13 +120,13 @@ export default defineEventHandler(async (event) => {
 
     const total = totalResult[0].count
 
-    // 获取状态变更日志列表
+    // 鑾峰彇鐘舵€佸彉鏇存棩蹇楀垪琛?
     const logs = await baseQuery
       .orderBy(desc(userStatusLogs.createdAt))
       .limit(limitNum)
       .offset(skip)
 
-    // 获取操作员信息（用于显示操作员名称）
+    // 鑾峰彇鎿嶄綔鍛樹俊鎭紙鐢ㄤ簬鏄剧ず鎿嶄綔鍛樺悕绉帮級
     const operatorIds = [...new Set(logs.map((log) => log.operatorId).filter((id) => id))]
     const operators = await db
       .select({
@@ -135,14 +135,14 @@ export default defineEventHandler(async (event) => {
         username: users.username
       })
       .from(users)
-      .where(eq(users.id, operatorIds[0])) // 这里需要用inArray，但先简化处理
+      .where(eq(users.id, operatorIds[0])) // 杩欓噷闇€瑕佺敤inArray锛屼絾鍏堢畝鍖栧鐞?
 
     const operatorMap = new Map()
     for (const op of operators) {
       operatorMap.set(op.id, op)
     }
 
-    // 计算分页信息
+    // 璁＄畻鍒嗛〉淇℃伅
     const totalPages = Math.ceil(total / limitNum)
     const hasNextPage = pageNum < totalPages
     const hasPrevPage = pageNum > 1
@@ -153,7 +153,7 @@ export default defineEventHandler(async (event) => {
         id: log.id,
         user: {
           id: log.userId,
-          name: log.userName || '未知用户',
+          name: log.userName || '鏈煡鐢ㄦ埛',
           username: log.userUsername || 'unknown'
         },
         oldStatus: log.oldStatus,
@@ -164,7 +164,7 @@ export default defineEventHandler(async (event) => {
         createdAt: log.createdAt,
         operator: {
           id: log.operatorId,
-          name: operatorMap.get(log.operatorId)?.name || log.operatorName || '未知操作员',
+          name: operatorMap.get(log.operatorId)?.name || log.operatorName || '鏈煡鎿嶄綔鍛?,
           username: operatorMap.get(log.operatorId)?.username || log.operatorUsername || 'unknown'
         }
       })),
@@ -183,7 +183,7 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error) {
-    console.error('获取状态变更日志失败:', error)
+    console.error('鑾峰彇鐘舵€佸彉鏇存棩蹇楀け璐?', error)
 
     if (error.statusCode) {
       throw error
@@ -191,7 +191,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      message: '获取状态变更日志失败: ' + error.message
+      message: '鑾峰彇鐘舵€佸彉鏇存棩蹇楀け璐? ' + error.message
     })
   }
 })

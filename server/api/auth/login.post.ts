@@ -197,6 +197,8 @@ export default defineEventHandler(async (event) => {
       throw createApiError(403, 'AUTH_ACCOUNT_BANNED', '该账号已被封禁')
     } else if (user.status === 'pending') {
       throw createApiError(403, 'AUTH_USER_PENDING_APPROVAL', '账号待管理员审核，请耐心等待')
+    } else if (user.status === 'rejected') {
+      throw createApiError(403, 'AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE', '该账号当前不可用')
     }
 
     // 检查是否开启2FA

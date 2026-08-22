@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { db, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
@@ -19,26 +19,26 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const clientIp = getClientIP(event)
 
-  const config = await db.query.systemSettings.findFirst()
-
-  // 数据库连接检查
+  // 数据库连接检查（在读取配置前执行，DB 故障时返回明确的 503 兜底）
   try {
     await db.select().from(users).limit(1)
   } catch (error) {
     console.error('Database connection error:', error)
-    throw createApiError(503, 'AUTH_DATABASE_UNAVAILABLE', '数据库服务暂时不可用')
+    throw createApiError(503, SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE, '数据库服务暂时不可用')
   }
+
+  const config = await db.query.systemSettings.findFirst()
 
   // 开关：是否开放用户名密码注册
   if (!config?.allowRegister) {
-    throw createApiError(403, 'AUTH_REGISTER_DISABLED', '系统未开放注册')
+    throw createApiError(403, SERVER_ERROR_CODES.AUTH_REGISTER_DISABLED, '系统未开放注册')
   }
 
   // 限流：按 IP 每小时最多 5 次注册请求
   const limitResult = await checkDistributedRateLimit(`register:${clientIp}`, REGISTER_RATE_LIMIT, REGISTER_RATE_WINDOW_MS)
   if (!limitResult.isAllowed) {
     const waitMinutes = Math.ceil((limitResult.resetTime - getServerTimestamp()) / 60000)
-    throw createApiError(429, 'AUTH_RATE_LIMITED_MINUTES', `注册请求过于频繁，请等待 ${waitMinutes} 分钟后再试`, { params: [waitMinutes] })
+    throw createApiError(429, SERVER_ERROR_CODES.AUTH_RATE_LIMITED_MINUTES, `注册请求过于频繁，请等待 ${waitMinutes} 分钟后再试`, { params: [waitMinutes] })
   }
 
   // 验证码：开启验证码服务时注册必须通过（图形验证码或 Turnstile）
@@ -50,11 +50,11 @@ export default defineEventHandler(async (event) => {
       const turnstileToken = body.turnstileToken
 
       if (!turnstileSecretKey) {
-        throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '验证码服务配置错误，请联系管理员')
+        throw createApiError(500, SERVER_ERROR_CODES.AUTH_CAPTCHA_SERVICE_UNAVAILABLE, '验证码服务配置错误，请联系管理员')
       }
 
       if (!turnstileToken) {
-        throw createApiError(400, 'AUTH_CAPTCHA_REQUIRED', '请完成人机验证', { captchaRequired: true, captchaProvider: 'turnstile' })
+        throw createApiError(400, SERVER_ERROR_CODES.AUTH_CAPTCHA_REQUIRED, '请完成人机验证', { captchaRequired: true, captchaProvider: 'turnstile' })
       }
 
       const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
@@ -71,23 +71,23 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!result.success) {
-          throw createApiError(400, 'AUTH_CAPTCHA_FAILED_OR_EXPIRED', '人机验证失败或已过期，请重试', { captchaRequired: true, captchaProvider: 'turnstile' })
+          throw createApiError(400, SERVER_ERROR_CODES.AUTH_CAPTCHA_FAILED_OR_EXPIRED, '人机验证失败或已过期，请重试', { captchaRequired: true, captchaProvider: 'turnstile' })
         }
       } catch (err: any) {
         if (err.statusCode === 400) throw err
         console.error('Turnstile verification error:', err)
-        throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
+        throw createApiError(500, SERVER_ERROR_CODES.AUTH_CAPTCHA_SERVICE_UNAVAILABLE, '人机验证服务暂时不可用')
       }
     } else {
       const captchaId = body.captchaId
       const captchaInput = body.captchaInput
       if (!captchaId || !captchaInput) {
-        throw createApiError(400, 'AUTH_IMAGE_CAPTCHA_REQUIRED', '请完成图形验证码', { captchaRequired: true, captchaProvider: 'graphic' })
+        throw createApiError(400, SERVER_ERROR_CODES.AUTH_IMAGE_CAPTCHA_REQUIRED, '请完成图形验证码', { captchaRequired: true, captchaProvider: 'graphic' })
       }
 
       const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
       if (!isValid) {
-        throw createApiError(400, 'AUTH_CAPTCHA_FAILED_OR_EXPIRED', '验证码错误或已过期，请重新输入', { captchaRequired: true, captchaProvider: 'graphic' })
+        throw createApiError(400, SERVER_ERROR_CODES.AUTH_CAPTCHA_FAILED_OR_EXPIRED, '验证码错误或已过期，请重新输入', { captchaRequired: true, captchaProvider: 'graphic' })
       }
     }
   }
@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
   const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
 
   if (!username || !name || !password || !confirmPassword) {
-    throw createApiError(400, 'AUTH_NAME_USERNAME_PASSWORD_REQUIRED', '姓名、用户名、密码不能为空')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_NAME_USERNAME_PASSWORD_REQUIRED, '姓名、用户名、密码不能为空')
   }
 
   const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
@@ -111,7 +111,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (remark.length > REMARK_MAX_LENGTH) {
-    throw createApiError(400, 'AUTH_INCOMPLETE_PARAMS', `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
   }
 
   const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
@@ -123,17 +123,17 @@ export default defineEventHandler(async (event) => {
     const valid = await isGradeClassValid(selectedGrade, selectedClass)
 
     if (!valid) {
-      throw createApiError(400, 'AUTH_GRADE_CLASS_MUST_EXIST', '请选择系统内已存在的年级和班级')
+      throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
     }
   }
 
-  // 用户名唯一性检查
+  // 用户名唯一性检查（预查 + 插入 onConflictDoNothing 兜底并发竞态）
   const existingUser = await db.query.users.findFirst({
     where: (t, { eq }) => eq(t.username, username)
   })
 
   if (existingUser) {
-    throw createApiError(409, 'AUTH_USERNAME_TAKEN', '用户名已存在，请使用其他用户名')
+    throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
   }
 
   const requiresApproval = Boolean(config?.registerRequiresApproval)
@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
   try {
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10)
-    const now = getBeijingTime()
+    const now = getServerDate()
 
     // 创建用户
     const insertedUser = (await db
@@ -161,10 +161,11 @@ export default defineEventHandler(async (event) => {
         lastLogin: now,
         forcePasswordChange: false
       })
+      .onConflictDoNothing()
       .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
     if (!insertedUser) {
-      throw new Error('Failed to create user')
+      throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
     }
 
     // 需要审核：不签发登录态，等待管理员审核
@@ -196,7 +197,9 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (e: any) {
+    // 业务错误码（如用户名冲突 409）直接透传
+    if (e?.statusCode) throw e
     console.error('Register error:', e)
-    throw createApiError(500, 'AUTH_SYSTEM_ERROR', e.message || '注册失败，请稍后重试')
+    throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, e.message || '注册失败，请稍后重试')
   }
 })

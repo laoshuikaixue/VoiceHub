@@ -14,31 +14,35 @@ export const cardCodeStatusEnum = pgEnum('card_code_status', [
 ]);
 
 // 用户表
-export const users = pgTable('User', {
-  id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  username: text('username').notNull(),
-  name: text('name'),
-  grade: text('grade'),
-  class: text('class'),
-  role: text('role').default('USER').notNull(),
-  password: text('password').notNull(),
-  email: text('email'),
-  emailVerified: boolean('emailVerified').default(false),
-  lastLogin: timestamp('lastLogin'),
-  lastLoginIp: text('lastLoginIp'),
-  passwordChangedAt: timestamp('passwordChangedAt'),
-  forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
-  tokenVersion: integer('tokenVersion').default(0).notNull(),
-  meowNickname: text('meowNickname'),
-  meowBoundAt: timestamp('meowBoundAt'),
-  status: userStatusEnum('status').default('active').notNull(),
-  statusChangedAt: timestamp('statusChangedAt').defaultNow(),
-  statusChangedBy: integer('statusChangedBy'),
-  // 注册时可选填写的备注，管理员审核时可修改
-  remark: text('remark'),
-});
+export const users = pgTable(
+  'User',
+  {
+    id: serial('id').primaryKey(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    username: text('username').notNull(),
+    name: text('name'),
+    grade: text('grade'),
+    class: text('class'),
+    role: text('role').default('USER').notNull(),
+    password: text('password').notNull(),
+    email: text('email'),
+    emailVerified: boolean('emailVerified').default(false),
+    lastLogin: timestamp('lastLogin'),
+    lastLoginIp: text('lastLoginIp'),
+    passwordChangedAt: timestamp('passwordChangedAt'),
+    forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
+    tokenVersion: integer('tokenVersion').default(0).notNull(),
+    meowNickname: text('meowNickname'),
+    meowBoundAt: timestamp('meowBoundAt'),
+    status: userStatusEnum('status').default('active').notNull(),
+    statusChangedAt: timestamp('statusChangedAt').defaultNow(),
+    statusChangedBy: integer('statusChangedBy'),
+    // 注册时可选填写的备注，管理员审核时可修改
+    remark: text('remark'),
+  },
+  (table) => [uniqueIndex('User_username_unique').on(table.username)],
+);
 
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
@@ -358,6 +362,9 @@ export const apiLogs = pgTable('api_logs', {
 export const userStatusLogs = pgTable('user_status_logs', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull(),
+  // 审计快照：用户被删除后仍可追溯（如注册审核拒绝）
+  username: text('username'),
+  name: text('name'),
   oldStatus: userStatusEnum('old_status'),
   newStatus: userStatusEnum('new_status').notNull(),
   reason: text('reason'),

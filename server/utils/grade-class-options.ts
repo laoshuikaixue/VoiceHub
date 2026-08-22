@@ -1,4 +1,4 @@
-import { and, isNotNull, eq } from 'drizzle-orm'
+import { and, isNotNull, eq, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users, gradeClass } from '~/drizzle/schema'
 import { resolveGradeClassOptions, type GradeClassOption } from './grade-class-core'
@@ -22,19 +22,25 @@ export async function fetchGradeClassOptions(): Promise<GradeClassOption[]> {
   return resolveGradeClassOptions(configRows, userRows)
 }
 
-// 组合合法性校验：配置表命中或现有 active 用户命中均可（与选项数据源语义一致）
+// 组合合法性校验：与选项数据源严格一致——配置非空时仅接受配置组合；
+// 配置为空时才回退到现有 active 用户组合
 export async function isGradeClassValid(grade: string, studentClass: string): Promise<boolean> {
-  const [configHit, userHit] = await Promise.all([
-    db.query.gradeClass.findFirst({
-      where: (t, { eq: eq_, and: and_ }) => and_(eq_(t.grade, grade), eq_(t.class, studentClass)),
-      columns: { id: true }
-    }),
-    db.query.users.findFirst({
-      where: (t, { eq: eq_, and: and_ }) =>
-        and_(eq_(t.status, 'active'), eq_(t.grade, grade), eq_(t.class, studentClass)),
-      columns: { id: true }
-    })
-  ])
+  const configHit = await db.query.gradeClass.findFirst({
+    where: (t, { eq: eq_, and: and_ }) => and_(eq_(t.grade, grade), eq_(t.class, studentClass)),
+    columns: { id: true }
+  })
 
-  return Boolean(configHit || userHit)
+  if (configHit) return true
+
+  // 配置表非空时不再接受用户存量组合（与注册表单选项一致，防绕过配置优先）
+  const configCount = await db.select({ count: () => sql<number>`count(*)::int` }).from(gradeClass)
+  if ((configCount[0]?.count || 0) > 0) return false
+
+  const userHit = await db.query.users.findFirst({
+    where: (t, { eq: eq_, and: and_ }) =>
+      and_(eq_(t.status, 'active'), eq_(t.grade, grade), eq_(t.class, studentClass)),
+    columns: { id: true }
+  })
+
+  return Boolean(userHit)
 }

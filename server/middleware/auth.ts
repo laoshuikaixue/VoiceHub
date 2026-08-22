@@ -163,7 +163,17 @@ export default defineEventHandler(async (event) => {
         event,
         createError({
           statusCode: 401,
-          message: errorMessage
+          message: errorMessage,
+          data: {
+            code:
+              user?.status === 'pending'
+                ? 'AUTH_USER_PENDING_APPROVAL'
+                : user?.status === 'withdrawn'
+                  ? 'AUTH_ACCOUNT_WITHDRAWN'
+                  : user?.status === 'graduate'
+                    ? 'AUTH_ACCOUNT_GRADUATED'
+                    : undefined
+          }
         })
       )
     }

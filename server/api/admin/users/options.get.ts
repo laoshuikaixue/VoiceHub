@@ -1,7 +1,6 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
+import { users, gradeClass } from '~/drizzle/schema'
 import { smartSort } from '~~/server/utils/grade-class-core'
 
 export default defineEventHandler(async (event) => {
@@ -28,10 +27,42 @@ export default defineEventHandler(async (event) => {
       })
       .from(users)
 
-    // 年级班级选项：配置优先，未配置时回退到用户提取（组织结构树不受影响，始终基于真实用户）
-    const options = await fetchGradeClassOptions()
-    const grades = [...new Set(options.map((item) => item.grade))].sort(smartSort)
-    const classes = options.map((item) => ({ grade: item.grade, class: item.class }))
+    // 年级班级选项：配置优先；未配置时回退到全部用户聚合（含 withdrawn/graduate 与仅有班级项），
+    // 与组织结构树口径一致，避免筛选下拉缺项
+    const configRows = await db
+      .select({ grade: gradeClass.grade, class: gradeClass.class })
+      .from(gradeClass)
+
+    let grades: string[]
+    let classes: { grade: string | null; class: string }[]
+    if (configRows.length > 0) {
+      const options = configRows
+        .filter((item) => Boolean(item.grade?.trim()) && Boolean(item.class?.trim()))
+        .sort((a, b) => {
+          const gradeResult = smartSort(a.grade, b.grade)
+          return gradeResult || smartSort(a.class, b.class)
+        })
+      grades = [...new Set(options.map((item) => item.grade))].sort(smartSort)
+      classes = options.map((item) => ({ grade: item.grade, class: item.class }))
+    } else {
+      const gradesSet = new Set<string>()
+      const classesMap = new Map<string, { grade: string | null; class: string }>()
+      for (const treeUser of treeUsers) {
+        const gradeValue = treeUser.grade?.trim() || ''
+        const classValue = treeUser.class?.trim() || ''
+        if (gradeValue) gradesSet.add(gradeValue)
+        if (classValue) {
+          const classKey = `${gradeValue}:${classValue}`
+          if (!classesMap.has(classKey)) {
+            classesMap.set(classKey, { grade: gradeValue || null, class: classValue })
+          }
+        }
+      }
+      grades = Array.from(gradesSet).sort(smartSort)
+      classes = Array.from(classesMap.values()).sort((a, b) =>
+        a.class.localeCompare(b.class, 'zh-CN', { numeric: true })
+      )
+    }
 
     return {
       success: true,

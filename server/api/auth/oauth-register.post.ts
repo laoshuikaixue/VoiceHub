@@ -26,6 +26,9 @@ export default defineEventHandler(async (event) => {
   const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
+  if (remark.length > 200) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, '备注不能超过 200 个字符')
+  }
   if (!bindingToken) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_SESSION_EXPIRED, '注册会话已过期，请重新通过第三方登录发起')
   }
@@ -87,7 +90,7 @@ export default defineEventHandler(async (event) => {
       const hashedPassword = await bcrypt.hash(password, 10)
       const now = getBeijingTime()
 
-      // 创建用户
+      // 创建用户（onConflictDoNothing 兜底并发用户名竞态）
       const insertedUser = (await tx
         .insert(users)
         .values({
@@ -105,10 +108,11 @@ export default defineEventHandler(async (event) => {
           lastLogin: now,
           forcePasswordChange: false
         })
+        .onConflictDoNothing()
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
       if (!insertedUser) {
-        throw new Error('Failed to create user')
+        throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
       }
 
       // 关联OAuth身份
@@ -158,6 +162,8 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (e: any) {
+    // 业务错误码（如用户名冲突 409）直接透传
+    if (e?.statusCode) throw e
     console.error('OAuth register error:', e)
     throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, e.message || '注册失败，请稍后重试')
   }
