@@ -1,5 +1,6 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { and, authSessions, db, desc, eq, isNull } from '~/drizzle/db'
+import { and, authSessions, db, desc, eq } from '~/drizzle/db'
+import { isNull } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { getServerDate } from '~~/server/utils/serverTime'
 
