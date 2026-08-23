@@ -71,6 +71,12 @@ export default defineEventHandler(async (event) => {
   // 公共接口只有匿名访问时才绕过认证；携带登录态必须继续检查强制改密状态。
   // OAuth 路由只有匿名启动/回调时公开；携带登录态时仍必须经过强制改密门控。
   const isPublicApi = isPublicApiPath(pathname, method)
+
+  // 公共排期接口自身会按需解析用户信息；不让残留 Cookie 进入全局会话校验，避免匿名页面受会话存储影响。
+  if (pathname === '/api/songs/public' && ['GET', 'HEAD'].includes(method)) {
+    return
+  }
+
   if (
     shouldBypassPublicApiAuthentication(pathname, method, Boolean(token)) ||
     (isOAuthProviderRoute && !token)
