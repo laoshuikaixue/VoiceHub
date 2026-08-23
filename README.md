@@ -1181,11 +1181,13 @@ VoiceHub/
 │   │   │   ├── lyric/               # 歌词API
 │   │   │   │   ├── mg.get.ts        # 咪咕音乐歌词
 │   │   │   │   └── tx.get.ts        # 腾讯音乐歌词
+│   │   │   ├── migu/                # 咪咕音乐播放链接API
 │   │   │   ├── qq/                  # QQ音乐账号API
 │   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
 │   │   │   │   └── login-qr.get.ts  # 获取登录二维码
 │   │   │   └── search/              # 搜索API
+│   │   │       ├── mg.get.ts        # 咪咕音乐搜索
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
 │   │   ├── platform-config/  # 平台管理公开API
@@ -1436,7 +1438,12 @@ VoiceHub/
 
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
+  - **`sentry.client.ts`**: Sentry 错误追踪插件（客户端）
   - **`theme.client.ts`**: 主题初始化插件（客户端），恢复用户主题偏好、同步 `data-theme` attribute 和 `<meta name="theme-color">`
+  - **`auth.client.ts`**: 客户端认证插件
+  - **`auth.server.ts`**: 服务端认证插件
+  - **`locale.ts`**: 语言初始化与 SSR 同步插件
+  - **`time-sync.client.ts`**: 客户端服务器时间对时插件
 - **`app/middleware/`**: 中间件，处理路由和认证
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
@@ -1460,7 +1467,7 @@ VoiceHub/
 
 - **`public/`**: 静态文件
 - **`public/images/`**: 备案图标等与主题无关的图片
-- **`public/assets/`**: 不随主题切换的公共资源（如 `logo.png`）
+- **`public/assets/`**: 不随主题切换的公共资源（`logo.png`、`logo-144.png`）
 - **`public/themes/{ClassicDark,ClassicLight,ModernLight}/`**: 随主题切换的 SVG 图片资源（Logo、搜索图标、点赞图标）
 
 ### 主题系统
