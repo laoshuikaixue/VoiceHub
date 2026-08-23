@@ -66,6 +66,60 @@ const calculateReplayCooldown = (status?: string | null, updatedAt?: Date | stri
   return remainingMs > 0 ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0
 }
 
+const loadBasicSongs = async (client: any, semester: string, grade: string, search: string, user: any, isAdmin: boolean) => {
+  const conditions: string[] = []
+  const params: any[] = []
+  const addParam = (value: any) => {
+    params.push(value)
+    return `$${params.length}`
+  }
+  if (search) {
+    const value = addParam(`%${search}%`)
+    conditions.push(`(s.title ILIKE ${value} OR s.artist ILIKE ${value})`)
+  }
+  if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
+  if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
+  const rows = await client.unsafe(`
+    SELECT s.id, s.title, s.artist, s.played, s."playedAt", s.semester,
+      s."createdAt", s."updatedAt", s.cover, s."musicPlatform", s."musicId",
+      s."cardCodeId", s."durationSeconds", s."playUrl", s."preferredPlayTimeId",
+      u.id AS "requesterId", u.name AS "requesterName", u.grade AS "requesterGrade", u.class AS "requesterClass",
+      sch."playDate" AS "scheduleDate", sch.played AS "schedulePlayed",
+      (sch."songId" IS NOT NULL) AS scheduled,
+      COALESCE((SELECT "hideStudentInfo" FROM "SystemSettings" LIMIT 1), true) AS "hideStudentInfo",
+      COUNT(*) OVER()::int AS total
+    FROM "Song" s
+    LEFT JOIN "User" u ON u.id = s."requesterId"
+    LEFT JOIN LATERAL (
+      SELECT "playDate", played, "songId" FROM "Schedule"
+      WHERE "songId" = s.id AND "isDraft" = false
+      ORDER BY "playDate" DESC LIMIT 1
+    ) sch ON true
+    ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
+    ORDER BY s."createdAt" DESC
+  `, params)
+  const hideStudentInfo = rows[0]?.hideStudentInfo ?? true
+  const songs = rows.map((row: any) => ({
+    id: Number(row.id), title: row.title, artist: row.artist,
+    requester: formatDisplayName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
+    requesterId: row.requesterId ? Number(row.requesterId) : undefined,
+    requesterGrade: row.requesterGrade || null, requesterClass: row.requesterClass || null,
+    collaborators: [], voteCount: 0, played: row.played === true, playedAt: row.playedAt || null,
+    semester: row.semester || null, createdAt: row.createdAt, updatedAt: row.updatedAt,
+    requestedAt: formatDateTime(row.createdAt), scheduled: row.scheduled === true,
+    cover: row.cover || null, musicPlatform: row.musicPlatform || null, musicId: row.musicId || null,
+    cardCodeId: row.cardCodeId ? Number(row.cardCodeId) : null,
+    durationSeconds: row.durationSeconds ? Number(row.durationSeconds) : null, playUrl: row.playUrl || null,
+    replayRequested: false, replayRequestCount: 0, isReplay: false, replayRequesters: [],
+    hasSubmissionNote: false, submissionNote: null, submissionNotePublic: false,
+    preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null,
+    ...(row.scheduleDate ? { scheduleDate: formatDateTime(row.scheduleDate), schedulePlayed: row.schedulePlayed === true } : {})
+  })) as SongResponse[]
+  if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
+  if (!user) songs.forEach(stripAnonymousSongIdentifiers)
+  return { success: true, data: { songs, total: Number(rows[0]?.total || 0) } }
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
@@ -392,6 +446,18 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('[Songs API] 获取歌曲列表失败:', error)
     if (error.statusCode) throw error
+
+    try {
+      const fallbackQuery = getQuery(event)
+      const fallbackSearch = String(fallbackQuery.search || '').trim()
+      const fallbackSemester = String(fallbackQuery.semester || '').trim()
+      const fallbackGrade = String(fallbackQuery.grade || '').trim()
+      const fallbackUser = event.context.user || null
+      const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+      return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin)
+    } catch (fallbackError) {
+      console.error('[Songs API] 基础歌曲查询也失败:', fallbackError)
+    }
 
     const isDbError = ['ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT'].some((code) =>
       String(error?.code || error?.message || '').includes(code)

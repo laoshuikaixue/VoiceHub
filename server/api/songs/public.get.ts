@@ -399,7 +399,10 @@ export default defineEventHandler(async (event) => {
     console.error('获取公共排期失败:', error)
     if (error.statusCode) throw error
     try {
-      return await loadBasicSchedules(client, semester, user, isAdmin)
+      const fallbackSemester = String(getQuery(event).semester || '').trim()
+      const fallbackUser = event.context.user || null
+      const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+      return await loadBasicSchedules(client, fallbackSemester, fallbackUser, fallbackIsAdmin)
     } catch (fallbackError) {
       console.error('基础排期兜底查询失败:', fallbackError)
     }
