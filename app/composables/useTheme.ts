@@ -70,17 +70,11 @@ export function useTheme() {
 
   if (!current) {
     const saved: Theme | null = readSavedTheme()
+    // 用户保存的主题被禁用时回退到站点默认；回退结果不写回 localStorage，避免把系统代选固化为用户偏好
     const chosen: Theme = (THEMES.includes(saved as Theme) && enabledThemes.value.includes(saved as Theme) ? saved : null) ?? siteDefault
 
     selected = ref<Theme>(chosen)
     current = ref<Theme>(chosen === 'System' ? resolveSystemTheme() : chosen)
-    if (saved && saved !== chosen) {
-      try {
-        localStorage.setItem('voicehub-theme', chosen)
-      } catch {
-        /* localStorage 写入失败（如配额满或被禁用），静默忽略 */
-      }
-    }
     document.documentElement.setAttribute('data-theme', current.value)
     if (chosen === 'System') watchSystemTheme()
   }
@@ -128,13 +122,20 @@ export function useTheme() {
 
 /** 应用服务端主题策略；用户已保存的主题优先于站点默认主题。 */
 export function applyThemeConfig(defaultTheme: unknown, configuredThemes: unknown) {
-  if (import.meta.server || !current || !selected) return
+  if (import.meta.server) return
+  if (!current || !selected) {
+    console.warn('applyThemeConfig: useTheme 尚未初始化，主题配置暂不生效')
+    return
+  }
   const nextEnabled = Array.isArray(configuredThemes)
     ? THEMES.filter((theme) => configuredThemes.includes(theme))
     : [...THEMES]
   enabledThemes.value = nextEnabled.length > 0 ? nextEnabled : [...THEMES]
   if (enabledThemes.value.includes('System') && (!enabledThemes.value.includes('ClassicDark') || !enabledThemes.value.includes('ClassicLight'))) {
     enabledThemes.value = enabledThemes.value.filter((theme) => theme !== 'System')
+  }
+  if (enabledThemes.value.length === 0) {
+    enabledThemes.value = [...THEMES]
   }
   siteDefault = THEMES.includes(defaultTheme as Theme) && enabledThemes.value.includes(defaultTheme as Theme)
     ? defaultTheme as Theme
@@ -143,13 +144,7 @@ export function applyThemeConfig(defaultTheme: unknown, configuredThemes: unknow
   const next = THEMES.includes(saved as Theme) && enabledThemes.value.includes(saved as Theme)
     ? saved as Theme
     : siteDefault
-  if (saved && saved !== next) {
-    try {
-      localStorage.setItem('voicehub-theme', next)
-    } catch {
-      /* localStorage 写入失败（如配额满或被禁用），静默忽略 */
-    }
-  }
+  // 用户保存的主题被禁用时回退到站点默认；回退结果不写回 localStorage，避免把系统代选固化为用户偏好
   selected.value = next
   if (next === 'System') {
     watchSystemTheme()

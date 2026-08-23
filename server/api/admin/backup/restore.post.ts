@@ -2570,7 +2570,6 @@ export default defineEventHandler(async (event) => {
     return restoreResults
   } catch (error) {
     console.error('恢复数据库备份失败:', error)
-    if (error?.data?.code || error?.statusMessage) throw error
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || '恢复数据库备份失败'

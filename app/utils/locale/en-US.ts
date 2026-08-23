@@ -3980,7 +3980,6 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'Too many incorrect authenticator codes. Please try again in 5 minutes.',
   AUTH_INCOMPLETE_PARAMS: 'Incomplete parameters',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
-  THEME_PERMISSION_DENIED: 'Only super administrators can manage theme settings',
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',

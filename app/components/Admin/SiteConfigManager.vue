@@ -692,7 +692,11 @@ const parseJsonArray = (value, fallback) => {
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value
     if (!Array.isArray(parsed) || parsed.length === 0) return fallback
-    const themes = parsed.filter((item) => THEMES.includes(item))
+    let themes = parsed.filter((item) => THEMES.includes(item))
+    // 脏数据防御：跟随系统依赖经典深色/浅色同时启用，缺失时剔除 System
+    if (themes.includes('System') && (!themes.includes('ClassicDark') || !themes.includes('ClassicLight'))) {
+      themes = themes.filter((item) => item !== 'System')
+    }
     return themes.length > 0 ? themes : fallback
   } catch {
     return fallback
@@ -826,106 +830,6 @@ const currentLimitLabel = computed(() => {
 
   return `${locale.value?.limitLabelPrefix || '当前启用：'}${limitTypeLabel || '未设置限额'}${locale.value?.limitLabelSuffix || '投稿限制'}`
 })
-
-const getLocalizedServerMessage = (message) => {
-  if (!message) return locale.value?.saveFailed || '系统设置保存失败'
-  if (typeof message !== 'string') return String(message)
-
-  const serverMessages = locale.value?.serverMessages
-  if (!serverMessages) return message
-  const rawMessages = serverMessages.raw
-  if (!rawMessages) return message
-  const exactMessageMap = {
-    [rawMessages.oauthRedirectCallbackInvalid]: serverMessages.oauthRedirectCallbackInvalid,
-    [rawMessages.oauthRedirectUrlInvalid]: serverMessages.oauthRedirectUrlInvalid,
-    [rawMessages.unauthorized]: serverMessages.unauthorized,
-    [rawMessages.adminOnly]: serverMessages.adminOnly,
-    [rawMessages.captchaProviderInvalid]: serverMessages.captchaProviderInvalid,
-    [rawMessages.turnstileRequired]: serverMessages.turnstileRequired,
-    [rawMessages.smtpPortInvalid]: serverMessages.smtpPortInvalid,
-    [rawMessages.oauthBaseRequired]: serverMessages.oauthBaseRequired,
-    [rawMessages.githubClientIdRequired]: serverMessages.githubClientIdRequired,
-    [rawMessages.githubClientSecretRequired]: serverMessages.githubClientSecretRequired,
-    [rawMessages.casdoorServerUrlRequired]: serverMessages.casdoorServerUrlRequired,
-    [rawMessages.casdoorClientIdRequired]: serverMessages.casdoorClientIdRequired,
-    [rawMessages.casdoorClientSecretRequired]: serverMessages.casdoorClientSecretRequired,
-    [rawMessages.casdoorOrganizationRequired]: serverMessages.casdoorOrganizationRequired,
-    [rawMessages.googleClientIdRequired]: serverMessages.googleClientIdRequired,
-    [rawMessages.googleClientSecretRequired]: serverMessages.googleClientSecretRequired,
-    [rawMessages.onlyOneLimit]: serverMessages.onlyOneLimit,
-    [rawMessages.updateFailed]: serverMessages.updateFailed
-  }
-
-  if (exactMessageMap[message]) return exactMessageMap[message]
-
-  const fields = serverMessages.fields || {}
-  const fieldLabelMap = {
-    [rawMessages.customOAuthAuthorizeUrlLabel]: fields.customOAuthAuthorizeUrl,
-    [rawMessages.customOAuthTokenUrlLabel]: fields.customOAuthTokenUrl,
-    [rawMessages.customOAuthUserInfoUrlLabel]: fields.customOAuthUserInfoUrl,
-    [rawMessages.customOAuthClientIdLabel]: fields.customOAuthClientId,
-    [rawMessages.customOAuthClientSecretLabel]: fields.customOAuthClientSecret,
-    [rawMessages.customOAuthUserIdFieldLabel]: fields.customOAuthUserIdField,
-    customOAuthAuthorizeUrl: fields.customOAuthAuthorizeUrl,
-    customOAuthTokenUrl: fields.customOAuthTokenUrl,
-    customOAuthUserInfoUrl: fields.customOAuthUserInfoUrl,
-    customOAuthClientId: fields.customOAuthClientId,
-    customOAuthClientSecret: fields.customOAuthClientSecret,
-    customOAuthUserIdField: fields.customOAuthUserIdField
-  }
-
-  if (
-    typeof rawMessages.booleanSuffix === 'string' &&
-    rawMessages.booleanSuffix.length > 0 &&
-    typeof serverMessages.mustBeBoolean === 'function' &&
-    message.endsWith(rawMessages.booleanSuffix)
-  ) {
-    return serverMessages.mustBeBoolean(message.slice(0, -rawMessages.booleanSuffix.length))
-  }
-
-  if (
-    typeof rawMessages.positiveIntegerSuffix === 'string' &&
-    rawMessages.positiveIntegerSuffix.length > 0 &&
-    typeof serverMessages.mustBePositiveInteger === 'function' &&
-    message.endsWith(rawMessages.positiveIntegerSuffix)
-  ) {
-    return serverMessages.mustBePositiveInteger(message.slice(0, -rawMessages.positiveIntegerSuffix.length))
-  }
-
-  if (
-    typeof rawMessages.nonNegativeIntegerOrNullSuffix === 'string' &&
-    rawMessages.nonNegativeIntegerOrNullSuffix.length > 0 &&
-    typeof serverMessages.mustBeNonNegativeIntegerOrNull === 'function' &&
-    message.endsWith(rawMessages.nonNegativeIntegerOrNullSuffix)
-  ) {
-    return serverMessages.mustBeNonNegativeIntegerOrNull(
-      message.slice(0, -rawMessages.nonNegativeIntegerOrNullSuffix.length)
-    )
-  }
-
-  if (
-    typeof rawMessages.customOAuthRequiredPrefix === 'string' &&
-    rawMessages.customOAuthRequiredPrefix.length > 0 &&
-    typeof serverMessages.customOAuthFieldRequired === 'function' &&
-    message.startsWith(rawMessages.customOAuthRequiredPrefix)
-  ) {
-    const rawField = message.slice(rawMessages.customOAuthRequiredPrefix.length)
-    const fieldLabel = fieldLabelMap[rawField] || rawField
-    return serverMessages.customOAuthFieldRequired(fieldLabel)
-  }
-
-  if (
-    typeof rawMessages.invalidUrlSuffix === 'string' &&
-    rawMessages.invalidUrlSuffix.length > 0 &&
-    typeof serverMessages.invalidUrl === 'function' &&
-    message.endsWith(rawMessages.invalidUrlSuffix)
-  ) {
-    const rawField = message.slice(0, -rawMessages.invalidUrlSuffix.length)
-    return serverMessages.invalidUrl(fieldLabelMap[rawField] || rawField)
-  }
-
-  return message
-}
 
 // 加载配置
 const loadConfig = async () => {
@@ -1079,15 +983,6 @@ const saveConfig = async () => {
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
-
-        const getErrorMessage = (err) => {
-          if (err?.data?.error) return err.data.error
-          if (err?.message) return err.message
-          if (err?.statusMessage && err.statusMessage !== 'Error') return err.statusMessage
-          if (err?.data?.message) return err.data.message
-          if (err?.error) return err.error
-          return null
-        }
 
         message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {

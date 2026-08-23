@@ -1232,7 +1232,6 @@ export default defineEventHandler(async (event) => {
       stats.processed++
     } catch (error) {
       console.error(`处理记录失败 (${tableName}):`, error)
-      if (error?.data?.code || error?.statusMessage) throw error
       stats.errors++
       stats.warnings.push(`记录处理失败: ${error.message}`)
     }

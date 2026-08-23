@@ -1,8 +1,5 @@
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-
-export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const
-export const DEFAULT_THEMES = [...THEMES]
+import { SERVER_ERROR_CODES, THEMES, DEFAULT_THEMES } from '~~/server/config/constants'
 
 export const parseThemeArray = (value: unknown, fallback = DEFAULT_THEMES): string[] => {
   try {

@@ -3990,7 +3990,6 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: '动态验证码错误次数过多，请在 5 分钟后重试',
   AUTH_INCOMPLETE_PARAMS: '参数不完整',
   COMMON_INVALID_PARAMS: '参数错误',
-  THEME_PERMISSION_DENIED: '只有超级管理员才能管理主题设置',
   THEME_INVALID_LIST: '启用的主题列表无效',
   THEME_INVALID_DEFAULT: '默认主题必须有效且处于启用状态',
   THEME_SYSTEM_REQUIRES_CLASSIC: '跟随系统时必须同时启用经典深色和经典浅色',
