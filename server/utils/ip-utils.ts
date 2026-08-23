@@ -8,15 +8,29 @@ import { isIP } from 'node:net'
  * @returns 客户端IP地址
  */
 export function getClientIP(event: H3Event): string {
-  // 尝试从各种可能的头部获取真实IP
   const headers = getHeaders(event)
 
-  // 按优先级检查各种IP头部
+  // CDN 专用头优先于 X-Forwarded-For；后者在部分托管平台会被改写为 CDN 节点地址。
   const ipHeaders = [
-    'x-forwarded-for',
+    'eo-connecting-ip', // EdgeOne
+    'eo-client-ip',
+    'x-edgeone-client-ip',
+    'edgeone-client-ip',
+    'cf-connecting-ip', // Cloudflare
+    'true-client-ip',
+    'fastly-client-ip',
+    'fly-client-ip',
+    'x-nf-client-connection-ip', // Netlify
+    'x-vercel-forwarded-for', // Vercel
+    'x-azure-clientip',
+    'x-appengine-user-ip',
+    'x-cluster-client-ip',
     'x-real-ip',
     'x-client-ip',
-    'cf-connecting-ip', // Cloudflare
+    'x-real-client-ip',
+    'x-forwarded-client-ip',
+    'x-original-forwarded-for',
+    'x-forwarded-for',
     'x-forwarded',
     'forwarded-for',
     'forwarded'
@@ -25,11 +39,12 @@ export function getClientIP(event: H3Event): string {
   for (const header of ipHeaders) {
     const value = headers[header]
     if (value) {
-      // x-forwarded-for 可能包含多个IP，取第一个
-      const ip = Array.isArray(value) ? value[0] : value
-      const firstIP = ip.split(',')[0].trim()
-      if (firstIP && isValidIP(firstIP)) {
-        return firstIP
+      const values = Array.isArray(value) ? value : [value]
+      for (const item of values) {
+        for (const candidate of String(item).split(',')) {
+          const ip = normalizeIPCandidate(candidate)
+          if (ip) return ip
+        }
       }
     }
   }
@@ -40,13 +55,29 @@ export function getClientIP(event: H3Event): string {
   const remoteAddress = event.node.req.socket?.remoteAddress
   if (remoteAddress) {
     // 移除IPv6映射的IPv4前缀
-    const cleanIP = remoteAddress.replace(/^::ffff:/, '')
-    if (isValidIP(cleanIP)) {
+    const cleanIP = normalizeIPCandidate(remoteAddress)
+    if (cleanIP) {
       return cleanIP
     }
   }
 
   return 'unknown'
+}
+
+function normalizeIPCandidate(value: string): string | null {
+  let candidate = value.trim().replace(/^"|"$/g, '')
+  const forwardedMatch = candidate.match(/^for\s*=\s*(.+)$/i)
+  if (forwardedMatch) candidate = forwardedMatch[1].split(';')[0].trim().replace(/^"|"$/g, '')
+
+  if (candidate.startsWith('[')) {
+    const closingBracket = candidate.indexOf(']')
+    if (closingBracket > 0) candidate = candidate.slice(1, closingBracket)
+  } else if (isIP(candidate) === 0 && /^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(candidate)) {
+    candidate = candidate.slice(0, candidate.lastIndexOf(':'))
+  }
+
+  const cleanIP = candidate.replace(/^::ffff:/i, '')
+  return isValidIP(cleanIP) ? cleanIP : null
 }
 
 /**
