@@ -147,6 +147,55 @@
         </div>
       </section>
 
+      <!-- 主题设置 -->
+      <section v-if="isSuperAdmin" :class="cardClass">
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4">
+          <Palette :size="16" class="text-primary" /> {{ locale.themeSettings }}
+        </h3>
+        <div class="space-y-3">
+          <p class="text-[10px] text-text-tertiary">{{ locale.themeSettingsDesc }}</p>
+          <div
+            v-for="option in themeOptions"
+            :key="option.value"
+            class="flex items-center gap-3 rounded-xl border border-border-secondary bg-bg-primary-50 p-3"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs font-bold text-text-primary">{{ option.label }}</p>
+              <p v-if="option.value === 'System'" class="mt-0.5 text-[10px] text-text-tertiary">
+                {{ locale.systemThemeHint }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors"
+              :class="formData.defaultTheme === option.value
+                ? 'border-warning bg-warning-10 text-warning'
+                : 'border-border-secondary text-text-disabled hover:border-warning-30 hover:text-warning'"
+              :aria-label="locale.setDefaultTheme"
+              :aria-pressed="formData.defaultTheme === option.value"
+              @click="setDefaultTheme(option.value)"
+            >
+              <Star :size="15" :fill="formData.defaultTheme === option.value ? 'currentColor' : 'none'" />
+            </button>
+            <button
+              type="button"
+              class="relative h-6 w-12 shrink-0 rounded-full transition-colors"
+              :class="themeToggleClass(option.value)"
+              :aria-label="formData.enabledThemes.includes(option.value) ? locale.disableTheme : locale.enableTheme"
+              :aria-pressed="formData.enabledThemes.includes(option.value)"
+              :disabled="isThemeToggleLocked(option.value)"
+              @click="toggleTheme(option.value)"
+            >
+              <span
+                class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                :class="formData.enabledThemes.includes(option.value) ? 'translate-x-6' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+          <p class="text-[10px] text-text-tertiary">{{ locale.defaultThemeDesc }}</p>
+        </div>
+      </section>
+
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
@@ -574,19 +623,81 @@ import {
   Save,
   RotateCcw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Palette,
+  Star
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { joinThemeLogoUrl, splitThemeLogoUrl, useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
+import { usePermissions } from '~/composables/usePermissions'
+import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
 const { refreshSiteConfig } = useSiteConfig()
-const { siteConfig: locale } = useLocale()
+const { siteConfig: locale, theme: themeLocale } = useLocale()
+const { isSuperAdmin } = usePermissions()
+const { localize: localizeServerError } = useServerErrors()
+const themeOptions = computed(() => THEMES.map((value) => ({ value, label: themeLocale.value?.[value] || value })))
+
+const setDefaultTheme = (theme) => {
+  formData.value.defaultTheme = theme
+  const enabled = new Set(formData.value.enabledThemes)
+  enabled.add(theme)
+  formData.value.enabledThemes = THEMES.filter((item) => enabled.has(item))
+  if (theme === 'System') {
+    const enabled = new Set(formData.value.enabledThemes)
+    enabled.add('System')
+    enabled.add('ClassicDark')
+    enabled.add('ClassicLight')
+    formData.value.enabledThemes = THEMES.filter((item) => enabled.has(item))
+    showNotification(locale.value?.systemThemeAutoEnabled || '跟随系统需要经典深色和经典浅色，已自动启用', 'info')
+  }
+}
+
+const isThemeToggleLocked = (theme) => {
+  if (formData.value.defaultTheme === theme) return true
+  if (formData.value.enabledThemes.length <= 1 && formData.value.enabledThemes.includes(theme)) return true
+  return (theme === 'ClassicDark' || theme === 'ClassicLight') && formData.value.enabledThemes.includes('System')
+}
+
+const themeToggleClass = (theme) => {
+  if (isThemeToggleLocked(theme)) return 'bg-primary-80 opacity-50 cursor-not-allowed'
+  return formData.value.enabledThemes.includes(theme) ? 'bg-primary' : 'bg-bg-quaternary'
+}
+
+const toggleTheme = (theme) => {
+  if (isThemeToggleLocked(theme)) return
+  const enabled = new Set(formData.value.enabledThemes)
+  if (enabled.has(theme)) {
+    if (enabled.size <= 1 || formData.value.defaultTheme === theme) return
+    if (theme === 'ClassicDark' || theme === 'ClassicLight') {
+      if (enabled.has('System')) {
+        showNotification(locale.value?.systemThemeRequiresBothClassic || '启用跟随系统时，经典深色和经典浅色必须同时启用', 'info')
+        return
+      }
+    }
+    enabled.delete(theme)
+  } else {
+    enabled.add(theme)
+  }
+  formData.value.enabledThemes = THEMES.filter((item) => enabled.has(item))
+}
+const parseJsonArray = (value, fallback) => {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    if (!Array.isArray(parsed) || parsed.length === 0) return fallback
+    const themes = parsed.filter((item) => THEMES.includes(item))
+    return themes.length > 0 ? themes : fallback
+  } catch {
+    return fallback
+  }
+}
 
 const loading = ref(true)
 const saving = ref(false)
@@ -666,7 +777,9 @@ const formData = ref({
   customOAuthUsernameField: '',
   customOAuthNameField: '',
   customOAuthEmailField: '',
-  customOAuthAvatarField: ''
+  customOAuthAvatarField: '',
+  defaultTheme: 'System',
+  enabledThemes: [...THEMES]
 })
 
 const originalData = ref({})
@@ -891,7 +1004,9 @@ const loadConfig = async () => {
       customOAuthUsernameField: data.customOAuthUsernameField || '',
       customOAuthNameField: data.customOAuthNameField || '',
       customOAuthEmailField: data.customOAuthEmailField || '',
-      customOAuthAvatarField: data.customOAuthAvatarField || ''
+      customOAuthAvatarField: data.customOAuthAvatarField || '',
+      defaultTheme: data.defaultTheme || 'System',
+      enabledThemes: parseJsonArray(data.enabledThemes, [...THEMES])
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -906,6 +1021,16 @@ const loadConfig = async () => {
 // 保存配置
 const saveConfig = async () => {
   try {
+    if (isSuperAdmin.value) {
+      if (!formData.value.enabledThemes.includes(formData.value.defaultTheme)) {
+        showNotification(locale.value?.defaultThemeMustBeEnabled || '默认主题必须处于启用状态', 'error')
+        return
+      }
+      if (formData.value.enabledThemes.includes('System') && (!formData.value.enabledThemes.includes('ClassicDark') || !formData.value.enabledThemes.includes('ClassicLight'))) {
+        showNotification(locale.value?.systemThemeRequiresBothClassic || '启用跟随系统时，经典深色和经典浅色必须同时启用', 'error')
+        return
+      }
+    }
     saving.value = true
     const schoolLogoHomeDarkUrl = (formData.value.schoolLogoHomeDarkUrl || '').trim()
     const schoolLogoHomeLightUrl = schoolLogoHomeDarkUrl
@@ -927,7 +1052,17 @@ const saveConfig = async () => {
       weeklySubmissionLimit:
         activeLimitTab.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
       monthlySubmissionLimit:
-        activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null
+        activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null,
+      ...(isSuperAdmin.value
+        ? {
+            defaultTheme: formData.value.defaultTheme,
+            enabledThemes: JSON.stringify(formData.value.enabledThemes)
+          }
+        : {})
+    }
+    if (!isSuperAdmin.value) {
+      delete configToSave.defaultTheme
+      delete configToSave.enabledThemes
     }
     delete configToSave.schoolLogoHomeDarkUrl
     delete configToSave.schoolLogoHomeLightUrl
@@ -954,7 +1089,7 @@ const saveConfig = async () => {
           return null
         }
 
-        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '系统设置保存失败')
+        message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }
@@ -980,7 +1115,7 @@ const saveConfig = async () => {
     console.error('Failed to save site config:', error)
     let message = locale.value?.saveFailedRetry || '系统设置保存失败，请稍后重试'
     if (error?.message) {
-      message = getLocalizedServerMessage(error.message)
+      message = localizeServerError(error, error.message)
     }
     showNotification(message, 'error')
   } finally {

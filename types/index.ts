@@ -160,6 +160,8 @@ export interface SystemSettings {
   enableCardCodeRequests?: boolean
   requireCardCodeForRequests?: boolean
   enableCardCodeLimitBypass?: boolean
+  defaultTheme?: 'System' | 'ClassicDark' | 'ClassicLight' | 'ModernLight'
+  enabledThemes?: string[] | string
 }
 
 export interface RequestTime {

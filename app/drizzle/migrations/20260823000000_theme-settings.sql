@@ -1,0 +1,2 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "defaultTheme" text DEFAULT 'System' NOT NULL;--> statement-breakpoint
+ALTER TABLE "SystemSettings" ADD COLUMN "enabledThemes" text DEFAULT '["System","ClassicDark","ClassicLight","ModernLight"]' NOT NULL;

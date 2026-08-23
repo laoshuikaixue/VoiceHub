@@ -54,7 +54,9 @@ export default defineEventHandler(async (event) => {
           sameSongRestrictionHours: null,
           sameArtistRestrictionHours: null,
           enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
-          platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS])
+          platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
+          defaultTheme: 'System',
+          enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
         })
         .returning()
       settings = newSettingsResult[0]

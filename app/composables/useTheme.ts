@@ -15,6 +15,8 @@ let current: Ref<Theme> | null = null // 实际生效主题（始终为具体主
 let selected: Ref<Theme> | null = null // 用户选择主题（可为 System）
 let systemQuery: MediaQueryList | null = null
 let systemChangeHandler: ((event: MediaQueryListEvent) => void) | null = null
+const enabledThemes = ref<Theme[]>([...THEMES])
+let siteDefault: Theme = 'System'
 
 function applyTheme(t: Theme) {
   current!.value = t
@@ -60,7 +62,7 @@ export function useTheme() {
       currentTheme,
       selectedTheme,
       isDark,
-      themes: THEMES,
+      themes: computed(() => enabledThemes.value),
       setTheme: () => {},
       toggleTheme: () => {}
     }
@@ -68,10 +70,17 @@ export function useTheme() {
 
   if (!current) {
     const saved: Theme | null = readSavedTheme()
-    const chosen: Theme = (THEMES.includes(saved as Theme) ? saved : null) ?? 'ClassicDark'
+    const chosen: Theme = (THEMES.includes(saved as Theme) && enabledThemes.value.includes(saved as Theme) ? saved : null) ?? siteDefault
 
     selected = ref<Theme>(chosen)
     current = ref<Theme>(chosen === 'System' ? resolveSystemTheme() : chosen)
+    if (saved && saved !== chosen) {
+      try {
+        localStorage.setItem('voicehub-theme', chosen)
+      } catch {
+        /* localStorage 写入失败（如配额满或被禁用），静默忽略 */
+      }
+    }
     document.documentElement.setAttribute('data-theme', current.value)
     if (chosen === 'System') watchSystemTheme()
   }
@@ -84,6 +93,7 @@ export function useTheme() {
   const isDark = computed(() => theme.value === 'ClassicDark')
 
   const setTheme = (t: Theme) => {
+    if (!enabledThemes.value.includes(t)) return
     chosen.value = t
     if (t === 'System') {
       watchSystemTheme()
@@ -101,16 +111,51 @@ export function useTheme() {
 
   /** 切换主题：按顺序循环切换 */
   const toggleTheme = () => {
-    const nextIndex = (THEMES.indexOf(chosen.value) + 1) % THEMES.length
-    setTheme(THEMES[nextIndex]!)
+    const availableThemes = enabledThemes.value
+    const nextIndex = (availableThemes.indexOf(chosen.value) + 1) % availableThemes.length
+    setTheme(availableThemes[nextIndex]!)
   }
 
   return {
     currentTheme,
     selectedTheme,
     isDark,
-    themes: THEMES,
+    themes: enabledThemes,
     setTheme,
     toggleTheme
+  }
+}
+
+/** 应用服务端主题策略；用户已保存的主题优先于站点默认主题。 */
+export function applyThemeConfig(defaultTheme: unknown, configuredThemes: unknown) {
+  if (import.meta.server || !current || !selected) return
+  const nextEnabled = Array.isArray(configuredThemes)
+    ? THEMES.filter((theme) => configuredThemes.includes(theme))
+    : [...THEMES]
+  enabledThemes.value = nextEnabled.length > 0 ? nextEnabled : [...THEMES]
+  if (enabledThemes.value.includes('System') && (!enabledThemes.value.includes('ClassicDark') || !enabledThemes.value.includes('ClassicLight'))) {
+    enabledThemes.value = enabledThemes.value.filter((theme) => theme !== 'System')
+  }
+  siteDefault = THEMES.includes(defaultTheme as Theme) && enabledThemes.value.includes(defaultTheme as Theme)
+    ? defaultTheme as Theme
+    : enabledThemes.value.includes('System') ? 'System' : enabledThemes.value[0]!
+  const saved = readSavedTheme()
+  const next = THEMES.includes(saved as Theme) && enabledThemes.value.includes(saved as Theme)
+    ? saved as Theme
+    : siteDefault
+  if (saved && saved !== next) {
+    try {
+      localStorage.setItem('voicehub-theme', next)
+    } catch {
+      /* localStorage 写入失败（如配额满或被禁用），静默忽略 */
+    }
+  }
+  selected.value = next
+  if (next === 'System') {
+    watchSystemTheme()
+    applyTheme(resolveSystemTheme())
+  } else {
+    unwatchSystemTheme()
+    applyTheme(next)
   }
 }
