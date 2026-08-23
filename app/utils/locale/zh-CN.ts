@@ -1801,12 +1801,12 @@ export const admin = {
       performance: '应用性能',
       business: '业务健康',
       database: '数据库',
-      infra: '05-基础设施',
-      security: '06-安全审计',
-      userActivity: '07-用户活动',
-      debug: '08-请求诊断',
-      logs: '09-日志中心',
-      dependencies: '10-外部依赖'
+      infra: '基础设施',
+      security: '安全审计',
+      userActivity: '用户活动',
+      debug: '请求诊断',
+      logs: '日志中心',
+      dependencies: '外部依赖'
     },
     overview: {
       systemHealth: '系统健康',

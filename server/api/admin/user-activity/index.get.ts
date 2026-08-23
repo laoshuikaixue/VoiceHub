@@ -123,7 +123,10 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error) {
-    console.error('[UserActivity] 查询用户活动失败:', error)
-    throw createApiError(500, SERVER_ERROR_CODES.USER_SESSION_FETCH_FAILED, '用户活动记录暂时无法读取')
+    const cause = error instanceof Error ? error.message : String(error)
+    console.error('[UserActivity] 查询用户活动失败:', cause)
+    throw createApiError(500, SERVER_ERROR_CODES.USER_SESSION_FETCH_FAILED, '用户活动记录暂时无法读取', {
+      cause: process.env.NODE_ENV === 'development' ? cause : undefined
+    })
   }
 })

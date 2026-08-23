@@ -1792,12 +1792,12 @@ export const admin = {
       performance: 'Performance',
       business: 'Business Health',
       database: 'Database',
-      infra: '05-Infrastructure',
-      security: '06-Security',
-      userActivity: '07-User Activity',
-      debug: '08-Request Debug',
-      logs: '09-Log Center',
-      dependencies: '10-Dependencies'
+      infra: 'Infrastructure',
+      security: 'Security',
+      userActivity: 'User Activity',
+      debug: 'Request Debug',
+      logs: 'Log Center',
+      dependencies: 'Dependencies'
     },
     overview: {
       systemHealth: 'System Health',

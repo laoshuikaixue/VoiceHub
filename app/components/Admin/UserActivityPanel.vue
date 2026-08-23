@@ -12,6 +12,11 @@
       @refresh="loadSessions(page)"
     >
       <div v-if="forbidden" class="activity-permission">仅超级管理员可查看用户活动记录。</div>
+      <div v-else-if="error && !data" class="activity-error-state">
+        <Icon name="warning" :size="16" />
+        <span>{{ error }}</span>
+        <button type="button" @click="loadSessions(page)">重试</button>
+      </div>
       <template v-else-if="data">
         <div class="activity-inline-summary">
           <span><Icon name="activity" :size="13" />活跃会话 <strong>{{ stats.activeSessions }}</strong></span>
@@ -259,6 +264,8 @@ watch(() => props.refreshToken, () => void loadSessions(page.value), { immediate
 <style scoped>
 .user-activity-panel { display: grid; gap: .75rem; color: var(--ops-text-1, #e5e7eb); }
 .activity-permission, .activity-empty { display: flex; min-height: 5rem; align-items: center; justify-content: center; color: var(--ops-text-2, #94a3b8); font-size: .75rem; }
+.activity-error-state { display: flex; min-height: 5rem; align-items: center; justify-content: center; gap: .5rem; color: var(--ops-error); font-size: .75rem; }
+.activity-error-state button { height: 1.8rem; border: 1px solid color-mix(in srgb, var(--ops-error) 35%, var(--ops-line)); border-radius: 5px; padding: 0 .65rem; color: var(--ops-error); background: var(--ops-control); font-size: .68rem; cursor: pointer; }
 .activity-inline-summary { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-bottom: .75rem; }
 .activity-inline-summary span { display: inline-flex; height: 1.875rem; align-items: center; gap: .35rem; border: 1px solid var(--ops-line); border-radius: 6px; padding: 0 .6rem; color: var(--ops-text-2); background: var(--ops-control); font-size: .6875rem; }
 .activity-inline-summary strong { color: var(--ops-text-1); font-family: var(--ops-mono); }
