@@ -14,6 +14,7 @@ import {
   playTimes,
   requestTimes,
   schedules,
+  scheduleSongPool,
   semesters,
   songBlacklists,
   songCollaborators,
@@ -31,6 +32,8 @@ import { SmtpService } from '../../../services/smtpService'
 import { ApiLogService } from '~~/server/services/apiLogService'
 import { assertAdminOperationTablesProtected, getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
+import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
+import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 // 此列表必须与恢复前清理的业务表同步；审计表不属于备份恢复数据，也不可删除。
 const BACKUP_RESTORE_CLEAR_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'card_code_redeem_logs', 'notifications', 'notification_settings', 'user_status_logs', 'user_identities', 'users', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'songs', 'card_codes', 'song_blacklists', 'email_templates', 'play_times', 'semesters', 'request_times', 'system_settings']
@@ -194,6 +197,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(collaborationLogs)
           await db.delete(songCollaborators)
           await db.delete(songReplayRequests)
+          await db.delete(scheduleSongPool)
           await db.delete(schedules)
           await db.delete(votes)
           await db.delete(songs)
@@ -266,8 +270,8 @@ export default defineEventHandler(async (event) => {
           await db.delete(collaborationLogs)
           await db.delete(songCollaborators)
           await db.delete(songReplayRequests)
+          await db.delete(scheduleSongPool)
           await db.delete(schedules)
-          await db.delete(cardCodeRedeemLogs)
           await db.delete(votes)
           await db.delete(songs)
           await db.delete(cardCodes)
@@ -308,6 +312,7 @@ export default defineEventHandler(async (event) => {
       'songReplayRequests',
       'votes',
       'schedules',
+      'scheduleSongPool',
       'cardCodeRedeemLogs',
       'notificationSettings',
       'notifications',
@@ -346,6 +351,10 @@ export default defineEventHandler(async (event) => {
               try {
                 await db.$transaction(
                   async (tx) => {
+                    const stats = {
+                      created: 0,
+                      warnings: restoreResults.details.warnings
+                    }
                     // 根据表名选择恢复策略
                     switch (tableName) {
                       case 'users':
@@ -874,6 +883,7 @@ export default defineEventHandler(async (event) => {
                           'cover',
                           'musicPlatform',
                           'musicId',
+                          'durationSeconds',
                           'submissionNote',
                           'submissionNotePublic'
                         ]
@@ -1121,7 +1131,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'systemSettings':
                         // 动态构建系统设置数据，自动跳过不存在的字段
-                        const systemSettingsData = {}
+                        let systemSettingsData = {}
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
                           'instanceId',
@@ -1140,7 +1150,6 @@ export default defineEventHandler(async (event) => {
                           'monthlySubmissionLimit',
                           'showBlacklistKeywords',
                           'enableRequestTimeLimitation',
-                          'requestTimeLimitation',
                           'forceBlockAllRequests',
                           'forcePasswordChangeOnFirstLogin',
                           'enableReplayRequests',
@@ -1149,6 +1158,10 @@ export default defineEventHandler(async (event) => {
                           'enableCardCodeRequests',
                           'requireCardCodeForRequests',
                           'enableCardCodeLimitBypass',
+                          'enableSubmissionRestriction',
+                          'submissionRestrictionScope',
+                          'sameSongRestrictionHours',
+                          'sameArtistRestrictionHours',
                           'hideStudentInfo',
                           'smtpEnabled',
                           'smtpHost',
@@ -1208,6 +1221,7 @@ export default defineEventHandler(async (event) => {
                             systemSettingsData[field] = record[field]
                           }
                         })
+                        systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
                         if (mode === 'merge') {
                           // 检查是否存在系统设置记录（通常只有一条记录）
@@ -2025,6 +2039,11 @@ export default defineEventHandler(async (event) => {
                           }
                         }
                         break
+
+                      case 'scheduleSongPool': {
+                        await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats)
+                        break
+                      }
 
                       case 'requestTimes':
                         // requestTimes表没有外键依赖

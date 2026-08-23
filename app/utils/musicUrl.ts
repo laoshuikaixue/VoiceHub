@@ -58,14 +58,16 @@ const miguQuality = {
   // 音质数值 → 服务端 toneFlag 映射
   flagMap: { 1: 'PQ', 2: 'HQ', 3: 'SQ', 4: 'ZQ24' } as Record<number, string>,
   upgradeUrl(url: string, flag: number) {
-    url = decodeURIComponent(url);
+    url = decodeURIComponent(url)
     switch (flag) {
       case 2: //HQ
         return url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
       case 3: //SQ
-        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac').replace('.mp3', '.flac');
+        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac').replace('.mp3', '.flac')
       case 4: //ZQ24 / ZQ
-        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac_24bit').replace('.mp3', '.flac');
+        return url
+          .replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac_24bit')
+          .replace('.mp3', '.flac')
       case 1:
       default:
         return url
@@ -161,7 +163,7 @@ const fetchXinghaiMiguUrl = async (
       })
 
       if (response?.code === 200 && response?.url) {
-        let url = await miguQuality.resolveAvailableUrl(response.url.split('?')[0], miguFlag || 1);
+        let url = await miguQuality.resolveAvailableUrl(response.url.split('?')[0], miguFlag || 1)
         if (url.startsWith('http://')) {
           url = url.replace('http://', 'https://')
         }
@@ -233,8 +235,7 @@ export async function getMusicUrlResult(
   const { getQuality } = useAudioQuality()
 
   // 优先使用 options 中的 quality，否则使用全局设置
-  const quality =
-    options?.quality !== undefined ? options.quality : getQuality(platform)
+  const quality = options?.quality !== undefined ? options.quality : getQuality(platform)
 
   if (platform === 'tencent') {
     const normalizedQuality = Number(quality)
@@ -274,11 +275,36 @@ export async function getMusicUrlResult(
       throw new Error(response?.message || 'QQ音乐播放链接解析失败')
     }
 
-    if (qqMusicCookie) {
+    // v3 负责探测歌曲支持的音质，播放链接仍由 v2 获取。
+    if (!excludedSources.has('vkeys-v3') && !excludedSources.has('vkeys')) {
       try {
-        return await requestBackendResolve()
+        const idParam = getVkeysIdParam('tencent', musicId)
+        const infoResponse: any = await fetch(
+          `https://api.vkeys.cn/music/tencent/song/info?${idParam.key}=${encodeURIComponent(idParam.value)}`,
+          { signal: AbortSignal.timeout(5000) }
+        ).then((response) => (response.ok ? response.json() : null))
+        const qualityInfo = Array.isArray(infoResponse?.data?.qualityInfo)
+          ? infoResponse.data.qualityInfo
+          : []
+        const selectedQuality = [...new Set([qualityCandidates[0], 8, 4, 10, 11, 14])].find(
+          (candidate) =>
+            qualityInfo.some(
+              (item: any) => Number(item.type) === candidate && Number(item.size) > 0
+            )
+        )
+        if (infoResponse?.code === 0 && selectedQuality !== undefined) {
+          const v2Response: any = await fetch(
+            `https://api.vkeys.cn/v2/music/tencent?${idParam.key}=${encodeURIComponent(idParam.value)}&quality=${selectedQuality}`,
+            { signal: AbortSignal.timeout(5000) }
+          ).then((response) => (response.ok ? response.json() : null))
+          const url = v2Response?.data?.url
+          if (v2Response?.code === 200 && url && !isKnownInvalidQqAudioUrl(String(url))) {
+            rememberMusicUrlSource(String(url), 'vkeys-v3')
+            return { url: String(url), source: 'vkeys-v3' }
+          }
+        }
       } catch {
-        // 登录态官方包失败后继续回退内置前端音源
+        // v3 失败后继续尝试 v2。
       }
     }
 
@@ -318,6 +344,32 @@ export async function getMusicUrlResult(
       }
     }
 
+    // K×H 音源提取的 QQ 直连接口支持浏览器跨域，作为 Vkeys 后备。
+    if (!excludedSources.has('ygking-qq')) {
+      const ygkingQuality: Record<number, string> = {
+        4: '128',
+        8: '320',
+        10: 'flac',
+        11: 'master',
+        14: 'master'
+      }
+      const qualityKey = ygkingQuality[qualityCandidates[0]] || '320'
+      try {
+        const data: any = await fetch(
+          `https://api.ygking.top/api/song/url?mid=${encodeURIComponent(String(musicId))}&quality=${encodeURIComponent(qualityKey)}`,
+          { signal: AbortSignal.timeout(5000) }
+        ).then((result) => (result.ok ? result.json() : null))
+        const url =
+          data?.data?.[String(musicId)] || (data?.data && data.data[Object.keys(data.data)[0]])
+        if (data?.code === 0 && url && !isKnownInvalidQqAudioUrl(String(url))) {
+          rememberMusicUrlSource(String(url), 'ygking-qq')
+          return { url: String(url), source: 'ygking-qq' }
+        }
+      } catch {
+        // 继续尝试 vkeys 或服务端回退。
+      }
+    }
+
     // vkeys 前端失败，回退到后端 resolve-url
     if (!qqMusicCookie) {
       return await requestBackendResolve()
@@ -349,13 +401,7 @@ export async function getMusicUrlResult(
   }
 
   // 先使用统一组件的音源选择逻辑
-  const backupResult = await getSongUrl(
-    finalMusicId,
-    quality,
-    platform,
-    undefined,
-    extendedOptions
-  )
+  const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
   if (backupResult.success && backupResult.url) {
     rememberMusicUrlSource(backupResult.url, backupResult.source || 'music-source')
     return {
@@ -371,12 +417,11 @@ export async function getMusicUrlResult(
 
   // 回退到 vkeys
   const normalizedQuality = Number(quality)
-  const qualityCandidates =
-    isNeteasePlatform
-      ? !hasNeteaseLogin && normalizedQuality > 4
-        ? [...new Set([normalizedQuality, 4])]
-        : [Number.isNaN(normalizedQuality) ? 0 : normalizedQuality]
-      : [Number.isNaN(normalizedQuality) ? 8 : normalizedQuality]
+  const qualityCandidates = isNeteasePlatform
+    ? !hasNeteaseLogin && normalizedQuality > 4
+      ? [...new Set([normalizedQuality, 4])]
+      : [Number.isNaN(normalizedQuality) ? 0 : normalizedQuality]
+    : [Number.isNaN(normalizedQuality) ? 8 : normalizedQuality]
 
   const endpoint =
     platform === 'netease' || platform === 'netease-podcast'

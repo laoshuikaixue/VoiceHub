@@ -377,6 +377,15 @@
                           formatDuration(getUsablePreload(song.song.id, selectedQuality).duration)
                         }}</span>
                       </div>
+                      <!-- 数据库时长标记 -->
+                      <div
+                        v-else-if="song.song.durationSeconds > 0"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bg-tertiary border border-border-secondary"
+                      >
+                        <span class="text-[9px] font-mono text-text-secondary">{{
+                          formatDuration(song.song.durationSeconds)
+                        }}</span>
+                      </div>
                       <!-- API 预估标记 -->
                       <div
                         v-else-if="estimatedDurations.has(song.song.id)"
@@ -977,7 +986,7 @@ const estimateSelectedDurations = async () => {
       const songId = songItem.song?.id
       if (!songId || !selectedSongs.value.has(songId)) return
       
-      // 已有缓存、API 预估或歌曲元数据时，无需再次请求网络。
+      // 已有数据库时长、缓存、API 预估时，无需再次请求网络。
       if (getKnownSongDuration(songItem) > 0) return
       
       songsToEstimate.push(songItem)
@@ -1137,9 +1146,16 @@ const estimatedTotalDuration = computed(() => {
 
 const getKnownSongDuration = (songItem) => {
   const song = songItem.song
+  // 优先使用数据库记录的时长
+  if (typeof song.durationSeconds === 'number' && song.durationSeconds > 0) {
+    return song.durationSeconds
+  }
+
+  // 其次使用预下载的精确时长
   const cached = getUsablePreload(song.id, selectedQuality.value)
   if (cached?.duration) return cached.duration
 
+  // 最后使用 API 预估时长
   const estimated = estimatedDurations.get(song.id)
   if (estimated?.durationSeconds) return estimated.durationSeconds
 

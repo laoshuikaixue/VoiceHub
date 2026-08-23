@@ -7,21 +7,32 @@ import {
   apiKeyPermissions,
   apiKeys,
   apiLogs,
+  cardCodeRedeemLogs,
+  cardCodes,
+  collaborationLogs,
   db,
   emailTemplates,
   notifications,
   notificationSettings,
+  passwordAuditLogs,
+  passwordRateLimits,
   playTimes,
+  requestTimes,
+  scheduleSongPool,
   schedules,
   semesters,
   songBlacklists,
+  songCollaborators,
+  songReplayRequests,
   songs,
   systemSettings,
+  userIdentities,
   users,
   userStatusLogs,
   votes
 } from '../app/drizzle/db.ts'
 import bcrypt from 'bcryptjs'
+import { closeConnection } from '../app/drizzle/db.ts'
 
 function getFirstRow(result) {
   return result?.rows?.[0] ?? result?.[0]
@@ -59,6 +70,16 @@ async function resetAutoIncrementSequences() {
     'Semester',
     'SystemSettings',
     'SongBlacklist',
+    'CardCode',
+    'CardCodeRedeemLog',
+    'SongCollaborator',
+    'CollaborationLog',
+    'SongReplayRequest',
+    'RequestTime',
+    'ScheduleSongPool',
+    'UserIdentity',
+    'PasswordAuditLog',
+    'PasswordRateLimit',
     'EmailTemplate',
     'user_status_logs'
   ]
@@ -101,9 +122,19 @@ async function main() {
     // 按照关联关系顺序删除数据
     await db.delete(notifications)
     await db.delete(notificationSettings)
-    await db.delete(schedules)
     await db.delete(votes)
+    await db.delete(collaborationLogs)
+    await db.delete(schedules)
+    await db.delete(scheduleSongPool)
+    await db.delete(songCollaborators)
+    await db.delete(songReplayRequests)
+    await db.delete(requestTimes)
+    await db.delete(cardCodeRedeemLogs)
+    await db.delete(userIdentities)
+    await db.delete(passwordAuditLogs)
+    await db.delete(passwordRateLimits)
     await db.delete(songs)
+    await db.delete(cardCodes)
     await db.delete(playTimes)
     await db.delete(semesters)
     await db.delete(systemSettings)
@@ -161,6 +192,8 @@ async function main() {
   } catch (error) {
     console.error('清空数据库时出错:', error)
     process.exit(1)
+  } finally {
+    await closeConnection()
   }
 }
 

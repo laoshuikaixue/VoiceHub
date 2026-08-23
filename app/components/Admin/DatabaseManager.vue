@@ -649,7 +649,7 @@ const createBackup = async () => {
     } else if (createForm.value.includeUsers) {
       tables = 'users'
     } else if (createForm.value.includeSongs) {
-      tables = 'songs'
+      tables = ['songs', 'scheduleSongPool']
     } else if (createForm.value.includeSystemData) {
       tables = ['systemSettings']
     } else {
@@ -754,6 +754,7 @@ const restoreBackup = async () => {
       'semesters',
       'playTimes',
       'songs',
+      'scheduleSongPool',
       'votes',
       'schedules',
       'notificationSettings',

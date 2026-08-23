@@ -10,97 +10,37 @@ import {
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 
-const TX_MUSICU_FALLBACK_QUALITY = 8
-const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
-const INVALID_TX_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
+const HYW_TX_URL = 'http://103.79.184.97/api/music/url'
+const HYW_CARD_KEY = 'PYPW-QFRL-3DBF-95O6'
 
-const txQualityMap: Record<string, string> = {
-  '4': '128k',
-  '8': '320k',
-  '10': 'flac',
-  '11': 'flac24bit',
-  '14': 'flac24bit',
-  '128': '128k',
-  '320': '320k',
-  '128k': '128k',
-  '320k': '320k',
-  flac: 'flac',
-  sq: 'flac',
-  hires: 'flac24bit',
-  flac24bit: 'flac24bit'
-}
-
-const normalizeTxQuality = (quality: unknown) => {
-  const key = String(quality ?? TX_MUSICU_FALLBACK_QUALITY).toLowerCase()
-  return txQualityMap[key] || '320k'
-}
-
-const resolveTxWithDreamMeting = async (songmid: string) => {
-  const url = `https://music.3e0.cn/?server=tencent&type=url&id=${encodeURIComponent(songmid)}`
-  const response = await fetch(url, {
-    method: 'GET',
-    redirect: 'manual',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    },
-    signal: AbortSignal.timeout(5000)
-  })
-
-  const location = response.headers.get('location')
-  if (location) {
-    return upgradeTxAudioUrl(location)
+const resolveTxWithHyw = async (songmid: string, quality: unknown) => {
+  const qualityMap: Record<string, string> = {
+    '4': '128k',
+    '8': '320k',
+    '10': 'flac',
+    '11': 'master',
+    '14': 'master'
   }
-
-  throw new Error(`music.3e0.cn 未返回播放重定向(${response.status})`)
-}
-
-const resolveTxWithHuibq = async (songmid: string, quality: string) => {
-  const url = `https://lxmusicapi.onrender.com/url/tx/${encodeURIComponent(songmid)}/${encodeURIComponent(quality)}`
-  const response = await fetch(url, {
-    headers: {
-      'X-Request-Key': 'share-v3',
-      'User-Agent': 'lx-music-desktop/2.11.0'
-    },
-    signal: AbortSignal.timeout(5000)
+  const query = new URLSearchParams({
+    source: 'tx',
+    songId: songmid,
+    songmid,
+    platform: 'tx',
+    quality: qualityMap[String(quality)] || String(quality || '128k'),
+    key: HYW_CARD_KEY
   })
-
-  if (!response.ok) {
-    throw new Error(`Huibq 返回 ${response.status}`)
-  }
-
+  const response = await fetch(`${HYW_TX_URL}?${query.toString()}`, {
+    signal: AbortSignal.timeout(8000),
+    headers: { Accept: 'application/json', 'X-Card-Key': HYW_CARD_KEY }
+  })
+  if (!response.ok) throw new Error(`HYW 返回 ${response.status}`)
   const data: any = await response.json()
-  if (data?.code !== 0 || !data?.url) {
-    throw new Error(data?.msg || data?.message || 'Huibq 未返回播放链接')
+  const url = typeof data?.url === 'string' ? data.url.trim() : ''
+  if (data?.code !== 200 || !/^https?:\/\//i.test(url)) {
+    throw new Error(data?.message || 'HYW 未返回播放链接')
   }
-
-  return upgradeTxAudioUrl(data.url)
+  return upgradeTxAudioUrl(url)
 }
-
-const validateResolvedTxUrl = (url: string, source: string) => {
-  const normalizedUrl = upgradeTxAudioUrl(url.trim())
-  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0];
-  if (urlWithoutParams.endsWith(INVALID_TX_AUDIO_URL_SUFFIX)) {
-    throw new Error(`${source} 返回已知无效音频链接`)
-  }
-
-  return normalizedUrl
-}
-
-const normalizeExcludedSources = (value: unknown) => {
-  if (!Array.isArray(value)) return new Set<string>()
-  return new Set(value.map((item) => String(item || '').trim()).filter(Boolean))
-}
-
-const buildResolveMeta = (
-  cookie: string,
-  attempts: Array<{ source: string; status: string; error?: string }>,
-  mediaId?: string
-) => ({
-  authUsed: Boolean(cookie),
-  authDiagnostic: getQqCookieDiagnostic(cookie),
-  resolvedMediaId: mediaId || undefined,
-  attempts
-})
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -108,7 +48,11 @@ export default defineEventHandler(async (event) => {
   const musicId = body?.musicId
   const playUrl = String(body?.playUrl || '').trim()
   const cookie = normalizeQqCookie(String(body?.cookie || '').trim())
-  const excludedSources = normalizeExcludedSources(body?.excludeSources)
+  const excludedSources = new Set(
+    Array.isArray(body?.excludeSources)
+      ? body.excludeSources.map((item: unknown) => String(item || '').trim()).filter(Boolean)
+      : []
+  )
 
   if (playUrl) {
     return {
@@ -118,8 +62,7 @@ export default defineEventHandler(async (event) => {
       normalizedMusicId: musicId ? String(musicId).trim() : '',
       idType: 'provided-url',
       authUsed: Boolean(cookie),
-      authDiagnostic: getQqCookieDiagnostic(cookie),
-      attempts: [{ source: 'play-url', status: 'success' }]
+      authDiagnostic: getQqCookieDiagnostic(cookie)
     }
   }
 
@@ -206,6 +149,34 @@ export default defineEventHandler(async (event) => {
       attempts.push({ source, status: 'error', error: message })
     }
   }
+  if (!excludedSources.has('hyw-tx')) {
+    try {
+      const url = validateResolvedTxUrl(
+        await resolveTxWithHyw(playableInfo.songmid, body?.quality),
+        'hyw-tx'
+      )
+      recordDependencyCall('tencent', {
+        success: true,
+        durationMs: getServerTimestamp() - startedAt,
+        retries: attempts.filter((item) => item.status === 'error').length,
+        fallbacks: attempts.filter((item) => item.status === 'error').length
+      })
+      return {
+        success: true,
+        url,
+        source: 'hyw-tx',
+        normalizedMusicId: playableInfo.songmid,
+        idType: normalized.idType,
+        ...buildResolveMeta(cookie, [...attempts, { source: 'hyw-tx', status: 'success' }], mediaId)
+      }
+    } catch (error: any) {
+      const message = String(error?.message || error)
+      errors.push(`hyw-tx: ${message}`)
+      attempts.push({ source: 'hyw-tx', status: 'error', error: message })
+    }
+  } else {
+    attempts.push({ source: 'hyw-tx', status: 'skipped' })
+  }
 
   recordDependencyCall('tencent', {
     success: false,
@@ -217,6 +188,6 @@ export default defineEventHandler(async (event) => {
   })
   throw createError({
     statusCode: 502,
-    message: `QQ 音乐播放链接解析失败：${errors.join('；')}（实验源 ${TX_DISABLED_EXPERIMENTAL_SOURCES.join('/')} 默认禁用）`
+    message: 'QQ 音乐播放链接解析失败'
   })
 })

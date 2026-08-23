@@ -148,3 +148,41 @@ export function getBeijingEndOfMonth(date?: Date): Date {
   const target = date ? dayjs(date).tz(BEIJING_TIMEZONE) : dayjs(getSyncedNow()).tz(BEIJING_TIMEZONE)
   return target.endOf('month').toDate()
 }
+
+/**
+ * 格式化歌曲/音频时长（秒 → 分:秒 / 时:分:秒）
+ */
+export function formatDuration(seconds: number): string {
+  const total = Number(seconds)
+  if (!isFinite(total) || total < 0) return ''
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = Math.floor(total % 60)
+  const minuteText = hours > 0 ? minutes.toString().padStart(2, '0') : String(minutes)
+  const secondText = secs.toString().padStart(2, '0')
+  return hours > 0 ? `${hours}:${minuteText}:${secondText}` : `${minuteText}:${secondText}`
+}
+
+/**
+ * 字符串日期（YYYY-MM-DD）增加指定天数
+ */
+export function addDaysToString(dateStr: string, days: number): string {
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateStr)
+  if (!match) return dateStr
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + days))
+  const pad = (n: number) => (n < 10 ? '0' + n : '' + n)
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`
+}
+
+/**
+ * 计算两个字符串日期之间的天数差（end - start）
+ * 负数表示 start 晚于 end
+ */
+export function getDaysBetween(startStr: string, endStr: string): number {
+  const startMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(startStr)
+  const endMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(endStr)
+  if (!startMatch || !endMatch) return -1
+  const start = new Date(Date.UTC(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]))).getTime()
+  const end = new Date(Date.UTC(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]))).getTime()
+  return Math.round((end - start) / 86400000)
+}

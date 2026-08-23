@@ -5,21 +5,22 @@ import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSubmissionCount, isCardCodeLimitBypassActive } from '~~/server/utils/submissionLimit'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
   const user = event.context.user
 
   if (!user) {
-    throw createApiError(401, 'SONG_LOGIN_REQUIRED_VIEW_STATUS', '需要登录才能查看投稿状态')
+    throw createApiError(401, SERVER_ERROR_CODES.SONG_LOGIN_REQUIRED_VIEW_STATUS, '需要登录才能查看投稿状态')
   }
 
   try {
     // 获取系统设置
     const systemSettingsData = await getSystemSettingsCached()
 
-    // 超级管理员和管理员不受投稿限制
-    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    // 超级管理员、管理员、歌曲管理员不受投稿限制
+    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
 
     // 基础返回结构
     const status: any = {

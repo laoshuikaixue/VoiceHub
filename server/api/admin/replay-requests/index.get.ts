@@ -43,6 +43,7 @@ export default defineEventHandler(async (event) => {
         playUrl: songs.playUrl,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
+        durationSeconds: songs.durationSeconds,
         submissionNote: songs.submissionNote,
         submissionNotePublic: songs.submissionNotePublic,
         hitRequestId: songs.hitRequestId

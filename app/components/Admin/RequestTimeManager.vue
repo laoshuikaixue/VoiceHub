@@ -51,7 +51,7 @@
           <button
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
-              enableRequestTimeLimitation ? 'bg-info' : 'bg-bg-tertiary'
+              enableRequestTimeLimitation ? 'bg-primary-hover' : 'bg-bg-tertiary'
             ]"
             @click="toggleTimeLimitation"
           >
@@ -63,7 +63,35 @@
             />
           </button>
         </div>
+        <div class="flex items-center gap-3 px-2 border-l border-border-secondary-50">
+          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+            >{{ locale.enableRestriction }}</span
+          >
+          <button
+            :class="[
+              'relative w-10 h-5 rounded-full transition-colors',
+              enableSubmissionRestriction ? 'bg-primary-hover' : 'bg-bg-tertiary'
+            ]"
+            @click="toggleRestriction"
+          >
+            <div
+              :class="[
+                'absolute top-1 w-3 h-3 bg-bg-secondary rounded-full transition-all',
+                enableSubmissionRestriction ? 'left-6' : 'left-1'
+              ]"
+            />
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- 全局错误提示 -->
+    <div
+      v-if="error"
+      class="p-4 bg-error-10 border border-error-20 rounded-2xl flex items-center gap-3 text-error text-xs font-bold"
+    >
+      <AlertCircle :size="16" />
+      <span @click="error = ''" class="cursor-pointer hover:underline">{{ error }}</span>
     </div>
 
     <!-- 主要内容区域 -->
@@ -254,6 +282,114 @@
             {{ stat.label }}
           </p>
           <h5 class="text-xl font-black text-text-primary">{{ stat.value }}</h5>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重复投稿限制面板 -->
+    <div
+      v-if="isAdmin"
+      class="bg-bg-secondary-20 border border-border-secondary rounded-3xl p-8 space-y-6"
+    >
+      <div class="flex items-center justify-between border-b border-border-secondary-50 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-warning-10 border border-warning-20 flex items-center justify-center text-warning">
+            <Ban :size="20" />
+          </div>
+          <div>
+            <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">
+              {{ locale.restrictionPanelTitle }}
+            </h4>
+            <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.restrictionPanelDesc }}</p>
+          </div>
+        </div>
+        <button
+          :disabled="restrictionSaving"
+          class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="saveRestrictionSettings"
+        >
+          <Save :size="14" />
+          {{ locale.saveSettings }}
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 space-y-4">
+          <label :class="['text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2']">
+            {{ locale.restrictionScope }}
+          </label>
+          <p class="text-[10px] text-text-tertiary px-1">{{ locale.restrictionScopeDesc }}</p>
+          <div class="flex gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
+            <button
+              :class="[
+                'flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                submissionRestrictionScope === 'self'
+                  ? 'bg-bg-tertiary text-primary shadow-sm'
+                  : 'text-text-disabled hover:text-text-tertiary'
+              ]"
+              @click="submissionRestrictionScope = 'self'"
+            >
+              {{ locale.restrictionScopeSelf }}
+            </button>
+            <button
+              :class="[
+                'flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                submissionRestrictionScope === 'all'
+                  ? 'bg-bg-tertiary text-primary shadow-sm'
+                  : 'text-text-disabled hover:text-text-tertiary'
+              ]"
+              @click="submissionRestrictionScope = 'all'"
+            >
+              {{ locale.restrictionScopeAll }}
+            </button>
+          </div>
+          <p class="text-[10px] text-text-disabled px-1 italic">{{ locale.restrictionPanelHint }}</p>
+        </div>
+
+        <div class="space-y-4">
+          <label :class="['text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2']">
+            {{ locale.sameSongRestrictionHours }}
+          </label>
+          <p class="text-[10px] text-text-tertiary px-1">{{ locale.sameSongRestrictionHoursDesc }}</p>
+          <div class="relative">
+            <input
+              :value="sameSongRestrictionHours ?? ''"
+              @input="sameSongRestrictionHours = $event.target.value === '' ? null : Number($event.target.value)"
+              @blur="normalizeRestrictionHours('sameSong')"
+              type="number"
+              min="1"
+              max="720"
+              step="1"
+              placeholder="-"
+              class="w-56 bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3 text-sm text-text-primary pr-16 focus:outline-none focus:border-primary-30"
+            />
+            <span
+              class="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+              >{{ locale.restrictionUnit }}</span>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <label :class="['text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2']">
+            {{ locale.sameArtistRestrictionHours }}
+          </label>
+          <p class="text-[10px] text-text-tertiary px-1">{{ locale.sameArtistRestrictionHoursDesc }}</p>
+          <div class="relative">
+            <input
+              :value="sameArtistRestrictionHours ?? ''"
+              @input="sameArtistRestrictionHours = $event.target.value === '' ? null : Number($event.target.value)"
+              @blur="normalizeRestrictionHours('sameArtist')"
+              type="number"
+              min="1"
+              max="720"
+              step="1"
+              placeholder="-"
+              class="w-56 bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3 text-sm text-text-primary pr-16 focus:outline-none focus:border-primary-30"
+            />
+            <span
+              class="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+              >{{ locale.restrictionUnit }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -509,6 +645,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, reactive, ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import type { RequestTime } from '~/types'
 import {
@@ -520,6 +657,8 @@ import {
   Power,
   AlertCircle,
   Hash,
+  Save,
+  Ban,
   CheckCircle2,
   XCircle,
   X,
@@ -528,6 +667,7 @@ import {
 } from '@lucide/vue'
 
 const { getAuthConfig, isAdmin } = useAuth()
+const toast = useToast()
 const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.requestTimeManager || {}
@@ -557,6 +697,11 @@ const deleteConfirmTitleText = computed(() =>
 const enableRequestTimeLimitation = ref(false)
 const hitRequestTime = ref(false)
 const enableRequest = ref(true)
+const enableSubmissionRestriction = ref(false)
+const submissionRestrictionScope = ref('all')
+const sameSongRestrictionHours = ref<number | null>(null)
+const sameArtistRestrictionHours = ref<number | null>(null)
+const restrictionSaving = ref(false)
 
 let refreshInterval: any = null
 
@@ -688,6 +833,10 @@ const fetchSystemSettings = async () => {
     const data = await response.json()
     enableRequestTimeLimitation.value = data.enableRequestTimeLimitation
     enableRequest.value = !data.forceBlockAllRequests
+    enableSubmissionRestriction.value = !!data.enableSubmissionRestriction
+    submissionRestrictionScope.value = data.submissionRestrictionScope || 'all'
+    sameSongRestrictionHours.value = data.sameSongRestrictionHours ?? null
+    sameArtistRestrictionHours.value = data.sameArtistRestrictionHours ?? null
   } catch (err: any) {
     console.error('获取系统设置失败:', getThrownMessage(err))
   }
@@ -740,6 +889,70 @@ const updateSystemSettings = async () => {
     }
   } catch (err: any) {
     error.value = getThrownMessage(err) || locale.value.errors.updateSystemSettingsFailed
+  }
+}
+
+const normalizeRestrictionHours = (key: 'sameSong' | 'sameArtist') => {
+  const target = key === 'sameSong' ? sameSongRestrictionHours : sameArtistRestrictionHours
+  if (typeof target.value === 'number' && (Number.isNaN(target.value) || target.value < 1 || target.value > 720 || !Number.isInteger(target.value))) {
+    target.value = null
+  }
+}
+
+const toggleRestriction = () => {
+  enableSubmissionRestriction.value = !enableSubmissionRestriction.value
+  // 关闭时清空时长，与服务端交叉校验保持一致
+  if (!enableSubmissionRestriction.value) {
+    sameSongRestrictionHours.value = null
+    sameArtistRestrictionHours.value = null
+  }
+}
+
+const saveRestrictionSettings = async () => {
+  normalizeRestrictionHours('sameSong')
+  normalizeRestrictionHours('sameArtist')
+
+  const enabled = enableSubmissionRestriction.value
+  const songHours = sameSongRestrictionHours.value
+  const artistHours = sameArtistRestrictionHours.value
+
+  try {
+    await submitRestrictionSettings({
+      enableSubmissionRestriction: enabled,
+      submissionRestrictionScope: submissionRestrictionScope.value,
+      sameSongRestrictionHours: enabled ? songHours : null,
+      sameArtistRestrictionHours: enabled ? artistHours : null
+    })
+  } catch {
+    error.value = locale.value.restrictionSaveFailed
+  }
+}
+
+const submitRestrictionSettings = async (body: any) => {
+  if (!isAdmin.value) return
+  restrictionSaving.value = true
+  try {
+    const authConfig = getAuthConfig()
+    const response = await fetch('/api/admin/system-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      ...authConfig
+    })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || locale.value.restrictionSaveFailed)
+    }
+    await fetchSystemSettings()
+    error.value = ''
+    toast.success(locale.value.restrictionSaveSuccess)
+  } catch (err) {
+    try {
+      await fetchSystemSettings()
+    } catch {}
+    throw err
+  } finally {
+    restrictionSaving.value = false
   }
 }
 

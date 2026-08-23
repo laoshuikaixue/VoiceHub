@@ -335,14 +335,14 @@ export const useLyrics = () => {
   }
 
   const getFormattedLrcText = (): string => {
-    if (currentLyrics.value.length === 0) return `[00:00.00]${lyricMessages.value.unavailable}`
+    if (currentLyrics.value.length === 0) return `${_formatTime(0)}${lyricMessages.value.unavailable}`
     return currentLyrics.value
       .map((line) => `${_formatTime(line.time)}${line.content}`)
       .join('\r\n')
   }
 
   const getFormattedLyricsForHarmonyOS = (): string => {
-    if (currentLyrics.value.length === 0) return `[00:00.00]${lyricMessages.value.unavailable}`
+    if (currentLyrics.value.length === 0) return `${_formatTime(0)}${lyricMessages.value.unavailable}`
 
     const MAX_BYTES = 40960
     const encoder = new TextEncoder()

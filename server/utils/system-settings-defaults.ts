@@ -32,6 +32,11 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enableCardCodeRequests: false,
   requireCardCodeForRequests: false,
   enableCardCodeLimitBypass: false,
+  // 重复投稿限制
+  enableSubmissionRestriction: false,
+  submissionRestrictionScope: 'all',
+  sameSongRestrictionHours: null,
+  sameArtistRestrictionHours: null,
   enableRequestTimeLimitation: false,
   forceBlockAllRequests: false,
   forcePasswordChangeOnFirstLogin: false,
