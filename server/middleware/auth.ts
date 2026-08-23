@@ -182,13 +182,26 @@ export default defineEventHandler(async (event) => {
     }
 
     // 会话表支持单设备撤销；迁移前令牌首次使用时会补建兼容记录。
-    const authSession = await ensureAuthSession(event, decoded)
+    // 公共接口携带过期/残留登录 Cookie 时，不能因会话存储故障阻断匿名内容。
+    let authSession
+    try {
+      authSession = await ensureAuthSession(event, decoded)
+      if (authSession) {
+        await touchAuthSession(authSession.id, Boolean(newToken))
+      }
+    } catch (sessionError) {
+      console.error('[Auth] 会话存储处理失败:', sessionError)
+      if (isPublicApi || isOAuthProviderRoute) {
+        delete event.context.user
+        return
+      }
+      throw sessionError
+    }
     if (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt)) {
       const invalidSessionError = new Error('登录会话已失效') as Error & { invalidToken?: boolean }
       invalidSessionError.invalidToken = true
       throw invalidSessionError
     }
-    await touchAuthSession(authSession.id, Boolean(newToken))
     event.context.authSessionId = authSession.id
 
     // 仅兼容迁移前签发的无版本号令牌；新体系令牌由 tokenVersion 撤销，避免 NTP 校准时钟与 iat 本机时钟偏差误杀。
