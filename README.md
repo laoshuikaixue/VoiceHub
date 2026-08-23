@@ -1181,11 +1181,14 @@ VoiceHub/
 │   │   │   ├── lyric/               # 歌词API
 │   │   │   │   ├── mg.get.ts        # 咪咕音乐歌词
 │   │   │   │   └── tx.get.ts        # 腾讯音乐歌词
+│   │   │   ├── migu/                # 咪咕音乐API
+│   │   │   │   └── playurl.get.ts    # 获取咪咕音乐播放链接
 │   │   │   ├── qq/                  # QQ音乐账号API
 │   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
 │   │   │   │   └── login-qr.get.ts  # 获取登录二维码
 │   │   │   └── search/              # 搜索API
+│   │   │       ├── mg.get.ts        # 咪咕音乐搜索
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
 │   │   ├── platform-config/  # 平台管理公开API
@@ -1354,6 +1357,7 @@ VoiceHub/
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
+│   │   ├── theme-config.ts # 主题配置校验与解析工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
@@ -1435,7 +1439,6 @@ VoiceHub/
 
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
-  - **`theme.client.ts`**: 主题初始化插件（客户端），恢复用户主题偏好、同步 `data-theme` attribute 和 `<meta name="theme-color">`
 - **`app/middleware/`**: 中间件，处理路由和认证
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）

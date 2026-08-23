@@ -272,6 +272,9 @@ export const systemSettings = pgTable('SystemSettings', {
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
   autoBackupConfig: text('autoBackupConfig'),
 
+  // 主题管理配置
+  defaultTheme: text('defaultTheme').default('System').notNull(),
+  enabledThemes: text('enabledThemes').default('["System","ClassicDark","ClassicLight","ModernLight"]').notNull(),
   // 平台管理配置
   enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),

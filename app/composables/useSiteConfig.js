@@ -1,6 +1,6 @@
 import { computed, ref, readonly } from 'vue'
 import { getAggregateOAuthLoginTypesOrDefault, getProviderDisplayName } from '~/utils/oauth'
-import { useTheme } from '~/composables/useTheme'
+import { applyThemeConfig, useTheme } from '~/composables/useTheme'
 
 const THEME_LOGO_SEPARATOR = '||'
 
@@ -60,7 +60,9 @@ const siteConfig = ref({
   aggregateOAuthEnabled: false,
   aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
-  customOAuthDisplayName: ''
+  customOAuthDisplayName: '',
+  defaultTheme: 'System',
+  enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
 
 const isLoaded = ref(false)
@@ -94,6 +96,14 @@ export const useSiteConfig = () => {
 
       const data = await response.json()
       siteConfig.value = data
+      try {
+        applyThemeConfig(
+          data.defaultTheme,
+          typeof data.enabledThemes === 'string' ? JSON.parse(data.enabledThemes) : data.enabledThemes
+        )
+      } catch {
+        applyThemeConfig('System', null)
+      }
       isLoaded.value = true
     } catch (error) {
       console.error('获取站点配置失败:', error)
@@ -125,7 +135,9 @@ export const useSiteConfig = () => {
         aggregateOAuthEnabled: false,
         aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
-        customOAuthDisplayName: ''
+        customOAuthDisplayName: '',
+        defaultTheme: 'System',
+        enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
       }
       isLoaded.value = true
     } finally {
