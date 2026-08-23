@@ -3,7 +3,7 @@ import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/we
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, eq, and, userIdentities } from '~/drizzle/db'
 import { defineEventHandler, setCookie } from 'h3'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
@@ -97,11 +97,7 @@ export default defineEventHandler(async (event) => {
         .where(eq(userIdentities.id, identity.id))
 
       // 签发登录 Token
-      const token = JWTEnhanced.generateToken(
-        identity.user.id,
-        identity.user.role,
-        identity.user.tokenVersion
-      )
+      const { token } = await createAuthSession(event, identity.user, 'webauthn')
       setCookie(event, 'auth-token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

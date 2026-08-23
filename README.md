@@ -1273,6 +1273,8 @@ VoiceHub/
 │   │   │   │   ├── send-code.post.ts # 发送验证码
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
+│   │   │   ├── sessions.delete.ts    # 撤销登录会话
+│   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
 │   │   └── users/          # 用户API
 │   │       ├── social-accounts/     # 社交账号管理
@@ -1454,6 +1456,7 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
+  - **`auth-session.ts`**: 登录会话创建、续期与撤销
 
 #### 静态资源
 

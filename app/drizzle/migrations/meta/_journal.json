@@ -281,6 +281,13 @@
       "when": 1786809600000,
       "tag": "20260816000000_add_schedule_song_pool",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787497559680,
+      "tag": "20260823230554_add_auth_sessions",
+      "breakpoints": true
     }
   ]
 }

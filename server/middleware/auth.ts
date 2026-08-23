@@ -14,6 +14,7 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
+import { ensureAuthSession, sessionExpiryIsActive, touchAuthSession } from '../utils/auth-session'
 
 function clearAuthCookie(event: H3Event) {
   setCookie(event, 'auth-token', '', {
@@ -180,6 +181,16 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+    // 会话表支持单设备撤销；迁移前令牌首次使用时会补建兼容记录。
+    const authSession = await ensureAuthSession(event, decoded)
+    if (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt)) {
+      const invalidSessionError = new Error('登录会话已失效') as Error & { invalidToken?: boolean }
+      invalidSessionError.invalidToken = true
+      throw invalidSessionError
+    }
+    await touchAuthSession(authSession.id, Boolean(newToken))
+    event.context.authSessionId = authSession.id
+
     // 仅兼容迁移前签发的无版本号令牌；新体系令牌由 tokenVersion 撤销，避免 NTP 校准时钟与 iat 本机时钟偏差误杀。
     if (decoded.tokenVersion === undefined && user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
@@ -231,6 +242,7 @@ export default defineEventHandler(async (event) => {
       passwordChangedAt: user.passwordChangedAt,
       forcePasswordChange: user.forcePasswordChange,
       tokenVersion: user.tokenVersion,
+      sessionId: authSession.id,
       email: user.email,
       emailVerified: user.emailVerified,
       requirePasswordChange,
