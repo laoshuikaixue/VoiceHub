@@ -2316,6 +2316,7 @@ export const admin = {
     rejectRequest: 'Reject Request',
     saveDraft: 'Save Draft',
     refreshDuration: 'Refresh song duration from platform',
+    refreshAllDurations: 'Refresh all song durations',
     refreshPageDurations: 'Refresh this page song durations from platform',
     refreshCandidateDurations: 'Refresh candidate song durations from platform',
     downloadSongs: 'Download Songs',
