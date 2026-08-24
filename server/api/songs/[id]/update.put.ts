@@ -189,7 +189,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 歌曲更新与重播申请更新放入同一事务，保证一致性
-    const updatedSong = await db.transaction(async (tx) => {
+    const updatedSongResult = await db.transaction(async (tx) => {
       if (replaySet) {
         const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
         const replayResult = await tx
@@ -292,7 +292,7 @@ export default defineEventHandler(async (event) => {
 
       createSubmissionNoteClearedNotification(
         notifyUserIds,
-        { title: updatedSong.title, artist: updatedSong.artist },
+        { title: updatedSongResult.title, artist: updatedSongResult.artist },
         submissionNoteClearReason
       ).catch((error) => {
         console.error('发送歌曲备注清空通知失败:', error)
@@ -329,7 +329,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      song: updatedSong
+      song: updatedSong[0]
     }
   } catch (error) {
     console.error('Update song error:', error)
