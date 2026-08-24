@@ -292,8 +292,15 @@
     {
       "idx": 41,
       "version": "7",
-      "when": 1787549400900,
-      "tag": "20260824000000_add_schedule_visibility_range",
+      "when": 1787497559680,
+      "tag": "20260823230554_add_auth_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1787587786102,
+      "tag": "20260824160946_add_schedule_visibility_range",
       "breakpoints": true
     }
   ]

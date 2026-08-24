@@ -19,14 +19,123 @@ const formatDisplayName = (
   return `${user.name}（${user.grade}）`
 }
 
+const isSchemaCompatibilityError = (error: unknown) => {
+  const value = error as { code?: string; cause?: { code?: string } } | null
+  const code = String(value?.code || value?.cause?.code || '')
+  return ['42P01', '42703'].includes(code)
+}
+
+// 可选迁移尚未完成时，只依赖初始表结构返回基础排期，避免首页整体不可用。
+const loadBasicSchedules = async (client: any, semester: string, user: any, isAdmin: boolean) => {
+  const params: any[] = []
+  const conditions: string[] = []
+  const scheduleDraftColumn = await client.unsafe(`
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'Schedule'
+      AND column_name = 'isDraft'
+    LIMIT 1
+  `)
+  if (scheduleDraftColumn.length > 0) conditions.push('sch."isDraft" = false')
+  if (semester) conditions.push('s.semester = $1')
+  if (semester) params.push(semester)
+  const rows = await client.unsafe(`
+    SELECT
+      sch.id,
+      to_char(sch."playDate", 'YYYY-MM-DD') AS "playDate",
+      sch.sequence,
+      sch.played AS "schedulePlayed",
+      sch."playTimeId",
+      s.id AS "songId",
+      s.title,
+      s.artist,
+      s.played AS "songPlayed",
+      s.cover,
+      s."musicPlatform",
+      s."musicId",
+      s.semester,
+      s."requesterId",
+      s."createdAt",
+      u.name AS "requesterName",
+      u.grade AS "requesterGrade",
+      u.class AS "requesterClass",
+      pt.id AS "playTimeRecordId",
+      pt.name AS "playTimeName",
+      pt."startTime" AS "playTimeStart",
+      pt."endTime" AS "playTimeEnd",
+      pt.enabled AS "playTimeEnabled",
+      COALESCE((SELECT "hideStudentInfo" FROM "SystemSettings" LIMIT 1), true) AS "hideStudentInfo"
+    FROM "Schedule" sch
+    INNER JOIN "Song" s ON s.id = sch."songId"
+    LEFT JOIN "User" u ON u.id = s."requesterId"
+    LEFT JOIN "PlayTime" pt ON pt.id = sch."playTimeId"
+    ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
+    ORDER BY sch."playDate", sch.sequence
+  `, params)
+  const hideStudentInfo = rows[0]?.hideStudentInfo ?? true
+  const schedules = rows.map((row: any) => ({
+    id: Number(row.id),
+    playDate: row.playDate,
+    sequence: Number(row.sequence || 1),
+    replayRequestId: null,
+    played: row.schedulePlayed === true,
+    playTimeId: row.playTimeId ? Number(row.playTimeId) : null,
+    playTime: row.playTimeRecordId ? {
+      id: Number(row.playTimeRecordId),
+      name: row.playTimeName,
+      startTime: row.playTimeStart,
+      endTime: row.playTimeEnd,
+      enabled: row.playTimeEnabled === true
+    } : null,
+    song: {
+      id: Number(row.songId),
+      title: row.title,
+      artist: row.artist,
+      requester: formatDisplayName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
+      requesterGrade: row.requesterGrade || null,
+      requesterClass: row.requesterClass || null,
+      collaborators: [],
+      voteCount: 0,
+      played: row.songPlayed === true,
+      cover: row.cover || null,
+      cardCodeId: null,
+      usedCardCode: false,
+      musicPlatform: row.musicPlatform || null,
+      musicId: row.musicId || null,
+      durationSeconds: null,
+      playUrl: null,
+      semester: row.semester || null,
+      requestedAt: row.createdAt ? formatDateTime(row.createdAt) : null,
+      hasSubmissionNote: false,
+      submissionNote: null,
+      submissionNotePublic: false,
+      preferredPlayTimeId: null,
+      requesterId: row.requesterId ? Number(row.requesterId) : null,
+      replayRequestCount: 0,
+      replayRequesters: [],
+      isReplay: false
+    }
+  })) as PublicScheduleItem[]
+  if (hideStudentInfo && !isAdmin) maskPublicScheduleData(schedules)
+  if (!user) stripAnonymousSongIdentifiersFromSchedules(schedules)
+  return schedules
+}
+
 export default defineEventHandler(async (event) => {
+  let authenticatedUser: any = null
+  let authenticatedIsAdmin = false
   try {
     const query = getQuery(event)
     const semester = String(query.semester || '').trim()
 
-    const authResult = await verifyUserAuth(event)
+    const authResult = event.context.authRejected
+      ? { success: false, user: null }
+      : await verifyUserAuth(event)
     const user = authResult.success ? authResult.user : null
     const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    authenticatedUser = user
+    authenticatedIsAdmin = isAdmin
 
     const params: any[] = []
     const semesterCondition = semester ? 'AND s.semester = $1' : ''
@@ -336,6 +445,14 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('获取公共排期失败:', error)
     if (error.statusCode) throw error
+    if (isSchemaCompatibilityError(error)) {
+      try {
+        const fallbackSemester = String(getQuery(event).semester || '').trim()
+        return await loadBasicSchedules(client, fallbackSemester, authenticatedUser, authenticatedIsAdmin)
+      } catch (fallbackError) {
+        console.error('基础排期兜底查询失败:', fallbackError)
+      }
+    }
     throw createError({
       statusCode: 500,
       message: error.message || '获取排期数据失败'

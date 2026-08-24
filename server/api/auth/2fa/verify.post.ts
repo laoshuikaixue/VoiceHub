@@ -1,5 +1,6 @@
 import { db, userIdentities, eq, and, users, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { getBeijingTime } from '~/utils/timeUtils'
@@ -249,7 +250,7 @@ export default defineEventHandler(async (event) => {
     .catch((err) => console.error('Error updating user login info:', err))
 
   // 生成Token
-  const authToken = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
+  const { token: authToken } = await createAuthSession(event, user, '2fa')
 
   const isSecure = isSecureRequest(event)
 

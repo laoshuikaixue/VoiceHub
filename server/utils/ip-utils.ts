@@ -2,34 +2,71 @@ import type { H3Event } from 'h3'
 import { getHeaders } from 'h3'
 import { isIP } from 'node:net'
 
+const SUPPORTED_CLIENT_IP_HEADERS = new Set([
+  'eo-connecting-ip',
+  'eo-client-ip',
+  'x-edgeone-client-ip',
+  'edgeone-client-ip',
+  'cf-connecting-ip',
+  'true-client-ip',
+  'fastly-client-ip',
+  'fly-client-ip',
+  'x-nf-client-connection-ip',
+  'x-vercel-forwarded-for',
+  'x-azure-clientip',
+  'x-appengine-user-ip',
+  'x-cluster-client-ip',
+  'x-real-ip',
+  'x-client-ip',
+  'x-real-client-ip',
+  'x-forwarded-client-ip',
+  'x-original-forwarded-for',
+  'x-forwarded-for',
+  'x-forwarded',
+  'forwarded-for',
+  'forwarded'
+])
+
+// 未配置 TRUSTED_CLIENT_IP_HEADERS 时的回退头部列表，覆盖主流平台
+const FALLBACK_CLIENT_IP_HEADERS = Object.freeze([
+  'x-forwarded-for',
+  'x-real-ip',
+  'x-vercel-forwarded-for',
+  'cf-connecting-ip',
+  'true-client-ip'
+])
+
+function getTrustedClientIPHeaders() {
+  const configured = String(process.env.TRUSTED_CLIENT_IP_HEADERS || '')
+    .split(',')
+    .map((header) => header.trim().toLowerCase())
+    .filter((header) => SUPPORTED_CLIENT_IP_HEADERS.has(header))
+
+  return configured.length > 0
+    ? [...new Set(configured)]
+    : FALLBACK_CLIENT_IP_HEADERS
+}
+
 /**
  * 获取客户端IP地址
  * @param event H3Event对象
  * @returns 客户端IP地址
  */
 export function getClientIP(event: H3Event): string {
-  // 尝试从各种可能的头部获取真实IP
   const headers = getHeaders(event)
 
-  // 按优先级检查各种IP头部
-  const ipHeaders = [
-    'x-forwarded-for',
-    'x-real-ip',
-    'x-client-ip',
-    'cf-connecting-ip', // Cloudflare
-    'x-forwarded',
-    'forwarded-for',
-    'forwarded'
-  ]
+  // 只有部署者明确声明受信头部时才读取转发头，避免客户端直连源站时伪造 IP。
+  const ipHeaders = getTrustedClientIPHeaders()
 
   for (const header of ipHeaders) {
     const value = headers[header]
     if (value) {
-      // x-forwarded-for 可能包含多个IP，取第一个
-      const ip = Array.isArray(value) ? value[0] : value
-      const firstIP = ip.split(',')[0].trim()
-      if (firstIP && isValidIP(firstIP)) {
-        return firstIP
+      const values = Array.isArray(value) ? value : [value]
+      for (const item of values) {
+        for (const candidate of String(item).split(',')) {
+          const ip = normalizeIPCandidate(candidate)
+          if (ip) return ip
+        }
       }
     }
   }
@@ -40,13 +77,32 @@ export function getClientIP(event: H3Event): string {
   const remoteAddress = event.node.req.socket?.remoteAddress
   if (remoteAddress) {
     // 移除IPv6映射的IPv4前缀
-    const cleanIP = remoteAddress.replace(/^::ffff:/, '')
-    if (isValidIP(cleanIP)) {
+    const cleanIP = normalizeIPCandidate(remoteAddress)
+    if (cleanIP) {
       return cleanIP
     }
   }
 
   return 'unknown'
+}
+
+function normalizeIPCandidate(value: string): string | null {
+  let candidate = value.trim().replace(/^"|"$/g, '')
+  const forwardedMatch = candidate.match(/^for\s*=\s*(.+)$/i)
+  if (forwardedMatch) {
+    const forwardedValue = forwardedMatch[1] || ''
+    candidate = (forwardedValue.split(';').shift() || '').trim().replace(/^"|"$/g, '')
+  }
+
+  if (candidate.startsWith('[')) {
+    const closingBracket = candidate.indexOf(']')
+    if (closingBracket > 0) candidate = candidate.slice(1, closingBracket)
+  } else if (isIP(candidate) === 0 && /^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(candidate)) {
+    candidate = candidate.slice(0, candidate.lastIndexOf(':'))
+  }
+
+  const cleanIP = candidate.replace(/^::ffff:/i, '')
+  return isValidIP(cleanIP) ? cleanIP : null
 }
 
 /**

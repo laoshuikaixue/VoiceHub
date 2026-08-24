@@ -14,6 +14,13 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
+import { SERVER_ERROR_CODES } from '../config/constants'
+import {
+  ensureAuthSession,
+  isAuthSessionStorageError,
+  sessionExpiryIsActive,
+  touchAuthSession
+} from '../utils/auth-session'
 
 function clearAuthCookie(event: H3Event) {
   setCookie(event, 'auth-token', '', {
@@ -70,6 +77,7 @@ export default defineEventHandler(async (event) => {
   // 公共接口只有匿名访问时才绕过认证；携带登录态必须继续检查强制改密状态。
   // OAuth 路由只有匿名启动/回调时公开；携带登录态时仍必须经过强制改密门控。
   const isPublicApi = isPublicApiPath(pathname, method)
+
   if (
     shouldBypassPublicApiAuthentication(pathname, method, Boolean(token)) ||
     (isOAuthProviderRoute && !token)
@@ -95,6 +103,7 @@ export default defineEventHandler(async (event) => {
       clearAuthCookie(event)
     }
     delete event.context.user
+    event.context.authRejected = true
     return true
   }
 
@@ -180,6 +189,48 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+    // 会话表支持单设备撤销；会话存储不可用时不接受无法撤销的登录态。
+    let authSession
+    try {
+      authSession = await ensureAuthSession(event, decoded)
+      if (authSession) {
+        await touchAuthSession(authSession.id, Boolean(newToken))
+      }
+    } catch (sessionError) {
+      console.error('[Auth] 会话存储处理失败:', sessionError)
+      if (isAuthSessionStorageError(sessionError)) {
+        // 登出必须允许清除 Cookie，即使会话表当前不可用。
+        if (pathname === '/api/auth/logout' && method === 'POST') {
+          clearAuthCookie(event)
+          delete event.context.user
+          return
+        }
+        if (isPublicApi || isOAuthProviderRoute) {
+          clearAuthCookie(event)
+          delete event.context.user
+          event.context.authRejected = true
+          return
+        }
+        return sendError(
+          event,
+          createApiError(503, SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE, '登录会话存储暂时不可用，请稍后重试')
+        )
+      } else {
+        if (isPublicApi || isOAuthProviderRoute) {
+          delete event.context.user
+          event.context.authRejected = true
+          return
+        }
+        throw sessionError
+      }
+    }
+    if (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt)) {
+      const invalidSessionError = new Error('登录会话已失效') as Error & { invalidToken?: boolean }
+      invalidSessionError.invalidToken = true
+      throw invalidSessionError
+    }
+    event.context.authSessionId = authSession?.id
+
     // 仅兼容迁移前签发的无版本号令牌；新体系令牌由 tokenVersion 撤销，避免 NTP 校准时钟与 iat 本机时钟偏差误杀。
     if (decoded.tokenVersion === undefined && user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
@@ -231,6 +282,7 @@ export default defineEventHandler(async (event) => {
       passwordChangedAt: user.passwordChangedAt,
       forcePasswordChange: user.forcePasswordChange,
       tokenVersion: user.tokenVersion,
+      sessionId: authSession?.id,
       email: user.email,
       emailVerified: user.emailVerified,
       requirePasswordChange,
@@ -283,6 +335,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 处理JWT验证错误
+    clearAuthCookie(event)
     return sendError(
       event,
       createError({

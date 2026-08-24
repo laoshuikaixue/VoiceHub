@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
     })
     passwordUpdated = true
 
-    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion)
+    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion, event.context.authSessionId)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),

@@ -40,18 +40,35 @@ export default defineEventHandler(async (event) => {
       throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
     }
 
-    const ownerCondition = and(
-      eq(notifications.id, id),
-      eq(notifications.userId, user.id),
-      eq(notifications.userDeleted, false)
-    )!
     if (shouldRetainNotificationHistory(notification.type, notification.source)) {
-      await db
+      const result = await db
         .update(notifications)
         .set(createNotificationUserDeleteUpdate())
-        .where(ownerCondition)
+        .where(
+          and(
+            eq(notifications.id, id),
+            eq(notifications.userId, user.id),
+            eq(notifications.userDeleted, false)
+          )
+        )
+        .returning({ id: notifications.id })
+      if (result.length === 0) {
+        throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
+      }
     } else {
-      await db.delete(notifications).where(ownerCondition)
+      const result = await db
+        .delete(notifications)
+        .where(
+          and(
+            eq(notifications.id, id),
+            eq(notifications.userId, user.id),
+            eq(notifications.userDeleted, false)
+          )
+        )
+        .returning({ id: notifications.id })
+      if (result.length === 0) {
+        throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
+      }
     }
 
     return { success: true }
