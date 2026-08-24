@@ -193,6 +193,11 @@ export const systemSettings = pgTable('SystemSettings', {
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   monthlySubmissionLimit: integer('monthlySubmissionLimit'),
+  // 用户可见播出排期范围
+  scheduleDaysBeforeEnabled: boolean('scheduleDaysBeforeEnabled').default(false).notNull(),
+  scheduleDaysBefore: integer('scheduleDaysBefore').default(1),
+  scheduleDaysAfterEnabled: boolean('scheduleDaysAfterEnabled').default(false).notNull(),
+  scheduleDaysAfter: integer('scheduleDaysAfter').default(1),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
   // SMTP 邮件配置
