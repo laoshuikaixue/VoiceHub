@@ -67,9 +67,6 @@ export default defineEventHandler(async (event) => {
     // 计算偏移量
     const offset = (page - 1) * limit
 
-    // 开放 API 面向外部调用，不应用普通用户前端的排期可见范围限制。
-    const finalWhere = whereCondition
-
     // 查询排期数据
     const schedulesData = await db
       .select({
@@ -108,7 +105,7 @@ export default defineEventHandler(async (event) => {
       .innerJoin(songs, eq(schedules.songId, songs.id))
       .leftJoin(users, eq(songs.requesterId, users.id))
       .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-      .where(finalWhere)
+      .where(whereCondition)
       .orderBy(
         sortBy === 'playDate'
           ? sortOrder === 'desc'
@@ -133,7 +130,7 @@ export default defineEventHandler(async (event) => {
       .from(schedules)
       .innerJoin(songs, eq(schedules.songId, songs.id))
       .leftJoin(users, eq(songs.requesterId, users.id))
-      .where(finalWhere)
+      .where(whereCondition)
 
     const total = Number(totalResult[0].count)
 

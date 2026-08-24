@@ -36,8 +36,11 @@ export default defineEventHandler(async (event) => {
     const scheduleRangeResult = await client.unsafe(
       `SELECT "scheduleDaysBeforeEnabled", "scheduleDaysBefore", "scheduleDaysAfterEnabled", "scheduleDaysAfter" FROM "SystemSettings" LIMIT 1`
     )
-    const daysBefore = Number(scheduleRangeResult[0]?.scheduleDaysBefore ?? 1)
-    const daysAfter = Number(scheduleRangeResult[0]?.scheduleDaysAfter ?? 1)
+    const storedDaysBefore = Number(scheduleRangeResult[0]?.scheduleDaysBefore)
+    const storedDaysAfter = Number(scheduleRangeResult[0]?.scheduleDaysAfter)
+    // 兼容历史脏数据，异常值不能导致范围意外扩大或生成无效日期。
+    const daysBefore = Number.isInteger(storedDaysBefore) && storedDaysBefore >= 1 && storedDaysBefore <= 730 ? storedDaysBefore : 1
+    const daysAfter = Number.isInteger(storedDaysAfter) && storedDaysAfter >= 1 && storedDaysAfter <= 730 ? storedDaysAfter : 1
     const beforeEnabled = scheduleRangeResult[0]?.scheduleDaysBeforeEnabled === true
     const afterEnabled = scheduleRangeResult[0]?.scheduleDaysAfterEnabled === true
     let dateRangeCondition = ''
