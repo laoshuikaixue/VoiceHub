@@ -19,6 +19,12 @@ const formatDisplayName = (
   return `${user.name}（${user.grade}）`
 }
 
+const isSchemaCompatibilityError = (error: unknown) => {
+  const value = error as { code?: string; cause?: { code?: string } } | null
+  const code = String(value?.code || value?.cause?.code || '')
+  return ['42P01', '42703'].includes(code)
+}
+
 // 可选迁移尚未完成时，只依赖初始表结构返回基础排期，避免首页整体不可用。
 const loadBasicSchedules = async (client: any, semester: string, user: any, isAdmin: boolean) => {
   const params: any[] = []
@@ -117,13 +123,19 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
 }
 
 export default defineEventHandler(async (event) => {
+  let authenticatedUser: any = null
+  let authenticatedIsAdmin = false
   try {
     const query = getQuery(event)
     const semester = String(query.semester || '').trim()
 
-    const authResult = await verifyUserAuth(event)
+    const authResult = event.context.authRejected
+      ? { success: false, user: null }
+      : await verifyUserAuth(event)
     const user = authResult.success ? authResult.user : null
     const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    authenticatedUser = user
+    authenticatedIsAdmin = isAdmin
 
     const params: any[] = []
     const semesterCondition = semester ? 'AND s.semester = $1' : ''
@@ -406,13 +418,13 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('获取公共排期失败:', error)
     if (error.statusCode) throw error
-    try {
-      const fallbackSemester = String(getQuery(event).semester || '').trim()
-      const fallbackUser = event.context.user || null
-      const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
-      return await loadBasicSchedules(client, fallbackSemester, fallbackUser, fallbackIsAdmin)
-    } catch (fallbackError) {
-      console.error('基础排期兜底查询失败:', fallbackError)
+    if (isSchemaCompatibilityError(error)) {
+      try {
+        const fallbackSemester = String(getQuery(event).semester || '').trim()
+        return await loadBasicSchedules(client, fallbackSemester, authenticatedUser, authenticatedIsAdmin)
+      } catch (fallbackError) {
+        console.error('基础排期兜底查询失败:', fallbackError)
+      }
     }
     throw createError({
       statusCode: 500,

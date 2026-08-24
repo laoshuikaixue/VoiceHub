@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery } from 'h3'
 import { and, authSessions, db, desc, eq } from '~/drizzle/db'
 import { isNull } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { isAuthSessionStorageError } from '~~/server/utils/auth-session'
 
@@ -19,7 +20,11 @@ export default defineEventHandler(async (event) => {
     })
   } catch (error) {
     if (!isAuthSessionStorageError(error)) throw error
-    return { success: true, data: [] }
+    throw createApiError(
+      503,
+      SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE,
+      '登录会话存储暂时不可用，请稍后重试'
+    )
   }
 
   return {

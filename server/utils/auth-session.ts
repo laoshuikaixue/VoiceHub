@@ -6,6 +6,8 @@ import type { H3Event } from 'h3'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export const AUTH_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
@@ -24,13 +26,13 @@ function getDateFromTimestamp(timestamp: number) {
 type SessionUser = { id: number; role: string; tokenVersion?: number }
 
 /**
- * 判断数据库是否尚未完成登录会话迁移。
- * 旧版本数据库仍可使用 JWT + 用户表认证，不能因新增会话表缺失而阻断全站接口。
+ * 判断登录会话存储是否因迁移缺失而不可用。
+ * 会话表不可用时禁止签发或接受无法撤销的登录令牌。
  */
 export function isAuthSessionStorageError(error: unknown) {
-  const value = error as { code?: string; message?: string } | null
-  const code = String(value?.code || '')
-  const message = String(value?.message || error || '')
+  const value = error as { code?: string; message?: string; cause?: { code?: string; message?: string } } | null
+  const code = String(value?.code || value?.cause?.code || '')
+  const message = String(value?.message || value?.cause?.message || error || '')
   return ['42P01', '42703'].includes(code) && /auth_sessions/i.test(message)
 }
 
@@ -90,7 +92,12 @@ export async function createAuthSession(event: H3Event, user: SessionUser, login
     })
   } catch (error) {
     if (!isAuthSessionStorageError(error)) throw error
-    console.warn('[Auth] 未检测到 auth_sessions 迁移，登录使用兼容会话模式')
+    console.error('[Auth] auth_sessions 表不可用，拒绝签发无法撤销的登录令牌:', error)
+    throw createApiError(
+      503,
+      SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE,
+      '登录会话存储暂时不可用，请先完成数据库迁移'
+    )
   }
 
   return {

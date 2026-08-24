@@ -14,6 +14,7 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
+import { SERVER_ERROR_CODES } from '../config/constants'
 import {
   ensureAuthSession,
   isAuthSessionStorageError,
@@ -77,11 +78,6 @@ export default defineEventHandler(async (event) => {
   // OAuth 路由只有匿名启动/回调时公开；携带登录态时仍必须经过强制改密门控。
   const isPublicApi = isPublicApiPath(pathname, method)
 
-  // 公共排期接口自身会按需解析用户信息；不让残留 Cookie 进入全局会话校验，避免匿名页面受会话存储影响。
-  if (pathname === '/api/songs/public' && ['GET', 'HEAD'].includes(method)) {
-    return
-  }
-
   if (
     shouldBypassPublicApiAuthentication(pathname, method, Boolean(token)) ||
     (isOAuthProviderRoute && !token)
@@ -107,6 +103,7 @@ export default defineEventHandler(async (event) => {
       clearAuthCookie(event)
     }
     delete event.context.user
+    event.context.authRejected = true
     return true
   }
 
@@ -192,10 +189,8 @@ export default defineEventHandler(async (event) => {
       )
     }
 
-    // 会话表支持单设备撤销；迁移前令牌首次使用时会补建兼容记录。
-    // 公共接口携带过期/残留登录 Cookie 时，不能因会话存储故障阻断匿名内容。
+    // 会话表支持单设备撤销；会话存储不可用时不接受无法撤销的登录态。
     let authSession
-    let sessionStorageUnavailable = false
     try {
       authSession = await ensureAuthSession(event, decoded)
       if (authSession) {
@@ -204,17 +199,32 @@ export default defineEventHandler(async (event) => {
     } catch (sessionError) {
       console.error('[Auth] 会话存储处理失败:', sessionError)
       if (isAuthSessionStorageError(sessionError)) {
-        sessionStorageUnavailable = true
-        console.warn('[Auth] 未检测到 auth_sessions 迁移，暂时使用兼容认证模式')
+        // 登出必须允许清除 Cookie，即使会话表当前不可用。
+        if (pathname === '/api/auth/logout' && method === 'POST') {
+          clearAuthCookie(event)
+          delete event.context.user
+          return
+        }
+        if (isPublicApi || isOAuthProviderRoute) {
+          clearAuthCookie(event)
+          delete event.context.user
+          event.context.authRejected = true
+          return
+        }
+        return sendError(
+          event,
+          createApiError(503, SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE, '登录会话存储暂时不可用，请稍后重试')
+        )
       } else {
         if (isPublicApi || isOAuthProviderRoute) {
           delete event.context.user
+          event.context.authRejected = true
           return
         }
         throw sessionError
       }
     }
-    if (!sessionStorageUnavailable && (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt))) {
+    if (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt)) {
       const invalidSessionError = new Error('登录会话已失效') as Error & { invalidToken?: boolean }
       invalidSessionError.invalidToken = true
       throw invalidSessionError
@@ -325,6 +335,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 处理JWT验证错误
+    clearAuthCookie(event)
     return sendError(
       event,
       createError({

@@ -2,6 +2,40 @@ import type { H3Event } from 'h3'
 import { getHeaders } from 'h3'
 import { isIP } from 'node:net'
 
+const SUPPORTED_CLIENT_IP_HEADERS = new Set([
+  'eo-connecting-ip',
+  'eo-client-ip',
+  'x-edgeone-client-ip',
+  'edgeone-client-ip',
+  'cf-connecting-ip',
+  'true-client-ip',
+  'fastly-client-ip',
+  'fly-client-ip',
+  'x-nf-client-connection-ip',
+  'x-vercel-forwarded-for',
+  'x-azure-clientip',
+  'x-appengine-user-ip',
+  'x-cluster-client-ip',
+  'x-real-ip',
+  'x-client-ip',
+  'x-real-client-ip',
+  'x-forwarded-client-ip',
+  'x-original-forwarded-for',
+  'x-forwarded-for',
+  'x-forwarded',
+  'forwarded-for',
+  'forwarded'
+])
+
+function getTrustedClientIPHeaders() {
+  const configured = String(process.env.TRUSTED_CLIENT_IP_HEADERS || '')
+    .split(',')
+    .map((header) => header.trim().toLowerCase())
+    .filter((header) => SUPPORTED_CLIENT_IP_HEADERS.has(header))
+
+  return [...new Set(configured)]
+}
+
 /**
  * 获取客户端IP地址
  * @param event H3Event对象
@@ -10,31 +44,8 @@ import { isIP } from 'node:net'
 export function getClientIP(event: H3Event): string {
   const headers = getHeaders(event)
 
-  // CDN 专用头优先于 X-Forwarded-For；后者在部分托管平台会被改写为 CDN 节点地址。
-  const ipHeaders = [
-    'eo-connecting-ip', // EdgeOne
-    'eo-client-ip',
-    'x-edgeone-client-ip',
-    'edgeone-client-ip',
-    'cf-connecting-ip', // Cloudflare
-    'true-client-ip',
-    'fastly-client-ip',
-    'fly-client-ip',
-    'x-nf-client-connection-ip', // Netlify
-    'x-vercel-forwarded-for', // Vercel
-    'x-azure-clientip',
-    'x-appengine-user-ip',
-    'x-cluster-client-ip',
-    'x-real-ip',
-    'x-client-ip',
-    'x-real-client-ip',
-    'x-forwarded-client-ip',
-    'x-original-forwarded-for',
-    'x-forwarded-for',
-    'x-forwarded',
-    'forwarded-for',
-    'forwarded'
-  ]
+  // 只有部署者明确声明受信头部时才读取转发头，避免客户端直连源站时伪造 IP。
+  const ipHeaders = getTrustedClientIPHeaders()
 
   for (const header of ipHeaders) {
     const value = headers[header]
@@ -67,7 +78,10 @@ export function getClientIP(event: H3Event): string {
 function normalizeIPCandidate(value: string): string | null {
   let candidate = value.trim().replace(/^"|"$/g, '')
   const forwardedMatch = candidate.match(/^for\s*=\s*(.+)$/i)
-  if (forwardedMatch) candidate = (forwardedMatch[1] || '').split(';')[0].trim().replace(/^"|"$/g, '')
+  if (forwardedMatch) {
+    const forwardedValue = forwardedMatch[1] || ''
+    candidate = (forwardedValue.split(';').shift() || '').trim().replace(/^"|"$/g, '')
+  }
 
   if (candidate.startsWith('[')) {
     const closingBracket = candidate.indexOf(']')

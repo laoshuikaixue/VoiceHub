@@ -66,7 +66,21 @@ const calculateReplayCooldown = (status?: string | null, updatedAt?: Date | stri
   return remainingMs > 0 ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0
 }
 
-const loadBasicSongs = async (client: any, semester: string, grade: string, search: string, user: any, isAdmin: boolean) => {
+const isSchemaCompatibilityError = (error: unknown) => {
+  const value = error as { code?: string; cause?: { code?: string } } | null
+  const code = String(value?.code || value?.cause?.code || '')
+  return ['42P01', '42703'].includes(code)
+}
+
+const loadBasicSongs = async (
+  client: any,
+  semester: string,
+  grade: string,
+  search: string,
+  user: any,
+  isAdmin: boolean,
+  options: { scope?: string; sortBy?: string; sortOrder?: string } = {}
+) => {
   const conditions: string[] = []
   const params: any[] = []
   const addParam = (value: any) => {
@@ -79,18 +93,25 @@ const loadBasicSongs = async (client: any, semester: string, grade: string, sear
   }
   if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
   if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
+  if (options.scope === 'mine' && user) conditions.push(`s."requesterId" = ${addParam(user.id)}`)
+  const orderColumn =
+    options.sortBy === 'title'
+      ? 's.title'
+      : options.sortBy === 'artist'
+        ? 's.artist'
+        : 's."createdAt"'
+  const orderDirection = options.sortOrder === 'asc' ? 'ASC' : 'DESC'
   // 兜底查询只依赖初始版本就存在的 Song/User 字段。
   // 可选迁移（排期、卡密、重播等）缺失时，歌曲列表仍应可用。
   const rows = await client.unsafe(`
     SELECT s.id, s.title, s.artist, s.played, s."playedAt", s.semester,
       s."createdAt", s."updatedAt", s.cover, s."musicPlatform", s."musicId",
-      s."preferredPlayTimeId",
       u.id AS "requesterId", u.name AS "requesterName", u.grade AS "requesterGrade", u.class AS "requesterClass",
       COUNT(*) OVER()::int AS total
     FROM "Song" s
     LEFT JOIN "User" u ON u.id = s."requesterId"
     ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
-    ORDER BY s."createdAt" DESC
+    ORDER BY ${orderColumn} ${orderDirection}
   `, params)
   const hideStudentInfo = true
   const songs = rows.map((row: any) => ({
@@ -106,7 +127,7 @@ const loadBasicSongs = async (client: any, semester: string, grade: string, sear
     durationSeconds: null, playUrl: null,
     replayRequested: false, replayRequestCount: 0, isReplay: false, replayRequesters: [],
     hasSubmissionNote: false, submissionNote: null, submissionNotePublic: false,
-    preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null,
+    preferredPlayTimeId: null,
   })) as SongResponse[]
   if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
   if (!user) songs.forEach(stripAnonymousSongIdentifiers)
@@ -440,16 +461,25 @@ export default defineEventHandler(async (event) => {
     console.error('[Songs API] 获取歌曲列表失败:', error)
     if (error.statusCode) throw error
 
-    try {
-      const fallbackQuery = getQuery(event)
-      const fallbackSearch = String(fallbackQuery.search || '').trim()
-      const fallbackSemester = String(fallbackQuery.semester || '').trim()
-      const fallbackGrade = String(fallbackQuery.grade || '').trim()
-      const fallbackUser = event.context.user || null
-      const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
-      return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin)
-    } catch (fallbackError) {
-      console.error('[Songs API] 基础歌曲查询也失败:', fallbackError)
+    if (isSchemaCompatibilityError(error)) {
+      try {
+        const fallbackQuery = getQuery(event)
+        const fallbackSearch = String(fallbackQuery.search || '').trim()
+        const fallbackSemester = String(fallbackQuery.semester || '').trim()
+        const fallbackGrade = String(fallbackQuery.grade || '').trim()
+        const fallbackScope = String(fallbackQuery.scope || '').trim()
+        const fallbackSortBy = String(fallbackQuery.sortBy || 'createdAt')
+        const fallbackSortOrder = String(fallbackQuery.sortOrder || 'desc')
+        const fallbackUser = event.context.user || null
+        const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+        return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin, {
+          scope: fallbackScope,
+          sortBy: fallbackSortBy,
+          sortOrder: fallbackSortOrder
+        })
+      } catch (fallbackError) {
+        console.error('[Songs API] 基础歌曲查询也失败:', fallbackError)
+      }
     }
 
     const isDbError = ['ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT'].some((code) =>

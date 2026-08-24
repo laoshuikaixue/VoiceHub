@@ -1,5 +1,6 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   isAuthSessionStorageError,
   revokeAuthSession,
@@ -22,6 +23,11 @@ export default defineEventHandler(async (event) => {
     await revokeOtherAuthSessions(user.id, event.context.authSessionId || null)
   } catch (error) {
     if (!isAuthSessionStorageError(error)) throw error
+    throw createApiError(
+      503,
+      SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE,
+      '登录会话存储暂时不可用，请稍后重试'
+    )
   }
   return { success: true }
 })
