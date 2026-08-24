@@ -388,7 +388,7 @@ async function handleUserLoginOrBind(
       })
       .where(eq(users.id, user.id))
 
-    const { token } = await createAuthSession(event, existingIdentity.user, 'oauth')
+    const { token } = await createAuthSession(event, existingIdentity.user, provider)
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: isSecure,

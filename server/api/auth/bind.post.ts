@@ -229,7 +229,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(users.id, user.id))
 
   // 登录
-  const { token } = await createAuthSession(event, user, 'oauth')
+  const { token } = await createAuthSession(event, user, payload.provider || 'oauth')
   const isSecure = isSecureRequest(event)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,

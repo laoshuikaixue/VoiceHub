@@ -126,7 +126,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 生成JWT令牌
-    const { token } = await createAuthSession(event, { id: result.id, role: 'USER', tokenVersion: result.tokenVersion }, 'oauth')
+    const { token } = await createAuthSession(event, { id: result.id, role: 'USER', tokenVersion: result.tokenVersion }, payload.provider || 'oauth')
 
     // 自动判断是否需要secure
     const isSecure = isSecureRequest(event)

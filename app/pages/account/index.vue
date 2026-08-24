@@ -443,6 +443,7 @@ import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { getProviderDisplayName } from '~/utils/oauth'
 
 const auth = useAuth()
 const router = useRouter()
@@ -552,8 +553,15 @@ const revokeOtherSessions = async () => {
 }
 
 const getSessionMethod = (method) => {
-  const map = { password: locale.value.sessions.methods.password, '2fa': locale.value.sessions.methods.twoFactor, oauth: locale.value.sessions.methods.oauth, webauthn: locale.value.sessions.methods.webauthn, legacy: locale.value.sessions.methods.legacy }
-  return map[method] || method
+  if (!method) return '-'
+  const baseMap = {
+    password: locale.value.sessions.methods.password,
+    '2fa': locale.value.sessions.methods.twoFactor,
+    webauthn: locale.value.sessions.methods.webauthn,
+    legacy: locale.value.sessions.methods.legacy
+  }
+  if (baseMap[method]) return baseMap[method]
+  return getProviderDisplayName(method)
 }
 
 // 样式类常量
