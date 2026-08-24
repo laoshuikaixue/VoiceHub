@@ -10,6 +10,7 @@ import { eq, or, and } from 'drizzle-orm'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -49,8 +50,7 @@ export default defineEventHandler(async (event) => {
       preferredPlayTimeId,
       durationSeconds
     } = body
-    const ipAddress =
-      (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
+    const ipAddress = getClientIP(event)
 
     // 验证必填字段
     if (!title || !artist) {

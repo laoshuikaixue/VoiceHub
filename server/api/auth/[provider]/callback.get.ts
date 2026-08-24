@@ -10,6 +10,7 @@ import {
 import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
 import {
@@ -387,11 +388,7 @@ async function handleUserLoginOrBind(
       })
       .where(eq(users.id, user.id))
 
-    const token = JWTEnhanced.generateToken(
-      existingIdentity.user.id,
-      existingIdentity.user.role,
-      existingIdentity.user.tokenVersion
-    )
+    const { token } = await createAuthSession(event, existingIdentity.user, provider)
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: isSecure,

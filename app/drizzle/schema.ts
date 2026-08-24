@@ -38,6 +38,29 @@ export const users = pgTable('User', {
   statusChangedBy: integer('statusChangedBy'),
 });
 
+// 登录会话表，id 与 JWT 的 jti 一致
+export const authSessions = pgTable('auth_sessions', {
+  id: uuid('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  browser: text('browser'),
+  operatingSystem: text('operating_system'),
+  device: text('device'),
+  loginMethod: text('login_method').default('password').notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revokedReason: text('revoked_reason')
+}, (table) => [
+  index('auth_sessions_user_active_idx').on(table.userId, table.revokedAt, table.expiresAt),
+  index('auth_sessions_last_active_idx').on(table.lastActiveAt)
+]);
+
+export type AuthSession = typeof authSessions.$inferSelect;
+export type NewAuthSession = typeof authSessions.$inferInsert;
+
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
   id: serial('id').primaryKey(),
@@ -447,6 +470,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [notificationSettings.userId],
   }),
   apiKeys: many(apiKeys),
+  sessions: many(authSessions),
   statusLogs: many(userStatusLogs),
     collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),

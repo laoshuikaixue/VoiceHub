@@ -4,6 +4,7 @@ import { songCollaborators, collaborationLogs, songs } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import { createCollaborationResponseNotification } from '~~/server/services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
+import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -52,8 +53,7 @@ export default defineEventHandler(async (event) => {
       collaboratorId: collabRecord.id,
       action: accept ? 'ACCEPT' : 'REJECT',
       operatorId: user.id,
-      ipAddress:
-        (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
+      ipAddress: getClientIP(event)
     })
 
     // 获取歌曲信息以发送通知

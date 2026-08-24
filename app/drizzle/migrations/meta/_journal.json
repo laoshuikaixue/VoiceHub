@@ -288,6 +288,13 @@
       "when": 1787483779816,
       "tag": "20260823000000_theme-settings",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787497559680,
+      "tag": "20260823230554_add_auth_sessions",
+      "breakpoints": true
     }
   ]
 }

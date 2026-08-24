@@ -214,6 +214,38 @@
           <section :class="sectionClass">
             <AuthTwoFactorSetup :initial-enabled="auth.user.value?.has2FA" />
           </section>
+
+          <!-- 登录会话 -->
+          <section :class="sectionClass">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-info-10 rounded-xl flex items-center justify-center"><Monitor :size="20" class="text-info" /></div>
+                <div>
+                  <h2 class="text-base font-black text-text-primary">{{ locale.sessions.title }}</h2>
+                  <p class="text-xs text-text-tertiary mt-0.5">{{ locale.sessions.desc }}</p>
+                </div>
+              </div>
+              <button class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-border-secondary bg-bg-primary-40 hover:bg-bg-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50" :disabled="sessionsLoading || sessionsRevoking" @click="loadSessions">
+                <RefreshCw :size="14" :class="{ 'animate-spin': sessionsLoading }" /> {{ locale.sessions.refresh }}
+              </button>
+            </div>
+            <div v-if="sessionsLoading" class="flex items-center justify-center gap-2 py-8 text-xs text-text-tertiary"><RefreshCw :size="16" class="animate-spin" />{{ locale.sessions.loading }}</div>
+            <div v-else-if="sessions.length === 0" class="py-8 text-center text-xs text-text-tertiary">{{ locale.sessions.empty }}</div>
+            <div v-else class="space-y-3">
+              <div v-for="session in sessions" :key="session.id" class="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-border-secondary-70 bg-bg-primary-45 p-4">
+                <div class="flex items-start gap-3 min-w-0">
+                  <div class="w-10 h-10 shrink-0 rounded-xl bg-bg-tertiary flex items-center justify-center text-text-secondary"><Monitor :size="19" /></div>
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2"><p class="text-sm font-black text-text-primary">{{ session.browser }} · {{ session.operatingSystem }}</p><span v-if="session.current" class="px-2 py-0.5 rounded-full bg-success-10 text-success text-[10px] font-bold">{{ locale.sessions.current }}</span></div>
+                    <p class="text-xs text-text-tertiary mt-1">{{ locale.sessions.ip }}: {{ session.ipAddress || '-' }} · {{ locale.sessions.loginMethod }}: {{ getSessionMethod(session.loginMethod) }}</p>
+                    <p class="text-xs text-text-tertiary mt-1">{{ locale.sessions.lastActive }}: {{ formatDate(session.lastActiveAt) }} · {{ locale.sessions.expiresAt }}: {{ formatDate(session.expiresAt) }}</p>
+                  </div>
+                </div>
+                <button class="inline-flex items-center justify-center gap-2 shrink-0 px-3 py-2 border border-error-20 bg-error-10 hover:bg-error-15 text-error text-xs font-bold rounded-xl transition-all disabled:opacity-50" :disabled="sessionsRevoking" @click="revokeSession(session)"><LogOut :size="14" />{{ locale.sessions.logout }}</button>
+              </div>
+              <button v-if="sessions.length > 1" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-error-20 bg-error-10 hover:bg-error-15 text-error text-xs font-bold rounded-xl transition-all disabled:opacity-50" :disabled="sessionsRevoking" @click="revokeOtherSessions"><LogOut :size="14" />{{ locale.sessions.logoutOthers }}</button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -397,6 +429,8 @@ import {
   KeyRound,
   Link as LinkIcon,
   Lock,
+  LogOut,
+  Monitor,
   Plus,
   RefreshCw,
   Trash2,
@@ -408,6 +442,8 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
+import { getProviderDisplayName } from '~/utils/oauth'
 
 const auth = useAuth()
 const router = useRouter()
@@ -415,6 +451,7 @@ const route = useRoute()
 const { showToast } = useToast()
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { currentLocale, pages } = useLocale()
+const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => pages.value?.account || {})
 const getAccountText = (path, ...args) => {
   const value = String(path).split('.').reduce((target, key) => target?.[key], locale.value?.personalApiKey)
@@ -444,6 +481,9 @@ const apiKeyLogsPagination = ref({
   total: 0,
   totalPages: 0
 })
+const sessions = ref([])
+const sessionsLoading = ref(false)
+const sessionsRevoking = ref(false)
 
 // 监听用户头像变化，重置错误状态
 watch(
@@ -457,6 +497,7 @@ watch(
 onMounted(() => {
   refreshSiteConfig()
   loadPersonalApiKeys()
+  loadSessions()
 
   if (route.query.message) {
     showToast(route.query.message, 'success')
@@ -467,6 +508,61 @@ onMounted(() => {
     router.replace({ query: { ...route.query, message: undefined, error: undefined } })
   }
 })
+
+const loadSessions = async () => {
+  sessionsLoading.value = true
+  try {
+    const response = await $fetch('/api/user/sessions')
+    sessions.value = response.data || []
+  } catch (error) {
+    console.error('加载登录会话失败:', error)
+    showToast(localizeServerError(error, locale.value.sessions.loadFailed), 'error')
+  } finally {
+    sessionsLoading.value = false
+  }
+}
+
+const revokeSession = async (session) => {
+  sessionsRevoking.value = true
+  try {
+    await $fetch('/api/user/sessions', { method: 'DELETE', query: { id: session.id } })
+    if (session.current) {
+      await auth.logout()
+      return
+    }
+    showToast(locale.value.sessions.logoutSuccess, 'success')
+    await loadSessions()
+  } catch (error) {
+    showToast(localizeServerError(error, locale.value.sessions.logoutFailed), 'error')
+  } finally {
+    sessionsRevoking.value = false
+  }
+}
+
+const revokeOtherSessions = async () => {
+  sessionsRevoking.value = true
+  try {
+    await $fetch('/api/user/sessions', { method: 'DELETE' })
+    showToast(locale.value.sessions.logoutOthersSuccess, 'success')
+    await loadSessions()
+  } catch (error) {
+    showToast(localizeServerError(error, locale.value.sessions.logoutFailed), 'error')
+  } finally {
+    sessionsRevoking.value = false
+  }
+}
+
+const getSessionMethod = (method) => {
+  if (!method) return '-'
+  const baseMap = {
+    password: locale.value.sessions.methods.password,
+    '2fa': locale.value.sessions.methods.twoFactor,
+    webauthn: locale.value.sessions.methods.webauthn,
+    legacy: locale.value.sessions.methods.legacy
+  }
+  if (baseMap[method]) return baseMap[method]
+  return getProviderDisplayName(method)
+}
 
 // 样式类常量
 const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'

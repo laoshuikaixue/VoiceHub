@@ -1,11 +1,11 @@
 import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
@@ -126,7 +126,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 生成JWT令牌
-    const token = JWTEnhanced.generateToken(result.id, 'USER', result.tokenVersion)
+    const { token } = await createAuthSession(event, { id: result.id, role: 'USER', tokenVersion: result.tokenVersion }, payload.provider || 'oauth')
 
     // 自动判断是否需要secure
     const isSecure = isSecureRequest(event)

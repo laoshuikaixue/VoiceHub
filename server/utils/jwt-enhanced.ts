@@ -53,13 +53,13 @@ export class JWTEnhanced {
   /**
    * 生成JWT token
    */
-  static generateToken(userId: number, role: string, tokenVersion = 0): string {
+  static generateToken(userId: number, role: string, tokenVersion = 0, sessionId?: string): string {
     if (!this.JWT_SECRET) {
       throw new Error('JWT_SECRET environment variable is not set')
     }
 
     // 生成唯一的JWT ID
-    const jti = randomUUID()
+    const jti = sessionId || randomUUID()
 
     // JWT载荷
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
@@ -167,7 +167,7 @@ export class JWTEnhanced {
     const decoded = this.verifyToken(oldToken)
 
     // 使用原有的用户信息生成新token
-    return this.generateToken(decoded.userId, decoded.role, decoded.tokenVersion ?? 0)
+    return this.generateToken(decoded.userId, decoded.role, decoded.tokenVersion ?? 0, decoded.jti)
   }
 
   /**

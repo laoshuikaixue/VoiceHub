@@ -1,7 +1,9 @@
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { notifications, songCollaborators, songs } from '~/drizzle/schema'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { createApiError } from '~~/server/utils/apiError'
 import { serializeNotificationSender } from '~~/server/utils/important-notification-policy'
 
 const serializeNotification = <T extends {
@@ -21,10 +23,7 @@ export default defineEventHandler(async (event) => {
   const user = event.context.user
 
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能获取通知'
-    })
+    throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '需要登录才能获取通知')
   }
 
   try {
@@ -35,11 +34,11 @@ export default defineEventHandler(async (event) => {
     const offset = (page - 1) * limit
     const unreadOnly = query.filter === 'unread'
     const search = typeof query.search === 'string' ? query.search.trim().slice(0, 100) : ''
-    const escapedSearch = search.replace(/[\\%_]/g, '\\$&')
-    const searchCondition = escapedSearch
+    // Drizzle ORM 的 ilike 已对参数做参数化绑定，无需手动转义 % 和 _
+    const searchCondition = search
       ? or(
-          ilike(notifications.title, `%${escapedSearch}%`),
-          ilike(notifications.message, `%${escapedSearch}%`)
+          ilike(notifications.title, `%${search}%`),
+          ilike(notifications.message, `%${search}%`)
         )
       : undefined
     const notificationCondition = and(
@@ -156,9 +155,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (err) {
     console.error('获取通知失败:', err)
-    throw createError({
-      statusCode: 500,
-      message: '获取通知失败'
-    })
+    throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_FETCH_FAILED, '获取通知失败')
   }
 })

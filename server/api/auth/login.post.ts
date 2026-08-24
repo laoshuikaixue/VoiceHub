@@ -23,6 +23,7 @@ import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import type { SystemSettings } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
+import { createAuthSession } from '~~/server/utils/auth-session'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -254,7 +255,7 @@ export default defineEventHandler(async (event) => {
       .catch((err) => console.error('Error updating user login info:', err))
 
     // 生成JWT
-    const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
+    const { token } = await createAuthSession(event, user, 'password')
 
     // 自动判断是否需要secure
     const isSecure =

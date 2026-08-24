@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import {
   isAccountLocked,
@@ -228,7 +229,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(users.id, user.id))
 
   // 登录
-  const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
+  const { token } = await createAuthSession(event, user, payload.provider || 'oauth')
   const isSecure = isSecureRequest(event)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,
