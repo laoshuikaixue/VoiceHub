@@ -147,6 +147,55 @@
         </div>
       </section>
 
+      <!-- 主题设置 -->
+      <section v-if="isSuperAdmin" :class="cardClass">
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4">
+          <Palette :size="16" class="text-primary" /> {{ locale.themeSettings }}
+        </h3>
+        <div class="space-y-3">
+          <p class="text-[10px] text-text-tertiary">{{ locale.themeSettingsDesc }}</p>
+          <div
+            v-for="option in themeOptions"
+            :key="option.value"
+            class="flex items-center gap-3 rounded-xl border border-border-secondary bg-bg-primary-50 p-3"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs font-bold text-text-primary">{{ option.label }}</p>
+              <p v-if="option.value === 'System'" class="mt-0.5 text-[10px] text-text-tertiary">
+                {{ locale.systemThemeHint }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors"
+              :class="formData.defaultTheme === option.value
+                ? 'border-warning bg-warning-10 text-warning'
+                : 'border-border-secondary text-text-disabled hover:border-warning-30 hover:text-warning'"
+              :aria-label="locale.setDefaultTheme"
+              :aria-pressed="formData.defaultTheme === option.value"
+              @click="setDefaultTheme(option.value)"
+            >
+              <Star :size="15" :fill="formData.defaultTheme === option.value ? 'currentColor' : 'none'" />
+            </button>
+            <button
+              type="button"
+              class="relative h-6 w-12 shrink-0 rounded-full transition-colors"
+              :class="themeToggleClass(option.value)"
+              :aria-label="formData.enabledThemes.includes(option.value) ? locale.disableTheme : locale.enableTheme"
+              :aria-pressed="formData.enabledThemes.includes(option.value)"
+              :disabled="isThemeToggleLocked(option.value)"
+              @click="toggleTheme(option.value)"
+            >
+              <span
+                class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                :class="formData.enabledThemes.includes(option.value) ? 'translate-x-6' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+          <p class="text-[10px] text-text-tertiary">{{ locale.defaultThemeDesc }}</p>
+        </div>
+      </section>
+
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
@@ -574,19 +623,85 @@ import {
   Save,
   RotateCcw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Palette,
+  Star
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { joinThemeLogoUrl, splitThemeLogoUrl, useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
+import { usePermissions } from '~/composables/usePermissions'
+import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
 const { refreshSiteConfig } = useSiteConfig()
-const { siteConfig: locale } = useLocale()
+const { siteConfig: locale, theme: themeLocale } = useLocale()
+const { isSuperAdmin } = usePermissions()
+const { localize: localizeServerError } = useServerErrors()
+const themeOptions = computed(() => THEMES.map((value) => ({ value, label: themeLocale.value?.[value] || value })))
+
+const setDefaultTheme = (theme) => {
+  formData.value.defaultTheme = theme
+  const enabled = new Set(formData.value.enabledThemes)
+  enabled.add(theme)
+  formData.value.enabledThemes = THEMES.filter((item) => enabled.has(item))
+  if (theme === 'System') {
+    const enabled = new Set(formData.value.enabledThemes)
+    enabled.add('System')
+    enabled.add('ClassicDark')
+    enabled.add('ClassicLight')
+    formData.value.enabledThemes = THEMES.filter((item) => enabled.has(item))
+    showNotification(locale.value?.systemThemeAutoEnabled || '跟随系统需要经典深色和经典浅色，已自动启用', 'info')
+  }
+}
+
+const isThemeToggleLocked = (theme) => {
+  if (formData.value.defaultTheme === theme) return true
+  if (formData.value.enabledThemes.length <= 1 && formData.value.enabledThemes.includes(theme)) return true
+  return (theme === 'ClassicDark' || theme === 'ClassicLight') && formData.value.enabledThemes.includes('System')
+}
+
+const themeToggleClass = (theme) => {
+  if (isThemeToggleLocked(theme)) return 'bg-primary-80 opacity-50 cursor-not-allowed'
+  return formData.value.enabledThemes.includes(theme) ? 'bg-primary' : 'bg-bg-quaternary'
+}
+
+const toggleTheme = (theme) => {
+  if (isThemeToggleLocked(theme)) return
+  const enabled = new Set(formData.value.enabledThemes)
+  if (enabled.has(theme)) {
+    if (enabled.size <= 1 || formData.value.defaultTheme === theme) return
+    if (theme === 'ClassicDark' || theme === 'ClassicLight') {
+      if (enabled.has('System')) {
+        showNotification(locale.value?.systemThemeRequiresBothClassic || '启用跟随系统时，经典深色和经典浅色必须同时启用', 'info')
+        return
+      }
+    }
+    enabled.delete(theme)
+  } else {
+    enabled.add(theme)
+  }
+  formData.value.enabledThemes = THEMES.filter((item) => enabled.has(item))
+}
+const parseJsonArray = (value, fallback) => {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    if (!Array.isArray(parsed) || parsed.length === 0) return fallback
+    let themes = parsed.filter((item) => THEMES.includes(item))
+    // 脏数据防御：跟随系统依赖经典深色/浅色同时启用，缺失时剔除 System
+    if (themes.includes('System') && (!themes.includes('ClassicDark') || !themes.includes('ClassicLight'))) {
+      themes = themes.filter((item) => item !== 'System')
+    }
+    return themes.length > 0 ? themes : fallback
+  } catch {
+    return fallback
+  }
+}
 
 const loading = ref(true)
 const saving = ref(false)
@@ -666,7 +781,9 @@ const formData = ref({
   customOAuthUsernameField: '',
   customOAuthNameField: '',
   customOAuthEmailField: '',
-  customOAuthAvatarField: ''
+  customOAuthAvatarField: '',
+  defaultTheme: 'System',
+  enabledThemes: [...THEMES]
 })
 
 const originalData = ref({})
@@ -713,106 +830,6 @@ const currentLimitLabel = computed(() => {
 
   return `${locale.value?.limitLabelPrefix || '当前启用：'}${limitTypeLabel || '未设置限额'}${locale.value?.limitLabelSuffix || '投稿限制'}`
 })
-
-const getLocalizedServerMessage = (message) => {
-  if (!message) return locale.value?.saveFailed || '系统设置保存失败'
-  if (typeof message !== 'string') return String(message)
-
-  const serverMessages = locale.value?.serverMessages
-  if (!serverMessages) return message
-  const rawMessages = serverMessages.raw
-  if (!rawMessages) return message
-  const exactMessageMap = {
-    [rawMessages.oauthRedirectCallbackInvalid]: serverMessages.oauthRedirectCallbackInvalid,
-    [rawMessages.oauthRedirectUrlInvalid]: serverMessages.oauthRedirectUrlInvalid,
-    [rawMessages.unauthorized]: serverMessages.unauthorized,
-    [rawMessages.adminOnly]: serverMessages.adminOnly,
-    [rawMessages.captchaProviderInvalid]: serverMessages.captchaProviderInvalid,
-    [rawMessages.turnstileRequired]: serverMessages.turnstileRequired,
-    [rawMessages.smtpPortInvalid]: serverMessages.smtpPortInvalid,
-    [rawMessages.oauthBaseRequired]: serverMessages.oauthBaseRequired,
-    [rawMessages.githubClientIdRequired]: serverMessages.githubClientIdRequired,
-    [rawMessages.githubClientSecretRequired]: serverMessages.githubClientSecretRequired,
-    [rawMessages.casdoorServerUrlRequired]: serverMessages.casdoorServerUrlRequired,
-    [rawMessages.casdoorClientIdRequired]: serverMessages.casdoorClientIdRequired,
-    [rawMessages.casdoorClientSecretRequired]: serverMessages.casdoorClientSecretRequired,
-    [rawMessages.casdoorOrganizationRequired]: serverMessages.casdoorOrganizationRequired,
-    [rawMessages.googleClientIdRequired]: serverMessages.googleClientIdRequired,
-    [rawMessages.googleClientSecretRequired]: serverMessages.googleClientSecretRequired,
-    [rawMessages.onlyOneLimit]: serverMessages.onlyOneLimit,
-    [rawMessages.updateFailed]: serverMessages.updateFailed
-  }
-
-  if (exactMessageMap[message]) return exactMessageMap[message]
-
-  const fields = serverMessages.fields || {}
-  const fieldLabelMap = {
-    [rawMessages.customOAuthAuthorizeUrlLabel]: fields.customOAuthAuthorizeUrl,
-    [rawMessages.customOAuthTokenUrlLabel]: fields.customOAuthTokenUrl,
-    [rawMessages.customOAuthUserInfoUrlLabel]: fields.customOAuthUserInfoUrl,
-    [rawMessages.customOAuthClientIdLabel]: fields.customOAuthClientId,
-    [rawMessages.customOAuthClientSecretLabel]: fields.customOAuthClientSecret,
-    [rawMessages.customOAuthUserIdFieldLabel]: fields.customOAuthUserIdField,
-    customOAuthAuthorizeUrl: fields.customOAuthAuthorizeUrl,
-    customOAuthTokenUrl: fields.customOAuthTokenUrl,
-    customOAuthUserInfoUrl: fields.customOAuthUserInfoUrl,
-    customOAuthClientId: fields.customOAuthClientId,
-    customOAuthClientSecret: fields.customOAuthClientSecret,
-    customOAuthUserIdField: fields.customOAuthUserIdField
-  }
-
-  if (
-    typeof rawMessages.booleanSuffix === 'string' &&
-    rawMessages.booleanSuffix.length > 0 &&
-    typeof serverMessages.mustBeBoolean === 'function' &&
-    message.endsWith(rawMessages.booleanSuffix)
-  ) {
-    return serverMessages.mustBeBoolean(message.slice(0, -rawMessages.booleanSuffix.length))
-  }
-
-  if (
-    typeof rawMessages.positiveIntegerSuffix === 'string' &&
-    rawMessages.positiveIntegerSuffix.length > 0 &&
-    typeof serverMessages.mustBePositiveInteger === 'function' &&
-    message.endsWith(rawMessages.positiveIntegerSuffix)
-  ) {
-    return serverMessages.mustBePositiveInteger(message.slice(0, -rawMessages.positiveIntegerSuffix.length))
-  }
-
-  if (
-    typeof rawMessages.nonNegativeIntegerOrNullSuffix === 'string' &&
-    rawMessages.nonNegativeIntegerOrNullSuffix.length > 0 &&
-    typeof serverMessages.mustBeNonNegativeIntegerOrNull === 'function' &&
-    message.endsWith(rawMessages.nonNegativeIntegerOrNullSuffix)
-  ) {
-    return serverMessages.mustBeNonNegativeIntegerOrNull(
-      message.slice(0, -rawMessages.nonNegativeIntegerOrNullSuffix.length)
-    )
-  }
-
-  if (
-    typeof rawMessages.customOAuthRequiredPrefix === 'string' &&
-    rawMessages.customOAuthRequiredPrefix.length > 0 &&
-    typeof serverMessages.customOAuthFieldRequired === 'function' &&
-    message.startsWith(rawMessages.customOAuthRequiredPrefix)
-  ) {
-    const rawField = message.slice(rawMessages.customOAuthRequiredPrefix.length)
-    const fieldLabel = fieldLabelMap[rawField] || rawField
-    return serverMessages.customOAuthFieldRequired(fieldLabel)
-  }
-
-  if (
-    typeof rawMessages.invalidUrlSuffix === 'string' &&
-    rawMessages.invalidUrlSuffix.length > 0 &&
-    typeof serverMessages.invalidUrl === 'function' &&
-    message.endsWith(rawMessages.invalidUrlSuffix)
-  ) {
-    const rawField = message.slice(0, -rawMessages.invalidUrlSuffix.length)
-    return serverMessages.invalidUrl(fieldLabelMap[rawField] || rawField)
-  }
-
-  return message
-}
 
 // 加载配置
 const loadConfig = async () => {
@@ -891,7 +908,9 @@ const loadConfig = async () => {
       customOAuthUsernameField: data.customOAuthUsernameField || '',
       customOAuthNameField: data.customOAuthNameField || '',
       customOAuthEmailField: data.customOAuthEmailField || '',
-      customOAuthAvatarField: data.customOAuthAvatarField || ''
+      customOAuthAvatarField: data.customOAuthAvatarField || '',
+      defaultTheme: data.defaultTheme || 'System',
+      enabledThemes: parseJsonArray(data.enabledThemes, [...THEMES])
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -906,6 +925,16 @@ const loadConfig = async () => {
 // 保存配置
 const saveConfig = async () => {
   try {
+    if (isSuperAdmin.value) {
+      if (!formData.value.enabledThemes.includes(formData.value.defaultTheme)) {
+        showNotification(locale.value?.defaultThemeMustBeEnabled || '默认主题必须处于启用状态', 'error')
+        return
+      }
+      if (formData.value.enabledThemes.includes('System') && (!formData.value.enabledThemes.includes('ClassicDark') || !formData.value.enabledThemes.includes('ClassicLight'))) {
+        showNotification(locale.value?.systemThemeRequiresBothClassic || '启用跟随系统时，经典深色和经典浅色必须同时启用', 'error')
+        return
+      }
+    }
     saving.value = true
     const schoolLogoHomeDarkUrl = (formData.value.schoolLogoHomeDarkUrl || '').trim()
     const schoolLogoHomeLightUrl = schoolLogoHomeDarkUrl
@@ -927,7 +956,17 @@ const saveConfig = async () => {
       weeklySubmissionLimit:
         activeLimitTab.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
       monthlySubmissionLimit:
-        activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null
+        activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null,
+      ...(isSuperAdmin.value
+        ? {
+            defaultTheme: formData.value.defaultTheme,
+            enabledThemes: JSON.stringify(formData.value.enabledThemes)
+          }
+        : {})
+    }
+    if (!isSuperAdmin.value) {
+      delete configToSave.defaultTheme
+      delete configToSave.enabledThemes
     }
     delete configToSave.schoolLogoHomeDarkUrl
     delete configToSave.schoolLogoHomeLightUrl
@@ -945,16 +984,7 @@ const saveConfig = async () => {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
 
-        const getErrorMessage = (err) => {
-          if (err?.data?.error) return err.data.error
-          if (err?.message) return err.message
-          if (err?.statusMessage && err.statusMessage !== 'Error') return err.statusMessage
-          if (err?.data?.message) return err.data.message
-          if (err?.error) return err.error
-          return null
-        }
-
-        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '系统设置保存失败')
+        message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }
@@ -980,7 +1010,7 @@ const saveConfig = async () => {
     console.error('Failed to save site config:', error)
     let message = locale.value?.saveFailedRetry || '系统设置保存失败，请稍后重试'
     if (error?.message) {
-      message = getLocalizedServerMessage(error.message)
+      message = localizeServerError(error, error.message)
     }
     showNotification(message, 'error')
   } finally {

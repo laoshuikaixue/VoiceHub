@@ -9,7 +9,8 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
+import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -113,6 +114,22 @@ export default defineEventHandler(async (event) => {
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
+
+    if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
+      if (user.role !== 'SUPER_ADMIN') {
+        // 主题设置仅超级管理员可修改：普通管理员请求剥离主题字段，其余配置照常处理
+        delete body.defaultTheme
+        delete body.enabledThemes
+      } else {
+        const enabledThemes = body.enabledThemes !== undefined
+          ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
+          : parseThemeArray(settings?.enabledThemes, DEFAULT_THEMES)
+        const defaultTheme = body.defaultTheme !== undefined ? body.defaultTheme : settings?.defaultTheme || 'System'
+        validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
+        if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
+        updateData.enabledThemes = JSON.stringify(enabledThemes)
+      }
+    }
 
     if (body.telemetryEnabled !== undefined) {
       if (typeof body.telemetryEnabled !== 'boolean') {

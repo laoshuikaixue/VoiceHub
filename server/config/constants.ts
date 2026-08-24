@@ -99,6 +99,9 @@ export const SERVER_ERROR_CODES = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'AUTH_TOTP_TOO_MANY_ATTEMPTS',
   AUTH_INCOMPLETE_PARAMS: 'AUTH_INCOMPLETE_PARAMS',
   COMMON_INVALID_PARAMS: 'COMMON_INVALID_PARAMS',
+  THEME_INVALID_LIST: 'THEME_INVALID_LIST',
+  THEME_INVALID_DEFAULT: 'THEME_INVALID_DEFAULT',
+  THEME_SYSTEM_REQUIRES_CLASSIC: 'THEME_SYSTEM_REQUIRES_CLASSIC',
   BILIBILI_PLAYURL_FAILED: 'BILIBILI_PLAYURL_FAILED',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'AUTH_NAME_USERNAME_PASSWORD_REQUIRED',
   AUTH_USERNAME_LENGTH_INVALID: 'AUTH_USERNAME_LENGTH_INVALID',
@@ -401,6 +404,10 @@ export const MUSIC_PLATFORMS = {
 
 // 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/utils/platforms.ts）
 export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
+
+// 主题白名单（主题管理校验用；新增主题需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/composables/useTheme.ts）
+export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const
+export const DEFAULT_THEMES = [...THEMES]
 
 export const RISK_CONTROL_CONSTANTS = {
   IP_SWITCH_WINDOW_MS: 5 * 60 * 1000,

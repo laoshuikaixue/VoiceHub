@@ -19,6 +19,9 @@ import {
 import { and, eq } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
+import { createApiError } from '~~/server/utils/apiError'
+import { validateThemeConfig } from '~~/server/utils/theme-config'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -691,6 +694,8 @@ export default defineEventHandler(async (event) => {
             const fields = [
               'enablePlayTimeSelection',
               'instanceId',
+              'defaultTheme',
+              'enabledThemes',
               'telemetryEnabled',
               'siteTitle',
               'siteLogoUrl',
@@ -773,6 +778,12 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
             })
+            if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
+              if (!Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || !Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
+                throw createApiError(400, SERVER_ERROR_CODES.THEME_INVALID_LIST, '主题配置必须同时包含默认主题和启用主题列表')
+              }
+              systemSettingsData.enabledThemes = JSON.stringify(validateThemeConfig(systemSettingsData.defaultTheme, systemSettingsData.enabledThemes))
+            }
             systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
             if (mode === 'merge') {
