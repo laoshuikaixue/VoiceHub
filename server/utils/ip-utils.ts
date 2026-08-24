@@ -27,13 +27,24 @@ const SUPPORTED_CLIENT_IP_HEADERS = new Set([
   'forwarded'
 ])
 
+// 未配置 TRUSTED_CLIENT_IP_HEADERS 时的回退头部列表，覆盖主流平台
+const FALLBACK_CLIENT_IP_HEADERS = Object.freeze([
+  'x-forwarded-for',
+  'x-real-ip',
+  'x-vercel-forwarded-for',
+  'cf-connecting-ip',
+  'true-client-ip'
+])
+
 function getTrustedClientIPHeaders() {
   const configured = String(process.env.TRUSTED_CLIENT_IP_HEADERS || '')
     .split(',')
     .map((header) => header.trim().toLowerCase())
     .filter((header) => SUPPORTED_CLIENT_IP_HEADERS.has(header))
 
-  return [...new Set(configured)]
+  return configured.length > 0
+    ? [...new Set(configured)]
+    : FALLBACK_CLIENT_IP_HEADERS
 }
 
 /**
