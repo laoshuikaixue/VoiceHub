@@ -161,6 +161,10 @@ export default defineEventHandler(async (event) => {
       const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
       const hasNoteVisibilityChange =
         'submissionNotePublicStatus' in body || 'submissionNotePublic' in body
+      if (body.replayRequestId !== null && body.replayRequestId !== undefined &&
+        (!Number.isInteger(replayRequestId) || replayRequestId <= 0)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '重播申请 ID 无效')
+      }
       if (replayRequestId && hasNoteVisibilityChange) {
         replaySet = { updatedAt: new Date() }
         if ('submissionNotePublicStatus' in body) {
@@ -185,15 +189,19 @@ export default defineEventHandler(async (event) => {
     }
 
     // 歌曲更新与重播申请更新放入同一事务，保证一致性
-    const updatedSongResult = await db.transaction(async (tx) => {
+    const updatedSong = await db.transaction(async (tx) => {
       if (replaySet) {
         const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
-        await tx
+        const replayResult = await tx
           .update(songReplayRequests)
           .set(replaySet)
           .where(
             and(eq(songReplayRequests.id, replayRequestId), eq(songReplayRequests.songId, songId))
           )
+          .returning({ id: songReplayRequests.id })
+        if (replayResult.length === 0) {
+          throw createApiError(404, SERVER_ERROR_CODES.COMMON_TARGET_NOT_FOUND, '重播申请不存在')
+        }
       }
       const result = await tx
         .update(songs)
@@ -284,7 +292,7 @@ export default defineEventHandler(async (event) => {
 
       createSubmissionNoteClearedNotification(
         notifyUserIds,
-        { title: updatedSongResult[0].title, artist: updatedSongResult[0].artist },
+        { title: updatedSong.title, artist: updatedSong.artist },
         submissionNoteClearReason
       ).catch((error) => {
         console.error('发送歌曲备注清空通知失败:', error)
@@ -321,7 +329,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      song: updatedSong[0]
+      song: updatedSong
     }
   } catch (error) {
     console.error('Update song error:', error)
