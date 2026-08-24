@@ -6,6 +6,8 @@
 .cache
 dist
 docs
+.pnpm-store
+.mimosa
 
 # Node dependencies
 node_modules
