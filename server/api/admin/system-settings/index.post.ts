@@ -979,7 +979,14 @@ export default defineEventHandler(async (event) => {
     if (!settings) {
       const newSettingsResult = await db
         .insert(systemSettings)
-        .values({ ...SYSTEM_SETTINGS_DEFAULTS, ...updateData })
+        .values({
+          ...SYSTEM_SETTINGS_DEFAULTS,
+          scheduleDaysBeforeEnabled: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysBeforeEnabled,
+          scheduleDaysBefore: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysBefore,
+          scheduleDaysAfterEnabled: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysAfterEnabled,
+          scheduleDaysAfter: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysAfter,
+          ...updateData
+        })
         .returning()
       settings = newSettingsResult[0]
     } else {

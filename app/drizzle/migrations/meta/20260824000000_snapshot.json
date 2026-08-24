@@ -2061,7 +2061,7 @@
           "name": "scheduleDaysBefore",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 1
         },
         "scheduleDaysAfterEnabled": {
@@ -2075,7 +2075,7 @@
           "name": "scheduleDaysAfter",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 1
         },
         "showBlacklistKeywords": {

@@ -416,7 +416,7 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase">{{ locale.daysUnit }}</span>
                 </div>
               </div>
-              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysBeforeDesc }}</p>
+              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysBeforeEnabledDesc }}</p>
 
               <div class="flex items-center gap-3 p-3 bg-bg-primary border border-border-secondary rounded-xl">
                 <label class="flex items-center gap-2 shrink-0 cursor-pointer">
@@ -448,7 +448,7 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase">{{ locale.daysUnit }}</span>
                 </div>
               </div>
-              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysAfterDesc }}</p>
+              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysAfterEnabledDesc }}</p>
             </div>
           </div>
         </div>
