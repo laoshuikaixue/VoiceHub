@@ -3,6 +3,7 @@ import { and, authSessions, db, desc, eq } from '~/drizzle/db'
 import { isNull } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { isAuthSessionStorageError } from '~~/server/utils/auth-session'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -10,10 +11,16 @@ export default defineEventHandler(async (event) => {
 
   const currentSessionId = event.context.authSessionId || String(getQuery(event).current || '')
   const now = getServerDate()
-  const sessions = await db.query.authSessions.findMany({
-    where: and(eq(authSessions.userId, user.id), isNull(authSessions.revokedAt)),
-    orderBy: desc(authSessions.lastActiveAt)
-  })
+  let sessions: Array<typeof authSessions.$inferSelect>
+  try {
+    sessions = await db.query.authSessions.findMany({
+      where: and(eq(authSessions.userId, user.id), isNull(authSessions.revokedAt)),
+      orderBy: desc(authSessions.lastActiveAt)
+    })
+  } catch (error) {
+    if (!isAuthSessionStorageError(error)) throw error
+    return { success: true, data: [] }
+  }
 
   return {
     success: true,

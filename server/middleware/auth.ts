@@ -14,7 +14,12 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
-import { ensureAuthSession, sessionExpiryIsActive, touchAuthSession } from '../utils/auth-session'
+import {
+  ensureAuthSession,
+  isAuthSessionStorageError,
+  sessionExpiryIsActive,
+  touchAuthSession
+} from '../utils/auth-session'
 
 function clearAuthCookie(event: H3Event) {
   setCookie(event, 'auth-token', '', {
@@ -190,6 +195,7 @@ export default defineEventHandler(async (event) => {
     // 会话表支持单设备撤销；迁移前令牌首次使用时会补建兼容记录。
     // 公共接口携带过期/残留登录 Cookie 时，不能因会话存储故障阻断匿名内容。
     let authSession
+    let sessionStorageUnavailable = false
     try {
       authSession = await ensureAuthSession(event, decoded)
       if (authSession) {
@@ -197,18 +203,23 @@ export default defineEventHandler(async (event) => {
       }
     } catch (sessionError) {
       console.error('[Auth] 会话存储处理失败:', sessionError)
-      if (isPublicApi || isOAuthProviderRoute) {
-        delete event.context.user
-        return
+      if (isAuthSessionStorageError(sessionError)) {
+        sessionStorageUnavailable = true
+        console.warn('[Auth] 未检测到 auth_sessions 迁移，暂时使用兼容认证模式')
+      } else {
+        if (isPublicApi || isOAuthProviderRoute) {
+          delete event.context.user
+          return
+        }
+        throw sessionError
       }
-      throw sessionError
     }
-    if (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt)) {
+    if (!sessionStorageUnavailable && (!authSession || authSession.userId !== user.id || authSession.revokedAt || !sessionExpiryIsActive(authSession.expiresAt))) {
       const invalidSessionError = new Error('登录会话已失效') as Error & { invalidToken?: boolean }
       invalidSessionError.invalidToken = true
       throw invalidSessionError
     }
-    event.context.authSessionId = authSession.id
+    event.context.authSessionId = authSession?.id
 
     // 仅兼容迁移前签发的无版本号令牌；新体系令牌由 tokenVersion 撤销，避免 NTP 校准时钟与 iat 本机时钟偏差误杀。
     if (decoded.tokenVersion === undefined && user.passwordChangedAt && decoded.iat) {
@@ -261,7 +272,7 @@ export default defineEventHandler(async (event) => {
       passwordChangedAt: user.passwordChangedAt,
       forcePasswordChange: user.forcePasswordChange,
       tokenVersion: user.tokenVersion,
-      sessionId: authSession.id,
+      sessionId: authSession?.id,
       email: user.email,
       emailVerified: user.emailVerified,
       requirePasswordChange,

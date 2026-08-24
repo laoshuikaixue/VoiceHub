@@ -79,26 +79,20 @@ const loadBasicSongs = async (client: any, semester: string, grade: string, sear
   }
   if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
   if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
+  // 兜底查询只依赖初始版本就存在的 Song/User 字段。
+  // 可选迁移（排期、卡密、重播等）缺失时，歌曲列表仍应可用。
   const rows = await client.unsafe(`
     SELECT s.id, s.title, s.artist, s.played, s."playedAt", s.semester,
       s."createdAt", s."updatedAt", s.cover, s."musicPlatform", s."musicId",
-      s."cardCodeId", s."durationSeconds", s."playUrl", s."preferredPlayTimeId",
+      s."preferredPlayTimeId",
       u.id AS "requesterId", u.name AS "requesterName", u.grade AS "requesterGrade", u.class AS "requesterClass",
-      sch."playDate" AS "scheduleDate", sch.played AS "schedulePlayed",
-      (sch."songId" IS NOT NULL) AS scheduled,
-      COALESCE((SELECT "hideStudentInfo" FROM "SystemSettings" LIMIT 1), true) AS "hideStudentInfo",
       COUNT(*) OVER()::int AS total
     FROM "Song" s
     LEFT JOIN "User" u ON u.id = s."requesterId"
-    LEFT JOIN LATERAL (
-      SELECT "playDate", played, "songId" FROM "Schedule"
-      WHERE "songId" = s.id AND "isDraft" = false
-      ORDER BY "playDate" DESC LIMIT 1
-    ) sch ON true
     ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
     ORDER BY s."createdAt" DESC
   `, params)
-  const hideStudentInfo = rows[0]?.hideStudentInfo ?? true
+  const hideStudentInfo = true
   const songs = rows.map((row: any) => ({
     id: Number(row.id), title: row.title, artist: row.artist,
     requester: formatDisplayName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
@@ -106,14 +100,13 @@ const loadBasicSongs = async (client: any, semester: string, grade: string, sear
     requesterGrade: row.requesterGrade || null, requesterClass: row.requesterClass || null,
     collaborators: [], voteCount: 0, played: row.played === true, playedAt: row.playedAt || null,
     semester: row.semester || null, createdAt: row.createdAt, updatedAt: row.updatedAt,
-    requestedAt: formatDateTime(row.createdAt), scheduled: row.scheduled === true,
+    requestedAt: formatDateTime(row.createdAt), scheduled: false,
     cover: row.cover || null, musicPlatform: row.musicPlatform || null, musicId: row.musicId || null,
-    cardCodeId: row.cardCodeId ? Number(row.cardCodeId) : null,
-    durationSeconds: row.durationSeconds ? Number(row.durationSeconds) : null, playUrl: row.playUrl || null,
+    cardCodeId: null,
+    durationSeconds: null, playUrl: null,
     replayRequested: false, replayRequestCount: 0, isReplay: false, replayRequesters: [],
     hasSubmissionNote: false, submissionNote: null, submissionNotePublic: false,
     preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null,
-    ...(row.scheduleDate ? { scheduleDate: formatDateTime(row.scheduleDate), schedulePlayed: row.schedulePlayed === true } : {})
   })) as SongResponse[]
   if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
   if (!user) songs.forEach(stripAnonymousSongIdentifiers)

@@ -19,10 +19,20 @@ const formatDisplayName = (
   return `${user.name}（${user.grade}）`
 }
 
-// 可选协作/重播表尚未完成迁移时，仍返回基础排期，避免首页整体不可用。
+// 可选迁移尚未完成时，只依赖初始表结构返回基础排期，避免首页整体不可用。
 const loadBasicSchedules = async (client: any, semester: string, user: any, isAdmin: boolean) => {
   const params: any[] = []
-  const semesterCondition = semester ? 'AND s.semester = $1' : ''
+  const conditions: string[] = []
+  const scheduleDraftColumn = await client.unsafe(`
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'Schedule'
+      AND column_name = 'isDraft'
+    LIMIT 1
+  `)
+  if (scheduleDraftColumn.length > 0) conditions.push('sch."isDraft" = false')
+  if (semester) conditions.push('s.semester = $1')
   if (semester) params.push(semester)
   const rows = await client.unsafe(`
     SELECT
@@ -38,8 +48,6 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
       s.cover,
       s."musicPlatform",
       s."musicId",
-      s."durationSeconds",
-      s."playUrl",
       s.semester,
       s."requesterId",
       s."createdAt",
@@ -56,7 +64,7 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
     INNER JOIN "Song" s ON s.id = sch."songId"
     LEFT JOIN "User" u ON u.id = s."requesterId"
     LEFT JOIN "PlayTime" pt ON pt.id = sch."playTimeId"
-    WHERE sch."isDraft" = false ${semesterCondition}
+    ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
     ORDER BY sch."playDate", sch.sequence
   `, params)
   const hideStudentInfo = rows[0]?.hideStudentInfo ?? true
@@ -89,8 +97,8 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
       usedCardCode: false,
       musicPlatform: row.musicPlatform || null,
       musicId: row.musicId || null,
-      durationSeconds: row.durationSeconds || null,
-      playUrl: row.playUrl || null,
+      durationSeconds: null,
+      playUrl: null,
       semester: row.semester || null,
       requestedAt: row.createdAt ? formatDateTime(row.createdAt) : null,
       hasSubmissionNote: false,

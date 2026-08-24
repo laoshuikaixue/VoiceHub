@@ -67,7 +67,7 @@ export function getClientIP(event: H3Event): string {
 function normalizeIPCandidate(value: string): string | null {
   let candidate = value.trim().replace(/^"|"$/g, '')
   const forwardedMatch = candidate.match(/^for\s*=\s*(.+)$/i)
-  if (forwardedMatch) candidate = forwardedMatch[1].split(';')[0].trim().replace(/^"|"$/g, '')
+  if (forwardedMatch) candidate = (forwardedMatch[1] || '').split(';')[0].trim().replace(/^"|"$/g, '')
 
   if (candidate.startsWith('[')) {
     const closingBracket = candidate.indexOf(']')

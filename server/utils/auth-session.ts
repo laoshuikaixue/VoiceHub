@@ -23,6 +23,17 @@ function getDateFromTimestamp(timestamp: number) {
 
 type SessionUser = { id: number; role: string; tokenVersion?: number }
 
+/**
+ * 判断数据库是否尚未完成登录会话迁移。
+ * 旧版本数据库仍可使用 JWT + 用户表认证，不能因新增会话表缺失而阻断全站接口。
+ */
+export function isAuthSessionStorageError(error: unknown) {
+  const value = error as { code?: string; message?: string } | null
+  const code = String(value?.code || '')
+  const message = String(value?.message || error || '')
+  return ['42P01', '42703'].includes(code) && /auth_sessions/i.test(message)
+}
+
 function readUserAgent(event: H3Event) {
   return (getHeader(event, 'user-agent') || '').slice(0, 500)
 }
@@ -65,17 +76,22 @@ export async function createAuthSession(event: H3Event, user: SessionUser, login
   const userAgent = readUserAgent(event)
   const metadata = parseUserAgent(userAgent)
 
-  await db.insert(authSessions).values({
-    id,
-    userId: user.id,
-    createdAt: now,
-    lastActiveAt: now,
-    expiresAt: getSessionExpiry(),
-    ipAddress: getClientIP(event),
-    userAgent,
-    ...metadata,
-    loginMethod
-  })
+  try {
+    await db.insert(authSessions).values({
+      id,
+      userId: user.id,
+      createdAt: now,
+      lastActiveAt: now,
+      expiresAt: getSessionExpiry(),
+      ipAddress: getClientIP(event),
+      userAgent,
+      ...metadata,
+      loginMethod
+    })
+  } catch (error) {
+    if (!isAuthSessionStorageError(error)) throw error
+    console.warn('[Auth] 未检测到 auth_sessions 迁移，登录使用兼容会话模式')
+  }
 
   return {
     id,
