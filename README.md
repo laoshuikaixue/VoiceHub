@@ -1460,7 +1460,6 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
-  - **`auth-session.ts`**: 登录会话创建、续期与撤销
 
 #### 静态资源
 
