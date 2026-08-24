@@ -372,6 +372,88 @@
         </div>
       </section>
 
+      <!-- 排期可见范围设置 -->
+      <section :class="cardClass">
+        <h3
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+        >
+          <CalendarRange :size="16" class="text-warning" /> {{ locale.scheduleVisibility }}
+        </h3>
+        <div class="space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
+            <p class="text-[10px] text-text-tertiary leading-relaxed">
+              {{ locale.scheduleVisibilityDesc }}
+            </p>
+
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 bg-bg-primary border border-border-secondary rounded-xl">
+                <label class="flex items-center gap-2 shrink-0 cursor-pointer">
+                  <span class="text-xs font-bold text-text-primary">{{ locale.daysBeforeEnabled }}</span>
+                  <span
+                    :class="[
+                      'relative inline-flex h-5 w-10 items-center rounded-full transition-colors',
+                      formData.scheduleDaysBeforeEnabled ? 'bg-primary' : 'bg-bg-tertiary'
+                    ]"
+                  >
+                    <input v-model="formData.scheduleDaysBeforeEnabled" type="checkbox" class="sr-only" />
+                    <span
+                      :class="[
+                        'absolute top-1 h-3 w-3 rounded-full bg-bg-secondary transition-all',
+                        formData.scheduleDaysBeforeEnabled ? 'left-6' : 'left-1'
+                      ]"
+                    />
+                  </span>
+                </label>
+                <div class="relative flex-1">
+                  <input
+                    v-model.number="formData.scheduleDaysBefore"
+                    :disabled="!formData.scheduleDaysBeforeEnabled"
+                    type="number"
+                    min="1"
+                    max="730"
+                    :class="inputClass"
+                  />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase">{{ locale.daysUnit }}</span>
+                </div>
+              </div>
+              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysBeforeEnabledDesc }}</p>
+
+              <div class="flex items-center gap-3 p-3 bg-bg-primary border border-border-secondary rounded-xl">
+                <label class="flex items-center gap-2 shrink-0 cursor-pointer">
+                  <span class="text-xs font-bold text-text-primary">{{ locale.daysAfterEnabled }}</span>
+                  <span
+                    :class="[
+                      'relative inline-flex h-5 w-10 items-center rounded-full transition-colors',
+                      formData.scheduleDaysAfterEnabled ? 'bg-primary' : 'bg-bg-tertiary'
+                    ]"
+                  >
+                    <input v-model="formData.scheduleDaysAfterEnabled" type="checkbox" class="sr-only" />
+                    <span
+                      :class="[
+                        'absolute top-1 h-3 w-3 rounded-full bg-bg-secondary transition-all',
+                        formData.scheduleDaysAfterEnabled ? 'left-6' : 'left-1'
+                      ]"
+                    />
+                  </span>
+                </label>
+                <div class="relative flex-1">
+                  <input
+                    v-model.number="formData.scheduleDaysAfter"
+                    :disabled="!formData.scheduleDaysAfterEnabled"
+                    type="number"
+                    min="1"
+                    max="730"
+                    :class="inputClass"
+                  />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase">{{ locale.daysUnit }}</span>
+                </div>
+              </div>
+              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysAfterEnabledDesc }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 安全与隐私设置 -->
       <section :class="cardClass">
         <h3
@@ -625,7 +707,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Palette,
-  Star
+  Star,
+  CalendarRange
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
@@ -741,6 +824,10 @@ const formData = ref({
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
+  scheduleDaysBeforeEnabled: false,
+  scheduleDaysBefore: 1,
+  scheduleDaysAfterEnabled: false,
+  scheduleDaysAfter: 1,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
   forcePasswordChangeOnFirstLogin: false,
@@ -868,6 +955,10 @@ const loadConfig = async () => {
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
+      scheduleDaysBeforeEnabled: data.scheduleDaysBeforeEnabled === true,
+      scheduleDaysBefore: data.scheduleDaysBefore ?? 1,
+      scheduleDaysAfterEnabled: data.scheduleDaysAfterEnabled === true,
+      scheduleDaysAfter: data.scheduleDaysAfter ?? 1,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,

@@ -334,6 +334,48 @@ export default defineEventHandler(async (event) => {
       updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
     }
 
+    if (body.scheduleDaysBeforeEnabled !== undefined) {
+      if (typeof body.scheduleDaysBeforeEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysBeforeEnabled 必须是布尔值')
+      }
+      updateData.scheduleDaysBeforeEnabled = body.scheduleDaysBeforeEnabled
+    }
+
+    if (body.scheduleDaysAfterEnabled !== undefined) {
+      if (typeof body.scheduleDaysAfterEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysAfterEnabled 必须是布尔值')
+      }
+      updateData.scheduleDaysAfterEnabled = body.scheduleDaysAfterEnabled
+    }
+
+    const nextScheduleDaysBeforeEnabled = body.scheduleDaysBeforeEnabled !== undefined
+      ? body.scheduleDaysBeforeEnabled
+      : (settings?.scheduleDaysBeforeEnabled ?? false)
+    const nextScheduleDaysAfterEnabled = body.scheduleDaysAfterEnabled !== undefined
+      ? body.scheduleDaysAfterEnabled
+      : (settings?.scheduleDaysAfterEnabled ?? false)
+
+    if (body.scheduleDaysBefore !== undefined) {
+      if (!Number.isInteger(body.scheduleDaysBefore) || body.scheduleDaysBefore < 1 || body.scheduleDaysBefore > 730) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysBefore 必须是 1-730 的正整数')
+      }
+      updateData.scheduleDaysBefore = body.scheduleDaysBefore
+    }
+
+    if (body.scheduleDaysAfter !== undefined) {
+      if (!Number.isInteger(body.scheduleDaysAfter) || body.scheduleDaysAfter < 1 || body.scheduleDaysAfter > 730) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysAfter 必须是 1-730 的正整数')
+      }
+      updateData.scheduleDaysAfter = body.scheduleDaysAfter
+    }
+
+    if (nextScheduleDaysBeforeEnabled && body.scheduleDaysBefore === undefined && !(settings?.scheduleDaysBefore >= 1)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用前方排期限制时，必须填写正整数天数')
+    }
+    if (nextScheduleDaysAfterEnabled && body.scheduleDaysAfter === undefined && !(settings?.scheduleDaysAfter >= 1)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用后方排期限制时，必须填写正整数天数')
+    }
+
     if (body.showBlacklistKeywords !== undefined) {
       if (typeof body.showBlacklistKeywords !== 'boolean') {
         throw createError({
@@ -937,7 +979,14 @@ export default defineEventHandler(async (event) => {
     if (!settings) {
       const newSettingsResult = await db
         .insert(systemSettings)
-        .values({ ...SYSTEM_SETTINGS_DEFAULTS, ...updateData })
+        .values({
+          ...SYSTEM_SETTINGS_DEFAULTS,
+          scheduleDaysBeforeEnabled: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysBeforeEnabled,
+          scheduleDaysBefore: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysBefore,
+          scheduleDaysAfterEnabled: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysAfterEnabled,
+          scheduleDaysAfter: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysAfter,
+          ...updateData
+        })
         .returning()
       settings = newSettingsResult[0]
     } else {

@@ -68,6 +68,17 @@ export const siteConfig = {
   limitLabelPrefix: '',
   limitLabelSuffix: ' Request Limit',
 
+  // Schedule visibility range
+  scheduleVisibility: 'Schedule Visibility',
+  scheduleVisibilityDesc: 'Controls the broadcast schedule range visible to regular users on the frontend. Administrators are not affected.',
+  daysBeforeEnabled: 'Enable Past Schedule Limit',
+  daysBeforeEnabledDesc: 'When enabled, users can only view schedules within the configured past days.',
+  daysAfterEnabled: 'Enable Future Schedule Limit',
+  daysAfterEnabledDesc: 'When enabled, users can only view schedules within the configured future days.',
+  daysBefore: 'Visible Past Days',
+  daysAfter: 'Visible Future Days',
+  daysUnit: 'days',
+
   securityPrivacy: 'Security and Privacy',
   captchaEnabled: 'Enable Login CAPTCHA',
   captchaEnabledDesc: 'Helps prevent brute-force attempts and bot registration.',

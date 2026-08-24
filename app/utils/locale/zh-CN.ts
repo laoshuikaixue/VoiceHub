@@ -76,6 +76,17 @@ export const siteConfig = {
   limitLabelPrefix: '',
   limitLabelSuffix: '投稿上限',
 
+  // 排期可见范围
+  scheduleVisibility: '排期可见范围',
+  scheduleVisibilityDesc: '仅控制普通用户在前端可见的播出排期时间范围。管理员不受此限制。',
+  daysBeforeEnabled: '启用可见前限制',
+  daysBeforeEnabledDesc: '启用后，普通用户仅可查看最近设置天数内的排期。',
+  daysAfterEnabled: '启用可见后限制',
+  daysAfterEnabledDesc: '启用后，普通用户仅可查看未来设置天数内的排期。',
+  daysBefore: '可见前',
+  daysAfter: '可见后',
+  daysUnit: '天',
+
   // 安全与隐私
   securityPrivacy: '安全与隐私设置',
   captchaEnabled: '启用登录人机验证',

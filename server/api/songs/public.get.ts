@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
-import { formatDateTime } from '~/utils/timeUtils'
+import { formatDateTime, getBeijingTimeISOString } from '~/utils/timeUtils'
 import {
   maskPublicScheduleData,
   stripAnonymousSongIdentifiersFromSchedules,
@@ -140,6 +140,32 @@ export default defineEventHandler(async (event) => {
     const params: any[] = []
     const semesterCondition = semester ? 'AND s.semester = $1' : ''
     if (semester) params.push(semester)
+
+    // 排期按 YYYY-MM-DD 存储，范围必须按北京时间自然日计算，不能使用当前时刻加减 24 小时。
+    const scheduleRangeResult = await client.unsafe(
+      `SELECT "scheduleDaysBeforeEnabled", "scheduleDaysBefore", "scheduleDaysAfterEnabled", "scheduleDaysAfter" FROM "SystemSettings" LIMIT 1`
+    )
+    const storedDaysBefore = Number(scheduleRangeResult[0]?.scheduleDaysBefore)
+    const storedDaysAfter = Number(scheduleRangeResult[0]?.scheduleDaysAfter)
+    // 兼容历史脏数据，异常值不能导致范围意外扩大或生成无效日期。
+    const daysBefore = Number.isInteger(storedDaysBefore) && storedDaysBefore >= 1 && storedDaysBefore <= 730 ? storedDaysBefore : 1
+    const daysAfter = Number.isInteger(storedDaysAfter) && storedDaysAfter >= 1 && storedDaysAfter <= 730 ? storedDaysAfter : 1
+    const beforeEnabled = scheduleRangeResult[0]?.scheduleDaysBeforeEnabled === true
+    const afterEnabled = scheduleRangeResult[0]?.scheduleDaysAfterEnabled === true
+    let dateRangeCondition = ''
+    if (!isAdmin && (beforeEnabled || afterEnabled)) {
+      const today = new Date(`${getBeijingTimeISOString().slice(0, 10)}T00:00:00.000Z`)
+      if (beforeEnabled) {
+        const minDate = new Date(today.getTime() - daysBefore * 86400000).toISOString()
+        dateRangeCondition += ' AND sch."playDate" >= $' + (params.length + 1)
+        params.push(minDate)
+      }
+      if (afterEnabled) {
+        const maxDate = new Date(today.getTime() + (daysAfter + 1) * 86400000).toISOString()
+        dateRangeCondition += ' AND sch."playDate" < $' + (params.length + 1)
+        params.push(maxDate)
+      }
+    }
 
     const schedulesQuery = `
       WITH
@@ -298,6 +324,7 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN replay_metadata rm ON rm.id = sch.replay_request_id
       WHERE sch."isDraft" = false
       ${semesterCondition}
+      ${dateRangeCondition}
       ORDER BY sch."playDate", sch.sequence
     `
 
