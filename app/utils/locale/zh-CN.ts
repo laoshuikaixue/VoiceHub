@@ -4044,6 +4044,7 @@ export const serverErrors = {
   AUTH_PASSWORD_TOO_MANY_BYTES: '密码有效长度不能超过72字节',
   AUTH_PASSWORD_TOO_COMMON: '该密码过于常见，请更换更安全的密码',
   AUTH_PASSWORD_COMPLEXITY_REQUIRED: '密码至少需要包含大写字母、小写字母、数字、特殊字符中的三类',
+  AUTH_INITIAL_PASSWORD_COMPLEXITY_REQUIRED: '密码至少需要包含大写字母、小写字母、数字、特殊字符中的两类',
   AUTH_PASSWORD_NOT_SET: '当前账号尚未设置密码，请使用初始密码设置功能',
   AUTH_INITIAL_PASSWORD_NOT_REQUIRED: '当前账号不需要设置初始密码，请使用修改密码功能',
   AUTH_PASSWORD_CHANGE_REQUIRED: '请先完成密码修改后再继续',

@@ -4035,6 +4035,7 @@ export const serverErrors = {
   AUTH_PASSWORD_TOO_MANY_BYTES: 'Password cannot exceed 72 bytes',
   AUTH_PASSWORD_TOO_COMMON: 'This password is too common. Choose a more secure password.',
   AUTH_PASSWORD_COMPLEXITY_REQUIRED: 'Password must include at least three of: uppercase letters, lowercase letters, numbers, and special characters',
+  AUTH_INITIAL_PASSWORD_COMPLEXITY_REQUIRED: 'Password must include at least two of: uppercase letters, lowercase letters, numbers, and special characters',
   AUTH_PASSWORD_NOT_SET: 'This account does not have a password yet. Use the initial password setup flow.',
   AUTH_INITIAL_PASSWORD_NOT_REQUIRED: 'This account does not need initial password setup. Use the change-password flow.',
   AUTH_PASSWORD_CHANGE_REQUIRED: 'Change your password before continuing',
