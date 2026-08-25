@@ -369,7 +369,9 @@ export default defineEventHandler(async (event) => {
                             'forcePasswordChange',
                             'meowNickname',
                             'status',
-                            'statusChangedBy'
+                            'statusChangedBy',
+                            'avatarProvider',
+                            'avatarProviderUserId'
                           ]
 
                           // 处理日期字段
@@ -595,6 +597,7 @@ export default defineEventHandler(async (event) => {
                           provider: record.provider,
                           providerUserId: record.providerUserId,
                           providerUsername: record.providerUsername,
+                          avatar: record.avatar || null,
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
                         }
 

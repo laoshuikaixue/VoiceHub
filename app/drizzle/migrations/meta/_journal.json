@@ -302,6 +302,20 @@
       "when": 1787587786102,
       "tag": "20260824160946_add_schedule_visibility_range",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1787653675610,
+      "tag": "20260825102755_add-oauth-avatar",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1787655239368,
+      "tag": "20260825105359_drop_aggregate_oauth_endpoint_default",
+      "breakpoints": true
     }
   ]
 }

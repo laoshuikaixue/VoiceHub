@@ -77,8 +77,10 @@ export default defineEventHandler(async (event) => {
     if (loginTypes.length === 0) {
       throw createError({ statusCode: 400, message: '未检测到受支持的聚合登录方式' })
     }
-    const endpoint =
-      process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
+    const endpoint = process.env.AGGREGATE_OAUTH_ENDPOINT?.trim()
+    if (!endpoint) {
+      throw createError({ statusCode: 400, message: '未检测到 AGGREGATE_OAUTH_ENDPOINT 环境配置' })
+    }
     if (!isSafeAggregateOAuthUrl(endpoint)) {
       throw createError({
         statusCode: 400,

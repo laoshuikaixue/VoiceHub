@@ -7,6 +7,7 @@ import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -86,6 +87,12 @@ export default defineEventHandler(async (event) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(password, 10)
       const now = getBeijingTime()
+      const avatarUrl = getIdentityAvatarUrl({
+        provider: payload.provider,
+        providerUserId: payload.providerUserId,
+        providerUsername: payload.providerUsername,
+        avatar: payload.avatar
+      })
 
       // 创建用户
       const insertedUser = (await tx
@@ -102,7 +109,9 @@ export default defineEventHandler(async (event) => {
           updatedAt: now,
           passwordChangedAt: now,
           lastLogin: now,
-          forcePasswordChange: false
+          forcePasswordChange: false,
+          avatarProvider: avatarUrl ? payload.provider : null,
+          avatarProviderUserId: avatarUrl ? payload.providerUserId : null
         })
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
@@ -116,6 +125,7 @@ export default defineEventHandler(async (event) => {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
+        avatar: payload.avatar || null,
         createdAt: getBeijingTime()
       })
 

@@ -33,6 +33,8 @@ export const users = pgTable('User', {
   tokenVersion: integer('tokenVersion').default(0).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
+  avatarProvider: text('avatarProvider'),
+  avatarProviderUserId: text('avatarProviderUserId'),
   status: userStatusEnum('status').default('active').notNull(),
   statusChangedAt: timestamp('statusChangedAt').defaultNow(),
   statusChangedBy: integer('statusChangedBy'),
@@ -277,7 +279,7 @@ export const systemSettings = pgTable('SystemSettings', {
   aggregateOAuthAppId: text('aggregateOAuthAppId'),
   aggregateOAuthAppKey: text('aggregateOAuthAppKey'),
   aggregateOAuthLoginType: text('aggregateOAuthLoginType').default('qq'),
-  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint').default('https://a.idcfx.net/connect.php'),
+  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint'),
   // Custom OAuth2
   customOAuthEnabled: boolean('customOAuthEnabled').default(false).notNull(),
   customOAuthDisplayName: text('customOAuthDisplayName'),
@@ -437,6 +439,7 @@ export const userIdentities = pgTable('UserIdentity', {
   provider: text('provider').notNull(),
   providerUserId: text('providerUserId').notNull(),
   providerUsername: text('providerUsername'),
+  avatar: text('avatar'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (t) => ({
   unq: unique().on(t.provider, t.providerUserId),

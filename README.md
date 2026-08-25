@@ -1277,6 +1277,7 @@ VoiceHub/
 │   │   │   │   ├── send-code.post.ts # 发送验证码
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
+│   │   │   ├── avatar.post.ts      # 设置 OAuth 头像来源
 │   │   │   ├── sessions.delete.ts    # 撤销登录会话
 │   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
@@ -1363,6 +1364,7 @@ VoiceHub/
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
+│   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
@@ -1389,7 +1391,8 @@ VoiceHub/
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
-│       └── token-version-policy.test.ts # 令牌版本策略测试
+│       ├── token-version-policy.test.ts # 令牌版本策略测试
+│       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义

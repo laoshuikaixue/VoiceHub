@@ -6,8 +6,12 @@
     </div>
 
     <div v-else class="space-y-4">
-      <div v-for="provider in enabledProviders" :key="provider.key" :class="itemClass">
-        <div class="flex items-center gap-4">
+      <div
+        v-for="provider in enabledProviders"
+        :key="provider.key"
+        :class="[itemClass, 'items-start']"
+      >
+        <div class="flex items-start gap-4 flex-1 min-w-0">
           <div
             class="w-10 h-10 rounded-xl bg-bg-primary flex items-center justify-center border border-border-secondary text-text-primary"
           >
@@ -22,29 +26,73 @@
             />
             <Shield v-else :size="20" />
           </div>
-          <div class="flex flex-col">
+          <div class="flex flex-col flex-1 min-w-0">
             <span class="text-sm font-bold text-text-primary">{{
               provider.name || getProviderDisplayName(provider.key)
             }}</span>
             <span
-              v-if="getIdentityByProvider(provider.key)"
-              class="text-[11px] text-primary font-medium mt-0.5"
-              >{{ getIdentityByProvider(provider.key).providerUsername }}</span
+              v-if="getIdentitiesByProvider(provider).length === 0"
+              class="text-[11px] text-text-tertiary mt-0.5"
+              >{{ locale.unbound }}</span
             >
-            <span v-else class="text-[11px] text-text-tertiary mt-0.5">{{ locale.unbound }}</span>
+            <div
+              v-if="getIdentitiesByProvider(provider).length > 0"
+              class="flex flex-col gap-2 mt-2"
+            >
+              <div
+                v-for="identity in getIdentitiesByProvider(provider)"
+                :key="identity.id"
+                class="flex items-center gap-3 p-2.5 bg-bg-primary-20 border border-border-secondary rounded-xl"
+              >
+                <div
+                  class="w-8 h-8 rounded-full bg-bg-primary border border-border-secondary overflow-hidden flex items-center justify-center text-xs font-bold text-text-secondary shrink-0"
+                >
+                  <img
+                    v-if="identity.avatar && !failedAvatarIds.includes(identity.id)"
+                    :src="identity.avatar"
+                    :alt="identity.providerUsername || provider.name"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                    @error="markAvatarFailed(identity.id)"
+                  >
+                  <span v-else>{{
+                    (identity.providerUsername || provider.name || '?').charAt(0)
+                  }}</span>
+                </div>
+                <div class="flex flex-col flex-1 min-w-0">
+                  <span class="text-xs font-medium text-text-secondary truncate">{{
+                    identity.providerUsername
+                  }}</span>
+                  <span
+                    v-if="identity.isAvatarSource"
+                    class="text-[10px] font-bold text-success bg-success-10 border border-success-20 px-2 py-0.5 rounded-full w-fit mt-1"
+                    >{{ locale.currentAvatar }}</span
+                  >
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button
+                    v-if="!identity.isAvatarSource"
+                    class="px-2.5 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-[11px] font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50"
+                    :disabled="avatarLoadingId === identity.id || actionLoading"
+                    @click="setAsAvatar(identity)"
+                  >
+                    {{ avatarLoadingId === identity.id ? locale.processing : locale.setAsAvatar }}
+                  </button>
+                  <button
+                    class="px-2.5 py-1.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-[11px] font-bold rounded-lg transition-all disabled:opacity-50"
+                    :disabled="actionLoading"
+                    @click="confirmUnbind(provider, identity)"
+                  >
+                    {{ locale.unbind }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <button
-          v-if="getIdentityByProvider(provider.key)"
-          class="px-4 py-1.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all disabled:opacity-50"
-          :disabled="actionLoading"
-          @click="confirmUnbind(provider.key)"
-        >
-          {{ actionLoading ? locale.processing : locale.unbind }}
-        </button>
-        <button
-          v-else
+          v-if="getIdentitiesByProvider(provider).length === 0"
           class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click="handleBind(provider)"
@@ -219,15 +267,21 @@ import {
   startWebAuthnRegistration
 } from '~/utils/webauthn'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
+import { useAuth } from '~/composables/useAuth'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
+const { refreshUser } = useAuth()
+const { localize: localizeServerError } = useServerErrors()
 const { auth, currentLocale } = useLocale()
 const locale = computed(() => auth.value?.oauthBindingCard || {})
 const { t: callLocale } = useLocaleText(locale)
 const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
+const avatarLoadingId = ref(null)
+const failedAvatarIds = ref([])
 const isWebAuthnSupported = ref(false)
 const isSecureContext = ref(true)
 
@@ -273,7 +327,7 @@ const saveEditing = async (id) => {
     await fetchIdentities()
     cancelEditing()
   } catch (e) {
-    showToast(e.data?.message || locale.value.renameFailed, 'error')
+    showToast(localizeServerError(e, locale.value.renameFailed), 'error')
   } finally {
     isRenaming.value = false
   }
@@ -326,8 +380,30 @@ const getProviderName = (provider) => {
   return matched?.name || getProviderDisplayName(provider)
 }
 
-const getIdentityByProvider = (provider) =>
-  identities.value.find((item) => item.provider === provider)
+const getIdentitiesByProvider = (provider) =>
+  identities.value.filter((item) => item.provider === provider.key)
+
+const markAvatarFailed = (id) => {
+  if (!failedAvatarIds.value.includes(id)) {
+    failedAvatarIds.value.push(id)
+  }
+}
+
+const setAsAvatar = async (identity) => {
+  avatarLoadingId.value = identity.id
+  try {
+    await $fetch('/api/user/avatar', {
+      method: 'POST',
+      body: { identityId: identity.id }
+    })
+    showToast(locale.value.avatarSetSuccess, 'success')
+    await Promise.all([fetchIdentities(), refreshUser()])
+  } catch (e) {
+    showToast(localizeServerError(e, locale.value.avatarSetFailed), 'error')
+  } finally {
+    avatarLoadingId.value = null
+  }
+}
 
 const webauthnIdentities = computed(() => identities.value.filter((i) => i.provider === 'webauthn'))
 
@@ -335,6 +411,7 @@ const fetchIdentities = async () => {
   try {
     loading.value = true
     identities.value = await $fetch('/api/auth/identities')
+    failedAvatarIds.value = []
   } catch (e) {
     console.error('获取绑定信息失败', e)
   } finally {
@@ -354,15 +431,15 @@ const handleBind = (provider) => {
   })
 }
 
-const confirmUnbind = (provider) => {
-  const providerName = getProviderName(provider)
+const confirmUnbind = (provider, identity) => {
+  const providerName = getProviderName(provider.key)
 
   confirmDialog.value = {
     title: locale.value.unbindTitle,
     message: callLocale('unbindMessage', '', providerName),
     type: 'danger',
     loading: false,
-    onConfirm: () => handleUnbind(provider),
+    onConfirm: () => handleUnbind(provider.key, identity.id),
     onCancel: () => {
       showConfirmDialog.value = false
     }
@@ -396,6 +473,11 @@ const handleUnbind = async (provider, id = null) => {
       (result.passkeyCleanup || []).map(signalUnknownWebAuthnCredential)
     )
     await fetchIdentities()
+    try {
+      await refreshUser()
+    } catch (e) {
+      // 头像来源变化后的用户刷新失败不阻塞解绑流程
+    }
     const deviceCleanupSucceeded = cleanupResults.length > 0 && cleanupResults.every(Boolean)
     if (provider === 'webauthn' && !deviceCleanupSucceeded) {
       showToast(locale.value.passkeyCleanupRequired, 'warning', 6000)
@@ -404,7 +486,7 @@ const handleUnbind = async (provider, id = null) => {
     }
     showConfirmDialog.value = false
   } catch (e) {
-    showToast(e.data?.message || locale.value.unbindFailed, 'error')
+    showToast(localizeServerError(e, locale.value.unbindFailed), 'error')
   } finally {
     actionLoading.value = false
     confirmDialog.value.loading = false
