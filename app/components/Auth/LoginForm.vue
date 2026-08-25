@@ -292,7 +292,7 @@
       </div>
 
       <!-- 邮箱验证码 - 仅注册模式且已填写邮箱时显示 -->
-      <div v-if="showRegisterMode && email" class="form-group">
+      <div v-if="(showRegisterMode || showCreateMode) && email" class="form-group">
         <label for="emailCode">{{ locale.emailCodeLabel }}</label>
         <div class="input-wrapper">
           <svg
