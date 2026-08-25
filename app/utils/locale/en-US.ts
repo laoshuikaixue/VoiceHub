@@ -2667,7 +2667,7 @@ export const admin = {
     clearBindingsBtn: 'Clear Bindings',
     clearBindingsConfirmTitle: 'Clear all aggregate OAuth bindings?',
     clearBindingsConfirmMessage: 'This will permanently remove all aggregate OAuth bindings for all users.\nIf the provider has changed, old data is invalid and users will need to rebind before using aggregate login.\nThis action cannot be undone. Continue?',
-    clearBindingsSuccess: (count: number, users: number) => `Cleared ${count} aggregate bindings (${users} users affected)`,
+    clearBindingsSuccess: 'Cleared {0} aggregate bindings ({1} users affected)',
     clearBindingsFailed: 'Failed to clear aggregate OAuth bindings',
     userIdField: 'User ID Field',
     usernameField: 'Username Field',

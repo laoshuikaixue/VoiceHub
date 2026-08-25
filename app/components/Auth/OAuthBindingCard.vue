@@ -327,7 +327,7 @@ const saveEditing = async (id) => {
     await fetchIdentities()
     cancelEditing()
   } catch (e) {
-    showToast(e.data?.message || locale.value.renameFailed, 'error')
+    showToast(localizeServerError(e, locale.value.renameFailed), 'error')
   } finally {
     isRenaming.value = false
   }
@@ -486,7 +486,7 @@ const handleUnbind = async (provider, id = null) => {
     }
     showConfirmDialog.value = false
   } catch (e) {
-    showToast(e.data?.message || locale.value.unbindFailed, 'error')
+    showToast(localizeServerError(e, locale.value.unbindFailed), 'error')
   } finally {
     actionLoading.value = false
     confirmDialog.value.loading = false

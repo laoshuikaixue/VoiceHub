@@ -360,7 +360,7 @@
 
     <!-- 清除聚合登录绑定二次确认弹窗 -->
     <ConfirmDialog
-      :show="showClearConfirm"
+      v-model:show="showClearConfirm"
       type="danger"
       :title="locale.clearBindingsConfirmTitle || '确认清除所有聚合登录绑定？'"
       :message="
@@ -380,7 +380,7 @@ import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download, Trash2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-import { useServerErrors } from '~/composables/useLocaleText'
+import { useServerErrors, useLocaleText } from '~/composables/useLocaleText'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {
@@ -401,6 +401,7 @@ const { showToast } = useToast()
 const { admin } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => admin.value?.oauthConfig || {})
+const { t: callLocale } = useLocaleText(locale)
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
@@ -526,11 +527,7 @@ const handleClearBindings = async () => {
       method: 'POST'
     })
     showClearConfirm.value = false
-    const successMsg =
-      typeof locale.value?.clearBindingsSuccess === 'function'
-        ? locale.value.clearBindingsSuccess(res.count, res.usersAffected)
-        : `已成功清除 ${res.count} 条聚合登录绑定数据（影响 ${res.usersAffected} 位用户）`
-    showToast(successMsg, 'success')
+    showToast(callLocale('clearBindingsSuccess', `已成功清除 ${res.count} 条聚合登录绑定数据（影响 ${res.usersAffected} 位用户）`, res.count, res.usersAffected), 'success')
   } catch (err) {
     console.error('清除聚合登录绑定失败:', err)
     showToast(

@@ -24,10 +24,10 @@ export function getIdentityAvatarUrl(
   const avatar = typeof identity.avatar === 'string' ? identity.avatar.trim() : ''
   if (avatar && /^https?:\/\//i.test(avatar)) return avatar
 
-  // 兼容迁移前只存了 GitHub 用户名的身份
+  // 兼容迁移前只存了 GitHub 用户名的身份（需校验格式，防止特殊字符拼进 URL）
   const username =
     typeof identity.providerUsername === 'string' ? identity.providerUsername.trim() : ''
-  if (identity.provider === 'github' && username) {
+  if (identity.provider === 'github' && username && /^[a-zA-Z0-9-]{1,39}$/.test(username)) {
     return `https://github.com/${username}.png`
   }
 

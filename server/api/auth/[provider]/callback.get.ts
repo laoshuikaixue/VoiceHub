@@ -328,7 +328,7 @@ async function handleUserLoginOrBind(
           providerUserId,
           providerUsername,
           avatar: avatar || null,
-          createdAt: new Date()
+          createdAt: getBeijingTime()
         })
 
         // 新身份加入后，若用户还没有可用头像来源则自动选中

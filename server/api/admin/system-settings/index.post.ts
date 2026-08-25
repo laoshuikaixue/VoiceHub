@@ -833,7 +833,7 @@ export default defineEventHandler(async (event) => {
           })
         }
       }
-      updateData.aggregateOAuthEndpoint = nextAggregateEndpoint || 'https://a.idcfx.net/connect.php'
+      updateData.aggregateOAuthEndpoint = nextAggregateEndpoint || null
     }
 
     // Custom OAuth2
