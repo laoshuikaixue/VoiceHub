@@ -334,13 +334,16 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('Update song error:', error)
 
-    if (error.statusCode) {
+    // 业务错误（带 statusCode）直接透传
+    if (error?.statusCode) {
       throw error
     }
 
-    throw createError({
-      statusCode: 500,
-      message: error.message || 'Internal server error'
-    })
+    // 非业务错误（数据库连接等）包装为统一的 500 错误码
+    throw createApiError(
+      500,
+      SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR,
+      error?.message || 'Internal server error'
+    )
   }
 })
