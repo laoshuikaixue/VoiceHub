@@ -123,7 +123,7 @@
                   type="number"
                   max="100"
                   min="1"
-                  class="w-16 bg-bg-primary border border-border-secondary rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:border-primary-30"
+                  class="w-16 bg-bg-primary border border-border-secondary rounded-lg px-2 py-1.5 text-xs text-text-primary text-center focus:outline-none focus:border-primary-30"
                 >
                 <span class="text-[10px] font-black text-text-disabled uppercase">{{ locale.voteUnit }}</span>
               </div>

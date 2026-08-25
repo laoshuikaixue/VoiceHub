@@ -1897,7 +1897,6 @@ const getFirstChar = (text) => {
   height: 20vh;
   background: linear-gradient(to bottom, transparent, var(--mask-30));
   z-index: 999;
-  backdrop-filter: blur(1px);
   pointer-events: none;
 }
 
