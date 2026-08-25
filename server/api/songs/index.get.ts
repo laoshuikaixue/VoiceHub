@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import {
   maskSongsInfo,
   stripAnonymousSongIdentifiers,
@@ -384,7 +385,7 @@ export default defineEventHandler(async (event) => {
       // 公开留言审核：待审/已拒绝的不对普通用户公开（管理员与投稿人始终可见完整备注与状态）
       const notePublic = 
         row.submissionNotePublic === true &&
-        row.submissionNotePublicStatus !== 'pending' &&
+        row.submissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
         row.submissionNotePublicStatus !== 'rejected'
       const canViewSubmissionNote =
         Boolean(row.submissionNote) && (notePublic || Boolean(user && (isAdmin || isRequester)))

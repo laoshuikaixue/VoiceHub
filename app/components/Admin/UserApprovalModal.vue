@@ -236,7 +236,7 @@ const handleApprove = async () => {
       emit('close')
     }
   } catch (err) {
-    error.value = localizeServerError(err, locale.value.approval?.approveSuccess)
+    error.value = localizeServerError(err, locale.value.approval?.approveFailed)
   } finally {
     loading.value = false
   }
@@ -267,7 +267,7 @@ const confirmReject = async () => {
       emit('close')
     }
   } catch (err) {
-    error.value = localizeServerError(err, locale.value.approval?.rejectSuccess)
+    error.value = localizeServerError(err, locale.value.approval?.rejectFailed)
     showRejectConfirm.value = false
   } finally {
     loading.value = false

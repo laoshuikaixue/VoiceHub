@@ -3618,7 +3618,9 @@ export const admin = {
       rejectReasonPlaceholder: '选填，将记录在状态日志中',
       confirmReject: '确认拒绝该注册申请？拒绝后该账户将被删除',
       approveSuccess: '注册审核已通过',
-      rejectSuccess: '注册申请已拒绝'
+      rejectSuccess: '注册申请已拒绝',
+      approveFailed: '注册审核操作失败',
+      rejectFailed: '注册审核操作失败'
     },
     mobile: {
       accountStatus: '账户状态',

@@ -1,6 +1,7 @@
 import { and, db, desc, eq, songs, songReplayRequests, semesters, playTimes } from '~/drizzle/db'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { z } from 'zod'
 
 const replayRequestSchema = z.object({
@@ -59,7 +60,7 @@ export default defineEventHandler(async (event) => {
   const noteRequiresApproval = settings.submissionNoteRequiresApproval === true
   const wantsPublic = submissionNote !== null ? parsedBody.data.submissionNotePublic !== false : false
   const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
-  const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? 'pending' : null
+  const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? SUBMISSION_NOTE_STATUS.PENDING : null
 
   // 4. 检查歌曲和学期
   const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)

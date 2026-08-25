@@ -1,7 +1,7 @@
 import { defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -24,6 +24,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // 目标用户必须存在且处于待审核状态
+  const userIdNumber = Number(userId)
+  if (!Number.isInteger(userIdNumber) || userIdNumber <= 0) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '无效的用户 ID')
+  }
+
   const targetResult = await db
     .select({
       id: users.id,
@@ -32,7 +37,7 @@ export default defineEventHandler(async (event) => {
       status: users.status
     })
     .from(users)
-    .where(eq(users.id, parseInt(userId)))
+    .where(eq(users.id, userIdNumber))
     .limit(1)
 
   if (targetResult.length === 0) {
@@ -73,9 +78,17 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.transaction(async (tx) => {
-      await tx.update(users).set(updateData).where(eq(users.id, parseInt(userId)))
+      // 并发防护：仅当用户仍处于 pending 时才通过（防止另一管理员已处理后重复写入）
+      const updated = await tx
+        .update(users)
+        .set(updateData)
+        .where(and(eq(users.id, userIdNumber), eq(users.status, 'pending')))
+        .returning({ id: users.id })
+      if (updated.length === 0) {
+        throw createApiError(409, SERVER_ERROR_CODES.USER_NOT_PENDING, '该用户已不在待审核状态，请刷新后重试')
+      }
       await tx.insert(userStatusLogs).values({
-        userId: parseInt(userId),
+        userId: userIdNumber,
         username: targetUser.username,
         name: targetUser.name,
         oldStatus: 'pending',
@@ -96,8 +109,16 @@ export default defineEventHandler(async (event) => {
   const rejectReason = typeof reason === 'string' && reason.trim() ? reason.trim() : '注册审核拒绝'
 
   await db.transaction(async (tx) => {
+    // 并发防护：仅当用户仍处于 pending 时才删除（防止删除已被其他管理员处理的用户）
+    const deleted = await tx
+      .delete(users)
+      .where(and(eq(users.id, userIdNumber), eq(users.status, 'pending')))
+      .returning({ id: users.id })
+    if (deleted.length === 0) {
+      throw createApiError(409, SERVER_ERROR_CODES.USER_NOT_PENDING, '该用户已不在待审核状态，请刷新后重试')
+    }
     await tx.insert(userStatusLogs).values({
-      userId: parseInt(userId),
+      userId: userIdNumber,
       username: targetUser.username,
       name: targetUser.name,
       oldStatus: 'pending',
@@ -106,7 +127,6 @@ export default defineEventHandler(async (event) => {
       operatorId: operator.id,
       createdAt: currentTime
     })
-    await tx.delete(users).where(eq(users.id, parseInt(userId)))
   })
 
   return {

@@ -4,6 +4,8 @@ import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -35,10 +37,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    if (sourceStatusFilter && !['active', 'withdrawn', 'graduate'].includes(sourceStatusFilter)) {
+    // 源状态白名单含 pending（支持按待审核筛选批量处理；同时使下方 pending→active 拦截可达）
+    if (sourceStatusFilter && !['active', 'pending', 'withdrawn', 'graduate'].includes(sourceStatusFilter)) {
       throw createError({
         statusCode: 400,
-        message: '前置状态必须为 active, withdrawn 或 graduate'
+        message: '前置状态必须为 active, pending, withdrawn 或 graduate'
       })
     }
 
@@ -51,10 +54,7 @@ export default defineEventHandler(async (event) => {
 
     // 待审核用户不得通过批量状态接口直接置为 active（须走注册审核流程）
     if (sourceStatusFilter === 'pending' && status === 'active') {
-      throw createError({
-        statusCode: 400,
-        message: '待审核用户需通过注册审核流程处理'
-      })
+      throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
     }
 
     if (!reason || reason.trim().length === 0) {

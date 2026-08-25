@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { validateGradeClassPair } from '~~/server/utils/register-validation'
+import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 
 export default defineEventHandler(async (event) => {
@@ -26,8 +26,8 @@ export default defineEventHandler(async (event) => {
   const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
-  if (remark.length > 200) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, '备注不能超过 200 个字符')
+  if (remark.length > REMARK_MAX_LENGTH) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
   }
   if (!bindingToken) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_SESSION_EXPIRED, '注册会话已过期，请重新通过第三方登录发起')
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
     const result = await db.transaction(async (tx) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(password, 10)
-      const now = getBeijingTime()
+      const now = getServerDate()
 
       // 创建用户（onConflictDoNothing 兜底并发用户名竞态）
       const insertedUser = (await tx
@@ -121,7 +121,7 @@ export default defineEventHandler(async (event) => {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
-        createdAt: getBeijingTime()
+        createdAt: now,
       })
 
       return insertedUser

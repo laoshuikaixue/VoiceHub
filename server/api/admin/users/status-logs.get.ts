@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm'
 import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
@@ -46,8 +46,9 @@ export default defineEventHandler(async (event) => {
       .select({
         id: userStatusLogs.id,
         userId: userStatusLogs.userId,
-        userName: userStatusLogs.name,
-        userUsername: userStatusLogs.username,
+        // 优先快照列（用户删除后审计可追溯）；存量旧日志快照为 NULL 时回退 join 的用户名
+        userName: sql`COALESCE(${userStatusLogs.name}, ${users.name})`,
+        userUsername: sql`COALESCE(${userStatusLogs.username}, ${users.username})`,
         oldStatus: userStatusLogs.oldStatus,
         newStatus: userStatusLogs.newStatus,
         reason: userStatusLogs.reason,
@@ -67,8 +68,8 @@ export default defineEventHandler(async (event) => {
         .select({
           id: userStatusLogs.id,
           userId: userStatusLogs.userId,
-          userName: userStatusLogs.name,
-          userUsername: userStatusLogs.username,
+          userName: sql`COALESCE(${userStatusLogs.name}, ${users.name})`,
+          userUsername: sql`COALESCE(${userStatusLogs.username}, ${users.username})`,
           oldStatus: userStatusLogs.oldStatus,
           newStatus: userStatusLogs.newStatus,
           reason: userStatusLogs.reason,
@@ -83,8 +84,8 @@ export default defineEventHandler(async (event) => {
           and(
             whereClause,
             or(
-              ilike(users.name, `%${searchTerm}%`),
-              ilike(users.username, `%${searchTerm}%`),
+              ilike(userStatusLogs.name, `%${searchTerm}%`),
+              ilike(userStatusLogs.username, `%${searchTerm}%`),
               ilike(userStatusLogs.reason, `%${searchTerm}%`)
             )
           )

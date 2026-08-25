@@ -3609,7 +3609,9 @@ export const admin = {
       rejectReasonPlaceholder: 'Optional; recorded in the status log',
       confirmReject: 'Reject this registration request? The account will be deleted.',
       approveSuccess: 'Registration approved',
-      rejectSuccess: 'Registration request rejected'
+      rejectSuccess: 'Registration request rejected',
+      approveFailed: 'Registration approval failed',
+      rejectFailed: 'Registration approval failed'
     },
     mobile: {
       accountStatus: 'Account Status',

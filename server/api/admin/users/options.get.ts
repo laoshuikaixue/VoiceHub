@@ -1,6 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, gradeClass } from '~/drizzle/schema'
+import { neq } from 'drizzle-orm'
 import { smartSort } from '~~/server/utils/grade-class-core'
 
 export default defineEventHandler(async (event) => {
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
         message: '只有系统管理员可以访问此选项'
       })
     }
-    // 用户树需要全量轻字段，避免用分页列表推导时统计不完整
+    // 用户树需要全量轻字段，避免用分页列表推导时统计不完整；排除待审核用户（未通过审核不计入组织树/筛选）
     const treeUsers = await db
       .select({
         id: users.id,
@@ -26,6 +27,7 @@ export default defineEventHandler(async (event) => {
         status: users.status
       })
       .from(users)
+      .where(neq(users.status, 'pending'))
 
     // 年级班级选项：配置优先；未配置时回退到全部用户聚合（含 withdrawn/graduate 与仅有班级项），
     // 与组织结构树口径一致，避免筛选下拉缺项

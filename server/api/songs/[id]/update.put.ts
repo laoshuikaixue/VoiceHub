@@ -9,7 +9,7 @@ import {
 import { eq, or, and } from 'drizzle-orm'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
@@ -140,9 +140,9 @@ export default defineEventHandler(async (event) => {
       const st = body.submissionNotePublicStatus
       if (st === 'approved') {
         updateData.submissionNotePublic = true
-        updateData.submissionNotePublicStatus = 'approved'
+        updateData.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.APPROVED
       } else if (st === 'rejected') {
-        updateData.submissionNotePublicStatus = 'rejected'
+        updateData.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.REJECTED
       } else {
         updateData.submissionNotePublic = false
         updateData.submissionNotePublicStatus = null
@@ -172,9 +172,9 @@ export default defineEventHandler(async (event) => {
           const st = body.submissionNotePublicStatus
           if (st === 'approved') {
             replaySet.submissionNotePublic = true
-            replaySet.submissionNotePublicStatus = 'approved'
+            replaySet.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.APPROVED
           } else if (st === 'rejected') {
-            replaySet.submissionNotePublicStatus = 'rejected'
+            replaySet.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.REJECTED
           } else {
             replaySet.submissionNotePublic = false
             replaySet.submissionNotePublicStatus = null

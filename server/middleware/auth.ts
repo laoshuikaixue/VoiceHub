@@ -176,11 +176,11 @@ export default defineEventHandler(async (event) => {
           data: {
             code:
               user?.status === 'pending'
-                ? 'AUTH_USER_PENDING_APPROVAL'
+                ? SERVER_ERROR_CODES.AUTH_USER_PENDING_APPROVAL
                 : user?.status === 'withdrawn'
-                  ? 'AUTH_ACCOUNT_WITHDRAWN'
+                  ? SERVER_ERROR_CODES.AUTH_ACCOUNT_WITHDRAWN
                   : user?.status === 'graduate'
-                    ? 'AUTH_ACCOUNT_GRADUATED'
+                    ? SERVER_ERROR_CODES.AUTH_ACCOUNT_GRADUATED
                     : undefined
           }
         })
@@ -194,7 +194,7 @@ export default defineEventHandler(async (event) => {
 
       return sendError(
         event,
-        createApiError(401, 'AUTH_SESSION_EXPIRED', '登录状态已失效，请重新登录', {
+        createApiError(401, SERVER_ERROR_CODES.AUTH_SESSION_EXPIRED, '登录状态已失效，请重新登录', {
           invalidToken: true,
           passwordChanged: true
         })
@@ -305,7 +305,7 @@ export default defineEventHandler(async (event) => {
     if (shouldBlockDuringPasswordChange(pathname, method, requirePasswordChange)) {
       return sendError(
         event,
-        createApiError(403, 'AUTH_PASSWORD_CHANGE_REQUIRED', '请先完成密码修改后再访问其他功能', {
+        createApiError(403, SERVER_ERROR_CODES.AUTH_PASSWORD_CHANGE_REQUIRED, '请先完成密码修改后再访问其他功能', {
           requirePasswordChange: true
         })
       )

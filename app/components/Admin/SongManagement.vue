@@ -1528,7 +1528,14 @@ const updateSubmissionNotePublicStatus = async (status) => {
     success: status === 'approved' ? '已通过审核' : '已拒绝审核',
     failure: '更新审核状态失败'
   }
-  const safeMessage = (_key, fallback) => fallback
+  const safeMessage = (section, key, fallback) => {
+    try {
+      const text = getNestedMessage(section, key)
+      return text || fallback
+    } catch {
+      return fallback
+    }
+  }
 
   dialogData.isUpdatingPublic = true
 
@@ -1558,7 +1565,7 @@ const updateSubmissionNotePublicStatus = async (status) => {
 
     if (window.$showNotification) {
       try {
-        window.$showNotification(safeMessage('messages', fallbackText.success), 'success')
+        window.$showNotification(safeMessage('messages', 'remarkApproved', fallbackText.success), 'success')
       } catch (notifyErr) {
         // 静默失败，不影响主流程
       }
@@ -1567,7 +1574,7 @@ const updateSubmissionNotePublicStatus = async (status) => {
     console.error('更新备注审核状态失败:', error)
     if (window.$showNotification) {
       try {
-        window.$showNotification(safeMessage('errors', fallbackText.failure), 'error')
+        window.$showNotification(safeMessage('errors', 'remarkUpdateFailed', fallbackText.failure), 'error')
       } catch (notifyErr) {
         // 静默失败
       }
@@ -1586,7 +1593,8 @@ const openSubmissionRemark = (song) => {
   submissionRemarkDialog.value = {
     show: true,
     songId: song.id,
-    replayRequestId: song.replayRequestId || null,
+    // 歌曲列表审核针对歌曲自身备注；重播备注审核从排期/重播列表发起（避免被 replayRequestId 劫持）
+    replayRequestId: null,
     title: song.title,
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,

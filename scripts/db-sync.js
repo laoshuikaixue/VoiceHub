@@ -170,6 +170,20 @@ async function columnExists(sql, tableName, columnName) {
   return result[0]?.exists === true
 }
 
+async function indexExists(sql, tableName, indexName) {
+  const result = await sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND tablename = ${tableName}
+        AND indexname = ${indexName}
+    ) AS exists
+  `
+
+  return result[0]?.exists === true
+}
+
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
@@ -185,8 +199,11 @@ async function checkSchemaConsistency(sql) {
     'CardCodeRedeemLog',
     'PasswordAuditLog',
     'PasswordRateLimit',
-    'GradeClass'
+    'GradeClass',
+    'auth_sessions'
   ]
+  // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
+  const requiredIndexes = [['User', 'User_username_unique']]
   const requiredColumns = {
     User: [
       'status',
@@ -305,6 +322,12 @@ async function checkSchemaConsistency(sql) {
       if (!(await columnExists(sql, tableName, columnName))) {
         missing.push(`${tableName}.${columnName} column`)
       }
+    }
+  }
+
+  for (const [tableName, indexName] of requiredIndexes) {
+    if (!(await indexExists(sql, tableName, indexName))) {
+      missing.push(`${tableName}.${indexName} index`)
     }
   }
 

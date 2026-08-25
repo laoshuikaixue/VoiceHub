@@ -432,3 +432,13 @@ export const RISK_CONTROL_CONSTANTS = {
 // 图形验证码策略
 export const CAPTCHA_MAX_FAILURES = 3
 export const CAPTCHA_CODE_EXPIRE = 300 // 5分钟
+
+// 投稿公开留言审核状态（Song.submissionNotePublicStatus / song_replay_requests.submission_note_public_status）
+export const SUBMISSION_NOTE_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected'
+} as const
+
+// 用户审核相关状态
+export const USER_STATUS_PENDING = 'pending'

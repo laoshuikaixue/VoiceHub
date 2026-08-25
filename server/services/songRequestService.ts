@@ -23,7 +23,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { z } from 'zod'
 
@@ -341,7 +341,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const noteRequiresApproval = systemSettingsData?.submissionNoteRequiresApproval === true
     const wantsPublic = submissionNote !== null ? requestBody.submissionNotePublic !== false : false
     const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
-    const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? 'pending' : null
+    const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? SUBMISSION_NOTE_STATUS.PENDING : null
 
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 

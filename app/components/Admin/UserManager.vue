@@ -1614,6 +1614,7 @@ import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
+import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
@@ -1832,18 +1833,7 @@ const getStageLabel = (user) => {
 
 const gradeSortWeight = (grade) => {
   const order = {
-    初一: 1,
-    初二: 2,
-    初三: 3,
-    高一: 4,
-    高二: 5,
-    高三: 6,
-    大一: 7,
-    大二: 8,
-    大三: 9,
-    大四: 10,
-    教师: 98,
-    教职工: 99,
+    ...GRADE_ORDER,
     [unsetGradeLabel.value]: 100
   }
 
