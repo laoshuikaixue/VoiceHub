@@ -6,7 +6,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { updateUserPassword } from '~~/server/services/userService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
-import { getPasswordPolicyViolation } from '~/utils/password-policy'
+import { getInitialPasswordPolicyViolation } from '~/utils/password-policy'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { canSetInitialPassword } from '~~/server/utils/initial-password-policy'
 import {
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const policyViolation = getPasswordPolicyViolation(newPassword)
+  const policyViolation = getInitialPasswordPolicyViolation(newPassword)
   if (policyViolation) {
     await recordPasswordAudit(event, user.id, auditAction, false, policyViolation.message)
     throw createApiError(400, policyViolation.code, policyViolation.message)

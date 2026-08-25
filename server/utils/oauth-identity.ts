@@ -20,7 +20,7 @@ export interface ExistingOAuthIdentity {
 export async function syncOAuthIdentityAvatar(
   tx: DbTransaction,
   user: { id: number; avatarProvider?: string | null; avatarProviderUserId?: string | null },
-  existing: ExistingOAuthIdentity | null,
+  existing: ExistingOAuthIdentity | null | undefined,
   payload: OAuthIdentityPayload
 ): Promise<{ created: boolean; avatarSourceSet: boolean }> {
   const currentIdentities = await tx.query.userIdentities.findMany({

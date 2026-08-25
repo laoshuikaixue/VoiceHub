@@ -11,6 +11,7 @@ import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/regis
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
+import { notifyRegistration } from '~~/server/utils/registration-notify'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -32,16 +33,13 @@ export default defineEventHandler(async (event) => {
   const emailCode = typeof body.emailCode === 'string' ? body.emailCode.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
-  // 邮箱必填由管理员开关控制（与本地注册同源）：开启时邮箱+验证码必填
+  // 邮箱必填由管理员开关控制（与本地注册同源）：开启时邮箱必填；验证码在用户名检查后消费
   const emailRequired = Boolean(config?.registerEmailRequired)
   if (emailRequired && !email) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请填写邮箱地址')
   }
   if (email && !EMAIL_REGEX.test(email)) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
-  }
-  if (email && !verifyEmailCode(email, emailCode)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 
   if (remark.length > REMARK_MAX_LENGTH) {
@@ -89,6 +87,11 @@ export default defineEventHandler(async (event) => {
 
   if (existingUser) {
     throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
+  }
+
+  // 邮箱验证码在最后校验（此前置校验均已通过，失败即消费不会误烧码）
+  if (email && !verifyEmailCode(email, emailCode)) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 
   // 检查OAuth身份是否已被绑定
@@ -158,6 +161,9 @@ export default defineEventHandler(async (event) => {
 
     // 清除绑定令牌
     deleteCookie(event, 'binding-token')
+
+    // 注册通知（站内通知管理员 + 邮件；异步，失败不影响主流程）
+    notifyRegistration(result.id, username, name, email, Boolean(config?.oauthRegisterRequiresApproval))
 
     // 需要审核时：不签发登录态，等待管理员审核
     if (config?.oauthRegisterRequiresApproval) {

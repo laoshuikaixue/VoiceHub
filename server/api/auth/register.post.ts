@@ -13,52 +13,11 @@ import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
-import { createBatchSystemNotifications } from '~~/server/services/notificationService'
-import { SmtpService } from '~~/server/services/smtpService'
+import { notifyRegistration } from '~~/server/utils/registration-notify'
 
 const REGISTER_RATE_LIMIT = 5
 const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-// 注册通知：待审核时站内通知所有管理员；有邮箱时邮件通知注册结果（异步，失败不影响主流程）
-async function notifyRegistration(
-  userId: number,
-  username: string,
-  name: string,
-  email: string,
-  requiresApproval: boolean
-) {
-  try {
-    if (requiresApproval) {
-      const adminResult = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(inArray(users.role, ['ADMIN', 'SUPER_ADMIN']))
-      const adminIds = adminResult.map((u) => u.id)
-      if (adminIds.length > 0) {
-        await createBatchSystemNotifications(
-          adminIds,
-          '新用户注册待审核',
-          `用户「${name}」（用户名：${username}）提交了注册申请，请前往用户管理审核。`,
-          false
-        )
-      }
-    }
-    if (email) {
-      const smtpService = SmtpService.getInstance()
-      if (await smtpService.ensureInitialized()) {
-        await smtpService.renderAndSend(email, 'register', {
-          title: requiresApproval ? '注册申请已提交' : '注册成功',
-          message: requiresApproval
-            ? `${name}，您的注册申请已提交，请耐心等待管理员审核。`
-            : `${name}，恭喜您注册成功，欢迎使用 VoiceHub！`
-        })
-      }
-    }
-  } catch (error) {
-    console.error('注册通知发送失败:', error)
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -157,17 +116,14 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, validationError.code, validationError.message)
   }
 
-  // 邮箱必填由管理员开关控制（需 SMTP 已配置方可开启）：开启时邮箱与验证码均为必填
+  // 邮箱必填由管理员开关控制（需 SMTP 已配置方可开启）：开启时邮箱必填
   const emailRequired = Boolean(config?.registerEmailRequired)
   if (emailRequired && !email) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请填写邮箱地址')
   }
-  // 邮箱可选填；填写时必须格式合法，且须通过邮箱验证码验证归属
+  // 邮箱格式校验（验证码校验在用户名唯一性检查之后执行，避免失败即烧码）
   if (email && !EMAIL_REGEX.test(email)) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
-  }
-  if (email && !verifyEmailCode(email, emailCode)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 
   if (remark.length > REMARK_MAX_LENGTH) {
@@ -194,6 +150,11 @@ export default defineEventHandler(async (event) => {
 
   if (existingUser) {
     throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
+  }
+
+  // 邮箱验证码在最后校验（此时用户名等前置校验均已通过，失败即消费不会误烧码）
+  if (email && !verifyEmailCode(email, emailCode)) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 
   const requiresApproval = Boolean(config?.registerRequiresApproval)
