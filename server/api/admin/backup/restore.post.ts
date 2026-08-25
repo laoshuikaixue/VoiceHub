@@ -34,6 +34,9 @@ import { assertAdminOperationTablesProtected, getAdminOperationFailureCode, reco
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
+import { validateThemeConfig } from '~~/server/utils/theme-config'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // 此列表必须与恢复前清理的业务表同步；审计表不属于备份恢复数据，也不可删除。
 const BACKUP_RESTORE_CLEAR_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'card_code_redeem_logs', 'notifications', 'notification_settings', 'user_status_logs', 'user_identities', 'users', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'songs', 'card_codes', 'song_blacklists', 'email_templates', 'play_times', 'semesters', 'request_times', 'system_settings']
@@ -1135,6 +1138,8 @@ export default defineEventHandler(async (event) => {
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
                           'instanceId',
+                          'defaultTheme',
+                          'enabledThemes',
                           'telemetryEnabled',
                           'siteTitle',
                           'siteLogoUrl',
@@ -1221,6 +1226,12 @@ export default defineEventHandler(async (event) => {
                             systemSettingsData[field] = record[field]
                           }
                         })
+                        if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
+                          if (!Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || !Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
+                            throw createApiError(400, SERVER_ERROR_CODES.THEME_INVALID_LIST, '主题配置必须同时包含默认主题和启用主题列表')
+                          }
+                          systemSettingsData.enabledThemes = JSON.stringify(validateThemeConfig(systemSettingsData.defaultTheme, systemSettingsData.enabledThemes))
+                        }
                         systemSettingsData = omitMaskedSystemSettingsSecrets(systemSettingsData)
 
                         if (mode === 'merge') {
