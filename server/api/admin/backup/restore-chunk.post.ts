@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import {
   cardCodeRedeemLogs,
   cardCodes,
+  gradeClass,
   notificationSettings,
   notifications,
   playTimes,
@@ -691,6 +692,39 @@ export default defineEventHandler(async (event) => {
                 stats.updated++
               } else {
                 await tx.insert(semesters).values({ ...semesterData, id: record.id })
+                stats.created++
+              }
+            }
+            break
+          }
+
+          case 'gradeClass': {
+            const gradeClassData: any = {}
+            const gradeClassFields = ['grade', 'class']
+            gradeClassFields.forEach((field) => {
+              if (record.hasOwnProperty(field)) {
+                gradeClassData[field] = record[field]
+              }
+            })
+            if (!gradeClassData.grade && !gradeClassData.class) break
+
+            if (mode === 'merge') {
+              const existingGradeClass = await tx.query.gradeClass.findFirst({
+                where: and(
+                  eq(gradeClass.grade, gradeClassData.grade),
+                  eq(gradeClass.class, gradeClassData.class)
+                )
+              })
+              if (!existingGradeClass) {
+                await tx.insert(gradeClass).values(gradeClassData)
+                stats.created++
+              }
+            } else {
+              const existing = await tx.query.gradeClass.findFirst({
+                where: eq(gradeClass.id, record.id)
+              })
+              if (!existing) {
+                await tx.insert(gradeClass).values({ ...gradeClassData, id: record.id })
                 stats.created++
               }
             }

@@ -10,6 +10,9 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
+import { verifyEmailCode } from '~~/server/utils/email-verification'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -25,7 +28,21 @@ export default defineEventHandler(async (event) => {
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
   const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
   const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const emailCode = typeof body.emailCode === 'string' ? body.emailCode.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
+
+  // 邮箱必填由管理员开关控制（与本地注册同源）：开启时邮箱+验证码必填
+  const emailRequired = Boolean(config?.registerEmailRequired)
+  if (emailRequired && !email) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请填写邮箱地址')
+  }
+  if (email && !EMAIL_REGEX.test(email)) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
+  }
+  if (email && !verifyEmailCode(email, emailCode)) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
+  }
 
   if (remark.length > REMARK_MAX_LENGTH) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
@@ -109,6 +126,8 @@ export default defineEventHandler(async (event) => {
           role: 'USER',
           status: config?.oauthRegisterRequiresApproval ? 'pending' : 'active',
           remark: remark || null,
+          email: email || null,
+          emailVerified: email ? true : null,
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,

@@ -267,7 +267,7 @@
       </div>
 
       <!-- 邮箱字段 - 管理员开启注册邮箱功能后显示（必填，需邮箱验证码验证归属） -->
-      <div v-if="showRegisterMode && registerEmailRequired" class="form-group">
+      <div v-if="(showRegisterMode || showCreateMode) && registerEmailRequired" class="form-group">
         <label for="email">{{ locale.emailLabel }}</label>
         <div class="input-wrapper">
           <svg
@@ -811,6 +811,17 @@ const handleRegisterOAuth = async () => {
     return
   }
 
+  // 邮箱必填由管理员开关控制：开启时邮箱必须填写，且须附带验证码
+  const emailValue = email.value.trim()
+  if (registerEmailRequired.value && !emailValue) {
+    error.value = locale.value.emailRequired
+    return
+  }
+  if (emailValue && !emailCode.value.trim()) {
+    error.value = locale.value.emailCodeRequired
+    return
+  }
+
   error.value = ''
   loading.value = true
 
@@ -824,7 +835,9 @@ const handleRegisterOAuth = async () => {
         class: studentClass.value,
         password: password.value,
         confirmPassword: confirmPassword.value,
-        remark: remark.value.trim()
+        remark: remark.value.trim(),
+        email: emailValue || undefined,
+        emailCode: emailCode.value.trim() || undefined
       }
     })
 
