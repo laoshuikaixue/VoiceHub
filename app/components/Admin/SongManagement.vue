@@ -1522,14 +1522,15 @@ const updateSubmissionNotePublicStatus = async (status) => {
   const dialogData = submissionRemarkDialog.value
   if (!dialogData.songId || dialogData.isUpdatingPublic) return
 
-  // 兜底文案：避免异步回调里 getNestedMessage 因代码分割/作用域问题而 ReferenceError
+  // 兜底文案：避免异步回调里 getNestedMessage 因代码分割/作用域问题抛 ReferenceError
+  // 用 try/catch + fallback 兜底（typeof 检查会被 production 死代码消除）
   const fallbackText = {
     success: status === 'approved' ? '已通过审核' : '已拒绝审核',
     failure: '更新审核状态失败'
   }
   const safeMessage = (key, fallback) => {
     try {
-      return typeof getNestedMessage === 'function' ? getNestedMessage(key) : fallback
+      return getNestedMessage(key) || fallback
     } catch {
       return fallback
     }
@@ -1562,12 +1563,20 @@ const updateSubmissionNotePublicStatus = async (status) => {
     }
 
     if (window.$showNotification) {
-      window.$showNotification(safeMessage('messages', fallbackText.success), 'success')
+      try {
+        window.$showNotification(safeMessage('messages', fallbackText.success), 'success')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
   } catch (error) {
     console.error('更新备注审核状态失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(safeMessage('errors', fallbackText.failure), 'error')
+      try {
+        window.$showNotification(safeMessage('errors', fallbackText.failure), 'error')
+      } catch (notifyErr) {
+        // 静默失败
+      }
     }
   } finally {
     dialogData.isUpdatingPublic = false
