@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
+import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -30,6 +32,11 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       message: '姓名、用户名和密码不能为空'
     })
+  }
+
+  const violation = getAdminPasswordViolation(initialPassword)
+  if (violation) {
+    throw createApiError(400, violation.code, violation.message)
   }
 
   try {

@@ -15,7 +15,7 @@ const COMMON_PASSWORDS = new Set([
   'voicehub'
 ])
 
-export const PASSWORD_MIN_LENGTH = 8
+export const PASSWORD_MIN_LENGTH = 6
 export const PASSWORD_MAX_LENGTH = 128
 
 function getUtf8ByteLength(value: string): number {

@@ -7,6 +7,14 @@ test('密码策略接受包含三类字符的安全密码', () => {
   assert.equal(validatePasswordPolicy('安全Pass123!'), null)
 })
 
+test('密码策略允许6位以上的安全密码', () => {
+  assert.equal(validatePasswordPolicy('Pass12'), null)
+})
+
+test('密码策略拒绝少于6位的密码', () => {
+  assert.match(validatePasswordPolicy('Pas12') || '', /长度至少为6位/)
+})
+
 test('密码策略拒绝常见弱口令和字符类型不足的密码', () => {
   assert.match(validatePasswordPolicy('12345678') || '', /过于常见/)
   assert.match(validatePasswordPolicy('abcdefgh') || '', /三类/)
