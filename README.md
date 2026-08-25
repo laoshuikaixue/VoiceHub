@@ -465,7 +465,7 @@ nix run .#build                # 在项目目录中执行，生成 .output 目�
 
 #### 前提条件
 
-- Node.js 20+
+- Node.js 22.11+
 - PostgreSQL 数据库（推荐使用 Neon）
 - Redis 数据库（可选；多实例或 Serverless 部署建议配置）
 
