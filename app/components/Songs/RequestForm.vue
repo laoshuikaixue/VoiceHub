@@ -4284,7 +4284,7 @@ defineExpose({
   font-size: 15px;
   line-height: 1.7;
   letter-spacing: 0.04em;
-  color: var(--overlay-50);
+  color: var(--overlay-40);
 }
 
 .rules-content-desktop p {
