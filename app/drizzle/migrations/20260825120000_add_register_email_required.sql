@@ -1,1 +1,0 @@
-ALTER TABLE "SystemSettings" ADD COLUMN "registerEmailRequired" boolean DEFAULT false NOT NULL;--> statement-breakpoint

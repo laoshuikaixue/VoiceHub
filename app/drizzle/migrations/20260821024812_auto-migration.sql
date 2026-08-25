@@ -1,1 +1,0 @@
-ALTER TABLE "SystemSettings" ADD COLUMN "oauthRegisterRequiresApproval" boolean DEFAULT true NOT NULL;

@@ -1,1 +1,0 @@
-ALTER TYPE "public"."user_status" ADD VALUE 'rejected';
