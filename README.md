@@ -465,7 +465,7 @@ nix run .#build                # 在项目目录中执行，生成 .output 目�
 
 #### 前提条件
 
-- Node.js 20+
+- Node.js 22.11+
 - PostgreSQL 数据库（推荐使用 Neon）
 - Redis 数据库（可选；多实例或 Serverless 部署建议配置）
 
@@ -665,6 +665,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | ---------------------- | ---- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | DATABASE_URL           | 是   | PostgreSQL数据库连接字符串                              | `postgresql://username:password@host:port/database?sslmode=require`                                                                             |
 | JWT_SECRET             | 是   | JWT令牌签名密钥，建议使用强随机字符串                   | `your-very-secure-jwt-secret-key`                                                                                                               |
+| TRUSTED_CLIENT_IP_HEADERS | 否 | 受信 CDN/反向代理真实 IP 头，多个值用逗号分隔；未配置时使用 TCP 连接地址 | `eo-connecting-ip` |
 | NODE_ENV               | 否   | 运行环境，development或production                       | `production`                                                                                                                                    |
 | REDIS_URL              | 否   | Redis短期状态服务连接字符串，用于验证码、限流和临时锁定 | `redis://default:password@host:port`                                                                                                            |
 | REDIS_KEY_PREFIX       | 否   | Redis键命名空间，多环境共用Redis时应分别设置            | `voicehub:v2:`                                                                                                                                  |
@@ -777,6 +778,7 @@ VoiceHub/
 │   │   │   ├── Ops/                     # 运维看板通用展示组件
 │   │   │   │   ├── OpsPanel.vue          # 统一状态面板壳
 │   │   │   │   └── OpsTimeChart.vue      # 运维指标时间趋势图
+│   │   │   ├── OAuthBindingsModal.vue # OAuth 绑定详情弹窗
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
@@ -1292,6 +1294,9 @@ VoiceHub/
 │   │   │   │   ├── send-code.post.ts # 发送验证码
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
+│   │   │   ├── avatar.post.ts      # 设置 OAuth 头像来源
+│   │   │   ├── sessions.delete.ts    # 撤销登录会话
+│   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
 │   │   └── users/          # 用户API
 │   │       ├── social-accounts/     # 社交账号管理
@@ -1357,6 +1362,7 @@ VoiceHub/
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
+│   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── operations-metrics.ts # 进程内运行指标聚合
 │   │   ├── permissions.js  # 权限系统配置
@@ -1381,6 +1387,7 @@ VoiceHub/
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
+│   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
@@ -1401,12 +1408,14 @@ VoiceHub/
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
-│       └── token-version-policy.test.ts # 令牌版本策略测试
+│       ├── token-version-policy.test.ts # 令牌版本策略测试
+│       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义

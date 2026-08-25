@@ -24,6 +24,7 @@ import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import type { SystemSettings } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { recordTurnstileValidation } from '~~/server/utils/operations-metrics'
+import { createAuthSession } from '~~/server/utils/auth-session'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -201,6 +202,9 @@ export default defineEventHandler(async (event) => {
       throw createApiError(403, 'AUTH_ACCOUNT_BANNED', '该账号已被封禁')
     }
 
+    // 普通登录不延续绑定流程，避免残留绑定令牌被后续 2FA 校验意外消费
+    deleteCookie(event, 'binding-token')
+
     // 检查是否开启2FA
     const totpIdentity = await db.query.userIdentities.findFirst({
       where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
@@ -258,7 +262,7 @@ export default defineEventHandler(async (event) => {
       .catch((err) => console.error('Error updating user login info:', err))
 
     // 生成JWT
-    const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
+    const { token } = await createAuthSession(event, user, 'password')
 
     // 自动判断是否需要secure
     const isSecure =

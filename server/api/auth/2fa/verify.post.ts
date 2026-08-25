@@ -1,5 +1,6 @@
 import { db, userIdentities, eq, and, users, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { getBeijingTime } from '~/utils/timeUtils'
@@ -21,6 +22,7 @@ import {
 } from '~~/server/utils/system-settings-helper'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
+import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
@@ -175,9 +177,12 @@ export default defineEventHandler(async (event) => {
     await db.transaction(async (tx) => {
       const [currentUser] = await tx
         .select({
+          id: users.id,
           tokenVersion: users.tokenVersion,
           forcePasswordChange: users.forcePasswordChange,
-          passwordChangedAt: users.passwordChangedAt
+          passwordChangedAt: users.passwordChangedAt,
+          avatarProvider: users.avatarProvider,
+          avatarProviderUserId: users.avatarProviderUserId
         })
         .from(users)
         .where(eq(users.id, user.id))
@@ -227,15 +232,12 @@ export default defineEventHandler(async (event) => {
         throw createApiError(409, 'AUTH_OAUTH_BOUND_OTHER_USER', '该第三方账号已被其他用户绑定')
       }
 
-      if (!existing) {
-        await tx.insert(userIdentities).values({
-          userId: user.id,
-          provider: bindingPayload.provider,
-          providerUserId: bindingPayload.providerUserId,
-          providerUsername: bindingPayload.providerUsername,
-          createdAt: getBeijingTime()
-        })
-      }
+      await syncOAuthIdentityAvatar(tx, currentUser, existing, {
+        provider: bindingPayload.provider,
+        providerUserId: bindingPayload.providerUserId,
+        providerUsername: bindingPayload.providerUsername,
+        avatar: bindingPayload.avatar
+      })
     })
   }
 
@@ -249,7 +251,7 @@ export default defineEventHandler(async (event) => {
     .catch((err) => console.error('Error updating user login info:', err))
 
   // 生成Token
-  const authToken = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
+  const { token: authToken } = await createAuthSession(event, user, '2fa')
 
   const isSecure = isSecureRequest(event)
 

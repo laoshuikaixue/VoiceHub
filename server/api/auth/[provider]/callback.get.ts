@@ -8,8 +8,9 @@ import {
   verifyCompactOAuthState
 } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
+import { db, eq, users, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
 import {
@@ -26,6 +27,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { computeRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
+import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
 const getSingleQueryValue = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined
@@ -195,7 +197,8 @@ export default defineEventHandler(async (event) => {
     identityProvider,
     providerUserId,
     providerUsername,
-    state.returnTo
+    state.returnTo,
+    userInfo.avatar
   )
 })
 
@@ -204,7 +207,8 @@ async function handleUserLoginOrBind(
   provider: string,
   providerUserId: string,
   providerUsername: string,
-  returnTo?: string
+  returnTo?: string,
+  avatar?: string
 ) {
   const isSecure = isSecureRequest(event)
   const safeReturnTo = getSafeOAuthReturnPath(returnTo)
@@ -229,17 +233,6 @@ async function handleUserLoginOrBind(
 
   // 如果用户已登录，则是绑定操作
   if (currentUser) {
-    if (existingIdentity) {
-      // 已经被绑定
-      if (existingIdentity.userId === currentUser.userId) {
-        // 已经被当前用户绑定
-        return sendRedirect(event, '/account?message=' + encodeURIComponent('账号已绑定'))
-      } else {
-        // 已经被其他用户绑定
-        return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
-      }
-    }
-
     let bindingResult:
       | 'success'
       | 'already-bound'
@@ -252,10 +245,13 @@ async function handleUserLoginOrBind(
       bindingResult = await db.transaction(async (tx) => {
         const [currentUserRecord] = await tx
           .select({
+            id: users.id,
             status: users.status,
             tokenVersion: users.tokenVersion,
             forcePasswordChange: users.forcePasswordChange,
-            passwordChangedAt: users.passwordChangedAt
+            passwordChangedAt: users.passwordChangedAt,
+            avatarProvider: users.avatarProvider,
+            avatarProviderUserId: users.avatarProviderUserId
           })
           .from(users)
           .where(eq(users.id, currentUser.userId))
@@ -295,15 +291,23 @@ async function handleUserLoginOrBind(
         })
 
         if (identity) {
-          return identity.userId === currentUser.userId ? 'already-bound' : 'bound-to-other'
+          if (identity.userId !== currentUser.userId) {
+            return 'bound-to-other'
+          }
+          await syncOAuthIdentityAvatar(tx, currentUserRecord, identity, {
+            provider,
+            providerUserId,
+            providerUsername,
+            avatar
+          })
+          return 'already-bound'
         }
 
-        await tx.insert(userIdentities).values({
-          userId: currentUser.userId,
+        await syncOAuthIdentityAvatar(tx, currentUserRecord, null, {
           provider,
           providerUserId,
           providerUsername,
-          createdAt: new Date()
+          avatar
         })
         return 'success'
       })
@@ -389,19 +393,38 @@ async function handleUserLoginOrBind(
       )
     }
 
-    await db
-      .update(users)
-      .set({
-        lastLogin: getBeijingTime(),
-        lastLoginIp: getClientIP(event)
-      })
-      .where(eq(users.id, user.id))
+    await db.transaction(async (tx) => {
+      const [userRecord] = await tx
+        .select({
+          id: users.id,
+          avatarProvider: users.avatarProvider,
+          avatarProviderUserId: users.avatarProviderUserId
+        })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .for('update')
 
-    const token = JWTEnhanced.generateToken(
-      existingIdentity.user.id,
-      existingIdentity.user.role,
-      existingIdentity.user.tokenVersion
-    )
+      if (!userRecord) {
+        throw createApiError(404, 'USER_NOT_FOUND', '用户不存在')
+      }
+
+      await syncOAuthIdentityAvatar(tx, userRecord, existingIdentity, {
+        provider,
+        providerUserId,
+        providerUsername,
+        avatar
+      })
+
+      await tx
+        .update(users)
+        .set({
+          lastLogin: getBeijingTime(),
+          lastLoginIp: getClientIP(event)
+        })
+        .where(eq(users.id, user.id))
+    })
+
+    const { token } = await createAuthSession(event, existingIdentity.user, provider)
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: isSecure,
@@ -415,7 +438,8 @@ async function handleUserLoginOrBind(
     const bindingToken = generateBindingToken({
       provider: provider,
       providerUserId,
-      providerUsername
+      providerUsername,
+      avatar
     })
 
     // 将绑定令牌存入 cookie

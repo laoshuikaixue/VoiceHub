@@ -142,6 +142,7 @@ import { ref, computed, onMounted } from 'vue'
 
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import { useLocale } from '~/utils/locale'
+import { PASSWORD_MIN_LENGTH } from '~/utils/password-policy'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const route = useRoute()
@@ -179,7 +180,7 @@ const handleSubmit = async () => {
     return
   }
 
-  if (password.value.length < 8) {
+  if (password.value.length < PASSWORD_MIN_LENGTH) {
     error.value = locale.value.passwordTooShort
     return
   }

@@ -1,0 +1,1 @@
+ALTER TABLE "SystemSettings" ALTER COLUMN "aggregateOAuthEndpoint" DROP DEFAULT;

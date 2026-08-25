@@ -1,6 +1,6 @@
 {
   "name": "voicehub",
-  "version": "1.5.9.3",
+  "version": "1.5.9.5",
   "description": "校园广播站点歌管理系统 - 基于数据库存储的现代化点歌、排期和播放管理平台",
   "private": true,
   "packageManager": "pnpm@10.29.3",
@@ -39,7 +39,7 @@
     "@applemusic-like-lyrics/lyric": "^0.4.1",
     "@applemusic-like-lyrics/vue": "^0.5.2",
     "@breezystack/lamejs": "^1.2.7",
-    "@lucide/vue": "^1.33.0",
+    "@lucide/vue": "^1.34.0",
     "@neteasecloudmusicapienhanced/api": "^4.40.1",
     "@netlify/functions": "^2.8.2",
     "@nuxt/kit": "4.5.0",
@@ -51,8 +51,8 @@
     "@pixi/filter-color-matrix": "^7.4.3",
     "@pixi/sprite": "^7.4.3",
     "@sansenjian/qq-music-api": "2.4.0",
-    "@sentry/node": "^10.70.0",
-    "@sentry/vue": "^10.70.0",
+    "@sentry/node": "^10.71.0",
+    "@sentry/vue": "^10.71.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.2",
     "@types/bcryptjs": "^2.4.6",
@@ -82,7 +82,7 @@
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lodash-es": "^4.18.1",
-    "marked": "^18.0.10",
+    "marked": "^18.0.11",
     "multer": "^2.2.0",
     "nodemailer": "^8.0.11",
     "nuxt": "^4.5.2",
@@ -91,7 +91,7 @@
     "prompts": "^2.4.2",
     "qrcode": "^1.5.4",
     "redis": "^5.12.1",
-    "sass": "^1.103.0",
+    "sass": "^1.103.1",
     "svg-captcha": "^1.4.0",
     "tsx": "^4.23.12",
     "vite-plugin-wasm": "^3.6.0",
@@ -103,7 +103,7 @@
     "zod": "^4.4.3"
   },
   "engines": {
-    "node": ">=18.20.0",
+    "node": ">=22.11.0",
     "pnpm": ">=10.0.0"
   },
   "pnpm": {
@@ -114,12 +114,12 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/kit": "4.5.0",
-    "@unocss/nuxt": "^66.8.0",
-    "@unocss/preset-wind3": "^66.8.0",
+    "@unocss/nuxt": "^66.8.1",
+    "@unocss/preset-wind3": "^66.8.1",
     "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^9.39.5",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",
-    "unocss": "^66.8.0"
+    "unocss": "^66.8.1"
   }
 }

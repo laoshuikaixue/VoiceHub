@@ -1,12 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -86,6 +87,12 @@ export default defineEventHandler(async (event) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(password, 10)
       const now = getBeijingTime()
+      const avatarUrl = getIdentityAvatarUrl({
+        provider: payload.provider,
+        providerUserId: payload.providerUserId,
+        providerUsername: payload.providerUsername,
+        avatar: payload.avatar
+      })
 
       // 创建用户
       const insertedUser = (await tx
@@ -102,7 +109,9 @@ export default defineEventHandler(async (event) => {
           updatedAt: now,
           passwordChangedAt: now,
           lastLogin: now,
-          forcePasswordChange: false
+          forcePasswordChange: false,
+          avatarProvider: avatarUrl ? payload.provider : null,
+          avatarProviderUserId: avatarUrl ? payload.providerUserId : null
         })
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
@@ -116,6 +125,7 @@ export default defineEventHandler(async (event) => {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
+        avatar: payload.avatar || null,
         createdAt: getBeijingTime()
       })
 
@@ -126,7 +136,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 生成JWT令牌
-    const token = JWTEnhanced.generateToken(result.id, 'USER', result.tokenVersion)
+    const { token } = await createAuthSession(event, { id: result.id, role: 'USER', tokenVersion: result.tokenVersion }, payload.provider || 'oauth')
 
     // 自动判断是否需要secure
     const isSecure = isSecureRequest(event)

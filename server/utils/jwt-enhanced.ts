@@ -58,11 +58,12 @@ export class JWTEnhanced {
       throw new Error('JWT_SECRET environment variable is not set')
     }
 
+    const jti = sessionId || randomUUID()
     // JWT载荷
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
       userId,
       role,
-      jti: sessionId,
+      jti,
       tokenVersion
     }
 

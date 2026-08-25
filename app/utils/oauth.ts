@@ -97,3 +97,11 @@ export const getProviderDisplayName = (provider: string): string => {
   }
   return map[normalizedProvider] || provider.charAt(0).toUpperCase() + provider.slice(1)
 }
+
+export const getOAuthProviderName = (provider: string): string => {
+  const normalizedProvider = String(provider || '').trim().toLowerCase()
+  if (normalizedProvider.startsWith('aggregate:')) {
+    return getAggregateOAuthLoginTypeName(normalizedProvider.slice('aggregate:'.length))
+  }
+  return getProviderDisplayName(normalizedProvider)
+}

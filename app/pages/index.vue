@@ -1374,6 +1374,10 @@ watch(activeTab, (newTab) => {
   if (newTab === 'notification') {
     loadNotifications()
   }
+  if (newTab === 'songs' && isClientAuthenticated.value && songs?.songs?.value?.length === 0 && !songs?.loading?.value) {
+    // 歌曲列表尚未加载，触发一次前台加载（骨架屏显示）
+    songs.fetchSongs().then(() => updateSongCounts())
+  }
 })
 
 watch(
@@ -1385,10 +1389,12 @@ watch(
       hasInitializedAuthData.value = true
       songs.clearPrivateSongs()
       songs.clearPublicSongs()
+      // 歌曲列表后台预取，避免阻塞首页首屏
+      songs.fetchSongs(true).then(() => updateSongCounts())
       await Promise.allSettled([
         loadNotifications(),
         fetchNotificationSettings(),
-        songs.fetchSongs(),
+        songs.fetchSongCount(),
         songs.fetchPublicSchedules()
       ])
       await updateSongCounts()
@@ -1436,11 +1442,11 @@ const updateSongCounts = async (semester = null) => {
     scheduleCount.value = schedules.length
 
     // 更新总歌曲数量
-    if (isClientAuthenticated.value && songs?.songs?.value) {
-      // 已登录用户：使用完整歌曲列表
+    if (isClientAuthenticated.value && songs?.songs?.value?.length) {
+      // 已登录用户且歌曲列表已加载：使用完整歌曲列表
       songCount.value = songs.songs.value.length
     } else {
-      // 未登录用户：使用缓存的歌曲总数
+      // 列表未加载完成或未登录：使用总数接口缓存
       songCount.value = songs?.songCount?.value || 0
     }
   } catch (e) {
@@ -1503,8 +1509,10 @@ onMounted(async () => {
     setBootState({ progress: BOOT_PROGRESS.CONTENT, message: locale.value.bootMessages.CONTENT })
     if (isClientAuthenticated.value) {
       hasInitializedAuthData.value = true
+      // 歌曲列表后台预取，避免阻塞首页首屏
+      songs.fetchSongs(true).then(() => updateSongCounts())
       await Promise.allSettled([
-        songs.fetchSongs(),
+        songs.fetchSongCount(),
         songs.fetchPublicSchedules(),
         loadNotifications(),
         fetchNotificationSettings()
@@ -2967,10 +2975,24 @@ if (
   font-weight: 600;
 }
 
+.settings-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--overlay-10);
+  border-radius: 10px;
+  background: var(--chip-bg);
+  color: var(--overlay-45);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
 .settings-icon:hover {
   background-color: var(--overlay-10);
   color: var(--text-primary);
-  transform: rotate(30deg);
 }
 
 /* 通知列表 */

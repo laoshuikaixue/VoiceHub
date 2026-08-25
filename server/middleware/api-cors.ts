@@ -1,3 +1,5 @@
+import { isTrustedOrigin, normalizeOrigin } from '~~/server/utils/request-utils'
+
 export default defineEventHandler((event) => {
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
@@ -47,17 +49,6 @@ export default defineEventHandler((event) => {
 
   if (sourceUrl) {
     try {
-      const normalizeOrigin = (value: string, fallbackProtocol: string) => {
-        const normalizedValue = value.includes('://') ? value : `${fallbackProtocol}//${value}`
-        const url = new URL(normalizedValue)
-        return {
-          origin: url.origin,
-          protocol: url.protocol,
-          hostname: url.hostname,
-          port: url.port || (url.protocol === 'https:' ? '443' : '80')
-        }
-      }
-
       const sourceOrigin = normalizeOrigin(sourceUrl, requestUrl.protocol)
       const trustedOrigin = normalizeOrigin(configuredHost, requestUrl.protocol)
       const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
@@ -72,8 +63,9 @@ export default defineEventHandler((event) => {
       const requestHost = getHeader(event, 'host')
       const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
       const matchesRequestHost = hostOrigin && sourceOrigin.origin === hostOrigin
+      const matchesConfiguredOrigin = isTrustedOrigin(sourceOrigin, trustedOrigin)
 
-      if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin && !matchesRequestHost) {
+      if (!matchesConfiguredOrigin && !isSameLoopbackOrigin && !matchesRequestHost) {
         console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${sourceOrigin.origin}, 期望 ${trustedOrigin.origin}, 路径 ${pathname}`)
         throw createError({
           statusCode: 403,
@@ -116,8 +108,7 @@ function getOriginFromHost(hostHeader: string | undefined, defaultProtocol: stri
   if (!hostHeader) return null
   const firstHost = (hostHeader.split(',')[0] || '').trim()
   try {
-    const normalized = firstHost.includes('://') ? firstHost : `${defaultProtocol}//${firstHost}`
-    return new URL(normalized).origin
+    return normalizeOrigin(firstHost, defaultProtocol).origin
   } catch {
     return null
   }

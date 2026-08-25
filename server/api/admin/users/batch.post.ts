@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq, inArray } from 'drizzle-orm'
+import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 interface UserData {
   name: string
@@ -76,6 +77,18 @@ export default defineEventHandler(async (event) => {
         username: userData.username,
         name: userData.name,
         reason: '缺少必填字段（姓名、账号或密码）'
+      })
+      continue
+    }
+
+    const passwordViolation = getAdminPasswordViolation(userData.password)
+    if (passwordViolation) {
+      results.failed++
+      results.errors.push({
+        index: i,
+        username: normalizedUserData.username,
+        name: normalizedUserData.name,
+        reason: passwordViolation.message
       })
       continue
     }
