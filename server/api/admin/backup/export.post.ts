@@ -28,7 +28,6 @@ import {
 import { inArray } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { maskSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -424,7 +423,7 @@ export default defineEventHandler(async (event) => {
       tablesToBackup.systemSettings = {
         query: async () => {
           const settings = await db.select().from(systemSettings)
-          return settings.map((s) => maskSystemSettingsSecrets(s))
+          return settings
         },
         description: '系统设置'
       }
