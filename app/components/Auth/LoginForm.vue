@@ -636,6 +636,10 @@ onMounted(async () => {
 
 onUnmounted(() => {
   WebAuthnAbortService.cancelCeremony()
+  if (codeTimer.value) {
+    clearInterval(codeTimer.value)
+    codeTimer.value = null
+  }
 })
 
 watch(showCreateMode, async (enabled) => {

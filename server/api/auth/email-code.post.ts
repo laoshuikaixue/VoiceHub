@@ -22,9 +22,9 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
   }
 
-  // 注册关闭时不允许发码（避免成为邮件群发通道）
+  // 注册/三方注册任一开放时允许发码（否则拒绝，避免成为邮件群发通道）
   const config = await db.query.systemSettings.findFirst()
-  if (!config?.allowRegister) {
+  if (!config?.allowRegister && !config?.allowOAuthRegistration) {
     throw createApiError(403, SERVER_ERROR_CODES.AUTH_REGISTER_DISABLED, '系统未开放注册')
   }
 
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
 
   // 先发邮件，发送成功后才落码（失败不落码，也不触发冷却）
   const code = generateEmailCode()
-  const sent = await smtpService.renderAndSend(email, 'verification', {
+  const sent = await smtpService.renderAndSend(email, 'verification.code', {
     title: 'VoiceHub 注册邮箱验证',
     message: `您的注册邮箱验证码是：${code}，5 分钟内有效。`
   })

@@ -212,7 +212,9 @@ async function checkSchemaConsistency(sql) {
       'email',
       'emailVerified',
       'tokenVersion',
-      'remark'
+      'remark',
+      'avatarProvider',
+      'avatarProviderUserId'
     ],
     Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
     song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],

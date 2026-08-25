@@ -1299,6 +1299,23 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // 防锁死：恢复开关前校验 SMTP 已配置，否则剥离 registerEmailRequired（避免恢复后注册必填邮箱却无法发码）
+  try {
+    const restoredSettings = await db.select().from(systemSettings).limit(1)
+    if (
+      restoredSettings[0]?.registerEmailRequired &&
+      (!restoredSettings[0]?.smtpEnabled || !restoredSettings[0]?.smtpHost)
+    ) {
+      await db
+        .update(systemSettings)
+        .set({ registerEmailRequired: false })
+        .where(eq(systemSettings.id, restoredSettings[0].id))
+      stats.warnings.push('SMTP 未配置，已剥离 registerEmailRequired，避免注册邮箱流程不可用')
+    }
+  } catch (settingsError) {
+    console.error('恢复后设置一致性校验失败:', settingsError)
+  }
+
   return {
     success: true,
     newMappings,
