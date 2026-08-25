@@ -198,6 +198,9 @@ export default defineEventHandler(async (event) => {
       throw createApiError(403, 'AUTH_ACCOUNT_BANNED', '该账号已被封禁')
     }
 
+    // 普通登录不延续绑定流程，避免残留绑定令牌被后续 2FA 校验意外消费
+    deleteCookie(event, 'binding-token')
+
     // 检查是否开启2FA
     const totpIdentity = await db.query.userIdentities.findFirst({
       where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))

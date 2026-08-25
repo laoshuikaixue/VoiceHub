@@ -20,7 +20,7 @@ import {
 } from '~~/server/utils/system-settings-helper'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 import { createApiError } from '~~/server/utils/apiError'
-import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<Record<string, unknown> | null>(event)
@@ -148,9 +148,12 @@ export default defineEventHandler(async (event) => {
     await db.transaction(async (tx) => {
       const [currentUser] = await tx
         .select({
+          id: users.id,
           tokenVersion: users.tokenVersion,
           forcePasswordChange: users.forcePasswordChange,
-          passwordChangedAt: users.passwordChangedAt
+          passwordChangedAt: users.passwordChangedAt,
+          avatarProvider: users.avatarProvider,
+          avatarProviderUserId: users.avatarProviderUserId
         })
         .from(users)
         .where(eq(users.id, user.id))
@@ -190,64 +193,16 @@ export default defineEventHandler(async (event) => {
           and(eq(t.provider, payload.provider), eq(t.providerUserId, payload.providerUserId))
       })
 
-      if (existing) {
-        if (existing.userId !== user.id) {
-          throw createApiError(409, 'AUTH_OAUTH_BOUND_OTHER_USER', '该第三方账号已被其他用户绑定')
-        }
-        if (payload.avatar && existing.avatar !== payload.avatar) {
-          await tx
-            .update(userIdentities)
-            .set({ avatar: payload.avatar })
-            .where(eq(userIdentities.id, existing.id))
-        }
-        return
+      if (existing && existing.userId !== user.id) {
+        throw createApiError(409, 'AUTH_OAUTH_BOUND_OTHER_USER', '该第三方账号已被其他用户绑定')
       }
 
-      const currentIdentities = await tx.query.userIdentities.findMany({
-        where: (t, { eq: eqUserId }) => eqUserId(t.userId, user.id),
-        columns: {
-          id: true,
-          provider: true,
-          providerUserId: true,
-          providerUsername: true,
-          avatar: true,
-          createdAt: true
-        }
-      })
-      const currentAvatarSource = resolveAvatarSource(user, currentIdentities)
-
-      await tx.insert(userIdentities).values({
-        userId: user.id,
+      await syncOAuthIdentityAvatar(tx, currentUser, existing, {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
-        avatar: payload.avatar || null
+        avatar: payload.avatar
       })
-
-      // 仅当用户当前没有可用头像来源时才自动选中新身份
-      if (!currentAvatarSource) {
-        const updatedIdentities = await tx.query.userIdentities.findMany({
-          where: (t, { eq: eqUserId }) => eqUserId(t.userId, user.id),
-          columns: {
-            id: true,
-            provider: true,
-            providerUserId: true,
-            providerUsername: true,
-            avatar: true,
-            createdAt: true
-          }
-        })
-        const nextAvatarSource = resolveAvatarSource(user, updatedIdentities)
-        if (nextAvatarSource) {
-          await tx
-            .update(users)
-            .set({
-              avatarProvider: nextAvatarSource.provider,
-              avatarProviderUserId: nextAvatarSource.providerUserId
-            })
-            .where(eq(users.id, user.id))
-        }
-      }
     })
   } catch (e: any) {
     // 如果用户尝试再次绑定相同的账户，处理唯一约束违规
