@@ -44,6 +44,29 @@ export const users = pgTable(
   (table) => [uniqueIndex('User_username_unique').on(table.username)],
 );
 
+// 登录会话表，id 与 JWT 的 jti 一致
+export const authSessions = pgTable('auth_sessions', {
+  id: uuid('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  browser: text('browser'),
+  operatingSystem: text('operating_system'),
+  device: text('device'),
+  loginMethod: text('login_method').default('password').notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revokedReason: text('revoked_reason')
+}, (table) => [
+  index('auth_sessions_user_active_idx').on(table.userId, table.revokedAt, table.expiresAt),
+  index('auth_sessions_last_active_idx').on(table.lastActiveAt)
+]);
+
+export type AuthSession = typeof authSessions.$inferSelect;
+export type NewAuthSession = typeof authSessions.$inferInsert;
+
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
   id: serial('id').primaryKey(),
@@ -214,6 +237,11 @@ export const systemSettings = pgTable('SystemSettings', {
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   monthlySubmissionLimit: integer('monthlySubmissionLimit'),
+  // 用户可见播出排期范围
+  scheduleDaysBeforeEnabled: boolean('scheduleDaysBeforeEnabled').default(false).notNull(),
+  scheduleDaysBefore: integer('scheduleDaysBefore').default(1).notNull(),
+  scheduleDaysAfterEnabled: boolean('scheduleDaysAfterEnabled').default(false).notNull(),
+  scheduleDaysAfter: integer('scheduleDaysAfter').default(1).notNull(),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
   // SMTP 邮件配置
@@ -300,6 +328,9 @@ export const systemSettings = pgTable('SystemSettings', {
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
   autoBackupConfig: text('autoBackupConfig'),
 
+  // 主题管理配置
+  defaultTheme: text('defaultTheme').default('System').notNull(),
+  enabledThemes: text('enabledThemes').default('["System","ClassicDark","ClassicLight","ModernLight"]').notNull(),
   // 平台管理配置
   enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),
@@ -476,6 +507,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [notificationSettings.userId],
   }),
   apiKeys: many(apiKeys),
+  sessions: many(authSessions),
   statusLogs: many(userStatusLogs),
     collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),

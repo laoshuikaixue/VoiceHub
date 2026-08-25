@@ -1,5 +1,19 @@
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 
+export const normalizeScheduleVisibilitySettings = (settings) => {
+  for (const field of [
+    'scheduleDaysBeforeEnabled',
+    'scheduleDaysBefore',
+    'scheduleDaysAfterEnabled',
+    'scheduleDaysAfter'
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(settings, field) && settings[field] === null) {
+      delete settings[field]
+    }
+  }
+  return settings
+}
+
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
   enablePlayTimeSelection: false,
@@ -23,6 +37,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   dailySubmissionLimit: null,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
+  scheduleDaysBeforeEnabled: false,
+  scheduleDaysBefore: 1,
+  scheduleDaysAfterEnabled: false,
+  scheduleDaysAfter: 1,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
   enableReplayRequests: false,
@@ -61,6 +79,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 自动备份
   autoBackupEnabled: false,
   autoBackupConfig: null,
+  // 主题管理
+  defaultTheme: 'System',
+  enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
   // 平台管理
   enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
   platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
@@ -110,7 +131,9 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'captchaProvider',
   'turnstileSiteKey',
   'enabledPlatforms',
-  'platformOrder'
+  'platformOrder',
+  'defaultTheme',
+  'enabledThemes'
 ]
 
 export const filterPublicSettings = (data: any) => {

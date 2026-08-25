@@ -9,7 +9,8 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
+import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -113,6 +114,22 @@ export default defineEventHandler(async (event) => {
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
+
+    if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
+      if (user.role !== 'SUPER_ADMIN') {
+        // 主题设置仅超级管理员可修改：普通管理员请求剥离主题字段，其余配置照常处理
+        delete body.defaultTheme
+        delete body.enabledThemes
+      } else {
+        const enabledThemes = body.enabledThemes !== undefined
+          ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
+          : parseThemeArray(settings?.enabledThemes, DEFAULT_THEMES)
+        const defaultTheme = body.defaultTheme !== undefined ? body.defaultTheme : settings?.defaultTheme || 'System'
+        validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
+        if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
+        updateData.enabledThemes = JSON.stringify(enabledThemes)
+      }
+    }
 
     if (body.telemetryEnabled !== undefined) {
       if (typeof body.telemetryEnabled !== 'boolean') {
@@ -315,6 +332,48 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
+    }
+
+    if (body.scheduleDaysBeforeEnabled !== undefined) {
+      if (typeof body.scheduleDaysBeforeEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysBeforeEnabled 必须是布尔值')
+      }
+      updateData.scheduleDaysBeforeEnabled = body.scheduleDaysBeforeEnabled
+    }
+
+    if (body.scheduleDaysAfterEnabled !== undefined) {
+      if (typeof body.scheduleDaysAfterEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysAfterEnabled 必须是布尔值')
+      }
+      updateData.scheduleDaysAfterEnabled = body.scheduleDaysAfterEnabled
+    }
+
+    const nextScheduleDaysBeforeEnabled = body.scheduleDaysBeforeEnabled !== undefined
+      ? body.scheduleDaysBeforeEnabled
+      : (settings?.scheduleDaysBeforeEnabled ?? false)
+    const nextScheduleDaysAfterEnabled = body.scheduleDaysAfterEnabled !== undefined
+      ? body.scheduleDaysAfterEnabled
+      : (settings?.scheduleDaysAfterEnabled ?? false)
+
+    if (body.scheduleDaysBefore !== undefined) {
+      if (!Number.isInteger(body.scheduleDaysBefore) || body.scheduleDaysBefore < 1 || body.scheduleDaysBefore > 730) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysBefore 必须是 1-730 的正整数')
+      }
+      updateData.scheduleDaysBefore = body.scheduleDaysBefore
+    }
+
+    if (body.scheduleDaysAfter !== undefined) {
+      if (!Number.isInteger(body.scheduleDaysAfter) || body.scheduleDaysAfter < 1 || body.scheduleDaysAfter > 730) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'scheduleDaysAfter 必须是 1-730 的正整数')
+      }
+      updateData.scheduleDaysAfter = body.scheduleDaysAfter
+    }
+
+    if (nextScheduleDaysBeforeEnabled && body.scheduleDaysBefore === undefined && !(settings?.scheduleDaysBefore >= 1)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用前方排期限制时，必须填写正整数天数')
+    }
+    if (nextScheduleDaysAfterEnabled && body.scheduleDaysAfter === undefined && !(settings?.scheduleDaysAfter >= 1)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用后方排期限制时，必须填写正整数天数')
     }
 
     if (body.showBlacklistKeywords !== undefined) {
@@ -961,7 +1020,14 @@ export default defineEventHandler(async (event) => {
     if (!settings) {
       const newSettingsResult = await db
         .insert(systemSettings)
-        .values({ ...SYSTEM_SETTINGS_DEFAULTS, ...updateData })
+        .values({
+          ...SYSTEM_SETTINGS_DEFAULTS,
+          scheduleDaysBeforeEnabled: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysBeforeEnabled,
+          scheduleDaysBefore: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysBefore,
+          scheduleDaysAfterEnabled: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysAfterEnabled,
+          scheduleDaysAfter: SYSTEM_SETTINGS_DEFAULTS.scheduleDaysAfter,
+          ...updateData
+        })
         .returning()
       settings = newSettingsResult[0]
     } else {

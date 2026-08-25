@@ -16,6 +16,7 @@ import {
 import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -95,8 +96,7 @@ export default defineEventHandler(async (event) => {
       collaboratorId: collaboratorRecord.id,
       action: 'LEAVE',
       operatorId: user.id,
-      ipAddress:
-        (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
+      ipAddress: getClientIP(event)
     })
 
     return {

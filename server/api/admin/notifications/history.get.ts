@@ -51,9 +51,8 @@ export default defineEventHandler(async (event) => {
     eq(notifications.type, 'SYSTEM_NOTICE'),
     eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL)
   )
-  const keywordPattern = filters.keyword
-    ? `%${filters.keyword.replace(/[\\%_]/g, '\\$&')}%`
-    : null
+  // Drizzle ORM 的 ilike 已对参数做参数化绑定，无需手动转义 % 和 _
+  const keywordPattern = filters.keyword ? `%${filters.keyword}%` : null
   const keywordCondition = keywordPattern
     ? or(ilike(notifications.title, keywordPattern), ilike(notifications.message, keywordPattern))
     : undefined

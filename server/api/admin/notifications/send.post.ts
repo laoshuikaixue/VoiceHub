@@ -123,8 +123,11 @@ export default defineEventHandler(async (event) => {
   ) as NotificationFilter
   let userIds: number[]
 
+  // 仅向活跃状态的用户发送通知，排除已退学/毕业用户
+  const activeUserCondition = eq(users.status, 'active')
+
   if (scope === 'ALL') {
-    const allUsers = await db.select({ id: users.id }).from(users)
+    const allUsers = await db.select({ id: users.id }).from(users).where(activeUserCondition)
     userIds = allUsers.map((target) => target.id)
   } else if (scope === 'GRADE') {
     const grade = typeof filter.grade === 'string' ? filter.grade.trim() : ''
@@ -132,7 +135,7 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_GRADE_REQUIRED, '年级不能为空')
     }
 
-    const gradeUsers = await db.select({ id: users.id }).from(users).where(eq(users.grade, grade))
+    const gradeUsers = await db.select({ id: users.id }).from(users).where(and(eq(users.grade, grade), activeUserCondition))
     userIds = gradeUsers.map((target) => target.id)
   } else if (scope === 'CLASS') {
     const grade = typeof filter.grade === 'string' ? filter.grade.trim() : ''
@@ -148,7 +151,7 @@ export default defineEventHandler(async (event) => {
     const classUsers = await db
       .select({ id: users.id })
       .from(users)
-      .where(and(eq(users.grade, grade), eq(users.class, className)))
+      .where(and(eq(users.grade, grade), eq(users.class, className), activeUserCondition))
     userIds = classUsers.map((target) => target.id)
   } else if (scope === 'MULTI_CLASS') {
     if (!Array.isArray(filter.classes) || filter.classes.length === 0) {
@@ -168,7 +171,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const whereConditions = classes.map((entry) =>
-      and(eq(users.grade, entry.grade), eq(users.class, entry.className))
+      and(eq(users.grade, entry.grade), eq(users.class, entry.className), activeUserCondition)
     )
     const multiClassUsers = await db
       .select({ id: users.id })
