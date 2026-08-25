@@ -4,17 +4,6 @@ import { db } from '~/drizzle/db'
 import { adminOperationLogs, users } from '~/drizzle/schema'
 import { verifyUserAuth } from '~~/server/utils/auth'
 
-function maskIpAddress(ipAddress: string | null): string {
-  if (!ipAddress || ipAddress === 'unknown') return '未知'
-  if (ipAddress.includes('.')) {
-    const parts = ipAddress.split('.')
-    return parts.length === 4 ? `${parts.slice(0, 3).join('.')}.*` : '已掩码'
-  }
-
-  const parts = ipAddress.split(':').filter(Boolean)
-  return parts.length > 0 ? `${parts.slice(0, 3).join(':')}:*` : '已掩码'
-}
-
 function parseDate(value: unknown, name: string): Date | undefined {
   if (typeof value !== 'string' || !value.trim()) return undefined
   const date = new Date(value)
@@ -112,7 +101,7 @@ export default defineEventHandler(async (event) => {
       result: row.result,
       summary: row.summary,
       requestId: row.requestId,
-      ipAddress: maskIpAddress(row.ipAddress)
+      ipAddress: row.ipAddress || '未知'
     })),
     pagination: {
       page,
