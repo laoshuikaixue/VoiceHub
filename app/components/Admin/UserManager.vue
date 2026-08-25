@@ -2829,6 +2829,20 @@ onBeforeUnmount(() => {
   width: 6px;
 }
 
+/* 行内操作按钮：保证 flex 布局稳定，不被表格列宽挤压换行 */
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.action-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
