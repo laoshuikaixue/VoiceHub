@@ -1,7 +1,10 @@
 <template>
   <div class="request-form">
     <div class="rules-section desktop-only-rules">
-      <h2 class="section-title">{{ locale.guidelinesTitle }}</h2>
+      <h2 class="rules-title">
+        <Icon :size="16" class="rules-icon" name="bell" />
+        {{ locale.guidelinesTitle }}
+      </h2>
       <div class="rules-content-desktop">
         <div
           v-if="submissionGuidelines"
@@ -4267,15 +4270,6 @@ defineExpose({
   min-width: 300px;
   height: 100%;
   overflow-y: auto;
-}
-
-.section-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 15px;
-  letter-spacing: 0.04em;
-  color: var(--overlay-60);
-  margin-bottom: 0.75rem;
 }
 
 .rules-content-desktop {
