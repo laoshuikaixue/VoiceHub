@@ -17,9 +17,12 @@ export interface User {
   email?: string | null
   emailVerified?: boolean
   identities?: Array<{
+    id: number
     provider: string
     providerUsername?: string | null
     providerUserId?: string | null
+    avatar?: string | null
+    isAvatarSource?: boolean
   }>
 }
 

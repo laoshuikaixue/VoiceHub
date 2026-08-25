@@ -111,7 +111,9 @@ export default defineEventHandler(async (event) => {
                 'meowNickname',
                 'forcePasswordChange',
                 'status',
-                'statusChangedBy'
+                'statusChangedBy',
+                'avatarProvider',
+                'avatarProviderUserId'
               ]
               const dateFields = [
                 'createdAt',
@@ -279,6 +281,7 @@ export default defineEventHandler(async (event) => {
               provider: record.provider,
               providerUserId: record.providerUserId,
               providerUsername: record.providerUsername,
+              avatar: record.avatar || null,
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
 
