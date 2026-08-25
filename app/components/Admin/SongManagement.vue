@@ -1523,18 +1523,12 @@ const updateSubmissionNotePublicStatus = async (status) => {
   if (!dialogData.songId || dialogData.isUpdatingPublic) return
 
   // 兜底文案：避免异步回调里 getNestedMessage 因代码分割/作用域问题抛 ReferenceError
-  // 用 try/catch + fallback 兜底（typeof 检查会被 production 死代码消除）
+  // 完全不调用 getNestedMessage 也能正常显示通知（避免任何作用域/死代码消除风险）
   const fallbackText = {
     success: status === 'approved' ? '已通过审核' : '已拒绝审核',
     failure: '更新审核状态失败'
   }
-  const safeMessage = (key, fallback) => {
-    try {
-      return getNestedMessage(key) || fallback
-    } catch {
-      return fallback
-    }
-  }
+  const safeMessage = (_key, fallback) => fallback
 
   dialogData.isUpdatingPublic = true
 
