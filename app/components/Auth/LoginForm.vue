@@ -310,6 +310,7 @@
             type="text"
             inputmode="numeric"
             maxlength="6"
+            class="code-input"
             :placeholder="locale.emailCodePlaceholder"
             @input="error = ''"
           />
@@ -474,6 +475,7 @@ const { localize: localizeServerError } = useServerErrors()
 const { success: toastSuccess } = useToast()
 
 const route = useRoute()
+const router = useRouter()
 const isBindMode = computed(() => route.query.action === 'bind')
 const providerUsername = computed(() => route.query.username || '')
 const providerName = computed(() => {
@@ -843,7 +845,7 @@ const handleRegisterOAuth = async () => {
 
     if (response.success) {
       if (response.pendingApproval) {
-        // 审核模式：提示后返回登录模式
+        // 审核模式：提示后退出 OAuth 创建视图，回到普通登录界面
         toastSuccess(locale.value.registerSuccessPending)
         showCreateMode.value = false
         username.value = ''
@@ -852,6 +854,9 @@ const handleRegisterOAuth = async () => {
         confirmPassword.value = ''
         grade.value = ''
         studentClass.value = ''
+        if (route.query.action === 'bind') {
+          await router.replace({ query: {} })
+        }
       } else {
         // 账户创建成功，刷新认证状态
         await auth.initAuth(true)
@@ -1169,6 +1174,38 @@ const handleWebAuthnLogin = async () => {
 
 .input-wrapper input::placeholder {
   color: var(--input-placeholder);
+}
+
+/* 邮箱验证码输入：右侧预留发送按钮空间 */
+.input-wrapper .code-input {
+  padding-right: 118px;
+}
+
+.code-btn {
+  position: absolute;
+  right: 10px;
+  z-index: 1;
+  padding: 7px 12px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.code-btn:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+}
+
+.code-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .input-wrapper input:focus {

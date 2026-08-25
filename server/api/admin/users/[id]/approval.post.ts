@@ -7,6 +7,37 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
+import { SmtpService } from '~~/server/services/smtpService'
+
+// 审核通过邮件通知（异步，失败不影响主流程）
+async function notifyApproved(name, email) {
+  try {
+    const smtpService = SmtpService.getInstance()
+    if (await smtpService.ensureInitialized()) {
+      await smtpService.renderAndSend(email, 'register-approved', {
+        title: '注册审核已通过',
+        message: `${name}，您的注册申请已通过审核，现在可以使用账号登录了。`
+      })
+    }
+  } catch (error) {
+    console.error('审核通过邮件发送失败:', error)
+  }
+}
+
+// 审核拒绝邮件通知（用户已删除，用快照 email 发信；异步，失败不影响主流程）
+async function notifyRejected(name, email, reason) {
+  try {
+    const smtpService = SmtpService.getInstance()
+    if (await smtpService.ensureInitialized()) {
+      await smtpService.renderAndSend(email, 'register-rejected', {
+        title: '注册申请未通过审核',
+        message: `${name}，您的注册申请未通过审核${reason ? `，原因：${reason}` : ''}。如有疑问请联系管理员。`
+      })
+    }
+  } catch (error) {
+    console.error('审核拒绝邮件发送失败:', error)
+  }
+}
 
 // 注册审核：approve 通过（可修改注册信息），reject 拒绝（删除账户并记录理由与用户快照）
 export default defineEventHandler(async (event) => {
@@ -35,7 +66,8 @@ export default defineEventHandler(async (event) => {
       id: users.id,
       username: users.username,
       name: users.name,
-      status: users.status
+      status: users.status,
+      email: users.email
     })
     .from(users)
     .where(eq(users.id, userIdNumber))
@@ -114,6 +146,11 @@ export default defineEventHandler(async (event) => {
       })
     })
 
+    // 审核通过邮件通知（异步，失败不影响主流程）
+    if (targetUser.email) {
+      notifyApproved(targetUser.name, targetUser.email)
+    }
+
     return {
       success: true,
       message: '注册审核通过'
@@ -143,6 +180,11 @@ export default defineEventHandler(async (event) => {
       createdAt: currentTime
     })
   })
+
+  // 审核拒绝邮件通知（用户已删除，用快照 email 发信）
+  if (targetUser.email) {
+    notifyRejected(targetUser.name, targetUser.email, rejectReason)
+  }
 
   return {
     success: true,
