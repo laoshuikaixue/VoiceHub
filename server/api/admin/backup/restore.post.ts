@@ -2567,7 +2567,10 @@ export default defineEventHandler(async (event) => {
     // 防锁死：恢复开关前校验 SMTP 已配置，否则剥离 registerEmailRequired（避免恢复后注册必填邮箱却无法发码）
     try {
       const restoredSettings = await db.select().from(systemSettings).limit(1)
-      if (restoredSettings[0]?.registerEmailRequired && !restoredSettings[0]?.smtpEnabled) {
+      if (
+      restoredSettings[0]?.registerEmailRequired &&
+      (!restoredSettings[0]?.smtpEnabled || !restoredSettings[0]?.smtpHost)
+    ) {
         await db
           .update(systemSettings)
           .set({ registerEmailRequired: false })

@@ -50,7 +50,11 @@ export default defineEventHandler(async (event) => {
   const code = generateEmailCode()
   const sent = await smtpService.renderAndSend(email, 'verification.code', {
     title: 'VoiceHub 注册邮箱验证',
-    message: `您的注册邮箱验证码是：${code}，5 分钟内有效。`
+    // 补 builtin verification 模板所需变量（code 必填）
+    name: '用户',
+    email,
+    code,
+    expiresInMinutes: 5
   })
 
   if (!sent) {

@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import {
   cardCodeRedeemLogs,
   cardCodes,
+  emailTemplates,
   gradeClass,
   notificationSettings,
   notifications,
@@ -872,6 +873,49 @@ export default defineEventHandler(async (event) => {
                 stats.updated++
               } else {
                 await tx.insert(systemSettings).values({ ...systemSettingsData, id: record.id })
+                stats.created++
+              }
+            }
+            break
+          }
+
+          case 'emailTemplates': {
+            // 邮件模板（按 key 去重：merge 模式同名 key 覆盖）
+            if (!record.key || !record.name || !record.subject) return
+            const templateData: any = {
+              key: record.key,
+              name: record.name,
+              subject: record.subject,
+              html: record.html || ''
+            }
+            if (record.contentType) templateData.contentType = record.contentType
+            if (record.headerSubtitle) templateData.headerSubtitle = record.headerSubtitle
+            if (record.actionText) templateData.actionText = record.actionText
+            if (record.actionUrl) templateData.actionUrl = record.actionUrl
+            if (record.updatedByUserId) templateData.updatedByUserId = record.updatedByUserId
+            if (record.createdAt) templateData.createdAt = new Date(record.createdAt)
+            if (record.updatedAt) templateData.updatedAt = new Date(record.updatedAt)
+
+            if (mode === 'merge') {
+              const existing = await tx.query.emailTemplates.findFirst({
+                where: eq(emailTemplates.key, record.key)
+              })
+              if (existing) {
+                await tx.update(emailTemplates).set(templateData).where(eq(emailTemplates.id, existing.id))
+                stats.updated++
+              } else {
+                await tx.insert(emailTemplates).values(templateData)
+                stats.created++
+              }
+            } else {
+              const existing = await tx.query.emailTemplates.findFirst({
+                where: eq(emailTemplates.id, record.id)
+              })
+              if (existing) {
+                await tx.update(emailTemplates).set(templateData).where(eq(emailTemplates.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(emailTemplates).values({ ...templateData, id: record.id })
                 stats.created++
               }
             }

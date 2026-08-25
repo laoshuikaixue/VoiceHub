@@ -163,7 +163,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 注册通知（站内通知管理员 + 邮件；异步，失败不影响主流程）
-    notifyRegistration(result.id, username, name, email, Boolean(config?.oauthRegisterRequiresApproval))
+    void notifyRegistration(result.id, username, name, email, Boolean(config?.oauthRegisterRequiresApproval))
 
     // 需要审核时：不签发登录态，等待管理员审核
     if (config?.oauthRegisterRequiresApproval) {

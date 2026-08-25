@@ -42,23 +42,29 @@
 
             <!-- 重要通知开关 -->
             <label
-              class="flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-colors"
+              class="flex cursor-pointer items-start gap-4 rounded-2xl border p-4 shadow-sm transition-colors"
               :class="
                 form.important
-                  ? 'border-primary-300 bg-primary-hover-10'
-                  : 'border-border-secondary bg-bg-primary hover:border-border-tertiary'
+                  ? 'border-primary-300 bg-primary-10'
+                  : 'border-border-tertiary bg-bg-primary hover:border-border-quaternary hover:bg-bg-secondary'
               "
             >
-              <input v-model="form.important" type="checkbox" class="peer sr-only">
               <span
-                class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-text-disabled after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-5 peer-checked:after:bg-bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300"
-                aria-hidden="true"
-              />
+                class="relative mt-0.5 inline-block h-6 w-11 shrink-0"
+              >
+                <input v-model="form.important" type="checkbox" class="peer sr-only">
+                <span
+                  class="absolute inset-0 rounded-full bg-border-tertiary transition-colors peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300"
+                />
+                <span
+                  class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"
+                />
+              </span>
               <span class="min-w-0">
                 <span class="flex items-center gap-2 text-sm font-black text-text-primary">
                   <AlertTriangle
                     :size="16"
-                    :class="form.important ? 'text-primary' : 'text-text-disabled'"
+                    :class="form.important ? 'text-primary' : 'text-text-tertiary'"
                   />
                   {{ locale.importantToggleTitle }}
                 </span>

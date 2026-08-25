@@ -772,6 +772,7 @@ VoiceHub/
 │   │   │   ├── NotificationHistory.vue # 通知发送历史与用户已读明细
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
+│   │   │   ├── OAuthBindingsModal.vue # OAuth 绑定详情弹窗
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件

@@ -17,5 +17,5 @@ ALTER TABLE "Song" ADD COLUMN "submissionNotePublicStatus" text;--> statement-br
 ALTER TABLE "SystemSettings" ADD COLUMN "submissionNoteRequiresApproval" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_status_logs" ADD COLUMN "username" text;--> statement-breakpoint
 ALTER TABLE "user_status_logs" ADD COLUMN "name" text;--> statement-breakpoint
-CREATE UNIQUE INDEX "User_username_unique" ON "User" USING btree ("username");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "User_username_unique" ON "User" USING btree ("username");--> statement-breakpoint
 ALTER TABLE "SystemSettings" ADD COLUMN "registerEmailRequired" boolean DEFAULT false NOT NULL;
