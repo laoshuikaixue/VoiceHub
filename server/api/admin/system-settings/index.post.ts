@@ -784,7 +784,7 @@ export default defineEventHandler(async (event) => {
     const nextAggregateEndpoint =
       body.aggregateOAuthEndpoint !== undefined
         ? normalizeOptionalText(body.aggregateOAuthEndpoint)
-        : settings?.aggregateOAuthEndpoint || 'https://a.idcfx.net/connect.php'
+        : settings?.aggregateOAuthEndpoint || ''
 
     if (body.aggregateOAuthEnabled !== undefined) {
       if (typeof body.aggregateOAuthEnabled !== 'boolean') {

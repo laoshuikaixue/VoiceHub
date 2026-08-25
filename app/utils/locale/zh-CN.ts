@@ -2671,6 +2671,13 @@ export const admin = {
       bilibili: '哔哩哔哩',
       kuaishou: '快手'
     },
+    clearBindingsTitle: '清除所有聚合登录绑定',
+    clearBindingsDesc: '更换聚合登录提供商时使用，将清除系统中所有用户的聚合登录绑定关系并要求其重新绑定。',
+    clearBindingsBtn: '清除绑定',
+    clearBindingsConfirmTitle: '确认清除所有聚合登录绑定？',
+    clearBindingsConfirmMessage: '此操作将永久清除系统中所有用户的聚合登录绑定关系。\n若更换了聚合登录提供商，旧数据已失效，清除后用户需重新绑定方可通过聚合登录访问账号。\n此操作不可撤销，是否继续？',
+    clearBindingsSuccess: (count: number, users: number) => `已成功清除 ${count} 条聚合登录绑定数据（影响 ${users} 位用户）`,
+    clearBindingsFailed: '清除聚合登录绑定失败',
     userIdField: '用户 ID 字段',
     usernameField: '用户名字段',
     nameField: '昵称字段',

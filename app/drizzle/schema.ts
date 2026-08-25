@@ -279,7 +279,7 @@ export const systemSettings = pgTable('SystemSettings', {
   aggregateOAuthAppId: text('aggregateOAuthAppId'),
   aggregateOAuthAppKey: text('aggregateOAuthAppKey'),
   aggregateOAuthLoginType: text('aggregateOAuthLoginType').default('qq'),
-  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint').default('https://a.idcfx.net/connect.php'),
+  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint'),
   // Custom OAuth2
   customOAuthEnabled: boolean('customOAuthEnabled').default(false).notNull(),
   customOAuthDisplayName: text('customOAuthDisplayName'),
