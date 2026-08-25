@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, semesters, songBlacklists, songs, users } from '~/drizzle/schema'
-import { and, count, eq, gte, lt, neq } from 'drizzle-orm'
+import { and, count, eq, gte, lt, ne } from 'drizzle-orm'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
         const result = await db
           .select({ count: count() })
           .from(users)
-          .where(neq(users.status, 'pending'))
+          .where(ne(users.status, 'pending'))
         return result[0].count
       })(),
 
@@ -175,7 +175,7 @@ export default defineEventHandler(async (event) => {
         const result = await db
           .select({ count: count() })
           .from(users)
-          .where(and(gte(users.createdAt, weekAgo), neq(users.status, 'pending')))
+          .where(and(gte(users.createdAt, weekAgo), ne(users.status, 'pending')))
         return result[0].count
       })(),
 
@@ -188,7 +188,7 @@ export default defineEventHandler(async (event) => {
             and(
               gte(users.createdAt, twoWeeksAgo),
               lt(users.createdAt, weekAgo),
-              neq(users.status, 'pending')
+              ne(users.status, 'pending')
             )
           )
         return result[0].count
@@ -264,7 +264,7 @@ export default defineEventHandler(async (event) => {
           const result = await db
             .select({ count: count() })
             .from(users)
-            .where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay), neq(users.status, 'pending')))
+            .where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay), ne(users.status, 'pending')))
           const countValue = result[0].count
 
           trends.push({
