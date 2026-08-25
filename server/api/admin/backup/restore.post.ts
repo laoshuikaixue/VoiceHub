@@ -372,7 +372,9 @@ export default defineEventHandler(async (event) => {
                             'meowNickname',
                             'status',
                             'statusChangedBy',
-                            'remark'
+                            'remark',
+                            'avatarProvider',
+                            'avatarProviderUserId'
                           ]
 
                           // 处理日期字段
@@ -598,6 +600,7 @@ export default defineEventHandler(async (event) => {
                           provider: record.provider,
                           providerUserId: record.providerUserId,
                           providerUsername: record.providerUsername,
+                          avatar: record.avatar || null,
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
                         }
 
@@ -1220,7 +1223,6 @@ export default defineEventHandler(async (event) => {
                           'allowOAuthRegistration',
                           'allowRegister',
                           'registerRequiresApproval',
-                  'registerEmailRequired',
                           'registerEmailRequired',
                           'oauthRegisterRequiresApproval',
                           'submissionNoteRequiresApproval',

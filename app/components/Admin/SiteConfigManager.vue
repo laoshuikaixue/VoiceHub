@@ -957,7 +957,7 @@ const formData = ref({
   aggregateOAuthAppId: '',
   aggregateOAuthAppKey: '',
   aggregateOAuthLoginType: ['qq'],
-  aggregateOAuthEndpoint: 'https://a.idcfx.net/connect.php',
+  aggregateOAuthEndpoint: '',
   customOAuthEnabled: false,
   customOAuthDisplayName: '',
   customOAuthAuthorizeUrl: '',

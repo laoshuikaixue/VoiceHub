@@ -9,6 +9,7 @@ import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
+import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -89,6 +90,12 @@ export default defineEventHandler(async (event) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(password, 10)
       const now = getServerDate()
+      const avatarUrl = getIdentityAvatarUrl({
+        provider: payload.provider,
+        providerUserId: payload.providerUserId,
+        providerUsername: payload.providerUsername,
+        avatar: payload.avatar
+      })
 
       // 创建用户（onConflictDoNothing 兜底并发用户名竞态）
       const insertedUser = (await tx
@@ -106,7 +113,9 @@ export default defineEventHandler(async (event) => {
           updatedAt: now,
           passwordChangedAt: now,
           lastLogin: now,
-          forcePasswordChange: false
+          forcePasswordChange: false,
+          avatarProvider: avatarUrl ? payload.provider : null,
+          avatarProviderUserId: avatarUrl ? payload.providerUserId : null
         })
         .onConflictDoNothing()
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
@@ -121,6 +130,7 @@ export default defineEventHandler(async (event) => {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
+        avatar: payload.avatar || null,
         createdAt: now,
       })
 

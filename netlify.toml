@@ -3,7 +3,8 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
+  # postcss-merge-longhand 使用 Set.difference，需要 Node 22+
+  NODE_VERSION = "22"
 
 [functions]
   node_bundler = "esbuild"

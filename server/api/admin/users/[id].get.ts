@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
+import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.user
@@ -40,14 +41,18 @@ export default defineEventHandler(async (event) => {
       email: true,
       emailVerified: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      avatarProvider: true,
+      avatarProviderUserId: true
     },
     with: {
       identities: {
         columns: {
           provider: true,
           providerUsername: true,
-          providerUserId: true
+          providerUserId: true,
+          avatar: true,
+          createdAt: true
         }
       }
     }
@@ -60,11 +65,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const githubIdentity = user.identities?.find((identity) => identity.provider === 'github')
+  const avatarSource = resolveAvatarSource(user, user.identities || [])
   return {
     ...user,
-    avatar: githubIdentity?.providerUsername
-      ? `https://github.com/${githubIdentity.providerUsername}.png`
-      : null
+    avatar: avatarSource?.url ?? null
   }
 })

@@ -61,10 +61,11 @@ const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
 const isAggregateSuccessCode = (value: unknown): boolean =>
   value === 0 || (typeof value === 'string' && value.trim() === '0')
 
-const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
-
 const normalizeAggregateEndpoint = (endpoint?: string): string => {
-  const value = endpoint?.trim() || DEFAULT_AGGREGATE_OAUTH_ENDPOINT
+  const value = endpoint?.trim()
+  if (!value) {
+    throw createError({ statusCode: 500, message: '聚合登录接口地址未配置，请在管理员后台完成配置' })
+  }
   try {
     const url = new URL(value)
     if (!isSafeAggregateOAuthUrl(url.toString())) {
@@ -74,7 +75,8 @@ const normalizeAggregateEndpoint = (endpoint?: string): string => {
     url.hash = ''
     url.pathname = url.pathname.replace(/\/$/, '')
     return url.toString().replace(/\/$/, '')
-  } catch {
+  } catch (e: any) {
+    if (e?.statusCode) throw e
     throw createError({ statusCode: 500, message: '聚合登陆接口地址配置错误' })
   }
 }

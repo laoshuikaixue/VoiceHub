@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 
 export default defineEventHandler(async (event) => {
   const authUser = event.context.user
@@ -25,13 +26,18 @@ export default defineEventHandler(async (event) => {
       role: true,
       password: true,
       forcePasswordChange: true,
-      passwordChangedAt: true
+      passwordChangedAt: true,
+      avatarProvider: true,
+      avatarProviderUserId: true
     },
     with: {
       identities: {
         columns: {
           provider: true,
-          providerUsername: true
+          providerUsername: true,
+          providerUserId: true,
+          avatar: true,
+          createdAt: true
         }
       }
     }
@@ -48,7 +54,7 @@ export default defineEventHandler(async (event) => {
   const passwordSetupState = getPasswordSetupState(dbUser, requirePasswordChange)
 
   // 构建返回的用户对象，只包含需要的字段
-  const githubIdentity = dbUser.identities?.find((id: any) => id.provider === 'github')
+  const avatarSource = resolveAvatarSource(dbUser, dbUser.identities || [])
   const user = {
     id: dbUser.id,
     username: dbUser.username,
@@ -61,10 +67,7 @@ export default defineEventHandler(async (event) => {
     requirePasswordChange,
     ...passwordSetupState,
     has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
-    // 动态生成 GitHub 头像 URL
-    avatar: githubIdentity?.providerUsername
-      ? `https://github.com/${githubIdentity.providerUsername}.png`
-      : null
+    avatar: avatarSource?.url ?? null
   }
 
   return {

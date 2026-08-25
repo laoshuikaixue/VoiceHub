@@ -14,35 +14,33 @@ export const cardCodeStatusEnum = pgEnum('card_code_status', [
 ]);
 
 // 用户表
-export const users = pgTable(
-  'User',
-  {
-    id: serial('id').primaryKey(),
-    createdAt: timestamp('createdAt').defaultNow().notNull(),
-    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-    username: text('username').notNull(),
-    name: text('name'),
-    grade: text('grade'),
-    class: text('class'),
-    role: text('role').default('USER').notNull(),
-    password: text('password').notNull(),
-    email: text('email'),
-    emailVerified: boolean('emailVerified').default(false),
-    lastLogin: timestamp('lastLogin'),
-    lastLoginIp: text('lastLoginIp'),
-    passwordChangedAt: timestamp('passwordChangedAt'),
-    forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
-    tokenVersion: integer('tokenVersion').default(0).notNull(),
-    meowNickname: text('meowNickname'),
-    meowBoundAt: timestamp('meowBoundAt'),
-    status: userStatusEnum('status').default('active').notNull(),
-    statusChangedAt: timestamp('statusChangedAt').defaultNow(),
-    statusChangedBy: integer('statusChangedBy'),
-    // 注册时可选填写的备注，管理员审核时可修改
-    remark: text('remark'),
-  },
-  (table) => [uniqueIndex('User_username_unique').on(table.username)],
-);
+export const users = pgTable('User', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  username: text('username').notNull(),
+  name: text('name'),
+  grade: text('grade'),
+  class: text('class'),
+  role: text('role').default('USER').notNull(),
+  password: text('password').notNull(),
+  email: text('email'),
+  emailVerified: boolean('emailVerified').default(false),
+  lastLogin: timestamp('lastLogin'),
+  lastLoginIp: text('lastLoginIp'),
+  passwordChangedAt: timestamp('passwordChangedAt'),
+  forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
+  tokenVersion: integer('tokenVersion').default(0).notNull(),
+  meowNickname: text('meowNickname'),
+  meowBoundAt: timestamp('meowBoundAt'),
+  avatarProvider: text('avatarProvider'),
+  avatarProviderUserId: text('avatarProviderUserId'),
+  status: userStatusEnum('status').default('active').notNull(),
+  statusChangedAt: timestamp('statusChangedAt').defaultNow(),
+  statusChangedBy: integer('statusChangedBy'),
+  // 注册时可选填写的备注，管理员审核时可修改
+  remark: text('remark'),
+}, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
 export const authSessions = pgTable('auth_sessions', {
@@ -307,7 +305,7 @@ export const systemSettings = pgTable('SystemSettings', {
   aggregateOAuthAppId: text('aggregateOAuthAppId'),
   aggregateOAuthAppKey: text('aggregateOAuthAppKey'),
   aggregateOAuthLoginType: text('aggregateOAuthLoginType').default('qq'),
-  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint').default('https://a.idcfx.net/connect.php'),
+  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint'),
   // Custom OAuth2
   customOAuthEnabled: boolean('customOAuthEnabled').default(false).notNull(),
   customOAuthDisplayName: text('customOAuthDisplayName'),
@@ -471,6 +469,7 @@ export const userIdentities = pgTable('UserIdentity', {
   provider: text('provider').notNull(),
   providerUserId: text('providerUserId').notNull(),
   providerUsername: text('providerUsername'),
+  avatar: text('avatar'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (t) => ({
   unq: unique().on(t.provider, t.providerUserId),

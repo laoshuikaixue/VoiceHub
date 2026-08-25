@@ -112,7 +112,9 @@ export default defineEventHandler(async (event) => {
                 'forcePasswordChange',
                 'status',
                 'statusChangedBy',
-                'remark'
+                'remark',
+                'avatarProvider',
+                'avatarProviderUserId'
               ]
               const dateFields = [
                 'createdAt',
@@ -280,6 +282,7 @@ export default defineEventHandler(async (event) => {
               provider: record.provider,
               providerUserId: record.providerUserId,
               providerUsername: record.providerUsername,
+              avatar: record.avatar || null,
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
 
