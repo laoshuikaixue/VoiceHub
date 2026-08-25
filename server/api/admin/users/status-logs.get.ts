@@ -107,8 +107,8 @@ export default defineEventHandler(async (event) => {
         and(
           whereClause,
           or(
-            ilike(users.name, `%${searchTerm}%`),
-            ilike(users.username, `%${searchTerm}%`),
+            ilike(userStatusLogs.name, `%${searchTerm}%`),
+            ilike(userStatusLogs.username, `%${searchTerm}%`),
             ilike(userStatusLogs.reason, `%${searchTerm}%`)
           )
         )

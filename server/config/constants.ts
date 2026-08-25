@@ -439,6 +439,3 @@ export const SUBMISSION_NOTE_STATUS = {
   APPROVED: 'approved',
   REJECTED: 'rejected'
 } as const
-
-// 用户审核相关状态
-export const USER_STATUS_PENDING = 'pending'

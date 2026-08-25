@@ -2152,6 +2152,7 @@ export const admin = {
     paginationItemName: 'songs',
     messages: {
       remarkVisibilityUpdated: 'Remark visibility updated',
+      remarkApproved: 'Remark approved',
       deleteSuccess: 'Song deleted',
       batchDeleteSuccess: 'Songs deleted',
       rejectSuccess: 'Song rejected and requester notified',
@@ -2169,6 +2170,7 @@ export const admin = {
       batchDeleteFailed: (message: string) => `Batch delete failed: ${message}`,
       rejectReasonRequired: 'Please enter a rejection reason',
       rejectFailed: (message: string) => `Reject failed: ${message}`,
+      remarkUpdateFailed: 'Failed to update remark approval status',
       songInfoRequired: 'Please enter song title and artist',
       coverUrlInvalidOrPending: 'Wait for cover URL validation or fix the invalid URL',
       playUrlInvalidOrPending: 'Wait for play URL validation or fix the invalid URL',

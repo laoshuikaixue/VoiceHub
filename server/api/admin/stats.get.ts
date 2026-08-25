@@ -264,7 +264,7 @@ export default defineEventHandler(async (event) => {
           const result = await db
             .select({ count: count() })
             .from(users)
-            .where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay)))
+            .where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay), neq(users.status, 'pending')))
           const countValue = result[0].count
 
           trends.push({

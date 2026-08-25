@@ -386,7 +386,7 @@ export default defineEventHandler(async (event) => {
       const notePublic = 
         row.submissionNotePublic === true &&
         row.submissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
-        row.submissionNotePublicStatus !== 'rejected'
+        row.submissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
       const canViewSubmissionNote =
         Boolean(row.submissionNote) && (notePublic || Boolean(user && (isAdmin || isRequester)))
       const replayRequestCount = Number(row.replayRequestCount || 0)

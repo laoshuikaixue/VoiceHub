@@ -128,6 +128,11 @@ export default defineEventHandler(async (event) => {
         })
         continue
       }
+      // 待审核用户不得通过批量状态接口直接置为 active（须走注册审核流程；即使未传 sourceStatus 也按实际状态拦截）
+      if (status === 'active' && u.status === 'pending') {
+        errors.push({ userId: u.id, error: '待审核用户需通过注册审核流程处理' })
+        continue
+      }
       if (u.status === status) {
         errors.push({ userId: u.id, error: '用户状态无需变更' })
         continue

@@ -151,7 +151,7 @@ export default defineEventHandler(async (event) => {
       // 兼容旧语义：置 true 视为通过审核，置 false 视为撤销公开
       const notePublic = body.submissionNotePublic === true
       updateData.submissionNotePublic = notePublic
-      updateData.submissionNotePublicStatus = notePublic ? 'approved' : null
+      updateData.submissionNotePublicStatus = notePublic ? SUBMISSION_NOTE_STATUS.APPROVED : null
     }
 
     const currentRequesterId = updateData.requesterId || existingSong.requesterId
@@ -182,7 +182,7 @@ export default defineEventHandler(async (event) => {
         } else {
           const notePublic = body.submissionNotePublic === true
           replaySet.submissionNotePublic = notePublic
-          replaySet.submissionNotePublicStatus = notePublic ? 'approved' : null
+          replaySet.submissionNotePublicStatus = notePublic ? SUBMISSION_NOTE_STATUS.APPROVED : null
         }
         delete updateData.submissionNotePublic
         delete updateData.submissionNotePublicStatus

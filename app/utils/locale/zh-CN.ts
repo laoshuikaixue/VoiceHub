@@ -2161,6 +2161,7 @@ export const admin = {
     paginationItemName: '首歌曲',
     messages: {
       remarkVisibilityUpdated: '备注留言可见性已更新',
+      remarkApproved: '备注留言已通过审核',
       deleteSuccess: '歌曲删除成功',
       batchDeleteSuccess: '批量删除成功',
       rejectSuccess: '歌曲驳回成功，已通知投稿人',
@@ -2178,6 +2179,7 @@ export const admin = {
       batchDeleteFailed: (message: string) => `批量删除失败: ${message}`,
       rejectReasonRequired: '请填写驳回原因',
       rejectFailed: (message: string) => `驳回失败: ${message}`,
+      remarkUpdateFailed: '备注留言审核状态更新失败',
       songInfoRequired: '请填写歌曲名称和歌手',
       coverUrlInvalidOrPending: '请等待封面URL验证完成或修正无效的URL',
       playUrlInvalidOrPending: '请等待播放URL验证完成或修正无效的URL',
