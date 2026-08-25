@@ -204,7 +204,7 @@ import {
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
-import { validatePasswordPolicy } from '~/utils/password-policy'
+import { validateInitialPasswordPolicy, validatePasswordPolicy } from '~/utils/password-policy'
 
 // 组件属性
 const props = defineProps({
@@ -249,7 +249,11 @@ const showConfirmPassword = ref(false)
 // 密码强度计算
 const passwordStrength = usePasswordStrength(newPassword)
 
-const passwordPolicyError = computed(() => validatePasswordPolicy(newPassword.value))
+const passwordPolicyError = computed(() =>
+  props.isFirstLogin
+    ? validateInitialPasswordPolicy(newPassword.value)
+    : validatePasswordPolicy(newPassword.value)
+)
 
 // 表单验证
 const isFormValid = computed(() => {
