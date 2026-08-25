@@ -1784,13 +1784,14 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  color: var(--text-primary);
 }
 
 .setting-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--lyrics-modal-text-secondary);
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -1798,7 +1799,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--lyrics-modal-surface);
+  background: var(--text-primary-10);
   border-radius: 6px;
   padding: 2px;
 }
@@ -1808,7 +1809,7 @@ onUnmounted(() => {
   height: 24px;
   border: none;
   background: transparent;
-  color: white;
+  color: var(--text-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1816,7 +1817,7 @@ onUnmounted(() => {
 }
 
 .setting-item button:hover {
-  background: var(--lyrics-modal-surface);
+  background: var(--text-primary-10);
   border-radius: 4px;
 }
 
