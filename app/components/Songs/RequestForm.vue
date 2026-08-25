@@ -56,9 +56,11 @@
                 v-model="title"
                 class="search-input"
                 :placeholder="locale.searchPlaceholder"
+                enterkeyhint="search"
                 required
                 type="text"
-              />
+                @keydown.enter.prevent="handleSearch"
+              >
               <button
                 :disabled="loading || searching || !title.trim()"
                 class="search-button"
@@ -267,16 +269,16 @@
                       :src="convertToHttps(neteaseUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
+                    >
                     <span class="user-name">{{ neteaseUser?.nickname || locale.loggedIn }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio" /> {{ locale.single }}
+                      <input v-model="searchType" :value="1" type="radio" > {{ locale.single }}
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio" /> {{ locale.podcast }}
+                      <input v-model="searchType" :value="1009" type="radio" > {{ locale.podcast }}
                     </label>
                   </div>
 
@@ -347,7 +349,7 @@
                       :src="convertToHttps(qqMusicUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
+                    >
                     <div v-else class="qq-user-avatar">
                       <Icon :size="14" name="music" />
                     </div>
@@ -437,7 +439,7 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-                        />
+                        >
                         <span class="custom-checkbox-box">
                           <svg
                             class="custom-checkbox-icon"
@@ -593,7 +595,7 @@
                         :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
-                      />
+                      >
                       <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
                           <Icon name="play" :size="20" class="play-icon" />
@@ -840,7 +842,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" />
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" >
                 </div>
               </div>
             </Transition>
@@ -1013,7 +1015,7 @@
                 class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
-              />
+              >
               <p
                 :class="[
                   'mt-2 px-1 text-[11px]',
@@ -1164,7 +1166,7 @@
                           v-if="match.cover"
                           :src="match.cover"
                           class="w-full h-full object-cover"
-                        />
+                        >
                         <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
                           class="absolute inset-0 bg-bg-primary-50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
@@ -1249,7 +1251,7 @@
                       class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-tertiary font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
-                    />
+                    >
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                       <Lock class="w-4 h-4 text-text-disabled" />
                     </div>
@@ -1270,7 +1272,7 @@
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
-                  />
+                  >
                 </div>
 
                 <!-- 歌曲封面地址 -->
@@ -1292,7 +1294,7 @@
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1341,7 +1343,7 @@
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1404,7 +1406,7 @@
       style="display: none"
       type="file"
       @change="handleImportData"
-    />
+    >
   </div>
 </template>
 
