@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    const [userRecord] = await tx.query.users.findFirst({
+    const userRecord = await tx.query.users.findFirst({
       where: eq(users.id, user.id),
       columns: {
         avatarProvider: true,

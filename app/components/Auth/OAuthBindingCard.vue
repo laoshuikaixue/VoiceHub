@@ -27,16 +27,14 @@
             <Shield v-else :size="20" />
           </div>
           <div class="flex flex-col flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-text-primary">{{
-                provider.name || getProviderDisplayName(provider.key)
-              }}</span>
-              <span
-                v-if="getIdentitiesByProvider(provider).length === 0"
-                class="text-[11px] text-text-tertiary"
-                >{{ locale.unbound }}</span
-              >
-            </div>
+            <span class="text-sm font-bold text-text-primary">{{
+              provider.name || getProviderDisplayName(provider.key)
+            }}</span>
+            <span
+              v-if="getIdentitiesByProvider(provider).length === 0"
+              class="text-[11px] text-text-tertiary mt-0.5"
+              >{{ locale.unbound }}</span
+            >
             <div
               v-if="getIdentitiesByProvider(provider).length > 0"
               class="flex flex-col gap-2 mt-2"

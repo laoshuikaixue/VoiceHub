@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
-  const [userRecord] = await db.query.users.findFirst({
+  const userRecord = await db.query.users.findFirst({
     where: eq(users.id, user.id),
     columns: {
       avatarProvider: true,
