@@ -10,6 +10,7 @@ import { eq, or, and } from 'drizzle-orm'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -166,7 +167,7 @@ export default defineEventHandler(async (event) => {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '重播申请 ID 无效')
       }
       if (replayRequestId && hasNoteVisibilityChange) {
-        replaySet = { updatedAt: new Date() }
+        replaySet = { updatedAt: getServerDate() }
         if ('submissionNotePublicStatus' in body) {
           const st = body.submissionNotePublicStatus
           if (st === 'approved') {

@@ -199,6 +199,7 @@ async function checkSchemaConsistency(sql) {
     ],
     Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
     song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
+    user_status_logs: ['username', 'name'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
       'instance_id',
