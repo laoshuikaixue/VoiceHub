@@ -2975,10 +2975,24 @@ if (
   font-weight: 600;
 }
 
+.settings-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--overlay-10);
+  border-radius: 10px;
+  background: var(--chip-bg);
+  color: var(--overlay-45);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
 .settings-icon:hover {
   background-color: var(--overlay-10);
   color: var(--text-primary);
-  transform: rotate(30deg);
 }
 
 /* 通知列表 */
