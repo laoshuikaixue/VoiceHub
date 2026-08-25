@@ -111,7 +111,8 @@ export default defineEventHandler(async (event) => {
                 'meowNickname',
                 'forcePasswordChange',
                 'status',
-                'statusChangedBy'
+                'statusChangedBy',
+                'remark'
               ]
               const dateFields = [
                 'createdAt',
@@ -345,6 +346,8 @@ export default defineEventHandler(async (event) => {
 
             const userStatusLogData = {
               userId: validUserId,
+              username: record.username ?? null,
+              name: record.name ?? null,
               oldStatus: record.oldStatus || record.previousStatus || null,
               newStatus: record.newStatus,
               reason: record.reason || null,

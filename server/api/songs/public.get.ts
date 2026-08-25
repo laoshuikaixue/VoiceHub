@@ -1,8 +1,8 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime, getBeijingTimeISOString } from '~/utils/timeUtils'
-import {
-  maskPublicScheduleData,
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import { maskPublicScheduleData,
   stripAnonymousSongIdentifiersFromSchedules,
   type PublicScheduleItem
 } from '../../utils/studentMask'
@@ -369,8 +369,8 @@ export default defineEventHandler(async (event) => {
       // 公开留言审核：待审/已拒绝的不对普通用户公开（管理员与投稿人始终可见）
       const effectiveNotePublic =
         effectiveSubmissionNotePublic &&
-        row.effectiveSubmissionNotePublicStatus !== 'pending' &&
-        row.effectiveSubmissionNotePublicStatus !== 'rejected'
+        row.effectiveSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
+        row.effectiveSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
       const effectivePlayTimeId = row.effectivePlayTimeId ? Number(row.effectivePlayTimeId) : null
       // 备注可见性主体：绑定重播申请时为申请人，否则为歌曲投稿人
       const noteOwnerId =

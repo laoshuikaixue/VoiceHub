@@ -142,6 +142,7 @@ export default defineEventHandler(async (event) => {
         updateData.submissionNotePublic = true
         updateData.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.APPROVED
       } else if (st === 'rejected') {
+        updateData.submissionNotePublic = false
         updateData.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.REJECTED
       } else {
         updateData.submissionNotePublic = false
@@ -174,6 +175,7 @@ export default defineEventHandler(async (event) => {
             replaySet.submissionNotePublic = true
             replaySet.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.APPROVED
           } else if (st === 'rejected') {
+            replaySet.submissionNotePublic = false
             replaySet.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.REJECTED
           } else {
             replaySet.submissionNotePublic = false

@@ -1888,7 +1888,17 @@ const locale = computed(() => {
     }
   })
 })
-const { t: callLocale } = useLocaleText(locale)
+const { t: callLocale, nested: getNestedMessage } = useLocaleText(locale)
+
+// 通知文案：优先 i18n 分区取值（section.key），异常时回退硬编码（防止异步回调作用域问题导致报错）
+const safeMessage = (section, key, fallback) => {
+  try {
+    const text = getNestedMessage(section, key)
+    return text || fallback
+  } catch {
+    return fallback
+  }
+}
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
@@ -2357,18 +2367,23 @@ const updateSubmissionNotePublicStatus = async (status) => {
     if (status === 'approved') dialogData.isPublic = true
 
     if (window.$showNotification) {
-      window.$showNotification(
-        getNestedMessage('messages', 'remarkVisibilityUpdated'),
-        'success'
-      )
+      try {
+        window.$showNotification(
+          safeMessage('messages', status === 'rejected' ? 'remarkRejected' : 'remarkApproved', '备注留言审核状态已更新'),
+          'success'
+        )
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
   } catch (error) {
     console.error('更新备注审核状态失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(
-        getNestedMessage('errors', 'remarkVisibilityUpdateFailed'),
-        'error'
-      )
+      try {
+        window.$showNotification(safeMessage('errors', 'remarkUpdateFailed', '备注留言审核状态更新失败'), 'error')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
   } finally {
     dialogData.isUpdatingPublic = false

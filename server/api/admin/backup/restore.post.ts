@@ -8,6 +8,7 @@ import {
   cardCodes,
   collaborationLogs,
   emailTemplates,
+  gradeClass,
   notificationSettings,
   notifications,
   playTimes,
@@ -296,6 +297,7 @@ export default defineEventHandler(async (event) => {
       'playTimes',
       'semesters',
       'requestTimes',
+      'gradeClass',
       'users',
       'userIdentities',
       'emailTemplates',
@@ -369,7 +371,8 @@ export default defineEventHandler(async (event) => {
                             'forcePasswordChange',
                             'meowNickname',
                             'status',
-                            'statusChangedBy'
+                            'statusChangedBy',
+                            'remark'
                           ]
 
                           // 处理日期字段
@@ -665,9 +668,11 @@ export default defineEventHandler(async (event) => {
                           return // 跳过此记录，因为userId是必需的
                         }
 
-                        // 构建用户状态日志数据
+                        // 构建用户状态日志数据（含快照列，删除用户后审计可追溯）
                         const userStatusLogData = {
                           userId: validUserStatusLogUserId,
+                          username: record.username ?? null,
+                          name: record.name ?? null,
                           oldStatus: record.oldStatus || record.previousStatus || null,
                           newStatus: record.newStatus,
                           reason: record.reason || null,
@@ -1120,6 +1125,44 @@ export default defineEventHandler(async (event) => {
                             // ID不存在，使用原始ID创建
                             await tx.insert(semesters).values({
                               ...semesterData,
+                              id: record.id
+                            })
+                          }
+                        }
+                        break
+
+                      case 'gradeClass':
+                        // 年级班级配置（唯一约束 grade+class）
+                        const gradeClassData = {
+                          grade: record.grade ?? '',
+                          class: record.class ?? ''
+                        }
+
+                        if (mode === 'merge') {
+                          const existingGradeClass = await tx
+                            .select()
+                            .from(gradeClass)
+                            .where(
+                              and(
+                                eq(gradeClass.grade, gradeClassData.grade),
+                                eq(gradeClass.class, gradeClassData.class)
+                              )
+                            )
+                            .limit(1)
+                          if (existingGradeClass.length === 0) {
+                            await tx.insert(gradeClass).values(gradeClassData)
+                          }
+                        } else {
+                          // 完全恢复模式，检查ID是否已存在
+                          const existingGradeClassWithId = await tx
+                            .select()
+                            .from(gradeClass)
+                            .where(eq(gradeClass.id, record.id))
+                            .limit(1)
+
+                          if (existingGradeClassWithId.length === 0) {
+                            await tx.insert(gradeClass).values({
+                              ...gradeClassData,
                               id: record.id
                             })
                           }
@@ -1830,6 +1873,7 @@ export default defineEventHandler(async (event) => {
                           preferredPlayTimeId: validReplayPlayTimeId,
                           submissionNote: record.submissionNote ?? null,
                           submissionNotePublic: record.submissionNotePublic === true,
+                          submissionNotePublicStatus: record.submissionNotePublicStatus ?? null,
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
                           updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
                         }

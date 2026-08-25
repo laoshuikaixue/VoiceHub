@@ -54,8 +54,8 @@ export default defineEventHandler(async (event) => {
         reason: userStatusLogs.reason,
         createdAt: userStatusLogs.createdAt,
         operatorId: userStatusLogs.operatorId,
-        operatorName: users.name,
-        operatorUsername: users.username
+        operatorName: sql`(SELECT u.name FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`,
+        operatorUsername: sql`(SELECT u.username FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`
       })
       .from(userStatusLogs)
       .leftJoin(users, eq(userStatusLogs.userId, users.id))
@@ -75,8 +75,8 @@ export default defineEventHandler(async (event) => {
           reason: userStatusLogs.reason,
           createdAt: userStatusLogs.createdAt,
           operatorId: userStatusLogs.operatorId,
-          operatorName: users.name,
-          operatorUsername: users.username
+          operatorName: sql`(SELECT u.name FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`,
+          operatorUsername: sql`(SELECT u.username FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`
         })
         .from(userStatusLogs)
         .leftJoin(users, eq(userStatusLogs.userId, users.id))
@@ -86,6 +86,9 @@ export default defineEventHandler(async (event) => {
             or(
               ilike(userStatusLogs.name, `%${searchTerm}%`),
               ilike(userStatusLogs.username, `%${searchTerm}%`),
+              // 存量旧日志快照列为 NULL，回退 join 的用户名列以便可搜
+              ilike(users.name, `%${searchTerm}%`),
+              ilike(users.username, `%${searchTerm}%`),
               ilike(userStatusLogs.reason, `%${searchTerm}%`)
             )
           )
@@ -109,6 +112,8 @@ export default defineEventHandler(async (event) => {
           or(
             ilike(userStatusLogs.name, `%${searchTerm}%`),
             ilike(userStatusLogs.username, `%${searchTerm}%`),
+            ilike(users.name, `%${searchTerm}%`),
+            ilike(users.username, `%${searchTerm}%`),
             ilike(userStatusLogs.reason, `%${searchTerm}%`)
           )
         )

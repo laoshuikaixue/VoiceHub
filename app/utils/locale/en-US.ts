@@ -2153,6 +2153,7 @@ export const admin = {
     messages: {
       remarkVisibilityUpdated: 'Remark visibility updated',
       remarkApproved: 'Remark approved',
+      remarkRejected: 'Remark rejected',
       deleteSuccess: 'Song deleted',
       batchDeleteSuccess: 'Songs deleted',
       rejectSuccess: 'Song rejected and requester notified',

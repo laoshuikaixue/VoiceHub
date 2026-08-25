@@ -12,7 +12,10 @@ export default defineEventHandler(async (event) => {
     throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
   }
 
-  const id = parseInt(getRouterParam(event, 'id'))
+  const id = Number(getRouterParam(event, 'id'))
+  if (!Number.isInteger(id) || id <= 0) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '无效的配置 ID')
+  }
 
   const existing = await db.query.gradeClass.findFirst({
     where: eq(gradeClass.id, id),

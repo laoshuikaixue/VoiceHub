@@ -6,6 +6,7 @@ import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair } from '~~/server/utils/register-validation'
+import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 
 // 注册审核：approve 通过（可修改注册信息），reject 拒绝（删除账户并记录理由与用户快照）
 export default defineEventHandler(async (event) => {
@@ -56,6 +57,20 @@ export default defineEventHandler(async (event) => {
     const gradeClassError = validateGradeClassPair(body.grade, body.class)
     if (gradeClassError) {
       throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, gradeClassError.message)
+    }
+
+    // 提交了年级班级组合时须为配置内组合（与注册校验同源）
+    if (typeof body.grade === 'string' && typeof body.class === 'string' && body.grade.trim() && body.class.trim()) {
+      const grade = body.grade.trim()
+      const classValue = body.class.trim()
+      const isValid = await isGradeClassValid(grade, classValue)
+      if (!isValid) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          '所选年级班级不在可选项内，请检查配置'
+        )
+      }
     }
 
     // 审核通过，可同步修改注册信息（未提供的字段保持不变）

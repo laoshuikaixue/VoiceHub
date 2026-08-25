@@ -2162,6 +2162,7 @@ export const admin = {
     messages: {
       remarkVisibilityUpdated: '备注留言可见性已更新',
       remarkApproved: '备注留言已通过审核',
+      remarkRejected: '备注留言已拒绝',
       deleteSuccess: '歌曲删除成功',
       batchDeleteSuccess: '批量删除成功',
       rejectSuccess: '歌曲驳回成功，已通知投稿人',

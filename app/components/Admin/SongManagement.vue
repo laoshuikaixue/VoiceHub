@@ -1565,7 +1565,8 @@ const updateSubmissionNotePublicStatus = async (status) => {
 
     if (window.$showNotification) {
       try {
-        window.$showNotification(safeMessage('messages', 'remarkApproved', fallbackText.success), 'success')
+        const successKey = status === 'rejected' ? 'remarkRejected' : 'remarkApproved'
+        window.$showNotification(safeMessage('messages', successKey, fallbackText.success), 'success')
       } catch (notifyErr) {
         // 静默失败，不影响主流程
       }

@@ -121,6 +121,10 @@ export default defineEventHandler(async (event) => {
         errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
         continue
       }
+      if (u.role !== 'USER' && user.role !== 'SUPER_ADMIN') {
+        errors.push({ userId: u.id, error: '权限不足：普通管理员无法批量修改其他管理员状态' })
+        continue
+      }
       if (sourceStatusFilter && u.status !== sourceStatusFilter) {
         errors.push({
           userId: u.id,
