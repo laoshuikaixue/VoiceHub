@@ -624,6 +624,29 @@
               </label>
             </div>
 
+            <div v-if="formData.allowRegister" class="flex items-start gap-4 pt-2 border-t border-border-secondary">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="register-email-required"
+                  v-model="formData.registerEmailRequired"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+                  :disabled="!formData.smtpEnabled"
+                />
+              </div>
+              <label for="register-email-required" class="cursor-pointer">
+                <p class="text-xs font-bold text-text-primary">
+                  {{ locale.registerEmailRequired }}
+                </p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
+                  {{ locale.registerEmailRequiredDesc }}
+                </p>
+                <p v-if="!formData.smtpEnabled" class="text-[10px] text-warning mt-1 leading-relaxed">
+                  {{ locale.registerEmailSmtpRequired }}
+                </p>
+              </label>
+            </div>
+
             <div v-if="formData.allowOAuthRegistration" class="flex items-start gap-4 pt-2 border-t border-border-secondary">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -914,6 +937,8 @@ const formData = ref({
   allowRegister: false,
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
+  registerEmailRequired: false,
+  smtpEnabled: false,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -1050,6 +1075,8 @@ const loadConfig = async () => {
       allowRegister: !!data.allowRegister,
       registerRequiresApproval: data.registerRequiresApproval !== false,
       oauthRegisterRequiresApproval: data.oauthRegisterRequiresApproval !== false,
+      registerEmailRequired: data.registerEmailRequired === true,
+      smtpEnabled: !!data.smtpEnabled,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
       githubOAuthEnabled: !!data.githubOAuthEnabled,

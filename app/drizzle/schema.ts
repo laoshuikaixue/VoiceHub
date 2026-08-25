@@ -278,6 +278,8 @@ export const systemSettings = pgTable('SystemSettings', {
   allowRegister: boolean('allowRegister').default(false).notNull(),
   registerRequiresApproval: boolean('registerRequiresApproval').default(true).notNull(),
   oauthRegisterRequiresApproval: boolean('oauthRegisterRequiresApproval').default(true).notNull(),
+  // 注册邮箱（选填→管理员开关控制；需 SMTP 已配置）
+  registerEmailRequired: boolean('registerEmailRequired').default(false).notNull(),
   // 投稿公开留言审核
   submissionNoteRequiresApproval: boolean('submissionNoteRequiresApproval').default(false).notNull(),
 

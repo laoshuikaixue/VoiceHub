@@ -245,6 +245,7 @@ async function checkSchemaConsistency(sql) {
       'allowRegister',
       'registerRequiresApproval',
       'oauthRegisterRequiresApproval',
+      'registerEmailRequired',
       'submissionNoteRequiresApproval',
       'oauthRedirectUri',
       'oauthStateSecret',

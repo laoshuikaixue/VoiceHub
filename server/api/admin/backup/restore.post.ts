@@ -1220,6 +1220,8 @@ export default defineEventHandler(async (event) => {
                           'allowOAuthRegistration',
                           'allowRegister',
                           'registerRequiresApproval',
+                  'registerEmailRequired',
+                          'registerEmailRequired',
                           'oauthRegisterRequiresApproval',
                           'submissionNoteRequiresApproval',
                           'oauthRedirectUri',

@@ -157,6 +157,11 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, validationError.code, validationError.message)
   }
 
+  // 邮箱必填由管理员开关控制（需 SMTP 已配置方可开启）：开启时邮箱与验证码均为必填
+  const emailRequired = Boolean(config?.registerEmailRequired)
+  if (emailRequired && !email) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请填写邮箱地址')
+  }
   // 邮箱可选填；填写时必须格式合法，且须通过邮箱验证码验证归属
   if (email && !EMAIL_REGEX.test(email)) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
