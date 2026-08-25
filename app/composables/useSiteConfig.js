@@ -186,7 +186,7 @@ export const useSiteConfig = () => {
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const allowRegister = computed(() => siteConfig.value.allowRegister === true)
   const registerEmailRequired = computed(() => siteConfig.value.registerEmailRequired === true)
-const submissionNoteRequiresApproval = computed(
+  const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
   )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)

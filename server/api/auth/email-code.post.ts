@@ -4,7 +4,9 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { SmtpService } from '~~/server/services/smtpService'
-import { issueEmailCode, isEmailCodeCooldownActive } from '~~/server/utils/email-verification'
+import { db } from '~/drizzle/db'
+import { systemSettings } from '~/drizzle/schema'
+import { generateEmailCode, storeEmailCode, isEmailCodeCooldownActive, cleanupExpiredEmailCodes } from '~~/server/utils/email-verification'
 
 const EMAIL_CODE_IP_LIMIT = 10
 const EMAIL_CODE_IP_WINDOW_MS = 60 * 1000
@@ -18,6 +20,12 @@ export default defineEventHandler(async (event) => {
 
   if (!email || !EMAIL_REGEX.test(email)) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
+  }
+
+  // 注册关闭时不允许发码（避免成为邮件群发通道）
+  const config = await db.query.systemSettings.findFirst()
+  if (!config?.allowRegister) {
+    throw createApiError(403, SERVER_ERROR_CODES.AUTH_REGISTER_DISABLED, '系统未开放注册')
   }
 
   // IP 限流：每分钟最多 10 次
@@ -38,7 +46,8 @@ export default defineEventHandler(async (event) => {
     throw createApiError(503, SERVER_ERROR_CODES.AUTH_EMAIL_SERVICE_UNAVAILABLE, '邮件服务未配置或不可用，请联系管理员')
   }
 
-  const code = issueEmailCode(email)
+  // 先发邮件，发送成功后才落码（失败不落码，也不触发冷却）
+  const code = generateEmailCode()
   const sent = await smtpService.renderAndSend(email, 'verification', {
     title: 'VoiceHub 注册邮箱验证',
     message: `您的注册邮箱验证码是：${code}，5 分钟内有效。`
@@ -47,6 +56,9 @@ export default defineEventHandler(async (event) => {
   if (!sent) {
     throw createApiError(503, SERVER_ERROR_CODES.AUTH_EMAIL_SERVICE_UNAVAILABLE, '验证码邮件发送失败，请稍后重试')
   }
+
+  cleanupExpiredEmailCodes()
+  storeEmailCode(email, code)
 
   return { success: true }
 })

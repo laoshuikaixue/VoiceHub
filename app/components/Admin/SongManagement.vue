@@ -1633,12 +1633,20 @@ const updateSubmissionNotePublic = async (isPublic) => {
     dialogData.status = isPublic ? 'approved' : null
 
     if (window.$showNotification) {
-      window.$showNotification(getNestedMessage('messages', 'remarkVisibilityUpdated'), 'success')
+      try {
+        window.$showNotification(safeMessage('messages', 'remarkVisibilityUpdated', '备注留言可见性已更新'), 'success')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
   } catch (error) {
     console.error('更新备注可见性失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(getNestedMessage('errors', 'remarkVisibilityUpdateFailed'), 'error')
+      try {
+        window.$showNotification(safeMessage('errors', 'remarkVisibilityUpdateFailed', '备注留言可见性更新失败'), 'error')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
     dialogData.isPublic = !isPublic
   } finally {

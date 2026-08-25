@@ -531,6 +531,7 @@ const email = ref('')
 const emailCode = ref('')
 const sendingCode = ref(false)
 const codeCountdown = ref(0)
+const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
 
@@ -875,10 +876,11 @@ const sendEmailCode = async () => {
     })
     toastSuccess(locale.value.codeSent)
     codeCountdown.value = 60
-    const timer = setInterval(() => {
+    codeTimer.value = setInterval(() => {
       codeCountdown.value -= 1
       if (codeCountdown.value <= 0) {
-        clearInterval(timer)
+        clearInterval(codeTimer.value)
+        codeTimer.value = null
         codeCountdown.value = 0
       }
     }, 1000)

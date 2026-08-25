@@ -145,7 +145,7 @@ export default defineEventHandler(async (event) => {
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
   const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
   const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
-  const email = typeof body.email === 'string' ? body.email.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   const emailCode = typeof body.emailCode === 'string' ? body.emailCode.trim() : ''
 
   if (!username || !name || !password || !confirmPassword) {
