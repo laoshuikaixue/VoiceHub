@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import { eq, inArray } from 'drizzle-orm'
 import { db, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
@@ -11,9 +12,53 @@ import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
+import { verifyEmailCode } from '~~/server/utils/email-verification'
+import { createBatchSystemNotifications } from '~~/server/services/notificationService'
+import { SmtpService } from '~~/server/services/smtpService'
 
 const REGISTER_RATE_LIMIT = 5
 const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// 注册通知：待审核时站内通知所有管理员；有邮箱时邮件通知注册结果（异步，失败不影响主流程）
+async function notifyRegistration(
+  userId: number,
+  username: string,
+  name: string,
+  email: string,
+  requiresApproval: boolean
+) {
+  try {
+    if (requiresApproval) {
+      const adminResult = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(inArray(users.role, ['ADMIN', 'SUPER_ADMIN']))
+      const adminIds = adminResult.map((u) => u.id)
+      if (adminIds.length > 0) {
+        await createBatchSystemNotifications(
+          adminIds,
+          '新用户注册待审核',
+          `用户「${name}」（用户名：${username}）提交了注册申请，请前往用户管理审核。`,
+          false
+        )
+      }
+    }
+    if (email) {
+      const smtpService = SmtpService.getInstance()
+      if (await smtpService.ensureInitialized()) {
+        await smtpService.renderAndSend(email, 'register', {
+          title: requiresApproval ? '注册申请已提交' : '注册成功',
+          message: requiresApproval
+            ? `${name}，您的注册申请已提交，请耐心等待管理员审核。`
+            : `${name}，恭喜您注册成功，欢迎使用 VoiceHub！`
+        })
+      }
+    }
+  } catch (error) {
+    console.error('注册通知发送失败:', error)
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -100,6 +145,8 @@ export default defineEventHandler(async (event) => {
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
   const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
   const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim() : ''
+  const emailCode = typeof body.emailCode === 'string' ? body.emailCode.trim() : ''
 
   if (!username || !name || !password || !confirmPassword) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_NAME_USERNAME_PASSWORD_REQUIRED, '姓名、用户名、密码不能为空')
@@ -108,6 +155,14 @@ export default defineEventHandler(async (event) => {
   const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
   if (validationError) {
     throw createApiError(400, validationError.code, validationError.message)
+  }
+
+  // 邮箱可选填；填写时必须格式合法，且须通过邮箱验证码验证归属
+  if (email && !EMAIL_REGEX.test(email)) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
+  }
+  if (email && !verifyEmailCode(email, emailCode)) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 
   if (remark.length > REMARK_MAX_LENGTH) {
@@ -155,6 +210,8 @@ export default defineEventHandler(async (event) => {
         role: 'USER',
         status: requiresApproval ? 'pending' : 'active',
         remark: remark || null,
+        email: email || null,
+        emailVerified: email ? true : null,
         createdAt: now,
         updatedAt: now,
         passwordChangedAt: now,
@@ -169,6 +226,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 需要审核：不签发登录态，等待管理员审核
+    // 注册通知（异步，不阻塞主流程）
+    notifyRegistration(insertedUser.id, username, name, email, requiresApproval)
+
     if (requiresApproval) {
       return {
         success: true,

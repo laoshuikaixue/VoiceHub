@@ -266,6 +266,64 @@
         </div>
       </div>
 
+      <!-- 邮箱字段 - 仅注册模式显示（可选，填写后需邮箱验证码验证归属） -->
+      <div v-if="showRegisterMode" class="form-group">
+        <label for="email">{{ locale.emailLabel }}</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="m22 7-10 6L2 7" />
+          </svg>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            :placeholder="locale.emailPlaceholder"
+            maxlength="100"
+            @input="error = ''"
+          />
+        </div>
+      </div>
+
+      <!-- 邮箱验证码 - 仅注册模式且已填写邮箱时显示 -->
+      <div v-if="showRegisterMode && email" class="form-group">
+        <label for="emailCode">{{ locale.emailCodeLabel }}</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <input
+            id="emailCode"
+            v-model="emailCode"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            :placeholder="locale.emailCodePlaceholder"
+            @input="error = ''"
+          />
+          <button
+            type="button"
+            class="code-btn"
+            :disabled="sendingCode || codeCountdown > 0"
+            @click="sendEmailCode"
+          >
+            {{ codeCountdown > 0 ? locale.codeCountdown(codeCountdown) : locale.sendCode }}
+          </button>
+        </div>
+      </div>
+
       <div v-show="showCaptcha" class="form-group">
         <TurnstileWidget
           v-if="captchaProvider === 'turnstile'"
@@ -469,6 +527,10 @@ const maskedEmail2FA = ref('')
 const showCreateMode = ref(false)
 const showRegisterMode = ref(false)
 const remark = ref('')
+const email = ref('')
+const emailCode = ref('')
+const sendingCode = ref(false)
+const codeCountdown = ref(0)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
 
@@ -795,6 +857,39 @@ const handleRegisterOAuth = async () => {
   }
 }
 
+// 发送邮箱验证码：校验格式 → POST /api/auth/email-code → 60 秒倒计时
+const sendEmailCode = async () => {
+  const emailValue = email.value.trim()
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailValue || !emailRegex.test(emailValue)) {
+    error.value = locale.value.emailInvalid || '请输入有效的邮箱地址'
+    return
+  }
+
+  error.value = ''
+  sendingCode.value = true
+  try {
+    await $fetch('/api/auth/email-code', {
+      method: 'POST',
+      body: { email: emailValue }
+    })
+    toastSuccess(locale.value.codeSent)
+    codeCountdown.value = 60
+    const timer = setInterval(() => {
+      codeCountdown.value -= 1
+      if (codeCountdown.value <= 0) {
+        clearInterval(timer)
+        codeCountdown.value = 0
+      }
+    }, 1000)
+  } catch (err) {
+    const apiError = useServerErrors().localize(err, locale.value.codeSendFailed)
+    error.value = apiError
+  } finally {
+    sendingCode.value = false
+  }
+}
+
 // 用户名密码注册：提交 /api/auth/register，处理待审核与直接登录两种结果
 const handleRegister = async () => {
   const validationError = validateOAuthRegisterCredentials(
@@ -805,6 +900,13 @@ const handleRegister = async () => {
 
   if (validationError) {
     error.value = serverErrors.value?.[validationError.code] || locale.value.registerFailed
+    return
+  }
+
+  // 填写了邮箱则必须同时提供验证码
+  const emailValue = email.value.trim()
+  if (emailValue && !emailCode.value.trim()) {
+    error.value = locale.value.emailCodeRequired
     return
   }
 
@@ -819,7 +921,9 @@ const handleRegister = async () => {
       class: studentClass.value,
       password: password.value,
       confirmPassword: confirmPassword.value,
-      remark: remark.value.trim()
+      remark: remark.value.trim(),
+      email: emailValue || undefined,
+      emailCode: emailCode.value.trim() || undefined
     }
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {

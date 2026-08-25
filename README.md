@@ -991,6 +991,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
+│       ├── email-verification.ts # 注册邮箱验证码（内存存储）
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
@@ -1148,6 +1149,7 @@ VoiceHub/
 │   │   │   ├── captcha.get.ts         # 图形验证码
 │   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
 │   │   │   ├── grade-class-options.get.ts # 年级班级选项（注册表单）
+│   │   │   ├── email-code.post.ts # 注册邮箱验证码发送
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
 │   │   │   │   └── verify.post.ts     # 验证2FA代码
