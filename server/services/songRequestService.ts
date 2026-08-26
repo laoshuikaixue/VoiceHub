@@ -291,7 +291,12 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
+    // 强制使用点歌券仅在点歌券功能启用时生效
+    if (
+      systemSettingsData?.requireCardCodeForRequests &&
+      systemSettingsData?.enableCardCodeRequests &&
+      !isAdmin
+    ) {
       const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
         throw createApiError(
@@ -302,9 +307,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    const isCardCodeEnabled = !!(
-      systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests
-    )
+    const isCardCodeEnabled = systemSettingsData?.enableCardCodeRequests === true
     const excludeCardCodeRequestsFromLimit = isCardCodeLimitBypassActive(systemSettingsData)
     if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
       throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
@@ -341,7 +344,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const noteRequiresApproval = systemSettingsData?.submissionNoteRequiresApproval === true
     const wantsPublic = submissionNote !== null ? requestBody.submissionNotePublic !== false : false
     const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
-    const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? SUBMISSION_NOTE_STATUS.PENDING : null
+    // 仅用户勾选公开的留言进入审核，私密留言只供管理员查看
+    const submissionNotePublicStatus =
+      noteRequiresApproval && submissionNote !== null && wantsPublic
+        ? SUBMISSION_NOTE_STATUS.PENDING
+        : null
 
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 

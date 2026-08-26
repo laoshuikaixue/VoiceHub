@@ -25,7 +25,24 @@
         <div class="p-8 space-y-4">
           <div class="flex items-center gap-3">
             <p class="text-xs text-text-tertiary font-medium">{{ songTitle }}</p>
-            <label for="is-public-checkbox" class="flex items-center gap-2 cursor-pointer group" :class="{ 'opacity-50': isUpdatingPublic }">
+            <span
+              v-if="noteStatus === 'pending'"
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-warning-10 text-warning border-warning-20"
+            >
+              {{ locale.statusPending }}
+            </span>
+            <span
+              v-else-if="noteStatus === 'rejected'"
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-error-10 text-error border-error-20"
+            >
+              {{ locale.statusRejected }}
+            </span>
+            <label
+              v-else
+              for="is-public-checkbox"
+              class="flex items-center gap-2 cursor-pointer group"
+              :class="{ 'opacity-50': isUpdatingPublic }"
+            >
               <input
                 id="is-public-checkbox"
                 type="checkbox"
@@ -33,21 +50,8 @@
                 :disabled="isUpdatingPublic"
                 @change="$emit('update:isPublic', $event.target.checked)"
                 class="w-4 h-4 rounded border-border-secondary bg-bg-primary cursor-pointer disabled:cursor-not-allowed"
-              >
+              />
               <span
-                v-if="noteStatus === 'pending'"
-                class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-warning-10 text-warning border-warning-20"
-              >
-                {{ locale.statusPending }}
-              </span>
-              <span
-                v-else-if="noteStatus === 'rejected'"
-                class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-error-10 text-error border-error-20"
-              >
-                {{ locale.statusRejected }}
-              </span>
-              <span
-                v-else
                 :class="[
                   'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border transition-colors',
                   isPublic

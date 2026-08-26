@@ -28,7 +28,7 @@ export function isCardCodeLimitBypassActive(
   return !!(
     settings?.enableSubmissionLimit &&
     settings.enableCardCodeLimitBypass &&
-    (settings.enableCardCodeRequests || settings.requireCardCodeForRequests)
+    settings.enableCardCodeRequests === true
   )
 }
 

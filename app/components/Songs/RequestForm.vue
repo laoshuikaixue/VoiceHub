@@ -439,7 +439,7 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-:disabled="submissionNoteRequiresApproval || !siteConfigLoaded"
+                          :disabled="submissionNoteRequiresApproval || !siteConfigLoaded"
                         />
                         <span class="custom-checkbox-box">
                           <svg
@@ -459,12 +459,6 @@
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                       </label>
-                      <p
-                        v-if="submissionNoteRequiresApproval"
-                        class="text-[11px] text-warning mt-1"
-                      >
-                        {{ locale.submissionNoteApprovalHint }}
-                      </p>
                     </div>
                   </div>
                   <textarea
@@ -473,8 +467,12 @@
                     maxlength="300"
                     class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary-10 resize-y transition-all"
                   />
-                  <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
-                    <span>{{ submissionNote.length }}/300</span>
+                  <div class="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-tertiary">
+                    <p v-if="submissionNoteRequiresApproval" class="flex min-w-0 items-center gap-1">
+                      <Icon name="info" size="12" class="shrink-0 text-warning" />
+                      <span class="truncate">{{ locale.submissionNoteApprovalHint }}</span>
+                    </p>
+                    <span class="shrink-0">{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
               </div>

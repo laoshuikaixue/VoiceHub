@@ -60,7 +60,11 @@ export default defineEventHandler(async (event) => {
   const noteRequiresApproval = settings.submissionNoteRequiresApproval === true
   const wantsPublic = submissionNote !== null ? parsedBody.data.submissionNotePublic !== false : false
   const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
-  const submissionNotePublicStatus = noteRequiresApproval && submissionNote !== null ? SUBMISSION_NOTE_STATUS.PENDING : null
+  // 仅用户勾选公开的留言进入审核，私密留言只供管理员查看
+  const submissionNotePublicStatus =
+    noteRequiresApproval && submissionNote !== null && wantsPublic
+      ? SUBMISSION_NOTE_STATUS.PENDING
+      : null
 
   // 4. 检查歌曲和学期
   const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)

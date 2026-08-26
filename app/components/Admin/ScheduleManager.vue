@@ -2410,10 +2410,14 @@ const updateSubmissionNotePublic = async (isPublic) => {
 
     await adminService.updateSong(dialogData.songId, updatePayload)
 
+    const applyNotePublic = (song) => {
+      song.submissionNotePublic = isPublic
+      song.submissionNotePublicStatus = isPublic ? 'approved' : null
+    }
     if (songsService && songsService.songs && songsService.songs.value) {
       const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
       if (songIndex !== -1) {
-        songsService.songs.value[songIndex].submissionNotePublic = isPublic
+        applyNotePublic(songsService.songs.value[songIndex])
       }
     }
 
@@ -2423,15 +2427,16 @@ const updateSubmissionNotePublic = async (isPublic) => {
         (s) => s.song && s.song.id === dialogData.songId
       )
       if (scheduleIndex !== -1) {
-        scheduleList[scheduleIndex].song.submissionNotePublic = isPublic
+        applyNotePublic(scheduleList[scheduleIndex].song)
       }
     }
 
     // 更新重播请求列表中的备注可见性
     const replayIndex = replayRequests.value.findIndex((s) => s.id === dialogData.songId)
     if (replayIndex !== -1) {
-      replayRequests.value[replayIndex].submissionNotePublic = isPublic
+      applyNotePublic(replayRequests.value[replayIndex])
     }
+    dialogData.status = isPublic ? 'approved' : null
 
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages.remarkVisibilityUpdated, 'success')

@@ -178,7 +178,8 @@ export const useSiteConfig = () => {
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
   const requireCardCodeForRequests = computed(
-    () => siteConfig.value.requireCardCodeForRequests === true
+    () =>
+      enableCardCodeRequests.value && siteConfig.value.requireCardCodeForRequests === true
   )
   const enableCardCodeLimitBypass = computed(
     () => siteConfig.value.enableCardCodeLimitBypass === true
