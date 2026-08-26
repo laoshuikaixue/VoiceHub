@@ -25,6 +25,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
+import { syncAllSequences } from '~~/server/utils/sequence-sync'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -1366,6 +1367,15 @@ export default defineEventHandler(async (event) => {
     } catch (settingsError) {
       console.error('恢复后设置一致性校验失败:', settingsError)
     }
+  }
+
+  // 恢复可能携带显式 id，完成后同步所有自增序列，避免后续插入主键冲突
+  try {
+    await syncAllSequences()
+  } catch (seqError) {
+    const seqErrorMsg = seqError instanceof Error ? seqError.message : '未知错误'
+    stats.warnings.push(`自增序列同步失败: ${seqErrorMsg}`)
+    console.error('自增序列同步失败:', seqError)
   }
 
   return {
