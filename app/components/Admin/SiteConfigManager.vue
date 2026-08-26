@@ -608,10 +608,13 @@
             </div>
 
             <div
-              v-if="formData.allowRegister"
+              v-if="formData.allowRegister || formData.allowOAuthRegistration"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
             >
-              <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+              <div
+                v-if="formData.allowRegister"
+                class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
+              >
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresApproval }}</p>
                   <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresApprovalDesc }}</p>
@@ -635,7 +638,7 @@
                   id="register-email-required"
                   v-model="formData.registerEmailRequired"
                   type="checkbox"
-                  :disabled="!formData.allowRegister || !formData.smtpEnabled"
+                  :disabled="(!formData.allowRegister && !formData.allowOAuthRegistration) || !formData.smtpEnabled"
                   class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
                 />
               </div>
