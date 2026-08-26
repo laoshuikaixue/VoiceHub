@@ -232,8 +232,8 @@
             </div>
 
             <div
+              v-if="formData.enableSubmissionRemarks"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
-              :class="formData.enableSubmissionRemarks ? '' : 'opacity-50'"
             >
               <div
                 class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
@@ -266,8 +266,8 @@
             </div>
 
             <div
+              v-if="formData.enableCardCodeRequests"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
-              :class="formData.enableCardCodeRequests ? '' : 'opacity-50'"
             >
               <div
                 class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
@@ -285,8 +285,8 @@
               </div>
 
               <div
+                v-if="formData.enableSubmissionLimit"
                 class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl transition-opacity"
-                :class="!formData.enableSubmissionLimit ? 'opacity-50' : ''"
               >
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeLimitBypass }}</p>
@@ -334,8 +334,8 @@
             </div>
 
             <div
+              v-if="formData.enableSubmissionLimit"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
-              :class="formData.enableSubmissionLimit ? '' : 'opacity-50'"
             >
               <div class="grid grid-cols-3 gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
                 <button
@@ -502,8 +502,8 @@
             </div>
 
             <div
+              v-if="formData.captchaEnabled"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
-              :class="formData.captchaEnabled ? '' : 'opacity-50'"
             >
               <div class="p-3 bg-bg-primary border border-border-secondary rounded-xl space-y-3">
                 <!-- 验证码类型选择 -->
@@ -608,8 +608,8 @@
             </div>
 
             <div
+              v-if="formData.allowRegister"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
-              :class="formData.allowRegister ? '' : 'opacity-50'"
             >
               <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
                 <div class="pr-4">
@@ -679,7 +679,7 @@
               id="telemetry-enabled"
               v-model="formData.telemetryEnabled"
               type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              class="w-5 h-5 shrink-0 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 

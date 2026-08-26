@@ -2695,6 +2695,8 @@ export const admin = {
     importEnv: '导入环境配置',
     allowRegistration: '允许第三方注册',
     allowRegistrationDesc: '开启后，允许用户通过 OAuth 创建新账号；关闭时，仅允许绑定已有账号',
+    oauthRegisterRequiresApproval: '第三方注册需管理员审核',
+    oauthRegisterRequiresApprovalDesc: '开启后，通过第三方新创建的用户需审核通过后才能登录。',
     allowed: '已允许',
     notAllowed: '未允许',
     redirectUri: 'OAuth 重定向 URI',

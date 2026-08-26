@@ -2686,6 +2686,8 @@ export const admin = {
     importEnv: 'Import Env Config',
     allowRegistration: 'Allow Third-Party Registration',
     allowRegistrationDesc: 'When enabled, users can create new accounts through OAuth. When disabled, OAuth can only bind existing accounts.',
+    oauthRegisterRequiresApproval: 'Require Admin Approval for Third-party Registration',
+    oauthRegisterRequiresApprovalDesc: 'When enabled, accounts created through third-party login require approval before sign-in.',
     allowed: 'Allowed',
     notAllowed: 'Not Allowed',
     redirectUri: 'OAuth Redirect URI',

@@ -55,8 +55,8 @@
         </div>
 
         <div
+          v-if="formData.allowOAuthRegistration"
           class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
-          :class="formData.allowOAuthRegistration ? '' : 'opacity-50'"
         >
           <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
             <div class="pr-4">
