@@ -1,102 +1,175 @@
 <template>
-  <div v-if="show" class="voters-modal-overlay" @click="closeModal">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3 class="modal-title">{{ locale.title }}</h3>
-        <button class="close-btn" @click="closeModal">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18" />
-            <line x1="6" x2="18" y1="6" y2="18" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- 歌曲信息 -->
-        <div v-if="songInfo" class="song-info">
-          <h4 class="song-title">{{ songInfo.title }}</h4>
-          <p class="song-artist">{{ songInfo.artist }}</p>
-          <div class="vote-summary">
-            <svg class="heart-icon" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-              />
-            </svg>
-            <span class="vote-count">{{ formatLocale(locale.votes, totalVotes) }}</span>
-          </div>
-        </div>
-
-        <!-- 加载状态 -->
-        <div v-if="loading" class="loading-container">
-          <div class="spinner" />
-          <p>{{ locale.loading }}</p>
-        </div>
-
-        <!-- 错误状态 -->
-        <div v-else-if="error" class="error-container">
-          <svg
-            class="error-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div
+        v-if="show"
+        class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
+        @click.self="closeModal"
+      >
+        <div
+          class="bg-bg-secondary border border-border-secondary w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        >
+          <!-- 头部 -->
+          <div
+            class="p-6 pb-4 flex items-center justify-between border-b border-border-secondary-50"
           >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="15" x2="9" y1="9" y2="15" />
-            <line x1="9" x2="15" y1="9" y2="15" />
-          </svg>
-          <p class="error-message">{{ error }}</p>
-          <button class="retry-btn" @click="fetchVoters">{{ commonLocale.retry }}</button>
-        </div>
-
-        <!-- 投票人员列表 -->
-        <div v-else-if="voters.length > 0" class="voters-list">
-          <div class="voters-header">
-            <span class="voters-title">{{ formatLocale(locale.voters, voters.length) }}</span>
-          </div>
-          <div class="voters-container">
-            <div v-for="(voter, index) in voters" :key="voter.id" class="voter-item">
-              <div class="voter-info">
-                <div class="voter-avatar">
-                  {{ getAvatarText(voter.name) }}
+            <div class="min-w-0">
+              <h3
+                class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3"
+              >
+                <div
+                  class="w-10 h-10 rounded-xl bg-primary-hover-10 flex items-center justify-center text-primary shrink-0"
+                >
+                  <Icon name="users" :size="20" />
                 </div>
-                <div class="voter-details">
-                  <span class="voter-name">{{ voter.name }}</span>
-                  <span class="vote-time">{{ formatVoteTime(voter.votedAt) }}</span>
+                {{ locale.title }}
+              </h3>
+              <p v-if="songInfo" class="text-xs text-text-tertiary mt-1 ml-13 truncate">
+                {{ songInfo.title }}
+              </p>
+            </div>
+            <button
+              class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all shrink-0"
+              @click="closeModal"
+            >
+              <Icon name="x" :size="20" />
+            </button>
+          </div>
+
+          <!-- 主体 -->
+          <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            <!-- 歌曲信息 -->
+            <div
+              v-if="songInfo"
+              class="mb-5 p-5 bg-bg-primary-50 border border-border-secondary-50 rounded-xl"
+            >
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-11 h-11 rounded-xl bg-error-10 flex items-center justify-center text-error shrink-0"
+                >
+                  <Icon name="music" :size="20" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="text-base font-black text-text-primary truncate">
+                    {{ songInfo.title }}
+                  </h4>
+                  <p class="text-xs text-text-tertiary mt-1 truncate">{{ songInfo.artist }}</p>
+                </div>
+                <div
+                  class="flex items-center gap-1.5 px-3 py-1.5 bg-error-10 border border-error-20 rounded-full text-error shrink-0"
+                >
+                  <Icon name="heart" :size="12" class="fill-current" />
+                  <span class="text-xs font-black">{{
+                    formatLocale(locale.votes, totalVotes)
+                  }}</span>
                 </div>
               </div>
-              <div class="voter-number">#{{ index + 1 }}</div>
+            </div>
+
+            <!-- 加载状态 -->
+            <LoadingState v-if="loading" :message="locale.loading" spinner-type="circle" />
+
+            <!-- 错误状态 -->
+            <div
+              v-else-if="error"
+              class="flex flex-col items-center justify-center py-16 text-center px-8"
+            >
+              <div
+                class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center text-error mb-4"
+              >
+                <Icon name="alert-triangle" :size="32" />
+              </div>
+              <p class="text-sm text-text-tertiary mb-6">{{ error }}</p>
+              <button
+                class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+                @click="fetchVoters"
+              >
+                {{ commonLocale.retry }}
+              </button>
+            </div>
+
+            <!-- 投票人员列表 -->
+            <div v-else-if="voters.length > 0">
+              <div class="flex items-center justify-between mb-3 px-1">
+                <div
+                  class="flex items-center gap-2 text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+                >
+                  <Icon name="users" :size="12" class="text-primary" />
+                  {{ formatLocale(locale.voters, voters.length) }}
+                </div>
+                <div class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+                  {{ formatLocale(locale.votes, totalVotes) }}
+                </div>
+              </div>
+
+              <div class="space-y-2 max-h-[45vh] overflow-y-auto custom-scrollbar pr-1">
+                <div
+                  v-for="(voter, index) in voters"
+                  :key="voter.id"
+                  class="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:bg-bg-tertiary-50 hover:border-border-secondary transition-all"
+                >
+                  <div
+                    class="w-10 h-10 rounded-xl bg-bg-tertiary border border-border-secondary flex items-center justify-center text-text-secondary text-sm font-black shrink-0"
+                  >
+                    {{ getAvatarText(voter.name) }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-black text-text-primary truncate">
+                      {{ voter.name }}
+                    </div>
+                    <div
+                      class="flex items-center gap-1.5 text-[10px] text-text-disabled mt-0.5 font-medium"
+                    >
+                      <Icon name="clock" :size="11" />
+                      {{ formatVoteTime(voter.votedAt) }}
+                    </div>
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-text-disabled px-2 py-1 bg-bg-tertiary rounded-lg shrink-0"
+                  >
+                    #{{ index + 1 }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 无投票状态 -->
+            <div v-else class="flex flex-col items-center justify-center py-16 text-text-disabled">
+              <Icon name="heart" :size="48" class="mb-4 opacity-20" />
+              <p class="text-sm font-bold">{{ locale.empty }}</p>
             </div>
           </div>
-        </div>
 
-        <!-- 无投票状态 -->
-        <div v-else class="empty-state">
-          <svg
-            class="empty-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
+          <!-- 底部 -->
+          <div
+            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end"
           >
-            <path
-              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-            />
-          </svg>
-          <p>{{ locale.empty }}</p>
+            <button
+              class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+              @click="closeModal"
+            >
+              {{ commonLocale.close }}
+            </button>
+          </div>
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button class="close-button" @click="closeModal">{{ commonLocale.close }}</button>
-      </div>
-    </div>
-  </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
+import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 
 // Props
 const props = defineProps({
@@ -122,6 +195,7 @@ const totalVotes = ref(0)
 const { common, currentLocale } = useLocale()
 const commonLocale = computed(() => common.value || {})
 const locale = computed(() => common.value?.votersModal || {})
+const { localize: localizeServerError } = useServerErrors()
 
 // 方法
 const closeModal = () => {
@@ -142,7 +216,7 @@ const fetchVoters = async () => {
     totalVotes.value = response.totalVotes || 0
   } catch (err) {
     console.error('获取投票人员失败:', err)
-    error.value = err.data?.message || locale.value.fetchFailed
+    error.value = localizeServerError(err, locale.value.fetchFailed)
   } finally {
     loading.value = false
   }
@@ -158,7 +232,8 @@ const getAvatarText = (name) => {
 const formatTimeAgo = (key, value) => {
   const message = commonLocale.value?.time?.[key]
   if (typeof message === 'function') return message(value)
-  if (typeof message === 'string') return message.replace(/{(\d+)}/g, (match, index) => index === '0' ? String(value) : match)
+  if (typeof message === 'string')
+    return message.replace(/{(\d+)}/g, (match, index) => (index === '0' ? String(value) : match))
   return ''
 }
 
@@ -198,347 +273,21 @@ watch(
 </script>
 
 <style scoped>
-.voters-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--modal-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background: var(--panel-bg-deep);
-  border-radius: 16px;
-  border: 1px solid var(--panel-border);
-  width: 100%;
-  max-width: 500px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 24px 0;
-}
-
-.modal-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--text-tertiary-hover);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: var(--panel-border);
-  color: var(--text-primary);
-}
-
-.close-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.modal-body {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-}
-
-.song-info {
-  background: var(--panel-border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  border: 1px solid var(--panel-border-light);
-}
-
-.song-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.song-artist {
-  color: var(--text-tertiary-hover);
-  margin: 0 0 16px 0;
-  font-size: 14px;
-}
-
-.vote-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.heart-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-error);
-}
-
-.vote-count {
-  color: var(--color-error);
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  gap: 16px;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--panel-border-light);
-  border-top: 3px solid var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  gap: 16px;
-}
-
-.error-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--color-error);
-}
-
-.error-message {
-  color: var(--color-error);
-  text-align: center;
-  margin: 0;
-}
-
-.retry-btn {
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s ease;
-}
-
-.retry-btn:hover {
-  background: var(--color-indigo);
-}
-
-.voters-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.voters-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--panel-border-light);
-}
-
-.voters-title {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 16px;
-}
-
-.voters-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.voter-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--panel-border);
-  border-radius: 8px;
-  border: 1px solid var(--panel-border-light);
-  transition: all 0.2s ease;
-}
-
-.voter-item:hover {
-  background: var(--text-primary);
-  border-color: var(--panel-border-dark);
-}
-
-.voter-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
-
-.voter-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-collab-hover));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.voter-details {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.voter-name {
-  color: var(--text-primary);
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.vote-time {
-  color: var(--text-tertiary-hover);
-  font-size: 12px;
-}
-
-.voter-number {
-  color: var(--text-tertiary-hover);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  gap: 16px;
-}
-
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--text-tertiary);
-}
-
-.empty-state p {
-  color: var(--text-tertiary-hover);
-  margin: 0;
-}
-
-.modal-footer {
-  padding: 0 24px 24px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.close-button {
-  background: var(--panel-border-light);
-  color: var(--text-primary);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background 0.2s ease;
-}
-
-.close-button:hover {
-  background: var(--panel-border-dark);
-}
-
-/* 滚动条样式 */
-.voters-container::-webkit-scrollbar {
+/* 列表自定义滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
-.voters-container::-webkit-scrollbar-track {
-  background: var(--panel-border);
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--text-muted);
   border-radius: 3px;
 }
 
-.voters-container::-webkit-scrollbar-thumb {
-  background: var(--panel-border-dark);
-  border-radius: 3px;
-}
-
-.voters-container::-webkit-scrollbar-thumb:hover {
-  background: var(--panel-border-dark);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .voters-modal-overlay {
-    padding: 10px;
-  }
-
-  .modal-content {
-    max-height: 90vh;
-  }
-
-  .modal-header,
-  .modal-body,
-  .modal-footer {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .voter-item {
-    padding: 10px 12px;
-  }
-
-  .voter-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
 }
 </style>
