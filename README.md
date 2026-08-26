@@ -1041,6 +1041,7 @@ VoiceHub/
 │   │   │   ├── grade-class/         # 年级班级配置API
 │   │   │   │   ├── [id].delete.ts   # 删除配置项
 │   │   │   │   ├── by-grade.delete.ts # 按年级删除配置
+│   │   │   │   ├── initialize.post.ts # 从现有用户提取初始化
 │   │   │   │   ├── index.get.ts     # 获取配置列表
 │   │   │   │   └── index.post.ts    # 新增配置项
 │   │   │   ├── card-codes/          # 点歌券管理API

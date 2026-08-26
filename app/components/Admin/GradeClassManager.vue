@@ -78,6 +78,21 @@
             </button>
           </div>
         </div>
+
+        <div class="border-t border-border-secondary pt-4">
+          <p class="text-sm font-black text-text-primary mb-2">{{ locale.initTitle }}</p>
+          <p class="text-xs text-text-tertiary mb-3">{{ locale.initDesc }}</p>
+          <button
+            type="button"
+            :disabled="initLoading"
+            class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            @click="handleInitialize"
+          >
+            <Users v-if="!initLoading" :size="14" />
+            <RefreshCw v-else :size="14" class="animate-spin" />
+            {{ locale.initButton }}
+          </button>
+        </div>
       </div>
       </div>
 
@@ -89,19 +104,19 @@
         </p>
         <ul class="space-y-2.5 text-xs text-text-tertiary leading-relaxed">
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">1</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">1</span>
             {{ locale.guideSingle }}
           </li>
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">2</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">2</span>
             {{ locale.guideBatchLine1 }}
           </li>
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">3</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">3</span>
             {{ locale.guideBatchLine2 }}
           </li>
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">4</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">4</span>
             {{ locale.guideDedup }}
           </li>
         </ul>
@@ -232,6 +247,7 @@ const classInput = ref('')
 const batchGradeInput = ref('')
 const batchClassInput = ref('')
 const batchAdding = ref(false)
+const initLoading = ref(false)
 const showDeleteConfirm = ref(false)
 const targetItem = ref(null)
 const showGradeDeleteConfirm = ref(false)
@@ -355,6 +371,27 @@ const handleBatchAdd = async () => {
     showNotification(`${locale.value.batchFailed}: ${getErrorMessage(error)}`, 'error')
   } finally {
     batchAdding.value = false
+  }
+}
+
+const handleInitialize = async () => {
+  initLoading.value = true
+  try {
+    const response = await $fetch('/api/admin/grade-class/initialize', {
+      method: 'POST'
+    })
+
+    if (response.success) {
+      await loadItems()
+      showNotification(
+        locale.value.initResult(response.added || 0, response.skipped || 0),
+        'success'
+      )
+    }
+  } catch (error) {
+    showNotification(`${locale.value.initFailed}: ${getErrorMessage(error)}`, 'error')
+  } finally {
+    initLoading.value = false
   }
 }
 
