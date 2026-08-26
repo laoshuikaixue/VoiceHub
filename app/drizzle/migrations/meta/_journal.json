@@ -316,6 +316,13 @@
       "when": 1787655239368,
       "tag": "20260825105359_drop_aggregate_oauth_endpoint_default",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1787715174545,
+      "tag": "20260826033254_add_registration_review_grade_class_and_note_review",
+      "breakpoints": true
     }
   ]
 }

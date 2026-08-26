@@ -103,6 +103,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--panel-bg-overlay); /* 浅灰背景，与你的设计一致 */
+  background-color: var(--bg-card, var(--panel-bg-overlay)); /* 不透明卡片背景，避免暗色遮罩/主题下验证码看不清 */
+  border: 1px solid var(--border-tertiary);
 }
 </style>

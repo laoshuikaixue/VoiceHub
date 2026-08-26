@@ -4,6 +4,8 @@ import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -56,6 +58,11 @@ export default defineEventHandler(async (event) => {
     }
 
     const targetUser = existingUser[0]
+
+    // 待审核用户不得通过状态接口直接置为 active（须走注册审核流程）
+    if (targetUser.status === 'pending' && status === 'active') {
+      throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
+    }
 
     // 检查是否为学生用户
     if (targetUser.role !== 'USER') {

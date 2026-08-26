@@ -9,6 +9,7 @@ import {
   getPasswordAuditContext
 } from '~~/server/services/passwordSecurityService'
 import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
@@ -153,6 +154,11 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         message: '用户状态只能是 active, withdrawn 或 graduate'
       })
+    }
+
+    // 待审核用户不得通过编辑接口直接置为 active（须走注册审核流程）
+    if (targetUser.status === 'pending' && status === 'active') {
+      throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
     }
 
     // 准备更新数据

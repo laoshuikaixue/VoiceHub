@@ -143,6 +143,23 @@ async function enumValueExists(sql, enumName, enumValue) {
   return result[0]?.exists === true
 }
 
+// user_status 枚举新增值显式幂等补齐
+async function ensureUserStatusEnumValues(sql) {
+  const pendingExists = await enumValueExists(sql, 'user_status', 'pending')
+  if (!pendingExists) {
+    const withdrawnExists = await enumValueExists(sql, 'user_status', 'withdrawn')
+    if (withdrawnExists) {
+      await sql`ALTER TYPE "public"."user_status" ADD VALUE 'pending' BEFORE 'withdrawn'`
+    } else {
+      await sql`ALTER TYPE "public"."user_status" ADD VALUE 'pending'`
+    }
+  }
+  const rejectedExists = await enumValueExists(sql, 'user_status', 'rejected')
+  if (!rejectedExists) {
+    await sql`ALTER TYPE "public"."user_status" ADD VALUE 'rejected'`
+  }
+}
+
 async function tableExists(sql, tableName) {
   const result = await sql`
     SELECT EXISTS (
@@ -170,10 +187,24 @@ async function columnExists(sql, tableName, columnName) {
   return result[0]?.exists === true
 }
 
+async function indexExists(sql, tableName, indexName) {
+  const result = await sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND tablename = ${tableName}
+        AND indexname = ${indexName}
+    ) AS exists
+  `
+
+  return result[0]?.exists === true
+}
+
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
-    ['user_status', ['graduate']],
+    ['user_status', ['graduate', 'pending', 'rejected']],
     ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']]
   ]
   const requiredTables = [
@@ -184,8 +215,12 @@ async function checkSchemaConsistency(sql) {
     'CardCode',
     'CardCodeRedeemLog',
     'PasswordAuditLog',
-    'PasswordRateLimit'
+    'PasswordRateLimit',
+    'GradeClass',
+    'auth_sessions'
   ]
+  // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
+  const requiredIndexes = [['User', 'User_username_unique']]
   const requiredColumns = {
     User: [
       'status',
@@ -193,9 +228,14 @@ async function checkSchemaConsistency(sql) {
       'statusChangedBy',
       'email',
       'emailVerified',
-      'tokenVersion'
+      'tokenVersion',
+      'remark',
+      'avatarProvider',
+      'avatarProviderUserId'
     ],
-    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId', 'cardCodeId'],
+    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
+    song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
+    user_status_logs: ['username', 'name'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
       'instance_id',
@@ -221,6 +261,13 @@ async function checkSchemaConsistency(sql) {
       'turnstileSecretKey',
       'forcePasswordChangeOnFirstLogin',
       'allowOAuthRegistration',
+      'allowRegister',
+      'registerRequiresApproval',
+      'oauthRegisterRequiresApproval',
+      'registerEmailRequired',
+      'submissionNoteRequiresApproval',
+      'defaultTheme',
+      'enabledThemes',
       'oauthRedirectUri',
       'oauthStateSecret',
       'oauthProviders',
@@ -300,6 +347,12 @@ async function checkSchemaConsistency(sql) {
     }
   }
 
+  for (const [tableName, indexName] of requiredIndexes) {
+    if (!(await indexExists(sql, tableName, indexName))) {
+      missing.push(`${tableName}.${indexName} index`)
+    }
+  }
+
   if (missing.length > 0) {
     warn(`检测到数据库schema不完整，缺少: ${missing.join(', ')}`)
     return false
@@ -309,6 +362,8 @@ async function checkSchemaConsistency(sql) {
 }
 
 async function repairSchemaWithPush(sql) {
+  // 先补齐枚举值，再执行 push
+  await ensureUserStatusEnumValues(sql)
   const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
   if (
     !safeExec(pushCommand, {

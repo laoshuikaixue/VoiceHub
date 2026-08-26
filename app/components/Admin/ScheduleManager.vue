@@ -1358,8 +1358,11 @@
     :content="submissionRemarkDialog.content"
     :is-public="submissionRemarkDialog.isPublic"
     :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
+    :note-status="submissionRemarkDialog.status"
     @close="submissionRemarkDialog.show = false"
     @update:is-public="updateSubmissionNotePublic"
+    @approve="updateSubmissionNotePublicStatus('approved')"
+    @reject="updateSubmissionNotePublicStatus('rejected')"
   />
 
   <SchedulePlaylistFilterModal
@@ -1885,7 +1888,17 @@ const locale = computed(() => {
     }
   })
 })
-const { t: callLocale } = useLocaleText(locale)
+const { t: callLocale, nested: getNestedMessage } = useLocaleText(locale)
+
+// 通知文案：优先 i18n 分区取值（section.key），异常时回退硬编码（防止异步回调作用域问题导致报错）
+const safeMessage = (section, key, fallback) => {
+  try {
+    const text = getNestedMessage(section, key)
+    return text || fallback
+  } catch {
+    return fallback
+  }
+}
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
@@ -2281,7 +2294,8 @@ const submissionRemarkDialog = ref({
   songTitle: '',
   content: '',
   isPublic: true,
-  isUpdatingPublic: false
+  isUpdatingPublic: false,
+  status: null
 })
 
 const openReplayModal = (song) => {
@@ -2309,7 +2323,70 @@ const openSubmissionRemark = (song, scheduleReplayRequestId = null) => {
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
     content: song.submissionNote,
-    isPublic: song.submissionNotePublic === true
+    isPublic: song.submissionNotePublic === true,
+    status: song.submissionNotePublicStatus || null
+  }
+}
+
+const updateSubmissionNotePublicStatus = async (status) => {
+  const dialogData = submissionRemarkDialog.value
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  dialogData.isUpdatingPublic = true
+
+  try {
+    const updatePayload = {
+      title: dialogData.title,
+      artist: dialogData.artist,
+      submissionNotePublicStatus: status
+    }
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
+
+    const applyLocal = (song) => {
+      song.submissionNotePublicStatus = status
+      if (status === 'approved') song.submissionNotePublic = true
+    }
+    if (songsService && songsService.songs && songsService.songs.value) {
+      const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
+      if (songIndex !== -1) applyLocal(songsService.songs.value[songIndex])
+    }
+    for (const scheduleList of [localScheduledSongs.value, publicSchedules.value]) {
+      const scheduleIndex = scheduleList.findIndex(
+        (s) => s.song && s.song.id === dialogData.songId
+      )
+      if (scheduleIndex !== -1) applyLocal(scheduleList[scheduleIndex].song)
+    }
+    const replayIndex = replayRequests.value.findIndex((s) => s.id === dialogData.songId)
+    if (replayIndex !== -1) applyLocal(replayRequests.value[replayIndex])
+
+    dialogData.status = status
+    if (status === 'approved') dialogData.isPublic = true
+
+    if (window.$showNotification) {
+      try {
+        window.$showNotification(
+          safeMessage('messages', status === 'rejected' ? 'remarkRejected' : 'remarkApproved', '备注留言审核状态已更新'),
+          'success'
+        )
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
+    }
+  } catch (error) {
+    console.error('更新备注审核状态失败:', error)
+    if (window.$showNotification) {
+      try {
+        window.$showNotification(safeMessage('errors', 'remarkUpdateFailed', '备注留言审核状态更新失败'), 'error')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
+    }
+  } finally {
+    dialogData.isUpdatingPublic = false
   }
 }
 
@@ -2333,10 +2410,14 @@ const updateSubmissionNotePublic = async (isPublic) => {
 
     await adminService.updateSong(dialogData.songId, updatePayload)
 
+    const applyNotePublic = (song) => {
+      song.submissionNotePublic = isPublic
+      song.submissionNotePublicStatus = isPublic ? 'approved' : null
+    }
     if (songsService && songsService.songs && songsService.songs.value) {
       const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
       if (songIndex !== -1) {
-        songsService.songs.value[songIndex].submissionNotePublic = isPublic
+        applyNotePublic(songsService.songs.value[songIndex])
       }
     }
 
@@ -2346,15 +2427,16 @@ const updateSubmissionNotePublic = async (isPublic) => {
         (s) => s.song && s.song.id === dialogData.songId
       )
       if (scheduleIndex !== -1) {
-        scheduleList[scheduleIndex].song.submissionNotePublic = isPublic
+        applyNotePublic(scheduleList[scheduleIndex].song)
       }
     }
 
     // 更新重播请求列表中的备注可见性
     const replayIndex = replayRequests.value.findIndex((s) => s.id === dialogData.songId)
     if (replayIndex !== -1) {
-      replayRequests.value[replayIndex].submissionNotePublic = isPublic
+      applyNotePublic(replayRequests.value[replayIndex])
     }
+    dialogData.status = isPublic ? 'approved' : null
 
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages.remarkVisibilityUpdated, 'success')

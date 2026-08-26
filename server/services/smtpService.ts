@@ -144,6 +144,24 @@ export class SmtpService {
       contentType: 'verification',
       headerSubtitle: '邮箱验证'
     },
+    'register': {
+      name: '注册通知',
+      subject: '{{title}} | {{siteTitle}}通知推送',
+      contentType: 'generic',
+      headerSubtitle: '注册通知'
+    },
+    'register-approved': {
+      name: '注册审核通过',
+      subject: '{{title}} | {{siteTitle}}通知推送',
+      contentType: 'generic',
+      headerSubtitle: '注册审核通知'
+    },
+    'register-rejected': {
+      name: '注册审核拒绝',
+      subject: '{{title}} | {{siteTitle}}通知推送',
+      contentType: 'generic',
+      headerSubtitle: '注册审核通知'
+    },
     'notification.generic': {
       name: '通用通知',
       subject: '{{title}} | {{siteTitle}}通知推送',

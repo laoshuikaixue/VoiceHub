@@ -23,7 +23,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { z } from 'zod'
 
@@ -291,7 +291,12 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
+    // 强制使用点歌券仅在点歌券功能启用时生效
+    if (
+      systemSettingsData?.requireCardCodeForRequests &&
+      systemSettingsData?.enableCardCodeRequests &&
+      !isAdmin
+    ) {
       const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
         throw createApiError(
@@ -302,9 +307,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    const isCardCodeEnabled = !!(
-      systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests
-    )
+    const isCardCodeEnabled = systemSettingsData?.enableCardCodeRequests === true
     const excludeCardCodeRequestsFromLimit = isCardCodeLimitBypassActive(systemSettingsData)
     if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
       throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
@@ -337,8 +340,15 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const rawSubmissionNote = requestBody.submissionNote || ''
     const submissionNote =
       systemSettingsData?.enableSubmissionRemarks && rawSubmissionNote ? rawSubmissionNote : null
-    const submissionNotePublic =
-      submissionNote !== null ? requestBody.submissionNotePublic !== false : false
+    // 公开留言审核：开关开启时投稿不立即公开，进入待审后由管理员通过
+    const noteRequiresApproval = systemSettingsData?.submissionNoteRequiresApproval === true
+    const wantsPublic = submissionNote !== null ? requestBody.submissionNotePublic !== false : false
+    const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
+    // 仅用户勾选公开的留言进入审核，私密留言只供管理员查看
+    const submissionNotePublicStatus =
+      noteRequiresApproval && submissionNote !== null && wantsPublic
+        ? SUBMISSION_NOTE_STATUS.PENDING
+        : null
 
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
@@ -473,6 +483,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
+          submissionNotePublicStatus,
           hitRequestId: hitRequestTime?.id || null
         })
         .returning()

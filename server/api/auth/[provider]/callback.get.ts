@@ -369,6 +369,12 @@ async function handleUserLoginOrBind(
         `/auth/error?code=ACCOUNT_GRADUATED&message=${encodeURIComponent('该账号已毕业，限制访问')}`
       )
     }
+    if (user.status === 'pending') {
+      return sendRedirect(
+        event,
+        `/auth/error?code=ACCOUNT_PENDING_APPROVAL&message=${encodeURIComponent('账号待管理员审核，请耐心等待')}`
+      )
+    }
     if (user.status !== 'active') {
       return sendRedirect(
         event,

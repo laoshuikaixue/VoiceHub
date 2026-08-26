@@ -74,6 +74,10 @@ export default defineEventHandler(async (event) => {
     throw createApiError(403, 'AUTH_ACCOUNT_GRADUATED', '该账号已毕业，限制访问')
   }
 
+  if (user.status === 'pending') {
+    throw createApiError(403, 'AUTH_USER_PENDING_APPROVAL', '账号待管理员审核，请耐心等待')
+  }
+
   if (user.status !== 'active') {
     throw createApiError(403, 'AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE', '该账号当前不可用')
   }

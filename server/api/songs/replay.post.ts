@@ -1,6 +1,7 @@
 import { and, db, desc, eq, songs, songReplayRequests, semesters, playTimes } from '~/drizzle/db'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { z } from 'zod'
 
 const replayRequestSchema = z.object({
@@ -55,7 +56,15 @@ export default defineEventHandler(async (event) => {
 
   const rawSubmissionNote = parsedBody.data.submissionNote || ''
   const submissionNote = settings.enableSubmissionRemarks && rawSubmissionNote ? rawSubmissionNote : null
-  const submissionNotePublic = submissionNote !== null ? parsedBody.data.submissionNotePublic !== false : false
+  // 公开留言审核：开关开启时申请留言不立即公开，进入待审后由管理员通过
+  const noteRequiresApproval = settings.submissionNoteRequiresApproval === true
+  const wantsPublic = submissionNote !== null ? parsedBody.data.submissionNotePublic !== false : false
+  const submissionNotePublic = noteRequiresApproval ? false : wantsPublic
+  // 仅用户勾选公开的留言进入审核，私密留言只供管理员查看
+  const submissionNotePublicStatus =
+    noteRequiresApproval && submissionNote !== null && wantsPublic
+      ? SUBMISSION_NOTE_STATUS.PENDING
+      : null
 
   // 4. 检查歌曲和学期
   const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -116,7 +125,8 @@ export default defineEventHandler(async (event) => {
       userId: user.id,
       preferredPlayTimeId: preferredPlayTime?.id || null,
       submissionNote,
-      submissionNotePublic
+      submissionNotePublic,
+      submissionNotePublicStatus
     })
     return { success: true, message: latestRequest ? '重新申请重播成功' : '申请重播成功' }
   } catch (error: any) {

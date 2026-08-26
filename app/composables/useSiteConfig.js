@@ -61,6 +61,9 @@ const siteConfig = ref({
   aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
   customOAuthDisplayName: '',
+  allowRegister: false,
+  submissionNoteRequiresApproval: false,
+  registerEmailRequired: false,
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
@@ -136,6 +139,9 @@ export const useSiteConfig = () => {
         aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
         customOAuthDisplayName: '',
+        allowRegister: false,
+        submissionNoteRequiresApproval: false,
+        registerEmailRequired: false,
         defaultTheme: 'System',
         enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
       }
@@ -172,12 +178,18 @@ export const useSiteConfig = () => {
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
   const requireCardCodeForRequests = computed(
-    () => siteConfig.value.requireCardCodeForRequests === true
+    () =>
+      enableCardCodeRequests.value && siteConfig.value.requireCardCodeForRequests === true
   )
   const enableCardCodeLimitBypass = computed(
     () => siteConfig.value.enableCardCodeLimitBypass === true
   )
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
+  const allowRegister = computed(() => siteConfig.value.allowRegister === true)
+  const registerEmailRequired = computed(() => siteConfig.value.registerEmailRequired === true)
+  const submissionNoteRequiresApproval = computed(
+    () => siteConfig.value.submissionNoteRequiresApproval === true
+  )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
@@ -259,6 +271,9 @@ export const useSiteConfig = () => {
     requireCardCodeForRequests,
     enableCardCodeLimitBypass,
     allowOAuthRegistration,
+    allowRegister,
+    submissionNoteRequiresApproval,
+    registerEmailRequired,
     captchaEnabled,
     captchaProvider,
     turnstileSiteKey,

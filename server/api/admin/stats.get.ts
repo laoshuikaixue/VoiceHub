@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, semesters, songBlacklists, songs, users } from '~/drizzle/schema'
-import { and, count, eq, gte, lt } from 'drizzle-orm'
+import { and, count, eq, gte, lt, ne } from 'drizzle-orm'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -69,9 +69,12 @@ export default defineEventHandler(async (event) => {
         return result[0].count
       })(),
 
-      // 总用户数
+      // 总用户数（排除待审核用户）
       (async () => {
-        const result = await db.select({ count: count() }).from(users)
+        const result = await db
+          .select({ count: count() })
+          .from(users)
+          .where(ne(users.status, 'pending'))
         return result[0].count
       })(),
 
@@ -167,21 +170,27 @@ export default defineEventHandler(async (event) => {
         return result[0].count
       })(),
 
-      // 本周新增用户
+      // 本周新增用户（排除待审核）
       (async () => {
         const result = await db
           .select({ count: count() })
           .from(users)
-          .where(gte(users.createdAt, weekAgo))
+          .where(and(gte(users.createdAt, weekAgo), ne(users.status, 'pending')))
         return result[0].count
       })(),
 
-      // 上周新增用户
+      // 上周新增用户（排除待审核）
       (async () => {
         const result = await db
           .select({ count: count() })
           .from(users)
-          .where(and(gte(users.createdAt, twoWeeksAgo), lt(users.createdAt, weekAgo)))
+          .where(
+            and(
+              gte(users.createdAt, twoWeeksAgo),
+              lt(users.createdAt, weekAgo),
+              ne(users.status, 'pending')
+            )
+          )
         return result[0].count
       })(),
 
@@ -255,7 +264,7 @@ export default defineEventHandler(async (event) => {
           const result = await db
             .select({ count: count() })
             .from(users)
-            .where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay)))
+            .where(and(gte(users.createdAt, startOfDay), lt(users.createdAt, endOfDay), ne(users.status, 'pending')))
           const countValue = result[0].count
 
           trends.push({

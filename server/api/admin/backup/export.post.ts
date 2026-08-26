@@ -23,6 +23,7 @@ import {
   users,
   userIdentities,
   userStatusLogs,
+  gradeClass,
   votes
 } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
@@ -292,6 +293,10 @@ export default defineEventHandler(async (event) => {
           }))
         },
         description: '用户状态变更日志'
+      },
+      gradeClass: {
+        query: () => db.select().from(gradeClass),
+        description: '年级班级配置'
       },
       userIdentities: {
         query: async () => {

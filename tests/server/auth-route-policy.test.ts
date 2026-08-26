@@ -13,6 +13,11 @@ test('匿名用户可以访问公共接口', () => {
   assert.equal(shouldBypassPublicApiAuthentication('/api/songs/public', 'GET', false), true)
 })
 
+test('OAuth 注册选项接口对匿名请求放行（binding-token 由接口自身校验）', () => {
+  assert.equal(isPublicApiPath('/api/auth/oauth-register-options', 'GET'), true)
+  assert.equal(isPublicApiPath('/api/auth/oauth-register-options', 'POST'), false)
+})
+
 test('携带登录态访问公共接口时必须经过认证检查', () => {
   assert.equal(shouldBypassPublicApiAuthentication('/api/songs/public', 'GET', true), false)
   assert.equal(shouldBypassPublicApiAuthentication('/api/site-config', 'GET', true), false)

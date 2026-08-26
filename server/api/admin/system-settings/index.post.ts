@@ -593,6 +593,68 @@ export default defineEventHandler(async (event) => {
       updateData.allowOAuthRegistration = body.allowOAuthRegistration
     }
 
+    // 注册配置字段
+    if (body.allowRegister !== undefined) {
+      if (typeof body.allowRegister !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowRegister 必须是布尔值'
+        })
+      }
+      updateData.allowRegister = body.allowRegister
+    }
+
+    if (body.registerRequiresApproval !== undefined) {
+      if (typeof body.registerRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'registerRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.registerRequiresApproval = body.registerRequiresApproval
+    }
+
+    if (body.oauthRegisterRequiresApproval !== undefined) {
+      if (typeof body.oauthRegisterRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'oauthRegisterRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.oauthRegisterRequiresApproval = body.oauthRegisterRequiresApproval
+    }
+
+    if (body.submissionNoteRequiresApproval !== undefined) {
+      if (typeof body.submissionNoteRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'submissionNoteRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.submissionNoteRequiresApproval = body.submissionNoteRequiresApproval
+    }
+
+    if (body.registerEmailRequired !== undefined) {
+      if (typeof body.registerEmailRequired !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'registerEmailRequired 必须是布尔值')
+      }
+      // 开启注册邮箱必填需前置：允许注册（或三方注册）+ SMTP 邮件服务已配置（合并提交值校验）
+      if (body.registerEmailRequired) {
+        const allowRegisterOrOAuth = Boolean(
+          body.allowRegister ?? settings?.allowRegister
+        ) || Boolean(body.allowOAuthRegistration ?? settings?.allowOAuthRegistration)
+        if (!allowRegisterOrOAuth) {
+          throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先开启允许用户注册，再启用注册邮箱必填')
+        }
+        const smtpEnabled = body.smtpEnabled ?? settings?.smtpEnabled
+        const smtpHost = body.smtpHost ?? settings?.smtpHost
+        if (!smtpEnabled || !smtpHost) {
+          throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先配置并开启 SMTP 邮件服务，再启用注册邮箱必填')
+        }
+      }
+      updateData.registerEmailRequired = body.registerEmailRequired
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string'

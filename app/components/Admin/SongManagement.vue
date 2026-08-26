@@ -464,8 +464,11 @@
       :content="submissionRemarkDialog.content"
       :is-public="submissionRemarkDialog.isPublic"
       :is-updating-public="submissionRemarkDialog.isUpdatingPublic"
+      :note-status="submissionRemarkDialog.status"
       @close="submissionRemarkDialog.show = false"
       @update:is-public="updateSubmissionNotePublic"
+      @approve="updateSubmissionNotePublicStatus('approved')"
+      @reject="updateSubmissionNotePublicStatus('rejected')"
     />
 
     <!-- 驳回歌曲对话框 -->
@@ -1243,7 +1246,8 @@ const submissionRemarkDialog = ref({
   songTitle: '',
   content: '',
   isPublic: false,
-  isUpdatingPublic: false
+  isUpdatingPublic: false,
+  status: null
 })
 
 // 驳回歌曲相关
@@ -1514,6 +1518,73 @@ const getStatusText = (song) => {
   return getNestedMessage('options', 'pending')
 }
 
+const updateSubmissionNotePublicStatus = async (status) => {
+  const dialogData = submissionRemarkDialog.value
+  if (!dialogData.songId || dialogData.isUpdatingPublic) return
+
+  // 兜底文案：避免异步回调里 getNestedMessage 因代码分割/作用域问题抛 ReferenceError
+  // 完全不调用 getNestedMessage 也能正常显示通知（避免任何作用域/死代码消除风险）
+  const fallbackText = {
+    success: status === 'approved' ? '已通过审核' : '已拒绝审核',
+    failure: '更新审核状态失败'
+  }
+  const safeMessage = (section, key, fallback) => {
+    try {
+      const text = getNestedMessage(section, key)
+      return text || fallback
+    } catch {
+      return fallback
+    }
+  }
+
+  dialogData.isUpdatingPublic = true
+
+  try {
+    const updatePayload = {
+      title: dialogData.title,
+      artist: dialogData.artist,
+      submissionNotePublicStatus: status
+    }
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
+
+    const songIndex = songs.value.findIndex((s) => s.id === dialogData.songId)
+    if (songIndex !== -1) {
+      songs.value[songIndex].submissionNotePublicStatus = status
+      if (status === 'approved') {
+        songs.value[songIndex].submissionNotePublic = true
+      }
+    }
+    dialogData.status = status
+    if (status === 'approved') {
+      dialogData.isPublic = true
+    }
+
+    if (window.$showNotification) {
+      try {
+        const successKey = status === 'rejected' ? 'remarkRejected' : 'remarkApproved'
+        window.$showNotification(safeMessage('messages', successKey, fallbackText.success), 'success')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
+    }
+  } catch (error) {
+    console.error('更新备注审核状态失败:', error)
+    if (window.$showNotification) {
+      try {
+        window.$showNotification(safeMessage('errors', 'remarkUpdateFailed', fallbackText.failure), 'error')
+      } catch (notifyErr) {
+        // 静默失败
+      }
+    }
+  } finally {
+    dialogData.isUpdatingPublic = false
+  }
+}
+
 const getCollaboratorDisplayName = (user) => {
   return user?.displayName || user?.name || user?.username || getLocaleMessage('unknownUser')
 }
@@ -1523,12 +1594,14 @@ const openSubmissionRemark = (song) => {
   submissionRemarkDialog.value = {
     show: true,
     songId: song.id,
-    replayRequestId: song.replayRequestId || null,
+    // 歌曲列表审核针对歌曲自身备注；重播备注审核从排期/重播列表发起（避免被 replayRequestId 劫持）
+    replayRequestId: null,
     title: song.title,
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
     content: song.submissionNote,
-    isPublic: song.submissionNotePublic === true
+    isPublic: song.submissionNotePublic === true,
+    status: song.submissionNotePublicStatus || null
   }
 }
 
@@ -1555,15 +1628,25 @@ const updateSubmissionNotePublic = async (isPublic) => {
     const songIndex = songs.value.findIndex((s) => s.id === dialogData.songId)
     if (songIndex !== -1) {
       songs.value[songIndex].submissionNotePublic = isPublic
+      songs.value[songIndex].submissionNotePublicStatus = isPublic ? 'approved' : null
     }
+    dialogData.status = isPublic ? 'approved' : null
 
     if (window.$showNotification) {
-      window.$showNotification(getNestedMessage('messages', 'remarkVisibilityUpdated'), 'success')
+      try {
+        window.$showNotification(safeMessage('messages', 'remarkVisibilityUpdated', '备注留言可见性已更新'), 'success')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
   } catch (error) {
     console.error('更新备注可见性失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(getNestedMessage('errors', 'remarkVisibilityUpdateFailed'), 'error')
+      try {
+        window.$showNotification(safeMessage('errors', 'remarkVisibilityUpdateFailed', '备注留言可见性更新失败'), 'error')
+      } catch (notifyErr) {
+        // 静默失败，不影响主流程
+      }
     }
     dialogData.isPublic = !isPublic
   } finally {
