@@ -49,7 +49,12 @@
 
               <div class="grid grid-cols-2 gap-3">
                 <CustomSelect v-model="form.grade" :options="gradeSelectOptions" :label="locale.approval.grade" @change="handleGradeChange" />
-                <CustomSelect v-model="form.class" :options="classSelectOptions" :label="locale.approval.class" />
+                <CustomSelect
+                  v-model="form.class"
+                  :options="classSelectOptions"
+                  :label="locale.approval.class"
+                  :disabled="!form.grade"
+                />
               </div>
 
               <div class="form-group">
@@ -153,7 +158,7 @@ const classOptions = ref([])
 const classOptionsLoaded = ref(false)
 
 const gradeSelectOptions = computed(() => [
-  { label: '', value: '' },
+  { label: locale.value?.approval?.gradeNotSet || '不设置', value: '' },
   ...[...new Set(classOptions.value.map((item) => item.grade))].map((option) => ({ label: option, value: option }))
 ])
 

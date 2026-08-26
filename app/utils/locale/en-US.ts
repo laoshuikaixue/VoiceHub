@@ -3634,6 +3634,7 @@ export const admin = {
       name: 'Name',
       grade: 'Grade',
       class: 'Class',
+      gradeNotSet: 'Not Set',
       registeredAt: 'Registered At',
       remark: 'Registration Remark',
       emptyRemark: 'Not provided',

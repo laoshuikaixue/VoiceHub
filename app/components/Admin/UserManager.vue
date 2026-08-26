@@ -2292,8 +2292,9 @@ const applyTreeFilter = (grade, className = '', stageLabel = '') => {
   classFilter.value = className
   treeFilterLabel.value = stageLabel
 
+  // 仅已退学/已毕业阶段联动状态筛选，其他阶段保留已选状态
   const nextStatus = getStageStatus(stageLabel)
-  if (nextStatus) {
+  if (nextStatus === 'withdrawn' || nextStatus === 'graduate') {
     statusFilter.value = nextStatus
   }
 

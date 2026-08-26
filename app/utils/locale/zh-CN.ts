@@ -3643,6 +3643,7 @@ export const admin = {
       name: '姓名',
       grade: '年级',
       class: '班级',
+      gradeNotSet: '不设置',
       registeredAt: '注册时间',
       remark: '注册备注',
       emptyRemark: '未填写',
