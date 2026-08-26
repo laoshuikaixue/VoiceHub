@@ -596,7 +596,8 @@ export default defineNuxtConfig({
     },
     // 公共键（会暴露到客户端）
     public: {
-      host: process.env.NUXT_PUBLIC_HOST || '', // 用于 CORS 和反向代理的主机名验证
+      // 配置后启用内部 API 的 CORS 来源校验；未配置时仅回环 Host 跳过，云平台公开 Host 仍校验
+      host: process.env.NUXT_PUBLIC_HOST || '',
       apiBase: '/api',
       oauth: {
         github: !!process.env.GITHUB_CLIENT_ID,
