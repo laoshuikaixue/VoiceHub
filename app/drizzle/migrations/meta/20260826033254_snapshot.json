@@ -1,6 +1,6 @@
 {
-  "id": "1adb7771-43cb-432b-9a7b-423638c5feda",
-  "prevId": "1e11ee30-85b1-470e-8a12-8bdba9f97d8d",
+  "id": "b91c379e-ec5e-460f-964d-a4aa9afee581",
+  "prevId": "f9ac55f1-265d-4b49-98b8-4670f7e1cff1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -222,6 +222,157 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.auth_sessions": {
+      "name": "auth_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_active_at": {
+          "name": "last_active_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "browser": {
+          "name": "browser",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "operating_system": {
+          "name": "operating_system",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "device": {
+          "name": "device",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "login_method": {
+          "name": "login_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'password'"
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_reason": {
+          "name": "revoked_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "auth_sessions_user_active_idx": {
+          "name": "auth_sessions_user_active_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "revoked_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "auth_sessions_last_active_idx": {
+          "name": "auth_sessions_last_active_idx",
+          "columns": [
+            {
+              "expression": "last_active_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "auth_sessions_user_id_User_id_fk": {
+          "name": "auth_sessions_user_id_User_id_fk",
+          "tableFrom": "auth_sessions",
+          "tableTo": "User",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2116,6 +2267,34 @@
           "primaryKey": false,
           "notNull": false
         },
+        "scheduleDaysBeforeEnabled": {
+          "name": "scheduleDaysBeforeEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "scheduleDaysBefore": {
+          "name": "scheduleDaysBefore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "scheduleDaysAfterEnabled": {
+          "name": "scheduleDaysAfterEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "scheduleDaysAfter": {
+          "name": "scheduleDaysAfter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
         "showBlacklistKeywords": {
           "name": "showBlacklistKeywords",
           "type": "boolean",
@@ -2311,6 +2490,13 @@
           "notNull": true,
           "default": true
         },
+        "registerEmailRequired": {
+          "name": "registerEmailRequired",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "submissionNoteRequiresApproval": {
           "name": "submissionNoteRequiresApproval",
           "type": "boolean",
@@ -2443,8 +2629,7 @@
           "name": "aggregateOAuthEndpoint",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": "'https://a.idcfx.net/connect.php'"
+          "notNull": false
         },
         "customOAuthEnabled": {
           "name": "customOAuthEnabled",
@@ -2552,6 +2737,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "defaultTheme": {
+          "name": "defaultTheme",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'System'"
+        },
+        "enabledThemes": {
+          "name": "enabledThemes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[\"System\",\"ClassicDark\",\"ClassicLight\",\"ModernLight\"]'"
+        },
         "enabledPlatforms": {
           "name": "enabledPlatforms",
           "type": "text",
@@ -2605,6 +2804,12 @@
         },
         "providerUsername": {
           "name": "providerUsername",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatar": {
+          "name": "avatar",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2836,6 +3041,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "avatarProvider": {
+          "name": "avatarProvider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatarProviderUserId": {
+          "name": "avatarProviderUserId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "status": {
           "name": "status",
           "type": "user_status",
@@ -2864,7 +3081,23 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "User_username_unique": {
+          "name": "User_username_unique",
+          "columns": [
+            {
+              "expression": "username",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
