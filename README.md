@@ -673,21 +673,6 @@ VoiceHub 实现了细粒度的权限控制系统：
 | NUXT_PUBLIC_HOST       | 否   | 显式配置站点外部地址后启用内部 API 的 CORS 来源校验；未配置时仅对回环 Host（反向代理常见场景）跳过，云平台公开 Host 仍校验 | `https://your-app.com` |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
-Redis 不参与歌曲、排期、点赞或用户资料缓存。迁移旧部署时可先执行 dry-run：
-
-```bash
-pnpm run redis:scan-legacy
-```
-
-确认 Redis 数据库为 VoiceHub 独占后，才可显式执行清理。PowerShell 示例：
-
-```powershell
-$env:REDIS_LEGACY_CLEANUP_CONFIRM = 'VOICEHUB'
-pnpm run redis:scan-legacy -- --apply
-```
-
-共享 Redis 默认不会自动删除；禁止使用 `FLUSHDB`。
-
 ## OAuth 配置
 
 系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录：

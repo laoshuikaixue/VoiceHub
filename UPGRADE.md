@@ -204,3 +204,22 @@ pnpm run start
 # 或使用 nohup 后台运行
 nohup pnpm run start > voicehub.log 2>&1 &
 ```
+
+---
+
+## 4. 旧 Redis 缓存键清理（可选）
+
+Redis 仅用于验证码、限流和临时安全状态，不参与歌曲、排期、点赞或用户资料缓存。从旧版本升级且曾使用 Redis 业务缓存的部署，可先执行 dry-run 检查残留键：
+
+```bash
+pnpm run redis:scan-legacy
+```
+
+确认 Redis 数据库为 VoiceHub 独占后，才可显式执行清理。PowerShell 示例：
+
+```powershell
+$env:REDIS_LEGACY_CLEANUP_CONFIRM = 'VOICEHUB'
+pnpm run redis:scan-legacy -- --apply
+```
+
+共享 Redis 默认不会自动删除；禁止使用 `FLUSHDB`。
