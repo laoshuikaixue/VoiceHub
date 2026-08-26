@@ -1130,7 +1130,6 @@
       :identities="selectedUserDetail?.identities || []"
       @close="closeOAuthBindingsModal"
     />
-    -->
 
     <!-- 用户详细信息模态框 -->
     <Transition

@@ -321,6 +321,13 @@ const handleBatchAdd = async () => {
     return
   }
 
+  // 后端批量上限 500，超限直接拦截
+  const totalItems = grades.length * classes.length
+  if (totalItems > 500) {
+    showNotification(locale.value.batchLimit, 'warning')
+    return
+  }
+
   const itemsToSend = []
   for (const grade of grades) {
     for (const studentClass of classes) {

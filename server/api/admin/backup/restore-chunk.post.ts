@@ -704,10 +704,15 @@ export default defineEventHandler(async (event) => {
             const gradeClassFields = ['grade', 'class']
             gradeClassFields.forEach((field) => {
               if (record.hasOwnProperty(field)) {
-                gradeClassData[field] = record[field]
+                gradeClassData[field] =
+                  typeof record[field] === 'string' ? record[field].trim() : record[field]
               }
             })
-            if (!gradeClassData.grade && !gradeClassData.class) break
+            // 空行直接跳过，避免空值配置行锁死配置优先校验
+            if (!gradeClassData.grade || !gradeClassData.class) {
+              stats.warnings.push(`gradeClass 记录 ${record.id ?? ''} 年级或班级为空，已跳过`)
+              break
+            }
 
             if (mode === 'merge') {
               const existingGradeClass = await tx.query.gradeClass.findFirst({
@@ -1343,21 +1348,24 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 防锁死：恢复开关前校验 SMTP 已配置，否则剥离 registerEmailRequired（避免恢复后注册必填邮箱却无法发码）
-  try {
-    const restoredSettings = await db.select().from(systemSettings).limit(1)
-    if (
-      restoredSettings[0]?.registerEmailRequired &&
-      (!restoredSettings[0]?.smtpEnabled || !restoredSettings[0]?.smtpHost)
-    ) {
-      await db
-        .update(systemSettings)
-        .set({ registerEmailRequired: false })
-        .where(eq(systemSettings.id, restoredSettings[0].id))
-      stats.warnings.push('SMTP 未配置，已剥离 registerEmailRequired，避免注册邮箱流程不可用')
+  // 防锁死：恢复系统设置块后校验 SMTP 已配置，否则剥离 registerEmailRequired
+  // （避免恢复后注册必填邮箱却无法发码）
+  if (tableName === 'systemSettings') {
+    try {
+      const restoredSettings = await db.select().from(systemSettings).limit(1)
+      if (
+        restoredSettings[0]?.registerEmailRequired &&
+        (!restoredSettings[0]?.smtpEnabled || !restoredSettings[0]?.smtpHost)
+      ) {
+        await db
+          .update(systemSettings)
+          .set({ registerEmailRequired: false })
+          .where(eq(systemSettings.id, restoredSettings[0].id))
+        stats.warnings.push('SMTP 未配置，已剥离 registerEmailRequired，避免注册邮箱流程不可用')
+      }
+    } catch (settingsError) {
+      console.error('恢复后设置一致性校验失败:', settingsError)
     }
-  } catch (settingsError) {
-    console.error('恢复后设置一致性校验失败:', settingsError)
   }
 
   return {

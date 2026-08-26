@@ -984,6 +984,8 @@ VoiceHub/
 │       │   └── qrc-parser.ts  # QRC格式解析
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
+│       ├── grade-class-input.ts # 年级班级批量输入解析
+│       ├── gradeClassWeights.js # 年级排序权重
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
@@ -992,7 +994,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
-│       ├── email-verification.ts # 注册邮箱验证码（内存存储）
+│       ├── email-verification.ts # 注册邮箱验证码
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
@@ -1130,7 +1132,7 @@ VoiceHub/
 │   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
 │   │   │       │   ├── status-logs.get.ts # 获取用户状态变更日志
 │   │   │       │   └── status.put.ts    # 更新用户状态
-│   │   │       ├── [id].approval.post.ts # 注册审核（通过/拒绝）
+│   │   │       ├── [id].approval.post.ts # 注册审核
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].get.ts      # 用户详情
@@ -1149,7 +1151,7 @@ VoiceHub/
 │   │   ├── auth/           # 认证API
 │   │   │   ├── captcha.get.ts         # 图形验证码
 │   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
-│   │   │   ├── grade-class-options.get.ts # 年级班级选项（注册表单）
+│   │   │   ├── grade-class-options.get.ts # 年级班级选项
 │   │   │   ├── email-code.post.ts # 注册邮箱验证码发送
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
@@ -1342,8 +1344,8 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
-│   │   ├── grade-class-core.ts # 年级班级选项纯函数（排序/兜底，可单测）
-│   │   ├── grade-class-options.ts # 年级班级选项提取工具（注册表单共用）
+│   │   ├── grade-class-core.ts # 年级班级选项纯函数
+│   │   ├── grade-class-options.ts # 年级班级选项提取工具
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
@@ -1362,7 +1364,8 @@ VoiceHub/
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
-│   │   ├── register-validation.ts # 注册校验纯函数（年级班级成对/备注长度）
+│   │   ├── register-validation.ts # 注册校验纯函数
+│   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具

@@ -16,6 +16,14 @@ import { notifyRegistration } from '~~/server/utils/registration-notify'
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default defineEventHandler(async (event) => {
+  // 数据库连接检查（在读取配置前执行，DB 故障时返回明确的 503）
+  try {
+    await db.select().from(users).limit(1)
+  } catch (error) {
+    console.error('Database connection error:', error)
+    throw createApiError(503, SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE, '数据库服务暂时不可用')
+  }
+
   // 检查是否允许 OAuth 注册
   const config = await db.query.systemSettings.findFirst()
   if (!config?.allowOAuthRegistration) {
@@ -43,7 +51,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (remark.length > REMARK_MAX_LENGTH) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
   }
   if (!bindingToken) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_SESSION_EXPIRED, '注册会话已过期，请重新通过第三方登录发起')
@@ -89,11 +97,6 @@ export default defineEventHandler(async (event) => {
     throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
   }
 
-  // 邮箱验证码在最后校验（此前置校验均已通过，失败即消费不会误烧码）
-  if (email && !verifyEmailCode(email, emailCode)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
-  }
-
   // 检查OAuth身份是否已被绑定
   const existingIdentity = await db.query.userIdentities.findFirst({
     where: (t, { eq, and }) =>
@@ -102,6 +105,11 @@ export default defineEventHandler(async (event) => {
 
   if (existingIdentity) {
     throw createApiError(409, SERVER_ERROR_CODES.AUTH_OAUTH_ALREADY_BOUND, '该第三方账号已被绑定，请直接登录或绑定到现有账户')
+  }
+
+  // 邮箱验证码在最后校验（前置校验通过后消费）
+  if (email && !(await verifyEmailCode(email, emailCode))) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 
   try {

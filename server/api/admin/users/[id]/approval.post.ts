@@ -112,7 +112,11 @@ export default defineEventHandler(async (event) => {
       statusChangedBy: operator.id
     }
     if (typeof body.name === 'string') {
-      updateData.name = body.name.trim()
+      const trimmedName = body.name.trim()
+      if (!trimmedName) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '姓名不能为空')
+      }
+      updateData.name = trimmedName
     }
     if (typeof body.grade === 'string') {
       updateData.grade = body.grade.trim() || null

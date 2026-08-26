@@ -143,6 +143,23 @@ async function enumValueExists(sql, enumName, enumValue) {
   return result[0]?.exists === true
 }
 
+// user_status 枚举新增值显式幂等补齐
+async function ensureUserStatusEnumValues(sql) {
+  const pendingExists = await enumValueExists(sql, 'user_status', 'pending')
+  if (!pendingExists) {
+    const withdrawnExists = await enumValueExists(sql, 'user_status', 'withdrawn')
+    if (withdrawnExists) {
+      await sql`ALTER TYPE "public"."user_status" ADD VALUE 'pending' BEFORE 'withdrawn'`
+    } else {
+      await sql`ALTER TYPE "public"."user_status" ADD VALUE 'pending'`
+    }
+  }
+  const rejectedExists = await enumValueExists(sql, 'user_status', 'rejected')
+  if (!rejectedExists) {
+    await sql`ALTER TYPE "public"."user_status" ADD VALUE 'rejected'`
+  }
+}
+
 async function tableExists(sql, tableName) {
   const result = await sql`
     SELECT EXISTS (
@@ -345,6 +362,8 @@ async function checkSchemaConsistency(sql) {
 }
 
 async function repairSchemaWithPush(sql) {
+  // 先补齐枚举值，再执行 push
+  await ensureUserStatusEnumValues(sql)
   const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
   if (
     !safeExec(pushCommand, {

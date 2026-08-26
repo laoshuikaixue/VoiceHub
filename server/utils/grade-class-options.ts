@@ -1,4 +1,4 @@
-import { and, isNotNull, eq, sql } from 'drizzle-orm'
+import { and, isNotNull, eq, ne, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users, gradeClass } from '~/drizzle/schema'
 import { resolveGradeClassOptions, type GradeClassOption } from './grade-class-core'
@@ -32,8 +32,11 @@ export async function isGradeClassValid(grade: string, studentClass: string): Pr
 
   if (configHit) return true
 
-  // 配置表非空时不再接受用户存量组合（与注册表单选项一致，防绕过配置优先）
-  const configCount = await db.select({ count: () => sql<number>`count(*)::int` }).from(gradeClass)
+  // 配置表存在有效行时不再接受用户存量组合（与注册表单选项一致，防绕过配置优先）
+  const configCount = await db
+    .select({ count: () => sql<number>`count(*)::int` })
+    .from(gradeClass)
+    .where(and(ne(gradeClass.grade, ''), ne(gradeClass.class, '')))
   if ((configCount[0]?.count || 0) > 0) return false
 
   const userHit = await db.query.users.findFirst({

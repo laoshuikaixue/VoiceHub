@@ -1137,8 +1137,13 @@ export default defineEventHandler(async (event) => {
                       case 'gradeClass':
                         // 年级班级配置（唯一约束 grade+class）
                         const gradeClassData = {
-                          grade: record.grade ?? '',
-                          class: record.class ?? ''
+                          grade: typeof record.grade === 'string' ? record.grade.trim() : '',
+                          class: typeof record.class === 'string' ? record.class.trim() : ''
+                        }
+                        // 空行直接跳过，避免空值配置行锁死配置优先校验
+                        if (!gradeClassData.grade || !gradeClassData.class) {
+                          stats.warnings.push(`gradeClass 记录 ${record.id ?? ''} 年级或班级为空，已跳过`)
+                          break
                         }
 
                         if (mode === 'merge') {

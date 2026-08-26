@@ -127,7 +127,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (remark.length > REMARK_MAX_LENGTH) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INCOMPLETE_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
   }
 
   const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
@@ -153,7 +153,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 邮箱验证码在最后校验（此时用户名等前置校验均已通过，失败即消费不会误烧码）
-  if (email && !verifyEmailCode(email, emailCode)) {
+  if (email && !(await verifyEmailCode(email, emailCode))) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
   }
 

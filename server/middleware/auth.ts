@@ -181,7 +181,7 @@ export default defineEventHandler(async (event) => {
                   ? SERVER_ERROR_CODES.AUTH_ACCOUNT_WITHDRAWN
                   : user?.status === 'graduate'
                     ? SERVER_ERROR_CODES.AUTH_ACCOUNT_GRADUATED
-                    : undefined
+                    : SERVER_ERROR_CODES.AUTH_ACCOUNT_DISABLED_OR_RESTRICTED
           }
         })
       )

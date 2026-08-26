@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
-import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
@@ -53,9 +53,7 @@ export default defineEventHandler(async (event) => {
         newStatus: userStatusLogs.newStatus,
         reason: userStatusLogs.reason,
         createdAt: userStatusLogs.createdAt,
-        operatorId: userStatusLogs.operatorId,
-        operatorName: sql`(SELECT u.name FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`,
-        operatorUsername: sql`(SELECT u.username FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`
+        operatorId: userStatusLogs.operatorId
       })
       .from(userStatusLogs)
       .leftJoin(users, eq(userStatusLogs.userId, users.id))
@@ -74,9 +72,7 @@ export default defineEventHandler(async (event) => {
           newStatus: userStatusLogs.newStatus,
           reason: userStatusLogs.reason,
           createdAt: userStatusLogs.createdAt,
-          operatorId: userStatusLogs.operatorId,
-          operatorName: sql`(SELECT u.name FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`,
-          operatorUsername: sql`(SELECT u.username FROM "User" u WHERE u.id = ${userStatusLogs.operatorId})`
+          operatorId: userStatusLogs.operatorId
         })
         .from(userStatusLogs)
         .leftJoin(users, eq(userStatusLogs.userId, users.id))
@@ -141,7 +137,7 @@ export default defineEventHandler(async (event) => {
         username: users.username
       })
       .from(users)
-      .where(eq(users.id, operatorIds[0])) // 这里需要用inArray，但先简化处理
+      .where(inArray(users.id, operatorIds))
 
     const operatorMap = new Map()
     for (const op of operators) {
@@ -170,8 +166,8 @@ export default defineEventHandler(async (event) => {
         createdAt: log.createdAt,
         operator: {
           id: log.operatorId,
-          name: operatorMap.get(log.operatorId)?.name || log.operatorName || '未知操作员',
-          username: operatorMap.get(log.operatorId)?.username || log.operatorUsername || 'unknown'
+          name: operatorMap.get(log.operatorId)?.name || '未知操作员',
+          username: operatorMap.get(log.operatorId)?.username || 'unknown'
         }
       })),
       pagination: {

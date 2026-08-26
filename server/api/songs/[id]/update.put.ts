@@ -128,6 +128,9 @@ export default defineEventHandler(async (event) => {
 
     if (shouldClearSubmissionNote) {
       updateData.submissionNote = null
+      // 清空备注时同步撤销公开与审核状态
+      updateData.submissionNotePublic = false
+      updateData.submissionNotePublicStatus = null
     } else if ('submissionNote' in body) {
       updateData.submissionNote =
         typeof body.submissionNote === 'string' && body.submissionNote.trim()
@@ -136,7 +139,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if ('submissionNotePublicStatus' in body) {
-      // 公开留言审核动作：approved=通过并公开；rejected=拒绝（保持不公开）；其他值=撤销公开
+      // 公开留言审核动作：approved=通过并公开；rejected=拒绝；null=撤销公开；其他值返回 400
       const st = body.submissionNotePublicStatus
       if (st === 'approved') {
         updateData.submissionNotePublic = true
@@ -144,9 +147,11 @@ export default defineEventHandler(async (event) => {
       } else if (st === 'rejected') {
         updateData.submissionNotePublic = false
         updateData.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.REJECTED
-      } else {
+      } else if (st === null || st === undefined) {
         updateData.submissionNotePublic = false
         updateData.submissionNotePublicStatus = null
+      } else {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '无效的公开留言审核状态')
       }
     } else if ('submissionNotePublic' in body) {
       // 兼容旧语义：置 true 视为通过审核，置 false 视为撤销公开
@@ -177,9 +182,11 @@ export default defineEventHandler(async (event) => {
           } else if (st === 'rejected') {
             replaySet.submissionNotePublic = false
             replaySet.submissionNotePublicStatus = SUBMISSION_NOTE_STATUS.REJECTED
-          } else {
+          } else if (st === null || st === undefined) {
             replaySet.submissionNotePublic = false
             replaySet.submissionNotePublicStatus = null
+          } else {
+            throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '无效的公开留言审核状态')
           }
         } else {
           const notePublic = body.submissionNotePublic === true

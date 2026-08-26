@@ -6,7 +6,13 @@ import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { SmtpService } from '~~/server/services/smtpService'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { generateEmailCode, storeEmailCode, isEmailCodeCooldownActive, cleanupExpiredEmailCodes } from '~~/server/utils/email-verification'
+import {
+  generateEmailCode,
+  storeEmailCode,
+  isEmailCodeCooldownActive,
+  isEmailCodeDailyLimitReached,
+  cleanupExpiredEmailCodes
+} from '~~/server/utils/email-verification'
 
 const EMAIL_CODE_IP_LIMIT = 10
 const EMAIL_CODE_IP_WINDOW_MS = 60 * 1000
@@ -36,8 +42,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // 同邮箱 60 秒冷却
-  if (isEmailCodeCooldownActive(email)) {
+  if (await isEmailCodeCooldownActive(email)) {
     throw createApiError(429, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_COOLDOWN, '验证码发送过于频繁，请 1 分钟后再试')
+  }
+
+  // 同一邮箱每日发送上限
+  if (await isEmailCodeDailyLimitReached(email)) {
+    throw createApiError(429, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_DAILY_LIMIT, '今日验证码发送次数已达上限，请明天再试')
   }
 
   // 邮件服务可用性检查
@@ -62,7 +73,7 @@ export default defineEventHandler(async (event) => {
   }
 
   cleanupExpiredEmailCodes()
-  storeEmailCode(email, code)
+  await storeEmailCode(email, code)
 
   return { success: true }
 })
