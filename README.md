@@ -670,7 +670,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_URL              | 否   | Redis短期状态服务连接字符串，用于验证码、限流和临时锁定 | `redis://default:password@host:port`                                                                                                            |
 | REDIS_KEY_PREFIX       | 否   | Redis键命名空间，多环境共用Redis时应分别设置            | `voicehub:v2:`                                                                                                                                  |
 | NITRO_PRESET           | 否   | Nitro预设                                               | `vercel`                                                                                                                                        |
-| NUXT_PUBLIC_HOST       | 否   | 用于 CORS 和反向代理的主机名验证                        | `your-app.com`                                                                                                                                  |
+| NUXT_PUBLIC_HOST       | 否   | 显式配置站点外部地址后启用内部 API 的 CORS 来源校验；未配置时仅对回环 Host（反向代理常见场景）跳过，云平台公开 Host 仍校验 | `https://your-app.com` |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
 Redis 不参与歌曲、排期、点赞或用户资料缓存。迁移旧部署时可先执行 dry-run：
@@ -812,6 +812,7 @@ VoiceHub/
 │   │   │   ├── TurnstileWidget.vue   # Cloudflare Turnstile验证组件
 │   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
 │   │   │   ├── OAuthQuickLogin.vue   # 微信/QQ内置浏览器快速登录按钮
+│   │   │   ├── OAuthBindReminderModal.vue # 微信/QQ内置浏览器账号密码登录绑定引导弹窗
 │   │   │   ├── TwoFactorSetup.vue    # 双重认证设置组件
 │   │   │   └── TwoFactorVerify.vue   # 双重认证验证组件
 │   │   ├── Common/            # 通用组件
@@ -902,6 +903,7 @@ VoiceHub/
 │   │   ├── useMusicSources.ts    # 音乐源管理hooks
 │   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
 │   │   ├── useNotifications.ts # 通知功能hooks
+│   │   ├── useOAuthBindReminder.ts # 微信/QQ绑定引导浏览器存储状态hooks
 │   │   ├── usePlatformConfig.ts    # 平台管理配置hooks
 │   │   ├── usePermissions.ts   # 权限管理hooks
 │   │   ├── usePasswordStrength.ts # 密码强度检测hooks

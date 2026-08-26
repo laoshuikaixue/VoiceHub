@@ -467,6 +467,7 @@ import TurnstileWidget from './TurnstileWidget.vue'
 import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
+import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
 const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, registerEmailRequired } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
@@ -744,6 +745,11 @@ const performLogin = async () => {
       method: 'POST',
       body: requestBody
     })
+
+    // 账号密码登录成功后记录来源，供微信/QQ 内置浏览器进入主页时引导绑定
+    if (!isBindMode.value && url === '/api/auth/login') {
+      useOAuthBindReminder().markPasswordLogin()
+    }
 
     // 处理 2FA
     if (response.requires2FA) {

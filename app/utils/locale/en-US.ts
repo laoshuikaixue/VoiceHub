@@ -881,6 +881,14 @@ export const pages = {
         kuaishou: 'Kuaishou'
       }
     },
+    bindReminder: {
+      title: (providerName: string) => `Bind ${providerName} for one-tap sign-in`,
+      description: (providerName: string) =>
+        `You are browsing VoiceHub inside ${providerName}, and this account is not linked to ${providerName} yet. Link it now to sign in with one tap next time.`,
+      bindNow: 'Bind Now',
+      ignore: 'Ignore',
+      neverRemind: "Don't Ask Again"
+    },
     changePasswordForm: {
       currentPassword: 'Current Password',
       currentPasswordPlaceholder: 'Enter current password',

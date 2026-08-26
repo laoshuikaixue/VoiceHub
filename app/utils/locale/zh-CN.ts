@@ -892,6 +892,14 @@ export const pages = {
         kuaishou: '快手'
       }
     },
+    bindReminder: {
+      title: (providerName: string) => `绑定${providerName}，下次一键登录`,
+      description: (providerName: string) =>
+        `检测到你正在${providerName}内访问 VoiceHub。当前账号尚未绑定${providerName}，绑定后下次可直接使用${providerName}快捷登录，无需再输入账号密码。`,
+      bindNow: '立即绑定',
+      ignore: '忽略',
+      neverRemind: '不再提示'
+    },
     changePasswordForm: {
       currentPassword: '当前密码',
       currentPasswordPlaceholder: '请输入当前密码',
