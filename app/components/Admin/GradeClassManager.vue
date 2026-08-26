@@ -46,40 +46,41 @@
         </div>
       </div>
 
-      <div class="border-t border-border-secondary pt-4">
-        <p class="text-sm font-black text-text-primary mb-2">{{ locale.batchTitle }}</p>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <div class="flex-1">
-            <input
-              v-model="batchGradeInput"
-              type="text"
-              :placeholder="locale.batchGradePlaceholder"
-              class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary transition-colors"
-            >
-          </div>
-          <div class="flex-1">
-            <input
-              v-model="batchClassInput"
-              type="text"
-              :placeholder="locale.batchClassPlaceholder"
-              class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary transition-colors"
-            >
-          </div>
-          <div class="flex items-end">
-            <button
-              type="button"
-              :disabled="batchAdding || !batchGradeInput.trim() || !batchClassInput.trim()"
-              class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-              @click="handleBatchAdd"
-            >
-              <Sparkles v-if="!batchAdding" :size="14" />
-              <RefreshCw v-else :size="14" class="animate-spin" />
-              {{ locale.batchButton }}
-            </button>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 border-t border-border-secondary pt-4">
+        <div>
+          <p class="text-sm font-black text-text-primary mb-2">{{ locale.batchTitle }}</p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-1">
+              <input
+                v-model="batchGradeInput"
+                type="text"
+                :placeholder="locale.batchGradePlaceholder"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary transition-colors"
+              >
+            </div>
+            <div class="flex-1">
+              <input
+                v-model="batchClassInput"
+                type="text"
+                :placeholder="locale.batchClassPlaceholder"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary transition-colors"
+              >
+            </div>
+            <div class="flex items-end">
+              <button
+                type="button"
+                :disabled="batchAdding || !batchGradeInput.trim() || !batchClassInput.trim()"
+                class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                @click="handleBatchAdd"
+              >
+                <Sparkles v-if="!batchAdding" :size="14" />
+                <RefreshCw v-else :size="14" class="animate-spin" />
+                {{ locale.batchButton }}
+              </button>
+            </div>
           </div>
         </div>
-
-        <div class="border-t border-border-secondary pt-4">
+        <div class="lg:border-l lg:border-border-secondary lg:pl-5">
           <p class="text-sm font-black text-text-primary mb-2">{{ locale.initTitle }}</p>
           <p class="text-xs text-text-tertiary mb-3">{{ locale.initDesc }}</p>
           <button
