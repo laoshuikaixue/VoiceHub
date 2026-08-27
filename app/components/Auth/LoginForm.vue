@@ -102,7 +102,7 @@
             :options="gradeSelectOptions"
             :disabled="classOptionsLoading || gradeOptions.length === 0"
             :label="locale.gradeLabel"
-            :placeholder="locale.optional"
+            :placeholder="registerRequiresGradeClass ? locale.selectGrade : locale.optional"
             class-name="class-select"
             @change="handleGradeChange"
           />
@@ -117,7 +117,15 @@
           />
         </div>
         <p class="hint-text">
-          {{ gradeOptions.length > 0 ? locale.classHint : locale.noClassHint }}
+          {{
+            gradeOptions.length > 0
+              ? registerRequiresGradeClass
+                ? locale.classHintRequired
+                : locale.classHint
+              : registerRequiresGradeClass
+                ? locale.noClassHintRequired
+                : locale.noClassHint
+          }}
         </p>
       </div>
 
@@ -469,7 +477,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, registerEmailRequired } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, registerEmailRequired, registerRequiresGradeClass } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -567,10 +575,10 @@ const gradeOptions = computed(() => {
 })
 
 const gradeSelectOptions = computed(() => {
-  return [
-    { label: locale.value.optional, value: '' },
-    ...gradeOptions.value.map(option => ({ label: option, value: option }))
-  ]
+  const options = gradeOptions.value.map((option) => ({ label: option, value: option }))
+  // 站点开启"注册时必须选择年级班级"时，去掉"不填写"空选项
+  if (registerRequiresGradeClass.value) return options
+  return [{ label: locale.value.optional, value: '' }, ...options]
 })
 
 const availableClassOptions = computed(() => {
@@ -607,6 +615,17 @@ const fetchClassOptions = async () => {
 const handleGradeChange = () => {
   error.value = ''
   studentClass.value = ''
+}
+
+// 年级班级校验：站点开启必填时二者均须选择；未开启时二者成对填写或全部留空
+const gradeClassRequiredError = () => {
+  if (registerRequiresGradeClass.value && (!grade.value || !studentClass.value)) {
+    return locale.value.gradeClassRequiredByConfig
+  }
+  if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
+    return locale.value.gradeClassRequired
+  }
+  return ''
 }
 
 const redirectAfterLogin = async () => {
@@ -688,8 +707,9 @@ const handleLogin = async () => {
       error.value = locale.value.fullRegisterInfo
       return
     }
-    if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
-      error.value = locale.value.gradeClassRequired
+    const gradeClassError = gradeClassRequiredError()
+    if (gradeClassError) {
+      error.value = gradeClassError
       return
     }
     return handleRegister()
@@ -701,8 +721,9 @@ const handleLogin = async () => {
       error.value = locale.value.fullRegisterInfo
       return
     }
-    if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
-      error.value = locale.value.gradeClassRequired
+    const gradeClassError = gradeClassRequiredError()
+    if (gradeClassError) {
+      error.value = gradeClassError
       return
     }
     return handleRegisterOAuth()

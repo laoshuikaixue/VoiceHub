@@ -655,6 +655,22 @@ export default defineEventHandler(async (event) => {
       updateData.registerEmailRequired = body.registerEmailRequired
     }
 
+    if (body.registerRequiresGradeClass !== undefined) {
+      if (typeof body.registerRequiresGradeClass !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'registerRequiresGradeClass 必须是布尔值')
+      }
+      // 开启注册必选年级班级需前置：允许注册（或第三方注册）已开启（合并提交值校验）
+      if (body.registerRequiresGradeClass) {
+        const allowRegisterOrOAuth = Boolean(
+          body.allowRegister ?? settings?.allowRegister
+        ) || Boolean(body.allowOAuthRegistration ?? settings?.allowOAuthRegistration)
+        if (!allowRegisterOrOAuth) {
+          throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先开启允许用户注册或第三方注册，再启用注册时必须选择年级班级')
+        }
+      }
+      updateData.registerRequiresGradeClass = body.registerRequiresGradeClass
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string'

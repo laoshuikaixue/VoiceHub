@@ -642,6 +642,20 @@
                   class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
                 />
               </div>
+
+              <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresGradeClass }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresGradeClassDesc }}</p>
+                </div>
+                <input
+                  id="register-requires-grade-class"
+                  v-model="formData.registerRequiresGradeClass"
+                  type="checkbox"
+                  :disabled="!formData.allowRegister && !formData.allowOAuthRegistration"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
@@ -900,6 +914,7 @@ const formData = ref({
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
   registerEmailRequired: false,
+  registerRequiresGradeClass: false,
   smtpEnabled: false,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
@@ -1038,6 +1053,7 @@ const loadConfig = async () => {
       registerRequiresApproval: data.registerRequiresApproval !== false,
       oauthRegisterRequiresApproval: data.oauthRegisterRequiresApproval !== false,
       registerEmailRequired: data.registerEmailRequired === true,
+      registerRequiresGradeClass: data.registerRequiresGradeClass === true,
       smtpEnabled: !!data.smtpEnabled,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',

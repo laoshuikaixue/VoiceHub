@@ -71,6 +71,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
   registerEmailRequired: false,
+  registerRequiresGradeClass: false,
   submissionNoteRequiresApproval: false,
   captchaEnabled: false, // 默认关闭图形验证码
   captchaMaxFailures: 3, //触发阈值
@@ -120,6 +121,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'registerRequiresApproval',
   'oauthRegisterRequiresApproval',
   'registerEmailRequired',
+  'registerRequiresGradeClass',
   'submissionNoteRequiresApproval',
   'githubOAuthEnabled',
   'casdoorOAuthEnabled',

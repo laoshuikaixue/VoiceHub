@@ -1,0 +1,1 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "registerRequiresGradeClass" boolean DEFAULT false NOT NULL;
