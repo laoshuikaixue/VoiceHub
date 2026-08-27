@@ -122,6 +122,7 @@ export const useSiteConfig = () => {
         icpNumber: '',
         gonganNumber: '',
         enableReplayRequests: false,
+        enableSubmissionRestriction: false,
         enableCollaborativeSubmission: true,
         enableSubmissionRemarks: false,
         allowOAuthRegistration: false,
@@ -171,6 +172,9 @@ export const useSiteConfig = () => {
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
   const showBeianIcon = computed(() => siteConfig.value.showBeianIcon || false)
   const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
+  const enableSubmissionRestriction = computed(
+    () => siteConfig.value.enableSubmissionRestriction === true
+  )
   const enableCollaborativeSubmission = computed(
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
@@ -264,6 +268,7 @@ export const useSiteConfig = () => {
     gonganNumber,
     showBeianIcon,
     enableReplayRequests,
+    enableSubmissionRestriction,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
     enableSubmissionLimit,

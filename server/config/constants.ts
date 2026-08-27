@@ -415,6 +415,10 @@ export const MUSIC_PLATFORMS = {
 // 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/utils/platforms.ts）
 export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
 
+// 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
+export const SONG_DURATION_MIN_SECONDS = 0
+export const SONG_DURATION_MAX_SECONDS = 7200
+
 // 主题白名单（主题管理校验用；新增主题需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/composables/useTheme.ts）
 export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const
 export const DEFAULT_THEMES = [...THEMES]

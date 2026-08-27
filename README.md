@@ -1318,7 +1318,7 @@ VoiceHub/
 │   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
-│   │   ├── durationValidationService.ts # 歌曲时长验证服务
+│   │   ├── durationValidationService.ts # 歌曲时长校验与补齐服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
@@ -1365,6 +1365,7 @@ VoiceHub/
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
+│   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
@@ -1376,6 +1377,7 @@ VoiceHub/
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
+│   │   ├── submission-restriction-policy.ts # 重复投稿限制模式判定
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
@@ -1408,6 +1410,8 @@ VoiceHub/
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
+│       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
+│       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
 │       ├── token-version-policy.test.ts # 令牌版本策略测试
 │       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义

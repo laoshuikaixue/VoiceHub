@@ -720,9 +720,9 @@
                         >
                         <span v-else class="similar-text">{{ locale.songExists }}</span>
 
-                        <!-- 管理员可直接重复投稿；普通用户仅可申请重播已播放歌曲。 -->
+                        <!-- 管理员或未开启重复投稿限制时可直接重复投稿；否则普通用户仅可申请重播已播放歌曲。 -->
                         <button
-                          v-if="auth.isAdmin.value"
+                          v-if="auth.isAdmin.value || (siteConfigLoaded && !enableSubmissionRestriction)"
                           :disabled="
                             !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
                           "
@@ -1507,6 +1507,7 @@ const {
   guidelines: submissionGuidelines,
   initSiteConfig,
   enableReplayRequests,
+  enableSubmissionRestriction,
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
   enableSubmissionLimit,
@@ -3438,64 +3439,38 @@ const submitSong = async (result, options = {}) => {
 
   let replayTargetSong = null
 
-  // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
+  // 重播申请需要定位到本学期内已播放的原歌曲；多P 视频按完整 musicId 精确匹配，其余平台由 getSimilarSong 归一化回退
   if (
+    options.replayRequest === true &&
     !auth.isAdmin.value &&
     auth.isAuthenticated.value &&
     songService.songs.value &&
-    songService.songs.value.length > 0
+    songService.songs.value.length > 0 &&
+    platform.value === 'bilibili' &&
+    result.musicId
   ) {
-    // 对于哔哩哔哩多P视频，使用 musicId 进行精确匹配
-    if (platform.value === 'bilibili' && result.musicId) {
-      // 构建完整的 musicId
-      let fullMusicId = String(result.musicId)
-      if (options.isBilibiliEpisode && options.episode) {
-        const bvId = fullMusicId.split(':')[0]
-        const musicIdParts = [bvId, options.episode.cid]
-        if (options.episode.page && Number(options.episode.page) > 1) {
-          musicIdParts.push(String(options.episode.page))
-        }
-        fullMusicId = musicIdParts.join(':')
+    let fullMusicId = String(result.musicId)
+    if (options.isBilibiliEpisode && options.episode) {
+      const bvId = fullMusicId.split(':')[0]
+      const musicIdParts = [bvId, options.episode.cid]
+      if (options.episode.page && Number(options.episode.page) > 1) {
+        musicIdParts.push(String(options.episode.page))
       }
-
-      // 检查是否已有相同 musicId 的歌曲
-      const existingSong = songService.songs.value.find(
-        (song) => isBilibiliSong(song) && song.musicId === fullMusicId
-      )
-
-      if (existingSong) {
-        if (options.replayRequest === true && existingSong.played) {
-          replayTargetSong = existingSong
-        }
-        const allowOverride = options.replayRequest === true && existingSong.played
-        if (!allowOverride) {
-          if (window.$showNotification) {
-            window.$showNotification(locale.value.notifications.duplicateSong, 'warning')
-          }
-          return
-        }
-      }
-    } else {
-      // 对于其他平台，使用标题和艺术家进行匹配
-      const existingSong = songService.songs.value.find(
-        (song) =>
-          song.title.toLowerCase() === songTitle.toLowerCase() &&
-          song.artist.toLowerCase() === songArtist.toLowerCase()
-      )
-
-      if (existingSong) {
-        if (options.replayRequest === true && existingSong.played) {
-          replayTargetSong = existingSong
-        }
-        const allowOverride = options.replayRequest === true && existingSong.played
-        if (!allowOverride) {
-          if (window.$showNotification) {
-            window.$showNotification(locale.value.notifications.duplicateSong, 'warning')
-          }
-          return
-        }
-      }
+      fullMusicId = musicIdParts.join(':')
     }
+
+    replayTargetSong =
+      songService.songs.value.find(
+        (song) => isBilibiliSong(song) && song.musicId === fullMusicId && song.played
+      ) || null
+  }
+
+  // 能否投稿由服务端预检结论决定（区分本学期查重与排期冷却窗口两种模式，且已随开关关闭放行）
+  if (!auth.isAdmin.value && isSongBlockedByRestriction(result)) {
+    if (window.$showNotification) {
+      window.$showNotification(getRestrictionMessage(getRestrictionReason(result)), 'warning')
+    }
+    return
   }
 
   submitting.value = true

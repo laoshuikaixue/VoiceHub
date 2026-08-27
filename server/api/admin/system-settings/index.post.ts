@@ -1013,7 +1013,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 重复投稿限制交叉校验：未设置时长时保留本学期同一首歌不可重复投稿的旧规则。
+    // 重复投稿限制交叉校验：开关关闭即完全不做限制；开启且未设置时长时沿用本学期同一首歌不可重复投稿的旧规则。
     const nextSameSongHours = body.sameSongRestrictionHours !== undefined
       ? body.sameSongRestrictionHours
       : settings?.sameSongRestrictionHours ?? null

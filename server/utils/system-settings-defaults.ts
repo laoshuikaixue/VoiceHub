@@ -106,6 +106,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'showBlacklistKeywords',
   'hideStudentInfo',
   'enableReplayRequests',
+  'enableSubmissionRestriction',
   'enableCollaborativeSubmission',
   'enableSubmissionRemarks',
   'enableCardCodeRequests',
