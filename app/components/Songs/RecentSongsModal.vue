@@ -229,6 +229,7 @@ import { getRecentSongs } from '~/utils/neteaseApi'
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => {
   const base = songsLocale.value?.mediaModals || {}
@@ -262,17 +263,6 @@ const songService = useSongs()
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
-
-// 标准化字符串
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
-    .trim()
-}
 
 // 检查是否已存在相似歌曲
 const getSimilarSong = (songData) => {

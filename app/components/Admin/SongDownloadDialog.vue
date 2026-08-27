@@ -735,12 +735,7 @@ const isRetryableDownloadError = (error) => {
   )
 }
 
-const resolveDownloadAudioCandidate = async (
-  song,
-  quality,
-  excludeSources = [],
-  ignoreProvidedUrl = false
-) => {
+const requestMusicUrlCandidate = async (song, quality, excludeSources, ignoreProvidedUrl) => {
   const platform = getSongPlatform(song)
   const result = await getMusicUrlResult(
     platform,
@@ -754,6 +749,25 @@ const resolveDownloadAudioCandidate = async (
   }
 
   return result
+}
+
+// 音源解析串行化：批量下载时逐首解析链接，避免并发集中请求触发音源风控；音频拉流不受影响
+let urlResolveQueue = Promise.resolve()
+const resolveDownloadAudioCandidate = (
+  song,
+  quality,
+  excludeSources = [],
+  ignoreProvidedUrl = false
+) => {
+  const task = urlResolveQueue.then(() =>
+    requestMusicUrlCandidate(song, quality, excludeSources, ignoreProvidedUrl)
+  )
+  // 链尾吞掉结果与错误，保证后续排队任务不被单个解析失败阻断
+  urlResolveQueue = task.then(
+    () => undefined,
+    () => undefined
+  )
+  return task
 }
 
 const withDownloadSourceFallback = async (song, quality, executor) => {

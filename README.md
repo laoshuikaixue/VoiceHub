@@ -896,6 +896,7 @@ VoiceHub/
 │   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSafeLocale.ts    # 安全 i18n 文本包装hooks
+│   │   ├── useScrollMemory.ts  # 页面滚动位置记忆hooks
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
@@ -956,6 +957,8 @@ VoiceHub/
 │   └── utils/                 # 工具函数
 │       ├── core/              # 核心工具
 │       │   └── security.ts    # 安全相关工具
+│       ├── data/                # 生成的数据表
+│       │   └── cjkT2sMap.ts    # 繁→简单字映射表
 │       ├── locale/            # 国际化语言资源
 │       │   ├── en-US.ts       # 英文语言包
 │       │   ├── index.ts       # 语言状态、切换及回退逻辑
@@ -979,6 +982,7 @@ VoiceHub/
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
+│       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── email-verification.ts # 注册邮箱验证码

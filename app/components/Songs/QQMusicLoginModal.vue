@@ -43,7 +43,7 @@
           <div class="flex flex-col items-center p-8 pt-4">
             <div class="flex min-h-[250px] w-full flex-col items-center justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
-                <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
+                <AppSpinner :size="48" class="mb-4" />
                 <p class="text-[10px] font-bold uppercase tracking-widest">{{ locale.loadingQr }}</p>
               </div>
 
@@ -51,7 +51,11 @@
                 <div
                   class="rounded-3xl bg-bg-secondary p-4 shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
                 >
-                  <img :src="qrImg" alt="QQ Music Login QR Code" class="h-44 w-44 object-contain" >
+                  <img
+                    :src="qrImg"
+                    alt="QQ Music Login QR Code"
+                    class="h-44 w-44 rounded-2xl object-contain"
+                  >
                 </div>
 
                 <div
@@ -124,6 +128,7 @@
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 const { songs } = useLocale()

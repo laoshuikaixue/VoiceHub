@@ -211,6 +211,7 @@ import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
+import { useScrollMemory } from '~/composables/useScrollMemory'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
@@ -226,6 +227,10 @@ definePageMeta({
 
 // 响应式数据
 const activeTab = ref('overview')
+
+// 各面板滚动位置独立记忆与恢复
+useScrollMemory(() => activeTab.value)
+
 const currentUser = ref(null)
 const sidebarOpen = ref(false)
 const showBackToTop = ref(false)

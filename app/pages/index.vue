@@ -852,6 +852,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 import { useTheme } from '~/composables/useTheme'
 import { useThemeImage } from '~/composables/useThemeImage'
+import { useScrollMemory } from '~/composables/useScrollMemory'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
@@ -1064,6 +1065,9 @@ onUnmounted(() => {
 
 // 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
+
+// 各标签页滚动位置独立记忆与恢复
+useScrollMemory(() => activeTab.value)
 
 const tabOrder = ['schedule', 'songs', 'request', 'notification']
 const activeIndex = computed(() => {

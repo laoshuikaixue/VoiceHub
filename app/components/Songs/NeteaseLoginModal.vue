@@ -44,7 +44,7 @@
           <div class="p-8 pt-4 flex flex-col items-center">
             <div class="w-full flex flex-col items-center min-h-[250px] justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
-                <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
+                <AppSpinner :size="48" class="mb-4" />
                 <p class="font-bold uppercase tracking-widest text-[10px]">{{ locale.loadingQr }}</p>
               </div>
 
@@ -52,7 +52,11 @@
                 <div
                   class="p-4 bg-bg-secondary rounded-3xl shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
                 >
-                  <img :src="qrImg" alt="Login QR Code" class="w-44 h-44 object-contain" >
+                  <img
+                    :src="qrImg"
+                    alt="Login QR Code"
+                    class="w-44 h-44 rounded-2xl object-contain"
+                  >
                 </div>
 
                 <div
@@ -121,6 +125,7 @@
 <script lang="ts" setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 interface Props {

@@ -275,6 +275,7 @@ import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useLocale } from '~/utils/locale'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 
 const props = defineProps({
   show: Boolean,
@@ -309,17 +310,6 @@ const songService = useSongs()
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
-
-// 标准化字符串
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
-    .trim()
-}
 
 // 检查是否已存在相似歌曲
 const getSimilarSong = (songData) => {

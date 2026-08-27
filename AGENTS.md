@@ -54,7 +54,8 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 搜索结果含 `actualMusicPlatform` 字段
 
 ### 3.3. 字符串匹配
-- `normalizeStr` / `normalizeString`：先移除 `feat.`/`ft.`（单词边界），再移除标点和空格，最后 `&`/`＆` → `and`
+- 归一化唯一权威实现: `app/utils/song-name-normalize.ts` 的 `normalizeForMatch`（`server/utils` 下同名文件仅转发导出；前端组件禁止内联重复实现）
+- 口径: 先繁→简（`toSimplifiedChinese`，映射表 `app/utils/data/cjkT2sMap.ts` 由 OpenCC 数据自动生成、禁止手工编辑），再按单词边界移除 `feat.`/`ft.`，然后移除标点和空格，最后 `&`/`＆` → `and`
 
 ### 3.4. 专辑详情
 - `AlbumDetailsModal.vue`：仅网易云支持，使用 `AbortController` 防止竞态

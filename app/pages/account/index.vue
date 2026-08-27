@@ -444,6 +444,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { getProviderDisplayName } from '~/utils/oauth'
+import { useScrollMemory } from '~/composables/useScrollMemory'
 
 const auth = useAuth()
 const router = useRouter()
@@ -453,6 +454,8 @@ const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { currentLocale, pages } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => pages.value?.account || {})
+// 记忆并恢复页面滚动位置
+useScrollMemory()
 const getAccountText = (path, ...args) => {
   const value = String(path).split('.').reduce((target, key) => target?.[key], locale.value?.personalApiKey)
   return formatLocaleValue(value, ...args)

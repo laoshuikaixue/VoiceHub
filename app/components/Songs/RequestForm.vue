@@ -1437,6 +1437,7 @@ import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { renderMarkdown } from '~/utils/markdown'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -2544,17 +2545,6 @@ const handleEpisodeVote = async (episode) => {
 }
 
 // 检查搜索结果是否已存在完全匹配的歌曲
-// 标准化字符串（与useSongs中的逻辑保持一致）
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .trim()
-}
-
 const getSimilarSong = (result) => {
   // 多P视频不在这里检查相似性，使用专门的 getBilibiliEpisodeStatus
   if (isBilibiliMultiP(result)) {

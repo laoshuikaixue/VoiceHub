@@ -297,6 +297,7 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
+import { normalizeForMatch as normalizeStr } from '~/utils/song-name-normalize'
 
 const props = defineProps({
   show: Boolean,
@@ -501,16 +502,6 @@ const isCurrentSong = (song) => {
   // 使用 songmid 匹配
   return String(currentSong.value.musicId) === String(song.songmid) ||
          String(currentSong.value.id) === String(song.songmid)
-}
-
-const normalizeStr = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .trim()
 }
 
 const submittedSongsMap = computed(() => {
