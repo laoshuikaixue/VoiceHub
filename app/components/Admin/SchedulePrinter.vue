@@ -1439,9 +1439,9 @@ const preprocessImages = async (element) => {
       img.style.setProperty('object-fit', 'contain', 'important')
       img.style.setProperty('border-radius', '4px', 'important')
     } else if (img.classList.contains('song-cover')) {
-      // 歌曲封面保持固定尺寸
-      img.style.setProperty('width', '40px', 'important')
-      img.style.setProperty('height', '40px', 'important')
+      // 尺寸跟随 .cover-section，硬写 40px 会被全局 img max-width 夹窄导致非正方形
+      img.style.setProperty('width', '100%', 'important')
+      img.style.setProperty('height', '100%', 'important')
       img.style.setProperty('object-fit', 'cover', 'important')
       img.style.setProperty('border-radius', '4px', 'important')
     }
@@ -1766,6 +1766,8 @@ onMounted(async () => {
     const { startDate, endDate } = calculateDateRange(settings.value.dateRangePreset)
     settings.value.startDate = startDate
     settings.value.endDate = endDate
+  } else {
+    setDateRange('today')
   }
   loadSchedules()
 })
