@@ -188,7 +188,7 @@ const isExpired = ref(false)
 const scanned = ref(false)
 const errorMessage = ref('')
 const checking = ref(false)
-// 登录渠道：qq=传统扫码（手机 QQ），wx=微信开放平台扫码
+// 登录渠道：qq、wx
 const channel = ref('qq')
 // 弹窗开关标记：防止关闭后在飞的长轮询响应继续触发下一轮
 let isOpen = false
