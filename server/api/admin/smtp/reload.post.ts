@@ -19,7 +19,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     const smtpService = SmtpService.getInstance()
-    const initialized = await smtpService.initializeSmtpConfig()
+    // 强制重载：transporter 已存在时默认早退，无法刷新已变更的配置
+    const initialized = await smtpService.initializeSmtpConfig(true)
 
     return {
       success: true,

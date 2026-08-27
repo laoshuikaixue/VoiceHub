@@ -1,4 +1,6 @@
 import { SmtpService } from '~~/server/services/smtpService'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { SMTP_PASSWORD_MASK } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
@@ -52,10 +54,11 @@ export default defineEventHandler(async (event) => {
     const originalTransporter = smtpService.transporter
 
     try {
-      // 如果密码是掩码，则使用原始配置中的密码
+      // 客户端仅持有掩码时，从数据库读取真实密码，避免依赖内存单例的初始化状态（冷启动竞态/陈旧配置）
+      const storedSettings = await getSystemSettingsCached()
       const testPassword =
-        body.smtpPassword === '****************'
-          ? originalConfig?.auth?.pass || body.smtpPassword
+        body.smtpPassword === SMTP_PASSWORD_MASK
+          ? storedSettings?.smtpPassword || ''
           : body.smtpPassword
 
       // 设置测试配置

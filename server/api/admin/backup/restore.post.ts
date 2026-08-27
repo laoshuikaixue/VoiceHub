@@ -2646,7 +2646,8 @@ export default defineEventHandler(async (event) => {
 
     try {
       const smtpService = SmtpService.getInstance()
-      const initialized = await smtpService.initializeSmtpConfig()
+      // 强制重载：备份恢复会替换 SMTP 配置，transporter 已存在时默认早退会导致仍用旧凭据
+      const initialized = await smtpService.initializeSmtpConfig(true)
       if (!initialized) {
         restoreResults.details.warnings = restoreResults.details.warnings || []
         restoreResults.details.warnings.push('SMTP未启用或配置不完整，SMTP实例已重置')
