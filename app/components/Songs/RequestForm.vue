@@ -296,7 +296,7 @@
                       class="action-btn-compact"
                       :title="locale.playlist"
                       type="button"
-                      @click="showPlaylistModal = true"
+                      @click="openPlaylistModal('netease')"
                     >
                       <Icon :size="14" name="playlist" />
                       <span>{{ locale.playlist }}</span>
@@ -371,6 +371,14 @@
                   </div>
 
                   <div class="user-actions-row">
+                    <button
+                      class="action-btn-compact"
+                      :title="locale.playlist"
+                      type="button"
+                      @click="openPlaylistModal('tencent')"
+                    >
+                      <Icon :size="14" name="playlist" />
+                    </button>
                     <button
                       class="action-btn-compact"
                       :aria-label="locale.exportCookie"
@@ -963,7 +971,8 @@
     <!-- 歌单选择弹窗 -->
     <PlaylistSelectionModal
       ref="playlistModalRef"
-      :cookie="neteaseCookie"
+      :cookie="playlistModalPlatform === 'tencent' ? qqMusicCookie : neteaseCookie"
+      :platform="playlistModalPlatform"
       :show="showPlaylistModal"
       :uid="neteaseUser?.userId || neteaseUser?.id"
       @close="showPlaylistModal = false"
@@ -1589,6 +1598,13 @@ const podcastCookie = ref('')
 
 const showRecentSongsModal = ref(false)
 const showPlaylistModal = ref(false)
+// 当前打开歌单弹窗对应的音源平台，决定弹窗内数据获取分支
+const playlistModalPlatform = ref('netease')
+
+const openPlaylistModal = (platform) => {
+  playlistModalPlatform.value = platform
+  showPlaylistModal.value = true
+}
 const showUserSearchModal = ref(false)
 const collaborators = ref([])
 

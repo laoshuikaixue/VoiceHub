@@ -984,6 +984,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
+│       ├── qqUserLibrary.ts   # QQ音乐用户资料库（歌单/最近播放）
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── email-verification.ts # 注册邮箱验证码
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
@@ -1195,7 +1196,9 @@ VoiceHub/
 │   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
 │   │   │   │   ├── check-cookie.post.ts # 校验QQ音乐登录Cookie有效性
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
-│   │   │   │   └── login-qr.get.ts  # 获取登录二维码
+│   │   │   │   ├── login-qr.get.ts  # 获取登录二维码
+│   │   │   │   ├── playlist-songs.post.ts # 获取QQ音乐歌单内歌曲
+│   │   │   │   └── playlists.post.ts # 获取用户创建与收藏的歌单
 │   │   │   └── search/              # 搜索API
 │   │   │       ├── mg.get.ts        # 咪咕音乐搜索
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
