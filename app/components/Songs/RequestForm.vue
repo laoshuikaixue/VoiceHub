@@ -2402,12 +2402,20 @@ const validateQqCookie = async (cookie) => {
   return res?.data || {}
 }
 
+// 持久化服务端返回的 VIP 状态，供取链优先级判断（仅 VIP 时优先官方链路）
+const persistQqVipFlag = (data) => {
+  if (typeof data?.isVip !== 'boolean' || !import.meta.client) return
+  localStorage.setItem('qq_music_vip', data.isVip ? '1' : '0')
+}
+
 // 用服务端校验结果补全真实昵称与头像，仅在有增量时更新
 const refreshQqProfileFromServer = async (cookie) => {
   if (!cookie) return
   try {
     const data = await validateQqCookie(cookie)
-    if (!data.valid || !(data.user?.nickname || data.user?.avatarUrl)) return
+    if (!data.valid) return
+    persistQqVipFlag(data)
+    if (!(data.user?.nickname || data.user?.avatarUrl)) return
 
     const mergedUser = { ...(qqMusicUser.value || {}), ...data.user }
     applyQqMusicUser(mergedUser)
@@ -2441,6 +2449,7 @@ const checkQQMusicLoginStatus = async () => {
   try {
     const data = await validateQqCookie(cookie)
     if (data.valid) {
+      persistQqVipFlag(data)
       await refreshQqProfileFromServer(cookie)
     } else {
       if (window.$showNotification) {
@@ -2477,6 +2486,7 @@ const handleLogoutQQMusic = () => {
   if (import.meta.client) {
     localStorage.removeItem('qq_music_cookie')
     localStorage.removeItem('qq_music_user')
+    localStorage.removeItem('qq_music_vip')
   }
 }
 

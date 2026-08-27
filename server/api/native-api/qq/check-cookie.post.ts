@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       data: {
         valid: result.valid,
+        isVip: result.isVip,
         signals: result.signals,
         user: result.profile
           ? {

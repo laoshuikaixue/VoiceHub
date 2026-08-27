@@ -61,7 +61,20 @@ const QQ_PLAY_FILE_TYPE_MAP: Record<string, { prefix: string; suffix: string }> 
   m4a: { prefix: 'C400', suffix: '.m4a' },
   '128': { prefix: 'M500', suffix: '.mp3' },
   '320': { prefix: 'M800', suffix: '.mp3' },
-  flac: { prefix: 'F000', suffix: '.flac' }
+  flac: { prefix: 'F000', suffix: '.flac' },
+  hires: { prefix: 'RS01', suffix: '.flac' }
+}
+
+// 原生直连链路音质档位，自高到低；批量请求时按请求档位起向下降级
+const QQ_OFFICIAL_QUALITY_ORDER = ['hires', 'flac', '320', '128', 'm4a']
+
+// 原生直连音质映射：11/14（master）可解析 Hi-Res FLAC，区别于 SDK 链路
+const QQ_OFFICIAL_QUALITY_MAP: Record<string, string> = {
+  ...QQ_SDK_QUALITY_MAP,
+  '11': 'hires',
+  '14': 'hires',
+  master: 'hires',
+  hires: 'hires'
 }
 
 const unwrapQqSdkResponse = (response: QqSdkResponse, fallbackMessage: string) => {
@@ -235,7 +248,9 @@ const buildQqOfficialPlayUrl = (
 }
 
 const resolveQqVkeyUin = (cookieObject: Record<string, string>) => {
-  return cookieObject.uin || '0'
+  // 兼容 uin 仅存于 qqmusic_uin 的会话；与资料链路一致，剥离 openid 的 o 前缀
+  const raw = cookieObject.uin || cookieObject.qqmusic_uin || ''
+  return raw ? raw.replace(/^o/i, '') : '0'
 }
 
 const requestQqOfficialVkey = async (
@@ -274,14 +289,18 @@ const requestQqOfficialVkey = async (
 
 const parseQqOfficialPlayUrl = (
   response: Record<string, any> | undefined,
-  songmid: string,
+  filenames: string[],
   guid: string
 ) => {
   const data = response?.req_0?.data
   const domain = pickPlayableDomain(data?.sip)
   const midurlinfo = Array.isArray(data?.midurlinfo) ? data.midurlinfo : []
-  const info = midurlinfo.find((item: Record<string, any>) => item?.songmid === songmid) ||
-    midurlinfo[0]
+
+  // 按候选顺位取第一个拿到直链的音质（降级命中）
+  let info = filenames
+    .map((filename) => midurlinfo.find((item: Record<string, any>) => item?.filename === filename))
+    .find((item) => item && (item.purl || item.vkey))
+  info = info || midurlinfo.find((item: Record<string, any>) => item?.purl || item?.vkey)
   const url = buildQqOfficialPlayUrl(domain, info, guid)
 
   return {
@@ -292,13 +311,13 @@ const parseQqOfficialPlayUrl = (
 
 const createQqOfficialVkeyPayload = ({
   songmid,
-  filename,
+  filenames,
   guid,
   uin,
   authst
 }: {
   songmid: string
-  filename: string
+  filenames: string[]
   guid: string
   uin: string
   authst?: string
@@ -308,10 +327,10 @@ const createQqOfficialVkeyPayload = ({
       module: 'vkey.GetVkeyServer',
       method: 'CgiGetVkey',
       param: {
-        filename: [filename],
+        filename: filenames,
         guid,
-        songmid: [songmid],
-        songtype: [0],
+        songmid: filenames.map(() => songmid),
+        songtype: filenames.map(() => 0),
         uin,
         loginflag: 1,
         platform: '20',
@@ -341,8 +360,7 @@ export const resolveQqOfficialPlayUrl = async ({
 }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
   const cookieObject = parseCookieObject(normalizedCookie)
-  const qualityKey = normalizeQqSdkQuality(quality)
-  const fileType = QQ_PLAY_FILE_TYPE_MAP[qualityKey] || QQ_PLAY_FILE_TYPE_MAP['320']
+  const qualityKey = QQ_OFFICIAL_QUALITY_MAP[String(quality ?? '8').toLowerCase()] || '320'
   const playableFileId = String(mediaId || songmid || '').trim()
   const songmidValue = String(songmid || '').trim()
 
@@ -353,12 +371,20 @@ export const resolveQqOfficialPlayUrl = async ({
     throw new Error('QQ 官方接口缺少播放文件 ID')
   }
 
+  // 自请求档位起向低档生成候选，批量请求、顺位命中，权限不足时链内降级
+  const qualityOrderIndex = QQ_OFFICIAL_QUALITY_ORDER.indexOf(qualityKey)
+  const qualityCandidates =
+    qualityOrderIndex >= 0 ? QQ_OFFICIAL_QUALITY_ORDER.slice(qualityOrderIndex) : ['320', '128', 'm4a']
+  const filenames = qualityCandidates.map((key) => {
+    const fileType = QQ_PLAY_FILE_TYPE_MAP[key]
+    return `${fileType.prefix}${playableFileId}${fileType.suffix}`
+  })
+
   const guid = QQ_PLAY_GUID
   const uin = resolveQqVkeyUin(cookieObject)
-  const filename = `${fileType.prefix}${playableFileId}${fileType.suffix}`
   const payload = createQqOfficialVkeyPayload({
     songmid: songmidValue,
-    filename,
+    filenames,
     guid,
     uin,
     authst: cookieObject.qqmusic_key
@@ -369,7 +395,7 @@ export const resolveQqOfficialPlayUrl = async ({
 
   try {
     const normalResponse = await requestQqOfficialVkey(payload, normalizedCookie, false)
-    const parsed = parseQqOfficialPlayUrl(normalResponse, songmidValue, guid)
+    const parsed = parseQqOfficialPlayUrl(normalResponse, filenames, guid)
     url = parsed.url
     info = parsed.info
   } catch (normalErr) {
@@ -379,7 +405,7 @@ export const resolveQqOfficialPlayUrl = async ({
   if (!url) {
     try {
       const signedResponse = await requestQqOfficialVkey(payload, normalizedCookie, true)
-      const signedResult = parseQqOfficialPlayUrl(signedResponse, songmidValue, guid)
+      const signedResult = parseQqOfficialPlayUrl(signedResponse, filenames, guid)
       url = signedResult.url || url
       info = signedResult.info || info
     } catch (signedErr) {
@@ -393,7 +419,7 @@ export const resolveQqOfficialPlayUrl = async ({
     const mid = info?.mid || 'missing'
     const tips = info?.tips ? `, tips=${String(info.tips)}` : ''
     throw new Error(
-      `QQ 官方接口未返回播放链接：filename=${filename}, result=${resultCode}, subcode=${subcode}, mid=${mid}, purl=${Boolean(info?.purl)}, vkey=${Boolean(info?.vkey)}${tips}`
+      `QQ 官方接口未返回播放链接：filename=${filenames.join('|')}, result=${resultCode}, subcode=${subcode}, mid=${mid}, purl=${Boolean(info?.purl)}, vkey=${Boolean(info?.vkey)}${tips}`
     )
   }
 
@@ -587,6 +613,30 @@ const findProfileNode = (value: unknown, depth = 0): Record<string, any> | undef
 }
 
 /**
+ * 从 vip_login_base 响应数据判断账号是否具备 VIP/超级会员权益。
+ * 字段形态因登录方式而异，统一做数值归一化，异常值视为非 VIP。
+ */
+export const isQqVipFromLoginBaseData = (data: unknown): boolean => {
+  const toNum = (value: unknown): number => {
+    const num = Number(value)
+    return Number.isFinite(num) ? num : 0
+  }
+  const record = (data && typeof data === 'object' ? data : {}) as Record<string, any>
+  const identity = (
+    record.identity && typeof record.identity === 'object' ? record.identity : {}
+  ) as Record<string, any>
+  return (
+    toNum(record.svip) > 0 ||
+    toNum(identity.vip) > 0 ||
+    toNum(identity.ExpVip) > 0 ||
+    toNum(identity.HugeVip) > 0 ||
+    toNum(identity.GroupVipFlag) > 0 ||
+    toNum(identity.ChildVip) > 0 ||
+    Boolean(record.mygreen)
+  )
+}
+
+/**
  * 校验 QQ 音乐登录 Cookie 并提取用户档案。
  * vip_login_base 是账户级接口，失效 Cookie 会返回错误码，作为有效性的主判据；
  * 主页资料接口用于补充昵称/头像。
@@ -601,6 +651,7 @@ export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
 
   let vipOk = false
   let vipCode: unknown
+  let isVip = false
   let detailOk = false
 
   try {
@@ -615,6 +666,9 @@ export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
     const reqData = resp?.req_1 || {}
     vipCode = reqData.code
     vipOk = Number(reqData.code) === 0
+    if (vipOk) {
+      isVip = isQqVipFromLoginBaseData(reqData.data)
+    }
   } catch (error) {
     console.warn('[qq_music_sdk] vip_login_base 失败:', error instanceof Error ? error.message : error)
   }
@@ -681,6 +735,7 @@ export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
 
   return {
     valid: vipOk || detailOk,
+    isVip,
     signals: {
       vipOk,
       vipCode: vipCode === undefined ? null : vipCode,
