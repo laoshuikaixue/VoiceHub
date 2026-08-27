@@ -378,6 +378,7 @@
                       @click="openPlaylistModal('tencent')"
                     >
                       <Icon :size="14" name="playlist" />
+                      <span>{{ locale.playlist }}</span>
                     </button>
                     <button
                       class="action-btn-compact"
