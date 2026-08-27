@@ -1,5 +1,7 @@
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { SMTP_PASSWORD_MASK } from '~~/server/api/admin/system-settings/secretMask'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
@@ -60,11 +62,19 @@ export default defineEventHandler(async (event) => {
     const originalTransporter = smtpService.transporter
 
     try {
-      // 如果密码是掩码，则使用原始配置中的密码
-      const testPassword =
-        body.smtpPassword === '****************'
-          ? originalConfig?.auth?.pass || body.smtpPassword
-          : body.smtpPassword
+      // 掩码密码回退：以数据库持久化值为准，内存单例不可靠（冷启动竞态/陈旧配置）
+      let testPassword = body.smtpPassword
+      if (testPassword === SMTP_PASSWORD_MASK) {
+        const dbSettings = await getSystemSettingsCached()
+        testPassword = dbSettings?.smtpPassword || ''
+      }
+
+      if (!testPassword) {
+        return {
+          success: false,
+          message: '未找到有效的SMTP密码，请重新填写授权码并保存配置'
+        }
+      }
 
       // 设置测试配置
       smtpService.smtpConfig = {
