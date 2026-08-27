@@ -296,6 +296,7 @@ async function checkSchemaConsistency(sql) {
       'registerRequiresApproval',
       'oauthRegisterRequiresApproval',
       'registerEmailRequired',
+      'registerRequiresGradeClass',
       'submissionNoteRequiresApproval',
       'defaultTheme',
       'enabledThemes',

@@ -70,6 +70,18 @@
               class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
             />
           </div>
+
+          <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ siteLocale.registerRequiresGradeClass }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ siteLocale.registerRequiresGradeClassDesc }}</p>
+            </div>
+            <input
+              v-model="formData.registerRequiresGradeClass"
+              type="checkbox"
+              class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 
@@ -416,7 +428,7 @@ const props = defineProps({
 const emits = defineEmits(['update:modelValue'])
 
 const { showToast } = useToast()
-const { admin } = useLocale()
+const { admin, siteConfig: siteLocale } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => admin.value?.oauthConfig || {})
 const { t: callLocale } = useLocaleText(locale)

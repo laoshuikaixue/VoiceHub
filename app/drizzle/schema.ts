@@ -278,6 +278,8 @@ export const systemSettings = pgTable('SystemSettings', {
   oauthRegisterRequiresApproval: boolean('oauthRegisterRequiresApproval').default(true).notNull(),
   // 注册邮箱（选填→管理员开关控制；需 SMTP 已配置）
   registerEmailRequired: boolean('registerEmailRequired').default(false).notNull(),
+  // 注册时必须选择年级班级（本地注册与第三方创建账户均强制）
+  registerRequiresGradeClass: boolean('registerRequiresGradeClass').default(false).notNull(),
   // 投稿公开留言审核
   submissionNoteRequiresApproval: boolean('submissionNoteRequiresApproval').default(false).notNull(),
 

@@ -64,6 +64,7 @@ const siteConfig = ref({
   allowRegister: false,
   submissionNoteRequiresApproval: false,
   registerEmailRequired: false,
+  registerRequiresGradeClass: false,
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
@@ -143,6 +144,7 @@ export const useSiteConfig = () => {
         allowRegister: false,
         submissionNoteRequiresApproval: false,
         registerEmailRequired: false,
+        registerRequiresGradeClass: false,
         defaultTheme: 'System',
         enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
       }
@@ -191,6 +193,9 @@ export const useSiteConfig = () => {
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const allowRegister = computed(() => siteConfig.value.allowRegister === true)
   const registerEmailRequired = computed(() => siteConfig.value.registerEmailRequired === true)
+  const registerRequiresGradeClass = computed(
+    () => siteConfig.value.registerRequiresGradeClass === true
+  )
   const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
   )
@@ -279,6 +284,7 @@ export const useSiteConfig = () => {
     allowRegister,
     submissionNoteRequiresApproval,
     registerEmailRequired,
+    registerRequiresGradeClass,
     captchaEnabled,
     captchaProvider,
     turnstileSiteKey,

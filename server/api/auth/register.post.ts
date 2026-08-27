@@ -10,7 +10,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
-import { validateGradeClassPair, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
+import { resolveGradeClassError, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
 import { notifyRegistration } from '~~/server/utils/registration-notify'
@@ -130,7 +130,11 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
   }
 
-  const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
+  const gradeClassError = resolveGradeClassError(
+    selectedGrade,
+    selectedClass,
+    Boolean(config?.registerRequiresGradeClass)
+  )
   if (gradeClassError) {
     throw createApiError(400, gradeClassError.code, gradeClassError.message)
   }

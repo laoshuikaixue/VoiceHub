@@ -11,6 +11,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
+import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -634,25 +635,42 @@ export default defineEventHandler(async (event) => {
       updateData.submissionNoteRequiresApproval = body.submissionNoteRequiresApproval
     }
 
+    // 注册子开关（邮箱必填 / 年级班级必填）以注册入口开启为前提：
+    // 两个入口均关闭时子开关无实际作用，直接落 false，避免整单保存被拒且子开关已隐藏无法取消
+    const registerEntryOpen = Boolean(
+      body.allowRegister ?? settings?.allowRegister
+    ) || Boolean(body.allowOAuthRegistration ?? settings?.allowOAuthRegistration)
+
     if (body.registerEmailRequired !== undefined) {
       if (typeof body.registerEmailRequired !== 'boolean') {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'registerEmailRequired 必须是布尔值')
       }
-      // 开启注册邮箱必填需前置：允许注册（或三方注册）+ SMTP 邮件服务已配置（合并提交值校验）
-      if (body.registerEmailRequired) {
-        const allowRegisterOrOAuth = Boolean(
-          body.allowRegister ?? settings?.allowRegister
-        ) || Boolean(body.allowOAuthRegistration ?? settings?.allowOAuthRegistration)
-        if (!allowRegisterOrOAuth) {
-          throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先开启允许用户注册，再启用注册邮箱必填')
-        }
+      // 开启时 SMTP 必须已配置并启用（合并提交值校验）
+      const nextEmailRequired = registerEntryOpen && body.registerEmailRequired
+      if (nextEmailRequired) {
         const smtpEnabled = body.smtpEnabled ?? settings?.smtpEnabled
         const smtpHost = body.smtpHost ?? settings?.smtpHost
         if (!smtpEnabled || !smtpHost) {
           throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先配置并开启 SMTP 邮件服务，再启用注册邮箱必填')
         }
       }
-      updateData.registerEmailRequired = body.registerEmailRequired
+      updateData.registerEmailRequired = nextEmailRequired
+    }
+
+    if (body.registerRequiresGradeClass !== undefined) {
+      if (typeof body.registerRequiresGradeClass !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'registerRequiresGradeClass 必须是布尔值')
+      }
+      // 开启时系统内必须已有可选年级班级组合，否则注册表单无项可选、注册请求全部被拒
+      const nextGradeClassRequired = registerEntryOpen && body.registerRequiresGradeClass
+      if (nextGradeClassRequired && (await fetchGradeClassOptions()).length === 0) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_GRADE_CLASS_OPTIONS_MISSING,
+          '请先在年级班级管理中配置年级班级，再启用注册时必须选择年级班级'
+        )
+      }
+      updateData.registerRequiresGradeClass = nextGradeClassRequired
     }
 
     if (body.oauthRedirectUri !== undefined) {
