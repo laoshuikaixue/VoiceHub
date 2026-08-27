@@ -201,6 +201,37 @@ async function indexExists(sql, tableName, indexName) {
   return result[0]?.exists === true
 }
 
+// 重复 username 会阻塞 User_username_unique 唯一索引的创建（push/migrate 均会失败）。
+// 同步前把多余行重命名为 username_<后缀>，保留最早一行，保证唯一索引可创建。
+async function ensureNoDuplicateUsernames(sql) {
+  if (!(await tableExists(sql, 'User'))) return
+
+  const duplicates = await sql`
+    SELECT username, array_agg(id ORDER BY id) AS ids
+    FROM "User"
+    WHERE username IS NOT NULL
+    GROUP BY username
+    HAVING COUNT(*) > 1
+  `
+
+  if (duplicates.length === 0) return
+
+  warn('检测到 User.username 重复值，重命名多余行以允许创建唯一索引')
+  for (const dup of duplicates) {
+    const [keptId, ...extraIds] = dup.ids
+    for (const id of extraIds) {
+      let suffix = 2
+      let newUsername = `${dup.username}_${suffix}`
+      while ((await sql`SELECT 1 FROM "User" WHERE username = ${newUsername} LIMIT 1`).length > 0) {
+        suffix += 1
+        newUsername = `${dup.username}_${suffix}`
+      }
+      await sql`UPDATE "User" SET username = ${newUsername} WHERE id = ${id}`
+      warn(`User#${id}: ${dup.username} -> ${newUsername}（保留最早记录 User#${keptId}）`)
+    }
+  }
+}
+
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
@@ -411,6 +442,8 @@ async function main() {
       }
       ok('空库迁移完成')
     } else {
+      // 重复 username 会阻塞唯一索引创建（push/migrate 均失败），先修复数据再同步
+      await ensureNoDuplicateUsernames(sql)
       const migrationRecordsExist = await hasMigrationRecords(sql)
       if (migrationRecordsExist) {
         // 正常数据库必须先应用待执行迁移，再检查最终结构；否则新增字段会被误判为schema损坏。
