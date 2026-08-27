@@ -50,7 +50,7 @@
     "@pixi/filter-bulge-pinch": "^5.1.1",
     "@pixi/filter-color-matrix": "^7.4.3",
     "@pixi/sprite": "^7.4.3",
-    "@sansenjian/qq-music-api": "2.5.0",
+    "@sansenjian/qq-music-api": "2.6.0",
     "@sentry/node": "^10.71.0",
     "@sentry/vue": "^10.71.0",
     "@simplewebauthn/browser": "^13.3.0",
