@@ -1,35 +1,37 @@
 <template>
-  <div class="schedule-item-print">
+  <div class="schedule-item-print" :class="{ 'is-narrow': narrow }">
     <div class="item-content">
-      <!-- 序号 -->
-      <div v-if="settings.showSequence" class="sequence-number">
-        {{ schedule.sequence || 1 }}
-      </div>
+      <div v-if="settings.showSequence || settings.showCover" class="item-leading">
+        <!-- 序号 -->
+        <div v-if="settings.showSequence" class="sequence-number">
+          {{ schedule.sequence || 1 }}
+        </div>
 
-      <!-- 歌曲封面 -->
-      <div v-if="settings.showCover" class="cover-section">
-        <img
-          v-if="schedule.song.cover"
-          :alt="schedule.song.title"
-          :data-original-src="convertToHttps(schedule.song.cover)"
-          :src="convertToHttps(schedule.song.cover)"
-          class="song-cover"
-          referrerpolicy="no-referrer"
-          @error="handleImageError"
-        >
-        <div class="cover-placeholder" :class="{ show: !schedule.song.cover }">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 1v6m0 6v6" />
-            <path d="m21 12-6-3-6 3-6-3" />
-          </svg>
+        <!-- 歌曲封面 -->
+        <div v-if="settings.showCover" class="cover-section">
+          <img
+            v-if="schedule.song.cover"
+            :alt="schedule.song.title"
+            :data-original-src="convertToHttps(schedule.song.cover)"
+            :src="convertToHttps(schedule.song.cover)"
+            class="song-cover"
+            referrerpolicy="no-referrer"
+            @error="handleImageError"
+          >
+          <div class="cover-placeholder" :class="{ show: !schedule.song.cover }">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v6m0 6v6" />
+              <path d="m21 12-6-3-6 3-6-3" />
+            </svg>
+          </div>
         </div>
       </div>
 
       <!-- 歌曲信息 -->
       <div class="song-info">
         <div v-if="settings.showTitle" class="song-title">
-          {{ schedule.song.title }}
+          <span class="title-text">{{ schedule.song.title }}</span>
           <!-- 重播标识 -->
           <span v-if="schedule.replayRequestId != null" class="replay-badge-print"> {{ locale.replay }} </span>
           <!-- 跨学期标识 -->
@@ -49,26 +51,28 @@
         </div>
       </div>
 
-      <!-- 投稿人信息（重播歌曲不显示申请人，只显示原投稿人） -->
-      <div v-if="settings.showRequester" class="requester-info">
-        <span class="label">{{ locale.requesterPrefix }}</span>
-        <span class="value">
-          {{ schedule.song.requester }}
-          <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
-            & {{ schedule.song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
+      <div v-if="settings.showRequester || settings.showVotes" class="item-trailing">
+        <!-- 投稿人信息（重播歌曲不显示申请人，只显示原投稿人） -->
+        <div v-if="settings.showRequester" class="requester-info">
+          <span class="label">{{ locale.requesterPrefix }}</span>
+          <span class="value">
+            {{ schedule.song.requester }}
+            <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
+              & {{ schedule.song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
 
-      <!-- 人数信息 -->
-      <div v-if="settings.showVotes" class="votes-info">
-        <span v-if="schedule.replayRequestId != null" class="label">{{ locale.replayRequestsPrefix }}</span>
-        <span v-else class="label">{{ locale.popularityPrefix }}</span>
-        <span class="value">{{
-          schedule.replayRequestId != null
-            ? locale.replayCount(schedule.song.replayRequestCount)
-            : schedule.song.voteCount || 0
-        }}</span>
+        <!-- 人数信息 -->
+        <div v-if="settings.showVotes" class="votes-info">
+          <span v-if="schedule.replayRequestId != null" class="label">{{ locale.replayRequestsPrefix }}</span>
+          <span v-else class="label">{{ locale.popularityPrefix }}</span>
+          <span class="value">{{
+            schedule.replayRequestId != null
+              ? locale.replayCount(schedule.song.replayRequestCount)
+              : schedule.song.voteCount || 0
+          }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -90,6 +94,10 @@ defineProps({
   settings: {
     type: Object,
     required: true
+  },
+  narrow: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -114,6 +122,20 @@ const handleImageError = (event) => {
   display: flex;
   align-items: center;
   width: 100%;
+  gap: 12px;
+  min-width: 0;
+}
+
+.item-leading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.item-trailing {
+  display: flex;
+  align-items: center;
   gap: 12px;
   min-width: 0;
 }
@@ -176,11 +198,17 @@ const handleImageError = (event) => {
   color: #1a1a1a;
   margin-bottom: 2px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+}
+
+/* 歌名文本块：text-overflow 只能作用在块容器上，故单独承载裁剪 */
+.title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 打印用重播标识 */
@@ -243,6 +271,67 @@ const handleImageError = (event) => {
   text-overflow: ellipsis;
 }
 
+/* 两列窄版排布 */
+.schedule-item-print.is-narrow {
+  padding: 6px 0;
+}
+
+.is-narrow .item-content,
+.is-narrow .item-leading {
+  gap: 8px;
+}
+
+.is-narrow .sequence-number {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+}
+
+.is-narrow .cover-section {
+  width: 32px;
+  height: 32px;
+}
+
+.is-narrow .cover-placeholder svg {
+  width: 16px;
+  height: 16px;
+}
+
+.is-narrow .song-title {
+  font-size: 13px;
+  gap: 3px;
+}
+
+.is-narrow .song-artist {
+  font-size: 11px;
+}
+
+.is-narrow .replay-badge-print,
+.is-narrow .cross-semester-badge-print {
+  font-size: 9px;
+  padding: 0 3px;
+}
+
+/* 人数与歌名同行、投稿人与歌手同行 */
+.is-narrow .item-trailing {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  min-width: 0;
+  max-width: 45%;
+}
+
+.is-narrow .votes-info {
+  order: -1;
+}
+
+.is-narrow .requester-info,
+.is-narrow .votes-info {
+  font-size: 11px;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
 /* 打印样式 */
 @media print {
   .schedule-item-print {
@@ -284,6 +373,9 @@ const handleImageError = (event) => {
     color: #1a1a1a !important;
     font-size: 16px !important;
     white-space: nowrap !important;
+  }
+
+  .title-text {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }

@@ -124,6 +124,11 @@
     color: #000 !important;
     margin-bottom: 2px !important;
     white-space: nowrap !important;
+  }
+
+  /* 歌名文本块承载裁剪，flex 容器上的 text-overflow 不生效 */
+  .schedule-item-print .title-text {
+    min-width: 0 !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
