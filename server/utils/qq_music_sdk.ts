@@ -7,6 +7,8 @@ import {
   search
 } from '@sansenjian/qq-music-api/sdk'
 import {
+  checkWXLoginQr,
+  getWXLoginQr,
   getUserAvatar,
   getUserDetail,
   getVipInfo
@@ -520,6 +522,17 @@ export const checkQqLogin = async (ptqrtoken: string | number, qrsig: string) =>
   return body.response || body.data || body
 }
 
+// 微信区扫码：本地库新链路，session cookie 与 QQ 扫码同构（tmeLoginType=1）
+export const getQqWxLoginQr = async () => {
+  const body = unwrapQqSdkResponse(await getWXLoginQr(), '获取微信登录二维码失败')
+  return body.response || body.data || body
+}
+
+export const checkQqWxLogin = async (uuid: string) => {
+  const body = unwrapQqSdkResponse(await checkWXLoginQr({ params: { uuid } }), '检查微信登录状态失败')
+  return body.response || body.data || body
+}
+
 export const getQqUserAvatar = async ({
   uin,
   k,
@@ -577,51 +590,93 @@ const findProfileNode = (value: unknown, depth = 0): Record<string, any> | undef
  * 校验 QQ 音乐登录 Cookie 并提取用户档案。
  * vip_login_base 是账户级接口，失效 Cookie 会返回错误码，作为有效性的主判据；
  * 主页资料接口用于补充昵称/头像。
+ * 探针不走库内封装：微信区 Cookie（tmeLoginType=1，无 p_skey）在库的
+ * 默认 comm 下会被上游拒绝，必须补齐 tmeLoginType 与计算出的 g_tk。
  */
 export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
   const diagnostic = getQqCookieDiagnostic(normalizedCookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const rawUin = String(cookieObject.uin || '').replace(/^o/i, '')
 
   let vipOk = false
   let vipCode: unknown
   let detailOk = false
 
   try {
-    const resp = await getQqVipInfo({ cookie: normalizedCookie })
-    const data = resp?.req_1?.data ?? resp?.data ?? resp
-    vipCode = data?.code ?? data?.errcode
-    vipOk = vipCode === 0
+    const numericLoginType = Number(cookieObject.tmeLoginType)
+    const resp: any = await callQqMusicu({
+      module: 'VipLogin.VipLoginInter',
+      method: 'vip_login_base',
+      param: {},
+      cookie: normalizedCookie,
+      extraComm: Number.isFinite(numericLoginType) ? { tmeLoginType: numericLoginType } : undefined
+    })
+    const reqData = resp?.req_1 || {}
+    vipCode = reqData.code
+    vipOk = Number(reqData.code) === 0
   } catch (error) {
-    console.warn('[qq_music_sdk] getVipInfo 失败:', error instanceof Error ? error.message : error)
+    console.warn('[qq_music_sdk] vip_login_base 失败:', error instanceof Error ? error.message : error)
   }
 
-  const cookieObject = parseCookieObject(normalizedCookie)
-  const rawUin = String(cookieObject.uin || '')
   let profile: { nickname?: string; avatarUrl?: string; userId?: string } | undefined
-  try {
-    // uin 形如 o123456（openid）时转数值为 NaN，getUserDetail 内部会失败，跳过即可
-    const numericUin = String(Number.parseInt(rawUin.replace(/^o/i, ''), 10))
-    if (numericUin !== 'NaN') {
-      const detail = await getQqUserDetail({ uin: numericUin, cookie: normalizedCookie })
-      const node = findProfileNode(detail)
-      if (node) {
+
+  // 主页直连（正确 g_tk）作为资料来源与会话佐证
+  if (/^\d+$/.test(rawUin)) {
+    try {
+      const homepage: any = await requestQqProfileHomepage({
+        uin: rawUin,
+        cookie: normalizedCookie,
+        gtk: getQqGtk(cookieObject)
+      })
+      const payload = homepage?.data || {}
+      if (Number(homepage?.code) === 0 && ['mydiss', 'mymusic', 'creator'].some((key) => key in payload)) {
         detailOk = true
-        const nickname =
-          typeof node.nick === 'string' ? node.nick : typeof node.nickname === 'string' ? node.nickname : ''
-        profile = {
-          nickname: nickname.trim() || undefined,
-          avatarUrl:
-            typeof node.headpic === 'string'
-              ? node.headpic
-              : typeof node.avatarUrl === 'string'
-                ? node.avatarUrl
-                : undefined,
-          userId: numericUin
+      }
+      const node = findProfileNode(homepage?.data || {})
+      if (node) {
+        profile = buildProfileFromNode(node, rawUin)
+      }
+    } catch (error) {
+      console.warn('[qq_music_sdk] 主页直连失败:', error instanceof Error ? error.message : error)
+    }
+
+    // 直连未取得资料时回退库封装（历史 QQ 区路径）
+    if (!profile) {
+      try {
+        const detail = await getQqUserDetail({ uin: rawUin, cookie: normalizedCookie })
+        const node = findProfileNode(detail)
+        if (node) {
+          detailOk = true
+          profile = buildProfileFromNode(node, rawUin)
         }
+      } catch (error) {
+        console.warn('[qq_music_sdk] getUserDetail 回退失败:', error instanceof Error ? error.message : error)
       }
     }
-  } catch (error) {
-    console.warn('[qq_music_sdk] getUserDetail 失败:', error instanceof Error ? error.message : error)
+  }
+
+  // 微信区 cookie 在 homepage/GetLoginUserInfo 均返回 1000，改从创建歌单的创建者字段提取昵称
+  if (!profile && /^\d+$/.test(rawUin)) {
+    try {
+      const resp: any = await callQqMusicu({
+        module: 'music.musicasset.PlaylistBaseRead',
+        method: 'GetPlaylistByUin',
+        param: { uin: rawUin },
+        cookie: normalizedCookie
+      })
+      const list = Array.isArray(resp?.req_1?.data?.v_playlist) ? resp.req_1.data.v_playlist : []
+      const creator = list.find((item: any) => item?.nick?.trim() || item?.avatar)
+      if (creator?.nick?.trim() || creator?.avatar) {
+        profile = {
+          nickname: creator.nick?.trim() || undefined,
+          avatarUrl: typeof creator.avatar === 'string' ? creator.avatar : undefined,
+          userId: rawUin
+        }
+      }
+    } catch (error) {
+      console.warn('[qq_music_sdk] 歌单创建者信息兜底失败:', error instanceof Error ? error.message : error)
+    }
   }
 
   return {
@@ -931,6 +986,73 @@ const getQqGtk = (cookieObject: Record<string, string>) => {
   return hash & 0x7fffffff
 }
 
+// 主页直连请求。uin 必须保持字符串原样：微信区 uin 超过 Number.MAX_SAFE_INTEGER，
+// 经数值转换会精度截断导致上游返回 1000 查无此人。
+const requestQqProfileHomepage = async ({
+  uin,
+  cookie,
+  gtk
+}: {
+  uin: string
+  cookie: string
+  gtk: number
+}) => {
+  return await $fetch<Record<string, any>>(
+    'https://c6.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg',
+    {
+      params: {
+        _: getServerTimestamp(),
+        cv: '4747474',
+        ct: '24',
+        format: 'json',
+        inCharset: 'utf-8',
+        outCharset: 'utf-8',
+        notice: '0',
+        platform: 'yqq.json',
+        needNewCode: '0',
+        uin,
+        g_tk_new_20200303: String(gtk),
+        g_tk: String(gtk),
+        cid: '205360838',
+        userid: uin,
+        reqfrom: '1',
+        reqtype: '0',
+        hostUin: '0',
+        loginUin: uin
+      },
+      headers: {
+        // 浏览器 UA 更贴近真实官网请求形态
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Referer: `https://y.qq.com/portal/profile.html?uin=${uin}`,
+        Cookie: cookie
+      },
+      signal: AbortSignal.timeout(8000)
+    }
+  )
+}
+
+const buildProfileFromNode = (
+  node: Record<string, any>,
+  userId: string
+): { nickname?: string; avatarUrl?: string; userId?: string } | undefined => {
+  const nickname =
+    typeof node?.nick === 'string'
+      ? node.nick.trim()
+      : typeof node?.nickname === 'string'
+        ? node.nickname.trim()
+        : ''
+  const avatarUrl =
+    typeof node?.headpic === 'string' && node.headpic.startsWith('http')
+      ? node.headpic
+      : typeof node?.avatarUrl === 'string' && node.avatarUrl.startsWith('http')
+        ? node.avatarUrl
+        : undefined
+
+  if (!nickname && !avatarUrl) return undefined
+  return { nickname: nickname || undefined, avatarUrl, userId }
+}
+
 // 合并用户创建的与收藏的歌单，id 去重时保留创建标记；收藏接口要求加密 euin
 export const getQqUserPlaylists = async ({ cookie }: { cookie?: string }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
@@ -1012,12 +1134,14 @@ const callQqMusicu = async ({
   module,
   method,
   param,
-  cookie
+  cookie,
+  extraComm
 }: {
   module: string
   method: string
   param: Record<string, unknown>
   cookie?: string
+  extraComm?: Record<string, unknown>
 }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
   const cookieObject = parseCookieObject(normalizedCookie)
@@ -1033,7 +1157,8 @@ const callQqMusicu = async ({
       cv: 4747474,
       platform: 'yqq.json',
       ...(authst ? { authst } : {}),
-      g_tk: getQqGtk(cookieObject)
+      g_tk: getQqGtk(cookieObject),
+      ...extraComm
     },
     req_1: { module, method, param }
   }

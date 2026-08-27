@@ -2401,6 +2401,21 @@ const validateQqCookie = async (cookie) => {
   return res?.data || {}
 }
 
+// 用服务端校验结果补全真实昵称与头像，仅在有增量时更新
+const refreshQqProfileFromServer = async (cookie) => {
+  if (!cookie) return
+  try {
+    const data = await validateQqCookie(cookie)
+    if (!data.valid || !(data.user?.nickname || data.user?.avatarUrl)) return
+
+    const mergedUser = { ...(qqMusicUser.value || {}), ...data.user }
+    applyQqMusicUser(mergedUser)
+    localStorage.setItem('qq_music_user', JSON.stringify(mergedUser))
+  } catch (e) {
+    console.warn('刷新 QQ 用户资料失败:', e)
+  }
+}
+
 // 启动时静默校验本地保存的 QQ 登录态，失效则清理并提示
 const checkQQMusicLoginStatus = async () => {
   if (!import.meta.client) return
@@ -2425,11 +2440,7 @@ const checkQQMusicLoginStatus = async () => {
   try {
     const data = await validateQqCookie(cookie)
     if (data.valid) {
-      if (data.user?.nickname || data.user?.avatarUrl) {
-        const mergedUser = { ...(qqMusicUser.value || {}), ...data.user }
-        applyQqMusicUser(mergedUser)
-        localStorage.setItem('qq_music_user', JSON.stringify(mergedUser))
-      }
+      await refreshQqProfileFromServer(cookie)
     } else {
       if (window.$showNotification) {
         window.$showNotification(locale.value.qqLoginExpired, 'warning')
@@ -2452,6 +2463,9 @@ const handleQQLoginSuccess = (data) => {
     localStorage.setItem('qq_music_cookie', data.cookie)
     localStorage.setItem('qq_music_user', JSON.stringify(qqMusicUser.value))
   }
+
+  // 立即拉取真实昵称与头像，替换扫码占位信息
+  refreshQqProfileFromServer(data.cookie)
 }
 
 const handleLogoutQQMusic = () => {
