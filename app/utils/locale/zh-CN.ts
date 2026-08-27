@@ -4176,6 +4176,7 @@ export const serverErrors = {
   THEME_INVALID_LIST: '启用的主题列表无效',
   THEME_INVALID_DEFAULT: '默认主题必须有效且处于启用状态',
   THEME_SYSTEM_REQUIRES_CLASSIC: '跟随系统时必须同时启用经典深色和经典浅色',
+  SETTINGS_GRADE_CLASS_OPTIONS_MISSING: '请先在年级班级管理中配置年级班级，再启用该选项',
   BILIBILI_PLAYURL_FAILED: '获取 Bilibili 音频链接失败',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: '姓名、用户名、密码不能为空',
   AUTH_USERNAME_LENGTH_INVALID: '用户名长度需要在3-30个字符之间',

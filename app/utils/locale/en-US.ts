@@ -4167,6 +4167,7 @@ export const serverErrors = {
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',
+  SETTINGS_GRADE_CLASS_OPTIONS_MISSING: 'Configure grade and class options before enabling this setting',
   BILIBILI_PLAYURL_FAILED: 'Failed to fetch Bilibili audio link',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
   AUTH_USERNAME_LENGTH_INVALID: 'Username must be between 3 and 30 characters',

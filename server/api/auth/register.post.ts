@@ -10,7 +10,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
-import { validateGradeClassPair, isGradeClassMissing, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
+import { resolveGradeClassError, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
 import { notifyRegistration } from '~~/server/utils/registration-notify'
@@ -130,14 +130,13 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
   }
 
-  const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
+  const gradeClassError = resolveGradeClassError(
+    selectedGrade,
+    selectedClass,
+    Boolean(config?.registerRequiresGradeClass)
+  )
   if (gradeClassError) {
     throw createApiError(400, gradeClassError.code, gradeClassError.message)
-  }
-
-  // 站点开启"注册时必须选择年级班级"时强制必填（本地注册路径）
-  if (config?.registerRequiresGradeClass && isGradeClassMissing(selectedGrade, selectedClass)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_REQUIRED, '注册时必须选择年级和班级')
   }
 
   if (selectedGrade && selectedClass) {

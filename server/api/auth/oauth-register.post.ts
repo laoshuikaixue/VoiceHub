@@ -7,7 +7,7 @@ import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { validateGradeClassPair, isGradeClassMissing, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
+import { resolveGradeClassError, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
@@ -75,14 +75,13 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, validationError.code, validationError.message)
   }
 
-  const gradeClassError = validateGradeClassPair(selectedGrade, selectedClass)
+  const gradeClassError = resolveGradeClassError(
+    selectedGrade,
+    selectedClass,
+    Boolean(config?.registerRequiresGradeClass)
+  )
   if (gradeClassError) {
     throw createApiError(400, gradeClassError.code, gradeClassError.message)
-  }
-
-  // 站点开启"注册时必须选择年级班级"时强制必填（第三方创建账户路径）
-  if (config?.registerRequiresGradeClass && isGradeClassMissing(selectedGrade, selectedClass)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_REQUIRED, '注册时必须选择年级和班级')
   }
 
   if (selectedGrade && selectedClass) {
