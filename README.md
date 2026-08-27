@@ -1196,7 +1196,9 @@ VoiceHub/
 │   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
 │   │   │   │   ├── check-cookie.post.ts # 校验QQ音乐登录Cookie有效性
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
-│   │   │   │   ├── login-qr.get.ts  # 获取登录二维码
+│   │   │   │   ├── check-wx-login.post.ts # 检查微信扫码登录状态
+│   │   │   │   ├── login-qr.get.ts  # 获取QQ登录二维码
+│   │   │   │   └── login-qr-wx.get.ts # 获取微信登录二维码
 │   │   │   │   ├── playlist-songs.post.ts # 获取QQ音乐歌单内歌曲
 │   │   │   │   └── playlists.post.ts # 获取用户创建与收藏的歌单
 │   │   │   └── search/              # 搜索API

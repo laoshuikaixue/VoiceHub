@@ -7,6 +7,8 @@ import {
   search
 } from '@sansenjian/qq-music-api/sdk'
 import {
+  checkWXLoginQr,
+  getWXLoginQr,
   getUserAvatar,
   getUserDetail,
   getVipInfo
@@ -520,6 +522,17 @@ export const checkQqLogin = async (ptqrtoken: string | number, qrsig: string) =>
   return body.response || body.data || body
 }
 
+// 微信区扫码：本地库新链路，session cookie 与 QQ 扫码同构（tmeLoginType=1）
+export const getQqWxLoginQr = async () => {
+  const body = unwrapQqSdkResponse(await getWXLoginQr(), '获取微信登录二维码失败')
+  return body.response || body.data || body
+}
+
+export const checkQqWxLogin = async (uuid: string) => {
+  const body = unwrapQqSdkResponse(await checkWXLoginQr({ params: { uuid } }), '检查微信登录状态失败')
+  return body.response || body.data || body
+}
+
 export const getQqUserAvatar = async ({
   uin,
   k,
@@ -1012,12 +1025,14 @@ const callQqMusicu = async ({
   module,
   method,
   param,
-  cookie
+  cookie,
+  extraComm
 }: {
   module: string
   method: string
   param: Record<string, unknown>
   cookie?: string
+  extraComm?: Record<string, unknown>
 }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
   const cookieObject = parseCookieObject(normalizedCookie)
@@ -1033,7 +1048,8 @@ const callQqMusicu = async ({
       cv: 4747474,
       platform: 'yqq.json',
       ...(authst ? { authst } : {}),
-      g_tk: getQqGtk(cookieObject)
+      g_tk: getQqGtk(cookieObject),
+      ...extraComm
     },
     req_1: { module, method, param }
   }
