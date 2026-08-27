@@ -57,8 +57,8 @@ importers:
         specifier: ^7.4.3
         version: 7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))
       '@sansenjian/qq-music-api':
-        specifier: 2.4.0
-        version: 2.4.0
+        specifier: 2.5.0
+        version: 2.5.0
       '@sentry/node':
         specifier: ^10.71.0
         version: 10.71.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))
@@ -2461,6 +2461,12 @@ packages:
     os: [linux]
     libc: [musl]
 
+  '@rollup/rollup-linux-riscv64-gnu@4.63.0':
+    resolution: {integrity: sha512-Ygsx+HoNH7afwi1bTIXbnTvVnsO+zurPLSYxybV1hHFVU72OWOCl6v05ql/z0hkpAPx+DK7Kn9Bi7MayCcjLTA==}
+    cpu: [riscv64]
+    os: [linux]
+    libc: [glibc]
+
   '@rollup/rollup-linux-riscv64-musl@4.63.0':
     resolution: {integrity: sha512-pDQxtMGb+OvG3fLwR2OkZlSd47hW+kWg4BYMG/++sR6RqorQccwPTDsxda5hPwiIeIErAnCF9ma3SAU06bdQtQ==}
     cpu: [riscv64]
@@ -2515,8 +2521,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@sansenjian/qq-music-api@2.4.0':
-    resolution: {integrity: sha512-yPV5h/Qd+oVOKVmDrG0C/r+Xs1QUXcE1Eo16aJYwY9Fugg3CoEaAYFYtitwSIQD6PpnuXqVqWIIot+gtLeAXOQ==}
+  '@sansenjian/qq-music-api@2.5.0':
+    resolution: {integrity: sha512-w68Z0CP/QG64C0SnHxt18zrY0f89c+khUcUpKanl+QsG/Q+N+UfvmVH3H/EmtGNCcDCl8yuEdQ6GTmDBXoWGng==}
     engines: {node: ^20.17.0 || >=22.9.0, npm: ^11.0.0}
     hasBin: true
 
@@ -10427,6 +10433,9 @@ snapshots:
   '@rollup/rollup-linux-ppc64-musl@4.63.0':
     optional: true
 
+  '@rollup/rollup-linux-riscv64-gnu@4.63.0':
+    optional: true
+
   '@rollup/rollup-linux-riscv64-musl@4.63.0':
     optional: true
 
@@ -10457,7 +10466,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.63.0':
     optional: true
 
-  '@sansenjian/qq-music-api@2.4.0':
+  '@sansenjian/qq-music-api@2.5.0':
     dependencies:
       '@koa/router': 15.7.0(koa@2.16.4)
       axios: 1.19.0
@@ -15141,6 +15150,7 @@ snapshots:
       '@rollup/rollup-linux-loong64-musl': 4.63.0
       '@rollup/rollup-linux-ppc64-gnu': 4.63.0
       '@rollup/rollup-linux-ppc64-musl': 4.63.0
+      '@rollup/rollup-linux-riscv64-gnu': 4.63.0
       '@rollup/rollup-linux-riscv64-musl': 4.63.0
       '@rollup/rollup-linux-s390x-gnu': 4.63.0
       '@rollup/rollup-linux-x64-gnu': 4.63.0

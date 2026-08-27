@@ -390,6 +390,19 @@ export const resolveQqOfficialPlayUrl = async ({
   return upgradeTxAudioUrl(url)
 }
 
+// CgiGetVkey 常见拒绝码语义（依据上游回显与社区实现）
+const QQ_VKEY_RESULT_HINTS: Record<string, string> = {
+  '104003': '该歌曲或音质需要绿钻/付费权限，或受版权、风控限制',
+  '104002': '账号权益不足或登录态被限制',
+  '-1': '请求参数或登录态不被接受',
+  '-2': '歌曲不存在或已下架'
+}
+
+const describeVkeyResult = (result: unknown) => {
+  if (result === undefined || result === null) return ''
+  return QQ_VKEY_RESULT_HINTS[String(result)] || ''
+}
+
 export const resolveQqSdkPlayUrl = async (
   songmid: string,
   quality?: unknown,
@@ -397,10 +410,12 @@ export const resolveQqSdkPlayUrl = async (
   mediaId?: string
 ) => {
   const normalizedCookie = normalizeQqCookie(cookie)
+  // resType=all 保留上游完整数据（含 midurlinfo 的 result/tips），便于诊断失败原因
   const body = unwrapQqSdkResponse(
     await getMusicPlay({
       songmid,
       quality: normalizeQqSdkQuality(quality),
+      resType: 'all',
       mediaId,
       cookie: normalizedCookie
     }),
@@ -420,7 +435,32 @@ export const resolveQqSdkPlayUrl = async (
     const authHint = diagnostic.hasCookie
       ? `（Cookie: uin=${diagnostic.hasUin ? `present:${diagnostic.uinType}` : 'missing'}, authKey=${diagnostic.hasAuthKey ? `${diagnostic.authKeys.join('/')}, used=${diagnostic.authKeySource}` : 'missing'}）`
       : '（未传 Cookie）'
-    throw new Error(`qq-music-api 未返回播放链接${reason}${authHint}`)
+
+    // 上游逐歌曲信息：区分「Cookie 无效」与「账号无权益/非 VIP」
+    const midurlinfo = Array.isArray(data?.req_0?.data?.midurlinfo) ? data.req_0.data.midurlinfo : []
+    const resultCodes = midurlinfo.map((item: Record<string, any>) => String(item?.result))
+    const semanticHint = [...new Set(resultCodes)]
+      .map(describeVkeyResult)
+      .filter(Boolean)
+      .join('；')
+    const upstreamHint = midurlinfo.length
+      ? `；上游: ${midurlinfo
+          .map((item: Record<string, any>) =>
+            [
+              `result=${item?.result ?? 'missing'}`,
+              `subcode=${item?.subcode ?? 'missing'}`,
+              `tips=${String(item?.tips || '') || 'none'}`,
+              `vkey=${Boolean(item?.vkey)}`,
+              `filename=${item?.filename || 'none'}`
+            ].join(', ')
+          )
+          .join(' | ')}`
+      : ''
+
+    const cause = semanticHint || (reason ? reason.replace(/^：/, '') : '')
+    throw new Error(
+      `${cause ? `QQ 官方链路未下发播放链接（${cause}）` : 'qq-music-api 未返回播放链接'}${upstreamHint}${authHint}`
+    )
   }
 
   return upgradeTxAudioUrl(url)

@@ -245,7 +245,9 @@ export async function getMusicUrlResult(
       typeof window !== 'undefined'
         ? window.localStorage.getItem('qq_music_cookie') || undefined
         : undefined
-    const requestBackendResolve = async () => {
+    const requestBackendResolve = async (
+      strategy: 'official-first' | 'fallback' = 'fallback'
+    ) => {
       const response: any = await $fetch('/api/music/resolve-url', {
         method: 'POST',
         body: {
@@ -255,7 +257,8 @@ export async function getMusicUrlResult(
           mediaId: options?.mediaId,
           playUrl: options?.ignoreProvidedUrl ? undefined : playUrl,
           cookie: qqMusicCookie,
-          excludeSources: [...excludedSources]
+          excludeSources: [...excludedSources],
+          strategy
         }
       })
 
@@ -273,6 +276,15 @@ export async function getMusicUrlResult(
       }
 
       throw new Error(response?.message || 'QQ音乐播放链接解析失败')
+    }
+
+    // 本地有 QQ 登录态时，优先后端用用户 Cookie 走官方链路换取直链，失败再降级第三方音源
+    if (qqMusicCookie && !excludedSources.has('qq-official')) {
+      try {
+        return await requestBackendResolve('official-first')
+      } catch (error: any) {
+        console.warn('[musicUrl] QQ 官方登录态解析失败，降级第三方音源:', error?.message || error)
+      }
     }
 
     // v3 负责探测歌曲支持的音质，播放链接仍由 v2 获取。
@@ -371,7 +383,7 @@ export async function getMusicUrlResult(
     }
 
     // vkeys 前端失败，回退到后端 resolve-url
-    if (!qqMusicCookie) {
+    if (!excludedSources.has('hyw-tx')) {
       return await requestBackendResolve()
     }
 

@@ -1,5 +1,10 @@
 import { upgradeTxAudioUrl } from '~~/server/utils/native_tx'
-import { getQqCookieDiagnostic, normalizeQqCookie } from '~~/server/utils/qq_music_sdk'
+import {
+  getQqCookieDiagnostic,
+  normalizeQqCookie,
+  resolveQqOfficialPlayUrl,
+  resolveQqSdkPlayUrl
+} from '~~/server/utils/qq_music_sdk'
 
 const HYW_TX_URL = 'http://103.79.184.97/api/music/url'
 const HYW_CARD_KEY = 'PYPW-QFRL-3DBF-95O6'
@@ -39,6 +44,8 @@ export default defineEventHandler(async (event) => {
   const musicId = body?.musicId
   const playUrl = String(body?.playUrl || '').trim()
   const cookie = normalizeQqCookie(String(body?.cookie || '').trim())
+  // official-first：QQ 官方 Cookie 链路；fallback：第三方兜底链路
+  const strategy = body?.strategy === 'official-first' ? 'official-first' : 'fallback'
   const excludedSources = new Set(
     Array.isArray(body?.excludeSources)
       ? body.excludeSources.map((item: unknown) => String(item || '').trim()).filter(Boolean)
@@ -61,17 +68,73 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '暂不支持的平台' })
   }
 
+  const normalizedMusicId = String(musicId || '').trim()
+
+  // 官方 Cookie 链路：带用户登录态走 CgiGetVkey，可获取 VIP/高音质直链
+  if (strategy === 'official-first') {
+    if (excludedSources.has('qq-official')) {
+      throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
+    }
+
+    try {
+      const url = await resolveQqSdkPlayUrl(
+        normalizedMusicId,
+        body?.quality,
+        cookie || undefined,
+        String(body?.mediaId || '').trim() || undefined
+      )
+      return {
+        success: true,
+        url,
+        source: 'qq-official',
+        normalizedMusicId,
+        idType: 'songmid',
+        authUsed: Boolean(cookie),
+        authDiagnostic: getQqCookieDiagnostic(cookie)
+      }
+    } catch (error: any) {
+      const sdkError = error?.message || String(error)
+      console.warn('[music/resolve-url] QQ 官方 SDK 解析失败，尝试原生直连:', sdkError)
+
+      // 原生直连：单文件名组合 + zzcSign 签名请求，与 SDK 的文件名策略互为校验
+      try {
+        const url = await resolveQqOfficialPlayUrl({
+          songmid: normalizedMusicId,
+          quality: body?.quality,
+          cookie: cookie || undefined,
+          mediaId: String(body?.mediaId || '').trim() || undefined
+        })
+        return {
+          success: true,
+          url,
+          source: 'qq-official',
+          normalizedMusicId,
+          idType: 'songmid',
+          authUsed: Boolean(cookie),
+          authDiagnostic: getQqCookieDiagnostic(cookie)
+        }
+      } catch (nativeError: any) {
+        const nativeErrorText = nativeError?.message || String(nativeError)
+        console.warn('[music/resolve-url] QQ 原生直连解析失败:', nativeErrorText)
+        throw createError({
+          statusCode: 502,
+          message: `QQ 官方链路解析失败：${sdkError}；原生直连：${nativeErrorText}`
+        })
+      }
+    }
+  }
+
   if (excludedSources.has('hyw-tx')) {
     throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
   }
 
   try {
-    const url = await resolveTxWithHyw(String(musicId || '').trim(), body?.quality)
+    const url = await resolveTxWithHyw(normalizedMusicId, body?.quality)
     return {
       success: true,
       url,
       source: 'hyw-tx',
-      normalizedMusicId: String(musicId || '').trim(),
+      normalizedMusicId,
       idType: 'songmid',
       authUsed: Boolean(cookie),
       authDiagnostic: getQqCookieDiagnostic(cookie)
