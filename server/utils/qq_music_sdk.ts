@@ -3,9 +3,10 @@ import {
   getLyric,
   getMusicPlay,
   getQQLoginQr,
+  getSearchByKey,
   search
 } from '@sansenjian/qq-music-api/sdk'
-import { getUserAvatar } from '@sansenjian/qq-music-api/services'
+import { getUserAvatar, getUserDetail, getVipInfo } from '@sansenjian/qq-music-api/services'
 import { txHeaders, txRequest, upgradeTxAudioUrl, zzcSign } from '~~/server/utils/native_tx'
 import { inflateRawSync, inflateSync, unzipSync } from 'node:zlib'
 
@@ -127,6 +128,8 @@ const decodeMaybeBase64 = (value: unknown) => {
 
   try {
     const decoded = Buffer.from(normalizedValue, 'base64').toString()
+    // 刻意检测解码结果中的控制字符，用于排除二进制内容
+    // eslint-disable-next-line no-control-regex
     if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/.test(decoded)) {
       return value
     }
@@ -390,7 +393,7 @@ export const resolveQqOfficialPlayUrl = async ({
   return upgradeTxAudioUrl(url)
 }
 
-// CgiGetVkey 常见拒绝码语义（依据上游回显与社区实现）
+// CgiGetVkey 常见拒绝码语义
 const QQ_VKEY_RESULT_HINTS: Record<string, string> = {
   '104003': '该歌曲或音质需要绿钻/付费权限，或受版权、风控限制',
   '104002': '账号权益不足或登录态被限制',
@@ -522,6 +525,110 @@ export const getQqUserAvatar = async ({
   size?: number
 }) => {
   return await getUserAvatar({ uin, k, size })
+}
+
+export const getQqVipInfo = async ({ cookie }: { cookie?: string }) => {
+  const body = unwrapQqSdkResponse(await getVipInfo({ cookie }), '获取 QQ VIP 信息失败')
+  return body.response || body.data || body
+}
+
+export const getQqUserDetail = async ({ uin, cookie }: { uin: string; cookie?: string }) => {
+  const body = unwrapQqSdkResponse(
+    await getUserDetail({ uin, cookie }),
+    '获取 QQ 用户信息失败'
+  )
+  return body.response || body.data || body
+}
+
+// 在响应树中递归查找首个含非空昵称字段的节点（上游资料页结构多变，做防御性解析）
+const findProfileNode = (value: unknown, depth = 0): Record<string, any> | undefined => {
+  if (depth > 8 || !value || typeof value !== 'object') return undefined
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findProfileNode(item, depth + 1)
+      if (found) return found
+    }
+    return undefined
+  }
+
+  const record = value as Record<string, any>
+  const nick =
+    typeof record.nick === 'string'
+      ? record.nick
+      : typeof record.nickname === 'string'
+        ? record.nickname
+        : ''
+  if (nick.trim()) return record
+
+  for (const child of Object.values(record)) {
+    const found = findProfileNode(child, depth + 1)
+    if (found) return found
+  }
+  return undefined
+}
+
+/**
+ * 校验 QQ 音乐登录 Cookie 并提取用户档案。
+ * vip_login_base 是账户级接口，失效 Cookie 会返回错误码，作为有效性的主判据；
+ * 主页资料接口用于补充昵称/头像。
+ */
+export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const diagnostic = getQqCookieDiagnostic(normalizedCookie)
+
+  let vipOk = false
+  let vipCode: unknown
+  let detailOk = false
+
+  try {
+    const resp = await getQqVipInfo({ cookie: normalizedCookie })
+    const data = resp?.req_1?.data ?? resp?.data ?? resp
+    vipCode = data?.code ?? data?.errcode
+    vipOk = vipCode === 0
+  } catch (error) {
+    console.warn('[qq_music_sdk] getVipInfo 失败:', error instanceof Error ? error.message : error)
+  }
+
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const rawUin = String(cookieObject.uin || '')
+  let profile: { nickname?: string; avatarUrl?: string; userId?: string } | undefined
+  try {
+    // uin 形如 o123456（openid）时转数值为 NaN，getUserDetail 内部会失败，跳过即可
+    const numericUin = String(Number.parseInt(rawUin.replace(/^o/i, ''), 10))
+    if (numericUin !== 'NaN') {
+      const detail = await getQqUserDetail({ uin: numericUin, cookie: normalizedCookie })
+      const node = findProfileNode(detail)
+      if (node) {
+        detailOk = true
+        const nickname =
+          typeof node.nick === 'string' ? node.nick : typeof node.nickname === 'string' ? node.nickname : ''
+        profile = {
+          nickname: nickname.trim() || undefined,
+          avatarUrl:
+            typeof node.headpic === 'string'
+              ? node.headpic
+              : typeof node.avatarUrl === 'string'
+                ? node.avatarUrl
+                : undefined,
+          userId: numericUin
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('[qq_music_sdk] getUserDetail 失败:', error instanceof Error ? error.message : error)
+  }
+
+  return {
+    valid: vipOk || detailOk,
+    signals: {
+      vipOk,
+      vipCode: vipCode === undefined ? null : vipCode,
+      detailOk
+    },
+    profile,
+    authDiagnostic: diagnostic
+  }
 }
 
 export const searchQqMusic = async ({

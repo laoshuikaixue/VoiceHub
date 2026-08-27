@@ -1503,6 +1503,7 @@ export const pages = {
       exportCookie: '导出Cookie数据',
       logout: '退出登录',
       logoutQQ: '退出 QQ 音乐登录',
+      qqLoginExpired: 'QQ 音乐登录已失效，请重新登录',
       preferredPlayTime: '期望播出时段',
       choosePlayTime: '选择时段',
       submissionNote: '投稿备注留言',

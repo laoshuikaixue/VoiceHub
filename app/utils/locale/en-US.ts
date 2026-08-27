@@ -1494,6 +1494,7 @@ export const pages = {
       exportCookie: 'Export Cookie',
       logout: 'Sign Out',
       logoutQQ: 'Sign out of QQ Music',
+      qqLoginExpired: 'QQ Music session expired, please sign in again',
       preferredPlayTime: 'Preferred Time Slot',
       choosePlayTime: 'Choose time slot',
       submissionNote: 'Submission Note',

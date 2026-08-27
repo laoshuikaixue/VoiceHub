@@ -326,7 +326,16 @@
 
             <!-- QQ音乐登录状态和选项 -->
             <div v-if="platform === 'tencent'" class="netease-options">
-              <div v-if="!isQQMusicLoggedIn" class="login-entry">
+              <!-- 检查中状态 -->
+              <div v-if="checkingQQLogin" class="netease-loading-state">
+                <div class="loading-content">
+                  <div class="loading-spinner" />
+                  <span class="loading-text">{{ locale.refreshing }}</span>
+                </div>
+              </div>
+
+              <!-- 未登录状态 -->
+              <div v-else-if="!isQQMusicLoggedIn" class="login-entry">
                 <div class="login-desc">
                   <p class="login-title">{{ locale.qqLoginTitle }}</p>
                 </div>
@@ -338,9 +347,14 @@
                   >
                     {{ locale.loginNow }}
                   </button>
+                  <button class="import-btn" type="button" @click="handleImportClickQQ">
+                    <Icon :size="14" name="upload" />
+                    {{ locale.importData }}
+                  </button>
                 </div>
               </div>
 
+              <!-- 已登录状态 -->
               <div v-else class="user-status">
                 <div class="user-compact-row">
                   <div class="user-profile">
@@ -357,6 +371,15 @@
                   </div>
 
                   <div class="user-actions-row">
+                    <button
+                      class="action-btn-compact"
+                      :aria-label="locale.exportCookie"
+                      :title="locale.exportCookie"
+                      type="button"
+                      @click="handleExportDataQQ"
+                    >
+                      <Icon :size="14" name="download" />
+                    </button>
                     <button
                       class="action-btn-compact text-error hover:bg-error-10 hover:text-error"
                       :aria-label="locale.logoutQQ"
@@ -1412,6 +1435,13 @@
       type="file"
       @change="handleImportData"
     >
+    <input
+      ref="qqFileInput"
+      accept=".json"
+      style="display: none"
+      type="file"
+      @change="handleImportDataQQ"
+    >
   </div>
 </template>
 
@@ -1494,7 +1524,8 @@ const AUDIO_MATCH_DURATION = 3
 
 const title = ref('')
 const artist = ref('')
-const platform = ref('netease') // 默认使用网易云音乐
+const platform = ref('netease') // 占位值，平台配置加载后跟随后台排序的首选平台
+const platformTouched = ref(false) // 用户是否手动切换过平台，切换后不再覆盖其选择
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
@@ -1519,15 +1550,22 @@ const {
 } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
-// 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
+// 监听平台可用性与排序变化：
+// - 当前平台被禁用时，强制切换到第一个可用平台并提示
+// - 用户未手动选择过平台时，默认选中跟随后台排序的第一位
 watch(availablePlatforms, (available) => {
-  if (available.length > 0 && !available.includes(platform.value)) {
+  if (available.length === 0) return
+  if (!available.includes(platform.value)) {
     platform.value = available[0]
     if (window.$showNotification) {
       const switchedName = locale.value.platforms[platform.value] || ''
       const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
       window.$showNotification(msg, 'info')
     }
+    return
+  }
+  if (!platformTouched.value && platform.value !== available[0]) {
+    platform.value = available[0]
   }
 })
 
@@ -1540,6 +1578,7 @@ const neteaseCookie = ref('')
 const isQQMusicLoggedIn = ref(false)
 const qqMusicUser = ref(null)
 const qqMusicCookie = ref('')
+const checkingQQLogin = ref(false)
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -2333,30 +2372,63 @@ const handleLogoutNetease = () => {
   }
 }
 
-const checkQQMusicLoginStatus = () => {
+const applyQqMusicUser = (user) => {
+  qqMusicUser.value = user || { nickname: locale.value.qqLoggedIn }
+}
+
+const validateQqCookie = async (cookie) => {
+  const res = await $fetch('/api/native-api/qq/check-cookie', {
+    method: 'POST',
+    body: { cookie }
+  })
+  return res?.data || {}
+}
+
+// 启动时静默校验本地保存的 QQ 登录态，失效则清理并提示
+const checkQQMusicLoginStatus = async () => {
   if (!import.meta.client) return
 
   const cookie = localStorage.getItem('qq_music_cookie')
-  const userStr = localStorage.getItem('qq_music_user')
-
   if (!cookie) {
     handleLogoutQQMusic()
     return
   }
 
+  // 先按本地缓存呈现，再异步校验，避免界面闪烁
   qqMusicCookie.value = cookie
   isQQMusicLoggedIn.value = true
-
   try {
+    const userStr = localStorage.getItem('qq_music_user')
     qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: locale.value.qqLoggedIn }
   } catch {
-    qqMusicUser.value = { nickname: locale.value.qqLoggedIn }
+    applyQqMusicUser(null)
+  }
+
+  checkingQQLogin.value = true
+  try {
+    const data = await validateQqCookie(cookie)
+    if (data.valid) {
+      if (data.user?.nickname || data.user?.avatarUrl) {
+        const mergedUser = { ...(qqMusicUser.value || {}), ...data.user }
+        applyQqMusicUser(mergedUser)
+        localStorage.setItem('qq_music_user', JSON.stringify(mergedUser))
+      }
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.qqLoginExpired, 'warning')
+      }
+      handleLogoutQQMusic()
+    }
+  } catch (e) {
+    console.warn('校验 QQ 登录状态失败，保留本地状态:', e)
+  } finally {
+    checkingQQLogin.value = false
   }
 }
 
 const handleQQLoginSuccess = (data) => {
   qqMusicCookie.value = data.cookie
-  qqMusicUser.value = data.user || { nickname: locale.value.qqLoggedIn }
+  applyQqMusicUser(data.user)
   isQQMusicLoggedIn.value = true
 
   if (import.meta.client) {
@@ -2374,6 +2446,80 @@ const handleLogoutQQMusic = () => {
     localStorage.removeItem('qq_music_cookie')
     localStorage.removeItem('qq_music_user')
   }
+}
+
+const handleExportDataQQ = () => {
+  if (!qqMusicCookie.value) return
+  const data = {
+    cookie: qqMusicCookie.value,
+    user: qqMusicUser.value,
+    timestamp: Date.now()
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `qq_music_cookie_${Date.now()}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  if (window.$showNotification) {
+    window.$showNotification(locale.value.notifications.exportSuccess, 'success')
+  }
+}
+
+const qqFileInput = ref(null)
+
+const handleImportClickQQ = () => {
+  qqFileInput.value.click()
+}
+
+const handleImportDataQQ = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    if (data.cookie) {
+      checkingQQLogin.value = true
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.notifications.validatingCookie, 'info')
+      }
+
+      const result = await validateQqCookie(data.cookie)
+      if (result.valid) {
+        const user =
+          result.user?.nickname || result.user?.avatarUrl
+            ? result.user
+            : { nickname: locale.value.qqLoggedIn }
+        handleQQLoginSuccess({ cookie: data.cookie, user })
+        if (window.$showNotification) {
+          window.$showNotification(locale.value.notifications.importSuccess, 'success')
+        }
+      } else {
+        if (window.$showNotification) {
+          window.$showNotification(locale.value.notifications.cookieInvalid, 'error')
+        }
+      }
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.notifications.fileFormatError, 'error')
+      }
+    }
+  } catch (e) {
+    console.error('导入失败', e)
+    if (window.$showNotification) {
+      window.$showNotification(
+        callLocale('notifications.importFailed', '', getErrorMessage(e)),
+        'error'
+      )
+    }
+  } finally {
+    checkingQQLogin.value = false
+  }
+  event.target.value = ''
 }
 
 watch(
@@ -2611,6 +2757,8 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
 // 平台切换函数
 const switchPlatform = (newPlatform) => {
   if (platform.value === newPlatform) return
+
+  platformTouched.value = true
 
   // 如果有正在进行的搜索请求，立即取消
   if (searchAbortController.value) {

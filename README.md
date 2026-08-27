@@ -1193,6 +1193,7 @@ VoiceHub/
 │   │   │   │   └── playurl.get.ts    # 获取咪咕音乐播放链接
 │   │   │   ├── qq/                  # QQ音乐账号API
 │   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
+│   │   │   │   ├── check-cookie.post.ts # 校验QQ音乐登录Cookie有效性
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
 │   │   │   │   └── login-qr.get.ts  # 获取登录二维码
 │   │   │   └── search/              # 搜索API
