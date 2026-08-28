@@ -540,6 +540,7 @@
     <Teleport to="body">
       <div
         v-if="tooltip.show"
+        ref="tooltipEl"
         :style="tooltip.style"
         class="fixed z-[999999] pointer-events-auto"
         @mouseenter="handleTooltipMouseEnter"
@@ -566,7 +567,7 @@
               class="space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1"
             >
               <div
-                v-for="user in realtimeStats.activeUsersList.slice(0, 5)"
+                v-for="user in realtimeStats.activeUsersList"
                 :key="user.id"
                 class="flex items-center gap-3 p-3 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl group hover:border-primary-30 transition-all"
               >
@@ -584,11 +585,6 @@
                 <div class="text-[10px] font-black text-text-disabled bg-bg-secondary px-2 py-1 rounded-lg">
                   {{ user.lastActive }}
                 </div>
-              </div>
-              <div v-if="realtimeStats.activeUsersList.length > 5" class="text-center py-2">
-                <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
-                  >{{ locale.andMoreUsers(realtimeStats.activeUsersList.length - 5) }}</span
-                >
               </div>
             </div>
             <div v-else class="py-10 flex flex-col items-center justify-center text-text-disabled">
@@ -609,7 +605,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, nextTick } from 'vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   TrendingUp,
@@ -768,6 +764,7 @@ const realtimeStats = ref({
 })
 
 // 全局tooltip状态
+const tooltipEl = ref(null)
 const tooltip = ref({
   show: false,
   isHovered: false,
@@ -780,9 +777,10 @@ const tooltip = ref({
 })
 
 // 鼠标进入事件处理
-const handleMouseEnter = (event) => {
+const handleMouseEnter = async (event) => {
   const rect = event.target.getBoundingClientRect()
   const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
 
   // 计算tooltip位置
   let left = rect.left + rect.width / 2
@@ -801,11 +799,32 @@ const handleMouseEnter = (event) => {
   if (top - tooltipHeight < 0) {
     top = rect.bottom + 10
   }
+  // 以视口高度为界，限制不超出底部
+  if (top + tooltipHeight > viewportHeight - 10) {
+    top = viewportHeight - tooltipHeight - 10
+  }
+  if (top < 10) {
+    top = 10
+  }
 
   tooltip.value.style.left = `${left}px`
   tooltip.value.style.top = `${top}px`
   tooltip.value.style.transform = 'translateX(-50%)'
   tooltip.value.show = true
+
+  // 渲染后按实际高度二次校正，确保完整显示在视口内
+  await nextTick()
+  const el = tooltipEl.value
+  if (!el) return
+  const actualHeight = el.offsetHeight
+  let actualTop = parseFloat(el.style.top) || 0
+  if (actualTop + actualHeight > viewportHeight - 10) {
+    actualTop = viewportHeight - actualHeight - 10
+  }
+  if (actualTop < 10) {
+    actualTop = 10
+  }
+  el.style.top = `${actualTop}px`
 }
 
 // 鼠标离开事件处理
