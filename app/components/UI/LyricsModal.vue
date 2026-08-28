@@ -270,7 +270,7 @@
                   <Icon name="skip-back" size="28" />
                 </button>
                 <button class="play-pause-btn" @click="togglePlayPause">
-                  <AppSpinner v-if="isLoadingTrack" :size="32" />
+                  <AppSpinner v-if="isLoadingTrack" :size="32" color="white" />
                   <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
                 </button>
                 <button :disabled="!hasNext" class="control-btn" @click="nextSong">
