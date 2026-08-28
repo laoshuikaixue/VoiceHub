@@ -1,11 +1,13 @@
 /**
  * 歌曲类型（语种/曲风）解析工具
- * 语种/曲风仅在网易云与 QQ 音源可判定：网易云取歌曲百科（song_wiki_info），QQ 取详情接口的数值语种码
+ * 语种/曲风仅在网易云与 QQ 音源可判定：网易云取歌曲百科（song_wiki_info），
+ * QQ 取详情接口 info.lan / info.genre 官网分类名（track_info 数值码兜底）
  * 其他平台或无 musicId 的投稿一律返回 null（不参与类型黑名单匹配）
  */
 import { getServerTimestamp } from './serverTime.ts'
 import {
   QQ_LANGUAGE_CODE_MAP,
+  QQ_GENRE_NAME_MAP,
   BLACKLIST_LANGUAGE_VALUES,
   BLACKLIST_GENRE_VALUES
 } from '../config/constants.ts'
@@ -79,6 +81,48 @@ export const mapQqLanguage = (code: unknown): string | null => {
   const normalized = Number(code)
   if (!Number.isInteger(normalized)) return null
   return QQ_LANGUAGE_CODE_MAP[normalized] ?? null
+}
+
+// 解析 QQ 歌曲详情响应（data.info.lan / data.info.genre 官网分类名 + track_info 数值码兜底）
+// 流派英文名仅映射候选曲风，已判定但未收录的流派名归「其他」；无法判定返回空数组（放行）
+export const parseTencentSongTypes = (payload: any): SongTypes => {
+  const result: SongTypes = { languages: [], genres: [] }
+  const data = payload?.req?.data ?? payload?.data
+  if (!data) return result
+
+  // 语种：info.lan 官网中文分类名优先，缺失时回退 track_info.language 数值码
+  const lanValues = Array.isArray(data.info?.lan?.content)
+    ? data.info.lan.content
+        .map((item: any) => normalizeLanguageLabels(typeof item?.value === 'string' ? item.value.trim() : ''))
+        .flat()
+    : []
+  if (lanValues.length > 0) {
+    result.languages = lanValues
+  } else {
+    const language = mapQqLanguage(data.track_info?.language)
+    const rawCode = data.track_info?.language
+    // 已判定为整数但未收录的语种码归入「其他」；缺失/非整数视为无法判定
+    if (language) {
+      result.languages = [language]
+    } else if (
+      rawCode !== null &&
+      rawCode !== undefined &&
+      rawCode !== '' &&
+      Number.isInteger(Number(rawCode))
+    ) {
+      result.languages = ['其他']
+    }
+  }
+
+  // 曲风：info.genre 官网英文分类名
+  const genreValues = Array.isArray(data.info?.genre?.content) ? data.info.genre.content : []
+  for (const item of genreValues) {
+    if (typeof item?.value !== 'string' || !item.value.trim()) continue
+    const mapped = QQ_GENRE_NAME_MAP[item.value.trim()]
+    result.genres.push(mapped || '其他')
+  }
+
+  return { languages: [...new Set(result.languages)], genres: [...new Set(result.genres)] }
 }
 
 // 网易云曲风为「一级-二级」结构，取一级分类
@@ -167,19 +211,7 @@ const fetchTencentTypes = async (musicId: string): Promise<SongTypes | null> => 
   try {
     const normalized = normalizeTxMusicId(musicId)
     const result: any = await txRequest(TX_MUSICU_URL, createTxSongDetailBody(normalized))
-    const rawCode = result?.req?.data?.track_info?.language
-    let language = mapQqLanguage(rawCode)
-    // 已判定为整数但未收录的语种码归入「其他」；缺失/非整数视为无法判定
-    if (
-      !language &&
-      rawCode !== null &&
-      rawCode !== undefined &&
-      rawCode !== '' &&
-      Number.isInteger(Number(rawCode))
-    ) {
-      language = '其他'
-    }
-    return { languages: language ? [language] : [], genres: [] }
+    return parseTencentSongTypes(result)
   } catch (error: any) {
     console.warn('[song-type-resolver] QQ音乐详情获取失败:', error?.message || error)
     return null

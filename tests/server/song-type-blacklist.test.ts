@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   normalizeLanguageLabels,
   parseNeteaseWikiTypes,
+  parseTencentSongTypes,
   mapQqLanguage,
   matchBlacklistGenre,
   matchBlacklistLanguage
@@ -10,7 +11,8 @@ import {
 import {
   BLACKLIST_LANGUAGE_VALUES,
   BLACKLIST_GENRE_VALUES,
-  QQ_LANGUAGE_CODE_MAP
+  QQ_LANGUAGE_CODE_MAP,
+  QQ_GENRE_NAME_MAP
 } from '../../server/config/constants.ts'
 
 test('网易云语种文本拆分与同义词归一', () => {
@@ -68,6 +70,46 @@ test('QQ 语种数字码映射', () => {
   assert.equal(mapQqLanguage(undefined), null)
 })
 
+test('解析 QQ 详情的官网分类名（语种/曲风）', () => {
+  const payload = {
+    req: {
+      data: {
+        info: {
+          lan: { content: [{ value: '国语' }, { value: ' 英语' }] },
+          genre: { content: [{ value: 'Pop' }, { value: 'Rock' }] }
+        },
+        track_info: { language: 0, genre: 1 }
+      }
+    }
+  }
+  const types = parseTencentSongTypes(payload)
+  assert.deepEqual(types.languages, ['华语', '英语'])
+  assert.deepEqual(types.genres, ['流行', '摇滚'])
+
+  // 未收录流派名归「其他」，重复值去重
+  const other = parseTencentSongTypes({
+    req: { data: { info: { genre: { content: [{ value: 'Animation' }, { value: 'Rock ' }] } } } }
+  })
+  assert.deepEqual(other.languages, [])
+  assert.deepEqual(other.genres, ['其他', '摇滚'])
+
+  // 空结构容错
+  assert.deepEqual(parseTencentSongTypes(null), { languages: [], genres: [] })
+  assert.deepEqual(parseTencentSongTypes({ req: { data: {} } }), { languages: [], genres: [] })
+  assert.deepEqual(parseTencentSongTypes({ req: { data: { info: {} } } }), { languages: [], genres: [] })
+})
+
+test('QQ 语种：info.lan 缺失时回退数值码，未收录整数码归「其他」', () => {
+  const fallback = parseTencentSongTypes({ req: { data: { track_info: { language: 5 } } } })
+  assert.deepEqual(fallback.languages, ['英语'])
+
+  const unknownCode = parseTencentSongTypes({ req: { data: { track_info: { language: 99 } } } })
+  assert.deepEqual(unknownCode.languages, ['其他'])
+
+  const missing = parseTencentSongTypes({ req: { data: { track_info: {} } } })
+  assert.deepEqual(missing.languages, [])
+})
+
 test('曲风与黑名单值按一级分类匹配', () => {
   assert.equal(matchBlacklistGenre('摇滚', ['摇滚-流行摇滚', '流行']), true)
   assert.equal(matchBlacklistGenre('流行', ['流行-华语流行']), true)
@@ -103,6 +145,15 @@ test('QQ 语种映射值必须落在语种候选值集合内', () => {
     assert.ok(
       (BLACKLIST_LANGUAGE_VALUES as readonly string[]).includes(label),
       `QQ 语种映射值 ${label} 不在候选值集合中`
+    )
+  }
+})
+
+test('QQ 流派映射值必须落在曲风候选值集合内', () => {
+  for (const label of Object.values(QQ_GENRE_NAME_MAP)) {
+    assert.ok(
+      (BLACKLIST_GENRE_VALUES as readonly string[]).includes(label),
+      `QQ 流派映射值 ${label} 不在候选值集合中`
     )
   }
 })

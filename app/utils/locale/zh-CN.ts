@@ -1892,7 +1892,7 @@ export const admin = {
     languageLabel: '语种值',
     genreLabel: '曲风值',
     languageHint: '仅对网易云/QQ音源生效：「其他」指已判定但不属于上述语种的歌曲；无法判定或手动投稿不拦截',
-    genreHint: '仅对网易云音源生效（QQ无曲风数据）；「其他」指一级曲风不属于上述候选的歌曲；无法判定不拦截',
+    genreHint: '对网易云/QQ音源生效：QQ流派按官网英文分类映射，不属于上述候选的流派归入「其他」；无法判定不拦截',
     songPlaceholder: '例如: 歌曲名 - 艺术家',
     keywordPlaceholder: '例如: 敏感词、特定风格',
     reason: '封禁原因 (可选)',

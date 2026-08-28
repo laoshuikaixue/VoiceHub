@@ -1883,7 +1883,7 @@ export const admin = {
     languageLabel: 'Language',
     genreLabel: 'Genre',
     languageHint: 'NetEase/QQ sources only. "Other" matches songs whose language is determined but outside the listed ones. Undetermined or manual submissions are not blocked.',
-    genreHint: 'NetEase source only (no genre data for QQ). "Other" matches songs whose primary genre is outside the listed ones. Undetermined songs are not blocked.',
+    genreHint: 'NetEase/QQ sources: QQ genres come from official category names; genres outside the listed ones fall into "Other". Undetermined songs are not blocked.',
     songPlaceholder: 'e.g. Song Title - Artist',
     keywordPlaceholder: 'e.g. sensitive word, specific style',
     reason: 'Reason (optional)',
