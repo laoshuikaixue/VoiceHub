@@ -1439,9 +1439,15 @@ const preprocessImages = async (element) => {
       img.style.setProperty('object-fit', 'contain', 'important')
       img.style.setProperty('border-radius', '4px', 'important')
     } else if (img.classList.contains('song-cover')) {
-      // 尺寸跟随 .cover-section，硬写 40px 会被全局 img max-width 夹窄导致非正方形
-      img.style.setProperty('width', '100%', 'important')
-      img.style.setProperty('height', '100%', 'important')
+      // 仅经典样式封面跟随 .cover-section 容器尺寸（硬写 40px 会被全局 img max-width 夹窄导致非正方形）；
+      // 表格样式封面无容器包装，必须保持固定尺寸，100% 会占满单元格挤掉文字
+      if (img.closest('.cover-section')) {
+        img.style.setProperty('width', '100%', 'important')
+        img.style.setProperty('height', '100%', 'important')
+      } else {
+        img.style.setProperty('width', '36px', 'important')
+        img.style.setProperty('height', '36px', 'important')
+      }
       img.style.setProperty('object-fit', 'cover', 'important')
       img.style.setProperty('border-radius', '4px', 'important')
     }
