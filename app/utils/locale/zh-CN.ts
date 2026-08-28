@@ -28,7 +28,7 @@ export const siteConfig = {
   statisticsCodeEnabled: '启用站点统计代码',
   statisticsCodeEnabledDesc: '开启后才会将下方统计代码注入到页面',
   statisticsCodePlaceholder: '粘贴统计代码片段（如百度统计、51.la、Clarity、Google Analytics 等）',
-  statisticsCodeHint: '将注入到所有页面的 <head> 中，支持任意 HTML/JS 统计代码。',
+  statisticsCodeHint: '将注入到所有页面的 <head> 中，支持任意 HTML/JS 统计代码。保存后约 1 分钟内生效。',
 
   // 视觉识别
   themeSettings: '主题设置',

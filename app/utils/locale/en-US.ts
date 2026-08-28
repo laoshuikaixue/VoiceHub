@@ -22,7 +22,7 @@ export const siteConfig = {
   statisticsCodeEnabled: 'Enable Site Statistics Code',
   statisticsCodeEnabledDesc: 'Only injects the snippet below into pages when enabled',
   statisticsCodePlaceholder: 'Paste your statistics snippet (e.g. Baidu Analytics, 51.la, Clarity, Google Analytics)',
-  statisticsCodeHint: 'Injected into the <head> of every page. Supports any HTML/JS statistics code.',
+  statisticsCodeHint: 'Injected into the <head> of every page. Supports any HTML/JS statistics code. Takes effect within about 1 minute after saving.',
 
   themeSettings: 'Theme Settings',
   themeSettingsDesc: 'Control each theme separately and use the star to choose the default theme.',

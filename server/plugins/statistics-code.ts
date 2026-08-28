@@ -8,6 +8,7 @@ import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
  *
  * 采用模块级 TTL 缓存复用统一设置读取封装（getSystemSettingsCached），
  * 避免在渲染热路径上每次请求都查询数据库。
+ * 读取失败时按关闭降级且不写缓存，下个请求重试。
  */
 const CACHE_TTL_MS = 60 * 1000 // 60 秒
 
@@ -32,19 +33,19 @@ async function getStatisticsCodeConfig(): Promise<{
     inFlight = (async () => {
       try {
         const settings = await getSystemSettingsCached()
-        cache = {
-          enabled: !!settings?.statisticsCodeEnabled,
-          code: settings?.statisticsCode || ''
+        // getSystemSettingsCached 读取失败时返回 null（不抛错），按关闭降级且不写缓存，下个请求重试
+        if (!settings) {
+          return { enabled: false, code: '' }
         }
-      } catch (error) {
-        // 读取失败按安全默认（关闭）降级，不阻塞渲染
-        console.error('[StatisticsCode] 读取统计代码配置失败:', error)
-        cache = { enabled: false, code: '' }
-      } finally {
+        cache = {
+          enabled: !!settings.statisticsCodeEnabled,
+          code: settings.statisticsCode || ''
+        }
         cacheFetchedAt = Date.now()
+        return cache
+      } finally {
         inFlight = null
       }
-      return cache
     })()
   }
 
