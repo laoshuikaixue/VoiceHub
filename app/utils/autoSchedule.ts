@@ -10,6 +10,7 @@
  * @param preSelected 用户已固定的歌曲（总是保留，算法仅对剩余候选补齐剩余时长）
  * @param plansCount 返回方案数，按 absDiff 升序排列（默认 1，仅返回最优）
  * @param targetSongCount 期望的最终歌曲数量（可选；启用后优先匹配歌曲数量，再比较时长）
+ * @param targetRequesterCount 期望的不同投稿人数量（可选；启用后优先覆盖不同投稿人，再比较时长）
  */
 export type AutoScheduleDirection = 'under' | 'over' | 'middle'
 
@@ -41,16 +42,58 @@ function normalizeTargetSongCount(value: number | null | undefined): number | nu
   return Math.floor(value)
 }
 
-function compareResults(
-  a: AutoScheduleResult,
-  b: AutoScheduleResult,
-  targetSongCount: number | null,
+/**
+ * 按投稿人分散排序：每个投稿人的首首歌排前，其余排后（组内保持原时长顺序）
+ * 用于贪心选曲时优先覆盖不同投稿人
+ */
+function diversifyOrder(
+  list: AutoScheduleCandidate[],
+  targetRequesterCount: number | null
+): AutoScheduleCandidate[] {
+  if (targetRequesterCount === null || targetRequesterCount <= 0) return list
+  const seen = new Set<string>()
+  const firstOfRequester: AutoScheduleCandidate[] = []
+  const rest: AutoScheduleCandidate[] = []
+  for (const song of list) {
+    const key = song.requester || ''
+    if (key && !seen.has(key)) {
+      seen.add(key)
+      firstOfRequester.push(song)
+    } else {
+      rest.push(song)
+    }
+  }
+  return [...firstOfRequester, ...rest]
+}
+
+interface ResultCompareContext {
+  targetSongCount: number | null
   fixedCount: number
+  targetRequesterCount: number | null
+  fixedRequesterSet: Set<string>
+}
+
+function distinctRequesterCount(
+  songs: AutoScheduleCandidate[],
+  ctx: ResultCompareContext
 ): number {
-  if (targetSongCount !== null) {
-    const aCountDiff = Math.abs(a.songs.length + fixedCount - targetSongCount)
-    const bCountDiff = Math.abs(b.songs.length + fixedCount - targetSongCount)
+  const set = new Set(ctx.fixedRequesterSet)
+  for (const s of songs) {
+    if (s.requester) set.add(s.requester)
+  }
+  return set.size
+}
+
+function compareResults(a: AutoScheduleResult, b: AutoScheduleResult, ctx: ResultCompareContext): number {
+  if (ctx.targetSongCount !== null) {
+    const aCountDiff = Math.abs(a.songs.length + ctx.fixedCount - ctx.targetSongCount)
+    const bCountDiff = Math.abs(b.songs.length + ctx.fixedCount - ctx.targetSongCount)
     if (aCountDiff !== bCountDiff) return aCountDiff - bCountDiff
+  }
+  if (ctx.targetRequesterCount !== null) {
+    const aReqDiff = Math.abs(distinctRequesterCount(a.songs, ctx) - ctx.targetRequesterCount)
+    const bReqDiff = Math.abs(distinctRequesterCount(b.songs, ctx) - ctx.targetRequesterCount)
+    if (aReqDiff !== bReqDiff) return aReqDiff - bReqDiff
   }
   return a.absDiff - b.absDiff || b.songs.length - a.songs.length
 }
@@ -103,12 +146,20 @@ export function autoSchedule(
   candidates: AutoScheduleCandidate[],
   preSelected: AutoScheduleCandidate[] = [],
   plansCount: number = 1,
-  targetSongCount?: number | null
+  targetSongCount?: number | null,
+  targetRequesterCount?: number | null
 ): AutoScheduleResult | AutoScheduleResult[] {
   const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
   if (input.earlyReturn !== undefined) return input.earlyReturn
   const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
+  const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
+  const compareCtx: ResultCompareContext = {
+    targetSongCount: normalizedTargetSongCount,
+    fixedCount: preSelected.length,
+    targetRequesterCount: normalizedTargetRequesterCount,
+    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean))
+  }
   const targetAdditionalCount = normalizedTargetSongCount === null
     ? null
     : Math.max(0, normalizedTargetSongCount - preSelected.length)
@@ -144,8 +195,9 @@ export function autoSchedule(
 
     if (dir === 'under') {
       const ids = new Set(result.map((s) => s.id))
-      for (const song of [...availableCandidates].sort(
-        (a, b) => a.durationSeconds! - b.durationSeconds!
+      for (const song of diversifyOrder(
+        [...availableCandidates].sort((a, b) => a.durationSeconds! - b.durationSeconds!),
+        normalizedTargetRequesterCount
       )) {
         if (targetAdditionalCount !== null && result.length >= targetAdditionalCount) break
         if (ids.has(song.id)) continue
@@ -210,9 +262,12 @@ export function autoSchedule(
   const sortedAscending = [...availableCandidates].sort(
     (a, b) => a.durationSeconds! - b.durationSeconds!
   )
+  // 设置投稿人目标时分散排序，优先覆盖不同投稿人
+  const diversifiedDescending = diversifyOrder(sortedDescending, normalizedTargetRequesterCount)
+  const diversifiedAscending = diversifyOrder(sortedAscending, normalizedTargetRequesterCount)
   const sortedByDuration = normalizedTargetSongCount !== null && direction === 'under'
-    ? sortedAscending
-    : sortedDescending
+    ? diversifiedAscending
+    : diversifiedDescending
 
   // 生成方案
   const plans: AutoScheduleResult[] = []
@@ -228,8 +283,8 @@ export function autoSchedule(
 
   // 确定性路径
   if (direction === 'middle') {
-    addUnique(runGreedy(normalizedTargetSongCount !== null ? sortedAscending : sortedDescending, 'under'))
-    addUnique(runGreedy(sortedDescending, 'over'))
+    addUnique(runGreedy(normalizedTargetSongCount !== null ? diversifiedAscending : diversifiedDescending, 'under'))
+    addUnique(runGreedy(diversifiedDescending, 'over'))
   } else {
     addUnique(runGreedy(sortedByDuration, direction))
   }
@@ -245,11 +300,11 @@ export function autoSchedule(
     }
     const shuffledSorted = shuffled.map((id) => songMap.get(id)).filter(Boolean)
     const dir = direction === 'middle' ? (i % 2 === 0 ? 'under' : 'over') : direction
-    addUnique(runGreedy(shuffledSorted, dir))
+    addUnique(runGreedy(diversifyOrder(shuffledSorted, normalizedTargetRequesterCount), dir))
   }
 
   // 按质量排序：设置期望首数时先比较首数偏差，再比较时长偏差
-  plans.sort((a, b) => compareResults(a, b, normalizedTargetSongCount, preSelected.length))
+  plans.sort((a, b) => compareResults(a, b, compareCtx))
 
   // 合并固定歌曲并截取
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
@@ -278,19 +333,30 @@ export function autoScheduleExhaustive(
   candidates: AutoScheduleCandidate[],
   preSelected: AutoScheduleCandidate[] = [],
   plansCount: number = 1,
-  targetSongCount?: number | null
+  targetSongCount?: number | null,
+  targetRequesterCount?: number | null
 ): AutoScheduleResult | AutoScheduleResult[] {
   const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
   if (input.earlyReturn !== undefined) return input.earlyReturn
   const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
+  const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
+  const compareCtx: ResultCompareContext = {
+    targetSongCount: normalizedTargetSongCount,
+    fixedCount: preSelected.length,
+    targetRequesterCount: normalizedTargetRequesterCount,
+    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean))
+  }
 
   // 将时长收窄为 number 类型，消除后续的非空断言
   type DurationCandidate = Omit<AutoScheduleCandidate, 'durationSeconds'> & { durationSeconds: number }
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
-  // 按时长降序排列，大歌曲优先，利于剪枝
-  const sorted = [...availableCandidates as DurationCandidate[]].sort((a, b) => b.durationSeconds - a.durationSeconds)
+  // 按时长降序排列，大歌曲优先，利于剪枝；设置投稿人目标时分散排序
+  const sorted = diversifyOrder(
+    [...(availableCandidates as DurationCandidate[])].sort((a, b) => b.durationSeconds - a.durationSeconds),
+    normalizedTargetRequesterCount
+  )
   const n = sorted.length
 
   // 后缀和：suffixSum[i] = sorted[i..n-1] 的时长之和，用于判定能否达到目标
@@ -321,7 +387,7 @@ export function autoScheduleExhaustive(
     if (seenKeys.has(key)) return
     seenKeys.add(key)
     solutions.push({ songs: [...currentSongs], totalDuration: total, diff, absDiff })
-    solutions.sort((a, b) => compareResults(a, b, normalizedTargetSongCount, preSelected.length))
+    solutions.sort((a, b) => compareResults(a, b, compareCtx))
     if (solutions.length > maxSolutions) {
       solutions.splice(maxSolutions)
       worstAbs = solutions[solutions.length - 1].absDiff
@@ -385,7 +451,7 @@ export function autoScheduleExhaustive(
 
   dfs(0, 0)
 
-  solutions.sort((a, b) => compareResults(a, b, normalizedTargetSongCount, preSelected.length))
+  solutions.sort((a, b) => compareResults(a, b, compareCtx))
 
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
   const finalPlans = solutions.slice(0, plansCount).map((p) => ({

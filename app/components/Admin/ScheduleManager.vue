@@ -1424,6 +1424,22 @@
             </div>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.targetRequesterCount }}</label>
+            <div class="flex gap-2">
+              <input
+                v-model.number="autoScheduleTargetRequesterCount"
+                type="number"
+                min="1"
+                step="1"
+                :placeholder="locale.targetRequesterCountPlaceholder"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                @keydown.enter="runAutoSchedule"
+              />
+              <span class="flex items-center text-xs text-text-disabled px-1">{{ locale.requesterCountUnit }}</span>
+            </div>
+          </div>
+
           <!-- 工具栏 -->
           <div class="flex items-center gap-2 p-2 bg-bg-secondary-50 border border-border-secondary rounded-xl">
             <div class="flex items-center gap-2 flex-1">
@@ -2251,6 +2267,7 @@ const openContextMenu = (e, side, song) => {
 const closeContextMenu = () => { contextMenuOpen.value = false }
 const autoScheduleTargetMinutes = ref(null)
 const autoScheduleTargetSongCount = ref(null)
+const autoScheduleTargetRequesterCount = ref(null)
 const autoScheduleDirection = ref('under')
 const autoScheduleFixExisting = ref(false)
 
@@ -3927,6 +3944,7 @@ const openAutoScheduleDialog = () => {
   currentPlanIndex.value = 0
   autoScheduleAlgorithm.value = 'auto'
   autoScheduleTargetSongCount.value = null
+  autoScheduleTargetRequesterCount.value = null
   autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
@@ -3937,6 +3955,7 @@ const closeAutoScheduleDialog = () => {
   currentPlanIndex.value = 0
   autoScheduleAlgorithm.value = 'auto'
   autoScheduleTargetSongCount.value = null
+  autoScheduleTargetRequesterCount.value = null
   autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
@@ -3945,25 +3964,34 @@ const resetAutoSchedule = () => {
   currentPlanIndex.value = 0
   autoScheduleAlgorithm.value = 'auto'
   autoScheduleTargetSongCount.value = null
+  autoScheduleTargetRequesterCount.value = null
   autoScheduleFixExisting.value = false
 }
 
 const autoScheduleCandidates = computed(() => {
   const scheduledIds = new Set(localScheduledSongs.value.map((s) => s.song && s.song.id).filter(Boolean))
 
+  // 已加入其他日期草稿的歌曲，排除出自动排期范围
+  const otherDateDraftIds = new Set(
+    drafts.value
+      .filter((d) => d.song && d.song.id && d.playDate && getScheduleDateValue(d.playDate) !== selectedDate.value)
+      .map((d) => d.song.id)
+  )
+  const excludeIds = new Set([...scheduledIds, ...otherDateDraftIds])
+
   // 备选池模式
   if (activeTab.value === 'pool') {
     return songPool.value
-      .filter((item) => !scheduledIds.has(item.songId))
+      .filter((item) => !excludeIds.has(item.songId))
       .map(poolCandidateFromItem)
   }
 
   // 待排库/重播/所有：复用 allUnscheduledSongs 的过滤逻辑，再排除已排期歌曲
-  const base = allUnscheduledSongs.value.filter((s) => !scheduledIds.has(s.id))
+  const base = allUnscheduledSongs.value.filter((s) => !excludeIds.has(s.id))
   if (activeTab.value === 'all') {
     // 「所有」额外纳入备选池未排期的歌曲
     const poolCandidates = songPool.value
-      .filter((item) => !scheduledIds.has(item.songId))
+      .filter((item) => !excludeIds.has(item.songId))
       .map(poolCandidateFromItem)
     const baseIds = new Set(base.map((s) => s.id))
     return [...base, ...poolCandidates.filter((p) => !baseIds.has(p.songId))]
@@ -3999,7 +4027,10 @@ const runAutoSchedule = () => {
   const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
     ? Math.floor(autoScheduleTargetSongCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount)
+  const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
+    ? Math.floor(autoScheduleTargetRequesterCount.value)
+    : null
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
@@ -4028,7 +4059,10 @@ const generateMorePlans = async () => {
   const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
     ? Math.floor(autoScheduleTargetSongCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount)
+  const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
+    ? Math.floor(autoScheduleTargetRequesterCount.value)
+    : null
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
   let addedCount = 0
