@@ -337,6 +337,13 @@
       "when": 1787880865098,
       "tag": "20260828013425_add_song_type_blacklist",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1787902641410,
+      "tag": "20260828073721_add_statistics_code",
+      "breakpoints": true
     }
   ]
 }

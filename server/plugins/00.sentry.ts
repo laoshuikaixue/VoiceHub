@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/node'
+import { hostname } from 'node:os'
 import type { H3Event } from 'h3'
 import {
   getSentryEventSearchText,
@@ -155,6 +156,8 @@ export default defineNitroPlugin((nitroApp) => {
         dsn: sentryConfig.dsn,
         environment: sentryConfig.environment,
         release: sentryConfig.release || undefined,
+        // 覆盖 SDK 自动采集的容器 hostname：由 SENTRY_SERVER_NAME 指定，未设置时回退到 os.hostname()
+        serverName: process.env.SENTRY_SERVER_NAME || hostname(),
         integrations: [
           Sentry.consoleLoggingIntegration({
             levels: process.env.NODE_ENV === 'development' ? ['log', 'warn', 'error'] : ['error']

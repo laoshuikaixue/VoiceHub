@@ -831,6 +831,8 @@ export default defineEventHandler(async (event) => {
               'turnstileSecretKey',
               'autoBackupEnabled',
               'autoBackupConfig',
+              'statisticsCodeEnabled',
+              'statisticsCode',
               'enabledPlatforms',
               'platformOrder'
             ]

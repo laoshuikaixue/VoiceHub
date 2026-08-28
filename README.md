@@ -1315,7 +1315,8 @@ VoiceHub/
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
-│   │   └── redis-lifecycle.ts # Redis短期状态连接生命周期
+│   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
+│   │   └── statistics-code.ts # 站点统计代码注入插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
