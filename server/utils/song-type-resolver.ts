@@ -4,7 +4,6 @@
  * QQ 取详情接口 info.lan / info.genre 官网分类名（track_info 数值码兜底）
  * 其他平台或无 musicId 的投稿一律返回 null（不参与类型黑名单匹配）
  */
-import { getServerTimestamp } from './serverTime.ts'
 import {
   QQ_LANGUAGE_CODE_MAP,
   QQ_GENRE_NAME_MAP,
@@ -154,14 +153,6 @@ export const matchBlacklistLanguage = (value: string, languages: string[]): bool
   return languages.includes(target)
 }
 
-// 正缓存 24h，空结果负缓存 30min，避免外部接口被打爆
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000
-const NEGATIVE_TTL_MS = 30 * 60 * 1000
-const CACHE_MAX_SIZE = 2000
-
-const cache = new Map<string, { types: SongTypes | null; expiresAt: number }>()
-const inflight = new Map<string, Promise<SongTypes | null>>()
-
 // 网易云增强 API 模块懒加载与配置初始化（模块级防并发）
 let neteaseApiPromise: Promise<any> | null = null
 let ncmConfigReady = false
@@ -226,30 +217,5 @@ export const resolveSongTypes = async (
   const platform = String(musicPlatform || '').trim()
   const id = String(musicId || '').trim()
   if (!id || (platform !== 'netease' && platform !== 'tencent')) return null
-
-  const cacheKey = `${platform}:${id}`
-  const cached = cache.get(cacheKey)
-  if (cached && cached.expiresAt > getServerTimestamp()) return cached.types
-
-  let promise = inflight.get(cacheKey)
-  if (!promise) {
-    promise = (platform === 'netease' ? fetchNeteaseTypes(id) : fetchTencentTypes(id))
-      .then((types) => {
-        const hasData = !!types && (types.languages.length > 0 || types.genres.length > 0)
-        if (cache.size >= CACHE_MAX_SIZE) {
-          const firstKey = cache.keys().next().value
-          if (firstKey !== undefined) cache.delete(firstKey)
-        }
-        cache.set(cacheKey, {
-          types,
-          expiresAt: getServerTimestamp() + (hasData ? CACHE_TTL_MS : NEGATIVE_TTL_MS)
-        })
-        return types
-      })
-      .finally(() => {
-        inflight.delete(cacheKey)
-      })
-    inflight.set(cacheKey, promise)
-  }
-  return await promise
+  return platform === 'netease' ? fetchNeteaseTypes(id) : fetchTencentTypes(id)
 }
