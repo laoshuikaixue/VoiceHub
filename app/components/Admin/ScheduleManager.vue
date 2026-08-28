@@ -192,19 +192,21 @@
           @dragleave="handleDraggableDragLeave"
           @drop.stop.prevent="handleReturnToDraggable"
         >
-          <div class="flex items-center justify-between px-1">
-            <h3 class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase">
+          <div class="flex flex-wrap items-center justify-between gap-y-2 px-1">
+            <h3
+              class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase whitespace-nowrap shrink-0"
+            >
               {{ activeTab === 'pool' ? locale.poolList : locale.pendingSongs }}
             </h3>
             <div class="flex items-center gap-2 w-full lg:w-auto">
               <div
-                class="flex flex-1 lg:flex-none gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
+                class="flex flex-1 lg:flex-none flex-wrap gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
               >
                 <button
                   v-for="tab in scheduleTabs"
                   :key="tab.id"
                   :class="[
-                    'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    'flex-1 lg:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                     activeTab === tab.id
                       ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
                       : 'text-text-disabled hover:text-text-tertiary'
