@@ -4,7 +4,7 @@ export const txHeaders = {
   'User-Agent': 'QQMusic 14090508(android 12)'
 }
 
-const TX_MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
+export const TX_MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const QQ_MID_PREFIX_RE = /^qqmid:/i
 const QQ_LEGACY_ID_RE = /^\d+$/
 const TX_DETAIL_CACHE_TTL = 6 * 60 * 60 * 1000

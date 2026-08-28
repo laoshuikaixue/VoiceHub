@@ -3572,7 +3572,9 @@ const submitSong = async (result, options = {}) => {
         method: 'POST',
         body: {
           title: title.value,
-          artist: artist.value
+          artist: artist.value,
+          musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value,
+          musicId: result.musicId ? String(result.musicId) : null
         }
       })
 
@@ -4047,7 +4049,9 @@ const handleManualSubmit = async () => {
         method: 'POST',
         body: {
           title: title.value,
-          artist: manualArtist.value
+          artist: manualArtist.value,
+          musicPlatform: platform.value,
+          musicId: null // 手动输入没有 musicId，类型黑名单不生效
         }
       })
 

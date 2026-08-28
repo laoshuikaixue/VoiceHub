@@ -330,6 +330,13 @@
       "when": 1787825301370,
       "tag": "20260827100821_add_register_requires_grade_class",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1787880865098,
+      "tag": "20260828013425_add_song_type_blacklist",
+      "breakpoints": true
     }
   ]
 }

@@ -2,7 +2,7 @@ import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestam
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
-export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
+export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD', 'LANGUAGE', 'GENRE']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'pending', 'withdrawn', 'graduate', 'rejected']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);

@@ -6,6 +6,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { backfillMissingSongDurations } from '~~/server/services/durationValidationService'
 import { normalizeStoredDuration } from '~~/server/utils/song-duration-policy'
+import { matchBlacklistGenre, matchBlacklistLanguage, resolveSongTypes } from '~~/server/utils/song-type-resolver'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -56,6 +57,11 @@ export default defineEventHandler(async (event) => {
     .from(songBlacklists)
     .where(eq(songBlacklists.isActive, true))
 
+  // 语种/曲风黑名单是否启用
+  const hasTypeBlacklist = blacklistItems.some(
+    (item) => item.type === 'LANGUAGE' || item.type === 'GENRE'
+  )
+
   // 获取当前学期已存在的歌曲，用于排重
   const existingSongs = await db
     .select({
@@ -94,6 +100,12 @@ export default defineEventHandler(async (event) => {
     let isBlocked = false
     let blockReason = ''
 
+    // 语种/曲风按 platform+musicId 解析类型；解析失败或平台不支持时放行
+    let songTypes: Awaited<ReturnType<typeof resolveSongTypes>> = null
+    if (hasTypeBlacklist) {
+      songTypes = await resolveSongTypes(song.musicPlatform, song.musicId)
+    }
+
     for (const item of blacklistItems) {
       if (item.type === 'SONG') {
         if (songFullName.includes(item.value.toLowerCase())) {
@@ -105,6 +117,18 @@ export default defineEventHandler(async (event) => {
         if (songFullName.includes(item.value.toLowerCase())) {
           isBlocked = true
           blockReason = item.reason || '包含违规关键词'
+          break
+        }
+      } else if (item.type === 'LANGUAGE') {
+        if (songTypes && matchBlacklistLanguage(item.value, songTypes.languages)) {
+          isBlocked = true
+          blockReason = item.reason || `语种「${item.value}」已被加入黑名单`
+          break
+        }
+      } else if (item.type === 'GENRE') {
+        if (songTypes && matchBlacklistGenre(item.value, songTypes.genres)) {
+          isBlocked = true
+          blockReason = item.reason || `曲风「${item.value}」已被加入黑名单`
           break
         }
       }

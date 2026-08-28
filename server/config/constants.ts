@@ -402,8 +402,29 @@ export const USER_ROLES = {
 // 黑名单类型常量
 export const BLACKLIST_TYPES = {
   SONG: 'SONG',
-  KEYWORD: 'KEYWORD'
+  KEYWORD: 'KEYWORD',
+  LANGUAGE: 'LANGUAGE',
+  GENRE: 'GENRE'
 } as const
+
+// 语种黑名单候选值（存储值即匹配值；新增需同步前端 app/utils/blacklist.ts）
+export const BLACKLIST_LANGUAGE_VALUES = ['华语', '粤语', '闽南语', '英语', '日语', '韩语', '其他'] as const
+
+// 曲风黑名单候选值（取网易云曲风标签一级分类；QQ 音源无曲风数据不参与匹配；新增需同步前端 app/utils/blacklist.ts）
+export const BLACKLIST_GENRE_VALUES = [
+  '流行', '摇滚', '民谣', '电子', '舞曲', '说唱', '古典', '爵士',
+  '乡村', '原声带', '蓝调', '轻音乐', '其他'
+] as const
+
+// QQ 音乐语种数字码 → 黑名单语种值（实测映射；未收录码视为未知，不参与匹配）
+export const QQ_LANGUAGE_CODE_MAP: Record<number, string> = {
+  0: '华语',
+  1: '粤语',
+  2: '闽南语',
+  3: '日语',
+  4: '韩语',
+  5: '英语'
+}
 
 // 音乐平台常量
 export const MUSIC_PLATFORMS = {
