@@ -35,6 +35,9 @@ const isNeonDatabase =
   isDomainOrSubdomain(databaseHostname, 'neon.tech') ||
   isDomainOrSubdomain(databaseHostname, 'neon.database.com');
 
+// Serverless 部署（每个函数实例独立建池，必须压低单实例连接数，防止实例数×池大小超过数据库 max_connections）
+const isServerlessDatabase = !!process.env.VERCEL || !!process.env.NETLIFY;
+
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {
   if (isNeonDatabase) {
@@ -58,9 +61,11 @@ const getDatabaseConfig = () => {
   } else {
     // 标准 PostgreSQL 数据库配置
     return {
-      max: process.env.NODE_ENV === 'production' ? 10 : 5, // 普通PostgreSQL可以支持更多连接
+      // Serverless 下单实例池压到 2：1 vCPU 数据库同时只能执行一条查询，大池只会耗尽 max_connections
+      max: isServerlessDatabase ? 2 : process.env.NODE_ENV === 'production' ? 10 : 5,
       idle_timeout: 20, // 增加空闲超时时间
-      connect_timeout: 30, // 增加连接超时时间以适应网络延迟
+      // 连接失败快速抛出，避免 30 秒挂起拖垮函数实例并引发重试风暴
+      connect_timeout: isServerlessDatabase ? 10 : 30,
       max_lifetime: 3600, // 连接最大生命周期（1小时）
       ssl: connectionString.includes('sslmode=require') || connectionString.includes('ssl=true') ? 'require' : false,
       prepare: false, // 禁用预处理语句以提高兼容性
