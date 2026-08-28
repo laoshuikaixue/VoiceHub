@@ -2053,7 +2053,27 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
 }
 
 // 音频播放器
-const { playSong } = useSongPlayer()
+const { playSong: playSongWithQueue } = useSongPlayer()
+
+// 播放歌曲：以歌曲所在列表（播放顺序/待排歌曲）作为播放队列，支持上下切歌与循环模式
+const playSong = (songOrSchedule) => {
+  // 兼容右键菜单传入的排期项（含 .song 字段）
+  const song = songOrSchedule && songOrSchedule.song ? songOrSchedule.song : songOrSchedule
+  if (!song) return
+  // 播放顺序列表中的歌曲，以播放顺序为队列
+  if (
+    localScheduledSongs.value.some((s) => s.song && String(s.song.id) === String(song.id))
+  ) {
+    playSongWithQueue(song, localScheduledSongs.value.map((s) => s.song))
+    return
+  }
+  // 待排歌曲列表中的歌曲，以当前待排列表为队列
+  if (filteredUnscheduledSongs.value.some((s) => String(s.id) === String(song.id))) {
+    playSongWithQueue(song, filteredUnscheduledSongs.value)
+    return
+  }
+  playSongWithQueue(song)
+}
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
