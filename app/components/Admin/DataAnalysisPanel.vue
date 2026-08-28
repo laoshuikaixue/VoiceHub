@@ -571,7 +571,14 @@
                 :key="user.id"
                 class="flex items-center gap-3 p-3 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl group hover:border-primary-30 transition-all"
               >
+                <img
+                  v-if="user.avatar && !failedAvatars[user.id]"
+                  :src="user.avatar"
+                  class="w-10 h-10 rounded-xl object-cover border border-border-secondary-50"
+                  @error="markAvatarFailed(user.id)"
+                >
                 <div
+                  v-else
                   class="w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center font-black text-text-tertiary group-hover:text-primary transition-colors"
                 >
                   {{ user.name.charAt(0) }}
@@ -765,6 +772,11 @@ const realtimeStats = ref({
 
 // 全局tooltip状态
 const tooltipEl = ref(null)
+const failedAvatars = ref({})
+const markAvatarFailed = (id) => {
+  if (id == null || failedAvatars.value[id]) return
+  failedAvatars.value = { ...failedAvatars.value, [id]: true }
+}
 const tooltip = ref({
   show: false,
   isHovered: false,
