@@ -180,12 +180,12 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-[4.5fr_7.5fr] gap-6 min-h-0">
         <!-- 左侧：待排歌曲（待排库） -->
         <div
           v-show="mobileTab === 'pending' || isDesktop"
           :class="[
-            'lg:col-span-4 flex flex-col space-y-2',
+            'flex flex-col space-y-2',
             mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex'
           ]"
           @dragover.prevent="handleDraggableDragOver"
@@ -633,7 +633,7 @@
         <div
           v-show="mobileTab === 'scheduled' || isDesktop"
           :class="[
-            'lg:col-span-8 flex flex-col space-y-4',
+            'flex flex-col space-y-4',
             mobileTab === 'pending' ? 'hidden lg:flex' : 'flex'
           ]"
         >
