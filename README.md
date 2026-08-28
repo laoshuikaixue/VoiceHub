@@ -981,6 +981,7 @@ VoiceHub/
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
+│       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
@@ -1369,6 +1370,7 @@ VoiceHub/
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
+│   │   ├── song-type-resolver.ts # 歌曲类型（语种/曲风）解析工具
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）

@@ -24,29 +24,44 @@
           <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
             >{{ locale.type }}</label
           >
-          <div class="flex p-1 bg-bg-primary border border-border-secondary rounded-lg">
+          <div class="grid grid-cols-2 gap-1 p-1 bg-bg-primary border border-border-secondary rounded-lg">
             <button
-              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="newItem.type === 'SONG' ? 'bg-bg-tertiary text-primary' : 'text-text-disabled'"
-              @click="newItem.type = 'SONG'"
+              @click="selectType('SONG')"
             >
               <Music :size="12" /> {{ locale.song }}
             </button>
             <button
-              class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="newItem.type === 'KEYWORD' ? 'bg-bg-tertiary text-info' : 'text-text-disabled'"
-              @click="newItem.type = 'KEYWORD'"
+              @click="selectType('KEYWORD')"
             >
               <Type :size="12" /> {{ locale.keyword }}
+            </button>
+            <button
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              :class="newItem.type === 'LANGUAGE' ? 'bg-bg-tertiary text-warning' : 'text-text-disabled'"
+              @click="selectType('LANGUAGE')"
+            >
+              <Languages :size="12" /> {{ locale.language }}
+            </button>
+            <button
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              :class="newItem.type === 'GENRE' ? 'bg-bg-tertiary text-success' : 'text-text-disabled'"
+              @click="selectType('GENRE')"
+            >
+              <AudioLines :size="12" /> {{ locale.genre }}
             </button>
           </div>
         </div>
 
         <div class="xl:col-span-4 space-y-2">
           <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
-            {{ newItem.type === 'SONG' ? locale.songLabel : locale.keywordLabel }}
+            {{ valueLabel }}
           </label>
           <input
+            v-if="newItem.type === 'SONG' || newItem.type === 'KEYWORD'"
             v-model="newItem.value"
             type="text"
             :placeholder="
@@ -54,6 +69,17 @@
             "
             class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 placeholder:text-text-secondary transition-all"
           >
+          <CustomSelect
+            v-else
+            v-model="newItem.value"
+            :options="typeValueOptions"
+          />
+          <p
+            v-if="newItem.type === 'LANGUAGE' || newItem.type === 'GENRE'"
+            class="text-[10px] text-text-secondary px-1 leading-relaxed"
+          >
+            {{ newItem.type === 'LANGUAGE' ? locale.languageHint : locale.genreHint }}
+          </p>
         </div>
 
         <div class="xl:col-span-4 space-y-2">
@@ -141,27 +167,18 @@
             <div class="flex-1 flex items-start gap-5">
               <div
                 class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border transition-all"
-                :class="[
-                  item.type === 'SONG'
-                    ? 'bg-primary-hover-10 text-primary border-primary-20 shadow-lg shadow-[var(--primary-glow-5)]'
-                    : 'bg-info-10 text-info border-info-20 shadow-lg shadow-[var(--info-glow-5)]'
-                ]"
+                :class="getTypeMeta(item.type).boxClass"
               >
-                <Music v-if="item.type === 'SONG'" :size="22" />
-                <Type v-else :size="22" />
+                <component :is="getTypeMeta(item.type).icon" :size="22" />
               </div>
 
               <div class="space-y-1.5 min-w-0">
                 <div class="flex items-center gap-3">
                   <span
                     class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border"
-                    :class="[
-                      item.type === 'SONG'
-                        ? 'bg-primary-hover-10 text-primary border-primary-20'
-                        : 'bg-info-10 text-info border-info-20'
-                    ]"
+                    :class="getTypeMeta(item.type).badgeClass"
                   >
-                    {{ item.type === 'SONG' ? locale.song : locale.keyword }}
+                    {{ getTypeMeta(item.type).label }}
                   </span>
                   <h5 class="text-base font-black text-text-primary truncate tracking-tight">
                     {{ item.value }}
@@ -320,6 +337,8 @@ import {
   ShieldAlert,
   Music,
   Type,
+  Languages,
+  AudioLines,
   Plus,
   Search,
   Filter,
@@ -334,6 +353,12 @@ import {
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import {
+  BLACKLIST_LANGUAGE_VALUES,
+  BLACKLIST_GENRE_VALUES,
+  BLACKLIST_LANGUAGE_LABEL_EN,
+  BLACKLIST_GENRE_LABEL_EN
+} from '~/utils/blacklist'
 import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
@@ -379,8 +404,78 @@ const pagination = reactive({
 const typeOptions = computed(() => [
   { label: locale.value?.allTypes || 'All Types', value: '' },
   { label: locale.value?.song || 'Song', value: 'SONG' },
-  { label: locale.value?.keyword || 'Keyword', value: 'KEYWORD' }
+  { label: locale.value?.keyword || 'Keyword', value: 'KEYWORD' },
+  { label: locale.value?.language || 'Language', value: 'LANGUAGE' },
+  { label: locale.value?.genre || 'Genre', value: 'GENRE' }
 ])
+
+// 类型 → 图标/徽章/文案元数据
+const getTypeMeta = (type) => {
+  switch (type) {
+    case 'SONG':
+      return {
+        icon: Music,
+        label: locale.value?.song || 'Song',
+        boxClass: 'bg-primary-hover-10 text-primary border-primary-20 shadow-lg shadow-[var(--primary-glow-5)]',
+        badgeClass: 'bg-primary-hover-10 text-primary border-primary-20'
+      }
+    case 'LANGUAGE':
+      return {
+        icon: Languages,
+        label: locale.value?.language || 'Language',
+        boxClass: 'bg-warning-10 text-warning border-warning-20 shadow-lg shadow-[var(--warning-glow-5)]',
+        badgeClass: 'bg-warning-10 text-warning border-warning-20'
+      }
+    case 'GENRE':
+      return {
+        icon: AudioLines,
+        label: locale.value?.genre || 'Genre',
+        boxClass: 'bg-success-10 text-success border-success-20 shadow-lg shadow-[var(--success-glow-5)]',
+        badgeClass: 'bg-success-10 text-success border-success-20'
+      }
+    default:
+      return {
+        icon: Type,
+        label: locale.value?.keyword || 'Keyword',
+        boxClass: 'bg-info-10 text-info border-info-20 shadow-lg shadow-[var(--info-glow-5)]',
+        badgeClass: 'bg-info-10 text-info border-info-20'
+      }
+  }
+}
+
+// 语种/曲风候选值选项（存储值为规范中文标签，英文界面附注显示名）
+const localeValueLabel = (value, enMap) =>
+  currentLocale.value === 'en-US' ? `${enMap[value] || value} (${value})` : value
+
+const typeValueOptions = computed(() => {
+  if (newItem.type === 'LANGUAGE') {
+    return BLACKLIST_LANGUAGE_VALUES.map((value) => ({
+      value,
+      label: localeValueLabel(value, BLACKLIST_LANGUAGE_LABEL_EN)
+    }))
+  }
+  if (newItem.type === 'GENRE') {
+    return BLACKLIST_GENRE_VALUES.map((value) => ({
+      value,
+      label: localeValueLabel(value, BLACKLIST_GENRE_LABEL_EN)
+    }))
+  }
+  return []
+})
+
+const valueLabel = computed(() => {
+  if (newItem.type === 'SONG') return locale.value?.songLabel
+  if (newItem.type === 'KEYWORD') return locale.value?.keywordLabel
+  if (newItem.type === 'LANGUAGE') return locale.value?.languageLabel
+  return locale.value?.genreLabel
+})
+
+// 切换类型时清空已选值
+const selectType = (type) => {
+  if (newItem.type === type) return
+  newItem.type = type
+  newItem.value = ''
+}
 
 let searchTimeout = null
 

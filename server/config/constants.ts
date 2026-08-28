@@ -402,8 +402,49 @@ export const USER_ROLES = {
 // 黑名单类型常量
 export const BLACKLIST_TYPES = {
   SONG: 'SONG',
-  KEYWORD: 'KEYWORD'
+  KEYWORD: 'KEYWORD',
+  LANGUAGE: 'LANGUAGE',
+  GENRE: 'GENRE'
 } as const
+
+// 语种黑名单候选值（存储值即匹配值；新增需同步前端 app/utils/blacklist.ts）
+export const BLACKLIST_LANGUAGE_VALUES = ['华语', '粤语', '闽南语', '英语', '日语', '韩语', '其他'] as const
+
+// 曲风黑名单候选值（取网易云曲风标签一级分类与 QQ 官网流派分类；新增需同步前端 app/utils/blacklist.ts）
+export const BLACKLIST_GENRE_VALUES = [
+  '流行', '摇滚', '民谣', '电子', '舞曲', '说唱', '古典', '爵士',
+  '乡村', '原声带', '蓝调', '轻音乐', '其他'
+] as const
+
+// QQ 音乐语种数字码 → 黑名单语种值（track_info.language 实测映射；info.lan 缺失时兜底）
+export const QQ_LANGUAGE_CODE_MAP: Record<number, string> = {
+  0: '华语',
+  1: '粤语',
+  2: '闽南语',
+  3: '日语',
+  4: '韩语',
+  5: '英语'
+}
+
+// QQ 官网流派分类英文名（get_song_detail_yqq 的 info.genre）→ 黑名单曲风值
+// 仅覆盖候选曲风；未收录流派名（Animation/World Music 等）由调用方归入「其他」
+export const QQ_GENRE_NAME_MAP: Record<string, string> = {
+  Pop: '流行',
+  Rock: '摇滚',
+  Folk: '民谣',
+  Electronic: '电子',
+  Dance: '舞曲',
+  Rap: '说唱',
+  'Hip Hop': '说唱',
+  'Hip-Hop': '说唱',
+  Classical: '古典',
+  Jazz: '爵士',
+  Country: '乡村',
+  Soundtrack: '原声带',
+  OST: '原声带',
+  Blues: '蓝调',
+  'Easy Listening': '轻音乐'
+}
 
 // 音乐平台常量
 export const MUSIC_PLATFORMS = {
