@@ -2724,10 +2724,11 @@ const allUnscheduledSongs = computed(() => {
   // 备选池模式
   if (activeTab.value === 'pool') {
     let poolSongs = songPool.value.filter((item) => {
+      // 与普通歌曲逻辑一致：已在任意日期排期（含草稿）或已加入当前播放顺序的歌曲不再展示
       const isScheduledInCurrentView = localScheduledSongs.value.some(
         (s) => (s.song && s.song.id === item.songId) || s.songId === item.songId
       )
-      return !isScheduledInCurrentView
+      return !isScheduledInCurrentView && !scheduledSongIds.value.has(item.songId)
     })
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase()
