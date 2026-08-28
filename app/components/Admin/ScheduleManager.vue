@@ -185,7 +185,7 @@
         <div
           v-show="mobileTab === 'pending' || isDesktop"
           :class="[
-            'lg:col-span-5 flex flex-col space-y-2',
+            'lg:col-span-4 flex flex-col space-y-2',
             mobileTab === 'scheduled' ? 'hidden lg:flex' : 'flex'
           ]"
           @dragover.prevent="handleDraggableDragOver"
@@ -633,7 +633,7 @@
         <div
           v-show="mobileTab === 'scheduled' || isDesktop"
           :class="[
-            'lg:col-span-7 flex flex-col space-y-4',
+            'lg:col-span-8 flex flex-col space-y-4',
             mobileTab === 'pending' ? 'hidden lg:flex' : 'flex'
           ]"
         >
@@ -2270,6 +2270,50 @@ const autoScheduleTargetSongCount = ref(null)
 const autoScheduleTargetRequesterCount = ref(null)
 const autoScheduleDirection = ref('under')
 const autoScheduleFixExisting = ref(false)
+const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
+const autoSchedulePlans = ref([])
+const currentPlanIndex = ref(0)
+const autoScheduleAlgorithm = ref('greedy')
+
+// 自动排期设置记忆（localStorage 持久化，下次打开弹窗沿用上次配置）
+const AUTO_SCHEDULE_SETTINGS_KEY = 'voicehub_auto_schedule_settings'
+const AUTO_SCHEDULE_DIRECTIONS = ['under', 'middle', 'over']
+const AUTO_SCHEDULE_ALGORITHMS = ['auto', 'greedy', 'exhaustive']
+const loadAutoScheduleSettings = () => {
+  if (!import.meta.client) return
+  try {
+    const saved = JSON.parse(localStorage.getItem(AUTO_SCHEDULE_SETTINGS_KEY) || 'null')
+    if (!saved || typeof saved !== 'object') return
+    if (Number.isFinite(saved.targetMinutes) && saved.targetMinutes > 0) autoScheduleTargetMinutes.value = saved.targetMinutes
+    if (Number.isFinite(saved.targetSongCount) && saved.targetSongCount > 0) autoScheduleTargetSongCount.value = Math.floor(saved.targetSongCount)
+    if (Number.isFinite(saved.targetRequesterCount) && saved.targetRequesterCount > 0) autoScheduleTargetRequesterCount.value = Math.floor(saved.targetRequesterCount)
+    if (AUTO_SCHEDULE_DIRECTIONS.includes(saved.direction)) autoScheduleDirection.value = saved.direction
+    if (AUTO_SCHEDULE_ALGORITHMS.includes(saved.algorithm)) autoScheduleAlgorithm.value = saved.algorithm
+    autoScheduleFixExisting.value = !!saved.fixExisting
+  } catch {
+    // 非法数据忽略，回退默认
+  }
+}
+const saveAutoScheduleSettings = () => {
+  if (!import.meta.client) return
+  try {
+    localStorage.setItem(AUTO_SCHEDULE_SETTINGS_KEY, JSON.stringify({
+      targetMinutes: autoScheduleTargetMinutes.value,
+      targetSongCount: autoScheduleTargetSongCount.value,
+      targetRequesterCount: autoScheduleTargetRequesterCount.value,
+      direction: autoScheduleDirection.value,
+      algorithm: autoScheduleAlgorithm.value,
+      fixExisting: autoScheduleFixExisting.value
+    }))
+  } catch {
+    // 存储失败忽略
+  }
+}
+watch(
+  [autoScheduleTargetMinutes, autoScheduleTargetSongCount, autoScheduleTargetRequesterCount, autoScheduleDirection, autoScheduleAlgorithm, autoScheduleFixExisting],
+  saveAutoScheduleSettings
+)
+loadAutoScheduleSettings()
 
 const autoScheduleScheduledSeconds = computed(() => {
   if (!autoScheduleFixExisting.value) return 0
@@ -2279,10 +2323,6 @@ const autoScheduleScheduledSeconds = computed(() => {
   }, 0)
 })
 
-const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
-const autoSchedulePlans = ref([])
-const currentPlanIndex = ref(0)
-const autoScheduleAlgorithm = ref('greedy')
 const actualExhaustive = computed(() => {
   return autoScheduleAlgorithm.value === 'exhaustive' ||
     (autoScheduleAlgorithm.value === 'auto' && autoScheduleCandidates.value.length < 20)
@@ -3938,14 +3978,11 @@ const handleAutoScheduleEscape = (e) => {
   }
 }
 
+// 打开/关闭/重置时保留用户上次的排期配置（由 localStorage 记忆）
 const openAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'auto'
-  autoScheduleTargetSongCount.value = null
-  autoScheduleTargetRequesterCount.value = null
-  autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
 const closeAutoScheduleDialog = () => {
@@ -3953,19 +3990,11 @@ const closeAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'auto'
-  autoScheduleTargetSongCount.value = null
-  autoScheduleTargetRequesterCount.value = null
-  autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'auto'
-  autoScheduleTargetSongCount.value = null
-  autoScheduleTargetRequesterCount.value = null
-  autoScheduleFixExisting.value = false
 }
 
 const autoScheduleCandidates = computed(() => {
