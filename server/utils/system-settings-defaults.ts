@@ -81,6 +81,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 自动备份
   autoBackupEnabled: false,
   autoBackupConfig: null,
+  // 站点统计代码（任意统计平台 HTML/JS 片段）
+  statisticsCodeEnabled: false,
+  statisticsCode: null,
   // 主题管理
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),

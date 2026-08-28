@@ -24,6 +24,11 @@ export const siteConfig = {
   showBeianIconDesc: '在公安联网备案号前显示备案图标',
   siteDescription: '站点描述',
   siteDescriptionPlaceholder: '请输入站点描述',
+  statisticsCode: '站点统计代码',
+  statisticsCodeEnabled: '启用站点统计代码',
+  statisticsCodeEnabledDesc: '开启后才会将下方统计代码注入到页面',
+  statisticsCodePlaceholder: '粘贴统计代码片段（如百度统计、51.la、Clarity、Google Analytics 等）',
+  statisticsCodeHint: '将注入到所有页面的 <head> 中，支持任意 HTML/JS 统计代码。',
 
   // 视觉识别
   themeSettings: '主题设置',

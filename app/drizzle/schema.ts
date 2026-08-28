@@ -330,6 +330,10 @@ export const systemSettings = pgTable('SystemSettings', {
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
   autoBackupConfig: text('autoBackupConfig'),
 
+  // 站点统计代码（任意站点统计平台的 HTML/JS 片段，注入 SSR 页面 <head>）
+  statisticsCodeEnabled: boolean('statisticsCodeEnabled').default(false).notNull(),
+  statisticsCode: text('statisticsCode'),
+
   // 主题管理配置
   defaultTheme: text('defaultTheme').default('System').notNull(),
   enabledThemes: text('enabledThemes').default('["System","ClassicDark","ClassicLight","ModernLight"]').notNull(),

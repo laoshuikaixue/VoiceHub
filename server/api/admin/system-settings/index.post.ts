@@ -194,6 +194,20 @@ export default defineEventHandler(async (event) => {
       updateData.gonganNumber = body.gonganNumber
     }
 
+    if (body.statisticsCode !== undefined) {
+      if (body.statisticsCode !== null && typeof body.statisticsCode !== 'string') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCode 必须是字符串或 null')
+      }
+      updateData.statisticsCode = body.statisticsCode
+    }
+
+    if (body.statisticsCodeEnabled !== undefined) {
+      if (typeof body.statisticsCodeEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCodeEnabled 必须是布尔值')
+      }
+      updateData.statisticsCodeEnabled = body.statisticsCodeEnabled
+    }
+
     if (body.showBeianIcon !== undefined) {
       if (typeof body.showBeianIcon !== 'boolean') {
         throw createError({

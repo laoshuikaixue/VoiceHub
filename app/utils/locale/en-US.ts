@@ -18,6 +18,11 @@ export const siteConfig = {
   showBeianIconDesc: 'Show the filing icon before the public security filing number',
   siteDescription: 'Site Description',
   siteDescriptionPlaceholder: 'Enter the site description',
+  statisticsCode: 'Site Statistics Code',
+  statisticsCodeEnabled: 'Enable Site Statistics Code',
+  statisticsCodeEnabledDesc: 'Only injects the snippet below into pages when enabled',
+  statisticsCodePlaceholder: 'Paste your statistics snippet (e.g. Baidu Analytics, 51.la, Clarity, Google Analytics)',
+  statisticsCodeHint: 'Injected into the <head> of every page. Supports any HTML/JS statistics code.',
 
   themeSettings: 'Theme Settings',
   themeSettingsDesc: 'Control each theme separately and use the star to choose the default theme.',
