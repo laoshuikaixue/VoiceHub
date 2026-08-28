@@ -57,11 +57,6 @@ export default defineEventHandler(async (event) => {
     .from(songBlacklists)
     .where(eq(songBlacklists.isActive, true))
 
-  // 语种/曲风黑名单是否启用
-  const hasTypeBlacklist = blacklistItems.some(
-    (item) => item.type === 'LANGUAGE' || item.type === 'GENRE'
-  )
-
   // 获取当前学期已存在的歌曲，用于排重
   const existingSongs = await db
     .select({
@@ -100,11 +95,9 @@ export default defineEventHandler(async (event) => {
     let isBlocked = false
     let blockReason = ''
 
-    // 语种/曲风按 platform+musicId 解析类型；解析失败或平台不支持时放行
+    // 语种/曲风懒解析：首次遇到类型项才请求音源，已被歌名/关键词拦截的歌曲不触发外部请求
     let songTypes: Awaited<ReturnType<typeof resolveSongTypes>> = null
-    if (hasTypeBlacklist) {
-      songTypes = await resolveSongTypes(song.musicPlatform, song.musicId)
-    }
+    let typesResolved = false
 
     for (const item of blacklistItems) {
       if (item.type === 'SONG') {
@@ -120,12 +113,21 @@ export default defineEventHandler(async (event) => {
           break
         }
       } else if (item.type === 'LANGUAGE') {
+        // 解析失败或平台不支持时返回 null，类型黑名单放行
+        if (!typesResolved) {
+          songTypes = await resolveSongTypes(song.musicPlatform, song.musicId)
+          typesResolved = true
+        }
         if (songTypes && matchBlacklistLanguage(item.value, songTypes.languages)) {
           isBlocked = true
           blockReason = item.reason || `语种「${item.value}」已被加入黑名单`
           break
         }
       } else if (item.type === 'GENRE') {
+        if (!typesResolved) {
+          songTypes = await resolveSongTypes(song.musicPlatform, song.musicId)
+          typesResolved = true
+        }
         if (songTypes && matchBlacklistGenre(item.value, songTypes.genres)) {
           isBlocked = true
           blockReason = item.reason || `曲风「${item.value}」已被加入黑名单`
