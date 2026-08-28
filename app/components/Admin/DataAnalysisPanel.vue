@@ -563,7 +563,7 @@
 
             <div
               v-if="realtimeStats.activeUsersList && realtimeStats.activeUsersList.length > 0"
-              class="space-y-4"
+              class="space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1"
             >
               <div
                 v-for="user in realtimeStats.activeUsersList.slice(0, 5)"
@@ -790,7 +790,7 @@ const handleMouseEnter = (event) => {
 
   // 确保tooltip不超出视口边界
   const tooltipWidth = 320 // 预估tooltip宽度
-  const tooltipHeight = 300 // 预估tooltip高度
+  const tooltipHeight = 480 // 预估tooltip高度（列表区已限高50vh）
 
   if (left + tooltipWidth / 2 > viewportWidth) {
     left = viewportWidth - tooltipWidth / 2 - 10
