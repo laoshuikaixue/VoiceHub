@@ -1,6 +1,35 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { normalizeQqCommentList } from '../../server/utils/qqComment.ts'
+import {
+  buildQqCommentPraiseParam,
+  normalizeQqCommentList,
+  parseQqCommentPraiseResult,
+  QQ_COMMENT_PRAISE_REQUEST
+} from '../../server/utils/qqComment.ts'
+
+test('QQ评论点赞使用官网接口的操作类型', () => {
+  assert.deepEqual(QQ_COMMENT_PRAISE_REQUEST, {
+    module: 'GlobalComment.GlobalCommentWriteServer',
+    method: 'UpdateHotComment'
+  })
+  assert.deepEqual(buildQqCommentPraiseParam('comment-1', true, '12345'), {
+    comment_id: 'comment-1',
+    type: 3,
+    uin: '12345'
+  })
+  assert.equal(buildQqCommentPraiseParam('comment-1', false, '12345').type, 4)
+})
+
+test('QQ评论点赞正确识别成功和登录过期响应', () => {
+  assert.deepEqual(
+    parseQqCommentPraiseResult({
+      code: 0,
+      req_1: { code: 0, data: { code: 0, subcode: 0 } }
+    }),
+    { ok: true, sessionExpired: false, message: '' }
+  )
+  assert.equal(parseQqCommentPraiseResult({ code: 0, req_1: { code: 1000 } }).sessionExpired, true)
+})
 
 test('QQ评论只保留根评论并将回复挂到根评论下', () => {
   const reply = {
@@ -24,7 +53,7 @@ test('QQ评论只保留根评论并将回复挂到根评论下', () => {
   assert.equal(result[0]?.content, '评论正文')
   assert.equal(result[0]?.replies.length, 1)
   assert.equal(result[0]?.replies[0]?.commentId, 'reply-1')
-  assert.equal(result[0]?.replies[0]?.user.ip, '广东')
+  assert.equal(result[0]?.replies[0]?.user.location, '广东')
 })
 
 test('QQ评论去重并归一化图片与表情图片地址', () => {

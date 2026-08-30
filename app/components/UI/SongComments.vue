@@ -68,10 +68,12 @@
 
           <div class="comment-body">
             <div class="comment-meta">
-              <span class="nickname">{{ item.user?.nickname || locale.neteaseUser }}</span>
-              <span v-if="item.user?.ip" class="comment-ip"
-                >{{ locale.ipLabel }} {{ item.user.ip }}</span
-              >
+              <div class="comment-user">
+                <span class="nickname">{{ item.user?.nickname || locale.neteaseUser }}</span>
+                <span v-if="item.user?.location" class="comment-location">
+                  {{ locale.locationLabel }} {{ item.user.location }}
+                </span>
+              </div>
               <span class="comment-time">{{ formatCommentTime(item.time) }}</span>
             </div>
             <div class="comment-content">
@@ -95,7 +97,13 @@
                 :alt="locale.commentImage"
                 loading="lazy"
                 referrerpolicy="no-referrer"
+                class="comment-image-previewable"
+                role="button"
+                tabindex="0"
+                :aria-label="locale.openImagePreview"
+                @click="openCommentImagePreview($event, image)"
                 @error="handleCommentImageError($event, image)"
+                @keydown.enter.prevent="openCommentImagePreview($event, image)"
               >
             </div>
             <div v-if="item.beReplied?.length" class="reply-preview">
@@ -110,7 +118,9 @@
             >
               <div class="reply-meta">
                 {{ reply.user?.nickname || locale.neteaseUser
-                }}<span v-if="reply.user?.ip"> · {{ locale.ipLabel }} {{ reply.user.ip }}</span>
+                }}<span v-if="reply.user?.location">
+                  · {{ locale.locationLabel }} {{ reply.user.location }}</span
+                >
               </div>
               <div class="reply-content">
                 <span>{{ reply.content }}</span>
@@ -133,7 +143,13 @@
                   :alt="locale.commentImage"
                   loading="lazy"
                   referrerpolicy="no-referrer"
+                  class="comment-image-previewable"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="locale.openImagePreview"
+                  @click="openCommentImagePreview($event, image)"
                   @error="handleCommentImageError($event, image)"
+                  @keydown.enter.prevent="openCommentImagePreview($event, image)"
                 >
               </div>
             </div>
@@ -164,15 +180,37 @@
       </button>
     </template>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="previewImageUrl"
+      class="comment-image-preview"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="locale.commentImage"
+      @click.self="closeCommentImagePreview"
+    >
+      <button
+        class="comment-image-preview-close"
+        :title="locale.closeImagePreview"
+        :aria-label="locale.closeImagePreview"
+        @click="closeCommentImagePreview"
+      >
+        <Icon name="x" size="24" />
+      </button>
+      <img :src="previewImageUrl" :alt="locale.commentImage">
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { fetchNetease } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 
 const props = defineProps({
   song: {
@@ -187,6 +225,7 @@ const props = defineProps({
 
 const PAGE_SIZE = 20
 const { ui } = useLocale()
+const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => {
   const base = ui.value?.songComments || {}
   const emptyText = () => ''
@@ -213,6 +252,7 @@ const sortErrors = ref({ hot: '', latest: '' })
 const sortLoading = ref({ hot: false, latest: false })
 const loadingCount = ref(0)
 const likeUpdatingKey = ref('')
+const previewImageUrl = ref('')
 const requestId = ref(0)
 const commentSort = ref('hot')
 const isLoading = computed(() => loadingCount.value > 0)
@@ -358,6 +398,26 @@ const handleCommentImageError = (event, originalUrl) => {
   image.src = getCommentProxyImageUrl(originalUrl)
 }
 
+const handlePreviewKeydown = (event) => {
+  if (event.key === 'Escape') closeCommentImagePreview()
+}
+
+const openCommentImagePreview = (event, originalUrl) => {
+  const image = event.currentTarget
+  previewImageUrl.value = image?.currentSrc || image?.src || getCommentImageUrl(originalUrl)
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handlePreviewKeydown)
+    window.addEventListener('keydown', handlePreviewKeydown)
+  }
+}
+
+const closeCommentImagePreview = () => {
+  previewImageUrl.value = ''
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handlePreviewKeydown)
+  }
+}
+
 const toggleCommentLike = async (comment) => {
   const songId = neteaseSongId.value || tencentSongId.value
   if (
@@ -421,10 +481,7 @@ const toggleCommentLike = async (comment) => {
   } catch (err) {
     updateCommentLikeState(commentId, !!comment.liked, currentLikedCount)
     if (window.$showNotification) {
-      window.$showNotification(
-        err?.data?.message || err?.message || locale.value.likeFailed,
-        'error'
-      )
+      window.$showNotification(localizeServerError(err, locale.value.likeFailed), 'error')
     }
   } finally {
     likeUpdatingKey.value = ''
@@ -585,12 +642,15 @@ watch(
     const oldSongId = oldValue?.[0]
 
     if (songId !== oldSongId) resetComments(true)
+    if (!visible) closeCommentImagePreview()
     if (songId && visible && !sortLoaded.value.hot && loadingCount.value === 0) {
       loadInitialComments()
     }
   },
   { immediate: true }
 )
+
+onBeforeUnmount(closeCommentImagePreview)
 
 defineExpose({ totalCount })
 </script>
@@ -731,6 +791,13 @@ defineExpose({ totalCount })
   margin-bottom: 0.4rem;
 }
 
+.comment-user {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
 .nickname {
   min-width: 0;
   overflow: hidden;
@@ -807,8 +874,60 @@ defineExpose({ totalCount })
   background: var(--lyrics-modal-surface-strong);
 }
 
-.comment-ip,
+.comment-image-previewable {
+  cursor: zoom-in;
+}
+
+.comment-image-previewable:focus-visible {
+  outline: 2px solid var(--lyrics-modal-text);
+  outline-offset: 2px;
+}
+
+.comment-image-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 88%);
+  backdrop-filter: blur(6px);
+}
+
+.comment-image-preview > img {
+  display: block;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100dvh - 2rem);
+  border-radius: 6px;
+  object-fit: contain;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 45%);
+}
+
+.comment-image-preview-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #fff;
+  background: rgb(20 20 20 / 76%);
+  cursor: pointer;
+}
+
+.comment-image-preview-close:hover,
+.comment-image-preview-close:focus-visible {
+  background: rgb(45 45 45 / 92%);
+}
+
+.comment-location,
 .reply-meta {
+  flex-shrink: 0;
   color: var(--lyrics-modal-text-muted);
   font-size: 0.72rem;
   font-weight: 600;

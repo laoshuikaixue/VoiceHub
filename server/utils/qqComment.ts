@@ -1,5 +1,39 @@
 const MAX_REPLY_DEPTH = 8
 
+export const QQ_COMMENT_PRAISE_REQUEST = {
+  module: 'GlobalComment.GlobalCommentWriteServer',
+  method: 'UpdateHotComment'
+} as const
+
+export const buildQqCommentPraiseParam = (commentId: string, liked: boolean, uin: string) => ({
+  comment_id: commentId,
+  type: liked ? 3 : 4,
+  uin
+})
+
+export const parseQqCommentPraiseResult = (response: unknown) => {
+  const body = response && typeof response === 'object' ? (response as Record<string, unknown>) : {}
+  const request =
+    body.req_1 && typeof body.req_1 === 'object'
+      ? (body.req_1 as Record<string, unknown>)
+      : undefined
+  const data =
+    request?.data && typeof request.data === 'object'
+      ? (request.data as Record<string, unknown>)
+      : undefined
+  const requestCode = Number(request?.code)
+  const dataCode = Number(data?.code)
+  const subcode = Number(data?.subcode)
+
+  return {
+    ok: Number(body.code) === 0 && requestCode === 0 && dataCode === 0 && subcode === 0,
+    sessionExpired: requestCode === 1000 || dataCode === 1000 || subcode === 1000,
+    message: String(
+      data?.msg || data?.message || request?.msg || request?.message || body.msg || body.message || ''
+    ).trim()
+  }
+}
+
 const optionalString = (value: unknown): string => {
   if (typeof value !== 'string') return ''
   return value.trim()
@@ -79,7 +113,7 @@ export interface QqCommentItem {
   user: {
     nickname: string
     avatarUrl: string
-    ip: string
+    location: string
   }
 }
 
@@ -123,7 +157,7 @@ export const normalizeQqComment = (
       nickname:
         optionalString(item.Nick ?? item.nick ?? item.nickname ?? user.nickname) || 'QQ 音乐用户',
       avatarUrl: normalizeImageUrl(item.Avatar ?? item.avatar ?? item.avatarurl ?? user.avatarUrl),
-      ip: optionalString(item.Location ?? item.location ?? item.ip ?? user.location)
+      location: optionalString(item.Location ?? item.location ?? user.location)
     }
   }
 }
