@@ -142,16 +142,18 @@ rbac/
 3. 调 `resolveUserPermissions(user.id)`（带缓存，命中即返回）
 4. 不在集合内 → 抛 `createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, ...)`
 
+**Lint 强制**：新增 ESLint 规则 `no-raw-role-check`（`eslint-rules/no-raw-role-check.js`），禁止 `server/api/**/*.ts` 中出现 `user.role === '...'` / `roles.includes(...)` / `requireAdmin(` / `requireSongAdmin(` 等模式。CI 阶段 `pnpm lint:ci` 必须通过；违规即构建失败。旧路径 fallback 仅在 `RBAC_ENABLED=false` 时启用（`server/utils/permissions.js` 保留 30 天后删除）。
+
 ### [S4.3] API Key 中间件改造
 
 `server/middleware/api-auth.ts` 改造点：
 
 1. 路径 → 权限解析改用 `routePermissionMap`
-2. 顺序检查：IP 白名单 → 是否激活 → 是否过期 → 速率限制（滑动窗口，Redis 计数器）→ 日配额 → 月配额 → 权限
-3. 速率限制键格式 `apikey:rl:{api_key_id}:{minute_bucket}`，TTL 90s
-4. 日配额键 `apikey:qd:{api_key_id}:{yyyymmdd}`，月配额键 `apikey:qm:{api_key_id}:{yyyymm}`
-5. 超限写 `ApiLogService.logAccess` 且返回 `429`，附 `Retry-After` 头
-6. Webhook 出站：`apiKey.webhook_url` 非空时，请求成功后异步发送 `POST`，body 包含 `event` / `payload` / `timestamp` / `signature: HMAC_SHA256(secret, timestamp + '.' + body)`
+2. 顺序检查：IP 白名单 → 是否激活 → 是否过期 → 速率限制 → 日配额 → 月配额 → 权限
+3. 速率限制与配额：**默认 PostgreSQL 实现**（`server/utils/ratelimit/`），与 Redis 实现并列，由环境变量 `RATELIMIT_BACKEND=pg|redis` 切换。当前部署未启用 Redis，因此 pg 是默认且唯一投产路径；redis 仅作可选增强。
+4. **速率限制算法**：pg 路径使用"固定窗口（按分钟对齐）"原子累加；若生产压测 [S11.2] 显示边界突发不可接受，则切换到滑动窗口（pg 实现：`api_rate_limit_counters` 表 + 90 秒 TTL + 累计求和）。选择标准由 [S11.2] 性能基线决定。
+5. 超限写 `ApiLogService.logAccess` 且返回 `429`，附 `Retry-After` 与 `X-RateLimit-Remaining` 响应头
+6. **Webhook 出站**：用 Nitro 的 `event.waitUntil(...)` 异步发送，不阻塞主请求。`webhook_secret` 落库前 `bcrypt` 哈希存储（与 API Key 同款），但创建响应中一次性返回明文用于接收方验签。
 
 ### [S4.4] 数据库迁移
 
@@ -160,7 +162,24 @@ rbac/
 迁移脚本调用顺序：
 1. `drizzle/schema.ts` 加表 → `pnpm db:generate`
 2. 写 `scripts/seed-permissions.ts`，在首次迁移后由 `pnpm db:seed` 触发
-3. 旧 `apiKeyPermissions.permission` 字符串归一化在 seed 后由一次性脚本完成（`scripts/normalize-api-permissions.ts`）
+3. 旧 `apiKeyPermissions.permission` 字符串归一化在 seed 后由一次性脚本完成（`scripts/normalize-api-permissions.ts`），**映射字典显式列在脚本顶部**：
+
+```ts
+// scripts/normalize-api-permissions.ts
+export const LEGACY_PERMISSION_MAP: Record<string, string> = {
+  'schedules:read': 'schedules.read',
+  'songs:read': 'songs.read',
+  'songs:request': 'songs.request',
+  'songs:write': 'songs.write',
+  'card-codes:read': 'card-codes.read',
+  'card-codes:write': 'card-codes.write',
+  'card-codes:delete': 'card-codes.delete',
+  'backup:execute': 'backup.execute'
+}
+// 写入 permission_migration_log 表（id, old, new, api_key_id, migrated_at）
+```
+
+4. 完成后 `SELECT COUNT(*) FROM apiKeyPermissions WHERE permission LIKE '%:%'` 必须为 0
 
 ### [S4.5] API Key 管理权限
 
@@ -232,55 +251,203 @@ ADMIN 默认有 `api_keys.read/write`，但 `api_keys.delete` 仅 SUPER_ADMIN。
 
 ## [S8] 错误处理与边界
 
-- 权限缓存失效：`user_permissions` 任何 CUD 操作触发 `rbac.cache.invalidate(userId)`；角色权限矩阵变更触发 `rbac.cache.invalidateAll()`
+- **权限缓存失效**：`user_permissions` 任何 CUD 操作触发 `rbac.cache.invalidate(userId)`；角色权限矩阵变更触发 `rbac.cache.invalidateAll()`。**单实例部署**使用进程内 LRU + 60s TTL + 主动失效双保险；**多实例部署**（未来场景）需引入 Redis Pub/Sub 广播失效事件，本期暂不实现。
 - 权限 key 命名错（DB 里有但代码无引用）：`routePermissionMap` 匹配命中但 `permissions.key` 在 DB 找不到 → 中间件打 ERROR 日志，按拒绝处理
-- IP 白名单格式非法：创建时拒绝（CIDR 校验），错误码 `API_KEY_INVALID_IP_WHITELIST`
-- Webhook 回调失败：重试 3 次（指数退避），失败入 `webhook_failures` 日志表
-- 日 / 月配额耗尽：返回 429 + `X-RateLimit-Reset` 头，客户端可解析
-- 速率限制窗口边界：使用 Redis `INCR` + `EXPIRE` 原子操作，避免滑动窗口实现复杂度
+- **IP 白名单格式非法**：创建时拒绝（CIDR/IP 校验），错误码 `API_KEY_INVALID_IP_WHITELIST`
+- **Webhook 签名规范**：签名置于请求头 `X-Signature: sha256=<hex>`；请求体只含 `event` / `payload` / `timestamp`，避免接收方解析歧义。签名计算 `HMAC_SHA256(secret, timestamp + '.' + body)`。
+- **Webhook 异步发送**：使用 Nitro `event.waitUntil(promise)`，主响应不 await。失败重试 3 次（指数退避 1s/4s/16s），失败入 `webhook_failures` 日志表。
+- 日 / 月配额耗尽：返回 `429` + `Retry-After` + `X-RateLimit-Reset` 头，客户端可解析
+- **速率限制原子性（pg 实现）**：使用 `INSERT ... ON CONFLICT (api_key_id, bucket_minute) DO UPDATE SET count = count + 1 RETURNING count`，单 SQL 原子操作，无应用层竞态
+- **Webhook Secret 存储**：`webhook_secret` 落库前用 `bcrypt` 哈希，明文仅创建响应一次性返回；接收方验证时用明文比对哈希（单向验签不能解哈希，因此**接收方本地比对需保留明文**，设计需文档化告知管理员）。
+- 配额字段语义：`NULL` = 不限；`0` = 拒绝（视为无效值，创建时 `quota_daily <= 0` 直接 `400` 拒绝，不允许"零配额"的歧义）
 
 ## [S9] 验证计划
 
-### [S9.1] 单元测试
+### [S9.1] 单元测试（Windows 本地可执行）
 
 新增 `tests/server/rbac/`：
 
-- `resolvePermissions.test.ts`：角色矩阵 / 加授 / 减授 / 过期 / revoke 优先级
-- `routePermissionMap.test.ts`：路径匹配顺序 / 通配 / 排除
-- `api-rate-limit.test.ts`：滑动窗口边界 / 配额耗尽 / 多 Key 并发
+- `resolvePermissions.test.ts`：角色矩阵 / 加授 / 减授 / 过期 / revoke 优先级 / 多重组合
+- `routePermissionMap.test.ts`：精确匹配 / 通配符 / 顺序敏感 / 不匹配返回 null
+- `api-rate-limit-pg.test.ts`：pg 实现固定窗口边界 / 配额耗尽返回 429 / 并发安全（多 goroutine 累加）
+- `webhook-signature.test.ts`：HMAC 计算正确性 / 头位置正确 / 时间戳防重放（±5min 容忍）
 
-### [S9.2] 集成测试
+### [S9.2] 集成测试（Windows 本地 + Postman/Apifox）
 
-- `tests/integration/api-auth-rbac.test.ts`：模拟 4 种角色 × 关键 API 的允许/拒绝矩阵
-- `tests/integration/api-key-quota.test.ts`：并发打到配额耗尽，验证 429 触发
-- `tests/integration/user-permissions.test.ts`：临时投权到期后自动失效
+- `tests/integration/api-auth-rbac.test.ts`：4 角色 × 关键 API 的允许/拒绝矩阵（覆盖 `user.manage` / `api_keys.delete` / `role.manage` 等关键差异）
+- `tests/integration/api-key-quota.test.ts`：配额耗尽 429 + `Retry-After` 头验证
+- `tests/integration/user-permissions.test.ts`：临时投权 `expires_at` 到期自动失效；revoke 覆盖 assign
+- **手工验证（Postman）**：使用 USER / SONG_ADMIN / ADMIN / SUPER_ADMIN 四种 Token，对照 [S12] 矩阵请求管理接口，验证返回码
 
-### [S9.3] 手工验证
+### [S9.3] 手工走查
 
 - `pnpm typecheck`
-- `pnpm lint`
+- `pnpm lint:ci`（含 `no-raw-role-check` 规则）
 - 跑 `pnpm db:generate` 看新增 4 张表 + snapshot
-- 浏览器走查：Sidebar 按角色显隐、RbacManager 页面加授 / 撤销流程、ApiKeyManager 新字段填写 + 速率配额展示
+- 浏览器走查：Sidebar 按权限显隐、RbacManager 页面加授 / 撤销流程、ApiKeyManager 新字段填写 + 速率配额展示 + Webhook Secret 一次性展示
+
+### [S9.4] 极端边界（Windows 本地）
+
+| 场景 | 操作 | 预期 |
+|---|---|---|
+| 非法 IP 白名单 | `ip_whitelist` 填 `999.999.999.999` | 创建返回 `API_KEY_INVALID_IP_WHITELIST` |
+| 过期时间过去 | 给用户加授 `expires_at = yesterday` | `resolveUserPermissions` 不返回该权限 |
+| 配额为 0 | `quota_daily = 0` | 创建返回 `400`，不允许歧义 |
+| Webhook 签名 | `node webhook-receiver.js` + ngrok | 接收端用相同 secret 重算 HMAC 一致；缺 `X-Signature` 头拒绝 |
+| 权限提升 | USER Token 调 `PUT /api/admin/rbac/roles/USER` | `403` |
+| SQL 注入 | `id=1' OR '1'='1` 在 ORM 参数化字段 | 不抛 SQL 异常 |
 
 ## [S10] 风险与缓解
 
 | 风险 | 缓解 |
 |---|---|
-| 124+ 处权限判断迁移漏改 | 写 ESLint 规则禁止 `user.role` 字面量出现在 `server/api/**`；CI 检查；保留旧 `permissions.js` 作为 fallback 30 天 |
-| 权限缓存与 DB 不一致 | 缓存 TTL 60s + 主动失效双保险；`/api/admin/rbac/my-permissions` 不缓存，强制实时 |
-| 旧 API Key 权限字符串不兼容 | seed 脚本显式列映射表；旧 Key 一次性转换日志入审计表 |
-| 速率限制被绕过（Key 重建） | API Key 创建需要 SUPER_ADMIN 审批；首次创建后 24h 内不可删除 |
-| Webhook 回调拖慢主请求 | 异步发送 + 重试；主路径不 await |
-| 用户加授误操作 | 列表展示 granted_by + reason + expires_at；撤销操作二次确认 |
+| 124+ 处权限判断迁移漏改 | ESLint `no-raw-role-check` 规则禁止 `user.role` 字面量在 `server/api/**`；CI 强制；保留旧 `permissions.js` fallback 30 天；`RBAC_ENABLED` feature flag 控制切换 |
+| 权限缓存与 DB 不一致 | 单实例：进程内 LRU + 60s TTL + 主动失效双保险；多实例留作后续增强（标 [future]） |
+| 旧 API Key 权限字符串不兼容 | `scripts/normalize-api-permissions.ts` 显式映射字典；变更入 `permission_migration_log` 审计表 |
+| 速率限制被绕过（Key 重建） | API Key 创建 24h 内不可删除；`created_by` 审计完整 |
+| Webhook 回调拖慢主请求 | `event.waitUntil` 异步发送 + 重试 + `webhook_failures` 表 |
+| Webhook 签名歧义 | 签名固定在 `X-Signature: sha256=<hex>` 头，body 仅含业务字段 |
+| 用户加授误操作 | 列表展示 `granted_by` + `reason` + `expires_at`；撤销二次确认；过期自动失效 |
+| 速率限制边界突发 | pg 实现固定窗口；若 [S11.2] 压测不通过切换为滑动窗口（pg `api_rate_limit_counters` + 90s TTL 累计） |
+| 多实例缓存不一致 | 文档明确当前为单实例假设；多实例需引入 Redis Pub/Sub 广播失效（标 [future]） |
 
-## [S11] 实施切片
+## [S11] 性能与运维（生产环境）
+
+### [S11.1] 数据库索引（迁移必建）
+
+```sql
+-- 角色权限矩阵
+CREATE INDEX idx_role_permissions_role ON role_permissions(role);
+
+-- 个人加授（按用户查、按权限反查）
+CREATE INDEX idx_user_permissions_user_id ON user_permissions(user_id);
+CREATE INDEX idx_user_permissions_permission_id ON user_permissions(permission_id);
+CREATE INDEX idx_user_permissions_expires_at ON user_permissions(expires_at) WHERE expires_at IS NOT NULL;
+
+-- 速率限制与配额（pg 实现）
+CREATE INDEX idx_api_rate_limit_counters_lookup ON api_rate_limit_counters(api_key_id, bucket_minute);
+CREATE INDEX idx_api_usage_daily_lookup ON api_usage_daily(api_key_id, usage_date);
+CREATE INDEX idx_api_usage_monthly_lookup ON api_usage_monthly(api_key_id, usage_month);
+```
+
+### [S11.2] 生产压测（Linux 环境，Windows 不可执行）
+
+**安全铁律**：
+- 只压 GET 请求（避免脏数据）
+- 使用 `owner_type='integration'` 的测试专用 Key，IP 白名单限制为压测跳板机
+- 业务低峰期（凌晨 2:00–4:00）+ 系统公告
+- 数据库连接 > 80% 立即停止并 `RBAC_ENABLED=false` 回滚
+- 测试后清理测试 Key 与测试计数
+
+**三项核心压测**：
+
+1. **速率限制原子累加**：`ab -n 200 -c 50 -H "X-API-Key: test_key" /api/songs`
+   - 观测：`pg_stat_activity` 锁等待 / `pg_stat_statements` 慢查询
+   - 通过：PG CPU < 70%，平均响应时间增幅 < 20%
+   - **若 PG CPU > 80%** → 必须引入 Redis 做限流计数器，方案不通过
+
+2. **权限解析缓存击穿**：100 个不同用户 Token 并发打 `/api/admin/rbac/my-permissions`（此接口不缓存）
+   - 观测：`role_permissions` + `user_permissions` JOIN 耗时 < 30ms
+   - 通过：所有查询走索引、无全表扫描
+
+3. **日/月配额耗尽**：`quota_daily=5` Key 发 10 次请求
+   - 观测：第 6 次起返回 `429`，响应头 `Retry-After` 存在
+   - 通过：第 2 天配额自动重置
+
+**压测记录模板**：
+
+| 项目 | 内容 |
+|---|---|
+| 压测时间 | `YYYY-MM-DD HH:MM` |
+| 压测人员 | `xxx` |
+| 压测工具 | `ab -n 500 -c 50` |
+| 测试 API Key | `vhub_test_xxxxx` |
+| 目标接口 | `GET /api/songs` |
+| DB CPU 峰值 | `xx%` |
+| P95 响应 | `xxms` |
+| 错误率 | `xx%` |
+| 限流触发 | `是 / 否` |
+| 结论 | `通过 / 不通过` |
+
+### [S11.3] 监控告警（建议阈值）
+
+| 告警项 | 阈值 | 处理 |
+|---|---|---|
+| 429 错误率 | > 5% | 检查 Key 配额/限流配置 |
+| Webhook 回调失败率 | > 10% | 检查目标服务可用性 |
+| 数据库连接池 | > 80% | 扩容或优化查询 |
+| 权限缓存命中率 | < 90% | 检查 TTL 或失效逻辑 |
+| PG 慢查询（>100ms） | > 10 条/分钟 | 分析索引 |
+
+## [S12] PR 审计检查清单
+
+| PR | 阶段 | 检查重点 |
+|---|---|---|
+| PR1 | 数据骨架 | 迁移 up/down / Seed 正确 / 旧表保留 / Drizzle schema 一致 / [S11.1] 索引创建 |
+| PR2 | 后端 RBAC 内核 | Feature Flag / `resolveUserPermissions` 单测 / `routePermissionMap` 全覆盖 / ESLint 规则 / 旧 `permissions.js` fallback |
+| PR3 | 前端策略镜像 | `useRbac()` 正确调用 / Sidebar 按权限显隐 / 未授权 403 友好提示 |
+| PR4 | API Key 增强 | 新字段校验 / 中间件顺序 / Webhook 异步 / 速率限制原子操作 / `webhook_secret` bcrypt 存储 |
+| PR5 | RbacManager UI | 仅 SUPER_ADMIN 可见 / `expires_at` + `reason` + `granted_by` / 撤销二次确认 / 审计日志 |
+
+## [S13] 回滚验证
+
+```bash
+# 关闭 Feature Flag
+export RBAC_ENABLED=false
+
+# 验证旧权限逻辑生效
+curl -X GET /api/admin/users -H "Authorization: Bearer <admin_token>"
+# 应返回 200（旧逻辑允许）
+
+# 数据库回滚（如需要）
+pnpm db:migrate down
+
+# 确认旧权限字符串仍可读
+pnpm tsx scripts/verify-legacy-permissions.ts
+```
+
+## [S14] 审计命令速查
+
+| 审计项 | 命令 |
+|---|---|
+| 搜索旧权限判断 | `grep -rn "user\.role" server/api/` |
+| 搜索冒号风格权限 | `grep -rn ":" server/utils/rbac/` |
+| 运行单元测试 | `pnpm test tests/server/rbac/` |
+| 检查数据库表结构 | `psql -c "\dt permissions"` |
+| 检查 Seed 数据 | `psql -c "SELECT key, category FROM permissions;"` |
+| 检查旧权限迁移 | `psql -c "SELECT * FROM apiKeyPermissions WHERE permission LIKE '%:%';"` |
+| 开启 PG 慢查询日志 | `psql -c "SET log_min_duration_statement = 50;"` |
+| 查看活跃连接 | `psql -c "SELECT count(*) FROM pg_stat_activity WHERE state='active';"` |
+| 压测命令（ab） | `ab -n 500 -c 50 -H "X-API-Key: xxx" <url>` |
+| 关闭 Feature Flag | `export RBAC_ENABLED=false` |
+
+## [S15] 实施切片
 
 预计拆 5 个 PR，每个独立可上线：
 
-1. **PR1 数据骨架**：schema + 4 张表 + seed + 迁移脚本（无业务影响）
-2. **PR2 后端 RBAC 内核**：rbac 模块 + guards + 全量替换 124+ 处（feature flag 关闭时走旧路径）
+1. **PR1 数据骨架**：schema + 4 张表 + seed + 迁移脚本（含 [S11.1] 索引）（无业务影响）
+2. **PR2 后端 RBAC 内核**：rbac 模块 + guards + ESLint 规则 + 全量替换 124+ 处（feature flag `RBAC_ENABLED=false` 时走旧路径）
 3. **PR3 前端策略镜像**：rbac.ts + composable + Sidebar 改造
-4. **PR4 API Key 增强**：owner / rate limit / quota / ip 白名单 / webhook + 中间件改造 + ApiKeyManager 表单
-5. **PR5 RbacManager 页面 + 移除旧路径**：UI 上线 + 关闭 feature flag + 旧表清理
+4. **PR4 API Key 增强**：owner / rate limit(pg) / quota / ip 白名单 / webhook + 中间件改造 + ApiKeyManager 表单
+5. **PR5 RbacManager 页面 + 移除旧路径**：UI 上线 + 关闭 feature flag + 旧表清理（30 天观察期后）
 
 每个 PR 之间可独立部署、独立验证、独立回滚。
+
+## [S16] 审计结论模板（实施完成后填写）
+
+| 维度 | 结论 | 备注 |
+|---|---|---|
+| 设计合理性 | ☐ 通过 ☐ 有条件 ☐ 不通过 | |
+| 代码质量 | ☐ 通过 ☐ 有条件 ☐ 不通过 | |
+| 数据库实现 | ☐ 通过 ☐ 有条件 ☐ 不通过 | |
+| 功能完整性 | ☐ 通过 ☐ 有条件 ☐ 不通过 | |
+| 安全性 | ☐ 通过 ☐ 有条件 ☐ 不通过 | |
+| 性能（生产压测） | ☐ 通过 ☐ 有条件 ☐ 不通过 | 仅 Linux 环境可执行 |
+| 运维可观测性 | ☐ 通过 ☐ 有条件 ☐ 不通过 | |
+
+**最终建议**：☐ 批准上线 ☐ 有条件批准 ☐ 拒绝上线
+
+**遗留问题**：
+
+| 编号 | 描述 | 严重度 | 计划解决时间 |
+|---|---|---|---|
