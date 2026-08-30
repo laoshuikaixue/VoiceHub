@@ -250,8 +250,15 @@ async function checkSchemaConsistency(sql) {
     'CardCodeRedeemLog',
     'PasswordAuditLog',
     'PasswordRateLimit',
+<<<<<<< HEAD
     'GradeClass',
     'auth_sessions'
+=======
+    'admin_operation_logs',
+    'user_sessions',
+    'operations_metric_buckets',
+    'operations_dependency_buckets'
+>>>>>>> d20eaf20 (chore(db + api): 更新数据库表校验与操作日志接口)
   ]
   // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
   const requiredIndexes = [['User', 'User_username_unique']]
@@ -358,6 +365,13 @@ async function checkSchemaConsistency(sql) {
     ],
     PasswordRateLimit: ['key', 'count', 'resetAt']
   }
+
+  Object.assign(requiredColumns, {
+    admin_operation_logs: ['created_at', 'actor_id', 'action', 'target_type', 'result', 'summary', 'ip_address'],
+    user_sessions: ['id', 'user_id', 'token_version', 'ip_address', 'user_agent', 'browser', 'device_type', 'last_path', 'started_at', 'last_active_at', 'expires_at'],
+    operations_metric_buckets: ['bucket_start', 'instance_id', 'request_count', 'server_error_count'],
+    operations_dependency_buckets: ['bucket_start', 'instance_id', 'source', 'call_count', 'success_count']
+  })
 
   const missing = []
 
