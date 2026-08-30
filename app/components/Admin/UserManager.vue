@@ -5,7 +5,7 @@
       <div>
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">
-          {{ showArchived ? formatMessage(locale.archivedSubtitle, totalUsers) : formatMessage(locale.subtitle, totalUsers) }}
+          {{ showArchived ? formatMessage(locale.archivedSubtitle, archivedCount) : formatMessage(locale.subtitle, totalUsers) }}
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -2020,6 +2020,8 @@ const activeOrgFilterLabel = computed(() => {
 })
 
 let loadUsersDebounceTimer = null
+// 视图切换重置筛选后由切换逻辑统一重载列表，置位抑制监听器的重复加载
+let suppressNextFilterReload = false
 
 // 监听搜索和过滤条件变化
 watch(
@@ -2027,6 +2029,11 @@ watch(
   () => {
     if (loadUsersDebounceTimer) {
       clearTimeout(loadUsersDebounceTimer)
+    }
+
+    if (suppressNextFilterReload) {
+      suppressNextFilterReload = false
+      return
     }
 
     loadUsersDebounceTimer = setTimeout(() => {
@@ -2340,6 +2347,15 @@ const clearTreeFilter = () => {
 
 // 切换普通/已归档视图：重置筛选与分页，并重载列表与组织结构树
 const toggleArchivedView = () => {
+  if (loadUsersDebounceTimer) {
+    clearTimeout(loadUsersDebounceTimer)
+    loadUsersDebounceTimer = null
+  }
+  // 有筛选值将被重置时筛选监听器必触发一次，置位抑制避免重复请求
+  const watchedFilters = [searchQuery, roleFilter, statusFilter, gradeFilter, classFilter]
+  if (watchedFilters.some((filter) => filter.value !== '')) {
+    suppressNextFilterReload = true
+  }
   showArchived.value = !showArchived.value
   searchQuery.value = ''
   roleFilter.value = ''
@@ -2347,9 +2363,13 @@ const toggleArchivedView = () => {
   gradeFilter.value = ''
   classFilter.value = ''
   treeFilterLabel.value = ''
+  // 页码保持 1 时页码监听器不触发，需显式重载；否则交给页码监听器
+  const reloadNow = currentPage.value === 1
   currentPage.value = 1
   void loadUserTree()
-  void loadUsers(1, pageSize.value)
+  if (reloadNow) {
+    void loadUsers(1, pageSize.value)
+  }
 }
 
 const openTreeUser = async (treeUser) => {
