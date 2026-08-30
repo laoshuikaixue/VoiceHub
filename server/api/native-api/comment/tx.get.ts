@@ -34,9 +34,10 @@ export default defineEventHandler(async (event) => {
     const rawImages = item.Pic || item.piclist || item.picList || item.pics || item.images || item.commentpic || item.pic || item.picurl || item.picUrl || []
     const images = (Array.isArray(rawImages) ? rawImages : [rawImages])
       .map((image: any) => typeof image === 'string' ? image : image?.picurl || image?.picUrl || image?.url || image?.imageurl || '')
+      .map((image: string) => image.replace(/&amp;/g, '&').replace(/^\/\//, 'https://'))
       .filter(Boolean)
     const result = {
-    commentId: item.CmId ?? item.commentid ?? item.commentId ?? item.id ?? item.rootcommentid,
+    commentId: item.CmId ?? item.commentid ?? item.commentId ?? item.id,
     content: item.Content || item.middlecommentcontent || item.content || item.commentcontent || item.rootcommentcontent || '',
     time: Number(item.PubTime ?? item.time ?? 0) * 1000,
     likedCount: Number(item.PraiseNum ?? item.praisenum ?? item.praise_num ?? item.likedCount ?? item.praiseNum ?? 0),
@@ -55,8 +56,8 @@ export default defineEventHandler(async (event) => {
     const roots = new Map<string, any>()
     const replies = new Map<string, any[]>()
     for (const raw of rawItems) {
-      const id = String(raw.commentid ?? raw.commentId ?? raw.id ?? '').trim()
-      const rootId = String(raw.rootcommentid ?? raw.rootCommentId ?? '').trim()
+      const id = String(raw.CmId ?? raw.commentid ?? raw.commentId ?? raw.id ?? '').trim()
+      const rootId = String(raw.RootCmId ?? raw.RootCommentId ?? raw.rootcommentid ?? raw.rootCommentId ?? raw.rootid ?? '').trim()
       if (rootId && rootId !== id) {
         const reply = normalize(raw)
         replies.set(rootId, [...(replies.get(rootId) || []), reply])
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
   const rawComments = toList(data.Comments || data.commentlist)
   const rawHotComments = toList(data.hot_comment || data.hotcommentlist || data.hotCommentList)
   const groupedComments = groupThreads([...rawHotComments, ...rawComments])
-  const hotIds = new Set(rawHotComments.map((item: any) => String(item.commentid ?? item.commentId ?? item.id ?? '').trim()))
+  const hotIds = new Set(rawHotComments.map((item: any) => String(item.CmId ?? item.commentid ?? item.commentId ?? item.id ?? '').trim()))
   const commentItems = groupedComments
   const hotItems = groupedComments.filter((item: any) => hotIds.has(String(item.commentId)))
   return {

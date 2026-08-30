@@ -66,7 +66,7 @@
             </div>
             <p class="comment-content" v-html="renderCommentContent(item.content)"></p>
             <div v-if="item.images?.length" class="comment-images">
-              <img v-for="(image, imageIndex) in item.images" :key="`image-${imageIndex}`" :src="getCommentImageUrl(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
+              <img v-for="(image, imageIndex) in item.images" :key="`image-${imageIndex}`" :src="getCommentImageUrl(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer" @error="handleCommentImageError($event, image)">
             </div>
             <div v-if="item.beReplied?.length" class="reply-preview">
               {{ item.beReplied[0]?.user?.nickname || locale.originalComment }}：{{ item.beReplied[0]?.content }}
@@ -75,7 +75,7 @@
               <div class="reply-meta">{{ reply.user?.nickname || locale.neteaseUser }}<span v-if="reply.user?.ip"> · {{ locale.ipLabel }} {{ reply.user.ip }}</span></div>
               <div v-html="renderCommentContent(reply.content)"></div>
               <div v-if="reply.images?.length" class="comment-images reply-images">
-                <img v-for="(image, imageIndex) in reply.images" :key="`reply-image-${imageIndex}`" :src="getCommentImageUrl(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
+                <img v-for="(image, imageIndex) in reply.images" :key="`reply-image-${imageIndex}`" :src="getCommentImageUrl(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer" @error="handleCommentImageError($event, image)">
               </div>
             </div>
             <div class="comment-actions">
@@ -315,7 +315,21 @@ const getCommentImageUrl = (url?: string) => {
   const value = String(url || '').trim()
   if (!value) return ''
   const absolute = value.startsWith('//') ? `https:${value}` : convertToHttps(value)
+  return absolute
+}
+
+const getCommentProxyImageUrl = (url?: string) => {
+  const value = String(url || '').trim()
+  if (!value) return ''
+  const absolute = value.startsWith('//') ? `https:${value}` : convertToHttps(value)
   return `/api/proxy/image?url=${encodeURIComponent(absolute)}`
+}
+
+const handleCommentImageError = (event: Event, originalUrl: string) => {
+  const image = event.target as HTMLImageElement | null
+  if (!image || image.dataset.fallback === '1') return
+  image.dataset.fallback = '1'
+  image.src = getCommentProxyImageUrl(originalUrl)
 }
 
 const toggleCommentLike = async (comment: NeteaseComment) => {

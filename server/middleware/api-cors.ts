@@ -23,9 +23,10 @@ export default defineEventHandler((event) => {
   // 未配置时仍使用 Host 头；云平台等公开 Host 继续校验，仅当反向代理把 Host 改写为回环地址时跳过。
   const config = useRuntimeConfig(event)
   let configuredHost = typeof config.public?.host === 'string' ? config.public.host.trim() : ''
+  const hasExplicitHost = Boolean(configuredHost)
 
   if (!configuredHost) {
-    const hostHeader = getHeader(event, 'host')
+    const hostHeader = getHeader(event, 'x-forwarded-host') || getHeader(event, 'host')
     if (!hostHeader) {
       throw createError({ statusCode: 400, message: 'Bad Request: 缺少Host请求头' })
     }
@@ -67,8 +68,15 @@ export default defineEventHandler((event) => {
         sourceOrigin.port === trustedOrigin.port
 
       const matchesConfiguredOrigin = isTrustedOrigin(sourceOrigin, trustedOrigin)
+      const requestHost = getHeader(event, 'host')
+      const requestProto = getHeader(event, 'x-forwarded-proto')?.split(',')[0]?.trim() || requestUrl.protocol.replace(':', '')
+      const hostOrigin = requestHost
+        ? normalizeOrigin(`${requestProto}://${requestHost.split(',')[0].trim()}`, requestUrl.protocol)
+        : null
+      const matchesRequestHost = hostOrigin && isTrustedOrigin(sourceOrigin, hostOrigin)
+      const matchesFallbackOrigin = !hasExplicitHost && matchesRequestHost
 
-      if (!matchesConfiguredOrigin && !isSameLoopbackOrigin) {
+      if (!matchesConfiguredOrigin && !matchesFallbackOrigin && !isSameLoopbackOrigin) {
         console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${sourceOrigin.origin}, 期望 ${trustedOrigin.origin}, 路径 ${pathname}`)
         throw createError({
           statusCode: 403,

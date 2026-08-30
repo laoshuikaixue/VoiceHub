@@ -59,7 +59,7 @@ export function isTrustedOrigin(source: OriginInfo, trusted: OriginInfo): boolea
   // 反代未透传外部协议时，允许同主机 HTTPS 访问按 HTTP 配置的来源
   return (
     source.hostname === trusted.hostname &&
-    source.explicitPort === trusted.explicitPort &&
+    source.port === trusted.port &&
     (source.protocol === trusted.protocol ||
       (source.protocol === 'https:' && trusted.protocol === 'http:'))
   )
