@@ -6,8 +6,8 @@
         <h2 class="comments-title">{{ locale.title }}</h2>
       </div>
       <div class="comments-sort" role="group">
-        <button :class="{ active: commentSort === 'hot' }" @click="commentSort = 'hot'">{{ locale.hotSort }}</button>
-        <button :class="{ active: commentSort === 'latest' }" @click="commentSort = 'latest'">{{ locale.latest }}</button>
+        <button :class="{ active: commentSort === 'hot' }" @click="selectCommentSort('hot')">{{ locale.hotSort }}</button>
+        <button :class="{ active: commentSort === 'latest' }" @click="selectCommentSort('latest')">{{ locale.latest }}</button>
       </div>
       <button
         class="refresh-button"
@@ -175,6 +175,14 @@ const likeUpdatingKey = ref('')
 const requestId = ref(0)
 const hasLoaded = ref(false)
 const commentSort = ref('hot')
+const selectCommentSort = (value: string) => {
+  if (commentSort.value === value) return
+  commentSort.value = value
+  if (isTencent.value && props.visible) {
+    resetComments()
+    fetchComments(false)
+  }
+}
 
 const neteaseSongId = computed(() => {
   const song = props.song
@@ -391,7 +399,7 @@ const fetchComments = async (append = false) => {
 
     const response = neteaseSongId.value
       ? await fetchNetease('/comment/music', params)
-      : await $fetch('/api/native-api/comment/tx', { params: { musicId: tencentSongId.value, page: Math.floor(nextOffset / PAGE_SIZE), pageSize: PAGE_SIZE } })
+      : await $fetch('/api/native-api/comment/tx', { params: { musicId: tencentSongId.value, page: Math.floor(nextOffset / PAGE_SIZE), pageSize: PAGE_SIZE, type: commentSort.value } })
 
     if (currentRequestId !== requestId.value) return
 
@@ -404,8 +412,15 @@ const fetchComments = async (append = false) => {
     const nextComments = Array.isArray(body.comments) ? body.comments : []
 
     hasLoaded.value = true
-    comments.value = append ? [...comments.value, ...nextComments] : nextComments
-    hotComments.value = append
+    if (isTencent.value && commentSort.value === 'hot') {
+      hotComments.value = append ? [...hotComments.value, ...nextComments] : nextComments
+      comments.value = []
+    } else {
+      comments.value = append ? [...comments.value, ...nextComments] : nextComments
+    }
+    hotComments.value = isTencent.value && commentSort.value === 'hot'
+      ? hotComments.value
+      : append
       ? hotComments.value
       : Array.isArray(body.hotComments)
         ? body.hotComments.slice(0, 8)
