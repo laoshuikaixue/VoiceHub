@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { db } from '~~/drizzle/db'
-import { users } from '~~/drizzle/schema'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
 import { updateUserPassword } from '~~/server/services/userService'
 import {
   PASSWORD_AUDIT_ACTIONS,
