@@ -997,6 +997,7 @@ watch(
   () => props.isVisible,
   async (visible) => {
     if (visible) {
+      activePanel.value = 'lyrics'
       disablePageScroll()
 
       await nextTick()

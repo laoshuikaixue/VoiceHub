@@ -14,10 +14,6 @@ import {
   getVipInfo
 } from '@sansenjian/qq-music-api/services'
 import { txHeaders, txRequest, upgradeTxAudioUrl, zzcSign } from '~~/server/utils/native_tx'
-import {
-  buildQqCommentPraiseParam,
-  QQ_COMMENT_PRAISE_REQUEST
-} from '~~/server/utils/qqComment'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { inflateRawSync, inflateSync, unzipSync } from 'node:zlib'
 
@@ -1045,16 +1041,6 @@ const getQqGtk = (cookieObject: Record<string, string>) => {
   return hash & 0x7fffffff
 }
 
-export const getQqWebSession = (cookie?: string) => {
-  const normalizedCookie = normalizeQqCookie(cookie)
-  const cookieObject = parseCookieObject(normalizedCookie)
-  return {
-    cookie: normalizedCookie,
-    gtk: getQqGtk(cookieObject),
-    uin: String(cookieObject.uin || '').replace(/^o/i, '')
-  }
-}
-
 // 主页直连请求。uin 必须保持字符串原样：微信区 uin 超过 Number.MAX_SAFE_INTEGER，
 // 经数值转换会精度截断导致上游返回 1000 查无此人。
 const requestQqProfileHomepage = async ({
@@ -1204,15 +1190,13 @@ const callQqMusicu = async ({
   method,
   param,
   cookie,
-  extraComm,
-  signed = true
+  extraComm
 }: {
   module: string
   method: string
   param: Record<string, unknown>
   cookie?: string
   extraComm?: Record<string, unknown>
-  signed?: boolean
 }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
   const cookieObject = parseCookieObject(normalizedCookie)
@@ -1241,16 +1225,6 @@ const callQqMusicu = async ({
   }
   if (normalizedCookie) headers['Cookie'] = normalizedCookie
 
-  if (!signed) {
-    return await $fetch<any>('https://u.y.qq.com/cgi-bin/musicu.fcg', {
-      method: 'POST',
-      headers,
-      body,
-      responseType: 'json',
-      signal: AbortSignal.timeout(8000)
-    })
-  }
-
   try {
     const sign = await zzcSign(JSON.stringify(body))
     return await $fetch<any>(`https://u.y.qq.com/cgi-bin/musics.fcg?sign=${sign}`, {
@@ -1270,24 +1244,6 @@ const callQqMusicu = async ({
     })
   }
 }
-
-export const updateQqCommentPraise = async ({
-  commentId,
-  liked,
-  cookie,
-  uin
-}: {
-  commentId: string
-  liked: boolean
-  cookie?: string
-  uin: string
-}) =>
-  await callQqMusicu({
-    ...QQ_COMMENT_PRAISE_REQUEST,
-    param: buildQqCommentPraiseParam(commentId, liked, uin),
-    cookie,
-    signed: false
-  })
 
 // 获取"我喜欢"歌单歌曲（dirid 固定 201），按 hasmore 分页拉全
 export const getQqLikedSongs = async ({ cookie }: { cookie?: string }) => {

@@ -40,12 +40,9 @@
     </div>
 
     <template v-else>
-      <div v-if="totalCount || hotComments.length" class="comments-summary">
+      <div v-if="totalCount" class="comments-summary">
         <span v-if="totalCount">{{
           formatLocaleValue(locale.commentsCount, formatCount(totalCount))
-        }}</span>
-        <span v-if="hotComments.length">{{
-          formatLocaleValue(locale.hotCount, hotComments.length)
         }}</span>
       </div>
 
@@ -112,9 +109,10 @@
               }}
             </div>
             <div
-              v-for="reply in item.replies || []"
-              :key="`reply-${reply.commentId}`"
+              v-for="reply in item.displayReplies"
+              :key="reply.displayKey"
               class="reply-preview"
+              :style="{ '--reply-depth': reply.displayDepth }"
             >
               <div class="reply-meta">
                 {{ reply.user?.nickname || locale.neteaseUser
@@ -155,16 +153,20 @@
             </div>
             <div class="comment-actions">
               <button
+                v-if="!isTencent"
                 class="liked-count"
                 :class="{ liked: item.liked }"
                 :disabled="likeUpdatingKey === String(item.commentId)"
                 :title="item.liked ? locale.unlike : locale.like"
                 @click="toggleCommentLike(item)"
               >
-                <Icon name="thumbs-up" size="13" />
+                <Icon :name="item.liked ? 'thumbs-up-filled' : 'thumbs-up'" size="13" />
                 {{ formatCount(item.likedCount || 0) }}
               </button>
-              <span v-if="item.isHot" class="hot-label">{{ locale.hot }}</span>
+              <span v-else class="qq-liked-count">
+                <Icon name="thumbs-up" size="13" />
+                {{ formatCount(item.likedCount || 0) }}
+              </span>
             </div>
           </div>
         </article>
@@ -236,7 +238,6 @@ const locale = computed(() => {
     noSource: qq ? base.qqNoSource || base.noSource : base.noSource,
     neteaseUser: qq ? base.qqUser || base.neteaseUser : base.neteaseUser,
     commentsCount: base.commentsCount || emptyText,
-    hotCount: base.hotCount || emptyText,
     minutesAgo: base.minutesAgo || emptyText,
     hoursAgo: base.hoursAgo || emptyText
   })
@@ -247,6 +248,7 @@ const hotComments = ref([])
 const sortTotals = ref({ hot: 0, latest: 0 })
 const sortHasMore = ref({ hot: false, latest: false })
 const sortOffsets = ref({ hot: 0, latest: 0 })
+const sortCursors = ref({ hot: '', latest: '' })
 const sortLoaded = ref({ hot: false, latest: false })
 const sortErrors = ref({ hot: '', latest: '' })
 const sortLoading = ref({ hot: false, latest: false })
@@ -293,6 +295,41 @@ const tencentOriginalSongId = computed(() => {
 
 const canFetchComments = computed(() => !!neteaseSongId.value || !!tencentSongId.value)
 const isTencent = computed(() => !!tencentSongId.value)
+const commentSourceKey = computed(() => {
+  if (neteaseSongId.value) return `netease:${neteaseSongId.value}`
+  if (tencentSongId.value) {
+    return `tencent:${tencentSongId.value}:${tencentOriginalSongId.value || ''}`
+  }
+  return ''
+})
+
+const flattenCommentReplies = (replies) => {
+  const flattened = []
+
+  const visit = (items, depth, path, ancestorIds) => {
+    if (!Array.isArray(items) || depth > 8) return
+
+    items.forEach((reply, index) => {
+      if (!reply || typeof reply !== 'object') return
+      const commentId = String(reply.commentId ?? `${depth}-${index}`)
+      if (ancestorIds.has(commentId)) return
+
+      const displayKey = `${path}-${commentId}-${index}`
+      flattened.push({
+        ...reply,
+        displayDepth: Math.min(depth, 3),
+        displayKey
+      })
+
+      const nextAncestorIds = new Set(ancestorIds)
+      nextAncestorIds.add(commentId)
+      visit(reply.replies, depth + 1, displayKey, nextAncestorIds)
+    })
+  }
+
+  visit(replies, 0, 'reply', new Set())
+  return flattened
+}
 
 const commentItems = computed(() => {
   const unique = (items) => {
@@ -310,7 +347,7 @@ const commentItems = computed(() => {
   const source = commentSort.value === 'hot' ? hotComments.value : comments.value
   return unique(source).map((item, index) => ({
     ...item,
-    isHot: commentSort.value === 'hot',
+    displayReplies: flattenCommentReplies(item.replies),
     key: getCommentKey(item, index)
   }))
 })
@@ -419,7 +456,7 @@ const closeCommentImagePreview = () => {
 }
 
 const toggleCommentLike = async (comment) => {
-  const songId = neteaseSongId.value || tencentSongId.value
+  const songId = neteaseSongId.value
   if (
     !songId ||
     comment.commentId === undefined ||
@@ -429,17 +466,10 @@ const toggleCommentLike = async (comment) => {
     return
   }
 
-  const cookie = isTencent.value
-    ? typeof window !== 'undefined'
-      ? localStorage.getItem('qq_music_cookie') || ''
-      : ''
-    : getNeteaseCookie()
+  const cookie = getNeteaseCookie()
   if (!cookie) {
     if (window.$showNotification) {
-      window.$showNotification(
-        isTencent.value ? locale.value.qqLoginRequiredToLike : locale.value.loginRequiredToLike,
-        'warning'
-      )
+      window.$showNotification(locale.value.loginRequiredToLike, 'warning')
     }
     return
   }
@@ -453,30 +483,19 @@ const toggleCommentLike = async (comment) => {
   updateCommentLikeState(commentId, nextLiked, nextLikedCount)
 
   try {
-    const response = isTencent.value
-      ? await $fetch('/api/native-api/comment/tx-like', {
-          method: 'POST',
-          body: {
-            musicId: tencentSongId.value,
-            songId: tencentOriginalSongId.value || undefined,
-            commentId,
-            liked: nextLiked,
-            cookie
-          }
-        })
-      : await fetchNetease(
-          '/comment/like',
-          {
-            id: songId,
-            cid: commentId,
-            t: nextLiked ? 1 : 0,
-            type: 0
-          },
-          cookie
-        )
+    const response = await fetchNetease(
+      '/comment/like',
+      {
+        id: songId,
+        cid: commentId,
+        t: nextLiked ? 1 : 0,
+        type: 0
+      },
+      cookie
+    )
 
     if (response.code !== 200) {
-      throw new Error(response.message || locale.value.likeFailed)
+      throw new Error(locale.value.likeFailed)
     }
   } catch (err) {
     updateCommentLikeState(commentId, !!comment.liked, currentLikedCount)
@@ -504,34 +523,41 @@ const fetchTencentComments = async (append, sort, currentRequestId) => {
   loadingCount.value += 1
 
   try {
+    const cursor = append ? sortCursors.value[sort] : ''
     const response = await $fetch('/api/native-api/comment/tx', {
       params: {
         musicId: tencentSongId.value,
         songId: tencentOriginalSongId.value || undefined,
         page: Math.floor(nextOffset / PAGE_SIZE),
         pageSize: PAGE_SIZE,
-        type: sort
+        type: sort,
+        cursor
       }
     })
     if (currentRequestId !== requestId.value) return
-    if (response.code !== 200) throw new Error(response.message || locale.value.loadFailed)
+    if (response.code !== 200) throw new Error(locale.value.loadFailed)
 
     const body = response.data || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
+    const nextCursor = String(body.nextCursor || '')
     const previous = append ? getListForSort(sort) : []
     setListForSort(sort, [...previous, ...nextComments])
     sortTotals.value = {
       ...sortTotals.value,
       [sort]: Number(body.total) || nextComments.length
     }
-    sortHasMore.value = { ...sortHasMore.value, [sort]: Boolean(body.more) }
+    sortHasMore.value = {
+      ...sortHasMore.value,
+      [sort]: Boolean(body.more) && Boolean(nextCursor)
+    }
     sortOffsets.value = { ...sortOffsets.value, [sort]: nextOffset + PAGE_SIZE }
+    sortCursors.value = { ...sortCursors.value, [sort]: nextCursor }
     sortLoaded.value = { ...sortLoaded.value, [sort]: true }
   } catch (err) {
     if (currentRequestId !== requestId.value) return
     sortErrors.value = {
       ...sortErrors.value,
-      [sort]: err?.data?.message || err?.message || locale.value.loadFailed
+      [sort]: localizeServerError(err, locale.value.loadFailed)
     }
   } finally {
     if (currentRequestId === requestId.value) {
@@ -557,7 +583,7 @@ const fetchNeteaseComments = async (append, currentRequestId) => {
   try {
     const response = await fetchNetease('/comment/music', params)
     if (currentRequestId !== requestId.value) return
-    if (response.code !== 200) throw new Error(response.message || locale.value.loadFailed)
+    if (response.code !== 200) throw new Error(locale.value.loadFailed)
 
     const body = response.body || response.data || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
@@ -579,7 +605,7 @@ const fetchNeteaseComments = async (append, currentRequestId) => {
     sortLoaded.value = { hot: true, latest: true }
   } catch (err) {
     if (currentRequestId !== requestId.value) return
-    const message = err?.data?.message || err?.message || locale.value.loadFailed
+    const message = localizeServerError(err, locale.value.loadFailed)
     sortErrors.value = append
       ? { ...sortErrors.value, latest: message }
       : { hot: message, latest: message }
@@ -621,6 +647,7 @@ const resetComments = (resetSort = false) => {
   sortTotals.value = { hot: 0, latest: 0 }
   sortHasMore.value = { hot: false, latest: false }
   sortOffsets.value = { hot: 0, latest: 0 }
+  sortCursors.value = { hot: '', latest: '' }
   sortLoaded.value = { hot: false, latest: false }
   sortErrors.value = { hot: '', latest: '' }
   sortLoading.value = { hot: false, latest: false }
@@ -637,13 +664,13 @@ const loadMoreComments = () => {
 }
 
 watch(
-  () => [neteaseSongId.value || tencentSongId.value, props.visible],
-  ([songId, visible], oldValue) => {
-    const oldSongId = oldValue?.[0]
+  () => [commentSourceKey.value, props.visible],
+  ([sourceKey, visible], oldValue) => {
+    const oldSourceKey = oldValue?.[0]
 
-    if (songId !== oldSongId) resetComments(true)
+    if (sourceKey !== oldSourceKey) resetComments(true)
     if (!visible) closeCommentImagePreview()
-    if (songId && visible && !sortLoaded.value.hot && loadingCount.value === 0) {
+    if (sourceKey && visible && !sortLoaded.value.hot && loadingCount.value === 0) {
       loadInitialComments()
     }
   },
@@ -938,6 +965,7 @@ defineExpose({ totalCount })
 }
 
 .reply-preview {
+  margin-left: calc(var(--reply-depth, 0) * 0.75rem);
   margin-top: 0.7rem;
   padding: 0.65rem 0.8rem;
   border-radius: 8px;
@@ -987,8 +1015,12 @@ defineExpose({ totalCount })
   opacity: 0.6;
 }
 
-.hot-label {
-  color: var(--lyrics-modal-text-secondary);
+.qq-liked-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: inherit;
+  cursor: default;
 }
 
 .comments-state {

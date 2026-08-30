@@ -4,27 +4,72 @@ import {
   txRequest,
   txSignedRequest
 } from '~~/server/utils/native_tx'
-import { normalizeQqCommentList } from '~~/server/utils/qqComment'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { createApiError } from '~~/server/utils/apiError'
+import {
+  buildQqCommentRequestParam,
+  normalizeQqCommentList
+} from '~~/server/utils/qqComment'
 
-const isSuccessfulResponse = (response: any) =>
+interface QqCommentResponse {
+  code?: unknown
+  request?: {
+    code?: unknown
+    data?: {
+      CommentList?: {
+        Comments?: Array<Record<string, unknown>>
+        Total?: unknown
+        HasMore?: unknown
+      }
+    }
+  }
+}
+
+const isSuccessfulResponse = (response: QqCommentResponse | undefined) =>
   response && Number(response.code) === 0 && Number(response.request?.code) === 0
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const musicId = String(query.musicId || '').trim()
   const originalSongId = String(query.songId || '').trim()
-  const page = Math.max(0, Number(query.page) || 0)
-  const pageSize = Math.min(50, Math.max(1, Number(query.pageSize) || 20))
+  const cursor = String(query.cursor || '').trim()
+  const rawPage = Number(query.page)
+  const rawPageSize = Number(query.pageSize)
+  const page = Number.isFinite(rawPage) ? Math.max(0, Math.floor(rawPage)) : 0
+  const pageSize = Number.isFinite(rawPageSize)
+    ? Math.min(50, Math.max(1, Math.floor(rawPageSize)))
+    : 20
   const type = query.type === 'latest' ? 'latest' : 'hot'
-  if (!musicId) throw createError({ statusCode: 400, message: '缺少 musicId 参数' })
+  if (!musicId) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      '缺少 musicId 参数'
+    )
+  }
 
   let topid = /^\d+$/.test(originalSongId) ? originalSongId : ''
   if (!topid && /^\d+$/.test(musicId)) topid = musicId
   if (!topid) {
-    const info = await getTxSongPlayableInfo(musicId)
-    topid = String(info.songId || '').trim()
+    try {
+      const info = await getTxSongPlayableInfo(musicId)
+      topid = String(info.songId || '').trim()
+    } catch (error) {
+      console.error('[QQ评论] 解析歌曲 ID 失败:', error instanceof Error ? error.message : error)
+      throw createApiError(
+        502,
+        SERVER_ERROR_CODES.QQ_COMMENT_FETCH_FAILED,
+        'QQ 音乐评论获取失败'
+      )
+    }
   }
-  if (!topid) throw createError({ statusCode: 502, message: 'QQ 音乐歌曲 ID 无效' })
+  if (!topid) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      'QQ 音乐歌曲 ID 无效'
+    )
+  }
 
   const requestBody = {
     comm: {
@@ -43,37 +88,40 @@ export default defineEventHandler(async (event) => {
     request: {
       module: 'music.globalComment.CommentRead',
       method: type === 'hot' ? 'GetHotCommentList' : 'GetNewCommentList',
-      param: {
-        BizType: 1,
-        BizId: topid,
-        LastCommentSeqNo: '',
-        PageSize: pageSize,
-        PageNum: page,
-        PicEnable: 1,
-        ...(type === 'hot'
-          ? { HotType: 1, WithAirborne: 0 }
-          : { HashTagID: '', SelfSeeEnable: 1, AudioEnable: 1 })
-      }
+      param: buildQqCommentRequestParam({ topid, cursor, page, pageSize, type })
     }
   }
 
-  let response: any
+  let response: QqCommentResponse | undefined
   try {
-    response = await txRequest(TX_MUSICU_URL, requestBody, {
+    response = (await txRequest(TX_MUSICU_URL, requestBody, {
       signal: AbortSignal.timeout(8000)
-    })
+    })) as QqCommentResponse
   } catch (error) {
     console.warn('[QQ评论] 直连接口请求失败，尝试签名接口:', error)
   }
 
   if (!isSuccessfulResponse(response)) {
-    response = await txSignedRequest(requestBody, {
-      signal: AbortSignal.timeout(8000)
-    })
+    try {
+      response = (await txSignedRequest(requestBody, {
+        signal: AbortSignal.timeout(8000)
+      })) as QqCommentResponse
+    } catch (error) {
+      console.error('[QQ评论] 签名接口请求失败:', error instanceof Error ? error.message : error)
+      throw createApiError(
+        502,
+        SERVER_ERROR_CODES.QQ_COMMENT_FETCH_FAILED,
+        'QQ 音乐评论获取失败'
+      )
+    }
   }
 
   if (!isSuccessfulResponse(response)) {
-    throw createError({ statusCode: 502, message: 'QQ 音乐评论接口异常' })
+    throw createApiError(
+      502,
+      SERVER_ERROR_CODES.QQ_COMMENT_FETCH_FAILED,
+      'QQ 音乐评论获取失败'
+    )
   }
   const data = response.request?.data?.CommentList || {}
   const rawComments = Array.isArray(data.Comments) ? data.Comments : []
@@ -86,7 +134,7 @@ export default defineEventHandler(async (event) => {
       total: Number(data.Total) || commentItems.length,
       more: Number(data.HasMore) === 1,
       nextCursor:
-        Number(data.HasMore) === 1 ? String(rawComments.at(-1)?.SeqNo || data.NextOffset || '') : ''
+        Number(data.HasMore) === 1 ? String(rawComments.at(-1)?.SeqNo || '') : ''
     }
   }
 })

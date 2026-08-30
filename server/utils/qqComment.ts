@@ -1,38 +1,28 @@
 const MAX_REPLY_DEPTH = 8
 
-export const QQ_COMMENT_PRAISE_REQUEST = {
-  module: 'GlobalComment.GlobalCommentWriteServer',
-  method: 'UpdateHotComment'
-} as const
-
-export const buildQqCommentPraiseParam = (commentId: string, liked: boolean, uin: string) => ({
-  comment_id: commentId,
-  type: liked ? 3 : 4,
-  uin
+export const buildQqCommentRequestParam = ({
+  topid,
+  cursor,
+  page,
+  pageSize,
+  type
+}: {
+  topid: string
+  cursor: string
+  page: number
+  pageSize: number
+  type: 'hot' | 'latest'
+}) => ({
+  BizType: 1,
+  BizId: topid,
+  LastCommentSeqNo: cursor,
+  PageSize: pageSize,
+  PageNum: page,
+  PicEnable: 1,
+  ...(type === 'hot'
+    ? { HotType: 1, WithAirborne: 0 }
+    : { HashTagID: '', SelfSeeEnable: 1, AudioEnable: 1 })
 })
-
-export const parseQqCommentPraiseResult = (response: unknown) => {
-  const body = response && typeof response === 'object' ? (response as Record<string, unknown>) : {}
-  const request =
-    body.req_1 && typeof body.req_1 === 'object'
-      ? (body.req_1 as Record<string, unknown>)
-      : undefined
-  const data =
-    request?.data && typeof request.data === 'object'
-      ? (request.data as Record<string, unknown>)
-      : undefined
-  const requestCode = Number(request?.code)
-  const dataCode = Number(data?.code)
-  const subcode = Number(data?.subcode)
-
-  return {
-    ok: Number(body.code) === 0 && requestCode === 0 && dataCode === 0 && subcode === 0,
-    sessionExpired: requestCode === 1000 || dataCode === 1000 || subcode === 1000,
-    message: String(
-      data?.msg || data?.message || request?.msg || request?.message || body.msg || body.message || ''
-    ).trim()
-  }
-}
 
 const optionalString = (value: unknown): string => {
   if (typeof value !== 'string') return ''
@@ -64,15 +54,15 @@ const collectImageUrls = (value: unknown): string[] => {
   return [...new Set(urls)]
 }
 
-const getCommentId = (item: Record<string, any>): string =>
+const getCommentId = (item: Record<string, unknown>): string =>
   optionalString(item.CmId ?? item.commentId ?? item.commentid ?? item.id)
 
-const getRootCommentId = (item: Record<string, any>): string =>
+const getRootCommentId = (item: Record<string, unknown>): string =>
   optionalString(
     item.RootCmId ?? item.RootCommentId ?? item.rootCommentId ?? item.rootcommentid ?? item.rootid
   )
 
-const getParentCommentId = (item: Record<string, any>): string =>
+const getParentCommentId = (item: Record<string, unknown>): string =>
   (() => {
     const parent =
       item.ParentCmId ??
@@ -85,7 +75,7 @@ const getParentCommentId = (item: Record<string, any>): string =>
     return optionalString(parent)
   })()
 
-const getNestedReplies = (item: Record<string, any>): Record<string, any>[] => {
+const getNestedReplies = (item: Record<string, unknown>): Array<Record<string, unknown>> => {
   if (Array.isArray(item.RepliedComments) && item.RepliedComments.length) {
     return item.RepliedComments
   }
@@ -124,7 +114,7 @@ export const normalizeQqComment = (
 ): QqCommentItem | null => {
   if (!raw || typeof raw !== 'object' || depth > MAX_REPLY_DEPTH) return null
 
-  const item = raw as Record<string, any>
+  const item = raw as Record<string, unknown>
   const commentId = getCommentId(item)
   const content = optionalString(
     item.Content ?? item.content ?? item.middlecommentcontent ?? item.commentcontent
@@ -142,7 +132,11 @@ export const normalizeQqComment = (
       return true
     })
 
-  const user = item.userinfo || item.user || {}
+  const userSource = item.userinfo || item.user
+  const user =
+    userSource && typeof userSource === 'object'
+      ? (userSource as Record<string, unknown>)
+      : {}
   return {
     commentId,
     content,
@@ -178,7 +172,7 @@ export const normalizeQqCommentList = (rawItems: unknown): QqCommentItem[] => {
   const candidates = rawItems
     .map((raw) => {
       if (!raw || typeof raw !== 'object') return null
-      const source = raw as Record<string, any>
+      const source = raw as Record<string, unknown>
       const item = normalizeQqComment(source)
       if (!item) return null
       return {

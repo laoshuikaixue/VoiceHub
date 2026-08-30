@@ -1,34 +1,31 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  buildQqCommentPraiseParam,
-  normalizeQqCommentList,
-  parseQqCommentPraiseResult,
-  QQ_COMMENT_PRAISE_REQUEST
+  buildQqCommentRequestParam,
+  normalizeQqCommentList
 } from '../../server/utils/qqComment.ts'
 
-test('QQ评论点赞使用官网接口的操作类型', () => {
-  assert.deepEqual(QQ_COMMENT_PRAISE_REQUEST, {
-    module: 'GlobalComment.GlobalCommentWriteServer',
-    method: 'UpdateHotComment'
-  })
-  assert.deepEqual(buildQqCommentPraiseParam('comment-1', true, '12345'), {
-    comment_id: 'comment-1',
-    type: 3,
-    uin: '12345'
-  })
-  assert.equal(buildQqCommentPraiseParam('comment-1', false, '12345').type, 4)
-})
-
-test('QQ评论点赞正确识别成功和登录过期响应', () => {
+test('QQ评论分页参数透传上一页游标', () => {
   assert.deepEqual(
-    parseQqCommentPraiseResult({
-      code: 0,
-      req_1: { code: 0, data: { code: 0, subcode: 0 } }
+    buildQqCommentRequestParam({
+      topid: '12345',
+      cursor: 'cursor-20',
+      page: 1,
+      pageSize: 20,
+      type: 'latest'
     }),
-    { ok: true, sessionExpired: false, message: '' }
+    {
+      BizType: 1,
+      BizId: '12345',
+      LastCommentSeqNo: 'cursor-20',
+      PageSize: 20,
+      PageNum: 1,
+      PicEnable: 1,
+      HashTagID: '',
+      SelfSeeEnable: 1,
+      AudioEnable: 1
+    }
   )
-  assert.equal(parseQqCommentPraiseResult({ code: 0, req_1: { code: 1000 } }).sessionExpired, true)
 })
 
 test('QQ评论只保留根评论并将回复挂到根评论下', () => {
@@ -112,4 +109,23 @@ test('QQ评论支持 SubCmListV1 回复列表', () => {
 
   assert.equal(result.length, 1)
   assert.equal(result[0]?.replies[0]?.content, '新版回复')
+})
+
+test('QQ评论保留多层回复供前端完整展示', () => {
+  const result = normalizeQqCommentList([
+    {
+      CmId: 'root-1',
+      Content: '根评论',
+      SubComments: [
+        {
+          CmId: 'reply-1',
+          Content: '一级回复',
+          SubComments: [{ CmId: 'reply-2', Content: '二级回复' }]
+        }
+      ]
+    }
+  ])
+
+  assert.equal(result[0]?.replies[0]?.commentId, 'reply-1')
+  assert.equal(result[0]?.replies[0]?.replies[0]?.commentId, 'reply-2')
 })

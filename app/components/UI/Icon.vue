@@ -239,6 +239,13 @@
       />
     </g>
 
+    <!-- 实心拇指向上 -->
+    <g v-else-if="name === 'thumbs-up-filled'" fill="currentColor" stroke="none">
+      <path
+        d="M7 10v12H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3Zm2 12V10.65l3.12-7.02A2.75 2.75 0 0 1 17 6v3h2.59a3 3 0 0 1 2.96 3.49l-1.17 7A3 3 0 0 1 18.42 22H9Z"
+      />
+    </g>
+
     <!-- 扬声器/广播图标 -->
     <g v-else-if="name === 'speaker'">
       <rect height="20" rx="2" ry="2" width="16" x="4" y="2" />
