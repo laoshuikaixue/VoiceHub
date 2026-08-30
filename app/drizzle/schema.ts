@@ -368,10 +368,22 @@ export const apiKeys = pgTable('api_keys', {
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   createdByUserId: integer('created_by_user_id').notNull(),
   usageCount: integer('usage_count').default(0).notNull(),
-
+  // 所有者模型：system / user / integration
+  ownerType: varchar('owner_type', { length: 32 }).default('system').notNull(),
+  ownerId: integer('owner_id'),
+  // 速率限制（NULL = 不限）
+  rateLimitPerMinute: integer('rate_limit_per_minute'),
+  // 日 / 月配额（NULL = 不限；<=0 创建时拒绝）
+  quotaDaily: integer('quota_daily'),
+  quotaMonthly: integer('quota_monthly'),
+  // IP 白名单（JSON 数组，CIDR/IP）
+  ipWhitelist: text('ip_whitelist'),
+  // Webhook 回调
+  webhookUrl: text('webhook_url'),
+  webhookSecretHash: text('webhook_secret_hash')
 });
 
-// API Key权限表
+// API Key权限表（迁移期间保留，新值统一用点分风格）
 export const apiKeyPermissions = pgTable('api_key_permissions', {
   id: uuid('id').primaryKey().defaultRandom(),
   apiKeyId: uuid('api_key_id').notNull(),
@@ -394,6 +406,94 @@ export const apiLogs = pgTable('api_logs', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   errorMessage: text('error_message'),
 });
+
+// 权限定义表（RBAC 权威源）
+export const permissions = pgTable('permissions', {
+  id: serial('id').primaryKey(),
+  key: varchar('key', { length: 100 }).notNull().unique(),
+  category: varchar('category', { length: 50 }).notNull(),
+  descriptionZh: text('description_zh').notNull(),
+  descriptionEn: text('description_en').notNull(),
+  scopeExpression: text('scope_expression'),
+  isApiPermission: boolean('is_api_permission').default(false).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  index('permissions_category_idx').on(table.category)
+]);
+
+// 角色 × 权限矩阵
+export const rolePermissions = pgTable('role_permissions', {
+  role: varchar('role', { length: 32 }).notNull(),
+  permissionId: integer('permission_id').notNull().references(() => permissions.id, { onDelete: 'cascade' })
+}, (table) => [
+  index('role_permissions_role_idx').on(table.role)
+]);
+
+// 个人加授 / 减授
+export const userPermissions = pgTable('user_permissions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  permissionId: integer('permission_id').notNull().references(() => permissions.id, { onDelete: 'cascade' }),
+  grantType: varchar('grant_type', { length: 16 }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  grantedBy: integer('granted_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  reason: text('reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  unique('user_permissions_user_perm_unique').on(table.userId, table.permissionId),
+  index('user_permissions_user_id_idx').on(table.userId),
+  index('user_permissions_permission_id_idx').on(table.permissionId),
+  index('user_permissions_expires_at_idx').on(table.expiresAt)
+]);
+
+// 旧权限字符串归一化审计日志
+export const permissionMigrationLog = pgTable('permission_migration_log', {
+  id: serial('id').primaryKey(),
+  oldValue: varchar('old_value', { length: 100 }).notNull(),
+  newValue: varchar('new_value', { length: 100 }).notNull(),
+  apiKeyId: uuid('api_key_id'),
+  migratedAt: timestamp('migrated_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+// API Key 速率限制计数器（PG 实现，按分钟对齐）
+export const apiRateLimitCounters = pgTable('api_rate_limit_counters', {
+  apiKeyId: uuid('api_key_id').notNull(),
+  bucketMinute: timestamp('bucket_minute', { withTimezone: true }).notNull(),
+  count: integer('count').default(0).notNull()
+}, (table) => [
+  index('api_rate_limit_counters_lookup_idx').on(table.apiKeyId, table.bucketMinute)
+]);
+
+// API Key 日配额聚合
+export const apiUsageDaily = pgTable('api_usage_daily', {
+  apiKeyId: uuid('api_key_id').notNull(),
+  usageDate: varchar('usage_date', { length: 8 }).notNull(),
+  count: integer('count').default(0).notNull()
+}, (table) => [
+  index('api_usage_daily_lookup_idx').on(table.apiKeyId, table.usageDate)
+]);
+
+// API Key 月配额聚合
+export const apiUsageMonthly = pgTable('api_usage_monthly', {
+  apiKeyId: uuid('api_key_id').notNull(),
+  usageMonth: varchar('usage_month', { length: 6 }).notNull(),
+  count: integer('count').default(0).notNull()
+}, (table) => [
+  index('api_usage_monthly_lookup_idx').on(table.apiKeyId, table.usageMonth)
+]);
+
+// Webhook 回调失败日志
+export const webhookFailures = pgTable('webhook_failures', {
+  id: serial('id').primaryKey(),
+  apiKeyId: uuid('api_key_id'),
+  url: text('url').notNull(),
+  payload: text('payload'),
+  errorMessage: text('error_message'),
+  attempt: integer('attempt').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  index('webhook_failures_api_key_id_idx').on(table.apiKeyId)
+]);
 
 // 用户状态变更日志表
 export const userStatusLogs = pgTable('user_status_logs', {
@@ -700,6 +800,22 @@ export type ApiKeyPermission = typeof apiKeyPermissions.$inferSelect;
 export type NewApiKeyPermission = typeof apiKeyPermissions.$inferInsert;
 export type ApiLog = typeof apiLogs.$inferSelect;
 export type NewApiLog = typeof apiLogs.$inferInsert;
+export type Permission = typeof permissions.$inferSelect;
+export type NewPermission = typeof permissions.$inferInsert;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type NewRolePermission = typeof rolePermissions.$inferInsert;
+export type UserPermission = typeof userPermissions.$inferSelect;
+export type NewUserPermission = typeof userPermissions.$inferInsert;
+export type PermissionMigrationLog = typeof permissionMigrationLog.$inferSelect;
+export type NewPermissionMigrationLog = typeof permissionMigrationLog.$inferInsert;
+export type ApiRateLimitCounter = typeof apiRateLimitCounters.$inferSelect;
+export type NewApiRateLimitCounter = typeof apiRateLimitCounters.$inferInsert;
+export type ApiUsageDaily = typeof apiUsageDaily.$inferSelect;
+export type NewApiUsageDaily = typeof apiUsageDaily.$inferInsert;
+export type ApiUsageMonthly = typeof apiUsageMonthly.$inferSelect;
+export type NewApiUsageMonthly = typeof apiUsageMonthly.$inferInsert;
+export type WebhookFailure = typeof webhookFailures.$inferSelect;
+export type NewWebhookFailure = typeof webhookFailures.$inferInsert;
 export type UserStatusLog = typeof userStatusLogs.$inferSelect;
 export type NewUserStatusLog = typeof userStatusLogs.$inferInsert;
 export type SongCollaborator = typeof songCollaborators.$inferSelect;
