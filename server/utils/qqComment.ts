@@ -57,10 +57,18 @@ const collectImageUrls = (value: unknown): string[] => {
 const getCommentId = (item: Record<string, unknown>): string =>
   optionalString(item.CmId ?? item.commentId ?? item.commentid ?? item.id)
 
-const getRootCommentId = (item: Record<string, unknown>): string =>
-  optionalString(
-    item.RootCmId ?? item.RootCommentId ?? item.rootCommentId ?? item.rootcommentid ?? item.rootid
-  )
+const getRootCommentId = (item: Record<string, unknown>): string => {
+  const root =
+    item.RootCmId ??
+    item.RootCommentId ??
+    item.rootCommentId ??
+    item.rootcommentid ??
+    item.rootid ??
+    item.RootComment ??
+    item.rootComment
+  if (root && typeof root === 'object') return getCommentId(root as Record<string, unknown>)
+  return optionalString(root)
+}
 
 const getParentCommentId = (item: Record<string, unknown>): string =>
   (() => {
@@ -229,4 +237,30 @@ export const normalizeQqCommentList = (rawItems: unknown): QqCommentItem[] => {
     rootIds.add(item.commentId)
     return true
   })
+}
+
+export const normalizeQqCommentPage = (rawItems: unknown) => {
+  const items = Array.isArray(rawItems) ? rawItems : []
+  const ids = new Set(
+    items
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => getCommentId(item as Record<string, unknown>))
+      .filter(Boolean)
+  )
+  const orphanReplies = items
+    .map((raw) => {
+      if (!raw || typeof raw !== 'object') return null
+      const source = raw as Record<string, unknown>
+      const rootCommentId = getRootCommentId(source) || getParentCommentId(source)
+      const commentId = getCommentId(source)
+      if (!rootCommentId || rootCommentId === commentId || ids.has(rootCommentId)) return null
+      const item = normalizeQqComment(source)
+      return item ? { ...item, rootCommentId } : null
+    })
+    .filter((item): item is QqCommentItem & { rootCommentId: string } => Boolean(item))
+
+  return {
+    comments: normalizeQqCommentList(items),
+    orphanReplies
+  }
 }

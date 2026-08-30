@@ -104,9 +104,13 @@
               >
             </div>
             <div v-if="item.beReplied?.length" class="reply-preview">
-              {{ item.beReplied[0]?.user?.nickname || locale.originalComment }}：{{
-                item.beReplied[0]?.content
-              }}
+              <div class="reply-meta">
+                {{ item.beReplied[0]?.user?.nickname || locale.originalComment
+                }}<span v-if="item.beReplied[0]?.user?.location">
+                  · {{ locale.locationLabel }} {{ item.beReplied[0].user.location }}</span
+                >
+              </div>
+              <div>{{ item.beReplied[0]?.content }}</div>
             </div>
             <div
               v-for="reply in getVisibleReplies(item)"
@@ -116,7 +120,7 @@
             >
               <div class="reply-meta">
                 <div class="reply-user">
-                  <div class="reply-avatar">
+                  <div v-if="!isTencent" class="reply-avatar">
                     <img
                       v-if="reply.user?.avatarUrl"
                       :src="convertToHttps(reply.user.avatarUrl)"
@@ -162,7 +166,7 @@
                   @keydown.enter.prevent="openCommentImagePreview($event, image)"
                 >
               </div>
-              <div class="reply-actions">
+              <div v-if="!isTencent" class="reply-actions">
                 <span class="qq-liked-count">
                   <Icon name="thumbs-up" size="13" />
                   {{ formatCount(reply.likedCount || 0) }}
@@ -170,20 +174,13 @@
               </div>
             </div>
             <button
-              v-if="Math.max(item.replyCount || 0, item.displayReplies.length) > 1"
+              v-if="!isTencent && item.displayReplies.length > 1"
               class="replies-toggle"
               type="button"
-              :disabled="isRepliesLoading(item.key)"
-              @click="toggleReplies(item)"
+              @click="toggleReplies(item.key)"
             >
-              {{
-                isRepliesLoading(item.key)
-                  ? locale.loadingReplies
-                  : isRepliesExpanded(item.key)
-                    ? locale.hideReplies
-                    : locale.showMoreReplies
-              }}
-              ({{ Math.max(item.replyCount || 0, item.displayReplies.length) }})
+              {{ isRepliesExpanded(item.key) ? locale.hideReplies : locale.showMoreReplies }}
+              ({{ item.displayReplies.length }})
             </button>
             <div class="comment-actions">
               <button
@@ -292,11 +289,16 @@ const previewImageUrl = ref('')
 const requestId = ref(0)
 const commentSort = ref('hot')
 const expandedReplyKeys = ref(new Set())
-const replyLoadingKeys = ref(new Set())
+const pendingQqReplies = ref([])
 const isLoading = computed(() => loadingCount.value > 0)
 const error = computed(() => sortErrors.value[commentSort.value] || '')
 const totalCount = computed(() => sortTotals.value.latest || sortTotals.value.hot || 0)
-const hasMore = computed(() => Boolean(sortHasMore.value[commentSort.value]))
+const hasMore = computed(() => {
+  if (props.song?.musicPlatform === 'tencent' && commentSort.value === 'hot') {
+    return Boolean(sortHasMore.value.hot || sortHasMore.value.latest)
+  }
+  return Boolean(sortHasMore.value[commentSort.value])
+})
 
 const selectCommentSort = (value) => {
   if (commentSort.value === value) return
@@ -367,21 +369,55 @@ const flattenCommentReplies = (replies) => {
   return flattened
 }
 
-const commentItems = computed(() => {
-  const unique = (items) => {
-    const seen = new Set()
-    return items.filter((item) => {
-      const key =
-        item.commentId != null
-          ? `id:${item.commentId}`
-          : `text:${item.user?.nickname || ''}|${item.time || 0}|${item.content || ''}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+const getCommentIdentity = (item) =>
+  item.commentId != null
+    ? `id:${item.commentId}`
+    : `text:${item.user?.nickname || ''}|${item.time || 0}|${item.content || ''}`
+
+const uniqueComments = (items) => {
+  const seen = new Set()
+  return items.filter((item) => {
+    const key = getCommentIdentity(item)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+const isPopularByLikes = (item) => Number(item.likedCount || 0) > 10
+
+const normalizeNeteaseLocation = (item) => {
+  const source = item?.ipLocation
+  const fallback = String(item?.user?.location || '').trim()
+  if (typeof source === 'string') return source.trim()
+  if (!source || typeof source !== 'object') return fallback
+  return String(source.location || source.province || source.city || source.country || '').trim() || fallback
+}
+
+const normalizeNeteaseComment = (item) => {
+  if (!item || typeof item !== 'object') return item
+  const user = item.user && typeof item.user === 'object' ? item.user : {}
+  return {
+    ...item,
+    user: {
+      ...user,
+      location: normalizeNeteaseLocation(item)
+    },
+    beReplied: Array.isArray(item.beReplied)
+      ? item.beReplied.map(normalizeNeteaseComment)
+      : item.beReplied,
+    replies: Array.isArray(item.replies) ? item.replies.map(normalizeNeteaseComment) : item.replies
   }
+}
+
+const mergeHotComments = (...groups) =>
+  uniqueComments(groups.flat()).sort(
+    (left, right) => Number(right.likedCount || 0) - Number(left.likedCount || 0)
+  )
+
+const commentItems = computed(() => {
   const source = commentSort.value === 'hot' ? hotComments.value : comments.value
-  return unique(source).map((item, index) => ({
+  return uniqueComments(source).map((item, index) => ({
     ...item,
     displayReplies: flattenCommentReplies(item.replies),
     key: getCommentKey(item, index)
@@ -389,24 +425,16 @@ const commentItems = computed(() => {
 })
 
 const isRepliesExpanded = (commentKey) => expandedReplyKeys.value.has(commentKey)
-const isRepliesLoading = (commentKey) => replyLoadingKeys.value.has(commentKey)
 
 const getVisibleReplies = (item) => {
-  if (isRepliesExpanded(item.key)) return item.displayReplies
+  if (isTencent.value || isRepliesExpanded(item.key)) return item.displayReplies
   return item.displayReplies.slice(0, 1)
 }
 
-const toggleReplies = async (item) => {
-  const commentKey = item.key
+const toggleReplies = (commentKey) => {
   const next = new Set(expandedReplyKeys.value)
-  if (next.has(commentKey)) {
-    next.delete(commentKey)
-  } else {
-    next.add(commentKey)
-    if (isTencent.value && item.displayReplies.length < Number(item.replyCount || 0)) {
-      await fetchTencentReplies(item)
-    }
-  }
+  if (next.has(commentKey)) next.delete(commentKey)
+  else next.add(commentKey)
   expandedReplyKeys.value = next
 }
 
@@ -469,7 +497,57 @@ const updateCommentLikeState = (commentId, liked, likedCount) => {
   }
 
   comments.value = comments.value.map(applyState)
-  hotComments.value = hotComments.value.map(applyState)
+  hotComments.value = mergeHotComments(
+    hotComments.value.map(applyState),
+    comments.value.filter(isPopularByLikes)
+  )
+  sortTotals.value = { ...sortTotals.value, hot: hotComments.value.length }
+}
+
+const attachPendingQqReplies = () => {
+  if (!pendingQqReplies.value.length) return
+
+  const pendingByRoot = new Map()
+  pendingQqReplies.value.forEach((reply) => {
+    const rootId = String(reply.rootCommentId || '')
+    if (!rootId || !reply.commentId) return
+    const replies = pendingByRoot.get(rootId) || []
+    replies.push(reply)
+    pendingByRoot.set(rootId, replies)
+  })
+
+  const resolvedRootIds = new Set()
+  const attachToList = (items) =>
+    items.map((item) => {
+      const additions = pendingByRoot.get(String(item.commentId))
+      if (!additions?.length) return item
+
+      resolvedRootIds.add(String(item.commentId))
+
+      const existingIds = new Set(flattenCommentReplies(item.replies).map((reply) => String(reply.commentId)))
+      const nextReplies = additions.filter((reply) => {
+        const replyId = String(reply.commentId)
+        if (existingIds.has(replyId)) return false
+        existingIds.add(replyId)
+        return true
+      })
+      if (!nextReplies.length) return item
+
+      return {
+        ...item,
+        replies: [...(Array.isArray(item.replies) ? item.replies : []), ...nextReplies],
+        replyCount: Math.max(Number(item.replyCount || 0), (item.replies?.length || 0) + nextReplies.length)
+      }
+    })
+
+  comments.value = attachToList(comments.value)
+  hotComments.value = attachToList(hotComments.value)
+
+  if (resolvedRootIds.size) {
+    pendingQqReplies.value = pendingQqReplies.value.filter(
+      (reply) => !resolvedRootIds.has(String(reply.rootCommentId))
+    )
+  }
 }
 
 const getCommentImageUrl = (url) => {
@@ -565,74 +643,6 @@ const toggleCommentLike = async (comment) => {
   }
 }
 
-const getListForSort = (sort) => (sort === 'hot' ? hotComments.value : comments.value)
-
-const setListForSort = (sort, items) => {
-  if (sort === 'hot') hotComments.value = items
-  else comments.value = items
-}
-
-const mergeCommentReplies = (commentId, replies) => {
-  const update = (item) => {
-    if (String(item.commentId) !== String(commentId)) return item
-    const merged = [...(Array.isArray(item.replies) ? item.replies : []), ...replies]
-    const seen = new Set()
-    return {
-      ...item,
-      replies: merged.filter((reply) => {
-        const key = String(reply.commentId || '')
-        if (!key || seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
-    }
-  }
-  comments.value = comments.value.map(update)
-  hotComments.value = hotComments.value.map(update)
-}
-
-const fetchTencentReplies = async (item) => {
-  if (!tencentSongId.value || !item.commentId || isRepliesLoading(item.key)) return
-
-  const loadingKeys = new Set(replyLoadingKeys.value)
-  loadingKeys.add(item.key)
-  replyLoadingKeys.value = loadingKeys
-
-  try {
-    const replies = []
-    let page = 0
-    let more = true
-    while (more && page < 20) {
-      const response = await $fetch('/api/native-api/comment/tx', {
-        params: {
-          musicId: tencentSongId.value,
-          songId: tencentOriginalSongId.value || undefined,
-          rootCommentId: item.commentId,
-          page,
-          pageSize: 50,
-          type: commentSort.value
-        }
-      })
-      if (response.code !== 200) throw new Error(locale.value.loadFailed)
-
-      const body = response.data || {}
-      const pageReplies = Array.isArray(body.comments) ? body.comments : []
-      replies.push(...pageReplies)
-      more = Boolean(body.more) && pageReplies.length > 0
-      page += 1
-    }
-    mergeCommentReplies(item.commentId, replies)
-  } catch (err) {
-    if (window.$showNotification) {
-      window.$showNotification(localizeServerError(err, locale.value.loadFailed), 'error')
-    }
-  } finally {
-    const next = new Set(replyLoadingKeys.value)
-    next.delete(item.key)
-    replyLoadingKeys.value = next
-  }
-}
-
 const fetchTencentComments = async (append, sort, currentRequestId) => {
   if (!tencentSongId.value || sortLoading.value[sort]) return
 
@@ -658,17 +668,44 @@ const fetchTencentComments = async (append, sort, currentRequestId) => {
 
     const body = response.data || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
+    const orphanReplies = Array.isArray(body.orphanReplies) ? body.orphanReplies : []
+    if (orphanReplies.length) {
+      const existingPending = new Set(
+        pendingQqReplies.value.map((reply) => `${reply.rootCommentId}:${reply.commentId}`)
+      )
+      pendingQqReplies.value = [
+        ...pendingQqReplies.value,
+        ...orphanReplies.filter((reply) => {
+          const key = `${reply.rootCommentId}:${reply.commentId}`
+          if (!reply.rootCommentId || !reply.commentId || existingPending.has(key)) return false
+          existingPending.add(key)
+          return true
+        })
+      ]
+    }
     const nextCursor = String(body.nextCursor || '')
-    const previous = append ? getListForSort(sort) : []
-    setListForSort(sort, [...previous, ...nextComments])
+    if (sort === 'hot') {
+      const promoted = hotComments.value.filter(isPopularByLikes)
+      const previous = append ? hotComments.value : promoted
+      hotComments.value = mergeHotComments(previous, nextComments)
+    } else {
+      const previous = append ? comments.value : []
+      comments.value = uniqueComments([...previous, ...nextComments])
+      hotComments.value = mergeHotComments(
+        hotComments.value,
+        nextComments.filter(isPopularByLikes)
+      )
+    }
     sortTotals.value = {
       ...sortTotals.value,
-      [sort]: Number(body.total) || nextComments.length
+      [sort]: sort === 'hot' ? hotComments.value.length : Number(body.total) || nextComments.length,
+      hot: hotComments.value.length
     }
     sortHasMore.value = {
       ...sortHasMore.value,
       [sort]: Boolean(body.more) && Boolean(nextCursor)
     }
+    attachPendingQqReplies()
     sortOffsets.value = { ...sortOffsets.value, [sort]: nextOffset + PAGE_SIZE }
     sortCursors.value = { ...sortCursors.value, [sort]: nextCursor }
     sortLoaded.value = { ...sortLoaded.value, [sort]: true }
@@ -705,11 +742,19 @@ const fetchNeteaseComments = async (append, currentRequestId) => {
     if (response.code !== 200) throw new Error(locale.value.loadFailed)
 
     const body = response.body || response.data || {}
-    const nextComments = Array.isArray(body.comments) ? body.comments : []
-    comments.value = append ? [...comments.value, ...nextComments] : nextComments
+    const nextComments = Array.isArray(body.comments)
+      ? body.comments.map(normalizeNeteaseComment)
+      : []
+    comments.value = uniqueComments(append ? [...comments.value, ...nextComments] : nextComments)
     if (!append) {
-      hotComments.value = Array.isArray(body.hotComments) ? body.hotComments : []
+      hotComments.value = Array.isArray(body.hotComments)
+        ? body.hotComments.map(normalizeNeteaseComment)
+        : []
     }
+    hotComments.value = mergeHotComments(
+      hotComments.value,
+      nextComments.filter(isPopularByLikes)
+    )
 
     const latestTotal = Number(body.total) || comments.value.length
     sortTotals.value = {
@@ -717,7 +762,7 @@ const fetchNeteaseComments = async (append, currentRequestId) => {
       latest: latestTotal
     }
     sortHasMore.value = {
-      hot: false,
+      hot: typeof body.more === 'boolean' ? body.more : comments.value.length < latestTotal,
       latest: typeof body.more === 'boolean' ? body.more : comments.value.length < latestTotal
     }
     sortOffsets.value = { ...sortOffsets.value, latest: nextOffset + PAGE_SIZE }
@@ -763,6 +808,7 @@ const resetComments = (resetSort = false) => {
   loadingCount.value = 0
   comments.value = []
   hotComments.value = []
+  pendingQqReplies.value = []
   sortTotals.value = { hot: 0, latest: 0 }
   sortHasMore.value = { hot: false, latest: false }
   sortOffsets.value = { hot: 0, latest: 0 }
@@ -771,7 +817,6 @@ const resetComments = (resetSort = false) => {
   sortErrors.value = { hot: '', latest: '' }
   sortLoading.value = { hot: false, latest: false }
   expandedReplyKeys.value = new Set()
-  replyLoadingKeys.value = new Set()
   if (resetSort) commentSort.value = 'hot'
 }
 
@@ -781,6 +826,11 @@ const refreshComments = () => {
 }
 
 const loadMoreComments = () => {
+  if (isTencent.value && commentSort.value === 'hot') {
+    if (sortHasMore.value.hot) fetchTencentComments(true, 'hot', requestId.value)
+    else if (sortHasMore.value.latest) fetchTencentComments(true, 'latest', requestId.value)
+    return
+  }
   fetchComments(true, commentSort.value)
 }
 

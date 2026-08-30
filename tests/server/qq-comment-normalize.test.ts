@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   buildQqCommentRequestParam,
+  normalizeQqCommentPage,
   normalizeQqCommentList
 } from '../../server/utils/qqComment.ts'
 
@@ -128,4 +129,20 @@ test('QQ评论保留多层回复供前端完整展示', () => {
 
   assert.equal(result[0]?.replies[0]?.commentId, 'reply-1')
   assert.equal(result[0]?.replies[0]?.replies[0]?.commentId, 'reply-2')
+})
+
+test('QQ评论分页中根评论缺失时保留孤儿回复供后续归并', () => {
+  const result = normalizeQqCommentPage([
+    {
+      CmId: 'reply-1',
+      RootCmId: 'root-1',
+      Content: '跨页回复',
+      Nick: '回复者'
+    }
+  ])
+
+  assert.equal(result.comments.length, 0)
+  assert.equal(result.orphanReplies.length, 1)
+  assert.equal(result.orphanReplies[0]?.commentId, 'reply-1')
+  assert.equal(result.orphanReplies[0]?.rootCommentId, 'root-1')
 })

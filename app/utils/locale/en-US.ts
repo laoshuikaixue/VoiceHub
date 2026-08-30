@@ -1145,7 +1145,6 @@ export const pages = {
       originalComment: 'Original comment',
       showMoreReplies: 'Show more replies',
       hideReplies: 'Collapse replies',
-      loadingReplies: 'Loading replies',
       unlike: 'Unlike',
       like: 'Like comment',
       loadingMore: 'Loading...',
