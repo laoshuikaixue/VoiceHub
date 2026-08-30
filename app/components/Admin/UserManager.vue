@@ -368,7 +368,7 @@
                     class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons"
                   >
                     <button
-                      :disabled="isSelf(user)"
+                      :disabled="!canManageUser(user)"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.editUser"
                       @click="editUser(user)"
@@ -391,7 +391,7 @@
                       <Music :size="13" />
                     </button>
                     <button
-                      :disabled="isSelf(user)"
+                      :disabled="!canManageUser(user)"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-warning transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn flex items-center justify-center"
                       :title="locale.actions.resetPassword"
                       @click="resetPassword(user)"
@@ -399,7 +399,7 @@
                       <Lock :size="13" />
                     </button>
                     <button
-                      :disabled="isSelf(user)"
+                      :disabled="!canManageUser(user)"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.deleteUser"
                       @click="confirmDeleteUser(user)"
@@ -534,7 +534,7 @@
 
             <div class="flex gap-2 action-buttons">
               <button
-                :disabled="isSelf(user)"
+                :disabled="!canManageUser(user)"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-primary-hover active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="editUser(user)"
               >
@@ -554,14 +554,14 @@
                 <Music :size="12" /> {{ locale.actions.records }}
               </button>
               <button
-                :disabled="isSelf(user)"
+                :disabled="!canManageUser(user)"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-warning active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="resetPassword(user)"
               >
                 <Lock :size="12" /> {{ locale.actions.reset }}
               </button>
               <button
-                :disabled="isSelf(user)"
+                :disabled="!canManageUser(user)"
                 class="px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary active:bg-error active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="confirmDeleteUser(user)"
               >
@@ -1637,6 +1637,7 @@ import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
@@ -1817,6 +1818,7 @@ const passwordForm = ref({
 
 // 服务
 const auth = useAuth()
+const { localize } = useServerErrors()
 
 // 判断是否为当前登录用户
 const isSelf = (user) => {
@@ -1828,14 +1830,36 @@ const isSuperAdmin = computed(() => {
   return auth.user.value?.role === 'SUPER_ADMIN'
 })
 
+// 普通管理员身份
+const isAdmin = computed(() => {
+  return auth.user.value?.role === 'ADMIN'
+})
+
+// 是否允许对目标用户执行管理操作（编辑/重置密码/删除），与后端越级保护一致
+const canManageUser = (user) => {
+  if (!user || isSelf(user)) return false
+  // 普通管理员不能操作超级管理员
+  return isSuperAdmin.value || user.role !== 'SUPER_ADMIN'
+}
+
 const availableRoles = computed(() => {
+  let roles
   if (isSuperAdmin.value) {
     // 超级管理员可以分配除自己以外的所有角色
-    return allRoles.value.filter((role) => role.name !== 'SUPER_ADMIN')
+    roles = allRoles.value.filter((role) => role.name !== 'SUPER_ADMIN')
+  } else if (isAdmin.value) {
+    // 管理员只能分配用户和歌曲管理员角色（与后端用户接口的角色限制一致）
+    roles = allRoles.value.filter((role) => ['USER', 'SONG_ADMIN'].includes(role.name))
   } else {
     // 其他角色不能分配角色，返回空数组
     return []
   }
+  // 保留目标用户当前角色，避免当前值不在选项中时下拉显示裸值
+  const currentRole = editingUser.value?.role
+  if (currentRole && !roles.some((role) => role.name === currentRole)) {
+    roles = [...roles, ...allRoles.value.filter((role) => role.name === currentRole)]
+  }
+  return roles
 })
 
 const getUserDisplayName = (user) => {
@@ -2451,7 +2475,7 @@ const saveUser = async () => {
     }
   } catch (error) {
       console.error('保存用户失败:', error)
-      formError.value = getErrorDetail(error) || locale.value.errors.saveFailed
+      formError.value = localize(error, locale.value.errors.saveFailed)
     } finally {
     saving.value = false
   }
