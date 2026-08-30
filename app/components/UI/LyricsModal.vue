@@ -182,7 +182,7 @@
                 <SongComments
                   ref="commentsRef"
                   :song="currentSong"
-                  :visible="isVisible && activePanel === 'comments'"
+                  :visible="isVisible"
                 />
               </div>
 

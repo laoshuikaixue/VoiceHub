@@ -8,31 +8,60 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
   buildQqCommentRequestParam,
+  normalizeQqComment,
   normalizeQqCommentList
 } from '~~/server/utils/qqComment'
+
+interface QqCommentListData {
+  Comments?: unknown
+  comments?: unknown
+  commentlist?: unknown
+  list?: unknown
+  Total?: unknown
+  total?: unknown
+  HasMore?: unknown
+  hasMore?: unknown
+  hasmore?: unknown
+}
+
+interface QqCommentModuleData extends QqCommentListData {
+  CommentList?: QqCommentListData
+  comment?: QqCommentListData
+}
 
 interface QqCommentResponse {
   code?: unknown
   request?: {
     code?: unknown
-    data?: {
-      CommentList?: {
-        Comments?: Array<Record<string, unknown>>
-        Total?: unknown
-        HasMore?: unknown
-      }
-    }
+    data?: QqCommentModuleData
+  }
+  comment?: {
+    code?: unknown
+    data?: QqCommentModuleData
   }
 }
 
-const isSuccessfulResponse = (response: QqCommentResponse | undefined) =>
-  response && Number(response.code) === 0 && Number(response.request?.code) === 0
+const getCommentListData = (response: QqCommentResponse) => {
+  const data = response.request?.data || response.comment?.data || {}
+  const list = data.CommentList || data.comment || data
+  return {
+    list,
+    comments: list.Comments || list.comments || list.commentlist || list.list || []
+  }
+}
+
+const isSuccessfulResponse = (response: QqCommentResponse | undefined) => {
+  if (!response || Number(response.code) !== 0) return false
+  const moduleCode = response.request?.code ?? response.comment?.code
+  return Number(moduleCode) === 0
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const musicId = String(query.musicId || '').trim()
   const originalSongId = String(query.songId || '').trim()
   const cursor = String(query.cursor || '').trim()
+  const rootCommentId = String(query.rootCommentId || '').trim()
   const rawPage = Number(query.page)
   const rawPageSize = Number(query.pageSize)
   const page = Number.isFinite(rawPage) ? Math.max(0, Math.floor(rawPage)) : 0
@@ -86,9 +115,18 @@ export default defineEventHandler(async (event) => {
       uin: '0'
     },
     request: {
-      module: 'music.globalComment.CommentRead',
-      method: type === 'hot' ? 'GetHotCommentList' : 'GetNewCommentList',
-      param: buildQqCommentRequestParam({ topid, cursor, page, pageSize, type })
+      module: rootCommentId ? 'comment.CommentReadServer' : 'music.globalComment.CommentRead',
+      method: rootCommentId ? 'GetCommentList' : type === 'hot' ? 'GetHotCommentList' : 'GetNewCommentList',
+      param: rootCommentId
+        ? {
+            biztype: 1,
+            bizid: topid,
+            rootcommentid: rootCommentId,
+            page,
+            pagesize: pageSize,
+            needhot: 0
+          }
+        : buildQqCommentRequestParam({ topid, cursor, page, pageSize, type })
     }
   }
 
@@ -123,18 +161,22 @@ export default defineEventHandler(async (event) => {
       'QQ 音乐评论获取失败'
     )
   }
-  const data = response.request?.data?.CommentList || {}
-  const rawComments = Array.isArray(data.Comments) ? data.Comments : []
-  const commentItems = normalizeQqCommentList(rawComments)
+  const { list, comments: responseComments } = getCommentListData(response)
+  const rawComments = Array.isArray(responseComments) ? responseComments : []
+  const commentItems = rootCommentId
+    ? rawComments.map((item) => normalizeQqComment(item)).filter(Boolean)
+    : normalizeQqCommentList(rawComments)
 
   return {
     code: 200,
     data: {
       comments: commentItems,
-      total: Number(data.Total) || commentItems.length,
-      more: Number(data.HasMore) === 1,
+      total: Number(list.Total ?? list.total) || commentItems.length,
+      more: Number(list.HasMore ?? list.hasMore ?? list.hasmore) === 1,
       nextCursor:
-        Number(data.HasMore) === 1 ? String(rawComments.at(-1)?.SeqNo || '') : ''
+        Number(list.HasMore ?? list.hasMore ?? list.hasmore) === 1
+          ? String(rawComments.at(-1)?.SeqNo || rawComments.at(-1)?.seqNo || '')
+          : ''
     }
   }
 })
