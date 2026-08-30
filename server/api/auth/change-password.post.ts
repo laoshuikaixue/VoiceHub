@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
     passwordUpdated = true
 
     // 密码变更会让旧令牌失效，因此为当前已验证会话立即换发令牌。
-    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion)
+    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion, event.context.authSessionId)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),

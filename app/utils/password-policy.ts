@@ -15,14 +15,28 @@ const COMMON_PASSWORDS = new Set([
   'voicehub'
 ])
 
-export const PASSWORD_MIN_LENGTH = 8
+export const PASSWORD_MIN_LENGTH = 6
 export const PASSWORD_MAX_LENGTH = 128
+export const INITIAL_PASSWORD_MIN_CLASSES = 2
+
+export interface PasswordPolicyOptions {
+  minClasses?: number
+  complexityCode?: string
+}
 
 function getUtf8ByteLength(value: string): number {
   return new TextEncoder().encode(value).length
 }
 
-export function getPasswordPolicyViolation(password: unknown) {
+const INITIAL_PASSWORD_POLICY_OPTIONS: PasswordPolicyOptions = {
+  minClasses: INITIAL_PASSWORD_MIN_CLASSES,
+  complexityCode: 'AUTH_INITIAL_PASSWORD_COMPLEXITY_REQUIRED'
+}
+
+export function getPasswordPolicyViolation(password: unknown, options: PasswordPolicyOptions = {}) {
+  const minClasses = options.minClasses ?? 3
+  const complexityCode = options.complexityCode ?? 'AUTH_PASSWORD_COMPLEXITY_REQUIRED'
+
   if (typeof password !== 'string' || !password) {
     return { code: 'AUTH_NEW_PASSWORD_REQUIRED', message: '密码不能为空' }
   }
@@ -64,16 +78,24 @@ export function getPasswordPolicyViolation(password: unknown) {
     /[^A-Za-z0-9]/.test(password)
   ].filter(Boolean).length
 
-  if (categories < 3) {
+  if (categories < minClasses) {
     return {
-      code: 'AUTH_PASSWORD_COMPLEXITY_REQUIRED',
-      message: '密码至少需要包含大写字母、小写字母、数字、特殊字符中的三类'
+      code: complexityCode,
+      message: `密码至少需要包含大写字母、小写字母、数字、特殊字符中的${minClasses === 2 ? '两' : '三'}类`
     }
   }
 
   return null
 }
 
+export function getInitialPasswordPolicyViolation(password: unknown) {
+  return getPasswordPolicyViolation(password, INITIAL_PASSWORD_POLICY_OPTIONS)
+}
+
 export function validatePasswordPolicy(password: unknown): string | null {
   return getPasswordPolicyViolation(password)?.message ?? null
+}
+
+export function validateInitialPasswordPolicy(password: unknown): string | null {
+  return getInitialPasswordPolicyViolation(password)?.message ?? null
 }

@@ -425,7 +425,7 @@ export default defineEventHandler(async (event) => {
       tablesToBackup.systemSettings = {
         query: async () => {
           const settings = await db.select().from(systemSettings)
-          return settings.map((s) => maskSystemSettingsSecrets(s))
+          return settings
         },
         description: '系统设置'
       }

@@ -10,6 +10,7 @@ export interface BindingTokenPayload {
   provider: string
   providerUserId: string
   providerUsername?: string
+  avatar?: string
   // 如果有可靠的未认证用户会话ID，可以在此添加 sessionId
 }
 

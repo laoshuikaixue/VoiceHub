@@ -2,27 +2,29 @@
   <transition name="notification">
     <div
       v-if="show"
-      :class="{
-        success: type === 'success',
-        error: type === 'error',
-        info: type === 'info'
-      }"
+      :class="['notification-item', type]"
       class="notification"
+      role="alert"
     >
-      <div class="notification-icon">
-        <Icon v-if="type === 'success'" :size="16" name="success" />
-        <Icon v-else-if="type === 'error'" :size="16" name="error" />
-        <Icon v-else :size="16" name="info" />
+      <div class="notification-icon-badge">
+        <Icon v-if="type === 'success'" :size="15" name="success" />
+        <Icon v-else-if="type === 'error'" :size="15" name="error" />
+        <Icon v-else-if="type === 'warning'" :size="15" name="warning" />
+        <Icon v-else :size="15" name="info" />
       </div>
       <div class="notification-content">
         {{ message }}
       </div>
-      <button class="notification-close" @click="$emit('close')">
-        <Icon :size="16" name="close" />
+      <button
+        class="notification-close"
+        type="button"
+        aria-label="关闭通知"
+        @click="$emit('close')"
+      >
+        <Icon :size="13" name="close" />
       </button>
 
-      <!-- 进度条 -->
-      <div v-if="autoClose" class="notification-progress">
+      <div v-if="autoClose && duration > 0" class="notification-progress">
         <div :style="{ animationDuration: `${duration}ms` }" class="notification-progress-bar" />
       </div>
     </div>
@@ -43,8 +45,8 @@ defineProps({
   },
   type: {
     type: String,
-    default: 'info', // 'success', 'error', 'info'
-    validator: (value) => ['success', 'error', 'info'].includes(value)
+    default: 'info',
+    validator: (value) => ['success', 'error', 'info', 'warning'].includes(value)
   },
   autoClose: {
     type: Boolean,
@@ -52,7 +54,7 @@ defineProps({
   },
   duration: {
     type: Number,
-    default: 3000 // 默认3秒后自动关闭
+    default: 3000
   }
 })
 
@@ -62,117 +64,140 @@ defineEmits(['close'])
 <style scoped>
 .notification {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: max(16px, env(safe-area-inset-top, 16px));
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 99999;
   display: flex;
   align-items: center;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px var(--mask-40);
+  max-width: min(480px, calc(100vw - 32px));
+  min-width: 0;
+  width: fit-content;
+  padding: 10px 14px 10px 12px;
+  border-radius: 14px;
   background: var(--panel-bg);
   color: var(--text-primary);
-  max-width: 400px;
-  min-width: 300px;
-  font-family: 'MiSans', sans-serif;
-  overflow: hidden; /* 确保进度条不会溢出 */
+  font-family: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.45;
+  box-shadow:
+    0 4px 6px -1px var(--mask-10, rgba(0, 0, 0, 0.05)),
+    0 10px 25px -3px var(--mask-30, rgba(0, 0, 0, 0.12)),
+    0 0 0 1px var(--border-color);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  overflow: hidden;
+  box-sizing: border-box;
+  will-change: transform, opacity;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.notification.success {
-  border-left: 4px solid var(--color-success);
+.notification:hover {
+  box-shadow:
+    0 6px 10px -1px var(--mask-20, rgba(0, 0, 0, 0.08)),
+    0 16px 32px -4px var(--mask-40, rgba(0, 0, 0, 0.16)),
+    0 0 0 1px var(--border-color);
 }
 
-.notification.error {
-  border-left: 4px solid var(--color-error);
-}
-
-.notification.info {
-  border-left: 4px solid var(--color-accent);
-}
-
-.notification-icon {
+.notification-icon-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  margin-right: 16px;
-  font-weight: bold;
-  font-size: 16px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
-.success .notification-icon {
-  background: var(--success-20);
+.success .notification-icon-badge {
+  background: var(--success-light);
   color: var(--color-success);
+  box-shadow: 0 0 10px var(--success-glow);
 }
 
-.error .notification-icon {
-  background: var(--error-20);
+.error .notification-icon-badge {
+  background: var(--error-light);
   color: var(--color-error);
+  box-shadow: 0 0 10px var(--error-glow);
 }
 
-.info .notification-icon {
-  background: var(--color-accent-alpha-20);
-  color: var(--color-accent);
+.warning .notification-icon-badge {
+  background: var(--warning-light);
+  color: var(--color-warning);
+  box-shadow: 0 0 10px var(--warning-glow);
+}
+
+.info .notification-icon-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 .notification-content {
   flex: 1;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+  padding-right: 6px;
 }
 
 .notification-close {
-  background: transparent;
-  border: none;
-  color: var(--overlay-60);
-  font-size: 20px;
-  cursor: pointer;
-  width: 28px;
-  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
   padding: 0;
-  transition: color 0.2s;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
 }
 
 .notification-close:hover {
   color: var(--text-primary);
+  background: var(--overlay-10);
 }
 
-/* 进度条 */
 .notification-progress {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 3px;
-  background: var(--overlay-10);
+  height: 2px;
+  background: var(--overlay-5);
 }
 
 .notification-progress-bar {
   height: 100%;
   width: 100%;
   transform-origin: left center;
-  animation: progress-shrink linear forwards;
+  animation: notification-progress-shrink linear forwards;
 }
 
 .success .notification-progress-bar {
-  background-color: var(--color-success);
+  background: var(--color-success);
 }
 
 .error .notification-progress-bar {
-  background-color: var(--color-error);
+  background: var(--color-error);
+}
+
+.warning .notification-progress-bar {
+  background: var(--color-warning);
 }
 
 .info .notification-progress-bar {
-  background-color: var(--color-accent);
+  background: var(--primary);
 }
 
-@keyframes progress-shrink {
+@keyframes notification-progress-shrink {
   0% {
     transform: scaleX(1);
   }
@@ -181,37 +206,50 @@ defineEmits(['close'])
   }
 }
 
-/* 动画效果 */
 .notification-enter-active {
-  animation: notification-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .notification-leave-active {
-  animation: notification-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes notification-in {
-  0% {
-    opacity: 0;
-    transform: translateX(40px) scale(0.9);
-  }
-  50% {
-    transform: translateX(-5px) scale(1.02);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
+.notification-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -20px) scale(0.94);
 }
 
-@keyframes notification-out {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
+.notification-enter-to {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.notification-leave-from {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.notification-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -12px) scale(0.96);
+}
+
+@media (max-width: 640px) {
+  .notification {
+    top: max(14px, env(safe-area-inset-top, 14px));
+    max-width: calc(100vw - 32px);
+    min-width: 0;
+    width: fit-content;
+    padding: 9px 13px 9px 10px;
+    border-radius: 12px;
+    font-size: 13px;
   }
-  100% {
-    opacity: 0;
-    transform: translateX(20px) scale(0.9);
+
+  .notification-icon-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    margin-right: 8px;
   }
 }
 </style>

@@ -49,7 +49,10 @@
 
           <!-- 歌曲信息 -->
           <div class="song-info">
-            <p class="song-title">{{ activeSong?.title || '未知歌曲' }}</p>
+            <div v-if="isMobile" class="song-title">
+              <marquee-text :text="activeSong?.title || '未知歌曲'" />
+            </div>
+            <p v-else class="song-title">{{ activeSong?.title || '未知歌曲' }}</p>
             <p class="song-artist">{{ activeSong?.artist || '未知艺术家' }}</p>
           </div>
 
@@ -254,6 +257,7 @@ import AudioElement from './AudioPlayer/AudioElement.vue'
 import VolumeControl from './AudioPlayer/VolumeControl.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
+import MarqueeText from './MarqueeText.vue'
 import AppSpinner from './Common/AppSpinner.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
@@ -1893,7 +1897,6 @@ const getFirstChar = (text) => {
   height: 20vh;
   background: linear-gradient(to bottom, transparent, var(--mask-30));
   z-index: 999;
-  backdrop-filter: blur(1px);
   pointer-events: none;
 }
 
@@ -2007,13 +2010,12 @@ const getFirstChar = (text) => {
 }
 
 .music-widget.mobile-player-bar .song-title {
+  display: block;
   font-size: 15px;
   font-weight: 600;
   margin-top: 2px;
   margin-bottom: 2px;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .music-widget.mobile-player-bar .song-artist {

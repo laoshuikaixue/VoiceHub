@@ -38,7 +38,8 @@ RUN pnpm run build
 # 预定义各架构的运行时镜像
 FROM node:24-alpine AS runtime-amd64
 FROM node:24-alpine AS runtime-arm64
-FROM node:20-alpine AS runtime-arm
+# Node 24 镜像已移除 arm/v7，32 位 ARM 使用 Node 22
+FROM node:22-alpine AS runtime-arm
 FROM node:24-trixie-slim AS runtime-s390x
 FROM node:24-trixie-slim AS runtime-ppc64le
 

@@ -21,6 +21,7 @@ interface CidRes {
 }
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getClientIP } from '~~/server/utils/ip-utils'
 
 interface NoRefererPlayUrlRes {
   code: number
@@ -45,11 +46,7 @@ export default defineEventHandler(async (event) => {
   const startedAt = getServerTimestamp()
 
   // 提取客户端真实 IP，用于转发给 Bilibili 接口，以便分配最快 CDN 节点
-  const forwardedFor = getRequestHeader(event, 'x-forwarded-for')
-  const forwardedForStr = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor
-  const clientIp = (forwardedForStr ? forwardedForStr.split(',')[0].trim() : '') ||
-                   getRequestHeader(event, 'x-real-ip') || 
-                   event.node.req.socket?.remoteAddress || ''
+  const clientIp = getClientIP(event)
 
   const headers: Record<string, string> = {
     Cookie: 'buvid3=0',
@@ -58,7 +55,7 @@ export default defineEventHandler(async (event) => {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
   }
 
-  if (clientIp) {
+  if (clientIp !== 'unknown') {
     headers['X-Forwarded-For'] = clientIp
     headers['X-Real-IP'] = clientIp
     headers['Client-IP'] = clientIp

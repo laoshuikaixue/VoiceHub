@@ -33,6 +33,8 @@ export const users = pgTable('User', {
   tokenVersion: integer('tokenVersion').default(0).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
+  avatarProvider: text('avatarProvider'),
+  avatarProviderUserId: text('avatarProviderUserId'),
   status: userStatusEnum('status').default('active').notNull(),
   statusChangedAt: timestamp('statusChangedAt').defaultNow(),
   statusChangedBy: integer('statusChangedBy'),
@@ -61,6 +63,29 @@ export const userSessions = pgTable('user_sessions', {
   index('user_sessions_browser_idx').on(table.browser),
   index('user_sessions_device_type_idx').on(table.deviceType)
 ]);
+
+// 登录会话表，id 与 JWT 的 jti 一致
+export const authSessions = pgTable('auth_sessions', {
+  id: uuid('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  browser: text('browser'),
+  operatingSystem: text('operating_system'),
+  device: text('device'),
+  loginMethod: text('login_method').default('password').notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revokedReason: text('revoked_reason')
+}, (table) => [
+  index('auth_sessions_user_active_idx').on(table.userId, table.revokedAt, table.expiresAt),
+  index('auth_sessions_last_active_idx').on(table.lastActiveAt)
+]);
+
+export type AuthSession = typeof authSessions.$inferSelect;
+export type NewAuthSession = typeof authSessions.$inferInsert;
 
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
@@ -219,6 +244,11 @@ export const systemSettings = pgTable('SystemSettings', {
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   monthlySubmissionLimit: integer('monthlySubmissionLimit'),
+  // 用户可见播出排期范围
+  scheduleDaysBeforeEnabled: boolean('scheduleDaysBeforeEnabled').default(false).notNull(),
+  scheduleDaysBefore: integer('scheduleDaysBefore').default(1).notNull(),
+  scheduleDaysAfterEnabled: boolean('scheduleDaysAfterEnabled').default(false).notNull(),
+  scheduleDaysAfter: integer('scheduleDaysAfter').default(1).notNull(),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
   // SMTP 邮件配置
@@ -275,7 +305,7 @@ export const systemSettings = pgTable('SystemSettings', {
   aggregateOAuthAppId: text('aggregateOAuthAppId'),
   aggregateOAuthAppKey: text('aggregateOAuthAppKey'),
   aggregateOAuthLoginType: text('aggregateOAuthLoginType').default('qq'),
-  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint').default('https://a.idcfx.net/connect.php'),
+  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint'),
   // Custom OAuth2
   customOAuthEnabled: boolean('customOAuthEnabled').default(false).notNull(),
   customOAuthDisplayName: text('customOAuthDisplayName'),
@@ -460,6 +490,7 @@ export const userIdentities = pgTable('UserIdentity', {
   provider: text('provider').notNull(),
   providerUserId: text('providerUserId').notNull(),
   providerUsername: text('providerUsername'),
+  avatar: text('avatar'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (t) => ({
   unq: unique().on(t.provider, t.providerUserId),
@@ -498,6 +529,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [notificationSettings.userId],
   }),
   apiKeys: many(apiKeys),
+  sessions: many(authSessions),
   statusLogs: many(userStatusLogs),
     collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),

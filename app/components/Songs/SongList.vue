@@ -15,36 +15,109 @@
           >
         </div>
 
-        <div class="mobile-tabs">
-          <button
-            v-ripple
-            :class="{ active: activeTab === 'all' }"
-            class="mobile-tab-btn"
-            @click="setActiveTab('all')"
-          >
-            {{ locale.tabs.all }}
-            <div v-if="activeTab === 'all'" class="active-indicator" />
-          </button>
-          <button
-            v-if="isAuthenticated"
-            v-ripple
-            :class="{ active: activeTab === 'mine' }"
-            class="mobile-tab-btn"
-            @click="setActiveTab('mine')"
-          >
-            {{ locale.tabs.mine }}
-            <div v-if="activeTab === 'mine'" class="active-indicator" />
-          </button>
-          <button
-            v-if="isAuthenticated"
-            v-ripple
-            :class="{ active: activeTab === 'replays' }"
-            class="mobile-tab-btn"
-            @click="setActiveTab('replays')"
-          >
-            {{ locale.tabs.replays }}
-            <div v-if="activeTab === 'replays'" class="active-indicator" />
-          </button>
+        <div class="mobile-tabs-row">
+          <div class="mobile-tabs">
+            <button
+              v-ripple
+              :class="{ active: activeTab === 'all' }"
+              class="mobile-tab-btn"
+              @click="setActiveTab('all')"
+            >
+              {{ locale.tabs.all }}
+              <div v-if="activeTab === 'all'" class="active-indicator" />
+            </button>
+            <button
+              v-if="isAuthenticated"
+              v-ripple
+              :class="{ active: activeTab === 'mine' }"
+              class="mobile-tab-btn"
+              @click="setActiveTab('mine')"
+            >
+              {{ locale.tabs.mine }}
+              <div v-if="activeTab === 'mine'" class="active-indicator" />
+            </button>
+            <button
+              v-if="isAuthenticated"
+              v-ripple
+              :class="{ active: activeTab === 'replays' }"
+              class="mobile-tab-btn"
+              @click="setActiveTab('replays')"
+            >
+              {{ locale.tabs.replays }}
+              <div v-if="activeTab === 'replays'" class="active-indicator" />
+            </button>
+          </div>
+
+          <div class="mobile-tab-actions">
+            <!-- 学期选择器 -->
+            <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
+              <button
+                :title="locale.currentSemester + selectedSemester"
+                class="semester-toggle-btn"
+                @click="showSemesterDropdown = !showSemesterDropdown"
+              >
+                <svg
+                  fill="none"
+                  height="16"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
+                </svg>
+              </button>
+
+              <Transition
+                enter-active-class="transition duration-100 ease-out"
+                enter-from-class="transform scale-95 opacity-0"
+                enter-to-class="transform scale-100 opacity-100"
+                leave-active-class="transition duration-75 ease-in"
+                leave-from-class="transform scale-100 opacity-100"
+                leave-to-class="transform scale-95 opacity-0"
+              >
+                <div v-if="showSemesterDropdown" class="semester-dropdown">
+                  <div
+                    v-for="semester in availableSemesters"
+                    :key="semester"
+                    :class="{ active: selectedSemester === semester }"
+                    class="semester-option"
+                    @click="onSemesterChange(semester)"
+                  >
+                    {{ semester }}
+                  </div>
+                </div>
+              </Transition>
+            </div>
+
+            <button
+              :disabled="loading"
+              :title="loading ? locale.refreshing : locale.refresh"
+              class="refresh-button"
+              @click="handleRefresh"
+            >
+              <svg
+                :class="{ rotating: loading }"
+                class="refresh-icon"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -112,17 +185,26 @@
               </svg>
             </button>
 
-            <div v-if="showSemesterDropdown" class="semester-dropdown">
-              <div
-                v-for="semester in availableSemesters"
-                :key="semester"
-                :class="{ active: selectedSemester === semester }"
-                class="semester-option"
-                @click="onSemesterChange(semester)"
-              >
-                {{ semester }}
+            <Transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <div v-if="showSemesterDropdown" class="semester-dropdown">
+                <div
+                  v-for="semester in availableSemesters"
+                  :key="semester"
+                  :class="{ active: selectedSemester === semester }"
+                  class="semester-option"
+                  @click="onSemesterChange(semester)"
+                >
+                  {{ semester }}
+                </div>
               </div>
-            </div>
+            </Transition>
           </div>
 
           <!-- 添加刷新按钮 - 使用SVG图标 -->
@@ -158,8 +240,22 @@
     <!-- 使用Transition组件包裹所有内容 -->
     <Transition mode="out-in" name="tab-switch">
       <div v-if="loading" :key="'loading'" class="loading">
-        <AppSpinner :size="40" />
-        {{ locale.loading }}
+        <div class="song-loading-skeleton" aria-hidden="true">
+          <div v-for="n in 6" :key="n" class="skeleton-card">
+            <div class="skeleton-card-main">
+              <div class="skeleton-cover shimmer-block" />
+              <div class="skeleton-lines">
+                <div class="skeleton-line shimmer-block" />
+                <div class="skeleton-line skeleton-line-short shimmer-block" />
+              </div>
+              <div class="skeleton-actions">
+                <div class="skeleton-heat shimmer-block" />
+                <div class="skeleton-like shimmer-block" />
+              </div>
+            </div>
+            <div class="skeleton-footer shimmer-block" />
+          </div>
+        </div>
       </div>
 
       <div v-else-if="error" :key="'error'" class="error">
@@ -199,6 +295,8 @@
                     :alt="song.title"
                     :src="convertToHttps(song.cover)"
                     class="cover-image"
+                    decoding="async"
+                    loading="lazy"
                     referrerpolicy="no-referrer"
                     @error="handleImageError($event, song)"
                   >
@@ -412,7 +510,6 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 import { useThemeImage } from '~/composables/useThemeImage'
 
@@ -1571,6 +1668,21 @@ const vRipple = {
     padding-bottom: 2px;
   }
 
+  .mobile-tabs-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .mobile-tab-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
   .mobile-tab-btn {
     background: transparent;
     border: none;
@@ -1716,6 +1828,7 @@ const vRipple = {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
+  transform-origin: top right;
   background: var(--panel-bg-overlay);
   border: 1px solid var(--overlay-10);
   border-radius: 8px;
@@ -1821,16 +1934,113 @@ const vRipple = {
   animation: rotate 1.2s cubic-bezier(0.5, 0.1, 0.5, 1) infinite;
 }
 
-/* 加载动画 */
+/* 加载骨架屏 */
 .loading {
-  text-align: center;
-  padding: 3rem;
-  color: var(--overlay-60);
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1rem;
+}
+
+.song-loading-skeleton {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.skeleton-card {
+  width: calc(33.333% - 0.75rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-card-main {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 1rem;
+  height: 100px;
+  background: var(--panel-bg);
+  border: 1px solid var(--song-card-border);
+  border-radius: 10px;
+}
+
+.skeleton-cover {
+  width: 55px;
+  height: 55px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-line {
+  width: 60%;
+  height: 16px;
+  border-radius: 6px;
+}
+
+.skeleton-line-short {
+  width: 40%;
+  height: 12px;
+}
+
+.skeleton-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.skeleton-heat {
+  width: 45px;
+  height: 40px;
+  border-radius: 6px;
+}
+
+.skeleton-like {
+  width: 45px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.skeleton-footer {
+  height: 45px;
+  margin-top: -1px;
+  border-radius: 0 0 10px 10px;
+}
+
+.shimmer-block {
+  position: relative;
+  overflow: hidden;
+  background: var(--overlay-10);
+}
+
+.shimmer-block::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--shimmer-overlay), transparent);
+  animation: song-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes song-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .error,
@@ -2324,6 +2534,10 @@ button:disabled {
   .song-card {
     width: calc(50% - 0.5rem);
   }
+
+  .skeleton-card {
+    width: calc(50% - 0.5rem);
+  }
 }
 
 @media (max-width: 768px) {
@@ -2469,11 +2683,10 @@ button:disabled {
   .song-card {
     width: 100%;
     background: var(--song-card-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
     border: 1px solid var(--song-card-border);
     box-shadow: 0 4px 20px var(--mask-15);
   }
@@ -2497,7 +2710,6 @@ button:disabled {
 
   .song-card.played {
     opacity: 0.8;
-    filter: grayscale(0.35);
     background: var(--overlay-8);
     border-color: var(--overlay-10);
   }
@@ -2632,10 +2844,76 @@ button:disabled {
   }
 
   /* 加载和空状态 */
+  .loading {
+    padding: 4px;
+  }
+
+  .song-loading-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px;
+  }
+
+  .skeleton-card {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--song-card-bg);
+    border: 1px solid var(--song-card-border);
+    box-shadow: 0 4px 20px var(--mask-15);
+  }
+
+  .skeleton-card-main {
+    height: auto;
+    min-height: 60px;
+    padding: 10px;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+
+  .skeleton-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  .skeleton-lines {
+    gap: 8px;
+  }
+
+  .skeleton-line {
+    height: 14px;
+  }
+
+  .skeleton-line-short {
+    height: 11px;
+  }
+
+  .skeleton-heat {
+    width: 28px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .skeleton-like {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .skeleton-footer {
+    height: 32px;
+    margin-top: 0;
+    border-top: 1px solid var(--song-card-divider);
+    border-radius: 0 0 20px 20px;
+  }
+
   .loading,
   .error,
   .empty {
-    padding: 40px 20px;
     background: transparent;
     border-radius: 0;
   }

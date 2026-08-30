@@ -33,6 +33,38 @@ export function isSecureRequest(event: H3Event): boolean {
   return getSafeRequestProtocol(event) === 'https'
 }
 
+export interface OriginInfo {
+  origin: string
+  protocol: string
+  hostname: string
+  port: string
+  explicitPort: string
+}
+
+export function normalizeOrigin(value: string, fallbackProtocol: string): OriginInfo {
+  const normalizedValue = value.includes('://') ? value : `${fallbackProtocol}//${value}`
+  const url = new URL(normalizedValue)
+  const protocol = url.protocol
+
+  return {
+    origin: url.origin,
+    protocol,
+    hostname: url.hostname,
+    port: url.port || (protocol === 'https:' ? '443' : '80'),
+    explicitPort: url.port
+  }
+}
+
+export function isTrustedOrigin(source: OriginInfo, trusted: OriginInfo): boolean {
+  // 反代未透传外部协议时，允许同主机 HTTPS 访问按 HTTP 配置的来源
+  return (
+    source.hostname === trusted.hostname &&
+    source.explicitPort === trusted.explicitPort &&
+    (source.protocol === trusted.protocol ||
+      (source.protocol === 'https:' && trusted.protocol === 'http:'))
+  )
+}
+
 // 不带方括号的裸 IPv6 地址需补齐方括号才能通过 URL 解析
 const normalizeHostForUrl = (host: string): string =>
   host.includes(':') && !host.startsWith('[') && /^[0-9a-f:]+$/i.test(host) ? `[${host}]` : host

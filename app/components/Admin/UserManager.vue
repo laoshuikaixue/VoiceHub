@@ -1085,6 +1085,13 @@
       @close="closeUserSongsModal"
     />
 
+    <!-- OAuth 绑定详情模态框 -->
+    <OAuthBindingsModal
+      :show="showOAuthBindingsModal"
+      :identities="selectedUserDetail?.identities || []"
+      @close="closeOAuthBindingsModal"
+    />
+
     <!-- 用户详细信息模态框 -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
@@ -1311,8 +1318,16 @@
                   </div>
 
                   <!-- OAuth 账号绑定 -->
-                  <div
-                    class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl flex items-center justify-between"
+                  <button
+                    type="button"
+                    class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl flex items-center justify-between w-full text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    :class="
+                      selectedUserDetail.identities?.length > 0
+                        ? 'cursor-pointer hover:bg-bg-primary hover:border-border-tertiary group'
+                        : ''
+                    "
+                    :disabled="!selectedUserDetail.identities?.length"
+                    @click="openOAuthBindingsModal"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
@@ -1332,17 +1347,24 @@
                         }}
                       </div>
                     </div>
-                    <div
-                      :class="[
-                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
-                        selectedUserDetail.identities?.length > 0
-                          ? 'bg-success-10 text-success'
-                          : 'bg-bg-tertiary text-text-disabled'
-                      ]"
-                    >
-                      <Link :size="16" />
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <div
+                        :class="[
+                          'w-8 h-8 rounded-xl flex items-center justify-center',
+                          selectedUserDetail.identities?.length > 0
+                            ? 'bg-success-10 text-success'
+                            : 'bg-bg-tertiary text-text-disabled'
+                        ]"
+                      >
+                        <Link :size="16" />
+                      </div>
+                      <ChevronRight
+                        v-if="selectedUserDetail.identities?.length > 0"
+                        :size="16"
+                        class="text-text-disabled transition-transform group-hover:translate-x-0.5"
+                      />
                     </div>
-                  </div>
+                  </button>
                 </div>
               </div>
 
@@ -1569,10 +1591,11 @@ import {
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
+import OAuthBindingsModal from '~/components/Admin/OAuthBindingsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
-import { getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
+import { getOAuthProviderName } from '~/utils/oauth'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
@@ -1590,13 +1613,6 @@ const getRoleName = (role) => {
   return locale.value?.roles?.[aliases[role]] || role
 }
 const getStatusName = (status) => locale.value?.statuses?.[status] || status
-const getOAuthProviderName = (provider) => {
-  const normalizedProvider = String(provider || '').trim().toLowerCase()
-  if (normalizedProvider.startsWith('aggregate:')) {
-    return getAggregateOAuthLoginTypeName(normalizedProvider.slice('aggregate:'.length))
-  }
-  return getProviderDisplayName(normalizedProvider)
-}
 const getErrorDetail = (error) =>
   error?.data?.message || error?.message || error?.statusMessage || locale.value?.detail?.unknown || '未知错误'
 
@@ -1708,6 +1724,9 @@ const handleImageError = (userId) => {
 // 用户详细信息模态框状态
 const showUserDetailModal = ref(false)
 const selectedUserDetail = ref(null)
+
+// OAuth 绑定详情模态框状态
+const showOAuthBindingsModal = ref(false)
 
 // 状态变更日志模态框状态
 
@@ -2088,6 +2107,16 @@ const showUserDetail = (user, event) => {
 const closeUserDetailModal = () => {
   showUserDetailModal.value = false
   selectedUserDetail.value = null
+  showOAuthBindingsModal.value = false
+}
+
+const openOAuthBindingsModal = () => {
+  if (!selectedUserDetail.value?.identities?.length) return
+  showOAuthBindingsModal.value = true
+}
+
+const closeOAuthBindingsModal = () => {
+  showOAuthBindingsModal.value = false
 }
 
 const closeBatchUpdateModal = () => {

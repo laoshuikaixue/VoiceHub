@@ -1,12 +1,15 @@
 import { getRequestHeader, getRequestURL, setCookie } from 'h3'
 import { revokeCurrentUserSession } from '~~/server/services/userSessionService'
+import { revokeAuthSession } from '~~/server/utils/auth-session'
 
 export default defineEventHandler(async (event) => {
   try {
     console.log('[Auth] User logout requested')
 
     await revokeCurrentUserSession(event)
-
+    if (event.context.user?.id && event.context.authSessionId) {
+      await revokeAuthSession(event.context.user.id, event.context.authSessionId, 'logout')
+    }
     // 清除cookie
     const isSecure =
       getRequestURL(event).protocol === 'https:' ||

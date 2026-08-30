@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createAuthSession } from '~~/server/utils/auth-session'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import {
   isAccountLocked,
@@ -20,6 +21,7 @@ import {
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 import { createApiError } from '~~/server/utils/apiError'
 import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
+import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<Record<string, unknown> | null>(event)
@@ -147,9 +149,12 @@ export default defineEventHandler(async (event) => {
     await db.transaction(async (tx) => {
       const [currentUser] = await tx
         .select({
+          id: users.id,
           tokenVersion: users.tokenVersion,
           forcePasswordChange: users.forcePasswordChange,
-          passwordChangedAt: users.passwordChangedAt
+          passwordChangedAt: users.passwordChangedAt,
+          avatarProvider: users.avatarProvider,
+          avatarProviderUserId: users.avatarProviderUserId
         })
         .from(users)
         .where(eq(users.id, user.id))
@@ -189,18 +194,15 @@ export default defineEventHandler(async (event) => {
           and(eq(t.provider, payload.provider), eq(t.providerUserId, payload.providerUserId))
       })
 
-      if (existing) {
-        if (existing.userId !== user.id) {
-          throw createApiError(409, 'AUTH_OAUTH_BOUND_OTHER_USER', '该第三方账号已被其他用户绑定')
-        }
-        return
+      if (existing && existing.userId !== user.id) {
+        throw createApiError(409, 'AUTH_OAUTH_BOUND_OTHER_USER', '该第三方账号已被其他用户绑定')
       }
 
-      await tx.insert(userIdentities).values({
-        userId: user.id,
+      await syncOAuthIdentityAvatar(tx, currentUser, existing, {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
-        providerUsername: payload.providerUsername
+        providerUsername: payload.providerUsername,
+        avatar: payload.avatar
       })
     })
   } catch (e: any) {
@@ -229,7 +231,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(users.id, user.id))
 
   // 登录
-  const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
+  const { token } = await createAuthSession(event, user, payload.provider || 'oauth')
   const isSecure = isSecureRequest(event)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,
