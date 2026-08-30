@@ -63,6 +63,9 @@
             <div v-if="item.beReplied?.length" class="reply-preview">
               {{ item.beReplied[0]?.user?.nickname || locale.originalComment }}：{{ item.beReplied[0]?.content }}
             </div>
+            <div v-for="reply in item.replies" :key="`reply-${reply.commentId}`" class="reply-preview">
+              {{ reply.user?.nickname || locale.neteaseUser }}: {{ reply.content }}
+            </div>
             <div class="comment-actions">
               <button
                 class="liked-count"
@@ -116,6 +119,7 @@ interface NeteaseComment {
     content?: string
     user?: NeteaseUser
   }>
+  replies?: NeteaseComment[]
   isHot?: boolean
   key?: string
 }

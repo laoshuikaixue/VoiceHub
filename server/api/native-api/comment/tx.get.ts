@@ -42,9 +42,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 502, message: 'QQ 音乐评论接口异常' })
   }
   const data = response.comment || {}
-  const normalize = (item: any) => ({
+  const normalize = (item: any, reply = false) => ({
     commentId: item.commentid ?? item.commentId ?? item.id ?? item.rootcommentid,
-    content: item.content || item.middlecommentcontent || item.rootcommentcontent || item.commentcontent || '',
+    content: reply ? item.content || item.middlecommentcontent || item.commentcontent || '' : item.content || item.rootcommentcontent || item.middlecommentcontent || item.commentcontent || '',
     time: Number(item.time || 0) * 1000,
     likedCount: Number(item.praisenum ?? item.praise_num ?? item.likedCount ?? item.praiseNum ?? 0),
     liked: false,
@@ -53,13 +53,39 @@ export default defineEventHandler(async (event) => {
       avatarUrl: item.avatarurl || item.avatar || item.user?.avatarurl || item.user?.avatar || ''
     }
   })
+  const groupThreads = (rawItems: any[]) => {
+    const roots = new Map<string, any>()
+    const replies = new Map<string, any[]>()
+    for (const raw of rawItems) {
+      const id = String(raw.commentid ?? raw.commentId ?? raw.id ?? '').trim()
+      const rootId = String(raw.rootcommentid ?? raw.rootCommentId ?? '').trim()
+      if (rootId && rootId !== id) {
+        const reply = normalize(raw, true)
+        replies.set(rootId, [...(replies.get(rootId) || []), reply])
+      } else {
+        const root = normalize(raw)
+        const key = String(root.commentId || '').trim()
+        if (key && !roots.has(key)) roots.set(key, root)
+      }
+    }
+    for (const [id, root] of roots) {
+      if (replies.has(id)) root.replies = replies.get(id)
+    }
+    return [...roots.values()]
+  }
+  const rawComments = Array.isArray(data.commentlist) ? data.commentlist : []
+  const rawHotComments = Array.isArray(data.hot_comment || data.hotcommentlist)
+    ? (data.hot_comment || data.hotcommentlist)
+    : []
+  const groupedComments = groupThreads([...rawHotComments, ...rawComments])
+  const hotIds = new Set(rawHotComments.map((item: any) => String(item.commentid ?? item.commentId ?? item.id ?? '').trim()))
+  const commentItems = groupedComments
+  const hotItems = groupedComments.filter((item: any) => hotIds.has(String(item.commentId)))
   return {
     code: 200,
     data: {
-      comments: Array.isArray(data.commentlist) ? data.commentlist.map(normalize) : [],
-      hotComments: Array.isArray(data.hot_comment || data.hotcommentlist)
-        ? (data.hot_comment || data.hotcommentlist).slice(0, 8).map(normalize)
-        : [],
+      comments: commentItems,
+      hotComments: hotItems.slice(0, 8),
       total: Number(data.commenttotal || 0),
       more: Boolean(data.enable_more || data.commentlist?.length === pageSize)
     }
