@@ -400,8 +400,8 @@ const currentLyricLine = computed(() => {
 
 const canShowComments = computed(() => {
   const song = currentSong.value
-  if (!song || song.musicPlatform !== 'netease') return false
-  return /^\d+$/.test(String(song.musicId || '').trim())
+  if (!song || !['netease', 'tencent'].includes(song.musicPlatform)) return false
+  return /^\d+$/.test(String(song.musicId || '').trim()) || song.musicPlatform === 'tencent'
 })
 
 const currentQualityText = computed(() => {

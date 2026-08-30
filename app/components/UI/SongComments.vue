@@ -65,6 +65,7 @@
             </div>
             <div class="comment-actions">
               <button
+                v-if="!isTencent"
                 class="liked-count"
                 :class="{ liked: item.liked }"
                 :disabled="likeUpdatingKey === String(item.commentId)"
@@ -133,8 +134,12 @@ const { ui } = useLocale()
 const locale = computed(() => {
   const base = ui.value?.songComments || {}
   const emptyText = () => ''
+  const qq = props.song?.musicPlatform === 'tencent'
   return useSafeLocale({
     ...base,
+    eyebrow: qq ? (base.qqEyebrow || base.eyebrow) : base.eyebrow,
+    noSource: qq ? (base.qqNoSource || base.noSource) : base.noSource,
+    neteaseUser: qq ? (base.qqUser || base.neteaseUser) : base.neteaseUser,
     commentsCount: base.commentsCount || emptyText,
     hotCount: base.hotCount || emptyText,
     minutesAgo: base.minutesAgo || emptyText,
@@ -162,7 +167,15 @@ const neteaseSongId = computed(() => {
   return id
 })
 
-const canFetchComments = computed(() => !!neteaseSongId.value)
+const tencentSongId = computed(() => {
+  const song = props.song
+  if (!song || song.musicPlatform !== 'tencent') return null
+  const id = String(song.musicId || '').trim()
+  return id || null
+})
+
+const canFetchComments = computed(() => !!neteaseSongId.value || !!tencentSongId.value)
+const isTencent = computed(() => !!tencentSongId.value)
 
 const commentItems = computed(() => {
   const taggedHotComments = hotComments.value.map((item) => ({ ...item, isHot: true }))
@@ -248,6 +261,7 @@ const updateCommentLikeState = (commentId: string | number, liked: boolean, like
 }
 
 const toggleCommentLike = async (comment: NeteaseComment) => {
+  if (isTencent.value) return
   const songId = neteaseSongId.value
   if (
     !songId ||
@@ -300,7 +314,7 @@ const toggleCommentLike = async (comment: NeteaseComment) => {
 }
 
 const fetchComments = async (append = false) => {
-  const songId = neteaseSongId.value
+  const songId = neteaseSongId.value || tencentSongId.value
   if (!songId || isLoading.value) return
 
   const currentRequestId = append ? requestId.value : requestId.value + 1
@@ -322,7 +336,9 @@ const fetchComments = async (append = false) => {
       params.offset = nextOffset
     }
 
-    const response = await fetchNetease('/comment/music', params)
+    const response = neteaseSongId.value
+      ? await fetchNetease('/comment/music', params)
+      : await $fetch('/api/native-api/comment/tx', { params: { musicId: tencentSongId.value, page: Math.floor(nextOffset / PAGE_SIZE), pageSize: PAGE_SIZE } })
 
     if (currentRequestId !== requestId.value) return
 
@@ -331,7 +347,7 @@ const fetchComments = async (append = false) => {
       return
     }
 
-    const body = response.body || {}
+    const body = response.body || response.data || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
 
     hasLoaded.value = true
@@ -371,7 +387,7 @@ const resetComments = () => {
 
 const refreshComments = () => {
   resetComments()
-  if (neteaseSongId.value) {
+  if (canFetchComments.value) {
     fetchComments(false)
   }
 }
@@ -381,7 +397,7 @@ const loadMoreComments = () => {
 }
 
 watch(
-  () => [neteaseSongId.value, props.visible] as const,
+  () => [neteaseSongId.value || tencentSongId.value, props.visible] as const,
   ([songId, visible], oldValue) => {
     const oldSongId = oldValue?.[0]
 
