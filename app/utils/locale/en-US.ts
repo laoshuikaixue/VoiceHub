@@ -3608,6 +3608,8 @@ export const admin = {
     emptySearch: 'No matching users found',
     empty: 'No user data',
     itemName: 'users',
+    archivedUsers: 'Archived',
+    archivedSubtitle: (total: number) => `${total} archived graduate/withdrawn accounts`,
     organization: {
       title: 'Organization',
       subtitle: (total: number) => `${total} members · Grouped by grade and class`,

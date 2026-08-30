@@ -3617,6 +3617,8 @@ export const admin = {
     emptySearch: '没有找到匹配的用户',
     empty: '暂无用户数据',
     itemName: '个用户',
+    archivedUsers: '已归档用户',
+    archivedSubtitle: (total: number) => `已归档 ${total} 位毕业生/退学账号`,
     organization: {
       title: '组织结构',
       subtitle: (total: number) => `${total} 位成员 · 按年级和班级统计`,
