@@ -202,14 +202,8 @@
 
           <!-- 底部栏 -->
           <div
-            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-between"
+            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end"
           >
-            <div
-              class="flex items-center gap-2 text-[10px] font-black text-text-disabled uppercase tracking-widest"
-            >
-              <Icon name="info" :size="12" />
-              {{ locale.recentSource }}
-            </div>
             <button
               class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
               @click="close"
@@ -229,6 +223,11 @@ import { getRecentSongs } from '~/utils/neteaseApi'
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
+import { useSongs } from '~/composables/useSongs'
+import { useAuth } from '~/composables/useAuth'
+import { useSemesters } from '~/composables/useSemesters'
+
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => {
   const base = songsLocale.value?.mediaModals || {}
@@ -240,9 +239,6 @@ const locale = computed(() => {
     monthDay: base.monthDay || emptyText
   })
 })
-import { useSongs } from '~/composables/useSongs'
-import { useAuth } from '~/composables/useAuth'
-import { useSemesters } from '~/composables/useSemesters'
 
 const props = defineProps({
   show: Boolean,
@@ -262,17 +258,6 @@ const songService = useSongs()
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
-
-// 标准化字符串
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
-    .trim()
-}
 
 // 检查是否已存在相似歌曲
 const getSimilarSong = (songData) => {
@@ -391,10 +376,6 @@ const handleLike = async (song) => {
 }
 
 const playSong = (songData) => {
-  // 简单的播放预览，如果需要完整播放器支持可能需要更多字段
-  // 这里暂时只发射事件，由父组件决定如何播放
-  // 实际上 RequestForm 可能会调用全局播放器
-  // 但这里为了简化，我们暂时构造一个简单的对象
   emit('play', {
     id: songData.id,
     title: songData.name,

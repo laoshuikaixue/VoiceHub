@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { getStatusText } from '~~/server/utils/user'
 
 export default defineEventHandler(async (event) => {
@@ -46,15 +46,14 @@ export default defineEventHandler(async (event) => {
       .select({
         id: userStatusLogs.id,
         userId: userStatusLogs.userId,
-        userName: users.name,
-        userUsername: users.username,
+        // 优先快照列（用户删除后审计可追溯）；存量旧日志快照为 NULL 时回退 join 的用户名
+        userName: sql`COALESCE(${userStatusLogs.name}, ${users.name})`,
+        userUsername: sql`COALESCE(${userStatusLogs.username}, ${users.username})`,
         oldStatus: userStatusLogs.oldStatus,
         newStatus: userStatusLogs.newStatus,
         reason: userStatusLogs.reason,
         createdAt: userStatusLogs.createdAt,
-        operatorId: userStatusLogs.operatorId,
-        operatorName: users.name,
-        operatorUsername: users.username
+        operatorId: userStatusLogs.operatorId
       })
       .from(userStatusLogs)
       .leftJoin(users, eq(userStatusLogs.userId, users.id))
@@ -67,15 +66,13 @@ export default defineEventHandler(async (event) => {
         .select({
           id: userStatusLogs.id,
           userId: userStatusLogs.userId,
-          userName: users.name,
-          userUsername: users.username,
+          userName: sql`COALESCE(${userStatusLogs.name}, ${users.name})`,
+          userUsername: sql`COALESCE(${userStatusLogs.username}, ${users.username})`,
           oldStatus: userStatusLogs.oldStatus,
           newStatus: userStatusLogs.newStatus,
           reason: userStatusLogs.reason,
           createdAt: userStatusLogs.createdAt,
-          operatorId: userStatusLogs.operatorId,
-          operatorName: users.name,
-          operatorUsername: users.username
+          operatorId: userStatusLogs.operatorId
         })
         .from(userStatusLogs)
         .leftJoin(users, eq(userStatusLogs.userId, users.id))
@@ -83,6 +80,9 @@ export default defineEventHandler(async (event) => {
           and(
             whereClause,
             or(
+              ilike(userStatusLogs.name, `%${searchTerm}%`),
+              ilike(userStatusLogs.username, `%${searchTerm}%`),
+              // 存量旧日志快照列为 NULL，回退 join 的用户名列以便可搜
               ilike(users.name, `%${searchTerm}%`),
               ilike(users.username, `%${searchTerm}%`),
               ilike(userStatusLogs.reason, `%${searchTerm}%`)
@@ -106,6 +106,8 @@ export default defineEventHandler(async (event) => {
         and(
           whereClause,
           or(
+            ilike(userStatusLogs.name, `%${searchTerm}%`),
+            ilike(userStatusLogs.username, `%${searchTerm}%`),
             ilike(users.name, `%${searchTerm}%`),
             ilike(users.username, `%${searchTerm}%`),
             ilike(userStatusLogs.reason, `%${searchTerm}%`)
@@ -135,7 +137,7 @@ export default defineEventHandler(async (event) => {
         username: users.username
       })
       .from(users)
-      .where(eq(users.id, operatorIds[0])) // 这里需要用inArray，但先简化处理
+      .where(inArray(users.id, operatorIds))
 
     const operatorMap = new Map()
     for (const op of operators) {
@@ -164,8 +166,8 @@ export default defineEventHandler(async (event) => {
         createdAt: log.createdAt,
         operator: {
           id: log.operatorId,
-          name: operatorMap.get(log.operatorId)?.name || log.operatorName || '未知操作员',
-          username: operatorMap.get(log.operatorId)?.username || log.operatorUsername || 'unknown'
+          name: operatorMap.get(log.operatorId)?.name || '未知操作员',
+          username: operatorMap.get(log.operatorId)?.username || 'unknown'
         }
       })),
       pagination: {

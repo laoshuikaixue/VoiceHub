@@ -3,6 +3,10 @@ import { db } from '~/drizzle/db'
 import { songs, semesters, songBlacklists } from '~/drizzle/schema'
 import { eq, inArray, and, asc } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { backfillMissingSongDurations } from '~~/server/services/durationValidationService'
+import { normalizeStoredDuration } from '~~/server/utils/song-duration-policy'
+import { matchBlacklistGenre, matchBlacklistLanguage, resolveSongTypes } from '~~/server/utils/song-type-resolver'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -74,6 +78,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const songsToInsert: (typeof songs.$inferInsert)[] = []
+  const now = getServerDate()
 
   for (const song of originalSongs) {
     const songKey = `${song.title.toLowerCase().trim()}|${song.artist.toLowerCase().trim()}`
@@ -90,6 +95,10 @@ export default defineEventHandler(async (event) => {
     let isBlocked = false
     let blockReason = ''
 
+    // 语种/曲风懒解析：首次遇到类型项才请求音源，已被歌名/关键词拦截的歌曲不触发外部请求
+    let songTypes: Awaited<ReturnType<typeof resolveSongTypes>> = null
+    let typesResolved = false
+
     for (const item of blacklistItems) {
       if (item.type === 'SONG') {
         if (songFullName.includes(item.value.toLowerCase())) {
@@ -101,6 +110,27 @@ export default defineEventHandler(async (event) => {
         if (songFullName.includes(item.value.toLowerCase())) {
           isBlocked = true
           blockReason = item.reason || '包含违规关键词'
+          break
+        }
+      } else if (item.type === 'LANGUAGE') {
+        // 解析失败或平台不支持时返回 null，类型黑名单放行
+        if (!typesResolved) {
+          songTypes = await resolveSongTypes(song.musicPlatform, song.musicId)
+          typesResolved = true
+        }
+        if (songTypes && matchBlacklistLanguage(item.value, songTypes.languages)) {
+          isBlocked = true
+          blockReason = item.reason || `语种「${item.value}」已被加入黑名单`
+          break
+        }
+      } else if (item.type === 'GENRE') {
+        if (!typesResolved) {
+          songTypes = await resolveSongTypes(song.musicPlatform, song.musicId)
+          typesResolved = true
+        }
+        if (songTypes && matchBlacklistGenre(item.value, songTypes.genres)) {
+          isBlocked = true
+          blockReason = item.reason || `曲风「${item.value}」已被加入黑名单`
           break
         }
       }
@@ -125,12 +155,9 @@ export default defineEventHandler(async (event) => {
       playUrl: song.playUrl,
       musicPlatform: song.musicPlatform,
       musicId: song.musicId,
-      durationSeconds: (() => {
-        const d = song.durationSeconds ? Number(song.durationSeconds) : null
-        return d !== null && Number.isFinite(d) && d >= 30 && d <= 3600 ? d : null
-      })(),
-      createdAt: new Date(),
-      updatedAt: new Date()
+      durationSeconds: normalizeStoredDuration(song.durationSeconds),
+      createdAt: now,
+      updatedAt: now
     })
 
     // 将即将插入的歌曲也加入判重集合，防止同一次请求中有重复歌曲
@@ -139,8 +166,28 @@ export default defineEventHandler(async (event) => {
 
   // 批量插入
   if (songsToInsert.length > 0) {
-    await db.insert(songs).values(songsToInsert)
-    results.success = songsToInsert.length
+    const insertedSongs = await db
+      .insert(songs)
+      .values(songsToInsert)
+      .returning({
+        id: songs.id,
+        musicPlatform: songs.musicPlatform,
+        musicId: songs.musicId,
+        durationSeconds: songs.durationSeconds
+      })
+
+    results.success = insertedSongs.length
+
+    // 往期投稿多数早于时长字段上线，缺失的时长放到响应后的后台任务补齐
+    const missingDurationSongs = insertedSongs.filter((song) => song.durationSeconds == null)
+    if (missingDurationSongs.length > 0) {
+      const durationTask = backfillMissingSongDurations(missingDurationSongs, '往期导入')
+      if (typeof event.waitUntil === 'function') {
+        event.waitUntil(durationTask)
+      } else {
+        durationTask.catch((error) => console.error('[往期导入] 后台补齐时长失败:', error))
+      }
+    }
   }
 
   return {

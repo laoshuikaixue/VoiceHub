@@ -111,6 +111,37 @@
               </div>
             </div>
 
+            <!-- 列表分栏（仅纵向经典列表） -->
+            <div v-if="showListColumns" class="space-y-2">
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+                >{{ locale.listColumns }}</label
+              >
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  :class="[
+                    'py-2 rounded-lg text-sm font-bold transition-all',
+                    settings.listColumns === 1
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
+                      : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
+                  ]"
+                  @click="settings.listColumns = 1"
+                >
+                  {{ locale.oneColumn }}
+                </button>
+                <button
+                  :class="[
+                    'py-2 rounded-lg text-sm font-bold transition-all',
+                    settings.listColumns === 2
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
+                      : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
+                  ]"
+                  @click="settings.listColumns = 2"
+                >
+                  {{ locale.twoColumns }}
+                </button>
+              </div>
+            </div>
+
             <!-- 日期范围 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
@@ -318,7 +349,7 @@
                 </div>
 
                 <!-- 排期内容 -->
-                <div class="schedule-content" :class="`layout-${settings.layoutStyle}`">
+                <div :class="scheduleContentClass">
                   <!-- 无数据提示 -->
                   <div v-if="filteredSchedules.length === 0" class="no-data-message">
                     <div class="no-data-icon">
@@ -368,7 +399,7 @@
                               :key="schedule.id"
                               class="schedule-item"
                             >
-                              <ScheduleItemPrint :schedule="schedule" :settings="settings" />
+                              <ScheduleItemPrint :schedule="schedule" :settings="settings" :narrow="isTwoColumnList" />
                             </div>
                           </div>
                         </div>
@@ -381,7 +412,7 @@
                           :key="schedule.id"
                           class="schedule-item"
                         >
-                          <ScheduleItemPrint :schedule="schedule" :settings="settings" />
+                          <ScheduleItemPrint :schedule="schedule" :settings="settings" :narrow="isTwoColumnList" />
                         </div>
                       </div>
                     </div>
@@ -481,6 +512,7 @@ const settings = ref({
   paperSize: 'A4',
   orientation: 'portrait',
   layoutStyle: 'classic',
+  listColumns: 1,
   startDate: '',
   endDate: '',
   dateRangePreset: '',
@@ -684,6 +716,22 @@ const selectTableLayout = () => {
   settings.value.layoutStyle = 'table'
   settings.value.orientation = 'landscape'
 }
+
+// 纵向经典列表才提供分栏设置
+const showListColumns = computed(() => {
+  const s = settings.value
+  return s.layoutStyle === 'classic' && s.orientation === 'portrait'
+})
+
+// 两列时排期项改用窄版两行排版
+const isTwoColumnList = computed(() => showListColumns.value && settings.value.listColumns === 2)
+
+// 排期内容容器 class（预览与两条导出路径共用）
+const scheduleContentClass = computed(
+  () =>
+    `schedule-content layout-${settings.value.layoutStyle}` +
+    (isTwoColumnList.value ? ' is-two-column' : '')
+)
 
 // 获取播出时段的排序权重
 const getPlayTimeSortWeight = (playTime) => {
@@ -998,7 +1046,7 @@ const exportPDFForPrint = async (action = 'print') => {
 
       // 创建内容区域
       const cw = applyScopeAttributes(document.createElement('div'))
-      cw.className = `schedule-content layout-${settings.value.layoutStyle}`
+      cw.className = scheduleContentClass.value
 
       cw.style.margin = '0'
       cw.style.padding = '0'
@@ -1391,9 +1439,15 @@ const preprocessImages = async (element) => {
       img.style.setProperty('object-fit', 'contain', 'important')
       img.style.setProperty('border-radius', '4px', 'important')
     } else if (img.classList.contains('song-cover')) {
-      // 歌曲封面保持固定尺寸
-      img.style.setProperty('width', '40px', 'important')
-      img.style.setProperty('height', '40px', 'important')
+      // 仅经典样式封面跟随 .cover-section 容器尺寸（硬写 40px 会被全局 img max-width 夹窄导致非正方形）；
+      // 表格样式封面无容器包装，必须保持固定尺寸，100% 会占满单元格挤掉文字
+      if (img.closest('.cover-section')) {
+        img.style.setProperty('width', '100%', 'important')
+        img.style.setProperty('height', '100%', 'important')
+      } else {
+        img.style.setProperty('width', '36px', 'important')
+        img.style.setProperty('height', '36px', 'important')
+      }
       img.style.setProperty('object-fit', 'cover', 'important')
       img.style.setProperty('border-radius', '4px', 'important')
     }
@@ -1432,7 +1486,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
   const scheduleContent = clonedPage.querySelector('.schedule-content')
   if (scheduleContent) {
-    scheduleContent.className = `schedule-content layout-${s.layoutStyle}`
+    scheduleContent.className = scheduleContentClass.value
   }
 
   // 使用 setProperty 避免覆盖其他重要样式
@@ -1718,6 +1772,8 @@ onMounted(async () => {
     const { startDate, endDate } = calculateDateRange(settings.value.dateRangePreset)
     settings.value.startDate = startDate
     settings.value.endDate = endDate
+  } else {
+    setDateRange('today')
   }
   loadSchedules()
 })
@@ -2031,6 +2087,26 @@ watch(
 .orientation-landscape .playtime-group {
   break-inside: avoid;
   margin-bottom: 20px;
+}
+
+/* 纵向经典列表两列分栏：相邻序号左右成对 */
+.schedule-content.layout-classic.is-two-column .schedule-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+}
+
+.schedule-content.layout-classic.is-two-column .schedule-item {
+  display: flex;
+}
+
+.schedule-content.layout-classic.is-two-column .schedule-item > .schedule-item-print {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-content.layout-classic.is-two-column .playtime-groups {
+  margin-left: 12px;
 }
 
 /* 打印样式 */

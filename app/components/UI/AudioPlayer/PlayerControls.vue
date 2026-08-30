@@ -18,7 +18,7 @@
           class="control-btn play-pause-btn"
           @click="$emit('togglePlay')"
         >
-          <AppSpinner v-if="isLoadingTrack" :size="18" />
+          <AppSpinner v-if="isLoadingTrack" :size="18" color="white" />
           <Icon v-else-if="isPlaying" :size="18" color="white" name="pause" />
           <Icon v-else :size="18" color="white" name="play" />
         </button>

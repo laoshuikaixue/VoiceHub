@@ -1,25 +1,8 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
-
-// 智能排序函数
-const smartSort = (a: string, b: string) => {
-  const gradeOrder: Record<string, number> = {
-    '初一': 1, '初二': 2, '初三': 3,
-    '高一': 4, '高二': 5, '高三': 6,
-    '大一': 7, '大二': 8, '大三': 9, '大四': 10,
-    '教师': 99, '教职工': 99
-  }
-
-  const weightA = gradeOrder[a]
-  const weightB = gradeOrder[b]
-
-  if (weightA !== undefined && weightB !== undefined) return weightA - weightB
-  if (weightA !== undefined) return -1
-  if (weightB !== undefined) return 1
-
-  return a.localeCompare(b, 'zh-CN', { numeric: true })
-}
+import { users, gradeClass } from '~/drizzle/schema'
+import { ne } from 'drizzle-orm'
+import { smartSort } from '~~/server/utils/grade-class-core'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,7 +15,7 @@ export default defineEventHandler(async (event) => {
         message: '只有系统管理员可以访问此选项'
       })
     }
-    // 用户树需要全量轻字段，避免用分页列表推导时统计不完整
+    // 用户树需要全量轻字段，避免用分页列表推导时统计不完整；排除待审核用户（未通过审核不计入组织树/筛选）
     const treeUsers = await db
       .select({
         id: users.id,
@@ -44,33 +27,44 @@ export default defineEventHandler(async (event) => {
         status: users.status
       })
       .from(users)
+      .where(ne(users.status, 'pending'))
 
-    const gradesSet = new Set<string>()
-    const classesMap = new Map<string, { grade: string | null, class: string }>()
+    // 年级班级选项：配置优先；未配置时回退到全部用户聚合（含 withdrawn/graduate 与仅有班级项），
+    // 与组织结构树口径一致，避免筛选下拉缺项
+    const configRows = await db
+      .select({ grade: gradeClass.grade, class: gradeClass.class })
+      .from(gradeClass)
 
-    for (const treeUser of treeUsers) {
-      const gradeValue = treeUser.grade?.trim() || ''
-      const classValue = treeUser.class?.trim() || ''
-
-      if (gradeValue) {
-        gradesSet.add(gradeValue)
-      }
-
-      if (classValue) {
-        const classKey = `${gradeValue}:${classValue}`
-        if (!classesMap.has(classKey)) {
-          classesMap.set(classKey, {
-            grade: gradeValue || null,
-            class: classValue
-          })
+    let grades: string[]
+    let classes: { grade: string | null; class: string }[]
+    if (configRows.length > 0) {
+      const options = configRows
+        .filter((item) => Boolean(item.grade?.trim()) && Boolean(item.class?.trim()))
+        .sort((a, b) => {
+          const gradeResult = smartSort(a.grade, b.grade)
+          return gradeResult || smartSort(a.class, b.class)
+        })
+      grades = [...new Set(options.map((item) => item.grade))].sort(smartSort)
+      classes = options.map((item) => ({ grade: item.grade, class: item.class }))
+    } else {
+      const gradesSet = new Set<string>()
+      const classesMap = new Map<string, { grade: string | null; class: string }>()
+      for (const treeUser of treeUsers) {
+        const gradeValue = treeUser.grade?.trim() || ''
+        const classValue = treeUser.class?.trim() || ''
+        if (gradeValue) gradesSet.add(gradeValue)
+        if (classValue) {
+          const classKey = `${gradeValue}:${classValue}`
+          if (!classesMap.has(classKey)) {
+            classesMap.set(classKey, { grade: gradeValue || null, class: classValue })
+          }
         }
       }
+      grades = Array.from(gradesSet).sort(smartSort)
+      classes = Array.from(classesMap.values()).sort((a, b) =>
+        a.class.localeCompare(b.class, 'zh-CN', { numeric: true })
+      )
     }
-
-    const grades = Array.from(gradesSet).sort(smartSort)
-    const classes = Array.from(classesMap.values()).sort((a, b) =>
-      a.class.localeCompare(b.class, 'zh-CN', { numeric: true })
-    )
 
     return {
       success: true,

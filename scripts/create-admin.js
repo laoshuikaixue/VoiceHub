@@ -29,6 +29,20 @@ async function main() {
       return existingSuperAdmin[0]
     }
 
+    // 没有超级管理员但 username=admin 已被其他角色占用时跳过创建，避免产生重复 username
+    const existingAdminName = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, 'admin'))
+      .limit(1)
+
+    if (existingAdminName.length > 0) {
+      console.warn(
+        `⚠️ username=admin 已被用户#${existingAdminName[0].id}（role=${existingAdminName[0].role}）占用，跳过创建管理员`
+      )
+      return existingAdminName[0]
+    }
+
     // 创建管理员
     const hashedPassword = await bcrypt.hash('admin123', 10)
     const [admin] = await db

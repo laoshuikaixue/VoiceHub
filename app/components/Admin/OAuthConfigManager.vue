@@ -31,27 +31,57 @@
         </button>
       </div>
 
-      <div
-        class="flex items-center justify-between bg-bg-secondary-50 p-4 rounded-xl border border-border-secondary-50"
-      >
-        <div>
-          <label :class="labelClass">{{ locale.allowRegistration }}</label>
-          <p class="text-[10px] text-text-disabled mt-1">{{ locale.allowRegistrationDesc }}</p>
+      <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+        <div class="flex items-center justify-between p-3">
+          <div class="pr-4">
+            <p class="text-xs font-bold text-text-primary">{{ locale.allowRegistration }}</p>
+            <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegistrationDesc }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              :class="[
+                'text-[10px] font-bold',
+                formData.allowOAuthRegistration ? 'text-success' : 'text-text-tertiary'
+              ]"
+            >
+              {{ formData.allowOAuthRegistration ? locale.allowed : locale.notAllowed }}
+            </span>
+            <input
+              v-model="formData.allowOAuthRegistration"
+              type="checkbox"
+              class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-green-600 cursor-pointer"
+            />
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span
-            :class="[
-              'text-[10px] font-bold',
-              formData.allowOAuthRegistration ? 'text-success' : 'text-text-tertiary'
-            ]"
-          >
-            {{ formData.allowOAuthRegistration ? locale.allowed : locale.notAllowed }}
-          </span>
-          <input
-            v-model="formData.allowOAuthRegistration"
-            type="checkbox"
-            class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-green-600 cursor-pointer"
-          />
+
+        <div
+          v-if="formData.allowOAuthRegistration"
+          class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+        >
+          <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.oauthRegisterRequiresApproval }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.oauthRegisterRequiresApprovalDesc }}</p>
+            </div>
+            <input
+              v-model="formData.oauthRegisterRequiresApproval"
+              type="checkbox"
+              :disabled="!formData.allowOAuthRegistration"
+              class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+            />
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ siteLocale.registerRequiresGradeClass }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ siteLocale.registerRequiresGradeClassDesc }}</p>
+            </div>
+            <input
+              v-model="formData.registerRequiresGradeClass"
+              type="checkbox"
+              class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 
@@ -398,7 +428,7 @@ const props = defineProps({
 const emits = defineEmits(['update:modelValue'])
 
 const { showToast } = useToast()
-const { admin } = useLocale()
+const { admin, siteConfig: siteLocale } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => admin.value?.oauthConfig || {})
 const { t: callLocale } = useLocaleText(locale)

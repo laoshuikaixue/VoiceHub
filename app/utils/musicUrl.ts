@@ -245,7 +245,12 @@ export async function getMusicUrlResult(
       typeof window !== 'undefined'
         ? window.localStorage.getItem('qq_music_cookie') || undefined
         : undefined
-    const requestBackendResolve = async () => {
+    // VIP 状态由登录校验接口写入（qq_music_vip），仅 VIP 才值得优先走官方链路
+    const isQqVip =
+      typeof window !== 'undefined' && window.localStorage.getItem('qq_music_vip') === '1'
+    const requestBackendResolve = async (
+      strategy: 'official-first' | 'fallback' = 'fallback'
+    ) => {
       const response: any = await $fetch('/api/music/resolve-url', {
         method: 'POST',
         body: {
@@ -255,7 +260,8 @@ export async function getMusicUrlResult(
           mediaId: options?.mediaId,
           playUrl: options?.ignoreProvidedUrl ? undefined : playUrl,
           cookie: qqMusicCookie,
-          excludeSources: [...excludedSources]
+          excludeSources: [...excludedSources],
+          strategy
         }
       })
 
@@ -273,6 +279,49 @@ export async function getMusicUrlResult(
       }
 
       throw new Error(response?.message || 'QQ音乐播放链接解析失败')
+    }
+
+    // VIP 登录态：优先后端用用户 Cookie 走官方链路换取直链，失败再降级第三方音源
+    if (qqMusicCookie && isQqVip && !excludedSources.has('qq-official')) {
+      try {
+        return await requestBackendResolve('official-first')
+      } catch (error: any) {
+        console.warn('[musicUrl] QQ 官方登录态解析失败，降级第三方音源:', error?.message || error)
+      }
+    }
+
+    // K×H 音源提取的 QQ 直连接口支持浏览器跨域，优先于 vkeys 使用。
+    if (!excludedSources.has('ygking-qq')) {
+      const ygkingQuality: Record<number, string> = {
+        4: '128',
+        8: '320',
+        10: 'flac',
+        11: 'master',
+        14: 'master'
+      }
+      const qualityKey = ygkingQuality[qualityCandidates[0]] || '320'
+      try {
+        const data: any = await fetch(
+          `https://api.ygking.top/api/song/url?mid=${encodeURIComponent(String(musicId))}&quality=${encodeURIComponent(qualityKey)}`,
+          { signal: AbortSignal.timeout(5000) }
+        ).then((result) => (result.ok ? result.json() : null))
+        const url =
+          data?.data?.[String(musicId)] || (data?.data && data.data[Object.keys(data.data)[0]])
+        if (data?.code === 0 && url && !isKnownInvalidQqAudioUrl(String(url))) {
+          rememberMusicUrlSource(String(url), 'ygking-qq')
+          return { url: String(url), source: 'ygking-qq' }
+        }
+      } catch {
+        // 继续尝试后端 HYW 与 vkeys。
+      }
+    }
+
+    if (!excludedSources.has('hyw-tx')) {
+      try {
+        return await requestBackendResolve()
+      } catch (error: any) {
+        console.warn('[musicUrl] HYW 后端解析失败，继续尝试 vkeys 音源:', error?.message || error)
+      }
     }
 
     // v3 负责探测歌曲支持的音质，播放链接仍由 v2 获取。
@@ -339,40 +388,18 @@ export async function getMusicUrlResult(
             }
           }
         } catch {
-          // vkeys 前端请求失败，继续走后端代理
+          // 该音质请求失败，继续尝试下一个音质候选
         }
       }
     }
 
-    // K×H 音源提取的 QQ 直连接口支持浏览器跨域，作为 Vkeys 后备。
-    if (!excludedSources.has('ygking-qq')) {
-      const ygkingQuality: Record<number, string> = {
-        4: '128',
-        8: '320',
-        10: 'flac',
-        11: 'master',
-        14: 'master'
-      }
-      const qualityKey = ygkingQuality[qualityCandidates[0]] || '320'
+    // 非 VIP 登录态：官方链路作为最后兜底
+    if (qqMusicCookie && !isQqVip && !excludedSources.has('qq-official')) {
       try {
-        const data: any = await fetch(
-          `https://api.ygking.top/api/song/url?mid=${encodeURIComponent(String(musicId))}&quality=${encodeURIComponent(qualityKey)}`,
-          { signal: AbortSignal.timeout(5000) }
-        ).then((result) => (result.ok ? result.json() : null))
-        const url =
-          data?.data?.[String(musicId)] || (data?.data && data.data[Object.keys(data.data)[0]])
-        if (data?.code === 0 && url && !isKnownInvalidQqAudioUrl(String(url))) {
-          rememberMusicUrlSource(String(url), 'ygking-qq')
-          return { url: String(url), source: 'ygking-qq' }
-        }
-      } catch {
-        // 继续尝试 vkeys 或服务端回退。
+        return await requestBackendResolve('official-first')
+      } catch (error: any) {
+        console.warn('[musicUrl] QQ 官方链路兜底失败:', error?.message || error)
       }
-    }
-
-    // vkeys 前端失败，回退到后端 resolve-url
-    if (!qqMusicCookie) {
-      return await requestBackendResolve()
     }
 
     throw new Error('QQ音乐播放链接解析失败')

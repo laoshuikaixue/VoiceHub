@@ -96,6 +96,32 @@
               :class="[inputClass, 'resize-none']"
             />
           </div>
+          <div class="pt-2">
+            <div
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
+            >
+              <div>
+                <p class="text-xs font-bold text-text-primary">{{ locale.statisticsCodeEnabled }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.statisticsCodeEnabledDesc }}</p>
+              </div>
+              <input
+                v-model="formData.statisticsCodeEnabled"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+          </div>
+          <div>
+            <label :class="labelClass">{{ locale.statisticsCode }}</label>
+            <textarea
+              v-model="formData.statisticsCode"
+              :rows="5"
+              :placeholder="locale.statisticsCodePlaceholder"
+              :class="[inputClass, 'font-mono text-xs resize-y']"
+              :disabled="!formData.statisticsCodeEnabled"
+            />
+            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.statisticsCodeHint }}</p>
+          </div>
         </div>
       </section>
 
@@ -218,72 +244,90 @@
             />
           </div>
 
-          <div
-            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
-          >
-            <div>
-              <p class="text-xs font-bold text-text-primary">{{ locale.enableRemarks }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableRemarksDesc }}</p>
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.enableRemarks }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableRemarksDesc }}</p>
+              </div>
+              <input
+                v-model="formData.enableSubmissionRemarks"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
             </div>
-            <input
-              v-model="formData.enableSubmissionRemarks"
-              type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-            />
+
+            <div
+              v-if="formData.enableSubmissionRemarks"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+            >
+              <div
+                class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
+              >
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.submissionNoteRequiresApproval }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.submissionNoteRequiresApprovalDesc }}</p>
+                </div>
+                <input
+                  v-model="formData.submissionNoteRequiresApproval"
+                  type="checkbox"
+                  :disabled="!formData.enableSubmissionRemarks"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
           </div>
 
-          <div
-            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
-          >
-            <div>
-              <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeRequests }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeRequests }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
+              </div>
+              <input
+                v-model="formData.enableCardCodeRequests"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
             </div>
-            <input
-              v-model="formData.enableCardCodeRequests"
-              type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-            />
-          </div>
 
-          <div
-            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
-          >
-            <div>
-              <p class="text-xs font-bold text-text-primary">{{ locale.requireCardCodeForRequests }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
-            </div>
-            <input
-              v-model="formData.requireCardCodeForRequests"
-              type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-            />
-          </div>
+            <div
+              v-if="formData.enableCardCodeRequests"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+            >
+              <div
+                class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
+              >
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.requireCardCodeForRequests }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
+                </div>
+                <input
+                  v-model="formData.requireCardCodeForRequests"
+                  type="checkbox"
+                  :disabled="!formData.enableCardCodeRequests"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
 
-          <div
-            :class="[
-              'flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl transition-opacity',
-              !formData.enableSubmissionLimit ||
-              (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
-                ? 'opacity-50'
-                : ''
-            ]"
-          >
-            <div class="pr-4">
-              <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeLimitBypass }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">
-                {{ locale.enableCardCodeLimitBypassDesc }}
-              </p>
+              <div
+                v-if="formData.enableSubmissionLimit"
+                class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl transition-opacity"
+              >
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeLimitBypass }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5">
+                    {{ locale.enableCardCodeLimitBypassDesc }}
+                  </p>
+                </div>
+                <input
+                  v-model="formData.enableCardCodeLimitBypass"
+                  type="checkbox"
+                  :disabled="!formData.enableCardCodeRequests || !formData.enableSubmissionLimit"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
-            <input
-              v-model="formData.enableCardCodeLimitBypass"
-              type="checkbox"
-              :disabled="
-                !formData.enableSubmissionLimit ||
-                (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
-              "
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
-            />
           </div>
 
           <div
@@ -300,11 +344,11 @@
             />
           </div>
 
-          <div class="space-y-4">
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
             <div
-              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
+              class="flex items-center justify-between p-3"
             >
-              <div>
+              <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.enableLimit }}</p>
                 <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableLimitDesc }}</p>
               </div>
@@ -315,7 +359,10 @@
               />
             </div>
 
-            <div v-if="formData.enableSubmissionLimit" class="space-y-4">
+            <div
+              v-if="formData.enableSubmissionLimit"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+            >
               <div class="grid grid-cols-3 gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
                 <button
                   :class="[
@@ -324,6 +371,7 @@
                       ? 'bg-bg-tertiary text-primary shadow-sm'
                       : 'text-text-disabled hover:text-text-tertiary'
                   ]"
+                  :disabled="!formData.enableSubmissionLimit"
                   @click="handleLimitTypeChange('daily')"
                 >
                   {{ locale.dailyLimit }}
@@ -335,6 +383,7 @@
                       ? 'bg-bg-tertiary text-primary shadow-sm'
                       : 'text-text-disabled hover:text-text-tertiary'
                   ]"
+                  :disabled="!formData.enableSubmissionLimit"
                   @click="handleLimitTypeChange('weekly')"
                 >
                   {{ locale.weeklyLimit }}
@@ -346,6 +395,7 @@
                       ? 'bg-bg-tertiary text-primary shadow-sm'
                       : 'text-text-disabled hover:text-text-tertiary'
                   ]"
+                  :disabled="!formData.enableSubmissionLimit"
                   @click="handleLimitTypeChange('monthly')"
                 >
                   {{ locale.monthlyLimit }}
@@ -359,7 +409,8 @@
                     v-model.number="currentLimitValue"
                     type="number"
                     min="0"
-                    :class="inputClass"
+                    :disabled="!formData.enableSubmissionLimit"
+                    :class="[inputClass, 'disabled:cursor-not-allowed disabled:opacity-50']"
                   />
                   <span
                     class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
@@ -462,170 +513,217 @@
           <Shield :size="16" class="text-error" /> {{ locale.securityPrivacy }}
         </h3>
         <div class="space-y-4">
-          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 pt-0.5">
-                <input
-                  id="captcha-enabled"
-                  v-model="formData.captchaEnabled"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-                />
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.captchaEnabled }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.captchaEnabledDesc }}</p>
               </div>
-              <div class="flex-1 space-y-4">
-                <label for="captcha-enabled" class="cursor-pointer block">
-                  <p class="text-xs font-bold text-text-primary">{{ locale.captchaEnabled }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
-                    {{ locale.captchaEnabledDesc }}
-                  </p>
-                </label>
+              <input
+                id="captcha-enabled"
+                v-model="formData.captchaEnabled"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
 
-                <div v-if="formData.captchaEnabled" class="pt-2 border-t border-border-secondary space-y-4">
-                  <!-- 验证码类型选择 -->
-                  <div>
-                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.captchaType }}</label>
-                    <div class="flex gap-4">
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          v-model="formData.captchaProvider"
-                          type="radio"
-                          value="graphic"
-                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer"
-                        />
-                        <span class="text-sm text-text-secondary">{{ locale.captchaGraphic }}</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          v-model="formData.captchaProvider"
-                          type="radio"
-                          value="turnstile"
-                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer"
-                        />
-                        <span class="text-sm text-text-secondary">{{ locale.captchaTurnstile }}</span>
-                      </label>
-                    </div>
+            <div
+              v-if="formData.captchaEnabled"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+            >
+              <div class="p-3 bg-bg-primary border border-border-secondary rounded-xl space-y-3">
+                <!-- 验证码类型选择 -->
+                <div>
+                  <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.captchaType }}</label>
+                  <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="formData.captchaProvider"
+                        type="radio"
+                        value="graphic"
+                        :disabled="!formData.captchaEnabled"
+                        class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span class="text-sm text-text-secondary">{{ locale.captchaGraphic }}</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="formData.captchaProvider"
+                        type="radio"
+                        value="turnstile"
+                        :disabled="!formData.captchaEnabled"
+                        class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span class="text-sm text-text-secondary">{{ locale.captchaTurnstile }}</span>
+                    </label>
                   </div>
+                </div>
 
-                  <!-- 图形验证码配置 -->
-                  <div v-if="formData.captchaProvider === 'graphic'">
-                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.captchaMaxFailures }}</label>
+                <!-- 图形验证码配置 -->
+                <div v-if="formData.captchaProvider === 'graphic'">
+                  <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.captchaMaxFailures }}</label>
+                  <input
+                    v-model.number="formData.captchaMaxFailures"
+                    type="number"
+                    min="1"
+                    :disabled="!formData.captchaEnabled"
+                    :placeholder="locale.captchaMaxFailuresPlaceholder"
+                    class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <p class="text-[10px] text-text-tertiary mt-1">
+                    {{ locale.captchaMaxFailuresDesc }}
+                  </p>
+                </div>
+
+                <!-- Turnstile 配置 -->
+                <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSiteKey }}</label>
                     <input
-                      v-model.number="formData.captchaMaxFailures"
-                      type="number"
-                      min="1"
-                      :placeholder="locale.captchaMaxFailuresPlaceholder"
-                      class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      v-model="formData.turnstileSiteKey"
+                      type="text"
+                      :disabled="!formData.captchaEnabled"
+                      :placeholder="locale.turnstileSiteKeyPlaceholder"
+                      class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSecretKey }}</label>
+                    <input
+                      v-model="formData.turnstileSecretKey"
+                      type="password"
+                      :disabled="!formData.captchaEnabled"
+                      :placeholder="locale.turnstileSecretKeyPlaceholder"
+                      class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <p class="text-[10px] text-text-tertiary mt-1">
-                      {{ locale.captchaMaxFailuresDesc }}
+                      {{ locale.turnstileSecretKeyDesc }}
                     </p>
-                  </div>
-
-                  <!-- Turnstile 配置 -->
-                  <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-4">
-                    <div>
-                      <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSiteKey }}</label>
-                      <input
-                        v-model="formData.turnstileSiteKey"
-                        type="text"
-                        :placeholder="locale.turnstileSiteKeyPlaceholder"
-                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSecretKey }}</label>
-                      <input
-                        v-model="formData.turnstileSecretKey"
-                        type="password"
-                        :placeholder="locale.turnstileSecretKeyPlaceholder"
-                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                      />
-                      <p class="text-[10px] text-text-tertiary mt-1">
-                        {{ locale.turnstileSecretKeyDesc }}
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 pt-0.5">
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.forcePasswordChangeOnFirstLogin }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.forcePasswordChangeOnFirstLoginDesc }}</p>
+            </div>
+            <input
+              id="force-password-change-first-login"
+              v-model="formData.forcePasswordChangeOnFirstLogin"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
+
+          <!-- 允许注册开关 -->
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.allowRegister }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegisterDesc }}</p>
+              </div>
+              <input
+                id="allow-register"
+                v-model="formData.allowRegister"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+
+            <div
+              v-if="formData.allowRegister || formData.allowOAuthRegistration"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+            >
+              <div
+                v-if="formData.allowRegister"
+                class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
+              >
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresApproval }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresApprovalDesc }}</p>
+                </div>
                 <input
-                  id="force-password-change-first-login"
-                  v-model="formData.forcePasswordChangeOnFirstLogin"
+                  id="register-requires-approval"
+                  v-model="formData.registerRequiresApproval"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+                  :disabled="!formData.allowRegister"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
                 />
               </div>
-              <label for="force-password-change-first-login" class="cursor-pointer">
-                <p class="text-xs font-bold text-text-primary">
-                  {{ locale.forcePasswordChangeOnFirstLogin }}
-                </p>
-                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
-                  {{ locale.forcePasswordChangeOnFirstLoginDesc }}
-                </p>
-              </label>
+
+              <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.registerEmailRequired }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerEmailRequiredDesc }}</p>
+                  <p v-if="!formData.smtpEnabled" class="text-[10px] text-warning mt-1 leading-relaxed">{{ locale.registerEmailSmtpRequired }}</p>
+                </div>
+                <input
+                  id="register-email-required"
+                  v-model="formData.registerEmailRequired"
+                  type="checkbox"
+                  :disabled="(!formData.allowRegister && !formData.allowOAuthRegistration) || !formData.smtpEnabled"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresGradeClass }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresGradeClassDesc }}</p>
+                </div>
+                <input
+                  id="register-requires-grade-class"
+                  v-model="formData.registerRequiresGradeClass"
+                  type="checkbox"
+                  :disabled="!formData.allowRegister && !formData.allowOAuthRegistration"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 pt-0.5">
-                <input
-                  id="show-keywords"
-                  v-model="formData.showBlacklistKeywords"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-                />
-              </div>
-              <label for="show-keywords" class="cursor-pointer">
-                <p class="text-xs font-bold text-text-primary">{{ locale.showBlacklistKeywords }}</p>
-                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
-                  {{ locale.showBlacklistKeywordsDesc }}
-                </p>
-              </label>
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.showBlacklistKeywords }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.showBlacklistKeywordsDesc }}</p>
             </div>
+            <input
+              id="show-keywords"
+              v-model="formData.showBlacklistKeywords"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
           </div>
 
-          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 pt-0.5">
-                <input
-                  id="hide-students"
-                  v-model="formData.hideStudentInfo"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-                />
-              </div>
-              <label for="hide-students" class="cursor-pointer">
-                <p class="text-xs font-bold text-text-primary">{{ locale.hideStudentInfo }}</p>
-                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
-                  {{ locale.hideStudentInfoDesc }}
-                </p>
-              </label>
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.hideStudentInfo }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.hideStudentInfoDesc }}</p>
             </div>
+            <input
+              id="hide-students"
+              v-model="formData.hideStudentInfo"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
           </div>
 
-          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 pt-0.5">
-                <input
-                  id="telemetry-enabled"
-                  v-model="formData.telemetryEnabled"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-                />
-              </div>
-              <label for="telemetry-enabled" class="cursor-pointer">
-                <p class="text-xs font-bold text-text-primary">{{ locale.telemetryEnabled }}</p>
-                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
-                  {{ locale.telemetryEnabledDesc }} <strong class="text-text-tertiary">{{ locale.telemetryPrivacy }}</strong>
-                </p>
-              </label>
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.telemetryEnabled }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+                {{ locale.telemetryEnabledDesc }} <strong class="text-text-tertiary">{{ locale.telemetryPrivacy }}</strong>
+              </p>
             </div>
+            <input
+              id="telemetry-enabled"
+              v-model="formData.telemetryEnabled"
+              type="checkbox"
+              class="w-5 h-5 shrink-0 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
           </div>
 
           <div
@@ -812,9 +910,12 @@ const formData = ref({
   submissionGuidelines: '',
   icpNumber: '',
   gonganNumber: '',
+  statisticsCode: '',
+  statisticsCodeEnabled: false,
   showBeianIcon: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
+  submissionNoteRequiresApproval: false,
   enableReplayRequests: false,
   enableSubmissionLimit: false,
   // 点歌券点歌设置
@@ -837,6 +938,12 @@ const formData = ref({
   turnstileSiteKey: '',
   turnstileSecretKey: '',
   captchaMaxFailures: 3,
+  allowRegister: false,
+  registerRequiresApproval: true,
+  oauthRegisterRequiresApproval: true,
+  registerEmailRequired: false,
+  registerRequiresGradeClass: false,
+  smtpEnabled: false,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -943,9 +1050,12 @@ const loadConfig = async () => {
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines.value,
       icpNumber: data.icpNumber || '',
       gonganNumber: data.gonganNumber || '',
+      statisticsCode: data.statisticsCode || '',
+      statisticsCodeEnabled: !!data.statisticsCodeEnabled,
       showBeianIcon: !!data.showBeianIcon,
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
+      submissionNoteRequiresApproval: !!data.submissionNoteRequiresApproval,
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
       // 点歌券点歌设置
@@ -969,6 +1079,12 @@ const loadConfig = async () => {
       turnstileSecretKey: undefined,
       captchaMaxFailures: data.captchaMaxFailures ?? 3,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
+      allowRegister: !!data.allowRegister,
+      registerRequiresApproval: data.registerRequiresApproval !== false,
+      oauthRegisterRequiresApproval: data.oauthRegisterRequiresApproval !== false,
+      registerEmailRequired: data.registerEmailRequired === true,
+      registerRequiresGradeClass: data.registerRequiresGradeClass === true,
+      smtpEnabled: !!data.smtpEnabled,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
       githubOAuthEnabled: !!data.githubOAuthEnabled,

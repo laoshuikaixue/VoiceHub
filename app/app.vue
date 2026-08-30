@@ -8,6 +8,9 @@
 
     <ImportantNotificationModal />
 
+    <!-- 微信/QQ 内置浏览器账号密码登录后的绑定引导 -->
+    <OAuthBindReminderModal />
+
     <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
     <LazyUIAudioPlayer
       v-show="isPlayerVisible"
@@ -33,6 +36,7 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
 import { useImportantNotification } from '~/composables/useImportantNotification'
 import ImportantNotificationModal from '~/components/UI/ImportantNotificationModal.vue'
+import OAuthBindReminderModal from '~/components/Auth/OAuthBindReminderModal.vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()

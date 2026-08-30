@@ -96,13 +96,15 @@
             <!-- 基础信息与主题 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
-                  >{{ locale.templateName }}</label
-                >
+                <div class="flex items-center justify-between px-1">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                    >{{ locale.templateName }}</label
+                  >
+                </div>
                 <input
                   v-model="form.name"
                   type="text"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
+                  class="h-11 w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
               <div class="space-y-2">
@@ -116,7 +118,7 @@
                   v-model="form.subject"
                   type="text"
                   :placeholder="locale.subjectPlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
+                  class="h-11 w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
             </div>

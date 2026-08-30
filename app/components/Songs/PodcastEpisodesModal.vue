@@ -228,6 +228,7 @@ const { songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.mediaModals || {})
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 
 const props = defineProps({
   show: Boolean,
@@ -253,17 +254,6 @@ const loadingMore = ref(false)
 const submitting = ref(false)
 const selectedProgramId = ref(null)
 const songsLoadingForSimilar = ref(false)
-
-// 标准化字符串
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
-    .trim()
-}
 
 // 检查是否已存在相似歌曲
 const getSimilarSong = (program) => {

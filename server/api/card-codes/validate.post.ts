@@ -78,7 +78,8 @@ export default defineEventHandler(async (event) => {
 
   const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
   const settings = await getSystemSettingsCached()
-  const enabled = !!(settings?.enableCardCodeRequests || settings?.requireCardCodeForRequests)
+  // 点歌券验证仅在启用点歌券时开放
+  const enabled = settings?.enableCardCodeRequests === true
   if (!enabled && !isAdmin) {
     throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
   }

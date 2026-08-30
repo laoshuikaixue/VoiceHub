@@ -728,6 +728,34 @@ const getDownloadResolveOptions = (song, quality, excludeSources = [], ignorePro
   }
 }
 
+// VIP 标记由点歌表单校验写入；后台页未挂载点歌表单，有 Cookie 但缺标记时补一次校验
+let qqVipCheckPromise = null
+const ensureQqVipFlag = async () => {
+  if (!import.meta.client) return
+  const cookie = localStorage.getItem('qq_music_cookie')
+  if (!cookie || localStorage.getItem('qq_music_vip') !== null) return
+
+  if (!qqVipCheckPromise) {
+    qqVipCheckPromise = (async () => {
+      try {
+        const res = await $fetch('/api/native-api/qq/check-cookie', {
+          method: 'POST',
+          body: { cookie }
+        })
+        const data = res?.data || {}
+        if (data.valid && typeof data.isVip === 'boolean') {
+          localStorage.setItem('qq_music_vip', data.isVip ? '1' : '0')
+        }
+      } catch (e) {
+        console.warn('[SongDownloadDialog] QQ VIP 状态校验失败:', e)
+      } finally {
+        qqVipCheckPromise = null
+      }
+    })()
+  }
+  await qqVipCheckPromise
+}
+
 const isRetryableDownloadError = (error) => {
   const message = String(error?.message || error || '')
   return /404|not found|failed to fetch|networkerror|http( error|\s+\d+)|疑似试听时长|无法从播放链接获取时长|无法获取音乐播放链接/i.test(
@@ -735,13 +763,11 @@ const isRetryableDownloadError = (error) => {
   )
 }
 
-const resolveDownloadAudioCandidate = async (
-  song,
-  quality,
-  excludeSources = [],
-  ignoreProvidedUrl = false
-) => {
+const requestMusicUrlCandidate = async (song, quality, excludeSources, ignoreProvidedUrl) => {
   const platform = getSongPlatform(song)
+  if (platform === 'tencent') {
+    await ensureQqVipFlag()
+  }
   const result = await getMusicUrlResult(
     platform,
     song?.musicId,
@@ -754,6 +780,25 @@ const resolveDownloadAudioCandidate = async (
   }
 
   return result
+}
+
+// 音源解析串行化：批量下载时逐首解析链接，避免并发集中请求触发音源风控；音频拉流不受影响
+let urlResolveQueue = Promise.resolve()
+const resolveDownloadAudioCandidate = (
+  song,
+  quality,
+  excludeSources = [],
+  ignoreProvidedUrl = false
+) => {
+  const task = urlResolveQueue.then(() =>
+    requestMusicUrlCandidate(song, quality, excludeSources, ignoreProvidedUrl)
+  )
+  // 链尾吞掉结果与错误，保证后续排队任务不被单个解析失败阻断
+  urlResolveQueue = task.then(
+    () => undefined,
+    () => undefined
+  )
+  return task
 }
 
 const withDownloadSourceFallback = async (song, quality, executor) => {

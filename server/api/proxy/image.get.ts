@@ -66,7 +66,10 @@ const validateUrl = async (url) => {
     const addrs = await lookup(hostname, { all: true })
     for (const addr of addrs) {
       if (isBlockedAddress(addr.address)) {
-        throw createError({ statusCode: 403, message: '该域名解析到内网地址，不允许代理' })
+        throw createError({
+          statusCode: 403,
+          message: `该域名解析到内网地址(${addr.address})，不允许代理`
+        })
       }
     }
   }
@@ -229,7 +232,10 @@ export default defineEventHandler(async (event) => {
 
     return new Uint8Array(buffer)
   } catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error) throw error
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      console.warn(`图片代理已拒绝 [${error.statusCode}]`, imageUrl, error.message)
+      throw error
+    }
 
     console.error('图片代理失败:', imageUrl, error)
 

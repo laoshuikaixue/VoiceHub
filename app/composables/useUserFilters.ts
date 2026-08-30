@@ -1,6 +1,7 @@
 import { computed, watch } from 'vue'
 import type { User } from '~/types'
 import { useAuth } from '~/composables/useAuth'
+import { smartSort } from '~/utils/gradeClassWeights'
 
 type UsersListResponse = {
   success: boolean
@@ -13,30 +14,6 @@ type UsersListResponse = {
 
 export const useUserFilters = () => {
   const auth = useAuth()
-
-  // 智能排序函数：支持处理“高一”、“高二”、“高三”等特殊中文，以及自然数字递增（24, 25, 26）
-  const smartSort = (a: string, b: string) => {
-    const gradeOrder: Record<string, number> = {
-      '初一': 1, '初二': 2, '初三': 3,
-      '高一': 4, '高二': 5, '高三': 6,
-      '大一': 7, '大二': 8, '大三': 9, '大四': 10,
-      '教师': 99, '教职工': 99
-    }
-
-    const weightA = gradeOrder[a]
-    const weightB = gradeOrder[b]
-
-    // 如果两者都是预定义的年级，按权重排
-    if (weightA !== undefined && weightB !== undefined) {
-      return weightA - weightB
-    }
-    // 如果只有一个是预定义的年级，预定义的排在前面
-    if (weightA !== undefined) return -1
-    if (weightB !== undefined) return 1
-
-    // 其他情况使用自然排序（支持 24, 25, 26 和 1班, 2班, 10班 的自然递增）
-    return a.localeCompare(b, 'zh-CN', { numeric: true })
-  }
 
   const allUsers = useState<User[]>('admin-all-users', () => [])
   const loading = useState<boolean>('admin-all-users-loading', () => false)

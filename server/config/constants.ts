@@ -105,6 +105,7 @@ export const SERVER_ERROR_CODES = {
   THEME_INVALID_LIST: 'THEME_INVALID_LIST',
   THEME_INVALID_DEFAULT: 'THEME_INVALID_DEFAULT',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'THEME_SYSTEM_REQUIRES_CLASSIC',
+  SETTINGS_GRADE_CLASS_OPTIONS_MISSING: 'SETTINGS_GRADE_CLASS_OPTIONS_MISSING',
   BILIBILI_PLAYURL_FAILED: 'BILIBILI_PLAYURL_FAILED',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'AUTH_NAME_USERNAME_PASSWORD_REQUIRED',
   AUTH_USERNAME_LENGTH_INVALID: 'AUTH_USERNAME_LENGTH_INVALID',
@@ -154,6 +155,8 @@ export const SERVER_ERROR_CODES = {
   AUTH_LOGIN_UNKNOWN_ERROR: 'AUTH_LOGIN_UNKNOWN_ERROR',
   AUTH_OAUTH_REGISTER_DISABLED: 'AUTH_OAUTH_REGISTER_DISABLED',
   AUTH_OAUTH_REGISTER_DISABLED_BIND: 'AUTH_OAUTH_REGISTER_DISABLED_BIND',
+  AUTH_REGISTER_DISABLED: 'AUTH_REGISTER_DISABLED',
+  AUTH_USER_PENDING_APPROVAL: 'AUTH_USER_PENDING_APPROVAL',
   AUTH_SYSTEM_ERROR: 'AUTH_SYSTEM_ERROR',
   AUTH_BINDING_SESSION_INVALID: 'AUTH_BINDING_SESSION_INVALID',
   AUTH_BINDING_SESSION_EXPIRED: 'AUTH_BINDING_SESSION_EXPIRED',
@@ -179,11 +182,16 @@ export const SERVER_ERROR_CODES = {
   AUTH_IMAGE_CAPTCHA_REQUIRED: 'AUTH_IMAGE_CAPTCHA_REQUIRED',
   AUTH_ACCOUNT_NAME_REQUIRED: 'AUTH_ACCOUNT_NAME_REQUIRED',
   AUTH_GRADE_CLASS_MUST_EXIST: 'AUTH_GRADE_CLASS_MUST_EXIST',
+  AUTH_GRADE_CLASS_REQUIRED: 'AUTH_GRADE_CLASS_REQUIRED',
   AUTH_ACCOUNT_DISABLED_OR_RESTRICTED: 'AUTH_ACCOUNT_DISABLED_OR_RESTRICTED',
   AUTH_ACCOUNT_RISK_CONTROL: 'AUTH_ACCOUNT_RISK_CONTROL',
   AUTH_ACCOUNT_LOCKED_MINUTES: 'AUTH_ACCOUNT_LOCKED_MINUTES',
   AUTH_ACCOUNT_LOCKED: 'AUTH_ACCOUNT_LOCKED',
   AUTH_EMAIL_MISMATCH: 'AUTH_EMAIL_MISMATCH',
+  AUTH_EMAIL_CODE_INVALID: 'AUTH_EMAIL_CODE_INVALID',
+  AUTH_EMAIL_CODE_COOLDOWN: 'AUTH_EMAIL_CODE_COOLDOWN',
+  AUTH_EMAIL_CODE_DAILY_LIMIT: 'AUTH_EMAIL_CODE_DAILY_LIMIT',
+  AUTH_EMAIL_SERVICE_UNAVAILABLE: 'AUTH_EMAIL_SERVICE_UNAVAILABLE',
   AUTH_RESET_PASSWORD_TOO_MANY: 'AUTH_RESET_PASSWORD_TOO_MANY',
   AUTH_RESET_LINK_EXPIRED: 'AUTH_RESET_LINK_EXPIRED',
   AUTH_USER_ID_MISMATCH: 'AUTH_USER_ID_MISMATCH',
@@ -224,6 +232,9 @@ export const SERVER_ERROR_CODES = {
   AUTH_LOGIN_REQUIRED: 'AUTH_LOGIN_REQUIRED',
   SONG_NO_ACTIVE_SEMESTER_VOTE: 'SONG_NO_ACTIVE_SEMESTER_VOTE',
   COMMON_INSUFFICIENT_PERMISSION: 'COMMON_INSUFFICIENT_PERMISSION',
+  COMMON_TARGET_NOT_FOUND: 'COMMON_TARGET_NOT_FOUND',
+  USER_NOT_PENDING: 'USER_NOT_PENDING',
+  GRADE_CLASS_DUPLICATE: 'GRADE_CLASS_DUPLICATE',
   SONG_ID_REQUIRED: 'SONG_ID_REQUIRED',
   SONG_NOT_FOUND: 'SONG_NOT_FOUND',
   SONG_DURATION_PLATFORM_REQUIRED: 'SONG_DURATION_PLATFORM_REQUIRED',
@@ -394,8 +405,49 @@ export const USER_ROLES = {
 // 黑名单类型常量
 export const BLACKLIST_TYPES = {
   SONG: 'SONG',
-  KEYWORD: 'KEYWORD'
+  KEYWORD: 'KEYWORD',
+  LANGUAGE: 'LANGUAGE',
+  GENRE: 'GENRE'
 } as const
+
+// 语种黑名单候选值（存储值即匹配值；新增需同步前端 app/utils/blacklist.ts）
+export const BLACKLIST_LANGUAGE_VALUES = ['华语', '粤语', '闽南语', '英语', '日语', '韩语', '其他'] as const
+
+// 曲风黑名单候选值（取网易云曲风标签一级分类与 QQ 官网流派分类；新增需同步前端 app/utils/blacklist.ts）
+export const BLACKLIST_GENRE_VALUES = [
+  '流行', '摇滚', '民谣', '电子', '舞曲', '说唱', '古典', '爵士',
+  '乡村', '原声带', '蓝调', '轻音乐', '其他'
+] as const
+
+// QQ 音乐语种数字码 → 黑名单语种值（track_info.language 实测映射；info.lan 缺失时兜底）
+export const QQ_LANGUAGE_CODE_MAP: Record<number, string> = {
+  0: '华语',
+  1: '粤语',
+  2: '闽南语',
+  3: '日语',
+  4: '韩语',
+  5: '英语'
+}
+
+// QQ 官网流派分类英文名（get_song_detail_yqq 的 info.genre）→ 黑名单曲风值
+// 仅覆盖候选曲风；未收录流派名（Animation/World Music 等）由调用方归入「其他」
+export const QQ_GENRE_NAME_MAP: Record<string, string> = {
+  Pop: '流行',
+  Rock: '摇滚',
+  Folk: '民谣',
+  Electronic: '电子',
+  Dance: '舞曲',
+  Rap: '说唱',
+  'Hip Hop': '说唱',
+  'Hip-Hop': '说唱',
+  Classical: '古典',
+  Jazz: '爵士',
+  Country: '乡村',
+  Soundtrack: '原声带',
+  OST: '原声带',
+  Blues: '蓝调',
+  'Easy Listening': '轻音乐'
+}
 
 // 音乐平台常量
 export const MUSIC_PLATFORMS = {
@@ -408,6 +460,10 @@ export const MUSIC_PLATFORMS = {
 
 // 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/utils/platforms.ts）
 export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
+
+// 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
+export const SONG_DURATION_MIN_SECONDS = 0
+export const SONG_DURATION_MAX_SECONDS = 7200
 
 // 主题白名单（主题管理校验用；新增主题需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/composables/useTheme.ts）
 export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const
@@ -431,3 +487,10 @@ export const RISK_CONTROL_CONSTANTS = {
 // 图形验证码策略
 export const CAPTCHA_MAX_FAILURES = 3
 export const CAPTCHA_CODE_EXPIRE = 300 // 5分钟
+
+// 投稿公开留言审核状态（Song.submissionNotePublicStatus / song_replay_requests.submission_note_public_status）
+export const SUBMISSION_NOTE_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected'
+} as const

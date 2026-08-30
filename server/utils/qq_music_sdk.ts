@@ -3,10 +3,18 @@ import {
   getLyric,
   getMusicPlay,
   getQQLoginQr,
+  getSearchByKey,
   search
 } from '@sansenjian/qq-music-api/sdk'
-import { getUserAvatar } from '@sansenjian/qq-music-api/services'
+import {
+  checkWXLoginQr,
+  getWXLoginQr,
+  getUserAvatar,
+  getUserDetail,
+  getVipInfo
+} from '@sansenjian/qq-music-api/services'
 import { txHeaders, txRequest, upgradeTxAudioUrl, zzcSign } from '~~/server/utils/native_tx'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { inflateRawSync, inflateSync, unzipSync } from 'node:zlib'
 
 type QqSdkResponse = {
@@ -53,7 +61,20 @@ const QQ_PLAY_FILE_TYPE_MAP: Record<string, { prefix: string; suffix: string }> 
   m4a: { prefix: 'C400', suffix: '.m4a' },
   '128': { prefix: 'M500', suffix: '.mp3' },
   '320': { prefix: 'M800', suffix: '.mp3' },
-  flac: { prefix: 'F000', suffix: '.flac' }
+  flac: { prefix: 'F000', suffix: '.flac' },
+  hires: { prefix: 'RS01', suffix: '.flac' }
+}
+
+// 原生直连链路音质档位，自高到低；批量请求时按请求档位起向下降级
+const QQ_OFFICIAL_QUALITY_ORDER = ['hires', 'flac', '320', '128', 'm4a']
+
+// 原生直连音质映射：11/14（master）可解析 Hi-Res FLAC，区别于 SDK 链路
+const QQ_OFFICIAL_QUALITY_MAP: Record<string, string> = {
+  ...QQ_SDK_QUALITY_MAP,
+  '11': 'hires',
+  '14': 'hires',
+  master: 'hires',
+  hires: 'hires'
 }
 
 const unwrapQqSdkResponse = (response: QqSdkResponse, fallbackMessage: string) => {
@@ -127,6 +148,8 @@ const decodeMaybeBase64 = (value: unknown) => {
 
   try {
     const decoded = Buffer.from(normalizedValue, 'base64').toString()
+    // 刻意检测解码结果中的控制字符，用于排除二进制内容
+    // eslint-disable-next-line no-control-regex
     if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/.test(decoded)) {
       return value
     }
@@ -225,7 +248,9 @@ const buildQqOfficialPlayUrl = (
 }
 
 const resolveQqVkeyUin = (cookieObject: Record<string, string>) => {
-  return cookieObject.uin || '0'
+  // 兼容 uin 仅存于 qqmusic_uin 的会话；与资料链路一致，剥离 openid 的 o 前缀
+  const raw = cookieObject.uin || cookieObject.qqmusic_uin || ''
+  return raw ? raw.replace(/^o/i, '') : '0'
 }
 
 const requestQqOfficialVkey = async (
@@ -264,14 +289,18 @@ const requestQqOfficialVkey = async (
 
 const parseQqOfficialPlayUrl = (
   response: Record<string, any> | undefined,
-  songmid: string,
+  filenames: string[],
   guid: string
 ) => {
   const data = response?.req_0?.data
   const domain = pickPlayableDomain(data?.sip)
   const midurlinfo = Array.isArray(data?.midurlinfo) ? data.midurlinfo : []
-  const info = midurlinfo.find((item: Record<string, any>) => item?.songmid === songmid) ||
-    midurlinfo[0]
+
+  // 按候选顺位取第一个拿到直链的音质（降级命中）
+  let info = filenames
+    .map((filename) => midurlinfo.find((item: Record<string, any>) => item?.filename === filename))
+    .find((item) => item && (item.purl || item.vkey))
+  info = info || midurlinfo.find((item: Record<string, any>) => item?.purl || item?.vkey)
   const url = buildQqOfficialPlayUrl(domain, info, guid)
 
   return {
@@ -282,13 +311,13 @@ const parseQqOfficialPlayUrl = (
 
 const createQqOfficialVkeyPayload = ({
   songmid,
-  filename,
+  filenames,
   guid,
   uin,
   authst
 }: {
   songmid: string
-  filename: string
+  filenames: string[]
   guid: string
   uin: string
   authst?: string
@@ -298,10 +327,10 @@ const createQqOfficialVkeyPayload = ({
       module: 'vkey.GetVkeyServer',
       method: 'CgiGetVkey',
       param: {
-        filename: [filename],
+        filename: filenames,
         guid,
-        songmid: [songmid],
-        songtype: [0],
+        songmid: filenames.map(() => songmid),
+        songtype: filenames.map(() => 0),
         uin,
         loginflag: 1,
         platform: '20',
@@ -331,8 +360,7 @@ export const resolveQqOfficialPlayUrl = async ({
 }) => {
   const normalizedCookie = normalizeQqCookie(cookie)
   const cookieObject = parseCookieObject(normalizedCookie)
-  const qualityKey = normalizeQqSdkQuality(quality)
-  const fileType = QQ_PLAY_FILE_TYPE_MAP[qualityKey] || QQ_PLAY_FILE_TYPE_MAP['320']
+  const qualityKey = QQ_OFFICIAL_QUALITY_MAP[String(quality ?? '8').toLowerCase()] || '320'
   const playableFileId = String(mediaId || songmid || '').trim()
   const songmidValue = String(songmid || '').trim()
 
@@ -343,12 +371,20 @@ export const resolveQqOfficialPlayUrl = async ({
     throw new Error('QQ 官方接口缺少播放文件 ID')
   }
 
+  // 自请求档位起向低档生成候选，批量请求、顺位命中，权限不足时链内降级
+  const qualityOrderIndex = QQ_OFFICIAL_QUALITY_ORDER.indexOf(qualityKey)
+  const qualityCandidates =
+    qualityOrderIndex >= 0 ? QQ_OFFICIAL_QUALITY_ORDER.slice(qualityOrderIndex) : ['320', '128', 'm4a']
+  const filenames = qualityCandidates.map((key) => {
+    const fileType = QQ_PLAY_FILE_TYPE_MAP[key]
+    return `${fileType.prefix}${playableFileId}${fileType.suffix}`
+  })
+
   const guid = QQ_PLAY_GUID
   const uin = resolveQqVkeyUin(cookieObject)
-  const filename = `${fileType.prefix}${playableFileId}${fileType.suffix}`
   const payload = createQqOfficialVkeyPayload({
     songmid: songmidValue,
-    filename,
+    filenames,
     guid,
     uin,
     authst: cookieObject.qqmusic_key
@@ -359,7 +395,7 @@ export const resolveQqOfficialPlayUrl = async ({
 
   try {
     const normalResponse = await requestQqOfficialVkey(payload, normalizedCookie, false)
-    const parsed = parseQqOfficialPlayUrl(normalResponse, songmidValue, guid)
+    const parsed = parseQqOfficialPlayUrl(normalResponse, filenames, guid)
     url = parsed.url
     info = parsed.info
   } catch (normalErr) {
@@ -369,7 +405,7 @@ export const resolveQqOfficialPlayUrl = async ({
   if (!url) {
     try {
       const signedResponse = await requestQqOfficialVkey(payload, normalizedCookie, true)
-      const signedResult = parseQqOfficialPlayUrl(signedResponse, songmidValue, guid)
+      const signedResult = parseQqOfficialPlayUrl(signedResponse, filenames, guid)
       url = signedResult.url || url
       info = signedResult.info || info
     } catch (signedErr) {
@@ -383,11 +419,24 @@ export const resolveQqOfficialPlayUrl = async ({
     const mid = info?.mid || 'missing'
     const tips = info?.tips ? `, tips=${String(info.tips)}` : ''
     throw new Error(
-      `QQ 官方接口未返回播放链接：filename=${filename}, result=${resultCode}, subcode=${subcode}, mid=${mid}, purl=${Boolean(info?.purl)}, vkey=${Boolean(info?.vkey)}${tips}`
+      `QQ 官方接口未返回播放链接：filename=${filenames.join('|')}, result=${resultCode}, subcode=${subcode}, mid=${mid}, purl=${Boolean(info?.purl)}, vkey=${Boolean(info?.vkey)}${tips}`
     )
   }
 
   return upgradeTxAudioUrl(url)
+}
+
+// CgiGetVkey 常见拒绝码语义
+const QQ_VKEY_RESULT_HINTS: Record<string, string> = {
+  '104003': '该歌曲或音质需要绿钻/付费权限，或受版权、风控限制',
+  '104002': '账号权益不足或登录态被限制',
+  '-1': '请求参数或登录态不被接受',
+  '-2': '歌曲不存在或已下架'
+}
+
+const describeVkeyResult = (result: unknown) => {
+  if (result === undefined || result === null) return ''
+  return QQ_VKEY_RESULT_HINTS[String(result)] || ''
 }
 
 export const resolveQqSdkPlayUrl = async (
@@ -397,10 +446,12 @@ export const resolveQqSdkPlayUrl = async (
   mediaId?: string
 ) => {
   const normalizedCookie = normalizeQqCookie(cookie)
+  // resType=all 保留上游完整数据（含 midurlinfo 的 result/tips），便于诊断失败原因
   const body = unwrapQqSdkResponse(
     await getMusicPlay({
       songmid,
       quality: normalizeQqSdkQuality(quality),
+      resType: 'all',
       mediaId,
       cookie: normalizedCookie
     }),
@@ -420,7 +471,32 @@ export const resolveQqSdkPlayUrl = async (
     const authHint = diagnostic.hasCookie
       ? `（Cookie: uin=${diagnostic.hasUin ? `present:${diagnostic.uinType}` : 'missing'}, authKey=${diagnostic.hasAuthKey ? `${diagnostic.authKeys.join('/')}, used=${diagnostic.authKeySource}` : 'missing'}）`
       : '（未传 Cookie）'
-    throw new Error(`qq-music-api 未返回播放链接${reason}${authHint}`)
+
+    // 上游逐歌曲信息：区分「Cookie 无效」与「账号无权益/非 VIP」
+    const midurlinfo = Array.isArray(data?.req_0?.data?.midurlinfo) ? data.req_0.data.midurlinfo : []
+    const resultCodes = midurlinfo.map((item: Record<string, any>) => String(item?.result))
+    const semanticHint = [...new Set(resultCodes)]
+      .map(describeVkeyResult)
+      .filter(Boolean)
+      .join('；')
+    const upstreamHint = midurlinfo.length
+      ? `；上游: ${midurlinfo
+          .map((item: Record<string, any>) =>
+            [
+              `result=${item?.result ?? 'missing'}`,
+              `subcode=${item?.subcode ?? 'missing'}`,
+              `tips=${String(item?.tips || '') || 'none'}`,
+              `vkey=${Boolean(item?.vkey)}`,
+              `filename=${item?.filename || 'none'}`
+            ].join(', ')
+          )
+          .join(' | ')}`
+      : ''
+
+    const cause = semanticHint || (reason ? reason.replace(/^：/, '') : '')
+    throw new Error(
+      `${cause ? `QQ 官方链路未下发播放链接（${cause}）` : 'qq-music-api 未返回播放链接'}${upstreamHint}${authHint}`
+    )
   }
 
   return upgradeTxAudioUrl(url)
@@ -472,6 +548,17 @@ export const checkQqLogin = async (ptqrtoken: string | number, qrsig: string) =>
   return body.response || body.data || body
 }
 
+// 微信区扫码：本地库新链路，session cookie 与 QQ 扫码同构（tmeLoginType=1）
+export const getQqWxLoginQr = async () => {
+  const body = unwrapQqSdkResponse(await getWXLoginQr(), '获取微信登录二维码失败')
+  return body.response || body.data || body
+}
+
+export const checkQqWxLogin = async (uuid: string) => {
+  const body = unwrapQqSdkResponse(await checkWXLoginQr({ params: { uuid } }), '检查微信登录状态失败')
+  return body.response || body.data || body
+}
+
 export const getQqUserAvatar = async ({
   uin,
   k,
@@ -482,6 +569,181 @@ export const getQqUserAvatar = async ({
   size?: number
 }) => {
   return await getUserAvatar({ uin, k, size })
+}
+
+export const getQqVipInfo = async ({ cookie }: { cookie?: string }) => {
+  const body = unwrapQqSdkResponse(await getVipInfo({ cookie }), '获取 QQ VIP 信息失败')
+  return body.response || body.data || body
+}
+
+export const getQqUserDetail = async ({ uin, cookie }: { uin: string; cookie?: string }) => {
+  const body = unwrapQqSdkResponse(
+    await getUserDetail({ uin, cookie }),
+    '获取 QQ 用户信息失败'
+  )
+  return body.response || body.data || body
+}
+
+// 在响应树中递归查找首个含非空昵称字段的节点（上游资料页结构多变，做防御性解析）
+const findProfileNode = (value: unknown, depth = 0): Record<string, any> | undefined => {
+  if (depth > 8 || !value || typeof value !== 'object') return undefined
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findProfileNode(item, depth + 1)
+      if (found) return found
+    }
+    return undefined
+  }
+
+  const record = value as Record<string, any>
+  const nick =
+    typeof record.nick === 'string'
+      ? record.nick
+      : typeof record.nickname === 'string'
+        ? record.nickname
+        : ''
+  if (nick.trim()) return record
+
+  for (const child of Object.values(record)) {
+    const found = findProfileNode(child, depth + 1)
+    if (found) return found
+  }
+  return undefined
+}
+
+/**
+ * 从 vip_login_base 响应数据判断账号是否具备 VIP/超级会员权益。
+ * 字段形态因登录方式而异，统一做数值归一化，异常值视为非 VIP。
+ */
+export const isQqVipFromLoginBaseData = (data: unknown): boolean => {
+  const toNum = (value: unknown): number => {
+    const num = Number(value)
+    return Number.isFinite(num) ? num : 0
+  }
+  const record = (data && typeof data === 'object' ? data : {}) as Record<string, any>
+  const identity = (
+    record.identity && typeof record.identity === 'object' ? record.identity : {}
+  ) as Record<string, any>
+  return (
+    toNum(record.svip) > 0 ||
+    toNum(identity.vip) > 0 ||
+    toNum(identity.ExpVip) > 0 ||
+    toNum(identity.HugeVip) > 0 ||
+    toNum(identity.GroupVipFlag) > 0 ||
+    toNum(identity.ChildVip) > 0 ||
+    Boolean(record.mygreen)
+  )
+}
+
+/**
+ * 校验 QQ 音乐登录 Cookie 并提取用户档案。
+ * vip_login_base 是账户级接口，失效 Cookie 会返回错误码，作为有效性的主判据；
+ * 主页资料接口用于补充昵称/头像。
+ * 探针不走库内封装：微信区 Cookie（tmeLoginType=1，无 p_skey）在库的
+ * 默认 comm 下会被上游拒绝，必须补齐 tmeLoginType 与计算出的 g_tk。
+ */
+export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const diagnostic = getQqCookieDiagnostic(normalizedCookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const rawUin = String(cookieObject.uin || '').replace(/^o/i, '')
+
+  let vipOk = false
+  let vipCode: unknown
+  let isVip = false
+  let detailOk = false
+
+  try {
+    const numericLoginType = Number(cookieObject.tmeLoginType)
+    const resp: any = await callQqMusicu({
+      module: 'VipLogin.VipLoginInter',
+      method: 'vip_login_base',
+      param: {},
+      cookie: normalizedCookie,
+      extraComm: Number.isFinite(numericLoginType) ? { tmeLoginType: numericLoginType } : undefined
+    })
+    const reqData = resp?.req_1 || {}
+    vipCode = reqData.code
+    vipOk = Number(reqData.code) === 0
+    if (vipOk) {
+      isVip = isQqVipFromLoginBaseData(reqData.data)
+    }
+  } catch (error) {
+    console.warn('[qq_music_sdk] vip_login_base 失败:', error instanceof Error ? error.message : error)
+  }
+
+  let profile: { nickname?: string; avatarUrl?: string; userId?: string } | undefined
+
+  // 主页直连（正确 g_tk）作为资料来源与会话佐证
+  if (/^\d+$/.test(rawUin)) {
+    try {
+      const homepage: any = await requestQqProfileHomepage({
+        uin: rawUin,
+        cookie: normalizedCookie,
+        gtk: getQqGtk(cookieObject)
+      })
+      const payload = homepage?.data || {}
+      if (Number(homepage?.code) === 0 && ['mydiss', 'mymusic', 'creator'].some((key) => key in payload)) {
+        detailOk = true
+      }
+      const node = findProfileNode(homepage?.data || {})
+      if (node) {
+        profile = buildProfileFromNode(node, rawUin)
+      }
+    } catch (error) {
+      console.warn('[qq_music_sdk] 主页直连失败:', error instanceof Error ? error.message : error)
+    }
+
+    // 直连未取得资料时回退库封装（历史 QQ 区路径）
+    if (!profile) {
+      try {
+        const detail = await getQqUserDetail({ uin: rawUin, cookie: normalizedCookie })
+        const node = findProfileNode(detail)
+        if (node) {
+          detailOk = true
+          profile = buildProfileFromNode(node, rawUin)
+        }
+      } catch (error) {
+        console.warn('[qq_music_sdk] getUserDetail 回退失败:', error instanceof Error ? error.message : error)
+      }
+    }
+  }
+
+  // 微信区 cookie 在 homepage/GetLoginUserInfo 均返回 1000，改从创建歌单的创建者字段提取昵称
+  if (!profile && /^\d+$/.test(rawUin)) {
+    try {
+      const resp: any = await callQqMusicu({
+        module: 'music.musicasset.PlaylistBaseRead',
+        method: 'GetPlaylistByUin',
+        param: { uin: rawUin },
+        cookie: normalizedCookie
+      })
+      const list = Array.isArray(resp?.req_1?.data?.v_playlist) ? resp.req_1.data.v_playlist : []
+      const creator = list.find((item: any) => item?.nick?.trim() || item?.avatar)
+      if (creator?.nick?.trim() || creator?.avatar) {
+        profile = {
+          nickname: creator.nick?.trim() || undefined,
+          avatarUrl: typeof creator.avatar === 'string' ? creator.avatar : undefined,
+          userId: rawUin
+        }
+      }
+    } catch (error) {
+      console.warn('[qq_music_sdk] 歌单创建者信息兜底失败:', error instanceof Error ? error.message : error)
+    }
+  }
+
+  return {
+    valid: vipOk || detailOk,
+    isVip,
+    signals: {
+      vipOk,
+      vipCode: vipCode === undefined ? null : vipCode,
+      detailOk
+    },
+    profile,
+    authDiagnostic: diagnostic
+  }
 }
 
 export const searchQqMusic = async ({
@@ -722,4 +984,422 @@ export const resolveQqNativeLyric = async ({
   result.roma = tryDecryptQrc(data.roma) || undefined
 
   return result
+}
+
+// ─── QQ 音乐用户资料库（歌单 / 我喜欢歌曲）────────────────────────────────────
+
+export type QqLibraryPlaylist = {
+  id: string
+  name: string
+  count: number
+  cover: string
+  origin: 'created' | 'collected'
+}
+
+const normalizeQqPlaylistSummary = (
+  raw: Record<string, any>,
+  origin: QqLibraryPlaylist['origin']
+): QqLibraryPlaylist | undefined => {
+  const basic = raw?.basic && typeof raw.basic === 'object' ? raw.basic : undefined
+  const source = basic || raw
+  const cover =
+    source.picurl ??
+    source.logo ??
+    source.imgurl ??
+    source.photo ??
+    source.picUrl ??
+    source.bigpicUrl ??
+    source.cover_url_medium ??
+    source.cover?.medium_url ??
+    source.cover?.default_url
+
+  const id = String(source.dissid ?? source.disstid ?? source.tid ?? source.id ?? '').trim()
+  const name = String(
+    source.dissname ?? source.dirName ?? source.title ?? source.dirname ?? source.name ?? ''
+  ).trim()
+  if (!id || !name) return undefined
+
+  return {
+    id,
+    name,
+    count:
+      Number(
+        source.song_count ?? source.songcount ?? source.songNum ?? source.songnum ?? source.song_cnt ?? source.num
+      ) || 0,
+    cover: String(cover || ''),
+    origin
+  }
+}
+
+// QQ 标准 g_tk 算法；无 p_skey 时哈希空串得 5381
+const getQqGtk = (cookieObject: Record<string, string>) => {
+  const seed = cookieObject.p_skey || ''
+  let hash = 5381
+  for (let i = 0; i < seed.length; i += 1) {
+    hash += (hash << 5) + seed.charCodeAt(i)
+  }
+  return hash & 0x7fffffff
+}
+
+// 主页直连请求。uin 必须保持字符串原样：微信区 uin 超过 Number.MAX_SAFE_INTEGER，
+// 经数值转换会精度截断导致上游返回 1000 查无此人。
+const requestQqProfileHomepage = async ({
+  uin,
+  cookie,
+  gtk
+}: {
+  uin: string
+  cookie: string
+  gtk: number
+}) => {
+  return await $fetch<Record<string, any>>(
+    'https://c6.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg',
+    {
+      params: {
+        _: getServerTimestamp(),
+        cv: '4747474',
+        ct: '24',
+        format: 'json',
+        inCharset: 'utf-8',
+        outCharset: 'utf-8',
+        notice: '0',
+        platform: 'yqq.json',
+        needNewCode: '0',
+        uin,
+        g_tk_new_20200303: String(gtk),
+        g_tk: String(gtk),
+        cid: '205360838',
+        userid: uin,
+        reqfrom: '1',
+        reqtype: '0',
+        hostUin: '0',
+        loginUin: uin
+      },
+      headers: {
+        // 浏览器 UA 更贴近真实官网请求形态
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Referer: `https://y.qq.com/portal/profile.html?uin=${uin}`,
+        Cookie: cookie
+      },
+      signal: AbortSignal.timeout(8000)
+    }
+  )
+}
+
+const buildProfileFromNode = (
+  node: Record<string, any>,
+  userId: string
+): { nickname?: string; avatarUrl?: string; userId?: string } | undefined => {
+  const nickname =
+    typeof node?.nick === 'string'
+      ? node.nick.trim()
+      : typeof node?.nickname === 'string'
+        ? node.nickname.trim()
+        : ''
+  const avatarUrl =
+    typeof node?.headpic === 'string' && node.headpic.startsWith('http')
+      ? node.headpic
+      : typeof node?.avatarUrl === 'string' && node.avatarUrl.startsWith('http')
+        ? node.avatarUrl
+        : undefined
+
+  if (!nickname && !avatarUrl) return undefined
+  return { nickname: nickname || undefined, avatarUrl, userId }
+}
+
+// 合并用户创建的与收藏的歌单，id 去重时保留创建标记；收藏接口要求加密 euin
+export const getQqUserPlaylists = async ({ cookie }: { cookie?: string }) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  // uin 可能带 o 前缀（openid 形态），主页接口要求纯数字 uin
+  const uin = String(cookieObject.uin || '').replace(/^o/i, '')
+  if (!/^\d+$/.test(uin)) {
+    throw new Error('Cookie 中缺少有效 uin，请重新登录')
+  }
+
+  const createdResp = await callQqMusicu({
+    module: 'music.musicasset.PlaylistBaseRead',
+    method: 'GetPlaylistByUin',
+    param: { uin },
+    cookie: normalizedCookie
+  })
+  if (Number(createdResp?.req_1?.code) !== 0) {
+    throw new Error('获取用户歌单失败')
+  }
+  const createdData = createdResp.req_1.data || {}
+  const createdRawList: Record<string, any>[] = Array.isArray(createdData.v_playlist)
+    ? createdData.v_playlist
+    : []
+
+  let collectedRawList: Record<string, any>[] = []
+  const euin = String(cookieObject.euin || '')
+  if (euin) {
+    const collectedResp = await callQqMusicu({
+      module: 'music.musicasset.PlaylistFavRead',
+      method: 'CgiGetPlaylistFavInfo',
+      param: { uin: euin, offset: 0, size: 100 },
+      cookie: normalizedCookie
+    })
+    if (Number(collectedResp?.req_1?.code) === 0) {
+      collectedRawList = Array.isArray(collectedResp?.req_1?.data?.v_list)
+        ? collectedResp.req_1.data.v_list
+        : []
+    }
+  }
+
+  const seen = new Set<string>()
+  const playlists: QqLibraryPlaylist[] = []
+  for (const [raw, origin] of [
+    ...createdRawList.map((item) => [item, 'created'] as const),
+    ...collectedRawList.map((item) => [item, 'collected'] as const)
+  ]) {
+    // "我喜欢"由前端固定入口承载，避免重复
+    if (origin === 'created' && Number(raw?.dirId) === 201) continue
+    const summary = normalizeQqPlaylistSummary(raw, origin)
+    if (!summary || seen.has(summary.id)) continue
+    seen.add(summary.id)
+    playlists.push(summary)
+  }
+
+  return { playlists }
+}
+
+const normalizeQqLibrarySong = (raw: Record<string, any>) => {
+  const singerList = Array.isArray(raw?.singer)
+    ? raw.singer
+    : Array.isArray(raw?.singers)
+      ? raw.singers
+      : []
+  const album = raw?.album && typeof raw.album === 'object' ? raw.album : {}
+
+  return {
+    mid: String(raw?.songmid ?? raw?.mid ?? ''),
+    id: typeof raw?.songid === 'number' ? raw.songid : Number(raw?.songid ?? raw?.id) || undefined,
+    name: String(raw?.songname ?? raw?.name ?? raw?.title ?? '').trim(),
+    singers: singerList.map((singer) => String(singer?.name || '')).filter(Boolean),
+    albumName: String(raw?.albumname ?? album.name ?? album.title ?? '').trim(),
+    albumMid: String(raw?.albummid ?? album.mid ?? ''),
+    interval: Number(raw?.interval) || 0
+  }
+}
+
+// 通用 musicu 透传；comm 组装对齐 QQ 音乐 web 端，签名失败回退普通接口
+const callQqMusicu = async ({
+  module,
+  method,
+  param,
+  cookie,
+  extraComm
+}: {
+  module: string
+  method: string
+  param: Record<string, unknown>
+  cookie?: string
+  extraComm?: Record<string, unknown>
+}) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const uin = String(cookieObject.uin || '').replace(/^o/i, '')
+  const authst = cookieObject.qqmusic_key || cookieObject.qm_keyst || cookieObject.music_key || ''
+
+  const body = {
+    comm: {
+      uin,
+      loginUin: uin,
+      format: 'json',
+      ct: 24,
+      cv: 4747474,
+      platform: 'yqq.json',
+      ...(authst ? { authst } : {}),
+      g_tk: getQqGtk(cookieObject),
+      ...extraComm
+    },
+    req_1: { module, method, param }
+  }
+
+  const headers: Record<string, string> = { ...txHeaders }
+  if (normalizedCookie) headers['Cookie'] = normalizedCookie
+
+  try {
+    const sign = await zzcSign(JSON.stringify(body))
+    return await $fetch<any>(`https://u.y.qq.com/cgi-bin/musics.fcg?sign=${sign}`, {
+      method: 'POST',
+      headers,
+      body,
+      responseType: 'json',
+      signal: AbortSignal.timeout(8000)
+    })
+  } catch {
+    return await $fetch<any>('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+      method: 'POST',
+      headers,
+      body,
+      responseType: 'json',
+      signal: AbortSignal.timeout(8000)
+    })
+  }
+}
+
+// 获取"我喜欢"歌单歌曲（dirid 固定 201），按 hasmore 分页拉全
+export const getQqLikedSongs = async ({ cookie }: { cookie?: string }) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const euin = String(cookieObject.euin || '')
+  if (!euin) {
+    throw new Error('Cookie 中缺少 euin，请重新登录')
+  }
+
+  const rawList: Record<string, any>[] = []
+  let begin = 0
+  for (let page = 0; page < 5; page += 1) {
+    const resp = await callQqMusicu({
+      module: 'music.srfDissInfo.DissInfo',
+      method: 'CgiGetDiss',
+      param: {
+        disstid: 0,
+        dirid: 201,
+        tag: true,
+        song_begin: begin,
+        song_num: 300,
+        userinfo: true,
+        orderlist: true,
+        enc_host_uin: euin
+      },
+      cookie: normalizedCookie
+    })
+    if (Number(resp?.req_1?.code) !== 0) {
+      throw new Error('获取我喜欢歌曲失败')
+    }
+    const data = resp.req_1.data || {}
+    const pageList = Array.isArray(data.songlist) ? data.songlist : []
+    rawList.push(...pageList)
+    if (!data.hasmore || pageList.length === 0) break
+    begin += pageList.length
+  }
+
+  return { songs: rawList.map(normalizeQqLibrarySong), total: rawList.length }
+}
+
+// fcg 完整登录形态请求歌单详情；库内 songListDetail 封装为匿名参数形态，收藏歌单会返回空 songlist
+const requestQqPlaylistFcg = async ({
+  disstid,
+  cookie,
+  cookieObject
+}: {
+  disstid: string | number
+  cookie: string
+  cookieObject: Record<string, string>
+}) => {
+  const uin = String(cookieObject.uin || '').replace(/^o/i, '')
+  const gtk = getQqGtk(cookieObject)
+
+  return await $fetch<Record<string, any>>(
+    'https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg',
+    {
+      params: {
+        type: 1,
+        json: 1,
+        utf8: 1,
+        onlysong: 0,
+        new_format: 1,
+        disstid,
+        loginUin: uin || 0,
+        hostUin: 0,
+        format: 'json',
+        inCharset: 'utf8',
+        outCharset: 'utf-8',
+        notice: 0,
+        platform: 'yqq.json',
+        needNewCode: 0,
+        g_tk: gtk,
+        _: getServerTimestamp()
+      },
+      headers: {
+        Referer: `https://y.qq.com/n/yqq/playsquare/${disstid}.html`,
+        Cookie: cookie
+      },
+      signal: AbortSignal.timeout(8000)
+    }
+  )
+}
+
+export const getQqPlaylistSongs = async ({
+  disstid,
+  favSongs = false,
+  cookie,
+  limit = 100,
+  offset = 0
+}: {
+  disstid: string | number
+  favSongs?: boolean
+  cookie?: string
+  limit?: number
+  offset?: number
+}) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+
+  // "我喜欢"虚拟歌单
+  if (favSongs) {
+    const liked = await getQqLikedSongs({ cookie: normalizedCookie })
+    return {
+      playlist: undefined,
+      songs: liked.songs.slice(offset, offset + limit),
+      total: liked.total
+    }
+  }
+
+  let songlistRaw: Record<string, any>[]
+  let playlistSummary: QqLibraryPlaylist | undefined
+
+  try {
+    const body = await requestQqPlaylistFcg({
+      disstid,
+      cookie: normalizedCookie,
+      cookieObject
+    })
+    if (Number(body?.code) !== 0) {
+      throw new Error(`fcg code=${body?.code}`)
+    }
+    const cdInfo = body?.cdlist?.[0] || {}
+    if (!Array.isArray(cdInfo.songlist) || cdInfo.songlist.length === 0) {
+      throw new Error('fcg 歌单歌曲为空')
+    }
+    songlistRaw = cdInfo.songlist
+    playlistSummary = normalizeQqPlaylistSummary(cdInfo, 'created')
+  } catch {
+    const resp = await callQqMusicu({
+      module: 'music.srfDissInfo.aiDissInfo',
+      method: 'uniform_get_Dissinfo',
+      param: {
+        disstid: Number(disstid),
+        userinfo: 1,
+        tag: 1,
+        orderlist: 1,
+        song_begin: 0,
+        song_num: 100000,
+        onlysonglist: 0,
+        enc_host_uin: ''
+      },
+      cookie: normalizedCookie
+    })
+    const reqResult = resp?.req_1 || {}
+    if (Number(reqResult.code) !== 0) {
+      throw new Error('获取歌单歌曲失败')
+    }
+    songlistRaw = Array.isArray(reqResult.data?.songlist) ? reqResult.data.songlist : []
+    playlistSummary = normalizeQqPlaylistSummary(
+      { ...(reqResult.data?.dirinfo || {}), id: disstid },
+      'created'
+    )
+  }
+
+  const songs = songlistRaw.map(normalizeQqLibrarySong)
+
+  return {
+    playlist: playlistSummary,
+    songs: songs.slice(offset, offset + limit),
+    total: songs.length
+  }
 }

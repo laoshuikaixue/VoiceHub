@@ -322,6 +322,15 @@
                     {{ getStatusName('active') }}
                   </div>
                   <div
+                    v-else-if="user.status === 'pending'"
+                    class="flex items-center gap-1.5 text-info font-black uppercase text-[10px] tracking-widest"
+                  >
+                    <div
+                      class="w-1.5 h-1.5 rounded-full bg-info shadow-[0_0_8px_var(--info-50)]"
+                    />
+                    {{ getStatusName('pending') }}
+                  </div>
+                  <div
                     v-else-if="user.status === 'withdrawn'"
                     class="flex items-center gap-1.5 text-error font-black uppercase text-[10px] tracking-widest"
                   >
@@ -363,6 +372,14 @@
                       @click="editUser(user)"
                     >
                       <Edit2 :size="13" />
+                    </button>
+                    <button
+                      v-if="user.status === 'pending'"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
+                      :title="locale.actions.approve"
+                      @click="openApproval(user)"
+                    >
+                      <ClipboardCheck :size="13" />
                     </button>
                     <button
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
@@ -430,6 +447,13 @@
                     class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success-50)]"
                   />
                   {{ getStatusName('active') }}
+                </div>
+                <div
+                  v-else-if="user.status === 'pending'"
+                  class="flex items-center gap-1.5 text-info font-black uppercase text-[10px] tracking-widest"
+                >
+                  <div class="w-1.5 h-1.5 rounded-full bg-info" />
+                  {{ getStatusName('pending') }}
                 </div>
                 <div
                   v-else-if="user.status === 'withdrawn'"
@@ -513,6 +537,13 @@
                 @click="editUser(user)"
               >
                 <Edit2 :size="12" /> {{ locale.actions.edit }}
+              </button>
+              <button
+                v-if="user.status === 'pending'"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
+                @click="openApproval(user)"
+              >
+                <ClipboardCheck :size="12" /> {{ locale.actions.approve }}
               </button>
               <button
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
@@ -1085,6 +1116,14 @@
       @close="closeUserSongsModal"
     />
 
+<!-- 用户注册审核模态框 -->
+    <UserApprovalModal
+      :show="showApprovalModal"
+      :user="userToApprove"
+      @close="showApprovalModal = false"
+      @success="handleApprovalSuccess"
+    />
+
     <!-- OAuth 绑定详情模态框 -->
     <OAuthBindingsModal
       :show="showOAuthBindingsModal"
@@ -1586,16 +1625,19 @@ import {
   Hash,
   AtSign,
   Briefcase,
-  Link
+  Link,
+  ClipboardCheck
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import OAuthBindingsModal from '~/components/Admin/OAuthBindingsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
+import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
-import { getOAuthProviderName } from '~/utils/oauth'
+import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
+import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
@@ -1619,6 +1661,8 @@ const getErrorDetail = (error) =>
 // 响应式数据
 const loading = ref(false)
 const users = ref([])
+const showApprovalModal = ref(false)
+const userToApprove = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
 const statusFilter = ref('')
@@ -1672,6 +1716,7 @@ const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?
 const statusFilterOptions = computed(() => [
   { label: locale.value?.allStatus || '全部状态', value: '' },
   { label: getStatusName('active'), value: 'active' },
+  { label: getStatusName('pending'), value: 'pending' },
   { label: getStatusName('withdrawn'), value: 'withdrawn' },
   { label: getStatusName('graduate'), value: 'graduate' }
 ])
@@ -1807,18 +1852,7 @@ const getStageLabel = (user) => {
 
 const gradeSortWeight = (grade) => {
   const order = {
-    初一: 1,
-    初二: 2,
-    初三: 3,
-    高一: 4,
-    高二: 5,
-    高三: 6,
-    大一: 7,
-    大二: 8,
-    大三: 9,
-    大四: 10,
-    教师: 98,
-    教职工: 99,
+    ...GRADE_ORDER,
     [unsetGradeLabel.value]: 100
   }
 
@@ -2054,6 +2088,22 @@ const editUser = (user) => {
   }
 }
 
+const openApproval = (user) => {
+  userToApprove.value = user
+  showApprovalModal.value = true
+}
+
+const handleApprovalSuccess = (result) => {
+  void loadUsers(currentPage.value, pageSize.value)
+  if (window.$showNotification) {
+    const message =
+      result?.action === 'approve'
+        ? locale.value.approval?.approveSuccess
+        : locale.value.approval?.rejectSuccess
+    window.$showNotification(message, 'success')
+  }
+}
+
 const resetPassword = (user) => {
   // 禁止重置自身密码
   if (isSelf(user)) {
@@ -2242,8 +2292,9 @@ const applyTreeFilter = (grade, className = '', stageLabel = '') => {
   classFilter.value = className
   treeFilterLabel.value = stageLabel
 
+  // 仅已退学/已毕业阶段联动状态筛选，其他阶段保留已选状态
   const nextStatus = getStageStatus(stageLabel)
-  if (nextStatus) {
+  if (nextStatus === 'withdrawn' || nextStatus === 'graduate') {
     statusFilter.value = nextStatus
   }
 
@@ -2806,6 +2857,20 @@ onBeforeUnmount(() => {
 /* 自定义滚动条样式 */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
+}
+
+/* 行内操作按钮：保证 flex 布局稳定，不被表格列宽挤压换行 */
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.action-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {

@@ -94,11 +94,18 @@
               >
                 <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-tertiary mr-4 flex-shrink-0">
                   <img
+                    v-if="playlist.coverImgUrl"
                     :src="convertToHttps(playlist.coverImgUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
                   >
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center bg-bg-quaternary-50"
+                  >
+                    <Icon name="heart" :size="22" class="text-text-disabled" />
+                  </div>
                 </div>
                 <div class="flex-1 min-w-0">
                   <h4
@@ -107,11 +114,14 @@
                     {{ playlist.name }}
                   </h4>
                   <div class="flex items-center gap-3 mt-1 text-xs text-text-tertiary">
-                    <span class="flex items-center">
+                    <span v-if="playlist.trackCount != null" class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
                       {{ callLocale('songCount', `${playlist.trackCount} 首`, playlist.trackCount) }}
                     </span>
-                    <span class="flex items-center truncate">
+                    <span
+                      v-if="playlist.creator?.nickname"
+                      class="flex items-center truncate"
+                    >
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
                       by {{ playlist.creator?.nickname }}
                     </span>
@@ -269,17 +279,24 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { getPlaylistTracks, getUserPlaylists } from '~/utils/neteaseApi'
+import {
+  getQqPlaylistSongs,
+  getQqUserPlaylists,
+  QQ_FAV_PLAYLIST_ID
+} from '~/utils/qqUserLibrary'
 import { convertToHttps } from '~/utils/url'
 import Icon from '../UI/Icon.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useLocale } from '~/utils/locale'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 
 const props = defineProps({
   show: Boolean,
   cookie: String,
-  uid: [String, Number]
+  uid: [String, Number],
+  platform: { type: String, default: 'netease' }
 })
 
 const { songs: songsLocale } = useLocale()
@@ -288,6 +305,8 @@ const locale = computed(() => requestLocale.value?.playlistModal || {})
 const { t: callLocale } = useLocaleText(locale)
 
 const emit = defineEmits(['close', 'submit', 'play'])
+
+const isTencentPlatform = computed(() => props.platform === 'tencent')
 
 const view = ref('playlists') // 'playlists' | 'songs'
 const playlists = ref([])
@@ -309,17 +328,6 @@ const songService = useSongs()
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
-
-// 标准化字符串
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
-    .trim()
-}
 
 // 检查是否已存在相似歌曲
 const getSimilarSong = (songData) => {
@@ -348,17 +356,39 @@ const getSimilarSong = (songData) => {
 }
 
 const fetchUserPlaylists = async () => {
-  if (!props.cookie || !props.uid) return
+  if (isTencentPlatform.value ? !props.cookie : (!props.cookie || !props.uid)) return
 
   loading.value = true
   error.value = ''
 
   try {
-    const { code, body, message } = await getUserPlaylists(props.uid, props.cookie)
-    if (code === 200 && body && body.playlist) {
-      playlists.value = body.playlist
+    if (isTencentPlatform.value) {
+      const list = await getQqUserPlaylists(props.cookie)
+      // 首部固定注入"我喜欢"入口，歌曲经 playlist-songs 专用链路获取
+      list.unshift({
+        id: QQ_FAV_PLAYLIST_ID,
+        name: locale.value.favSongs || 'Liked Songs',
+        cover: '',
+        count: null,
+        origin: 'liked'
+      })
+      if (list.length > 0) {
+        // 补齐歌单卡片模板所需字段
+        playlists.value = list.map((item) => ({
+          ...item,
+          coverImgUrl: item.cover,
+          trackCount: item.count
+        }))
+      } else {
+        error.value = locale.value.fetchPlaylistsFailed
+      }
     } else {
-      error.value = message || locale.value.fetchPlaylistsFailed
+      const { code, body, message } = await getUserPlaylists(props.uid, props.cookie)
+      if (code === 200 && body && body.playlist) {
+        playlists.value = body.playlist
+      } else {
+        error.value = message || locale.value.fetchPlaylistsFailed
+      }
     }
   } catch (err) {
     error.value = locale.value.networkFailed
@@ -369,7 +399,7 @@ const fetchUserPlaylists = async () => {
 }
 
 const fetchPlaylistSongs = async (playlistId, isLoadMore = false) => {
-  if (!props.cookie) return
+  if (isTencentPlatform.value ? !props.cookie : !props.cookie) return
 
   if (isLoadMore) {
     moreLoading.value = true
@@ -389,28 +419,40 @@ const fetchPlaylistSongs = async (playlistId, isLoadMore = false) => {
     // "传递 limit=50&offset=0 得到 1-50。传递 limit=50&offset=50 得到 51-100"
     // 所以 offset 变量应该跟踪目前为止加载的歌曲数量。
 
-    const { code, body, message } = await getPlaylistTracks(
-      playlistId,
-      limit.value,
-      offset.value,
-      props.cookie
-    )
-    if (code === 200 && body && body.songs) {
+    if (isTencentPlatform.value) {
+      const result = await getQqPlaylistSongs(playlistId, props.cookie, limit.value, offset.value)
       if (isLoadMore) {
-        songs.value = [...songs.value, ...body.songs]
+        songs.value = [...songs.value, ...result.songs]
       } else {
-        songs.value = body.songs
+        songs.value = result.songs
       }
 
-      // 为下次调用更新偏移
-      offset.value += body.songs.length
-
-      // 检查是否还有更多歌曲
-      if (body.songs.length < limit.value) {
-        hasMore.value = false
-      }
+      offset.value += result.songs.length
+      hasMore.value = result.hasMore
     } else {
-      error.value = message || locale.value.fetchSongsFailed
+      const { code, body, message } = await getPlaylistTracks(
+        playlistId,
+        limit.value,
+        offset.value,
+        props.cookie
+      )
+      if (code === 200 && body && body.songs) {
+        if (isLoadMore) {
+          songs.value = [...songs.value, ...body.songs]
+        } else {
+          songs.value = body.songs
+        }
+
+        // 为下次调用更新偏移
+        offset.value += body.songs.length
+
+        // 检查是否还有更多歌曲
+        if (body.songs.length < limit.value) {
+          hasMore.value = false
+        }
+      } else {
+        error.value = message || locale.value.fetchSongsFailed
+      }
     }
   } catch (err) {
     error.value = locale.value.networkFailed
@@ -529,10 +571,10 @@ const playSong = (songData) => {
     artist: songData.ar?.map((a) => a.name).join('/'),
     cover: songData.al?.picUrl,
     albumId: songData.al?.id,
-    musicPlatform: 'netease',
+    musicPlatform: isTencentPlatform.value ? 'tencent' : 'netease',
     musicId: songData.id.toString(),
     sourceInfo: {
-      source: 'netease-backup',
+      source: isTencentPlatform.value ? 'tencent-library' : 'netease-backup',
       playlistId: selectedPlaylist.value?.id,
       type: 'song'
     }
@@ -551,10 +593,10 @@ const selectSong = (songData) => {
     album: songData.al?.name,
     albumId: songData.al?.id,
     duration: songData.dt,
-    musicPlatform: 'netease',
+    musicPlatform: isTencentPlatform.value ? 'tencent' : 'netease',
     musicId: songData.id.toString(),
     sourceInfo: {
-      source: 'netease-backup',
+      source: isTencentPlatform.value ? 'tencent-library' : 'netease-backup',
       playlistId: selectedPlaylist.value?.id,
       type: 'song'
     }

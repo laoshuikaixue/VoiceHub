@@ -1,8 +1,8 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime, getBeijingTimeISOString } from '~/utils/timeUtils'
-import {
-  maskPublicScheduleData,
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import { maskPublicScheduleData,
   stripAnonymousSongIdentifiersFromSchedules,
   type PublicScheduleItem
 } from '../../utils/studentMask'
@@ -220,6 +220,7 @@ export default defineEventHandler(async (event) => {
           rr.user_id,
           rr.submission_note,
           rr.submission_note_public,
+          rr.submission_note_public_status,
           rr.preferred_play_time_id
         FROM song_replay_requests rr
       ),
@@ -290,6 +291,7 @@ export default defineEventHandler(async (event) => {
         s."submissionNotePublic",
         CASE WHEN rm.id IS NOT NULL THEN rm.submission_note ELSE s."submissionNote" END AS "effectiveSubmissionNote",
         CASE WHEN rm.id IS NOT NULL THEN COALESCE(rm.submission_note_public, false) ELSE s."submissionNotePublic" END AS "effectiveSubmissionNotePublic",
+        CASE WHEN rm.id IS NOT NULL THEN rm.submission_note_public_status ELSE s."submissionNotePublicStatus" END AS "effectiveSubmissionNotePublicStatus",
         CASE WHEN rm.id IS NOT NULL THEN rm.preferred_play_time_id ELSE s."preferredPlayTimeId" END AS "effectivePlayTimeId",
         rm.user_id AS "replayRequesterUserId",
         u.name AS "requesterName",
@@ -364,6 +366,11 @@ export default defineEventHandler(async (event) => {
       const linkedReplayRequestId = row.replayRequestId ? Number(row.replayRequestId) : null
       const effectiveSubmissionNote = row.effectiveSubmissionNote
       const effectiveSubmissionNotePublic = row.effectiveSubmissionNotePublic === true
+      // 公开留言审核：待审/已拒绝的不对普通用户公开（管理员与投稿人始终可见）
+      const effectiveNotePublic =
+        effectiveSubmissionNotePublic &&
+        row.effectiveSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
+        row.effectiveSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
       const effectivePlayTimeId = row.effectivePlayTimeId ? Number(row.effectivePlayTimeId) : null
       // 备注可见性主体：绑定重播申请时为申请人，否则为歌曲投稿人
       const noteOwnerId =
@@ -375,7 +382,7 @@ export default defineEventHandler(async (event) => {
       const isNoteOwner = Boolean(user && noteOwnerId !== null && noteOwnerId === user.id)
       const canViewSubmissionNote =
         Boolean(effectiveSubmissionNote) &&
-        (effectiveSubmissionNotePublic === true || Boolean(user && (isAdmin || isNoteOwner)))
+        (effectiveNotePublic || Boolean(user && (isAdmin || isNoteOwner)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
 
       return {

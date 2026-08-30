@@ -4,6 +4,7 @@
       <h2>{{ getFormTitle }}</h2>
       <p v-if="isBindMode && !showCreateMode">{{ formatLocale(locale.bindProvider, providerName, providerUsername) }}</p>
       <p v-else-if="isBindMode && showCreateMode">{{ formatLocale(locale.createWithProvider, providerName) }}</p>
+      <p v-else-if="showRegisterMode">{{ locale.registerSubtitle }}</p>
       <p v-else>{{ locale.loginSubtitle }}</p>
     </div>
 
@@ -65,8 +66,8 @@
         <p v-if="showCreateMode" class="hint-text">{{ locale.usernameHint }}</p>
       </div>
 
-      <!-- 姓名字段 - 仅创建模式 -->
-      <div v-if="showCreateMode" class="form-group">
+      <!-- 姓名字段 - 仅注册/创建模式 -->
+      <div v-if="showCreateMode || showRegisterMode" class="form-group">
         <label for="name">{{ locale.realName }}</label>
         <div class="input-wrapper">
           <svg
@@ -93,15 +94,15 @@
         </div>
       </div>
 
-      <!-- 年级班级字段 - 仅创建模式，可选 -->
-      <div v-if="showCreateMode" class="form-group">
+      <!-- 年级班级字段 - 仅注册/创建模式，可选 -->
+      <div v-if="showCreateMode || showRegisterMode" class="form-group">
         <div class="class-row">
           <CustomSelect
             v-model="grade"
             :options="gradeSelectOptions"
             :disabled="classOptionsLoading || gradeOptions.length === 0"
             :label="locale.gradeLabel"
-            :placeholder="locale.optional"
+            :placeholder="registerRequiresGradeClass ? locale.selectGrade : locale.optional"
             class-name="class-select"
             @change="handleGradeChange"
           />
@@ -116,7 +117,15 @@
           />
         </div>
         <p class="hint-text">
-          {{ gradeOptions.length > 0 ? locale.classHint : locale.noClassHint }}
+          {{
+            gradeOptions.length > 0
+              ? registerRequiresGradeClass
+                ? locale.classHintRequired
+                : locale.classHint
+              : registerRequiresGradeClass
+                ? locale.noClassHintRequired
+                : locale.noClassHint
+          }}
         </p>
       </div>
 
@@ -170,7 +179,7 @@
         </div>
 
         <!-- 密码强度指示器 -->
-        <div v-if="showCreateMode && password" class="px-1 pt-1 space-y-2 mt-1">
+        <div v-if="(showCreateMode || showRegisterMode) && password" class="px-1 pt-1 space-y-2 mt-1">
           <div class="h-1 w-full bg-[var(--input-border)] rounded-full overflow-hidden">
             <div
               class="h-full transition-all duration-500"
@@ -192,8 +201,8 @@
         </div>
       </div>
 
-      <!-- 确认密码字段 - 仅在创建模式下显示 -->
-      <div v-if="showCreateMode" class="form-group">
+      <!-- 确认密码字段 - 仅在创建/注册模式下显示 -->
+      <div v-if="showCreateMode || showRegisterMode" class="form-group">
         <label for="confirmPassword">{{ locale.confirmPassword }}</label>
         <div class="input-wrapper">
           <svg
@@ -241,12 +250,94 @@
         </div>
       </div>
 
-      <div v-if="isSiteConfigLoaded && showCaptcha" class="form-group">
+      <!-- 备注字段 - 仅注册/创建模式下显示（可选） -->
+      <div v-if="showRegisterMode || showCreateMode" class="form-group">
+        <label for="remark">{{ locale.remarkLabel }}</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <input
+            id="remark"
+            v-model="remark"
+            :placeholder="locale.remarkPlaceholder"
+            maxlength="200"
+            type="text"
+            @input="error = ''"
+          />
+        </div>
+      </div>
+
+      <!-- 邮箱字段 - 管理员开启注册邮箱功能后显示（必填，需邮箱验证码验证归属） -->
+      <div v-if="(showRegisterMode || showCreateMode) && registerEmailRequired" class="form-group">
+        <label for="email">{{ locale.emailLabel }}</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="m22 7-10 6L2 7" />
+          </svg>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            :placeholder="locale.emailPlaceholder"
+            maxlength="100"
+            @input="error = ''"
+          />
+        </div>
+      </div>
+
+      <!-- 邮箱验证码 - 仅注册模式且已填写邮箱时显示 -->
+      <div v-if="(showRegisterMode || showCreateMode) && email" class="form-group">
+        <label for="emailCode">{{ locale.emailCodeLabel }}</label>
+        <div class="input-wrapper">
+          <svg
+            class="input-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <input
+            id="emailCode"
+            v-model="emailCode"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            class="code-input"
+            :placeholder="locale.emailCodePlaceholder"
+            @input="error = ''"
+          />
+          <button
+            type="button"
+            class="code-btn"
+            :disabled="sendingCode || codeCountdown > 0"
+            @click="sendEmailCode"
+          >
+            {{ codeCountdown > 0 ? locale.codeCountdown(codeCountdown) : locale.sendCode }}
+          </button>
+        </div>
+      </div>
+
+      <div v-show="showCaptcha" class="form-group">
         <TurnstileWidget
           v-if="captchaProvider === 'turnstile'"
           ref="turnstileRef"
           v-model="turnstileToken"
-          :config-ready="isSiteConfigLoaded"
         />
         <CaptchaInput
           v-else
@@ -271,7 +362,7 @@
         <span class="error-message">{{ error }}</span>
       </div>
 
-      <button :disabled="loading || isTurnstilePending" class="submit-btn" type="submit">
+      <button :disabled="loading" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
           <circle
             cx="12"
@@ -298,14 +389,29 @@
             />
           </circle>
         </svg>
-        <span v-if="loading">{{ isBindMode ? locale.binding : locale.loggingIn }}</span>
-        <span v-else>{{ isBindMode ? locale.bindAndLogin : locale.login }}</span>
+        <span v-if="loading">{{ showRegisterMode ? locale.registering : isBindMode ? locale.binding : locale.loggingIn }}</span>
+        <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
+
+      <!-- 登录/注册模式切换 -->
+      <div v-if="!isBindMode && allowRegister" class="mode-switch">
+        <button
+          v-if="!showRegisterMode"
+          type="button"
+          class="switch-link"
+          @click="switchToRegister"
+        >
+          {{ locale.toRegister }}
+        </button>
+        <button v-else type="button" class="switch-link" @click="switchToLogin">
+          {{ locale.toLogin }}
+        </button>
+      </div>
     </form>
 
-    <AuthOAuthQuickLogin v-if="!isBindMode" />
+    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" />
 
-    <div v-if="!isBindMode && isWebAuthnSupported" class="webauthn-section">
+    <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
@@ -315,7 +421,7 @@
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode" />
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -369,13 +475,16 @@ import TurnstileWidget from './TurnstileWidget.vue'
 import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
+import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, isLoaded: isSiteConfigLoaded } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, registerEmailRequired, registerRequiresGradeClass } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
+const { success: toastSuccess } = useToast()
 
 const route = useRoute()
+const router = useRouter()
 const isBindMode = computed(() => route.query.action === 'bind')
 const providerUsername = computed(() => route.query.username || '')
 const providerName = computed(() => {
@@ -391,6 +500,8 @@ const turnstileToken = ref('')
 const turnstileRef = ref(null)
 
 const showCaptcha = computed(() => {
+  // 注册模式开启验证码服务时强制显示验证码
+  if (showRegisterMode.value) return captchaEnabled.value
   // 如果后端明确要求显示验证码，则优先显示
   if (isGraphicCaptchaRequired.value) return true
   // 否则根据配置显示
@@ -398,11 +509,8 @@ const showCaptcha = computed(() => {
   return captchaProvider.value === 'turnstile'
 })
 
-const isTurnstilePending = computed(() => {
-  return !isSiteConfigLoaded.value || (showCaptcha.value && captchaProvider.value === 'turnstile' && !turnstileToken.value)
-})
-
 const getFormTitle = computed(() => {
+  if (showRegisterMode.value) return locale.value.registerTitle
   if (!isBindMode.value) return locale.value.welcomeBack
   if (!showCreateMode.value) return locale.value.bindAccount
   return locale.value.createNewAccount
@@ -428,6 +536,13 @@ const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 const showCreateMode = ref(false)
+const showRegisterMode = ref(false)
+const remark = ref('')
+const email = ref('')
+const emailCode = ref('')
+const sendingCode = ref(false)
+const codeCountdown = ref(0)
+const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
 
@@ -460,10 +575,10 @@ const gradeOptions = computed(() => {
 })
 
 const gradeSelectOptions = computed(() => {
-  return [
-    { label: locale.value.optional, value: '' },
-    ...gradeOptions.value.map(option => ({ label: option, value: option }))
-  ]
+  const options = gradeOptions.value.map((option) => ({ label: option, value: option }))
+  // 站点开启"注册时必须选择年级班级"时，去掉"不填写"空选项
+  if (registerRequiresGradeClass.value) return options
+  return [{ label: locale.value.optional, value: '' }, ...options]
 })
 
 const availableClassOptions = computed(() => {
@@ -481,7 +596,10 @@ const fetchClassOptions = async () => {
 
   classOptionsLoading.value = true
   try {
-    const response = await $fetch('/api/auth/oauth-register-options')
+    const url = showRegisterMode.value
+      ? '/api/auth/grade-class-options'
+      : '/api/auth/oauth-register-options'
+    const response = await $fetch(url)
 
     if (response.success) {
       classOptions.value = response.classes || []
@@ -497,6 +615,17 @@ const fetchClassOptions = async () => {
 const handleGradeChange = () => {
   error.value = ''
   studentClass.value = ''
+}
+
+// 年级班级校验：站点开启必填时二者均须选择；未开启时二者成对填写或全部留空
+const gradeClassRequiredError = () => {
+  if (registerRequiresGradeClass.value && (!grade.value || !studentClass.value)) {
+    return locale.value.gradeClassRequiredByConfig
+  }
+  if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
+    return locale.value.gradeClassRequired
+  }
+  return ''
 }
 
 const redirectAfterLogin = async () => {
@@ -527,6 +656,10 @@ onMounted(async () => {
 
 onUnmounted(() => {
   WebAuthnAbortService.cancelCeremony()
+  if (codeTimer.value) {
+    clearInterval(codeTimer.value)
+    codeTimer.value = null
+  }
 })
 
 watch(showCreateMode, async (enabled) => {
@@ -538,12 +671,48 @@ watch(showCreateMode, async (enabled) => {
   }
 })
 
-const handleLogin = async () => {
-  if (isTurnstilePending.value) return
+watch(showRegisterMode, async (enabled) => {
+  if (enabled) {
+    await fetchClassOptions()
+  } else {
+    grade.value = ''
+    studentClass.value = ''
+    remark.value = ''
+  }
+})
 
+const switchToRegister = () => {
+  showRegisterMode.value = true
+  error.value = ''
+  isGraphicCaptchaRequired.value = false
+}
+
+const switchToLogin = () => {
+  showRegisterMode.value = false
+  error.value = ''
+  grade.value = ''
+  studentClass.value = ''
+  remark.value = ''
+}
+
+const handleLogin = async () => {
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return
+  }
+
+  // 注册模式的验证与提交
+  if (showRegisterMode.value) {
+    if (!name.value || !confirmPassword.value) {
+      error.value = locale.value.fullRegisterInfo
+      return
+    }
+    const gradeClassError = gradeClassRequiredError()
+    if (gradeClassError) {
+      error.value = gradeClassError
+      return
+    }
+    return handleRegister()
   }
 
   // 创建账户模式的验证
@@ -552,8 +721,9 @@ const handleLogin = async () => {
       error.value = locale.value.fullRegisterInfo
       return
     }
-    if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
-      error.value = locale.value.gradeClassRequired
+    const gradeClassError = gradeClassRequiredError()
+    if (gradeClassError) {
+      error.value = gradeClassError
       return
     }
     return handleRegisterOAuth()
@@ -596,6 +766,11 @@ const performLogin = async () => {
       method: 'POST',
       body: requestBody
     })
+
+    // 账号密码登录成功后记录来源，供微信/QQ 内置浏览器进入主页时引导绑定
+    if (!isBindMode.value && url === '/api/auth/login') {
+      useOAuthBindReminder().markPasswordLogin()
+    }
 
     // 处理 2FA
     if (response.requires2FA) {
@@ -669,6 +844,17 @@ const handleRegisterOAuth = async () => {
     return
   }
 
+  // 邮箱必填由管理员开关控制：开启时邮箱必须填写，且须附带验证码
+  const emailValue = email.value.trim()
+  if (registerEmailRequired.value && !emailValue) {
+    error.value = locale.value.emailRequired
+    return
+  }
+  if (emailValue && !emailCode.value.trim()) {
+    error.value = locale.value.emailCodeRequired
+    return
+  }
+
   error.value = ''
   loading.value = true
 
@@ -681,20 +867,165 @@ const handleRegisterOAuth = async () => {
         grade: grade.value,
         class: studentClass.value,
         password: password.value,
-        confirmPassword: confirmPassword.value
+        confirmPassword: confirmPassword.value,
+        remark: remark.value.trim(),
+        email: emailValue || undefined,
+        emailCode: emailCode.value.trim() || undefined
       }
     })
 
     if (response.success) {
-      // 账户创建成功，刷新认证状态
-      await auth.initAuth(true)
-      return redirectAfterLogin()
+      if (response.pendingApproval) {
+        // 审核模式：提示后退出 OAuth 创建视图，回到普通登录界面
+        toastSuccess(locale.value.registerSuccessPending)
+        showCreateMode.value = false
+        username.value = ''
+        name.value = ''
+        password.value = ''
+        confirmPassword.value = ''
+        grade.value = ''
+        studentClass.value = ''
+        if (route.query.action === 'bind') {
+          await router.replace({ query: {} })
+        }
+      } else {
+        // 账户创建成功，刷新认证状态
+        await auth.initAuth(true)
+        return redirectAfterLogin()
+      }
     }
   } catch (err) {
     const apiError = err
     // 统一按错误码本地化服务端错误，未命中再回退到默认文案
     error.value = localizeServerError(apiError, locale.value.registerFailed)
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
+    if (apiError.statusCode === 409) {
+      username.value = ''
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 发送邮箱验证码：校验格式 → POST /api/auth/email-code → 60 秒倒计时
+const sendEmailCode = async () => {
+  const emailValue = email.value.trim()
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailValue || !emailRegex.test(emailValue)) {
+    error.value = locale.value.emailInvalid || '请输入有效的邮箱地址'
+    return
+  }
+
+  error.value = ''
+  sendingCode.value = true
+  try {
+    await $fetch('/api/auth/email-code', {
+      method: 'POST',
+      body: { email: emailValue }
+    })
+    toastSuccess(locale.value.codeSent)
+    codeCountdown.value = 60
+    codeTimer.value = setInterval(() => {
+      codeCountdown.value -= 1
+      if (codeCountdown.value <= 0) {
+        clearInterval(codeTimer.value)
+        codeTimer.value = null
+        codeCountdown.value = 0
+      }
+    }, 1000)
+  } catch (err) {
+    const apiError = useServerErrors().localize(err, locale.value.codeSendFailed)
+    error.value = apiError
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+// 用户名密码注册：提交 /api/auth/register，处理待审核与直接登录两种结果
+const handleRegister = async () => {
+  const validationError = validateOAuthRegisterCredentials(
+    username.value,
+    password.value,
+    confirmPassword.value
+  )
+
+  if (validationError) {
+    error.value = serverErrors.value?.[validationError.code] || locale.value.registerFailed
+    return
+  }
+
+  // 邮箱必填由管理员开关控制：开启时邮箱必须填写，且须附带验证码
+  const emailValue = email.value.trim()
+  if (registerEmailRequired.value && !emailValue) {
+    error.value = locale.value.emailRequired
+    return
+  }
+  if (emailValue && !emailCode.value.trim()) {
+    error.value = locale.value.emailCodeRequired
+    return
+  }
+
+  error.value = ''
+  loading.value = true
+
+  try {
+    const requestBody = {
+      username: username.value,
+      name: name.value,
+      grade: grade.value,
+      class: studentClass.value,
+      password: password.value,
+      confirmPassword: confirmPassword.value,
+      remark: remark.value.trim(),
+      email: emailValue || undefined,
+      emailCode: emailCode.value.trim() || undefined
+    }
+    if (showCaptcha.value) {
+      if (captchaProvider.value === 'turnstile') {
+        requestBody.turnstileToken = turnstileToken.value
+      } else {
+        requestBody.captchaId = captchaId.value
+        requestBody.captchaInput = captchaInput.value.trim()
+      }
+    }
+
+    const response = await $fetch('/api/auth/register', {
+      method: 'POST',
+      body: requestBody
+    })
+
+    if (response.success) {
+      if (response.pendingApproval) {
+        // 需要审核：提示后返回登录模式
+        toastSuccess(locale.value.registerSuccessPending)
+        switchToLogin()
+      } else {
+        // 无需审核：自动登录
+        await auth.initAuth(true)
+        return redirectAfterLogin()
+      }
+    }
+  } catch (err) {
+    const apiError = err
+    const innerData = apiError.data?.data
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(apiError, locale.value.registerFailed)
+
+    // 如果后端要求验证码，则显示验证码区域
+    if (innerData?.captchaRequired) {
+      isGraphicCaptchaRequired.value = true
+    }
+    // 只要当前显示了验证码，就强制刷新验证码
+    if (showCaptcha.value) {
+      await nextTick()
+      if (captchaProvider.value === 'turnstile') {
+        turnstileRef.value?.reset?.()
+      } else {
+        captchaRef.value?.refreshCaptcha?.()
+      }
+    }
+
+    // 用户名冲突时清空用户名字段
     if (apiError.statusCode === 409) {
       username.value = ''
     }
@@ -876,6 +1207,38 @@ const handleWebAuthnLogin = async () => {
   color: var(--input-placeholder);
 }
 
+/* 邮箱验证码输入：右侧预留发送按钮空间 */
+.input-wrapper .code-input {
+  padding-right: 118px;
+}
+
+.code-btn {
+  position: absolute;
+  right: 10px;
+  z-index: 1;
+  padding: 7px 12px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.code-btn:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+}
+
+.code-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .input-wrapper input:focus {
   outline: none;
   border-color: var(--input-border-focus);
@@ -1037,6 +1400,24 @@ const handleWebAuthnLogin = async () => {
 .form-footer {
   margin-top: 24px;
   text-align: center;
+}
+
+.mode-switch {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.switch-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--primary);
+  transition: opacity 0.2s ease;
+}
+
+.switch-link:hover {
+  opacity: 0.8;
 }
 
 .help-text {

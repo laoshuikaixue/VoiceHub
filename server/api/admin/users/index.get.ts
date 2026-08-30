@@ -52,8 +52,8 @@ export default defineEventHandler(async (event) => {
     // 状态筛选
     if (status && typeof status === 'string' && status.trim()) {
       const statusFilter = status.trim()
-      if (['active', 'withdrawn', 'graduate'].includes(statusFilter)) {
-        whereConditions.push(eq(users.status, statusFilter as 'active' | 'withdrawn' | 'graduate'))
+      if (['active', 'pending', 'withdrawn', 'graduate'].includes(statusFilter)) {
+        whereConditions.push(eq(users.status, statusFilter as 'active' | 'pending' | 'withdrawn' | 'graduate'))
       }
     }
 
@@ -122,6 +122,7 @@ export default defineEventHandler(async (event) => {
         meowBoundAt: true,
         email: true,
         emailVerified: true,
+        remark: true,
         createdAt: true,
         updatedAt: true,
         avatarProvider: true,

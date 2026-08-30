@@ -1,10 +1,12 @@
 import * as Sentry from '@sentry/node'
+import { hostname } from 'node:os'
 import type { H3Event } from 'h3'
 import {
   getSentryEventSearchText,
   isExpectedUpstreamMusicError,
   stringifyErrorValue
 } from '~~/app/utils/sentryUpstreamMusicErrors'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getInstanceIdInfo } from '../utils/instance-id'
 import { isTelemetryEnabled, isTelemetryEnabledCached } from '../utils/telemetry'
 
@@ -37,6 +39,20 @@ const isExpectedAggregateOAuthError = (text: string): boolean => {
   const normalizedText = text.toLowerCase()
   return EXPECTED_AGGREGATE_OAUTH_ERROR_PATTERNS.some((pattern) =>
     normalizedText.includes(pattern.toLowerCase())
+  )
+}
+
+// 邮件服务不可用（多为实例 SMTP 配置问题）降级为 info，保留记录但不触发告警
+const isEmailServiceConfigError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false
+  const record = error as {
+    statusMessage?: unknown
+    data?: { code?: unknown } | undefined
+  }
+  const dataCode = typeof record.data?.code === 'string' ? record.data.code : ''
+  return (
+    record.statusMessage === SERVER_ERROR_CODES.AUTH_EMAIL_SERVICE_UNAVAILABLE ||
+    dataCode === SERVER_ERROR_CODES.AUTH_EMAIL_SERVICE_UNAVAILABLE
   )
 }
 
@@ -142,6 +158,8 @@ export default defineNitroPlugin((nitroApp) => {
         dsn: sentryConfig.dsn,
         environment: sentryConfig.environment,
         release: sentryConfig.release || undefined,
+        // 覆盖 SDK 自动采集的容器 hostname：由 SENTRY_SERVER_NAME 指定，未设置时回退到 os.hostname()
+        serverName: process.env.SENTRY_SERVER_NAME || hostname(),
         integrations: [
           Sentry.consoleLoggingIntegration({
             levels: process.env.NODE_ENV === 'development' ? ['log', 'warn', 'error'] : ['error']
@@ -228,6 +246,8 @@ export default defineNitroPlugin((nitroApp) => {
       return
     }
 
+    const level = isEmailServiceConfigError(error) ? 'info' : 'error'
+
     Sentry.withScope((scope) => {
       const event = context?.event
       if (event) {
@@ -237,7 +257,7 @@ export default defineNitroPlugin((nitroApp) => {
         }
       }
 
-      scope.setLevel('error')
+      scope.setLevel(level)
       Sentry.captureException(error)
     })
   })

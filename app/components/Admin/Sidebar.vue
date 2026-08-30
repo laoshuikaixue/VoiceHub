@@ -145,7 +145,8 @@ import {
   Globe,
   Database,
   Lock,
-  Ticket
+  Ticket,
+  GraduationCap
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import Icon from '~/components/UI/Icon.vue'
@@ -198,7 +199,10 @@ const menuGroups = computed(() => [
   },
   {
     section: locale.value.sections?.users || '用户管理',
-    items: [{ icon: Users, label: locale.value.menu?.users || '用户管理', id: 'users' }]
+    items: [
+      { icon: Users, label: locale.value.menu?.users || '用户管理', id: 'users' },
+      { icon: GraduationCap, label: locale.value.menu?.gradeClass || '年级班级', id: 'grade-class' }
+    ]
   },
   {
     section: locale.value.sections?.api || 'API',

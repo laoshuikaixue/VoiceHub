@@ -41,9 +41,40 @@
           </div>
 
           <div class="flex flex-col items-center p-8 pt-4">
+            <!-- 登录渠道 Tab -->
+            <div
+              v-if="!status || status !== 'success'"
+              class="mb-5 grid w-full grid-cols-2 gap-1 rounded-2xl bg-bg-tertiary-50 p-1"
+            >
+              <button
+                :class="[
+                  'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all',
+                  channel === 'qq'
+                    ? 'bg-bg-secondary text-text-primary shadow'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                ]"
+                type="button"
+                @click="switchChannel('qq')"
+              >
+                {{ locale.channelQq }}
+              </button>
+              <button
+                :class="[
+                  'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all',
+                  channel === 'wx'
+                    ? 'bg-bg-secondary text-text-primary shadow'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                ]"
+                type="button"
+                @click="switchChannel('wx')"
+              >
+                {{ locale.channelWx }}
+              </button>
+            </div>
+
             <div class="flex min-h-[250px] w-full flex-col items-center justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
-                <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
+                <AppSpinner :size="48" class="mb-4" />
                 <p class="text-[10px] font-bold uppercase tracking-widest">{{ locale.loadingQr }}</p>
               </div>
 
@@ -51,7 +82,11 @@
                 <div
                   class="rounded-3xl bg-bg-secondary p-4 shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
                 >
-                  <img :src="qrImg" alt="QQ Music Login QR Code" class="h-44 w-44 object-contain" >
+                  <img
+                    :src="qrImg"
+                    alt="QQ Music Login QR Code"
+                    class="h-44 w-44 rounded-2xl object-contain"
+                  >
                 </div>
 
                 <div
@@ -95,7 +130,13 @@
                     v-else-if="status === 'waiting'"
                     class="text-xs font-black uppercase tracking-widest text-text-tertiary"
                   >
-                    {{ locale.qqWaiting }}
+                    {{
+                      scanned
+                        ? locale.wxScanned
+                        : channel === 'wx'
+                          ? locale.wxWaiting
+                          : locale.qqWaiting
+                    }}
                   </p>
                   <p
                     v-else-if="status === 'success'"
@@ -111,7 +152,7 @@
               <p
                 class="text-center text-[10px] font-black uppercase leading-relaxed tracking-[0.15em] text-text-tertiary"
               >
-                {{ locale.qqTip }}
+                {{ channel === 'wx' ? locale.wxTip : locale.qqTip }}
               </p>
             </div>
           </div>
@@ -124,6 +165,7 @@
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 const { songs } = useLocale()
@@ -142,19 +184,36 @@ const qrImg = ref('')
 const loading = ref(false)
 const status = ref('')
 const isExpired = ref(false)
+// 微信渠道：已扫码待确认（驱动状态行文案切换）
+const scanned = ref(false)
 const errorMessage = ref('')
 const checking = ref(false)
+// 登录渠道：qq、wx
+const channel = ref('qq')
+// 弹窗开关标记：防止关闭后在飞的长轮询响应继续触发下一轮
+let isOpen = false
 let timer = null
 let qrPayload = null
 
 const stopPolling = () => {
   if (timer) {
-    clearInterval(timer)
+    clearTimeout(timer)
     timer = null
   }
 }
 
+const scheduleNextCheck = () => {
+  if (timer || !isOpen) return
+  // 微信为长轮询接口，收到响应后短间隔重入即可
+  const delay = channel.value === 'wx' ? 800 : 3000
+  timer = setTimeout(async () => {
+    timer = null
+    await checkStatus()
+  }, delay)
+}
+
 const handleClose = () => {
+  isOpen = false
   stopPolling()
   emit('close')
 }
@@ -172,34 +231,55 @@ const buildUserInfo = (session, user) => {
   return {
     userId: uin,
     id: uin,
-    nickname: uin ? `QQ ${uin}` : locale.value.qqAccount,
-    userName: uin ? `QQ ${uin}` : locale.value.qqAccount,
+    nickname: uin || locale.value.qqAccount,
+    userName: uin || locale.value.qqAccount,
     raw: session
   }
 }
 
+const switchChannel = (value) => {
+  if (channel.value === value) return
+  channel.value = value
+  initLogin()
+}
+
 const initLogin = async () => {
   stopPolling()
+  isOpen = true
   loading.value = true
   status.value = ''
   isExpired.value = false
+  scanned.value = false
   errorMessage.value = ''
   qrImg.value = ''
   qrPayload = null
 
   try {
-    const response = await $fetch('/api/native-api/qq/login-qr')
-    const data = response?.data || {}
-    if (!response?.success || !data.img || !data.ptqrtoken || !data.qrsig) {
-      throw new Error(locale.value.qqQrIncomplete)
-    }
+    if (channel.value === 'wx') {
+      const response = await $fetch('/api/native-api/qq/login-qr-wx')
+      const data = response?.data || {}
+      if (!response?.success || !data.img || !data.uuid) {
+        throw new Error(locale.value.qqQrIncomplete)
+      }
 
-    qrPayload = data
-    qrImg.value = data.img
-    status.value = 'waiting'
-    timer = setInterval(checkStatus, 3000)
+      qrPayload = data
+      qrImg.value = data.img
+      status.value = 'waiting'
+      scheduleNextCheck()
+    } else {
+      const response = await $fetch('/api/native-api/qq/login-qr')
+      const data = response?.data || {}
+      if (!response?.success || !data.img || !data.ptqrtoken || !data.qrsig) {
+        throw new Error(locale.value.qqQrIncomplete)
+      }
+
+      qrPayload = data
+      qrImg.value = data.img
+      status.value = 'waiting'
+      scheduleNextCheck()
+    }
   } catch (error) {
-    console.error('初始化 QQ 登录失败:', error)
+    console.error('初始化扫码登录失败:', error)
     errorMessage.value = error?.message || locale.value.qqQrFailed
   } finally {
     loading.value = false
@@ -207,19 +287,33 @@ const initLogin = async () => {
 }
 
 const checkStatus = async () => {
-  if (!qrPayload?.ptqrtoken || !qrPayload?.qrsig || checking.value) return
+  if (!qrPayload || !isOpen || checking.value) return
 
   checking.value = true
   try {
-    const response = await $fetch('/api/native-api/qq/check-login', {
-      method: 'POST',
-      body: {
-        ptqrtoken: qrPayload.ptqrtoken,
-        qrsig: qrPayload.qrsig
-      }
-    })
-    const data = response?.data || {}
+    let data
+    if (channel.value === 'wx') {
+      const response = await $fetch('/api/native-api/qq/check-wx-login', {
+        method: 'POST',
+        body: { uuid: qrPayload.uuid }
+      })
+      data = response?.data || {}
+    } else {
+      const response = await $fetch('/api/native-api/qq/check-login', {
+        method: 'POST',
+        body: {
+          ptqrtoken: qrPayload.ptqrtoken,
+          qrsig: qrPayload.qrsig
+        }
+      })
+      data = response?.data || {}
+    }
     const loginStatus = data.status || (data.isOk ? 'success' : data.refresh ? 'expired' : 'waiting')
+
+    // 微信渠道：手机已扫码、等待确认
+    if (data.scanned) {
+      scanned.value = true
+    }
 
     if (loginStatus === 'success' || data.isOk) {
       const cookie = data.cookie || getSessionCookie(data.session)
@@ -243,18 +337,18 @@ const checkStatus = async () => {
       return
     }
 
-    if (data.message) {
-      status.value = 'waiting'
-      return
-    }
-
     status.value = 'waiting'
   } catch (error) {
-    console.error('检查 QQ 登录状态失败:', error)
+    console.error('检查扫码登录状态失败:', error)
     errorMessage.value = error?.message || locale.value.qqCheckFailed
     stopPolling()
   } finally {
     checking.value = false
+  }
+
+  // 仅在未出结果时继续轮询
+  if (!isExpired.value && status.value === 'waiting') {
+    scheduleNextCheck()
   }
 }
 
@@ -264,12 +358,14 @@ watch(
     if (visible) {
       initLogin()
     } else {
+      isOpen = false
       stopPolling()
     }
   }
 )
 
 onUnmounted(() => {
+  isOpen = false
   stopPolling()
 })
 </script>

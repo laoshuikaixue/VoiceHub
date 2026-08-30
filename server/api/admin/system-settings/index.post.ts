@@ -13,6 +13,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
+import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -193,6 +194,20 @@ export default defineEventHandler(async (event) => {
 
     if (body.gonganNumber !== undefined) {
       updateData.gonganNumber = body.gonganNumber
+    }
+
+    if (body.statisticsCode !== undefined) {
+      if (body.statisticsCode !== null && typeof body.statisticsCode !== 'string') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCode 必须是字符串或 null')
+      }
+      updateData.statisticsCode = body.statisticsCode
+    }
+
+    if (body.statisticsCodeEnabled !== undefined) {
+      if (typeof body.statisticsCodeEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCodeEnabled 必须是布尔值')
+      }
+      updateData.statisticsCodeEnabled = body.statisticsCodeEnabled
     }
 
     if (body.showBeianIcon !== undefined) {
@@ -595,6 +610,85 @@ export default defineEventHandler(async (event) => {
       updateData.allowOAuthRegistration = body.allowOAuthRegistration
     }
 
+    // 注册配置字段
+    if (body.allowRegister !== undefined) {
+      if (typeof body.allowRegister !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowRegister 必须是布尔值'
+        })
+      }
+      updateData.allowRegister = body.allowRegister
+    }
+
+    if (body.registerRequiresApproval !== undefined) {
+      if (typeof body.registerRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'registerRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.registerRequiresApproval = body.registerRequiresApproval
+    }
+
+    if (body.oauthRegisterRequiresApproval !== undefined) {
+      if (typeof body.oauthRegisterRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'oauthRegisterRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.oauthRegisterRequiresApproval = body.oauthRegisterRequiresApproval
+    }
+
+    if (body.submissionNoteRequiresApproval !== undefined) {
+      if (typeof body.submissionNoteRequiresApproval !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'submissionNoteRequiresApproval 必须是布尔值'
+        })
+      }
+      updateData.submissionNoteRequiresApproval = body.submissionNoteRequiresApproval
+    }
+
+    // 注册子开关（邮箱必填 / 年级班级必填）以注册入口开启为前提：
+    // 两个入口均关闭时子开关无实际作用，直接落 false，避免整单保存被拒且子开关已隐藏无法取消
+    const registerEntryOpen = Boolean(
+      body.allowRegister ?? settings?.allowRegister
+    ) || Boolean(body.allowOAuthRegistration ?? settings?.allowOAuthRegistration)
+
+    if (body.registerEmailRequired !== undefined) {
+      if (typeof body.registerEmailRequired !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'registerEmailRequired 必须是布尔值')
+      }
+      // 开启时 SMTP 必须已配置并启用（合并提交值校验）
+      const nextEmailRequired = registerEntryOpen && body.registerEmailRequired
+      if (nextEmailRequired) {
+        const smtpEnabled = body.smtpEnabled ?? settings?.smtpEnabled
+        const smtpHost = body.smtpHost ?? settings?.smtpHost
+        if (!smtpEnabled || !smtpHost) {
+          throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先配置并开启 SMTP 邮件服务，再启用注册邮箱必填')
+        }
+      }
+      updateData.registerEmailRequired = nextEmailRequired
+    }
+
+    if (body.registerRequiresGradeClass !== undefined) {
+      if (typeof body.registerRequiresGradeClass !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'registerRequiresGradeClass 必须是布尔值')
+      }
+      // 开启时系统内必须已有可选年级班级组合，否则注册表单无项可选、注册请求全部被拒
+      const nextGradeClassRequired = registerEntryOpen && body.registerRequiresGradeClass
+      if (nextGradeClassRequired && (await fetchGradeClassOptions()).length === 0) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_GRADE_CLASS_OPTIONS_MISSING,
+          '请先在年级班级管理中配置年级班级，再启用注册时必须选择年级班级'
+        )
+      }
+      updateData.registerRequiresGradeClass = nextGradeClassRequired
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string'
@@ -953,7 +1047,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 重复投稿限制交叉校验：未设置时长时保留本学期同一首歌不可重复投稿的旧规则。
+    // 重复投稿限制交叉校验：开关关闭即完全不做限制；开启且未设置时长时沿用本学期同一首歌不可重复投稿的旧规则。
     const nextSameSongHours = body.sameSongRestrictionHours !== undefined
       ? body.sameSongRestrictionHours
       : settings?.sameSongRestrictionHours ?? null
@@ -1012,7 +1106,8 @@ export default defineEventHandler(async (event) => {
 
     try {
       const { SmtpService } = await import('~~/server/services/smtpService')
-      await SmtpService.getInstance().initializeSmtpConfig()
+      // 强制刷新：早退检查会导致修改授权码后单例仍持有旧凭据
+      await SmtpService.getInstance().initializeSmtpConfig(true)
       console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
     } catch (smtpError) {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)

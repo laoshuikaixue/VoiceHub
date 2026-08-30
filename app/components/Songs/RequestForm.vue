@@ -296,7 +296,7 @@
                       class="action-btn-compact"
                       :title="locale.playlist"
                       type="button"
-                      @click="showPlaylistModal = true"
+                      @click="openPlaylistModal('netease')"
                     >
                       <Icon :size="14" name="playlist" />
                       <span>{{ locale.playlist }}</span>
@@ -326,7 +326,16 @@
 
             <!-- QQ音乐登录状态和选项 -->
             <div v-if="platform === 'tencent'" class="netease-options">
-              <div v-if="!isQQMusicLoggedIn" class="login-entry">
+              <!-- 检查中状态 -->
+              <div v-if="checkingQQLogin" class="netease-loading-state">
+                <div class="loading-content">
+                  <div class="loading-spinner" />
+                  <span class="loading-text">{{ locale.refreshing }}</span>
+                </div>
+              </div>
+
+              <!-- 未登录状态 -->
+              <div v-else-if="!isQQMusicLoggedIn" class="login-entry">
                 <div class="login-desc">
                   <p class="login-title">{{ locale.qqLoginTitle }}</p>
                 </div>
@@ -338,9 +347,14 @@
                   >
                     {{ locale.loginNow }}
                   </button>
+                  <button class="import-btn" type="button" @click="handleImportClickQQ">
+                    <Icon :size="14" name="upload" />
+                    {{ locale.importData }}
+                  </button>
                 </div>
               </div>
 
+              <!-- 已登录状态 -->
               <div v-else class="user-status">
                 <div class="user-compact-row">
                   <div class="user-profile">
@@ -357,6 +371,24 @@
                   </div>
 
                   <div class="user-actions-row">
+                    <button
+                      class="action-btn-compact"
+                      :title="locale.playlist"
+                      type="button"
+                      @click="openPlaylistModal('tencent')"
+                    >
+                      <Icon :size="14" name="playlist" />
+                      <span>{{ locale.playlist }}</span>
+                    </button>
+                    <button
+                      class="action-btn-compact"
+                      :aria-label="locale.exportCookie"
+                      :title="locale.exportCookie"
+                      type="button"
+                      @click="handleExportDataQQ"
+                    >
+                      <Icon :size="14" name="download" />
+                    </button>
                     <button
                       class="action-btn-compact text-error hover:bg-error-10 hover:text-error"
                       :aria-label="locale.logoutQQ"
@@ -439,7 +471,8 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-                        >
+                          :disabled="submissionNoteRequiresApproval || !siteConfigLoaded"
+                        />
                         <span class="custom-checkbox-box">
                           <svg
                             class="custom-checkbox-icon"
@@ -466,8 +499,12 @@
                     maxlength="300"
                     class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary-10 resize-y transition-all"
                   />
-                  <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
-                    <span>{{ submissionNote.length }}/300</span>
+                  <div class="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-tertiary">
+                    <p v-if="submissionNoteRequiresApproval" class="flex min-w-0 items-center gap-1">
+                      <Icon name="info" size="12" class="shrink-0 text-warning" />
+                      <span class="truncate">{{ locale.submissionNoteApprovalHint }}</span>
+                    </p>
+                    <span class="shrink-0">{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
               </div>
@@ -684,9 +721,9 @@
                         >
                         <span v-else class="similar-text">{{ locale.songExists }}</span>
 
-                        <!-- 管理员可直接重复投稿；普通用户仅可申请重播已播放歌曲。 -->
+                        <!-- 管理员或未开启重复投稿限制时可直接重复投稿；否则普通用户仅可申请重播已播放歌曲。 -->
                         <button
-                          v-if="auth.isAdmin.value"
+                          v-if="auth.isAdmin.value || (siteConfigLoaded && !enableSubmissionRestriction)"
                           :disabled="
                             !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
                           "
@@ -935,7 +972,8 @@
     <!-- 歌单选择弹窗 -->
     <PlaylistSelectionModal
       ref="playlistModalRef"
-      :cookie="neteaseCookie"
+      :cookie="playlistModalPlatform === 'tencent' ? qqMusicCookie : neteaseCookie"
+      :platform="playlistModalPlatform"
       :show="showPlaylistModal"
       :uid="neteaseUser?.userId || neteaseUser?.id"
       @close="showPlaylistModal = false"
@@ -1407,6 +1445,13 @@
       type="file"
       @change="handleImportData"
     >
+    <input
+      ref="qqFileInput"
+      accept=".json"
+      style="display: none"
+      type="file"
+      @change="handleImportDataQQ"
+    >
   </div>
 </template>
 
@@ -1432,6 +1477,7 @@ import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { renderMarkdown } from '~/utils/markdown'
+import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1462,12 +1508,15 @@ const {
   guidelines: submissionGuidelines,
   initSiteConfig,
   enableReplayRequests,
+  enableSubmissionRestriction,
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
   enableSubmissionLimit,
   enableCardCodeRequests,
   requireCardCodeForRequests,
-  enableCardCodeLimitBypass
+  enableCardCodeLimitBypass,
+  submissionNoteRequiresApproval,
+  isLoaded: siteConfigLoaded
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
@@ -1486,7 +1535,8 @@ const AUDIO_MATCH_DURATION = 3
 
 const title = ref('')
 const artist = ref('')
-const platform = ref('netease') // 默认使用网易云音乐
+const platform = ref('netease') // 占位值，平台配置加载后跟随后台排序的首选平台
+const platformTouched = ref(false) // 用户是否手动切换过平台，切换后不再覆盖其选择
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
@@ -1511,15 +1561,22 @@ const {
 } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
-// 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
+// 监听平台可用性与排序变化：
+// - 当前平台被禁用时，强制切换到第一个可用平台并提示
+// - 用户未手动选择过平台时，默认选中跟随后台排序的第一位
 watch(availablePlatforms, (available) => {
-  if (available.length > 0 && !available.includes(platform.value)) {
+  if (available.length === 0) return
+  if (!available.includes(platform.value)) {
     platform.value = available[0]
     if (window.$showNotification) {
       const switchedName = locale.value.platforms[platform.value] || ''
       const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
       window.$showNotification(msg, 'info')
     }
+    return
+  }
+  if (!platformTouched.value && platform.value !== available[0]) {
+    platform.value = available[0]
   }
 })
 
@@ -1532,6 +1589,7 @@ const neteaseCookie = ref('')
 const isQQMusicLoggedIn = ref(false)
 const qqMusicUser = ref(null)
 const qqMusicCookie = ref('')
+const checkingQQLogin = ref(false)
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -1542,6 +1600,13 @@ const podcastCookie = ref('')
 
 const showRecentSongsModal = ref(false)
 const showPlaylistModal = ref(false)
+// 当前打开歌单弹窗对应的音源平台，决定弹窗内数据获取分支
+const playlistModalPlatform = ref('netease')
+
+const openPlaylistModal = (platform) => {
+  playlistModalPlatform.value = platform
+  showPlaylistModal.value = true
+}
 const showUserSearchModal = ref(false)
 const collaborators = ref([])
 
@@ -2325,36 +2390,92 @@ const handleLogoutNetease = () => {
   }
 }
 
-const checkQQMusicLoginStatus = () => {
+const applyQqMusicUser = (user) => {
+  qqMusicUser.value = user || { nickname: locale.value.qqLoggedIn }
+}
+
+const validateQqCookie = async (cookie) => {
+  const res = await $fetch('/api/native-api/qq/check-cookie', {
+    method: 'POST',
+    body: { cookie }
+  })
+  return res?.data || {}
+}
+
+// 持久化服务端返回的 VIP 状态，供取链优先级判断（仅 VIP 时优先官方链路）
+const persistQqVipFlag = (data) => {
+  if (typeof data?.isVip !== 'boolean' || !import.meta.client) return
+  localStorage.setItem('qq_music_vip', data.isVip ? '1' : '0')
+}
+
+// 用服务端校验结果补全真实昵称与头像，仅在有增量时更新
+const refreshQqProfileFromServer = async (cookie) => {
+  if (!cookie) return
+  try {
+    const data = await validateQqCookie(cookie)
+    if (!data.valid) return
+    persistQqVipFlag(data)
+    if (!(data.user?.nickname || data.user?.avatarUrl)) return
+
+    const mergedUser = { ...(qqMusicUser.value || {}), ...data.user }
+    applyQqMusicUser(mergedUser)
+    localStorage.setItem('qq_music_user', JSON.stringify(mergedUser))
+  } catch (e) {
+    console.warn('刷新 QQ 用户资料失败:', e)
+  }
+}
+
+// 启动时静默校验本地保存的 QQ 登录态，失效则清理并提示
+const checkQQMusicLoginStatus = async () => {
   if (!import.meta.client) return
 
   const cookie = localStorage.getItem('qq_music_cookie')
-  const userStr = localStorage.getItem('qq_music_user')
-
   if (!cookie) {
     handleLogoutQQMusic()
     return
   }
 
+  // 先按本地缓存呈现，再异步校验，避免界面闪烁
   qqMusicCookie.value = cookie
   isQQMusicLoggedIn.value = true
-
   try {
+    const userStr = localStorage.getItem('qq_music_user')
     qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: locale.value.qqLoggedIn }
   } catch {
-    qqMusicUser.value = { nickname: locale.value.qqLoggedIn }
+    applyQqMusicUser(null)
+  }
+
+  checkingQQLogin.value = true
+  try {
+    const data = await validateQqCookie(cookie)
+    if (data.valid) {
+      persistQqVipFlag(data)
+      await refreshQqProfileFromServer(cookie)
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.qqLoginExpired, 'warning')
+      }
+      handleLogoutQQMusic()
+    }
+  } catch (e) {
+    console.warn('校验 QQ 登录状态失败，保留本地状态:', e)
+  } finally {
+    checkingQQLogin.value = false
   }
 }
 
 const handleQQLoginSuccess = (data) => {
   qqMusicCookie.value = data.cookie
-  qqMusicUser.value = data.user || { nickname: locale.value.qqLoggedIn }
+  applyQqMusicUser(data.user)
   isQQMusicLoggedIn.value = true
 
   if (import.meta.client) {
     localStorage.setItem('qq_music_cookie', data.cookie)
     localStorage.setItem('qq_music_user', JSON.stringify(qqMusicUser.value))
   }
+
+  // 立即拉取真实昵称与头像，替换扫码占位信息
+  refreshQqProfileFromServer(data.cookie)
 }
 
 const handleLogoutQQMusic = () => {
@@ -2365,7 +2486,82 @@ const handleLogoutQQMusic = () => {
   if (import.meta.client) {
     localStorage.removeItem('qq_music_cookie')
     localStorage.removeItem('qq_music_user')
+    localStorage.removeItem('qq_music_vip')
   }
+}
+
+const handleExportDataQQ = () => {
+  if (!qqMusicCookie.value) return
+  const data = {
+    cookie: qqMusicCookie.value,
+    user: qqMusicUser.value,
+    timestamp: Date.now()
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `qq_music_cookie_${Date.now()}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  if (window.$showNotification) {
+    window.$showNotification(locale.value.notifications.exportSuccess, 'success')
+  }
+}
+
+const qqFileInput = ref(null)
+
+const handleImportClickQQ = () => {
+  qqFileInput.value.click()
+}
+
+const handleImportDataQQ = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    if (data.cookie) {
+      checkingQQLogin.value = true
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.notifications.validatingCookie, 'info')
+      }
+
+      const result = await validateQqCookie(data.cookie)
+      if (result.valid) {
+        const user =
+          result.user?.nickname || result.user?.avatarUrl
+            ? result.user
+            : { nickname: locale.value.qqLoggedIn }
+        handleQQLoginSuccess({ cookie: data.cookie, user })
+        if (window.$showNotification) {
+          window.$showNotification(locale.value.notifications.importSuccess, 'success')
+        }
+      } else {
+        if (window.$showNotification) {
+          window.$showNotification(locale.value.notifications.cookieInvalid, 'error')
+        }
+      }
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.notifications.fileFormatError, 'error')
+      }
+    }
+  } catch (e) {
+    console.error('导入失败', e)
+    if (window.$showNotification) {
+      window.$showNotification(
+        callLocale('notifications.importFailed', '', getErrorMessage(e)),
+        'error'
+      )
+    }
+  } finally {
+    checkingQQLogin.value = false
+  }
+  event.target.value = ''
 }
 
 watch(
@@ -2537,17 +2733,6 @@ const handleEpisodeVote = async (episode) => {
 }
 
 // 检查搜索结果是否已存在完全匹配的歌曲
-// 标准化字符串（与useSongs中的逻辑保持一致）
-const normalizeString = (str) => {
-  if (!str) return ''
-  return str
-    .toLowerCase()
-    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
-    .replace(/[&＆]/g, 'and')
-    .trim()
-}
-
 const getSimilarSong = (result) => {
   // 多P视频不在这里检查相似性，使用专门的 getBilibiliEpisodeStatus
   if (isBilibiliMultiP(result)) {
@@ -2614,6 +2799,8 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
 // 平台切换函数
 const switchPlatform = (newPlatform) => {
   if (platform.value === newPlatform) return
+
+  platformTouched.value = true
 
   // 如果有正在进行的搜索请求，立即取消
   if (searchAbortController.value) {
@@ -3277,64 +3464,38 @@ const submitSong = async (result, options = {}) => {
 
   let replayTargetSong = null
 
-  // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
+  // 重播申请需要定位到本学期内已播放的原歌曲；多P 视频按完整 musicId 精确匹配，其余平台由 getSimilarSong 归一化回退
   if (
+    options.replayRequest === true &&
     !auth.isAdmin.value &&
     auth.isAuthenticated.value &&
     songService.songs.value &&
-    songService.songs.value.length > 0
+    songService.songs.value.length > 0 &&
+    platform.value === 'bilibili' &&
+    result.musicId
   ) {
-    // 对于哔哩哔哩多P视频，使用 musicId 进行精确匹配
-    if (platform.value === 'bilibili' && result.musicId) {
-      // 构建完整的 musicId
-      let fullMusicId = String(result.musicId)
-      if (options.isBilibiliEpisode && options.episode) {
-        const bvId = fullMusicId.split(':')[0]
-        const musicIdParts = [bvId, options.episode.cid]
-        if (options.episode.page && Number(options.episode.page) > 1) {
-          musicIdParts.push(String(options.episode.page))
-        }
-        fullMusicId = musicIdParts.join(':')
+    let fullMusicId = String(result.musicId)
+    if (options.isBilibiliEpisode && options.episode) {
+      const bvId = fullMusicId.split(':')[0]
+      const musicIdParts = [bvId, options.episode.cid]
+      if (options.episode.page && Number(options.episode.page) > 1) {
+        musicIdParts.push(String(options.episode.page))
       }
-
-      // 检查是否已有相同 musicId 的歌曲
-      const existingSong = songService.songs.value.find(
-        (song) => isBilibiliSong(song) && song.musicId === fullMusicId
-      )
-
-      if (existingSong) {
-        if (options.replayRequest === true && existingSong.played) {
-          replayTargetSong = existingSong
-        }
-        const allowOverride = options.replayRequest === true && existingSong.played
-        if (!allowOverride) {
-          if (window.$showNotification) {
-            window.$showNotification(locale.value.notifications.duplicateSong, 'warning')
-          }
-          return
-        }
-      }
-    } else {
-      // 对于其他平台，使用标题和艺术家进行匹配
-      const existingSong = songService.songs.value.find(
-        (song) =>
-          song.title.toLowerCase() === songTitle.toLowerCase() &&
-          song.artist.toLowerCase() === songArtist.toLowerCase()
-      )
-
-      if (existingSong) {
-        if (options.replayRequest === true && existingSong.played) {
-          replayTargetSong = existingSong
-        }
-        const allowOverride = options.replayRequest === true && existingSong.played
-        if (!allowOverride) {
-          if (window.$showNotification) {
-            window.$showNotification(locale.value.notifications.duplicateSong, 'warning')
-          }
-          return
-        }
-      }
+      fullMusicId = musicIdParts.join(':')
     }
+
+    replayTargetSong =
+      songService.songs.value.find(
+        (song) => isBilibiliSong(song) && song.musicId === fullMusicId && song.played
+      ) || null
+  }
+
+  // 能否投稿由服务端预检结论决定（区分本学期查重与排期冷却窗口两种模式，且已随开关关闭放行）
+  if (!auth.isAdmin.value && isSongBlockedByRestriction(result)) {
+    if (window.$showNotification) {
+      window.$showNotification(getRestrictionMessage(getRestrictionReason(result)), 'warning')
+    }
+    return
   }
 
   submitting.value = true
@@ -3411,7 +3572,9 @@ const submitSong = async (result, options = {}) => {
         method: 'POST',
         body: {
           title: title.value,
-          artist: artist.value
+          artist: artist.value,
+          musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value,
+          musicId: result.musicId ? String(result.musicId) : null
         }
       })
 
@@ -3886,7 +4049,9 @@ const handleManualSubmit = async () => {
         method: 'POST',
         body: {
           title: title.value,
-          artist: manualArtist.value
+          artist: manualArtist.value,
+          musicPlatform: platform.value,
+          musicId: null // 手动输入没有 musicId，类型黑名单不生效
         }
       })
 

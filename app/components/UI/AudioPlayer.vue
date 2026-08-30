@@ -59,7 +59,7 @@
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls">
             <button class="mobile-control-btn" @click.stop="handleTogglePlay">
-              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" />
+              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="white" />
               <Icon
                 v-else
                 :name="control.isPlaying.value ? 'pause' : 'play'"
@@ -142,7 +142,7 @@
                 title="播放/暂停"
                 @click="handleTogglePlay"
               >
-                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" />
+                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" color="white" />
                 <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
                 <Icon v-else name="play" size="24" />
               </span>

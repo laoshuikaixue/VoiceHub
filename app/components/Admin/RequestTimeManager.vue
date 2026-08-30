@@ -68,9 +68,11 @@
             >{{ locale.enableRestriction }}</span
           >
           <button
+            :disabled="restrictionSaving"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
-              enableSubmissionRestriction ? 'bg-primary-hover' : 'bg-bg-tertiary'
+              enableSubmissionRestriction ? 'bg-primary-hover' : 'bg-bg-tertiary',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
             ]"
             @click="toggleRestriction"
           >
@@ -899,13 +901,15 @@ const normalizeRestrictionHours = (key: 'sameSong' | 'sameArtist') => {
   }
 }
 
-const toggleRestriction = () => {
+const toggleRestriction = async () => {
   enableSubmissionRestriction.value = !enableSubmissionRestriction.value
   // 关闭时清空时长，与服务端交叉校验保持一致
   if (!enableSubmissionRestriction.value) {
     sameSongRestrictionHours.value = null
     sameArtistRestrictionHours.value = null
   }
+  // 顶部开关立即保存，开启后无需再点面板保存按钮
+  await saveRestrictionSettings()
 }
 
 const saveRestrictionSettings = async () => {

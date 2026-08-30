@@ -82,7 +82,7 @@
               <h4 class="text-3xl font-black text-text-primary tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
-              <div class="flex items-center gap-2 text-primary-60 font-bold text-xs">
+              <div class="flex items-center gap-2 text-text-primary-80 font-bold text-xs">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="12"
@@ -104,7 +104,7 @@
             </div>
             <div class="pt-4">
               <span
-                class="px-4 py-2 bg-bg-secondary text-primary-hover text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
+                class="px-4 py-2 bg-bg-secondary-20 text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
               >
                 {{ locale.inProgress }}
               </span>

@@ -1,15 +1,29 @@
 import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { resolveGradeClassError, REMARK_MAX_LENGTH } from '~~/server/utils/register-validation'
+import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
+import { verifyEmailCode } from '~~/server/utils/email-verification'
+import { notifyRegistration } from '~~/server/utils/registration-notify'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default defineEventHandler(async (event) => {
+  // 数据库连接检查（在读取配置前执行，DB 故障时返回明确的 503）
+  try {
+    await db.select().from(users).limit(1)
+  } catch (error) {
+    console.error('Database connection error:', error)
+    throw createApiError(503, SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE, '数据库服务暂时不可用')
+  }
+
   // 检查是否允许 OAuth 注册
   const config = await db.query.systemSettings.findFirst()
   if (!config?.allowOAuthRegistration) {
@@ -22,8 +36,23 @@ export default defineEventHandler(async (event) => {
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
   const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
+  const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const emailCode = typeof body.emailCode === 'string' ? body.emailCode.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
+  // 邮箱必填由管理员开关控制（与本地注册同源）：开启时邮箱必填；验证码在用户名检查后消费
+  const emailRequired = Boolean(config?.registerEmailRequired)
+  if (emailRequired && !email) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请填写邮箱地址')
+  }
+  if (email && !EMAIL_REGEX.test(email)) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入有效的邮箱地址')
+  }
+
+  if (remark.length > REMARK_MAX_LENGTH) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备注不能超过 ${REMARK_MAX_LENGTH} 个字符`)
+  }
   if (!bindingToken) {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_SESSION_EXPIRED, '注册会话已过期，请重新通过第三方登录发起')
   }
@@ -46,18 +75,19 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, validationError.code, validationError.message)
   }
 
-  if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_TOGETHER, '年级和班级需要同时选择，或全部留空')
+  const gradeClassError = resolveGradeClassError(
+    selectedGrade,
+    selectedClass,
+    Boolean(config?.registerRequiresGradeClass)
+  )
+  if (gradeClassError) {
+    throw createApiError(400, gradeClassError.code, gradeClassError.message)
   }
 
   if (selectedGrade && selectedClass) {
-    const existingClass = await db.query.users.findFirst({
-      where: (t, { eq, and }) =>
-        and(eq(t.status, 'active'), eq(t.grade, selectedGrade), eq(t.class, selectedClass)),
-      columns: { id: true }
-    })
+    const valid = await isGradeClassValid(selectedGrade, selectedClass)
 
-    if (!existingClass) {
+    if (!valid) {
       throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
     }
   }
@@ -81,12 +111,17 @@ export default defineEventHandler(async (event) => {
     throw createApiError(409, SERVER_ERROR_CODES.AUTH_OAUTH_ALREADY_BOUND, '该第三方账号已被绑定，请直接登录或绑定到现有账户')
   }
 
+  // 邮箱验证码在最后校验（前置校验通过后消费）
+  if (email && !(await verifyEmailCode(email, emailCode))) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_EMAIL_CODE_INVALID, '邮箱验证码无效或已过期，请重新获取')
+  }
+
   try {
     // 开事务创建用户和关联身份
     const result = await db.transaction(async (tx) => {
       // 加密密码
       const hashedPassword = await bcrypt.hash(password, 10)
-      const now = getBeijingTime()
+      const now = getServerDate()
       const avatarUrl = getIdentityAvatarUrl({
         provider: payload.provider,
         providerUserId: payload.providerUserId,
@@ -94,7 +129,7 @@ export default defineEventHandler(async (event) => {
         avatar: payload.avatar
       })
 
-      // 创建用户
+      // 创建用户（onConflictDoNothing 兜底并发用户名竞态）
       const insertedUser = (await tx
         .insert(users)
         .values({
@@ -104,7 +139,10 @@ export default defineEventHandler(async (event) => {
           class: selectedClass || null,
           password: hashedPassword,
           role: 'USER',
-          status: 'active',
+          status: config?.oauthRegisterRequiresApproval ? 'pending' : 'active',
+          remark: remark || null,
+          email: email || null,
+          emailVerified: email ? true : null,
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,
@@ -113,10 +151,11 @@ export default defineEventHandler(async (event) => {
           avatarProvider: avatarUrl ? payload.provider : null,
           avatarProviderUserId: avatarUrl ? payload.providerUserId : null
         })
+        .onConflictDoNothing()
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
       if (!insertedUser) {
-        throw new Error('Failed to create user')
+        throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
       }
 
       // 关联OAuth身份
@@ -126,7 +165,7 @@ export default defineEventHandler(async (event) => {
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
         avatar: payload.avatar || null,
-        createdAt: getBeijingTime()
+        createdAt: now,
       })
 
       return insertedUser
@@ -134,6 +173,17 @@ export default defineEventHandler(async (event) => {
 
     // 清除绑定令牌
     deleteCookie(event, 'binding-token')
+
+    // 注册通知（站内通知管理员 + 邮件；异步，失败不影响主流程）
+    void notifyRegistration(result.id, username, name, email, Boolean(config?.oauthRegisterRequiresApproval))
+
+    // 需要审核时：不签发登录态，等待管理员审核
+    if (config?.oauthRegisterRequiresApproval) {
+      return {
+        success: true,
+        pendingApproval: true
+      }
+    }
 
     // 生成JWT令牌
     const { token } = await createAuthSession(event, { id: result.id, role: 'USER', tokenVersion: result.tokenVersion }, payload.provider || 'oauth')
@@ -159,6 +209,8 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (e: any) {
+    // 业务错误码（如用户名冲突 409）直接透传
+    if (e?.statusCode) throw e
     console.error('OAuth register error:', e)
     throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, e.message || '注册失败，请稍后重试')
   }

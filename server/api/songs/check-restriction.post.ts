@@ -4,6 +4,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
+import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 type RestrictionCheck = {
@@ -40,13 +41,12 @@ export default defineEventHandler(async (event) => {
   const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
 
   const settings = await getSystemSettingsCached()
-  if (!settings?.enableSubmissionRestriction || isAdmin) {
+  const restrictionPolicy = resolveSubmissionRestrictionPolicy(settings)
+  if (restrictionPolicy.mode === 'none' || isAdmin) {
     return respond(allowedChecks)
   }
 
-  const sameSongHours = settings.sameSongRestrictionHours ?? null
-  const sameArtistHours = settings.sameArtistRestrictionHours ?? null
-  const scope = settings.submissionRestrictionScope ?? 'all'
+  const { sameSongHours, sameArtistHours, scope } = restrictionPolicy
 
   const normalizedCandidates = candidates.map((song) => ({
     ...song,
@@ -54,8 +54,8 @@ export default defineEventHandler(async (event) => {
     artist: normalizeForMatch(song.artist)
   }))
 
-  // 未配置冷却时长时，保留旧规则：本学期已有的同一首歌不可再次投稿。
-  if (!sameSongHours && !sameArtistHours) {
+  // 开关开启但未配置冷却时长时，沿用旧规则：本学期已有的同一首歌不可再次投稿。
+  if (restrictionPolicy.mode === 'semester') {
     const currentSemesterResult = await db
       .select({ name: semesters.name })
       .from(semesters)

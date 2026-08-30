@@ -20,6 +20,11 @@ export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
 
 export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/auth/login', methods: ['POST'] },
+  { path: '/api/auth/register', methods: ['POST'] },
+  { path: '/api/auth/email-code', methods: ['POST'] },
+  { path: '/api/auth/grade-class-options', methods: GET_METHODS },
+  // 携带 binding-token（而非登录态 token）访问，必须放行给接口自身校验
+  { path: '/api/auth/oauth-register-options', methods: GET_METHODS },
   { path: '/api/auth/bind', methods: ['POST'] },
   { path: '/api/auth/oauth-register', methods: ['POST'] },
   { path: '/api/auth/2fa/verify', methods: ['POST'] },

@@ -1,8 +1,9 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
-import { songs, users, votes } from '~/drizzle/schema'
-import { count, eq, gte } from 'drizzle-orm'
+import { songs, users, userIdentities, votes } from '~/drizzle/schema'
+import { count, eq, gte, inArray } from 'drizzle-orm'
 import { getBeijingHour, getBeijingStartOfDay } from '~/utils/timeUtils'
+import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -70,7 +71,8 @@ export default defineEventHandler(async (event) => {
             userMap.set(song.requesterId2, {
               id: song.requesterId2,
               username: song.requesterUsername,
-              name: song.requesterName
+              name: song.requesterName,
+              avatar: null
             })
           })
 
@@ -79,7 +81,8 @@ export default defineEventHandler(async (event) => {
             userMap.set(user.id, {
               id: user.id,
               username: user.username,
-              name: user.name
+              name: user.name,
+              avatar: null
             })
           })
 
@@ -88,9 +91,57 @@ export default defineEventHandler(async (event) => {
             userMap.set(vote.userId2, {
               id: vote.userId2,
               username: vote.userUsername,
-              name: vote.userName
+              name: vote.userName,
+              avatar: null
             })
           })
+
+          // 解析头像（与用户管理面板同源：优先用户选中的身份，否则按创建顺序取第一个可用头像）
+          const activeUserIds = Array.from(userMap.keys())
+          if (activeUserIds.length > 0) {
+            const [userPrefs, identities] = await Promise.all([
+              db
+                .select({
+                  id: users.id,
+                  avatarProvider: users.avatarProvider,
+                  avatarProviderUserId: users.avatarProviderUserId
+                })
+                .from(users)
+                .where(inArray(users.id, activeUserIds)),
+              db
+                .select({
+                  userId: userIdentities.userId,
+                  provider: userIdentities.provider,
+                  providerUsername: userIdentities.providerUsername,
+                  providerUserId: userIdentities.providerUserId,
+                  avatar: userIdentities.avatar,
+                  createdAt: userIdentities.createdAt
+                })
+                .from(userIdentities)
+                .where(inArray(userIdentities.userId, activeUserIds))
+            ])
+
+            const prefsMap = new Map(userPrefs.map((pref) => [pref.id, pref]))
+            const identitiesMap = new Map()
+            identities.forEach((identity) => {
+              if (!identitiesMap.has(identity.userId)) {
+                identitiesMap.set(identity.userId, [])
+              }
+              identitiesMap.get(identity.userId).push(identity)
+            })
+
+            userMap.forEach((info, id) => {
+              const pref = prefsMap.get(id)
+              const avatarSource = resolveAvatarSource(
+                {
+                  avatarProvider: pref?.avatarProvider,
+                  avatarProviderUserId: pref?.avatarProviderUserId
+                },
+                identitiesMap.get(id) || []
+              )
+              info.avatar = avatarSource?.url ?? null
+            })
+          }
 
           const activeUsersList = Array.from(userMap.values())
 
