@@ -78,7 +78,13 @@ const validateUrl = async (url) => {
 const getReferer = (hostname) => {
   const h = hostname.toLowerCase()
   if (h === 'hdslb.com' || h.endsWith('.hdslb.com')) return 'https://www.bilibili.com/'
-  if (h === 'y.qq.com' || h.endsWith('.y.qq.com') || h === 'y.gtimg.cn' || h.endsWith('.y.gtimg.cn')) return 'https://y.qq.com/'
+  if (
+    h === 'y.qq.com' ||
+    h.endsWith('.y.qq.com') ||
+    h === 'y.gtimg.cn' ||
+    h.endsWith('.y.gtimg.cn') ||
+    h === 'music-file.y.qq.com'
+  ) return 'https://y.qq.com/'
   if (h === 'music.126.net' || h.endsWith('.music.126.net')) return 'https://music.163.com/'
   if (h.endsWith('.musicapp.migu.cn') || h.endsWith('.migu.cn')) return 'https://y.migu.cn/'
   return ''

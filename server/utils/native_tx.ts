@@ -41,14 +41,15 @@ export async function zzcSign(text: string) {
  * 使用签名请求 QQ 音乐 API
  * 相比普通 musicu.fcg，musics.fcg?sign=... 的签名请求更稳定
  */
-export const txSignedRequest = async (body: any) => {
+export const txSignedRequest = async (body: any, options: { signal?: AbortSignal } = {}) => {
   const sign = await zzcSign(JSON.stringify(body))
   try {
     const response = await $fetch(`https://u.y.qq.com/cgi-bin/musics.fcg?sign=${sign}`, {
       method: 'POST',
       headers: txHeaders,
       body,
-      responseType: 'json'
+      responseType: 'json',
+      signal: options.signal
     })
     return response
   } catch (error) {
@@ -245,13 +246,18 @@ export const getTxSongPlayableInfo = async (
   return value
 }
 
-export const txRequest = async (url: string, body: any) => {
+export const txRequest = async (
+  url: string,
+  body: any,
+  options: { signal?: AbortSignal } = {}
+) => {
   try {
     const response = await $fetch(url, {
       method: 'POST',
       headers: txHeaders,
       body,
-      responseType: 'json'
+      responseType: 'json',
+      signal: options.signal
     })
     return response
   } catch (error) {

@@ -855,7 +855,7 @@ VoiceHub/
 │   │   │   ├── PageTransition.vue     # 页面过渡动画
 │   │   │   ├── ProgressBar.vue        # 进度条组件
 │   │   │   ├── AppLoadingScreen.vue   # 启动加载屏幕组件
-│   │   │   ├── SongComments.vue       # 网易云音乐评论组件
+│   │   │   ├── SongComments.vue       # 网易云与QQ音乐评论组件
 │   │   │   └── WarpCanvas.vue         # 动态画布背景组件
 │   │   ├── year-review/       # 年度回顾组件
 │   │   │   ├── IntroSlide.vue     # 开场页
@@ -1365,6 +1365,7 @@ VoiceHub/
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── permissions.js  # 权限系统配置
+│   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── register-validation.ts # 注册校验纯函数
@@ -1418,6 +1419,7 @@ VoiceHub/
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
+│       ├── qq-comment-normalize.test.ts # QQ音乐评论归一化测试
 │       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
 │       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
 │       ├── token-version-policy.test.ts # 令牌版本策略测试

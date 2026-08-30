@@ -1041,6 +1041,16 @@ const getQqGtk = (cookieObject: Record<string, string>) => {
   return hash & 0x7fffffff
 }
 
+export const getQqWebSession = (cookie?: string) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  return {
+    cookie: normalizedCookie,
+    gtk: getQqGtk(cookieObject),
+    uin: String(cookieObject.uin || '').replace(/^o/i, '')
+  }
+}
+
 // 主页直连请求。uin 必须保持字符串原样：微信区 uin 超过 Number.MAX_SAFE_INTEGER，
 // 经数值转换会精度截断导致上游返回 1000 查无此人。
 const requestQqProfileHomepage = async ({
