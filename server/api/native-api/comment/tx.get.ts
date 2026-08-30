@@ -42,17 +42,25 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 502, message: 'QQ 音乐评论接口异常' })
   }
   const data = response.comment || {}
-  const normalize = (item: any, reply = false) => ({
+  const normalize = (item: any) => {
+    const user = item.userinfo || item.user || {}
+    const rawImages = item.piclist || item.picList || item.pics || item.images || item.commentpic || item.picurl || item.picUrl || []
+    const images = (Array.isArray(rawImages) ? rawImages : [rawImages])
+      .map((image: any) => typeof image === 'string' ? image : image?.picurl || image?.picUrl || image?.url || image?.imageurl || '')
+      .filter(Boolean)
+    return {
     commentId: item.commentid ?? item.commentId ?? item.id ?? item.rootcommentid,
-    content: reply ? item.content || item.middlecommentcontent || item.commentcontent || '' : item.content || item.rootcommentcontent || item.middlecommentcontent || item.commentcontent || '',
+    content: item.middlecommentcontent || item.content || item.commentcontent || item.rootcommentcontent || '',
     time: Number(item.time || 0) * 1000,
     likedCount: Number(item.praisenum ?? item.praise_num ?? item.likedCount ?? item.praiseNum ?? 0),
     liked: false,
+    images,
     user: {
-      nickname: item.nick || item.nickname || item.user?.nick || item.user?.nickname || 'QQ 音乐用户',
-      avatarUrl: item.avatarurl || item.avatar || item.user?.avatarurl || item.user?.avatar || ''
+      nickname: item.nick || item.nickname || user.nick || user.nickname || 'QQ 音乐用户',
+      avatarUrl: item.avatarurl || item.avatar || user.avatarurl || user.avatar || '',
+      ip: item.ip || item.userip || item.userIp || user.ip || user.userip || ''
     }
-  })
+  }}
   const groupThreads = (rawItems: any[]) => {
     const roots = new Map<string, any>()
     const replies = new Map<string, any[]>()
@@ -60,7 +68,7 @@ export default defineEventHandler(async (event) => {
       const id = String(raw.commentid ?? raw.commentId ?? raw.id ?? '').trim()
       const rootId = String(raw.rootcommentid ?? raw.rootCommentId ?? '').trim()
       if (rootId && rootId !== id) {
-        const reply = normalize(raw, true)
+        const reply = normalize(raw)
         replies.set(rootId, [...(replies.get(rootId) || []), reply])
       } else {
         const root = normalize(raw)

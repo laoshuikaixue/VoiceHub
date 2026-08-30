@@ -165,7 +165,7 @@
                   @click="activePanel = 'comments'"
                 >
                   <Icon name="message-circle" size="16" />
-                  <span>{{ locale.comments }}</span>
+                  <span>{{ locale.comments }} ({{ commentsCount }})</span>
                 </button>
               </div>
 
@@ -179,6 +179,7 @@
               </div>
 
               <SongComments
+                ref="commentsRef"
                 v-show="activePanel === 'comments'"
                 class="comments-display-area"
                 :song="currentSong"
@@ -363,6 +364,8 @@ const hasPushedHistory = ref(false)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 375)
 const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 812)
 const activePanel = ref('lyrics')
+const commentsRef = ref(null)
+const commentsCount = computed(() => Number(commentsRef.value?.totalCount || 0))
 
 // 拖拽状态管理
 const isDragging = ref(false)

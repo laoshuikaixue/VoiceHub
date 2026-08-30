@@ -1189,7 +1189,8 @@ VoiceHub/
 │   │   │   └── websocket.ts         # 音乐WebSocket连接
 │   │   ├── native-api/     # 原生音乐API
 │   │   │   ├── comment/              # 评论API
-│   │   │   │   └── tx.get.ts         # QQ音乐评论
+│   │   │   │   ├── tx.get.ts         # QQ音乐评论
+│   │   │   │   └── tx-like.post.ts   # QQ音乐评论点赞
 │   │   │   ├── lyric/               # 歌词API
 │   │   │   │   ├── mg.get.ts        # 咪咕音乐歌词
 │   │   │   │   └── tx.get.ts        # 腾讯音乐歌词

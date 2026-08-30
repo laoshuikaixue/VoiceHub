@@ -5,6 +5,10 @@
         <p class="comments-eyebrow">{{ locale.eyebrow }}</p>
         <h2 class="comments-title">{{ locale.title }}</h2>
       </div>
+      <div class="comments-sort" role="group">
+        <button :class="{ active: commentSort === 'latest' }" @click="commentSort = 'latest'">{{ locale.latest }}</button>
+        <button :class="{ active: commentSort === 'hot' }" @click="commentSort = 'hot'">{{ locale.hotSort }}</button>
+      </div>
       <button
         class="refresh-button"
         :disabled="isLoading || !canFetchComments"
@@ -57,14 +61,22 @@
           <div class="comment-body">
             <div class="comment-meta">
               <span class="nickname">{{ item.user?.nickname || locale.neteaseUser }}</span>
+              <span v-if="item.user?.ip" class="comment-ip">{{ locale.ipLabel }} {{ item.user.ip }}</span>
               <span class="comment-time">{{ formatCommentTime(item.time) }}</span>
             </div>
-            <p class="comment-content">{{ item.content }}</p>
+            <p class="comment-content" v-html="renderCommentContent(item.content)"></p>
+            <div v-if="item.images?.length" class="comment-images">
+              <img v-for="(image, imageIndex) in item.images" :key="`image-${imageIndex}`" :src="convertToHttps(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
+            </div>
             <div v-if="item.beReplied?.length" class="reply-preview">
               {{ item.beReplied[0]?.user?.nickname || locale.originalComment }}：{{ item.beReplied[0]?.content }}
             </div>
             <div v-for="reply in item.replies" :key="`reply-${reply.commentId}`" class="reply-preview">
-              {{ reply.user?.nickname || locale.neteaseUser }}: {{ reply.content }}
+              <div class="reply-meta">{{ reply.user?.nickname || locale.neteaseUser }}<span v-if="reply.user?.ip"> · {{ locale.ipLabel }} {{ reply.user.ip }}</span></div>
+              <div v-html="renderCommentContent(reply.content)"></div>
+              <div v-if="reply.images?.length" class="comment-images reply-images">
+                <img v-for="(image, imageIndex) in reply.images" :key="`reply-image-${imageIndex}`" :src="convertToHttps(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
+              </div>
             </div>
             <div class="comment-actions">
               <button
@@ -106,6 +118,7 @@ import { useLocale } from '~/utils/locale'
 interface NeteaseUser {
   avatarUrl?: string
   nickname?: string
+  ip?: string
 }
 
 interface NeteaseComment {
@@ -120,6 +133,7 @@ interface NeteaseComment {
     user?: NeteaseUser
   }>
   replies?: NeteaseComment[]
+  images?: string[]
   isHot?: boolean
   key?: string
 }
@@ -160,6 +174,7 @@ const error = ref('')
 const likeUpdatingKey = ref('')
 const requestId = ref(0)
 const hasLoaded = ref(false)
+const commentSort = ref('hot')
 
 const neteaseSongId = computed(() => {
   const song = props.song
@@ -205,7 +220,10 @@ const commentItems = computed(() => {
     return true
   })
 
-  return [...taggedHotComments, ...regularComments].map((item, index) => ({
+  const ordered = commentSort.value === 'hot'
+    ? [...taggedHotComments, ...regularComments]
+    : [...regularComments, ...taggedHotComments]
+  return ordered.map((item, index) => ({
     ...item,
     key: getCommentKey(item, index)
   }))
@@ -272,9 +290,19 @@ const updateCommentLikeState = (commentId: string | number, liked: boolean, like
   hotComments.value = hotComments.value.map(applyState)
 }
 
+const renderCommentContent = (content?: string) => {
+  const source = String(content || '')
+  const images: string[] = []
+  const withPlaceholders = source.replace(/<img\b[^>]*?src=["']([^"']+)["'][^>]*>/gi, (_tag, src) => {
+    images.push(convertToHttps(src))
+    return `\u0000${images.length - 1}\u0000`
+  })
+  const escaped = withPlaceholders.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return escaped.replace(/\u0000(\d+)\u0000/g, (_match, index) => `<img src="${images[Number(index)].replace(/"/g, '&quot;')}" alt="" class="inline-comment-emoji">`)
+}
+
 const toggleCommentLike = async (comment: NeteaseComment) => {
-  if (isTencent.value) return
-  const songId = neteaseSongId.value
+  const songId = neteaseSongId.value || tencentSongId.value
   if (
     !songId ||
     comment.commentId === undefined ||
@@ -284,10 +312,12 @@ const toggleCommentLike = async (comment: NeteaseComment) => {
     return
   }
 
-  const cookie = getNeteaseCookie()
+  const cookie = isTencent.value
+    ? (typeof window !== 'undefined' ? localStorage.getItem('qq_music_cookie') || '' : '')
+    : getNeteaseCookie()
   if (!cookie) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.loginRequiredToLike, 'warning')
+      window.$showNotification(isTencent.value ? locale.value.qqLoginRequiredToLike : locale.value.loginRequiredToLike, 'warning')
     }
     return
   }
@@ -301,7 +331,9 @@ const toggleCommentLike = async (comment: NeteaseComment) => {
   updateCommentLikeState(commentId, nextLiked, nextLikedCount)
 
   try {
-    const response = await fetchNetease(
+    const response = isTencent.value
+      ? await $fetch('/api/native-api/comment/tx-like', { method: 'POST', body: { musicId: tencentSongId.value, commentId, liked: nextLiked, cookie } })
+      : await fetchNetease(
       '/comment/like',
       {
         id: songId,
@@ -423,6 +455,8 @@ watch(
   },
   { immediate: true }
 )
+
+defineExpose({ totalCount })
 </script>
 
 <style scoped>
@@ -585,6 +619,67 @@ watch(
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.comments-sort {
+  display: inline-flex;
+  gap: 0.2rem;
+  margin-left: auto;
+  padding: 0.2rem;
+  border-radius: 6px;
+  background: var(--lyrics-modal-surface);
+}
+
+.comments-sort button {
+  border: 0;
+  border-radius: 4px;
+  padding: 0.35rem 0.55rem;
+  color: var(--lyrics-modal-text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.comments-sort button.active {
+  color: var(--lyrics-modal-text);
+  background: var(--lyrics-modal-surface-strong);
+}
+
+.comment-content :deep(.inline-comment-emoji),
+.reply-preview :deep(.inline-comment-emoji) {
+  width: 1.35em;
+  height: 1.35em;
+  display: inline-block;
+  vertical-align: -0.3em;
+  object-fit: contain;
+}
+
+.comment-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.comment-images img {
+  width: 96px;
+  height: 96px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--lyrics-modal-surface-strong);
+}
+
+.comment-ip,
+.reply-meta {
+  color: var(--lyrics-modal-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.reply-meta {
+  margin-bottom: 0.25rem;
 }
 
 .reply-preview {
