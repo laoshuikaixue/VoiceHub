@@ -384,7 +384,7 @@ const uniqueComments = (items) => {
   })
 }
 
-const isPopularByLikes = (item) => Number(item.likedCount || 0) > 10
+const isPopularByLikes = (item) => Number(item.likedCount || 0) >= 10
 
 const normalizeNeteaseLocation = (item) => {
   const source = item?.ipLocation
