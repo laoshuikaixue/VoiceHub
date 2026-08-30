@@ -1,8 +1,9 @@
-import { createError, defineEventHandler } from 'h3'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, gradeClass } from '~/drizzle/schema'
-import { ne } from 'drizzle-orm'
+import { and, count, inArray, ne, notInArray } from 'drizzle-orm'
 import { smartSort } from '~~/server/utils/grade-class-core'
+import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/user-archive'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,7 +16,19 @@ export default defineEventHandler(async (event) => {
         message: '只有系统管理员可以访问此选项'
       })
     }
+
+    // 归档筛选：archived=1 仅查已归档（graduate/withdrawn）；archived=0 排除已归档；缺省不限制
+    const query = getQuery(event)
+    const archivedFilter = resolveArchivedFilter(query.archived)
+
     // 用户树需要全量轻字段，避免用分页列表推导时统计不完整；排除待审核用户（未通过审核不计入组织树/筛选）
+    const treeConditions = [ne(users.status, 'pending')]
+    if (archivedFilter === 'archived') {
+      treeConditions.push(inArray(users.status, [...ARCHIVED_USER_STATUSES]))
+    } else if (archivedFilter === 'unarchived') {
+      treeConditions.push(notInArray(users.status, [...ARCHIVED_USER_STATUSES]))
+    }
+
     const treeUsers = await db
       .select({
         id: users.id,
@@ -27,7 +40,14 @@ export default defineEventHandler(async (event) => {
         status: users.status
       })
       .from(users)
-      .where(ne(users.status, 'pending'))
+      .where(and(...treeConditions))
+
+    // 已归档用户总数（graduate/withdrawn 状态），供前端"已归档用户"入口徽标
+    const archivedCountResult = await db
+      .select({ count: count() })
+      .from(users)
+      .where(inArray(users.status, [...ARCHIVED_USER_STATUSES]))
+    const archivedCount = archivedCountResult[0]?.count || 0
 
     // 年级班级选项：配置优先；未配置时回退到全部用户聚合（含 withdrawn/graduate 与仅有班级项），
     // 与组织结构树口径一致，避免筛选下拉缺项
@@ -70,7 +90,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       grades,
       classes,
-      treeUsers
+      treeUsers,
+      archivedCount
     }
   } catch (error) {
     console.error('获取用户筛选选项失败:', error)

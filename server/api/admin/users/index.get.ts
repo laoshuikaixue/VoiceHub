@@ -1,8 +1,9 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { and, asc, desc, count, eq, ilike, isNull, or, sql } from 'drizzle-orm'
+import { and, asc, desc, count, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/user-archive'
 
 const UNSET_FILTER_VALUE = '__UNSET__'
 
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const query = getQuery(event)
-    const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
+    const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc', archived } = query
 
     // 构建筛选条件
     const whereConditions = []
@@ -55,6 +56,14 @@ export default defineEventHandler(async (event) => {
       if (['active', 'pending', 'withdrawn', 'graduate'].includes(statusFilter)) {
         whereConditions.push(eq(users.status, statusFilter as 'active' | 'pending' | 'withdrawn' | 'graduate'))
       }
+    }
+
+    // 归档筛选：archived=1 仅查已归档（graduate/withdrawn）；archived=0 排除已归档；缺省不限制
+    const archivedFilter = resolveArchivedFilter(archived)
+    if (archivedFilter === 'archived') {
+      whereConditions.push(inArray(users.status, [...ARCHIVED_USER_STATUSES]))
+    } else if (archivedFilter === 'unarchived') {
+      whereConditions.push(notInArray(users.status, [...ARCHIVED_USER_STATUSES]))
     }
 
     // 搜索功能（姓名、用户名或IP地址）

@@ -4,9 +4,24 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
       <div>
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
-        <p class="text-xs text-text-tertiary mt-1">{{ formatMessage(locale.subtitle, totalUsers) }}</p>
+        <p class="text-xs text-text-tertiary mt-1">
+          {{ showArchived ? formatMessage(locale.archivedSubtitle, totalUsers) : formatMessage(locale.subtitle, totalUsers) }}
+        </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <button
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest hover:text-primary hover:border-primary-30"
+          :title="locale.archivedHint"
+          @click="toggleArchivedView"
+        >
+          <Archive v-if="!showArchived" class="text-warning shrink-0" :size="14" />
+          <ArrowLeft v-else class="text-info shrink-0" :size="14" />
+          {{ showArchived ? locale.backToUsers : locale.archivedUsers }}
+          <span
+            v-if="!showArchived && archivedCount > 0"
+            class="px-1.5 py-0.5 bg-warning-10 text-warning text-[10px] rounded-full font-black"
+          >{{ archivedCount }}</span>
+        </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-[var(--primary-glow)]"
           @click="showAddModal = true"
@@ -1626,7 +1641,8 @@ import {
   AtSign,
   Briefcase,
   Link,
-  ClipboardCheck
+  ClipboardCheck,
+  Archive
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
@@ -1668,6 +1684,9 @@ const roleFilter = ref('')
 const statusFilter = ref('')
 const gradeFilter = ref('')
 const classFilter = ref('')
+// 已归档用户视图：graduate（限制访问-毕业生）状态账号归档后不再直接展示，需切换视图查看
+const showArchived = ref(false)
+const archivedCount = ref(0)
 const sortBy = ref('id')
 const sortOrder = ref('asc')
 const currentPage = ref(1)
@@ -1713,13 +1732,22 @@ const allRoles = computed(() => [
 // 筛选选项
 const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '全部角色' }, ...allRoles.value])
 
-const statusFilterOptions = computed(() => [
-  { label: locale.value?.allStatus || '全部状态', value: '' },
-  { label: getStatusName('active'), value: 'active' },
-  { label: getStatusName('pending'), value: 'pending' },
-  { label: getStatusName('withdrawn'), value: 'withdrawn' },
-  { label: getStatusName('graduate'), value: 'graduate' }
-])
+// 状态筛选：普通视图不提供 graduate/withdrawn 选项（已归档账号默认隐藏）；归档视图仅这两类
+const statusFilterOptions = computed(() => {
+  const options = [{ label: locale.value?.allStatus || '全部状态', value: '' }]
+  if (showArchived.value) {
+    options.push(
+      { label: getStatusName('graduate'), value: 'graduate' },
+      { label: getStatusName('withdrawn'), value: 'withdrawn' }
+    )
+  } else {
+    options.push(
+      { label: getStatusName('active'), value: 'active' },
+      { label: getStatusName('pending'), value: 'pending' }
+    )
+  }
+  return options
+})
 
 const userStatusOptions = computed(() => [
   { label: getStatusName('activeAccess'), value: 'active' },
@@ -2310,6 +2338,20 @@ const clearTreeFilter = () => {
   treeFilterLabel.value = ''
 }
 
+// 切换普通/已归档视图：重置筛选与分页，并重载列表与组织结构树
+const toggleArchivedView = () => {
+  showArchived.value = !showArchived.value
+  searchQuery.value = ''
+  roleFilter.value = ''
+  statusFilter.value = ''
+  gradeFilter.value = ''
+  classFilter.value = ''
+  treeFilterLabel.value = ''
+  currentPage.value = 1
+  void loadUserTree()
+  void loadUsers(1, pageSize.value)
+}
+
 const openTreeUser = async (treeUser) => {
   try {
     const detail = await $fetch(`/api/admin/users/${treeUser.id}`, {
@@ -2374,12 +2416,15 @@ const saveUser = async () => {
       })
     }
 
+    // 先缓存是否编辑态：closeModal 会清空 editingUser，通知文案需在清空前判定
+    const wasEditing = Boolean(editingUser.value)
+
     await Promise.all([loadUserTree(), loadUsers()])
     closeModal()
 
     if (window.$showNotification) {
       window.$showNotification(
-        editingUser.value ? locale.value.notifications.updateSuccess : locale.value.notifications.createSuccess,
+        wasEditing ? locale.value.notifications.updateSuccess : locale.value.notifications.createSuccess,
         'success'
       )
     }
@@ -2445,7 +2490,8 @@ const loadUsers = async (page = 1, limit = 100) => {
         grade: toUserFilterQuery(gradeFilter.value, unsetGradeLabel.value),
         class: toUserFilterQuery(classFilter.value, unsetClassLabel.value),
         sortBy: sortBy.value,
-        sortOrder: sortOrder.value
+        sortOrder: sortOrder.value,
+        archived: showArchived.value ? '1' : '0'
       },
       ...auth.getAuthConfig()
     })
@@ -2480,10 +2526,12 @@ const loadUserTree = async () => {
 
   try {
     const response = await $fetch('/api/admin/users/options', {
+      query: { archived: showArchived.value ? '1' : '0' },
       ...auth.getAuthConfig()
     })
 
     treeUsers.value = response.treeUsers || []
+    archivedCount.value = response.archivedCount || 0
     expandDefaultTreeNodes()
   } catch (error) {
     console.error('加载组织结构失败:', error)

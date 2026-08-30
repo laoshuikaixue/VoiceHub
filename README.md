@@ -1388,6 +1388,7 @@ VoiceHub/
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
+│   │   ├── user-archive.ts # 账号归档判定与筛选参数解析
 │   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
@@ -1418,6 +1419,7 @@ VoiceHub/
 │       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
 │       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
 │       ├── token-version-policy.test.ts # 令牌版本策略测试
+│       ├── user-archive.test.ts # 账号归档筛选参数解析测试
 │       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
