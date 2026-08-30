@@ -1,5 +1,6 @@
 import { apiKeyPermissions, apiKeys, db, users } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 /**
  * 获取API Key详情
@@ -7,13 +8,7 @@ import { eq } from 'drizzle-orm'
  */
 export default defineEventHandler(async (event) => {
   // 检查用户权限 - 只有超级管理员可以管理 API Key
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以管理 API Key'
-    })
-  }
+  await requireSuperAdmin(event)
 
   const apiKeyId = getRouterParam(event, 'id')
 

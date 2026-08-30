@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
 import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 /**
  * 创建API Key
@@ -22,13 +23,7 @@ const createApiKeySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   // 检查用户权限 - 只有超级管理员可以管理 API Key
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以管理 API Key'
-    })
-  }
+  const user = await requireSuperAdmin(event)
 
   try {
     // 验证请求体

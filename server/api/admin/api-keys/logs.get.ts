@@ -1,4 +1,5 @@
 import { ApiLogService } from '~~/server/services/apiLogService'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 /**
  * 获取API访问日志
@@ -6,13 +7,7 @@ import { ApiLogService } from '~~/server/services/apiLogService'
  */
 export default defineEventHandler(async (event) => {
   // 检查用户权限 - 只有超级管理员可以查看 API 日志
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以查看 API 日志'
-    })
-  }
+  await requireSuperAdmin(event)
 
   const query = getQuery(event)
   const page = parseInt(query.page as string) || 1

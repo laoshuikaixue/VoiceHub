@@ -1,17 +1,12 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以管理备份文件'
-      })
-    }
+    await requireSuperAdmin(event)
 
     const filename = getRouterParam(event, 'filename')
 

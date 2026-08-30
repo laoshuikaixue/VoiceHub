@@ -1,4 +1,5 @@
 import withNuxt from './.nuxt/eslint.config.mjs'
+import noRawRoleCheck from './eslint-rules/no-raw-role-check.js'
 
 export default withNuxt(
   // 全局忽略配置
@@ -20,6 +21,13 @@ export default withNuxt(
   },
   // 自定义规则
   {
+    plugins: {
+      voicehub: {
+        rules: {
+          'no-raw-role-check': noRawRoleCheck
+        }
+      }
+    },
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/no-v-html': 'off',
@@ -41,8 +49,10 @@ export default withNuxt(
       '@typescript-eslint/no-unsafe-function-type': 'warn',
       // 允许require导入
       '@typescript-eslint/no-require-imports': 'off',
-      // 允许未处理的Promise
-      '@typescript-eslint/no-floating-promises': 'off'
+      // 允许未处理Promise
+      '@typescript-eslint/no-floating-promises': 'off',
+      // 禁止在 server/api/** 中直接判断 user.role 字面量；统一走 requirePermission
+      'voicehub/no-raw-role-check': 'error'
     }
   }
 )

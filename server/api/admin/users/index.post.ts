@@ -4,6 +4,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { policies, requirePermission, PERMISSIONS } from '~~/server/utils/rbac'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -13,13 +14,7 @@ const normalizeOptionalText = (value: unknown) => {
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  await policies.canManageUsers(event)
 
   const body = await readBody(event)
   const normalizedName = normalizeRequiredText(body.name)
@@ -62,25 +57,22 @@ export default defineEventHandler(async (event) => {
     let validRole = 'USER'
     if (body.role && ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
       // 超级管理员可以创建任何角色的用户
-      if (user.role === 'SUPER_ADMIN') {
+      let canAssignAnyRole = false
+      try {
+        await requirePermission(event, PERMISSIONS.ROLE_MANAGE)
+        canAssignAnyRole = true
+      } catch {
+        canAssignAnyRole = false
+      }
+      if (canAssignAnyRole) {
         validRole = body.role
-      }
-      // 管理员只能创建管理员以下的角色（USER, SONG_ADMIN）
-      else if (user.role === 'ADMIN') {
-        if (['USER', 'SONG_ADMIN'].includes(body.role)) {
-          validRole = body.role
-        } else {
-          throw createError({
-            statusCode: 403,
-            message: '管理员只能创建用户和歌曲管理员角色'
-          })
-        }
-      }
-      // 其他角色不能创建用户
-      else {
+      } else if (['USER', 'SONG_ADMIN'].includes(body.role)) {
+        // 管理员只能创建管理员以下的角色（USER, SONG_ADMIN）
+        validRole = body.role
+      } else {
         throw createError({
           statusCode: 403,
-          message: '没有权限创建用户'
+          message: '管理员只能创建用户和歌曲管理员角色'
         })
       }
     }

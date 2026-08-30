@@ -2,17 +2,12 @@ import { createError, defineEventHandler } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
 import formidable from 'formidable'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以上传备份文件'
-      })
-    }
+    await requireSuperAdmin(event)
 
     // 创建备份目录
     const backupDir = path.join(process.cwd(), 'backups')

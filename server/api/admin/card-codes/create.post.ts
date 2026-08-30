@@ -1,15 +1,10 @@
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
+import { requirePermission, PERMISSIONS } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  await requirePermission(event, PERMISSIONS.CARD_CODES_WRITE)
 
   const body = await readBody(event) ?? {}
 
