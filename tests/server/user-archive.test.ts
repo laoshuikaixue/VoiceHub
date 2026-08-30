@@ -4,7 +4,7 @@ import {
   ARCHIVED_USER_STATUSES,
   isArchivedStatus,
   resolveArchivedFilter
-} from '../../server/utils/user-archive.ts'
+} from '../../app/utils/user-archive.ts'
 
 test('归档状态包含 graduate（限制访问-毕业生）与 withdrawn（限制访问-退学）', () => {
   assert.deepEqual([...ARCHIVED_USER_STATUSES], ['graduate', 'withdrawn'])
