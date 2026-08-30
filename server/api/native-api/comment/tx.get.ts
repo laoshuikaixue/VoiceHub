@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
   const data = response.comment || {}
   const normalize = (item: any) => {
     const user = item.userinfo || item.user || {}
-    const rawImages = item.piclist || item.picList || item.pics || item.images || item.commentpic || item.picurl || item.picUrl || []
+    const rawImages = item.piclist || item.picList || item.pics || item.images || item.commentpic || item.pic || item.picurl || item.picUrl || []
     const images = (Array.isArray(rawImages) ? rawImages : [rawImages])
       .map((image: any) => typeof image === 'string' ? image : image?.picurl || image?.picUrl || image?.url || image?.imageurl || '')
       .filter(Boolean)
@@ -81,10 +81,14 @@ export default defineEventHandler(async (event) => {
     }
     return [...roots.values()]
   }
-  const rawComments = Array.isArray(data.commentlist) ? data.commentlist : []
-  const rawHotComments = Array.isArray(data.hot_comment || data.hotcommentlist)
-    ? (data.hot_comment || data.hotcommentlist)
-    : []
+  const toList = (value: any) => {
+    if (Array.isArray(value)) return value
+    if (Array.isArray(value?.commentlist)) return value.commentlist
+    if (Array.isArray(value?.list)) return value.list
+    return []
+  }
+  const rawComments = toList(data.commentlist)
+  const rawHotComments = toList(data.hot_comment || data.hotcommentlist || data.hotCommentList)
   const groupedComments = groupThreads([...rawHotComments, ...rawComments])
   const hotIds = new Set(rawHotComments.map((item: any) => String(item.commentid ?? item.commentId ?? item.id ?? '').trim()))
   const commentItems = groupedComments

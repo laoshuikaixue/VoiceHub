@@ -6,8 +6,8 @@
         <h2 class="comments-title">{{ locale.title }}</h2>
       </div>
       <div class="comments-sort" role="group">
-        <button :class="{ active: commentSort === 'latest' }" @click="commentSort = 'latest'">{{ locale.latest }}</button>
         <button :class="{ active: commentSort === 'hot' }" @click="commentSort = 'hot'">{{ locale.hotSort }}</button>
+        <button :class="{ active: commentSort === 'latest' }" @click="commentSort = 'latest'">{{ locale.latest }}</button>
       </div>
       <button
         class="refresh-button"
@@ -66,7 +66,7 @@
             </div>
             <p class="comment-content" v-html="renderCommentContent(item.content)"></p>
             <div v-if="item.images?.length" class="comment-images">
-              <img v-for="(image, imageIndex) in item.images" :key="`image-${imageIndex}`" :src="convertToHttps(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
+              <img v-for="(image, imageIndex) in item.images" :key="`image-${imageIndex}`" :src="getCommentImageUrl(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
             </div>
             <div v-if="item.beReplied?.length" class="reply-preview">
               {{ item.beReplied[0]?.user?.nickname || locale.originalComment }}：{{ item.beReplied[0]?.content }}
@@ -75,14 +75,14 @@
               <div class="reply-meta">{{ reply.user?.nickname || locale.neteaseUser }}<span v-if="reply.user?.ip"> · {{ locale.ipLabel }} {{ reply.user.ip }}</span></div>
               <div v-html="renderCommentContent(reply.content)"></div>
               <div v-if="reply.images?.length" class="comment-images reply-images">
-                <img v-for="(image, imageIndex) in reply.images" :key="`reply-image-${imageIndex}`" :src="convertToHttps(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
+                <img v-for="(image, imageIndex) in reply.images" :key="`reply-image-${imageIndex}`" :src="getCommentImageUrl(image)" :alt="locale.commentImage" loading="lazy" referrerpolicy="no-referrer">
               </div>
             </div>
             <div class="comment-actions">
               <button
                 class="liked-count"
-                :class="{ disabled: isTencent, liked: item.liked }"
-                :disabled="isTencent || likeUpdatingKey === String(item.commentId)"
+                :class="{ liked: item.liked }"
+                :disabled="likeUpdatingKey === String(item.commentId)"
                 :title="item.liked ? locale.unlike : locale.like"
                 @click="toggleCommentLike(item)"
               >
@@ -220,9 +220,9 @@ const commentItems = computed(() => {
     return true
   })
 
-  const ordered = commentSort.value === 'hot'
-    ? [...taggedHotComments, ...regularComments]
-    : [...regularComments, ...taggedHotComments]
+  const latest = [...regularComments].sort((a, b) => Number(b.time || 0) - Number(a.time || 0))
+  const popular = [...taggedHotComments].sort((a, b) => Number(b.likedCount || 0) - Number(a.likedCount || 0))
+  const ordered = commentSort.value === 'hot' ? [...popular, ...latest] : [...latest, ...popular]
   return ordered.map((item, index) => ({
     ...item,
     key: getCommentKey(item, index)
@@ -293,12 +293,21 @@ const updateCommentLikeState = (commentId: string | number, liked: boolean, like
 const renderCommentContent = (content?: string) => {
   const source = String(content || '')
   const images: string[] = []
-  const withPlaceholders = source.replace(/<img\b[^>]*?src=["']([^"']+)["'][^>]*>/gi, (_tag, src) => {
-    images.push(convertToHttps(src))
+  const withPlaceholders = source.replace(/(?:<img\b[^>]*?src=["']([^"']+)["'][^>]*>|&lt;img\b[^>]*?src=(?:["']|&quot;)([^"'&]+)(?:["']|&quot;)[^&]*&gt;)/gi, (_tag, src, encodedSrc) => {
+    images.push(getCommentImageUrl(src || encodedSrc))
     return `\u0000${images.length - 1}\u0000`
   })
   const escaped = withPlaceholders.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  return escaped.replace(/\u0000(\d+)\u0000/g, (_match, index) => `<img src="${images[Number(index)].replace(/"/g, '&quot;')}" alt="" class="inline-comment-emoji">`)
+  return escaped
+    .replace(/\[em\][^\[]*\[\/em\]/gi, '🙂')
+    .replace(/\u0000(\d+)\u0000/g, (_match, index) => `<img src="${images[Number(index)].replace(/"/g, '&quot;')}" alt="" class="inline-comment-emoji">`)
+}
+
+const getCommentImageUrl = (url?: string) => {
+  const value = String(url || '').trim()
+  if (!value) return ''
+  const absolute = value.startsWith('//') ? `https:${value}` : convertToHttps(value)
+  return `/api/proxy/image?url=${encodeURIComponent(absolute)}`
 }
 
 const toggleCommentLike = async (comment: NeteaseComment) => {
