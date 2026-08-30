@@ -76,12 +76,19 @@ const getParentCommentId = (item: Record<string, unknown>): string =>
   })()
 
 const getNestedReplies = (item: Record<string, unknown>): Array<Record<string, unknown>> => {
-  if (Array.isArray(item.RepliedComments) && item.RepliedComments.length) {
-    return item.RepliedComments
-  }
-  if (Array.isArray(item.SubComments) && item.SubComments.length) return item.SubComments
-  if (Array.isArray(item.SubCmListV1)) return item.SubCmListV1
-  return []
+  const replies = [
+    ...(Array.isArray(item.RepliedComments) ? item.RepliedComments : []),
+    ...(Array.isArray(item.SubComments) ? item.SubComments : []),
+    ...(Array.isArray(item.SubCmListV1) ? item.SubCmListV1 : [])
+  ]
+  const seen = new Set<string>()
+  return replies.filter((reply) => {
+    if (!reply || typeof reply !== 'object') return false
+    const id = getCommentId(reply)
+    if (id && seen.has(id)) return false
+    if (id) seen.add(id)
+    return true
+  })
 }
 
 const normalizeTimestamp = (value: unknown): number => {

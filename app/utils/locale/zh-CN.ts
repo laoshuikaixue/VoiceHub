@@ -1154,6 +1154,8 @@ export const pages = {
       openImagePreview: '查看大图',
       closeImagePreview: '关闭大图',
       originalComment: '原评论',
+      showMoreReplies: '展开更多回复',
+      hideReplies: '收起回复',
       unlike: '取消点赞',
       like: '点赞评论',
       loadingMore: '加载中...',

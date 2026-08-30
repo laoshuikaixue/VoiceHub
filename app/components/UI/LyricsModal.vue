@@ -165,7 +165,7 @@
                   @click="activePanel = 'comments'"
                 >
                   <Icon name="message-circle" size="16" />
-                  <span>{{ locale.comments }} ({{ commentsCount }})</span>
+                  <span>{{ locale.comments }} ({{ formatCompactCommentCount(commentsCount) }})</span>
                 </button>
               </div>
 
@@ -178,13 +178,13 @@
                 </div>
               </div>
 
-              <SongComments
-                ref="commentsRef"
-                v-show="activePanel === 'comments'"
-                class="comments-display-area"
-                :song="currentSong"
-                :visible="isVisible && activePanel === 'comments'"
-              />
+              <div v-show="activePanel === 'comments'" class="comments-display-area">
+                <SongComments
+                  ref="commentsRef"
+                  :song="currentSong"
+                  :visible="isVisible && activePanel === 'comments'"
+                />
+              </div>
 
               <!-- 歌词设置工具栏 -->
               <div v-if="activePanel === 'lyrics'" class="lyric-toolbar">
@@ -366,6 +366,14 @@ const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 81
 const activePanel = ref('lyrics')
 const commentsRef = ref(null)
 const commentsCount = computed(() => Number(commentsRef.value?.totalCount || 0))
+const commentCountUnit = computed(() => ui.value?.songComments?.tenThousand || '万')
+
+const formatCompactCommentCount = (count) => {
+  const value = Number(count) || 0
+  if (value < 10000) return String(value)
+  const compact = (value / 10000).toFixed(value >= 100000 ? 0 : 1).replace(/\.0$/, '')
+  return `${compact}${commentCountUnit.value}`
+}
 
 // 拖拽状态管理
 const isDragging = ref(false)
@@ -1558,8 +1566,10 @@ onUnmounted(() => {
 }
 
 .comments-display-area {
+  width: 100%;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .comment-current-lyric {

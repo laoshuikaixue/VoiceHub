@@ -1143,6 +1143,8 @@ export const pages = {
       openImagePreview: 'View full image',
       closeImagePreview: 'Close image',
       originalComment: 'Original comment',
+      showMoreReplies: 'Show more replies',
+      hideReplies: 'Collapse replies',
       unlike: 'Unlike',
       like: 'Like comment',
       loadingMore: 'Loading...',

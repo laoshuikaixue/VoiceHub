@@ -6,7 +6,11 @@
         <h2 class="comments-title">{{ locale.title }}</h2>
       </div>
       <div class="comments-sort" role="group">
-        <button :class="{ active: commentSort === 'hot' }" @click="selectCommentSort('hot')">
+        <button
+          v-if="isTencent"
+          :class="{ active: commentSort === 'hot' }"
+          @click="selectCommentSort('hot')"
+        >
           {{ locale.hotSort }} ({{ formatCount(sortTotals.hot) }})
         </button>
         <button :class="{ active: commentSort === 'latest' }" @click="selectCommentSort('latest')">
@@ -42,7 +46,7 @@
     <template v-else>
       <div v-if="totalCount" class="comments-summary">
         <span v-if="totalCount">{{
-          formatLocaleValue(locale.commentsCount, formatCount(totalCount))
+          formatLocaleValue(locale.commentsCount, String(totalCount))
         }}</span>
       </div>
 
@@ -109,16 +113,27 @@
               }}
             </div>
             <div
-              v-for="reply in item.displayReplies"
+              v-for="reply in getVisibleReplies(item)"
               :key="reply.displayKey"
               class="reply-preview"
               :style="{ '--reply-depth': reply.displayDepth }"
             >
               <div class="reply-meta">
-                {{ reply.user?.nickname || locale.neteaseUser
-                }}<span v-if="reply.user?.location">
-                  · {{ locale.locationLabel }} {{ reply.user.location }}</span
-                >
+                <div class="reply-user">
+                  <div class="reply-avatar">
+                    <img
+                      v-if="reply.user?.avatarUrl"
+                      :src="convertToHttps(reply.user.avatarUrl)"
+                      :alt="reply.user?.nickname || locale.userAvatar"
+                      referrerpolicy="no-referrer"
+                    >
+                    <Icon v-else name="user" size="12" />
+                  </div>
+                  <span>{{ reply.user?.nickname || locale.neteaseUser }}</span>
+                  <span v-if="reply.user?.location">
+                    · {{ locale.locationLabel }} {{ reply.user.location }}</span
+                  >
+                </div>
               </div>
               <div class="reply-content">
                 <span>{{ reply.content }}</span>
@@ -150,7 +165,22 @@
                   @keydown.enter.prevent="openCommentImagePreview($event, image)"
                 >
               </div>
+              <div class="reply-actions">
+                <span class="qq-liked-count">
+                  <Icon name="thumbs-up" size="13" />
+                  {{ formatCount(reply.likedCount || 0) }}
+                </span>
+              </div>
             </div>
+            <button
+              v-if="item.displayReplies.length > 1"
+              class="replies-toggle"
+              type="button"
+              @click="toggleReplies(item.key)"
+            >
+              {{ isRepliesExpanded(item.key) ? locale.hideReplies : locale.showMoreReplies }}
+              ({{ item.displayReplies.length }})
+            </button>
             <div class="comment-actions">
               <button
                 v-if="!isTencent"
@@ -256,7 +286,8 @@ const loadingCount = ref(0)
 const likeUpdatingKey = ref('')
 const previewImageUrl = ref('')
 const requestId = ref(0)
-const commentSort = ref('hot')
+const commentSort = ref('latest')
+const expandedReplyKeys = ref(new Set())
 const isLoading = computed(() => loadingCount.value > 0)
 const error = computed(() => sortErrors.value[commentSort.value] || '')
 const totalCount = computed(() => sortTotals.value.latest || sortTotals.value.hot || 0)
@@ -351,6 +382,20 @@ const commentItems = computed(() => {
     key: getCommentKey(item, index)
   }))
 })
+
+const isRepliesExpanded = (commentKey) => expandedReplyKeys.value.has(commentKey)
+
+const getVisibleReplies = (item) => {
+  if (isRepliesExpanded(item.key)) return item.displayReplies
+  return item.displayReplies.slice(0, 1)
+}
+
+const toggleReplies = (commentKey) => {
+  const next = new Set(expandedReplyKeys.value)
+  if (next.has(commentKey)) next.delete(commentKey)
+  else next.add(commentKey)
+  expandedReplyKeys.value = next
+}
 
 function getCommentKey(item, index) {
   const prefix = commentSort.value === 'hot' ? 'hot' : 'comment'
@@ -588,9 +633,8 @@ const fetchNeteaseComments = async (append, currentRequestId) => {
     const body = response.body || response.data || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
     comments.value = append ? [...comments.value, ...nextComments] : nextComments
-    if (!append) {
-      hotComments.value = Array.isArray(body.hotComments) ? body.hotComments : []
-    }
+    // 网易云的 hotComments 属于精选评论，不在播放器中展示。
+    if (!append) hotComments.value = []
 
     const latestTotal = Number(body.total) || comments.value.length
     sortTotals.value = {
@@ -651,7 +695,8 @@ const resetComments = (resetSort = false) => {
   sortLoaded.value = { hot: false, latest: false }
   sortErrors.value = { hot: '', latest: '' }
   sortLoading.value = { hot: false, latest: false }
-  if (resetSort) commentSort.value = 'hot'
+  expandedReplyKeys.value = new Set()
+  if (resetSort) commentSort.value = isTencent.value ? 'hot' : 'latest'
 }
 
 const refreshComments = () => {
@@ -964,6 +1009,30 @@ defineExpose({ totalCount })
   margin-bottom: 0.25rem;
 }
 
+.reply-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.reply-avatar {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 1.25rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  color: var(--lyrics-modal-text-muted);
+  background: var(--lyrics-modal-surface-strong);
+}
+
+.reply-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .reply-preview {
   margin-left: calc(var(--reply-depth, 0) * 0.75rem);
   margin-top: 0.7rem;
@@ -974,6 +1043,29 @@ defineExpose({ totalCount })
   font-size: 0.82rem;
   line-height: 1.55;
   word-break: break-word;
+}
+
+.replies-toggle {
+  margin-top: 0.55rem;
+  margin-left: calc(var(--reply-depth, 0) * 0.75rem);
+  border: 0;
+  padding: 0;
+  color: var(--lyrics-modal-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.replies-toggle:hover {
+  color: var(--lyrics-modal-text);
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
 }
 
 .comment-actions {
