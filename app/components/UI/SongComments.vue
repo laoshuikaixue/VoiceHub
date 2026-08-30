@@ -65,10 +65,9 @@
             </div>
             <div class="comment-actions">
               <button
-                v-if="!isTencent"
                 class="liked-count"
-                :class="{ liked: item.liked }"
-                :disabled="likeUpdatingKey === String(item.commentId)"
+                :class="{ disabled: isTencent, liked: item.liked }"
+                :disabled="isTencent || likeUpdatingKey === String(item.commentId)"
                 :title="item.liked ? locale.unlike : locale.like"
                 @click="toggleCommentLike(item)"
               >
@@ -178,14 +177,23 @@ const canFetchComments = computed(() => !!neteaseSongId.value || !!tencentSongId
 const isTencent = computed(() => !!tencentSongId.value)
 
 const commentItems = computed(() => {
-  const taggedHotComments = hotComments.value.map((item) => ({ ...item, isHot: true }))
+  const unique = (items: NeteaseComment[]) => {
+    const seen = new Set<string>()
+    return items.filter((item) => {
+      const key = item.commentId != null ? `id:${item.commentId}` : `text:${item.user?.nickname || ''}|${item.time || 0}|${item.content || ''}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }
+  const taggedHotComments = unique(hotComments.value).map((item) => ({ ...item, isHot: true }))
   const seenIds = new Set(
     taggedHotComments
       .map((item) => item.commentId)
       .filter((commentId) => commentId !== undefined && commentId !== null)
       .map((commentId) => String(commentId))
   )
-  const regularComments = comments.value.filter((item) => {
+  const regularComments = unique(comments.value).filter((item) => {
     if (item.commentId === undefined || item.commentId === null) return true
     const key = String(item.commentId)
     if (seenIds.has(key)) return false

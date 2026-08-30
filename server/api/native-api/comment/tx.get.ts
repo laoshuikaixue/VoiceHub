@@ -43,14 +43,14 @@ export default defineEventHandler(async (event) => {
   }
   const data = response.comment || {}
   const normalize = (item: any) => ({
-    commentId: item.commentid ?? item.id,
-    content: item.content || '',
+    commentId: item.commentid ?? item.commentId ?? item.id ?? item.rootcommentid,
+    content: item.content || item.middlecommentcontent || item.rootcommentcontent || item.commentcontent || '',
     time: Number(item.time || 0) * 1000,
-    likedCount: Number(item.praisenum || item.likedCount || 0),
+    likedCount: Number(item.praisenum ?? item.praise_num ?? item.likedCount ?? item.praiseNum ?? 0),
     liked: false,
     user: {
-      nickname: item.nick || item.nickname || 'QQ 音乐用户',
-      avatarUrl: item.avatarurl || item.avatar || ''
+      nickname: item.nick || item.nickname || item.user?.nick || item.user?.nickname || 'QQ 音乐用户',
+      avatarUrl: item.avatarurl || item.avatar || item.user?.avatarurl || item.user?.avatar || ''
     }
   })
   return {
