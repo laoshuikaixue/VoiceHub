@@ -379,31 +379,125 @@ CREATE INDEX idx_api_usage_monthly_lookup ON api_usage_monthly(api_key_id, usage
 | 权限缓存命中率 | < 90% | 检查 TTL 或失效逻辑 |
 | PG 慢查询（>100ms） | > 10 条/分钟 | 分析索引 |
 
-## [S12] PR 审计检查清单
+## [S12] 单一 PR 验收清单（提交上游前必须全部勾选）
 
-| PR | 阶段 | 检查重点 |
-|---|---|---|
-| PR1 | 数据骨架 | 迁移 up/down / Seed 正确 / 旧表保留 / Drizzle schema 一致 / [S11.1] 索引创建 |
-| PR2 | 后端 RBAC 内核 | Feature Flag / `resolveUserPermissions` 单测 / `routePermissionMap` 全覆盖 / ESLint 规则 / 旧 `permissions.js` fallback |
-| PR3 | 前端策略镜像 | `useRbac()` 正确调用 / Sidebar 按权限显隐 / 未授权 403 友好提示 |
-| PR4 | API Key 增强 | 新字段校验 / 中间件顺序 / Webhook 异步 / 速率限制原子操作 / `webhook_secret` bcrypt 存储 |
-| PR5 | RbacManager UI | 仅 SUPER_ADMIN 可见 / `expires_at` + `reason` + `granted_by` / 撤销二次确认 / 审计日志 |
+> 内部开发按 [S15] 分阶段在 feature 分支累积，最终**一次性推送一个 PR** 至 `laoshuikaixue/VoiceHub`。所有验收项必须在合并前通过。
+
+### 一、数据骨架（[S2][S7]）
+
+- [ ] `pnpm db:generate` 生成 4 张新表（`permissions` / `role_permissions` / `user_permissions` / `permission_migration_log`）+ `api_keys` 8 个扩展字段 + 速率限制 / 配额 / Webhook 失败日志表，无手工 SQL
+- [ ] 所有 migration 含 `up` 与 `down` 脚本，`pnpm db:migrate down` 可回滚
+- [ ] [S11.1] 全部索引已建（`pg_indexes` 查询确认）
+- [ ] `pnpm db:seed` 写入 4 角色 × 权限矩阵 + 旧 8 项 API 权限注册到 `permissions`
+- [ ] `pnpm tsx scripts/normalize-api-permissions.ts` 执行后 `SELECT COUNT(*) FROM apiKeyPermissions WHERE permission LIKE '%:%'` 为 0
+- [ ] `permission_migration_log` 记录每条变更（old / new / api_key_id / migrated_at）
+
+### 二、后端 RBAC 内核（[S4]）
+
+- [ ] `server/utils/rbac/` 模块完整：`policies.ts` / `guards.ts` / `resolvePermissions.ts` / `routePermissionMap.ts` / `cache.ts` / `permissionsSeed.ts` / `constants.ts`
+- [ ] 124+ 处旧 `user.role` 判断**全部**替换为 `requirePermission(event, key)`
+- [ ] ESLint `no-raw-role-check` 规则已注册；`pnpm lint:ci` 通过；违规构建失败
+- [ ] `routePermissionMap` 覆盖 [S4.3] 列出的所有管理 / 敏感路由；未覆盖路由走默认拒绝
+- [ ] `permissions.js` 旧文件保留 30 天作为 fallback（`RBAC_ENABLED=false` 启用）
+- [ ] `requireSongAdmin.ts` 改造为 `requirePermission` 薄封装
+
+### 三、前端策略镜像（[S5.1][S5.2]）
+
+- [ ] `app/utils/rbac.ts` 与后端 `policies.ts` 镜像
+- [ ] `useRbac()` composable 调用 `/api/admin/rbac/my-permissions` 拉取有效权限并缓存
+- [ ] `Sidebar.vue` 改用 `rbac.canAccess(page)`，按权限显隐
+- [ ] 未授权路由跳转统一 403 友好提示页
+- [ ] `ApiKeyManager.vue` 表单扩展：owner_type / rate_limit_per_minute / quota_daily / quota_monthly / ip_whitelist / webhook_url；创建成功弹窗一次性展示 `apiKey` 与 `webhook_secret` 明文
+
+### 四、API Key 增强（[S4.3][S4.5]）
+
+- [ ] `routePermissionMap` 替代 `api-auth.ts` 中的 `getRequiredPermission` 硬编码
+- [ ] 中间件顺序正确：IP 白名单 → 激活 → 过期 → 速率限制 → 日配额 → 月配额 → 权限
+- [ ] PG 速率限制使用 `INSERT ... ON CONFLICT (api_key_id, bucket_minute) DO UPDATE SET count = count + 1 RETURNING count`，无应用层竞态
+- [ ] PG 日 / 月配额使用原子累加 + 唯一索引，跨实例可序列化
+- [ ] 超限返回 `429` + `Retry-After` + `X-RateLimit-Remaining` 头
+- [ ] Webhook 签名置于 `X-Signature: sha256=<hex>` 头；body 仅含 `event` / `payload` / `timestamp`
+- [ ] Webhook 异步使用 Nitro `event.waitUntil(...)`，主响应不 await
+- [ ] Webhook 失败重试 3 次（指数退避 1s/4s/16s），失败入 `webhook_failures` 表
+- [ ] `webhook_secret` 落库前 `bcrypt` 哈希（cost=10）；明文仅创建响应一次性返回
+- [ ] `quota_daily <= 0` / `quota_monthly <= 0` 创建时返回 `400`，不允许歧义；`NULL` = 不限
+- [ ] IP 白名单 CIDR 校验，非法格式返回 `API_KEY_INVALID_IP_WHITELIST`
+- [ ] `RATELIMIT_BACKEND` 环境变量支持 `pg`（默认） / `redis`（可选增强）切换
+
+### 五、RbacManager UI（[S5.3]）
+
+- [ ] 三个标签页：权限总览（只读）/ 角色管理 / 个人加授
+- [ ] 角色编辑 + 权限分配仅 `SUPER_ADMIN` 可见（前端 `v-if` + 后端 `requirePermission(event, 'permissions.manage')` 双重校验）
+- [ ] 个人加授表单字段：`permission_id` / `grant_type`（assign/revoke） / `expires_at` / `reason`
+- [ ] 加授列表展示 `granted_by` / `reason` / `expires_at` / 创建时间
+- [ ] 撤销操作二次确认（`ConfirmDialog`）
+
+### 六、测试与验证（[S9]）
+
+- [ ] `pnpm typecheck` 通过
+- [ ] `pnpm lint:ci` 通过
+- [ ] 单元测试全部通过（`tests/server/rbac/`）：
+  - `resolvePermissions.test.ts` — 角色矩阵 / 加授 / 减授 / revoke 优先级 / 过期 / 组合场景
+  - `routePermissionMap.test.ts` — 精确匹配 / 通配符 / 顺序敏感 / 不匹配返回 null
+  - `api-rate-limit-pg.test.ts` — 固定窗口边界 / 配额耗尽 429 / 并发安全
+  - `webhook-signature.test.ts` — HMAC 计算正确 / 头位置正确 / ±5min 时间戳容忍
+- [ ] 集成测试通过（`tests/integration/`）：
+  - `api-auth-rbac.test.ts` — 4 角色 × 关键 API 矩阵
+  - `api-key-quota.test.ts` — 配额耗尽 429 + Retry-After 头
+  - `user-permissions.test.ts` — 临时投权到期自动失效
+- [ ] Postman 手工验证 4 角色访问矩阵（[S9.2] 表）
+- [ ] 极端边界全部通过（[S9.4] 表）
+
+### 七、生产压测（[S11.2]，Linux 环境）
+
+> 该项由运维 / 后端联合在预发布或生产环境执行，不阻塞 PR 合并，但**生产部署前必须完成**。
+
+- [ ] 速率限制原子累加压测通过（PG CPU < 70%，无死锁）
+- [ ] 权限解析缓存击穿压测通过（resolveUserPermissions JOIN < 30ms）
+- [ ] 日 / 月配额耗尽压测通过（第 6 次起 429 + Retry-After）
+- [ ] 压测记录填入 [S11.2] 模板并存档
+
+### 八、安全审计（[S10]）
+
+- [ ] 权限提升测试：低权限 Token 请求高权限 API 全部返回 403
+- [ ] SQL 注入测试：`' OR '1'='1` 在 ORM 参数化字段不抛异常
+- [ ] 敏感信息落库检查：`webhook_secret` / `api_key` 均哈希存储，明文仅响应返回
+- [ ] Webhook 签名验证：ngrok 接收端用相同 secret 重算 HMAC 一致；缺头拒绝
+- [ ] IP 白名单校验：`192.168.1.0/24` 白名单外 IP 被拒绝
+
+### 九、文档与运维（[S11.3][S13][S14][S16]）
+
+- [ ] `app/utils/locale/{zh-CN,en-US}.ts` 同步新增权限 / 加授 / Webhook 配置相关文案（按 AGENTS.md 2.5）
+- [ ] `SERVER_ERROR_CODES` + 两份 locale 的 `serverErrors` 同步新增 `API_KEY_INVALID_IP_WHITELIST` 等错误码
+- [ ] `README.md` 项目结构部分同步新增文件（`server/utils/rbac/`、`RbacManager.vue`、`scripts/normalize-api-permissions.ts` 等）
+- [ ] `RBAC_ENABLED` 与 `RATELIMIT_BACKEND` 环境变量写入部署文档
+- [ ] 监控告警规则（[S11.3]）已配置
+- [ ] 回滚脚本验证：`RBAC_ENABLED=false` 后旧逻辑可工作
+- [ ] PR 描述中包含：变更摘要 / 迁移步骤 / 回滚预案 / 性能压测结果链接
 
 ## [S13] 回滚验证
 
+> 单 PR 提交后 `RBAC_ENABLED=false` 仅作为 30 天观察期内的应急回滚手段，不作为长期开关。详见 [S15.三]。
+
 ```bash
-# 关闭 Feature Flag
+# 代码层回滚（不依赖数据库，立即生效）
 export RBAC_ENABLED=false
-
-# 验证旧权限逻辑生效
+# 重启服务后，server/utils/permissions.js 旧判断路径生效
 curl -X GET /api/admin/users -H "Authorization: Bearer <admin_token>"
-# 应返回 200（旧逻辑允许）
+# 应返回 200（旧逻辑允许 ADMIN/SUPER_ADMIN 访问）
 
-# 数据库回滚（如需要）
+# 数据库回滚（仅当代码层回滚不满足时执行）
 pnpm db:migrate down
+# 撤销 permissions / role_permissions / user_permissions / api_keys 扩展字段
 
-# 确认旧权限字符串仍可读
+# 验证旧 API Key 仍可鉴权（旧 apiKeyPermissions 表未删除）
 pnpm tsx scripts/verify-legacy-permissions.ts
+
+# 30 天后清理（独立 PR：chore: 清理 RBAC 重构临时 fallback）
+# - 删除 server/utils/permissions.js
+# - 删除 apiKeyPermissions 表
+# - 删除 RBAC_ENABLED feature flag
+# - 删除 scripts/normalize-api-permissions.ts / verify-legacy-permissions.ts
 ```
 
 ## [S14] 审计命令速查
@@ -421,17 +515,55 @@ pnpm tsx scripts/verify-legacy-permissions.ts
 | 压测命令（ab） | `ab -n 500 -c 50 -H "X-API-Key: xxx" <url>` |
 | 关闭 Feature Flag | `export RBAC_ENABLED=false` |
 
-## [S15] 实施切片
+## [S15] 实施与提交策略
 
-预计拆 5 个 PR，每个独立可上线：
+### 一、外部提交流程（推到上游）
 
-1. **PR1 数据骨架**：schema + 4 张表 + seed + 迁移脚本（含 [S11.1] 索引）（无业务影响）
-2. **PR2 后端 RBAC 内核**：rbac 模块 + guards + ESLint 规则 + 全量替换 124+ 处（feature flag `RBAC_ENABLED=false` 时走旧路径）
-3. **PR3 前端策略镜像**：rbac.ts + composable + Sidebar 改造
-4. **PR4 API Key 增强**：owner / rate limit(pg) / quota / ip 白名单 / webhook + 中间件改造 + ApiKeyManager 表单
-5. **PR5 RbacManager 页面 + 移除旧路径**：UI 上线 + 关闭 feature flag + 旧表清理（30 天观察期后）
+> 本次重构**整体作为一个 PR 提交至 `laoshuikaixue/VoiceHub`**。不接受拆分。
 
-每个 PR 之间可独立部署、独立验证、独立回滚。
+- 工作分支：`feature/rbac-and-api-key`（从 `main` 拉取，基于最新 upstream 同步）
+- 提交规范：每个内部阶段用语义化 commit（`feat(db): ...` / `feat(rbac): ...` / `feat(api-key): ...` / `feat(rbac-ui): ...` / `test: ...` / `docs: ...`），便于 reviewer 按阶段 review
+- 推送目标：fork 的 `TSS-Small-sunshine/VoiceHub`，再向 upstream 开 PR
+- PR 描述必须包含（按 upstream 维护者阅读习惯）：
+  - 变更摘要（≤5 条）
+  - 数据库迁移步骤（含 `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:seed` / 旧权限归一化脚本）
+  - 新增 / 修改的环境变量（`RBAC_ENABLED` / `RATELIMIT_BACKEND`）
+  - 性能压测结果（[S11.2] 模板）或显式声明"待生产部署前补齐"
+  - 回滚预案（`RBAC_ENABLED=false` + `pnpm db:migrate down`）
+  - 测试覆盖摘要（`pnpm test` 结果行）
+  - [S12] 单一 PR 验收清单全部勾选
+
+### 二、内部开发阶段（commit 顺序与依赖）
+
+内部仍按 5 个阶段累积到 feature 分支，每个阶段独立可运行、可测试：
+
+1. **Stage 1 数据骨架** — `feat(db): permissions + role_permissions + user_permissions + api_keys 扩展字段` + [S11.1] 索引 + seed + 旧权限归一化脚本
+2. **Stage 2 后端 RBAC 内核** — `feat(rbac): server/utils/rbac 模块 + ESLint no-raw-role-check + 124+ 处替换`（保留 `permissions.js` 30 天 fallback）
+3. **Stage 3 前端策略镜像** — `feat(rbac): app/utils/rbac.ts + useRbac + Sidebar + ApiKeyManager 表单扩展`
+4. **Stage 4 API Key 增强** — `feat(api-key): PG 速率限制 + 配额 + IP 白名单 + Webhook 签名 + 中间件改造`
+5. **Stage 5 RbacManager UI** — `feat(rbac-ui): RbacManager.vue + 角色管理 + 个人加授 + 审计日志`
+
+每 Stage 之间不强求独立上线，但需保证：
+
+- 任意 Stage N 合入后，`pnpm dev` 仍能启动，不出现路由 500
+- `RBAC_ENABLED=false` 时，前 3 个 Stage 仍可走旧逻辑（feature flag 兜底）
+- Stage 4 + 5 上线后 `RBAC_ENABLED` 默认 `true`，回滚时切回 `false` 即可
+
+### 三、回滚预案
+
+- **代码层**：`RBAC_ENABLED=false` 一键回退到 `permissions.js` + `requireSongAdmin.ts` + 旧 `apiKeyPermissions` 冒号风格（feature flag 切换不依赖数据库）
+- **数据层**：`pnpm db:migrate down` 撤销新增 4 表 + `api_keys` 扩展字段；旧 `apiKeyPermissions` 数据在 seed 阶段未删除，回滚后仍可读
+- **API Key**：回滚后 24h 内允许保留 `webhook_secret` 哈希（接收方已存明文可继续验签），但 Webhook URL 失效不报错，仅不发送
+- **保留期**：`permissions.js` + 旧 `apiKeyPermissions` 表保留 30 天后清理（独立 PR `chore: 清理 RBAC 重构临时 fallback`）
+
+### 四、与 upstream 同步冲突预案
+
+若 upstream 在开发期间引入新接口或新角色：
+
+- 在 `feature/rbac-and-api-key` 上 `git fetch upstream && git rebase upstream/main`
+- 新增接口：补 `routePermissionMap` 条目 + 权限 key
+- 新增角色：在 `permissionsSeed.ts` 增加 seed 行，PR 中说明
+- 冲突若涉及 `permissions.js` / `apiKeyPermissions` 表结构，联系 upstream 维护者协商处理
 
 ## [S16] 审计结论模板（实施完成后填写）
 
