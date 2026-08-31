@@ -37,7 +37,7 @@
             <!-- 菜单项列表 -->
             <template v-for="item in group.items" :key="item.id">
               <button
-                v-if="permissions.canAccessPage(item.permissionId || item.id)"
+                v-if="rbac.canAccessPage(item.permissionId || item.id)"
                 :class="[
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-all group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-10 focus-visible:ring-inset',
                   activeTab === item.id
@@ -138,10 +138,23 @@ import {
   GraduationCap
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import { useRbac } from '~/composables/useRbac'
+import { useAuth } from '~/composables/useAuth'
 
 const avatarError = ref(false)
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.sidebar || {})
+
+const auth = useAuth()
+const rbac = useRbac()
+const rbacUserId = computed(() => auth.user.value?.id)
+watch(
+  rbacUserId,
+  (id) => {
+    rbac.bind(id)
+  },
+  { immediate: true }
+)
 
 const props = defineProps({
   // 侧边栏是否打开（移动端）
@@ -223,7 +236,7 @@ const menuGroups = computed(() => [
  */
 const shouldShowGroup = (group) => {
   if (!props.permissions) return true
-  return group.items.some((item) => props.permissions.canAccessPage(item.permissionId || item.id))
+  return group.items.some((item) => rbac.canAccessPage(item.permissionId || item.id))
 }
 
 /**

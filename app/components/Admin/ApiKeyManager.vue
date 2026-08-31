@@ -137,6 +137,7 @@
               <Edit2 v-else :size="14" />
             </button>
             <button
+              v-if="rbac.can(PERMISSIONS.API_KEYS_DELETE)"
               class="p-2 text-text-tertiary hover:text-error transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="deleteApiKey(apiKey)"
@@ -621,6 +622,9 @@ import {
   X
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
+import { useAuth } from '~/composables/useAuth'
+import { useRbac } from '~/composables/useRbac'
+import { PERMISSIONS } from '~/utils/rbac'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -790,6 +794,16 @@ const availablePermissions = computed(() => [
 
 // Toast通知
 const toast = useToast()
+const auth = useAuth()
+const rbac = useRbac()
+const rbacUserId = computed(() => auth.user.value?.id)
+watch(
+  rbacUserId,
+  (id) => {
+    rbac.bind(id)
+  },
+  { immediate: true }
+)
 
 // 方法
 const handleExpiresAtChange = (val) => {
