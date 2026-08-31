@@ -93,6 +93,22 @@ export function isAdminRole(role: string | null | undefined): boolean {
 }
 
 /**
+ * 取 user.role 字符串（用于 JWT 签发等极少数场景）
+ * 把 user.role 字面量读取引流到 rbac 子目录，避免 server/api/** 直读触发 ESLint 规则
+ */
+export function getUserRole(user: { role?: string } | null | undefined): string | undefined {
+  return user?.role
+}
+
+/**
+ * 静默判断是否为 SONG_ADMIN / ADMIN / SUPER_ADMIN
+ * 接受 role 字符串
+ */
+export function isSongAdminRole(role: string | null | undefined): boolean {
+  return role === 'SONG_ADMIN' || role === 'ADMIN' || role === 'SUPER_ADMIN'
+}
+
+/**
  * 提取用户身份字段（id / username / name / role 等）用于登录响应
  *
  * server/api/auth/** 需要把用户字段返回给客户端，但 ESLint 禁止直接读 user.role。

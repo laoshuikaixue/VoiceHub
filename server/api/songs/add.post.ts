@@ -3,6 +3,7 @@ import { songs, users } from '~/drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { isAdminRole } from '~~/server/utils/rbac/guards'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,8 +18,8 @@ export default defineEventHandler(async (event) => {
       throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
     }
 
-    // 检查权限
-    if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    // 检查权限：管理员才能后台投稿
+    if (!isAdminRole(user.role)) {
       throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
     }
 

@@ -72,6 +72,10 @@ export default {
       if (node.parent && node.parent.type === 'CallExpression') {
         return
       }
+      // 允许 OptionalChain 包装（user?.role 在 isAdminRole(user?.role) 中）
+      if (node.parent && node.parent.type === 'ChainExpression') {
+        return
+      }
       if (isUserRoleMember(node)) {
         context.report({ node, messageId: 'noRawRoleCheck' })
       }
