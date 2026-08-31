@@ -29,6 +29,9 @@ const optionalString = (value: unknown): string => {
   return value.trim()
 }
 
+// QQ 评论正文的换行以字面量 \n 两个字符返回，需还原为真实换行
+const unescapeLiteralNewlines = (text: string) => text.replace(/\\r\\n|\\n|\\r/g, '\n')
+
 const normalizeImageUrl = (value: unknown): string => {
   const text = optionalString(value).replace(/&amp;/gi, '&')
   if (!text) return ''
@@ -131,8 +134,8 @@ export const normalizeQqComment = (
 
   const item = raw as Record<string, unknown>
   const commentId = getCommentId(item)
-  const content = optionalString(
-    item.Content ?? item.content ?? item.middlecommentcontent ?? item.commentcontent
+  const content = unescapeLiteralNewlines(
+    optionalString(item.Content ?? item.content ?? item.middlecommentcontent ?? item.commentcontent)
   )
   if (!commentId || !content || parentIds.has(commentId)) return null
 

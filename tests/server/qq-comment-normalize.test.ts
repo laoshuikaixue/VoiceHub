@@ -146,3 +146,17 @@ test('QQ评论分页中根评论缺失时保留孤儿回复供后续归并', () 
   assert.equal(result.orphanReplies[0]?.commentId, 'reply-1')
   assert.equal(result.orphanReplies[0]?.rootCommentId, 'root-1')
 })
+
+test('QQ评论正文字面量换行还原为真实换行', () => {
+  const result = normalizeQqCommentList([
+    {
+      CmId: 'root-1',
+      Content: '第一行\\r\\n第二行\\n第三行\\r结尾',
+      Nick: '评论者',
+      SubComments: [{ CmId: 'reply-1', Content: '回复\\n换行', Nick: '回复者' }]
+    }
+  ])
+
+  assert.equal(result[0]?.content, '第一行\n第二行\n第三行\n结尾')
+  assert.equal(result[0]?.replies[0]?.content, '回复\n换行')
+})

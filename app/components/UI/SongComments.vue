@@ -1169,6 +1169,7 @@ defineExpose({ totalCount })
   font-size: 0.82rem;
   line-height: 1.55;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .replies-toggle {
