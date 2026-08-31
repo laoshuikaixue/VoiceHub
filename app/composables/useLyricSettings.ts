@@ -40,6 +40,14 @@ export const useLyricSettings = () => {
   const wordFadeWidth = useState('lyric-word-fade-width', () => 0.5)
   const countDownShow = useState('lyric-countdown-show', () => true)
 
+  // AMLL 歌词优化
+  const amllNormalizeSpaces = useState('lyric-amll-normalize-spaces', () => true)
+  const amllResetLineTimestamps = useState('lyric-amll-reset-line-timestamps', () => true)
+  const amllConvertBgLines = useState('lyric-amll-convert-bg-lines', () => true)
+  const amllSyncBgLines = useState('lyric-amll-sync-bg-lines', () => true)
+  const amllCleanOverlaps = useState('lyric-amll-clean-overlaps', () => true)
+  const amllTryAdvanceStart = useState('lyric-amll-try-advance-start', () => true)
+
   // 歌词字体
   const lyricFontWeight = useState('lyric-font-weight', () => 'bold')
   const LyricFont = useState('lyric-font-family', () => 'follow') // 'follow' 跟随系统
@@ -118,6 +126,12 @@ export const useLyricSettings = () => {
     hidePassedLines,
     wordFadeWidth,
     countDownShow,
+    amllNormalizeSpaces,
+    amllResetLineTimestamps,
+    amllConvertBgLines,
+    amllSyncBgLines,
+    amllCleanOverlaps,
+    amllTryAdvanceStart,
     lyricFontWeight,
     LyricFont,
     enableExcludeLyrics,

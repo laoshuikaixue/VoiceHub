@@ -230,6 +230,45 @@
                     </div>
                   </template>
                 </Popover>
+                <Popover v-if="lyricSettings.useAMLyrics.value" placement="top-end" :offset="12">
+                  <template #trigger>
+                    <div class="toolbar-btn" :title="locale.amllOptimize">
+                      <Icon name="list-ordered" size="20" />
+                    </div>
+                  </template>
+                  <template #content>
+                    <div class="lyric-settings-content">
+                      <div class="setting-group-label">{{ locale.amllOptimize }}</div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.amllNormalizeSpaces }}</span>
+                        <input v-model="lyricSettings.amllNormalizeSpaces.value" type="checkbox" />
+                      </div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.amllResetLineTimestamps }}</span>
+                        <input
+                          v-model="lyricSettings.amllResetLineTimestamps.value"
+                          type="checkbox"
+                        />
+                      </div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.amllConvertBgLines }}</span>
+                        <input v-model="lyricSettings.amllConvertBgLines.value" type="checkbox" />
+                      </div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.amllSyncBgLines }}</span>
+                        <input v-model="lyricSettings.amllSyncBgLines.value" type="checkbox" />
+                      </div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.amllCleanOverlaps }}</span>
+                        <input v-model="lyricSettings.amllCleanOverlaps.value" type="checkbox" />
+                      </div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.amllTryAdvanceStart }}</span>
+                        <input v-model="lyricSettings.amllTryAdvanceStart.value" type="checkbox" />
+                      </div>
+                    </div>
+                  </template>
+                </Popover>
               </div>
             </div>
           </div>
@@ -1825,6 +1864,12 @@ onUnmounted(() => {
   width: 16px;
   height: 16px;
   accent-color: var(--color-error);
+}
+
+.setting-group-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 /* 音质菜单动画 */

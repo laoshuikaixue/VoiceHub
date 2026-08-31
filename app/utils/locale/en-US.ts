@@ -1086,6 +1086,13 @@ export const pages = {
       showTranslation: 'Show translation',
       showRoma: 'Show romanization',
       showYrc: 'Word-by-word lyrics (YRC)',
+      amllOptimize: 'Lyric optimize',
+      amllNormalizeSpaces: 'Normalize spaces',
+      amllResetLineTimestamps: 'Reset line times',
+      amllConvertBgLines: 'Merge bg vocals',
+      amllSyncBgLines: 'Sync bg lines',
+      amllCleanOverlaps: 'Clean overlaps',
+      amllTryAdvanceStart: 'Advance lines',
       quality: 'Quality',
       playMode: {
         loopOne: 'Repeat One',
