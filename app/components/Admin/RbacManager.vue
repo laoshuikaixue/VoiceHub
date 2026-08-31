@@ -85,7 +85,7 @@
                 :checked="roleMatrix[role]?.includes(p.key) || false"
                 :disabled="role === 'SUPER_ADMIN'"
                 class="w-3.5 h-3.5"
-                @change="toggleRolePermission(role, p.key, ($event.target as HTMLInputElement).checked)"
+                @change="toggleRolePermission(role, p.key, $event.target.checked)"
               >
               <span class="text-[10px] font-mono text-text-secondary">{{ p.key }}</span>
             </label>
