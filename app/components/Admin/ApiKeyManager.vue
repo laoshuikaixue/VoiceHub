@@ -302,6 +302,89 @@
                 >{{ locale.enabled }}</span
               >
             </label>
+
+            <!-- 高级选项：所有者 / 速率限制 / 配额 / IP 白名单 / Webhook -->
+            <div class="space-y-3 pt-2 border-t border-border-secondary">
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                {{ locale.advancedOptions || '高级选项' }}
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ locale.ownerType || '所有者类型' }}
+                  </label>
+                  <CustomSelect
+                    v-model="form.ownerType"
+                    :options="[
+                      { label: locale.ownerSystem || '系统', value: 'system' },
+                      { label: locale.ownerUser || '用户', value: 'user' },
+                      { label: locale.ownerIntegration || '集成', value: 'integration' }
+                    ]"
+                    class-name="w-full"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ locale.rateLimitPerMinute || '每分钟速率限制' }}
+                  </label>
+                  <input
+                    v-model.number="form.rateLimitPerMinute"
+                    type="number"
+                    min="1"
+                    :placeholder="locale.unlimited || '不限'"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                  >
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ locale.quotaDaily || '日配额' }}
+                  </label>
+                  <input
+                    v-model.number="form.quotaDaily"
+                    type="number"
+                    min="1"
+                    :placeholder="locale.unlimited || '不限'"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                  >
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ locale.quotaMonthly || '月配额' }}
+                  </label>
+                  <input
+                    v-model.number="form.quotaMonthly"
+                    type="number"
+                    min="1"
+                    :placeholder="locale.unlimited || '不限'"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                  >
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                  {{ locale.ipWhitelist || 'IP 白名单（每行一项，IP 或 CIDR）' }}
+                </label>
+                <textarea
+                  v-model="form.ipWhitelist"
+                  rows="2"
+                  :placeholder="locale.ipWhitelistPlaceholder || '留空表示不限制\n192.168.1.0/24'"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary min-h-[60px] resize-none placeholder:text-text-primary"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                  {{ locale.webhookUrl || 'Webhook URL' }}
+                </label>
+                <input
+                  v-model="form.webhookUrl"
+                  type="url"
+                  :placeholder="locale.webhookUrlPlaceholder || 'https://example.com/webhook'"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                >
+              </div>
+            </div>
           </div>
 
           <div class="p-6 border-t border-border-secondary flex gap-2 justify-end">
@@ -719,7 +802,14 @@ const form = reactive({
   description: '',
   expiresAt: '',
   permissions: [],
-  isActive: true
+  isActive: true,
+  ownerType: 'system',
+  ownerId: null,
+  rateLimitPerMinute: null,
+  quotaDaily: null,
+  quotaMonthly: null,
+  ipWhitelist: '',
+  webhookUrl: ''
 })
 
 const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
@@ -864,12 +954,22 @@ const createApiKey = async () => {
 
   submitting.value = true
   try {
+    const ipWhitelistArray = form.ipWhitelist
+      ? form.ipWhitelist.split('\n').map((s) => s.trim()).filter(Boolean)
+      : null
     const data = {
       name: form.name,
       description: form.description || null,
       expiresAt: form.expiresAt || null,
       permissions: form.permissions,
-      isActive: true
+      isActive: true,
+      ownerType: form.ownerType,
+      ownerId: form.ownerId || null,
+      rateLimitPerMinute: form.rateLimitPerMinute || null,
+      quotaDaily: form.quotaDaily || null,
+      quotaMonthly: form.quotaMonthly || null,
+      ipWhitelist: ipWhitelistArray,
+      webhookUrl: form.webhookUrl || null
     }
 
     const response = await $fetch('/api/admin/api-keys', {
@@ -900,13 +1000,23 @@ const updateApiKey = async () => {
 
   submitting.value = true
   try {
+    const ipWhitelistArray = form.ipWhitelist
+      ? form.ipWhitelist.split('\n').map((s) => s.trim()).filter(Boolean)
+      : null
     const data = {
       name: form.name,
       description: form.description || null,
       // 如果是 'keep'，则不发送 expiresAt 字段，后端将不更新该字段
       ...(form.expiresAt !== 'keep' && { expiresAt: form.expiresAt || null }),
       permissions: form.permissions,
-      isActive: form.isActive
+      isActive: form.isActive,
+      ownerType: form.ownerType,
+      ownerId: form.ownerId || null,
+      rateLimitPerMinute: form.rateLimitPerMinute || null,
+      quotaDaily: form.quotaDaily || null,
+      quotaMonthly: form.quotaMonthly || null,
+      ipWhitelist: ipWhitelistArray,
+      webhookUrl: form.webhookUrl || null
     }
 
     const response = await $fetch(`/api/admin/api-keys/${selectedApiKey.value.id}`, {
@@ -1087,6 +1197,13 @@ const resetForm = () => {
   expiresAtText.value = getExpiresOptionText('never')
   form.permissions = []
   form.isActive = true
+  form.ownerType = 'system'
+  form.ownerId = null
+  form.rateLimitPerMinute = null
+  form.quotaDaily = null
+  form.quotaMonthly = null
+  form.ipWhitelist = ''
+  form.webhookUrl = ''
 }
 
 const formatDate = (dateString) => {

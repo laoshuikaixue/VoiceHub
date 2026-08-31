@@ -2,8 +2,14 @@ import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
-import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
-import { requireSuperAdmin } from '~~/server/utils/rbac'
+import {
+  generateApiKey,
+  generateWebhookSecret,
+  hashApiKey,
+  hashWebhookSecret
+} from '~~/server/utils/apiKeyUtils'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 /**
  * 创建API Key
@@ -11,6 +17,17 @@ import { requireSuperAdmin } from '~~/server/utils/rbac'
  */
 
 // 请求体验证schema
+const ipEntrySchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .refine(
+    (v) =>
+      // 单 IP 或 CIDR（IPv4 简单校验）
+      /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(v.trim()),
+    'IP 白名单格式无效（需为单 IP 或 CIDR）'
+  )
+
 const createApiKeySchema = z.object({
   name: z.string().min(1, 'API Key名称不能为空').max(100, 'API Key名称不能超过100个字符'),
   description: z
@@ -18,12 +35,34 @@ const createApiKeySchema = z.object({
     .optional(),
   expiresAt: z.union([z.string(), z.null(), z.undefined()]).optional(),
 
-  permissions: z.array(apiPermissionSchema).min(1, '至少需要选择一个权限')
+  permissions: z.array(apiPermissionSchema).min(1, '至少需要选择一个权限'),
+  ownerType: z.enum(['system', 'user', 'integration']).optional(),
+  ownerId: z.number().int().positive().optional(),
+  rateLimitPerMinute: z.number().int().positive().nullable().optional(),
+  quotaDaily: z
+    .number()
+    .int()
+    .refine((v) => v == null || v > 0, 'quotaDaily 必须为正整数或 null')
+    .nullable()
+    .optional(),
+  quotaMonthly: z
+    .number()
+    .int()
+    .refine((v) => v == null || v > 0, 'quotaMonthly 必须为正整数或 null')
+    .nullable()
+    .optional(),
+  ipWhitelist: z.array(ipEntrySchema).max(64).optional(),
+  webhookUrl: z
+    .string()
+    .url('webhookUrl 必须为合法 URL')
+    .max(500)
+    .nullable()
+    .optional()
 })
 
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以管理 API Key
-  const user = await requireSuperAdmin(event)
+  // 检查用户权限：创建 API Key 需要 api_keys.write
+  const user = await requirePermission(event, PERMISSIONS.API_KEYS_WRITE)
 
   try {
     // 验证请求体
@@ -77,6 +116,15 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // Webhook secret：若用户提供 webhookUrl，则生成明文 + 哈希
+    // 创建响应一次性返回明文，DB 仅存哈希
+    let webhookSecretPlain: string | null = null
+    let webhookSecretHash: string | null = null
+    if (validatedData.webhookUrl) {
+      webhookSecretPlain = generateWebhookSecret()
+      webhookSecretHash = await hashWebhookSecret(webhookSecretPlain)
+    }
+
     // 开始事务
     const result = await db.transaction(async (tx) => {
       // 插入API Key记录
@@ -91,7 +139,17 @@ export default defineEventHandler(async (event) => {
           expiresAt,
 
           usageCount: 0,
-          createdByUserId: user.id
+          createdByUserId: user.id,
+          ownerType: validatedData.ownerType ?? 'system',
+          ownerId: validatedData.ownerId ?? null,
+          rateLimitPerMinute: validatedData.rateLimitPerMinute ?? null,
+          quotaDaily: validatedData.quotaDaily ?? null,
+          quotaMonthly: validatedData.quotaMonthly ?? null,
+          ipWhitelist: validatedData.ipWhitelist
+            ? JSON.stringify(validatedData.ipWhitelist)
+            : null,
+          webhookUrl: validatedData.webhookUrl ?? null,
+          webhookSecretHash
         })
         .returning({ id: apiKeys.id })
 
@@ -125,7 +183,16 @@ export default defineEventHandler(async (event) => {
         permissions: validatedData.permissions,
         usageCount: 0,
         createdBy: user.id,
-        creatorName: user.name
+        creatorName: user.name,
+        ownerType: validatedData.ownerType ?? 'system',
+        ownerId: validatedData.ownerId ?? null,
+        rateLimitPerMinute: validatedData.rateLimitPerMinute ?? null,
+        quotaDaily: validatedData.quotaDaily ?? null,
+        quotaMonthly: validatedData.quotaMonthly ?? null,
+        ipWhitelist: validatedData.ipWhitelist ?? null,
+        webhookUrl: validatedData.webhookUrl ?? null,
+        // 一次性明文返回（创建响应外不再返回）
+        webhookSecret: webhookSecretPlain
       }
     })
 

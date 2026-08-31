@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const apiKeyName = existingApiKey[0].name
+    const apiKeyName = existingApiKey[0]?.name
 
     // 开始事务删除
     await db.transaction(async (tx) => {
