@@ -52,3 +52,12 @@ test('相同来源仍然可信', () => {
     true
   )
 })
+
+test('EdgeOne 实际转发 Host 可作为同源校验依据', () => {
+  const source = normalizeOrigin('https://preview.edgeone.app', 'https:')
+  const configured = normalizeOrigin('https://voicehub.example.com', 'https:')
+  const forwardedHost = normalizeOrigin('https://preview.edgeone.app', 'https:')
+
+  assert.equal(isTrustedOrigin(source, configured), false)
+  assert.equal(isTrustedOrigin(source, forwardedHost), true)
+})

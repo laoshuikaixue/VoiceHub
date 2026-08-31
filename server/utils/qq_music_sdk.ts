@@ -1282,7 +1282,11 @@ const callQqMusicu = async ({
     req_1: { module, method, param }
   }
 
-  const headers: Record<string, string> = { ...txHeaders }
+  const headers: Record<string, string> = {
+    ...txHeaders,
+    'Content-Type': 'application/json',
+    Referer: 'https://y.qq.com/'
+  }
   if (normalizedCookie) headers['Cookie'] = normalizedCookie
 
   try {

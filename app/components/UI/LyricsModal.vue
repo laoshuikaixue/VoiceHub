@@ -165,7 +165,7 @@
                   @click="activePanel = 'comments'"
                 >
                   <Icon name="message-circle" size="16" />
-                  <span>{{ locale.comments }}</span>
+                  <span>{{ locale.comments }} ({{ formatCompactCommentCount(commentsCount) }})</span>
                 </button>
               </div>
 
@@ -178,12 +178,13 @@
                 </div>
               </div>
 
-              <SongComments
-                v-show="activePanel === 'comments'"
-                class="comments-display-area"
-                :song="currentSong"
-                :visible="isVisible && activePanel === 'comments'"
-              />
+              <div v-show="activePanel === 'comments'" class="comments-display-area">
+                <SongComments
+                  ref="commentsRef"
+                  :song="currentSong"
+                  :visible="isVisible"
+                />
+              </div>
 
               <!-- 歌词设置工具栏 -->
               <div v-if="activePanel === 'lyrics'" class="lyric-toolbar">
@@ -399,6 +400,16 @@ const hasPushedHistory = ref(false)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 375)
 const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 812)
 const activePanel = ref('lyrics')
+const commentsRef = ref(null)
+const commentsCount = computed(() => Number(commentsRef.value?.totalCount || 0))
+const commentCountUnit = computed(() => ui.value?.songComments?.tenThousand || '万')
+
+const formatCompactCommentCount = (count) => {
+  const value = Number(count) || 0
+  if (value < 10000) return String(value)
+  const compact = (value / 10000).toFixed(value >= 100000 ? 0 : 1).replace(/\.0$/, '')
+  return `${compact}${commentCountUnit.value}`
+}
 
 // 拖拽状态管理
 const isDragging = ref(false)
@@ -436,8 +447,8 @@ const currentLyricLine = computed(() => {
 
 const canShowComments = computed(() => {
   const song = currentSong.value
-  if (!song || song.musicPlatform !== 'netease') return false
-  return /^\d+$/.test(String(song.musicId || '').trim())
+  if (!song || !['netease', 'tencent'].includes(song.musicPlatform)) return false
+  return /^\d+$/.test(String(song.musicId || '').trim()) || song.musicPlatform === 'tencent'
 })
 
 const currentQualityText = computed(() => {
@@ -1030,6 +1041,7 @@ watch(
   () => props.isVisible,
   async (visible) => {
     if (visible) {
+      activePanel.value = 'lyrics'
       disablePageScroll()
 
       await nextTick()
@@ -1590,8 +1602,10 @@ onUnmounted(() => {
 }
 
 .comments-display-area {
+  width: 100%;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .comment-current-lyric {
