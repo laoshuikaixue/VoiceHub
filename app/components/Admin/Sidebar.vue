@@ -135,7 +135,8 @@ import {
   Database,
   Lock,
   Ticket,
-  GraduationCap
+  GraduationCap,
+  ShieldCheck
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useRbac } from '~/composables/useRbac'
@@ -221,7 +222,8 @@ const menuGroups = computed(() => [
       { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
       { icon: ListMusic, label: locale.value.menu?.musicSource || '音源控制', id: 'music-source' },
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
-      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' }
+      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' },
+      { icon: ShieldCheck, label: locale.value.menu?.rbac || '角色权限', id: 'rbac' }
     ]
   },
   {
