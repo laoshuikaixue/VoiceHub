@@ -41,6 +41,7 @@
         :enable-blur="settings.lyricsBlur.value"
         :hide-passed-lines="settings.hidePassedLines.value"
         :word-fade-width="settings.wordFadeWidth.value"
+        :optimize-options="optimizeOptions"
         :style="{
           '--display-count-down-show': settings.countDownShow.value ? 'flex' : 'none',
           '--amll-lp-font-size': `${settings.lyricFontSize.value}px`,
@@ -86,6 +87,16 @@ const lyricLines = computed(() => {
   // 使用 cloneDeep 剥离 Vue 响应式代理，防止 structuredClone 错误
   return cloneDeep(lyricManager.lyrics.value)
 })
+
+// AMLL 歌词优化配置
+const optimizeOptions = computed(() => ({
+  normalizeSpaces: settings.amllNormalizeSpaces.value,
+  resetLineTimestamps: settings.amllResetLineTimestamps.value,
+  convertExcessiveBackgroundLines: settings.amllConvertBgLines.value,
+  syncMainAndBackgroundLines: settings.amllSyncBgLines.value,
+  cleanUnintentionalOverlaps: settings.amllCleanOverlaps.value,
+  tryAdvanceStartTime: settings.amllTryAdvanceStart.value
+}))
 
 // 进度跳转
 const jumpSeek = (line: LyricLineMouseEvent) => {

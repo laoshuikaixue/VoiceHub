@@ -1097,6 +1097,12 @@ export const pages = {
       showTranslation: '显示翻译',
       showRoma: '显示罗马音',
       showYrc: '逐字歌词 (YRC)',
+      amllNormalizeSpaces: '规范空格',
+      amllResetLineTimestamps: '对齐行时间戳',
+      amllConvertBgLines: '合并背景和声行',
+      amllSyncBgLines: '同步背景行时间',
+      amllCleanOverlaps: '清理时间戳重叠',
+      amllTryAdvanceStart: '提前行入场',
       quality: '音质',
       playMode: {
         loopOne: '单曲循环',

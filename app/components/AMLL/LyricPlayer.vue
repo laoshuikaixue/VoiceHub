@@ -2,12 +2,13 @@
 /**
  * 歌词渲染组件 - 基于 @applemusic-like-lyrics/core
  */
-import {
-  type BaseRenderer,
-  type LyricLine,
-  type LyricLineMouseEvent,
-  type LyricPlayerBase,
-  type spring
+import type {
+  BaseRenderer,
+  LyricLine,
+  LyricLineMouseEvent,
+  LyricPlayerBase,
+  OptimizeLyricOptions,
+  spring
 } from '@applemusic-like-lyrics/core'
 import {
   type PropType,
@@ -15,6 +16,7 @@ import {
   type ShallowRef,
   ref,
   computed,
+  nextTick,
   onMounted,
   onUnmounted,
   watch
@@ -131,6 +133,13 @@ const props = defineProps({
       new (...args: ConstructorParameters<typeof BaseRenderer>): BaseRenderer
     }>,
     required: false
+  },
+  /**
+   * AMLL 歌词行优化配置（修改后需重新 setLyricLines 才对当前歌词生效）
+   */
+  optimizeOptions: {
+    type: Object as PropType<OptimizeLyricOptions>,
+    required: false
   }
 })
 
@@ -161,6 +170,14 @@ const wrapperRef = ref<HTMLDivElement | null>(null)
 // 歌词播放实例
 const playerRef = ref<LyricPlayerBase>()
 
+// 初始化完成标记与内容淡入控制
+const initialized = ref(false)
+const contentVisible = ref(false)
+// 初始化完成前到达的歌词行，初始化后统一应用
+let pendingLyricLines: LyricLine[] | undefined
+// 最新播放进度（非响应式；setLyricLines 不带时间会把内部进度重置为 0）
+let latestTime = 0
+
 // 事件处理器
 const lineClickHandler = (e: Event) => emit('lineClick', e as LyricLineMouseEvent)
 const lineContextMenuHandler = (e: Event) => emit('lineContextmenu', e as LyricLineMouseEvent)
@@ -168,19 +185,40 @@ const lineContextMenuHandler = (e: Event) => emit('lineContextmenu', e as LyricL
 // 底部行元素 (用于 Teleport)
 const bottomLineEl = computed(() => playerRef.value?.getBottomLineElement())
 
-// 组件挂载时初始化
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+// 组件挂载时初始化（分帧等待渲染，避免挂载首帧跳动）
 onMounted(async () => {
   const wrapper = wrapperRef.value
   if (!wrapper) return
 
   try {
     const { LyricPlayer: CoreLyricPlayer } = await import('@applemusic-like-lyrics/core')
-    if (wrapperRef.value !== wrapper) return
+    if (wrapperRef.value !== wrapper || playerRef.value) return
 
-    playerRef.value = new CoreLyricPlayer()
-    wrapper.appendChild(playerRef.value.getElement())
-    playerRef.value.addEventListener('line-click', lineClickHandler)
-    playerRef.value.addEventListener('line-contextmenu', lineContextMenuHandler)
+    const player = new CoreLyricPlayer()
+    playerRef.value = player
+    wrapper.appendChild(player.getElement())
+    player.addEventListener('line-click', lineClickHandler)
+    player.addEventListener('line-contextmenu', lineContextMenuHandler)
+    if (props.optimizeOptions) player.setOptimizeOptions({ ...props.optimizeOptions })
+
+    await nextTick()
+    if (playerRef.value !== player) return
+    await nextFrame()
+    if (playerRef.value !== player) return
+
+    if (pendingLyricLines) {
+      player.setLyricLines(pendingLyricLines, latestTime)
+      pendingLyricLines = undefined
+      await nextFrame()
+      if (playerRef.value !== player) return
+    }
+
+    player.update(0)
+    player.setCurrentTime(latestTime, true)
+    initialized.value = true
+    contentVisible.value = true
   } catch (error) {
     console.error('AM 歌词播放器初始化失败:', error)
   }
@@ -194,6 +232,9 @@ onUnmounted(() => {
     player.removeEventListener('line-contextmenu', lineContextMenuHandler)
     player.dispose()
   }
+  initialized.value = false
+  contentVisible.value = false
+  pendingLyricLines = undefined
 })
 
 // 动画帧更新
@@ -216,8 +257,9 @@ watchEffect((onCleanup) => {
   }
 })
 
-// 播放/暂停状态
+// 播放/暂停状态（初始化完成前不驱动，避免时序竞争）
 watchEffect(() => {
+  if (!initialized.value) return
   if (props.playing !== undefined) {
     if (props.playing) {
       playerRef.value?.resume()
@@ -258,16 +300,38 @@ watchEffect(() => {
   playerRef.value?.setEnableScale(props.enableScale)
 })
 
-// 歌词行数据
+// 歌词行数据（初始化完成前缓存，完成后统一应用）
 watchEffect(() => {
-  if (props.lyricLines !== undefined) playerRef.value?.setLyricLines(props.lyricLines)
+  const lines = props.lyricLines
+  if (lines === undefined) return
+  const player = playerRef.value
+  if (!player || !initialized.value) {
+    pendingLyricLines = lines
+    return
+  }
+  player.setLyricLines(lines, latestTime)
 })
+
+// AMLL 歌词优化配置（修改后需重新 setLyricLines 才对当前歌词生效）
+watch(
+  () => props.optimizeOptions,
+  (options) => {
+    const player = playerRef.value
+    if (!player || !options) return
+    player.setOptimizeOptions({ ...options })
+    if (initialized.value && props.lyricLines) {
+      player.setLyricLines(props.lyricLines, latestTime)
+    }
+  },
+  { deep: true }
+)
 
 // 当前播放时间
 watch(
   () => props.currentTime,
   (time, oldTime) => {
     if (time === undefined) return
+    latestTime = time
     const isSeek = oldTime !== undefined && Math.abs(time - oldTime) > 1000
     playerRef.value?.setCurrentTime(time, isSeek)
   },
@@ -305,7 +369,7 @@ defineExpose<LyricPlayerRef>({
 </script>
 
 <template>
-  <div ref="wrapperRef" class="amll-wrapper">
+  <div ref="wrapperRef" class="amll-wrapper" :class="{ 'is-visible': contentVisible }">
     <Teleport v-if="bottomLineEl" :to="bottomLineEl">
       <slot name="bottom-line" />
     </Teleport>
@@ -316,5 +380,11 @@ defineExpose<LyricPlayerRef>({
 .amll-wrapper {
   width: 100%;
   height: 100%;
+  opacity: 0;
+  transition: opacity 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.amll-wrapper.is-visible {
+  opacity: 1;
 }
 </style>

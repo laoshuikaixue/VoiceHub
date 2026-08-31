@@ -227,6 +227,42 @@
                         <span class="label">{{ locale.showYrc }}</span>
                         <input v-model="lyricSettings.showYrc.value" type="checkbox" />
                       </div>
+                      <template v-if="lyricSettings.useAMLyrics.value">
+                        <div class="setting-divider" />
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllNormalizeSpaces }}</span>
+                          <input
+                            v-model="lyricSettings.amllNormalizeSpaces.value"
+                            type="checkbox"
+                          />
+                        </div>
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllResetLineTimestamps }}</span>
+                          <input
+                            v-model="lyricSettings.amllResetLineTimestamps.value"
+                            type="checkbox"
+                          />
+                        </div>
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllConvertBgLines }}</span>
+                          <input v-model="lyricSettings.amllConvertBgLines.value" type="checkbox" />
+                        </div>
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllSyncBgLines }}</span>
+                          <input v-model="lyricSettings.amllSyncBgLines.value" type="checkbox" />
+                        </div>
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllCleanOverlaps }}</span>
+                          <input v-model="lyricSettings.amllCleanOverlaps.value" type="checkbox" />
+                        </div>
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllTryAdvanceStart }}</span>
+                          <input
+                            v-model="lyricSettings.amllTryAdvanceStart.value"
+                            type="checkbox"
+                          />
+                        </div>
+                      </template>
                     </div>
                   </template>
                 </Popover>
@@ -1825,6 +1861,11 @@ onUnmounted(() => {
   width: 16px;
   height: 16px;
   accent-color: var(--color-error);
+}
+
+.setting-divider {
+  height: 1px;
+  background: var(--overlay-20);
 }
 
 /* 音质菜单动画 */

@@ -26,7 +26,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 状态管理用 Composables，不用 Pinia
 
 ### 2.3. 后端
-- 导入: 项目根用 `~~/`，app 目录用 `~/`
+- 导入: 项目根目录（如 `server/`）用 `~~/`，app 目录用 `~/`（`~/` 即 `app/`）；drizzle 位于 `app/drizzle/`，服务端导入必须写 `~/drizzle/db`、`~/drizzle/schema`，禁止 `~~/drizzle/...`（静态检查不报错，部署构建解析失败）
 - 错误: 用户可见的业务错误统一用 `createApiError(statusCode, code, message, data?)`（`~~/server/utils/apiError.ts`），code 取自 `SERVER_ERROR_CODES`；认证错误 401
 - 时间戳: 服务端取当前时间统一用 `getServerTimestamp()` / `getServerDate()`（`~~/server/utils/serverTime.ts`），禁止直接写 `Date.now()` / `new Date()`
 

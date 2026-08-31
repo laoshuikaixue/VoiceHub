@@ -15,6 +15,7 @@ import {
 } from '@sansenjian/qq-music-api/services'
 import { txHeaders, txRequest, upgradeTxAudioUrl, zzcSign } from '~~/server/utils/native_tx'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { randomUUID } from 'node:crypto'
 import { inflateRawSync, inflateSync, unzipSync } from 'node:zlib'
 
 type QqSdkResponse = {
@@ -40,7 +41,11 @@ const QQ_SDK_QUALITY_MAP: Record<string, string> = {
 const QQ_AUTH_COOKIE_KEYS = ['qqmusic_key', 'qm_keyst', 'music_key']
 const QQ_MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const QQ_MUSICS_URL = 'https://u.y.qq.com/cgi-bin/musics.fcg'
-const QQ_PLAY_GUID = '1429839143'
+// CDN 调度缓存；失败时短暂缓存空列表，避免每次播放都重试
+let qqCdnCache: { sips: string[]; expireAt: number } | null = null
+const QQ_CDN_FALLBACK_DOMAIN = 'https://isure.stream.qqmusic.qq.com/'
+const QQ_CDN_CACHE_TTL = 60 * 60 * 1000
+const QQ_CDN_FAIL_TTL = 60 * 1000
 const QQ_COMMON_QUERY = {
   g_tk: '1124214810',
   hostUin: '0',
@@ -290,10 +295,11 @@ const requestQqOfficialVkey = async (
 const parseQqOfficialPlayUrl = (
   response: Record<string, any> | undefined,
   filenames: string[],
-  guid: string
+  guid: string,
+  cdnSip: string
 ) => {
   const data = response?.req_0?.data
-  const domain = pickPlayableDomain(data?.sip)
+  const domain = cdnSip || pickPlayableDomain(data?.sip) || QQ_CDN_FALLBACK_DOMAIN
   const midurlinfo = Array.isArray(data?.midurlinfo) ? data.midurlinfo : []
 
   // 按候选顺位取第一个拿到直链的音质（降级命中）
@@ -301,6 +307,8 @@ const parseQqOfficialPlayUrl = (
     .map((filename) => midurlinfo.find((item: Record<string, any>) => item?.filename === filename))
     .find((item) => item && (item.purl || item.vkey))
   info = info || midurlinfo.find((item: Record<string, any>) => item?.purl || item?.vkey)
+  // 未命中可播放条目时回退首个请求档位，保留拒绝码用于诊断
+  info = info || midurlinfo.find((item: Record<string, any>) => item?.filename === filenames[0])
   const url = buildQqOfficialPlayUrl(domain, info, guid)
 
   return {
@@ -309,32 +317,40 @@ const parseQqOfficialPlayUrl = (
   }
 }
 
+// 登录态注入 comm 的 qq/authst/tmeLoginType，已登录账号才能解析 VIP/高音质直链
+const resolveQqLoginType = (cookieObject: Record<string, string>, authst: string) => {
+  const raw = Number(cookieObject.tmeLoginType)
+  if (Number.isFinite(raw) && raw > 0) return raw
+  return authst.startsWith('W_X') ? 1 : 2
+}
+
 const createQqOfficialVkeyPayload = ({
   songmid,
   filenames,
   guid,
   uin,
-  authst
+  authst,
+  tmeLoginType
 }: {
   songmid: string
   filenames: string[]
   guid: string
   uin: string
   authst?: string
+  tmeLoginType?: number
 }) => {
+  const loginComm = authst ? { qq: uin, authst, tmeLoginType: tmeLoginType || 2 } : {}
   return {
     req_0: {
-      module: 'vkey.GetVkeyServer',
-      method: 'CgiGetVkey',
+      module: 'music.vkey.GetVkey',
+      method: 'UrlGetVkey',
       param: {
+        uin: uin !== '0' ? uin : '',
         filename: filenames,
         guid,
         songmid: filenames.map(() => songmid),
         songtype: filenames.map(() => 0),
-        uin,
-        loginflag: 1,
-        platform: '20',
-        ...(authst ? { authst } : {})
+        ctx: 0
       }
     },
     loginUin: uin,
@@ -342,9 +358,53 @@ const createQqOfficialVkeyPayload = ({
       uin,
       format: 'json',
       ct: 24,
-      cv: 0
+      cv: 0,
+      ...loginComm
     }
   }
+}
+
+// CDN 调度取最新可用流媒体节点；失败时由调用方回退响应 sip 与兜底域名
+const fetchQqCdnSip = async (): Promise<string> => {
+  const now = getServerTimestamp()
+  if (qqCdnCache && qqCdnCache.expireAt > now) return qqCdnCache.sips[0] || ''
+
+  try {
+    const payload = {
+      req_0: {
+        module: 'music.audioCdnDispatch.cdnDispatch',
+        method: 'GetCdnDispatch',
+        param: {
+          guid: randomUUID().replace(/-/g, ''),
+          uid: '0',
+          use_new_domain: 1,
+          use_ipv6: 1
+        }
+      },
+      comm: { uin: 0, format: 'json', ct: 24, cv: 0 }
+    }
+    const response = await $fetch<any>(
+      `${QQ_MUSICS_URL}?sign=${await zzcSign(JSON.stringify(payload))}`,
+      {
+        method: 'POST',
+        headers: { ...txHeaders },
+        body: payload,
+        responseType: 'json',
+        signal: AbortSignal.timeout(6000)
+      }
+    )
+    const sips = Array.isArray(response?.req_0?.data?.sip)
+      ? response.req_0.data.sip.filter(
+          (sip: unknown) => typeof sip === 'string' && sip.startsWith('https://')
+        )
+      : []
+    qqCdnCache = { sips, expireAt: now + QQ_CDN_CACHE_TTL }
+  } catch (err) {
+    console.warn('[qq_music_sdk] CDN 调度失败，回退响应节点与兜底域名:', err)
+    qqCdnCache = { sips: [], expireAt: now + QQ_CDN_FAIL_TTL }
+  }
+
+  return qqCdnCache.sips[0] || ''
 }
 
 export const resolveQqOfficialPlayUrl = async ({
@@ -361,15 +421,14 @@ export const resolveQqOfficialPlayUrl = async ({
   const normalizedCookie = normalizeQqCookie(cookie)
   const cookieObject = parseCookieObject(normalizedCookie)
   const qualityKey = QQ_OFFICIAL_QUALITY_MAP[String(quality ?? '8').toLowerCase()] || '320'
-  const playableFileId = String(mediaId || songmid || '').trim()
   const songmidValue = String(songmid || '').trim()
 
   if (!songmidValue) {
     throw new Error('QQ 官方接口缺少 songmid')
   }
-  if (!playableFileId) {
-    throw new Error('QQ 官方接口缺少播放文件 ID')
-  }
+
+  // 无 media_mid 时上游规则是 mid 拼两次
+  const fileBase = String(mediaId || '').trim() || `${songmidValue}${songmidValue}`
 
   // 自请求档位起向低档生成候选，批量请求、顺位命中，权限不足时链内降级
   const qualityOrderIndex = QQ_OFFICIAL_QUALITY_ORDER.indexOf(qualityKey)
@@ -377,25 +436,28 @@ export const resolveQqOfficialPlayUrl = async ({
     qualityOrderIndex >= 0 ? QQ_OFFICIAL_QUALITY_ORDER.slice(qualityOrderIndex) : ['320', '128', 'm4a']
   const filenames = qualityCandidates.map((key) => {
     const fileType = QQ_PLAY_FILE_TYPE_MAP[key]
-    return `${fileType.prefix}${playableFileId}${fileType.suffix}`
+    return `${fileType.prefix}${fileBase}${fileType.suffix}`
   })
 
-  const guid = QQ_PLAY_GUID
+  const guid = randomUUID().replace(/-/g, '')
   const uin = resolveQqVkeyUin(cookieObject)
+  const authst = cookieObject.qqmusic_key || cookieObject.qm_keyst || cookieObject.music_key || ''
   const payload = createQqOfficialVkeyPayload({
     songmid: songmidValue,
     filenames,
     guid,
     uin,
-    authst: cookieObject.qqmusic_key
+    authst,
+    tmeLoginType: authst ? resolveQqLoginType(cookieObject, authst) : undefined
   })
+  const cdnSip = await fetchQqCdnSip()
 
   let url: string | undefined
   let info: Record<string, any> | undefined
 
   try {
     const normalResponse = await requestQqOfficialVkey(payload, normalizedCookie, false)
-    const parsed = parseQqOfficialPlayUrl(normalResponse, filenames, guid)
+    const parsed = parseQqOfficialPlayUrl(normalResponse, filenames, guid, cdnSip)
     url = parsed.url
     info = parsed.info
   } catch (normalErr) {
@@ -405,7 +467,7 @@ export const resolveQqOfficialPlayUrl = async ({
   if (!url) {
     try {
       const signedResponse = await requestQqOfficialVkey(payload, normalizedCookie, true)
-      const signedResult = parseQqOfficialPlayUrl(signedResponse, filenames, guid)
+      const signedResult = parseQqOfficialPlayUrl(signedResponse, filenames, guid, cdnSip)
       url = signedResult.url || url
       info = signedResult.info || info
     } catch (signedErr) {
@@ -426,10 +488,12 @@ export const resolveQqOfficialPlayUrl = async ({
   return upgradeTxAudioUrl(url)
 }
 
-// CgiGetVkey 常见拒绝码语义
+// CgiGetVkey/UrlGetVkey 常见拒绝码语义
 const QQ_VKEY_RESULT_HINTS: Record<string, string> = {
   '104003': '该歌曲或音质需要绿钻/付费权限，或受版权、风控限制',
   '104002': '账号权益不足或登录态被限制',
+  '104004': 'VKey 生成失败或歌曲文件不存在',
+  '104013': '播放设备受限或触发风控',
   '-1': '请求参数或登录态不被接受',
   '-2': '歌曲不存在或已下架'
 }
