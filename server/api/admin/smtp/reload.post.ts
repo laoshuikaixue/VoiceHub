@@ -1,21 +1,9 @@
 import { SmtpService } from '~~/server/services/smtpService'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能重载SMTP配置'
-    })
-  }
+  const _user = await requirePermission(event, PERMISSIONS.SMTP_MANAGE)
 
   try {
     const smtpService = SmtpService.getInstance()

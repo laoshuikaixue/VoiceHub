@@ -29,7 +29,7 @@ import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
-  await requireSuperAdmin(event)
+  const user = await requireSuperAdmin(event)
 
   try {
     const body = await readBody(event)

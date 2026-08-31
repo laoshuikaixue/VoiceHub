@@ -5,7 +5,7 @@ import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 import { requirePermission, PERMISSIONS } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, PERMISSIONS.CARD_CODES_WRITE)
+  const user = await requirePermission(event, PERMISSIONS.CARD_CODES_WRITE)
 
   const body = await readBody(event) ?? {}
   const ids = Array.isArray(body.ids) ? body.ids : body.id ? [body.id] : []

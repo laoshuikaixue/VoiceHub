@@ -16,7 +16,7 @@ import { resolveNotificationBatchReference } from '~~/server/utils/notification-
 import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  await policies.canSendSystemNotification(event)
+  const user = await policies.canSendSystemNotification(event)
 
   const batchReference = resolveNotificationBatchReference(getRouterParam(event, 'batchId'))
   if (!batchReference) {

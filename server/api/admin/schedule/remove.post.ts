@@ -6,7 +6,7 @@ import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
-  await policies.canEditSchedule(event)
+  const user = await policies.canEditSchedule(event)
 
   try {
     const body = await readBody(event)

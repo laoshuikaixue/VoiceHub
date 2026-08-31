@@ -11,7 +11,7 @@ import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  await policies.canManageBlacklist(event)
+  const user = await policies.canManageBlacklist(event)
 
   const body = await readBody(event)
   const { type, value, reason } = body

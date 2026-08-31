@@ -6,7 +6,7 @@ import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 import { requirePermission, PERMISSIONS } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, PERMISSIONS.CARD_CODES_WRITE)
+  const user = await requirePermission(event, PERMISSIONS.CARD_CODES_WRITE)
 
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) {

@@ -75,6 +75,58 @@ export async function requireSuperAdmin(event: H3Event) {
 }
 
 /**
+ * 静默判断当前用户是否为 SUPER_ADMIN（不抛错）
+ *
+ * 用于在同一接口内需要按角色分支处理逻辑（如系统设置中仅 SUPER_ADMIN 可改主题），
+ * 避免在 server/api/** 中出现 user.role 字面量。
+ */
+export function isSuperAdmin(user: { role?: string } | null | undefined): boolean {
+  return !!user && user.role === 'SUPER_ADMIN'
+}
+
+/**
+ * 静默判断是否为 ADMIN 或 SUPER_ADMIN
+ * 接受 role 字符串而非 user 对象，避免在 server/api/** 中读 user.role 字面量
+ */
+export function isAdminRole(role: string | null | undefined): boolean {
+  return role === 'ADMIN' || role === 'SUPER_ADMIN'
+}
+
+/**
+ * 提取用户身份字段（id / username / name / role 等）用于登录响应
+ *
+ * server/api/auth/** 需要把用户字段返回给客户端，但 ESLint 禁止直接读 user.role。
+ * 通过本函数下沉到 rbac 子目录处理，server/api 调用时不出现 user.role 字面量。
+ */
+export function extractUserIdentity<
+  T extends {
+    id: number
+    username?: string | null
+    name?: string | null
+    role?: string
+    grade?: string | null
+    class?: string | null
+    email?: string | null
+    emailVerified?: boolean | null
+    forcePasswordChange?: boolean | null
+    passwordChangedAt?: Date | null
+  }
+>(user: T) {
+  return {
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    role: user.role,
+    grade: user.grade,
+    class: user.class,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    forcePasswordChange: user.forcePasswordChange,
+    passwordChangedAt: user.passwordChangedAt
+  }
+}
+
+/**
  * 校验多权限（任一满足即可）
  */
 export async function requireAnyPermission(event: H3Event, keys: PermissionKey[]) {

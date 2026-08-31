@@ -2,20 +2,11 @@ import { db, users, userIdentities } from '~/drizzle/db'
 import { eq, or, like, inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能清除聚合登录绑定'
-    })
-  }
+  const _user = await requirePermission(event, PERMISSIONS.SYSTEM_SETTINGS_WRITE)
 
   const result = await db.transaction(async (tx) => {
     // 1. 查询所有聚合登录相关的身份

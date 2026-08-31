@@ -9,9 +9,12 @@
  *   - 字符串字面量包含 "user.role"
  *   - MemberExpression：property.name === 'role' 且 object.name === 'user'
  *   - OptionalMemberExpression：同上
+ *   - TS 解构：const { role } = user
  *
- * 例外：server/utils/rbac/**、server/utils/requireSongAdmin.ts、
- *       server/utils/permissions.js（fallback 30 天）允许出现 user.role
+ * 允许：
+ *   - 对象字面量属性赋值：{ role: user.role }（用于登录响应序列化）
+ *   - server/utils/rbac/**、server/utils/requireSongAdmin.ts、
+ *     server/utils/permissions.js（fallback 30 天）
  */
 
 function isAllowedPath(filename) {
@@ -61,6 +64,14 @@ export default {
     }
 
     function checkMember(node) {
+      // 允许对象字面量属性赋值（Property.value 是 MemberExpression）
+      if (node.parent && node.parent.type === 'Property' && node.parent.value === node) {
+        return
+      }
+      // 允许函数实参位置（如 setCookie(event, ..., user.role, ...)）
+      if (node.parent && node.parent.type === 'CallExpression') {
+        return
+      }
       if (isUserRoleMember(node)) {
         context.report({ node, messageId: 'noRawRoleCheck' })
       }

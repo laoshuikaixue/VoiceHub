@@ -2,16 +2,11 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes, songReplayRequests } from '~/drizzle/schema'
 import { count, countDistinct, desc, eq, sql } from 'drizzle-orm'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  const _user = await requirePermission(event, PERMISSIONS.STATS_READ)
 
   const query = getQuery(event)
   const semester = query.semester as string

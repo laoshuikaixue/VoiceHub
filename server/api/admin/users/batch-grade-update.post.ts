@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
-import { policies, requireSuperAdmin } from '~~/server/utils/rbac'
+import { policies, isSuperAdmin, requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -95,7 +95,7 @@ export default defineEventHandler(async (event) => {
         errors.push({ userId: user.id, error: '禁止在用户管理中批量更新自己的账户' })
         continue
       }
-      if (user.role === 'SUPER_ADMIN') {
+      if (isSuperAdmin(user)) {
         try {
           await requireSuperAdmin(event)
         } catch {

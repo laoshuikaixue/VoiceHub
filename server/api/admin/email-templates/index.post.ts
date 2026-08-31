@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
     throw createError({ statusCode: 405, message: '方法不被允许' })
   }
-  await policies.canManageEmailTemplates(event)
+  const user = await policies.canManageEmailTemplates(event)
 
   const body = await readBody(event)
   const { key, name, subject, html } = body || {}

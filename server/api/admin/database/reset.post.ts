@@ -112,7 +112,7 @@ async function resetAutoIncrementSequences() {
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
-    await policies.canResetDatabase(event)
+    const user = await policies.canResetDatabase(event)
 
     const resetResults = {
       success: true,
