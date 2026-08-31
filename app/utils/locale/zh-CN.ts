@@ -1097,7 +1097,6 @@ export const pages = {
       showTranslation: '显示翻译',
       showRoma: '显示罗马音',
       showYrc: '逐字歌词 (YRC)',
-      amllOptimize: '歌词优化',
       amllNormalizeSpaces: '规范空格',
       amllResetLineTimestamps: '对齐行时间戳',
       amllConvertBgLines: '合并背景和声行',

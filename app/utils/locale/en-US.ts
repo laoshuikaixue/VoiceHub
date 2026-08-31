@@ -1086,7 +1086,6 @@ export const pages = {
       showTranslation: 'Show translation',
       showRoma: 'Show romanization',
       showYrc: 'Word-by-word lyrics (YRC)',
-      amllOptimize: 'Lyric optimize',
       amllNormalizeSpaces: 'Normalize spaces',
       amllResetLineTimestamps: 'Reset line times',
       amllConvertBgLines: 'Merge bg vocals',
