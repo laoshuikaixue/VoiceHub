@@ -4164,7 +4164,7 @@ export const admin = {
     webhookUrl: 'Webhook URL',
     webhookUrlPlaceholder: 'https://example.com/webhook'
   },
-  rbac: {
+  rbacManager: {
     title: '角色权限',
     desc: '管理角色权限与个人加授',
     createGrant: '新增加授',
@@ -4177,6 +4177,7 @@ export const admin = {
       grants: '个人加授'
     },
     onlySuperAdmin: '仅超级管理员',
+    onlyAdminOrAbove: '仅管理员及以上可管理个人加授',
     noGrants: '暂无个人加授',
     confirmRevoke: '确定要撤销此权限吗?',
     revoke: '撤销',
@@ -4184,13 +4185,25 @@ export const admin = {
     grantRevoke: '撤销',
     expiresAt: '过期时间',
     permissionKey: '权限 Key',
+    permissionKeyPlaceholder: '如 song.read',
     grantType: '类型',
     reason: '原因',
+    reasonPlaceholder: '可选:撤销原因',
     cancel: '取消',
     confirm: '确认',
     keep: '保持(不变)',
     add: '添加',
-    noPermission: '暂无权限'
+    noPermission: '暂无权限',
+    saveAll: '保存全部',
+    userId: '用户 ID',
+    userIdPlaceholder: '输入用户 ID'
+  },
+  forbidden: {
+    title: '无权访问',
+    message: '您没有权限访问此页面',
+    backDashboard: '返回控制台',
+    backHome: '返回首页',
+    contactAdmin: '联系管理员'
   }
 } as const
 

@@ -214,4 +214,7 @@ export function clearRbacCache(userId?: number) {
   } else {
     cache.delete(userId)
   }
+  // 重置模块级 state,避免下一账号 login 完成前的权限泄露窗口 (W6 修复)
+  stateRef.value = emptyState()
+  userIdRef.value = null
 }

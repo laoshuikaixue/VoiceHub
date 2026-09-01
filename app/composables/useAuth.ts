@@ -136,6 +136,16 @@ export const useAuth = () => {
 
     if (response.success && response.user) {
       setAuthState(response.user)
+      // 2FA 完成后刷新 RBAC 缓存 (W6: verify2FA 状态泄漏修复)
+      if (import.meta.client) {
+        try {
+          const rbac = useRbac()
+          rbac.bind(response.user.id)
+          await rbac.refresh()
+        } catch {
+          // useRbac 不可用,忽略
+        }
+      }
       return response
     }
     throw new Error('验证失败')

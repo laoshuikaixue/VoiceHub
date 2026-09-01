@@ -4155,7 +4155,7 @@ export const admin = {
     webhookUrl: 'Webhook URL',
     webhookUrlPlaceholder: 'https://example.com/webhook'
   },
-  rbac: {
+  rbacManager: {
     title: 'Roles & Permissions',
     desc: 'Manage roles, permissions, and user grants',
     createGrant: 'New Grant',
@@ -4168,6 +4168,7 @@ export const admin = {
       grants: 'User Grants'
     },
     onlySuperAdmin: 'Super Admin Only',
+    onlyAdminOrAbove: 'Only admin and above can manage user grants',
     noGrants: 'No User Grants',
     confirmRevoke: 'Are you sure to revoke this permission?',
     revoke: 'Revoke',
@@ -4175,13 +4176,25 @@ export const admin = {
     grantRevoke: 'Revoke',
     expiresAt: 'Expiration',
     permissionKey: 'Permission Key',
+    permissionKeyPlaceholder: 'e.g. song.read',
     grantType: 'Type',
     reason: 'Reason',
+    reasonPlaceholder: 'Optional: reason for revocation',
     cancel: 'Cancel',
     confirm: 'Confirm',
     keep: 'Keep',
     add: 'Add',
-    noPermission: 'No permissions'
+    noPermission: 'No permissions',
+    saveAll: 'Save All',
+    userId: 'User ID',
+    userIdPlaceholder: 'Enter user ID'
+  },
+  forbidden: {
+    title: 'Access Denied',
+    message: 'You do not have permission to access this page',
+    backDashboard: 'Back to Dashboard',
+    backHome: 'Back to Home',
+    contactAdmin: 'Contact Admin'
   }
 } as const
 
