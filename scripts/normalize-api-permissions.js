@@ -7,9 +7,16 @@
  *   schedules:read / songs:read / songs:request / songs:write
  *   card-codes:read / card-codes:write / card-codes:delete / backup:execute
  *
- * 新值（与 permissions.key 对齐的点分风格）：
- *   schedules.read / songs.read / songs.request / songs.write
- *   card-codes.read / card-codes.write / card-codes.delete / backup.execute
+ * 新值（与 server/utils/rbac/constants.ts 的 PERMISSIONS.* 枚举 1:1 对齐）：
+ *   schedule.read / song.read / song.read / song.write
+ *   card_codes.read / card_codes.write / card_codes.delete / backup.execute
+ *
+ * ⚠️ 维护警告（防止历史 bug 重演）：
+ *   本映射的目标 key 必须与 `server/utils/rbac/constants.ts:16-52` 的 PERMISSIONS 枚举
+ *   完全一致（单数 + 下划线风格）。如 PERMISSIONS 枚举调整，本脚本必须同步更新。
+ *   任何"看起来差不多"的 key（如 `songs.read` vs `song.read`）都视为不匹配——runtime
+ *   校验查的是 PERMISSIONS 枚举字面量，写错会导致迁移过的 API Key 静默失效。
+ *   L3 审计曾发现此类 bug（A6），修复 commit 见 git log 关键字 `fix(scripts)`。
  *
  * 行为：
  *   - 逐行 UPDATE（id 维度）
@@ -32,15 +39,17 @@ if (!process.env.DATABASE_URL) {
   process.exit(0)
 }
 
-// 旧冒号风格 → 新点分风格映射字典（显式列在脚本顶部，覆盖全部 8 项旧权限）
+// 旧冒号风格 → 新点分风格映射字典
+// 目标 key 必须与 server/utils/rbac/constants.ts:16-52 PERMISSIONS 枚举 1:1 一致
+// 详见文件顶部 JSDoc 的"维护警告"
 export const LEGACY_PERMISSION_MAP = {
-  'schedules:read': 'schedules.read',
-  'songs:read': 'songs.read',
-  'songs:request': 'songs.request',
-  'songs:write': 'songs.write',
-  'card-codes:read': 'card-codes.read',
-  'card-codes:write': 'card-codes.write',
-  'card-codes:delete': 'card-codes.delete',
+  'schedules:read': 'schedule.read',
+  'songs:read': 'song.read',
+  'songs:request': 'song.read', // 历史映射: songs:request → song.read（按现有 LEGACY 规则合并）
+  'songs:write': 'song.write',
+  'card-codes:read': 'card_codes.read',
+  'card-codes:write': 'card_codes.write',
+  'card-codes:delete': 'card_codes.delete',
   'backup:execute': 'backup.execute'
 }
 
