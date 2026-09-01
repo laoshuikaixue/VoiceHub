@@ -4140,7 +4140,48 @@ export const admin = {
     logsFailed: 'Failed to load API usage logs',
     copied: 'Copied to clipboard',
     copyFailed: 'Copy failed',
-    expiresAtText: (date: string) => `Expires: ${date}`
+    expiresAtText: (date: string) => `Expires: ${date}`,
+    advancedOptions: 'Advanced Options',
+    ownerType: 'Owner Type',
+    ownerSystem: 'System',
+    ownerUser: 'User',
+    ownerIntegration: 'Integration',
+    rateLimitPerMinute: 'Rate Limit per Minute',
+    unlimited: 'Unlimited',
+    quotaDaily: 'Daily Quota',
+    quotaMonthly: 'Monthly Quota',
+    ipWhitelist: 'IP Whitelist',
+    ipWhitelistPlaceholder: 'Leave empty for no limit\n192.168.1.0/24',
+    webhookUrl: 'Webhook URL',
+    webhookUrlPlaceholder: 'https://example.com/webhook'
+  },
+  rbac: {
+    title: 'Roles & Permissions',
+    desc: 'Manage roles, permissions, and user grants',
+    createGrant: 'New Grant',
+    loading: 'Loading...',
+    saving: 'Saving...',
+    saveChanges: 'Save Changes',
+    tabs: {
+      permissions: 'Permissions',
+      roles: 'Roles',
+      grants: 'User Grants'
+    },
+    onlySuperAdmin: 'Super Admin Only',
+    noGrants: 'No User Grants',
+    confirmRevoke: 'Are you sure to revoke this permission?',
+    revoke: 'Revoke',
+    grantAssign: 'Assign',
+    grantRevoke: 'Revoke',
+    expiresAt: 'Expiration',
+    permissionKey: 'Permission Key',
+    grantType: 'Type',
+    reason: 'Reason',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    keep: 'Keep',
+    add: 'Add',
+    noPermission: 'No permissions'
   }
 } as const
 

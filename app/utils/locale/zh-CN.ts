@@ -4149,7 +4149,48 @@ export const admin = {
     logsFailed: '获取API使用日志失败',
     copied: '已复制到剪贴板',
     copyFailed: '复制失败',
-    expiresAtText: (date: string) => `到期: ${date}`
+    expiresAtText: (date: string) => `到期: ${date}`,
+    advancedOptions: '高级选项',
+    ownerType: '所有者类型',
+    ownerSystem: '系统',
+    ownerUser: '用户',
+    ownerIntegration: '集成',
+    rateLimitPerMinute: '每分钟速率限制',
+    unlimited: '不限',
+    quotaDaily: '日配额',
+    quotaMonthly: '月配额',
+    ipWhitelist: 'IP 白名单',
+    ipWhitelistPlaceholder: '留空表示不限制\n192.168.1.0/24',
+    webhookUrl: 'Webhook URL',
+    webhookUrlPlaceholder: 'https://example.com/webhook'
+  },
+  rbac: {
+    title: '角色权限',
+    desc: '管理角色权限与个人加授',
+    createGrant: '新增加授',
+    loading: '加载中...',
+    saving: '保存中...',
+    saveChanges: '保存修改',
+    tabs: {
+      permissions: '权限',
+      roles: '角色',
+      grants: '个人加授'
+    },
+    onlySuperAdmin: '仅超级管理员',
+    noGrants: '暂无个人加授',
+    confirmRevoke: '确定要撤销此权限吗?',
+    revoke: '撤销',
+    grantAssign: '授予',
+    grantRevoke: '撤销',
+    expiresAt: '过期时间',
+    permissionKey: '权限 Key',
+    grantType: '类型',
+    reason: '原因',
+    cancel: '取消',
+    confirm: '确认',
+    keep: '保持(不变)',
+    add: '添加',
+    noPermission: '暂无权限'
   }
 } as const
 

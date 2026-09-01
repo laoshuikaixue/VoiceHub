@@ -7,6 +7,7 @@
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
       <button
+        v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
         class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-[var(--primary-glow)] active:scale-95"
         @click="openCreateModal"
       >
@@ -50,6 +51,7 @@
         </div>
         <button
           class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-disabled hover:text-primary transition-all flex items-center justify-center"
+          aria-label="刷新 API Key 列表"
           @click="loadApiKeys"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
@@ -80,6 +82,7 @@
         {{ locale.emptyDesc }}
       </p>
       <button
+        v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
         class="mt-8 flex items-center gap-2 px-6 py-3 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-2xl transition-all"
         @click="openCreateModal"
       >
@@ -121,16 +124,20 @@
             class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all"
           >
             <button
+              v-if="rbac.can(PERMISSIONS.API_KEYS_READ)"
               class="p-2 text-text-tertiary hover:text-primary transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
+              aria-label="查看 API Key"
               @click="viewApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingViewId === apiKey.id" :size="14" class="animate-spin" />
               <Eye v-else :size="14" />
             </button>
             <button
+              v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
               class="p-2 text-text-tertiary hover:text-warning transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
+              aria-label="编辑 API Key"
               @click="editApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingEditId === apiKey.id" :size="14" class="animate-spin" />
@@ -140,6 +147,7 @@
               v-if="rbac.can(PERMISSIONS.API_KEYS_DELETE)"
               class="p-2 text-text-tertiary hover:text-error transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
+              aria-label="删除 API Key"
               @click="deleteApiKey(apiKey)"
             >
               <Trash2 :size="14" />
@@ -216,6 +224,7 @@
             </h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
+              aria-label="关闭弹窗"
               @click="closeModals"
             >
               <X :size="20" />
@@ -415,6 +424,7 @@
             </h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
+              aria-label="关闭弹窗"
               @click="closeModals"
             >
               <X :size="20" />
@@ -451,6 +461,7 @@
                       ? 'bg-success text-text-primary'
                       : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary'
                   "
+                  :aria-label="copied ? '已复制' : '复制 API Key'"
                   @click="copyToClipboard(newApiKey?.apiKey)"
                 >
                   <Check v-if="copied" :size="16" />
@@ -487,6 +498,7 @@
             <h3 class="text-lg font-black text-text-primary uppercase tracking-widest">{{ locale.details }}</h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
+              aria-label="关闭弹窗"
               @click="closeModals"
             >
               <X :size="20" />
@@ -730,6 +742,25 @@ const getExpiresOptionText = (key) =>
 const getPermissionOptionText = (key, field) => formatLocaleValue(locale.value?.permissionOptions?.[key]?.[field])
 const getDeleteTitle = (name) => getLocaleText('deleteMessage', name)
 
+// 过期时间预设：单一数据源
+// - key 稳定（永不随 i18n 文案变化），用于 form.expiresAt 和 CustomSelect 的 value
+// - days 为 null 表示永不过期，数值则由 handleExpiresAtChange 写入对应的 ISO 时间
+// - labelKey 用于 i18n 解析（locale.expiresOptions[key]）
+// - 'keep' 是编辑态的特殊值：不更改原有过期时间，由 expiresAtOptions 在编辑模式下动态插入
+const EXPIRES_PRESETS = [
+  { key: 'never', days: null, labelKey: 'never' },
+  { key: '3d',    days: 3,    labelKey: 'threeDays' },
+  { key: '7d',    days: 7,    labelKey: 'sevenDays' },
+  { key: '30d',   days: 30,   labelKey: 'thirtyDays' },
+  { key: '60d',   days: 60,   labelKey: 'sixtyDays' },
+  { key: '90d',   days: 90,   labelKey: 'ninetyDays' }
+]
+const PRESET_BY_KEY = Object.fromEntries(EXPIRES_PRESETS.map((p) => [p.key, p]))
+const getPresetLabel = (key) => {
+  const preset = PRESET_BY_KEY[key]
+  return preset ? getExpiresOptionText(preset.labelKey) : key
+}
+
 // 响应式数据
 const loading = ref(false)
 const submitting = ref(false)
@@ -747,15 +778,20 @@ const loadingEditId = ref(null)
 const loadingViewId = ref(null)
 
 // 文本映射
-const expiresAtText = ref('')
-const expiresAtOptions = computed(() => [
-  getExpiresOptionText('never'),
-  getExpiresOptionText('threeDays'),
-  getExpiresOptionText('sevenDays'),
-  getExpiresOptionText('thirtyDays'),
-  getExpiresOptionText('sixtyDays'),
-  getExpiresOptionText('ninetyDays')
-])
+// expiresAtText 持有稳定 key（never/3d/7d/30d/60d/90d/keep），由 CustomSelect 直接使用
+// 渲染时通过 expiresAtOptions 的 label 字段查 i18n，文本变更不影响功能
+const expiresAtText = ref('never')
+const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
+const expiresAtOptions = computed(() => {
+  const options = EXPIRES_PRESETS.map((p) => ({ value: p.key, label: getPresetLabel(p.key) }))
+  // 编辑态且原有过期时间：把 'keep' 放在最前，label 用原日期，保留原 UX
+  if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
+    const date = new Date(selectedApiKey.value.expiresAt)
+    const dateLabel = formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
+    return [{ value: 'keep', label: dateLabel }, ...options]
+  }
+  return options
+})
 const statusFilterOptions = computed(() => [
   { label: getLocaleText('allStatus'), value: '' },
   { label: getLocaleText('active'), value: 'active' },
@@ -812,28 +848,20 @@ const form = reactive({
   webhookUrl: ''
 })
 
-const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
-
-const getExpiresAtText = () => {
-  if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
-    const date = new Date(selectedApiKey.value.expiresAt)
-    return formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
-  }
-
-  const expiresAtTextMap = {
-    '3d': getExpiresOptionText('threeDays'),
-    '7d': getExpiresOptionText('sevenDays'),
-    '30d': getExpiresOptionText('thirtyDays'),
-    '60d': getExpiresOptionText('sixtyDays'),
-    '90d': getExpiresOptionText('ninetyDays')
-  }
-  return expiresAtTextMap[form.expiresAt] || getExpiresOptionText('never')
+// 同步 form.expiresAt 到 v-model 的 key
+// - 'keep' 编辑态原样保留
+// - '' 或空 映射为 'never'
+// - 其他 key 直接同步
+const getExpiresAtKey = () => {
+  if (form.expiresAt === 'keep') return 'keep'
+  if (!form.expiresAt) return 'never'
+  return form.expiresAt
 }
 
 watch(
-  [locale, () => form.expiresAt],
+  () => form.expiresAt,
   () => {
-    expiresAtText.value = getExpiresAtText()
+    expiresAtText.value = getExpiresAtKey()
   },
   { immediate: true }
 )
@@ -896,16 +924,14 @@ watch(
 )
 
 // 方法
-const handleExpiresAtChange = (val) => {
-  const map = {
-    [getExpiresOptionText('never')]: '',
-    [getExpiresOptionText('threeDays')]: '3d',
-    [getExpiresOptionText('sevenDays')]: '7d',
-    [getExpiresOptionText('thirtyDays')]: '30d',
-    [getExpiresOptionText('sixtyDays')]: '60d',
-    [getExpiresOptionText('ninetyDays')]: '90d'
+// CustomSelect emit 的 value 已是稳定 key（never/3d/7d/30d/60d/90d/keep）
+// 'never' 表示永不过期，form.expiresAt 存空串；其他 key 直接透传
+const handleExpiresAtChange = (key) => {
+  if (key === 'never') {
+    form.expiresAt = ''
+  } else {
+    form.expiresAt = key
   }
-  form.expiresAt = map[val] || ''
 }
 
 // 搜索防抖
@@ -1105,11 +1131,9 @@ const editApiKey = async (apiKey) => {
       form.description = response.data.description || ''
 
       if (response.data.expiresAt) {
-        const date = new Date(response.data.expiresAt)
-        expiresAtText.value = formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
+        // 编辑态：保留原过期时间，form.expiresAt 标 'keep'，expiresAtOptions 会自动插入 keep 选项
         form.expiresAt = 'keep'
       } else {
-        expiresAtText.value = getExpiresOptionText('never')
         form.expiresAt = ''
       }
 
@@ -1194,7 +1218,6 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.expiresAt = ''
-  expiresAtText.value = getExpiresOptionText('never')
   form.permissions = []
   form.isActive = true
   form.ownerType = 'system'

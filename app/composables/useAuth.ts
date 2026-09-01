@@ -2,6 +2,7 @@ import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { clearRbacCache, useRbac } from '~/composables/useRbac'
 
 interface LoginResponse {
   success: boolean
@@ -105,6 +106,16 @@ export const useAuth = () => {
 
       if (response.user) {
         setAuthState(response.user)
+        // 登录成功后刷新 RBAC 缓存（A4-3 修复）
+        if (import.meta.client) {
+          try {
+            const rbac = useRbac()
+            rbac.bind(response.user.id)
+            await rbac.refresh()
+          } catch {
+            // useRbac 不可用，忽略
+          }
+        }
         return response
       }
     }
@@ -134,6 +145,16 @@ export const useAuth = () => {
     const data = await $fetch<{ user: User }>('/api/auth/verify')
     if (data?.user) {
       setAuthState(data.user)
+      // 刷新用户后同步 RBAC 缓存（A4-3 修复）
+      if (import.meta.client) {
+        try {
+          const rbac = useRbac()
+          rbac.bind(data.user.id)
+          await rbac.refresh()
+        } catch {
+          // useRbac 不可用，忽略
+        }
+      }
       return data.user
     }
     return null
@@ -201,6 +222,17 @@ export const useAuth = () => {
       resetUserFilters()
     } catch (e) {
       // ignore
+    }
+
+    // 清理 RBAC 缓存并重置 userIdRef，避免下次登录命中旧账号缓存（A4-3 修复）
+    if (import.meta.client) {
+      try {
+        clearRbacCache()
+        const rbac = useRbac()
+        rbac.bind(null)
+      } catch {
+        // useRbac 不可用，忽略
+      }
     }
 
     if (import.meta.client && redirect) {

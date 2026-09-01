@@ -4,8 +4,9 @@
  * 行为：
  *   - 首次调用时 fetch /api/admin/rbac/my-permissions 拉取有效权限集合
  *   - 缓存到模块内 Map（同进程跨组件复用）
- *   - 失败时降级为空集（前端隐藏按钮但保留路由可见性，避免白屏）
+ *   - 失败时：保留上次成功缓存；首次失败时设空集并 3s 后自动 retry（仅 1 次）
  *   - SSR 守卫：服务端不读共享缓存（防止请求间泄漏）
+ *   - 未知 pageId 对 SUPER_ADMIN 兜底放行，避免漏配静默锁出
  *
  * 接口：
  *   const rbac = useRbac()
@@ -23,15 +24,27 @@ import {
   normalizePermission,
   type PermissionKey
 } from '~/utils/rbac'
+import { useAuth } from '~/composables/useAuth'
 
 type RbacState = {
   loaded: boolean
   loading: boolean
   error: string | null
   permissions: Set<PermissionKey>
+  superAdmin?: boolean
+  retryCount?: number
 }
 
 const cache = new Map<number, RbacState>()
+
+// 模块级 state：多次 useRbac() 共享同一 ref，保证 Sidebar / ApiKeyManager / RbacManager
+// 组件间 state 同步（A4-1 修复）
+const userIdRef = ref<number | null>(null)
+const stateRef = ref<RbacState>({ loaded: false, loading: false, error: null, permissions: new Set() })
+
+// 首次失败后自动 retry 一次（3s 后），避免一次 5xx 永久锁出 sidebar
+const AUTO_RETRY_DELAY_MS = 3000
+const MAX_AUTO_RETRY = 1
 
 function emptyState(): RbacState {
   return { loaded: false, loading: false, error: null, permissions: new Set() }
@@ -41,16 +54,13 @@ export const useRbac = () => {
   // 兼容 SSR：服务端不持有跨请求缓存
   const isServer = typeof window === 'undefined'
 
-  const userIdRef = ref<number | null>(null)
-  const stateRef = ref<RbacState>(emptyState())
-
   async function load(userId: number, force = false) {
     if (isServer) {
       stateRef.value = emptyState()
       return
     }
     const cached = cache.get(userId)
-    if (cached && cached.loaded && !force) {
+    if (cached && cached.loaded && !force && !cached.error) {
       stateRef.value = cached
       return
     }
@@ -65,31 +75,62 @@ export const useRbac = () => {
     stateRef.value = next
 
     try {
-      const response = await $fetch<{ permissions: string[] }>(
+      // 后端响应被外层 { success, data } 包了一层,需解包 .data(W5 hidden bug 修复)
+      const response = await $fetch<{ success: boolean; data: { permissions: string[] } }>(
         '/api/admin/rbac/my-permissions'
       )
       const perms = new Set<PermissionKey>()
-      for (const raw of response?.permissions ?? []) {
+      for (const raw of response?.data?.permissions ?? []) {
         const normalized = normalizePermission(raw)
         if (normalized) perms.add(normalized)
+      }
+      // superAdmin 优先从 response 读取，未提供时兜底 useAuth().user.value?.role
+      let isSuperAdmin = false
+      if (import.meta.client) {
+        try {
+          isSuperAdmin = useAuth().user.value?.role === 'SUPER_ADMIN'
+        } catch {
+          // useAuth 不可用，保持 false
+        }
       }
       const done: RbacState = {
         loaded: true,
         loading: false,
         error: null,
-        permissions: perms
+        permissions: perms,
+        superAdmin: isSuperAdmin
       }
       cache.set(userId, done)
       stateRef.value = done
     } catch (err: any) {
-      const fail: RbacState = {
-        loaded: true,
-        loading: false,
-        error: err?.message || String(err),
-        permissions: new Set()
+      const errMessage = err?.message || String(err)
+      const prev = cache.get(userId)
+      if (prev && prev.loaded && !prev.error) {
+        // 已有成功缓存：保留上次成功，仅标记 error（A4-2 / A6-3 修复）
+        const fail: RbacState = { ...prev, error: errMessage }
+        cache.set(userId, fail)
+        stateRef.value = fail
+      } else {
+        // 首次或持续失败：设空集，按 MAX_AUTO_RETRY 次数自动 retry
+        const retryCount = (prev?.retryCount ?? 0) + 1
+        const fail: RbacState = {
+          loaded: true,
+          loading: false,
+          error: errMessage,
+          permissions: new Set(),
+          retryCount
+        }
+        cache.set(userId, fail)
+        stateRef.value = fail
+        if (typeof window !== 'undefined' && retryCount <= MAX_AUTO_RETRY) {
+          setTimeout(() => {
+            // 仅当 userIdRef 仍指向同一用户时才 retry，避免登出/切换账号后误触发
+            if (userIdRef.value === userId) {
+              void load(userId, true)
+            }
+          }, AUTO_RETRY_DELAY_MS)
+        }
       }
-      cache.set(userId, fail)
-      stateRef.value = fail
     }
   }
 
@@ -124,7 +165,18 @@ export const useRbac = () => {
 
   function canAccessPage(pageId: string): boolean {
     const key = getPagePermission(pageId)
-    if (!key) return false
+    if (!key) {
+      // 未知 pageId：SUPER_ADMIN 兜底通过，避免漏配静默锁出所有用户（A5-1 修复）
+      if (stateRef.value.superAdmin === true) return true
+      if (import.meta.client) {
+        try {
+          if (useAuth().user.value?.role === 'SUPER_ADMIN') return true
+        } catch {
+          // useAuth 不可用，保持 false
+        }
+      }
+      return false
+    }
     return stateRef.value.permissions.has(key)
   }
 

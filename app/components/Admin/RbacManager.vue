@@ -8,6 +8,7 @@
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc || '管理权限定义、角色矩阵与个人加授' }}</p>
       </div>
       <button
+        v-if="rbac.can(PERMISSIONS.USER_PERMISSIONS_MANAGE)"
         class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-[var(--primary-glow)] active:scale-95"
         @click="openCreateModal"
       >
@@ -244,6 +245,18 @@
         </div>
       </div>
     </Transition>
+
+    <!-- 撤销加授二次确认 -->
+    <ConfirmDialog
+      v-model:show="showRevokeDialog"
+      type="danger"
+      :title="getLocaleText('confirmRevokeTitle', '确认撤销')"
+      :message="revokeConfirmMessage"
+      :confirm-text="getLocaleText('revoke', '撤销')"
+      :cancel-text="getLocaleText('cancel', '取消')"
+      @confirm="confirmRevoke"
+      @cancel="cancelRevoke"
+    />
   </div>
 </template>
 
@@ -251,16 +264,24 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Plus, X, Trash2 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useRbac } from '~/composables/useRbac'
+import { useSafeLocale } from '~/composables/useSafeLocale'
+import { useLocaleText } from '~/composables/useLocaleText'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 import { PERMISSIONS } from '~/utils/rbac'
 
 const auth = useAuth()
 const rbac = useRbac()
 const toast = useToast()
 
-const locale = ref({})
+// i18n: 通过 useLocale() 读取 admin.rbacManager 段;key 缺失时回退到模板中的中文硬编码串
+const { admin } = useLocale()
+const locale = computed(() => useSafeLocale(admin.value?.rbacManager || {}))
+// 用 t 而不是 msg:t 有真正的 fallback 参数,缺失 key 时回退到中文默认值
+const { t: getLocaleText } = useLocaleText(locale)
 
 const tabs = [
   { id: 'permissions', label: '权限总览' },
@@ -325,11 +346,26 @@ const canManageGrants = computed(() =>
   auth.user.value?.role === 'SUPER_ADMIN'
 )
 
+// 撤销加授的二次确认弹窗(替代原生 confirm)
+const pendingRevokeGrant = ref(null)
+const showRevokeDialog = ref(false)
+// 文案走 i18n;key 缺失时回退到中文模板,占位符 {0}=用户名 {1}=权限 key
+const revokeConfirmMessage = computed(() => {
+  const grant = pendingRevokeGrant.value
+  const name = grant?.userName || grant?.userUsername || ''
+  const key = grant?.permissionKey || ''
+  const fallback = `确定要撤销 ${name} 的 ${key} 权限吗？`
+  return getLocaleText('confirmRevokeMessage', fallback, name, key)
+})
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleString()
 }
 
+/**
+ * 加载全量权限定义 + 按 category 分组;供「权限总览」Tab 渲染
+ */
 async function loadPermissions() {
   loadingPermissions.value = true
   try {
@@ -371,6 +407,13 @@ async function loadUserGrants() {
   }
 }
 
+/**
+ * 切换「角色 × 权限」矩阵中的某一格;SUPER_ADMIN 不可改(硬编码保护,前后端双保险)
+ * 改动只在本地 matrix 累积,需要点「保存全部修改」才下发
+ * @param {string} role - 角色枚举(USER / SONG_ADMIN / ADMIN)
+ * @param {string} permKey - 权限 key
+ * @param {boolean} checked - 是否勾选
+ */
 function toggleRolePermission(role, permKey, checked) {
   if (role === 'SUPER_ADMIN') return
   const arr = roleMatrix.value[role] ? [...roleMatrix.value[role]] : []
@@ -383,6 +426,10 @@ function toggleRolePermission(role, permKey, checked) {
   roleMatrix.value = { ...roleMatrix.value, [role]: arr }
 }
 
+/**
+ * 把本地累积的角色矩阵逐个 PUT 到后端;只下发 USER/SONG_ADMIN/ADMIN 三档,
+ * SUPER_ADMIN 不在范围内(其权限集在 seed 里固定,前端无入口)
+ */
 async function saveRoleMatrix() {
   savingRoles.value = true
   try {
@@ -415,6 +462,10 @@ function closeCreateModal() {
   form.reason = ''
 }
 
+/**
+ * 提交「个人加授/减授」表单;expiresAt 是 datetime-local 输入,
+ * 提交前转 ISO 8601 后端才认
+ */
 async function submitGrant() {
   if (!form.userId) return toast.error('请填写用户 ID')
   if (!form.permissionKey) return toast.error('请填写权限 Key')
@@ -445,8 +496,22 @@ async function submitGrant() {
   }
 }
 
-async function revokeGrant(grant) {
-  if (!confirm(`确定要撤销 ${grant.userName || grant.userUsername} 的 ${grant.permissionKey} 权限吗？`)) return
+/**
+ * 打开撤销加授的二次确认弹窗(不再使用原生 confirm,走 locale 文案)
+ * @param {Object} grant - 单条个人加授记录
+ */
+function revokeGrant(grant) {
+  pendingRevokeGrant.value = grant
+  showRevokeDialog.value = true
+}
+
+/**
+ * 用户在 ConfirmDialog 确认后真正执行撤销
+ */
+async function confirmRevoke() {
+  const grant = pendingRevokeGrant.value
+  if (!grant) return
+  showRevokeDialog.value = false
   try {
     await $fetch(`/api/admin/rbac/user-permissions/${grant.id}`, { method: 'DELETE' })
     toast.success('加授已撤销')
@@ -454,7 +519,14 @@ async function revokeGrant(grant) {
   } catch (err) {
     console.error('撤销失败:', err)
     toast.error(err?.data?.message || '撤销失败')
+  } finally {
+    pendingRevokeGrant.value = null
   }
+}
+
+function cancelRevoke() {
+  showRevokeDialog.value = false
+  pendingRevokeGrant.value = null
 }
 
 onMounted(() => {

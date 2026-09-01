@@ -52,7 +52,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Lock, Home, ArrowLeft } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
+
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.forbidden || {})
 
 definePageMeta({
   layout: 'default'
