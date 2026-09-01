@@ -18,8 +18,15 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getUserPermissions } from './resolvePermissions'
 import type { PermissionKey } from './constants'
+import { isRbacEnabled } from './fallback'
+import { requireLegacyRoleCheck } from './legacyRoleCheck'
 
 export async function requirePermission(event: H3Event, key: PermissionKey) {
+  // RBAC_ENABLED=false → 走 legacy 4 角色判断（紧急回滚路径）
+  if (!isRbacEnabled()) {
+    return requireLegacyRoleCheck(event, key)
+  }
+
   const user = event.context.user
   if (!user) {
     throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '未授权访问')
@@ -53,6 +60,10 @@ export async function requirePermission(event: H3Event, key: PermissionKey) {
  * 受 ESLint `voicehub/no-raw-role-check` 规则覆盖。
  */
 export async function requireSuperAdmin(event: H3Event) {
+  // 注：本函数体只读 `user.role`，与 RBAC_ENABLED 状态无关；
+  // legacy / 新 RBAC 路径行为 1:1 一致，因此无需 isRbacEnabled() 分叉。
+  // 与 requirePermission 不同：后者要查 role_permissions 表，必须有 fallback；
+  // 本函数天然兼容 env 开关。
   const user = event.context.user
   if (!user) {
     throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '未授权访问')

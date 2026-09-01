@@ -13,8 +13,10 @@
  *
  * 允许：
  *   - 对象字面量属性赋值：{ role: user.role }（用于登录响应序列化）
- *   - server/utils/rbac/**、server/utils/requireSongAdmin.ts、
- *     server/utils/permissions.js（fallback 30 天）
+ *   - server/utils/rbac/**（含 guards.ts / legacyRoleCheck.ts / policies.ts 等
+ *     任何需要 user.role 字面量的 RBAC 内部模块）
+ *   - server/utils/requireSongAdmin.ts
+ *   - server/utils/permissions.js（旧 fallback，30 天兼容期）
  */
 
 function isAllowedPath(filename) {
