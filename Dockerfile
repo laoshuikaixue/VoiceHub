@@ -50,6 +50,9 @@ USER root
 WORKDIR /app
 
 # 运行依赖必须在目标平台安装，不能从构建平台复制 node_modules。
+# 同时追加 --ignore-scripts：runtime 仅执行 `node .output/server/index.mjs`
+# (Nitro 纯 JS 输出)，不引用 rolldown/esbuild/oxc-parser 等 build-time
+# native binding，跳过 postinstall 可避免 QEMU 用户态下 SIGILL。
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY scripts/postinstall.js ./scripts/postinstall.js
 RUN set -eux; \
@@ -58,7 +61,7 @@ RUN set -eux; \
     pnpm config set fetch-retries 5; \
     pnpm config set fetch-retry-mintimeout 20000; \
     pnpm config set fetch-retry-maxtimeout 120000; \
-    pnpm install --prod --frozen-lockfile
+    pnpm install --prod --frozen-lockfile --ignore-scripts
 
 # 从构建阶段复制必要文件
 COPY --from=builder /app/drizzle.config.ts ./
