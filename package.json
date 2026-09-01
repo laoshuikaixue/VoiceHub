@@ -18,6 +18,7 @@
     "db:studio": "pnpm exec drizzle-kit studio",
     "db:drop": "pnpm exec drizzle-kit drop",
     "db:check": "pnpm exec drizzle-kit check",
+    "rbac:rollback": "psql $DATABASE_URL -f scripts/rbac-rollback.sql",
     "setup": "pnpm install --frozen-lockfile && pnpm run db:migrate",
     "create-admin": "pnpm exec tsx scripts/create-admin.js",
     "clear-db": "pnpm exec tsx scripts/clear-database.js",
