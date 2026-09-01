@@ -4,6 +4,10 @@
  * 替代 server/middleware/api-auth.ts 的 getRequiredPermission 硬编码 switch
  * 替代 server/utils/permissions.js 的角色 → 页面映射
  *
+ * 消费者：
+ *   (1) requirePermission（管理后台 /api/admin/* 路径）
+ *   (2) api-auth.ts getRequiredPermission（开放 API /api/open/* 路径）
+ *
  * 匹配算法：第一条命中规则胜出（顺序敏感，精确路由在通配路由之前）
  */
 
@@ -135,7 +139,32 @@ export const routePermissionMap: RouteMatcher[] = [
   { matcher: /^\/api\/admin\/songs\/duration$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_WRITE } },
   { matcher: /^\/api\/admin\/songs\/reject$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_REJECT } },
   { matcher: /^\/api\/admin\/songs\/mark-played$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_WRITE } },
-  { matcher: /^\/api\/admin\/songs\/delete$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_WRITE } }
+  { matcher: /^\/api\/admin\/songs\/delete$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_WRITE } },
+
+  // ========== /api/open/* 开放 API 路径（消费者：api-auth.ts getRequiredPermission） ==========
+  // 顺序敏感：精确路径在前，通配在后
+  // 来源：server/middleware/api-auth.ts getLegacyRequiredPermission (fallback)
+  // 权限映射：LEGACY_PERMISSION_MAP 归一化（songs:request → song.read、card-codes:* → card_codes.* 等）
+
+  // card-codes
+  // 特殊路径 /card-codes/delete 优先于通用 /card-codes
+  { matcher: /^\/api\/open\/card-codes\/delete$/, rule: { method: 'POST', permission: PERMISSIONS.CARD_CODES_DELETE } },
+  { matcher: /^\/api\/open\/card-codes$/, rule: { method: 'GET', permission: PERMISSIONS.CARD_CODES_READ } },
+  { matcher: /^\/api\/open\/card-codes$/, rule: { method: 'POST', permission: PERMISSIONS.CARD_CODES_WRITE } },
+  { matcher: /^\/api\/open\/card-codes$/, rule: { method: 'PATCH', permission: PERMISSIONS.CARD_CODES_WRITE } },
+  { matcher: /^\/api\/open\/card-codes$/, rule: { method: 'DELETE', permission: PERMISSIONS.CARD_CODES_DELETE } },
+
+  // songs：精确路径在前，通配在后
+  // /songs/mark-played 与 /songs/request 优先于 /songs/.+ 通配
+  { matcher: /^\/api\/open\/songs\/request$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_READ } },
+  { matcher: /^\/api\/open\/songs\/mark-played$/, rule: { method: 'POST', permission: PERMISSIONS.SONG_WRITE } },
+  { matcher: /^\/api\/open\/songs\/.+$/, rule: { method: 'GET', permission: PERMISSIONS.SONG_READ } },
+
+  // schedules（fallback 通配：任何方法都需 schedule.read；新规则先覆盖最常见 GET）
+  { matcher: /^\/api\/open\/schedules\/.+$/, rule: { method: 'GET', permission: PERMISSIONS.SCHEDULE_READ } },
+
+  // backup（fallback 通配：任何方法都需 backup.execute；新规则先覆盖最常见 POST）
+  { matcher: /^\/api\/open\/backup\/.+$/, rule: { method: 'POST', permission: PERMISSIONS.BACKUP_EXECUTE } }
 ]
 
 /**

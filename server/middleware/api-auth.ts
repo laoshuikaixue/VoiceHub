@@ -14,6 +14,8 @@ import { verifyApiKey } from '~~/server/utils/apiKeyUtils'
 import { checkAndIncrementRate, type RateCheckResult } from '~~/server/utils/ratelimit/pg'
 import { sendWebhookWithRetry, type WebhookPayload } from '~~/server/utils/webhook'
 import { isIpAllowed, parseIpWhitelist } from '~~/server/utils/ip-whitelist'
+import { resolveRoutePermission } from '~~/server/utils/rbac/routePermissionMap'
+import { LEGACY_PERMISSION_MAP } from '~~/server/utils/rbac/constants'
 
 const truncateResponseBody = (responseBody: any, maxLength = 10000) => {
   try {
@@ -411,8 +413,38 @@ export default defineEventHandler(async (event) => {
 
 /**
  * 根据路径和方法获取所需权限
+ *
+ * 解析顺序：
+ *   1. 优先委托 `resolveRoutePermission`（返回点分 PermissionKey）
+ *   2. 未命中时回退到 `getLegacyRequiredPermission`（保留旧 switch，返回冒号风格 key）
+ *   3. 通过 `LEGACY_PERMISSION_MAP` 归一化为点分风格后返回
+ *
+ * 这样可消除 routePermissionMap.ts 死代码，同时保持旧 /api/open/* 路径的向后兼容
+ * （apiKeyPermissions 表历史数据可能是冒号风格 key）。
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
+  // 1. 委托新路由注册中心（已统一为点分风格）
+  const resolved = resolveRoutePermission(pathname, method)
+  if (resolved) return resolved
+
+  // 2. Fallback：旧 switch 行为，返回冒号风格 key
+  const legacyKey = getLegacyRequiredPermission(pathname, method)
+  if (!legacyKey) return null
+
+  // 3. 归一化冒号 → 点分（未在映射表内的原样返回，保留向后兼容）
+  return LEGACY_PERMISSION_MAP[legacyKey] ?? legacyKey
+}
+
+/**
+ * 旧版 getRequiredPermission switch 实现
+ *
+ * 仅作为 getRequiredPermission 的 fallback 使用，保留 /api/open/* 旧路径的
+ * 冒号风格 key（card-codes:* / schedules:* / songs:* / backup:*），以便
+ * apiKeyPermissions 表历史冒号数据可继续命中。
+ *
+ * @deprecated 优先使用 resolveRoutePermission；新路径请注册到 routePermissionMap
+ */
+function getLegacyRequiredPermission(pathname: string, method: string): string | null {
   const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
 
   if (
