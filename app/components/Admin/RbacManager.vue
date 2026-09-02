@@ -533,6 +533,7 @@
       :message="templateConfirmMessage"
       :confirm-text="getLocaleText('apply', '应用')"
       :cancel-text="getLocaleText('cancel', '取消')"
+      :loading="savingRoles"
       @confirm="confirmApplyTemplate"
       @cancel="cancelApplyTemplate"
     />
@@ -681,6 +682,11 @@ function formatDate(dateStr: string) {
 
 /**
  * 加载全量权限定义 + 按 category 分组;供「权限总览」Tab 渲染
+ *
+ * 同步默认选中第一个分类:之前只靠 watch(permissionsGrouped) 在数据落地后给
+ * selectedCategory 兜底,但 W8 之后该 watch 在 VPS 上偶发不触发,导致右侧全空;
+ * 改成在数据写入的同一段同步代码里直接 set,行为与 watch 一致,watch 仅留作
+ * 防御性兜底(例如未来通过其他途径直接改 permissionsGrouped.value 时仍能恢复选中)。
  */
 async function loadPermissions() {
   loadingPermissions.value = true
@@ -689,6 +695,11 @@ async function loadPermissions() {
     if (res.success) {
       allPermissions.value = res.data.items
       permissionsGrouped.value = res.data.grouped
+      // 兜底选中第一个分类:与下方 watch 行为一致,但不走响应式依赖,保证一定执行
+      const keys = Object.keys(res.data.grouped || {})
+      if (keys.length > 0 && (!selectedCategory.value || !res.data.grouped[selectedCategory.value])) {
+        selectedCategory.value = keys[0]
+      }
     }
   } catch (err) {
     console.error('加载权限定义失败:', err)
@@ -994,16 +1005,37 @@ function askApplyTemplate(tpl: typeof ROLE_TEMPLATES[number]) {
   pendingTemplate.value = tpl
   showTemplateDialog.value = true
 }
-/** 确认应用:把目标角色的 matrix 整个替换为模板 permissions */
-function confirmApplyTemplate() {
+/**
+ * 确认应用:把目标角色的 matrix 整个替换为模板 permissions,先 PUT 后端落库
+ * role_permissions 表(W7a/W9 hotfix 之前只改本地 ref,导致 DB 与 UI 不一致)
+ * 失败时通过 :loading=savingRoles 让 ConfirmDialog 保持打开+显示 spinner,允许重试
+ */
+async function confirmApplyTemplate() {
   const tpl = pendingTemplate.value
   if (!tpl) return
   const role = pendingTemplateRole.value
   if (role === 'SUPER_ADMIN') return
-  roleMatrix.value = { ...roleMatrix.value, [role]: [...tpl.permissions] }
-  showTemplateDialog.value = false
-  pendingTemplate.value = null
-  toast.success(`已应用模板「${tpl.label}」到「${roleLabels[role] || role}」`)
+
+  savingRoles.value = true
+  try {
+    await $fetch(`/api/admin/rbac/roles/${role}`, {
+      method: 'PUT',
+      body: { permissions: tpl.permissions }
+    })
+    // 后端成功后落本地(失败不更新,保持原样让用户重试)
+    roleMatrix.value = { ...roleMatrix.value, [role]: [...tpl.permissions] }
+    showTemplateDialog.value = false
+    pendingTemplate.value = null
+    toast.success(
+      `已应用模板「${tpl.label}」到「${roleLabels[role] || role}」(${tpl.permissions.length} 个权限)`
+    )
+  } catch (err: unknown) {
+    console.error('应用模板失败:', err)
+    const e = err as { data?: { message?: string } }
+    toast.error(e?.data?.message || '应用模板失败')
+  } finally {
+    savingRoles.value = false
+  }
 }
 function cancelApplyTemplate() {
   showTemplateDialog.value = false
