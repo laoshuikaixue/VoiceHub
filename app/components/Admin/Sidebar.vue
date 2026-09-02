@@ -194,8 +194,7 @@ const menuGroups = computed(() => [
       {
         icon: BarChart3,
         label: locale.value.menu?.dataAnalysis || '数据分析',
-        id: 'data-analysis',
-        permissionId: 'data-analysis'
+        id: 'data-analysis'
       }
     ]
   },

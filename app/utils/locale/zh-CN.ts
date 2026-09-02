@@ -4196,7 +4196,25 @@ export const admin = {
     noPermission: '暂无权限',
     saveAll: '保存全部',
     userId: '用户 ID',
-    userIdPlaceholder: '输入用户 ID'
+    userIdPlaceholder: '输入用户 ID',
+    // W7a 角色矩阵新增(B 搜索筛选 / C 模板 / G 用户视角 / 二次确认弹窗)
+    searchPlaceholder: '搜索权限 key 或描述...',
+    clearSearch: '清空搜索',
+    roleTemplates: '角色模板',
+    noMatchingPermissions: '没有匹配的权限',
+    userPerspective: '用户视角',
+    currentUser: '当前用户',
+    searchUserPlaceholder: '搜索用户名或姓名...',
+    noMatchingUsers: '未找到匹配的用户',
+    grants: '条',
+    alreadyGranted: '已加授的权限',
+    noUserGrantsYet: '该用户暂无加授',
+    noGrantsForUser: '该用户暂无加授记录',
+    confirmRevokeTitle: '确认撤销',
+    confirmRevokeMessage: '确定要撤销 {0} 的 {1} 权限吗?',
+    applyTemplateTitle: '应用角色模板',
+    applyTemplateMessage: '将覆盖 {0} 的 {1} 个权限,确定?',
+    apply: '应用'
   },
   forbidden: {
     title: '无权访问',

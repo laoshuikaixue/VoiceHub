@@ -4187,7 +4187,25 @@ export const admin = {
     noPermission: 'No permissions',
     saveAll: 'Save All',
     userId: 'User ID',
-    userIdPlaceholder: 'Enter user ID'
+    userIdPlaceholder: 'Enter user ID',
+    // W7a role matrix additions (B search / C template / G user perspective / confirm dialogs)
+    searchPlaceholder: 'Search permission key or description...',
+    clearSearch: 'Clear search',
+    roleTemplates: 'Role Templates',
+    noMatchingPermissions: 'No matching permissions',
+    userPerspective: 'User Perspective',
+    currentUser: 'Current User',
+    searchUserPlaceholder: 'Search username or name...',
+    noMatchingUsers: 'No matching users',
+    grants: 'entries',
+    alreadyGranted: 'Already granted',
+    noUserGrantsYet: 'User has no grants',
+    noGrantsForUser: 'User has no grant records',
+    confirmRevokeTitle: 'Confirm Revoke',
+    confirmRevokeMessage: 'Are you sure to revoke the "{1}" permission from {0}?',
+    applyTemplateTitle: 'Apply Role Template',
+    applyTemplateMessage: 'Will overwrite {1} permissions for {0}, confirm?',
+    apply: 'Apply'
   },
   forbidden: {
     title: 'Access Denied',

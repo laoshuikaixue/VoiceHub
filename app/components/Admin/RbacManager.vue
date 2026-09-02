@@ -44,16 +44,31 @@
           :key="category"
           class="bg-bg-secondary-30 border border-border-secondary-60 rounded-2xl p-5"
         >
-          <h3 class="text-sm font-black text-text-primary mb-3 uppercase tracking-wider">
-            {{ categoryLabels[category] || category }}
-          </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <!-- E: 分类可折叠 + 显示权限数 -->
+          <button
+            type="button"
+            class="w-full flex items-center justify-between text-left mb-3"
+            :aria-expanded="expandedCategories.has(String(category))"
+            @click="toggleCategory(String(category))"
+          >
+            <h3 class="text-sm font-black text-text-primary uppercase tracking-wider">
+              {{ categoryLabels[category] || category }}
+              <span class="ml-1 text-text-tertiary font-normal">({{ perms.length }})</span>
+            </h3>
+            <ChevronDown v-if="!expandedCategories.has(String(category))" :size="14" class="text-text-tertiary" />
+            <ChevronUp v-else :size="14" class="text-text-tertiary" />
+          </button>
+          <div v-show="expandedCategories.has(String(category))" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <div
               v-for="p in perms"
               :key="p.id"
               class="p-3 bg-bg-primary border border-border-secondary rounded-xl flex items-start gap-2"
             >
-              <code class="text-[10px] font-mono text-primary shrink-0">{{ p.key }}</code>
+              <!-- D: hover 显示完整描述 -->
+              <code
+                class="text-[10px] font-mono text-primary shrink-0 cursor-help"
+                :title="`${p.key} — ${p.descriptionEn || p.descriptionZh}`"
+              >{{ p.key }}</code>
               <span class="text-[11px] text-text-tertiary leading-relaxed">{{ p.descriptionZh }}</span>
             </div>
           </div>
@@ -67,6 +82,48 @@
         {{ locale.onlySuperAdmin || '仅超级管理员可编辑角色矩阵' }}
       </div>
       <div v-else class="space-y-3">
+        <!-- B: 搜索筛选 -->
+        <div class="bg-bg-secondary-30 border border-border-secondary-60 rounded-2xl p-3 flex items-center gap-2">
+          <Search :size="14" class="text-text-tertiary shrink-0" />
+          <input
+            v-model="roleMatrixSearch"
+            type="text"
+            :placeholder="locale.searchPlaceholder || '搜索权限 key 或描述...'"
+            class="flex-1 bg-transparent text-xs text-text-primary placeholder-text-tertiary focus:outline-none"
+          >
+          <button
+            v-if="roleMatrixSearch"
+            type="button"
+            class="p-1 text-text-tertiary hover:text-text-primary rounded transition-colors"
+            :aria-label="getLocaleText('clearSearch', '清空搜索')"
+            @click="roleMatrixSearch = ''"
+          >
+            <X :size="12" />
+          </button>
+        </div>
+
+        <!-- C: 角色模板 -->
+        <div class="bg-bg-secondary-30 border border-border-secondary-60 rounded-2xl p-3 space-y-2">
+          <div class="flex items-center gap-2 text-text-tertiary">
+            <Layers :size="12" />
+            <span class="text-[10px] font-black uppercase tracking-widest">
+              {{ getLocaleText('roleTemplates', '角色模板') }}
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="tpl in ROLE_TEMPLATES"
+              :key="tpl.key"
+              type="button"
+              class="px-3 py-1.5 text-[11px] font-bold bg-bg-primary border border-border-secondary hover:border-primary text-text-primary rounded-lg transition-colors active:scale-95"
+              :title="tpl.description"
+              @click="askApplyTemplate(tpl)"
+            >
+              {{ tpl.label }}
+            </button>
+          </div>
+        </div>
+
         <div
           v-for="role in roles"
           :key="role"
@@ -74,22 +131,45 @@
         >
           <h3 class="text-sm font-black text-text-primary mb-3 uppercase tracking-wider">
             {{ roleLabels[role] || role }}
+            <span class="ml-1 text-text-tertiary font-normal">({{ (roleMatrix[role] || []).length }})</span>
           </h3>
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            <label
-              v-for="p in allPermissions"
-              :key="p.key"
-              class="flex items-center gap-2 p-2 bg-bg-primary border border-border-secondary rounded-lg cursor-pointer hover:border-primary-30 transition-colors"
+          <!-- A: 按 category 分组 -->
+          <div v-if="Object.keys(filteredPermissionsGrouped).length === 0" class="text-center py-6 text-text-tertiary text-[11px]">
+            {{ getLocaleText('noMatchingPermissions', '没有匹配的权限') }}
+          </div>
+          <div v-else class="space-y-4">
+            <div
+              v-for="(perms, category) in filteredPermissionsGrouped"
+              :key="`${role}-${category}`"
+              class="space-y-2"
             >
-              <input
-                type="checkbox"
-                :checked="roleMatrix[role]?.includes(p.key) || false"
-                :disabled="role === 'SUPER_ADMIN'"
-                class="w-3.5 h-3.5"
-                @change="toggleRolePermission(role, p.key, $event.target.checked)"
-              >
-              <span class="text-[10px] font-mono text-text-secondary">{{ p.key }}</span>
-            </label>
+              <div class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                {{ categoryLabels[category] || category }}
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                <label
+                  v-for="p in perms"
+                  :key="p.key"
+                  class="flex items-start gap-2 p-2 bg-bg-primary border border-border-secondary rounded-lg cursor-pointer hover:border-primary-30 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="roleMatrix[role]?.includes(p.key) || false"
+                    :disabled="role === 'SUPER_ADMIN'"
+                    class="w-3.5 h-3.5 mt-0.5 shrink-0"
+                    @change="toggleRolePermission(role, p.key, $event.target.checked)"
+                  >
+                  <div class="min-w-0 flex-1">
+                    <!-- D: hover 显示完整 description -->
+                    <code
+                      class="text-[10px] font-mono text-text-secondary block cursor-help"
+                      :title="`${p.key} — ${p.descriptionEn || p.descriptionZh}`"
+                    >{{ p.key }}</code>
+                    <p class="text-[10px] text-text-tertiary leading-tight mt-0.5">{{ p.descriptionZh }}</p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
         <button
@@ -108,13 +188,84 @@
       <div v-if="!canManageGrants" class="p-4 bg-warning-10 border border-warning-20 rounded-2xl text-warning text-xs">
         {{ locale.onlyAdminOrAbove || '仅管理员及以上可管理个人加授' }}
       </div>
-      <div v-else>
+      <div v-else class="space-y-3">
+        <!-- G: 用户视角 — 选择目标用户查看其当前加授 -->
+        <div class="bg-bg-secondary-30 border border-border-secondary-60 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-text-tertiary">
+              <UserIcon :size="14" />
+              <span class="text-[10px] font-black uppercase tracking-widest">
+                {{ getLocaleText('userPerspective', '用户视角') }}
+              </span>
+            </div>
+            <span v-if="selectedUserId" class="text-[10px] text-text-tertiary">
+              {{ getLocaleText('currentUser', '当前用户') }}: <b class="text-text-primary">{{ selectedUserName }}</b>
+              ({{ selectedUserPermissions.length }})
+            </span>
+          </div>
+          <div class="relative">
+            <Search :size="14" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+            <input
+              v-model="grantUserSearch"
+              type="text"
+              :placeholder="getLocaleText('searchUserPlaceholder', '搜索用户名或姓名...')"
+              class="w-full pl-8 pr-8 py-2 bg-bg-primary border border-border-secondary rounded-xl text-xs text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary-30"
+            >
+            <button
+              v-if="grantUserSearch"
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-tertiary hover:text-text-primary rounded transition-colors"
+              :aria-label="getLocaleText('clearSearch', '清空搜索')"
+              @click="grantUserSearch = ''"
+            >
+              <X :size="12" />
+            </button>
+          </div>
+          <div v-if="grantUserSearch" class="max-h-40 overflow-y-auto space-y-1">
+            <div v-if="filteredUserOptions.length === 0" class="text-center py-3 text-text-tertiary text-[11px]">
+              {{ getLocaleText('noMatchingUsers', '未找到匹配的用户') }}
+            </div>
+            <button
+              v-for="u in filteredUserOptions"
+              :key="u.userId"
+              type="button"
+              class="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-left text-xs bg-bg-primary hover:border-primary border border-border-secondary rounded-lg transition-colors"
+              :class="selectedUserId === u.userId ? 'border-primary' : ''"
+              @click="selectGrantUser(u.userId)"
+            >
+              <span class="font-bold text-text-primary truncate">{{ u.userName || u.userUsername }}</span>
+              <span class="text-text-tertiary text-[10px] shrink-0">{{ u.grantCount }} {{ getLocaleText('grants', '条') }}</span>
+            </button>
+          </div>
+          <!-- 已选用户当前权限摘要 -->
+          <div v-if="selectedUserId" class="space-y-1.5">
+            <div class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+              {{ getLocaleText('alreadyGranted', '已加授的权限') }}
+            </div>
+            <div v-if="selectedUserPermissions.length === 0" class="text-[11px] text-text-tertiary italic">
+              {{ getLocaleText('noUserGrantsYet', '该用户暂无加授') }}
+            </div>
+            <div v-else class="flex flex-wrap gap-1.5">
+              <span
+                v-for="key in selectedUserPermissions"
+                :key="key"
+                class="inline-flex items-center gap-1 px-2 py-0.5 bg-success-10 text-success text-[10px] font-mono rounded"
+              >
+                {{ key }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div v-if="userGrants.length === 0 && !loadingGrants" class="text-center py-10 text-text-tertiary text-xs">
           {{ locale.noGrants || '暂无个人加授记录' }}
         </div>
+        <div v-else-if="filteredUserGrants.length === 0 && selectedUserId" class="text-center py-6 text-text-tertiary text-xs">
+          {{ getLocaleText('noGrantsForUser', '该用户暂无加授记录') }}
+        </div>
         <div v-else class="space-y-2">
           <div
-            v-for="g in userGrants"
+            v-for="g in filteredUserGrants"
             :key="g.id"
             class="bg-bg-secondary-30 border border-border-secondary-60 rounded-2xl p-4 flex items-center justify-between gap-4"
           >
@@ -129,7 +280,10 @@
                 >
                   {{ g.grantType === 'assign' ? (locale.grantAssign || '加授') : (locale.grantRevoke || '减授') }}
                 </span>
-                <code class="text-[10px] font-mono text-primary">{{ g.permissionKey }}</code>
+                <code
+                  class="text-[10px] font-mono text-primary cursor-help"
+                  :title="`${g.permissionKey} — ${g.permissionDescriptionZh || g.permissionKey}`"
+                >{{ g.permissionKey }}</code>
               </div>
               <p v-if="g.reason" class="text-[11px] text-text-tertiary">{{ g.reason }}</p>
               <p v-if="g.expiresAt" class="text-[11px] text-warning">
@@ -151,6 +305,7 @@
     <Transition name="modal">
       <div
         v-if="showCreateModal"
+        ref="createModalEl"
         class="fixed inset-0 z-[100] flex items-center justify-center p-4"
       >
         <div
@@ -257,12 +412,33 @@
       @confirm="confirmRevoke"
       @cancel="cancelRevoke"
     />
+
+    <!-- C: 应用角色模板二次确认 -->
+    <ConfirmDialog
+      v-model:show="showTemplateDialog"
+      type="warning"
+      :title="getLocaleText('applyTemplateTitle', '应用角色模板')"
+      :message="templateConfirmMessage"
+      :confirm-text="getLocaleText('apply', '应用')"
+      :cancel-text="getLocaleText('cancel', '取消')"
+      @confirm="confirmApplyTemplate"
+      @cancel="cancelApplyTemplate"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { Plus, X, Trash2 } from '@lucide/vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import {
+  Plus,
+  X,
+  Trash2,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  User as UserIcon,
+  Layers
+} from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useAuth } from '~/composables/useAuth'
@@ -529,11 +705,268 @@ function cancelRevoke() {
   pendingRevokeGrant.value = null
 }
 
+// =============================================================
+// A. 角色矩阵显示权限描述 + 分类分组 / B. 搜索筛选
+// =============================================================
+/** 角色矩阵顶部搜索框(key/description_zh/description_en 模糊匹配) */
+const roleMatrixSearch = ref('')
+/** 搜索后保留的权限列表(平铺,仍保留 category 字段供后续分组) */
+const filteredPermissions = computed(() => {
+  const q = roleMatrixSearch.value.trim().toLowerCase()
+  if (!q) return allPermissions.value
+  return allPermissions.value.filter((p) =>
+    p.key.toLowerCase().includes(q) ||
+    (p.descriptionZh && p.descriptionZh.toLowerCase().includes(q)) ||
+    (p.descriptionEn && p.descriptionEn.toLowerCase().includes(q))
+  )
+})
+/** 搜索后的权限按 category 重新分组,供角色矩阵渲染(A) */
+const filteredPermissionsGrouped = computed(() => {
+  const grouped = {}
+  for (const p of filteredPermissions.value) {
+    if (!grouped[p.category]) grouped[p.category] = []
+    grouped[p.category].push(p)
+  }
+  return grouped
+})
+
+// =============================================================
+// C. 角色模板(preset) — 一键覆盖角色权限
+// =============================================================
+/**
+ * 角色模板清单;permission 列表与 seed-permissions.js 角色矩阵对齐。
+ * label 走 locale.templates.* 缺失时回退到中文;description 走 title 提示。
+ */
+const ROLE_TEMPLATES = [
+  {
+    key: 'songAdmin',
+    label: '音乐管理员模板',
+    description: '管理歌曲/排期相关',
+    permissions: [
+      'song.read', 'song.write', 'song.reject',
+      'schedule.read', 'schedule.write', 'schedule.publish',
+      'playtimes.manage', 'request_times.manage',
+      'semester.manage', 'stats.read',
+      'card_codes.read', 'card_codes.write'
+    ]
+  },
+  {
+    key: 'admin',
+    label: '管理员模板',
+    description: '在音乐管理员基础上加用户/系统相关',
+    permissions: [
+      'song.read', 'song.write', 'song.reject',
+      'schedule.read', 'schedule.write', 'schedule.publish',
+      'playtimes.manage', 'request_times.manage',
+      'semester.manage', 'stats.read',
+      'card_codes.read', 'card_codes.write',
+      'user.read', 'user.manage', 'user.status',
+      'blacklist.manage', 'system_settings.read',
+      'email_templates.manage', 'smtp.manage', 'grade_class.manage',
+      'backup.execute', 'notification.send',
+      'api_keys.read', 'api_keys.write', 'api_keys.manage',
+      'permissions.read'
+    ]
+  },
+  {
+    key: 'viewer',
+    label: '只读模板',
+    description: '仅查看类权限(适合审计/统计岗)',
+    permissions: [
+      'song.read', 'schedule.read', 'stats.read',
+      'card_codes.read', 'system_settings.read',
+      'user.read', 'api_keys.read', 'permissions.read'
+    ]
+  },
+  {
+    key: 'clear',
+    label: '清空模板',
+    description: '清空该角色所有权限',
+    permissions: []
+  }
+]
+/** 当前待应用的模板 + 目标角色 */
+const pendingTemplate = ref(null)
+/** 应用模板前的二次确认弹窗(走 ConfirmDialog) */
+const showTemplateDialog = ref(false)
+const templateConfirmMessage = computed(() => {
+  const tpl = pendingTemplate.value
+  if (!tpl) return ''
+  const target = pendingTemplateRole.value
+  const targetLabel = roleLabels[target] || target
+  const count = tpl.permissions.length
+  const fallback = `将覆盖「${targetLabel}」角色的 ${count} 个权限,确定?`
+  return getLocaleText('applyTemplateMessage', fallback, targetLabel, count)
+})
+const pendingTemplateRole = ref('USER')
+/** 打开模板确认弹窗(点模板按钮触发) */
+function askApplyTemplate(tpl) {
+  // 按 template.key 自动匹配目标角色(也避免 SUPER_ADMIN 这类不可改的角色)
+  const targetMap = {
+    songAdmin: 'SONG_ADMIN',
+    admin: 'ADMIN',
+    viewer: 'USER',
+    clear: 'USER'
+  }
+  pendingTemplateRole.value = targetMap[tpl.key] || 'USER'
+  pendingTemplate.value = tpl
+  showTemplateDialog.value = true
+}
+/** 确认应用:把目标角色的 matrix 整个替换为模板 permissions */
+function confirmApplyTemplate() {
+  const tpl = pendingTemplate.value
+  if (!tpl) return
+  const role = pendingTemplateRole.value
+  if (role === 'SUPER_ADMIN') return
+  roleMatrix.value = { ...roleMatrix.value, [role]: [...tpl.permissions] }
+  showTemplateDialog.value = false
+  pendingTemplate.value = null
+  toast.success(`已应用模板「${tpl.label}」到「${roleLabels[role] || role}」`)
+}
+function cancelApplyTemplate() {
+  showTemplateDialog.value = false
+  pendingTemplate.value = null
+}
+
+// =============================================================
+// E. 权限总览分类可折叠 + 数量显示
+// =============================================================
+/** 已展开的分类集合;默认全部展开(在 onMounted 从 permissionsGrouped 初始化) */
+const expandedCategories = ref(new Set())
+function toggleCategory(category) {
+  const next = new Set(expandedCategories.value)
+  if (next.has(category)) next.delete(category)
+  else next.add(category)
+  expandedCategories.value = next
+}
+
+// =============================================================
+// F. 焦点陷阱 + Esc 关闭
+//  - createModalEl: 在组件内的弹窗(不 portal),用 ref + local listener
+//  - ConfirmDialog: Teleport 到 body,用 document 监听 Esc
+// =============================================================
+const createModalEl = ref(null)
+/** 收集焦点元素 + Tab 循环 */
+function trapFocusIn(el) {
+  if (!el) return null
+  const focusable = el.querySelectorAll(
+    'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+  )
+  if (focusable.length === 0) return null
+  focusable[0].focus()
+  const handler = (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      if (showCreateModal.value) closeCreateModal()
+      return
+    }
+    if (e.key !== 'Tab') return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+  el.addEventListener('keydown', handler)
+  return () => el.removeEventListener('keydown', handler)
+}
+/** 弹窗打开时聚焦首个可输入元素(Esc 由 create modal 自己处理) */
+watch(showCreateModal, (open) => {
+  if (open) {
+    nextTick(() => trapFocusIn(createModalEl.value))
+  }
+})
+/** ConfirmDialog portal 到 body,需要 document 级 Esc 监听 */
+function handleGlobalEsc(e) {
+  if (e.key !== 'Escape') return
+  if (showTemplateDialog.value) cancelApplyTemplate()
+  else if (showRevokeDialog.value) cancelRevoke()
+}
+watch([showTemplateDialog, showRevokeDialog], ([tpl, rev]) => {
+  if (tpl || rev) {
+    document.addEventListener('keydown', handleGlobalEsc)
+  } else {
+    document.removeEventListener('keydown', handleGlobalEsc)
+  }
+})
+
+// =============================================================
+// G. 用户视角 — 选择目标用户查看其当前加授
+// =============================================================
+/** 当前选中的用户 ID */
+const selectedUserId = ref(null)
+/** 当前选中用户已有的加授权限 key 列表(assign 类型) */
+const selectedUserPermissions = ref([])
+/** 当前选中用户的可读姓名 */
+const selectedUserName = computed(() => {
+  if (!selectedUserId.value) return ''
+  const g = userGrants.value.find((x) => x.userId === selectedUserId.value)
+  return g?.userName || g?.userUsername || ''
+})
+/** 用户搜索框(grants tab 顶部) */
+const grantUserSearch = ref('')
+/** 从 userGrants 派生的「去重用户 + 各自加授条数」列表 */
+const userOptions = computed(() => {
+  const map = new Map()
+  for (const g of userGrants.value) {
+    const uid = g.userId
+    if (!uid) continue
+    if (!map.has(uid)) {
+      map.set(uid, { userId: uid, userName: g.userName, userUsername: g.userUsername, grantCount: 0 })
+    }
+    map.get(uid).grantCount += 1
+  }
+  return Array.from(map.values()).sort((a, b) => (a.userName || a.userUsername || '').localeCompare(b.userName || b.userUsername || ''))
+})
+/** 搜索后过滤的用户列表 */
+const filteredUserOptions = computed(() => {
+  const q = grantUserSearch.value.trim().toLowerCase()
+  if (!q) return userOptions.value
+  return userOptions.value.filter(
+    (u) =>
+      (u.userName && u.userName.toLowerCase().includes(q)) ||
+      (u.userUsername && u.userUsername.toLowerCase().includes(q))
+  )
+})
+/** 选中用户后,grants 列表只显示该用户(否则显示全部) */
+const filteredUserGrants = computed(() => {
+  if (!selectedUserId.value) return userGrants.value
+  return userGrants.value.filter((g) => g.userId === selectedUserId.value)
+})
+/** 选择目标用户:从本地 userGrants 聚合其当前 assign 权限 */
+function selectGrantUser(userId) {
+  selectedUserId.value = userId
+  const now = Date.now()
+  selectedUserPermissions.value = userGrants.value
+    .filter((g) => {
+      if (g.userId !== userId) return false
+      if (g.grantType !== 'assign') return false
+      if (g.expiresAt && new Date(g.expiresAt).getTime() <= now) return false
+      return true
+    })
+    .map((g) => g.permissionKey)
+  grantUserSearch.value = ''
+}
+
 onMounted(() => {
   rbac.bind(auth.user.value?.id)
   loadPermissions()
   loadRoleMatrix()
   loadUserGrants()
+  // E: 默认展开所有分类(权限总览加载完成后)
+  watch(permissionsGrouped, (g) => {
+    if (Object.keys(g).length > 0 && expandedCategories.value.size === 0) {
+      expandedCategories.value = new Set(Object.keys(g))
+    }
+  }, { immediate: true, deep: true })
+})
+onBeforeUnmount(() => {
+  // 清理全局 Esc 监听
+  document.removeEventListener('keydown', handleGlobalEsc)
 })
 </script>
 
