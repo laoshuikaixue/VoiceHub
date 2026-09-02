@@ -634,7 +634,9 @@ const categoryLabels: Record<string, string> = {
   database: '数据库',
   notification: '通知',
   api_keys: 'API 密钥',
-  rbac: '权限中心'
+  role: '角色管理',
+  user_permissions: '个人加授',
+  permissions: '权限定义'
 }
 const savingRoles = ref(false)
 
@@ -932,18 +934,19 @@ const ROLE_TEMPLATES = [
   {
     key: 'admin',
     label: '管理员模板',
-    description: '在音乐管理员基础上加用户/系统相关',
+    description: '在音乐管理员基础上加用户/系统/备份/API 等(含部分破坏性操作)',
     permissions: [
       'song.read', 'song.write', 'song.reject',
       'schedule.read', 'schedule.write', 'schedule.publish',
       'playtimes.manage', 'request_times.manage',
       'semester.manage', 'stats.read',
-      'card_codes.read', 'card_codes.write',
+      'card_codes.read', 'card_codes.write', 'card_codes.delete',
       'user.read', 'user.manage', 'user.status',
-      'blacklist.manage', 'system_settings.read',
+      'blacklist.manage', 'system_settings.read', 'system_settings.write',
       'email_templates.manage', 'smtp.manage', 'grade_class.manage',
-      'backup.execute', 'notification.send',
-      'api_keys.read', 'api_keys.write', 'api_keys.manage',
+      'backup.execute', 'backup.export', 'backup.restore',
+      'notification.send',
+      'api_keys.read', 'api_keys.write', 'api_keys.manage', 'api_keys.delete',
       'permissions.read'
     ]
   },
