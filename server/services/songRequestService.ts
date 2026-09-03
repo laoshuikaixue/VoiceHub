@@ -36,7 +36,14 @@ type SongRequestUser = {
 const songRequestBodySchema = z.object({
   title: z.string().trim().min(1, '歌曲名称不能为空').max(200, '歌曲名称不能超过200个字符'),
   artist: z.string().trim().min(1, '艺术家不能为空').max(200, '艺术家不能超过200个字符'),
-  cover: z.string().trim().max(1000, '封面地址不能超过1000个字符').optional().nullable(),
+  cover: z
+    .string()
+    .trim()
+    .max(1000, '封面地址不能超过1000个字符')
+    // 封面必须是完整 http(s) 链接，防止音源返回 pic_id 等片段被误存导致封面无法显示
+    .refine((value) => value === '' || /^https?:\/\//i.test(value), '封面地址必须以 http(s):// 开头')
+    .optional()
+    .nullable(),
   musicPlatform: z.string().trim().max(50, '音乐平台标识不能超过50个字符').optional().nullable(),
   musicId: z.string().trim().max(200, '音乐 ID 不能超过200个字符').optional().nullable(),
   bilibiliCid: z.string().trim().max(100, 'Bilibili CID 不能超过100个字符').optional().nullable(),

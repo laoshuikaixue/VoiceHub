@@ -1354,7 +1354,8 @@ export const useMusicSources = () => {
           id: item.id,
           title: item.name,
           artist: Array.isArray(item.artist) ? item.artist.join('/') : item.artist || '未知艺术家',
-          cover: item.pic_id,
+          // GD Studio 搜索结果可能只返回 pic_id 而非完整 URL，非 URL 值不能当封面使用
+          cover: typeof item.pic === 'string' && item.pic.startsWith('http') ? item.pic : null,
           album: item.album,
           albumId: item.album_id,
           duration: 0,
@@ -1563,7 +1564,8 @@ export const useMusicSources = () => {
             artist: Array.isArray(data.artist)
               ? data.artist.join('/')
               : data.artist || '未知艺术家',
-            cover: data.pic_id,
+            // GD Studio 详情结果可能只返回 pic_id 而非完整 URL，非 URL 值不能当封面使用
+            cover: typeof data.pic === 'string' && data.pic.startsWith('http') ? data.pic : null,
             album: data.album,
             duration: 0,
             musicPlatform: 'netease',
