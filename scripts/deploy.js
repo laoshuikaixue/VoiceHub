@@ -155,6 +155,21 @@ async function syncDatabase() {
       throw new Error('创建或检查管理员账户失败')
     }
   }
+
+  // D-3 fix: 部署后自动 seed RBAC 权限目录（idempotent：permissions UPSERT + role_permissions DO NOTHING）
+  // 不在 deploy 链里调 seed → fresh deploy 后 5 张 RBAC 表全空 → SUPER_ADMIN sidebar 空白 + admin API 403
+  if (fileExists('scripts/seed-permissions.js')) {
+    logStep('🌱', '写入 RBAC 权限种子数据...')
+    if (
+      !(await execAsync('pnpm', ['run', 'db:seed'], {
+        env: nonInteractiveEnv,
+        shell: true
+      }))
+    ) {
+      throw new Error('RBAC 权限种子写入失败')
+    }
+    logSuccess('RBAC 权限种子写入完成')
+  }
 }
 
 async function buildApplication(signal) {
