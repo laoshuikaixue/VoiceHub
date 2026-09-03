@@ -1817,7 +1817,8 @@ export const admin = {
       musicSource: 'Music Source',
       siteConfig: 'Site Config',
       database: 'Database',
-      password: 'Change Password'
+      password: 'Change Password',
+      rbac: 'Roles & Permissions'
     },
     roles: {
       USER: 'User',
@@ -4153,7 +4154,58 @@ export const admin = {
     ipWhitelist: 'IP Whitelist',
     ipWhitelistPlaceholder: 'Leave empty for no limit\n192.168.1.0/24',
     webhookUrl: 'Webhook URL',
-    webhookUrlPlaceholder: 'https://example.com/webhook'
+    webhookUrlPlaceholder: 'https://example.com/webhook',
+    actions: {
+      view: 'View',
+      edit: 'Edit',
+      delete: 'Delete',
+      refresh: 'Refresh',
+      close: 'Close',
+      copy: 'Copy'
+    }
+  },
+  rbac: {
+    title: 'Roles & Permissions Management',
+    menu: 'Roles & Permissions',
+    tabs: {
+      permissions: 'Permission Definitions',
+      roles: 'Role Management',
+      grants: 'User Grants'
+    },
+    actions: {
+      applyTemplate: 'Apply Template',
+      createRole: 'Create Role',
+      deleteRole: 'Delete Role',
+      saveMatrix: 'Save Matrix',
+      addGrant: 'Add Grant',
+      removeGrant: 'Remove Grant',
+      refresh: 'Refresh'
+    },
+    template: {
+      clear: 'Clear Template',
+      user: 'User Template',
+      songAdmin: 'Song Admin Template',
+      admin: 'Admin Template',
+      viewer: 'Viewer Template'
+    },
+    confirm: {
+      applyTemplate: 'Apply template "{template}" to "{role}"? This will overwrite {count} existing permissions.',
+      deleteRole: 'Delete role "{role}"?'
+    },
+    success: {
+      applied: 'Template "{template}" applied to "{role}" ({count} permissions)',
+      roleCreated: 'Role created',
+      roleDeleted: 'Role deleted',
+      matrixSaved: 'Permission matrix saved',
+      grantAdded: 'Grant added',
+      grantRemoved: 'Grant removed'
+    },
+    error: {
+      applyTemplateFailed: 'Failed to apply template',
+      roleCreateFailed: 'Failed to create role',
+      roleDeleteFailed: 'Failed to delete role',
+      matrixSaveFailed: 'Failed to save matrix'
+    }
   },
   rbacManager: {
     title: 'Roles & Permissions',

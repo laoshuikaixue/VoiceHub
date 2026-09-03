@@ -1826,7 +1826,8 @@ export const admin = {
       musicSource: '音源控制',
       siteConfig: '站点配置',
       database: '数据库操作',
-      password: '修改密码'
+      password: '修改密码',
+      rbac: '角色权限'
     },
     roles: {
       USER: '普通用户',
@@ -4162,7 +4163,58 @@ export const admin = {
     ipWhitelist: 'IP 白名单',
     ipWhitelistPlaceholder: '留空表示不限制\n192.168.1.0/24',
     webhookUrl: 'Webhook URL',
-    webhookUrlPlaceholder: 'https://example.com/webhook'
+    webhookUrlPlaceholder: 'https://example.com/webhook',
+    actions: {
+      view: '查看',
+      edit: '编辑',
+      delete: '删除',
+      refresh: '刷新',
+      close: '关闭',
+      copy: '复制'
+    }
+  },
+  rbac: {
+    title: '角色与权限管理',
+    menu: '角色权限',
+    tabs: {
+      permissions: '权限定义',
+      roles: '角色管理',
+      grants: '个人加授'
+    },
+    actions: {
+      applyTemplate: '应用模板',
+      createRole: '创建角色',
+      deleteRole: '删除角色',
+      saveMatrix: '保存权限矩阵',
+      addGrant: '新增个人加授',
+      removeGrant: '移除加授',
+      refresh: '刷新'
+    },
+    template: {
+      clear: '清空模板',
+      user: '普通用户模板',
+      songAdmin: '歌曲管理员模板',
+      admin: '管理员模板',
+      viewer: '只读访客模板'
+    },
+    confirm: {
+      applyTemplate: '确定要应用模板「{template}」到「{role}」吗？这将覆盖该角色现有的 {count} 个权限。',
+      deleteRole: '确定要删除角色「{role}」吗？'
+    },
+    success: {
+      applied: '已应用模板「{template}」到「{role}」({count} 个权限)',
+      roleCreated: '角色已创建',
+      roleDeleted: '角色已删除',
+      matrixSaved: '权限矩阵已保存',
+      grantAdded: '加授已添加',
+      grantRemoved: '加授已移除'
+    },
+    error: {
+      applyTemplateFailed: '应用模板失败',
+      roleCreateFailed: '创建角色失败',
+      roleDeleteFailed: '删除角色失败',
+      matrixSaveFailed: '保存权限矩阵失败'
+    }
   },
   rbacManager: {
     title: '角色权限',

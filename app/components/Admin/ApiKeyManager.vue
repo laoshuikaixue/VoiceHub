@@ -51,7 +51,7 @@
         </div>
         <button
           class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-disabled hover:text-primary transition-all flex items-center justify-center"
-          aria-label="刷新 API Key 列表"
+          :aria-label="t('admin.apiKeys.actions.refresh', '刷新 API Key 列表')"
           @click="loadApiKeys"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
@@ -127,7 +127,7 @@
               v-if="rbac.can(PERMISSIONS.API_KEYS_READ)"
               class="p-2 text-text-tertiary hover:text-primary transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
-              aria-label="查看 API Key"
+              :aria-label="t('admin.apiKeys.actions.view', '查看 API Key')"
               @click="viewApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingViewId === apiKey.id" :size="14" class="animate-spin" />
@@ -137,7 +137,7 @@
               v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
               class="p-2 text-text-tertiary hover:text-warning transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
-              aria-label="编辑 API Key"
+              :aria-label="t('admin.apiKeys.actions.edit', '编辑 API Key')"
               @click="editApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingEditId === apiKey.id" :size="14" class="animate-spin" />
@@ -147,7 +147,7 @@
               v-if="rbac.can(PERMISSIONS.API_KEYS_DELETE)"
               class="p-2 text-text-tertiary hover:text-error transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
-              aria-label="删除 API Key"
+              :aria-label="t('admin.apiKeys.actions.delete', '删除 API Key')"
               @click="deleteApiKey(apiKey)"
             >
               <Trash2 :size="14" />
@@ -224,7 +224,7 @@
             </h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
-              aria-label="关闭弹窗"
+              :aria-label="t('admin.apiKeys.actions.close', '关闭弹窗')"
               @click="closeModals"
             >
               <X :size="20" />
@@ -315,32 +315,32 @@
             <!-- 高级选项：所有者 / 速率限制 / 配额 / IP 白名单 / Webhook -->
             <div class="space-y-3 pt-2 border-t border-border-secondary">
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                {{ locale.advancedOptions || '高级选项' }}
+                {{ t('admin.apiKeys.advancedOptions', '高级选项') }}
               </label>
               <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                    {{ locale.ownerType || '所有者类型' }}
+                    {{ t('admin.apiKeys.ownerType', '所有者类型') }}
                   </label>
                   <CustomSelect
                     v-model="form.ownerType"
                     :options="[
-                      { label: locale.ownerSystem || '系统', value: 'system' },
-                      { label: locale.ownerUser || '用户', value: 'user' },
-                      { label: locale.ownerIntegration || '集成', value: 'integration' }
+                      { label: t('admin.apiKeys.ownerSystem', '系统'), value: 'system' },
+                      { label: t('admin.apiKeys.ownerUser', '用户'), value: 'user' },
+                      { label: t('admin.apiKeys.ownerIntegration', '集成'), value: 'integration' }
                     ]"
                     class-name="w-full"
                   />
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                    {{ locale.rateLimitPerMinute || '每分钟速率限制' }}
+                    {{ t('admin.apiKeys.rateLimitPerMinute', '每分钟速率限制') }}
                   </label>
                   <input
                     v-model.number="form.rateLimitPerMinute"
                     type="number"
                     min="1"
-                    :placeholder="locale.unlimited || '不限'"
+                    :placeholder="t('admin.apiKeys.unlimited', '不限')"
                     class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
                   >
                 </div>
@@ -348,48 +348,48 @@
               <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                    {{ locale.quotaDaily || '日配额' }}
+                    {{ t('admin.apiKeys.quotaDaily', '日配额') }}
                   </label>
                   <input
                     v-model.number="form.quotaDaily"
                     type="number"
                     min="1"
-                    :placeholder="locale.unlimited || '不限'"
+                    :placeholder="t('admin.apiKeys.unlimited', '不限')"
                     class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
                   >
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                    {{ locale.quotaMonthly || '月配额' }}
+                    {{ t('admin.apiKeys.quotaMonthly', '月配额') }}
                   </label>
                   <input
                     v-model.number="form.quotaMonthly"
                     type="number"
                     min="1"
-                    :placeholder="locale.unlimited || '不限'"
+                    :placeholder="t('admin.apiKeys.unlimited', '不限')"
                     class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
                   >
                 </div>
               </div>
               <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                  {{ locale.ipWhitelist || 'IP 白名单（每行一项，IP 或 CIDR）' }}
+                  {{ t('admin.apiKeys.ipWhitelist', 'IP 白名单（每行一项，IP 或 CIDR）') }}
                 </label>
                 <textarea
                   v-model="form.ipWhitelist"
                   rows="2"
-                  :placeholder="locale.ipWhitelistPlaceholder || '留空表示不限制\n192.168.1.0/24'"
+                  :placeholder="t('admin.apiKeys.ipWhitelistPlaceholder', '留空表示不限制\n192.168.1.0/24')"
                   class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary min-h-[60px] resize-none placeholder:text-text-primary"
                 />
               </div>
               <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
-                  {{ locale.webhookUrl || 'Webhook URL' }}
+                  {{ t('admin.apiKeys.webhookUrl', 'Webhook URL') }}
                 </label>
                 <input
                   v-model="form.webhookUrl"
                   type="url"
-                  :placeholder="locale.webhookUrlPlaceholder || 'https://example.com/webhook'"
+                  :placeholder="t('admin.apiKeys.webhookUrlPlaceholder', 'https://example.com/webhook')"
                   class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
                 >
               </div>
@@ -424,7 +424,7 @@
             </h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
-              aria-label="关闭弹窗"
+              :aria-label="t('admin.apiKeys.actions.close', '关闭弹窗')"
               @click="closeModals"
             >
               <X :size="20" />
@@ -461,7 +461,7 @@
                       ? 'bg-success text-text-primary'
                       : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary'
                   "
-                  :aria-label="copied ? '已复制' : '复制 API Key'"
+                  :aria-label="copied ? t('admin.apiKeys.actions.copied', '已复制') : t('admin.apiKeys.actions.copy', '复制 API Key')"
                   @click="copyToClipboard(newApiKey?.apiKey)"
                 >
                   <Check v-if="copied" :size="16" />
@@ -498,7 +498,7 @@
             <h3 class="text-lg font-black text-text-primary uppercase tracking-widest">{{ locale.details }}</h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
-              aria-label="关闭弹窗"
+              :aria-label="t('admin.apiKeys.actions.close', '关闭弹窗')"
               @click="closeModals"
             >
               <X :size="20" />
@@ -729,6 +729,21 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
 const { msg: getLocaleText } = useLocaleText(locale)
+
+// 路径式 i18n 查找：t('admin.apiKeys.actions.view', '查看') → 先按 'a.b.c' 拆段在 admin.value 上回退定位，
+// 命中返回 string，未命中返回 fallback。集中兜底避免模板里散落的 `|| '中文'` 字面量。
+const t = (key: string, fallback: string): string => {
+  if (!key) return fallback
+  let cursor: unknown = admin.value
+  for (const segment of key.split('.')) {
+    if (cursor && typeof cursor === 'object' && segment in (cursor as Record<string, unknown>)) {
+      cursor = (cursor as Record<string, unknown>)[segment]
+      continue
+    }
+    return fallback
+  }
+  return typeof cursor === 'string' ? cursor : fallback
+}
 const expiresOptionFallbacks = {
   never: '永不过期',
   threeDays: '3天后过期',
