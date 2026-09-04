@@ -321,11 +321,13 @@ export function useAudioPlayer() {
     if (song.musicPlatform && song.musicId) {
       try {
         const { getLyrics } = useMusicSources()
+        const { useLyricSettings } = await import('./useLyricSettings')
         getLyrics(song.musicPlatform as 'netease' | 'tencent', song.musicId, {
           title: song.title,
           artist: song.artist,
           album: song.album || undefined,
-          duration: song.duration || undefined
+          duration: song.duration || undefined,
+          priority: useLyricSettings().lyricPriority.value
         }).catch(() => {})
       } catch (error) {
         console.warn('[AudioPlayer] 歌词预载失败:', error)

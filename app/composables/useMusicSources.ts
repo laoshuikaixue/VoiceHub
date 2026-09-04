@@ -80,11 +80,20 @@ type LyricUpgradeMeta = {
   duration?: number
   /** false = 明确禁止跨平台升级（防止递归），undefined/true = 允许 */
   allowCrossPlatformUpgrade?: boolean
+  /** 歌词来源优先级，参与缓存键（切换来源后强制重新拉取时传入） */
+  priority?: string
   /** 用于歌词页先显示基础歌词，再切换到更高阶歌词 */
   onProgress?: LyricProgressCallback
 }
 
-type LyricResultData = { lrc: string; trans?: string; yrc?: string; ttml?: string }
+type LyricResultData = {
+  lrc: string
+  trans?: string
+  yrc?: string
+  ttml?: string
+  /** YRC 对齐的翻译（ytlrc），时间戳与逐字主歌词行边界一致 */
+  ytrans?: string
+}
 
 /**
  * 格式优先级：数字越小越高阶。
@@ -295,15 +304,18 @@ const getLyricCacheKey = (platform: string, id: number | string, meta?: LyricUpg
   const album = normalizeLyricMatchText(meta?.album || '')
   // allowCrossPlatformUpgrade=false 与 undefined/true 的结果不同，需区分
   const upgradeFlag = meta?.allowCrossPlatformUpgrade === false ? '0' : '1'
+  // 优先级不同时抓取路径不同，结果可能不同；无显式 priority 的调用不区分
+  const priority = meta?.priority || ''
   const durationBucket = meta?.duration ? Math.round(meta.duration / 5000) : 0
-  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}`
+  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}:${priority}`
 }
 
 const cloneLyricData = (data: LyricResultData): LyricResultData => ({
   lrc: data.lrc || '',
   trans: data.trans || '',
   yrc: data.yrc || '',
-  ttml: data.ttml || ''
+  ttml: data.ttml || '',
+  ytrans: data.ytrans || ''
 })
 
 const subscribeLyricProgress = (
@@ -527,6 +539,9 @@ export const useMusicSources = () => {
         ) {
           currentData.yrc = upgraded.data.yrc
           if (upgraded.data.trans && !currentData.trans) currentData.trans = upgraded.data.trans
+          if (upgraded.data.ytrans && !currentData.ytrans) {
+            currentData.ytrans = upgraded.data.ytrans
+          }
           return true
         }
       } catch (error: any) {
@@ -573,7 +588,8 @@ export const useMusicSources = () => {
             resultData.lrc?.length || 0,
             resultData.trans?.length || 0,
             resultData.yrc?.length || 0,
-            resultData.ttml?.length || 0
+            resultData.ttml?.length || 0,
+            resultData.ytrans?.length || 0
           ].join(':')
           if (signature === lastProgressSignature) return
           lastProgressSignature = signature
@@ -599,13 +615,26 @@ export const useMusicSources = () => {
         const fetchOfficial = async () => {
           if (platform !== 'netease' || !neteaseSource) return
           try {
+            // /lyric/new 返回逐字歌词（yrc）及其对齐翻译（ytlrc）/罗马音（yromalrc），
+            // 时间戳贴 YRC 行边界，优先于普通 tlyric/romalrc
             const [lrcResp, yrcResp] = await Promise.allSettled([
               $fetch(`${neteaseSource.baseUrl}/lyric`, {
                 params: { id: id.toString() },
                 timeout: neteaseSource.timeout || 8000
               }),
               $fetch(`${neteaseSource.baseUrl}/lyric/new`, {
-                params: { id: id.toString() },
+                params: {
+                  id: id.toString(),
+                  // 请求全部歌词版本（参考 SPlayer-Next lyric_new）
+                  cp: false,
+                  tv: 0,
+                  lv: 0,
+                  rv: 0,
+                  kv: 0,
+                  yv: 0,
+                  ytv: 0,
+                  yrv: 0
+                },
                 timeout: neteaseSource.timeout || 8000
               })
             ])
@@ -618,6 +647,12 @@ export const useMusicSources = () => {
             if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
               const yr = yrcResp.value
               if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
+              // ytlrc 为 YRC 对齐翻译，时间戳与逐字行边界一致
+              if (yr?.ytlrc?.lyric) resultData.ytrans = yr.ytlrc.lyric
+              // 无 ytlrc 时用 tlyric 兜底
+              if (!resultData.ytrans && yr?.tlyric?.lyric && !resultData.trans) {
+                resultData.trans = yr.tlyric.lyric
+              }
             }
 
             if (resultData.lrc || resultData.yrc) {
@@ -655,7 +690,7 @@ export const useMusicSources = () => {
         }
 
         const fetchQM = async () => {
-          if (!settings.enableQQMusicLyric.value && settings.lyricPriority.value !== 'qm') return
+          if (!settings.enableQQMusicLyric.value && priority !== 'qm') return
 
           if (platform === 'tencent') {
             try {
@@ -753,7 +788,7 @@ export const useMusicSources = () => {
           }
         }
 
-        const priority = settings.lyricPriority.value
+        const priority = meta?.priority || settings.lyricPriority.value
         if (progressive) {
           if (platform === 'netease') {
             let triedQM = false
