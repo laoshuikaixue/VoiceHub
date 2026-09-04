@@ -1,6 +1,7 @@
 import { computed, readonly, ref } from 'vue'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useMusicSources } from '~/composables/useMusicSources'
+import { useLyricSettings } from '~/composables/useLyricSettings'
 import type { MusicTrackMeta } from '~/utils/musicUrl'
 
 export interface PlayableSong {
@@ -321,7 +322,6 @@ export function useAudioPlayer() {
     if (song.musicPlatform && song.musicId) {
       try {
         const { getLyrics } = useMusicSources()
-        const { useLyricSettings } = await import('./useLyricSettings')
         getLyrics(song.musicPlatform as 'netease' | 'tencent', song.musicId, {
           title: song.title,
           artist: song.artist,
