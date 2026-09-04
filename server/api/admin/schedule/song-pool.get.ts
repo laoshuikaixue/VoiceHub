@@ -57,6 +57,7 @@ export default defineEventHandler(async (event) => {
       title: song.title,
       artist: song.artist,
       durationSeconds: song.durationSeconds,
+      played: song.played === true,
       requester: requesterUser ? (requesterUser.name || requesterUser.username || 'Unknown User') : 'Unknown User',
       requesterId: song.requesterId,
       requesterGrade: requesterUser?.grade || null,
