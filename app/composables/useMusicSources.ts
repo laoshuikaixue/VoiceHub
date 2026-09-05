@@ -80,11 +80,20 @@ type LyricUpgradeMeta = {
   duration?: number
   /** false = 明确禁止跨平台升级（防止递归），undefined/true = 允许 */
   allowCrossPlatformUpgrade?: boolean
+  /** 歌词来源优先级，参与缓存键（切换来源后强制重新拉取时传入） */
+  priority?: string
   /** 用于歌词页先显示基础歌词，再切换到更高阶歌词 */
   onProgress?: LyricProgressCallback
 }
 
-type LyricResultData = { lrc: string; trans?: string; yrc?: string; ttml?: string }
+type LyricResultData = {
+  lrc: string
+  trans?: string
+  yrc?: string
+  ttml?: string
+  /** YRC 对齐的翻译（ytlrc），时间戳与逐字主歌词行边界一致 */
+  ytrans?: string
+}
 
 /**
  * 格式优先级：数字越小越高阶。
@@ -295,15 +304,18 @@ const getLyricCacheKey = (platform: string, id: number | string, meta?: LyricUpg
   const album = normalizeLyricMatchText(meta?.album || '')
   // allowCrossPlatformUpgrade=false 与 undefined/true 的结果不同，需区分
   const upgradeFlag = meta?.allowCrossPlatformUpgrade === false ? '0' : '1'
+  // 优先级不同时抓取路径不同，结果可能不同；无显式 priority 的调用不区分
+  const priority = meta?.priority || ''
   const durationBucket = meta?.duration ? Math.round(meta.duration / 5000) : 0
-  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}`
+  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}:${priority}`
 }
 
 const cloneLyricData = (data: LyricResultData): LyricResultData => ({
   lrc: data.lrc || '',
   trans: data.trans || '',
   yrc: data.yrc || '',
-  ttml: data.ttml || ''
+  ttml: data.ttml || '',
+  ytrans: data.ytrans || ''
 })
 
 const subscribeLyricProgress = (
@@ -527,6 +539,9 @@ export const useMusicSources = () => {
         ) {
           currentData.yrc = upgraded.data.yrc
           if (upgraded.data.trans && !currentData.trans) currentData.trans = upgraded.data.trans
+          if (upgraded.data.ytrans && !currentData.ytrans) {
+            currentData.ytrans = upgraded.data.ytrans
+          }
           return true
         }
       } catch (error: any) {
@@ -573,7 +588,8 @@ export const useMusicSources = () => {
             resultData.lrc?.length || 0,
             resultData.trans?.length || 0,
             resultData.yrc?.length || 0,
-            resultData.ttml?.length || 0
+            resultData.ttml?.length || 0,
+            resultData.ytrans?.length || 0
           ].join(':')
           if (signature === lastProgressSignature) return
           lastProgressSignature = signature
@@ -599,13 +615,25 @@ export const useMusicSources = () => {
         const fetchOfficial = async () => {
           if (platform !== 'netease' || !neteaseSource) return
           try {
+            // /lyric/new 返回逐字歌词（yrc）及其对齐翻译（ytlrc），
+            // 时间戳贴 YRC 行边界，优先于普通 tlyric
             const [lrcResp, yrcResp] = await Promise.allSettled([
               $fetch(`${neteaseSource.baseUrl}/lyric`, {
                 params: { id: id.toString() },
                 timeout: neteaseSource.timeout || 8000
               }),
               $fetch(`${neteaseSource.baseUrl}/lyric/new`, {
-                params: { id: id.toString() },
+                params: {
+                  id: id.toString(),
+                  cp: false,
+                  tv: 0,
+                  lv: 0,
+                  rv: 0,
+                  kv: 0,
+                  yv: 0,
+                  ytv: 0,
+                  yrv: 0
+                },
                 timeout: neteaseSource.timeout || 8000
               })
             ])
@@ -618,6 +646,12 @@ export const useMusicSources = () => {
             if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
               const yr = yrcResp.value
               if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
+              // ytlrc 为 YRC 对齐翻译，时间戳与逐字行边界一致
+              if (yr?.ytlrc?.lyric) resultData.ytrans = yr.ytlrc.lyric
+              // 无 ytlrc 时用 tlyric 兜底
+              if (!resultData.ytrans && yr?.tlyric?.lyric && !resultData.trans) {
+                resultData.trans = yr.tlyric.lyric
+              }
             }
 
             if (resultData.lrc || resultData.yrc) {
@@ -630,7 +664,8 @@ export const useMusicSources = () => {
         }
 
         const fetchAMLL = async () => {
-          if (!settings.enableOnlineTTMLLyric.value) return
+          // 锁定 TTML 来源时无视总开关
+          if (!settings.enableOnlineTTMLLyric.value && priority !== 'ttml') return
 
           try {
             let url: string
@@ -655,7 +690,7 @@ export const useMusicSources = () => {
         }
 
         const fetchQM = async () => {
-          if (!settings.enableQQMusicLyric.value && settings.lyricPriority.value !== 'qm') return
+          if (!settings.enableQQMusicLyric.value && priority !== 'qm') return
 
           if (platform === 'tencent') {
             try {
@@ -753,8 +788,22 @@ export const useMusicSources = () => {
           }
         }
 
-        const priority = settings.lyricPriority.value
-        if (progressive) {
+        const priority = meta?.priority || settings.lyricPriority.value
+        // 指定具体来源（非 auto）时锁定该来源，失败不回退、不做跨平台升级
+        const sourceLocked = priority === 'qm' || priority === 'official' || priority === 'ttml'
+        if (sourceLocked) {
+          if (platform === 'migu') {
+            await fetchMigu()
+          } else if (priority === 'qm') {
+            await fetchQM()
+          } else if (priority === 'official') {
+            // 锁定 NCM：官方接口，yrc 优先、lrc 兜底（fetchOfficial 内部已同时请求两者）
+            await fetchOfficial()
+          } else {
+            // 锁定 TTML：仅 AMLL DB
+            await fetchAMLL()
+          }
+        } else if (progressive) {
           if (platform === 'netease') {
             let triedQM = false
             const fetchQMOnce = async () => {
@@ -764,12 +813,10 @@ export const useMusicSources = () => {
             }
 
             await fetchOfficial()
-            if (priority === 'qm' || (priority === 'auto' && settings.enableQQMusicLyric.value)) {
+            if (priority === 'auto' && settings.enableQQMusicLyric.value) {
               await fetchQMOnce()
             }
-            if (priority !== 'official') {
-              await fetchAMLL()
-            }
+            await fetchAMLL()
             if (!hasResult) {
               await fetchQMOnce()
             }
@@ -778,39 +825,10 @@ export const useMusicSources = () => {
             await fetchMigu()
           } else {
             await fetchQM()
-            if (priority !== 'official') {
-              await fetchAMLL()
-            }
+            await fetchAMLL()
             if (!hasResult) {
               await fetchOfficial()
             }
-          }
-        } else if (priority === 'qm') {
-          if (platform === 'migu') {
-            await fetchMigu()
-          } else {
-            await fetchAMLL()
-            await fetchQM()
-            if (!hasResult) await fetchOfficial()
-          }
-        } else if (priority === 'ttml') {
-          if (platform === 'migu') {
-            await fetchMigu()
-          } else {
-            // 先尝试 AMLL DB 拿 TTML
-            await fetchAMLL()
-            // 无论是否拿到 TTML，都需要 lrc/trans 作为翻译来源和回退
-            if (!resultData.lrc && !resultData.trans) {
-              await fetchOfficial()
-              if (!hasResult) await fetchQM()
-            }
-          }
-        } else if (priority === 'official') {
-          if (platform === 'migu') {
-            await fetchMigu()
-          } else {
-            await fetchOfficial()
-            if (!hasResult) await fetchQM()
           }
         } else {
           // 默认：AMLL → (QQ) → 官方
@@ -834,7 +852,8 @@ export const useMusicSources = () => {
         }
 
         // 跨平台升级：当前无 TTML 时尝试（有 yrc 也可升级到 ttml，有 lrc 可升级到 yrc/ttml）
-        if (!resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
+        // 指定具体来源时不做升级，保证结果确实来自所选来源
+        if (!sourceLocked && !resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
           const upgraded = await tryUpgradeLyric(platform, resultData, meta)
           if (upgraded) {
             hasResult = true
@@ -855,7 +874,7 @@ export const useMusicSources = () => {
           return { success: true, data: resultData }
         }
 
-        if (platform === 'netease') {
+        if (!sourceLocked && platform === 'netease') {
           const metingSources = enabledSources.filter((source) => source.id.startsWith('meting-'))
           for (const source of metingSources) {
             try {

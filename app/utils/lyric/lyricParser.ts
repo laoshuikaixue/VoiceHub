@@ -32,6 +32,8 @@ const QRC_WORD_PATTERN = /([^(]*)\((\d+),(\d+)\)/g
 
 const DEFAULT_WORD_DURATION = 1000
 const ALIGN_TOLERANCE_MS = 300
+/** 二次最近邻对齐的漂移容差：兜底时间轴整体漂移较大的来源 */
+const DRIFT_TOLERANCE_MS = 1500
 
 /**
  * 解析时间戳为毫秒
@@ -261,7 +263,11 @@ export const isWordLevelFormat = (format: LrcFormat): boolean =>
 
 /**
  * 歌词内容对齐
- * 使用双指针算法实现 O(N) 复杂度
+ * 两阶段策略：
+ * 1. 双指针严格匹配（容差 300ms），与主/翻译行数不一致时按时间方向跳跃
+ * 2. 对仍未命中的主行，与剩余未使用的翻译行做最近邻匹配（容差放宽到 1500ms）
+ *    兜底时间轴整体漂移较大的来源（vkeys、第三方翻译 LRC 等），
+ *    避免个别行漂移导致大面积翻译丢失
  * @param lyrics 歌词数据 (Readonly)
  * @param otherLyrics 其他歌词数据
  * @param key 对齐类型
@@ -275,26 +281,45 @@ export const alignLyrics = (
   if (!lyrics.length || !otherLyrics.length) return cloneDeep(lyrics) as LyricLine[]
 
   const result = cloneDeep(lyrics) as LyricLine[]
+  // 防御性排序：部分解析路径（逐字 LRC）不保证输出按时间有序
+  const others = [...otherLyrics].sort((a, b) => a.startTime - b.startTime)
 
+  const textOf = (line: LyricLine): string => line.words.map((word) => word.word).join('')
+  const used = new Set<number>()
+
+  // 第一轮：双指针严格匹配
   let i = 0
   let j = 0
-
-  while (i < result.length && j < otherLyrics.length) {
-    const line = result[i]
-    const other = otherLyrics[j]
-    const diff = line.startTime - other.startTime
-
+  while (i < result.length && j < others.length) {
+    const diff = result[i].startTime - others[j].startTime
     if (Math.abs(diff) <= ALIGN_TOLERANCE_MS) {
-      // 匹配成功
-      line[key] = other.words.map((word) => word.word).join('')
+      result[i][key] = textOf(others[j])
+      used.add(j)
       i++
       j++
     } else if (diff < 0) {
-      // 当前歌词时间较早，移动当前指针
       i++
     } else {
-      // 目标歌词时间较早，移动目标指针
       j++
+    }
+  }
+
+  // 第二轮：最近邻兜底（1:1 约束，只填充第一轮未命中的行）
+  for (let m = 0; m < result.length; m++) {
+    if (result[m][key]) continue
+    let bestK = -1
+    let bestDiff = Infinity
+    for (let k = 0; k < others.length; k++) {
+      if (used.has(k)) continue
+      const diff = Math.abs(result[m].startTime - others[k].startTime)
+      if (diff < bestDiff) {
+        bestDiff = diff
+        bestK = k
+      }
+    }
+    if (bestK !== -1 && bestDiff <= DRIFT_TOLERANCE_MS) {
+      result[m][key] = textOf(others[bestK])
+      used.add(bestK)
     }
   }
   return result
@@ -390,7 +415,8 @@ export const parseQRCLyric = (qrcContent: string, trans?: string, roma?: string)
 
   // 处理翻译
   if (trans) {
-    let transLines = parseLrc(trans)
+    // parseSmartLrc 兼容 1 位毫秒时间戳与逐字变体，比 parseLrc 更稳
+    let { lines: transLines } = parseSmartLrc(trans)
     if (transLines?.length) {
       // 过滤包含 "//" 或 "作品的著作权" 的翻译行
       transLines = transLines.filter((line) => {

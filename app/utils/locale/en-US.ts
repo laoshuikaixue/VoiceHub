@@ -1093,6 +1093,8 @@ export const pages = {
       amllCleanOverlaps: 'Clean overlaps',
       amllTryAdvanceStart: 'Advance lines',
       quality: 'Quality',
+      lyricSource: 'Lyric source',
+      lyricSourceAuto: 'Auto',
       playMode: {
         loopOne: 'Repeat One',
         order: 'Repeat Playlist',

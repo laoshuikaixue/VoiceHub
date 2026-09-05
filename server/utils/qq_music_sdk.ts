@@ -838,8 +838,6 @@ export const searchQqMusic = async ({
 }
 
 // ─── QRC 解密 ─────────────────────────────────────────────────────────────────
-// 移植自 SPlayer-Next electron/main/apis/qqmusic/core/tripledes.ts + qrc.ts
-// 原始来源: LDDC 项目 https://github.com/chenmozhijin/LDDC
 
 const QRC_KEY = Buffer.from('!@#)(*$%123ZXC!@!@#)(NHL', 'utf8')
 
@@ -950,8 +948,7 @@ const tryDecryptQrc = (hex: string | undefined): string | undefined => {
 // ─── QQ 音乐原生歌词接口（支持 QRC 逐字）────────────────────────────────────
 
 /**
- * 调用 music.musichallSong.PlayLyricInfo/GetPlayLyricInfo 获取 QRC 歌词。
- * 参考 SPlayer-Next electron/main/apis/qqmusic/modules/lyric.ts
+ * 调用 music.musichallSong.PlayLyricInfo/GetPlayLyricInfo 获取 QRC 歌词
  */
 export const resolveQqNativeLyric = async ({
   songId,

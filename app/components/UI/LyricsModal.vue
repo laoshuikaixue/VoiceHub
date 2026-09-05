@@ -76,7 +76,9 @@
           <div
             ref="mainContent"
             class="main-content"
-            :style="{ zIndex: isMobile && showQualitySettings ? 101 : undefined }"
+            :style="{
+              zIndex: isMobile && (showQualitySettings || showLyricSourceMenu) ? 101 : undefined
+            }"
             @scroll="onMainContentScroll"
             @click="handleOverlayClick"
           >
@@ -112,23 +114,48 @@
                   <p class="song-artist">{{ currentSong?.artist || locale.unknownArtist }}</p>
 
                   <!-- 音质标识 (歌手名下方) -->
-                  <div
-                    v-if="currentSong?.musicPlatform"
-                    class="mobile-quality-badge"
-                    @click.stop="showQualitySettings = !showQualitySettings"
-                  >
-                    {{ currentQualityText }}
+                  <div class="badge-row">
+                    <div
+                      v-if="currentSong?.musicPlatform"
+                      class="mobile-quality-badge"
+                      @click.stop="toggleQualityMenu"
+                    >
+                      {{ currentQualityText }}
 
-                    <!-- 音质切换菜单 -->
-                    <div v-if="showQualitySettings" class="badge-quality-menu" @click.stop>
-                      <div
-                        v-for="option in currentPlatformOptions"
-                        :key="option.value"
-                        class="badge-quality-option"
-                        :class="{ active: isCurrentQuality(option.value) }"
-                        @click="selectQuality(option.value)"
-                      >
-                        {{ option.label }}
+                      <!-- 音质切换菜单 -->
+                      <div v-if="showQualitySettings" class="badge-quality-menu" @click.stop>
+                        <div
+                          v-for="option in currentPlatformOptions"
+                          :key="option.value"
+                          class="badge-quality-option"
+                          :class="{ active: isCurrentQuality(option.value) }"
+                          @click="selectQuality(option.value)"
+                        >
+                          {{ option.label }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 歌词来源标识 -->
+                    <div
+                      v-if="lyricSourceOptions.length > 0"
+                      class="mobile-quality-badge lyric-source-badge"
+                      @click.stop="toggleLyricSourceMenu"
+                    >
+                      <Icon name="lyrics" size="12" />
+                      {{ currentLyricSourceLabel }}
+
+                      <!-- 歌词来源切换菜单 -->
+                      <div v-if="showLyricSourceMenu" class="badge-quality-menu" @click.stop>
+                        <div
+                          v-for="option in lyricSourceOptions"
+                          :key="option.value"
+                          class="badge-quality-option"
+                          :class="{ active: isCurrentLyricSource(option.value) }"
+                          @click="selectLyricSource(option.value)"
+                        >
+                          {{ option.label }}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -349,6 +376,7 @@ import { computed, nextTick, onUnmounted, ref, watch, onMounted } from 'vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useLyricSettings } from '~/composables/useLyricSettings'
+import { useLyricManager } from '~/composables/useLyricManager'
 import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
@@ -385,6 +413,7 @@ const audioVisualizer = useAudioVisualizer()
 
 // 响应式状态
 const showQualitySettings = ref(false)
+const showLyricSourceMenu = ref(false)
 const progressBar = ref(null)
 const backgroundContainer = ref(null)
 const coverBlurContainer = ref(null)
@@ -428,6 +457,7 @@ const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
 const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
+const lyricManager = useLyricManager()
 const currentCoverUrl = computed(() =>
   currentSong.value?.cover ? convertToHttps(currentSong.value.cover) : ''
 )
@@ -507,6 +537,86 @@ const selectQuality = async (qualityValue) => {
 
     showQualitySettings.value = false
   }
+}
+
+// ─── 歌词来源切换 ────────────────────────────────────────────
+
+const lyricPriority = lyricSettings.lyricPriority
+
+// 菜单选项：按当前歌曲平台只展示真实可用的来源
+// netease → NCM 官方 / VK 第三方 / AMLL；tencent → QM / AMLL；其他平台无可选来源
+const lyricSourceOptions = computed(() => {
+  const platform = currentSong.value?.musicPlatform
+  if (platform === 'netease') {
+    return [
+      { value: 'auto', label: locale.value.lyricSourceAuto },
+      { value: 'official', label: 'NCM' },
+      { value: 'qm', label: 'Vkeys' },
+      { value: 'ttml', label: 'AMLL' }
+    ]
+  }
+  if (platform === 'tencent') {
+    return [
+      { value: 'auto', label: locale.value.lyricSourceAuto },
+      { value: 'qm', label: 'QM' },
+      { value: 'ttml', label: 'AMLL' }
+    ]
+  }
+  return []
+})
+
+// 徽章显示当前歌词实际命中的来源与格式，便于定位问题源
+const currentLyricSourceLabel = computed(() => {
+  const source = lyricManager.lyricSource.value
+  if (!source) return locale.value.lyricSource
+  const sourceMap = {
+    official: 'NCM',
+    qm: 'QM',
+    vkeys: 'Vkeys',
+    amll: 'AMLL',
+    meting: 'Meting'
+  }
+  const formatMap = {
+    ttml: 'TTML',
+    qrc: 'QRC',
+    'word-by-word': 'YRC',
+    line: 'LRC'
+  }
+  const sourceText = sourceMap[source] || ''
+  const formatText = formatMap[lyricManager.lyricFormat.value] || ''
+  return formatText ? `${sourceText}·${formatText}` : sourceText
+})
+
+// 与音质菜单互斥：同一时间只展开一个
+const toggleQualityMenu = () => {
+  showQualitySettings.value = !showQualitySettings.value
+  if (showQualitySettings.value) {
+    showLyricSourceMenu.value = false
+  }
+}
+
+const toggleLyricSourceMenu = () => {
+  showLyricSourceMenu.value = !showLyricSourceMenu.value
+  if (showLyricSourceMenu.value) {
+    showQualitySettings.value = false
+  }
+}
+
+// 当前选中的来源（与音质切换行为一致，菜单项高亮）
+const isCurrentLyricSource = (sourceValue) => lyricPriority.value === sourceValue
+
+const selectLyricSource = async (sourceValue) => {
+  showLyricSourceMenu.value = false
+  if (lyricPriority.value === sourceValue) return
+
+  lyricPriority.value = sourceValue
+  // 强制重新拉取当前歌曲歌词（priority 已参与缓存键，切换后不会命中旧缓存）
+  const song = currentSong.value
+  if (!song) return
+  const trackId = song.id?.toString()
+  if (!trackId) return
+
+  await lyricManager.fetchLyric(song, { force: true })
 }
 
 // 移动端状态与动画
@@ -977,8 +1087,9 @@ const closeModal = () => {
 }
 
 const handleOverlayClick = (event) => {
-  if (showQualitySettings.value) {
+  if (showQualitySettings.value || showLyricSourceMenu.value) {
     showQualitySettings.value = false
+    showLyricSourceMenu.value = false
     if (event.target.classList.contains('lyrics-modal-overlay')) {
       closeModal()
     }
@@ -2015,6 +2126,24 @@ onUnmounted(() => {
 .mobile-quality-badge:active {
   background: var(--lyrics-modal-surface-strong);
   transform: scale(0.96);
+}
+
+/* 音质与歌词来源徽章并排 */
+.badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lyric-source-badge {
+  gap: 4px;
+  font-weight: 500;
+}
+
+.lyric-source-badge .badge-quality-menu {
+  min-width: 110px;
 }
 
 /* 响应式 */

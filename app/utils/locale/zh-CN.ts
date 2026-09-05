@@ -1104,6 +1104,8 @@ export const pages = {
       amllCleanOverlaps: '清理时间戳重叠',
       amllTryAdvanceStart: '提前行入场',
       quality: '音质',
+      lyricSource: '歌词来源',
+      lyricSourceAuto: '自动',
       playMode: {
         loopOne: '单曲循环',
         order: '列表循环',

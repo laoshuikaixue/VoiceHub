@@ -3,6 +3,7 @@ import { cleanTTMLTranslations, parseQRCLyric, parseSmartLrc } from '~/utils/lyr
 import { parseTTML, parseYrc } from '@applemusic-like-lyrics/lyric'
 import { useAudioPlayer } from './useAudioPlayer'
 import { useMusicSources } from './useMusicSources'
+import { useLyricSettings } from './useLyricSettings'
 import { useLocale } from '~/utils/locale'
 
 export interface ParsedLyricLine {
@@ -22,6 +23,8 @@ export interface LyricData {
   trans?: string
   yrc?: string
   ttml?: string
+  /** YRC 对齐的翻译（ytlrc），时间戳与逐字主歌词行边界一致 */
+  ytrans?: string
 }
 
 // ─── 内部解析工具 ────────────────────────────────────────────────
@@ -196,9 +199,10 @@ export const useLyrics = () => {
     translationLyrics.value = []
     showTranslation.value = false
 
-    // 翻译歌词
-    if (lyricData.trans) {
-      const parsedTrans = parseBestLyrics([lyricData.trans])
+    // 翻译歌词（ytlrc 时间戳与逐字主歌词对齐，优先于 tlyric）
+    const transSource = lyricData.ytrans || lyricData.trans
+    if (transSource) {
+      const parsedTrans = parseBestLyrics([transSource])
       if (parsedTrans.lines.length > 0) {
         translationLyrics.value = parsedTrans.lines
         showTranslation.value = true
@@ -235,6 +239,7 @@ export const useLyrics = () => {
         artist: meta?.artist ?? currentSong?.artist ?? '',
         album: meta?.album ?? currentSong?.album ?? '',
         duration: currentSong?.duration,
+        priority: useLyricSettings().lyricPriority.value,
         onProgress: ({ data }) => {
           if (token !== currentToken) return
           const applied = applyLyricData(data)
