@@ -143,7 +143,7 @@ export const useLyricManager = () => {
           if (lines && lines.length > 0) {
             const validLines = lines.filter((l) => l.words && l.words.length > 0)
             if (validLines.length > 0) {
-              parsedLyrics = lines
+              parsedLyrics = validLines
               format = 'word-by-word'
               console.log('[LyricManager] 使用 YRC 格式')
             }

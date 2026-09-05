@@ -298,7 +298,12 @@ const buildLyricUpgradeQueries = (meta: LyricUpgradeMeta) => {
   return [...queries].filter(Boolean)
 }
 
-const getLyricCacheKey = (platform: string, id: number | string, meta?: LyricUpgradeMeta) => {
+const getLyricCacheKey = (
+  platform: string,
+  id: number | string,
+  meta?: LyricUpgradeMeta,
+  settingsFlag = ''
+) => {
   const title = normalizeLyricMatchText(meta?.title || '')
   const artist = normalizeLyricMatchText(meta?.artist || '')
   const album = normalizeLyricMatchText(meta?.album || '')
@@ -307,7 +312,7 @@ const getLyricCacheKey = (platform: string, id: number | string, meta?: LyricUpg
   // 优先级不同时抓取路径不同，结果可能不同；无显式 priority 的调用不区分
   const priority = meta?.priority || ''
   const durationBucket = meta?.duration ? Math.round(meta.duration / 5000) : 0
-  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}:${priority}`
+  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}:${priority}:${settingsFlag}`
 }
 
 const cloneLyricData = (data: LyricResultData): LyricResultData => ({
@@ -561,7 +566,14 @@ export const useMusicSources = () => {
     data?: LyricResultData
     error?: string
   }> => {
-    const cacheKey = getLyricCacheKey(platform, id, meta)
+    // 抓取路径受歌词开关影响，开关值参与缓存键，避免切换后 60s 内命中按旧配置计算的结果
+    const settings = useLyricSettings()
+    const settingsFlag = [
+      settings.enableQQMusicLyric.value ? 1 : 0,
+      settings.enableOnlineTTMLLyric.value ? 1 : 0,
+      settings.amllDbServer.value || ''
+    ].join(':')
+    const cacheKey = getLyricCacheKey(platform, id, meta, settingsFlag)
     const unsubscribeProgress = subscribeLyricProgress(cacheKey, meta?.onProgress)
     const progressive = typeof meta?.onProgress === 'function'
 
@@ -572,7 +584,6 @@ export const useMusicSources = () => {
 
     const promise = (async () => {
       try {
-        const settings = useLyricSettings()
         const enabledSources = getEnabledSources()
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')

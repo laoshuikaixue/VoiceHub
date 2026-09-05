@@ -1419,6 +1419,7 @@ VoiceHub/
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
+│       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
