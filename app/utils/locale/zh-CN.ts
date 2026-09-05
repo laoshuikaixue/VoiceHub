@@ -546,6 +546,25 @@ export const pages = {
       copyFailed: '复制失败，请手动选择 Key 复制',
       logsFailed: '加载调用记录失败'
     },
+    musicSource: {
+      title: '音源设置',
+      desc: '配置个人音源 API Key，解锁更高音质的播放链接',
+      keyLabel: 'ChKSz API Key',
+      keyPlaceholder: '粘贴你的 ChKSz API Key',
+      showKey: '显示 Key',
+      hideKey: '隐藏 Key',
+      save: '保存',
+      clear: '清除',
+      test: '测试',
+      saveSuccess: '音源 API Key 已保存（仅保存在当前浏览器）',
+      clearSuccess: '音源 API Key 已清除',
+      testSuccess: '测试通过：Key 有效，音源可用',
+      testInvalid: '测试失败：Key 无效或已被限制',
+      testTimeout: '测试超时，请稍后重试',
+      testNetwork: '网络异常，无法连接音源服务',
+      testEmpty: '请先填写 API Key',
+      hint: 'Key 仅保存在当前浏览器，不会上传到服务器；可前往获取：'
+    },
     roles: {
       ADMIN: '管理员',
       SUPER_ADMIN: '超级管理员',

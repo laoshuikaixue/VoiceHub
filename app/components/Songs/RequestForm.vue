@@ -1816,7 +1816,7 @@ let audioMatchSilentNode = null
 // 音源管理器
 const musicSources = useMusicSources()
 const { currentSource, sourceStatus, sourceStatusSummary, currentSourceInfo } = musicSources
-const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
+const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus, persistNeteaseVipFlag, clearNeteaseVipFlag } = useAudioQuality()
 const searchError = ref('')
 
 // 手动输入相关
@@ -2271,6 +2271,8 @@ const checkNeteaseLoginStatus = async () => {
           isNeteaseLoggedIn.value = true
           neteaseUser.value = dataObj.profile || dataObj.account
           localStorage.setItem('netease_user', JSON.stringify(neteaseUser.value))
+          // 同步 VIP 标志（vipType 非 0 即 VIP）
+          persistNeteaseVipFlag(dataObj.profile)
           // 同步全局网易云登录状态
           updateGlobalNeteaseStatus()
         } else {
@@ -2373,6 +2375,7 @@ const handleLoginSuccess = (data) => {
   if (import.meta.client) {
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
+    persistNeteaseVipFlag(data.user)
     updateGlobalNeteaseStatus()
   }
 }
@@ -2386,6 +2389,7 @@ const handleLogoutNetease = () => {
   if (import.meta.client) {
     localStorage.removeItem('netease_cookie')
     localStorage.removeItem('netease_user')
+    clearNeteaseVipFlag()
     updateGlobalNeteaseStatus()
   }
 }

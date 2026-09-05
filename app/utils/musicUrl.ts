@@ -1,5 +1,6 @@
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useMusicSources } from '~/composables/useMusicSources'
+import { useChkszSource } from '~/composables/useChkszSource'
 import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 
@@ -233,9 +234,24 @@ export async function getMusicUrlResult(
   }
 
   const { getQuality } = useAudioQuality()
+  const { getChkszMusicUrl, hasChkszKey } = useChkszSource()
 
   // 优先使用 options 中的 quality，否则使用全局设置
   const quality = options?.quality !== undefined ? options.quality : getQuality(platform)
+
+  // ChKSz 音源（用户自配 apikey）：非 VIP 登录态下最优先，VIP 登录态下官方链路之后的次优先
+  const isExcluded = (source: string) => (options?.excludeSources || []).includes(source)
+  const tryChksz = async (chkszQuality: number | string): Promise<MusicUrlResolveResult | null> => {
+    if (!hasChkszKey() || isExcluded('chksz')) {
+      return null
+    }
+    const chkszUrl = await getChkszMusicUrl(platform, musicId, chkszQuality)
+    if (chkszUrl) {
+      rememberMusicUrlSource(chkszUrl, 'chksz')
+      return { url: chkszUrl, source: 'chksz' }
+    }
+    return null
+  }
 
   if (platform === 'tencent') {
     const normalizedQuality = Number(quality)
@@ -288,6 +304,12 @@ export async function getMusicUrlResult(
       } catch (error: any) {
         console.warn('[musicUrl] QQ 官方登录态解析失败，降级第三方音源:', error?.message || error)
       }
+    }
+
+    // ChKSz 音源：VIP 官方之后的次优先，非 VIP/未登录时为最优先
+    const chkszResult = await tryChksz(qualityCandidates[0])
+    if (chkszResult) {
+      return chkszResult
     }
 
     // K×H 音源提取的 QQ 直连接口支持浏览器跨域，优先于 vkeys 使用。
@@ -411,6 +433,12 @@ export async function getMusicUrlResult(
     isNeteasePlatform &&
     typeof window !== 'undefined' &&
     !!window.localStorage.getItem('netease_cookie')
+  // 仅 VIP 登录态才优先走网易官方链路，非 VIP/未登录时 ChKSz 最优先
+  const isNeteaseVip =
+    isNeteasePlatform &&
+    typeof window !== 'undefined' &&
+    window.localStorage.getItem('netease_vip') === '1'
+  const neteaseOfficialFirst = hasNeteaseLogin && isNeteaseVip
 
   let finalMusicId = musicId
   let bilibiliCid: string | undefined
@@ -427,6 +455,14 @@ export async function getMusicUrlResult(
     excludeSources: options?.excludeSources
   }
 
+  // 非 VIP 登录态/未登录：ChKSz 音源最优先
+  if (isNeteasePlatform && !neteaseOfficialFirst) {
+    const chkszResult = await tryChksz(quality)
+    if (chkszResult) {
+      return chkszResult
+    }
+  }
+
   // 先使用统一组件的音源选择逻辑
   const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
   if (backupResult.success && backupResult.url) {
@@ -434,6 +470,14 @@ export async function getMusicUrlResult(
     return {
       url: backupResult.url,
       source: backupResult.source || 'music-source'
+    }
+  }
+
+  // VIP 登录态官方链路失败：ChKSz 作为次优先
+  if (isNeteasePlatform && neteaseOfficialFirst) {
+    const chkszResult = await tryChksz(quality)
+    if (chkszResult) {
+      return chkszResult
     }
   }
 
