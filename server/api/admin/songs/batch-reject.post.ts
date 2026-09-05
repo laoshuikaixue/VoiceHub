@@ -1,20 +1,18 @@
 import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
-import { eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // 单次批量驳回的歌曲数量上限
 const MAX_BATCH_REJECT_COUNT = 1000
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
+  requireSongAdmin(event)
+
   const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
 
   const body = await readBody(event)
 
@@ -26,24 +24,20 @@ export default defineEventHandler(async (event) => {
   const addToBlacklist = body?.addToBlacklist === true
 
   if (songIds.length === 0) {
-    throw createError({
-      statusCode: 400,
-      message: '歌曲ID列表不能为空'
-    })
+    throw createApiError(400, SERVER_ERROR_CODES.SONG_BATCH_REJECT_IDS_REQUIRED, '歌曲ID列表不能为空')
   }
 
   if (songIds.length > MAX_BATCH_REJECT_COUNT) {
-    throw createError({
-      statusCode: 400,
-      message: `单次最多驳回 ${MAX_BATCH_REJECT_COUNT} 首歌曲`
-    })
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.SONG_BATCH_REJECT_LIMIT_EXCEEDED,
+      `单次最多驳回 ${MAX_BATCH_REJECT_COUNT} 首歌曲`,
+      { params: [MAX_BATCH_REJECT_COUNT] }
+    )
   }
 
   if (!reason) {
-    throw createError({
-      statusCode: 400,
-      message: '驳回原因不能为空'
-    })
+    throw createApiError(400, SERVER_ERROR_CODES.SONG_BATCH_REJECT_REASON_REQUIRED, '驳回原因不能为空')
   }
 
   try {
@@ -55,22 +49,26 @@ export default defineEventHandler(async (event) => {
       const existingSongs = await tx.select().from(songs).where(inArray(songs.id, songIds))
 
       if (existingSongs.length === 0) {
-        throw createError({
-          statusCode: 404,
-          message: '歌曲不存在或已被删除'
-        })
+        throw createApiError(404, SERVER_ERROR_CODES.SONG_NOT_FOUND, '歌曲不存在或已被删除')
       }
 
       const existingIds = existingSongs.map((song) => song.id)
       console.log(`开始批量驳回歌曲，共 ${existingIds.length} 首`)
 
-      // 如果选择加入黑名单，逐首添加（同名同歌手可能已存在，失败忽略）
+      // 如果选择加入黑名单，先查出已存在条目，跳过已存在与批内重复的「歌名 - 歌手」
       if (addToBlacklist) {
-        for (const song of existingSongs) {
+        const blacklistValues = [...new Set(existingSongs.map((song) => `${song.title} - ${song.artist}`))]
+        const existingBlacklist = await tx
+          .select({ value: songBlacklists.value })
+          .from(songBlacklists)
+          .where(and(eq(songBlacklists.type, 'SONG'), inArray(songBlacklists.value, blacklistValues)))
+        const existingSet = new Set(existingBlacklist.map((item) => item.value))
+        const valuesToInsert = blacklistValues.filter((value) => !existingSet.has(value))
+        for (const value of valuesToInsert) {
           try {
             await tx.insert(songBlacklists).values({
               type: 'SONG',
-              value: `${song.title} - ${song.artist}`,
+              value,
               reason: `歌曲驳回: ${reason}`,
               createdBy: user.id
             })
@@ -142,9 +140,6 @@ export default defineEventHandler(async (event) => {
     }
 
     // 其他错误
-    throw createError({
-      statusCode: 500,
-      message: '批量驳回失败: ' + error.message
-    })
+    throw createApiError(500, SERVER_ERROR_CODES.SONG_OPERATION_FAILED, '批量驳回失败: ' + error.message)
   }
 })

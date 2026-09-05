@@ -1163,6 +1163,7 @@ import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { validateUrl, convertToHttps } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
@@ -1173,6 +1174,7 @@ dayjs.extend(customParseFormat)
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
+const { localize: localizeServerError } = useServerErrors()
 const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.songManagement || {}
@@ -1920,8 +1922,12 @@ const confirmReject = async () => {
     }
   } catch (error) {
     console.error('驳回歌曲失败:', error)
-    const failKey = isBatch ? 'batchRejectFailed' : 'rejectFailed'
-    showNotification(getNestedMessage('errors', failKey, getErrorMessage(error)), 'error')
+    if (isBatch) {
+      // 批量接口按错误码本地化，避免服务端中文兜底文案在英文界面泄漏
+      showNotification(getNestedMessage('errors', 'batchRejectFailed', localizeServerError(error)), 'error')
+    } else {
+      showNotification(getNestedMessage('errors', 'rejectFailed', getErrorMessage(error)), 'error')
+    }
   } finally {
     rejectLoading.value = false
   }
