@@ -1103,6 +1103,7 @@ VoiceHub/
 │   │   │   │   ├── test-connection.post.ts # 测试SMTP连接
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
+│   │   │   │   ├── batch-reject.post.ts  # 批量驳回歌曲
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
 │   │   │   │   ├── duration.post.ts # 更新歌曲时长
 │   │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
