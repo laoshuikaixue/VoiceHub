@@ -1,6 +1,7 @@
 import type { LyricLine } from '@applemusic-like-lyrics/lyric'
 
-const TIME_TAG_REGEX = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g
+// 时间戳支持 [mm:ss] / [mm:ss.f] / [mm:ss.ff] / [mm:ss.fff]，毫秒位按十进制小数补齐 3 位
+const TIME_TAG_REGEX = /\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g
 const META_TAG_REGEX = /^\[[a-z]+:/i
 
 export const parseLrc = (lrcContent: string): LyricLine[] => {
@@ -29,7 +30,7 @@ export const parseLrc = (lrcContent: string): LyricLine[] => {
       const min = parseInt(match[1], 10)
       const sec = parseInt(match[2], 10)
       // 补齐毫秒
-      const msStr = match[3].padEnd(3, '0').slice(0, 3)
+      const msStr = (match[3] ?? '0').padEnd(3, '0').slice(0, 3)
       const ms = parseInt(msStr, 10)
       const startTime = min * 60 * 1000 + sec * 1000 + ms
 
