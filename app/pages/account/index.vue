@@ -194,6 +194,94 @@
             </div>
           </section>
 
+          <!-- 音源设置（ChKSz） -->
+          <section :class="sectionClass">
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-warning-10 rounded-xl flex items-center justify-center">
+                <ListMusic :size="20" class="text-warning" />
+              </div>
+              <div>
+                <h2 class="text-base font-black text-text-primary">{{ locale.musicSource.title }}</h2>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.musicSource.desc }}</p>
+              </div>
+            </div>
+
+            <div class="max-w-xl space-y-4">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest" for="chksz-apikey-input">
+                  {{ locale.musicSource.keyLabel }}
+                </label>
+                <div class="flex items-stretch gap-2">
+                  <div class="flex-1 min-w-0 flex items-center rounded-xl border border-border-secondary bg-bg-primary-45 focus-within:border-border-tertiary transition-colors">
+                    <input
+                      id="chksz-apikey-input"
+                      v-model="chkszKeyInput"
+                      :type="showChkszKey ? 'text' : 'password'"
+                      :placeholder="locale.musicSource.keyPlaceholder"
+                      autocomplete="off"
+                      class="flex-1 min-w-0 bg-transparent px-4 py-2.5 font-mono text-xs text-text-primary outline-none"
+                    >
+                    <button
+                      type="button"
+                      class="px-3 text-text-tertiary hover:text-text-primary transition-colors shrink-0"
+                      :title="showChkszKey ? locale.musicSource.hideKey : locale.musicSource.showKey"
+                      @click="showChkszKey = !showChkszKey"
+                    >
+                      <EyeOff v-if="showChkszKey" :size="15" />
+                      <Eye v-else :size="15" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  :disabled="chkszTesting || chkszKeyInput.trim() === chkszApiKey"
+                  @click="saveChkszKey"
+                >
+                  <Check :size="14" />
+                  {{ locale.musicSource.save }}
+                </button>
+                <button
+                  class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border-secondary bg-bg-primary-40 hover:bg-bg-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  :disabled="chkszTesting || (!chkszApiKey && !chkszKeyInput)"
+                  @click="clearChkszKeySetting"
+                >
+                  <Trash2 :size="14" />
+                  {{ locale.musicSource.clear }}
+                </button>
+                <button
+                  class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border-secondary bg-bg-primary-40 hover:bg-bg-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  :disabled="chkszTesting || (!chkszKeyInput.trim() && !chkszApiKey)"
+                  @click="testChkszKey"
+                >
+                  <RefreshCw v-if="chkszTesting" :size="14" class="animate-spin" />
+                  <Play v-else :size="14" />
+                  {{ locale.musicSource.test }}
+                </button>
+              </div>
+
+              <p
+                v-if="chkszTestResult"
+                class="text-xs font-bold leading-relaxed"
+                :class="chkszTestResult.valid ? 'text-success' : 'text-error'"
+              >
+                {{ chkszTestResult.text }}
+              </p>
+
+              <p class="text-xs text-text-tertiary leading-relaxed">
+                {{ locale.musicSource.hint }}
+                <a
+                  href="https://api.chksz.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-primary hover:text-primary-hover font-bold underline underline-offset-2"
+                >api.chksz.com</a>
+              </p>
+            </div>
+          </section>
+
           <!-- 修改密码 -->
           <section :class="sectionClass">
             <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
@@ -426,11 +514,15 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  Eye,
+  EyeOff,
   KeyRound,
   Link as LinkIcon,
+  ListMusic,
   Lock,
   LogOut,
   Monitor,
+  Play,
   Plus,
   RefreshCw,
   Trash2,
@@ -439,6 +531,7 @@ import {
 } from '@lucide/vue'
 import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
 import { useAuth } from '~/composables/useAuth'
+import { useChkszSource } from '~/composables/useChkszSource'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
@@ -488,6 +581,56 @@ const sessions = ref([])
 const sessionsLoading = ref(false)
 const sessionsRevoking = ref(false)
 
+// 音源设置（ChKSz apikey，仅存本浏览器 localStorage）
+const { chkszApiKey, clearChkszKey, verifyChkszKey } = useChkszSource()
+const chkszKeyInput = ref('')
+const showChkszKey = ref(false)
+const chkszTesting = ref(false)
+const chkszTestResult = ref(null)
+
+const saveChkszKey = () => {
+  const trimmed = chkszKeyInput.value.trim()
+  if (!trimmed) return
+  chkszApiKey.value = trimmed
+  showToast(locale.value.musicSource.saveSuccess, 'success')
+}
+
+const clearChkszKeySetting = () => {
+  clearChkszKey()
+  chkszKeyInput.value = ''
+  chkszTestResult.value = null
+  showToast(locale.value.musicSource.clearSuccess, 'success')
+}
+
+const testChkszKey = async () => {
+  chkszTesting.value = true
+  chkszTestResult.value = null
+  const keyToTest = chkszKeyInput.value.trim() || chkszApiKey.value
+  try {
+    const result = await verifyChkszKey(keyToTest)
+    const textMap = {
+      ok: locale.value.musicSource.testSuccess,
+      empty: locale.value.musicSource.testEmpty,
+      timeout: locale.value.musicSource.testTimeout,
+      network: locale.value.musicSource.testNetwork,
+      api_error: locale.value.musicSource.testInvalid,
+      http_401: locale.value.musicSource.testInvalid,
+      http_403: locale.value.musicSource.testInvalid,
+      http_429: locale.value.musicSource.testInvalid
+    }
+    let text = textMap[result.message] || locale.value.musicSource.testNetwork
+    if (!result.valid && result.detail) {
+      text += `（${result.detail}）`
+    }
+    chkszTestResult.value = {
+      valid: result.valid,
+      text
+    }
+  } finally {
+    chkszTesting.value = false
+  }
+}
+
 // 监听用户头像变化，重置错误状态
 watch(
   () => auth.user.value?.avatar,
@@ -501,6 +644,7 @@ onMounted(() => {
   refreshSiteConfig()
   loadPersonalApiKeys()
   loadSessions()
+  chkszKeyInput.value = chkszApiKey.value || ''
 
   if (route.query.message) {
     showToast(route.query.message, 'success')

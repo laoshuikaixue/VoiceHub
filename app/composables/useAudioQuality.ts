@@ -1,5 +1,6 @@
 import { computed, readonly, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
+import { getLoginStatus } from '~/utils/neteaseApi'
 
 // 音质配置
 export const QUALITY_OPTIONS = {
@@ -39,6 +40,63 @@ let globalAudioQuality: any = null
 // 网易云登录状态，全局共享
 const isNeteaseLoggedIn = ref(false)
 let isLoginStatusInitialized = false
+
+// 网易 VIP 标志（localStorage netease_vip）：vipType 非 0 即 VIP，仅 VIP 登录态才优先官方播放源
+const persistNeteaseVipFlag = (profile: any) => {
+  if (typeof window === 'undefined') return
+  try {
+    if (profile && typeof profile.vipType === 'number') {
+      localStorage.setItem('netease_vip', profile.vipType !== 0 ? '1' : '0')
+    } else {
+      localStorage.removeItem('netease_vip')
+    }
+  } catch (error) {
+    console.error('[audioQuality] Failed to persist netease_vip:', error)
+  }
+}
+
+const clearNeteaseVipFlag = () => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem('netease_vip')
+  } catch {
+    // localStorage 不可用时忽略
+  }
+}
+
+// 每会话一次的 VIP 状态静默刷新守卫
+let isNeteaseVipRefreshing = false
+let isNeteaseVipRefreshed = false
+
+// 静默刷新 VIP 状态：有 cookie 时调 /login/status 校验登录态并同步 VIP 标志
+const refreshNeteaseVipStatus = async () => {
+  if (typeof window === 'undefined' || isNeteaseVipRefreshed || isNeteaseVipRefreshing) return
+  let cookie: string | null = null
+  try {
+    cookie = localStorage.getItem('netease_cookie')
+  } catch {
+    // localStorage 不可用时跳过刷新
+  }
+  if (!cookie) return
+  isNeteaseVipRefreshing = true
+  try {
+    const res = await getLoginStatus(cookie)
+    const dataObj = res.body?.data || res.body
+    if (dataObj && dataObj.account) {
+      isNeteaseLoggedIn.value = true
+      persistNeteaseVipFlag(dataObj.profile)
+    } else {
+      // 登录失效：仅清 VIP 标志，cookie 与组件本地状态由组件级校验负责清理
+      clearNeteaseVipFlag()
+      isNeteaseLoggedIn.value = false
+    }
+  } catch {
+    // 网络异常保留本地状态
+  } finally {
+    isNeteaseVipRefreshing = false
+    isNeteaseVipRefreshed = true
+  }
+}
 
 export function useAudioQuality() {
   const { ui } = useLocale()
@@ -82,9 +140,13 @@ export function useAudioQuality() {
   // 初始化登录状态监听
   if (!isLoginStatusInitialized && typeof window !== 'undefined') {
     checkNeteaseLoginStatus()
+    refreshNeteaseVipStatus()
     window.addEventListener('storage', (e) => {
       if (e.key === 'netease_cookie') {
         checkNeteaseLoginStatus()
+        // 其他标签页登录态变化时重新同步 VIP 标志
+        isNeteaseVipRefreshed = false
+        refreshNeteaseVipStatus()
       }
     })
     isLoginStatusInitialized = true
@@ -173,6 +235,8 @@ export function useAudioQuality() {
     QUALITY_OPTIONS,
     DEFAULT_QUALITY,
     checkNeteaseLoginStatus,
-    isNeteaseLoggedIn: readonly(isNeteaseLoggedIn)
+    isNeteaseLoggedIn: readonly(isNeteaseLoggedIn),
+    persistNeteaseVipFlag,
+    clearNeteaseVipFlag
   }
 }

@@ -535,6 +535,25 @@ export const pages = {
       copyFailed: 'Copy failed. Select the key and copy it manually.',
       logsFailed: 'Failed to load call logs'
     },
+    musicSource: {
+      title: 'Music Source',
+      desc: 'Configure your personal source API key for higher-quality playback',
+      keyLabel: 'ChKSz API Key',
+      keyPlaceholder: 'Paste your ChKSz API key',
+      showKey: 'Show key',
+      hideKey: 'Hide key',
+      save: 'Save',
+      clear: 'Clear',
+      test: 'Test',
+      saveSuccess: 'Source API key saved (this browser only)',
+      clearSuccess: 'Source API key cleared',
+      testSuccess: 'Test passed: key is valid and the source is available',
+      testInvalid: 'Test failed: key is invalid or restricted',
+      testTimeout: 'Test timed out, please try again later',
+      testNetwork: 'Network error: cannot reach the source service',
+      testEmpty: 'Enter an API key first',
+      hint: 'The key is stored in this browser only and never uploaded to the server. Get one at:'
+    },
     roles: {
       ADMIN: 'Administrator',
       SUPER_ADMIN: 'Super Administrator',

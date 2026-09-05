@@ -682,7 +682,7 @@ const props = defineProps({
 
 // 音频播放相关 - 使用全局音频播放器
 const audioPlayer = useAudioPlayer()
-const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
+const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus, persistNeteaseVipFlag } = useAudioQuality()
 const { currentLocale, songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.scheduleList || {})
 const { t: callLocale } = useLocaleText(locale)
@@ -1178,6 +1178,8 @@ const handleLoginSuccess = (data) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
+    // 同步 VIP 标志（vipType 非 0 即 VIP）
+    persistNeteaseVipFlag(data.user)
     // 更新全局网易云登录状态，通知其他组件（如AudioPlayer）
     updateGlobalNeteaseStatus()
   }
