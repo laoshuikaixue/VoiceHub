@@ -244,7 +244,7 @@
                   {{ locale.musicSource.save }}
                 </button>
                 <button
-                  class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border-secondary bg-bg-primary-40 hover:bg-bg-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border-secondary bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                   :disabled="chkszTesting || (!chkszApiKey && !chkszKeyInput)"
                   @click="clearChkszKeySetting"
                 >
@@ -252,7 +252,7 @@
                   {{ locale.musicSource.clear }}
                 </button>
                 <button
-                  class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border-secondary bg-bg-primary-40 hover:bg-bg-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  class="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border-secondary bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                   :disabled="chkszTesting || (!chkszKeyInput.trim() && !chkszApiKey)"
                   @click="testChkszKey"
                 >
