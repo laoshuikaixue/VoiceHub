@@ -2,6 +2,8 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
+import { triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import {
   getAggregateOAuthLoginTypesOrDefault,
@@ -1110,6 +1112,22 @@ export default defineEventHandler(async (event) => {
     } catch (smtpError) {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)
     }
+
+    if (updateData.enabledPlatforms !== undefined || updateData.platformOrder !== undefined) {
+      void triggerMusicSourceProbe(true)?.catch((probeError) => {
+        console.warn('[Operations] Music source probe configuration refresh failed:', probeError)
+      })
+    }
+
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'SETTINGS.SAVE',
+      targetType: 'SYSTEM_SETTINGS',
+      targetId: settings?.id,
+      result: 'SUCCESS',
+      summary: '管理员保存了系统设置',
+      changes: { changedFields: Object.keys(updateData) }
+    })
 
     return maskSystemSettingsSecrets(settings)
   } catch (error) {

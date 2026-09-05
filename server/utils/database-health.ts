@@ -1,5 +1,7 @@
 import { db, testConnection } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { findDatabaseQueryContext } from '~~/server/utils/request-database-context'
 
 // 数据库健康检查
 export async function checkDatabaseHealth() {
@@ -122,12 +124,26 @@ export async function getDatabaseMetrics() {
     `)
 
     const stat = stats[0] || {}
+    let queriesExecuted: number | null = null
+    try {
+      const queryStats = await db.execute(sql`
+        SELECT COALESCE(SUM(calls), 0)::bigint AS query_calls
+        FROM pg_stat_statements
+        WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+      `)
+      const queryStatsRow = queryStats[0] as { query_calls?: number | string } | undefined
+      const queryCalls = Number(queryStatsRow?.query_calls)
+      queriesExecuted = Number.isFinite(queryCalls) ? queryCalls : null
+    } catch {
+      // 未安装 pg_stat_statements 时保留未知，不将事务数当作查询数。
+    }
 
     return {
       responseTime,
       activeConnections: stat.active_connections || 0,
       transactionsCommitted: stat.transactions_committed || 0,
       transactionsRolledBack: stat.transactions_rolled_back || 0,
+      queriesExecuted,
       cacheHitRatio:
         stat.blocks_read && stat.blocks_hit
           ? ((stat.blocks_hit / (stat.blocks_hit + stat.blocks_read)) * 100).toFixed(2)
@@ -137,6 +153,46 @@ export async function getDatabaseMetrics() {
     throw new Error(
       `Failed to get database metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
     )
+  }
+}
+
+// 托管 PostgreSQL 可能限制统计视图；单项无权限时显式返回不可用。
+const diagnosticQuery = async (query: ReturnType<typeof sql>) => {
+  try {
+    return { available: true, data: await db.execute(query) }
+  } catch (error) {
+    return { available: false, data: [], reason: error instanceof Error ? error.message : '查询不可用' }
+  }
+}
+
+export async function getDatabaseDiagnostics() {
+  const [activity, locks, tables, size, slowQueries] = await Promise.all([
+    diagnosticQuery(sql`SELECT pid, usename AS user_name, state, wait_event_type, wait_event, query_start AS query_started_at, now() - query_start AS duration, left(query, 300) AS query FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND state <> 'idle' ORDER BY query_start ASC LIMIT 20`),
+    diagnosticQuery(sql`SELECT blocked.pid AS blocked_pid, blocker.pid AS blocking_pid, now() - blocked.query_start AS wait_duration, left(blocked.query, 220) AS blocked_query, left(blocker.query, 220) AS blocking_query FROM pg_locks blocked_lock JOIN pg_stat_activity blocked ON blocked.pid = blocked_lock.pid JOIN pg_locks blocker_lock ON blocker_lock.locktype = blocked_lock.locktype AND blocker_lock.database IS NOT DISTINCT FROM blocked_lock.database AND blocker_lock.relation IS NOT DISTINCT FROM blocked_lock.relation AND blocker_lock.page IS NOT DISTINCT FROM blocked_lock.page AND blocker_lock.tuple IS NOT DISTINCT FROM blocked_lock.tuple AND blocker_lock.transactionid IS NOT DISTINCT FROM blocked_lock.transactionid AND blocker_lock.pid <> blocked_lock.pid JOIN pg_stat_activity blocker ON blocker.pid = blocker_lock.pid WHERE NOT blocked_lock.granted AND blocker_lock.granted LIMIT 20`),
+    diagnosticQuery(sql`SELECT relname AS table_name, n_live_tup AS live_rows, n_dead_tup AS dead_rows, pg_total_relation_size(relid) AS total_bytes, pg_indexes_size(relid) AS index_bytes, CASE WHEN n_live_tup > 0 THEN round(n_dead_tup::numeric / n_live_tup * 100, 2) ELSE 0 END AS dead_row_ratio FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 20`),
+    diagnosticQuery(sql`SELECT pg_database_size(current_database()) AS database_bytes, pg_size_pretty(pg_database_size(current_database())) AS database_size`),
+    diagnosticQuery(sql`SELECT queryid::text AS query_id, left(query, 300) AS query, calls, round(mean_exec_time::numeric, 2) AS average_duration_ms, round(max_exec_time::numeric, 2) AS maximum_duration_ms FROM pg_stat_statements WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database()) ORDER BY mean_exec_time DESC LIMIT 20`)
+  ])
+
+  const enrichQueryRows = (source: typeof activity) => ({
+    ...source,
+    data: source.data.map((row: any) => {
+      const context = findDatabaseQueryContext(row.query, row.query_started_at)
+      return {
+        ...row,
+        caller_route: context?.route || null,
+        request_id: context?.requestId || null,
+        user_id: context?.userId ?? null
+      }
+    })
+  })
+  return {
+    activity: enrichQueryRows(activity),
+    locks,
+    tables,
+    size,
+    slowQueries: enrichQueryRows(slowQueries),
+    collectedAt: getServerDate().toISOString()
   }
 }
 

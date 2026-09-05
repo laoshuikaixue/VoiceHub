@@ -14,6 +14,8 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
+import { syncAuthenticatedUserSession } from '../services/userSessionService'
+import { updateRequestDatabaseUser } from '~~/server/utils/request-database-context'
 import { SERVER_ERROR_CODES } from '../config/constants'
 import {
   ensureAuthSession,
@@ -299,6 +301,19 @@ export default defineEventHandler(async (event) => {
       emailVerified: user.emailVerified,
       requirePasswordChange,
       ...passwordSetupState
+    }
+    updateRequestDatabaseUser(user.id)
+
+    const sessionActive = await syncAuthenticatedUserSession(event, decoded, user)
+    if (!sessionActive) {
+      delete event.context.user
+      clearAuthCookie(event)
+      return sendError(
+        event,
+        createApiError(401, 'AUTH_SESSION_EXPIRED', '当前会话已被管理员下线，请重新登录', {
+          invalidToken: true
+        })
+      )
     }
 
     // 认证完成前只允许维持登录态和完成改密所需的接口。

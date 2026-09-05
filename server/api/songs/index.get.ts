@@ -383,7 +383,7 @@ export default defineEventHandler(async (event) => {
         : []
       const isRequester = Boolean(user && Number(row.requesterId) === user.id)
       // 公开留言审核：待审/已拒绝的不对普通用户公开（管理员与投稿人始终可见完整备注与状态）
-      const notePublic = 
+      const notePublic =
         row.submissionNotePublic === true &&
         row.submissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
         row.submissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED

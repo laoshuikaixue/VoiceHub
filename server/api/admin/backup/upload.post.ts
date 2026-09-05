@@ -2,6 +2,7 @@ import { createError, defineEventHandler } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
 import formidable from 'formidable'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -111,6 +112,17 @@ export default defineEventHandler(async (event) => {
     // 获取文件信息
     const stats = await fs.stat(newFilepath)
 
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'BACKUP.UPLOAD',
+      targetType: 'BACKUP',
+      targetId: newFilename,
+      targetLabel: newFilename,
+      result: 'SUCCESS',
+      summary: '管理员上传了备份文件',
+      changes: { filename: newFilename }
+    })
+
     return {
       success: true,
       message: '备份文件上传成功',
@@ -125,6 +137,17 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('上传备份文件失败:', error)
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'BACKUP.UPLOAD',
+        targetType: 'BACKUP',
+        targetId: 'upload',
+        result: 'FAILURE',
+        summary: '管理员上传备份文件失败',
+        failureCode: getAdminOperationFailureCode(error, 'BACKUP_UPLOAD_FAILED')
+      })
+    }
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || '上传备份文件失败'

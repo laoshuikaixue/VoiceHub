@@ -47,8 +47,24 @@ function fileExists(p) {
 function ensureDrizzleFiles() {
   if (!fileExists('drizzle.config.ts')) throw new Error('Drizzle 配置文件不存在')
   if (!fileExists('app/drizzle/schema.ts')) throw new Error('Schema 文件不存在')
-  if (!fileExists('app/drizzle/migrations/meta/_journal.json'))
+  const journalPath = 'app/drizzle/migrations/meta/_journal.json'
+  if (!fileExists(journalPath))
     throw new Error('Drizzle journal 文件不存在')
+
+  const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'))
+  const entries = Array.isArray(journal.entries) ? journal.entries : []
+  const missingMigrations = entries
+    .map((entry) => `app/drizzle/migrations/${entry.tag}.sql`)
+    .filter((migrationPath) => !fileExists(migrationPath))
+  if (missingMigrations.length > 0) {
+    throw new Error(`Drizzle journal 引用了缺失的迁移文件: ${missingMigrations.join(', ')}`)
+  }
+
+  const latestEntry = entries.at(-1)
+  if (latestEntry) {
+    const latestSnapshot = `app/drizzle/migrations/meta/${latestEntry.tag.replace(/_.+$/, '')}_snapshot.json`
+    if (!fileExists(latestSnapshot)) throw new Error(`最新迁移缺少 snapshot: ${latestSnapshot}`)
+  }
 }
 
 function createSqlClient() {
@@ -143,23 +159,6 @@ async function enumValueExists(sql, enumName, enumValue) {
   return result[0]?.exists === true
 }
 
-// user_status 枚举新增值显式幂等补齐
-async function ensureUserStatusEnumValues(sql) {
-  const pendingExists = await enumValueExists(sql, 'user_status', 'pending')
-  if (!pendingExists) {
-    const withdrawnExists = await enumValueExists(sql, 'user_status', 'withdrawn')
-    if (withdrawnExists) {
-      await sql`ALTER TYPE "public"."user_status" ADD VALUE 'pending' BEFORE 'withdrawn'`
-    } else {
-      await sql`ALTER TYPE "public"."user_status" ADD VALUE 'pending'`
-    }
-  }
-  const rejectedExists = await enumValueExists(sql, 'user_status', 'rejected')
-  if (!rejectedExists) {
-    await sql`ALTER TYPE "public"."user_status" ADD VALUE 'rejected'`
-  }
-}
-
 async function tableExists(sql, tableName) {
   const result = await sql`
     SELECT EXISTS (
@@ -187,55 +186,10 @@ async function columnExists(sql, tableName, columnName) {
   return result[0]?.exists === true
 }
 
-async function indexExists(sql, tableName, indexName) {
-  const result = await sql`
-    SELECT EXISTS (
-      SELECT 1
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-        AND tablename = ${tableName}
-        AND indexname = ${indexName}
-    ) AS exists
-  `
-
-  return result[0]?.exists === true
-}
-
-// 重复 username 会阻塞 User_username_unique 唯一索引的创建（push/migrate 均会失败）。
-// 同步前把多余行重命名为 username_<后缀>，保留最早一行，保证唯一索引可创建。
-async function ensureNoDuplicateUsernames(sql) {
-  if (!(await tableExists(sql, 'User'))) return
-
-  const duplicates = await sql`
-    SELECT username, array_agg(id ORDER BY id) AS ids
-    FROM "User"
-    WHERE username IS NOT NULL
-    GROUP BY username
-    HAVING COUNT(*) > 1
-  `
-
-  if (duplicates.length === 0) return
-
-  warn('检测到 User.username 重复值，重命名多余行以允许创建唯一索引')
-  for (const dup of duplicates) {
-    const [keptId, ...extraIds] = dup.ids
-    for (const id of extraIds) {
-      let suffix = 2
-      let newUsername = `${dup.username}_${suffix}`
-      while ((await sql`SELECT 1 FROM "User" WHERE username = ${newUsername} LIMIT 1`).length > 0) {
-        suffix += 1
-        newUsername = `${dup.username}_${suffix}`
-      }
-      await sql`UPDATE "User" SET username = ${newUsername} WHERE id = ${id}`
-      warn(`User#${id}: ${dup.username} -> ${newUsername}（保留最早记录 User#${keptId}）`)
-    }
-  }
-}
-
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
-    ['user_status', ['graduate', 'pending', 'rejected']],
+    ['user_status', ['graduate']],
     ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']]
   ]
   const requiredTables = [
@@ -247,11 +201,11 @@ async function checkSchemaConsistency(sql) {
     'CardCodeRedeemLog',
     'PasswordAuditLog',
     'PasswordRateLimit',
-    'GradeClass',
-    'auth_sessions'
+    'admin_operation_logs',
+    'user_sessions',
+    'operations_metric_buckets',
+    'operations_dependency_buckets'
   ]
-  // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
-  const requiredIndexes = [['User', 'User_username_unique']]
   const requiredColumns = {
     User: [
       'status',
@@ -259,14 +213,9 @@ async function checkSchemaConsistency(sql) {
       'statusChangedBy',
       'email',
       'emailVerified',
-      'tokenVersion',
-      'remark',
-      'avatarProvider',
-      'avatarProviderUserId'
+      'tokenVersion'
     ],
-    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
-    song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
-    user_status_logs: ['username', 'name'],
+    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId', 'cardCodeId'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
       'instance_id',
@@ -292,14 +241,6 @@ async function checkSchemaConsistency(sql) {
       'turnstileSecretKey',
       'forcePasswordChangeOnFirstLogin',
       'allowOAuthRegistration',
-      'allowRegister',
-      'registerRequiresApproval',
-      'oauthRegisterRequiresApproval',
-      'registerEmailRequired',
-      'registerRequiresGradeClass',
-      'submissionNoteRequiresApproval',
-      'defaultTheme',
-      'enabledThemes',
       'oauthRedirectUri',
       'oauthStateSecret',
       'oauthProviders',
@@ -350,6 +291,13 @@ async function checkSchemaConsistency(sql) {
     PasswordRateLimit: ['key', 'count', 'resetAt']
   }
 
+  Object.assign(requiredColumns, {
+    admin_operation_logs: ['created_at', 'actor_id', 'action', 'target_type', 'result', 'summary', 'ip_address'],
+    user_sessions: ['id', 'user_id', 'token_version', 'ip_address', 'user_agent', 'browser', 'device_type', 'last_path', 'started_at', 'last_active_at', 'expires_at'],
+    operations_metric_buckets: ['bucket_start', 'instance_id', 'request_count', 'server_error_count'],
+    operations_dependency_buckets: ['bucket_start', 'instance_id', 'source', 'call_count', 'success_count']
+  })
+
   const missing = []
 
   for (const [enumName, enumValues] of requiredEnums) {
@@ -379,41 +327,11 @@ async function checkSchemaConsistency(sql) {
     }
   }
 
-  for (const [tableName, indexName] of requiredIndexes) {
-    if (!(await indexExists(sql, tableName, indexName))) {
-      missing.push(`${tableName}.${indexName} index`)
-    }
-  }
-
   if (missing.length > 0) {
     warn(`检测到数据库schema不完整，缺少: ${missing.join(', ')}`)
     return false
   }
 
-  return true
-}
-
-async function repairSchemaWithPush(sql) {
-  // 先补齐枚举值，再执行 push
-  await ensureUserStatusEnumValues(sql)
-  const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
-  if (
-    !safeExec(pushCommand, {
-      env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
-    })
-  ) {
-    err('数据库schema修复失败')
-    return false
-  }
-
-  if (!(await checkSchemaConsistency(sql))) {
-    err('push 后数据库schema仍不完整')
-    return false
-  }
-
-  // push 只同步结构，不会写入迁移表；补齐记录可避免后续 migrate 重放已存在的结构。
-  await seedMissingMigrationRecords(sql)
-  ok('强制同步完成，迁移记录已补齐')
   return true
 }
 
@@ -443,8 +361,6 @@ async function main() {
       }
       ok('空库迁移完成')
     } else {
-      // 重复 username 会阻塞唯一索引创建（push/migrate 均失败），先修复数据再同步
-      await ensureNoDuplicateUsernames(sql)
       const migrationRecordsExist = await hasMigrationRecords(sql)
       if (migrationRecordsExist) {
         // 正常数据库必须先应用待执行迁移，再检查最终结构；否则新增字段会被误判为schema损坏。
@@ -462,21 +378,16 @@ async function main() {
           } else {
             warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
           }
-          log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
-          if (!(await repairSchemaWithPush(sql))) {
-            err('数据库同步完全失败。请检查数据库连接或迁移文件。')
-            process.exit(1)
-          }
+          err('部署期间禁止自动执行 push --force。请检查数据库连接、迁移记录和迁移文件。')
+          process.exit(1)
         }
       } else {
         warn('检测到 legacy 数据库迁移记录为空，检查schema并写入迁移基线。')
         const schemaConsistent = await checkSchemaConsistency(sql)
 
         if (!schemaConsistent) {
-          log('🔄 legacy schema不完整，尝试使用 push --force 进行同步...', 'cyan')
-          if (!(await repairSchemaWithPush(sql))) {
-            process.exit(1)
-          }
+          err('部署期间禁止自动执行 push --force。请先在维护窗口修复 legacy 数据库结构。')
+          process.exit(1)
         } else {
           await seedMissingMigrationRecords(sql)
         }

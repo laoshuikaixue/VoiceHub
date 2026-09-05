@@ -6,6 +6,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 /** 备份配置结构校验 */
 const backupConfigSchema = z.object({
@@ -109,6 +110,16 @@ export default defineEventHandler(async (event) => {
       })
       .where(eq(systemSettings.id, existing.id))
   }
+
+  await recordAdminOperation(event, {
+    actor: { id: user.id, role: user.role },
+    action: 'BACKUP_CONFIG.UPDATE',
+    targetType: 'SYSTEM_SETTINGS',
+    targetId: existing?.id,
+    result: 'SUCCESS',
+    summary: '管理员更新了自动备份配置',
+    changes: { autoBackupEnabled: enabled, configKey: 'autoBackupConfig' }
+  })
 
   return { success: true, message: '自动备份配置已保存' }
 })

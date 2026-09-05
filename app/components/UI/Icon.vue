@@ -322,6 +322,52 @@
       <circle cx="12" cy="8" r="1" fill="currentColor" />
     </g>
 
+    <!-- 运维监控图标 -->
+    <g v-else-if="name === 'activity' || name === 'monitoring'">
+      <path d="M3 12h4l2.5-7 5 14 2.5-7h4" />
+    </g>
+
+    <!-- 数据库图标 -->
+    <g v-else-if="name === 'database'">
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M3 5v7c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
+      <path d="M3 12v7c0 1.66 4.03 3 9 3s9-1.34 9-3v-7" />
+    </g>
+
+    <!-- 服务器图标 -->
+    <g v-else-if="name === 'server'">
+      <rect x="3" y="3" width="18" height="7" rx="2" />
+      <rect x="3" y="14" width="18" height="7" rx="2" />
+      <circle cx="7" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="7" cy="17.5" r="1" fill="currentColor" stroke="none" />
+    </g>
+
+    <!-- 处理器图标 -->
+    <g v-else-if="name === 'cpu'">
+      <rect x="7" y="7" width="10" height="10" rx="1" />
+      <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
+      <rect x="10" y="10" width="4" height="4" />
+    </g>
+
+    <!-- 终端图标 -->
+    <g v-else-if="name === 'terminal'">
+      <polyline points="4 7 9 12 4 17" />
+      <line x1="12" y1="17" x2="20" y2="17" />
+    </g>
+
+    <!-- 趋势图图标 -->
+    <g v-else-if="name === 'chart-line'">
+      <path d="M3 3v18h18" />
+      <path d="m7 16 4-5 4 3 5-7" />
+    </g>
+
+    <!-- 图层图标 -->
+    <g v-else-if="name === 'layers'">
+      <path d="m12 2 9 5-9 5-9-5 9-5Z" />
+      <path d="m3 12 9 5 9-5" />
+      <path d="m3 17 9 5 9-5" />
+    </g>
+
     <!-- 成功/勾选图标 -->
     <g v-else-if="name === 'check' || name === 'success'">
       <polyline points="20 6 9 17 4 12" />
