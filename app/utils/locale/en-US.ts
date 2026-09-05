@@ -2019,7 +2019,8 @@ export const admin = {
       markPlayed: 'Mark as Played',
       markUnplayed: 'Mark as Unplayed',
       reject: 'Reject Song',
-      deleteSong: 'Delete Song'
+      deleteSong: 'Delete Song',
+      batchReject: 'Reject'
     },
     filters: {
       semester: 'Semester',
@@ -2066,10 +2067,14 @@ export const admin = {
     },
     rejectDialog: {
       title: 'Reject Song',
+      batchTitle: 'Batch Reject Songs',
       requester: (name: string) => `Requester: ${name}`,
+      batchInfo: (count: number) => `Reject the selected ${count} songs`,
+      batchHint: 'Each requester will be notified after rejection',
       reason: 'Reject Reason',
       reasonPlaceholder: 'Enter the reason. It will be sent to the requester as a system notification...',
       addToBlacklist: 'Also add this song to the blacklist',
+      batchAddToBlacklist: 'Also add the selected songs to the blacklist',
       blacklistHint: 'After blacklisting, this song cannot be requested again',
       processing: 'Processing...',
       confirm: 'Confirm Reject'
@@ -2248,6 +2253,7 @@ export const admin = {
       remarkRejected: 'Remark rejected',
       deleteSuccess: 'Song deleted',
       batchDeleteSuccess: 'Songs deleted',
+      batchRejectSuccess: (rejected: number, missing: number) => missing > 0 ? `Batch reject completed: ${rejected} succeeded, ${missing} not found` : `Batch rejected ${rejected} songs, requesters notified`,
       rejectSuccess: 'Song rejected and requester notified',
       validatingUrl: 'Validating URL, please wait...',
       validatingCoverUrl: 'Validating cover URL, please wait...',
@@ -2261,6 +2267,7 @@ export const admin = {
       markFailed: (message: string) => `Mark failed: ${message}`,
       deleteFailed: (message: string) => `Delete failed: ${message}`,
       batchDeleteFailed: (message: string) => `Batch delete failed: ${message}`,
+      batchRejectFailed: (message: string) => `Batch reject failed: ${message}`,
       rejectReasonRequired: 'Please enter a rejection reason',
       rejectFailed: (message: string) => `Reject failed: ${message}`,
       remarkUpdateFailed: 'Failed to update remark approval status',
@@ -4377,6 +4384,9 @@ export const serverErrors = {
   SONG_LOGIN_REQUIRED_REQUEST: 'You must sign in to request a song',
   SONG_LOGIN_REQUIRED_REPLAY: 'You must sign in to request a replay',
   SONG_INACTIVE_SEMESTER_VOTE: 'The semester is inactive, so voting is unavailable',
+  SONG_BATCH_REJECT_IDS_REQUIRED: 'Select songs to reject first',
+  SONG_BATCH_REJECT_LIMIT_EXCEEDED: 'Up to {0} songs can be rejected at once',
+  SONG_BATCH_REJECT_REASON_REQUIRED: 'A rejection reason is required',
   USER_API_KEY_NOT_FOUND: 'Personal integration token not found',
   USER_API_KEY_ID_REQUIRED: 'Token ID is required',
   USER_API_KEY_ID_INVALID: 'Invalid token ID',
