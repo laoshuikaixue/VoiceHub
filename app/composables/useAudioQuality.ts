@@ -59,7 +59,9 @@ const clearNeteaseVipFlag = () => {
   if (typeof window === 'undefined') return
   try {
     localStorage.removeItem('netease_vip')
-  } catch {}
+  } catch {
+    // localStorage 不可用时忽略
+  }
 }
 
 // 每会话一次的 VIP 状态静默刷新守卫
@@ -72,7 +74,9 @@ const refreshNeteaseVipStatus = async () => {
   let cookie: string | null = null
   try {
     cookie = localStorage.getItem('netease_cookie')
-  } catch {}
+  } catch {
+    // localStorage 不可用时跳过刷新
+  }
   if (!cookie) return
   isNeteaseVipRefreshing = true
   try {
