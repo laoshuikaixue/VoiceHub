@@ -612,34 +612,30 @@ export const useMusicSources = () => {
           return ttmlValidated
         }
 
-        const fetchOfficial = async (basicOnly = false) => {
+        const fetchOfficial = async () => {
           if (platform !== 'netease' || !neteaseSource) return
           try {
             // /lyric/new 返回逐字歌词（yrc）及其对齐翻译（ytlrc），
             // 时间戳贴 YRC 行边界，优先于普通 tlyric
-            // basicOnly（来源锁定为 NCM）时仅取逐行 LRC + tlyric
             const [lrcResp, yrcResp] = await Promise.allSettled([
               $fetch(`${neteaseSource.baseUrl}/lyric`, {
                 params: { id: id.toString() },
                 timeout: neteaseSource.timeout || 8000
               }),
-              basicOnly
-                ? Promise.resolve(null)
-                : $fetch(`${neteaseSource.baseUrl}/lyric/new`, {
-                    params: {
-                      id: id.toString(),
-                      // 请求全部歌词版本（参考 SPlayer-Next lyric_new）
-                      cp: false,
-                      tv: 0,
-                      lv: 0,
-                      rv: 0,
-                      kv: 0,
-                      yv: 0,
-                      ytv: 0,
-                      yrv: 0
-                    },
-                    timeout: neteaseSource.timeout || 8000
-                  })
+              $fetch(`${neteaseSource.baseUrl}/lyric/new`, {
+                params: {
+                  id: id.toString(),
+                  cp: false,
+                  tv: 0,
+                  lv: 0,
+                  rv: 0,
+                  kv: 0,
+                  yv: 0,
+                  ytv: 0,
+                  yrv: 0
+                },
+                timeout: neteaseSource.timeout || 8000
+              })
             ])
 
             if (lrcResp.status === 'fulfilled' && lrcResp.value?.code === 200) {
@@ -647,7 +643,7 @@ export const useMusicSources = () => {
               if (lr?.lrc?.lyric) resultData.lrc = lr.lrc.lyric
               if (lr?.tlyric?.lyric) resultData.trans = lr.tlyric.lyric
             }
-            if (yrcResp && yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
+            if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
               const yr = yrcResp.value
               if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
               // ytlrc 为 YRC 对齐翻译，时间戳与逐字行边界一致
@@ -801,8 +797,8 @@ export const useMusicSources = () => {
           } else if (priority === 'qm') {
             await fetchQM()
           } else if (priority === 'official') {
-            // 锁定 NCM：仅逐行 LRC + tlyric，不请求 yrc/ytlrc
-            await fetchOfficial(true)
+            // 锁定 NCM：官方接口，yrc 优先、lrc 兜底（fetchOfficial 内部已同时请求两者）
+            await fetchOfficial()
           } else {
             // 锁定 TTML：仅 AMLL DB
             await fetchAMLL()

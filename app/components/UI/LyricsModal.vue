@@ -76,7 +76,9 @@
           <div
             ref="mainContent"
             class="main-content"
-            :style="{ zIndex: isMobile && showQualitySettings ? 101 : undefined }"
+            :style="{
+              zIndex: isMobile && (showQualitySettings || showLyricSourceMenu) ? 101 : undefined
+            }"
             @scroll="onMainContentScroll"
             @click="handleOverlayClick"
           >
@@ -116,7 +118,7 @@
                     <div
                       v-if="currentSong?.musicPlatform"
                       class="mobile-quality-badge"
-                      @click.stop="showQualitySettings = !showQualitySettings"
+                      @click.stop="toggleQualityMenu"
                     >
                       {{ currentQualityText }}
 
@@ -138,7 +140,7 @@
                     <div
                       v-if="lyricSourceOptions.length > 0"
                       class="mobile-quality-badge lyric-source-badge"
-                      @click.stop="showLyricSourceMenu = !showLyricSourceMenu"
+                      @click.stop="toggleLyricSourceMenu"
                     >
                       <Icon name="lyrics" size="12" />
                       {{ currentLyricSourceLabel }}
@@ -149,7 +151,7 @@
                           v-for="option in lyricSourceOptions"
                           :key="option.value"
                           class="badge-quality-option"
-                          :class="{ active: lyricPriority.value === option.value }"
+                          :class="{ active: isCurrentLyricSource(option.value) }"
                           @click="selectLyricSource(option.value)"
                         >
                           {{ option.label }}
@@ -549,7 +551,7 @@ const lyricSourceOptions = computed(() => {
     return [
       { value: 'auto', label: locale.value.lyricSourceAuto },
       { value: 'official', label: 'NCM' },
-      { value: 'qm', label: 'VK' },
+      { value: 'qm', label: 'Vkeys' },
       { value: 'ttml', label: 'AMLL' }
     ]
   }
@@ -570,9 +572,9 @@ const currentLyricSourceLabel = computed(() => {
   const sourceMap = {
     official: 'NCM',
     qm: 'QM',
-    vkeys: 'VK',
+    vkeys: 'Vkeys',
     amll: 'AMLL',
-    meting: 'MK'
+    meting: 'Meting'
   }
   const formatMap = {
     ttml: 'TTML',
@@ -585,12 +587,29 @@ const currentLyricSourceLabel = computed(() => {
   return formatText ? `${sourceText}·${formatText}` : sourceText
 })
 
+// 与音质菜单互斥：同一时间只展开一个
+const toggleQualityMenu = () => {
+  showQualitySettings.value = !showQualitySettings.value
+  if (showQualitySettings.value) {
+    showLyricSourceMenu.value = false
+  }
+}
+
+const toggleLyricSourceMenu = () => {
+  showLyricSourceMenu.value = !showLyricSourceMenu.value
+  if (showLyricSourceMenu.value) {
+    showQualitySettings.value = false
+  }
+}
+
+// 当前选中的来源（与音质切换行为一致，菜单项高亮）
+const isCurrentLyricSource = (sourceValue) => lyricPriority.value === sourceValue
+
 const selectLyricSource = async (sourceValue) => {
   showLyricSourceMenu.value = false
   if (lyricPriority.value === sourceValue) return
 
   lyricPriority.value = sourceValue
-
   // 强制重新拉取当前歌曲歌词（priority 已参与缓存键，切换后不会命中旧缓存）
   const song = currentSong.value
   if (!song) return

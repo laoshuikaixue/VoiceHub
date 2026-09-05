@@ -178,14 +178,16 @@ export const useLyricManager = () => {
 
     // 对齐翻译（TTML 已内嵌翻译，不需要再 align）
     if (format !== 'ttml') {
-      // ytrans（ytlrc）时间戳与逐字主歌词行边界一致，优先于普通 tlyric
-      const transText = ytrans || trans
+      // 逐字歌词（YRC/QRC）用 ytlrc（YRC 对齐翻译）优先；普通 LRC 用 tlyric
+      const isWordLevel = format === 'qrc' || format === 'word-by-word'
+      const transText = isWordLevel ? ytrans || trans : trans
       if (transText) {
         const { lines: transLines } = parseSmartLrc(transText)
         if (transLines.length > 0) {
           parsedLyrics = alignLyrics(parsedLyrics, transLines, 'translatedLyric')
           hasTranslation.value = true
-          console.log(`[LyricManager] 已对齐翻译 (来源: ${ytrans ? 'ytlrc' : 'tlyric'})`)
+          const transKind = ytrans && isWordLevel ? 'ytlrc' : 'tlyric'
+          console.log(`[LyricManager] 已对齐翻译 (来源: ${transKind})`)
         }
       }
     }
