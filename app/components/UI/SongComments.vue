@@ -294,7 +294,9 @@ const isLoading = computed(() => loadingCount.value > 0)
 const error = computed(() => sortErrors.value[commentSort.value] || '')
 const totalCount = computed(() => sortTotals.value.latest || sortTotals.value.hot || 0)
 const hasMore = computed(() => {
-  if (props.song?.musicPlatform === 'tencent' && commentSort.value === 'hot') {
+  if (commentSort.value === 'hot') {
+    // 网易云热门评论是初始请求返回的固定集合，接口按最新流翻页，热门 Tab 不提供加载更多
+    if (!isTencent.value) return false
     return Boolean(sortHasMore.value.hot || sortHasMore.value.latest)
   }
   return Boolean(sortHasMore.value[commentSort.value])
