@@ -179,7 +179,7 @@ export function useChkszSource() {
    */
   const verifyChkszKey = async (
     key?: string
-  ): Promise<{ valid: boolean; message: string; detail?: string; quotaRemaining?: number }> => {
+  ): Promise<{ valid: boolean; message: string; detail?: string }> => {
     const apiKey = (key !== undefined ? key : chkszApiKey.value).trim()
     if (!apiKey) {
       return { valid: false, message: 'empty' }

@@ -615,11 +615,16 @@ const testChkszKey = async () => {
       network: locale.value.musicSource.testNetwork,
       api_error: locale.value.musicSource.testInvalid,
       http_401: locale.value.musicSource.testInvalid,
-      http_403: locale.value.musicSource.testInvalid
+      http_403: locale.value.musicSource.testInvalid,
+      http_429: locale.value.musicSource.testInvalid
+    }
+    let text = textMap[result.message] || locale.value.musicSource.testNetwork
+    if (!result.valid && result.detail) {
+      text += `（${result.detail}）`
     }
     chkszTestResult.value = {
       valid: result.valid,
-      text: textMap[result.message] || locale.value.musicSource.testNetwork
+      text
     }
   } finally {
     chkszTesting.value = false
