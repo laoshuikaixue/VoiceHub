@@ -59,25 +59,28 @@ export const useLyricManager = () => {
 
   /**
    * 推断歌词实际来源：
-   * ttml → AMLL DB；逐字 QRC → QQ；其余按抓取阶段映射
+   * ttml → AMLL DB；逐字 QRC → QQ；其余按抓取阶段与平台映射
    */
   const inferLyricSource = (
     format: LrcFormat | 'ttml' | 'qrc',
     stage: string,
     track: any
   ): string => {
+    const platform = track?.musicPlatform || 'netease'
     if (format === 'ttml') return 'amll'
     if (format === 'qrc') return 'qm'
-    if (stage === '最终') {
-      // 最终结果无阶段标记，按平台保守推断
-      const platform = track?.musicPlatform || 'netease'
-      return platform === 'tencent' ? 'qm' : 'official'
+    if (stage === 'upgrade') {
+      // 跨平台升级：数据来自对侧平台
+      return platform === 'netease' ? 'qm' : 'official'
     }
-    if (stage === 'upgrade') return 'upgrade'
     if (stage === 'meting') return 'meting'
     if (stage === 'amll') return 'amll'
-    // official / qm 阶段
-    return stage === 'qm' ? 'qm' : 'official'
+    if (stage === 'qm') {
+      // netease 平台的 qm 阶段走 vkeys 第三方接口
+      return platform === 'netease' ? 'vkeys' : 'qm'
+    }
+    // official 阶段 / 最终结果按平台保守推断
+    return platform === 'tencent' ? 'qm' : 'official'
   }
 
   const applyLyricData = (

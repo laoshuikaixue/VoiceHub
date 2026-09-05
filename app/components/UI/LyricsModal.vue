@@ -136,7 +136,7 @@
 
                     <!-- 歌词来源标识 -->
                     <div
-                      v-if="currentSong?.musicPlatform"
+                      v-if="lyricSourceOptions.length > 0"
                       class="mobile-quality-badge lyric-source-badge"
                       @click.stop="showLyricSourceMenu = !showLyricSourceMenu"
                     >
@@ -541,24 +541,38 @@ const selectQuality = async (qualityValue) => {
 
 const lyricPriority = lyricSettings.lyricPriority
 
-// 菜单选项：歌词来源优先级
-const lyricSourceOptions = computed(() => [
-  { value: 'auto', label: locale.value.lyricSourceAuto },
-  { value: 'qm', label: locale.value.lyricSourceQm },
-  { value: 'official', label: locale.value.lyricSourceOfficial },
-  { value: 'ttml', label: locale.value.lyricSourceTtml }
-])
+// 菜单选项：按当前歌曲平台只展示真实可用的来源
+// netease → NCM 官方 / VK 第三方 / AMLL；tencent → QM / AMLL；其他平台无可选来源
+const lyricSourceOptions = computed(() => {
+  const platform = currentSong.value?.musicPlatform
+  if (platform === 'netease') {
+    return [
+      { value: 'auto', label: locale.value.lyricSourceAuto },
+      { value: 'official', label: 'NCM' },
+      { value: 'qm', label: 'VK' },
+      { value: 'ttml', label: 'AMLL' }
+    ]
+  }
+  if (platform === 'tencent') {
+    return [
+      { value: 'auto', label: locale.value.lyricSourceAuto },
+      { value: 'qm', label: 'QM' },
+      { value: 'ttml', label: 'AMLL' }
+    ]
+  }
+  return []
+})
 
 // 徽章显示当前歌词实际命中的来源与格式，便于定位问题源
 const currentLyricSourceLabel = computed(() => {
   const source = lyricManager.lyricSource.value
   if (!source) return locale.value.lyricSource
   const sourceMap = {
-    official: locale.value.lyricSourceActualOfficial,
-    qm: locale.value.lyricSourceActualQm,
-    amll: locale.value.lyricSourceActualAmll,
-    upgrade: locale.value.lyricSourceActualUpgrade,
-    meting: locale.value.lyricSourceActualMeting
+    official: 'NCM',
+    qm: 'QM',
+    vkeys: 'VK',
+    amll: 'AMLL',
+    meting: 'MK'
   }
   const formatMap = {
     ttml: 'TTML',
