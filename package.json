@@ -106,11 +106,6 @@
     "node": ">=22.11.0",
     "pnpm": ">=10.0.0"
   },
-  "pnpm": {
-    "overrides": {
-      "h3": "1.15.11"
-    }
-  },
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/kit": "4.5.0",
