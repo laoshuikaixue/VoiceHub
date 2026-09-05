@@ -1,4 +1,4 @@
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 
 // ChKSz 音源（api.chksz.com）：用户自配 apikey，前端直连（接口返回 Access-Control-Allow-Origin: *）
 // 仅支持 netease / tencent 平台，接口免费配额有限（约 400 次 + 每分钟 20 次），需缓存与限流
@@ -44,15 +44,15 @@ const readStoredKey = (): string => {
   }
 }
 
-let globalChkszState: any = null
+let globalChkszKey: any = null
 
 export function useChkszSource() {
-  if (!globalChkszState) {
-    globalChkszState = useState<string>('chksz-api-key', () => readStoredKey())
+  if (!globalChkszKey) {
+    globalChkszKey = ref(readStoredKey())
 
     if (import.meta.client) {
       watch(
-        globalChkszState,
+        globalChkszKey,
         (newValue) => {
           try {
             if (newValue && newValue.trim()) {
@@ -69,7 +69,7 @@ export function useChkszSource() {
     }
   }
 
-  const chkszApiKey = globalChkszState
+  const chkszApiKey = globalChkszKey
 
   const hasChkszKey = () => {
     const key = chkszApiKey.value
