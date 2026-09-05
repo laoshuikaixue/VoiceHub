@@ -4,7 +4,6 @@ import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
-  canSendSystemNotification,
   NOTIFICATION_SOURCES,
   serializeNotificationSender
 } from '~~/server/utils/important-notification-policy'
@@ -12,24 +11,10 @@ import {
   resolveNotificationHistoryFilters,
   resolveNotificationHistoryPagination
 } from '~~/server/utils/notification-history-policy'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createApiError(
-      401,
-      SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED,
-      '请先登录后查看通知历史'
-    )
-  }
-
-  if (!canSendSystemNotification(user.role)) {
-    throw createApiError(
-      403,
-      SERVER_ERROR_CODES.NOTIFICATION_ADMIN_REQUIRED,
-      '只有管理员可以查看通知历史'
-    )
-  }
+  await policies.canSendSystemNotification(event)
 
   const query = getQuery(event)
   const filters = resolveNotificationHistoryFilters({

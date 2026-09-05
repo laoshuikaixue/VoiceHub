@@ -26,16 +26,11 @@ import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以恢复备份'
-    })
-  }
+  await requireSuperAdmin(event)
 
   const body = await readBody(event)
   const {
@@ -47,11 +42,9 @@ export default defineEventHandler(async (event) => {
     hasSuperAdminInBackup = false
   } = body
 
-  if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '仅超级管理员可以覆盖超级管理员账号数据'
-    })
+  if (overwriteSuperAdmin) {
+    // overwriteSuperAdmin 选项本身要求 SUPER_ADMIN 权限；需 SUPER_ADMIN 才能开启
+    await requireSuperAdmin(event)
   }
 
   if (!tableName || !records || !Array.isArray(records)) {

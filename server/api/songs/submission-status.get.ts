@@ -6,6 +6,7 @@ import { getSubmissionCount, isCardCodeLimitBypassActive } from '~~/server/utils
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { isSongAdminRole } from '~~/server/utils/rbac/guards'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
     const systemSettingsData = await getSystemSettingsCached()
 
     // 超级管理员、管理员、歌曲管理员不受投稿限制
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    const isAdmin = isSongAdminRole(user.role)
 
     // 基础返回结构
     const status: any = {

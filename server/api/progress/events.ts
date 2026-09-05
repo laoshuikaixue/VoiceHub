@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getCookie, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
+import { isSongAdminRole } from '~~/server/utils/rbac/guards'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -93,7 +94,7 @@ export default defineEventHandler(async (event) => {
       select: { id: true, role: true }
     })
 
-    if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!user || !isSongAdminRole(user.role)) {
       throw createError({
         statusCode: 403,
         message: '需要管理员权限'

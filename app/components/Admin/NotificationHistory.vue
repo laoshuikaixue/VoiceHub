@@ -614,7 +614,7 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   AlertCircle,
@@ -714,6 +714,27 @@ const hasActiveFilters = computed(
     Boolean(filters.value.sender)
 )
 
+/**
+ * 从 API 响应里解包出业务数据。服务端 handler 当前直接返回
+ * `{ notifications, senders, pagination }`，但 $fetch 链路若被任何
+ * 中间件或插件二次封装为 `{ data, ... }` 或 `{ success, data }`，
+ * 直接读 `response.notifications` 会得到 undefined → 列表永远空。
+ * 这里做一层向后兼容的解包，避免单点失误把整张表挡掉。
+ */
+const unwrapResponse = (raw: unknown): Record<string, unknown> => {
+  if (!raw || typeof raw !== 'object') return {}
+  const candidate = raw as Record<string, unknown>
+  if (
+    'data' in candidate &&
+    candidate.data &&
+    typeof candidate.data === 'object' &&
+    !Array.isArray(candidate.data)
+  ) {
+    return candidate.data as Record<string, unknown>
+  }
+  return candidate
+}
+
 const loadHistory = async () => {
   const activeRequest = ++requestVersion
   loading.value = true
@@ -734,13 +755,14 @@ const loadHistory = async () => {
 
     if (activeRequest !== requestVersion) return
 
-    notifications.value = response.notifications || []
-    senders.value = response.senders || []
+    const payload = unwrapResponse(response)
+    notifications.value = Array.isArray(payload.notifications) ? payload.notifications : []
+    senders.value = Array.isArray(payload.senders) ? payload.senders : []
     pagination.value = {
-      page: Number(response.pagination?.page || 1),
-      limit: Number(response.pagination?.limit || 20),
-      total: Number(response.pagination?.total || 0),
-      totalPages: Math.max(1, Number(response.pagination?.totalPages || 1))
+      page: Number(payload.pagination?.page || 1),
+      limit: Number(payload.pagination?.limit || 20),
+      total: Number(payload.pagination?.total || 0),
+      totalPages: Math.max(1, Number(payload.pagination?.totalPages || 1))
     }
   } catch (fetchError) {
     if (activeRequest !== requestVersion) return
@@ -802,17 +824,18 @@ const loadDetails = async () => {
 
     if (activeRequest !== detailRequestVersion) return
 
+    const payload = unwrapResponse(response)
     selectedBatch.value = {
       ...selectedBatch.value,
-      ...(response.notification || {})
+      ...(payload.notification || {})
     }
-    recipients.value = response.recipients || []
-    detailStats.value = response.stats || { total: 0, read: 0, unread: 0 }
+    recipients.value = Array.isArray(payload.recipients) ? payload.recipients : []
+    detailStats.value = payload.stats || { total: 0, read: 0, unread: 0 }
     detailPagination.value = {
-      page: Number(response.pagination?.page || 1),
-      limit: Number(response.pagination?.limit || 20),
-      total: Number(response.pagination?.total || 0),
-      totalPages: Math.max(1, Number(response.pagination?.totalPages || 1))
+      page: Number(payload.pagination?.page || 1),
+      limit: Number(payload.pagination?.limit || 20),
+      total: Number(payload.pagination?.total || 0),
+      totalPages: Math.max(1, Number(payload.pagination?.totalPages || 1))
     }
   } catch (fetchError) {
     if (activeRequest !== detailRequestVersion) return

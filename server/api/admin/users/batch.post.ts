@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { policies, requirePermission, PERMISSIONS } from '~~/server/utils/rbac'
 
 interface UserData {
   name: string
@@ -26,13 +27,7 @@ const normalizeOptionalText = (value: unknown) => {
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  await policies.canManageUsers(event)
 
   const body = await readBody(event)
 
@@ -158,36 +153,38 @@ export default defineEventHandler(async (event) => {
     )
 
     // 5. 准备批量插入的数据
-    const insertValues = usersToInsertData.map((userData, idx) => {
-      // 角色权限控制
-      let validRole = 'USER' // 默认角色
-      if (userData.role) {
-        const rolePermissions: Record<string, string[]> = {
-          SUPER_ADMIN: ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'],
-          ADMIN: ['USER', 'SONG_ADMIN']
+    const insertValues = await Promise.all(
+      usersToInsertData.map(async (userData, idx) => {
+        // 角色权限控制
+        let validRole = 'USER' // 默认角色
+        if (userData.role) {
+          const allowedRoles = (
+            await requirePermission(event, PERMISSIONS.ROLE_MANAGE)
+              .then(() => ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'])
+              .catch(() => ['USER', 'SONG_ADMIN'])
+          ) as string[]
+          if (allowedRoles.includes(userData.role)) {
+            validRole = userData.role
+          }
         }
-        const allowedRoles = rolePermissions[user.role]
-        if (allowedRoles?.includes(userData.role)) {
-          validRole = userData.role
+
+        // 状态验证
+        let validStatus = 'active'
+        if (userData.status && ['active', 'withdrawn', 'graduate'].includes(userData.status)) {
+          validStatus = userData.status
         }
-      }
 
-      // 状态验证
-      let validStatus = 'active'
-      if (userData.status && ['active', 'withdrawn', 'graduate'].includes(userData.status)) {
-        validStatus = userData.status
-      }
-
-      return {
-        name: userData.name,
-        username: userData.username,
-        password: hashedPasswords[idx]!,
-        role: validRole,
-        status: validStatus as 'active' | 'withdrawn' | 'graduate',
-        grade: userData.grade,
-        class: userData.class
-      }
-    })
+        return {
+          name: userData.name,
+          username: userData.username,
+          password: hashedPasswords[idx]!,
+          role: validRole,
+          status: validStatus as 'active' | 'withdrawn' | 'graduate',
+          grade: userData.grade,
+          class: userData.class
+        }
+      })
+    )
 
     // 6. 执行批量插入
     await db.insert(users).values(insertValues)

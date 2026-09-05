@@ -5,7 +5,6 @@ import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
-  canSendSystemNotification,
   createNotificationSenderSnapshot,
   NOTIFICATION_SOURCES,
   NOTIFICATION_CONTENT_MAX_LENGTH,
@@ -14,20 +13,10 @@ import {
   serializeNotificationSender
 } from '~~/server/utils/important-notification-policy'
 import { resolveNotificationBatchReference } from '~~/server/utils/notification-history-policy'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '请先登录后修改通知')
-  }
-
-  if (!canSendSystemNotification(user.role)) {
-    throw createApiError(
-      403,
-      SERVER_ERROR_CODES.NOTIFICATION_ADMIN_REQUIRED,
-      '只有管理员可以修改通知'
-    )
-  }
+  const user = await policies.canSendSystemNotification(event)
 
   const batchReference = resolveNotificationBatchReference(getRouterParam(event, 'batchId'))
   if (!batchReference) {

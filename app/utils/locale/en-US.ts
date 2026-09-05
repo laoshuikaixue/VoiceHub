@@ -1832,7 +1832,8 @@ export const admin = {
       musicSource: 'Music Source',
       siteConfig: 'Site Config',
       database: 'Database',
-      password: 'Change Password'
+      password: 'Change Password',
+      rbac: 'Roles & Permissions'
     },
     roles: {
       USER: 'User',
@@ -4155,7 +4156,130 @@ export const admin = {
     logsFailed: 'Failed to load API usage logs',
     copied: 'Copied to clipboard',
     copyFailed: 'Copy failed',
-    expiresAtText: (date: string) => `Expires: ${date}`
+    expiresAtText: (date: string) => `Expires: ${date}`,
+    advancedOptions: 'Advanced Options',
+    ownerType: 'Owner Type',
+    ownerSystem: 'System',
+    ownerUser: 'User',
+    ownerIntegration: 'Integration',
+    rateLimitPerMinute: 'Rate Limit per Minute',
+    unlimited: 'Unlimited',
+    quotaDaily: 'Daily Quota',
+    quotaMonthly: 'Monthly Quota',
+    ipWhitelist: 'IP Whitelist',
+    ipWhitelistPlaceholder: 'Leave empty for no limit\n192.168.1.0/24',
+    webhookUrl: 'Webhook URL',
+    webhookUrlPlaceholder: 'https://example.com/webhook',
+    actions: {
+      view: 'View',
+      edit: 'Edit',
+      delete: 'Delete',
+      refresh: 'Refresh',
+      close: 'Close',
+      copy: 'Copy'
+    }
+  },
+  rbac: {
+    title: 'Roles & Permissions Management',
+    menu: 'Roles & Permissions',
+    tabs: {
+      permissions: 'Permission Definitions',
+      roles: 'Role Management',
+      grants: 'User Grants'
+    },
+    actions: {
+      applyTemplate: 'Apply Template',
+      createRole: 'Create Role',
+      deleteRole: 'Delete Role',
+      saveMatrix: 'Save Matrix',
+      addGrant: 'Add Grant',
+      removeGrant: 'Remove Grant',
+      refresh: 'Refresh'
+    },
+    template: {
+      clear: 'Clear Template',
+      user: 'User Template',
+      songAdmin: 'Song Admin Template',
+      admin: 'Admin Template',
+      viewer: 'Viewer Template'
+    },
+    confirm: {
+      applyTemplate: 'Apply template "{template}" to "{role}"? This will overwrite {count} existing permissions.',
+      deleteRole: 'Delete role "{role}"?'
+    },
+    success: {
+      applied: 'Template "{template}" applied to "{role}" ({count} permissions)',
+      roleCreated: 'Role created',
+      roleDeleted: 'Role deleted',
+      matrixSaved: 'Permission matrix saved',
+      grantAdded: 'Grant added',
+      grantRemoved: 'Grant removed'
+    },
+    error: {
+      applyTemplateFailed: 'Failed to apply template',
+      roleCreateFailed: 'Failed to create role',
+      roleDeleteFailed: 'Failed to delete role',
+      matrixSaveFailed: 'Failed to save matrix'
+    }
+  },
+  rbacManager: {
+    title: 'Roles & Permissions',
+    desc: 'Manage roles, permissions, and user grants',
+    createGrant: 'New Grant',
+    loading: 'Loading...',
+    saving: 'Saving...',
+    saveChanges: 'Save Changes',
+    tabs: {
+      permissions: 'Permissions',
+      roles: 'Roles',
+      grants: 'User Grants'
+    },
+    onlySuperAdmin: 'Super Admin Only',
+    onlyAdminOrAbove: 'Only admin and above can manage user grants',
+    noGrants: 'No User Grants',
+    confirmRevoke: 'Are you sure to revoke this permission?',
+    revoke: 'Revoke',
+    grantAssign: 'Assign',
+    grantRevoke: 'Revoke',
+    expiresAt: 'Expiration',
+    permissionKey: 'Permission Key',
+    permissionKeyPlaceholder: 'e.g. song.read',
+    grantType: 'Type',
+    reason: 'Reason',
+    reasonPlaceholder: 'Optional: reason for revocation',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    keep: 'Keep',
+    add: 'Add',
+    noPermission: 'No permissions',
+    saveAll: 'Save All',
+    userId: 'User ID',
+    userIdPlaceholder: 'Enter user ID',
+    // W7a role matrix additions (B search / C template / G user perspective / confirm dialogs)
+    searchPlaceholder: 'Search permission key or description...',
+    clearSearch: 'Clear search',
+    roleTemplates: 'Role Templates',
+    noMatchingPermissions: 'No matching permissions',
+    userPerspective: 'User Perspective',
+    currentUser: 'Current User',
+    searchUserPlaceholder: 'Search username or name...',
+    noMatchingUsers: 'No matching users',
+    grants: 'entries',
+    alreadyGranted: 'Already granted',
+    noUserGrantsYet: 'User has no grants',
+    noGrantsForUser: 'User has no grant records',
+    confirmRevokeTitle: 'Confirm Revoke',
+    confirmRevokeMessage: 'Are you sure to revoke the "{1}" permission from {0}?',
+    applyTemplateTitle: 'Apply Role Template',
+    applyTemplateMessage: 'Will overwrite {1} permissions for {0}, confirm?',
+    apply: 'Apply'
+  },
+  forbidden: {
+    title: 'Access Denied',
+    message: 'You do not have permission to access this page',
+    backDashboard: 'Back to Dashboard',
+    backHome: 'Back to Home',
+    contactAdmin: 'Contact Admin'
   }
 } as const
 

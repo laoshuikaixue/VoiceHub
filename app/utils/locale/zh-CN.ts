@@ -1841,7 +1841,8 @@ export const admin = {
       musicSource: '音源控制',
       siteConfig: '站点配置',
       database: '数据库操作',
-      password: '修改密码'
+      password: '修改密码',
+      rbac: '角色权限'
     },
     roles: {
       USER: '普通用户',
@@ -4164,7 +4165,130 @@ export const admin = {
     logsFailed: '获取API使用日志失败',
     copied: '已复制到剪贴板',
     copyFailed: '复制失败',
-    expiresAtText: (date: string) => `到期: ${date}`
+    expiresAtText: (date: string) => `到期: ${date}`,
+    advancedOptions: '高级选项',
+    ownerType: '所有者类型',
+    ownerSystem: '系统',
+    ownerUser: '用户',
+    ownerIntegration: '集成',
+    rateLimitPerMinute: '每分钟速率限制',
+    unlimited: '不限',
+    quotaDaily: '日配额',
+    quotaMonthly: '月配额',
+    ipWhitelist: 'IP 白名单',
+    ipWhitelistPlaceholder: '留空表示不限制\n192.168.1.0/24',
+    webhookUrl: 'Webhook URL',
+    webhookUrlPlaceholder: 'https://example.com/webhook',
+    actions: {
+      view: '查看',
+      edit: '编辑',
+      delete: '删除',
+      refresh: '刷新',
+      close: '关闭',
+      copy: '复制'
+    }
+  },
+  rbac: {
+    title: '角色与权限管理',
+    menu: '角色权限',
+    tabs: {
+      permissions: '权限定义',
+      roles: '角色管理',
+      grants: '个人加授'
+    },
+    actions: {
+      applyTemplate: '应用模板',
+      createRole: '创建角色',
+      deleteRole: '删除角色',
+      saveMatrix: '保存权限矩阵',
+      addGrant: '新增个人加授',
+      removeGrant: '移除加授',
+      refresh: '刷新'
+    },
+    template: {
+      clear: '清空模板',
+      user: '普通用户模板',
+      songAdmin: '歌曲管理员模板',
+      admin: '管理员模板',
+      viewer: '只读访客模板'
+    },
+    confirm: {
+      applyTemplate: '确定要应用模板「{template}」到「{role}」吗？这将覆盖该角色现有的 {count} 个权限。',
+      deleteRole: '确定要删除角色「{role}」吗？'
+    },
+    success: {
+      applied: '已应用模板「{template}」到「{role}」({count} 个权限)',
+      roleCreated: '角色已创建',
+      roleDeleted: '角色已删除',
+      matrixSaved: '权限矩阵已保存',
+      grantAdded: '加授已添加',
+      grantRemoved: '加授已移除'
+    },
+    error: {
+      applyTemplateFailed: '应用模板失败',
+      roleCreateFailed: '创建角色失败',
+      roleDeleteFailed: '删除角色失败',
+      matrixSaveFailed: '保存权限矩阵失败'
+    }
+  },
+  rbacManager: {
+    title: '角色权限',
+    desc: '管理角色权限与个人加授',
+    createGrant: '新增加授',
+    loading: '加载中...',
+    saving: '保存中...',
+    saveChanges: '保存修改',
+    tabs: {
+      permissions: '权限',
+      roles: '角色',
+      grants: '个人加授'
+    },
+    onlySuperAdmin: '仅超级管理员',
+    onlyAdminOrAbove: '仅管理员及以上可管理个人加授',
+    noGrants: '暂无个人加授',
+    confirmRevoke: '确定要撤销此权限吗?',
+    revoke: '撤销',
+    grantAssign: '授予',
+    grantRevoke: '撤销',
+    expiresAt: '过期时间',
+    permissionKey: '权限 Key',
+    permissionKeyPlaceholder: '如 song.read',
+    grantType: '类型',
+    reason: '原因',
+    reasonPlaceholder: '可选:撤销原因',
+    cancel: '取消',
+    confirm: '确认',
+    keep: '保持(不变)',
+    add: '添加',
+    noPermission: '暂无权限',
+    saveAll: '保存全部',
+    userId: '用户 ID',
+    userIdPlaceholder: '输入用户 ID',
+    // W7a 角色矩阵新增(B 搜索筛选 / C 模板 / G 用户视角 / 二次确认弹窗)
+    searchPlaceholder: '搜索权限 key 或描述...',
+    clearSearch: '清空搜索',
+    roleTemplates: '角色模板',
+    noMatchingPermissions: '没有匹配的权限',
+    userPerspective: '用户视角',
+    currentUser: '当前用户',
+    searchUserPlaceholder: '搜索用户名或姓名...',
+    noMatchingUsers: '未找到匹配的用户',
+    grants: '条',
+    alreadyGranted: '已加授的权限',
+    noUserGrantsYet: '该用户暂无加授',
+    noGrantsForUser: '该用户暂无加授记录',
+    confirmRevokeTitle: '确认撤销',
+    confirmRevokeMessage: '确定要撤销 {0} 的 {1} 权限吗?',
+    applyTemplateTitle: '应用角色模板',
+    applyTemplateMessage: '将覆盖 {0} 的 {1} 个权限,确定?',
+    apply: '应用'
+  },
+  forbidden: {
+    title: '无权访问',
+    message: '您没有权限访问此页面',
+    backDashboard: '返回控制台',
+    backHome: '返回首页',
+    contactAdmin: '联系管理员'
   }
 } as const
 

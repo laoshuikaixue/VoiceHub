@@ -11,6 +11,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { policies, requirePermission, requireSuperAdmin, PERMISSIONS } from '~~/server/utils/rbac'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -28,13 +29,7 @@ const roleNames: Record<string, string> = {
 export default defineEventHandler(async (event) => {
   try {
     // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    const user = await policies.canManageUsers(event)
 
     const userId = getRouterParam(event, 'id')
     const userIdNum = Number.parseInt(String(userId), 10)
@@ -89,11 +84,15 @@ export default defineEventHandler(async (event) => {
 
     // 3. 越级修改保护
     // 如果目标用户是 SUPER_ADMIN，操作者必须是 SUPER_ADMIN
-    if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足：普通管理员无法修改超级管理员信息'
-      })
+    if (targetUser.role === 'SUPER_ADMIN') {
+      try {
+        await requireSuperAdmin(event)
+      } catch {
+        throw createError({
+          statusCode: 403,
+          message: '权限不足：普通管理员无法修改超级管理员信息'
+        })
+      }
     }
 
     // 检查用户名是否被其他用户使用
@@ -124,26 +123,23 @@ export default defineEventHandler(async (event) => {
     }
 
     if (role && role !== targetUser.role) {
-      // 超级管理员可以设置任何角色
-      if (user.role === 'SUPER_ADMIN') {
+      // 越级保护：只有拥有 ROLE_MANAGE 权限（实际等同 SUPER_ADMIN）可设置任意角色
+      let canAssignAnyRole = false
+      try {
+        await requirePermission(event, PERMISSIONS.ROLE_MANAGE)
+        canAssignAnyRole = true
+      } catch {
+        canAssignAnyRole = false
+      }
+      if (canAssignAnyRole) {
         validRole = role
-      }
-      // 管理员只能设置管理员以下的角色（USER, SONG_ADMIN）
-      else if (user.role === 'ADMIN') {
-        if (['USER', 'SONG_ADMIN'].includes(role)) {
-          validRole = role
-        } else {
-          throw createError({
-            statusCode: 403,
-            message: '管理员只能设置用户和歌曲管理员角色'
-          })
-        }
-      }
-      // 其他角色不能设置角色
-      else {
+      } else if (['USER', 'SONG_ADMIN'].includes(role)) {
+        // 普通管理员只能设置管理员以下的角色
+        validRole = role
+      } else {
         throw createError({
           statusCode: 403,
-          message: '没有权限设置用户角色'
+          message: '管理员只能设置用户和歌曲管理员角色'
         })
       }
     }

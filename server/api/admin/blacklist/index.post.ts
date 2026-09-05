@@ -7,16 +7,11 @@ import {
   BLACKLIST_LANGUAGE_VALUES,
   BLACKLIST_GENRE_VALUES
 } from '~~/server/config/constants'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  const user = await policies.canManageBlacklist(event)
 
   const body = await readBody(event)
   const { type, value, reason } = body

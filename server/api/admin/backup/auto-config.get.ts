@@ -2,12 +2,10 @@ import { defineEventHandler } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAutoBackupConfig, isAutoBackupEnabled } from '~~/server/services/autoBackupService'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以查看自动备份配置')
-  }
+  await requireSuperAdmin(event)
 
   const enabled = await isAutoBackupEnabled()
   const config = await getAutoBackupConfig()

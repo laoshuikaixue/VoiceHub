@@ -190,6 +190,13 @@
             >
               <LazyAdminApiKeyManager />
             </div>
+            <!-- 角色权限管理（SUPER_ADMIN） -->
+            <div
+              v-if="activeTab === 'rbac' && permissions.canAccessPage('rbac')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminRbacManager />
+            </div>
             <!-- 卡密管理 -->
             <div
               v-if="activeTab === 'card-codes' && permissions.canAccessPage('card-codes')"

@@ -3,17 +3,12 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { getStatusText } from '~~/server/utils/user'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
     // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    await policies.canReadUsers(event)
 
     const query = getQuery(event)
     const { page = '1', limit = '50', search, status, operatorId } = query

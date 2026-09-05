@@ -12,6 +12,9 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { isSuperAdmin } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -89,22 +92,7 @@ const validatePlatformArray = (fieldName: string, value: unknown, requireUnique 
 }
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能更新系统设置'
-    })
-  }
+  const user = await requirePermission(event, PERMISSIONS.SYSTEM_SETTINGS_WRITE)
 
   try {
     const body = await readBody(event)
@@ -117,7 +105,7 @@ export default defineEventHandler(async (event) => {
     let settings = settingsResult[0]
 
     if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
-      if (user.role !== 'SUPER_ADMIN') {
+      if (!isSuperAdmin(user)) {
         // 主题设置仅超级管理员可修改：普通管理员请求剥离主题字段，其余配置照常处理
         delete body.defaultTheme
         delete body.enabledThemes
