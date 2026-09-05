@@ -503,7 +503,7 @@
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
             <h3 class="text-xl font-black text-text-primary">
-              {{ rejectBatchIds.length > 0 ? locale.rejectDialog.batchTitle : locale.rejectDialog.title }}
+              {{ isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title }}
             </h3>
             <button
               class="text-text-tertiary hover:text-text-secondary transition-colors"
@@ -520,8 +520,8 @@
               >
                 <Music :size="18" />
               </div>
-              <div v-if="rejectBatchIds.length > 0">
-                <h4 class="font-bold text-text-primary text-sm">{{ locale.rejectDialog.batchInfo(rejectBatchIds.length) }}</h4>
+              <div v-if="isBatchReject">
+                <h4 class="font-bold text-text-primary text-sm">{{ locale.rejectDialog.batchInfo(batchRejectIds.length) }}</h4>
                 <p class="text-xs text-text-tertiary">{{ locale.rejectDialog.batchHint }}</p>
               </div>
               <div v-else>
@@ -550,7 +550,7 @@
               <div>
                 <span
                   class="text-xs font-bold text-text-secondary group-hover:text-error transition-colors"
-                  >{{ rejectBatchIds.length > 0 ? locale.rejectDialog.batchAddToBlacklist : locale.rejectDialog.addToBlacklist }}</span
+                  >{{ isBatchReject ? locale.rejectDialog.batchAddToBlacklist : locale.rejectDialog.addToBlacklist }}</span
                 >
                 <p class="text-[10px] text-text-disabled font-medium">
                   {{ locale.rejectDialog.blacklistHint }}
@@ -1275,7 +1275,8 @@ const rejectLoading = ref(false)
 const rejectReason = ref('')
 const addToBlacklist = ref(false)
 // 批量驳回模式下的歌曲 ID 列表，非空数组表示批量模式
-const rejectBatchIds = ref([])
+const batchRejectIds = ref([])
+const isBatchReject = computed(() => batchRejectIds.value.length > 0)
 const rejectSongInfo = ref({
   id: null,
   title: '',
@@ -1834,7 +1835,7 @@ const rejectSong = (songId) => {
   const song = songs.value.find((s) => s.id === songId)
   if (!song) return
 
-  rejectBatchIds.value = []
+  batchRejectIds.value = []
   rejectSongInfo.value = {
     id: song.id,
     title: song.title || '',
@@ -1851,7 +1852,7 @@ const rejectSong = (songId) => {
 const batchReject = () => {
   if (selectedSongs.value.length === 0) return
 
-  rejectBatchIds.value = [...selectedSongs.value]
+  batchRejectIds.value = [...selectedSongs.value]
   rejectSongInfo.value = {
     id: null,
     title: '',
@@ -1871,12 +1872,12 @@ const confirmReject = async () => {
     return
   }
 
-  const isBatch = rejectBatchIds.value.length > 0
-  const songIds = isBatch ? [...rejectBatchIds.value] : []
+  const isBatch = isBatchReject.value
 
   rejectLoading.value = true
   try {
     if (isBatch) {
+      const songIds = [...batchRejectIds.value]
       const result = await $fetch('/api/admin/songs/batch-reject', {
         method: 'POST',
         body: {
@@ -1888,6 +1889,7 @@ const confirmReject = async () => {
 
       await refreshSongs(true)
       showRejectDialog.value = false
+      batchRejectIds.value = []
 
       const rejected = result?.data?.rejected ?? songIds.length
       const missing = result?.data?.missing ?? 0
@@ -1930,7 +1932,7 @@ const cancelReject = () => {
   showRejectDialog.value = false
   rejectReason.value = ''
   addToBlacklist.value = false
-  rejectBatchIds.value = []
+  batchRejectIds.value = []
   rejectSongInfo.value = {
     id: null,
     title: '',
