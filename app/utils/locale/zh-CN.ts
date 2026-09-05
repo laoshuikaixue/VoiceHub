@@ -2028,7 +2028,8 @@ export const admin = {
       markPlayed: '标记为已播放',
       markUnplayed: '标记为未播放',
       reject: '驳回歌曲',
-      deleteSong: '删除歌曲'
+      deleteSong: '删除歌曲',
+      batchReject: '驳回'
     },
     filters: {
       semester: '学期',
@@ -2075,10 +2076,14 @@ export const admin = {
     },
     rejectDialog: {
       title: '驳回歌曲',
+      batchTitle: '批量驳回歌曲',
       requester: (name: string) => `投稿人: ${name}`,
+      batchInfo: (count: number) => `将驳回选中的 ${count} 首歌曲`,
+      batchHint: '驳回后将通过系统通知发送给各投稿人',
       reason: '驳回原因',
       reasonPlaceholder: '请输入驳回原因，将通过系统通知发送给投稿人...',
       addToBlacklist: '同时将此歌曲加入黑名单',
+      batchAddToBlacklist: '同时将所选歌曲加入黑名单',
       blacklistHint: '加入黑名单后，该歌曲将无法再次被投稿',
       processing: '处理中...',
       confirm: '确认驳回'
@@ -2257,6 +2262,7 @@ export const admin = {
       remarkRejected: '备注留言已拒绝',
       deleteSuccess: '歌曲删除成功',
       batchDeleteSuccess: '批量删除成功',
+      batchRejectSuccess: (rejected: number, missing: number) => missing > 0 ? `批量驳回完成，成功 ${rejected} 首，${missing} 首未找到` : `批量驳回成功，共 ${rejected} 首，已通知投稿人`,
       rejectSuccess: '歌曲驳回成功，已通知投稿人',
       validatingUrl: '正在验证URL，请稍候...',
       validatingCoverUrl: '正在验证封面URL，请稍候...',
@@ -2270,6 +2276,7 @@ export const admin = {
       markFailed: (message: string) => `标记失败: ${message}`,
       deleteFailed: (message: string) => `删除失败: ${message}`,
       batchDeleteFailed: (message: string) => `批量删除失败: ${message}`,
+      batchRejectFailed: (message: string) => `批量驳回失败: ${message}`,
       rejectReasonRequired: '请填写驳回原因',
       rejectFailed: (message: string) => `驳回失败: ${message}`,
       remarkUpdateFailed: '备注留言审核状态更新失败',
