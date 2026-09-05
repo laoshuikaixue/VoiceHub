@@ -112,6 +112,16 @@ test('输出按时间升序且时间标签从正文剔除', () => {
   assert.equal(first.words[0].word, '作词 : 占位')
 })
 
+test('1 位分钟写法可解析', () => {
+  const lines = parseLrc('[1:00.7]一位分钟\n[1:02]无小数\n[12:34.5]两位分钟')
+  assert.equal(lines.length, 3)
+  assert.equal(lines[0].startTime, 60700)
+  assert.equal(lines[0].words[0].word, '一位分钟')
+  assert.equal(lines[1].startTime, 62000)
+  assert.equal(lines[2].startTime, 754500)
+  assert.equal(lines[2].words[0].word, '两位分钟')
+})
+
 test('空内容返回空数组', () => {
   assert.deepEqual(parseLrc(''), [])
 })

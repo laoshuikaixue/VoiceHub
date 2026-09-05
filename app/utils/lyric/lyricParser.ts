@@ -19,12 +19,12 @@ export enum LrcFormat {
 /** LyricWord 类型 */
 type LyricWord = { word: string; startTime: number; endTime: number; romanWord: string }
 
-// 预编译正则表达式
+// 预编译正则表达式（时间戳分钟位 1-2 位，需与 parseLrc 保持一致）
 const META_TAG_REGEX = /^\[[a-z]+:/i
-const TIME_TAG_REGEX = /\[(\d{2}):(\d{2})\.(\d{1,})\]/g
-const ENHANCED_TIME_TAG_REGEX = /<(\d{2}):(\d{2})\.(\d{1,})>/
+const TIME_TAG_REGEX = /\[(\d{1,2}):(\d{2})\.(\d{1,})\]/g
+const ENHANCED_TIME_TAG_REGEX = /<(\d{1,2}):(\d{2})\.(\d{1,})>/
 // 移除全局带状态的正则，改为在函数内使用 matchAll 或重新构建
-const LINE_TIME_REGEX = /^\[(\d{2}):(\d{2})\.(\d{1,})\]/
+const LINE_TIME_REGEX = /^\[(\d{1,2}):(\d{2})\.(\d{1,})\]/
 
 // QRC 解析相关正则 - 提前编译
 const QRC_LINE_PATTERN = /^\[(\d+),(\d+)\](.*)$/
@@ -99,7 +99,7 @@ export const detectLrcFormat = (content: string): LrcFormat => {
 export const parseWordByWordLrc = (content: string): LyricLine[] => {
   const result: LyricLine[] = []
   let prevLine: LyricLine | null = null
-  const WORD_BY_WORD_PATTERN = /\[(\d{2}):(\d{2})\.(\d{1,})\]([^[\\]]*)/g
+  const WORD_BY_WORD_PATTERN = /\[(\d{1,2}):(\d{2})\.(\d{1,})\]([^[\\]]*)/g
 
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim()
@@ -166,7 +166,7 @@ export const parseWordByWordLrc = (content: string): LyricLine[] => {
 export const parseEnhancedLrc = (content: string): LyricLine[] => {
   const result: LyricLine[] = []
   let prevLine: LyricLine | null = null
-  const ENHANCED_WORD_PATTERN = /<(\d{2}):(\d{2})\.(\d{1,})>([^<]*)/g
+  const ENHANCED_WORD_PATTERN = /<(\d{1,2}):(\d{2})\.(\d{1,})>([^<]*)/g
 
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim()
