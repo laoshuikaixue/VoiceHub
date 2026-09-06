@@ -800,9 +800,9 @@
             <label :class="labelClass">{{ locale.legalConsentDisplayMode }}</label>
             <div class="legal-mode-switch mt-2">
               <span class="legal-mode-indicator" :class="{ 'is-checkbox': formData.legalConsentDisplayMode === 'checkbox' }" />
-              <button v-for="mode in ['modal', 'checkbox']" :key="mode" type="button" :class="['legal-mode-option', { 'is-active': formData.legalConsentDisplayMode === mode }]" @click="formData.legalConsentDisplayMode = mode">{{ mode === 'modal' ? locale.legalConsentModal : locale.legalConsentCheckbox }}</button>
+              <button v-for="mode in ['modal', 'checkbox']" :key="mode" type="button" :class="['legal-mode-option', { 'is-active': formData.legalConsentDisplayMode === mode }]" @click="formData.legalConsentDisplayMode = mode"><Shield v-if="mode === 'modal'" :size="14" /><CircleCheck v-else :size="14" />{{ mode === 'modal' ? locale.legalConsentModal : locale.legalConsentCheckbox }}</button>
             </div>
-            <p class="legal-setting-hint">{{ locale.legalConsentDisplayModeHint }}</p>
+            <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
           </div>
           <div><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
         </div>
@@ -827,6 +827,7 @@ import {
   ImageIcon,
   FileText,
   Trash2,
+  CircleCheck,
   Settings2,
   Shield,
   Save,

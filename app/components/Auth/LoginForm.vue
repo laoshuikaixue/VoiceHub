@@ -349,14 +349,6 @@
         />
       </div>
 
-      <label v-if="showLoginTerms && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
-        <input v-model="loginTermsAccepted" type="checkbox">
-        <span>{{ locale.legalConsentPrefix }}</span>
-        <template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug">
-          <a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer">{{ doc.name }}</a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span>
-        </template>
-      </label>
-
       <div v-if="loginTermsBlocked && legalConsentDisplayMode === 'modal'" class="login-terms-blocked">
         <span>{{ locale.legalConsentBlocked }}</span>
         <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView }}</button>
@@ -407,6 +399,14 @@
         <span v-if="loading">{{ showRegisterMode ? locale.registering : isBindMode ? locale.binding : locale.loggingIn }}</span>
         <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
+
+      <label v-if="showLoginTerms && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
+        <input v-model="loginTermsAccepted" type="checkbox">
+        <span>{{ locale.legalConsentPrefix }}</span>
+        <template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug">
+          <a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer">{{ doc.name }}</a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span>
+        </template>
+      </label>
 
       <!-- 登录/注册模式切换 -->
       <div v-if="!isBindMode && allowRegister" class="mode-switch">

@@ -25,7 +25,7 @@ export const siteConfig = {
   siteDescription: '站点描述',
   siteDescriptionPlaceholder: '请输入站点描述',
   statisticsCode: '站点统计代码',
-  legalConsentTitle: '登录条款确认', legalConsentDesc: '控制登录页面是否要求用户先阅读并同意条款。', legalConsentDisplayMode: '展示形式', legalConsentModal: '弹窗', legalConsentCheckbox: '复选框', legalConsentUpdatedDate: '条款更新日期', legalConsentDocuments: '协议文档', legalConsentAdd: '添加文档', legalConsentDocument: '文档', legalConsentName: '文档名称', legalConsentSlug: '路由标识', legalConsentContent: 'Markdown 内容', legalConsentKeepOne: '至少保留一份协议文档', delete: '删除',
+  legalConsentTitle: '登录条款确认', legalConsentDesc: '控制登录页面是否要求用户先阅读并同意条款。', legalConsentDisplayMode: '展示形式', legalConsentModal: '弹窗', legalConsentCheckbox: '复选框', legalConsentModalHint: '弹窗会在登录页打开，用户拒绝后所有登录入口保持禁用。', legalConsentCheckboxHint: '复选框会显示在登录按钮下方，未勾选前所有登录入口禁用。', legalConsentUpdatedDate: '条款更新日期', legalConsentDocuments: '协议文档', legalConsentAdd: '添加文档', legalConsentDocument: '文档', legalConsentName: '文档名称', legalConsentSlug: '路由标识', legalConsentContent: 'Markdown 内容', legalConsentKeepOne: '至少保留一份协议文档', delete: '删除',
   legalConsentPrefix: '我已阅读并同意', legalConsentSeparator: '、', legalConsentBlocked: '未同意最新条款前，无法输入账号密码或使用快捷登录。', legalConsentDisplayModeHint: '复选框会显示在登录按钮下方，未勾选所有登录入口禁用。', legalConsentUpdatedDateHint: '日期或文档内容变化后，用户需要重新同意。', legalConsentDocumentsDesc: '文档名称可自定义，内容按 Markdown 保存。可参考：服务条款、使用政策、支持的国家和地区、服务特定条款。', legalConsentUntitled: '未命名文档', legalConsentNamePlaceholder: '例如：服务条款', legalConsentSlugPlaceholder: '例如：terms', legalConsentContentPlaceholder: '在这里填写正式 Markdown 条款内容。',
   legalConsentView: '查看条款', legalConsentModalTitle: '条款更新通知', legalConsentModalDesc: '请仔细阅读以下条款，同意后才能继续登录。', legalConsentReject: '拒绝', legalConsentAccept: '同意并继续',
   statisticsCodeEnabled: '启用站点统计代码',
@@ -4452,3 +4452,4 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_UPDATE_FAILED: '修改通知失败',
   NOTIFICATION_HISTORY_DELETE_FAILED: '删除通知失败',
 } as const
+
