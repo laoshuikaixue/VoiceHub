@@ -793,7 +793,7 @@
             <h3 class="text-sm font-black text-text-primary flex items-center gap-2"><FileText :size="16" class="text-primary" /> {{ locale.legalConsentTitle }}</h3>
             <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.legalConsentDesc }}</p>
           </div>
-          <input v-model="formData.legalConsentEnabled" type="checkbox" class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer">
+          <div class="legal-enable-control"><span :class="formData.legalConsentEnabled ? 'is-enabled' : '">{{ formData.legalConsentEnabled ? (locale.legalConsentEnabledLabel || '已启用') : (locale.legalConsentDisabledLabel || '未启用') }}</span><input v-model="formData.legalConsentEnabled" type="checkbox" class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -1353,3 +1353,9 @@ input[type='number'] {
   .legal-document-fields { grid-template-columns: 1fr; }
 }
 </style>
+
+/* 展示形式控件保持紧凑并统一图标基线 */
+.legal-mode-switch { min-height: 38px; padding: 3px; }
+.legal-mode-option { min-height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; line-height: 1; }
+.legal-mode-option svg { width: 14px; height: 14px; flex: 0 0 14px; }
+

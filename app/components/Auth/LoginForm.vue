@@ -52,8 +52,7 @@
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          <input
-            id="username"
+          <input\n            :disabled="showLoginTerms && !loginTermsAccepted"\n            id="username"
             v-model="username"
             :class="{ 'input-error': error }"
             :autocomplete="!isBindMode && !showCreateMode ? 'username webauthn' : 'username'"
@@ -151,8 +150,7 @@
             <circle cx="12" cy="16" r="1" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          <input
-            id="password"
+          <input\n            :disabled="showLoginTerms && !loginTermsAccepted"\n            id="password"
             v-model="password"
             :class="{ 'input-error': error }"
             :type="showPassword ? 'text' : 'password'"
@@ -350,7 +348,7 @@
       </div>
 
       <div v-if="loginTermsBlocked && legalConsentDisplayMode === 'modal'" class="login-terms-blocked">
-        <span>{{ locale.legalConsentBlocked }}</span>
+        <span class="blocked-icon">♢</span><div class="blocked-copy"><strong>继续登录前需要先同意最新条款。</strong><span>{{ locale.legalConsentBlocked }}</span></div>
         <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView }}</button>
       </div>
 
@@ -404,9 +402,10 @@
         <input v-model="loginTermsAccepted" type="checkbox">
         <span>{{ locale.legalConsentPrefix }}</span>
         <template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug">
-          <a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer">{{ doc.name }}</a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span>
+          <a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span>
         </template>
       </label>
+      <p v-if="showLoginTerms && legalConsentDisplayMode === 'checkbox' && !loginTermsAccepted" class="login-terms-blocked inline-terms-warning">{{ locale.legalConsentBlocked }}</p>
 
       <!-- 登录/注册模式切换 -->
       <div v-if="!isBindMode && allowRegister" class="mode-switch">
@@ -436,7 +435,7 @@
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" />
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode && (!showLoginTerms || loginTermsAccepted)" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -467,10 +466,11 @@
     <Teleport to="body">
       <div v-if="showLegalConsentModal" class="legal-consent-overlay">
         <div class="legal-consent-modal">
-          <h3>{{ locale.legalConsentModalTitle }}</h3>
+          <div class="legal-consent-heading"><span class="legal-consent-shield">⌁</span><div><h3>{{ locale.legalConsentModalTitle }}</h3><span class="legal-consent-date">{{ legalConsentUpdatedDate }}</span></div></div>
           <p>{{ locale.legalConsentModalDesc }}</p>
+          <h4 class="legal-consent-related">相关文档</h4>
           <div class="legal-consent-docs">
-            <a v-for="doc in legalConsentDocuments" :key="doc.slug" :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer">{{ doc.name }}</a>
+            <a v-for="doc in legalConsentDocuments" :key="doc.slug" :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><span>▧</span>{{ doc.name }}<span>↗</span></a>
           </div>
           <div class="legal-consent-actions">
             <button type="button" class="legal-consent-reject" @click="rejectLegalConsent">{{ locale.legalConsentReject }}</button>
@@ -1361,18 +1361,19 @@ const handleWebAuthnLogin = async () => {
   text-decoration: underline;
 }
 
-.login-terms-blocked { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--border-secondary); border-radius: 10px; background: var(--bg-secondary); color: var(--text-tertiary); font-size: 12px; }
+.login-terms-blocked { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:12px 14px; border:1px solid #19546a; border-radius:8px; background:#123746; color:#9be4df; font-size:12px; }.blocked-icon{color:#2dd4bf;font-size:20px;align-self:flex-start}.blocked-copy{display:flex;flex:1;flex-direction:column;gap:4px;line-height:1.45}.blocked-copy strong{color:#b5f3ef;font-weight:700}.blocked-copy span{color:#9be4df}.login-terms-blocked button { padding:7px 12px; border-radius:6px; background:#0d9488; color:#fff; font-weight:700; white-space:nowrap; }
 .login-terms-blocked button { color: var(--primary); font-weight: 700; white-space: nowrap; }
 .legal-consent-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
 .legal-consent-modal { width: min(600px, 100%); max-height: 90vh; overflow: auto; padding: 28px; border: 1px solid var(--border-secondary); border-radius: 18px; background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .legal-consent-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+.legal-consent-heading { display:flex; align-items:center; gap:14px; margin-bottom:12px; }.legal-consent-heading h3{margin:0}.legal-consent-shield{display:grid;place-items:center;width:50px;height:50px;border-radius:12px;background:#123b4a;color:#2dd4bf;font-size:26px}.legal-consent-date{display:inline-block;margin-top:4px;padding:4px 9px;border-radius:999px;background:var(--bg-tertiary);color:var(--text-tertiary);font-size:11px}.legal-consent-related{margin:22px 0 10px;font-size:13px}.legal-consent-docs a{display:flex;align-items:center;gap:10px}.legal-consent-docs a span:last-child{margin-left:auto;color:var(--text-tertiary)}
 .legal-consent-modal p { color: var(--text-tertiary); font-size: 13px; line-height: 1.7; }
 .legal-consent-docs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 20px 0; }
 .legal-consent-docs a { padding: 14px; border: 1px solid var(--border-secondary); border-radius: 10px; color: var(--text-primary); font-weight: 700; }
 .legal-consent-actions { display: flex; gap: 12px; }
-.legal-consent-actions button { flex: 1; padding: 12px; border-radius: 10px; font-weight: 800; }
-.legal-consent-reject { background: var(--bg-tertiary); color: var(--text-secondary); }
-.legal-consent-accept { background: var(--primary); color: white; }
+.legal-consent-actions button { flex: 1; min-height: 44px; padding: 12px; border-radius: 10px; font-size: 14px !important; line-height: 1.2; font-weight: 800; opacity: 1 !important; visibility: visible !important; }
+.legal-consent-reject { background: var(--bg-tertiary); color: var(--text-primary) !important; }
+.legal-consent-accept { background: var(--primary); color: #fff !important; }
 
 .class-row {
   display: grid;
@@ -1704,3 +1705,5 @@ const handleWebAuthnLogin = async () => {
   line-height: 1.4;
 }
 </style>
+
+
