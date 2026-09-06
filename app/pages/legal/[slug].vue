@@ -2,7 +2,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import Icon from '~/components/UI/Common/Icon.vue'
+import Icon from '~/components/UI/Icon.vue'
 import { renderMarkdown } from '~/utils/markdown'
 import { useLocale } from '~/utils/locale'
 import { useSiteConfig } from '~/composables/useSiteConfig'
