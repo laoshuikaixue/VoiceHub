@@ -217,7 +217,8 @@ export default defineEventHandler(async (event) => {
     if (body.legalConsentDocuments !== undefined) {
       let docs
       try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }
-      if (!Array.isArray(docs) || (body.legalConsentEnabled && (!docs.length || docs.some((d) => !d || !d.name?.trim() || !d.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d.slug || '')) || new Set(docs.map((d) => d.slug)).size !== docs.length))) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档配置无效')
+      const effectiveEnabled = body.legalConsentEnabled !== undefined ? body.legalConsentEnabled : settings?.legalConsentEnabled === true
+      if (!Array.isArray(docs) || (effectiveEnabled && (!docs.length || docs.some((d) => !d || !d.name?.trim() || !d.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d.slug || '')) || new Set(docs.map((d) => d.slug)).size !== docs.length))) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档配置无效')
       updateData.legalConsentDocuments = JSON.stringify(docs)
     }
 

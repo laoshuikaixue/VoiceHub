@@ -151,7 +151,8 @@
             <circle cx="12" cy="16" r="1" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          <input\n            :disabled="showLoginTerms && !loginTermsAccepted"\n            id="password"
+          <input
+            id="password"
             v-model="password"
             :class="{ 'input-error': error }"
             :type="showPassword ? 'text' : 'password'"
@@ -467,15 +468,15 @@
     <Teleport to="body">
       <div v-if="showLegalConsentModal" class="legal-consent-overlay">
         <div class="legal-consent-modal">
-          <div class="legal-consent-heading"><span class="legal-consent-shield">⌁</span><div><h3>{{ locale.legalConsentModalTitle }}</h3><span class="legal-consent-date">{{ legalConsentUpdatedDate }}</span></div></div>
-          <p>{{ locale.legalConsentModalDesc }}</p>
+          <div class="legal-consent-heading"><span class="legal-consent-shield">♢</span><div><h3>{{ locale.legalConsentModalTitle || '条款更新通知' }}</h3><span class="legal-consent-date">{{ legalConsentUpdatedDate }}</span></div></div>
+          <p>{{ locale.legalConsentModalDesc || '我们的服务条款已更新。在继续使用服务之前，请仔细阅读并同意以下条款。' }}</p>
           <h4 class="legal-consent-related">相关文档</h4>
           <div class="legal-consent-docs">
             <a v-for="doc in legalConsentDocuments" :key="doc.slug" :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><span>▧</span>{{ doc.name }}<span>↗</span></a>
           </div>
           <div class="legal-consent-actions">
-            <button type="button" class="legal-consent-reject" @click="rejectLegalConsent">{{ locale.legalConsentReject }}</button>
-            <button type="button" class="legal-consent-accept" @click="acceptLegalConsent">{{ locale.legalConsentAccept }}</button>
+            <button type="button" class="legal-consent-reject" @click="rejectLegalConsent">{{ locale.legalConsentReject || '拒绝' }}</button>
+            <button type="button" class="legal-consent-accept" @click="acceptLegalConsent">{{ locale.legalConsentAccept || '同意并继续' }}</button>
           </div>
         </div>
       </div>
