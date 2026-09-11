@@ -298,6 +298,17 @@ const buildLyricUpgradeQueries = (meta: LyricUpgradeMeta) => {
   return [...queries].filter(Boolean)
 }
 
+/**
+ * 影响歌词抓取路径的歌词设置签名，参与缓存键。
+ * 新增影响抓取的设置项时必须同步加入，否则切换设置后 60s 内会命中按旧配置计算的结果。
+ */
+const buildLyricFetchSettingsFlag = (settings: ReturnType<typeof useLyricSettings>): string =>
+  [
+    settings.enableQQMusicLyric.value ? 1 : 0,
+    settings.enableOnlineTTMLLyric.value ? 1 : 0,
+    settings.amllDbServer.value || ''
+  ].join(':')
+
 const getLyricCacheKey = (
   platform: string,
   id: number | string,
@@ -566,14 +577,9 @@ export const useMusicSources = () => {
     data?: LyricResultData
     error?: string
   }> => {
-    // 抓取路径受歌词开关影响，开关值参与缓存键，避免切换后 60s 内命中按旧配置计算的结果
+    // 抓取路径受歌词开关影响，设置签名参与缓存键，避免切换后 60s 内命中按旧配置计算的结果
     const settings = useLyricSettings()
-    const settingsFlag = [
-      settings.enableQQMusicLyric.value ? 1 : 0,
-      settings.enableOnlineTTMLLyric.value ? 1 : 0,
-      settings.amllDbServer.value || ''
-    ].join(':')
-    const cacheKey = getLyricCacheKey(platform, id, meta, settingsFlag)
+    const cacheKey = getLyricCacheKey(platform, id, meta, buildLyricFetchSettingsFlag(settings))
     const unsubscribeProgress = subscribeLyricProgress(cacheKey, meta?.onProgress)
     const progressive = typeof meta?.onProgress === 'function'
 

@@ -141,6 +141,7 @@ export const useLyricManager = () => {
         try {
           const lines = parseYrc(yrc)
           if (lines && lines.length > 0) {
+            // words 为空的行无任何可展示内容，过滤后再判定 YRC 是否可用
             const validLines = lines.filter((l) => l.words && l.words.length > 0)
             if (validLines.length > 0) {
               parsedLyrics = validLines
