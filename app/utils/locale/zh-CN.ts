@@ -2124,6 +2124,7 @@ export const admin = {
       durationPlaceholder: '例如: 240',
       durationHint: '取值范围 0~7200 秒（留空表示无时长信息），可通过后台校验自动验证',
       refreshDuration: '刷新',
+      refreshCover: '刷新',
       validUrl: 'URL有效',
       saving: '保存中...',
       saveChanges: '保存更改',
@@ -2270,7 +2271,8 @@ export const admin = {
       validatingPlayUrl: '正在验证播放地址URL，请稍候...',
       updateSuccess: '歌曲信息更新成功',
       addSuccess: '歌曲添加成功',
-      durationRefreshed: '时长获取成功，已自动填入'
+      durationRefreshed: '时长获取成功，已自动填入',
+      coverRefreshed: '封面获取成功，已自动填入'
     },
     errors: {
       remarkVisibilityUpdateFailed: '更新备注可见性失败',
@@ -2292,7 +2294,9 @@ export const admin = {
       addFailed: '添加失败',
       durationRefreshFailed: (message: string) => `时长刷新失败: ${message || '未知错误'}`,
       durationInvalidRange: '时长需在 30–3600 秒之间',
-      durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长'
+      durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长',
+      coverRefreshFailed: (message: string) => `封面刷新失败: ${message || '未知错误'}`,
+      coverPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新封面'
     }
   },
   dataAnalysis: {
@@ -4376,6 +4380,7 @@ export const serverErrors = {
   SONG_ID_REQUIRED: '歌曲ID不能为空',
   SONG_NOT_FOUND: '歌曲不存在',
   SONG_DURATION_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取时长',
+  SONG_COVER_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取封面',
   SONG_CARD_RELEASE_FAILED: '点歌券释放失败，撤回已终止',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。',
   SONG_FETCH_VOTERS_FAILED: '获取投票人员列表失败',

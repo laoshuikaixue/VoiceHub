@@ -1104,6 +1104,7 @@ VoiceHub/
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
 │   │   │   │   ├── batch-reject.post.ts  # 批量驳回歌曲
+│   │   │   │   ├── cover.post.ts    # 获取歌曲封面
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
 │   │   │   │   ├── duration.post.ts # 更新歌曲时长
 │   │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
@@ -1378,6 +1379,7 @@ VoiceHub/
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
 │   │   ├── song-type-resolver.ts # 歌曲类型（语种/曲风）解析工具
+│   │   ├── songCoverFetcher.ts # 外部平台歌曲封面获取工具
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）

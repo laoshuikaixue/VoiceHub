@@ -1024,20 +1024,37 @@
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.editModal.coverUrl }}</label
               >
-              <input
-                v-if="showEditModal"
-                v-model="editForm.cover"
-                type="text"
-                placeholder="http://..."
-                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
-              />
-              <input
-                v-else
-                v-model="addForm.cover"
-                type="text"
-                placeholder="http://..."
-                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
-              />
+              <div class="flex gap-2">
+                <input
+                  v-if="showEditModal"
+                  v-model="editForm.cover"
+                  type="text"
+                  placeholder="http://..."
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
+                />
+                <input
+                  v-else
+                  v-model="addForm.cover"
+                  type="text"
+                  placeholder="http://..."
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  :disabled="
+                    refreshCoverLoading ||
+                    (showEditModal
+                      ? !editForm.musicPlatform || !editForm.musicId
+                      : !addForm.musicPlatform || !addForm.musicId)
+                  "
+                  class="px-4 py-3 bg-bg-tertiary-50 hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-lg transition-all border border-border-tertiary-30 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
+                  :title="locale.editModal.refreshCover"
+                  @click="refreshCoverInModal"
+                >
+                  <RotateCcw :size="14" :class="{ 'animate-spin': refreshCoverLoading }" />
+                  {{ locale.editModal.refreshCover }}
+                </button>
+              </div>
               <p
                 v-if="
                   (showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
@@ -1290,6 +1307,7 @@ const rejectSongInfo = ref({
 const showEditModal = ref(false)
 const editLoading = ref(false)
 const refreshDurationLoading = ref(false)
+const refreshCoverLoading = ref(false)
 const editForm = ref({
   id: null,
   title: '',
@@ -2098,6 +2116,42 @@ const refreshDurationInModal = async () => {
     showNotification(getNestedMessage('errors', 'durationRefreshFailed', getErrorMessage(error)), 'error')
   } finally {
     refreshDurationLoading.value = false
+  }
+}
+
+// 弹窗内刷新歌曲封面（编辑模式按 songId，新增模式按平台+音乐ID），仅填入表单随弹窗保存
+const refreshCoverInModal = async () => {
+  const isEdit = showEditModal.value
+  const form = isEdit ? editForm.value : addForm.value
+  if (!form.musicPlatform || !form.musicId) {
+    showNotification(getNestedMessage('errors', 'coverPlatformRequired'), 'warning')
+    return
+  }
+
+  refreshCoverLoading.value = true
+  try {
+    const body = isEdit
+      ? { songId: editForm.value.id }
+      : { platform: addForm.value.musicPlatform, musicId: addForm.value.musicId }
+    const result = await $fetch('/api/admin/songs/cover', {
+      method: 'POST',
+      body
+    })
+    if (result.success && result.cover) {
+      if (isEdit) {
+        editForm.value.cover = result.cover
+      } else {
+        addForm.value.cover = result.cover
+      }
+      showNotification(getNestedMessage('messages', 'coverRefreshed'), 'success')
+    } else {
+      showNotification(getNestedMessage('errors', 'coverRefreshFailed', result?.message), 'error')
+    }
+  } catch (error) {
+    console.error('刷新歌曲封面失败:', error)
+    showNotification(getNestedMessage('errors', 'coverRefreshFailed', getErrorMessage(error)), 'error')
+  } finally {
+    refreshCoverLoading.value = false
   }
 }
 
