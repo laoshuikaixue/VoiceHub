@@ -69,7 +69,7 @@
             <h2>{{ isFirstLogin ? locale.setNewPassword : locale.changePasswordTitle }}</h2>
             <p>{{ isFirstLogin ? locale.setNewPasswordDesc : locale.updatePasswordDesc }}</p>
             <p
-              v-if="isFirstLogin && auth.isAuthenticated && accountUsername"
+              v-if="isFirstLogin && auth.isAuthenticated && accountDisplayName"
               class="account-identity"
             >
               {{ locale.initialPasswordAccount.replace('{0}', accountDisplayName) }}
