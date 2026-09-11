@@ -633,6 +633,7 @@
                     />
                     <input
                       v-model="userForm.name"
+                      autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.namePlaceholder"
                       type="text"
@@ -650,6 +651,7 @@
                     />
                     <input
                       v-model="userForm.username"
+                      autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.usernamePlaceholder"
                       type="text"
@@ -669,6 +671,7 @@
                   />
                   <input
                     v-model="userForm.password"
+                    autocomplete="new-password"
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                     :placeholder="locale.form.passwordPlaceholder"
                     type="password"
@@ -715,6 +718,7 @@
                     />
                     <input
                       v-model="userForm.grade"
+                      autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.gradePlaceholder"
                       type="text"
@@ -732,6 +736,7 @@
                     />
                     <input
                       v-model="userForm.class"
+                      autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.classPlaceholder"
                       type="text"
@@ -813,6 +818,7 @@
                   />
                   <input
                     v-model="passwordForm.password"
+                    autocomplete="new-password"
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-warning-30 transition-all text-text-primary"
                     :placeholder="locale.resetPasswordModal.newPasswordPlaceholder"
                     type="password"
@@ -830,6 +836,7 @@
                   />
                   <input
                     v-model="passwordForm.confirmPassword"
+                    autocomplete="new-password"
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-warning-30 transition-all text-text-primary"
                     :placeholder="locale.resetPasswordModal.confirmPasswordPlaceholder"
                     type="password"

@@ -92,6 +92,7 @@
               >
               <input
                 v-model="config.smtpUsername"
+                autocomplete="off"
                 type="text"
                 placeholder="your-email@example.com"
                 class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
@@ -103,6 +104,7 @@
               >
               <input
                 v-model="config.smtpFromEmail"
+                autocomplete="off"
                 type="text"
                 :placeholder="config.smtpUsername || 'your-email@example.com'"
                 class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
@@ -117,6 +119,7 @@
               >
               <input
                 v-model="config.smtpPassword"
+                autocomplete="new-password"
                 type="password"
                 placeholder="••••••••••••"
                 class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
@@ -128,6 +131,7 @@
               >
               <input
                 v-model="config.smtpFromName"
+                autocomplete="off"
                 type="text"
                 :placeholder="locale.defaultFromName"
                 class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
@@ -152,6 +156,7 @@
               <div class="flex gap-2">
                 <input
                   v-model="testEmail"
+                  autocomplete="off"
                   type="email"
                   :placeholder="locale.testEmailPlaceholder"
                   class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"

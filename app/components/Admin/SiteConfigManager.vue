@@ -591,6 +591,7 @@
                     <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSecretKey }}</label>
                     <input
                       v-model="formData.turnstileSecretKey"
+                      autocomplete="new-password"
                       type="password"
                       :disabled="!formData.captchaEnabled"
                       :placeholder="locale.turnstileSecretKeyPlaceholder"
