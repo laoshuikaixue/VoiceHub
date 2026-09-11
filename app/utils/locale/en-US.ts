@@ -235,6 +235,7 @@ export const changePassword = {
   setNewPassword: 'Set New Password',
   changePasswordTitle: 'Change Password',
   setNewPasswordDesc: 'Create a secure password',
+  initialPasswordAccount: 'You are changing the initial password for account {0}',
   updatePasswordDesc: 'Update your login password',
   backToHome: 'Back to Home',
   logout: 'Log Out'
@@ -3840,8 +3841,10 @@ export const admin = {
         title: 'Student Scope Filter',
         currentGrade: 'Current Grade',
         currentClass: 'Current Class',
+        accountStatus: 'Account Status',
         allGrades: 'All Grades',
         allClasses: 'All Classes',
+        allStatuses: 'All Statuses',
         selectUsers: (selected: number, total: number) => `Select Users (${selected}/${total})`,
         clearSelection: 'Clear Selection',
         selectAll: 'Select All Current',

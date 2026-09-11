@@ -223,6 +223,19 @@
                     class-name="w-full"
                   />
                 </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ locale.studentFilter.accountStatus }}</label
+                  >
+                  <CustomSelect
+                    v-model="accountStatusFilter"
+                    :options="accountStatusOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="locale.studentFilter.allStatuses"
+                    class-name="w-full"
+                  />
+                </div>
               </div>
 
               <div class="space-y-3">
@@ -920,6 +933,7 @@ const error = ref('')
 // 仅更新年级相关
 const gradeFilter = ref('')
 const classFilter = ref('')
+const accountStatusFilter = ref('')
 const selectedUserIds = ref([])
 const targetGrade = ref('')
 const keepClass = ref(true)
@@ -972,6 +986,8 @@ const locale = computed(() => {
     fields: { ...(base.fields || {}) },
     studentFilter: {
       selectUsers: emptyText,
+      accountStatus: '',
+      allStatuses: '',
       ...(base.studentFilter || {})
     },
     gradeSettings: { ...(base.gradeSettings || {}) },
@@ -1046,6 +1062,10 @@ const sourceStatusOptions = computed(() => [
   { label: locale.value?.statusOptions?.all || '全部状态', value: '' },
   ...statusOptions.value
 ])
+const accountStatusOptions = computed(() => [
+  { label: locale.value?.studentFilter?.allStatuses || '全部状态', value: '' },
+  ...statusOptions.value
+])
 
 // 计算属性
 const computedUsers = computed(() => {
@@ -1066,6 +1086,18 @@ const availableClasses = computed(() => {
 
 watch(() => gradeFilter.value, () => {
   classFilter.value = ''
+})
+
+watch(accountStatusFilter, (value) => {
+  if (updateType.value === 'status-batch') sourceStatus.value = value
+})
+
+watch(sourceStatus, (value) => {
+  if (updateType.value === 'status-batch' && value !== accountStatusFilter.value) accountStatusFilter.value = value
+})
+
+watch(updateType, (value) => {
+  if (value === 'status-batch') sourceStatus.value = accountStatusFilter.value
 })
 
 const gradeOptions = computed(() => {
@@ -1227,6 +1259,10 @@ const filteredUsers = computed(() => {
 
   if (classFilter.value) {
     filtered = filtered.filter((s) => s.class === classFilter.value)
+  }
+
+  if (accountStatusFilter.value) {
+    filtered = filtered.filter((s) => s.status === accountStatusFilter.value)
   }
 
   return filtered
@@ -1660,7 +1696,8 @@ const performGradeUpdate = async () => {
     body: {
       userIds: selectedUserIds.value,
       targetGrade: targetGrade.value.trim(),
-      keepClass: keepClass.value
+      keepClass: keepClass.value,
+      accountStatus: accountStatusFilter.value || undefined
     },
     ...auth.getAuthConfig()
   })
@@ -1783,7 +1820,7 @@ const performStatusUpdate = async () => {
     method: 'PUT',
     body: {
       userIds: selectedUserIds.value,
-      sourceStatus: sourceStatus.value || undefined,
+      sourceStatus: accountStatusFilter.value || sourceStatus.value || undefined,
       status: targetStatus.value,
       reason: statusReason.value.trim()
     },

@@ -246,6 +246,7 @@ export const changePassword = {
   setNewPassword: '设置新密码',
   changePasswordTitle: '修改密码',
   setNewPasswordDesc: '请设置一个安全的密码',
+  initialPasswordAccount: '您正在修改账号 {0} 的初始密码',
   updatePasswordDesc: '更新您的登录密码',
   backToHome: '返回主页',
   logout: '退出登录'
@@ -3849,8 +3850,10 @@ export const admin = {
         title: '学生范围筛选',
         currentGrade: '当前年级',
         currentClass: '当前班级',
+        accountStatus: '账号状态',
         allGrades: '全部年级',
         allClasses: '全部班级',
+        allStatuses: '全部状态',
         selectUsers: (selected: number, total: number) => `选择用户 (${selected}/${total})`,
         clearSelection: '取消全选',
         selectAll: '选择当前全部',
