@@ -72,7 +72,7 @@
               v-if="isFirstLogin && auth.isAuthenticated && accountUsername"
               class="account-identity"
             >
-              {{ locale.initialPasswordAccount.replace('{0}', accountUsername) }}
+              {{ locale.initialPasswordAccount.replace('{0}', accountDisplayName) }}
             </p>
           </div>
 
@@ -118,7 +118,11 @@ const isFirstLogin = computed(() => {
   return currentUser?.needsInitialPasswordSetup === true
 })
 const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
-const accountUsername = computed(() => auth.user.value?.username?.trim() || '')
+// 优先显示姓名，未填写时回退用户名
+const accountDisplayName = computed(() => {
+  const user = auth.user.value
+  return user?.name?.trim() || user?.username?.trim() || ''
+})
 
 // 未登录用户重定向到登录页
 onMounted(async () => {
