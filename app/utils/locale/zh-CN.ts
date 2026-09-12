@@ -103,7 +103,7 @@ export const siteConfig = {
   captchaTurnstile: 'Cloudflare Turnstile',
   captchaMaxFailures: '触发阈值（失败次数）',
   captchaMaxFailuresPlaceholder: '例如: 3',
-  captchaMaxFailuresDesc: '连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。',
+  captchaMaxFailuresDesc: '连续密码错误达到此次数后，后续登录必须输入验证码。设置为 0 表示每次登录均需验证码。建议设置为 3-5 次。',
   turnstileSiteKey: 'Site Key (Sitekey)',
   turnstileSiteKeyPlaceholder: '在此输入 Turnstile 的 Site Key',
   turnstileSecretKey: 'Secret Key (Secret)',

@@ -80,7 +80,8 @@ export default defineEventHandler(async (event) => {
         captchaEnabled = true
         captchaProvider = settings.captchaProvider || 'graphic'
         turnstileSecretKey = settings.turnstileSecretKey || ''
-        if (settings.captchaMaxFailures) {
+        // 0 = 每次登录均需验证码
+        if (typeof settings.captchaMaxFailures === 'number' && Number.isInteger(settings.captchaMaxFailures) && settings.captchaMaxFailures >= 0) {
           captchaMaxFailures = settings.captchaMaxFailures
         }
       }
@@ -94,6 +95,8 @@ export default defineEventHandler(async (event) => {
     if (captchaEnabled) {
       if (captchaProvider === 'turnstile') {
         needCaptcha = true // Turnstile 每次都验证
+      } else if (captchaMaxFailures === 0) {
+        needCaptcha = true // 阈值为 0 时直接要求验证码
       } else {
         const failCount = await getLoginFailureCount(body.username)
         needCaptcha = failCount >= captchaMaxFailures
