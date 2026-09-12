@@ -442,10 +442,11 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.captchaMaxFailures !== undefined) {
-      if (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 1) {
+      // 0 表示每次登录均需图形验证码
+      if (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 0) {
         throw createError({
           statusCode: 400,
-          message: 'captchaMaxFailures 必须是正整数'
+          message: 'captchaMaxFailures 必须是非负整数'
         })
       }
       updateData.captchaMaxFailures = body.captchaMaxFailures

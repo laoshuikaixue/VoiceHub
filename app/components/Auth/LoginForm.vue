@@ -362,7 +362,7 @@
         <span class="error-message">{{ error }}</span>
       </div>
 
-      <button :disabled="loading" class="submit-btn" type="submit">
+      <button :disabled="loading || captchaPending" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
           <circle
             cx="12"
@@ -477,7 +477,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, registerEmailRequired, registerRequiresGradeClass } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -506,7 +506,16 @@ const showCaptcha = computed(() => {
   if (isGraphicCaptchaRequired.value) return true
   // 否则根据配置显示
   if (!captchaEnabled.value) return false
+  // 阈值为 0：每次登录均需验证码，默认即显示（刷新页面不丢状态）
+  if (captchaProvider.value === 'graphic' && captchaMaxFailures.value === 0) return true
   return captchaProvider.value === 'turnstile'
+})
+
+// 图形验证码尚未加载完成时禁用提交，避免空 captchaId 被服务端拒绝
+const captchaPending = computed(() => {
+  if (!showCaptcha.value) return false
+  if (captchaProvider.value === 'turnstile') return false
+  return !captchaId.value
 })
 
 const getFormTitle = computed(() => {
@@ -742,6 +751,12 @@ const handleLogin = async () => {
 
 // 发起登录/绑定请求，成功后跳转；返回 'success' | '2fa' | 'failed'
 const performLogin = async () => {
+  // 兜底：验证码未就绪时不提交（正常路径按钮已禁用，防键盘/脚本直接触发）
+  if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
+    error.value = locale.value.captchaInput?.loadFailed || '获取验证码失败'
+    return 'failed'
+  }
+
   loading.value = true
 
   // 构建请求体，包含验证码信息

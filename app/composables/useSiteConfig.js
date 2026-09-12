@@ -49,6 +49,7 @@ const siteConfig = ref({
   gonganNumber: '',
   captchaEnabled: false,
   captchaProvider: 'graphic',
+  captchaMaxFailures: 3,
   turnstileSiteKey: '',
   enableSubmissionLimit: false,
   enableCardCodeRequests: false,
@@ -201,6 +202,11 @@ export const useSiteConfig = () => {
   )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
+  // 登录失败触发图形验证码的阈值；0 表示每次登录均需验证码，非法值回退默认 3
+  const captchaMaxFailures = computed(() => {
+    const value = Number(siteConfig.value.captchaMaxFailures)
+    return Number.isInteger(value) && value >= 0 ? value : 3
+  })
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({
@@ -287,6 +293,7 @@ export const useSiteConfig = () => {
     registerRequiresGradeClass,
     captchaEnabled,
     captchaProvider,
+    captchaMaxFailures,
     turnstileSiteKey,
     smtpEnabled,
     oauth,

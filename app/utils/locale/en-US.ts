@@ -94,7 +94,7 @@ export const siteConfig = {
   captchaTurnstile: 'Cloudflare Turnstile',
   captchaMaxFailures: 'Failure Threshold',
   captchaMaxFailuresPlaceholder: 'e.g. 3',
-  captchaMaxFailuresDesc: 'Require CAPTCHA after this many consecutive password failures. Recommended: 3-5.',
+  captchaMaxFailuresDesc: 'Require CAPTCHA after this many consecutive password failures. Set to 0 to require CAPTCHA on every login. Recommended: 3-5.',
   turnstileSiteKey: 'Site Key',
   turnstileSiteKeyPlaceholder: 'Enter the Turnstile Site Key',
   turnstileSecretKey: 'Secret Key',
