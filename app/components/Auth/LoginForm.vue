@@ -510,8 +510,8 @@ const showCaptcha = computed(() => {
   if (isGraphicCaptchaRequired.value) return true
   // 否则根据配置显示
   if (!captchaEnabled.value) return false
-  // 阈值为 0 时每次都显示
-  if (captchaProvider.value === 'graphic' && captchaMaxFailures.value === 0) return true
+  // 阈值为 0 时每次都显示（bind 接口不校验验证码，绑定模式除外）
+  if (captchaProvider.value === 'graphic' && !isBindMode.value && captchaMaxFailures.value === 0) return true
   return captchaProvider.value === 'turnstile'
 })
 
@@ -757,7 +757,7 @@ const handleLogin = async () => {
 const performLogin = async () => {
   // 兜底：验证码未就绪时不提交
   if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
-    error.value = locale.value.captchaInput?.loadFailed || ''
+    error.value = authLocale.value?.captchaInput?.loadFailed || locale.value.loginFailed
     return 'failed'
   }
 
