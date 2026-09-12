@@ -1406,7 +1406,6 @@ const handleWebAuthnLogin = async () => {
   cursor: not-allowed;
 }
 
-/* 登录中与等待验证码时均应用该暗色样式，与 :disabled 同条件，颜色一致 */
 .submit-btn.is-disabled {
   opacity: 0.6;
   transform: none;
