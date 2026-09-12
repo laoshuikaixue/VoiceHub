@@ -362,7 +362,11 @@
         <span class="error-message">{{ error }}</span>
       </div>
 
-      <button :disabled="loading || captchaPending" class="submit-btn" type="submit">
+      <button
+        :disabled="loading || captchaPending"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending }]"
+        type="submit"
+      >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
           <circle
             cx="12"
@@ -1378,7 +1382,8 @@ const handleWebAuthnLogin = async () => {
   transition:
     background var(--transition-normal),
     box-shadow var(--transition-normal),
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1398,9 +1403,12 @@ const handleWebAuthnLogin = async () => {
 }
 
 .submit-btn:disabled {
-  opacity: 0.6;
-  filter: brightness(0.85);
   cursor: not-allowed;
+}
+
+/* 登录中与等待验证码时均应用该暗色样式，与 :disabled 同条件，颜色一致 */
+.submit-btn.is-disabled {
+  opacity: 0.6;
   transform: none;
 }
 
