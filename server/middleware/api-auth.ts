@@ -77,8 +77,8 @@ export default defineEventHandler(async (event) => {
   const ipAddress = getClientIP(event)
 
   // 检查IP是否被限制
-  if (isIPBlocked(ipAddress)) {
-    const remainingTime = getIPBlockRemainingTime(ipAddress)
+  if (await isIPBlocked(ipAddress)) {
+    const remainingTime = await getIPBlockRemainingTime(ipAddress)
     await ApiLogService.logAccess({
       apiKeyId: null,
       endpoint: pathname,

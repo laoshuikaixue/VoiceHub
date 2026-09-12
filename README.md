@@ -1148,6 +1148,7 @@ VoiceHub/
 │   │   │       └── [...path].ts   # 转发网易云API请求
 │   │   ├── auth/           # 认证API
 │   │   │   ├── captcha.get.ts         # 图形验证码
+│   │   │   ├── captcha-required.get.ts # 登录验证码预检
 │   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
 │   │   │   ├── grade-class-options.get.ts # 年级班级选项
 │   │   │   ├── email-code.post.ts # 注册邮箱验证码发送

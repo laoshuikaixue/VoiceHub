@@ -559,6 +559,28 @@ const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
 
+// 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
+let captchaPrecheckTimer = null
+const precheckCaptchaRequired = () => {
+  if (showRegisterMode.value || isBindMode.value) return
+  if (!captchaEnabled.value || captchaProvider.value !== 'graphic') return
+  if (captchaMaxFailures.value === 0 || isGraphicCaptchaRequired.value) return
+  const name = username.value.trim()
+  if (!name) return
+  $fetch('/api/auth/captcha-required', { query: { username: name } })
+    .then((res) => {
+      if (res?.captchaRequired) isGraphicCaptchaRequired.value = true
+    })
+    .catch(() => {})
+}
+
+watch(username, () => {
+  clearTimeout(captchaPrecheckTimer)
+  captchaPrecheckTimer = setTimeout(precheckCaptchaRequired, 400)
+})
+
+onUnmounted(() => clearTimeout(captchaPrecheckTimer))
+
 // 二次确认文案：将第三方账号与当前输入的账户绑定
 const bindConfirmMessage = computed(() => {
   if (!isBindMode.value || showCreateMode.value) return ''
