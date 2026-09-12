@@ -1353,7 +1353,24 @@ input[type='number'] {
   .legal-add-button { width: 100%; justify-content: center; }
   .legal-document-fields { grid-template-columns: 1fr; }
 }
-</style>
+.legal-consent-header { align-items: flex-start; margin-bottom: 4px; }
+.legal-consent-heading h3 { font-size: 16px; line-height: 1.35; }
+.legal-consent-heading p { margin-top: 8px; font-size: 12px; line-height: 1.6; }
+.legal-enable-control { display:flex; align-items:center; gap:10px; color:var(--text-secondary); font-size:14px; font-weight:700; line-height:24px; }
+.legal-enable-control .is-enabled { color:#22c55e; }
+.legal-enable-control:not(:has(input:checked)) > span:first-child { color:#ef4444; }
+.legal-toggle { position:relative; display:inline-flex; width:44px; height:24px; flex:0 0 44px; }
+.legal-toggle input { position:absolute; opacity:0; inset:0; cursor:pointer; }
+.legal-toggle i { width:44px; height:24px; border-radius:999px; background:var(--bg-tertiary); transition:.2s; }
+.legal-toggle i:after { content:''; display:block; width:18px; height:18px; margin:3px; border-radius:50%; background:#fff; transition:.2s; }
+.legal-toggle input:checked + i { background:var(--primary); }
+.legal-toggle input:checked + i:after { transform:translateX(20px); }
+.legal-consent-panel > .grid { align-items:start; column-gap:24px; margin-top:22px; }
+.legal-consent-panel > .grid > div { min-width:0; }
+.legal-mode-switch { min-height:42px; margin-top:10px !important; }
+.legal-mode-option { min-height:34px; display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:12px; line-height:1; }
+.legal-mode-option svg { width:15px; height:15px; flex:0 0 15px; }
+.legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }</style>
 
 /* 展示形式控件保持紧凑并统一图标基线 */
 .legal-mode-switch { min-height: 38px; padding: 3px; }
@@ -1363,3 +1380,4 @@ input[type='number'] {
 
 
 .legal-toggle { position:relative; display:inline-flex; width:44px; height:24px; flex:0 0 44px; }.legal-toggle input { position:absolute; opacity:0; inset:0; cursor:pointer; }.legal-toggle i { width:44px; height:24px; border-radius:999px; background:var(--bg-tertiary); transition:.2s; }.legal-toggle i:after { content:''; display:block; width:18px; height:18px; margin:3px; border-radius:50%; background:#fff; transition:.2s; }.legal-toggle input:checked + i { background:var(--primary); }.legal-toggle input:checked + i:after { transform:translateX(20px); }.legal-enable-control { display:flex; align-items:center; gap:8px; color:var(--text-tertiary); font-size:12px; font-weight:700; } .legal-enable-control .is-enabled { color:var(--primary); }
+

@@ -425,19 +425,19 @@
       </div>
     </form>
 
-    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode && (!showLoginTerms || loginTermsAccepted)" />
+    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked" />
 
     <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button v-if="!showLoginTerms || loginTermsAccepted" type="button" class="webauthn-btn" :disabled="loading" @click="handleWebAuthnLogin">
+      <button type="button" class="webauthn-btn" :disabled="loading || loginTermsBlocked" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode && (!showLoginTerms || loginTermsAccepted)" />
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -1373,9 +1373,9 @@ const handleWebAuthnLogin = async () => {
 .legal-consent-modal { width: min(600px, 100%); max-height: 90vh; overflow: auto; padding: 28px; border: 1px solid var(--border-secondary); border-radius: 18px; background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .legal-consent-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
 .legal-consent-heading { display:flex; align-items:center; gap:14px; margin-bottom:12px; }.legal-consent-heading h3{margin:0}.legal-consent-shield{display:grid;place-items:center;width:50px;height:50px;border-radius:12px;background:#123b4a;color:#2dd4bf;font-size:26px}.legal-consent-shield svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.doc-symbol{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary)}.external-symbol{display:grid;place-items:center;margin-left:auto;color:#a9b8cb}.external-symbol svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.doc-symbol svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.legal-consent-date{display:inline-block;margin-top:4px;padding:4px 9px;border-radius:999px;background:var(--bg-tertiary);color:var(--text-tertiary);font-size:11px}.legal-consent-related{margin:20px 0 12px;font-size:13px;color:#f8fafc}.legal-consent-docs a{display:flex;align-items:center;gap:10px}.legal-consent-docs a span:last-child{margin-left:auto;color:var(--text-tertiary)}
-.legal-consent-modal p { color:#c5d0df; font-size:13px; line-height:1.7; padding-bottom:20px; border-bottom:1px solid #26354d; }
+.legal-consent-modal p { color:var(--text-secondary); font-size:13px; line-height:1.7; padding-bottom:20px; border-bottom:1px solid #26354d; }
 .legal-consent-docs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 20px 0; }
-.legal-consent-docs a { display:flex; align-items:center; gap:10px; min-height:62px; padding:12px 16px; border:1px solid #34455f; border-radius:12px; color:#f8fafc; background:#1b2a40; font-weight:700; }
+.legal-consent-docs a { display:flex; align-items:center; gap:10px; min-height:62px; padding:12px 16px; border:1px solid var(--border-secondary); border-radius:12px; color:#f8fafc; background:var(--bg-tertiary); font-weight:700; }
 .legal-consent-actions { display: flex; gap: 12px; padding-top:20px; border-top:1px solid var(--border-secondary); }
 .legal-consent-actions button { flex: 1; min-height: 44px; padding: 12px; border-radius: 10px; font-size: 14px !important; line-height: 1.2; font-weight: 800; opacity: 1 !important; visibility: visible !important; }
 .legal-consent-reject { background: var(--bg-tertiary); color: var(--text-primary) !important; }
@@ -1711,6 +1711,7 @@ const handleWebAuthnLogin = async () => {
   line-height: 1.4;
 }
 </style>
+
 
 
 
