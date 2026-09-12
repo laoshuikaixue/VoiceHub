@@ -523,7 +523,7 @@
                 @click="startDownload"
               >
                 <Download v-if="!downloading" class="w-3.5 h-3.5" />
-                <AppSpinner :size="14" />
+                <AppSpinner v-else :size="14" color="white" />
                 {{
                   downloading
                     ? currentTaskType === 'merge'
@@ -1746,7 +1746,9 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
       } catch (error) {
         console.error(`写入合并文件失败: ${song.title}`, error)
         const errorText = getErrorMessage(error)
-        throw new Error(getLocaleText('writeMergedFileFailed', errorText, errorText))
+        throw new Error(getLocaleText('writeMergedFileFailed', errorText, errorText), {
+          cause: error
+        })
       } finally {
         activeDownloads.delete(song.id)
         downloadedCount.value++
