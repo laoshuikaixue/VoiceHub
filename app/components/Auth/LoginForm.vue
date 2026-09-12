@@ -753,7 +753,8 @@ const handleLogin = async () => {
 const performLogin = async () => {
   // 兜底：验证码未就绪时不提交（正常路径按钮已禁用，防键盘/脚本直接触发）
   if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
-    error.value = locale.value.captchaInput?.loadFailed || '获取验证码失败'
+    // 键缺失时显示空（error 区域 v-if 不渲染）；两本词典均含 loadFailed，正常不会缺失
+    error.value = locale.value.captchaInput?.loadFailed || ''
     return 'failed'
   }
 
