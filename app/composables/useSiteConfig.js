@@ -202,8 +202,7 @@ export const useSiteConfig = () => {
   )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
-  // 登录失败触发图形验证码的阈值；0 表示每次登录均需验证码，非法/空值回退默认 3
-  // 注意：null/'' 会被 Number() 转为 0，必须先排除，避免误开启"每次必验"
+  // 触发图形验证码的失败阈值：0 = 每次必验，空值/非法回退 3
   const captchaMaxFailures = computed(() => {
     const raw = siteConfig.value.captchaMaxFailures
     if (raw === null || raw === undefined || raw === '') return 3

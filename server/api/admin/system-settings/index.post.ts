@@ -442,7 +442,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.captchaMaxFailures !== undefined) {
-      // 0 表示每次登录均需图形验证码
+      // 0 = 每次登录均需验证码
       if (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 0) {
         throw createError({
           statusCode: 400,

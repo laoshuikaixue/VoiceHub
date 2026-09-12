@@ -506,12 +506,12 @@ const showCaptcha = computed(() => {
   if (isGraphicCaptchaRequired.value) return true
   // 否则根据配置显示
   if (!captchaEnabled.value) return false
-  // 阈值为 0：每次登录均需验证码，默认即显示（刷新页面不丢状态）
+  // 阈值为 0 时每次都显示
   if (captchaProvider.value === 'graphic' && captchaMaxFailures.value === 0) return true
   return captchaProvider.value === 'turnstile'
 })
 
-// 图形验证码尚未加载完成时禁用提交，避免空 captchaId 被服务端拒绝
+// 验证码未加载完成时禁用提交
 const captchaPending = computed(() => {
   if (!showCaptcha.value) return false
   if (captchaProvider.value === 'turnstile') return false
@@ -751,9 +751,8 @@ const handleLogin = async () => {
 
 // 发起登录/绑定请求，成功后跳转；返回 'success' | '2fa' | 'failed'
 const performLogin = async () => {
-  // 兜底：验证码未就绪时不提交（正常路径按钮已禁用，防键盘/脚本直接触发）
+  // 兜底：验证码未就绪时不提交
   if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
-    // 键缺失时显示空（error 区域 v-if 不渲染）；两本词典均含 loadFailed，正常不会缺失
     error.value = locale.value.captchaInput?.loadFailed || ''
     return 'failed'
   }
@@ -1400,6 +1399,7 @@ const handleWebAuthnLogin = async () => {
 
 .submit-btn:disabled {
   opacity: 0.6;
+  filter: brightness(0.85);
   cursor: not-allowed;
   transform: none;
 }
