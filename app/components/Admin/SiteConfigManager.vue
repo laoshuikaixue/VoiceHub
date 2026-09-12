@@ -788,12 +788,12 @@
 
       <!-- 登录条款确认 -->
       <section class="lg:col-span-2 legal-consent-panel">
-        <div class="flex items-center justify-between border-b border-border-secondary pb-4">
+        <div class="legal-consent-header">
           <div class="legal-consent-heading">
             <h3 class="text-sm font-black text-text-primary flex items-center gap-2"><FileText :size="16" class="text-primary" /> {{ locale.legalConsentTitle }}</h3>
             <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.legalConsentDesc }}</p>
           </div>
-          <div class="legal-enable-control"><span :class="{ 'is-enabled': formData.legalConsentEnabled }">{{ formData.legalConsentEnabled ? (locale.legalConsentEnabledLabel || '已启用') : (locale.legalConsentDisabledLabel || '未启用') }}</span><input v-model="formData.legalConsentEnabled" type="checkbox" class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"></div>
+          <label class="legal-enable-control"><span :class="{ 'is-enabled': formData.legalConsentEnabled }">{{ formData.legalConsentEnabled ? (locale.legalConsentEnabledLabel || '已启用') : (locale.legalConsentDisabledLabel || '未启用') }}</span><span class="legal-toggle"><input v-model="formData.legalConsentEnabled" type="checkbox"><i /></span></label>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -1322,6 +1322,7 @@ input[type='number'] {
 }
 
 .legal-consent-panel { grid-column: 1 / -1; padding: 24px; border: 1px solid var(--border-secondary); border-radius: 16px; background: var(--bg-secondary-40); box-shadow: var(--shadow-xl); }
+.legal-consent-header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:18px; border-bottom:1px solid var(--border-secondary); }
 .legal-consent-heading { min-width: 0; }
 .legal-mode-switch { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--border-secondary); border-radius: 10px; background: var(--bg-primary-50); overflow: hidden; }
 .legal-mode-indicator { position: absolute; inset: 4px calc(50% + 2px) 4px 4px; border-radius: 7px; background: var(--primary); box-shadow: 0 3px 10px var(--primary-glow); transition: transform 260ms cubic-bezier(.22, 1, .36, 1); pointer-events: none; }
@@ -1360,3 +1361,5 @@ input[type='number'] {
 .legal-mode-option svg { width: 14px; height: 14px; flex: 0 0 14px; }
 
 
+
+.legal-toggle { position:relative; display:inline-flex; width:44px; height:24px; flex:0 0 44px; }.legal-toggle input { position:absolute; opacity:0; inset:0; cursor:pointer; }.legal-toggle i { width:44px; height:24px; border-radius:999px; background:var(--bg-tertiary); transition:.2s; }.legal-toggle i:after { content:''; display:block; width:18px; height:18px; margin:3px; border-radius:50%; background:#fff; transition:.2s; }.legal-toggle input:checked + i { background:var(--primary); }.legal-toggle input:checked + i:after { transform:translateX(20px); }.legal-enable-control { display:flex; align-items:center; gap:8px; color:var(--text-tertiary); font-size:12px; font-weight:700; } .legal-enable-control .is-enabled { color:var(--primary); }
