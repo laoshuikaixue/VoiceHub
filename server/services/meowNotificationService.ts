@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { notificationSettings, users } from '~/drizzle/schema'
 import { and, eq, inArray, isNotNull, ne } from 'drizzle-orm'
 import { getSiteTitle } from '~~/server/utils/siteUtils'
+import { recordNotificationDelivery } from '~~/server/utils/operations-metrics'
 
 /**
  * 发送 MeoW 通知
@@ -84,11 +85,13 @@ export async function sendMeowNotificationToUser(
 
     // 检查用户是否绑定了 MeoW 账号
     if (!user?.meowNickname) {
+      recordNotificationDelivery('meow', 'skipped')
       return false
     }
 
     // 检查用户是否启用了通知
     if (userNotificationSettings && !userNotificationSettings.enabled) {
+      recordNotificationDelivery('meow', 'skipped')
       return false
     }
 
@@ -118,8 +121,12 @@ export async function sendMeowNotificationToUser(
     }
 
     // 发送 MeoW 通知
-    return await sendMeowNotification(user.meowNickname, fullTitle, enhancedMessage, url)
+    recordNotificationDelivery('meow', 'eligible')
+    const success = await sendMeowNotification(user.meowNickname, fullTitle, enhancedMessage, url)
+    if (!success) recordNotificationDelivery('meow', 'failure')
+    return success
   } catch (error) {
+    recordNotificationDelivery('meow', 'failure')
     console.error('发送用户 MeoW 通知失败:', error)
     return false
   }

@@ -20,6 +20,7 @@ import {
 } from '~~/server/utils/system-settings-helper'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
 export default defineEventHandler(async (event) => {
@@ -247,6 +248,16 @@ export default defineEventHandler(async (event) => {
   // 清除绑定令牌
   deleteCookie(event, 'binding-token')
   deleteCookie(event, 'pre-auth-token')
+
+  await recordAdminOperation(event, {
+    actor: user,
+    action: 'ACCOUNT.BIND',
+    targetType: 'USER_IDENTITY',
+    targetLabel: String(payload.provider || 'OAUTH'),
+    result: 'SUCCESS',
+    summary: '用户绑定第三方账号',
+    changes: { provider: String(payload.provider || 'OAUTH') }
+  })
 
   return { success: true }
 })

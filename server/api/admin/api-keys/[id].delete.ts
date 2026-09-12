@@ -1,5 +1,6 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 /**
  * 删除API Key
@@ -9,6 +10,9 @@ export default defineEventHandler(async (event) => {
   // 检查用户权限 - 只有超级管理员可以管理 API Key
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
+    if (user) {
+      await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.DELETE', targetType: 'API_KEY', targetId: getRouterParam(event, 'id'), result: 'FAILURE', summary: '管理员删除 API Key 被拒绝', failureCode: 'HTTP_403' })
+    }
     throw createError({
       statusCode: 403,
       message: '只有超级管理员可以管理 API Key'
@@ -58,6 +62,16 @@ export default defineEventHandler(async (event) => {
       await tx.delete(apiKeys).where(eq(apiKeys.id, apiKeyId))
     })
 
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'API_KEY.DELETE',
+      targetType: 'API_KEY',
+      targetId: apiKeyId,
+      targetLabel: apiKeyName,
+      result: 'SUCCESS',
+      summary: '管理员删除了 API Key'
+    })
+
     return {
       success: true,
       message: `API Key "${apiKeyName}" 删除成功`,
@@ -68,8 +82,13 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     if (error.statusCode) {
+      if (shouldRecordAdminOperationFailure(error)) {
+        await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.DELETE', targetType: 'API_KEY', targetId: apiKeyId, result: 'FAILURE', summary: '管理员删除 API Key 失败', failureCode: getAdminOperationFailureCode(error, 'API_KEY_DELETE_FAILED') })
+      }
       throw error
     }
+
+    await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.DELETE', targetType: 'API_KEY', targetId: apiKeyId, result: 'FAILURE', summary: '管理员删除 API Key 失败', failureCode: getAdminOperationFailureCode(error, 'API_KEY_DELETE_FAILED') })
 
     throw createError({
       statusCode: 500,

@@ -26,6 +26,7 @@ import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils
 import { createApiError } from '~~/server/utils/apiError'
 import { computeRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
 const getSingleQueryValue = (value: unknown): string | undefined => {
@@ -328,6 +329,15 @@ async function handleUserLoginOrBind(
     }
 
     if (bindingResult === 'success') {
+      await recordAdminOperation(event, {
+        actor: { id: currentUser.userId, role: currentUser.role || 'USER' },
+        action: 'ACCOUNT.BIND',
+        targetType: 'USER_IDENTITY',
+        targetLabel: provider,
+        result: 'SUCCESS',
+        summary: '用户绑定第三方账号',
+        changes: { provider }
+      })
       return sendRedirect(event, '/account?message=' + encodeURIComponent('绑定成功'))
     }
     if (bindingResult === 'already-bound') {

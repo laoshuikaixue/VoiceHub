@@ -23,6 +23,10 @@ import {
   votes
 } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
+import { assertAdminOperationTablesProtected, getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
+
+// 此列表必须与下方实际删除的业务表同步；只追加审计表不允许出现在其中。
+const DATABASE_RESET_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'notifications', 'notification_settings', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'songs', 'song_blacklists', 'user_status_logs', 'user_identities', 'email_templates', 'users', 'play_times', 'semesters', 'request_times', 'system_settings']
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -132,6 +136,7 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+      assertAdminOperationTablesProtected(DATABASE_RESET_TARGET_TABLES)
       // 使用事务确保数据一致性
       await db.transaction(async (tx) => {
         // 按照外键依赖顺序删除数据
@@ -272,8 +277,28 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'DB.RESET',
+      targetType: 'DATABASE',
+      targetId: 'reset',
+      result: 'SUCCESS',
+      summary: '管理员重置了数据库',
+      changes: { count: resetResults.details.recordsDeleted }
+    })
     return resetResults
   } catch (error) {
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'DB.RESET',
+        targetType: 'DATABASE',
+        targetId: 'reset',
+        result: 'FAILURE',
+        summary: '管理员重置数据库失败',
+        failureCode: getAdminOperationFailureCode(error, 'DB_RESET_FAILED')
+      })
+    }
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || '服务器内部错误'

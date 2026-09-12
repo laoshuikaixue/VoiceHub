@@ -1,4 +1,5 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { db } from '~/drizzle/db'
 import {
   apiKeyPermissions,
@@ -29,6 +30,8 @@ import {
 import { promises as fs } from 'fs'
 import path from 'path'
 import { SmtpService } from '../../../services/smtpService'
+import { ApiLogService } from '~~/server/services/apiLogService'
+import { assertAdminOperationTablesProtected, getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
@@ -37,7 +40,11 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
 
+// 此列表必须与恢复前清理的业务表同步；审计表不属于备份恢复数据，也不可删除。
+const BACKUP_RESTORE_CLEAR_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'card_code_redeem_logs', 'notifications', 'notification_settings', 'user_status_logs', 'user_identities', 'users', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'songs', 'card_codes', 'song_blacklists', 'email_templates', 'play_times', 'semesters', 'request_times', 'system_settings']
+
 export default defineEventHandler(async (event) => {
+  const restoreStartedAt = getServerTimestamp()
   try {
     // 验证管理员权限
     const user = event.context.user
@@ -184,6 +191,7 @@ export default defineEventHandler(async (event) => {
     if (clearExisting) {
       console.log('清空现有数据...')
       try {
+        assertAdminOperationTablesProtected(BACKUP_RESTORE_CLEAR_TARGET_TABLES)
         if (shouldOverwriteSuperAdmin) {
           await db.delete(apiLogs)
           await db.delete(apiKeyPermissions)
@@ -2661,8 +2669,49 @@ export default defineEventHandler(async (event) => {
       restoreResults.details.warnings.push('重载SMTP配置失败')
     }
 
+    void ApiLogService.logAccess({
+      apiKeyId: null,
+      endpoint: '/api/admin/backup/restore',
+      method: event.node.req.method || 'POST',
+      ipAddress: event.node.req.socket?.remoteAddress || 'unknown',
+      userAgent: String(event.node.req.headers['user-agent'] || '').slice(0, 500),
+      statusCode: restoreResults.success ? 200 : 500,
+      responseTimeMs: Math.max(0, getServerTimestamp() - restoreStartedAt),
+      errorMessage: `backup_restore mode=${mode} restored=${restoreResults.details.recordsRestored || 0} errors=${restoreResults.details.errors.length}`
+    })
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'BACKUP.RESTORE',
+      targetType: 'BACKUP',
+      targetId: mode,
+      result: restoreResults.success ? 'SUCCESS' : 'FAILURE',
+      summary: restoreResults.success ? '管理员完成了备份恢复' : '管理员执行备份恢复但存在错误',
+      failureCode: restoreResults.success ? null : 'RESTORE_PARTIAL_FAILURE',
+      changes: { mode, count: restoreResults.details.recordsRestored || 0 }
+    })
     return restoreResults
   } catch (error) {
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'BACKUP.RESTORE',
+        targetType: 'BACKUP',
+        targetId: mode,
+        result: 'FAILURE',
+        summary: '管理员执行备份恢复失败',
+        failureCode: getAdminOperationFailureCode(error, 'RESTORE_FAILED')
+      })
+    }
+    void ApiLogService.logAccess({
+      apiKeyId: null,
+      endpoint: '/api/admin/backup/restore',
+      method: event.node.req.method || 'POST',
+      ipAddress: event.node.req.socket?.remoteAddress || 'unknown',
+      userAgent: String(event.node.req.headers['user-agent'] || '').slice(0, 500),
+      statusCode: Number(error?.statusCode) || 500,
+      responseTimeMs: Math.max(0, getServerTimestamp() - restoreStartedAt),
+      errorMessage: `backup_restore_failed mode=${mode} reason=${String(error?.message || 'unknown').slice(0, 300)}`
+    })
     console.error('恢复数据库备份失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 /**
  * 更新API Key
@@ -30,6 +31,9 @@ export default defineEventHandler(async (event) => {
   // 检查用户权限 - 只有超级管理员可以管理 API Key
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
+    if (user) {
+      await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.UPDATE', targetType: 'API_KEY', targetId: getRouterParam(event, 'id'), result: 'FAILURE', summary: '管理员更新 API Key 被拒绝', failureCode: 'HTTP_403' })
+    }
     throw createError({
       statusCode: 403,
       message: '只有超级管理员可以管理 API Key'
@@ -136,6 +140,35 @@ export default defineEventHandler(async (event) => {
       return { apiKeyId }
     })
 
+    const isDisable = validatedData.isActive === false
+    if (isDisable) {
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'API_KEY.DISABLE',
+        targetType: 'API_KEY',
+        targetId: result.apiKeyId,
+        result: 'SUCCESS',
+        summary: '管理员禁用了 API Key',
+        changes: { enabled: false }
+      })
+    }
+
+    if (!isDisable || validatedData.permissions || validatedData.name !== undefined) {
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'API_KEY.UPDATE',
+        targetType: 'API_KEY',
+        targetId: result.apiKeyId,
+        result: 'SUCCESS',
+        summary: '管理员更新了 API Key',
+        changes: {
+          ...(validatedData.isActive !== undefined && !isDisable ? { enabled: validatedData.isActive } : {}),
+          ...(validatedData.permissions ? { permissions: validatedData.permissions } : {}),
+          ...(validatedData.name !== undefined ? { name: validatedData.name } : {})
+        }
+      })
+    }
+
     return {
       success: true,
       message: 'API Key更新成功',
@@ -145,6 +178,9 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     if (error.statusCode) {
+      if (shouldRecordAdminOperationFailure(error)) {
+        await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.UPDATE', targetType: 'API_KEY', targetId: apiKeyId, result: 'FAILURE', summary: '管理员更新 API Key 失败', failureCode: getAdminOperationFailureCode(error, 'API_KEY_UPDATE_FAILED') })
+      }
       throw error
     }
 
@@ -155,6 +191,8 @@ export default defineEventHandler(async (event) => {
         message: `请求参数验证失败：${error.errors.map((e: any) => e.message).join(', ')}`
       })
     }
+
+    await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'API_KEY.UPDATE', targetType: 'API_KEY', targetId: apiKeyId, result: 'FAILURE', summary: '管理员更新 API Key 失败', failureCode: getAdminOperationFailureCode(error, 'API_KEY_UPDATE_FAILED') })
 
     throw createError({
       statusCode: 500,

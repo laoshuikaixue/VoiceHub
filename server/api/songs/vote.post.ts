@@ -9,6 +9,7 @@ import {
   recordUserVoteActivity
 } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
@@ -106,6 +107,17 @@ export default defineEventHandler(async (event) => {
 
       const voteCount = voteCountResult[0].count
 
+      await recordAdminOperation(event, {
+        actor: user,
+        action: 'SONG.VOTE_REMOVE',
+        targetType: 'SONG',
+        targetId: song.id,
+        targetLabel: `${song.title} - ${song.artist}`,
+        result: 'SUCCESS',
+        summary: '用户取消歌曲点赞',
+        changes: { operation: 'REMOVE', count: voteCount }
+      })
+
       return {
         success: true,
         message: '取消投票成功',
@@ -138,6 +150,17 @@ export default defineEventHandler(async (event) => {
         .where(eq(votes.songId, body.songId))
 
       const voteCount = voteCountResult[0].count
+
+      await recordAdminOperation(event, {
+        actor: user,
+        action: 'SONG.VOTE',
+        targetType: 'SONG',
+        targetId: song.id,
+        targetLabel: `${song.title} - ${song.artist}`,
+        result: 'SUCCESS',
+        summary: '用户为歌曲点赞',
+        changes: { operation: 'ADD', count: voteCount }
+      })
 
       // 发送通知（异步，不阻塞响应）
       if (song.requesterId !== user.id) {

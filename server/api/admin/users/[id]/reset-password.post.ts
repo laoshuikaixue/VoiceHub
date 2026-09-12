@@ -9,6 +9,7 @@ import {
 } from '~~/server/services/passwordSecurityService'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -89,11 +90,31 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'ADMIN.PASSWORD_RESET',
+      targetType: 'USER',
+      targetId: id,
+      result: 'SUCCESS',
+      summary: '管理员重置了用户密码'
+    })
+
     return {
       success: true,
       message: '密码重置成功'
     }
   } catch (error) {
+    if (!(error && typeof error === 'object' && 'statusCode' in error && Number(error.statusCode) === 400)) {
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'ADMIN.PASSWORD_RESET',
+        targetType: 'USER',
+        targetId: id,
+        result: 'FAILURE',
+        summary: '管理员重置用户密码失败',
+        failureCode: error && typeof error === 'object' && 'statusCode' in error ? `HTTP_${error.statusCode}` : 'PASSWORD_RESET_FAILED'
+      })
+    }
     await recordPasswordAudit(
       event,
       id,

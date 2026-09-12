@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -54,6 +55,17 @@ export default defineEventHandler(async (event) => {
     // 删除文件
     await fs.unlink(filepath)
 
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'BACKUP.DELETE',
+      targetType: 'BACKUP',
+      targetId: filename,
+      targetLabel: filename,
+      result: 'SUCCESS',
+      summary: '管理员删除了备份文件',
+      changes: { filename }
+    })
+
     console.log(`管理员 ${user.username} 删除了备份文件：${filename}`)
 
     return {
@@ -63,6 +75,17 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('删除备份文件失败:', error)
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'BACKUP.DELETE',
+        targetType: 'BACKUP',
+        targetId: getRouterParam(event, 'filename'),
+        result: 'FAILURE',
+        summary: '管理员删除备份文件失败',
+        failureCode: getAdminOperationFailureCode(error, 'BACKUP_DELETE_FAILED')
+      })
+    }
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || '删除备份文件失败'

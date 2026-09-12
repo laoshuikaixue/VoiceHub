@@ -15,6 +15,7 @@ import {
   verifyStateCode
 } from '~~/server/utils/captchaStore'
 import { randomInt } from 'node:crypto'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {
@@ -109,6 +110,16 @@ export default defineEventHandler(async (event) => {
           meowBoundAt: new Date()
         })
         .where(eq(users.id, userId))
+
+      await recordAdminOperation(event, {
+        actor: user,
+        action: 'ACCOUNT.MEOW_BIND',
+        targetType: 'MEOW_ACCOUNT',
+        targetLabel: 'MeoW',
+        result: 'SUCCESS',
+        summary: '用户绑定 MeoW 账号',
+        changes: { provider: 'meow' }
+      })
 
       return {
         success: true,

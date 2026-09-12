@@ -27,6 +27,7 @@ import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECOND
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
 import { z } from 'zod'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 type SongRequestUser = {
   id: number
@@ -603,6 +604,21 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
       }
     }
+
+    await recordAdminOperation(event, {
+      actor: user,
+      action: 'SONG.REQUEST_CREATE',
+      targetType: 'SONG',
+      targetId: song.id,
+      targetLabel: `${song.title} - ${song.artist}`,
+      result: 'SUCCESS',
+      summary: '用户提交歌曲请求',
+      changes: {
+        provider: song.musicPlatform,
+        semester: song.semester,
+        count: notificationsToSend.length
+      }
+    })
 
     return song
   } catch (error: any) {

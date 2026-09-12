@@ -25,11 +25,18 @@ import {
   votes
 } from '~/drizzle/schema'
 import { eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
+import { assertAdminOperationTablesProtected, getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
+
+// 此列表必须与下方实际删除的业务表同步；admin_operation_logs 为只追加审计表。
+const BACKUP_CLEAR_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'notifications', 'notification_settings', 'card_code_redeem_logs', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'user_status_logs', 'email_templates', 'song_blacklists', 'user_identities', 'songs', 'card_codes', 'play_times', 'semesters', 'request_times', 'system_settings', 'users']
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
+    if (user) {
+      await recordAdminOperation(event, { actor: { id: user.id, role: user.role }, action: 'DB.RESET', targetType: 'DATABASE', targetId: 'clear', result: 'FAILURE', summary: '管理员清空数据库被拒绝', failureCode: 'HTTP_403' })
+    }
     throw createError({
       statusCode: 403,
       message: '只有超级管理员可以清空数据库'
@@ -66,6 +73,15 @@ export default defineEventHandler(async (event) => {
       await db.delete(userIdentities).where(eq(userIdentities.userId, currentUserId))
       await db.delete(users).where(eq(users.id, currentUserId))
 
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'DB.RESET',
+        targetType: 'DATABASE',
+        targetId: 'temporary-admin',
+        result: 'SUCCESS',
+        summary: '管理员清理了临时管理员数据'
+      })
+
       return {
         success: true,
         message: '临时管理员账户已清理',
@@ -86,6 +102,7 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('清空现有数据...')
+    assertAdminOperationTablesProtected(BACKUP_CLEAR_TARGET_TABLES)
 
     if (shouldOverwriteSuperAdmin || preservedSuperAdminIds.length === 0) {
       await db.delete(apiLogs)
@@ -161,6 +178,15 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('✅ 现有数据已清空')
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'DB.RESET',
+      targetType: 'DATABASE',
+      targetId: 'clear',
+      result: 'SUCCESS',
+      summary: '管理员清空了数据库',
+      changes: { mode: shouldOverwriteSuperAdmin ? 'overwrite-super-admin' : 'preserve-super-admin' }
+    })
     return {
       success: true,
       message: '数据已清空',
@@ -170,6 +196,17 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('清空数据失败:', error)
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'DB.RESET',
+        targetType: 'DATABASE',
+        targetId: 'clear',
+        result: 'FAILURE',
+        summary: '管理员清空数据库失败',
+        failureCode: getAdminOperationFailureCode(error, 'DB_CLEAR_FAILED')
+      })
+    }
     throw createError({
       statusCode: 500,
       message: '清空数据失败：' + error.message

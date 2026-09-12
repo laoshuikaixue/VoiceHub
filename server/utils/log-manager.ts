@@ -129,6 +129,8 @@ export class LogManager {
     logFileSize: number
     totalLogFiles: number
     archivedFiles: number
+    archiveSize: number
+    lastArchivedAt: Date | null
     oldestLog: Date | null
     newestLog: Date | null
   }> {
@@ -153,11 +155,17 @@ export class LogManager {
 
       // 统计归档文件数量
       let archivedFiles = 0
+      let archiveSize = 0
+      let lastArchivedAt: Date | null = null
       try {
         const archiveFiles = await fs.readdir(archiveDir)
-        archivedFiles = archiveFiles.filter(
+        const matchingArchiveFiles = archiveFiles.filter(
           (f) => f.startsWith('api-') && f.endsWith('.log')
-        ).length
+        )
+        archivedFiles = matchingArchiveFiles.length
+        const archiveStats = await Promise.all(matchingArchiveFiles.map((file) => fs.stat(path.join(archiveDir, file))))
+        archiveSize = archiveStats.reduce((total, stats) => total + stats.size, 0)
+        lastArchivedAt = archiveStats.reduce<Date | null>((latest, stats) => !latest || stats.mtime > latest ? stats.mtime : latest, null)
       } catch {
         // 归档目录不存在
       }
@@ -181,6 +189,8 @@ export class LogManager {
         logFileSize,
         totalLogFiles,
         archivedFiles,
+        archiveSize,
+        lastArchivedAt,
         oldestLog: oldestResult[0]?.createdAt || null,
         newestLog: newestResult[0]?.createdAt || null
       }
@@ -191,6 +201,8 @@ export class LogManager {
         logFileSize: 0,
         totalLogFiles: 0,
         archivedFiles: 0,
+        archiveSize: 0,
+        lastArchivedAt: null,
         oldestLog: null,
         newestLog: null
       }
