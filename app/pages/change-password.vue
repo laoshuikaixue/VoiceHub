@@ -68,6 +68,12 @@
           <div class="form-header">
             <h2>{{ isFirstLogin ? locale.setNewPassword : locale.changePasswordTitle }}</h2>
             <p>{{ isFirstLogin ? locale.setNewPasswordDesc : locale.updatePasswordDesc }}</p>
+            <p
+              v-if="isFirstLogin && auth.isAuthenticated && accountDisplayName"
+              class="account-identity"
+            >
+              {{ locale.initialPasswordAccount.replace('{0}', accountDisplayName) }}
+            </p>
           </div>
 
           <div class="password-form-shell">
@@ -112,6 +118,11 @@ const isFirstLogin = computed(() => {
   return currentUser?.needsInitialPasswordSetup === true
 })
 const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
+// 优先显示姓名，未填写时回退用户名
+const accountDisplayName = computed(() => {
+  const user = auth.user.value
+  return user?.name?.trim() || user?.username?.trim() || ''
+})
 
 // 未登录用户重定向到登录页
 onMounted(async () => {
@@ -283,6 +294,13 @@ onMounted(async () => {
 .form-header {
   text-align: center;
   margin-bottom: 32px;
+}
+
+.account-identity {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .form-header h2 {

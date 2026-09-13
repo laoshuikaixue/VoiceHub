@@ -49,6 +49,7 @@ const siteConfig = ref({
   gonganNumber: '',
   captchaEnabled: false,
   captchaProvider: 'graphic',
+  captchaMaxFailures: 3,
   turnstileSiteKey: '',
   enableSubmissionLimit: false,
   enableCardCodeRequests: false,
@@ -214,6 +215,13 @@ export const useSiteConfig = () => {
   )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
+  // 触发图形验证码的失败阈值：0 = 每次必验，空值/非法回退 3
+  const captchaMaxFailures = computed(() => {
+    const raw = siteConfig.value.captchaMaxFailures
+    if (raw === null || raw === undefined || raw === '') return 3
+    const value = Number(raw)
+    return Number.isInteger(value) && value >= 0 ? value : 3
+  })
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({
@@ -304,6 +312,7 @@ export const useSiteConfig = () => {
     legalConsentDocuments,
     captchaEnabled,
     captchaProvider,
+    captchaMaxFailures,
     turnstileSiteKey,
     smtpEnabled,
     oauth,

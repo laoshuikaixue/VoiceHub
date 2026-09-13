@@ -104,6 +104,7 @@
         <div class="flex gap-2">
           <input
             v-model="formData.oauthStateSecret"
+            autocomplete="new-password"
             :type="showSecrets.state ? 'text' : 'password'"
             :placeholder="locale.stateSecretPlaceholder"
             :class="inputClass"
@@ -293,8 +294,9 @@
 
         <div>
           <label :class="labelClass">{{ locale.clientId }}</label>
-          <input
-            v-model="formData.customOAuthClientId"
+            <input
+              v-model="formData.customOAuthClientId"
+              autocomplete="off"
             type="text"
             :placeholder="locale.clientIdPlaceholder"
             :class="inputClass"
@@ -306,6 +308,7 @@
           <div class="flex gap-2">
             <input
               v-model="formData.customOAuthClientSecret"
+              autocomplete="new-password"
               :type="showSecrets.custom ? 'text' : 'password'"
               :placeholder="showSecrets.custom ? locale.clientSecretPlaceholder : '••••••••••••••••'"
               :class="inputClass"
@@ -335,6 +338,7 @@
             <label :class="labelClass">{{ locale.usernameField }}</label>
             <input
               v-model="formData.customOAuthUsernameField"
+              autocomplete="off"
               type="text"
               placeholder="preferred_username"
               :class="inputClass"
@@ -355,6 +359,7 @@
             <label :class="labelClass">{{ locale.emailField }}</label>
             <input
               v-model="formData.customOAuthEmailField"
+              autocomplete="off"
               type="text"
               placeholder="email"
               :class="inputClass"

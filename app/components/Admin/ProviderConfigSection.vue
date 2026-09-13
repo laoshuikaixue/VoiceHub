@@ -47,6 +47,7 @@
         <label :class="labelClass">{{ clientIdLabel }}</label>
         <input
           :value="clientId"
+          autocomplete="off"
           @input="$emit('update:clientId', $event.target.value)"
           type="text"
           :placeholder="clientIdPlaceholder"
@@ -59,6 +60,7 @@
         <div class="flex gap-2">
           <input
             :value="clientSecret"
+            autocomplete="new-password"
             @input="$emit('update:clientSecret', $event.target.value)"
             :type="showSecret ? 'text' : 'password'"
             :placeholder="showSecret ? clientSecretPlaceholder : '••••••••••••••••'"

@@ -11,6 +11,58 @@ export const convertToHttps = (url: string | null | undefined): string => {
   return url
 }
 
+// 背景渲染仅用于取色（渲染器内部会降采样到 32×32）与 60px 模糊，收敛到小图即可，
+// 与 QQ 音乐封面缩略图（T002R300x300M000）取同一口径
+const COVER_SIZE = 300
+
+// 网易云图片 CDN：param=边长y边长 做正方形裁切缩放
+const NETEASE_IMAGE_HOSTS = ['music.126.net']
+
+// QQ 音乐图片 CDN：尺寸写在文件名里（T002R500x500M000{albumMid}.jpg），不认 query 缩放参数
+const QQ_IMAGE_HOSTS = ['y.gtimg.cn', 'y.qq.com']
+const QQ_IMAGE_SIZE_PATTERN = /(T\d{3})R(\d+)x(\d+)M000/
+
+const matchHost = (host: string, hosts: string[]): boolean =>
+  hosts.some((item) => host === item || host.endsWith(`.${item}`))
+
+/**
+ * 按需收敛封面URL的尺寸，避免背景渲染加载超大原图
+ *
+ * 网易云部分专辑原图可达 10MB 以上，超过图片代理的体积上限会被拒绝加载。
+ * 网易云与 QQ 音乐可做尺寸收敛；其余来源（如咪咕 CDN 不提供缩放参数）原样返回，
+ * 由图片代理的体积上限配合背景渲染的降级兜底保证不出现空白背景。
+ * @param url - 封面URL
+ * @param size - 期望边长（像素）
+ * @returns 收敛尺寸后的URL；不支持尺寸控制的来源原样返回
+ */
+export const getSizedCoverUrl = (url: string | null | undefined, size = COVER_SIZE): string => {
+  if (!url) return ''
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.toLowerCase()
+
+    if (matchHost(host, NETEASE_IMAGE_HOSTS)) {
+      if (parsed.searchParams.has('param')) return url
+      parsed.searchParams.set('param', `${size}y${size}`)
+      return parsed.toString()
+    }
+
+    if (matchHost(host, QQ_IMAGE_HOSTS)) {
+      const matched = QQ_IMAGE_SIZE_PATTERN.exec(parsed.pathname)
+      if (!matched) return url
+      // 只收敛不放大，已足够小的地址保持原样
+      const currentSize = Number(matched[2])
+      if (!Number.isFinite(currentSize) || currentSize <= size) return url
+      parsed.pathname = parsed.pathname.replace(QQ_IMAGE_SIZE_PATTERN, `$1R${size}x${size}M000`)
+      return parsed.toString()
+    }
+
+    return url
+  } catch {
+    return url
+  }
+}
+
 /**
  * 验证URL格式是否有效
  * @param url - 要验证的URL字符串

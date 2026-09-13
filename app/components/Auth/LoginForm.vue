@@ -374,7 +374,11 @@
         </button>
       </div>
 
-      <button :disabled="loading" class="submit-btn" type="submit">
+      <button
+        :disabled="loading || captchaPending"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending }]"
+        type="submit"
+      >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
           <circle
             cx="12"
@@ -516,7 +520,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentUpdatedDate, legalConsentDocuments } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentUpdatedDate, legalConsentDocuments } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -548,7 +552,16 @@ const showCaptcha = computed(() => {
   if (isGraphicCaptchaRequired.value) return true
   // 否则根据配置显示
   if (!captchaEnabled.value) return false
+  // 阈值为 0 时每次都显示（bind 接口不校验验证码，绑定模式除外）
+  if (captchaProvider.value === 'graphic' && !isBindMode.value && captchaMaxFailures.value === 0) return true
   return captchaProvider.value === 'turnstile'
+})
+
+// 验证码未加载完成时禁用提交
+const captchaPending = computed(() => {
+  if (!showCaptcha.value) return false
+  if (captchaProvider.value === 'turnstile') return false
+  return !captchaId.value
 })
 
 const getFormTitle = computed(() => {
@@ -621,6 +634,28 @@ const rejectLegalConsent = () => {
   error.value = locale.value.legalConsentBlocked
   toastError('未同意最新条款前，无法输入账号密码或使用快捷登录。')
 }
+
+// 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
+let captchaPrecheckTimer = null
+const precheckCaptchaRequired = () => {
+  if (showRegisterMode.value || isBindMode.value) return
+  if (!captchaEnabled.value || captchaProvider.value !== 'graphic') return
+  if (captchaMaxFailures.value === 0 || isGraphicCaptchaRequired.value) return
+  const name = username.value.trim()
+  if (!name) return
+  $fetch('/api/auth/captcha-required', { query: { username: name } })
+    .then((res) => {
+      if (res?.captchaRequired) isGraphicCaptchaRequired.value = true
+    })
+    .catch(() => {})
+}
+
+watch(username, () => {
+  clearTimeout(captchaPrecheckTimer)
+  captchaPrecheckTimer = setTimeout(precheckCaptchaRequired, 400)
+})
+
+onUnmounted(() => clearTimeout(captchaPrecheckTimer))
 
 // 二次确认文案：将第三方账号与当前输入的账户绑定
 const bindConfirmMessage = computed(() => {
@@ -833,6 +868,12 @@ const handleLogin = async () => {
 
 // 发起登录/绑定请求，成功后跳转；返回 'success' | '2fa' | 'failed'
 const performLogin = async () => {
+  // 兜底：验证码未就绪时不提交
+  if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
+    error.value = authLocale.value?.captchaInput?.loadFailed || locale.value.loginFailed
+    return 'failed'
+  }
+
   loading.value = true
 
   // 构建请求体，包含验证码信息
@@ -1543,7 +1584,8 @@ const handleWebAuthnLogin = async () => {
   transition:
     background var(--transition-normal),
     box-shadow var(--transition-normal),
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1563,8 +1605,11 @@ const handleWebAuthnLogin = async () => {
 }
 
 .submit-btn:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+}
+
+.submit-btn.is-disabled {
+  opacity: 0.6;
   transform: none;
 }
 

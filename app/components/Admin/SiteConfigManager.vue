@@ -565,7 +565,7 @@
                   <input
                     v-model.number="formData.captchaMaxFailures"
                     type="number"
-                    min="1"
+                    min="0"
                     :disabled="!formData.captchaEnabled"
                     :placeholder="locale.captchaMaxFailuresPlaceholder"
                     class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
@@ -591,6 +591,7 @@
                     <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSecretKey }}</label>
                     <input
                       v-model="formData.turnstileSecretKey"
+                      autocomplete="new-password"
                       type="password"
                       :disabled="!formData.captchaEnabled"
                       :placeholder="locale.turnstileSecretKeyPlaceholder"

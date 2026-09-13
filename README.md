@@ -996,6 +996,7 @@ VoiceHub/
 │       ├── timeUtils.ts       # 时间工具
 │       ├── user-archive.ts    # 账号归档判定与筛选参数解析
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
+│       ├── print-image-cache.ts # 打印导出图片下载缓存
 │       └── url.ts             # URL处理工具
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
@@ -1103,6 +1104,8 @@ VoiceHub/
 │   │   │   │   ├── test-connection.post.ts # 测试SMTP连接
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
 │   │   │   ├── songs/               # 管理员歌曲管理API
+│   │   │   │   ├── batch-reject.post.ts  # 批量驳回歌曲
+│   │   │   │   ├── cover.post.ts    # 获取歌曲封面
 │   │   │   │   ├── delete.post.ts   # 删除歌曲
 │   │   │   │   ├── duration.post.ts # 更新歌曲时长
 │   │   │   │   ├── mark-played.post.ts  # 标记歌曲已播放
@@ -1146,6 +1149,7 @@ VoiceHub/
 │   │   │       └── [...path].ts   # 转发网易云API请求
 │   │   ├── auth/           # 认证API
 │   │   │   ├── captcha.get.ts         # 图形验证码
+│   │   │   ├── captcha-required.get.ts # 登录验证码预检
 │   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
 │   │   │   ├── grade-class-options.get.ts # 年级班级选项
 │   │   │   ├── email-code.post.ts # 注册邮箱验证码发送
@@ -1378,6 +1382,7 @@ VoiceHub/
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
 │   │   ├── song-type-resolver.ts # 歌曲类型（语种/曲风）解析工具
+│   │   ├── songCoverFetcher.ts # 外部平台歌曲封面获取工具
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
@@ -1417,8 +1422,10 @@ VoiceHub/
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
+│       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
+│       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试

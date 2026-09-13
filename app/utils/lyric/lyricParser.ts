@@ -2,7 +2,7 @@ import { cloneDeep } from 'lodash-es'
 import type { LyricLine } from '@applemusic-like-lyrics/lyric'
 import { parseTTML as parseTTMLLib } from '@applemusic-like-lyrics/lyric'
 import { extractLyricContent } from './qrc-parser'
-import { parseLrc } from './parseLrc'
+import { parseLrc, parseTimeToMs } from './parseLrc'
 
 /**
  * LRC 格式类型
@@ -19,12 +19,12 @@ export enum LrcFormat {
 /** LyricWord 类型 */
 type LyricWord = { word: string; startTime: number; endTime: number; romanWord: string }
 
-// 预编译正则表达式
+// 预编译正则表达式（时间戳分钟位 1-2 位，需与 parseLrc 保持一致）
 const META_TAG_REGEX = /^\[[a-z]+:/i
-const TIME_TAG_REGEX = /\[(\d{2}):(\d{2})\.(\d{1,})\]/g
-const ENHANCED_TIME_TAG_REGEX = /<(\d{2}):(\d{2})\.(\d{1,})>/
+const FORMAT_DETECT_TIME_TAG_REGEX = /\[(\d{1,2}):(\d{2})\.(\d{1,})\]/g
+const ENHANCED_TIME_TAG_REGEX = /<(\d{1,2}):(\d{2})\.(\d{1,})>/
 // 移除全局带状态的正则，改为在函数内使用 matchAll 或重新构建
-const LINE_TIME_REGEX = /^\[(\d{2}):(\d{2})\.(\d{1,})\]/
+const LINE_TIME_REGEX = /^\[(\d{1,2}):(\d{2})\.(\d{1,})\]/
 
 // QRC 解析相关正则 - 提前编译
 const QRC_LINE_PATTERN = /^\[(\d+),(\d+)\](.*)$/
@@ -34,19 +34,6 @@ const DEFAULT_WORD_DURATION = 1000
 const ALIGN_TOLERANCE_MS = 300
 /** 二次最近邻对齐的漂移容差：兜底时间轴整体漂移较大的来源 */
 const DRIFT_TOLERANCE_MS = 1500
-
-/**
- * 解析时间戳为毫秒
- * 使用字符串补齐处理，避免浮点数计算误差
- */
-const parseTimeToMs = (min: string, sec: string, ms: string): number => {
-  const minutes = parseInt(min, 10)
-  const seconds = parseInt(sec, 10)
-  // 补齐到 3 位 (例如 "5" -> "500", "05" -> "050", "1234" -> "123")
-  const msNormalized = ms.padEnd(3, '0').slice(0, 3)
-  const milliseconds = parseInt(msNormalized, 10)
-  return minutes * 60 * 1000 + seconds * 1000 + milliseconds
-}
 
 /**
  * 创建 LyricWord 对象
@@ -84,7 +71,7 @@ export const detectLrcFormat = (content: string): LrcFormat => {
       return LrcFormat.Enhanced
     }
     // 检查逐字LRC
-    const matches = line.match(TIME_TAG_REGEX)
+    const matches = line.match(FORMAT_DETECT_TIME_TAG_REGEX)
     if (matches && matches.length > 1) {
       return LrcFormat.WordByWord
     }
@@ -99,7 +86,7 @@ export const detectLrcFormat = (content: string): LrcFormat => {
 export const parseWordByWordLrc = (content: string): LyricLine[] => {
   const result: LyricLine[] = []
   let prevLine: LyricLine | null = null
-  const WORD_BY_WORD_PATTERN = /\[(\d{2}):(\d{2})\.(\d{1,})\]([^[\\]]*)/g
+  const WORD_BY_WORD_PATTERN = /\[(\d{1,2}):(\d{2})\.(\d{1,})\]([^[\\]]*)/g
 
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim()
@@ -166,7 +153,7 @@ export const parseWordByWordLrc = (content: string): LyricLine[] => {
 export const parseEnhancedLrc = (content: string): LyricLine[] => {
   const result: LyricLine[] = []
   let prevLine: LyricLine | null = null
-  const ENHANCED_WORD_PATTERN = /<(\d{2}):(\d{2})\.(\d{1,})>([^<]*)/g
+  const ENHANCED_WORD_PATTERN = /<(\d{1,2}):(\d{2})\.(\d{1,})>([^<]*)/g
 
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim()

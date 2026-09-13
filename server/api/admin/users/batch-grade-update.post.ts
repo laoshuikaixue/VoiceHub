@@ -14,7 +14,11 @@ export default defineEventHandler(async (event) => {
 
     // 获取请求体
     const body = await readBody(event)
-    const { userIds, targetGrade, keepClass } = body
+    const { userIds, targetGrade, keepClass, accountStatus } = body
+    const accountStatusFilter = typeof accountStatus === 'string' ? accountStatus.trim() : ''
+    if (accountStatusFilter && !['active', 'pending', 'withdrawn', 'graduate'].includes(accountStatusFilter)) {
+      throw createError({ statusCode: 400, message: '账号状态筛选值无效' })
+    }
 
     // 验证必填字段
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
@@ -76,7 +80,8 @@ export default defineEventHandler(async (event) => {
         username: users.username,
         grade: users.grade,
         class: users.class,
-        role: users.role
+        role: users.role,
+        status: users.status
       })
       .from(users)
       .where(inArray(users.id, uniqueUserIds))
@@ -99,6 +104,11 @@ export default defineEventHandler(async (event) => {
     // 过滤出有权限修改的用户
     const validExistingUserIds: number[] = []
     for (const user of existingUsers) {
+      if (accountStatusFilter && user.status !== accountStatusFilter) {
+        failed++
+        errors.push({ userId: user.id, error: '账号状态与筛选条件不匹配' })
+        continue
+      }
       if (user.id === 1) {
         failed++
         errors.push({ userId: user.id, error: '无法修改系统初始超级管理员' })
@@ -163,7 +173,8 @@ export default defineEventHandler(async (event) => {
         existingUsers: existingUsers.length,
         nonExistentUsers: nonExistentUserIds.length,
         targetGrade,
-        keepClass
+        keepClass,
+        accountStatus: accountStatusFilter || null
       }
     }
   } catch (error) {

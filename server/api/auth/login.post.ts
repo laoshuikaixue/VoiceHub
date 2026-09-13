@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { db, eq, users, userIdentities, and, systemSettings } from '~/drizzle/db'
+import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
   getAccountLockRemainingTime,
@@ -11,8 +11,8 @@ import {
   recordAccountIpLogin,
   blockUser,
   getUserBlockRemainingTime,
-  //导入失败计数查询函数
-  getLoginFailureCount
+  resolveCaptchaSettings,
+  isPasswordLoginCaptchaRequired
 } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
@@ -21,7 +21,6 @@ import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
-import type { SystemSettings } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
 
@@ -53,8 +52,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查IP是否被限制
-    if (isIPBlocked(clientIp)) {
-      const remainingTime = getIPBlockRemainingTime(clientIp)
+    if (await isIPBlocked(clientIp)) {
+      const remainingTime = await getIPBlockRemainingTime(clientIp)
       throw createApiError(423, 'AUTH_IP_BLOCKED_RETRY_MINUTES', `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
     }
 
@@ -64,48 +63,16 @@ export default defineEventHandler(async (event) => {
       throw createApiError(423, 'AUTH_ACCOUNT_LOCKED_MINUTES', `账户已被锁定，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
     }
 
-    // 读取全局配置：是否启用图形验证码
-    let captchaEnabled = false
-    let captchaProvider = 'graphic'
-    let turnstileSecretKey = ''
-    let captchaMaxFailures = 3
-    try {
-      const settings = await db
-        .select()
-        .from(systemSettings)
-        .limit(1)
-        .then((rows) => rows[0] as SystemSettings | undefined)
-
-      if (settings?.captchaEnabled) {
-        captchaEnabled = true
-        captchaProvider = settings.captchaProvider || 'graphic'
-        turnstileSecretKey = settings.turnstileSecretKey || ''
-        if (settings.captchaMaxFailures) {
-          captchaMaxFailures = settings.captchaMaxFailures
-        }
-      }
-    } catch (e) {
-      // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
-      console.warn('读取验证码配置失败，已暂时禁用:', e)
-    }
-
-    // 图形验证码检查
-    let needCaptcha = false
-    if (captchaEnabled) {
-      if (captchaProvider === 'turnstile') {
-        needCaptcha = true // Turnstile 每次都验证
-      } else {
-        const failCount = await getLoginFailureCount(body.username)
-        needCaptcha = failCount >= captchaMaxFailures
-      }
-    }
+    // 读取验证码配置并判断是否需要验证码（阈值 0 = 每次必验；用户名/IP 任一维度达标即要求）
+    const captchaSettings = await resolveCaptchaSettings()
+    const needCaptcha = await isPasswordLoginCaptchaRequired(body.username, clientIp, captchaSettings)
 
     // 验证码校验
     if (needCaptcha) {
-      if (captchaProvider === 'turnstile') {
+      if (captchaSettings.provider === 'turnstile') {
         const turnstileToken = body.turnstileToken
 
-        if (!turnstileSecretKey) {
+        if (!captchaSettings.turnstileSecretKey) {
           console.error('Turnstile is enabled but secret key is missing!')
           throw createApiError(500, 'AUTH_CODE_SERVICE_CONFIG_ERROR', '验证码服务配置错误，请联系管理员')
         }
@@ -116,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
         const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
         const formData = new URLSearchParams()
-        formData.append('secret', turnstileSecretKey)
+        formData.append('secret', captchaSettings.turnstileSecretKey)
         formData.append('response', turnstileToken)
         formData.append('remoteip', clientIp)
 
@@ -243,10 +210,10 @@ export default defineEventHandler(async (event) => {
 
     await recordLoginSuccess(body.username, clientIp)
 
-    const ipSwitchExceeded = recordAccountIpLogin(body.username, clientIp)
+    const ipSwitchExceeded = await recordAccountIpLogin(body.username, clientIp)
     if (ipSwitchExceeded) {
       blockUser(user.id)
-      const ipRemain = getIPBlockRemainingTime(clientIp)
+      const ipRemain = await getIPBlockRemainingTime(clientIp)
       const userRemain = getUserBlockRemainingTime(user.id)
       throw createApiError(423, 'AUTH_MULTI_IP_PROTECTION', `检测到同一账号短期多IP登录，当前IP限制 ${ipRemain} 分钟，账户保护 ${userRemain} 分钟`, { params: [ipRemain, userRemain] })
     }

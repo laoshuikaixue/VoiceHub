@@ -5,6 +5,11 @@ export const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
   '返回已知无效音频链接',
   'qq-music-api 未返回歌词',
   '[tx.lyric] qq-music-api 歌词接口失败',
+  // QQ 旧版歌词接口回退失败（业务码非 0 或 HTTP 非 2xx）
+  'qq 歌词接口异常:',
+  'qq 歌词接口返回',
+  // B 站上游接口波动/风控（如 412 Precondition Failed），URL 由 ofetch 拼入错误消息
+  'api.bilibili.com',
   'The operation was aborted due to timeout',
   'request timed out',
   'timeout exceeded',
@@ -41,6 +46,12 @@ export const stringifyErrorValue = (
 
   if (seen.has(value)) return ''
   seen.add(value)
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stringifyErrorValue(item, depth + 1, seen))
+      .filter(Boolean)
+      .join(' ')
+  }
 
   const record = value as Record<string, unknown>
   const errorName = value instanceof Error ? value.name : record.name
@@ -51,6 +62,10 @@ export const stringifyErrorValue = (
     errorMessage,
     record.statusMessage,
     record.statusCode,
+    // Sentry 日志参数（console.error 传入的错误对象）
+    stringifyErrorValue(record.params, depth + 1, seen),
+    // H3Error.data / FetchError.data
+    stringifyErrorValue(record.data, depth + 1, seen),
     stringifyErrorValue(record.cause, depth + 1, seen)
   ]
     .filter((item) => item !== undefined && item !== null && item !== '')

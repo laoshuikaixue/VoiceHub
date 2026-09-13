@@ -250,6 +250,91 @@
                 class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm focus:outline-none text-text-secondary min-h-[80px] resize-none focus:border-primary-50 transition-colors"
               />
             </div>
+
+            <!-- 导出方案 -->
+            <div class="space-y-2">
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+                >{{ locale.exportPresets }}</label
+              >
+              <div class="flex gap-2">
+                <input
+                  v-model="newPresetName"
+                  type="text"
+                  maxlength="30"
+                  :placeholder="locale.presetNamePlaceholder"
+                  class="flex-1 min-w-0 bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
+                  @keydown.enter="saveCurrentAsPreset"
+                />
+                <button
+                  class="shrink-0 flex items-center justify-center gap-1.5 px-3 py-2 bg-bg-tertiary-80 hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-lg border border-border-tertiary transition-all"
+                  @click="saveCurrentAsPreset"
+                >
+                  <Plus class="w-3.5 h-3.5" /> {{ locale.savePreset }}
+                </button>
+              </div>
+
+              <p v-if="presets.length === 0" class="text-xs text-text-tertiary">
+                {{ locale.noPresetsHint }}
+              </p>
+              <div v-else class="space-y-1.5">
+                <div
+                  v-for="preset in presets"
+                  :key="preset.id"
+                  :class="[
+                    'flex items-center gap-2 rounded-lg border bg-bg-primary px-2.5 py-1.5 transition-colors',
+                    preset.selected ? 'border-primary-30' : 'border-border-secondary'
+                  ]"
+                >
+                  <label class="flex items-center cursor-pointer group select-none shrink-0">
+                    <div
+                      :class="[
+                        'w-4 h-4 rounded flex items-center justify-center border transition-all',
+                        preset.selected
+                          ? 'bg-primary-hover border-primary'
+                          : 'bg-bg-primary border-border-secondary group-hover:border-border-tertiary'
+                      ]"
+                    >
+                      <CheckCircle2 v-if="preset.selected" class="w-2.5 h-2.5 text-text-primary" />
+                    </div>
+                    <input v-model="preset.selected" type="checkbox" class="hidden" />
+                  </label>
+                  <button
+                    class="flex-1 min-w-0 text-left"
+                    :title="locale.applyPreset"
+                    @click="applyPreset(preset)"
+                  >
+                    <div class="text-xs font-bold text-text-secondary truncate">{{ preset.name }}</div>
+                    <div class="text-[10px] text-text-tertiary truncate">
+                      {{ presetSummary(preset) }}
+                    </div>
+                  </button>
+                  <button
+                    class="shrink-0 p-1 rounded text-text-tertiary hover:text-error transition-colors"
+                    :title="locale.deletePreset"
+                    @click="removePreset(preset)"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="presets.length > 0" class="flex gap-2 pt-1">
+                <CustomSelect
+                  v-model="batchFormat"
+                  :options="batchFormatOptions"
+                  class-name="flex-1 min-w-0"
+                />
+                <button
+                  :disabled="selectedPresetCount === 0 || isBatchExporting"
+                  class="shrink-0 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-bold rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all"
+                  @click="batchExport"
+                >
+                  <Loader2 v-if="isBatchExporting" class="w-3.5 h-3.5 animate-spin" />
+                  <ListChecks v-else class="w-3.5 h-3.5" />
+                  {{ batchExportButtonText }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- 操作按钮 -->
@@ -261,7 +346,7 @@
               <RefreshCw class="w-4 h-4" /> {{ locale.refreshPreview }}
             </button>
             <button
-              :disabled="isPrinting"
+              :disabled="isPrinting || isBatchExporting"
               class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-sm font-bold rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all"
               @click="printSchedule"
             >
@@ -269,14 +354,14 @@
             </button>
             <div class="grid grid-cols-2 gap-2">
               <button
-                :disabled="isExporting"
+                :disabled="isExporting || isBatchExporting"
                 class="flex items-center justify-center gap-2 py-2.5 bg-success-10 text-success hover:bg-success-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-success-20 transition-all"
                 @click="exportPDF"
               >
                 <FileText class="w-3.5 h-3.5" /> {{ isExporting ? locale.exporting : locale.exportPdf }}
               </button>
               <button
-                :disabled="isExportingImage"
+                :disabled="isExportingImage || isBatchExporting"
                 class="flex items-center justify-center gap-2 py-2.5 bg-warning-10 text-warning hover:bg-warning-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-warning-20 transition-all"
                 @click="exportImage"
               >
@@ -446,11 +531,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
+import { downloadImageAsBase64, warmupPrintImages } from '~/utils/print-image-cache'
 import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import {
@@ -461,7 +547,11 @@ import {
   FileText,
   ImageIcon,
   AlignLeft,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  Trash2,
+  Loader2,
+  ListChecks
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
@@ -481,7 +571,7 @@ const generatedAtText = computed(() => {
   return formatLocale(locale.value?.generatedAt, nowText, nowText)
 })
 const remarkText = computed(() => {
-  const remark = settings.remark || ''
+  const remark = settings.value.remark || ''
   return formatLocale(locale.value?.remarkPrefix, remark, remark)
 })
 
@@ -864,7 +954,7 @@ const refreshPreview = async () => {
 }
 
 const printSchedule = async () => {
-  if (isPrinting.value) return // 防止重复点击
+  if (isPrinting.value || isBatchExporting.value) return // 防止重复点击
 
   isPrinting.value = true
   try {
@@ -890,7 +980,7 @@ const printSchedule = async () => {
 
 // 统一的PDF生成函数（支持打印和下载）
 // 采用DOM分页策略，避免长图渲染导致的内存溢出和卡死
-const exportPDFForPrint = async (action = 'print') => {
+const exportPDFForPrint = async (action = 'print', customFilename = null, { notify = true } = {}) => {
   if (!previewContent.value) throw new Error(locale.value.previewNotFound)
 
   const originalPrintPage = previewContent.value.querySelector('.print-page')
@@ -1299,9 +1389,11 @@ const exportPDFForPrint = async (action = 'print') => {
         URL.revokeObjectURL(blobUrl)
       }, 300000)
     } else {
-      const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+      const filename =
+        customFilename ||
+        `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
       pdf.save(filename)
-      if (window.$showNotification) {
+      if (notify && window.$showNotification) {
         window.$showNotification(locale.value.pdfExported, 'success')
       }
     }
@@ -1309,85 +1401,6 @@ const exportPDFForPrint = async (action = 'print') => {
     if (document.body.contains(pageContainer)) {
       document.body.removeChild(pageContainer)
     }
-  }
-}
-
-const isPrivateIPv4 = (hostname) => {
-  const parts = hostname.split('.').map(Number)
-  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part))) return false
-  const [first, second] = parts
-  return (
-    first === 10 ||
-    first === 127 ||
-    (first === 169 && second === 254) ||
-    (first === 172 && second >= 16 && second <= 31) ||
-    (first === 192 && second === 168)
-  )
-}
-
-const isPrivateIPv6 = (hostname) => {
-  const normalizedHost = hostname.toLowerCase()
-  return (
-    normalizedHost === '::1' ||
-    normalizedHost.startsWith('fc') ||
-    normalizedHost.startsWith('fd') ||
-    normalizedHost.startsWith('fe8') ||
-    normalizedHost.startsWith('fe9') ||
-    normalizedHost.startsWith('fea') ||
-    normalizedHost.startsWith('feb')
-  )
-}
-
-const shouldFetchImageDirectly = (url) => {
-  try {
-    const parsedUrl = new URL(url, window.location.origin)
-    const hostname = parsedUrl.hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1')
-    return (
-      parsedUrl.origin === window.location.origin ||
-      hostname === 'localhost' ||
-      hostname.endsWith('.localhost') ||
-      hostname.endsWith('.local') ||
-      hostname.endsWith('.lan') ||
-      hostname.endsWith('.internal') ||
-      isPrivateIPv4(hostname) ||
-      isPrivateIPv6(hostname)
-    )
-  } catch {
-    return true
-  }
-}
-
-const fetchImageBlob = async (url, useProxy) => {
-  const targetUrl = useProxy ? `/api/proxy/image?url=${encodeURIComponent(url)}` : url
-  const response = await fetch(targetUrl)
-  if (!response.ok) {
-    throw new Error(useProxy ? '图片代理下载失败' : '图片直连下载失败')
-  }
-  return response.blob()
-}
-
-// 预下载图片并转换为base64
-const downloadImageAsBase64 = async (url) => {
-  try {
-    const directFirst = shouldFetchImageDirectly(url)
-    let blob
-    try {
-      blob = await fetchImageBlob(url, !directFirst)
-    } catch (error) {
-      if (directFirst) throw error
-      // 代理拒绝内网解析时，交给浏览器按用户网络环境直连
-      blob = await fetchImageBlob(url, false)
-    }
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  } catch (error) {
-    console.warn('图片下载失败:', url, error)
-    return null
   }
 }
 
@@ -1422,6 +1435,13 @@ const preprocessImages = async (element) => {
       }
     }
 
+    // 等待图片实际解码完成，替代固定延时（缓存命中时远快于盲等）
+    try {
+      await img.decode()
+    } catch {
+      // 解码失败由透明像素/占位图兜底
+    }
+
     // 确保图片元素在打印时保持正确的样式
     if (img.classList.contains('school-logo-print')) {
       // 学校Logo保持原始比例，设置最大尺寸
@@ -1454,8 +1474,8 @@ const preprocessImages = async (element) => {
   })
 
   await Promise.all(imagePromises)
-  // 等待一下让图片加载完成
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  // 解码已逐张等待完成，这里仅短暂缓冲布局稳定
+  await new Promise((resolve) => setTimeout(resolve, 50))
 }
 
 const generateAndDownloadImage = async (sourceElement, filename, preProcessCallback = null) => {
@@ -1533,8 +1553,8 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
   await preprocessImages(clonedPage)
 
   try {
-    // 增加等待时间，确保渲染完成
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // 图片解码已在 preprocessImages 中逐张等待，这里仅短暂缓冲渲染稳定
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     const contentHeight = imageContainer.offsetHeight || imageContainer.scrollHeight
 
@@ -1581,14 +1601,11 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
   }
 }
 
-const exportSingleImage = async (printPage) => {
-  await generateAndDownloadImage(
-    printPage,
-    `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`
-  )
+const exportSingleImage = async (printPage, filenameBase) => {
+  await generateAndDownloadImage(printPage, `${filenameBase}.png`)
 }
 
-const exportSplitImages = async (printPage) => {
+const exportSplitImages = async (printPage, filenameBase, silent = false) => {
   const dateGroups = printPage.querySelectorAll('.date-group')
   const months = new Set()
 
@@ -1602,12 +1619,12 @@ const exportSplitImages = async (printPage) => {
   const sortedMonths = Array.from(months).sort()
 
   if (sortedMonths.length === 0) {
-    await exportSingleImage(printPage)
+    await exportSingleImage(printPage, filenameBase)
     return
   }
 
   for (const month of sortedMonths) {
-    await generateAndDownloadImage(printPage, `广播排期表_${month}.png`, (clonedPage) => {
+    await generateAndDownloadImage(printPage, `${filenameBase}_${month}.png`, (clonedPage) => {
       const groups = clonedPage.querySelectorAll('.date-group')
       let hasContent = false
 
@@ -1626,13 +1643,58 @@ const exportSplitImages = async (printPage) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
   }
 
-  if (window.$showNotification) {
+  if (!silent && window.$showNotification) {
     window.$showNotification(locale.value.segmentedExport(sortedMonths.length), 'success')
   }
 }
 
+const defaultImageFilenameBase = () =>
+  `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}`
+
+// 从当前预览生成长图并下载；silent 模式（批量导出）跳过移动端确认与过程提示
+// 返回 false 表示用户在移动端确认弹窗中取消
+const exportPreviewAsImage = async (filenameBase, { silent = false } = {}) => {
+  if (!previewContent.value) {
+    throw new Error(locale.value.previewNotFound)
+  }
+
+  const printPage = previewContent.value.querySelector('.print-page') || previewContent.value
+
+  // 获取实际内容高度
+  const fullHeight = printPage.scrollHeight
+  const MAX_HEIGHT = 15000
+
+  // 检查设备是否为移动端
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  )
+
+  // 如果是移动端且内容过长，建议使用PDF导出
+  if (!silent && isMobile && fullHeight > 5000) {
+    if (
+      confirm(
+        '当前排期内容较长，在移动设备上生成长图可能会导致卡顿或失败。建议使用"导出PDF"功能，是否继续尝试生成长图？'
+      )
+    ) {
+      // 用户坚持要生成，继续
+    } else {
+      return false
+    }
+  }
+
+  if (fullHeight > MAX_HEIGHT) {
+    if (!silent && window.$showNotification) {
+      window.$showNotification(locale.value.autoSegmenting, 'info')
+    }
+    await exportSplitImages(printPage, filenameBase, silent)
+  } else {
+    await generateAndDownloadImage(printPage, `${filenameBase}.png`)
+  }
+  return true
+}
+
 const exportPDF = async () => {
-  if (isExporting.value) return
+  if (isExporting.value || isBatchExporting.value) return
 
   isExporting.value = true
   try {
@@ -1653,56 +1715,13 @@ const exportPDF = async () => {
 }
 
 const exportImage = async () => {
-  if (isExportingImage.value) return
-
-  if (!previewContent.value) {
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.previewNotFound, 'error')
-    }
-    return
-  }
+  if (isExportingImage.value || isBatchExporting.value) return
 
   isExportingImage.value = true
 
   try {
-    const printPage = previewContent.value.querySelector('.print-page') || previewContent.value
-
-    // 获取实际内容高度
-    const fullHeight = printPage.scrollHeight
-    const MAX_HEIGHT = 15000
-
-    // 检查设备是否为移动端
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    )
-
-    // 如果是移动端且内容过长，建议使用PDF导出
-    if (isMobile && fullHeight > 5000) {
-      if (
-        confirm(
-          '当前排期内容较长，在移动设备上生成长图可能会导致卡顿或失败。建议使用"导出PDF"功能，是否继续尝试生成长图？'
-        )
-      ) {
-        // 用户坚持要生成，继续
-      } else {
-        isExportingImage.value = false
-        return
-      }
-    }
-
-    if (fullHeight > MAX_HEIGHT) {
-      if (window.$showNotification) {
-        window.$showNotification(locale.value.autoSegmenting, 'info')
-      }
-      await exportSplitImages(printPage)
-    } else {
-      await generateAndDownloadImage(
-        printPage,
-        `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.png`
-      )
-    }
-
-    if (window.$showNotification) {
+    const completed = await exportPreviewAsImage(defaultImageFilenameBase())
+    if (completed && window.$showNotification) {
       window.$showNotification(locale.value.imageExported, 'success')
     }
   } catch (error) {
@@ -1712,6 +1731,211 @@ const exportImage = async () => {
     }
   } finally {
     isExportingImage.value = false
+  }
+}
+
+// ===== 导出方案 =====
+const PRESETS_STORAGE_KEY = 'voicehub_print_presets'
+
+// 方案仅快照排版样式；日期范围与备注在批量导出时共用面板当前值
+const PRESET_FIELDS = [
+  'paperSize',
+  'orientation',
+  'layoutStyle',
+  'listColumns',
+  'showCover',
+  'showTitle',
+  'showArtist',
+  'showRequester',
+  'showVotes',
+  'showSequence',
+  'showSchoolLogo',
+  'showPlayTime'
+]
+
+const presets = ref([])
+const newPresetName = ref('')
+const batchFormat = ref('pdf')
+const isBatchExporting = ref(false)
+const batchProgress = ref(null)
+
+const batchFormatOptions = computed(() => [
+  { label: locale.value?.batchFormatPdf || 'PDF', value: 'pdf' },
+  { label: locale.value?.batchFormatImage || 'PNG', value: 'image' }
+])
+
+const selectedPresetCount = computed(() => presets.value.filter((p) => p.selected).length)
+
+const batchExportButtonText = computed(() => {
+  if (isBatchExporting.value && batchProgress.value) {
+    return formatLocale(
+      locale.value?.batchExporting,
+      '',
+      batchProgress.value.index,
+      batchProgress.value.total
+    )
+  }
+  return formatLocale(locale.value?.batchExportSelected, '', selectedPresetCount.value)
+})
+
+// 方案摘要：纸张 · 排版 · 方向（· 两列）
+const presetSummary = (preset) => {
+  const s = preset.settings
+  const parts = [
+    s.paperSize,
+    s.layoutStyle === 'table' ? locale.value.tableLayout : locale.value.classicList,
+    s.orientation === 'landscape' ? locale.value.landscape : locale.value.portrait
+  ]
+  if (s.layoutStyle === 'classic' && s.orientation === 'portrait' && s.listColumns === 2) {
+    parts.push(locale.value.twoColumns)
+  }
+  return parts.filter(Boolean).join(' · ')
+}
+
+// 从 localStorage 加载导出方案（字段逐项类型校验，异常值回退当前默认值）
+const loadPresets = () => {
+  try {
+    const saved = localStorage.getItem(PRESETS_STORAGE_KEY)
+    if (!saved) return
+    const parsed = JSON.parse(saved)
+    if (!Array.isArray(parsed)) return
+    presets.value = parsed
+      .filter((item) => item && typeof item === 'object' && typeof item.name === 'string')
+      .map((item) => {
+        const presetSettings = {}
+        PRESET_FIELDS.forEach((key) => {
+          const value = item.settings?.[key]
+          presetSettings[key] =
+            typeof value === typeof settings.value[key] ? value : settings.value[key]
+        })
+        return {
+          id: String(item.id || `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`),
+          name: item.name,
+          settings: presetSettings,
+          selected: true
+        }
+      })
+  } catch (error) {
+    console.warn('加载导出方案失败:', error)
+  }
+}
+
+const persistPresets = () => {
+  try {
+    const data = presets.value.map((p) => ({ id: p.id, name: p.name, settings: p.settings }))
+    localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(data))
+  } catch (error) {
+    console.warn('保存导出方案失败:', error)
+  }
+}
+
+const saveCurrentAsPreset = () => {
+  const name = newPresetName.value.trim()
+  if (!name) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.presetNameRequired, 'warning')
+    }
+    return
+  }
+  if (presets.value.some((p) => p.name === name)) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.presetNameDuplicated, 'warning')
+    }
+    return
+  }
+  const presetSettings = {}
+  PRESET_FIELDS.forEach((key) => {
+    presetSettings[key] = settings.value[key]
+  })
+  presets.value.push({
+    id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    settings: presetSettings,
+    selected: true
+  })
+  newPresetName.value = ''
+  persistPresets()
+  if (window.$showNotification) {
+    window.$showNotification(locale.value.presetSaved, 'success')
+  }
+}
+
+// 点击方案名应用回当前设置（可微调后另存）
+const applyPreset = (preset) => {
+  Object.assign(settings.value, preset.settings)
+}
+
+const removePreset = (preset) => {
+  presets.value = presets.value.filter((p) => p.id !== preset.id)
+  persistPresets()
+  if (window.$showNotification) {
+    window.$showNotification(locale.value.presetDeleted, 'success')
+  }
+}
+
+// 方案名会拼进下载文件名，替换文件系统非法字符
+const sanitizeFilename = (name) => name.replace(/[\\/:*?"<>|]/g, '_')
+
+// 批量导出：预热图片缓存后按方案顺序逐个切换排版导出
+// 光栅化在主线程且内存开销大，必须顺序执行；图片网络请求已由缓存并发化
+const batchExport = async () => {
+  const selected = presets.value.filter((p) => p.selected)
+  if (selected.length === 0 || isBatchExporting.value) return
+  if (isPrinting.value || isExporting.value || isExportingImage.value) return
+
+  isBatchExporting.value = true
+  const originalSettings = JSON.parse(JSON.stringify(settings.value))
+  const dateTag = new Date().toISOString().split('T')[0]
+  // 与单次导出命名保持一致，文件名包含所选日期范围
+  const rangeTag = formatDateRange().replace(/\n/g, '_')
+
+  try {
+    // 收集预览内全部图片原始地址，一次性并发拉取填充缓存
+    const imageUrls = Array.from(
+      previewContent.value?.querySelectorAll('img[data-original-src], img[src]') || []
+    ).map((img) => img.dataset.originalSrc || img.getAttribute('src'))
+    await warmupPrintImages(imageUrls)
+
+    for (let i = 0; i < selected.length; i += 1) {
+      const preset = selected[i]
+      batchProgress.value = { index: i + 1, total: selected.length }
+      Object.assign(settings.value, preset.settings)
+      await nextTick()
+      // 等待排版切换后的重排与封面渲染稳定
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      const baseName = `广播排期表_${sanitizeFilename(preset.name)}_${rangeTag}_${dateTag}`
+      if (batchFormat.value === 'pdf') {
+        await exportPDFForPrint('download', `${baseName}.pdf`, { notify: false })
+      } else {
+        await exportPreviewAsImage(baseName, { silent: true })
+      }
+    }
+
+    if (window.$showNotification) {
+      window.$showNotification(
+        formatLocale(locale.value.batchExportCompleted, '', selected.length),
+        'success'
+      )
+    }
+  } catch (error) {
+    console.error('批量导出失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(
+        formatLocale(
+          locale.value.batchExportFailed,
+          '',
+          error?.message || locale.value.unknownError
+        ),
+        'error'
+      )
+    }
+  } finally {
+    // 还原用户当前设置（deep watch 防抖保存最终落回原值）
+    Object.assign(settings.value, originalSettings)
+    await nextTick()
+    batchProgress.value = null
+    isBatchExporting.value = false
   }
 }
 
@@ -1768,6 +1992,7 @@ onMounted(async () => {
   await fetchCurrentSemester()
   settings.value.currentSemester = currentSemester.value?.name
   loadSavedSettings()
+  loadPresets()
   if (settings.value.dateRangePreset) {
     const { startDate, endDate } = calculateDateRange(settings.value.dateRangePreset)
     settings.value.startDate = startDate

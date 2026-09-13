@@ -4,6 +4,7 @@ import type {
   BackgroundRender,
   MeshGradientRenderer
 } from '@applemusic-like-lyrics/core'
+import { getSizedCoverUrl } from '~/utils/url'
 
 const isClient = typeof window !== 'undefined'
 let CoreModule: typeof import('@applemusic-like-lyrics/core') | null = null
@@ -34,6 +35,22 @@ const toProxiedUrl = (url: string): string => {
   if (!needsCorsProxy(url)) return url
   return `${CORS_PROXY_PATH}?url=${encodeURIComponent(url)}`
 }
+
+// 背景仅用于取色与模糊，加载尺寸化后的封面可避免超大原图被图片代理拒绝
+const toBackgroundCoverUrl = (url: string): string => toProxiedUrl(getSizedCoverUrl(url))
+
+// 渲染器加载字符串封面失败时只记日志并重试，不会抛错，因此先自行加载 <img> 以感知失败
+const loadCoverImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      if (image.naturalWidth > 0) resolve(image)
+      else reject(new Error('封面图像解码失败'))
+    }
+    image.onerror = () => reject(new Error('封面图像加载失败'))
+    image.src = url
+  })
 
 const ensureCoreModule = async () => {
   if (!isClient) return null
@@ -119,7 +136,12 @@ export const useBackgroundRenderer = () => {
     const cover = currentCoverUrl.value
     if (cover !== loadedCoverUrl.value) {
       try {
-        await renderer.setAlbum(cover ? toProxiedUrl(cover) : '', false)
+        if (cover) {
+          const image = await loadCoverImage(toBackgroundCoverUrl(cover))
+          await renderer.setAlbum(image, false)
+        } else {
+          await renderer.setAlbum('', false)
+        }
         if (currentCoverUrl.value === cover) {
           loadedCoverUrl.value = cover
           hasRenderError.value = false
@@ -175,7 +197,9 @@ export const useBackgroundRenderer = () => {
     currentCoverUrl.value = coverUrl || ''
 
     if (coverBlurElement.value) {
-      coverBlurElement.value.style.backgroundImage = coverUrl ? `url(${coverUrl})` : ''
+      // 兜底层直连封面（不经图片代理），渲染器失败时仍可显示模糊封面
+      const blurUrl = getSizedCoverUrl(coverUrl)
+      coverBlurElement.value.style.backgroundImage = blurUrl ? `url(${blurUrl})` : ''
     }
 
     await applyRendererState()
