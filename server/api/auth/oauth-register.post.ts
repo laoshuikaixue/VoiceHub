@@ -32,6 +32,12 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const { password, confirmPassword } = body
+
+  // 条款确认：开启登录条款后，必须携带与当前配置一致的已同意日期
+  if (config?.legalConsentEnabled && body.legalConsentAcceptedDate !== (config.legalConsentUpdatedDate || 'unversioned')) {
+    throw createApiError(403, SERVER_ERROR_CODES.AUTH_LEGAL_CONSENT_REQUIRED, '请先阅读并同意最新条款后再注册')
+  }
+
   const username = typeof body.username === 'string' ? body.username.trim() : ''
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''

@@ -958,7 +958,8 @@ const handleRegisterOAuth = async () => {
         confirmPassword: confirmPassword.value,
         remark: remark.value.trim(),
         email: emailValue || undefined,
-        emailCode: emailCode.value.trim() || undefined
+        emailCode: emailCode.value.trim() || undefined,
+        legalConsentAcceptedDate: legalConsentUpdatedDate.value || 'unversioned'
       }
     })
 
@@ -1066,7 +1067,8 @@ const handleRegister = async () => {
       confirmPassword: confirmPassword.value,
       remark: remark.value.trim(),
       email: emailValue || undefined,
-      emailCode: emailCode.value.trim() || undefined
+      emailCode: emailCode.value.trim() || undefined,
+      legalConsentAcceptedDate: legalConsentUpdatedDate.value || 'unversioned'
     }
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {

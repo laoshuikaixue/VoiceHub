@@ -45,6 +45,11 @@ export default defineEventHandler(async (event) => {
     throw createApiError(429, SERVER_ERROR_CODES.AUTH_RATE_LIMITED_MINUTES, `注册请求过于频繁，请等待 ${waitMinutes} 分钟后再试`, { params: [waitMinutes] })
   }
 
+  // 条款确认：开启登录条款后，必须携带与当前配置一致的已同意日期
+  if (config?.legalConsentEnabled && body.legalConsentAcceptedDate !== (config.legalConsentUpdatedDate || 'unversioned')) {
+    throw createApiError(403, SERVER_ERROR_CODES.AUTH_LEGAL_CONSENT_REQUIRED, '请先阅读并同意最新条款后再注册')
+  }
+
   // 验证码：开启验证码服务时注册必须通过（图形验证码或 Turnstile）
   const captchaEnabled = Boolean(config?.captchaEnabled)
   const captchaProvider = config?.captchaProvider || 'graphic'

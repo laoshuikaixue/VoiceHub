@@ -4286,6 +4286,7 @@ export const serverErrors = {
   AUTH_OAUTH_REGISTER_DISABLED: 'Third-party account registration is disabled',
   AUTH_OAUTH_REGISTER_DISABLED_BIND: 'Third-party account registration is disabled. Please sign in to an existing account to bind.',
   AUTH_REGISTER_DISABLED: 'Registration is not open',
+  AUTH_LEGAL_CONSENT_REQUIRED: 'Please read and accept the latest terms before registering.',
   AUTH_USER_PENDING_APPROVAL: 'Your account is pending admin approval. Please wait.',
   AUTH_SYSTEM_ERROR: 'System error. Please try again later.',
   AUTH_BINDING_SESSION_INVALID: 'The binding session is invalid. Please restart binding.',

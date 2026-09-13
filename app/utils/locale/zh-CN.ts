@@ -4295,6 +4295,7 @@ export const serverErrors = {
   AUTH_OAUTH_REGISTER_DISABLED: '系统已关闭第三方账号注册功能',
   AUTH_OAUTH_REGISTER_DISABLED_BIND: '系统已关闭第三方账号注册功能，请登录现有账号进行绑定',
   AUTH_REGISTER_DISABLED: '系统未开放注册',
+  AUTH_LEGAL_CONSENT_REQUIRED: '请先阅读并同意最新条款后再注册',
   AUTH_USER_PENDING_APPROVAL: '账号待管理员审核，请耐心等待',
   AUTH_SYSTEM_ERROR: '系统错误，请稍后重试',
   AUTH_BINDING_SESSION_INVALID: '绑定会话已失效，请重新发起绑定',
