@@ -3,6 +3,7 @@ import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import { isSongAdminRole } from '~~/server/utils/rbac/guards'
 import {
   maskSongsInfo,
   stripAnonymousSongIdentifiers,
@@ -147,7 +148,7 @@ export default defineEventHandler(async (event) => {
     const sortBy = String(query.sortBy || 'createdAt')
     const sortOrder = String(query.sortOrder || 'desc') === 'asc' ? 'asc' : 'desc'
     const user = event.context.user || null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = Boolean(user && isSongAdminRole(user.role))
 
     const params: any[] = [user?.id ?? null]
     const conditions: string[] = []
@@ -489,7 +490,7 @@ export default defineEventHandler(async (event) => {
         const fallbackSortBy = String(fallbackQuery.sortBy || 'createdAt')
         const fallbackSortOrder = String(fallbackQuery.sortOrder || 'desc')
         const fallbackUser = event.context.user || null
-        const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+        const fallbackIsAdmin = Boolean(fallbackUser && isSongAdminRole(fallbackUser.role))
         return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin, {
           scope: fallbackScope,
           sortBy: fallbackSortBy,

@@ -1,22 +1,17 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
-import { and, eq, inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { policies, requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
     // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    const user = await policies.canChangeUserStatus(event)
 
     const body = await readBody(event)
     const { userIds, status, reason, sourceStatus } = body
@@ -117,13 +112,21 @@ export default defineEventHandler(async (event) => {
         errors.push({ userId: u.id, error: '禁止在用户管理中批量更新自己的账户' })
         continue
       }
-      if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
-        errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
-        continue
+      if (u.role === 'SUPER_ADMIN') {
+        try {
+          await requireSuperAdmin(event)
+        } catch {
+          errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
+          continue
+        }
       }
-      if (u.role !== 'USER' && user.role !== 'SUPER_ADMIN') {
-        errors.push({ userId: u.id, error: '权限不足：普通管理员无法批量修改其他管理员状态' })
-        continue
+      if (u.role !== 'USER') {
+        try {
+          await requireSuperAdmin(event)
+        } catch {
+          errors.push({ userId: u.id, error: '权限不足：普通管理员无法批量修改其他管理员状态' })
+          continue
+        }
       }
       if (sourceStatusFilter && u.status !== sourceStatusFilter) {
         errors.push({

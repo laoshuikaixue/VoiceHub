@@ -3,15 +3,13 @@ import { db } from '~/drizzle/db'
 import { gradeClass } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { policies } from '~~/server/utils/rbac'
 
 const MAX_BATCH_SIZE = 500
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
+  await policies.canManageGradeClass(event)
 
   const body = await readBody(event)
 

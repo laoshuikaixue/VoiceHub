@@ -4,16 +4,14 @@ import { db } from '~/drizzle/db'
 import { gradeClass, users } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { policies } from '~~/server/utils/rbac'
 
 const MAX_BATCH_SIZE = 500
 
 // 从现有用户提取年级班级组合并写入配置（仅 active 用户）
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
+  await policies.canManageGradeClass(event)
 
   const userCombos = await db
     .selectDistinct({

@@ -5,6 +5,8 @@ import { and, count, eq, gte, lt, ne } from 'drizzle-orm'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -12,14 +14,7 @@ dayjs.extend(timezone)
 const BEIJING_TIMEZONE = 'Asia/Shanghai'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  const _user = await requirePermission(event, PERMISSIONS.STATS_READ)
 
   const query = getQuery(event)
   const semester = query.semester as string

@@ -1,12 +1,10 @@
 import { db, songs, songReplayRequests, users } from '~/drizzle/db'
 import { desc, eq, sql, and } from 'drizzle-orm'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 1. 检查权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  await policies.canWriteSong(event)
 
   // 获取查询参数
   const query = getQuery(event)

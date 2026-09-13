@@ -5,24 +5,11 @@ import { createSongSelectedNotification, createReplaySongSelectedNotification } 
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有歌曲管理员及以上权限才能发布排期'
-    })
-  }
+  const user = await policies.canPublishSchedule(event)
 
   const body = await readBody(event)
 

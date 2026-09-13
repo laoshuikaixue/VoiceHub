@@ -7,6 +7,7 @@
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
       <button
+        v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
         class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-[var(--primary-glow)] active:scale-95"
         @click="openCreateModal"
       >
@@ -50,6 +51,7 @@
         </div>
         <button
           class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-disabled hover:text-primary transition-all flex items-center justify-center"
+          :aria-label="t('admin.apiKeys.actions.refresh', '刷新 API Key 列表')"
           @click="loadApiKeys"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
@@ -80,6 +82,7 @@
         {{ locale.emptyDesc }}
       </p>
       <button
+        v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
         class="mt-8 flex items-center gap-2 px-6 py-3 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-2xl transition-all"
         @click="openCreateModal"
       >
@@ -121,24 +124,30 @@
             class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all"
           >
             <button
+              v-if="rbac.can(PERMISSIONS.API_KEYS_READ)"
               class="p-2 text-text-tertiary hover:text-primary transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
+              :aria-label="t('admin.apiKeys.actions.view', '查看 API Key')"
               @click="viewApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingViewId === apiKey.id" :size="14" class="animate-spin" />
               <Eye v-else :size="14" />
             </button>
             <button
+              v-if="rbac.can(PERMISSIONS.API_KEYS_WRITE)"
               class="p-2 text-text-tertiary hover:text-warning transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
+              :aria-label="t('admin.apiKeys.actions.edit', '编辑 API Key')"
               @click="editApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingEditId === apiKey.id" :size="14" class="animate-spin" />
               <Edit2 v-else :size="14" />
             </button>
             <button
+              v-if="rbac.can(PERMISSIONS.API_KEYS_DELETE)"
               class="p-2 text-text-tertiary hover:text-error transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
+              :aria-label="t('admin.apiKeys.actions.delete', '删除 API Key')"
               @click="deleteApiKey(apiKey)"
             >
               <Trash2 :size="14" />
@@ -215,6 +224,7 @@
             </h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
+              :aria-label="t('admin.apiKeys.actions.close', '关闭弹窗')"
               @click="closeModals"
             >
               <X :size="20" />
@@ -301,6 +311,89 @@
                 >{{ locale.enabled }}</span
               >
             </label>
+
+            <!-- 高级选项：所有者 / 速率限制 / 配额 / IP 白名单 / Webhook -->
+            <div class="space-y-3 pt-2 border-t border-border-secondary">
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                {{ t('admin.apiKeys.advancedOptions', '高级选项') }}
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ t('admin.apiKeys.ownerType', '所有者类型') }}
+                  </label>
+                  <CustomSelect
+                    v-model="form.ownerType"
+                    :options="[
+                      { label: t('admin.apiKeys.ownerSystem', '系统'), value: 'system' },
+                      { label: t('admin.apiKeys.ownerUser', '用户'), value: 'user' },
+                      { label: t('admin.apiKeys.ownerIntegration', '集成'), value: 'integration' }
+                    ]"
+                    class-name="w-full"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ t('admin.apiKeys.rateLimitPerMinute', '每分钟速率限制') }}
+                  </label>
+                  <input
+                    v-model.number="form.rateLimitPerMinute"
+                    type="number"
+                    min="1"
+                    :placeholder="t('admin.apiKeys.unlimited', '不限')"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                  >
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ t('admin.apiKeys.quotaDaily', '日配额') }}
+                  </label>
+                  <input
+                    v-model.number="form.quotaDaily"
+                    type="number"
+                    min="1"
+                    :placeholder="t('admin.apiKeys.unlimited', '不限')"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                  >
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                    {{ t('admin.apiKeys.quotaMonthly', '月配额') }}
+                  </label>
+                  <input
+                    v-model.number="form.quotaMonthly"
+                    type="number"
+                    min="1"
+                    :placeholder="t('admin.apiKeys.unlimited', '不限')"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                  >
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                  {{ t('admin.apiKeys.ipWhitelist', 'IP 白名单（每行一项，IP 或 CIDR）') }}
+                </label>
+                <textarea
+                  v-model="form.ipWhitelist"
+                  rows="2"
+                  :placeholder="t('admin.apiKeys.ipWhitelistPlaceholder', '留空表示不限制\n192.168.1.0/24')"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary min-h-[60px] resize-none placeholder:text-text-primary"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5">
+                  {{ t('admin.apiKeys.webhookUrl', 'Webhook URL') }}
+                </label>
+                <input
+                  v-model="form.webhookUrl"
+                  type="url"
+                  :placeholder="t('admin.apiKeys.webhookUrlPlaceholder', 'https://example.com/webhook')"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-primary-30 text-text-primary"
+                >
+              </div>
+            </div>
           </div>
 
           <div class="p-6 border-t border-border-secondary flex gap-2 justify-end">
@@ -331,6 +424,7 @@
             </h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
+              :aria-label="t('admin.apiKeys.actions.close', '关闭弹窗')"
               @click="closeModals"
             >
               <X :size="20" />
@@ -367,6 +461,7 @@
                       ? 'bg-success text-text-primary'
                       : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary'
                   "
+                  :aria-label="copied ? t('admin.apiKeys.actions.copied', '已复制') : t('admin.apiKeys.actions.copy', '复制 API Key')"
                   @click="copyToClipboard(newApiKey?.apiKey)"
                 >
                   <Check v-if="copied" :size="16" />
@@ -403,6 +498,7 @@
             <h3 class="text-lg font-black text-text-primary uppercase tracking-widest">{{ locale.details }}</h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
+              :aria-label="t('admin.apiKeys.actions.close', '关闭弹窗')"
               @click="closeModals"
             >
               <X :size="20" />
@@ -600,7 +696,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import {
   Plus,
@@ -621,6 +717,9 @@ import {
   X
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
+import { useAuth } from '~/composables/useAuth'
+import { useRbac } from '~/composables/useRbac'
+import { PERMISSIONS } from '~/utils/rbac'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -630,6 +729,21 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
 const { msg: getLocaleText } = useLocaleText(locale)
+
+// 路径式 i18n 查找：t('admin.apiKeys.actions.view', '查看') → 先按 'a.b.c' 拆段在 admin.value 上回退定位，
+// 命中返回 string，未命中返回 fallback。集中兜底避免模板里散落的 `|| '中文'` 字面量。
+const t = (key: string, fallback: string): string => {
+  if (!key) return fallback
+  let cursor: unknown = admin.value
+  for (const segment of key.split('.')) {
+    if (cursor && typeof cursor === 'object' && segment in (cursor as Record<string, unknown>)) {
+      cursor = (cursor as Record<string, unknown>)[segment]
+      continue
+    }
+    return fallback
+  }
+  return typeof cursor === 'string' ? cursor : fallback
+}
 const expiresOptionFallbacks = {
   never: '永不过期',
   threeDays: '3天后过期',
@@ -642,6 +756,25 @@ const getExpiresOptionText = (key) =>
   formatLocaleValue(locale.value?.expiresOptions?.[key]) || expiresOptionFallbacks[key] || key
 const getPermissionOptionText = (key, field) => formatLocaleValue(locale.value?.permissionOptions?.[key]?.[field])
 const getDeleteTitle = (name) => getLocaleText('deleteMessage', name)
+
+// 过期时间预设：单一数据源
+// - key 稳定（永不随 i18n 文案变化），用于 form.expiresAt 和 CustomSelect 的 value
+// - days 为 null 表示永不过期，数值则由 handleExpiresAtChange 写入对应的 ISO 时间
+// - labelKey 用于 i18n 解析（locale.expiresOptions[key]）
+// - 'keep' 是编辑态的特殊值：不更改原有过期时间，由 expiresAtOptions 在编辑模式下动态插入
+const EXPIRES_PRESETS = [
+  { key: 'never', days: null, labelKey: 'never' },
+  { key: '3d',    days: 3,    labelKey: 'threeDays' },
+  { key: '7d',    days: 7,    labelKey: 'sevenDays' },
+  { key: '30d',   days: 30,   labelKey: 'thirtyDays' },
+  { key: '60d',   days: 60,   labelKey: 'sixtyDays' },
+  { key: '90d',   days: 90,   labelKey: 'ninetyDays' }
+]
+const PRESET_BY_KEY = Object.fromEntries(EXPIRES_PRESETS.map((p) => [p.key, p]))
+const getPresetLabel = (key) => {
+  const preset = PRESET_BY_KEY[key]
+  return preset ? getExpiresOptionText(preset.labelKey) : key
+}
 
 // 响应式数据
 const loading = ref(false)
@@ -660,15 +793,20 @@ const loadingEditId = ref(null)
 const loadingViewId = ref(null)
 
 // 文本映射
-const expiresAtText = ref('')
-const expiresAtOptions = computed(() => [
-  getExpiresOptionText('never'),
-  getExpiresOptionText('threeDays'),
-  getExpiresOptionText('sevenDays'),
-  getExpiresOptionText('thirtyDays'),
-  getExpiresOptionText('sixtyDays'),
-  getExpiresOptionText('ninetyDays')
-])
+// expiresAtText 持有稳定 key（never/3d/7d/30d/60d/90d/keep），由 CustomSelect 直接使用
+// 渲染时通过 expiresAtOptions 的 label 字段查 i18n，文本变更不影响功能
+const expiresAtText = ref('never')
+const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
+const expiresAtOptions = computed(() => {
+  const options = EXPIRES_PRESETS.map((p) => ({ value: p.key, label: getPresetLabel(p.key) }))
+  // 编辑态且原有过期时间：把 'keep' 放在最前，label 用原日期，保留原 UX
+  if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
+    const date = new Date(selectedApiKey.value.expiresAt)
+    const dateLabel = formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
+    return [{ value: 'keep', label: dateLabel }, ...options]
+  }
+  return options
+})
 const statusFilterOptions = computed(() => [
   { label: getLocaleText('allStatus'), value: '' },
   { label: getLocaleText('active'), value: 'active' },
@@ -715,31 +853,30 @@ const form = reactive({
   description: '',
   expiresAt: '',
   permissions: [],
-  isActive: true
+  isActive: true,
+  ownerType: 'system',
+  ownerId: null,
+  rateLimitPerMinute: null,
+  quotaDaily: null,
+  quotaMonthly: null,
+  ipWhitelist: '',
+  webhookUrl: ''
 })
 
-const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
-
-const getExpiresAtText = () => {
-  if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
-    const date = new Date(selectedApiKey.value.expiresAt)
-    return formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
-  }
-
-  const expiresAtTextMap = {
-    '3d': getExpiresOptionText('threeDays'),
-    '7d': getExpiresOptionText('sevenDays'),
-    '30d': getExpiresOptionText('thirtyDays'),
-    '60d': getExpiresOptionText('sixtyDays'),
-    '90d': getExpiresOptionText('ninetyDays')
-  }
-  return expiresAtTextMap[form.expiresAt] || getExpiresOptionText('never')
+// 同步 form.expiresAt 到 v-model 的 key
+// - 'keep' 编辑态原样保留
+// - '' 或空 映射为 'never'
+// - 其他 key 直接同步
+const getExpiresAtKey = () => {
+  if (form.expiresAt === 'keep') return 'keep'
+  if (!form.expiresAt) return 'never'
+  return form.expiresAt
 }
 
 watch(
-  [locale, () => form.expiresAt],
+  () => form.expiresAt,
   () => {
-    expiresAtText.value = getExpiresAtText()
+    expiresAtText.value = getExpiresAtKey()
   },
   { immediate: true }
 )
@@ -790,18 +927,26 @@ const availablePermissions = computed(() => [
 
 // Toast通知
 const toast = useToast()
+const auth = useAuth()
+const rbac = useRbac()
+const rbacUserId = computed(() => auth.user.value?.id)
+watch(
+  rbacUserId,
+  (id) => {
+    rbac.bind(id)
+  },
+  { immediate: true }
+)
 
 // 方法
-const handleExpiresAtChange = (val) => {
-  const map = {
-    [getExpiresOptionText('never')]: '',
-    [getExpiresOptionText('threeDays')]: '3d',
-    [getExpiresOptionText('sevenDays')]: '7d',
-    [getExpiresOptionText('thirtyDays')]: '30d',
-    [getExpiresOptionText('sixtyDays')]: '60d',
-    [getExpiresOptionText('ninetyDays')]: '90d'
+// CustomSelect emit 的 value 已是稳定 key（never/3d/7d/30d/60d/90d/keep）
+// 'never' 表示永不过期，form.expiresAt 存空串；其他 key 直接透传
+const handleExpiresAtChange = (key) => {
+  if (key === 'never') {
+    form.expiresAt = ''
+  } else {
+    form.expiresAt = key
   }
-  form.expiresAt = map[val] || ''
 }
 
 // 搜索防抖
@@ -850,12 +995,22 @@ const createApiKey = async () => {
 
   submitting.value = true
   try {
+    const ipWhitelistArray = form.ipWhitelist
+      ? form.ipWhitelist.split('\n').map((s) => s.trim()).filter(Boolean)
+      : null
     const data = {
       name: form.name,
       description: form.description || null,
       expiresAt: form.expiresAt || null,
       permissions: form.permissions,
-      isActive: true
+      isActive: true,
+      ownerType: form.ownerType,
+      ownerId: form.ownerId || null,
+      rateLimitPerMinute: form.rateLimitPerMinute || null,
+      quotaDaily: form.quotaDaily || null,
+      quotaMonthly: form.quotaMonthly || null,
+      ipWhitelist: ipWhitelistArray,
+      webhookUrl: form.webhookUrl || null
     }
 
     const response = await $fetch('/api/admin/api-keys', {
@@ -886,13 +1041,23 @@ const updateApiKey = async () => {
 
   submitting.value = true
   try {
+    const ipWhitelistArray = form.ipWhitelist
+      ? form.ipWhitelist.split('\n').map((s) => s.trim()).filter(Boolean)
+      : null
     const data = {
       name: form.name,
       description: form.description || null,
       // 如果是 'keep'，则不发送 expiresAt 字段，后端将不更新该字段
       ...(form.expiresAt !== 'keep' && { expiresAt: form.expiresAt || null }),
       permissions: form.permissions,
-      isActive: form.isActive
+      isActive: form.isActive,
+      ownerType: form.ownerType,
+      ownerId: form.ownerId || null,
+      rateLimitPerMinute: form.rateLimitPerMinute || null,
+      quotaDaily: form.quotaDaily || null,
+      quotaMonthly: form.quotaMonthly || null,
+      ipWhitelist: ipWhitelistArray,
+      webhookUrl: form.webhookUrl || null
     }
 
     const response = await $fetch(`/api/admin/api-keys/${selectedApiKey.value.id}`, {
@@ -981,11 +1146,9 @@ const editApiKey = async (apiKey) => {
       form.description = response.data.description || ''
 
       if (response.data.expiresAt) {
-        const date = new Date(response.data.expiresAt)
-        expiresAtText.value = formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
+        // 编辑态：保留原过期时间，form.expiresAt 标 'keep'，expiresAtOptions 会自动插入 keep 选项
         form.expiresAt = 'keep'
       } else {
-        expiresAtText.value = getExpiresOptionText('never')
         form.expiresAt = ''
       }
 
@@ -1070,9 +1233,15 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.expiresAt = ''
-  expiresAtText.value = getExpiresOptionText('never')
   form.permissions = []
   form.isActive = true
+  form.ownerType = 'system'
+  form.ownerId = null
+  form.rateLimitPerMinute = null
+  form.quotaDaily = null
+  form.quotaMonthly = null
+  form.ipWhitelist = ''
+  form.webhookUrl = ''
 }
 
 const formatDate = (dateString) => {

@@ -7,6 +7,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
+import { isAdminRole } from '~~/server/utils/rbac/guards'
 
 const USER_BURST_LIMIT = 5
 const USER_BURST_WINDOW_MS = 60 * 1000
@@ -76,7 +77,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, 'CARD_CODE_REQUIRED', 'Request card is required')
   }
 
-  const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+  const isAdmin = isAdminRole(user.role)
   const settings = await getSystemSettingsCached()
   // 点歌券验证仅在启用点歌券时开放
   const enabled = settings?.enableCardCodeRequests === true

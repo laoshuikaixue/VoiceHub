@@ -37,7 +37,7 @@
             <!-- 菜单项列表 -->
             <template v-for="item in group.items" :key="item.id">
               <button
-                v-if="permissions.canAccessPage(item.permissionId || item.id)"
+                v-if="rbac.canAccessPage(item.permissionId || item.id)"
                 :class="[
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-all group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-10 focus-visible:ring-inset',
                   activeTab === item.id
@@ -135,13 +135,27 @@ import {
   Database,
   Lock,
   Ticket,
-  GraduationCap
+  GraduationCap,
+  ShieldCheck
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import { useRbac } from '~/composables/useRbac'
+import { useAuth } from '~/composables/useAuth'
 
 const avatarError = ref(false)
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.sidebar || {})
+
+const auth = useAuth()
+const rbac = useRbac()
+const rbacUserId = computed(() => auth.user.value?.id)
+watch(
+  rbacUserId,
+  (id) => {
+    rbac.bind(id)
+  },
+  { immediate: true }
+)
 
 const props = defineProps({
   // 侧边栏是否打开（移动端）
@@ -180,8 +194,7 @@ const menuGroups = computed(() => [
       {
         icon: BarChart3,
         label: locale.value.menu?.dataAnalysis || '数据分析',
-        id: 'data-analysis',
-        permissionId: 'data-analysis'
+        id: 'data-analysis'
       }
     ]
   },
@@ -208,7 +221,8 @@ const menuGroups = computed(() => [
       { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
       { icon: ListMusic, label: locale.value.menu?.musicSource || '音源控制', id: 'music-source' },
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
-      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' }
+      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' },
+      { icon: ShieldCheck, label: locale.value.menu?.rbac || '角色权限', id: 'rbac' }
     ]
   },
   {
@@ -223,7 +237,7 @@ const menuGroups = computed(() => [
  */
 const shouldShowGroup = (group) => {
   if (!props.permissions) return true
-  return group.items.some((item) => props.permissions.canAccessPage(item.permissionId || item.id))
+  return group.items.some((item) => rbac.canAccessPage(item.permissionId || item.id))
 }
 
 /**

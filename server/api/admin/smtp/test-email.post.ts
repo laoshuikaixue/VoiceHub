@@ -2,6 +2,8 @@ import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { SMTP_PASSWORD_MASK } from '~~/server/api/admin/system-settings/secretMask'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
@@ -12,22 +14,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 检查用户认证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能发送测试邮件'
-    })
-  }
+  const _user = await requirePermission(event, PERMISSIONS.SMTP_MANAGE)
 
   try {
     const body = await readBody(event)

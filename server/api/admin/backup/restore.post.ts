@@ -36,17 +36,12 @@ import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以恢复备份'
-      })
-    }
+    await requireSuperAdmin(event)
 
     let backupData
     let mode = 'merge'
@@ -159,11 +154,9 @@ export default defineEventHandler(async (event) => {
 
     const backupUsers = Array.isArray(backupData.data?.users) ? backupData.data.users : []
     const hasSuperAdminInBackup = backupUsers.some((record) => record?.role === 'SUPER_ADMIN')
-    if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '仅超级管理员可以覆盖超级管理员账号数据'
-      })
+    if (overwriteSuperAdmin) {
+      // overwriteSuperAdmin 选项本身要求 SUPER_ADMIN 权限；需再次确认
+      await requireSuperAdmin(event)
     }
     const shouldOverwriteSuperAdmin =
       mode === 'replace' && clearExisting && overwriteSuperAdmin && hasSuperAdminInBackup

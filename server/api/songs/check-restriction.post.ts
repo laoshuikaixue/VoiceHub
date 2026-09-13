@@ -6,6 +6,7 @@ import { getServerDate } from '~~/server/utils/serverTime'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { isSongAdminRole } from '~~/server/utils/rbac/guards'
 
 type RestrictionCheck = {
   blocked: boolean
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
     return respond(allowedChecks)
   }
 
-  const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+  const isAdmin = isSongAdminRole(user.role)
 
   const settings = await getSystemSettingsCached()
   const restrictionPolicy = resolveSubmissionRestrictionPolicy(settings)

@@ -1,15 +1,10 @@
 import { db, eq } from '~/drizzle/db'
 import { schedules } from '~/drizzle/schema'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 验证用户认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
+  await policies.canEditSchedule(event)
 
   try {
     const body = await readBody(event)
