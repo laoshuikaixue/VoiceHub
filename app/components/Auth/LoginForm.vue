@@ -354,9 +354,9 @@
         />
       </div>
 
-      <div v-if="(loginTermsBlocked || legalConsentRejected) && legalConsentDisplayMode === 'modal'" class="login-terms-blocked">
+      <div v-if="legalConsentActive && (loginTermsBlocked || legalConsentRejected)" class="login-terms-blocked">
         <span class="blocked-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div class="blocked-copy"><strong>继续登录前需要先同意最新条款。</strong><span>未同意最新条款前，无法输入账号密码或使用快捷登录。</span></div>
-        <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView || '查看条款' }}</button>
+        <button v-if="legalConsentDisplayMode === 'modal'" type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView || '查看条款' }}</button>
       </div>
 
       <div v-if="error" class="error-container">
@@ -405,7 +405,7 @@
         <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
 
-      <label v-if="showLoginTerms && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
+      <label v-if="legalConsentActive && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
         <input v-model="loginTermsAccepted" type="checkbox">
         <span class="terms-text"><span>{{ locale.legalConsentPrefix }}</span><template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug"><a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span></template></span>
       </label>
@@ -562,8 +562,8 @@ const loginTermsAccepted = ref(false)
 const legalConsentStorageKey = computed(() => `voicehub.legalConsent.${legalConsentUpdatedDate.value || 'unversioned'}`)
 const showLegalConsentModal = ref(false)
 const legalConsentRejected = ref(false)
-const showLoginTerms = computed(() => !showRegisterMode.value && !isBindMode.value && legalConsentEnabled.value && legalConsentDocuments.value.length > 0)
-const loginTermsBlocked = computed(() => showLoginTerms.value && !loginTermsAccepted.value)
+const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
+const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
 const confirmPassword = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -579,20 +579,20 @@ const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 onMounted(() => {
-  const syncLegalConsent = ([enabled, mode] = [showLoginTerms.value, legalConsentDisplayMode.value]) => {
+  const syncLegalConsent = ([enabled, mode] = [legalConsentActive.value, legalConsentDisplayMode.value]) => {
     if (!enabled) return
     try { loginTermsAccepted.value = localStorage.getItem(legalConsentStorageKey.value) === 'true' } catch { loginTermsAccepted.value = false }
     if (mode === 'modal' && !loginTermsAccepted.value) showLegalConsentModal.value = true
   }
   syncLegalConsent()
-  watch([showLoginTerms, legalConsentDisplayMode], ([enabled, mode]) => {
+  watch([legalConsentActive, legalConsentDisplayMode], ([enabled, mode]) => {
     syncLegalConsent([enabled, mode])
   })
   watch(loginTermsAccepted, (accepted) => {
     if (accepted) {
       try { localStorage.setItem(legalConsentStorageKey.value, 'true') } catch {}
     }
-    if (!accepted && showLoginTerms.value) error.value = locale.value.legalConsentBlocked
+    if (!accepted && legalConsentActive.value && legalConsentDisplayMode.value === 'modal') error.value = locale.value.legalConsentBlocked
     if (accepted && error.value === locale.value.legalConsentBlocked) error.value = ''
   })
 })
@@ -714,7 +714,7 @@ const handle2FASuccess = async () => {
 }
 
 const recordLegalConsent = async () => {
-  if (!showLoginTerms.value || !loginTermsAccepted.value) return
+  if (!legalConsentActive.value || !loginTermsAccepted.value) return
   try {
     await $fetch('/api/legal-consent', { method: 'POST' })
   } catch (error) {
