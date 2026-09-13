@@ -354,11 +354,6 @@
         />
       </div>
 
-      <div v-if="legalConsentActive && (loginTermsBlocked || legalConsentRejected)" class="login-terms-blocked">
-        <span class="blocked-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div class="blocked-copy"><strong>继续登录前需要先同意最新条款。</strong><span>未同意最新条款前，无法输入账号密码或使用快捷登录。</span></div>
-        <button v-if="legalConsentDisplayMode === 'modal'" type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView || '查看条款' }}</button>
-      </div>
-
       <div v-if="error" class="error-container">
         <svg
           class="error-icon"
@@ -372,6 +367,11 @@
           <line x1="12" x2="12.01" y1="16" y2="16" />
         </svg>
         <span class="error-message">{{ error }}</span>
+        <button class="error-close" type="button" aria-label="关闭提示" @click="error = ''">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       <button :disabled="loading" class="submit-btn" type="submit">
@@ -404,6 +404,11 @@
         <span v-if="loading">{{ showRegisterMode ? locale.registering : isBindMode ? locale.binding : locale.loggingIn }}</span>
         <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
+
+      <div v-if="legalConsentDisplayMode === 'modal' && legalConsentActive && (loginTermsBlocked || legalConsentRejected)" class="login-terms-blocked">
+        <span class="blocked-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div class="blocked-copy"><strong>{{ locale.legalConsentRequiredTitle }}</strong><span>{{ locale.legalConsentBlocked }}</span></div>
+        <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView || '查看条款' }}</button>
+      </div>
 
       <label v-if="legalConsentActive && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
         <input v-model="loginTermsAccepted" type="checkbox">
@@ -581,6 +586,7 @@ const maskedEmail2FA = ref('')
 onMounted(() => {
   const syncLegalConsent = ([enabled, mode] = [legalConsentActive.value, legalConsentDisplayMode.value]) => {
     if (!enabled) return
+    // 按浏览器本地记忆恢复勾选状态（与账号无关），条款更新日期变化后自动失效
     try { loginTermsAccepted.value = localStorage.getItem(legalConsentStorageKey.value) === 'true' } catch { loginTermsAccepted.value = false }
     if (mode === 'modal' && !loginTermsAccepted.value) showLegalConsentModal.value = true
   }
@@ -589,10 +595,9 @@ onMounted(() => {
     syncLegalConsent([enabled, mode])
   })
   watch(loginTermsAccepted, (accepted) => {
-    if (accepted) {
-      try { localStorage.setItem(legalConsentStorageKey.value, 'true') } catch {}
-    }
-    if (!accepted && legalConsentActive.value && legalConsentDisplayMode.value === 'modal') error.value = locale.value.legalConsentBlocked
+    // 无论勾选还是取消都记录，刷新后恢复上一次的状态
+    try { localStorage.setItem(legalConsentStorageKey.value, String(accepted)) } catch {}
+    if (!accepted && legalConsentActive.value) error.value = locale.value.legalConsentBlocked
     if (accepted && error.value === locale.value.legalConsentBlocked) error.value = ''
   })
 })
@@ -608,7 +613,6 @@ const acceptLegalConsent = () => {
   loginTermsAccepted.value = true
   legalConsentRejected.value = false
   showLegalConsentModal.value = false
-  try { localStorage.setItem(legalConsentStorageKey.value, 'true') } catch {}
 }
 const rejectLegalConsent = () => {
   loginTermsAccepted.value = false
@@ -947,6 +951,11 @@ const handleRegisterOAuth = async () => {
   loading.value = true
 
   try {
+    // 提交前换取服务端签发的条款同意凭证（未开启条款时跳过）
+    let legalConsentToken = ''
+    if (legalConsentActive.value) {
+      legalConsentToken = (await $fetch('/api/legal-consent'))?.token || ''
+    }
     const response = await $fetch('/api/auth/oauth-register', {
       method: 'POST',
       body: {
@@ -959,7 +968,7 @@ const handleRegisterOAuth = async () => {
         remark: remark.value.trim(),
         email: emailValue || undefined,
         emailCode: emailCode.value.trim() || undefined,
-        legalConsentAcceptedDate: legalConsentUpdatedDate.value || 'unversioned'
+        legalConsentToken
       }
     })
 
@@ -1067,8 +1076,11 @@ const handleRegister = async () => {
       confirmPassword: confirmPassword.value,
       remark: remark.value.trim(),
       email: emailValue || undefined,
-      emailCode: emailCode.value.trim() || undefined,
-      legalConsentAcceptedDate: legalConsentUpdatedDate.value || 'unversioned'
+      emailCode: emailCode.value.trim() || undefined
+    }
+    // 提交前换取服务端签发的条款同意凭证（未开启条款时跳过）
+    if (legalConsentActive.value) {
+      requestBody.legalConsentToken = (await $fetch('/api/legal-consent'))?.token || ''
     }
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {
@@ -1373,6 +1385,8 @@ const handleWebAuthnLogin = async () => {
 .login-terms-check input {
   width: 16px;
   height: 16px;
+  flex: 0 0 16px;
+  margin-top: 2px;
   accent-color: var(--primary);
 }
 
@@ -1380,7 +1394,6 @@ const handleWebAuthnLogin = async () => {
   color: var(--primary);
   text-decoration: underline;
 }
-.login-terms-check input { flex: 0 0 16px; margin-top: 2px; }
 
 .login-terms-blocked { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--info-border); border-radius:8px; background:var(--info-light); color:var(--text-secondary); font-size:12px; }
 .blocked-icon { display:grid; place-items:center; flex:0 0 20px; color:var(--info); }
@@ -1495,6 +1508,26 @@ const handleWebAuthnLogin = async () => {
 .error-message {
   font-size: 14px;
   font-weight: var(--font-medium);
+}
+
+.error-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  color: var(--error);
+  opacity: 0.7;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+.error-close svg {
+  width: 14px;
+  height: 14px;
 }
 
 .submit-btn {

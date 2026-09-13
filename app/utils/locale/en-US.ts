@@ -892,6 +892,7 @@ export const pages = {
         `Bind the ${providerName} account "${providerUsername}" to "${username}"? You can then sign in with ${providerName} directly.`,
       legalConsentPrefix: 'I have read and agree to ',
       legalConsentSeparator: ', ',
+      legalConsentRequiredTitle: 'Please accept the latest terms before continuing.',
       legalConsentBlocked: 'You cannot enter credentials or use quick login until you agree to the latest terms.'
     },
     oauthButtons: {

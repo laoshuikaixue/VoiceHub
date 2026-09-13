@@ -14,6 +14,7 @@ import { resolveGradeClassError, REMARK_MAX_LENGTH } from '~~/server/utils/regis
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
 import { notifyRegistration } from '~~/server/utils/registration-notify'
+import { verifyLegalConsentToken } from '~~/server/utils/legal-consent'
 
 const REGISTER_RATE_LIMIT = 5
 const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
@@ -45,10 +46,8 @@ export default defineEventHandler(async (event) => {
     throw createApiError(429, SERVER_ERROR_CODES.AUTH_RATE_LIMITED_MINUTES, `注册请求过于频繁，请等待 ${waitMinutes} 分钟后再试`, { params: [waitMinutes] })
   }
 
-  // 条款确认：开启登录条款后，必须携带与当前配置一致的已同意日期
-  if (config?.legalConsentEnabled && body.legalConsentAcceptedDate !== (config.legalConsentUpdatedDate || 'unversioned')) {
-    throw createApiError(403, SERVER_ERROR_CODES.AUTH_LEGAL_CONSENT_REQUIRED, '请先阅读并同意最新条款后再注册')
-  }
+  // 条款确认：开启登录条款后，必须携带服务端签发的当前版本同意凭证
+  const legalConsentVersion = verifyLegalConsentToken(config, body)
 
   // 验证码：开启验证码服务时注册必须通过（图形验证码或 Turnstile）
   const captchaEnabled = Boolean(config?.captchaEnabled)
@@ -191,7 +190,9 @@ export default defineEventHandler(async (event) => {
         updatedAt: now,
         passwordChangedAt: now,
         lastLogin: now,
-        forcePasswordChange: false
+        forcePasswordChange: false,
+        legalConsentVersion: legalConsentVersion || null,
+        legalConsentAt: legalConsentVersion ? getServerTimestamp() : null
       })
       .onConflictDoNothing()
       .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
