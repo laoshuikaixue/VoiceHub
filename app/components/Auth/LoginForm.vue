@@ -407,12 +407,8 @@
 
       <label v-if="showLoginTerms && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
         <input v-model="loginTermsAccepted" type="checkbox">
-        <span>{{ locale.legalConsentPrefix }}</span>
-        <template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug">
-          <a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span>
-        </template>
+        <span class="terms-text"><span>{{ locale.legalConsentPrefix }}</span><template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug"><a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span></template></span>
       </label>
-      <p v-if="showLoginTerms && legalConsentDisplayMode === 'checkbox' && !loginTermsAccepted" class="login-terms-blocked inline-terms-warning">{{ locale.legalConsentBlocked }}</p>
 
       <!-- 登录/注册模式切换 -->
       <div v-if="!isBindMode && allowRegister" class="mode-switch">
@@ -1355,13 +1351,21 @@ const handleWebAuthnLogin = async () => {
 .login-terms-check {
   display: flex;
   align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin-top: 14px;
   width: 100%;
-  line-height: 1.55;
+  padding: 10px 12px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  line-height: 1.6;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.login-terms-check .terms-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .login-terms-check input {
@@ -1386,7 +1390,7 @@ const handleWebAuthnLogin = async () => {
 .legal-consent-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
 .legal-consent-modal { width: min(600px, 100%); max-height: 90vh; overflow: auto; padding: 28px; border: 1px solid var(--border-secondary); border-radius: 18px; background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .legal-consent-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-.legal-consent-heading { display:flex; align-items:center; gap:14px; margin-bottom:12px; }.legal-consent-heading h3{margin:0}.legal-consent-shield{display:grid;place-items:center;width:50px;height:50px;border-radius:12px;background:var(--info);color:#fff}.legal-consent-shield svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.doc-symbol{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary)}.external-symbol{display:grid;place-items:center;margin-left:auto;color:var(--text-tertiary)}.external-symbol svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.doc-symbol svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.legal-consent-date{display:inline-block;margin-top:4px;padding:4px 9px;border-radius:999px;background:var(--bg-tertiary);color:var(--text-tertiary);font-size:11px}.legal-consent-related{margin:20px 0 12px;font-size:13px;color:var(--text-secondary)}
+.legal-consent-heading { display:flex; align-items:center; gap:14px; margin-bottom:12px; }.legal-consent-heading h3{margin:0}.legal-consent-shield{display:grid;place-items:center;width:50px;height:50px;border-radius:12px;background:var(--info-light);color:var(--info)}.legal-consent-shield svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.doc-symbol{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary)}.external-symbol{display:grid;place-items:center;margin-left:auto;color:var(--text-tertiary)}.external-symbol svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.doc-symbol svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.legal-consent-date{display:inline-block;margin-top:4px;padding:4px 9px;border-radius:999px;background:var(--bg-tertiary);color:var(--text-tertiary);font-size:11px}.legal-consent-related{margin:20px 0 12px;font-size:13px;color:var(--text-secondary)}
 .legal-consent-modal p { color:var(--text-secondary); font-size:13px; line-height:1.7; padding-bottom:20px; border-bottom:1px solid var(--border-secondary); }
 .legal-consent-docs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 20px 0; }
 .legal-consent-docs a { display:flex; align-items:center; gap:10px; min-height:62px; padding:12px 16px; border:1px solid var(--border-secondary); border-radius:12px; color:var(--text-primary); background:var(--bg-tertiary); font-weight:700; }

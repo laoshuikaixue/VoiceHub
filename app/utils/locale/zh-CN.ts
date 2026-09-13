@@ -900,7 +900,10 @@ export const pages = {
       confirmBind: '确认绑定',
       confirmBindTitle: '确认绑定',
       confirmBindMessage: (providerName: string, providerUsername: string, username: string) =>
-        `确认将 ${providerName} 账号「${providerUsername}」与账户「${username}」绑定？绑定后即可使用 ${providerName} 直接登录。`
+        `确认将 ${providerName} 账号「${providerUsername}」与账户「${username}」绑定？绑定后即可使用 ${providerName} 直接登录。`,
+      legalConsentPrefix: '我已阅读并同意',
+      legalConsentSeparator: '、',
+      legalConsentBlocked: '未同意最新条款前，无法输入账号密码或使用快捷登录。'
     },
     oauthButtons: {
       divider: '或使用第三方账号登录',

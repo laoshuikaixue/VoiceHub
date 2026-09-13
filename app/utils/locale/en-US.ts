@@ -889,7 +889,10 @@ export const pages = {
       confirmBind: 'Confirm Bind',
       confirmBindTitle: 'Confirm Binding',
       confirmBindMessage: (providerName: string, providerUsername: string, username: string) =>
-        `Bind the ${providerName} account "${providerUsername}" to "${username}"? You can then sign in with ${providerName} directly.`
+        `Bind the ${providerName} account "${providerUsername}" to "${username}"? You can then sign in with ${providerName} directly.`,
+      legalConsentPrefix: 'I have read and agree to ',
+      legalConsentSeparator: ', ',
+      legalConsentBlocked: 'You cannot enter credentials or use quick login until you agree to the latest terms.'
     },
     oauthButtons: {
       divider: 'Or sign in with a third-party account',
