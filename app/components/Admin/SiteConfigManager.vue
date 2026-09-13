@@ -804,7 +804,7 @@
             </div>
             <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
           </div>
-          <div><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
+          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
         </div>
         <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
@@ -1370,7 +1370,9 @@ input[type='number'] {
 .legal-mode-switch { min-height:42px; margin-top:10px !important; }
 .legal-mode-option { min-height:34px; display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:12px; line-height:1; }
 .legal-mode-option svg { width:15px; height:15px; flex:0 0 15px; }
-.legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }</style>
+.legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
+.legal-date-field { min-width:0; } .legal-date-field input { width:180px; max-width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) minmax(240px,1fr); } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}.legal-date-field input{width:100%}}
+</style>
 
 /* 展示形式控件保持紧凑并统一图标基线 */
 .legal-mode-switch { min-height: 38px; padding: 3px; }
@@ -1380,4 +1382,8 @@ input[type='number'] {
 
 
 .legal-toggle { position:relative; display:inline-flex; width:44px; height:24px; flex:0 0 44px; }.legal-toggle input { position:absolute; opacity:0; inset:0; cursor:pointer; }.legal-toggle i { width:44px; height:24px; border-radius:999px; background:var(--bg-tertiary); transition:.2s; }.legal-toggle i:after { content:''; display:block; width:18px; height:18px; margin:3px; border-radius:50%; background:#fff; transition:.2s; }.legal-toggle input:checked + i { background:var(--primary); }.legal-toggle input:checked + i:after { transform:translateX(20px); }.legal-enable-control { display:flex; align-items:center; gap:8px; color:var(--text-tertiary); font-size:12px; font-weight:700; } .legal-enable-control .is-enabled { color:var(--primary); }
+
+
+
+
 
