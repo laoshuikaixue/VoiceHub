@@ -24,7 +24,7 @@
               v-else
               ref="coverBlurContainer"
               :class="{ visible: showBackgroundFallback }"
-              :style="{ backgroundImage: `url(${currentCoverUrl})` }"
+              :style="{ backgroundImage: `url(${getSizedCoverUrl(currentCoverUrl)})` }"
               class="cover-background"
             />
             <!-- 叠加暗化层，提升白色背景下歌词对比度 -->
@@ -383,7 +383,7 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
-import { convertToHttps } from '~/utils/url'
+import { convertToHttps, getSizedCoverUrl } from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'
