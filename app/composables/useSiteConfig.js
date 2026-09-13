@@ -66,6 +66,10 @@ const siteConfig = ref({
   submissionNoteRequiresApproval: false,
   registerEmailRequired: false,
   registerRequiresGradeClass: false,
+  legalConsentEnabled: false,
+  legalConsentDisplayMode: 'modal',
+  legalConsentUpdatedDate: '',
+  legalConsentDocuments: '[]',
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
@@ -197,6 +201,15 @@ export const useSiteConfig = () => {
   const registerRequiresGradeClass = computed(
     () => siteConfig.value.registerRequiresGradeClass === true
   )
+  const legalConsentEnabled = computed(() => siteConfig.value.legalConsentEnabled === true)
+  const legalConsentDisplayMode = computed(() => siteConfig.value.legalConsentDisplayMode || 'modal')
+  const legalConsentUpdatedDate = computed(() => siteConfig.value.legalConsentUpdatedDate || '')
+  const legalConsentDocuments = computed(() => {
+    try {
+      const docs = typeof siteConfig.value.legalConsentDocuments === 'string' ? JSON.parse(siteConfig.value.legalConsentDocuments) : siteConfig.value.legalConsentDocuments
+      return Array.isArray(docs) ? docs.filter((doc) => doc?.name && doc?.slug) : []
+    } catch { return [] }
+  })
   const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
   )
@@ -293,6 +306,10 @@ export const useSiteConfig = () => {
     submissionNoteRequiresApproval,
     registerEmailRequired,
     registerRequiresGradeClass,
+    legalConsentEnabled,
+    legalConsentDisplayMode,
+    legalConsentUpdatedDate,
+    legalConsentDocuments,
     captchaEnabled,
     captchaProvider,
     captchaMaxFailures,

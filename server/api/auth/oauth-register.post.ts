@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db, users, userIdentities } from '~/drizzle/db'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
@@ -12,6 +12,7 @@ import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
 import { notifyRegistration } from '~~/server/utils/registration-notify'
+import { verifyLegalConsentToken } from '~~/server/utils/legal-consent'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -32,6 +33,10 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const { password, confirmPassword } = body
+
+  // 条款确认：开启登录条款后，必须携带服务端签发的当前版本同意凭证
+  const legalConsentVersion = verifyLegalConsentToken(config, body)
+
   const username = typeof body.username === 'string' ? body.username.trim() : ''
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
@@ -149,7 +154,9 @@ export default defineEventHandler(async (event) => {
           lastLogin: now,
           forcePasswordChange: false,
           avatarProvider: avatarUrl ? payload.provider : null,
-          avatarProviderUserId: avatarUrl ? payload.providerUserId : null
+          avatarProviderUserId: avatarUrl ? payload.providerUserId : null,
+          legalConsentVersion: legalConsentVersion || null,
+          legalConsentAt: legalConsentVersion ? getServerTimestamp() : null
         })
         .onConflictDoNothing()
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
