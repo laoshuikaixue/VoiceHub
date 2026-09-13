@@ -1371,7 +1371,7 @@ input[type='number'] {
 .legal-mode-option { min-height:34px; display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:12px; line-height:1; }
 .legal-mode-option svg { width:15px; height:15px; flex:0 0 15px; }
 .legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
-.legal-date-field { min-width:0; } .legal-date-field input { width:180px; max-width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) minmax(240px,1fr); } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}.legal-date-field input{width:100%}}
+.legal-date-field { min-width:0; } .legal-date-field input { width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
 </style>
 
 /* 展示形式控件保持紧凑并统一图标基线 */
