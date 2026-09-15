@@ -2,6 +2,7 @@ import { upgradeTxAudioUrl } from '~~/server/utils/native_tx'
 import {
   getQqCookieDiagnostic,
   normalizeQqCookie,
+  refreshQqCredential,
   resolveQqOfficialPlayUrl,
   resolveQqSdkPlayUrl
 } from '~~/server/utils/qq_music_sdk'
@@ -76,50 +77,63 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
     }
 
+    const mediaId = String(body?.mediaId || '').trim() || undefined
+
+    // SDK 与原生直连互为校验：SDK 依赖上游文件名策略，原生链路可诊断拒绝原因
+    const attemptOfficial = async (activeCookie?: string): Promise<string> => {
+      try {
+        return await resolveQqSdkPlayUrl(normalizedMusicId, body?.quality, activeCookie, mediaId)
+      } catch (error: any) {
+        const sdkError = error?.message || String(error)
+        console.warn('[music/resolve-url] QQ 官方 SDK 解析失败，尝试原生直连:', sdkError)
+
+        try {
+          return await resolveQqOfficialPlayUrl({
+            songmid: normalizedMusicId,
+            quality: body?.quality,
+            cookie: activeCookie,
+            mediaId
+          })
+        } catch (nativeError: any) {
+          const nativeErrorText = nativeError?.message || String(nativeError)
+          console.warn('[music/resolve-url] QQ 原生直连解析失败:', nativeErrorText)
+          throw createError({
+            statusCode: 502,
+            message: `QQ 官方链路解析失败：${sdkError}；原生直连：${nativeErrorText}`
+          })
+        }
+      }
+    }
+
+    let activeCookie = cookie || undefined
     try {
-      const url = await resolveQqSdkPlayUrl(
-        normalizedMusicId,
-        body?.quality,
-        cookie || undefined,
-        String(body?.mediaId || '').trim() || undefined
-      )
+      const url = await attemptOfficial(activeCookie)
       return {
         success: true,
         url,
         source: 'qq-official',
         normalizedMusicId,
         idType: 'songmid',
-        authUsed: Boolean(cookie),
-        authDiagnostic: getQqCookieDiagnostic(cookie)
+        authUsed: Boolean(activeCookie),
+        authDiagnostic: getQqCookieDiagnostic(activeCookie)
       }
-    } catch (error: any) {
-      const sdkError = error?.message || String(error)
-      console.warn('[music/resolve-url] QQ 官方 SDK 解析失败，尝试原生直连:', sdkError)
+    } catch (error) {
+      // 登录态过期是解析失败的常见原因，续期成功后重试一轮
+      if (!activeCookie) throw error
+      const refreshResult = await refreshQqCredential({ cookie: activeCookie })
+      if (!refreshResult.refreshed) throw error
+      activeCookie = refreshResult.cookie
 
-      // 原生直连：单文件名组合 + zzcSign 签名请求，与 SDK 的文件名策略互为校验
-      try {
-        const url = await resolveQqOfficialPlayUrl({
-          songmid: normalizedMusicId,
-          quality: body?.quality,
-          cookie: cookie || undefined,
-          mediaId: String(body?.mediaId || '').trim() || undefined
-        })
-        return {
-          success: true,
-          url,
-          source: 'qq-official',
-          normalizedMusicId,
-          idType: 'songmid',
-          authUsed: Boolean(cookie),
-          authDiagnostic: getQqCookieDiagnostic(cookie)
-        }
-      } catch (nativeError: any) {
-        const nativeErrorText = nativeError?.message || String(nativeError)
-        console.warn('[music/resolve-url] QQ 原生直连解析失败:', nativeErrorText)
-        throw createError({
-          statusCode: 502,
-          message: `QQ 官方链路解析失败：${sdkError}；原生直连：${nativeErrorText}`
-        })
+      const url = await attemptOfficial(activeCookie)
+      return {
+        success: true,
+        url,
+        source: 'qq-official',
+        normalizedMusicId,
+        idType: 'songmid',
+        authUsed: true,
+        authDiagnostic: getQqCookieDiagnostic(activeCookie),
+        cookie: activeCookie
       }
     }
   }
