@@ -2427,9 +2427,11 @@ const persistQqVipFlag = (data) => {
 
 // 用服务端校验结果补全真实昵称与头像，仅在有增量时更新
 const refreshQqProfileFromServer = async (cookie) => {
-  if (!cookie) return
+  // 校验过程可能触发续期，优先使用已替换的最新登录态
+  const activeCookie = qqMusicCookie.value || cookie
+  if (!activeCookie) return
   try {
-    const data = await validateQqCookie(cookie)
+    const data = await validateQqCookie(activeCookie)
     if (!data.valid) return
     persistQqVipFlag(data)
     if (!(data.user?.nickname || data.user?.avatarUrl)) return

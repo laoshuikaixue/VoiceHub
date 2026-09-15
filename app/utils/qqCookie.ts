@@ -4,11 +4,6 @@ export const QQ_MUSIC_COOKIE_KEY = 'qq_music_cookie'
 /** 服务端续期 Cookie 后的广播事件名，供持有内存副本的页面同步 */
 export const QQ_MUSIC_COOKIE_EVENT = 'qq-music-cookie-updated'
 
-export const readQqMusicCookie = (): string => {
-  if (!import.meta.client) return ''
-  return localStorage.getItem(QQ_MUSIC_COOKIE_KEY) || ''
-}
-
 /**
  * 落盘服务端续期后的 Cookie 并广播变更
  * @returns 是否实际替换了本地登录态（Cookie 为空或与当前一致时为 false）

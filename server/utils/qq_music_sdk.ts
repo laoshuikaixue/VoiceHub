@@ -960,8 +960,9 @@ export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
     }
   }
 
+  const valid = vipOk || detailOk
   return {
-    valid: vipOk || detailOk,
+    valid,
     isVip,
     signals: {
       vipOk,
@@ -970,7 +971,8 @@ export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
       refreshed
     },
     profile,
-    cookie: refreshed ? activeCookie : undefined,
+    // 复验通过才回传新 Cookie，否则前端会按失效流程清理登录态
+    cookie: refreshed && valid ? activeCookie : undefined,
     authDiagnostic: getQqCookieDiagnostic(activeCookie)
   }
 }
