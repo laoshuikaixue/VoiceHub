@@ -154,6 +154,7 @@ export const siteConfig = {
   platformTencent: 'QQ Music',
   platformBilibili: 'Bilibili',
   platformMigu: 'Migu Music',
+  platformMusicfree: 'MusicFree Plugins',
   platformEnabled: 'Enabled',
   platformDisabled: 'Disabled',
 
@@ -1530,7 +1531,8 @@ export const pages = {
         netease: 'NetEase Cloud Music',
         tencent: 'QQ Music',
         bilibili: 'Bilibili',
-        migu: 'Migu Music'
+        migu: 'Migu Music',
+        musicfree: 'MusicFree'
       },
       refreshing: 'Refreshing',
       neteaseLoginTitle: 'Sign in to NetEase for full features',
@@ -2236,7 +2238,8 @@ export const admin = {
       netease: 'NetEase Cloud Music',
       tencent: 'QQ Music',
       bilibili: 'Bilibili',
-      migu: 'Migu Music'
+      migu: 'Migu Music',
+      musicfree: 'MusicFree'
     },
     timeAgo: {
       justNow: 'Just now',
@@ -4251,6 +4254,7 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'Too many incorrect authenticator codes. Please try again in 5 minutes.',
   AUTH_INCOMPLETE_PARAMS: 'Incomplete parameters',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
+  COMMON_RATE_LIMITED_SECONDS: 'Too many requests. Try again in {0} seconds.',
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',

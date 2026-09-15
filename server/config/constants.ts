@@ -99,6 +99,7 @@ export const SERVER_ERROR_CODES = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'AUTH_TOTP_TOO_MANY_ATTEMPTS',
   AUTH_INCOMPLETE_PARAMS: 'AUTH_INCOMPLETE_PARAMS',
   COMMON_INVALID_PARAMS: 'COMMON_INVALID_PARAMS',
+  COMMON_RATE_LIMITED_SECONDS: 'COMMON_RATE_LIMITED_SECONDS',
   THEME_INVALID_LIST: 'THEME_INVALID_LIST',
   THEME_INVALID_DEFAULT: 'THEME_INVALID_DEFAULT',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'THEME_SYSTEM_REQUIRES_CLASSIC',
@@ -460,8 +461,12 @@ export const MUSIC_PLATFORMS = {
   MIGU: 'migu'
 } as const
 
-// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/utils/platforms.ts）
+// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值与前端 app/utils/platforms.ts）
+// 不含 MusicFree 插件平台：插件始终启用、不参与开关与排序，由运行时注入，不入库
 export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
+
+// MusicFree 插件运行时目录（相对进程工作目录，启动时解析为绝对路径）
+export const MUSICFREE_PLUGIN_DIR = 'musicfree-plugins'
 
 // 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
 export const SONG_DURATION_MIN_SECONDS = 0

@@ -981,6 +981,7 @@ VoiceHub/
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
+│       ├── musicfreePlatform.ts # MusicFree插件平台映射
 │       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
@@ -1193,6 +1194,11 @@ VoiceHub/
 │   │   │   ├── resolve-url.post.ts # 音乐播放链接统一解析
 │   │   │   ├── state.post.ts        # 音乐状态管理
 │   │   │   └── websocket.ts         # 音乐WebSocket连接
+│   │   ├── musicfree/      # MusicFree插件API
+│   │   │   ├── lyric.post.ts        # 插件歌词获取
+│   │   │   ├── media-source.post.ts # 插件播放链接获取
+│   │   │   ├── plugins.get.ts       # 插件列表与用户变量声明
+│   │   │   └── search.post.ts       # 插件搜索
 │   │   ├── native-api/     # 原生音乐API
 │   │   │   ├── comment/              # 评论API
 │   │   │   │   └── tx.get.ts         # QQ音乐评论
@@ -1367,6 +1373,9 @@ VoiceHub/
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
+│   │   ├── musicfree.ts    # MusicFree插件运行时（构建产物优先，本地目录回退）
+│   │   ├── musicfree-bundles/ # MusicFree构建期打包产物（manifest.ts已提交，*.mjs已忽略）
+│   │   ├── musicfreeRateLimit.ts # MusicFree未鉴权端点的按IP限流
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── permissions.js  # 权限系统配置
@@ -1404,7 +1413,8 @@ VoiceHub/
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
-│   ├── build.js           # 输出环境变量解析结果并执行 Nuxt 构建
+│   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
+│   ├── build-musicfree-plugins.js # 下载并打包 MusicFree 插件（见下文说明）
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
@@ -1451,6 +1461,7 @@ VoiceHub/
 ├── flake.nix              # Nix构建与NixOS模块配置
 ├── fnos/                  # 飞牛 OS 安装包相关配置
 ├── LICENSE                # 开源许可证文件
+├── musicfree-plugins/     # MusicFree 插件自动读取目录
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖
@@ -2022,7 +2033,26 @@ const confirmUnbind = (provider) => {
 
 ### 音源扩展开发指南
 
-VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动态扩展。开发者可以轻松添加新的音乐API源，提高系统的可用性和音乐资源覆盖率。
+VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动态扩展。开发者可以轻松添加新的音乐API源，提高系统的可用性和音乐资源覆盖率。也可以把 MusicFree 插件文件放进项目根目录的 `musicfree-plugins/` 文件夹，运行时会自动读取该目录中的 `.js` 插件并参与搜索与播放解析。
+
+#### MusicFree 插件运行时说明
+
+- **两种加载模式（构建产物优先）**：
+  1. **构建期打包**：设置 `MUSICFREE_PLUGIN_ZIP_URL` 指向一个仅含插件 `.js` 文件的 zip，`pnpm run build` 会下载并用 esbuild 打成 ESM 产物。产物在运行时被直接 `import`，**不经过 `node:vm`**，因此可在 EdgeOne Pages / Vercel / Netlify 等 serverless 环境运行。
+  2. **本地目录**：未设置 `MUSICFREE_PLUGIN_ZIP_URL` 时清单为空，自动回退到 `musicfree-plugins/` 目录，以 `node:vm` 加载。适合本地开发。
+- **构建产物目录**：`server/utils/musicfree-bundles/`。`*.mjs` 已被 `.gitignore` 忽略；`manifest.ts` 已提交（默认为空），保证干净 clone 不跑构建脚本也能直接构建。
+- **失败策略**：未设置 URL → 生成空清单并继续构建；已设置 URL 但下载、解压或打包失败 → **构建失败**。不做静默降级，避免产出"以为有插件"的坏产物。
+- **插件目录（本地模式）**：`musicfree-plugins/`（已被 `.gitignore` 忽略）。启动时扫描该目录下所有 `.js` 文件；目录不存在时不加载任何插件，功能自动降级为内置音源。实际扫描的绝对路径见启动日志（相对进程工作目录解析）。
+- **信任模型（重要）**：插件以服务器完整权限运行。`vm` 上下文**不是安全边界**——插件可通过宿主对象原型链触达 `process` 等宿主能力；构建期打包模式下白名单在构建时强制校验，但插件代码本身仍与主服务同权。请只使用你信任的插件来源。
+- **构建期打包的限制**：zip ≤ 60MB，单个插件 ≤ 5MB，最多 30 个插件；仅接受 `.js` 条目，其他文件被忽略。插件不得直接 `require` Node 内置模块（esbuild 插件会拒绝并中止构建），只能引入约定的 npm 依赖。
+- **插件加载**：插件在启动时一次性加载并缓存在内存中，**目录或 URL 变更后需重启服务生效**（构建期打包则需重新构建发布）。单个插件加载失败只跳过该插件，不影响其他插件与内置音源。
+- **登录态（cookie）**：本项目对接的是公用音源，cookie 等登录态由插件源码自行携带，**不需要任何配置**。`env.getUserVariables()` 保留作为协议兼容，始终返回空对象，调用它的插件不会报错。
+- **已知限制**：
+  - 插件 `getMediaSource` 返回的 `headers`（Referer / User-Agent 等）在浏览器 `<audio>` 直连时无法携带，依赖自定义请求头的播放链接会 403；支持这类插件需在服务端做代理转发。
+  - 歌曲表只持久化 `playUrl` / `musicPlatform` / `musicId` / `title` / `artist` / `cover`，插件搜索期的平台特有字段（hash、mid 等）不会入库。仅依赖 `id` 的插件可正常重放；依赖搜索期独有字段的插件在页面重载或次日播报后会解析失败。
+  - 插件搜索结果的 `isEnd` 分页标记尚未接入前端"没有更多"判断。
+  - 构建期打包的插件在编译期即已固化，无运行时 `vm` 编译超时保护；插件顶层代码死循环会挂起服务启动。只使用可信插件来源。
+  - `/api/musicfree/*` 为未鉴权端点，已按 IP 限流（搜索 20 次/分钟，播放链接与歌词各 30 次/分钟），防止被当作出站请求放大器刷接口。
 
 #### 音源架构概述
 

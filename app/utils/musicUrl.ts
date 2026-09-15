@@ -3,6 +3,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useChkszSource } from '~/composables/useChkszSource'
 import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
+import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
 /**
  * 动态获取音乐播放URL
@@ -28,6 +29,8 @@ export type MusicTrackMeta = {
   name?: string
   artist?: string
   album?: string
+  // 原始搜索结果或 DB 记录；MusicFree 插件的 getMediaSource 可能依赖搜索期的平台特有字段
+  rawItem?: unknown
 }
 
 export type MusicUrlResolveResult = {
@@ -251,6 +254,29 @@ export async function getMusicUrlResult(
       return { url: chkszUrl, source: 'chksz' }
     }
     return null
+  }
+
+  if (isMusicFreePlatform(platform)) {
+    const { musicInfo } = options || {}
+    const { getSongUrl } = useMusicSources()
+
+    // 音质档位由 getSongUrl 内部映射为 MusicFree 的 quality 取值后透传给插件
+    const result = await getSongUrl(String(musicId), quality, platform || 'musicfree', undefined, {
+      excludeSources: options?.excludeSources,
+      musicInfo: {
+        title: musicInfo?.name,
+        artist: musicInfo?.artist,
+        album: musicInfo?.album,
+        rawItem: musicInfo?.rawItem
+      }
+    })
+
+    if (result.success && result.url) {
+      rememberMusicUrlSource(result.url, 'musicfree')
+      return { url: result.url, source: 'musicfree' }
+    }
+
+    throw new Error(result.error || 'MusicFree 插件未返回播放链接')
   }
 
   if (platform === 'tencent') {

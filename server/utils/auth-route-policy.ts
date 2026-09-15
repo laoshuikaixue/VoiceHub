@@ -46,6 +46,9 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/sys/time', methods: GET_METHODS }
 ]
 
+// /api/musicfree/* 不在公开 API 白名单中，要求登录态。
+// 与 /api/native-api/ 的区别：native-api 是标准内置音源功能，面向匿名用户；
+// MusicFree 插件以服务器完整权限运行，存在 SSRF 与出站请求放大风险，必须登录才可使用。
 export const PUBLIC_API_PREFIX_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/proxy/', methods: GET_METHODS },
   { path: '/api/bilibili/', methods: GET_METHODS },

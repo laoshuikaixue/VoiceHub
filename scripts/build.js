@@ -2,6 +2,7 @@
 
 import { spawn } from 'child_process'
 import { config } from 'dotenv'
+import fs from 'fs'
 import path from 'path'
 
 config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
@@ -431,6 +432,23 @@ function runNuxtBuild() {
   })
 }
 
+async function runMusicFreePluginBuild() {
+  const scriptPath = path.resolve(process.cwd(), 'scripts/build-musicfree-plugins.js')
+  if (!fs.existsSync(scriptPath)) return true
+  log('🧩 构建 MusicFree 插件...', 'cyan')
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (success) => {
+      if (settled) return
+      settled = true
+      resolve(success)
+    }
+    const child = spawn(process.execPath, [scriptPath], { stdio: 'inherit', env: process.env })
+    child.on('error', () => finish(false))
+    child.on('exit', (code) => finish(code === 0))
+  })
+}
+
 async function build() {
   const rawNodeOptions = process.env.NODE_OPTIONS
   normalizeBlankEnvironment()
@@ -439,7 +457,8 @@ async function build() {
 
   if (process.argv.includes('--diagnostics-only')) return
 
-  log('🔨 开始执行 Nuxt 构建...', 'cyan')
+  log('\n🔨 开始构建...', 'cyan')
+  if (!(await runMusicFreePluginBuild())) throw new Error('MusicFree 插件构建失败')
   if (!(await runNuxtBuild())) throw new Error('Nuxt 构建失败')
   log('✅ Nuxt 构建完成', 'green')
 }

@@ -230,7 +230,7 @@
                 type="button"
                 @click="switchPlatform(pKey)"
               >
-                {{ locale.platforms[pKey] || pKey }}
+                {{ getPlatformButtonLabel(pKey) }}
               </button>
             </div>
 
@@ -1557,9 +1557,19 @@ const voting = ref(false)
 const {
   getAvailablePlatforms,
   loadPlatformConfig,
-  loaded: platformConfigLoaded
+  loaded: platformConfigLoaded,
+  musicFreePlugins
 } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
+
+// 平台按钮显示名：内置音源用词典，MusicFree 插件用其 displayName
+const getPlatformButtonLabel = (key) => {
+  if (key.startsWith('musicfree:')) {
+    const plugin = musicFreePlugins.value.find((p) => p.platform === key)
+    return plugin?.displayName ?? key.replace('musicfree:', '')
+  }
+  return ((locale.value.platforms) || {})[key] ?? key
+}
 
 // 监听平台可用性与排序变化：
 // - 当前平台被禁用时，强制切换到第一个可用平台并提示
@@ -1569,7 +1579,7 @@ watch(availablePlatforms, (available) => {
   if (!available.includes(platform.value)) {
     platform.value = available[0]
     if (window.$showNotification) {
-      const switchedName = locale.value.platforms[platform.value] || ''
+      const switchedName = getPlatformButtonLabel(platform.value) || ''
       const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
       window.$showNotification(msg, 'info')
     }
@@ -3162,7 +3172,8 @@ const getAudioUrl = async (result) => {
             musicInfo: {
               name: result.title,
               artist: result.artist,
-              album: result.album || undefined
+              album: result.album || undefined,
+              rawItem: result
             }
           }
         )

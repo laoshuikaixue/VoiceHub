@@ -22,6 +22,7 @@ import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
 import { getPlatformDisplayName } from '~/utils/platforms'
+import { getMusicFreeQuality, isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -806,9 +807,46 @@ export const useMusicSources = () => {
         }
 
         const priority = meta?.priority || settings.lyricPriority.value
+        /**
+         * 获取 MusicFree 插件歌词：插件平台只走插件自带的 getLyric，
+         * 不参与内置音源的来源锁定与回退判定
+         */
+        const fetchMusicFree = async () => {
+          if (!isMusicFreePlatform(platform)) return
+
+          const musicItem = {
+            id: String(id),
+            musicId: String(id),
+            musicPlatform: platform,
+            actualMusicPlatform: platform,
+            ...(meta?.title ? { title: meta.title } : {}),
+            ...(meta?.artist ? { artist: meta.artist } : {}),
+            ...(meta?.album ? { album: meta.album } : {})
+          }
+          try {
+            const resp = await $fetch('/api/musicfree/lyric', {
+              method: 'POST',
+              body: { musicItem },
+              timeout: 10000
+            })
+            const lrc = resp?.data?.rawLrc
+            const trans = resp?.data?.translation
+            if (typeof lrc === 'string' && lrc.trim()) resultData.lrc = lrc
+            if (typeof trans === 'string' && trans.trim()) resultData.trans = trans
+            if (resultData.lrc || resultData.trans) {
+              hasResult = true
+              emitProgress('official')
+            }
+          } catch (e) {
+            console.warn('[getLyrics] MusicFree 插件歌词获取失败:', e)
+          }
+        }
+
         // 指定具体来源（非 auto）时锁定该来源，失败不回退、不做跨平台升级
         const sourceLocked = priority === 'qm' || priority === 'official' || priority === 'ttml'
-        if (sourceLocked) {
+        if (isMusicFreePlatform(platform)) {
+          await fetchMusicFree()
+        } else if (sourceLocked) {
           if (platform === 'migu') {
             await fetchMigu()
           } else if (priority === 'qm') {
@@ -1143,13 +1181,14 @@ export const useMusicSources = () => {
       // - QQ音乐平台：无论国内外均优先 Native Music
       // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
+      const normalizedPlatform = isMusicFreePlatform(platform) ? 'musicfree' : platform
       // 检查平台是否启用（SSR 阶段跳过，$fetch 无 cookie）
       if (import.meta.client) {
-        if (!globalEnabledPlatforms.value.includes(platform)) {
+        if (!globalEnabledPlatforms.value.includes(normalizedPlatform)) {
           const { currentLocale, siteConfig } = useLocale()
           const available = globalEnabledPlatforms.value.filter((p) => p !== platform)
           const platformName = getPlatformDisplayName(
-            platform,
+            normalizedPlatform,
             siteConfig.value,
             currentLocale.value
           )
@@ -1171,6 +1210,29 @@ export const useMusicSources = () => {
         }
       }
       const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
+
+      if (isMusicFreePlatform(platform)) {
+        try {
+          const response: any = await $fetch('/api/musicfree/search', {
+            method: 'POST',
+            body: { query: params.keywords, page: 1, limit: params.limit || 20, pluginId: platform },
+            signal
+          })
+          currentSource.value = normalizedPlatform
+          lastUsedSource.value = normalizedPlatform
+          updateSourceStatus(normalizedPlatform, 'online')
+          return {
+            success: true,
+            source: 'musicfree',
+            data: Array.isArray(response?.data) ? response.data : [],
+            error: undefined
+          }
+        } catch (error: any) {
+          const wrappedError = new Error(error?.message || 'MusicFree 插件搜索失败')
+          wrappedError.cause = error
+          throw wrappedError
+        }
+      }
 
       if (
         shouldUseNativeFirst &&
@@ -1723,6 +1785,7 @@ export const useMusicSources = () => {
       unblock?: boolean
       bilibiliCid?: string
       excludeSources?: string[]
+      musicInfo?: { title?: string; artist?: string; album?: string; rawItem?: any }
     }
   ): Promise<{
     success: boolean
@@ -1772,6 +1835,45 @@ export const useMusicSources = () => {
           if (!options.bilibiliCid) {
             options.bilibiliCid = parsed.cid
           }
+        }
+      }
+
+      if (isMusicFreePlatform(platform)) {
+        if (options?.excludeSources?.includes('musicfree')) {
+          return { success: false, error: 'MusicFree 插件音源已排除' }
+        }
+
+        const { musicInfo } = options || {}
+        const rawItem = musicInfo?.rawItem
+        const musicPlatform = platform || 'musicfree'
+        const musicItem = {
+          // 复用搜索期的完整 item，插件可能依赖搜索时特有的平台字段
+          ...(rawItem && typeof rawItem === 'object' ? rawItem : { id: idParam }),
+          musicId: idParam,
+          musicPlatform,
+          actualMusicPlatform: musicPlatform,
+          ...(musicInfo?.title ? { title: musicInfo.title } : {}),
+          ...(musicInfo?.artist ? { artist: musicInfo.artist } : {}),
+          ...(musicInfo?.album ? { album: musicInfo.album } : {})
+        }
+
+        try {
+          const response: any = await $fetch('/api/musicfree/media-source', {
+            method: 'POST',
+            body: { musicItem, quality: getMusicFreeQuality(quality) },
+            timeout: 20000
+          })
+          if (response?.success && response?.url) {
+            const url = String(response.url)
+              .replace(/^http:\/\//, 'https://')
+            const validation = await validatePlayUrl(url)
+            return validation.valid
+              ? { success: true, url, source: 'musicfree' }
+              : { success: false, error: validation.error || 'MusicFree 插件返回的播放链接无效' }
+          }
+          return { success: false, error: 'MusicFree 插件未返回播放链接' }
+        } catch (musicFreeError: any) {
+          return { success: false, error: musicFreeError?.message || 'MusicFree 插件音源解析失败' }
         }
       }
 

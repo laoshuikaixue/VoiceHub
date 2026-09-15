@@ -337,7 +337,7 @@ export const systemSettings = pgTable('SystemSettings', {
   // 主题管理配置
   defaultTheme: text('defaultTheme').default('System').notNull(),
   enabledThemes: text('enabledThemes').default('["System","ClassicDark","ClassicLight","ModernLight"]').notNull(),
-  // 平台管理配置
+  // 平台管理配置（仅内置音源；MusicFree 插件平台始终启用、由运行时注入，不入库）
   enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),
 });

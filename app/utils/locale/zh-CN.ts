@@ -165,6 +165,7 @@ export const siteConfig = {
   platformTencent: 'QQ音乐',
   platformBilibili: '哔哩哔哩',
   platformMigu: '咪咕音乐',
+  platformMusicfree: 'MusicFree插件',
   platformEnabled: '已启用',
   platformDisabled: '已禁用',
 
@@ -1539,7 +1540,8 @@ export const pages = {
         netease: '网易云音乐',
         tencent: 'QQ音乐',
         bilibili: '哔哩哔哩',
-        migu: '咪咕音乐'
+        migu: '咪咕音乐',
+        musicfree: 'MusicFree插件'
       },
       refreshing: '刷新中',
       neteaseLoginTitle: '登录网易云获取完整体验',
@@ -2245,7 +2247,8 @@ export const admin = {
       netease: '网易云音乐',
       tencent: 'QQ音乐',
       bilibili: '哔哩哔哩',
-      migu: '咪咕音乐'
+      migu: '咪咕音乐',
+      musicfree: 'MusicFree插件'
     },
     timeAgo: {
       justNow: '刚刚',
@@ -4260,6 +4263,7 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: '动态验证码错误次数过多，请在 5 分钟后重试',
   AUTH_INCOMPLETE_PARAMS: '参数不完整',
   COMMON_INVALID_PARAMS: '参数错误',
+  COMMON_RATE_LIMITED_SECONDS: '操作过于频繁，请 {0} 秒后再试',
   THEME_INVALID_LIST: '启用的主题列表无效',
   THEME_INVALID_DEFAULT: '默认主题必须有效且处于启用状态',
   THEME_SYSTEM_REQUIRES_CLASSIC: '跟随系统时必须同时启用经典深色和经典浅色',

@@ -31,6 +31,7 @@ backups/
 .vscode
 .trae
 .qoder
+.codebuddy
 .figma
 .codex
 .agents
@@ -47,3 +48,9 @@ result
 # Tencent Cloud EdgeOne
 .edgeone/*
 .tef_dist/*
+
+# MusicFree Plugins 
+musicfree-plugins/
+# 构建期打包的插件产物（manifest.ts 需提交，保证干净 clone 可直接构建）
+server/utils/musicfree-bundles/*.mjs
+.mf-staging/
