@@ -21,6 +21,7 @@
 
 <script setup>
 import { ref, watch, nextTick, computed } from 'vue'
+import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
 const props = defineProps({
   song: {
@@ -42,12 +43,14 @@ const emit = defineEmits([
 
 const audioPlayer = ref(null)
 
-const crossOriginVal = computed(() => {
-  return props.song?.musicPlatform === 'migu' ? null : 'anonymous'
+// 咪咕与 MusicFree 插件音源不保证 CORS 响应头，强制 crossorigin="anonymous"
+// 会直接导致 MEDIA_ELEMENT_ERROR_SRC_NOT_SUPPORTED，需退回 no-cors 模式加载
+const isNoCorsSource = computed(() => {
+  const platform = props.song?.musicPlatform
+  return platform === 'migu' || isMusicFreePlatform(platform)
 })
-const referrerPolicyVal = computed(() => {
-  return props.song?.musicPlatform === 'migu' ? null : 'no-referrer'
-})
+const crossOriginVal = computed(() => (isNoCorsSource.value ? null : 'anonymous'))
+const referrerPolicyVal = computed(() => (isNoCorsSource.value ? null : 'no-referrer'))
 const audioSrc = computed(() => {
   return props.song?.musicUrl || undefined
 })
