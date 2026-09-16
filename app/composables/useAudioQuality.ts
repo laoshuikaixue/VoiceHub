@@ -24,6 +24,11 @@ export const QUALITY_OPTIONS = {
     { value: 2, key: 'miguHq' },
     { value: 3, key: 'miguSq' },
     { value: 4, key: 'miguZq24' },
+  ],
+  musicfree: [
+    { value: 2, key: 'musicfreeStandard' },
+    { value: 4, key: 'musicfreeHigh' },
+    { value: 5, key: 'musicfreeSuper' }
   ]
 }
 
@@ -32,7 +37,15 @@ const DEFAULT_QUALITY = {
   netease: 4, // HQ极高 (320k)
   tencent: 8, // HQ高音质
   bilibili: 1,
-  migu: 1 // 标准音质（咪咕匿名仅提供 128k）
+  migu: 1, // 标准音质（咪咕匿名仅提供 128k）
+  musicfree: 4 // 高品质
+}
+
+// 将平台名归一化为音质配置键（musicfree:<id> → musicfree，netease-podcast → netease）
+const normalizeQualityPlatform = (platform: string): string => {
+  if (platform.startsWith('musicfree:')) return 'musicfree'
+  if (platform === 'netease-podcast') return 'netease'
+  return platform
 }
 
 // 全局音质状态，确保所有组件共享同一个状态
@@ -156,36 +169,30 @@ export function useAudioQuality() {
 
   // 保存音质设置到localStorage
   const saveQuality = (platform: string, quality: number) => {
-    audioQuality.value[platform] = quality
+    audioQuality.value[normalizeQualityPlatform(platform)] = quality
     // localStorage保存已经通过watch自动处理
   }
 
   // 获取指定平台的音质设置
   const getQuality = (platform: string) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
+    const key = normalizeQualityPlatform(platform)
 
-    const stored = audioQuality.value[platform]
+    const stored = audioQuality.value[key]
     // 已保存的音质值不再存在于选项列表时（如咪咕音质收敛后残留旧值），回落默认值
     const platformOptions =
-      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string }>>)[platform] || []
+      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string }>>)[key] || []
     const isValid = platformOptions.some((option) => option.value === stored)
     if (isValid) {
       return stored
     }
-    return (DEFAULT_QUALITY as Record<string, number>)[platform]
+    return (DEFAULT_QUALITY as Record<string, number>)[key]
   }
 
   // 获取指定平台的音质选项
   const getQualityOptions = (platform: string) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
+    const key = normalizeQualityPlatform(platform)
 
-    return (QUALITY_OPTIONS[platform] || []).map((option) => ({
+    return (QUALITY_OPTIONS[key] || []).map((option) => ({
       ...option,
       label: locale.value?.options?.[option.key]?.label || option.key,
       description: locale.value?.options?.[option.key]?.description || '使用推荐音质设置'
@@ -194,10 +201,6 @@ export function useAudioQuality() {
 
   // 获取音质标签
   const getQualityLabel = (platform: string, quality: number) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
     const options = getQualityOptions(platform)
     const option = options.find((opt) => opt.value === quality)
     return option ? option.label : locale.value.unknown
@@ -205,10 +208,6 @@ export function useAudioQuality() {
 
   // 获取音质描述
   const getQualityDescription = (platform: string, quality: number) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
     const options = getQualityOptions(platform)
     const option = options.find((opt) => opt.value === quality)
     return option ? option.description : ''

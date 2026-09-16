@@ -1153,7 +1153,10 @@ export const pages = {
         bilibiliDefault: { label: '默认', description: '默认音质' },
         miguHq: { label: 'HQ高音质', description: '高品质音乐体验' },
         miguSq: { label: 'SQ无损', description: '无损音质，文件较大' },
-        miguZq24: { label: 'ZQ24无损', description: '高解析度音质，文件更大，需要更多流量' }
+        miguZq24: { label: 'ZQ24无损', description: '高解析度音质，文件更大，需要更多流量' },
+        musicfreeStandard: { label: '标准', description: '标准音质' },
+        musicfreeHigh: { label: '高品质', description: '高品质音质' },
+        musicfreeSuper: { label: '超高', description: '最高音质' }
       }
     },
     bilibiliIframe: {

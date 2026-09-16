@@ -1142,7 +1142,10 @@ export const pages = {
         bilibiliDefault: { label: 'Default', description: 'Default quality' },
         miguHq: { label: 'HQ High', description: 'High-quality music experience' },
         miguSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
-        miguZq24: { label: 'ZQ24 Lossless', description: 'High-resolution quality, larger files, more data' }
+        miguZq24: { label: 'ZQ24 Lossless', description: 'High-resolution quality, larger files, more data' },
+        musicfreeStandard: { label: 'Standard', description: 'Standard quality' },
+        musicfreeHigh: { label: 'High', description: 'High quality' },
+        musicfreeSuper: { label: 'Super', description: 'Highest quality' }
       }
     },
     bilibiliIframe: {
