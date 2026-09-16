@@ -18,6 +18,8 @@ export default defineEventHandler(async (event) => {
         valid: result.valid,
         isVip: result.isVip,
         signals: result.signals,
+        // 失效后自动续期成功时回传新 Cookie，前端据此替换本地登录态
+        cookie: result.cookie,
         user: result.profile
           ? {
               userId: result.profile.userId,

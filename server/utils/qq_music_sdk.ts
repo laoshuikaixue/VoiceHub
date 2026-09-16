@@ -324,6 +324,151 @@ const resolveQqLoginType = (cookieObject: Record<string, string>, authst: string
   return authst.startsWith('W_X') ? 1 : 2
 }
 
+// 续期所需字段的候选键名：网页 Cookie（psrf_*）与扫码会话（wx_*）命名不同，逐个兼容取值
+const QQ_REFRESH_FIELDS = {
+  openid: ['psrf_qqopenid', 'wx_openid', 'wxopenid'],
+  refreshToken: ['psrf_qqrefresh_token', 'wxrefresh_token'],
+  unionid: ['psrf_qqunionid', 'wx_unionid', 'wxunionid'],
+  accessToken: ['psrf_qqaccess_token'],
+  expiresAt: ['psrf_access_token_expiresAt'],
+  refreshKey: ['qm_refresh_key']
+}
+
+const pickCookieField = (cookieObject: Record<string, string>, keys: string[]) => {
+  for (const key of keys) {
+    if (cookieObject[key]) return cookieObject[key]
+  }
+  return ''
+}
+
+type QqRefreshCredentialData = {
+  musickey?: string
+  musicid?: number | string
+  str_musicid?: string
+  refresh_key?: string
+  refresh_token?: string
+  access_token?: string
+  encryptUin?: string
+  openid?: string
+  unionid?: string
+  expired_at?: number
+  musickeyCreateTime?: number
+  loginType?: number
+}
+
+export type QqRefreshResult = {
+  /** 是否成功换到新凭据 */
+  refreshed: boolean
+  /** 续期成功时为合并后的新 Cookie，失败时原样返回 */
+  cookie: string
+}
+
+// 同一会话的并发续期共享一次请求，避免同时失效时重复刷新
+const qqRefreshInflight = new Map<string, Promise<QqRefreshResult>>()
+
+/**
+ * 用 refresh_token 向 LoginServer 续期 musickey（loginMode=2）。
+ * 仅在 Cookie 同时具备会话密钥与 refresh_token 时可用，缺少续期凭据的扫码会话会直接跳过。
+ */
+export const refreshQqCredential = async ({
+  cookie
+}: {
+  cookie?: string
+}): Promise<QqRefreshResult> => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const authst = cookieObject.qqmusic_key || cookieObject.qm_keyst || cookieObject.music_key || ''
+  const uin = resolveQqVkeyUin(cookieObject)
+  const refreshToken = pickCookieField(cookieObject, QQ_REFRESH_FIELDS.refreshToken)
+
+  if (!normalizedCookie || !authst || uin === '0' || !refreshToken) {
+    return { refreshed: false, cookie: normalizedCookie }
+  }
+
+  const inflightKey = `${uin}:${authst}`
+  const inflight = qqRefreshInflight.get(inflightKey)
+  if (inflight) return inflight
+
+  const task = (async (): Promise<QqRefreshResult> => {
+    const loginType = resolveQqLoginType(cookieObject, authst)
+    const openid = pickCookieField(cookieObject, QQ_REFRESH_FIELDS.openid)
+    const unionid = pickCookieField(cookieObject, QQ_REFRESH_FIELDS.unionid)
+    const refreshKey = pickCookieField(cookieObject, QQ_REFRESH_FIELDS.refreshKey)
+
+    const param =
+      loginType === 1
+        ? {
+            openid,
+            refresh_token: refreshToken,
+            str_musicid: cookieObject.qm_str_musicid || uin,
+            musickey: authst,
+            unionid,
+            refresh_key: refreshKey,
+            loginMode: 2
+          }
+        : {
+            openid,
+            access_token: pickCookieField(cookieObject, QQ_REFRESH_FIELDS.accessToken),
+            refresh_token: refreshToken,
+            expired_in: Number(pickCookieField(cookieObject, QQ_REFRESH_FIELDS.expiresAt)) || 0,
+            musicid: Number(uin) || 0,
+            musickey: authst,
+            refresh_key: refreshKey,
+            loginMode: 2
+          }
+
+    try {
+      const resp: any = await callQqMusicu({
+        module: 'music.login.LoginServer',
+        method: 'Login',
+        param,
+        cookie: normalizedCookie,
+        extraComm: { qq: uin, tmeLoginType: loginType }
+      })
+      // 上游按请求键回包，两种形态都做兼容
+      const inner = resp?.req_1 || resp?.request || {}
+      const data: QqRefreshCredentialData | undefined = inner?.data
+      if (Number(resp?.code) !== 0 || Number(inner?.code) !== 0 || !data?.musickey) {
+        console.warn('[qq_music_sdk] 凭据续期被拒绝:', inner?.code ?? resp?.code)
+        return { refreshed: false, cookie: normalizedCookie }
+      }
+
+      const merged: Record<string, string> = { ...cookieObject }
+      merged.qqmusic_key = data.musickey
+      merged.qm_keyst = data.musickey
+      merged.tmeLoginType = String(data.loginType || loginType)
+      const musicId = String(data.str_musicid || data.musicid || '').replace(/^o/i, '')
+      if (musicId) {
+        merged.uin = musicId
+        merged.qqmusic_uin = musicId
+      }
+      if (data.encryptUin) merged.euin = data.encryptUin
+      if (data.openid) merged[loginType === 1 ? 'wx_openid' : 'psrf_qqopenid'] = data.openid
+      if (data.unionid) merged[loginType === 1 ? 'wx_unionid' : 'psrf_qqunionid'] = data.unionid
+      if (data.refresh_token) {
+        merged[loginType === 1 ? 'wxrefresh_token' : 'psrf_qqrefresh_token'] = data.refresh_token
+      }
+      if (data.access_token) merged.psrf_qqaccess_token = data.access_token
+      if (data.expired_at) merged.psrf_access_token_expiresAt = String(data.expired_at)
+      if (data.musickeyCreateTime) {
+        merged.psrf_musickey_createtime = String(data.musickeyCreateTime)
+      }
+      // 网页 Cookie 无此字段，首次续期后写入供后续续期复用
+      if (data.refresh_key) merged.qm_refresh_key = data.refresh_key
+
+      return { refreshed: true, cookie: serializeCookieObject(merged) }
+    } catch (error: any) {
+      console.warn('[qq_music_sdk] 凭据续期失败:', error?.message || error)
+      return { refreshed: false, cookie: normalizedCookie }
+    } finally {
+      qqRefreshInflight.delete(inflightKey)
+    }
+  })()
+
+  qqRefreshInflight.set(inflightKey, task)
+  return task
+}
+
 const createQqOfficialVkeyPayload = ({
   songmid,
   filenames,
@@ -700,42 +845,45 @@ export const isQqVipFromLoginBaseData = (data: unknown): boolean => {
   )
 }
 
-/**
- * 校验 QQ 音乐登录 Cookie 并提取用户档案。
- * vip_login_base 是账户级接口，失效 Cookie 会返回错误码，作为有效性的主判据；
- * 主页资料接口用于补充昵称/头像。
- * 探针不走库内封装：微信区 Cookie（tmeLoginType=1，无 p_skey）在库的
- * 默认 comm 下会被上游拒绝，必须补齐 tmeLoginType 与计算出的 g_tk。
- */
-export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
-  const normalizedCookie = normalizeQqCookie(cookie)
-  const diagnostic = getQqCookieDiagnostic(normalizedCookie)
-  const cookieObject = parseCookieObject(normalizedCookie)
-  const rawUin = String(cookieObject.uin || '').replace(/^o/i, '')
-
-  let vipOk = false
-  let vipCode: unknown
-  let isVip = false
-  let detailOk = false
-
+/** vip_login_base 探针：账户级接口，失效 Cookie 会返回错误码，作为登录有效性主判据 */
+const probeQqVipLogin = async (cookieObject: Record<string, string>, cookie: string) => {
   try {
     const numericLoginType = Number(cookieObject.tmeLoginType)
     const resp: any = await callQqMusicu({
       module: 'VipLogin.VipLoginInter',
       method: 'vip_login_base',
       param: {},
-      cookie: normalizedCookie,
+      cookie,
       extraComm: Number.isFinite(numericLoginType) ? { tmeLoginType: numericLoginType } : undefined
     })
     const reqData = resp?.req_1 || {}
-    vipCode = reqData.code
-    vipOk = Number(reqData.code) === 0
-    if (vipOk) {
-      isVip = isQqVipFromLoginBaseData(reqData.data)
+    const vipOk = Number(reqData.code) === 0
+    return {
+      vipOk,
+      vipCode: reqData.code as unknown,
+      isVip: vipOk ? isQqVipFromLoginBaseData(reqData.data) : false
     }
   } catch (error) {
     console.warn('[qq_music_sdk] vip_login_base 失败:', error instanceof Error ? error.message : error)
+    return { vipOk: false, vipCode: undefined as unknown, isVip: false }
   }
+}
+
+/**
+ * 校验 QQ 音乐登录 Cookie 并提取用户档案。
+ * vip_login_base 是账户级接口，失效 Cookie 会返回错误码，作为有效性的主判据；
+ * 主页资料接口用于补充昵称/头像。
+ * 探针不走库内封装：微信区 Cookie（tmeLoginType=1，无 p_skey）在库的
+ * 默认 comm 下会被上游拒绝，必须补齐 tmeLoginType 与计算出的 g_tk。
+ * 双探针均失败时尝试凭据续期，续期成功则返回新 Cookie 供调用方落盘。
+ */
+export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
+  const cookieObject = parseCookieObject(normalizedCookie)
+  const rawUin = String(cookieObject.uin || '').replace(/^o/i, '')
+
+  let { vipOk, vipCode, isVip } = await probeQqVipLogin(cookieObject, normalizedCookie)
+  let detailOk = false
 
   let profile: { nickname?: string; avatarUrl?: string; userId?: string } | undefined
 
@@ -797,16 +945,35 @@ export const checkQqCookie = async ({ cookie }: { cookie?: string }) => {
     }
   }
 
+  // 双探针全失败才判定失效：先尝试用 refresh_token 续期，成功则复验并回传新 Cookie
+  let activeCookie = normalizedCookie
+  let refreshed = false
+  if (!vipOk && !detailOk) {
+    const refreshResult = await refreshQqCredential({ cookie: normalizedCookie })
+    if (refreshResult.refreshed) {
+      activeCookie = refreshResult.cookie
+      const retried = await probeQqVipLogin(parseCookieObject(activeCookie), activeCookie)
+      vipOk = retried.vipOk
+      vipCode = retried.vipCode
+      isVip = retried.isVip
+      refreshed = true
+    }
+  }
+
+  const valid = vipOk || detailOk
   return {
-    valid: vipOk || detailOk,
+    valid,
     isVip,
     signals: {
       vipOk,
       vipCode: vipCode === undefined ? null : vipCode,
-      detailOk
+      detailOk,
+      refreshed
     },
     profile,
-    authDiagnostic: diagnostic
+    // 复验通过才回传新 Cookie，否则前端会按失效流程清理登录态
+    cookie: refreshed && valid ? activeCookie : undefined,
+    authDiagnostic: getQqCookieDiagnostic(activeCookie)
   }
 }
 

@@ -1476,6 +1476,7 @@ import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import { onQqMusicCookieUpdated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 import ImportSongsModal from './ImportSongsModal.vue'
@@ -1600,6 +1601,8 @@ const isQQMusicLoggedIn = ref(false)
 const qqMusicUser = ref(null)
 const qqMusicCookie = ref('')
 const checkingQQLogin = ref(false)
+// QQ Cookie 续期广播的取消订阅函数
+let unsubscribeQqCookie = null
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -2219,6 +2222,10 @@ const useAudioMatchResult = async (match) => {
 
 onBeforeUnmount(() => {
   stopAudioMatchSession()
+  if (unsubscribeQqCookie) {
+    unsubscribeQqCookie()
+    unsubscribeQqCookie = null
+  }
 })
 
 const handleImportSuccess = async () => {
@@ -2413,7 +2420,13 @@ const validateQqCookie = async (cookie) => {
     method: 'POST',
     body: { cookie }
   })
-  return res?.data || {}
+  const data = res?.data || {}
+  // 校验失败时服务端会用 refresh_token 续期，成功则替换本地登录态
+  if (data.cookie) {
+    persistQqMusicCookie(data.cookie)
+    qqMusicCookie.value = data.cookie
+  }
+  return data
 }
 
 // 持久化服务端返回的 VIP 状态，供取链优先级判断（仅 VIP 时优先官方链路）
@@ -2424,9 +2437,11 @@ const persistQqVipFlag = (data) => {
 
 // 用服务端校验结果补全真实昵称与头像，仅在有增量时更新
 const refreshQqProfileFromServer = async (cookie) => {
-  if (!cookie) return
+  // 校验过程可能触发续期，优先使用已替换的最新登录态
+  const activeCookie = qqMusicCookie.value || cookie
+  if (!activeCookie) return
   try {
-    const data = await validateQqCookie(cookie)
+    const data = await validateQqCookie(activeCookie)
     if (!data.valid) return
     persistQqVipFlag(data)
     if (!(data.user?.nickname || data.user?.avatarUrl)) return
@@ -2607,6 +2622,10 @@ watch(
 onMounted(async () => {
   // 后台加载平台配置（不阻塞其他初始化）；平台可用性变化由 watch 自动处理
   loadPlatformConfig()
+  // 播放链路触发续期后同步内存登录态，避免歌单等后续请求仍用旧凭据
+  unsubscribeQqCookie = onQqMusicCookieUpdated((cookie) => {
+    qqMusicCookie.value = cookie
+  })
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()

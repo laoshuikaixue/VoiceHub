@@ -546,6 +546,7 @@
 import { computed, ref, watch, reactive, onUnmounted } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrlResult } from '~/utils/musicUrl'
+import { persistQqMusicCookie } from '~/utils/qqCookie'
 import { useLocale } from '~/utils/locale'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
@@ -743,6 +744,10 @@ const ensureQqVipFlag = async () => {
           body: { cookie }
         })
         const data = res?.data || {}
+        // 校验失败时服务端可能已续期，落盘新 Cookie 避免后续仍用旧凭据
+        if (data.cookie) {
+          persistQqMusicCookie(data.cookie)
+        }
         if (data.valid && typeof data.isVip === 'boolean') {
           localStorage.setItem('qq_music_vip', data.isVip ? '1' : '0')
         }

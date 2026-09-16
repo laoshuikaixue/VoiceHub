@@ -16,8 +16,8 @@
         <div
           v-if="isOpen"
           ref="contentRef"
-          :style="contentStyle"
-          class="fixed z-[10000] bg-bg-secondary-95 backdrop-blur-xl border border-primary-10 rounded-xl shadow-2xl overflow-hidden"
+          :style="[contentStyle, { zIndex }]"
+          class="fixed bg-bg-secondary-95 backdrop-blur-xl border border-primary-10 rounded-xl shadow-2xl overflow-hidden"
           @click.stop
         >
           <slot name="content" :close="close" />
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, watch, onUnmounted, type StyleValue } from 'vue'
+import { usePopupZIndex } from '~/composables/useZIndex'
 
 const props = defineProps({
   placement: {
@@ -45,6 +46,8 @@ const isOpen = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
 const contentRef = ref<HTMLElement | null>(null)
 const contentStyle = ref<StyleValue>({})
+// 气泡需压过所在弹窗，层级在展开时动态分配
+const { zIndex, onOpenChange } = usePopupZIndex()
 
 const updatePosition = () => {
   if (!isOpen.value || !containerRef.value || !contentRef.value) return
@@ -135,6 +138,7 @@ const handleScrollOrResize = () => {
 }
 
 watch(isOpen, (val) => {
+  onOpenChange(val)
   if (val) {
     window.addEventListener('scroll', handleScrollOrResize, true)
     window.addEventListener('resize', handleScrollOrResize)

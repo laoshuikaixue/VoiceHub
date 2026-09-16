@@ -4,6 +4,7 @@ import { useChkszSource } from '~/composables/useChkszSource'
 import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
+import { persistQqMusicCookie } from '~/utils/qqCookie'
 
 /**
  * 动态获取音乐播放URL
@@ -306,6 +307,9 @@ export async function getMusicUrlResult(
           strategy
         }
       })
+
+      // 服务端可能已用 refresh_token 续期，落盘新 Cookie 供后续请求复用
+      if (response?.cookie) persistQqMusicCookie(response.cookie)
 
       if (response?.success && response?.url) {
         if (platform === 'tencent' && qqMusicCookie && response.authUsed === false) {
