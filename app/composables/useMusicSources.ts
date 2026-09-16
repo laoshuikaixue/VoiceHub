@@ -22,7 +22,7 @@ import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
 import { getPlatformDisplayName } from '~/utils/platforms'
-import { getMusicFreeQuality, isMusicFreePlatform } from '~/utils/musicfreePlatform'
+import { MUSICFREE_PLATFORM_PREFIX, getMusicFreeQuality, isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -814,11 +814,15 @@ export const useMusicSources = () => {
         const fetchMusicFree = async () => {
           if (!isMusicFreePlatform(platform)) return
 
+          const pluginId = platform.startsWith(MUSICFREE_PLATFORM_PREFIX)
+            ? platform.slice(MUSICFREE_PLATFORM_PREFIX.length)
+            : ''
           const musicItem = {
             id: String(id),
             musicId: String(id),
             musicPlatform: platform,
             actualMusicPlatform: platform,
+            musicFreePlugin: pluginId,
             ...(meta?.title ? { title: meta.title } : {}),
             ...(meta?.artist ? { artist: meta.artist } : {}),
             ...(meta?.album ? { album: meta.album } : {})
@@ -1215,7 +1219,12 @@ export const useMusicSources = () => {
         try {
           const response: any = await $fetch('/api/musicfree/search', {
             method: 'POST',
-            body: { query: params.keywords, page: 1, limit: params.limit || 20, pluginId: platform },
+            body: {
+              query: params.keywords,
+              page: Math.floor((params.offset || 0) / (params.limit || 20)) + 1,
+              limit: params.limit || 20,
+              pluginId: platform
+            },
             signal
           })
           currentSource.value = platform
@@ -1845,12 +1854,16 @@ export const useMusicSources = () => {
 
         const { musicInfo } = options || {}
         const rawItem = musicInfo?.rawItem
+        const pluginId = platform.startsWith(MUSICFREE_PLATFORM_PREFIX)
+          ? platform.slice(MUSICFREE_PLATFORM_PREFIX.length)
+          : ''
         const musicItem = {
           // 复用搜索期的完整 item，插件可能依赖搜索时特有的平台字段
           ...(rawItem && typeof rawItem === 'object' ? rawItem : { id: idParam }),
           musicId: idParam,
           musicPlatform: platform,
           actualMusicPlatform: platform,
+          musicFreePlugin: pluginId,
           ...(musicInfo?.title ? { title: musicInfo.title } : {}),
           ...(musicInfo?.artist ? { artist: musicInfo.artist } : {}),
           ...(musicInfo?.album ? { album: musicInfo.album } : {})

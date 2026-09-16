@@ -12,7 +12,11 @@ export default defineEventHandler(async (event) => {
 
   // 传入带 musicfree: 前缀的插件标识时只搜该插件；缺省则聚合搜索全部插件
   const pluginId = String(body?.pluginId || '').trim()
-  const pluginName = pluginId.startsWith('musicfree:') ? pluginId.slice('musicfree:'.length) : pluginId
+  const pluginName = pluginId.startsWith('musicfree:') ? pluginId.slice('musicfree:'.length).trim() : pluginId
+  // 拒绝 musicfree: 后缀为空的畸形标识，防止空插件名导致全插件扇出
+  if (pluginId && !pluginName) {
+    throw createError({ statusCode: 400, message: '无效的插件标识' })
+  }
 
   try {
     return {
