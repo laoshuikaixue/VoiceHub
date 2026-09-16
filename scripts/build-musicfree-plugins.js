@@ -41,6 +41,9 @@ const ALLOWED_MODULES = new Set([
   'webdav'
 ])
 
+// 与 server/utils/musicfree.ts 的 toPluginId 规则一致，保证磁盘/打包两路径 id 相同
+const toPluginId = (stem) => stem.replace(/[^\w\u4e00-\u9fa5-]/g, '_').replace(/^_+|_+$/g, '')
+
 const log = (message) => console.log(`[MusicFree 插件构建] ${message}`)
 // process.exit 不会执行 finally 块，所以用抛错代替直接退出，保证 staging 能被清理
 const FAILED = Symbol('musicfree-build-failed')
@@ -90,7 +93,7 @@ const writeManifest = (built) => {
     built.length === 0
       ? `${header}export const BUNDLED_MUSICFREE_PLUGINS = []\n`
       : `${header}${built.map((p, index) => `import plugin${index} from './${p.file}'`).join('\n')}\n\nexport const BUNDLED_MUSICFREE_PLUGINS = [\n${built
-          .map((p, index) => `  plugin${index},`)
+          .map((p, index) => `  { id: ${JSON.stringify(p.id)}, instance: plugin${index} },`)
           .join('\n')}\n]\n`
   log(`清单${writeIfChanged(MANIFEST, content) ? '已更新' : '无变化'}：${built.length} 个插件`)
 }
@@ -194,7 +197,7 @@ const main = async () => {
       const platform = extractPlatform(data.toString('utf8'))
       try {
         const outFile = await buildPlugin(target, stem)
-        built.push({ file: path.basename(outFile), platform })
+        built.push({ file: path.basename(outFile), id: toPluginId(stem), platform })
         log(`已构建 ${name}${platform ? `（platform: ${platform}）` : ''}`)
       } catch (error) {
         fail(`插件构建失败：${name}\n${error?.message || error}`)

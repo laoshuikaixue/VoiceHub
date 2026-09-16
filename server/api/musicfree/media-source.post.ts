@@ -17,6 +17,11 @@ export default defineEventHandler(async (event) => {
   if (!platform.startsWith('musicfree:')) {
     throw createError({ statusCode: 400, message: '仅支持 MusicFree 插件歌曲' })
   }
+  // 拒绝 musicfree: 后缀为空的畸形标识：getMusicFreeMediaSource 已会拒绝，
+  // 此处提前返回 400 而非 502，语义更准确
+  if (!platform.slice('musicfree:'.length).trim()) {
+    throw createError({ statusCode: 400, message: '缺少 MusicFree 插件标识' })
+  }
 
   try {
     const result = await getMusicFreeMediaSource(musicItem, String(body?.quality || 'standard'))

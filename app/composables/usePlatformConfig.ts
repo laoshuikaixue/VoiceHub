@@ -8,10 +8,12 @@ import { useSiteConfig } from './useSiteConfig'
 import { BUILTIN_PLATFORMS, PLUGIN_PLATFORMS } from '~/utils/platforms'
 import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
-/** MusicFree 插件信息（platform 为带前缀的插件标识，也是搜索/播放时的路由键） */
+/** MusicFree 插件信息（platform 为带前缀的插件标识 musicfree:<id>，也是搜索/播放时的路由键） */
 export type MusicFreePluginInfo = {
   platform: string
   displayName: string
+  // 稳定唯一 id（与 platform 后缀一致），供客户端直接取用
+  id?: string
 }
 
 const cache = {

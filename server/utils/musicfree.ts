@@ -37,16 +37,35 @@ const cloneJson = (value: any): any => (value === undefined ? undefined : JSON.p
 const withTimeout = <T = any>(task: Promise<T>, label: string): Promise<T> =>
   Promise.race([task, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(label)), PLUGIN_TIMEOUT_MS))])
 
-// 插件对象统一以自身声明的 platform 为标识（loadPluginFromCode 已保证非空）
-const pluginKey = (plugin: any): string => safeString(plugin.platform).trim()
+// 文件名 stem → 稳定唯一 id；与 scripts/build-musicfree-plugins.js 的 slug 规则一致，
+// 保证"磁盘加载"与"构建期打包"两条路径产出相同 id，路由键不随加载方式漂移
+const toPluginId = (stem: string): string => stem.replace(/[^\w\u4e00-\u9fa5-]/g, '_').replace(/^_+|_+$/g, '')
 
-const readPluginNames = (): string[] => {
+/**
+ * 插件运行时句柄。
+ * - id：稳定唯一路由键（文件名 stem 归一化），暴露给客户端作为 musicfree:<id> 的后缀
+ * - platform：插件声明的 platform 字段，仅作显示名，不参与路由
+ * - instance：插件对象，含 search/getMediaSource/getLyric 等方法
+ */
+export type MusicFreePluginHandle = {
+  id: string
+  platform: string
+  displayName: string
+  instance: any
+}
+
+// 同时返回 id 与原始文件名：id 作路由键，file 用于读盘
+const readPluginFiles = (): { id: string; file: string }[] => {
   try {
     if (!existsSync(PLUGIN_ROOT)) return []
     return readdirSync(PLUGIN_ROOT)
       .filter((name) => name.endsWith('.js'))
-      .sort()
-      .map((name) => basename(name, '.js').trim() || 'musicfree-plugin')
+      .map((name) => {
+        const stem = basename(name, '.js').trim()
+        return { id: toPluginId(stem), file: name }
+      })
+      .filter((entry) => entry.id)
+      .sort((a, b) => a.id.localeCompare(b.id))
   } catch (error) {
     // 目录不可读（权限、挂载异常等）时按无插件处理，不影响内置音源
     console.warn('[MusicFree] 插件目录读取失败，按无插件模式运行:', error?.message || error)
@@ -54,48 +73,8 @@ const readPluginNames = (): string[] => {
   }
 }
 
-const loadPluginsFromDisk = async (): Promise<any[]> => {
-  // 构建期打包的插件优先：直接 import 的 ESM 模块，不依赖 node:vm，可跑在 serverless 上
-  if (BUNDLED_MUSICFREE_PLUGINS.length > 0) {
-    console.info(`[MusicFree] 使用构建期打包的 ${BUNDLED_MUSICFREE_PLUGINS.length} 个插件`)
-    return BUNDLED_MUSICFREE_PLUGINS
-  }
-  const names = readPluginNames()
-  if (names.length === 0) {
-    console.warn(`[MusicFree] 未从 ${PLUGIN_ROOT} 读取到插件文件`)
-    return []
-  }
-  console.info(`[MusicFree] 从 ${PLUGIN_ROOT} 读取到 ${names.length} 个插件文件`)
-
-  const plugins: any[] = []
-  for (const name of names) {
-    try {
-      plugins.push(loadPluginFromCode(readFileSync(join(PLUGIN_ROOT, `${name}.js`), 'utf8'), name))
-      console.info(`[MusicFree] 插件 ${name} 加载成功`)
-    } catch (error) {
-      console.warn(`[MusicFree] 插件 ${name} 加载失败:`, error)
-    }
-  }
-  return plugins
-}
-
-let pluginsCache: any[] | null = null
-let pluginsLoading: Promise<any[]> | null = null
-
-// 模块级缓存：避免每次搜索/解析/歌词请求都重新读盘与 vm 编译；插件目录变更后需重启服务生效
-export const getMusicFreePluginsConfig = async (): Promise<any[]> => {
-  if (pluginsCache) return pluginsCache
-  if (pluginsLoading) return pluginsLoading
-  pluginsLoading = loadPluginsFromDisk().then((plugins) => {
-    pluginsCache = plugins
-    pluginsLoading = null
-    return plugins
-  })
-  return pluginsLoading
-}
-
-// 按候选键读取单个插件的用户变量；文件缺失、格式非法或键不匹配时回退空对象
-// 插件运行环境：cookie 等登录态由插件源码自行携带（公用音源），不另做配置入口
+// 仅用于兼容性收敛（避免插件引入服务端不该暴露的模块），不是安全边界：
+// vm 上下文内的插件仍可通过宿主对象原型链触达 process 等宿主能力，插件以服务器完整权限运行
 const createSandbox = () => {
   const module = { exports: {} as any }
 
@@ -138,26 +117,106 @@ const createSandbox = () => {
   return { module, sandbox }
 }
 
-const loadPluginFromCode = (code: string, pluginName: string): any => {
+const loadPluginFromCode = (code: string, pluginId: string): any => {
   if (!code || code.length > CODE_LIMIT) throw new Error('插件代码为空或超过大小限制')
   const { module, sandbox } = createSandbox()
-  vm.runInContext(code, sandbox, { timeout: 3000, filename: `musicfree-${pluginName}.js` })
+  vm.runInContext(code, sandbox, { timeout: 3000, filename: `musicfree-${pluginId}.js` })
 
   const plugin = module.exports?.default || module.exports
   if (!plugin || typeof plugin !== 'object') throw new Error('插件未导出有效对象')
-  // platform 缺失时回退到文件名，保证平台标识稳定可路由
-  const declaredPlatform = safeString(plugin.platform).trim()
-  if (!declaredPlatform) plugin.platform = pluginName
   return plugin
 }
 
-// 实现了 method 的插件；pluginName 非空时只取 platform 匹配的那一个
-const pluginsWith = async (method: string, pluginName: string): Promise<any[]> => {
-  const plugins = await getMusicFreePluginsConfig()
-  return plugins.filter((plugin) => typeof plugin[method] === 'function' && (!pluginName || pluginKey(plugin) === pluginName))
+// 将裸插件对象归一化为句柄：platform 缺失时回退到 id，保证显示名总有值
+const normalizeHandle = (id: string, instance: any): MusicFreePluginHandle | null => {
+  if (!id || !instance || typeof instance !== 'object') return null
+  const platform = safeString(instance.platform).trim() || id
+  return {
+    id,
+    platform,
+    displayName: platform.replace(/_/g, ' '),
+    instance
+  }
 }
 
-// 播放链接/歌词请求里没有 musicFreePlugin 字段时，从 platform 前缀还原插件名
+// 按 id 去重：同名（文件名归一化后冲突）只保留首个，避免路由歧义
+const dedupHandles = (handles: MusicFreePluginHandle[]): MusicFreePluginHandle[] => {
+  const seen = new Set<string>()
+  const result: MusicFreePluginHandle[] = []
+  for (const handle of handles) {
+    if (seen.has(handle.id)) {
+      console.warn(`[MusicFree] 检测到重复插件 id "${handle.id}"，已忽略后续加载`)
+      continue
+    }
+    seen.add(handle.id)
+    result.push(handle)
+  }
+  return result
+}
+
+const loadPluginsFromDisk = async (): Promise<MusicFreePluginHandle[]> => {
+  // 构建期打包的插件优先：直接 import 的 ESM 模块，不依赖 node:vm，可跑在 serverless 上
+  if (BUNDLED_MUSICFREE_PLUGINS.length > 0) {
+    console.info(`[MusicFree] 使用构建期打包的 ${BUNDLED_MUSICFREE_PLUGINS.length} 个插件`)
+    const handles = (BUNDLED_MUSICFREE_PLUGINS as { id: string; instance: any }[])
+      .map((entry) => normalizeHandle(safeString(entry.id), entry.instance))
+      .filter((h): h is MusicFreePluginHandle => h !== null)
+    return dedupHandles(handles)
+  }
+  const files = readPluginFiles()
+  if (files.length === 0) {
+    console.warn(`[MusicFree] 未从 ${PLUGIN_ROOT} 读取到插件文件`)
+    return []
+  }
+  console.info(`[MusicFree] 从 ${PLUGIN_ROOT} 读取到 ${files.length} 个插件文件`)
+
+  const handles: MusicFreePluginHandle[] = []
+  for (const { id, file } of files) {
+    try {
+      const instance = loadPluginFromCode(readFileSync(join(PLUGIN_ROOT, file), 'utf8'), id)
+      const handle = normalizeHandle(id, instance)
+      if (handle) {
+        handles.push(handle)
+        console.info(`[MusicFree] 插件 ${id} 加载成功`)
+      }
+    } catch (error) {
+      console.warn(`[MusicFree] 插件 ${id} 加载失败:`, error)
+    }
+  }
+  return dedupHandles(handles)
+}
+
+let pluginsCache: MusicFreePluginHandle[] | null = null
+let pluginsLoading: Promise<MusicFreePluginHandle[]> | null = null
+
+// 模块级缓存：避免每次搜索/解析/歌词请求都重新读盘与 vm 编译；插件目录变更后需重启服务生效
+export const getMusicFreePluginsConfig = async (): Promise<MusicFreePluginHandle[]> => {
+  if (pluginsCache) return pluginsCache
+  if (pluginsLoading) return pluginsLoading
+  pluginsLoading = loadPluginsFromDisk().then((plugins) => {
+    pluginsCache = plugins
+    pluginsLoading = null
+    return plugins
+  })
+  return pluginsLoading
+}
+
+/**
+ * 按 id 精确定位单个实现了指定方法的插件。
+ * id 是稳定唯一路由键（musicfree:<文件名>），直接匹配，不回退。
+ */
+const findHandle = async (method: string, id: string): Promise<MusicFreePluginHandle | null> => {
+  const handles = await getMusicFreePluginsConfig()
+  return handles.find((h) => h.id === id && typeof h.instance?.[method] === 'function') || null
+}
+
+// 全部实现了指定方法的插件（用于聚合搜索与插件列表）
+const handlesWith = async (method: string): Promise<MusicFreePluginHandle[]> => {
+  const handles = await getMusicFreePluginsConfig()
+  return handles.filter((h) => typeof h.instance?.[method] === 'function')
+}
+
+// 播放链接/歌词请求里没有 musicFreePlugin 字段时，从 platform 前缀还原插件 id
 const itemPluginName = (musicItem: any): string => {
   const declared = safeString(musicItem?.musicFreePlugin)
   if (declared) return declared
@@ -165,23 +224,31 @@ const itemPluginName = (musicItem: any): string => {
   return platform.startsWith('musicfree:') ? platform.slice('musicfree:'.length) : ''
 }
 
-export const searchMusicFreePlugins = async (query: string, page = 1, limit = 20, pluginName?: string): Promise<any[]> => {
-  const targets = await pluginsWith('search', pluginName || '')
+export const searchMusicFreePlugins = async (query: string, page = 1, limit = 20, pluginId?: string): Promise<any[]> => {
+  const trimmedId = (pluginId || '').trim()
+  // 传 pluginId 时只搜该插件（精确路由，不扇出）；缺省时聚合搜索全部插件
+  let targets: MusicFreePluginHandle[]
+  if (trimmedId) {
+    const handle = await findHandle('search', trimmedId)
+    targets = handle ? [handle] : []
+  } else {
+    targets = await handlesWith('search')
+  }
   // 单插件已有 MAX_RESULTS_PER_PLUGIN 上限，这里再对聚合结果截断，保证分页语义稳定
   const maxResults = Math.min(Math.max(1, Number(limit) || 20), MAX_AGGREGATE_RESULTS)
   const results: any[] = []
   const errors: string[] = []
 
   await Promise.all(
-    targets.map(async (plugin) => {
+    targets.map(async (handle) => {
       try {
-        const result = await withTimeout(plugin.search(query, page, 'music'), '插件搜索超时')
+        const result = await withTimeout(handle.instance.search(query, page, 'music'), '插件搜索超时')
         for (const item of (Array.isArray(result?.data) ? result.data : []).slice(0, MAX_RESULTS_PER_PLUGIN)) {
-          const mapped = mapMusicFreeItem(item, pluginKey(plugin))
+          const mapped = mapMusicFreeItem(item, handle)
           if (mapped) results.push(mapped)
         }
       } catch (error: any) {
-        errors.push(`${pluginKey(plugin)}: ${error?.message || error}`)
+        errors.push(`${handle.id}: ${error?.message || error}`)
       }
     })
   )
@@ -196,43 +263,42 @@ export const getMusicFreeMediaSource = async (
   musicItem: any,
   quality = 'standard'
 ): Promise<{ url: string; headers?: Record<string, string> }> => {
-  const pluginName = itemPluginName(musicItem)
-  const errors: string[] = []
+  const pluginId = itemPluginName(musicItem)
+  if (!pluginId) throw new Error('缺少 MusicFree 插件标识')
+  // 精确定位唯一插件，不再遍历全部插件，避免空标识导致出站请求放大
+  const handle = await findHandle('getMediaSource', pluginId)
+  if (!handle) throw new Error(`未找到 MusicFree 插件: ${pluginId}`)
 
-  for (const plugin of await pluginsWith('getMediaSource', pluginName)) {
-    try {
-      const result = await withTimeout(plugin.getMediaSource(cloneJson(musicItem), quality), '插件获取播放链接超时')
-      const url = safeString(result?.url || musicItem?.url).trim()
-      if (url) return { url, headers: result?.headers && typeof result.headers === 'object' ? result.headers : undefined }
-    } catch (error: any) {
-      errors.push(`${pluginKey(plugin)}: ${error?.message || error}`)
-    }
-  }
-  throw new Error(errors[0] || 'MusicFree 插件未返回播放链接')
+  const result = await withTimeout(handle.instance.getMediaSource(cloneJson(musicItem), quality), '插件获取播放链接超时')
+  const url = safeString(result?.url || musicItem?.url).trim()
+  if (!url) throw new Error('MusicFree 插件未返回播放链接')
+  return { url, headers: result?.headers && typeof result.headers === 'object' ? result.headers : undefined }
 }
 
 export const getMusicFreeLyric = async (musicItem: any): Promise<{ rawLrc?: string; translation?: string } | null> => {
-  for (const plugin of await pluginsWith('getLyric', itemPluginName(musicItem))) {
-    try {
-      const result = await withTimeout(plugin.getLyric(cloneJson(musicItem)), '插件获取歌词超时')
-      const rawLrc = safeString(result?.rawLrc || result?.lrc).trim()
-      const translation = safeString(result?.translation).trim()
-      if (rawLrc || translation) return { rawLrc, translation }
-    } catch (error: any) {
-      console.warn(`[MusicFree] 插件歌词获取失败 ${pluginKey(plugin)}:`, error?.message || error)
-    }
+  const pluginId = itemPluginName(musicItem)
+  if (!pluginId) return null
+  const handle = await findHandle('getLyric', pluginId)
+  if (!handle) return null
+  try {
+    const result = await withTimeout(handle.instance.getLyric(cloneJson(musicItem)), '插件获取歌词超时')
+    const rawLrc = safeString(result?.rawLrc || result?.lrc).trim()
+    const translation = safeString(result?.translation).trim()
+    if (rawLrc || translation) return { rawLrc, translation }
+  } catch (error: any) {
+    console.warn(`[MusicFree] 插件歌词获取失败 ${handle.id}:`, error?.message || error)
   }
   return null
 }
 
-const mapMusicFreeItem = (item: any, pluginName: string): any | null => {
+const mapMusicFreeItem = (item: any, handle: MusicFreePluginHandle): any | null => {
   const id = safeString(item?.id).trim()
   const title = safeString(item?.title || item?.song || item?.name).trim()
   const artist = safeString(item?.artist || item?.singer).trim()
   if (!id || !title || !artist) return null
 
   const duration = Number(item?.duration)
-  const platform = `musicfree:${pluginName}`
+  const platform = `musicfree:${handle.id}`
   return {
     ...cloneJson(item),
     id,
@@ -241,8 +307,8 @@ const mapMusicFreeItem = (item: any, pluginName: string): any | null => {
     musicId: id,
     musicPlatform: platform,
     actualMusicPlatform: platform,
-    sourceInfo: { source: 'musicfree', plugin: pluginName, platform, fetchedAt: getServerTimestamp() },
-    musicFreePlugin: pluginName,
+    sourceInfo: { source: 'musicfree', plugin: handle.id, platform, fetchedAt: getServerTimestamp() },
+    musicFreePlugin: handle.id,
     cover: safeString(item?.artwork || item?.cover || item?.pic || '').trim() || null,
     album: safeString(item?.album).trim() || '',
     duration: Number.isFinite(duration) && duration > 0 ? duration : undefined,

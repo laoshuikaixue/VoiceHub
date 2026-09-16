@@ -3,7 +3,7 @@
     ref="audioPlayer"
     :key="audioKey"
     :src="audioSrc"
-    :crossorigin="crossOriginVal"
+    v-bind="crossOriginVal ? { crossorigin: crossOriginVal } : {}"
     :referrerpolicy="referrerPolicyVal"
     playsinline
     preload="auto"

@@ -205,19 +205,21 @@
         </Transition>
 
         <!-- 音频元素 -->
-        <AudioElement
-          ref="audioElementRef"
-          :song="song"
-          @canplay="handleCanPlay"
-          @ended="handleEnded"
-          @error="handleError"
-          @loadedmetadata="handleLoaded"
-          @durationchange="handleDurationChange"
-          @loadstart="handleLoadStart"
-          @pause="handlePause"
-          @play="handlePlay"
-          @timeupdate="handleTimeUpdate"
-        />
+        <ClientOnly>
+          <AudioElement
+            ref="audioElementRef"
+            :song="song"
+            @canplay="handleCanPlay"
+            @ended="handleEnded"
+            @error="handleError"
+            @loadedmetadata="handleLoaded"
+            @durationchange="handleDurationChange"
+            @loadstart="handleLoadStart"
+            @pause="handlePause"
+            @play="handlePlay"
+            @timeupdate="handleTimeUpdate"
+          />
+        </ClientOnly>
       </div>
     </Transition>
 
@@ -269,6 +271,7 @@ import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
@@ -529,7 +532,7 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
 
 const trySwitchPlaybackSource = async () => {
   const song = activeSong.value
-  if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song)) {
+  if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song) || isMusicFreePlatform(song.musicPlatform)) {
     return false
   }
 

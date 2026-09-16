@@ -17,6 +17,9 @@ export default defineEventHandler(async (event) => {
   if (!platform.startsWith('musicfree:')) {
     throw createError({ statusCode: 400, message: '仅支持 MusicFree 插件歌曲' })
   }
+  if (!platform.slice('musicfree:'.length).trim()) {
+    throw createError({ statusCode: 400, message: '缺少 MusicFree 插件标识' })
+  }
 
   try {
     return { success: true, data: await getMusicFreeLyric(musicItem) }
