@@ -1,4 +1,4 @@
-import { getMusicFreeLyric } from '~~/server/utils/musicfree'
+import { extractPluginId, getMusicFreeLyric } from '~~/server/utils/musicfree'
 import { enforceMusicFreeRateLimit } from '~~/server/utils/musicfreeRateLimit'
 
 const LYRIC_RATE_LIMIT = 30
@@ -13,11 +13,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 校验必须是 MusicFree 插件来源的歌曲，防止空插件名导致全插件遍历（出站请求放大）
-  const platform = String(musicItem.musicPlatform || musicItem.platform || '')
-  if (!platform.startsWith('musicfree:')) {
-    throw createError({ statusCode: 400, message: '仅支持 MusicFree 插件歌曲' })
-  }
-  if (!platform.slice('musicfree:'.length).trim()) {
+  const pluginId = extractPluginId(musicItem)
+  if (!pluginId) {
     throw createError({ statusCode: 400, message: '缺少 MusicFree 插件标识' })
   }
 

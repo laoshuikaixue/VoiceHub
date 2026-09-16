@@ -1181,14 +1181,14 @@ export const useMusicSources = () => {
       // - QQ音乐平台：无论国内外均优先 Native Music
       // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
-      const normalizedPlatform = isMusicFreePlatform(platform) ? 'musicfree' : platform
       // 检查平台是否启用（SSR 阶段跳过，$fetch 无 cookie）
-      if (import.meta.client) {
-        if (!globalEnabledPlatforms.value.includes(normalizedPlatform)) {
+      // MusicFree 插件平台始终启用，不走 enabledPlatforms 校验
+      if (import.meta.client && !isMusicFreePlatform(platform)) {
+        if (!globalEnabledPlatforms.value.includes(platform)) {
           const { currentLocale, siteConfig } = useLocale()
           const available = globalEnabledPlatforms.value.filter((p) => p !== platform)
           const platformName = getPlatformDisplayName(
-            normalizedPlatform,
+            platform,
             siteConfig.value,
             currentLocale.value
           )
@@ -1218,9 +1218,9 @@ export const useMusicSources = () => {
             body: { query: params.keywords, page: 1, limit: params.limit || 20, pluginId: platform },
             signal
           })
-          currentSource.value = normalizedPlatform
-          lastUsedSource.value = normalizedPlatform
-          updateSourceStatus(normalizedPlatform, 'online')
+          currentSource.value = platform
+          lastUsedSource.value = platform
+          updateSourceStatus(platform, 'online')
           return {
             success: true,
             source: 'musicfree',
@@ -1845,13 +1845,12 @@ export const useMusicSources = () => {
 
         const { musicInfo } = options || {}
         const rawItem = musicInfo?.rawItem
-        const musicPlatform = platform || 'musicfree'
         const musicItem = {
           // 复用搜索期的完整 item，插件可能依赖搜索时特有的平台字段
           ...(rawItem && typeof rawItem === 'object' ? rawItem : { id: idParam }),
           musicId: idParam,
-          musicPlatform,
-          actualMusicPlatform: musicPlatform,
+          musicPlatform: platform,
+          actualMusicPlatform: platform,
           ...(musicInfo?.title ? { title: musicInfo.title } : {}),
           ...(musicInfo?.artist ? { artist: musicInfo.artist } : {}),
           ...(musicInfo?.album ? { album: musicInfo.album } : {})

@@ -9,9 +9,6 @@ import { MUSICFREE_PLATFORM_PREFIX } from '~/utils/musicfreePlatform'
 // 受管理员控制的“内置”音源：可被启用/禁用、排序（音源管理后台），也是入库配置的白名单
 export const BUILTIN_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
 
-// 插件平台：始终启用、固定排在内置音源之后，不参与启用/禁用与排序，不入库
-export const PLUGIN_PLATFORMS = ['musicfree'] as const
-
 // 平台显示名键 → 国际化文案键（按 siteConfig 段）
 export const PLATFORM_NAME_KEYS = {
   netease: 'platformNetease',
@@ -49,7 +46,9 @@ export const getPlatformDisplayName = (key: string, siteConfig: any, currentLoca
   const isEn = currentLocale === 'en-US'
   if (key.startsWith(MUSICFREE_PLATFORM_PREFIX)) {
     const suffix = key.slice(MUSICFREE_PLATFORM_PREFIX.length)
-    return suffix || (isEn ? PLATFORM_NAME_FALLBACK_EN.musicfree : PLATFORM_NAME_FALLBACK.musicfree)
+    return suffix
+      ? (isEn ? `${PLATFORM_NAME_FALLBACK_EN.musicfree}: ${suffix}` : `${PLATFORM_NAME_FALLBACK.musicfree}: ${suffix}`)
+      : (isEn ? PLATFORM_NAME_FALLBACK_EN.musicfree : PLATFORM_NAME_FALLBACK.musicfree)
   }
   return isEn
     ? (PLATFORM_NAME_FALLBACK_EN[key as keyof typeof PLATFORM_NAME_FALLBACK_EN] ?? key)

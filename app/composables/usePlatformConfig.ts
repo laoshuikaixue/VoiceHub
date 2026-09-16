@@ -5,7 +5,7 @@
 
 import { ref } from 'vue'
 import { useSiteConfig } from './useSiteConfig'
-import { BUILTIN_PLATFORMS, PLUGIN_PLATFORMS } from '~/utils/platforms'
+import { BUILTIN_PLATFORMS } from '~/utils/platforms'
 import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
 /** MusicFree 插件信息（platform 为带前缀的插件标识 musicfree:<id>，也是搜索/播放时的路由键） */
@@ -50,13 +50,6 @@ const parsePlatformArray = (value: unknown, allowBackfill = false): string[] => 
   return merged
 }
 
-/** 插件平台始终启用：确保其在启用列表中始终存在（用于搜索可用性检查），不受管理员禁用控制 */
-const ensurePluginPlatforms = (list: string[]): string[] => {
-  const set = new Set(list)
-  for (const p of PLUGIN_PLATFORMS) set.add(p)
-  return [...set]
-}
-
 /** 加载 MusicFree 插件列表：每个插件作为独立平台 */
 const loadMusicFreePlugins = async () => {
   try {
@@ -84,7 +77,7 @@ export const usePlatformConfig = () => {
       try {
         const { siteConfig, isLoaded } = useSiteConfig()
         if (isLoaded.value && siteConfig.value?.enabledPlatforms) {
-          enabledPlatforms.value = ensurePluginPlatforms(parsePlatformArray(siteConfig.value.enabledPlatforms, false))
+          enabledPlatforms.value = parsePlatformArray(siteConfig.value.enabledPlatforms, false)
           platformOrder.value = parsePlatformArray(siteConfig.value.platformOrder, true)
           loaded.value = true
           loadMusicFreePlugins()
@@ -97,7 +90,7 @@ export const usePlatformConfig = () => {
 
     try {
       const res = await $fetch('/api/platform-config')
-      enabledPlatforms.value = ensurePluginPlatforms(parsePlatformArray(res.enabledPlatforms, false))
+      enabledPlatforms.value = parsePlatformArray(res.enabledPlatforms, false)
       platformOrder.value = parsePlatformArray(res.platformOrder, true)
       loaded.value = true
       loadMusicFreePlugins()

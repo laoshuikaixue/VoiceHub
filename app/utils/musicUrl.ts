@@ -262,7 +262,7 @@ export async function getMusicUrlResult(
     const { getSongUrl } = useMusicSources()
 
     // 音质档位由 getSongUrl 内部映射为 MusicFree 的 quality 取值后透传给插件
-    const result = await getSongUrl(String(musicId), quality, platform || 'musicfree', undefined, {
+    const result = await getSongUrl(String(musicId), quality, platform, undefined, {
       excludeSources: options?.excludeSources,
       musicInfo: {
         title: musicInfo?.name,

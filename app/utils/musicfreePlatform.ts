@@ -1,8 +1,13 @@
 export const MUSICFREE_PLATFORM_PREFIX = 'musicfree:'
 
+/**
+ * 判断是否为 MusicFree 插件平台。
+ * 只接受带 musicfree: 前缀的标识（如 musicfree:netease），不接受裸 'musicfree'，
+ * 避免空插件名导致服务端全插件遍历（出站请求放大）。
+ */
 export const isMusicFreePlatform = (platform?: string | null): boolean => {
   if (!platform) return false
-  return platform === 'musicfree' || platform.startsWith(MUSICFREE_PLATFORM_PREFIX)
+  return platform.startsWith(MUSICFREE_PLATFORM_PREFIX)
 }
 
 // 站内音质档位（useAudioQuality 的数值）→ MusicFree 插件 quality 取值；唯一权威映射

@@ -31,9 +31,23 @@ export const getMusicFreePluginDir = (): string => PLUGIN_ROOT
 
 const safeString = (value: unknown): string => (value === null || value === undefined ? '' : String(value))
 
+/**
+ * 校验 musicItem 的插件标识，返回插件 id 或空字符串。
+ * 与 itemPluginName 一致：优先取 musicFreePlugin，回退到 musicPlatform/platform 前缀。
+ * API 路由使用此函数做 400 校验，避免校验口径与运行时不一致。
+ */
+export const extractPluginId = (musicItem: any): string => {
+  const declared = safeString(musicItem?.musicFreePlugin)
+  if (declared) return declared.trim()
+  const platform = safeString(musicItem?.musicPlatform || musicItem?.platform)
+  return platform.startsWith('musicfree:') ? platform.slice('musicfree:'.length).trim() : ''
+}
+
 // 插件返回的数据未经类型约束，按 any 处理
 const cloneJson = (value: any): any => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)))
 
+// 仅防止调用方挂起；不取消底层任务，超时的 promise 仍在后台运行。
+// 插件方法通常发起 HTTP 请求（axios 自带 timeout），极端情况可接受。
 const withTimeout = <T = any>(task: Promise<T>, label: string): Promise<T> =>
   Promise.race([task, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(label)), PLUGIN_TIMEOUT_MS))])
 
@@ -100,9 +114,9 @@ const createSandbox = () => {
     URLSearchParams,
     AbortController,
     setTimeout,
-    setInterval,
     clearTimeout,
-    clearInterval,
+    // 故意不提供 setInterval/clearInterval：插件可创建永不结束的定时器，
+    // 导致内存泄漏；需要轮询的插件应改用 setTimeout + 递归
     Promise,
     env: {
       // 保留协议方法并返回空对象：调用它的插件不会因方法缺失而报错
@@ -217,12 +231,7 @@ const handlesWith = async (method: string): Promise<MusicFreePluginHandle[]> => 
 }
 
 // 播放链接/歌词请求里没有 musicFreePlugin 字段时，从 platform 前缀还原插件 id
-const itemPluginName = (musicItem: any): string => {
-  const declared = safeString(musicItem?.musicFreePlugin)
-  if (declared) return declared
-  const platform = safeString(musicItem?.musicPlatform || musicItem?.platform)
-  return platform.startsWith('musicfree:') ? platform.slice('musicfree:'.length) : ''
-}
+const itemPluginName = (musicItem: any): string => extractPluginId(musicItem)
 
 export const searchMusicFreePlugins = async (query: string, page = 1, limit = 20, pluginId?: string): Promise<any[]> => {
   const trimmedId = (pluginId || '').trim()
