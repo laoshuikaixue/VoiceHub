@@ -1,4 +1,4 @@
-import { getMusicFreePluginDir, getMusicFreePluginsConfig } from '~~/server/utils/musicfree'
+import { getMusicFreePluginsConfig } from '~~/server/utils/musicfree'
 
 export default defineNitroPlugin(async (nitroApp) => {
   // 预热 SSR 渲染器，避免首次请求因模块循环依赖导致的 500 错误
@@ -13,7 +13,7 @@ export default defineNitroPlugin(async (nitroApp) => {
   // 同时预热插件缓存；目录缺失属正常情况，只是没有插件可加载
   try {
     const plugins = await getMusicFreePluginsConfig()
-    console.info(`[MusicFree] 启动预热完成，共加载 ${plugins.length} 个插件（目录：${getMusicFreePluginDir()}）`)
+    console.info(`[MusicFree] 启动预热完成，共加载 ${plugins.length} 个插件`)
   } catch (error) {
     console.warn('[MusicFree] 启动预热失败:', error)
   }

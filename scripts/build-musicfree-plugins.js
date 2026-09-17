@@ -3,8 +3,10 @@
 /**
  * 构建期 MusicFree 插件打包
  *
- * 从 MUSICFREE_PLUGIN_ZIP_URL 指向的 zip 下载插件源码，用 esbuild 打成 ESM 模块，
- * 运行时直接 import 执行，不经过 node:vm 沙箱——这样才能跑在 serverless 上。
+ * 从 MUSICFREE_PLUGIN_ZIP_URL 指向的 zip 下载插件源码，用 esbuild 打成 ESM 模块。
+ * 产物有两个消费时机，二者都直接 import 执行，不经过 node:vm 沙箱：
+ * - 镜像/应用构建期：manifest 被 Nitro 内联进服务端包，可在 serverless 环境运行
+ * - 容器启动期：Dockerfile 启动命令重跑本脚本，server/utils/musicfree.ts 动态 import 目录内的 *.mjs
  *
  * 失败策略：
  * - 未配置 URL → 生成空清单，退出 0（不干扰无插件用户与 CI）
@@ -113,13 +115,17 @@ const whitelistPlugin = (entries) => ({
 })
 
 // 注入的 env：cookie 等登录态由插件源码自行携带（公用音源），getUserVariables 返回空对象以保持协议兼容
+// require 锚定到进程工作目录而非 import.meta.url：Nitro 把 import.meta.url 重写为 file:///_entry.js，
+// 插件内联进服务端包后 createRequire 会解析不到 axios 等依赖
 const buildBanner = () =>
   `import {createRequire as __mfCr} from 'node:module';`
-  + `const require=__mfCr(import.meta.url);`
+  + `import {pathToFileURL as __mfU} from 'node:url';`
+  + `const require=__mfCr(__mfU(process.cwd()+'/package.json').toString());`
   + `var env={getUserVariables:()=>({}),os:'linux',appVersion:'1.6.0',lang:'zh-CN'}`
 
 const buildPlugin = async (source, pluginId) => {
-  const slug = pluginId.replace(/[^\w\u4e00-\u9fa5-]/g, '_')
+  // 文件名即插件 id（与清单 id 同规则）：运行时按文件名反解 id，无需解析 manifest
+  const slug = toPluginId(pluginId)
   const outFile = path.join(GENERATED_DIR, `${slug}.mjs`)
   await esbuild.build({
     entryPoints: [source],
@@ -137,8 +143,13 @@ const buildPlugin = async (source, pluginId) => {
 
 const main = async () => {
   if (!ZIP_URL) {
+    // 同步清掉上一次的产物：运行时是动态 import 目录内的 *.mjs，遗留文件会加载成孤儿插件
+    fs.mkdirSync(GENERATED_DIR, { recursive: true })
+    for (const file of fs.readdirSync(GENERATED_DIR)) {
+      if (file.endsWith('.mjs')) fs.rmSync(path.join(GENERATED_DIR, file), { force: true })
+    }
     writeManifest([])
-    log('未配置 MUSICFREE_PLUGIN_ZIP_URL，生成空清单（运行时回退到本地插件目录）')
+    log('未配置 MUSICFREE_PLUGIN_ZIP_URL，生成空清单并清理旧产物（运行时回退到本地插件目录）')
     return
   }
 

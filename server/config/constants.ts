@@ -468,6 +468,10 @@ export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu']
 // MusicFree 插件运行时目录（相对进程工作目录，启动时解析为绝对路径）
 export const MUSICFREE_PLUGIN_DIR = 'musicfree-plugins'
 
+// MusicFree 插件打包产物目录（scripts/build-musicfree-plugins.js 的唯一输出位置）。
+// 构建脚本无法引入 TS 常量，两处路径字面量需保持一致
+export const MUSICFREE_BUNDLES_DIR = 'server/utils/musicfree-bundles'
+
 // 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
 export const SONG_DURATION_MIN_SECONDS = 0
 export const SONG_DURATION_MAX_SECONDS = 7200

@@ -2039,15 +2039,20 @@ VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动�
 
 #### MusicFree 插件运行时说明
 
-- **两种加载模式（构建产物优先）**：
-  1. **构建期打包**：设置 `MUSICFREE_PLUGIN_ZIP_URL` 指向一个仅含插件 `.js` 文件的 zip，`pnpm run build` 会下载并用 esbuild 打成 ESM 产物。产物在运行时被直接 `import`，**不经过 `node:vm`**，因此可在 EdgeOne Pages / Vercel / Netlify 等 serverless 环境运行。
-  2. **本地目录**：未设置 `MUSICFREE_PLUGIN_ZIP_URL` 时清单为空，自动回退到 `musicfree-plugins/` 目录，以 `node:vm` 加载。适合本地开发。
+- **三个加载来源（按 id 合并去重，先到先留）**：
+  1. **启动期产物**：`MUSICFREE_PLUGIN_ZIP_URL` 指向的 zip 由 `scripts/build-musicfree-plugins.js` 用 esbuild 打成 `server/utils/musicfree-bundles/*.mjs`，服务端启动时动态 `import`。**更新 zip 无需重建镜像**，重启容器即生效。
+  2. **构建期固化**：`pnpm run build` 把当次产物写入 `manifest.ts` 并被 Nitro 内联进 `.output` 服务端包，是 EdgeOne Pages / Vercel / Netlify 等 serverless 环境的唯一可用来源。
+  3. **本地目录**：`musicfree-plugins/` 下的 `.js` 插件以 `node:vm` 加载。适合本地开发与挂载更新。
+  三个来源**不互斥**：URL 插件与本地插件可同时生效；同一 id 时优先级为 启动期产物 > 构建期固化 > 本地目录（文件名归一化后即 id）。
+- **独立构建脚本**：`pnpm run build:plugins` 可单独执行插件下载与打包（`pnpm run build` 内部已先调用它），Docker 镜像的启动命令也会在容器启动时执行一次。未设置 `MUSICFREE_PLUGIN_ZIP_URL` 时生成空清单、清理旧产物并正常退出，不会阻塞容器启动。
 - **构建产物目录**：`server/utils/musicfree-bundles/`。`*.mjs` 已被 `.gitignore` 忽略；`manifest.ts` 已提交（默认为空），保证干净 clone 不跑构建脚本也能直接构建。
 - **失败策略**：未设置 URL → 生成空清单并继续构建；已设置 URL 但下载、解压或打包失败 → **构建失败**。不做静默降级，避免产出"以为有插件"的坏产物。
 - **插件目录（本地模式）**：`musicfree-plugins/`（已被 `.gitignore` 忽略）。启动时扫描该目录下所有 `.js` 文件；目录不存在时不加载任何插件，功能自动降级为内置音源。实际扫描的绝对路径见启动日志（相对进程工作目录解析）。
 - **信任模型（重要）**：插件以服务器完整权限运行。`vm` 上下文**不是安全边界**——插件可通过宿主对象原型链触达 `process` 等宿主能力；构建期打包模式下白名单在构建时强制校验，但插件代码本身仍与主服务同权。请只使用你信任的插件来源。
 - **构建期打包的限制**：zip ≤ 60MB，单个插件 ≤ 5MB，最多 30 个插件；仅接受 `.js` 条目，其他文件被忽略。插件不得直接 `require` Node 内置模块（esbuild 插件会拒绝并中止构建），只能引入约定的 npm 依赖。
-- **插件加载**：插件在启动时一次性加载并缓存在内存中，**目录或 URL 变更后需重启服务生效**（构建期打包则需重新构建发布）。单个插件加载失败只跳过该插件，不影响其他插件与内置音源。
+- **插件加载**：插件在启动时一次性加载并缓存在内存中，**三个来源任一变更后都需重启服务生效**（URL 只需更新 zip；构建期固化的清单需重建镜像）。单个插件加载失败只跳过该插件，不影响其他插件与内置音源。
+  - **Docker 特别注意**：构建期固化的插件不会因运行时 zip 变更而移除——若构建镜像时 URL 指向了插件 A/B，运行时改为仅含 C，B 仍从内联清单加载（serverless 回退设计）。如需完全清除构建期固化插件，须用空 URL 重建镜像。
+- **依赖解析（重要）**：插件内的 `require('axios')` 等统一钿定到进程工作目录（项目根）解析。Nitro 构建后 `import.meta.url` 会被重写为 `file:///_entry.js`，若按 `import.meta.url` 创建 require，打包产物中将解析不到任何 npm 依赖。
 - **登录态（cookie）**：本项目对接的是公用音源，cookie 等登录态由插件源码自行携带，**不需要任何配置**。`env.getUserVariables()` 保留作为协议兼容，始终返回空对象，调用它的插件不会报错。
 - **已知限制**：
   - 插件 `getMediaSource` 返回的 `headers`（Referer / User-Agent 等）在浏览器 `<audio>` 直连时无法携带，依赖自定义请求头的播放链接会 403；支持这类插件需在服务端做代理转发。

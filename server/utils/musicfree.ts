@@ -1,14 +1,18 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { basename, join, resolve } from 'node:path'
+import { basename, join, resolve, sep } from 'node:path'
 import { createRequire } from 'node:module'
+import { pathToFileURL } from 'node:url'
 import vm from 'node:vm'
-import { MUSICFREE_PLUGIN_DIR } from '~~/server/config/constants'
+import { MUSICFREE_BUNDLES_DIR, MUSICFREE_PLUGIN_DIR } from '~~/server/config/constants'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { BUNDLED_MUSICFREE_PLUGINS } from './musicfree-bundles/manifest'
 
-const require = createRequire(import.meta.url)
+// Nitro 把 import.meta.url 重写为 file:///_entry.js，createRequire 会解析不到任何 npm 依赖；
+// 固定锚定到进程工作目录（项目根，node_modules 所在层），保证本地插件的 require 在打包产物中可用
+const require = createRequire(pathToFileURL(process.cwd() + sep + 'package.json').toString())
 // 相对路径锚定到进程工作目录：部署环境 cwd 不一致时会静默读不到插件，日志里需能看出实际路径
 const PLUGIN_ROOT = resolve(process.cwd(), MUSICFREE_PLUGIN_DIR)
+const BUNDLES_ROOT = resolve(process.cwd(), MUSICFREE_BUNDLES_DIR)
 // 仅用于兼容性收敛（避免插件引入服务端不该暴露的模块），不是安全边界：
 // vm 上下文内的插件仍可通过宿主对象原型链触达 process 等宿主能力，插件以服务器完整权限运行
 const ALLOWED_MODULES = new Set([
@@ -168,15 +172,55 @@ const dedupHandles = (handles: MusicFreePluginHandle[]): MusicFreePluginHandle[]
   return result
 }
 
-const loadPluginsFromDisk = async (): Promise<MusicFreePluginHandle[]> => {
-  // 构建期打包的插件优先：直接 import 的 ESM 模块，不依赖 node:vm，可跑在 serverless 上
-  if (BUNDLED_MUSICFREE_PLUGINS.length > 0) {
-    console.info(`[MusicFree] 使用构建期打包的 ${BUNDLED_MUSICFREE_PLUGINS.length} 个插件`)
-    const handles = (BUNDLED_MUSICFREE_PLUGINS as { id: string; instance: any }[])
-      .map((entry) => normalizeHandle(safeString(entry.id), entry.instance))
-      .filter((h): h is MusicFreePluginHandle => h !== null)
-    return dedupHandles(handles)
+// 镜像构建期固化的插件：manifest 被 Nitro 内联进服务端包，是 serverless 环境的唯一可用来源
+const loadInlinedBundledPlugins = (): MusicFreePluginHandle[] =>
+  (BUNDLED_MUSICFREE_PLUGINS as { id: string; instance: any }[])
+    .map((entry) => normalizeHandle(safeString(entry.id), entry.instance))
+    .filter((h): h is MusicFreePluginHandle => h !== null)
+
+// 启动期打包产物文件：scripts/build-musicfree-plugins.js 在容器启动时写入，文件名即插件 id
+const readBundleFiles = (): string[] => {
+  try {
+    if (!existsSync(BUNDLES_ROOT)) return []
+    return readdirSync(BUNDLES_ROOT).filter((name) => name.endsWith('.mjs')).sort()
+  } catch (error) {
+    console.warn('[MusicFree] 插件产物目录读取失败，按无产物模式运行:', error?.message || error)
+    return []
   }
+}
+
+// 启动期生成的打包产物：直接 import 的 ESM 模块，不依赖 node:vm；
+// 与本地目录插件并行加载，允许「URL 插件 + 本地插件」共存
+const loadGeneratedBundledPlugins = async (): Promise<MusicFreePluginHandle[]> => {
+  const files = readBundleFiles()
+  if (files.length === 0) return []
+  console.info(`[MusicFree] 从 ${BUNDLES_ROOT} 读取到 ${files.length} 个打包产物`)
+  const handles: MusicFreePluginHandle[] = []
+  for (const file of files) {
+    const id = toPluginId(basename(file, '.mjs'))
+    if (!id) continue
+    try {
+      const mod: any = await import(pathToFileURL(join(BUNDLES_ROOT, file)).toString())
+      // esbuild 把 CJS 插件导出为 default；取不到时视为无有效插件，不拿模块命名空间冒充分身
+      const instance = mod.default
+      if (!instance || typeof instance !== 'object') {
+        console.warn(`[MusicFree] 打包产物 ${file} 未导出有效对象，已跳过`)
+        continue
+      }
+      const handle = normalizeHandle(id, instance)
+      if (handle) {
+        handles.push(handle)
+        console.info(`[MusicFree] 插件 ${id} 已从打包产物加载`)
+      }
+    } catch (error) {
+      console.warn(`[MusicFree] 打包产物 ${file} 加载失败:`, error)
+    }
+  }
+  return handles
+}
+
+// 本地目录插件：musicfree-plugins/ 下的 .js 文件，以 node:vm 加载
+const loadPluginsFromDisk = async (): Promise<MusicFreePluginHandle[]> => {
   const files = readPluginFiles()
   if (files.length === 0) {
     console.warn(`[MusicFree] 未从 ${PLUGIN_ROOT} 读取到插件文件`)
@@ -197,17 +241,31 @@ const loadPluginsFromDisk = async (): Promise<MusicFreePluginHandle[]> => {
       console.warn(`[MusicFree] 插件 ${id} 加载失败:`, error)
     }
   }
-  return dedupHandles(handles)
+  return handles
+}
+
+// 三个来源合并后按 id 去重，来源顺序即优先级（同 id 只保留首个）：
+// 启动期产物（最新） > 镜像构建期固化（serverless 必需） > 本地目录（本地开发/挂载更新）
+const loadPlugins = async (): Promise<MusicFreePluginHandle[]> => {
+  const generated = await loadGeneratedBundledPlugins()
+  const inlined = loadInlinedBundledPlugins()
+  const fromDisk = await loadPluginsFromDisk()
+  const handles = dedupHandles([...generated, ...inlined, ...fromDisk])
+  console.info(
+    `[MusicFree] 插件加载完成：共 ${handles.length} 个`
+      + `（启动期产物 ${generated.length}、构建期固化 ${inlined.length}、本地目录 ${fromDisk.length}）`
+  )
+  return handles
 }
 
 let pluginsCache: MusicFreePluginHandle[] | null = null
 let pluginsLoading: Promise<MusicFreePluginHandle[]> | null = null
 
-// 模块级缓存：避免每次搜索/解析/歌词请求都重新读盘与 vm 编译；插件目录变更后需重启服务生效
+// 模块级缓存：避免每次搜索/解析/歌词请求都重新读盘与编译；插件目录或产物变更后需重启服务生效
 export const getMusicFreePluginsConfig = async (): Promise<MusicFreePluginHandle[]> => {
   if (pluginsCache) return pluginsCache
   if (pluginsLoading) return pluginsLoading
-  pluginsLoading = loadPluginsFromDisk().then((plugins) => {
+  pluginsLoading = loadPlugins().then((plugins) => {
     pluginsCache = plugins
     pluginsLoading = null
     return plugins
