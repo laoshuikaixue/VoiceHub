@@ -1,13 +1,11 @@
 import { db, songReplayRequests, songs } from '~/drizzle/db'
 import { eq, and } from 'drizzle-orm'
 import { createReplayRequestRejectedNotification } from '~~/server/services/notificationService'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 检查管理员权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  await policies.canWriteSong(event)
 
   const body = await readBody(event)
   const { songId } = body

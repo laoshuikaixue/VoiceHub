@@ -1,23 +1,17 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, asc, desc, count, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/user-archive'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 const UNSET_FILTER_VALUE = '__UNSET__'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查用户是否为管理员
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以访问用户列表'
-      })
-    }
+    const _user = await requirePermission(event, PERMISSIONS.USER_READ)
 
     const query = getQuery(event)
     const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc', archived } = query

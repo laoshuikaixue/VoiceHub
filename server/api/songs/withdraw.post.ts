@@ -17,6 +17,7 @@ import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeL
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { isSongAdminRole } from '~~/server/utils/rbac/guards'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
   if (
     !isRequester &&
     !isCollaborator &&
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+    !isSongAdminRole(user.role)
   ) {
     throw createApiError(403, 'SONG_WITHDRAW_OWN_ONLY', '只能撤回自己的投稿或退出联合投稿')
   }
@@ -87,7 +88,7 @@ export default defineEventHandler(async (event) => {
   if (
     isCollaborator &&
     !isRequester &&
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+    !isSongAdminRole(user.role)
   ) {
     await db.delete(songCollaborators).where(eq(songCollaborators.id, collaboratorRecord.id))
 

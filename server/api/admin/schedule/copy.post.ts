@@ -3,15 +3,11 @@ import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
+  const _user = await requirePermission(event, PERMISSIONS.SCHEDULE_WRITE)
 
   const startTime = Date.now()
   const clientIP = getClientIP(event)

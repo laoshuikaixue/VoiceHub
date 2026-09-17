@@ -1,19 +1,15 @@
 import { apiKeyPermissions, apiKeys, db, users } from '~/drizzle/db'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
+import { requirePermission } from '~~/server/utils/rbac/guards'
+import { PERMISSIONS } from '~~/server/utils/rbac/constants'
 
 /**
  * 获取API Key列表
  * GET /api/admin/api-keys
  */
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以管理 API Key
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以管理 API Key'
-    })
-  }
+  // 检查用户权限
+  await requirePermission(event, PERMISSIONS.API_KEYS_READ)
 
   const query = getQuery(event)
   const page = parseInt(query.page as string) || 1
@@ -73,7 +69,13 @@ export default defineEventHandler(async (event) => {
         createdAt: apiKeys.createdAt,
         updatedAt: apiKeys.updatedAt,
         createdByUserId: apiKeys.createdByUserId,
-        creatorName: users.name
+        creatorName: users.name,
+        ownerType: apiKeys.ownerType,
+        ownerId: apiKeys.ownerId,
+        rateLimitPerMinute: apiKeys.rateLimitPerMinute,
+        quotaDaily: apiKeys.quotaDaily,
+        quotaMonthly: apiKeys.quotaMonthly,
+        hasWebhookSecret: apiKeys.webhookSecretHash
       })
       .from(apiKeys)
       .leftJoin(users, eq(apiKeys.createdByUserId, users.id))

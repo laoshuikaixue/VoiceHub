@@ -11,6 +11,11 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { getIPBlockRemainingTime, isIPBlocked } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { verifyApiKey } from '~~/server/utils/apiKeyUtils'
+import { checkAndIncrementRate, type RateCheckResult } from '~~/server/utils/ratelimit/pg'
+import { sendWebhookWithRetry, type WebhookPayload } from '~~/server/utils/webhook'
+import { isIpAllowed, parseIpWhitelist } from '~~/server/utils/ip-whitelist'
+import { resolveRoutePermission } from '~~/server/utils/rbac/routePermissionMap'
+import { LEGACY_PERMISSION_MAP } from '~~/server/utils/rbac/constants'
 
 const truncateResponseBody = (responseBody: any, maxLength = 10000) => {
   try {
@@ -150,7 +155,12 @@ export default defineEventHandler(async (event) => {
         isActive: apiKeys.isActive,
         expiresAt: apiKeys.expiresAt,
         usageCount: apiKeys.usageCount,
-        createdByUserId: apiKeys.createdByUserId
+        createdByUserId: apiKeys.createdByUserId,
+        rateLimitPerMinute: apiKeys.rateLimitPerMinute,
+        quotaDaily: apiKeys.quotaDaily,
+        quotaMonthly: apiKeys.quotaMonthly,
+        ipWhitelist: apiKeys.ipWhitelist,
+        webhookUrl: apiKeys.webhookUrl
       })
       .from(apiKeys)
       .where(eq(apiKeys.keyPrefix, keyPrefix))
@@ -210,6 +220,60 @@ export default defineEventHandler(async (event) => {
       })
 
       throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.API_KEY_EXPIRED])
+    }
+
+    // IP 白名单（spec [S4.3]）
+    const ipWhitelist = parseIpWhitelist(apiKeyRecord.ipWhitelist)
+    if (ipWhitelist.length > 0 && !isIpAllowed(ipAddress, ipWhitelist)) {
+      console.log(`[API Auth Middleware] IP ${ipAddress} 不在白名单内`)
+      await ApiLogService.logAccess({
+        apiKeyId: apiKeyRecord.id,
+        endpoint: pathname,
+        method,
+        ipAddress,
+        userAgent,
+        statusCode: HTTP_STATUS.FORBIDDEN,
+        responseTimeMs: Date.now() - startTime,
+        errorMessage: 'IP_NOT_ALLOWED'
+      })
+
+      throw new Error('您的 IP 不在该 API Key 的白名单内')
+    }
+
+    // 速率限制 + 配额（spec [S4.3] PG 原子累加）
+    const rateCheck: RateCheckResult = await checkAndIncrementRate({
+      apiKeyId: apiKeyRecord.id,
+      rateLimitPerMinute: apiKeyRecord.rateLimitPerMinute ?? null,
+      quotaDaily: apiKeyRecord.quotaDaily ?? null,
+      quotaMonthly: apiKeyRecord.quotaMonthly ?? null
+    })
+    if (!rateCheck.ok) {
+      const reasonLabel = {
+        rate_limit: 'API_KEY_RATE_LIMITED',
+        quota_daily: 'API_KEY_DAILY_QUOTA_EXCEEDED',
+        quota_monthly: 'API_KEY_MONTHLY_QUOTA_EXCEEDED'
+      }[rateCheck.reason]
+      await ApiLogService.logAccess({
+        apiKeyId: apiKeyRecord.id,
+        endpoint: pathname,
+        method,
+        ipAddress,
+        userAgent,
+        statusCode: 429,
+        responseTimeMs: Date.now() - startTime,
+        errorMessage: reasonLabel
+      })
+
+      event.node.res.setHeader('Retry-After', String(rateCheck.retryAfterSeconds))
+      event.node.res.setHeader('X-RateLimit-Remaining', '0')
+      return sendError(
+        event,
+        createError({
+          statusCode: 429,
+          statusMessage: reasonLabel,
+          message: `${reasonLabel}: 当前 ${rateCheck.current}/${rateCheck.limit}`
+        })
+      )
     }
 
     // 检查权限
@@ -285,6 +349,26 @@ export default defineEventHandler(async (event) => {
     // 将API Key信息添加到事件上下文中，供后续处理使用
     event.context.apiKey = apiKeyRecord
 
+    // Webhook 回调（spec [S4.3] + [S8]）：异步 fire-and-forget
+    // 注意：webhook_secret 在 DB 中存的是 bcrypt 哈希，不可还原；
+    // 此处仅在没有 secret 的情况下不发 webhook（创建时必须一次性返回明文给用户）
+    if (apiKeyRecord.webhookUrl) {
+      const webhookPayload: WebhookPayload = {
+        event: 'api_key.request',
+        payload: {
+          apiKeyId: apiKeyRecord.id,
+          endpoint: pathname,
+          method,
+          ipAddress
+        }
+      }
+      // event.waitUntil 不需要 secret，因为我们没存明文；这里仅占位，
+      // 真正的 webhook 在 ApiKeyManager 创建时已下发过 secret 给接收方；
+      // 但发送回调仍需明文 secret 才能算签名，所以本期 webhook 暂时仅记录占位，
+      // 等 RbacManager 提供"重置 webhook secret 明文再注入"的运维流程后启用。
+      void webhookPayload
+    }
+
     // 记录成功的API访问（在响应后记录）
     event.context.logApiAccess = async (
       statusCode: number,
@@ -329,8 +413,38 @@ export default defineEventHandler(async (event) => {
 
 /**
  * 根据路径和方法获取所需权限
+ *
+ * 解析顺序：
+ *   1. 优先委托 `resolveRoutePermission`（返回点分 PermissionKey）
+ *   2. 未命中时回退到 `getLegacyRequiredPermission`（保留旧 switch，返回冒号风格 key）
+ *   3. 通过 `LEGACY_PERMISSION_MAP` 归一化为点分风格后返回
+ *
+ * 这样可消除 routePermissionMap.ts 死代码，同时保持旧 /api/open/* 路径的向后兼容
+ * （apiKeyPermissions 表历史数据可能是冒号风格 key）。
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
+  // 1. 委托新路由注册中心（已统一为点分风格）
+  const resolved = resolveRoutePermission(pathname, method)
+  if (resolved) return resolved
+
+  // 2. Fallback：旧 switch 行为，返回冒号风格 key
+  const legacyKey = getLegacyRequiredPermission(pathname, method)
+  if (!legacyKey) return null
+
+  // 3. 归一化冒号 → 点分（未在映射表内的原样返回，保留向后兼容）
+  return LEGACY_PERMISSION_MAP[legacyKey] ?? legacyKey
+}
+
+/**
+ * 旧版 getRequiredPermission switch 实现
+ *
+ * 仅作为 getRequiredPermission 的 fallback 使用，保留 /api/open/* 旧路径的
+ * 冒号风格 key（card-codes:* / schedules:* / songs:* / backup:*），以便
+ * apiKeyPermissions 表历史冒号数据可继续命中。
+ *
+ * @deprecated 优先使用 resolveRoutePermission；新路径请注册到 routePermissionMap
+ */
+function getLegacyRequiredPermission(pathname: string, method: string): string | null {
   const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
 
   if (

@@ -2,12 +2,10 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以测试邮件发送')
-  }
+  await requireSuperAdmin(event)
 
   const body = await readBody(event)
   const { recipient } = body

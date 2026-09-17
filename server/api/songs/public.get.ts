@@ -7,6 +7,7 @@ import { maskPublicScheduleData,
   type PublicScheduleItem
 } from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
+import { isSongAdminRole } from '~~/server/utils/rbac/guards'
 
 const formatDisplayName = (
   user: { name?: string | null; grade?: string | null; class?: string | null },
@@ -133,7 +134,7 @@ export default defineEventHandler(async (event) => {
       ? { success: false, user: null }
       : await verifyUserAuth(event)
     const user = authResult.success ? authResult.user : null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = Boolean(user && isSongAdminRole(user.role))
     authenticatedUser = user
     authenticatedIsAdmin = isAdmin
 

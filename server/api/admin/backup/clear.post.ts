@@ -25,16 +25,11 @@ import {
   votes
 } from '~/drizzle/schema'
 import { eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以清空数据库'
-    })
-  }
+  const user = await requireSuperAdmin(event)
 
   try {
     const body = await readBody(event)

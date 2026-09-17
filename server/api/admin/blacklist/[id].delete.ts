@@ -2,16 +2,11 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { songBlacklists } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { policies } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  await policies.canManageBlacklist(event)
 
   const id = parseInt(getRouterParam(event, 'id'))
   if (!id) {

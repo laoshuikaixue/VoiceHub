@@ -6,6 +6,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { requireSuperAdmin } from '~~/server/utils/rbac'
 
 /** 备份配置结构校验 */
 const backupConfigSchema = z.object({
@@ -60,10 +61,7 @@ function mergeSecrets(incoming: any, existing: any): any {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以修改自动备份配置')
-  }
+  await requireSuperAdmin(event)
 
   const body = await readBody(event)
   const { enabled, config } = body

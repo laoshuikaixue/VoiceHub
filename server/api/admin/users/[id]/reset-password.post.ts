@@ -9,16 +9,11 @@ import {
 } from '~~/server/services/passwordSecurityService'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { policies, requireSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  const user = await policies.canManageUsers(event)
 
   // 安全获取ID参数
   const params = event.context.params || {}
@@ -72,11 +67,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // 越级保护：目标用户是 SUPER_ADMIN 时，操作者必须是 SUPER_ADMIN
-    if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足：普通管理员无法重置超级管理员密码'
-      })
+    if (targetUser.role === 'SUPER_ADMIN') {
+      try {
+        await requireSuperAdmin(event)
+      } catch {
+        throw createError({
+          statusCode: 403,
+          message: '权限不足：普通管理员无法重置超级管理员密码'
+        })
+      }
     }
 
     // 使用统一服务重置密码 (forceReset = true)

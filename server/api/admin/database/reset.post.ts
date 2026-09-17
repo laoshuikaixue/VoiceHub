@@ -23,6 +23,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
+import { policies } from '~~/server/utils/rbac'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -111,13 +112,7 @@ async function resetAutoIncrementSequences() {
 export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
-    }
+    const user = await policies.canResetDatabase(event)
 
     const resetResults = {
       success: true,

@@ -1,5 +1,6 @@
 import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import { policies } from '~~/server/utils/rbac'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -94,14 +95,8 @@ async function fixTableSequence(table: string, dbTableName: string) {
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '需要管理员权限'
-      })
-    }
+    // 验证管理员权限（修复序列属于数据库维护，纳入 DATABASE_RESET 范围由管理员/SUPER_ADMIN 把控）
+    await policies.canResetDatabase(event)
 
     const body = await readBody(event)
     const { table } = body

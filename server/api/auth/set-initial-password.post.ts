@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { updateUserPassword } from '~~/server/services/userService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { getUserRole } from '~~/server/utils/rbac/guards'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { getInitialPasswordPolicyViolation } from '~/utils/password-policy'
 import { getClientIP } from '~~/server/utils/ip-utils'
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
     })
     passwordUpdated = true
 
-    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion, event.context.authSessionId)
+    const newToken = JWTEnhanced.generateToken(user.id, getUserRole(user), tokenVersion, event.context.authSessionId)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),
