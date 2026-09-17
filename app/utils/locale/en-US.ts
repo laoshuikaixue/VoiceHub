@@ -3537,6 +3537,7 @@ export const admin = {
       selectBackupFile: 'Please select a backup file',
       restoreSuccessRelogin: 'Database restored. Signing in again...',
       restoreSuccess: 'Database restored successfully',
+      restoreAdminMissing: 'No new super admin detected. Current account kept. Check and retry',
       sequenceResetSuccess: 'Sequence reset successfully',
       databaseResetSuccess: 'Database reset successfully'
     },

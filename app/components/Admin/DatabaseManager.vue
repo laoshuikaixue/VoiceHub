@@ -730,6 +730,14 @@ const restoreBackup = async () => {
       restoreForm.value.overwriteSuperAdmin = false
     }
 
+    // 覆盖超管时，临时保留的当前管理员会占用备份记录的原ID，预留备份最大用户ID之后的新ID用于重映射
+    let maxBackupUserId = 0
+    for (const item of backupData.data.users || []) {
+      const id = Number(item?.id)
+      if (Number.isFinite(id) && id > maxBackupUserId) maxBackupUserId = id
+    }
+    const reservedUserId = maxBackupUserId > 0 ? maxBackupUserId + 1 : null
+
     let preservedSuperAdminIds = []
     let temporaryPreservedUserId = null
 
@@ -768,7 +776,8 @@ const restoreBackup = async () => {
       songs: {},
       meta: {
         preservedSuperAdminIds,
-        temporaryPreservedUserId
+        temporaryPreservedUserId,
+        reservedUserId
       }
     }
     const CHUNK_SIZE = 50
@@ -845,12 +854,18 @@ const restoreBackup = async () => {
       const restoredUserIds = Object.values(mappings.users).map((id) => Number(id))
       if (!restoredUserIds.includes(Number(temporaryPreservedUserId))) {
         restoreProgress.value = getProgressMessage('finalizingAdmin')
-        await $fetch('/api/admin/backup/clear', {
+        const finalizeResult = await $fetch('/api/admin/backup/clear', {
           method: 'POST',
           body: {
             finalizeTempUser: true
           }
         })
+        if (!finalizeResult.finalized) {
+          // 未产生新的超级管理员：保留当前账户，避免失去管理入口
+          showNotification(getMessage('restoreAdminMissing'), 'error')
+          activeModal.value = 'none'
+          return
+        }
       }
       showNotification(getMessage('restoreSuccessRelogin'), 'success')
       activeModal.value = 'none'
