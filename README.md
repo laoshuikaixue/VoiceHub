@@ -1464,6 +1464,7 @@ VoiceHub/
 ├── fnos/                  # 飞牛 OS 安装包相关配置
 ├── LICENSE                # 开源许可证文件
 ├── musicfree-plugins/     # MusicFree 插件自动读取目录
+├── MUSIC_SOURCE_PLUGINS_PLAN.md # LX/MusicFree插件统一接入方案
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖

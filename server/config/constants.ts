@@ -69,6 +69,14 @@ export const API_ERROR_MESSAGES = {
 // 配合 server/utils/apiError.ts 的 createApiError() 抛出，客户端通过 serverErrors 词典按 code 本地化。
 // 说明：admin/** 子系统暂缓码化，仍直接返回中文文案，故此处不含 ADMIN_* 分组。
 export const SERVER_ERROR_CODES = {
+  PLUGIN_INVALID_CONFIG: 'PLUGIN_INVALID_CONFIG',
+  PLUGIN_CONFIG_CONFLICT: 'PLUGIN_CONFIG_CONFLICT',
+  PLUGIN_LOAD_FAILED: 'PLUGIN_LOAD_FAILED',
+  PLUGIN_RESOLVE_FAILED: 'PLUGIN_RESOLVE_FAILED',
+  PLUGIN_UNAVAILABLE: 'PLUGIN_UNAVAILABLE',
+  PLUGIN_NETWORK_BLOCKED: 'PLUGIN_NETWORK_BLOCKED',
+  PLUGIN_TIMEOUT: 'PLUGIN_TIMEOUT',
+  PLUGIN_INVALID_TICKET: 'PLUGIN_INVALID_TICKET',
   // 点歌券（card-codes）
   CARD_CODE_AUTH_REQUIRED: 'CARD_CODE_AUTH_REQUIRED',
   CARD_CODE_REQUIRED: 'CARD_CODE_REQUIRED',
@@ -471,6 +479,25 @@ export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu']
 
 // MusicFree 插件运行时目录（相对进程工作目录，启动时解析为绝对路径）
 export const MUSICFREE_PLUGIN_DIR = 'musicfree-plugins'
+
+export const MUSIC_PLUGIN_PROTOCOLS = ['auto', 'lx', 'musicfree'] as const
+export const MUSIC_PLUGIN_CATALOGS = ['netease', 'tencent', 'migu', 'kugou', 'kuwo'] as const
+export const MUSIC_PLUGIN_LX_SOURCES: Record<string, string> = {
+  netease: 'wy', tencent: 'tx', migu: 'mg', kugou: 'kg', kuwo: 'kw'
+}
+export const MUSIC_PLUGIN_LIMITS = {
+  count: 20,
+  scriptBytes: 5 * 1024 * 1024,
+  responseBytes: 5 * 1024 * 1024,
+  itemBytes: 64 * 1024,
+  memoryBytes: 32 * 1024 * 1024,
+  loadMs: 8000,
+  callMs: 8000,
+  batchMs: 24000,
+  requests: 12,
+  redirects: 4,
+  concurrency: 2
+} as const
 
 // MusicFree 插件打包产物目录（scripts/build-musicfree-plugins.js 的唯一输出位置）。
 // 构建脚本无法引入 TS 常量，两处路径字面量需保持一致
