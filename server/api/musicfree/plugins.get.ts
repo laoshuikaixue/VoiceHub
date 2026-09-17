@@ -1,4 +1,6 @@
 import { getMusicFreePluginsConfig } from '~~/server/utils/musicfree'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async () => {
   try {
@@ -13,6 +15,6 @@ export default defineEventHandler(async () => {
       }))
     return { success: true, data }
   } catch (error: any) {
-    throw createError({ statusCode: 502, message: error?.message || '获取 MusicFree 插件列表失败' })
+    throw createApiError(502, SERVER_ERROR_CODES.MUSICFREE_PLUGINS_FETCH_FAILED, error?.message || '获取 MusicFree 插件列表失败')
   }
 })

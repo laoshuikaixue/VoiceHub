@@ -1,6 +1,7 @@
 import { computed, readonly, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
 import { getLoginStatus } from '~/utils/neteaseApi'
+import { MUSICFREE_PLATFORM_PREFIX } from '~/utils/musicfreePlatform'
 
 // 音质配置
 export const QUALITY_OPTIONS = {
@@ -43,7 +44,7 @@ const DEFAULT_QUALITY = {
 
 // 将平台名归一化为音质配置键（musicfree:<id> → musicfree，netease-podcast → netease）
 const normalizeQualityPlatform = (platform: string): string => {
-  if (platform.startsWith('musicfree:')) return 'musicfree'
+  if (platform.startsWith(MUSICFREE_PLATFORM_PREFIX)) return 'musicfree'
   if (platform === 'netease-podcast') return 'netease'
   return platform
 }

@@ -1237,7 +1237,8 @@ export const useMusicSources = () => {
             error: undefined
           }
         } catch (error: any) {
-          const wrappedError = new Error(error?.message || 'MusicFree 插件搜索失败')
+          const { localize } = useServerErrors()
+          const wrappedError = new Error(localize(error, 'MusicFree 插件搜索失败'))
           wrappedError.cause = error
           throw wrappedError
         }
@@ -1885,7 +1886,8 @@ export const useMusicSources = () => {
           }
           return { success: false, error: 'MusicFree 插件未返回播放链接' }
         } catch (musicFreeError: any) {
-          return { success: false, error: musicFreeError?.message || 'MusicFree 插件音源解析失败' }
+          const { localize } = useServerErrors()
+          return { success: false, error: localize(musicFreeError, 'MusicFree 插件音源解析失败') }
         }
       }
 

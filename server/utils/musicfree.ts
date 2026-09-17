@@ -41,8 +41,8 @@ const safeString = (value: unknown): string => (value === null || value === unde
  * API 路由使用此函数做 400 校验，避免校验口径与运行时不一致。
  */
 export const extractPluginId = (musicItem: any): string => {
-  const declared = safeString(musicItem?.musicFreePlugin)
-  if (declared) return declared.trim()
+  const declared = safeString(musicItem?.musicFreePlugin).trim()
+  if (declared) return declared
   const platform = safeString(musicItem?.musicPlatform || musicItem?.platform)
   return platform.startsWith('musicfree:') ? platform.slice('musicfree:'.length).trim() : ''
 }
@@ -182,7 +182,13 @@ const loadInlinedBundledPlugins = (): MusicFreePluginHandle[] =>
 const readBundleFiles = (): string[] => {
   try {
     if (!existsSync(BUNDLES_ROOT)) return []
-    return readdirSync(BUNDLES_ROOT).filter((name) => name.endsWith('.mjs')).sort()
+    // 与 readPluginFiles 一致，按归一化后的 id 排序，保证两来源加载顺序稳定
+    return readdirSync(BUNDLES_ROOT)
+      .filter((name) => name.endsWith('.mjs'))
+      .map((name) => ({ file: name, id: toPluginId(basename(name, '.mjs')) }))
+      .filter((entry) => entry.id)
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((entry) => entry.file)
   } catch (error) {
     console.warn('[MusicFree] 插件产物目录读取失败，按无产物模式运行:', error?.message || error)
     return []
@@ -262,14 +268,20 @@ let pluginsCache: MusicFreePluginHandle[] | null = null
 let pluginsLoading: Promise<MusicFreePluginHandle[]> | null = null
 
 // 模块级缓存：避免每次搜索/解析/歌词请求都重新读盘与编译；插件目录或产物变更后需重启服务生效
+// 加载失败时清空 in-flight 标记，保证后续请求可重试，不会永久拒绝
 export const getMusicFreePluginsConfig = async (): Promise<MusicFreePluginHandle[]> => {
   if (pluginsCache) return pluginsCache
   if (pluginsLoading) return pluginsLoading
-  pluginsLoading = loadPlugins().then((plugins) => {
-    pluginsCache = plugins
-    pluginsLoading = null
-    return plugins
-  })
+  pluginsLoading = loadPlugins()
+    .then((plugins) => {
+      pluginsCache = plugins
+      return plugins
+    })
+    .catch((error) => {
+      // 清空 in-flight 标记，下次请求可重试
+      pluginsLoading = null
+      throw error
+    })
   return pluginsLoading
 }
 

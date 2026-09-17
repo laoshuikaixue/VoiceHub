@@ -23,6 +23,8 @@ config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
 const ROOT = path.resolve(process.cwd())
 const ZIP_URL = (process.env.MUSICFREE_PLUGIN_ZIP_URL || '').trim()
 const STAGING_DIR = path.join(ROOT, '.mf-staging')
+// 与 server/config/constants.ts 的 MUSICFREE_BUNDLES_DIR 路径字面量需保持一致；
+// 构建脚本无法 import TS 常量，路径变更时两处须同步修改
 const GENERATED_DIR = path.join(ROOT, 'server', 'utils', 'musicfree-bundles')
 const MANIFEST = path.join(GENERATED_DIR, 'manifest.ts')
 
