@@ -1222,6 +1222,9 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
+    musicFreeExcluded: 'MusicFree plugin source is excluded',
+    musicFreeInvalidUrl: 'MusicFree plugin returned an invalid playback link',
+    musicFreeNoUrl: 'MusicFree plugin did not return a playback link',
     loopOneEnabled: 'Repeat one enabled',
     singleEnabled: 'Single-play mode enabled',
     listLoopEnabled: 'Playlist loop enabled'

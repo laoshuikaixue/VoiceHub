@@ -31,8 +31,6 @@ const MAX_RESULTS_PER_PLUGIN = 50
 // 聚合搜索的最终结果上限，防止插件数量多时结果无界膨胀
 const MAX_AGGREGATE_RESULTS = 100
 
-export const getMusicFreePluginDir = (): string => PLUGIN_ROOT
-
 const safeString = (value: unknown): string => (value === null || value === undefined ? '' : String(value))
 
 /**
@@ -52,8 +50,14 @@ const cloneJson = (value: any): any => (value === undefined ? undefined : JSON.p
 
 // 仅防止调用方挂起；不取消底层任务，超时的 promise 仍在后台运行。
 // 插件方法通常发起 HTTP 请求（axios 自带 timeout），极端情况可接受。
-const withTimeout = <T = any>(task: Promise<T>, label: string): Promise<T> =>
-  Promise.race([task, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(label)), PLUGIN_TIMEOUT_MS))])
+// 任务提前完成时 clearTimeout 释放定时器，避免高并发下累积未触发定时器
+const withTimeout = <T = any>(task: Promise<T>, label: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout>
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label)), PLUGIN_TIMEOUT_MS)
+  })
+  return Promise.race([task, timeout]).finally(() => clearTimeout(timer!))
+}
 
 // 文件名 stem → 稳定唯一 id；与 scripts/build-musicfree-plugins.js 的 slug 规则一致，
 // 保证"磁盘加载"与"构建期打包"两条路径产出相同 id，路由键不随加载方式漂移
@@ -315,13 +319,15 @@ export const searchMusicFreePlugins = async (query: string, page = 1, limit = 20
   }
   // 单插件已有 MAX_RESULTS_PER_PLUGIN 上限，这里再对聚合结果截断，保证分页语义稳定
   const maxResults = Math.min(Math.max(1, Number(limit) || 20), MAX_AGGREGATE_RESULTS)
+  // 插件协议为 1-based 分页，保证 page 为正整数，NaN/非正数回退为 1
+  const safePage = Math.max(1, Math.floor(Number(page)) || 1)
   const results: any[] = []
   const errors: string[] = []
 
   await Promise.all(
     targets.map(async (handle) => {
       try {
-        const result = await withTimeout(handle.instance.search(query, page, 'music'), '插件搜索超时')
+        const result = await withTimeout(handle.instance.search(query, safePage, 'music'), '插件搜索超时')
         for (const item of (Array.isArray(result?.data) ? result.data : []).slice(0, MAX_RESULTS_PER_PLUGIN)) {
           const mapped = mapMusicFreeItem(item, handle)
           if (mapped) results.push(mapped)
@@ -346,7 +352,11 @@ export const getMusicFreeMediaSource = async (
   if (!pluginId) throw new Error('缺少 MusicFree 插件标识')
   // 精确定位唯一插件，不再遍历全部插件，避免空标识导致出站请求放大
   const handle = await findHandle('getMediaSource', pluginId)
-  if (!handle) throw new Error(`未找到 MusicFree 插件: ${pluginId}`)
+  if (!handle) {
+    // 区分"插件不存在"与"插件未实现 getMediaSource"，便于排查
+    const exists = (await getMusicFreePluginsConfig()).some((h) => h.id === pluginId)
+    throw new Error(exists ? `插件 ${pluginId} 未实现 getMediaSource 方法` : `未找到 MusicFree 插件: ${pluginId}`)
+  }
 
   const result = await withTimeout(handle.instance.getMediaSource(cloneJson(musicItem), quality), '插件获取播放链接超时')
   const url = safeString(result?.url || musicItem?.url).trim()
@@ -378,6 +388,7 @@ const mapMusicFreeItem = (item: any, handle: MusicFreePluginHandle): any | null 
 
   const duration = Number(item?.duration)
   const platform = `musicfree:${handle.id}`
+  const rawUrl = safeString(item?.url).trim()
   return {
     ...cloneJson(item),
     id,
@@ -391,7 +402,7 @@ const mapMusicFreeItem = (item: any, handle: MusicFreePluginHandle): any | null 
     cover: safeString(item?.artwork || item?.cover || item?.pic || '').trim() || null,
     album: safeString(item?.album).trim() || '',
     duration: Number.isFinite(duration) && duration > 0 ? duration : undefined,
-    url: safeString(item?.url).trim() || undefined,
-    hasUrl: !!safeString(item?.url).trim()
+    url: rawUrl || undefined,
+    hasUrl: !!rawUrl
   }
 }

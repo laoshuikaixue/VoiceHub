@@ -1233,6 +1233,9 @@ export const pages = {
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
+    musicFreeExcluded: 'MusicFree 插件音源已排除',
+    musicFreeInvalidUrl: 'MusicFree 插件返回的播放链接无效',
+    musicFreeNoUrl: 'MusicFree 插件未返回播放链接',
     loopOneEnabled: '已切换为单曲循环',
     singleEnabled: '已切换为单曲播放',
     listLoopEnabled: '已切换为列表循环'

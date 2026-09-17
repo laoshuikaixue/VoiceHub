@@ -21,6 +21,7 @@ import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
+import { useLocale } from '~/utils/locale'
 import { getPlatformDisplayName } from '~/utils/platforms'
 import { MUSICFREE_PLATFORM_PREFIX, getMusicFreeQuality, isMusicFreePlatform } from '~/utils/musicfreePlatform'
 
@@ -1849,8 +1850,9 @@ export const useMusicSources = () => {
       }
 
       if (isMusicFreePlatform(platform)) {
+        const { audioPlayer } = useLocale()
         if (options?.excludeSources?.includes('musicfree')) {
-          return { success: false, error: 'MusicFree 插件音源已排除' }
+          return { success: false, error: audioPlayer.value.musicFreeExcluded }
         }
 
         const { musicInfo } = options || {}
@@ -1882,9 +1884,9 @@ export const useMusicSources = () => {
             const validation = await validatePlayUrl(url)
             return validation.valid
               ? { success: true, url, source: 'musicfree' }
-              : { success: false, error: validation.error || 'MusicFree 插件返回的播放链接无效' }
+              : { success: false, error: validation.error || audioPlayer.value.musicFreeInvalidUrl }
           }
-          return { success: false, error: 'MusicFree 插件未返回播放链接' }
+          return { success: false, error: audioPlayer.value.musicFreeNoUrl }
         } catch (musicFreeError: any) {
           const { localize } = useServerErrors()
           return { success: false, error: localize(musicFreeError, 'MusicFree 插件音源解析失败') }
