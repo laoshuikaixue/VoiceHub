@@ -130,7 +130,6 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     gradeClass: { query: () => db.select().from(gradeClass), description: '年级班级配置' },
     notifications: { query: () => db.select().from(notifications), description: '通知数据' },
     notificationSettings: { query: () => db.select().from(notificationSettings), description: '通知设置' },
-    // 键名与恢复端读取的表名保持一致
     songBlacklist: { query: () => db.select().from(songBlacklists), description: '歌曲黑名单' },
     votes: { query: () => db.select().from(votes), description: '投票数据' },
     cardCodes: { query: () => db.select().from(cardCodes), description: '点歌券数据' },
