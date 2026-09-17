@@ -207,6 +207,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(playTimes)
           await db.delete(semesters)
           await db.delete(requestTimes)
+          await db.delete(gradeClass)
           await db.delete(systemSettings)
         } else {
           const preservedUsers = await db
@@ -277,6 +278,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(playTimes)
           await db.delete(semesters)
           await db.delete(requestTimes)
+          await db.delete(gradeClass)
           await db.delete(systemSettings)
         }
         console.log('✅ 现有数据已清空')

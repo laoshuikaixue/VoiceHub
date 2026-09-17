@@ -8,6 +8,7 @@ import {
   cardCodes,
   collaborationLogs,
   emailTemplates,
+  gradeClass,
   notifications,
   notificationSettings,
   playTimes,
@@ -130,6 +131,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(playTimes)
       await db.delete(semesters)
       await db.delete(requestTimes)
+      await db.delete(gradeClass)
       await db.delete(systemSettings)
       if (temporaryPreservedUserId) {
         await db.delete(users).where(notInArray(users.id, [temporaryPreservedUserId]))
@@ -178,6 +180,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(playTimes)
       await db.delete(semesters)
       await db.delete(requestTimes)
+      await db.delete(gradeClass)
       await db.delete(systemSettings)
       await db.delete(users).where(notInArray(users.id, preservedSuperAdminIds))
     }

@@ -8,6 +8,7 @@ import {
   notificationSettings,
   notifications,
   playTimes,
+  requestTimes,
   schedules,
   semesters,
   songBlacklists,
@@ -669,6 +670,61 @@ export default defineEventHandler(async (event) => {
               } else {
                 await tx.insert(playTimes).values({
                   ...playTimeData,
+                  id: record.id
+                })
+                stats.created++
+              }
+            }
+            break
+          }
+
+          case 'requestTimes': {
+            if (!record.name || !record.startTime || !record.endTime) {
+              stats.warnings.push(`requestTimes 记录 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            const requestTimeData: any = {
+              name: record.name,
+              startTime: new Date(record.startTime),
+              endTime: new Date(record.endTime),
+              enabled: record.enabled !== undefined ? record.enabled : true,
+              description: record.description || null,
+              expected: record.expected || 0,
+              accepted: record.accepted || 0,
+              past: record.past !== undefined ? record.past : false,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              const existingRequestTime = await tx.query.requestTimes.findFirst({
+                where: eq(requestTimes.name, requestTimeData.name)
+              })
+              if (existingRequestTime) {
+                await tx
+                  .update(requestTimes)
+                  .set(requestTimeData)
+                  .where(eq(requestTimes.id, existingRequestTime.id))
+                stats.updated++
+              } else {
+                await tx.insert(requestTimes).values(requestTimeData)
+                stats.created++
+              }
+            } else {
+              const existingRequestTimeWithId = await tx.query.requestTimes.findFirst({
+                where: eq(requestTimes.id, record.id)
+              })
+
+              if (existingRequestTimeWithId) {
+                await tx
+                  .update(requestTimes)
+                  .set(requestTimeData)
+                  .where(eq(requestTimes.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(requestTimes).values({
+                  ...requestTimeData,
                   id: record.id
                 })
                 stats.created++
