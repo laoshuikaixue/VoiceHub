@@ -18,7 +18,7 @@ export function publicAddress(address: string): boolean {
 export function networkUrl(input: string, script = false): URL {
   let url: URL
   try { url = new URL(input) } catch { throw pluginError('PLUGIN_NETWORK_BLOCKED', 400) }
-  if (!(script ? url.protocol === 'https:' : ['https:', 'http:'].includes(url.protocol)) ||
+  if (!(['https:', 'http:'].includes(url.protocol)) ||
       url.username || url.password || input.length > 8192 ||
       url.hostname.toLowerCase().replace(/\.$/, '').endsWith('localhost')) {
     throw pluginError('PLUGIN_NETWORK_BLOCKED', 400)

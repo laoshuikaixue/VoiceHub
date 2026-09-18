@@ -754,6 +754,7 @@ VoiceHub/
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   │   ├── MusicSourceController.vue # 音源控制管理
+│   │   │   ├── MusicSourcePlugins.vue # LX Music 与 MusicFree 插件音源管理
 │   │   │   ├── NotificationHistory.vue # 通知发送历史与用户已读明细
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
@@ -982,6 +983,7 @@ VoiceHub/
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
+│       ├── pluginResolver.ts   # 插件音源搜索、歌词与媒体解析接入
 │       ├── musicfreePlatform.ts # MusicFree插件平台映射
 │       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
@@ -1057,6 +1059,7 @@ VoiceHub/
 │   │   │   │   ├── pool-status.get.ts # 连接池状态
 │   │   │   │   ├── reset.post.ts    # 重置数据库
 │   │   │   │   └── status.get.ts    # 数据库状态
+│   │   │   ├── music-source-plugins/ # 音源插件配置、启停、排序与验证
 │   │   │   ├── db-status.get.ts     # 数据库状态检查
 │   │   │   ├── email-templates/     # 邮件模板管理API
 │   │   │   │   ├── index.delete.ts  # 删除邮件模板
@@ -1201,6 +1204,7 @@ VoiceHub/
 │   │   │   ├── media-source.post.ts # 插件播放链接获取
 │   │   │   ├── plugins.get.ts       # 插件列表与用户变量声明
 │   │   │   └── search.post.ts       # 插件搜索
+│   │   ├── music-source-plugins/ # 统一音源插件搜索、歌词与媒体接口
 │   │   ├── native-api/     # 原生音乐API
 │   │   │   ├── comment/              # 评论API
 │   │   │   │   └── tx.get.ts         # QQ音乐评论
@@ -1462,8 +1466,6 @@ VoiceHub/
 ├── flake.nix              # Nix构建与NixOS模块配置
 ├── fnos/                  # 飞牛 OS 安装包相关配置
 ├── LICENSE                # 开源许可证文件
-├── musicfree-plugins/     # MusicFree 插件自动读取目录
-├── MUSIC_SOURCE_PLUGINS_PLAN.md # LX/MusicFree插件统一接入方案
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖

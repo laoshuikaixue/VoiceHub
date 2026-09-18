@@ -473,12 +473,8 @@ export const MUSIC_PLATFORMS = {
   MIGU: 'migu'
 } as const
 
-// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值与前端 app/utils/platforms.ts）
-// 不含 MusicFree 插件平台：插件始终启用、不参与开关与排序，由运行时注入，不入库
+// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；插件平台由独立配置管理）
 export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
-
-// MusicFree 插件运行时目录（相对进程工作目录，启动时解析为绝对路径）
-export const MUSICFREE_PLUGIN_DIR = 'musicfree-plugins'
 
 export const MUSIC_PLUGIN_PROTOCOLS = ['auto', 'lx', 'musicfree'] as const
 export const MUSIC_PLUGIN_CATALOGS = ['netease', 'tencent', 'migu', 'kugou', 'kuwo'] as const

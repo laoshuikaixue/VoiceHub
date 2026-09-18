@@ -35,13 +35,43 @@ export function validatePluginInput(input: any) {
   const scriptUrl = String(input?.scriptUrl || '').trim()
   const protocol = input?.protocol || 'auto'
   const catalog = input?.catalog || null
-  if (!name || name.length > 100 || !MUSIC_PLUGIN_PROTOCOLS.includes(protocol) || (catalog && !MUSIC_PLUGIN_CATALOGS.includes(catalog))) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
+  if (name.length > 100 || !MUSIC_PLUGIN_PROTOCOLS.includes(protocol) || (catalog && !MUSIC_PLUGIN_CATALOGS.includes(catalog))) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
   networkUrl(scriptUrl, true)
   const variables = input?.variables
   if (variables !== undefined && (variables === null || typeof variables !== 'object' || Array.isArray(variables) || Object.keys(variables).length > 30 || Object.values(variables).some((v) => typeof v !== 'string') || JSON.stringify(variables).length > 16000)) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
   const legacyPlatformKey = input?.legacyPlatformKey ? String(input.legacyPlatformKey).trim() : null
   if (legacyPlatformKey && !/^[\w\u4e00-\u9fa5-]{1,100}$/.test(legacyPlatformKey)) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
   return { name, scriptUrl, protocol: protocol as PluginProtocol, catalog, variables, legacyPlatformKey }
+}
+
+function fallbackPluginName(scriptUrl: string) {
+  try {
+    const value = decodeURIComponent(new URL(scriptUrl).pathname.split('/').pop() || '').replace(/\.(?:m?js|cjs)$/i, '').trim()
+    return value.slice(0, 100) || '插件音源'
+  } catch {
+    return '插件音源'
+  }
+}
+
+async function resolvePluginName(data: ReturnType<typeof validatePluginInput>, id?: string) {
+  if (data.name) return data
+  let variables = data.variables
+  if (variables === undefined && id) {
+    const [row] = await db.select().from(plugins).where(and(eq(plugins.id, id), isNull(plugins.deletedAt)))
+    if (row) {
+      const [revision] = await db.select().from(revisions).where(and(eq(revisions.pluginId, id), eq(revisions.revision, row.desiredRevision))).limit(1)
+      if (revision) variables = unseal(revision.variables, 'variables')
+    }
+  }
+  try {
+    const { downloadScript } = await import('./prepare')
+    const code = await downloadScript(data.scriptUrl)
+    const { capability } = await runPlugin({ source: code.source, protocol: data.protocol, prelude: await prelude(), variables })
+    const name = typeof capability?.name === 'string' ? capability.name.trim() : ''
+    return { ...data, name: name.length > 0 && name.length <= 100 ? name : fallbackPluginName(data.scriptUrl) }
+  } catch {
+    throw pluginError('PLUGIN_LOAD_FAILED')
+  }
 }
 
 async function mutate<T>(expected: number, action: (tx: any) => Promise<T>) {
@@ -55,7 +85,7 @@ async function mutate<T>(expected: number, action: (tx: any) => Promise<T>) {
 }
 
 export async function savePlugin(input: any, expected: number, id?: string) {
-  const data = validatePluginInput(input)
+  const data = await resolvePluginName(validatePluginInput(input), id)
   const pluginId = id || randomUUID()
   await mutate(expected, async (tx) => {
     const [old] = id ? await tx.select().from(plugins).where(and(eq(plugins.id, id), isNull(plugins.deletedAt))) : []

@@ -12,6 +12,11 @@ import type { PluginCapability, PluginProtocol } from './types.ts'
 const loading = newQuickJSWASMModuleFromVariant(variant)
 let active = 0
 
+export function extractPluginName(source: string) {
+  const match = source.match(/@name\s*[:：]?\s*([^\r\n*]+)/i)
+  return match?.[1]?.trim().slice(0, 100) || ''
+}
+
 function dump(context: QuickJSContext, handle: QuickJSHandle) {
   const value = context.dump(handle)
   if (JSON.stringify(value)?.length > limits.responseBytes) throw pluginError('PLUGIN_LOAD_FAILED')
@@ -117,7 +122,7 @@ export async function runPlugin(options: {
       return result.value
     }
     evaluate(options.prelude).dispose()
-    evaluate(`globalThis.__variables=${JSON.stringify(options.variables || {})};lx.currentScriptInfo=${JSON.stringify({ name: 'VoiceHub', rawScript: options.source, version: '', description: '', author: '', homepage: '' })}`).dispose()
+    evaluate(`globalThis.__variables=${JSON.stringify(options.variables || {})};lx.currentScriptInfo=${JSON.stringify({ name: extractPluginName(options.source) || 'VoiceHub', rawScript: options.source, version: '', description: '', author: '', homepage: '' })}`).dispose()
     evaluate(options.source).dispose()
     const awaitGuest = async (code: string) => {
       const handle = evaluate(code)

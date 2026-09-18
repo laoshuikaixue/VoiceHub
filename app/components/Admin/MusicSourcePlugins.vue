@@ -35,7 +35,7 @@
       <div v-if="open" class="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4" @click.self="!busy && (open = false)">
         <form class="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-bg-primary border border-border-secondary p-6 space-y-4" @submit.prevent="save">
           <h3 class="text-lg font-bold text-text-primary">{{ form.id ? t.edit : t.add }}</h3>
-          <label class="block text-xs text-text-secondary">{{ t.name }}<input v-model="form.name" required maxlength="100" class="mt-2 w-full p-3 rounded-lg bg-bg-secondary border border-border-secondary text-text-primary" /></label>
+          <label class="block text-xs text-text-secondary">{{ t.name }}<input v-model="form.name" maxlength="100" class="mt-2 w-full p-3 rounded-lg bg-bg-secondary border border-border-secondary text-text-primary" /><span class="block mt-1 text-text-tertiary">{{ t.nameHint }}</span></label>
           <label class="block text-xs text-text-secondary">{{ t.url }}<input v-model="form.scriptUrl" required type="url" class="mt-2 w-full p-3 rounded-lg bg-bg-secondary border border-border-secondary text-text-primary" /></label>
           <CustomSelect v-model="form.protocol" :options="protocolOptions" :label="t.protocol" />
           <CustomSelect v-model="form.catalog" :options="catalogOptions" :label="t.catalog" />
