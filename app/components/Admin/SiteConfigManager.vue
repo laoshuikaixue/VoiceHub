@@ -22,7 +22,7 @@
           @click="saveConfig"
         >
           <template v-if="saving">
-            <AppSpinner :size="14" />
+            <AppSpinner :size="14" color="white" />
             {{ locale.saving }}
           </template>
           <template v-else-if="saveSuccess"> <CheckCircle2 :size="14" /> {{ locale.saved }} </template>

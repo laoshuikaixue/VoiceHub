@@ -169,8 +169,10 @@ export async function refreshPlugin(id: string, prepared?: PreparedPlugin): Prom
       await storeArtifact(artifact)
       await db.update(plugins).set({ activeRevision: artifact.revision, activeHash: artifact.hash, lastError: null, updatedAt: getServerDate() }).where(and(eq(plugins.id, id), eq(plugins.desiredRevision, artifact.revision), isNull(plugins.deletedAt)))
       return artifact
-    } catch {
-      await db.update(plugins).set({ lastError: 'PLUGIN_LOAD_FAILED' }).where(and(eq(plugins.id, id), eq(plugins.desiredRevision, row.desiredRevision)))
+    } catch (error) {
+      const code = String((error as any)?.data?.code || (error as any)?.statusMessage || 'PLUGIN_LOAD_FAILED')
+      console.error(`[插件音源] 插件 ${id} 第 ${row.desiredRevision} 版加载失败 ${code}:`, (error as Error)?.message || error)
+      await db.update(plugins).set({ lastError: code }).where(and(eq(plugins.id, id), eq(plugins.desiredRevision, row.desiredRevision)))
       throw pluginError('PLUGIN_LOAD_FAILED')
     }
   })().finally(() => inflight.delete(key))
@@ -225,9 +227,11 @@ export async function pluginAdminView() {
     const desired = await pluginRevision(row.id, row.desiredRevision)
     const artifact = snapshotMode() ? pluginManifest.artifacts.find((p) => p.id === row.id) : row.activeRevision ? await artifactFor({ ...row, enabled: true }) : null
     let hasVariables = true
-    let lastError = row.lastError
-    try { hasVariables = Object.keys(unseal(desired.variables, 'variables')).length > 0 } catch { lastError = 'PLUGIN_INVALID_TICKET' }
-    data.push({ id: row.id, name: row.name, enabled: row.enabled, priority: row.priority, desiredRevision: row.desiredRevision, activeRevision: artifact?.revision || null, lastError, legacyPlatformKey: row.legacyPlatformKey, protocol: desired.protocol, catalog: desired.catalog, scriptUrl: desired.scriptUrl, hasVariables, capability: artifact?.capability || null })
+    const lastError = row.lastError
+    // 参数解密失败只说明 JWT_SECRET 变过，不代表产物加载失败，单独标记避免误报为更新失败
+    let variablesInvalid = false
+    try { hasVariables = Object.keys(unseal(desired.variables, 'variables')).length > 0 } catch { variablesInvalid = true }
+    data.push({ id: row.id, name: row.name, enabled: row.enabled, priority: row.priority, desiredRevision: row.desiredRevision, activeRevision: artifact?.revision || null, lastError, variablesInvalid, legacyPlatformKey: row.legacyPlatformKey, protocol: desired.protocol, catalog: desired.catalog, scriptUrl: desired.scriptUrl, hasVariables, capability: artifact?.capability || null })
   }
   return { data, revision: await configRevision(), mode: snapshotMode() ? 'snapshot' : 'hot', buildId: pluginManifest.buildId }
 }

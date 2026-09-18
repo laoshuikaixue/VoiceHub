@@ -101,7 +101,7 @@
             @click="addBlacklistItem"
           >
             <Plus v-if="!loading" :size="16" />
-            <AppSpinner :size="16" />
+            <AppSpinner v-else :size="16" color="white" />
             {{ loading ? locale.processing : locale.addButton }}
           </button>
         </div>
