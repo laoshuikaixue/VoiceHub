@@ -61,6 +61,22 @@ const audioPlayer = useAudioPlayer()
 const currentSong = ref(null)
 const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
 const shouldHidePlayer = computed(() => route.path === '/change-password')
+let legalConsentSynced = false
+
+const syncAcceptedLegalConsent = async () => {
+  if (legalConsentSynced || !isAuthenticated.value || typeof localStorage === 'undefined') return
+  const hasAcceptedVersion = Object.keys(localStorage).some(
+    (key) => key.startsWith('voicehub.legalConsent.') && localStorage.getItem(key) === 'true'
+  )
+  if (!hasAcceptedVersion) return
+  legalConsentSynced = true
+  try {
+    await $fetch('/api/legal-consent', { method: 'POST' })
+  } catch (error) {
+    legalConsentSynced = false
+    console.warn('同步条款同意状态失败:', error)
+  }
+}
 
 // 判断是否为播放列表模式
 // 投稿页面、搜索预览等场景不是播放列表模式，不应该自动跳过
@@ -209,6 +225,11 @@ const setupHarmonyOSListeners = () => {
 onMounted(async () => {
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
+  await syncAcceptedLegalConsent()
+})
+
+watch(() => isAuthenticated.value, () => {
+  void syncAcceptedLegalConsent()
 })
 
 // 重要通知仅在登录或会话恢复时检查一次，不做轮询，避免增加服务器负担

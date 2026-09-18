@@ -8,6 +8,7 @@
         v-if="showWeChat"
         type="button"
         class="quick-login-btn wechat"
+        :disabled="disabled"
         @click="loginWith('wx')"
       >
         <Icon name="oauth-wechat" :size="20" />
@@ -17,6 +18,7 @@
         v-if="showQQ"
         type="button"
         class="quick-login-btn qq"
+        :disabled="disabled"
         @click="loginWith('qq')"
       >
         <Icon name="oauth-qq" :size="20" />
@@ -33,6 +35,8 @@ import { useLocale } from '~/utils/locale'
 import { detectEmbeddedBrowser } from '~/utils/embedded-browser'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 
+const props = defineProps({ disabled: { type: Boolean, default: false } })
+const disabled = computed(() => props.disabled)
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const route = useRoute()
 const { auth } = useLocale()

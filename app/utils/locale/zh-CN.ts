@@ -25,6 +25,9 @@ export const siteConfig = {
   siteDescription: '站点描述',
   siteDescriptionPlaceholder: '请输入站点描述',
   statisticsCode: '站点统计代码',
+  legalConsentTitle: '登录条款确认', legalConsentDesc: '控制登录页面是否要求用户先阅读并同意条款。', legalConsentDisplayMode: '展示形式', legalConsentModal: '弹窗', legalConsentCheckbox: '复选框', legalConsentModalHint: '弹窗会在登录页打开，用户拒绝后所有登录入口保持禁用。', legalConsentCheckboxHint: '复选框会显示在登录按钮下方，未勾选前所有登录入口禁用。', legalConsentUpdatedDate: '条款更新日期', legalConsentDocuments: '协议文档', legalConsentAdd: '添加文档', legalConsentDocument: '文档', legalConsentName: '文档名称', legalConsentSlug: '路由标识', legalConsentContent: 'Markdown 内容', legalConsentKeepOne: '至少保留一份协议文档', delete: '删除',
+  legalConsentPrefix: '我已阅读并同意', legalConsentSeparator: '、', legalConsentBlocked: '未同意最新条款前，无法输入账号密码或使用快捷登录。', legalConsentDisplayModeHint: '复选框会显示在登录按钮下方，未勾选所有登录入口禁用。', legalConsentUpdatedDateHint: '日期或文档内容变化后，用户需要重新同意。', legalConsentDocumentsDesc: '文档名称可自定义，内容按 Markdown 保存。可参考：服务条款、使用政策、支持的国家和地区、服务特定条款。', legalConsentUntitled: '未命名文档', legalConsentNamePlaceholder: '例如：服务条款', legalConsentSlugPlaceholder: '例如：terms', legalConsentContentPlaceholder: '在这里填写正式 Markdown 条款内容。',
+  legalConsentView: '查看条款', legalConsentModalTitle: '条款更新通知', legalConsentModalDesc: '请仔细阅读以下条款，同意后才能继续登录。', legalConsentReject: '拒绝', legalConsentAccept: '同意并继续',
   statisticsCodeEnabled: '启用站点统计代码',
   statisticsCodeEnabledDesc: '开启后才会将下方统计代码注入到页面',
   statisticsCodePlaceholder: '粘贴统计代码片段（如百度统计、51.la、Clarity、Google Analytics 等）',
@@ -898,7 +901,11 @@ export const pages = {
       confirmBind: '确认绑定',
       confirmBindTitle: '确认绑定',
       confirmBindMessage: (providerName: string, providerUsername: string, username: string) =>
-        `确认将 ${providerName} 账号「${providerUsername}」与账户「${username}」绑定？绑定后即可使用 ${providerName} 直接登录。`
+        `确认将 ${providerName} 账号「${providerUsername}」与账户「${username}」绑定？绑定后即可使用 ${providerName} 直接登录。`,
+      legalConsentPrefix: '我已阅读并同意',
+      legalConsentSeparator: '、',
+      legalConsentRequiredTitle: '继续登录前需要先同意最新条款。',
+      legalConsentBlocked: '未同意最新条款前，无法输入账号密码或使用快捷登录。'
     },
     oauthButtons: {
       divider: '或使用第三方账号登录',
@@ -4320,6 +4327,7 @@ export const serverErrors = {
   AUTH_OAUTH_REGISTER_DISABLED: '系统已关闭第三方账号注册功能',
   AUTH_OAUTH_REGISTER_DISABLED_BIND: '系统已关闭第三方账号注册功能，请登录现有账号进行绑定',
   AUTH_REGISTER_DISABLED: '系统未开放注册',
+  AUTH_LEGAL_CONSENT_REQUIRED: '请先阅读并同意最新条款后再注册',
   AUTH_USER_PENDING_APPROVAL: '账号待管理员审核，请耐心等待',
   AUTH_SYSTEM_ERROR: '系统错误，请稍后重试',
   AUTH_BINDING_SESSION_INVALID: '绑定会话已失效，请重新发起绑定',
@@ -4484,3 +4492,4 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_UPDATE_FAILED: '修改通知失败',
   NOTIFICATION_HISTORY_DELETE_FAILED: '删除通知失败',
 } as const
+

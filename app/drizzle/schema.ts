@@ -40,6 +40,8 @@ export const users = pgTable('User', {
   statusChangedBy: integer('statusChangedBy'),
   // 注册时可选填写的备注，管理员审核时可修改
   remark: text('remark'),
+  legalConsentVersion: text('legal_consent_version'),
+  legalConsentAt: timestamp('legal_consent_at'),
 }, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
@@ -333,6 +335,10 @@ export const systemSettings = pgTable('SystemSettings', {
   // 站点统计代码（任意站点统计平台的 HTML/JS 片段，注入 SSR 页面 <head>）
   statisticsCodeEnabled: boolean('statisticsCodeEnabled').default(false).notNull(),
   statisticsCode: text('statisticsCode'),
+  legalConsentEnabled: boolean('legalConsentEnabled').default(false).notNull(),
+  legalConsentDisplayMode: text('legalConsentDisplayMode').default('modal').notNull(),
+  legalConsentUpdatedDate: text('legalConsentUpdatedDate'),
+  legalConsentDocuments: text('legalConsentDocuments').default('[]').notNull(),
 
   // 主题管理配置
   defaultTheme: text('defaultTheme').default('System').notNull(),

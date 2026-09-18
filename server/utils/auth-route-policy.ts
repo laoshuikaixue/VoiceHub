@@ -19,6 +19,8 @@ export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
 ]
 
 export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/legal-consent', methods: ['GET', 'POST'] },
+  { path: '/api/legal-documents', methods: GET_METHODS },
   { path: '/api/auth/login', methods: ['POST'] },
   { path: '/api/auth/register', methods: ['POST'] },
   { path: '/api/auth/email-code', methods: ['POST'] },

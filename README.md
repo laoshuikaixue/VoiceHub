@@ -1375,6 +1375,7 @@ VoiceHub/
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
+│   │   ├── legal-consent.ts # 条款同意凭证签发与校验
 │   │   ├── register-validation.ts # 注册校验纯函数
 │   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
@@ -1482,6 +1483,7 @@ VoiceHub/
   - **`UI/`**: 通用UI组件（播放器、对话框、进度条等）
   - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
+  - **`legal/[slug].vue`**: 公开法律条款页面
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
   - **`useTheme.ts`**: 主题管理 composable，支持深色/浅色主题切换与 localStorage 持久化
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
@@ -1498,6 +1500,7 @@ VoiceHub/
 #### 服务端目录 (server/)
 
 - **`server/api/`**: 服务端API，RESTful接口设计
+  - **`legal-documents.get.ts`**: 公开条款文档接口
   - **`admin/`**: 管理员专用API（用户、排期、统计等）
   - **`auth/`**: 认证相关API
   - **`songs/`**: 歌曲管理API
