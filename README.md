@@ -156,6 +156,13 @@ wrangler secret put DATABASE_URL
 wrangler secret put JWT_SECRET
 ```
 
+本地运行 `dev:cloudflare` 前需在项目根目录创建 `.dev.vars`（已被 gitignore，仅本地生效），提供启动必需变量：
+
+```ini
+DATABASE_URL=postgres://user:pass@host:5432/db
+JWT_SECRET=本地开发用密钥
+```
+
 - `DATABASE_URL` 建议使用 Neon/Supabase 等支持 Serverless 的 PostgreSQL；当前适配通过 Worker secret 读取该连接串。
 - 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
 - Workers 下 Redis、SMTP、本地文件备份、网易云易盾 jsdom 接口与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。

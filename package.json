@@ -130,6 +130,7 @@
     "eslint": "^9.39.5",
     "prettier": "^3.9.8",
     "typescript": "^5.9.3",
-    "unocss": "^66.10.5"
+    "unocss": "^66.10.5",
+    "wrangler": "4.135.0"
   }
 }
