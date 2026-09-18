@@ -301,10 +301,6 @@ export const SERVER_ERROR_CODES = {
   // 音源平台
   MUSIC_SOURCE_PLATFORM_DISABLED: 'MUSIC_SOURCE_PLATFORM_DISABLED',
   QQ_COMMENT_FETCH_FAILED: 'QQ_COMMENT_FETCH_FAILED',
-  PLUGIN_SEARCH_FAILED: 'PLUGIN_SEARCH_FAILED',
-  PLUGIN_MEDIA_SOURCE_FAILED: 'PLUGIN_MEDIA_SOURCE_FAILED',
-  PLUGIN_LYRIC_FAILED: 'PLUGIN_LYRIC_FAILED',
-  PLUGIN_CAPABILITIES_FETCH_FAILED: 'PLUGIN_CAPABILITIES_FETCH_FAILED',
   // 自动备份
   BACKUP_DISABLED: 'BACKUP_DISABLED',
   BACKUP_NOT_CONFIGURED: 'BACKUP_NOT_CONFIGURED',
@@ -487,12 +483,13 @@ export const MUSIC_PLUGIN_LIMITS = {
   responseBytes: 5 * 1024 * 1024,
   itemBytes: 64 * 1024,
   memoryBytes: 32 * 1024 * 1024,
-  loadMs: 8000,
   callMs: 8000,
   batchMs: 24000,
   requests: 12,
   redirects: 4,
-  concurrency: 2
+  concurrency: 2,
+  // serverless 部署快照（prelude + 全部插件脚本）的解码后总量上限，超出会在构建期终止部署
+  snapshotBytes: 24 * 1024 * 1024
 } as const
 
 // 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用

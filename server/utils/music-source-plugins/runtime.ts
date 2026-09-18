@@ -1,4 +1,4 @@
-import { newQuickJSWASMModuleFromVariant, type QuickJSContext, type QuickJSHandle } from 'quickjs-emscripten-core'
+import { newQuickJSWASMModuleFromVariant, type QuickJSContext, type QuickJSHandle, type QuickJSRuntime } from 'quickjs-emscripten-core'
 import variant from '@jitl/quickjs-singlefile-browser-release-sync'
 import { createCipheriv, createHash, publicEncrypt, constants, randomBytes } from 'node:crypto'
 import { inflate, deflate } from 'node:zlib'
@@ -28,22 +28,26 @@ export async function runPlugin(options: {
   source: string; prelude: string; protocol: PluginProtocol; variables?: Record<string, string>
   action?: string; params?: unknown; signal?: AbortSignal; timeout?: number
 }): Promise<{ capability: PluginCapability; result?: any }> {
-  if (active >= limits.concurrency) throw pluginError('PLUGIN_UNAVAILABLE', 503)
-  active++
   const controller = new AbortController()
   const signal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal
   const deadline = getServerTimestamp() + (options.timeout || limits.callMs)
-  const timer = setTimeout(() => controller.abort(), Math.max(1, deadline - getServerTimestamp()))
+  let timer: ReturnType<typeof setTimeout> | undefined
   let context: QuickJSContext | undefined
+  let runtime: QuickJSRuntime | undefined
+  let occupied = false
   let disposed = false
   let calls = 0
-  let logs = 0
   const tasks = new Set<Promise<void>>()
   const waiting = new Set<any>()
   const controllers = new Map<number, AbortController>()
   try {
+    // 占用计数必须紧邻 try，否则中途抛出会永久漏出并发槽
+    if (active >= limits.concurrency) throw pluginError('PLUGIN_UNAVAILABLE', 503)
+    active++
+    occupied = true
+    timer = setTimeout(() => controller.abort(), Math.max(1, deadline - getServerTimestamp()))
     const module = await loading
-    const runtime = module.newRuntime()
+    runtime = module.newRuntime()
     runtime.setMemoryLimit(limits.memoryBytes)
     runtime.setMaxStackSize(512 * 1024)
     runtime.setInterruptHandler(() => signal.aborted || getServerTimestamp() >= deadline)
@@ -67,7 +71,7 @@ export async function runPlugin(options: {
         } else if (method === 'rsa') {
           const data = Buffer.from(args[0])
           result = Array.from(publicEncrypt({ key: String(args[1]), padding: constants.RSA_NO_PADDING }, Buffer.concat([Buffer.alloc(Math.max(0, 128 - data.length)), data])))
-        } else if (method === 'log') { if (++logs > 100) throw new Error('日志超限') }
+        } else if (method === 'log') { /* 宿主不采集插件日志，直接接受，避免插件的 console 输出打断执行 */ }
         else throw new Error('未知宿主能力')
         return ctx.newString(JSON.stringify(result))
       } catch { throw new Error('Host operation rejected') }
@@ -147,15 +151,13 @@ export async function runPlugin(options: {
     return { capability, result }
   } finally {
     disposed = true
-    clearTimeout(timer)
+    if (timer) clearTimeout(timer)
     controller.abort()
     for (const child of controllers.values()) child.abort()
-    for (const promise of waiting) promise.dispose()
-    if (context) {
-      const runtime = context.runtime
-      context.dispose()
-      runtime.dispose()
-    }
-    active--
+    for (const promise of waiting) { try { promise.dispose() } catch {} }
+    // 分别释放，任一步抛出都不能漏掉另一个，否则 runtime 与其堆内存常驻
+    if (context) { try { context.dispose() } catch {} }
+    if (runtime) { try { runtime.dispose() } catch {} }
+    if (occupied) active--
   }
 }

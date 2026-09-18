@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { musicSourcePlugins as plugins, musicSourcePluginRevisions as revisions, musicSourceConfigState as state } from '~/drizzle/schema'
 import { MUSIC_PLUGIN_CATALOGS, MUSIC_PLUGIN_LIMITS, MUSIC_PLUGIN_PROTOCOLS } from '../../config/constants'
@@ -36,7 +36,7 @@ export function validatePluginInput(input: any) {
   const protocol = input?.protocol || 'auto'
   const catalog = input?.catalog || null
   if (name.length > 100 || !MUSIC_PLUGIN_PROTOCOLS.includes(protocol) || (catalog && !MUSIC_PLUGIN_CATALOGS.includes(catalog))) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
-  networkUrl(scriptUrl, true)
+  networkUrl(scriptUrl)
   const variables = input?.variables
   if (variables !== undefined && (variables === null || typeof variables !== 'object' || Array.isArray(variables) || Object.keys(variables).length > 30 || Object.values(variables).some((v) => typeof v !== 'string') || JSON.stringify(variables).length > 16000)) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
   const legacyPlatformKey = input?.legacyPlatformKey ? String(input.legacyPlatformKey).trim() : null
@@ -73,7 +73,7 @@ async function resolvePluginName(data: ReturnType<typeof validatePluginInput>, i
     const [row] = await db.select().from(plugins).where(and(eq(plugins.id, id), isNull(plugins.deletedAt)))
     if (row) {
       const [revision] = await db.select().from(revisions).where(and(eq(revisions.pluginId, id), eq(revisions.revision, row.desiredRevision))).limit(1)
-      if (revision) variables = unseal(revision.variables, 'variables')
+      if (revision) { try { variables = unseal(revision.variables, 'variables') } catch { /* JWT_SECRET 变过，旧参数解不开时按无参数继续解析名称 */ } }
     }
   }
   const { downloadScript } = await import('./prepare')
@@ -113,6 +113,11 @@ export async function savePlugin(input: any, expected: number, id?: string) {
     const rows = await tx.select({ id: plugins.id }).from(plugins).where(isNull(plugins.deletedAt))
     if (!old && rows.length >= MUSIC_PLUGIN_LIMITS.count) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
     revision = old ? old.desiredRevision + 1 : 1
+    // legacyPlatformKey 的唯一索引不排除软删行，提前校验避免直接抛数据库 23505
+    if (data.legacyPlatformKey) {
+      const [conflict] = await tx.select({ id: plugins.id }).from(plugins).where(and(eq(plugins.legacyPlatformKey, data.legacyPlatformKey), ne(plugins.id, pluginId))).limit(1)
+      if (conflict) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
+    }
     let variables = data.variables === undefined && old ? (await tx.select().from(revisions).where(and(eq(revisions.pluginId, id!), eq(revisions.revision, old.desiredRevision))))[0]?.variables : undefined
     variables ||= seal(data.variables || {}, 'variables')
     if (old) await tx.update(plugins).set({ name: data.name, legacyPlatformKey: data.legacyPlatformKey, desiredRevision: revision, lastError: null, updatedAt: getServerDate() }).where(eq(plugins.id, pluginId))
@@ -126,7 +131,8 @@ export async function savePlugin(input: any, expected: number, id?: string) {
 
 export async function setPluginEnabled(id: string, enabled: boolean, expected: number) {
   await mutate(expected, async (tx) => {
-    const rows = await tx.update(plugins).set({ enabled, updatedAt: getServerDate() }).where(and(eq(plugins.id, id), isNull(plugins.deletedAt))).returning()
+    // 重新启用时清掉旧的失败标记，否则 artifactFor 的失败闩会让它永远不重试
+    const rows = await tx.update(plugins).set(enabled ? { enabled, lastError: null, updatedAt: getServerDate() } : { enabled, updatedAt: getServerDate() }).where(and(eq(plugins.id, id), isNull(plugins.deletedAt))).returning()
     if (!rows.length) throw pluginError('PLUGIN_UNAVAILABLE', 404)
   })
 }
@@ -224,14 +230,13 @@ export async function availablePlugins() {
 export async function pluginAdminView() {
   const data = []
   for (const row of await listPluginRows()) {
-    const desired = await pluginRevision(row.id, row.desiredRevision)
+    // 期望版本行缺失（如恢复中断留下的孤儿数据）时退到现存最新版本，保证列表仍可访问、可删除
+    const [desired] = await db.select().from(revisions).where(eq(revisions.pluginId, row.id)).orderBy(desc(revisions.revision)).limit(1)
     const artifact = snapshotMode() ? pluginManifest.artifacts.find((p) => p.id === row.id) : row.activeRevision ? await artifactFor({ ...row, enabled: true }) : null
-    let hasVariables = true
-    const lastError = row.lastError
-    // 参数解密失败只说明 JWT_SECRET 变过，不代表产物加载失败，单独标记避免误报为更新失败
     let variablesInvalid = false
-    try { hasVariables = Object.keys(unseal(desired.variables, 'variables')).length > 0 } catch { variablesInvalid = true }
-    data.push({ id: row.id, name: row.name, enabled: row.enabled, priority: row.priority, desiredRevision: row.desiredRevision, activeRevision: artifact?.revision || null, lastError, variablesInvalid, legacyPlatformKey: row.legacyPlatformKey, protocol: desired.protocol, catalog: desired.catalog, scriptUrl: desired.scriptUrl, hasVariables, capability: artifact?.capability || null })
+    // 参数解密失败只说明 JWT_SECRET 变过，不代表产物加载失败，单独标记避免误报为更新失败
+    if (desired) { try { unseal(desired.variables, 'variables') } catch { variablesInvalid = true } }
+    data.push({ id: row.id, name: row.name, enabled: row.enabled, priority: row.priority, desiredRevision: row.desiredRevision, activeRevision: artifact?.revision || null, lastError: desired ? row.lastError : (row.lastError || 'PLUGIN_UNAVAILABLE'), variablesInvalid, legacyPlatformKey: row.legacyPlatformKey, protocol: desired?.protocol || null, catalog: desired?.catalog || null, scriptUrl: desired?.scriptUrl || '', capability: artifact?.capability || null })
   }
   return { data, revision: await configRevision(), mode: snapshotMode() ? 'snapshot' : 'hot', buildId: pluginManifest.buildId }
 }

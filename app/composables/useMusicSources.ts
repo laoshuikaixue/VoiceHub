@@ -914,7 +914,8 @@ export const useMusicSources = () => {
 
         // 跨平台升级：当前无 TTML 时尝试（有 yrc 也可升级到 ttml，有 lrc 可升级到 yrc/ttml）
         // 指定具体来源时不做升级，保证结果确实来自所选来源
-        if (!sourceLocked && !resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
+        // 插件音源不参与跨平台升级：插件曲目 ID 与内置平台无对应关系，升级会挂上错误版本的歌词
+        if (!sourceLocked && !isPluginPlatform(platform) && !resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
           const upgraded = await tryUpgradeLyric(platform, resultData, meta)
           if (upgraded) {
             hasResult = true

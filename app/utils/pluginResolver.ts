@@ -1,9 +1,8 @@
 /** 插件阶段统一入口，解析失败后由既有内置链路继续回退。 */
+import { getPersistedSongId, getPluginQuality } from './pluginPlatform'
 export async function resolvePluginUrl(platform: string, musicId: string | number, quality: number | string | undefined, options: any = {}) {
   const raw = options.musicInfo?.rawItem || {}
-  const level = typeof quality === 'string' && ['standard', 'high', 'super', 'lossless'].includes(quality)
-    ? quality
-    : Number(quality) >= 10 ? 'lossless' : Number(quality) >= 5 ? 'super' : Number(quality) >= 4 ? 'high' : 'standard'
+  const level = getPluginQuality(quality)
   let excluded = [...(options.excludeSources || [])]
   let continuation
   for (let batch = 0; batch < 2; batch++) {
@@ -12,7 +11,8 @@ export async function resolvePluginUrl(platform: string, musicId: string | numbe
       body: { platform, musicId: String(musicId), quality: level, excludeSources: excluded,
         continuation,
         selectionToken: raw.selectionToken || options.selectionToken,
-        songId: options.songId || (!raw.selectionToken && Number.isInteger(raw.id) && (raw.requesterId !== undefined || raw.createdAt) ? raw.id : undefined),
+        preferProxy: options.preferProxy === true,
+        songId: options.songId || getPersistedSongId(raw),
         title: options.musicInfo?.name || raw.title,
         artist: options.musicInfo?.artist || raw.artist,
         album: options.musicInfo?.album || raw.album,

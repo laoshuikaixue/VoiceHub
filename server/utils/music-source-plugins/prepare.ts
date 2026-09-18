@@ -27,7 +27,7 @@ export function preparePrelude(): Promise<string> {
 export function codeHash(source: string) { return createHash('sha256').update(source).digest('hex') }
 
 export async function downloadScript(url: string, signal?: AbortSignal) {
-  const result = await requestNetwork(url, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000), script: true }, MUSIC_PLUGIN_LIMITS.scriptBytes)
+  const result = await requestNetwork(url, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000) }, MUSIC_PLUGIN_LIMITS.scriptBytes)
   if (result.status !== 200) throw pluginError('PLUGIN_LOAD_FAILED')
   const source = result.bytes.toString('utf8').replace(/^\uFEFF/, '')
   if (!source.trim() || /^\s*(<!doctype|<html)/i.test(source)) throw pluginError('PLUGIN_LOAD_FAILED')

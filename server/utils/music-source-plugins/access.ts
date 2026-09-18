@@ -12,8 +12,9 @@ export async function pluginAccess(event: H3Event, admin = false) {
   if (admin && user.role !== 'SUPER_ADMIN') throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '需要超级管理员权限')
   if (admin && !['GET', 'HEAD'].includes(event.method)) {
     const origin = getRequestHeader(event, 'origin')
-    const host = getRequestHeader(event, 'host')
-    try { if (origin && new URL(origin).host !== host) throw new Error('来源不匹配') }
+    // 与 api-cors 中间件保持一致：反代可能改写 Host，此时以 x-forwarded-host 为准
+    const host = getRequestHeader(event, 'x-forwarded-host') || getRequestHeader(event, 'host')
+    try { if (origin && new URL(origin).host !== (host?.split(',')[0] || '').trim()) throw new Error('来源不匹配') }
     catch { throw pluginError('PLUGIN_INVALID_CONFIG', 403) }
   }
   for (const key of [`user:${user.id}`, `ip:${getClientIP(event)}`]) {

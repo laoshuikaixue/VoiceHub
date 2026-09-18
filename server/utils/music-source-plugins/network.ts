@@ -7,15 +7,25 @@ import ipaddr from 'ipaddr.js'
 import { MUSIC_PLUGIN_LIMITS } from '../../config/constants.ts'
 import { pluginError } from './errors.ts'
 
+// ::a.b.c.d 形式的 IPv4 兼容地址：ipaddr 会判成 unicast，需自行还原（该库只识别 ::ffff/a.b.c.d）
+const ipv4CompatibleAddress = (bytes: number[]) => {
+  if (bytes.slice(0, 12).some((byte) => byte !== 0)) return null
+  if (bytes.slice(12).every((byte) => byte === 0)) return null
+  return ipaddr.fromByteArray(bytes.slice(12), 'ipv4')
+}
+
 export function publicAddress(address: string): boolean {
   try {
-    let ip = ipaddr.parse(address)
-    if (ip.kind() === 'ipv6' && (ip as ipaddr.IPv6).isIPv4MappedAddress()) ip = (ip as ipaddr.IPv6).toIPv4Address()
+    let ip: ipaddr.IPv4 | ipaddr.IPv6 = ipaddr.parse(address)
+    if (ip.kind() === 'ipv6') {
+      const embedded = ip.isIPv4MappedAddress() ? ip.toIPv4Address() : ipv4CompatibleAddress(ip.toByteArray())
+      if (embedded && embedded.kind() === 'ipv4') ip = embedded
+    }
     return ip.range() === 'unicast'
   } catch { return false }
 }
 
-export function networkUrl(input: string, script = false): URL {
+export function networkUrl(input: string): URL {
   let url: URL
   try { url = new URL(input) } catch { throw pluginError('PLUGIN_NETWORK_BLOCKED', 400) }
   if (!(['https:', 'http:'].includes(url.protocol)) ||
@@ -47,12 +57,11 @@ export interface NetworkOptions {
   headers?: Record<string, unknown>
   body?: string | Uint8Array
   signal: AbortSignal
-  script?: boolean
 }
 
 /** 连接固定到已校验的 DNS 结果，重定向每跳重新校验。 */
 export async function openNetwork(input: string, options: NetworkOptions): Promise<IncomingMessage> {
-  let url = networkUrl(input, options.script)
+  let url = networkUrl(input)
   let headers = cleanHeaders(options.headers)
   let method = (options.method || 'GET').toUpperCase()
   let body = options.body
@@ -79,7 +88,7 @@ export async function openNetwork(input: string, options: NetworkOptions): Promi
     if (![301, 302, 303, 307, 308].includes(response.statusCode || 0) || !response.headers.location) return response
     response.destroy()
     if (hop === MUSIC_PLUGIN_LIMITS.redirects) throw pluginError('PLUGIN_NETWORK_BLOCKED')
-    const next = networkUrl(new URL(response.headers.location, url).href, options.script)
+    const next = networkUrl(new URL(response.headers.location, url).href)
     if (next.origin !== url.origin) {
       headers = Object.fromEntries(Object.entries(headers).filter(([key]) => !['authorization', 'cookie', 'referer', 'x-api-key'].includes(key)))
     }

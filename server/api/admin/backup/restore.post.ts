@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
-import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
+import { pluginClearOrder, restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
   apiKeyPermissions,
   apiKeys,
@@ -209,6 +209,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(semesters)
           await db.delete(requestTimes)
           await db.delete(gradeClass)
+          for (const table of pluginClearOrder) await db.delete(table)
           await db.delete(systemSettings)
         } else {
           const preservedUsers = await db
@@ -280,6 +281,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(semesters)
           await db.delete(requestTimes)
           await db.delete(gradeClass)
+          for (const table of pluginClearOrder) await db.delete(table)
           await db.delete(systemSettings)
         }
         console.log('✅ 现有数据已清空')

@@ -3,5 +3,5 @@ import { requestTrack, pluginLyric } from '~~/server/utils/music-source-plugins/
 
 export default defineEventHandler(async (event) => {
   const user = await pluginAccess(event)
-  return { success: true, data: await pluginLyric(await requestTrack(await readBody(event), user.id)) }
+  return { success: true, data: await pluginLyric(await requestTrack(await readBody(event), user)) }
 })

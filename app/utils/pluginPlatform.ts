@@ -28,5 +28,20 @@ export const PLUGIN_QUALITY_MAP: Record<string, string> = {
   '5': 'super'
 }
 
-export const getPluginQuality = (quality?: number | string): string =>
-  PLUGIN_QUALITY_MAP[String(quality)] || 'standard'
+const PLUGIN_QUALITY_LEVELS = ['standard', 'high', 'super', 'lossless']
+
+export const getPluginQuality = (quality?: number | string): string => {
+  const value = String(quality ?? '')
+  // 调用方已给出档位名时直接采用，服务端回退链会用到 lossless
+  if (PLUGIN_QUALITY_LEVELS.includes(value)) return value
+  return PLUGIN_QUALITY_MAP[value] || 'standard'
+}
+
+/**
+ * 已入库歌曲才能按 songId 让服务端回查插件曲目；搜索结果携带 selectionToken，不走该路径。
+ * 服务端会按 songId 校验可见性，因此这里只负责识别“这是数据库里的歌曲行”。
+ */
+export const getPersistedSongId = (item?: any): number | undefined => {
+  if (!item || item.selectionToken) return undefined
+  return Number.isInteger(item.id) && (item.requesterId !== undefined || item.createdAt !== undefined) ? item.id : undefined
+}

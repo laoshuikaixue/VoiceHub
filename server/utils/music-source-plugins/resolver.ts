@@ -1,6 +1,6 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { songs, musicSourcePlugins } from '~/drizzle/schema'
+import { schedules, songCollaborators, songs, musicSourcePlugins } from '~/drizzle/schema'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { getSystemSettingsCached } from '../system-settings-helper'
 import { MUSIC_PLUGIN_LIMITS as limits, MUSIC_PLUGIN_LX_SOURCES, MUSIC_SOURCE_PLATFORMS } from '../../config/constants'
@@ -44,10 +44,22 @@ export function readSelection(token: string, userId: number, platform?: string, 
   return data.track
 }
 
-export async function requestTrack(body: any, userId: number): Promise<PluginTrack> {
-  if (body.selectionToken) return readSelection(body.selectionToken, userId)
+// 无选择票据时按歌曲 ID 解析，可见性与播放列表保持一致：已正式发布排期、本人投稿/协作者、或歌曲管理角色
+async function resolvableBySongId(songId: number, user: { id: number; role: string }) {
+  if (['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) return true
+  const [own] = await db.select({ id: songs.id }).from(songs).where(and(eq(songs.id, songId), eq(songs.requesterId, user.id))).limit(1)
+  if (own) return true
+  const [collab] = await db.select({ id: songCollaborators.id }).from(songCollaborators).where(and(eq(songCollaborators.songId, songId), eq(songCollaborators.userId, user.id))).limit(1)
+  if (collab) return true
+  const [published] = await db.select({ id: schedules.id }).from(schedules).where(and(eq(schedules.songId, songId), eq(schedules.isDraft, false))).limit(1)
+  return !!published
+}
+
+export async function requestTrack(body: any, user: { id: number; role: string }): Promise<PluginTrack> {
+  if (body.selectionToken) return readSelection(body.selectionToken, user.id)
   if (body.songId) {
     if (!Number.isSafeInteger(Number(body.songId)) || Number(body.songId) < 1) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
+    if (!(await resolvableBySongId(Number(body.songId), user))) throw pluginError('PLUGIN_UNAVAILABLE', 403)
     const [song] = await db.select().from(songs).where(eq(songs.id, Number(body.songId)))
     if (!song) throw pluginError('PLUGIN_UNAVAILABLE', 404)
     if (song.musicSourceData) return song.musicSourceData as PluginTrack
@@ -131,7 +143,7 @@ async function itemFor(artifact: PluginArtifact, track: PluginTrack, signal: Abo
   return item
 }
 
-export async function resolvePlugins(track: PluginTrack, quality: string, excluded: string[], userId: number, signal?: AbortSignal) {
+export async function resolvePlugins(track: PluginTrack, quality: string, excluded: string[], userId: number, signal?: AbortSignal, preferProxy = false) {
   if (!(await enabledCatalog(track.catalog))) throw pluginError('PLUGIN_UNAVAILABLE')
   const deadline = getServerTimestamp() + limits.batchMs
   const budget = AbortSignal.any([AbortSignal.timeout(limits.batchMs), ...(signal ? [signal] : [])])
@@ -180,10 +192,13 @@ export async function resolvePlugins(track: PluginTrack, quality: string, exclud
       failures.delete(resolverId)
       const [current] = await db.select().from(musicSourcePlugins).where(eq(musicSourcePlugins.id, row.id))
       if (!current?.enabled || current.deletedAt) continue
-      const proxy = Object.keys(media.headers || {}).length > 0 || media.url.startsWith('http:')
+      // preferProxy：客户端需要在页面里直接读取响应体（如批量下载），此时不能返回跨域直链
+      const proxy = preferProxy || Object.keys(media.headers || {}).length > 0 || media.url.startsWith('http:')
       const url = proxy ? `/api/music-source-plugins/media?ticket=${seal({ ...media, pluginId: row.id, catalog: track.catalog, userId }, 'media', 30 * 60 * 1000)}` : media.url
       return { success: true, url, source: resolverId, pluginId: row.id, attempted, quality: media.quality, playbackMode: proxy ? 'proxy' : 'direct', more: false }
-    } catch {
+    } catch (error) {
+      // 沙箱并发饱和（503）属容量问题，不计入熔断，否则高峰期会把健康插件集体拉黑 30 秒
+      if ((error as any)?.statusCode === 503) continue
       const old = failures.get(resolverId)
       const count = (old?.count || 0) + 1
       failures.set(resolverId, { count, until: count >= 3 ? getServerTimestamp() + 30000 : 0 })

@@ -5,6 +5,7 @@ import { useAudioPlayer } from './useAudioPlayer'
 import { useMusicSources } from './useMusicSources'
 import { useLyricSettings } from './useLyricSettings'
 import { useLocale } from '~/utils/locale'
+import { getPersistedSongId } from '~/utils/pluginPlatform'
 
 export interface ParsedLyricLine {
   time: number
@@ -236,7 +237,7 @@ export const useLyrics = () => {
       const currentSong = audioPlayer.getCurrentSong().value as any
       const result = await getLyrics(platform as 'netease' | 'tencent', musicId, {
         selectionToken: meta?.selectionToken || currentSong?.selectionToken,
-        songId: !currentSong?.selectionToken && Number.isInteger(currentSong?.id) && (currentSong?.requesterId !== undefined || currentSong?.createdAt) ? currentSong.id : undefined,
+        songId: getPersistedSongId(currentSong),
         title: meta?.title ?? currentSong?.title ?? '',
         artist: meta?.artist ?? currentSong?.artist ?? '',
         album: meta?.album ?? currentSong?.album ?? '',

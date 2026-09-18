@@ -1,10 +1,12 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { musicSourcePlugins, musicSourcePluginRevisions, musicSourceConfigState } from '~/drizzle/schema'
 import { getServerDate } from '../serverTime'
 import { validatePluginInput } from './store'
 import { pluginError } from './errors'
 
 export const pluginBackupTables = { musicSourcePlugins, musicSourcePluginRevisions, musicSourceConfigState }
+// 清空顺序即外键依赖顺序：先版本行，再插件主表
+export const pluginClearOrder = [musicSourcePluginRevisions, musicSourcePlugins, musicSourceConfigState] as const
 export async function restorePluginRecord(tx: any, tableName: string, record: any) {
   if (tableName === 'musicSourcePlugins') {
     if (!/^[a-f0-9-]{36}$/i.test(record.id) || !record.name || !Number.isInteger(record.desiredRevision)) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
@@ -18,6 +20,8 @@ export async function restorePluginRecord(tx: any, tableName: string, record: an
     if (existing && ['scriptUrl', 'protocol', 'catalog', 'variables'].some((key) => existing[key] !== data[key])) throw pluginError('PLUGIN_CONFIG_CONFLICT', 409)
     await tx.insert(musicSourcePluginRevisions).values(data).onConflictDoNothing()
   } else if (tableName === 'musicSourceConfigState') {
-    await tx.insert(musicSourceConfigState).values({ id: 1, revision: (Number(record.revision) || 0) + 1 }).onConflictDoUpdate({ target: musicSourceConfigState.id, set: { revision: (Number(record.revision) || 0) + 1 } })
+    // 只允许向前推进，否则恢复后仍持有旧版本号的后台标签页可以覆盖刚恢复的配置
+    const next = sql`GREATEST(${musicSourceConfigState.revision}, ${(Number(record.revision) || 0) + 1})`
+    await tx.insert(musicSourceConfigState).values({ id: 1, revision: (Number(record.revision) || 0) + 1 }).onConflictDoUpdate({ target: musicSourceConfigState.id, set: { revision: next } })
   }
 }

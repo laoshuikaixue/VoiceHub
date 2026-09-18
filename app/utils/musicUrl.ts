@@ -193,6 +193,8 @@ const fetchXinghaiMiguUrl = async (
 }
 
 const musicUrlSourceCache = new Map<string, string>()
+// 每次解析都会产生新地址（插件代理票据各不相同），需设上限否则长时间播放会无界增长
+const MUSIC_URL_SOURCE_CACHE_SIZE = 200
 
 const normalizeCacheUrl = (url: string) => {
   return url.trim().replace(/^http:\/\//, 'https://')
@@ -208,6 +210,11 @@ export const isKnownInvalidQqAudioUrl = (url: string | null | undefined) => {
 const rememberMusicUrlSource = (url: string | null | undefined, source?: string) => {
   if (!url || !source) return
   musicUrlSourceCache.set(normalizeCacheUrl(url), source)
+  // 插件代理模式下缓存的是相对地址，而 <audio>.currentSrc 是绝对地址，两者都登记失败回退才找得到来源
+  if (import.meta.client && url.startsWith('/')) {
+    musicUrlSourceCache.set(normalizeCacheUrl(new URL(url, window.location.origin).href), source)
+  }
+  while (musicUrlSourceCache.size > MUSIC_URL_SOURCE_CACHE_SIZE) musicUrlSourceCache.delete(musicUrlSourceCache.keys().next().value!)
 }
 
 export const getCachedMusicUrlSource = (url: string | null | undefined) => {
