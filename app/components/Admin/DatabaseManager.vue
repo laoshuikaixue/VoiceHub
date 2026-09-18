@@ -764,10 +764,15 @@ const restoreBackup = async () => {
       'playTimes',
       'requestTimes',
       'emailTemplates',
+      'cardCodes',
       'songs',
+      'songCollaborators',
+      'collaborationLogs',
+      'songReplayRequests',
       'scheduleSongPool',
       'votes',
       'schedules',
+      'cardCodeRedeemLogs',
       'notificationSettings',
       'notifications',
       'songBlacklist',
@@ -780,6 +785,7 @@ const restoreBackup = async () => {
     const mappings = {
       users: {},
       songs: {},
+      cardCodes: {},
       apiKeys: {},
       meta: {
         preservedSuperAdminIds,
@@ -829,6 +835,8 @@ const restoreBackup = async () => {
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
+          // 点歌券 id 用于歌曲与兑换日志的关联重映射
+          if (response.newMappings.cardCodes) Object.assign(mappings.cardCodes, response.newMappings.cardCodes)
           // API Key 的 id 为 uuid，用于权限与日志的关联重映射
           if (response.newMappings.apiKeys) Object.assign(mappings.apiKeys, response.newMappings.apiKeys)
         }

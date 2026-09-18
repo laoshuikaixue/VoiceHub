@@ -6,6 +6,7 @@ import {
   apiLogs,
   cardCodeRedeemLogs,
   cardCodes,
+  collaborationLogs,
   emailTemplates,
   gradeClass,
   notificationSettings,
@@ -15,6 +16,8 @@ import {
   schedules,
   semesters,
   songBlacklists,
+  songCollaborators,
+  songReplayRequests,
   songs,
   systemSettings,
   userIdentities,
@@ -1421,6 +1424,194 @@ export default defineEventHandler(async (event) => {
 
           case 'scheduleSongPool': {
             await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
+            break
+          }
+
+          case 'songCollaborators': {
+            if (!record.songId || !record.userId) {
+              stats.warnings.push(`联合投稿人 ${record.id ?? ''} 缺少歌曲或用户，已跳过`)
+              break
+            }
+
+            let validCollabSongId = record.songId
+            const mappedCollabSongId = songIdMapping.get(record.songId)
+            if (mappedCollabSongId) {
+              validCollabSongId = mappedCollabSongId
+            } else {
+              const songExists = await tx.query.songs.findFirst({
+                where: eq(songs.id, record.songId)
+              })
+              if (!songExists) {
+                stats.warnings.push(`联合投稿人的歌曲 ${record.songId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            let validCollabUserId = record.userId
+            const mappedCollabUserId = userIdMapping.get(record.userId)
+            if (mappedCollabUserId) {
+              validCollabUserId = mappedCollabUserId
+            } else {
+              const userExists = await tx.query.users.findFirst({
+                where: eq(users.id, record.userId)
+              })
+              if (!userExists) {
+                stats.warnings.push(`联合投稿人的用户 ${record.userId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            const collabData: any = {
+              songId: validCollabSongId,
+              userId: validCollabUserId,
+              status: record.status || 'PENDING',
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+
+            if (record.id) {
+              const existingCollab = await tx.query.songCollaborators.findFirst({
+                where: eq(songCollaborators.id, record.id)
+              })
+              if (existingCollab) {
+                await tx
+                  .update(songCollaborators)
+                  .set(collabData)
+                  .where(eq(songCollaborators.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(songCollaborators).values({ ...collabData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(songCollaborators).values(collabData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'collaborationLogs': {
+            if (!record.collaboratorId || !record.action) {
+              stats.warnings.push(`联合投稿日志 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            // collaboratorId 为 uuid：协作人行恢复时保留原 uuid，可直接沿用
+            const collabLogData: any = {
+              collaboratorId: record.collaboratorId,
+              action: record.action,
+              operatorId: record.operatorId,
+              ipAddress: record.ipAddress || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (record.operatorId) {
+              const mappedOperatorId = userIdMapping.get(record.operatorId)
+              if (mappedOperatorId) collabLogData.operatorId = mappedOperatorId
+            }
+
+            if (record.id) {
+              const existingCollabLog = await tx.query.collaborationLogs.findFirst({
+                where: eq(collaborationLogs.id, record.id)
+              })
+              if (existingCollabLog) {
+                await tx
+                  .update(collaborationLogs)
+                  .set(collabLogData)
+                  .where(eq(collaborationLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(collaborationLogs).values({ ...collabLogData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(collaborationLogs).values(collabLogData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'songReplayRequests': {
+            if (!record.songId || !record.userId) {
+              stats.warnings.push(`重播申请 ${record.id ?? ''} 缺少歌曲或用户，已跳过`)
+              break
+            }
+
+            let validReplaySongId = record.songId
+            const mappedReplaySongId = songIdMapping.get(record.songId)
+            if (mappedReplaySongId) {
+              validReplaySongId = mappedReplaySongId
+            } else {
+              const songExists = await tx.query.songs.findFirst({
+                where: eq(songs.id, record.songId)
+              })
+              if (!songExists) {
+                stats.warnings.push(`重播申请的歌曲 ${record.songId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            let validReplayUserId = record.userId
+            const mappedReplayUserId = userIdMapping.get(record.userId)
+            if (mappedReplayUserId) {
+              validReplayUserId = mappedReplayUserId
+            } else {
+              const userExists = await tx.query.users.findFirst({
+                where: eq(users.id, record.userId)
+              })
+              if (!userExists) {
+                stats.warnings.push(`重播申请的用户 ${record.userId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            let validReplayPlayTimeId = record.preferredPlayTimeId || null
+            if (validReplayPlayTimeId) {
+              const playTimeExists = await tx.query.playTimes.findFirst({
+                where: eq(playTimes.id, validReplayPlayTimeId)
+              })
+              if (!playTimeExists) validReplayPlayTimeId = null
+            }
+
+            const replayData: any = {
+              songId: validReplaySongId,
+              userId: validReplayUserId,
+              status: record.status || 'PENDING',
+              preferredPlayTimeId: validReplayPlayTimeId,
+              submissionNote: record.submissionNote ?? null,
+              submissionNotePublic: record.submissionNotePublic === true,
+              submissionNotePublicStatus: record.submissionNotePublicStatus ?? null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              // 同一用户同一首歌最多一条待处理申请（部分唯一索引），冲突时跳过
+              const inserted = await tx
+                .insert(songReplayRequests)
+                .values(replayData)
+                .onConflictDoNothing()
+                .returning()
+              if (inserted.length > 0) stats.created++
+              else stats.warnings.push(`重播申请 ${record.id ?? ''} 存在待处理重复记录，已跳过`)
+            } else if (record.id) {
+              const existingReplay = await tx.query.songReplayRequests.findFirst({
+                where: eq(songReplayRequests.id, record.id)
+              })
+              if (existingReplay) {
+                await tx
+                  .update(songReplayRequests)
+                  .set(replayData)
+                  .where(eq(songReplayRequests.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(songReplayRequests).values({ ...replayData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(songReplayRequests).values(replayData)
+              stats.created++
+            }
             break
           }
 
