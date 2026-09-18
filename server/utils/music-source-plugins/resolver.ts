@@ -10,6 +10,7 @@ import { runPlugin } from './runtime'
 import { seal, unseal } from './tickets'
 import { pluginError } from './errors'
 import { networkUrl, requestNetwork } from './network'
+import { legacyPluginPlatformKey, pluginIdFromPlatform, pluginPlatformKey } from './platform'
 import type { PluginArtifact, PluginTrack } from './types'
 
 const failures = new Map<string, { count: number; until: number }>()
@@ -37,7 +38,9 @@ async function call(artifact: PluginArtifact, action: string, params: unknown, s
 
 export function readSelection(token: string, userId: number, platform?: string, musicId?: string): PluginTrack {
   const data = unseal<{ userId: number; track: PluginTrack }>(token, 'selection')
-  if (data.userId !== userId || (platform && platform !== `musicfree:${data.track.pluginId}`) || (musicId && String(musicId) !== data.track.externalId)) throw pluginError('PLUGIN_INVALID_TICKET', 400)
+  const trackPlatform = data.track.pluginId ? pluginPlatformKey(data.track.pluginId) : ''
+  const legacyTrackPlatform = data.track.pluginId ? legacyPluginPlatformKey(data.track.pluginId) : ''
+  if (data.userId !== userId || (platform && platform !== trackPlatform && platform !== legacyTrackPlatform) || (musicId && String(musicId) !== data.track.externalId)) throw pluginError('PLUGIN_INVALID_TICKET', 400)
   return data.track
 }
 
@@ -54,8 +57,8 @@ export async function requestTrack(body: any, userId: number): Promise<PluginTra
   const externalId = String(body.musicId || '').trim()
   if (!externalId || externalId.length > 200 || platform.length > 100) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
   let pluginId: string | undefined
-  if (platform.startsWith('musicfree:')) {
-    const key = platform.slice(10)
+  const key = pluginIdFromPlatform(platform)
+  if (key !== null) {
     pluginId = (await listPluginRows()).find((p) => p.id === key || p.legacyPlatformKey === key)?.id
     if (!pluginId) throw pluginError('PLUGIN_UNAVAILABLE')
   }
@@ -67,7 +70,7 @@ export async function pluginCapabilities() {
   for (const { row, artifact } of await availablePlugins()) {
     const revision = await pluginRevision(row.id, artifact.revision)
     if (!(await enabledCatalog(revision.catalog))) continue
-    result.push({ id: row.id, platform: `musicfree:${row.id}`, displayName: row.name, protocol: artifact.capability.protocol, search: artifact.capability.search, sources: artifact.capability.sources })
+    result.push({ id: row.id, platform: pluginPlatformKey(row.id), displayName: row.name, protocol: artifact.capability.protocol, search: artifact.capability.search, sources: artifact.capability.sources })
   }
   return result
 }
@@ -86,9 +89,9 @@ export async function searchPlugins(query: string, page: number, id: string, use
     const title = String(item.title || item.name || '').slice(0, 200)
     const artist = String(item.artist || item.singer || '').slice(0, 200)
     if (!externalId || externalId.length > 200 || !title || !artist) continue
-    const track: PluginTrack = { schemaVersion: 1, pluginId: target.row.id, catalog: revision.catalog || `musicfree:${target.row.id}`, externalId, title, artist, album: String(item.album || ''), duration: Number(item.duration) || undefined, item }
-    const platform = `musicfree:${target.row.id}`
-    data.push({ id: externalId, musicId: externalId, title, artist, album: track.album, duration: track.duration, cover: String(item.artwork || item.cover || '') || null, musicPlatform: platform, actualMusicPlatform: platform, musicFreePlugin: target.row.id, selectionToken: seal({ userId, track }, 'selection', 2 * 60 * 60 * 1000), sourceInfo: { source: 'musicfree', plugin: target.row.id } })
+    const track: PluginTrack = { schemaVersion: 1, pluginId: target.row.id, catalog: revision.catalog || pluginPlatformKey(target.row.id), externalId, title, artist, album: String(item.album || ''), duration: Number(item.duration) || undefined, item }
+    const platform = pluginPlatformKey(target.row.id)
+    data.push({ id: externalId, musicId: externalId, title, artist, album: track.album, duration: track.duration, cover: String(item.artwork || item.cover || '') || null, musicPlatform: platform, actualMusicPlatform: platform, pluginId: target.row.id, selectionToken: seal({ userId, track }, 'selection', 2 * 60 * 60 * 1000), sourceInfo: { source: 'plugin', plugin: target.row.id } })
   }
   return { data, isEnd: result?.isEnd !== false }
 }

@@ -984,7 +984,7 @@ VoiceHub/
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── pluginResolver.ts   # 插件音源搜索、歌词与媒体解析接入
-│       ├── musicfreePlatform.ts # MusicFree插件平台映射
+│       ├── pluginPlatform.ts # 插件音源平台键、插件 ID 与音质映射（LX Music / MusicFree）
 │       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
@@ -1199,12 +1199,17 @@ VoiceHub/
 │   │   │   ├── resolve-url.post.ts # 音乐播放链接统一解析
 │   │   │   ├── state.post.ts        # 音乐状态管理
 │   │   │   └── websocket.ts         # 音乐WebSocket连接
-│   │   ├── musicfree/      # MusicFree插件API
+│   │   ├── musicfree/      # 旧版 MusicFree 插件 API 兼容路由
 │   │   │   ├── lyric.post.ts        # 插件歌词获取
 │   │   │   ├── media-source.post.ts # 插件播放链接获取
 │   │   │   ├── plugins.get.ts       # 插件列表与用户变量声明
 │   │   │   └── search.post.ts       # 插件搜索
-│   │   ├── music-source-plugins/ # 统一音源插件搜索、歌词与媒体接口
+│   │   ├── music-source-plugins/ # 统一音源插件接口
+│   │   │   ├── capabilities.get.ts  # 插件能力与平台列表
+│   │   │   ├── lyric.post.ts        # 插件歌词获取
+│   │   │   ├── media.get.ts         # 插件媒体代理
+│   │   │   ├── resolve.post.ts      # 插件播放链接解析与回退
+│   │   │   └── search.post.ts       # 插件搜索
 │   │   ├── native-api/     # 原生音乐API
 │   │   │   ├── comment/              # 评论API
 │   │   │   │   └── tx.get.ts         # QQ音乐评论
@@ -2041,7 +2046,8 @@ VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动�
 
 #### 音源插件运行时说明
 
-- **兼容协议**：运行时兼容 LX Music 的 `lx.on` / `lx.send` / `lx.request` 协议，以及 MusicFree 的 CommonJS `search`、`getMediaSource`、`getLyric` 协议。协议可自动识别，也可以在后台明确指定。
+- **平台键**：插件音源统一使用 `plugin:<插件ID>` 作为歌曲平台标识，LX Music 与 MusicFree 插件共用同一套键；旧数据里的 `musicfree:<插件ID>` 继续识别。
+- **兼容协议**：运行时兼容 LX Music 的 `lx.on` / `lx.send` / `lx.request` 协议，以及 MusicFree 的 CommonJS `search`、`getMediaSource`、`getLyric` 协议。协议可自动识别，也可以在后台明确指定。LX Music 音源作为内置平台的解析器参与回退，声明了搜索能力的插件才会出现在搜索平台列表。
 - **安全执行**：第三方脚本在 QuickJS/WASM 中运行，不会直接导入 Nitro 主进程。宿主仅提供受限 HTTP、加密、压缩、随机数和日志能力；网络请求会校验协议、重定向、DNS 和内网地址，并受限于超时、内存、响应体积与并发数。
 - **常驻部署**：Node/Docker 保存或刷新插件后立即下载、校验并原子切换到新版本。下载或验证失败时，已生效版本继续服务；启用开关和拖拽排序立即生效。
 - **Serverless 部署**：构建时 `pnpm run build:plugins` 从数据库读取配置并生成部署快照。新增或修改脚本在下一次部署后生效；已部署版本的启用开关和排序仍从数据库读取。

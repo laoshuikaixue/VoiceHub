@@ -228,7 +228,7 @@ const parsePlatformArray = (value, allowBackfill = false) => {
     return [...BUILTIN_PLATFORMS]
   }
 }
-// 后台仅管理内置音源（插件平台如 MusicFree 始终启用、固定排序，不在此暴露开关）
+// 后台仅管理内置音源（插件音源的启用状态与排序由插件音源配置管理，不在此暴露开关）
 const managedPlatforms = computed(() => platformOrder.value.filter((p) => BUILTIN_PLATFORMS.includes(p)))
 
 const getPlatformLabel = (key) => getPlatformDisplayName(key, siteConfig.value, currentLocale.value)

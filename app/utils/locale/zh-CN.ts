@@ -165,7 +165,7 @@ export const siteConfig = {
   platformTencent: 'QQ音乐',
   platformBilibili: '哔哩哔哩',
   platformMigu: '咪咕音乐',
-  platformMusicfree: 'MusicFree插件',
+  platformPlugin: '插件音源',
   platformEnabled: '已启用',
   platformDisabled: '已禁用',
 
@@ -1154,9 +1154,9 @@ export const pages = {
         miguHq: { label: 'HQ高音质', description: '高品质音乐体验' },
         miguSq: { label: 'SQ无损', description: '无损音质，文件较大' },
         miguZq24: { label: 'ZQ24无损', description: '高解析度音质，文件更大，需要更多流量' },
-        musicfreeStandard: { label: '标准', description: '标准音质' },
-        musicfreeHigh: { label: '高品质', description: '高品质音质' },
-        musicfreeSuper: { label: '超高', description: '最高音质' }
+        pluginStandard: { label: '标准', description: '标准音质' },
+        pluginHigh: { label: '高品质', description: '高品质音质' },
+        pluginSuper: { label: '超高', description: '最高音质' }
       }
     },
     bilibiliIframe: {
@@ -1233,9 +1233,9 @@ export const pages = {
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
-    musicFreeExcluded: 'MusicFree 插件音源已排除',
-    musicFreeInvalidUrl: 'MusicFree 插件返回的播放链接无效',
-    musicFreeNoUrl: 'MusicFree 插件未返回播放链接',
+    pluginExcluded: '插件音源已排除',
+    pluginInvalidUrl: '插件音源返回的播放链接无效',
+    pluginNoUrl: '插件音源未返回播放链接',
     loopOneEnabled: '已切换为单曲循环',
     singleEnabled: '已切换为单曲播放',
     listLoopEnabled: '已切换为列表循环'
@@ -1547,7 +1547,7 @@ export const pages = {
         tencent: 'QQ音乐',
         bilibili: '哔哩哔哩',
         migu: '咪咕音乐',
-        musicfree: 'MusicFree插件'
+        plugin: '插件音源'
       },
       refreshing: '刷新中',
       neteaseLoginTitle: '登录网易云获取完整体验',
@@ -2254,7 +2254,7 @@ export const admin = {
       tencent: 'QQ音乐',
       bilibili: '哔哩哔哩',
       migu: '咪咕音乐',
-      musicfree: 'MusicFree插件'
+      plugin: '插件音源'
     },
     timeAgo: {
       justNow: '刚刚',
@@ -2931,7 +2931,7 @@ export const admin = {
     catalogHint: '只有确认插件歌曲 ID 与官方平台一致时才选择对应目录。',
     variables: '插件参数（JSON）',
     variablesHint: '键和值均为字符串。编辑时留空保留现有参数，填写 {} 清空。',
-    legacy: '旧 MusicFree 标识（迁移时填写）',
+    legacy: '旧插件标识（旧数据迁移用）',
     cancel: '取消',
     saveDeploy: '保存配置',
     saveLoad: '保存并加载',
@@ -4508,10 +4508,10 @@ export const serverErrors = {
   PLUGIN_NETWORK_BLOCKED: '插件请求地址或响应不符合网络限制',
   PLUGIN_TIMEOUT: '音源插件执行超时',
   PLUGIN_INVALID_TICKET: '歌曲或媒体凭证无效、已过期',
-  MUSICFREE_SEARCH_FAILED: 'MusicFree 插件搜索失败',
-  MUSICFREE_MEDIA_SOURCE_FAILED: 'MusicFree 插件获取播放链接失败',
-  MUSICFREE_LYRIC_FAILED: 'MusicFree 插件获取歌词失败',
-  MUSICFREE_PLUGINS_FETCH_FAILED: '获取 MusicFree 插件列表失败',
+  PLUGIN_SEARCH_FAILED: '插件音源搜索失败',
+  PLUGIN_MEDIA_SOURCE_FAILED: '插件音源获取播放链接失败',
+  PLUGIN_LYRIC_FAILED: '插件音源获取歌词失败',
+  PLUGIN_CAPABILITIES_FETCH_FAILED: '获取插件音源列表失败',
   BACKUP_NOT_CONFIGURED: '自动备份未配置',
   NO_BACKUP_METHOD_ENABLED: '没有启用任何备份方式',
   BACKUP_FAILED: '备份执行失败',

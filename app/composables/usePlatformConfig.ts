@@ -6,10 +6,10 @@
 import { ref } from 'vue'
 import { useSiteConfig } from './useSiteConfig'
 import { BUILTIN_PLATFORMS } from '~/utils/platforms'
-import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
+import { isPluginPlatform } from '~/utils/pluginPlatform'
 
-/** MusicFree 插件信息（platform 为带前缀的插件标识 musicfree:<id>，也是搜索/播放时的路由键） */
-export type MusicFreePluginInfo = {
+/** 插件音源信息（platform 为带前缀的插件标识 plugin:<id>，也是搜索/播放时的路由键） */
+export type PluginPlatformInfo = {
   platform: string
   displayName: string
   // 稳定唯一 id（与 platform 后缀一致），供客户端直接取用
@@ -20,8 +20,8 @@ const cache = {
   enabledPlatforms: ref<string[]>([...BUILTIN_PLATFORMS]),
   platformOrder: ref<string[]>([...BUILTIN_PLATFORMS]),
   loaded: ref(false),
-  // MusicFree 插件列表：每个插件作为独立平台
-  musicFreePlugins: ref<MusicFreePluginInfo[]>([]),
+  // 插件音源列表：每个插件作为独立平台
+  pluginPlatforms: ref<PluginPlatformInfo[]>([]),
   // 加载中的 promise，避免并发重复请求
   inflight: null as Promise<void> | null
 }
@@ -50,12 +50,13 @@ const parsePlatformArray = (value: unknown, allowBackfill = false): string[] => 
   return merged
 }
 
-/** 加载 MusicFree 插件列表：每个插件作为独立平台 */
-const loadMusicFreePlugins = async () => {
+/** 加载可搜索的插件音源列表：只有声明了搜索能力的插件才作为独立平台 */
+const loadPluginPlatforms = async () => {
   try {
-    const res = await $fetch<{ data?: MusicFreePluginInfo[] }>('/api/musicfree/plugins')
+    const res = await $fetch<{ data?: PluginPlatformInfo[] }>('/api/music-source-plugins/capabilities')
     if (Array.isArray(res?.data)) {
-      cache.musicFreePlugins.value = res.data
+      // LX Music 音源插件只作为内置平台的解析器，没有搜索 Tab
+      cache.pluginPlatforms.value = res.data.filter((plugin: any) => plugin?.search === true)
     }
   } catch {
     // 插件列表获取失败不影响内置平台的可用性
@@ -80,7 +81,7 @@ export const usePlatformConfig = () => {
           enabledPlatforms.value = parsePlatformArray(siteConfig.value.enabledPlatforms, false)
           platformOrder.value = parsePlatformArray(siteConfig.value.platformOrder, true)
           loaded.value = true
-          loadMusicFreePlugins()
+          loadPluginPlatforms()
           return
         }
       } catch {
@@ -93,7 +94,7 @@ export const usePlatformConfig = () => {
       enabledPlatforms.value = parsePlatformArray(res.enabledPlatforms, false)
       platformOrder.value = parsePlatformArray(res.platformOrder, true)
       loaded.value = true
-      loadMusicFreePlugins()
+      loadPluginPlatforms()
     } catch {
       // SSR 阶段 $fetch 不可用，保持 loaded=false 让客户端重试
       if (import.meta.server) return
@@ -128,16 +129,16 @@ export const usePlatformConfig = () => {
     const builtin = platformOrder.value.filter(
       (p) => (BUILTIN_PLATFORMS as readonly string[]).includes(p) && enabledPlatforms.value.includes(p)
     )
-    // 每个 MusicFree 插件作为独立平台，固定排在内置音源之后
-    const pluginPlatforms = cache.musicFreePlugins.value.map((p) => p.platform)
+    // 每个插件音源作为独立平台，固定排在内置音源之后
+    const pluginPlatforms = cache.pluginPlatforms.value.map((p) => p.platform)
     return [...builtin, ...pluginPlatforms]
   }
 
   /**
-   * 判断平台是否可用（MusicFree 插件平台始终视为启用，不受后台开关控制）
+   * 判断平台是否可用（插件音源是否可用由插件管理的启用状态决定，不受内置音源开关控制）
    */
   const isPlatformEnabled = (platform: string): boolean => {
-    if (isMusicFreePlatform(platform)) return cache.musicFreePlugins.value.some((plugin) => plugin.platform === platform)
+    if (isPluginPlatform(platform)) return cache.pluginPlatforms.value.some((plugin) => plugin.platform === platform)
     return enabledPlatforms.value.includes(platform)
   }
 
@@ -145,7 +146,7 @@ export const usePlatformConfig = () => {
     enabledPlatforms,
     platformOrder,
     loaded,
-    musicFreePlugins: cache.musicFreePlugins,
+    pluginPlatforms: cache.pluginPlatforms,
     loadPlatformConfig,
     refreshPlatformConfig,
     getAvailablePlatforms,

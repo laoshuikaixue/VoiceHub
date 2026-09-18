@@ -4,7 +4,7 @@
  * 新增内置音源需同步：本文件 + server/config/constants.ts 的 MUSIC_SOURCE_PLATFORMS + app/drizzle/schema.ts 默认值与迁移文件
  */
 
-import { MUSICFREE_PLATFORM_PREFIX } from '~/utils/musicfreePlatform'
+import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX, getPluginId } from '~/utils/pluginPlatform'
 
 // 受管理员控制的“内置”音源：可被启用/禁用、排序（音源管理后台），也是入库配置的白名单
 export const BUILTIN_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
@@ -15,7 +15,7 @@ export const PLATFORM_NAME_KEYS = {
   tencent: 'platformTencent',
   bilibili: 'platformBilibili',
   migu: 'platformMigu',
-  musicfree: 'platformMusicfree'
+  plugin: 'platformPlugin'
 } as const
 
 // 平台显示名回退值（词典缺失时使用）
@@ -24,7 +24,7 @@ export const PLATFORM_NAME_FALLBACK = {
   tencent: 'QQ音乐',
   bilibili: '哔哩哔哩',
   migu: '咪咕音乐',
-  musicfree: 'MusicFree插件'
+  plugin: '插件音源'
 } as const
 
 export const PLATFORM_NAME_FALLBACK_EN = {
@@ -32,7 +32,7 @@ export const PLATFORM_NAME_FALLBACK_EN = {
   tencent: 'QQ Music',
   bilibili: 'Bilibili',
   migu: 'Migu Music',
-  musicfree: 'MusicFree Plugin'
+  plugin: 'Source Plugin'
 } as const
 
 /**
@@ -44,11 +44,11 @@ export const getPlatformDisplayName = (key: string, siteConfig: any, currentLoca
     return siteConfig[nameKey]
   }
   const isEn = currentLocale === 'en-US'
-  if (key.startsWith(MUSICFREE_PLATFORM_PREFIX)) {
-    const suffix = key.slice(MUSICFREE_PLATFORM_PREFIX.length)
+  if (key.startsWith(PLUGIN_PLATFORM_PREFIX) || key.startsWith(LEGACY_PLUGIN_PLATFORM_PREFIX)) {
+    const suffix = getPluginId(key)
     return suffix
-      ? (isEn ? `${PLATFORM_NAME_FALLBACK_EN.musicfree}: ${suffix}` : `${PLATFORM_NAME_FALLBACK.musicfree}: ${suffix}`)
-      : (isEn ? PLATFORM_NAME_FALLBACK_EN.musicfree : PLATFORM_NAME_FALLBACK.musicfree)
+      ? (isEn ? `${PLATFORM_NAME_FALLBACK_EN.plugin}: ${suffix}` : `${PLATFORM_NAME_FALLBACK.plugin}: ${suffix}`)
+      : (isEn ? PLATFORM_NAME_FALLBACK_EN.plugin : PLATFORM_NAME_FALLBACK.plugin)
   }
   return isEn
     ? (PLATFORM_NAME_FALLBACK_EN[key as keyof typeof PLATFORM_NAME_FALLBACK_EN] ?? key)

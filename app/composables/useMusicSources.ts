@@ -23,7 +23,7 @@ import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
 import { useLocale } from '~/utils/locale'
 import { getPlatformDisplayName } from '~/utils/platforms'
-import { MUSICFREE_PLATFORM_PREFIX, getMusicFreeQuality, isMusicFreePlatform } from '~/utils/musicfreePlatform'
+import { getPluginId, getPluginQuality, isPluginPlatform } from '~/utils/pluginPlatform'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -811,30 +811,28 @@ export const useMusicSources = () => {
 
         const priority = meta?.priority || settings.lyricPriority.value
         /**
-         * 获取 MusicFree 插件歌词：插件平台只走插件自带的 getLyric，
+         * 获取插件音源歌词：插件平台只走插件自带的 getLyric，
          * 不参与内置音源的来源锁定与回退判定
          */
-        const fetchMusicFree = async () => {
-          if (!isMusicFreePlatform(platform)) return
+        const fetchPluginLyric = async () => {
+          if (!isPluginPlatform(platform)) return
 
-          const pluginId = platform.startsWith(MUSICFREE_PLATFORM_PREFIX)
-            ? platform.slice(MUSICFREE_PLATFORM_PREFIX.length)
-            : ''
+          const pluginId = getPluginId(platform)
           const musicItem = {
             id: String(id),
             musicId: String(id),
             musicPlatform: platform,
             actualMusicPlatform: platform,
-            musicFreePlugin: pluginId,
+            pluginId,
             selectionToken: meta?.selectionToken,
             ...(meta?.title ? { title: meta.title } : {}),
             ...(meta?.artist ? { artist: meta.artist } : {}),
             ...(meta?.album ? { album: meta.album } : {})
           }
           try {
-            const resp = await $fetch('/api/musicfree/lyric', {
+            const resp = await $fetch('/api/music-source-plugins/lyric', {
               method: 'POST',
-              body: { musicItem, songId: meta?.songId },
+              body: { ...musicItem, platform, songId: meta?.songId },
               timeout: 10000
             })
             const lrc = resp?.data?.rawLrc
@@ -846,14 +844,14 @@ export const useMusicSources = () => {
               emitProgress('official')
             }
           } catch (e) {
-            console.warn('[getLyrics] MusicFree 插件歌词获取失败:', e)
+            console.warn('[getLyrics] 插件音源歌词获取失败:', e)
           }
         }
 
         // 指定具体来源（非 auto）时锁定该来源，失败不回退、不做跨平台升级
         const sourceLocked = priority === 'qm' || priority === 'official' || priority === 'ttml'
-        if (isMusicFreePlatform(platform)) {
-          await fetchMusicFree()
+        if (isPluginPlatform(platform)) {
+          await fetchPluginLyric()
         } else if (sourceLocked) {
           if (platform === 'migu') {
             await fetchMigu()
@@ -1190,8 +1188,8 @@ export const useMusicSources = () => {
       // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
       // 检查平台是否启用（SSR 阶段跳过，$fetch 无 cookie）
-      // MusicFree 插件平台始终启用，不走 enabledPlatforms 校验
-      if (import.meta.client && !isMusicFreePlatform(platform)) {
+      // 插件音源是否可用由插件管理的启用状态决定，不走 enabledPlatforms 校验
+      if (import.meta.client && !isPluginPlatform(platform)) {
         if (!globalEnabledPlatforms.value.includes(platform)) {
           const { currentLocale, siteConfig } = useLocale()
           const available = globalEnabledPlatforms.value.filter((p) => p !== platform)
@@ -1219,9 +1217,9 @@ export const useMusicSources = () => {
       }
       const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
 
-      if (isMusicFreePlatform(platform)) {
+      if (isPluginPlatform(platform)) {
         try {
-          const response: any = await $fetch('/api/musicfree/search', {
+          const response: any = await $fetch('/api/music-source-plugins/search', {
             method: 'POST',
             body: {
               query: params.keywords,
@@ -1236,13 +1234,13 @@ export const useMusicSources = () => {
           updateSourceStatus(platform, 'online')
           return {
             success: true,
-            source: 'musicfree',
+            source: 'plugin',
             data: Array.isArray(response?.data) ? response.data : [],
             error: undefined
           }
         } catch (error: any) {
           const { localize } = useServerErrors()
-          const wrappedError = new Error(localize(error, 'MusicFree 插件搜索失败'))
+          const wrappedError = new Error(localize(error, '插件音源搜索失败'))
           wrappedError.cause = error
           throw wrappedError
         }
@@ -1852,44 +1850,38 @@ export const useMusicSources = () => {
         }
       }
 
-      if (isMusicFreePlatform(platform)) {
+      if (isPluginPlatform(platform)) {
         const { audioPlayer } = useLocale()
-        if (options?.excludeSources?.includes('musicfree')) {
-          return { success: false, error: audioPlayer.value.musicFreeExcluded }
+        if (options?.excludeSources?.some((source) => isPluginPlatform(source))) {
+          return { success: false, error: audioPlayer.value.pluginExcluded }
         }
 
         const { musicInfo } = options || {}
-        const rawItem = musicInfo?.rawItem
-        const pluginId = platform.startsWith(MUSICFREE_PLATFORM_PREFIX)
-          ? platform.slice(MUSICFREE_PLATFORM_PREFIX.length)
-          : ''
-        const musicItem = {
-          // 复用搜索期的完整 item，插件可能依赖搜索时特有的平台字段
-          ...(rawItem && typeof rawItem === 'object' ? rawItem : { id: idParam }),
-          id: idParam,
-          musicId: idParam,
-          musicPlatform: platform,
-          actualMusicPlatform: platform,
-          musicFreePlugin: pluginId,
-          ...(musicInfo?.title ? { title: musicInfo.title } : {}),
-          ...(musicInfo?.artist ? { artist: musicInfo.artist } : {}),
-          ...(musicInfo?.album ? { album: musicInfo.album } : {})
-        }
-
         try {
-          const response: any = await $fetch('/api/musicfree/media-source', {
+          const response: any = await $fetch('/api/music-source-plugins/resolve', {
             method: 'POST',
-            body: { musicItem, quality: getMusicFreeQuality(quality) },
+            body: {
+              platform,
+              musicId: idParam,
+              quality: getPluginQuality(quality),
+              selectionToken: musicInfo?.selectionToken,
+              songId: options?.songId,
+              title: musicInfo?.title,
+              artist: musicInfo?.artist,
+              album: musicInfo?.album,
+              duration: musicInfo?.duration ?? musicInfo?.durationSeconds,
+              excludeSources: options?.excludeSources || []
+            },
             timeout: 20000
           })
           if (response?.success && response?.url) {
             const url = String(response.url)
-            return { success: true, url, source: response.source || 'musicfree' }
+            return { success: true, url, source: response.source || `plugin:${getPluginId(platform)}` }
           }
-          return { success: false, error: audioPlayer.value.musicFreeNoUrl }
-        } catch (musicFreeError: any) {
+          return { success: false, error: audioPlayer.value.pluginNoUrl }
+        } catch (pluginResolveError: any) {
           const { localize } = useServerErrors()
-          return { success: false, error: localize(musicFreeError, 'MusicFree 插件音源解析失败') }
+          return { success: false, error: localize(pluginResolveError, '插件音源解析失败') }
         }
       }
 

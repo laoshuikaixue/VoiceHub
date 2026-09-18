@@ -1479,6 +1479,7 @@ import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { onQqMusicCookieUpdated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
+import { getPluginId, isPluginPlatform } from '~/utils/pluginPlatform'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1559,15 +1560,15 @@ const {
   getAvailablePlatforms,
   loadPlatformConfig,
   loaded: platformConfigLoaded,
-  musicFreePlugins
+  pluginPlatforms
 } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
-// 平台按钮显示名：内置音源用词典，MusicFree 插件用其 displayName
+// 平台按钮显示名：内置音源用词典，插件音源用其 displayName
 const getPlatformButtonLabel = (key) => {
-  if (key.startsWith('musicfree:')) {
-    const plugin = musicFreePlugins.value.find((p) => p.platform === key)
-    return plugin?.displayName ?? key.replace('musicfree:', '')
+  if (isPluginPlatform(key)) {
+    const plugin = pluginPlatforms.value.find((p) => p.platform === key)
+    return plugin?.displayName ?? getPluginId(key)
   }
   return ((locale.value.platforms) || {})[key] ?? key
 }

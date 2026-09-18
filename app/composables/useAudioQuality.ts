@@ -1,7 +1,7 @@
 import { computed, readonly, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
 import { getLoginStatus } from '~/utils/neteaseApi'
-import { MUSICFREE_PLATFORM_PREFIX } from '~/utils/musicfreePlatform'
+import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX } from '~/utils/pluginPlatform'
 
 // 音质配置
 export const QUALITY_OPTIONS = {
@@ -26,10 +26,10 @@ export const QUALITY_OPTIONS = {
     { value: 3, key: 'miguSq' },
     { value: 4, key: 'miguZq24' },
   ],
-  musicfree: [
-    { value: 2, key: 'musicfreeStandard' },
-    { value: 4, key: 'musicfreeHigh' },
-    { value: 5, key: 'musicfreeSuper' }
+  plugin: [
+    { value: 2, key: 'pluginStandard' },
+    { value: 4, key: 'pluginHigh' },
+    { value: 5, key: 'pluginSuper' }
   ]
 }
 
@@ -39,12 +39,12 @@ const DEFAULT_QUALITY = {
   tencent: 8, // HQ高音质
   bilibili: 1,
   migu: 1, // 标准音质（咪咕匿名仅提供 128k）
-  musicfree: 4 // 高品质
+  plugin: 4 // 高品质
 }
 
-// 将平台名归一化为音质配置键（musicfree:<id> → musicfree，netease-podcast → netease）
+// 将平台名归一化为音质配置键（plugin:<id> → plugin，netease-podcast → netease）
 const normalizeQualityPlatform = (platform: string): string => {
-  if (platform.startsWith(MUSICFREE_PLATFORM_PREFIX)) return 'musicfree'
+  if (platform.startsWith(PLUGIN_PLATFORM_PREFIX) || platform.startsWith(LEGACY_PLUGIN_PLATFORM_PREFIX)) return 'plugin'
   if (platform === 'netease-podcast') return 'netease'
   return platform
 }
@@ -127,7 +127,11 @@ export function useAudioQuality() {
   const getStoredQuality = () => {
     try {
       const stored = localStorage.getItem('audioQuality')
-      return stored ? JSON.parse(stored) : DEFAULT_QUALITY
+      if (!stored) return DEFAULT_QUALITY
+      const parsed = JSON.parse(stored)
+      // 旧版本以 musicfree 作为插件音质配置键，迁移到 plugin
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && !('plugin' in parsed) && 'musicfree' in parsed) parsed.plugin = parsed.musicfree
+      return parsed || DEFAULT_QUALITY
     } catch {
       return DEFAULT_QUALITY
     }

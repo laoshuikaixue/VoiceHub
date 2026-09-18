@@ -10,8 +10,8 @@ import { pluginManifest } from './manifest'
 import { pluginError } from './errors'
 import { seal, unseal } from './tickets'
 import { networkUrl } from './network'
-import { runPlugin } from './runtime'
-import type { PluginArtifact, PluginProtocol } from './types'
+import { extractPluginName, runPlugin } from './runtime'
+import type { PluginArtifact, PluginCapability, PluginProtocol } from './types'
 
 const artifactRoot = join(process.cwd(), '.data', 'music-source-plugins')
 const inflight = new Map<string, Promise<PluginArtifact>>()
@@ -53,8 +53,21 @@ function fallbackPluginName(scriptUrl: string) {
   }
 }
 
-async function resolvePluginName(data: ReturnType<typeof validatePluginInput>, id?: string) {
-  if (data.name) return data
+type PluginSource = { source: string; hash: string }
+type PreparedPlugin = { code: PluginSource; capability: PluginCapability; revision?: number }
+
+const pickPluginName = (value: unknown) => {
+  const name = typeof value === 'string' ? value.trim() : ''
+  return name.length > 0 && name.length <= 100 ? name : ''
+}
+
+/**
+ * 名称为空时从脚本自身读取：优先用沙箱初始化得到的插件名称，
+ * 初始化失败则退到脚本注释里的 @name，仍无结果时使用直链文件名。
+ * 下载或初始化失败不阻断保存，加载状态由刷新流程记录。
+ */
+async function resolvePluginName(data: ReturnType<typeof validatePluginInput>, id?: string): Promise<{ data: ReturnType<typeof validatePluginInput>; prepared: PreparedPlugin | null }> {
+  if (data.name) return { data, prepared: null }
   let variables = data.variables
   if (variables === undefined && id) {
     const [row] = await db.select().from(plugins).where(and(eq(plugins.id, id), isNull(plugins.deletedAt)))
@@ -63,14 +76,20 @@ async function resolvePluginName(data: ReturnType<typeof validatePluginInput>, i
       if (revision) variables = unseal(revision.variables, 'variables')
     }
   }
+  const { downloadScript } = await import('./prepare')
+  let code: PluginSource
   try {
-    const { downloadScript } = await import('./prepare')
-    const code = await downloadScript(data.scriptUrl)
-    const { capability } = await runPlugin({ source: code.source, protocol: data.protocol, prelude: await prelude(), variables })
-    const name = typeof capability?.name === 'string' ? capability.name.trim() : ''
-    return { ...data, name: name.length > 0 && name.length <= 100 ? name : fallbackPluginName(data.scriptUrl) }
+    code = await downloadScript(data.scriptUrl)
   } catch {
-    throw pluginError('PLUGIN_LOAD_FAILED')
+    return { data: { ...data, name: fallbackPluginName(data.scriptUrl) }, prepared: null }
+  }
+  const commentName = pickPluginName(extractPluginName(code.source))
+  try {
+    const { capability } = await runPlugin({ source: code.source, protocol: data.protocol, prelude: await prelude(), variables })
+    const name = pickPluginName(capability?.name) || commentName || fallbackPluginName(data.scriptUrl)
+    return { data: { ...data, name }, prepared: { code, capability } }
+  } catch {
+    return { data: { ...data, name: commentName || fallbackPluginName(data.scriptUrl) }, prepared: null }
   }
 }
 
@@ -85,21 +104,23 @@ async function mutate<T>(expected: number, action: (tx: any) => Promise<T>) {
 }
 
 export async function savePlugin(input: any, expected: number, id?: string) {
-  const data = await resolvePluginName(validatePluginInput(input), id)
+  const { data, prepared } = await resolvePluginName(validatePluginInput(input), id)
   const pluginId = id || randomUUID()
+  let revision = 1
   await mutate(expected, async (tx) => {
     const [old] = id ? await tx.select().from(plugins).where(and(eq(plugins.id, id), isNull(plugins.deletedAt))) : []
     if (id && !old) throw pluginError('PLUGIN_UNAVAILABLE', 404)
     const rows = await tx.select({ id: plugins.id }).from(plugins).where(isNull(plugins.deletedAt))
     if (!old && rows.length >= MUSIC_PLUGIN_LIMITS.count) throw pluginError('PLUGIN_INVALID_CONFIG', 400)
-    const revision = old ? old.desiredRevision + 1 : 1
+    revision = old ? old.desiredRevision + 1 : 1
     let variables = data.variables === undefined && old ? (await tx.select().from(revisions).where(and(eq(revisions.pluginId, id!), eq(revisions.revision, old.desiredRevision))))[0]?.variables : undefined
     variables ||= seal(data.variables || {}, 'variables')
     if (old) await tx.update(plugins).set({ name: data.name, legacyPlatformKey: data.legacyPlatformKey, desiredRevision: revision, lastError: null, updatedAt: getServerDate() }).where(eq(plugins.id, pluginId))
     else await tx.insert(plugins).values({ id: pluginId, name: data.name, legacyPlatformKey: data.legacyPlatformKey, priority: rows.length })
     await tx.insert(revisions).values({ pluginId, revision, scriptUrl: data.scriptUrl, protocol: data.protocol, catalog: data.catalog, variables })
   })
-  if (!snapshotMode()) await refreshPlugin(pluginId).catch(() => undefined)
+  // 名称来自脚本自动提取时已下载并初始化过一次，直接复用避免重复执行
+  if (!snapshotMode()) await refreshPlugin(pluginId, prepared ? { ...prepared, revision } : undefined).catch(() => undefined)
   return pluginId
 }
 
@@ -130,7 +151,7 @@ async function storeArtifact(artifact: PluginArtifact) {
   await rename(temporary, target)
 }
 
-export async function refreshPlugin(id: string): Promise<PluginArtifact> {
+export async function refreshPlugin(id: string, prepared?: PreparedPlugin): Promise<PluginArtifact> {
   if (snapshotMode()) throw pluginError('PLUGIN_UNAVAILABLE', 409)
   const [row] = await db.select().from(plugins).where(and(eq(plugins.id, id), isNull(plugins.deletedAt)))
   if (!row) throw pluginError('PLUGIN_UNAVAILABLE', 404)
@@ -140,9 +161,10 @@ export async function refreshPlugin(id: string): Promise<PluginArtifact> {
   const task = (async () => {
     try {
       const revision = await pluginRevision(id, row.desiredRevision)
+      const reused = prepared && prepared.revision === revision.revision ? prepared : undefined
       const { downloadScript } = await import('./prepare')
-      const code = await downloadScript(revision.scriptUrl)
-      const { capability } = await runPlugin({ source: code.source, protocol: revision.protocol as PluginProtocol, prelude: await prelude(), variables: unseal(revision.variables, 'variables') })
+      const code = reused?.code || await downloadScript(revision.scriptUrl)
+      const capability = reused?.capability || (await runPlugin({ source: code.source, protocol: revision.protocol as PluginProtocol, prelude: await prelude(), variables: unseal(revision.variables, 'variables') })).capability
       const artifact: PluginArtifact = { id, revision: revision.revision, protocol: revision.protocol as PluginProtocol, ...code, capability }
       await storeArtifact(artifact)
       await db.update(plugins).set({ activeRevision: artifact.revision, activeHash: artifact.hash, lastError: null, updatedAt: getServerDate() }).where(and(eq(plugins.id, id), eq(plugins.desiredRevision, artifact.revision), isNull(plugins.deletedAt)))

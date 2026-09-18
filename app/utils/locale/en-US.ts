@@ -154,7 +154,7 @@ export const siteConfig = {
   platformTencent: 'QQ Music',
   platformBilibili: 'Bilibili',
   platformMigu: 'Migu Music',
-  platformMusicfree: 'MusicFree Plugins',
+  platformPlugin: 'Source Plugins',
   platformEnabled: 'Enabled',
   platformDisabled: 'Disabled',
 
@@ -1143,9 +1143,9 @@ export const pages = {
         miguHq: { label: 'HQ High', description: 'High-quality music experience' },
         miguSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
         miguZq24: { label: 'ZQ24 Lossless', description: 'High-resolution quality, larger files, more data' },
-        musicfreeStandard: { label: 'Standard', description: 'Standard quality' },
-        musicfreeHigh: { label: 'High', description: 'High quality' },
-        musicfreeSuper: { label: 'Super', description: 'Highest quality' }
+        pluginStandard: { label: 'Standard', description: 'Standard quality' },
+        pluginHigh: { label: 'High', description: 'High quality' },
+        pluginSuper: { label: 'Super', description: 'Highest quality' }
       }
     },
     bilibiliIframe: {
@@ -1222,9 +1222,9 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
-    musicFreeExcluded: 'MusicFree plugin source is excluded',
-    musicFreeInvalidUrl: 'MusicFree plugin returned an invalid playback link',
-    musicFreeNoUrl: 'MusicFree plugin did not return a playback link',
+    pluginExcluded: 'Source plugin is excluded',
+    pluginInvalidUrl: 'Source plugin returned an invalid playback link',
+    pluginNoUrl: 'Source plugin did not return a playback link',
     loopOneEnabled: 'Repeat one enabled',
     singleEnabled: 'Single-play mode enabled',
     listLoopEnabled: 'Playlist loop enabled'
@@ -1538,7 +1538,7 @@ export const pages = {
         tencent: 'QQ Music',
         bilibili: 'Bilibili',
         migu: 'Migu Music',
-        musicfree: 'MusicFree'
+        plugin: 'Source Plugin'
       },
       refreshing: 'Refreshing',
       neteaseLoginTitle: 'Sign in to NetEase for full features',
@@ -2245,7 +2245,7 @@ export const admin = {
       tencent: 'QQ Music',
       bilibili: 'Bilibili',
       migu: 'Migu Music',
-      musicfree: 'MusicFree'
+      plugin: 'Source Plugin'
     },
     timeAgo: {
       justNow: 'Just now',
@@ -2922,7 +2922,7 @@ export const admin = {
     catalogHint: 'Select an official catalog only if the plugin uses the same track IDs.',
     variables: 'Plugin variables (JSON)',
     variablesHint: 'Use string keys and values. Leave blank to keep current values; enter {} to clear.',
-    legacy: 'Legacy MusicFree ID (migration)',
+    legacy: 'Legacy plugin ID (migration)',
     cancel: 'Cancel',
     saveDeploy: 'Save',
     saveLoad: 'Save & load',
@@ -4499,10 +4499,10 @@ export const serverErrors = {
   PLUGIN_NETWORK_BLOCKED: 'Plugin request or response rejected by network policy',
   PLUGIN_TIMEOUT: 'Source plugin timed out',
   PLUGIN_INVALID_TICKET: 'Invalid or expired track or media credential',
-  MUSICFREE_SEARCH_FAILED: 'MusicFree plugin search failed',
-  MUSICFREE_MEDIA_SOURCE_FAILED: 'Failed to fetch MusicFree media source',
-  MUSICFREE_LYRIC_FAILED: 'Failed to fetch MusicFree lyrics',
-  MUSICFREE_PLUGINS_FETCH_FAILED: 'Failed to fetch MusicFree plugin list',
+  PLUGIN_SEARCH_FAILED: 'Source plugin search failed',
+  PLUGIN_MEDIA_SOURCE_FAILED: 'Failed to fetch source plugin media source',
+  PLUGIN_LYRIC_FAILED: 'Failed to fetch source plugin lyrics',
+  PLUGIN_CAPABILITIES_FETCH_FAILED: 'Failed to fetch source plugin list',
   BACKUP_NOT_CONFIGURED: 'Auto backup is not configured',
   NO_BACKUP_METHOD_ENABLED: 'No backup methods enabled',
   BACKUP_FAILED: 'Backup execution failed',

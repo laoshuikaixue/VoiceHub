@@ -271,7 +271,6 @@ import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,

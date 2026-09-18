@@ -3,7 +3,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useChkszSource } from '~/composables/useChkszSource'
 import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
-import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
+import { isPluginPlatform } from '~/utils/pluginPlatform'
 import { persistQqMusicCookie } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
 import { useServerErrors } from '~/composables/useLocaleText'
@@ -34,7 +34,7 @@ export type MusicTrackMeta = {
   name?: string
   artist?: string
   album?: string
-  // 原始搜索结果或 DB 记录；MusicFree 插件的 getMediaSource 可能依赖搜索期的平台特有字段
+  // 原始搜索结果或 DB 记录；插件音源的 getMediaSource 可能依赖搜索期的平台特有字段
   rawItem?: unknown
 }
 
@@ -261,7 +261,7 @@ export async function getMusicUrlResult(
     return null
   }
 
-  if (isMusicFreePlatform(platform)) {
+  if (isPluginPlatform(platform)) {
     const result = await resolvePluginUrl(platform, musicId, quality, options)
     if (result?.url) {
       rememberMusicUrlSource(result.url, result.source)
