@@ -258,11 +258,9 @@ async function deploy() {
     })
 
     // 数据库失败时主动取消构建；构建失败时等待迁移安全结束，避免中断数据库事务。
-    const [databaseResult, buildResult] = await Promise.all([
-      settleTask(databaseTask),
-      settleTask(buildApplication(buildController.signal))
-    ])
+    const databaseResult = await settleTask(databaseTask)
     if (!databaseResult.success) throw databaseResult.error
+    const buildResult = await settleTask(buildApplication(buildController.signal))
     if (!buildResult.success) throw buildResult.error
 
     log('🎉 部署完成！', 'green')

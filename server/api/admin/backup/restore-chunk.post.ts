@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
   cardCodeRedeemLogs,
   cardCodes,
@@ -99,6 +100,12 @@ export default defineEventHandler(async (event) => {
     try {
       await db.transaction(async (tx) => {
         switch (tableName) {
+          case 'musicSourcePlugins':
+          case 'musicSourcePluginRevisions':
+          case 'musicSourceConfigState':
+            await restorePluginRecord(tx, tableName, record)
+            stats.created++
+            break
           case 'users': {
             const buildUserData = (includePassword = false) => {
               const userData: any = {}
@@ -527,6 +534,7 @@ export default defineEventHandler(async (event) => {
               'cover',
               'musicPlatform',
               'musicId',
+              'musicSourceData',
               'durationSeconds',
               'submissionNote',
               'submissionNotePublic',

@@ -5,6 +5,8 @@ import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
 import { persistQqMusicCookie } from '~/utils/qqCookie'
+import { resolvePluginUrl } from '~/utils/pluginResolver'
+import { useServerErrors } from '~/composables/useLocaleText'
 
 /**
  * 动态获取音乐播放URL
@@ -21,6 +23,8 @@ export type MusicUrlResolveOptions = {
   excludeSources?: string[]
   ignoreProvidedUrl?: boolean
   musicInfo?: MusicTrackMeta
+  songId?: number
+  selectionToken?: string
 }
 
 /**
@@ -258,26 +262,21 @@ export async function getMusicUrlResult(
   }
 
   if (isMusicFreePlatform(platform)) {
-    const { musicInfo } = options || {}
-    const { getSongUrl } = useMusicSources()
-
-    // 音质档位由 getSongUrl 内部映射为 MusicFree 的 quality 取值后透传给插件
-    const result = await getSongUrl(String(musicId), quality, platform, undefined, {
-      excludeSources: options?.excludeSources,
-      musicInfo: {
-        title: musicInfo?.name,
-        artist: musicInfo?.artist,
-        album: musicInfo?.album,
-        rawItem: musicInfo?.rawItem
-      }
-    })
-
-    if (result.success && result.url) {
-      rememberMusicUrlSource(result.url, 'musicfree')
-      return { url: result.url, source: 'musicfree' }
+    const result = await resolvePluginUrl(platform, musicId, quality, options)
+    if (result?.url) {
+      rememberMusicUrlSource(result.url, result.source)
+      return result
     }
+    const { localize } = useServerErrors()
+    throw new Error(localize({ data: { code: 'PLUGIN_RESOLVE_FAILED' } }))
+  }
 
-    throw new Error(result.error || 'MusicFree 插件未返回播放链接')
+  const tryPlugins = async () => {
+    try {
+      const result = await resolvePluginUrl(platform, musicId, quality, options)
+      if (result?.url) { rememberMusicUrlSource(result.url, result.source); return result }
+    } catch (error) { console.warn('[musicUrl] 插件解析阶段失败', error) }
+    return null
   }
 
   if (platform === 'tencent') {
@@ -341,6 +340,9 @@ export async function getMusicUrlResult(
     if (chkszResult) {
       return chkszResult
     }
+
+    const pluginResult = await tryPlugins()
+    if (pluginResult) return pluginResult
 
     // K×H 音源提取的 QQ 直连接口支持浏览器跨域，优先于 vkeys 使用。
     if (!excludedSources.has('ygking-qq')) {
@@ -493,6 +495,11 @@ export async function getMusicUrlResult(
     }
   }
 
+  if (platform !== 'bilibili' && !neteaseOfficialFirst) {
+    const pluginResult = await tryPlugins()
+    if (pluginResult) return pluginResult
+  }
+
   // 先使用统一组件的音源选择逻辑
   const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
   if (backupResult.success && backupResult.url) {
@@ -501,6 +508,11 @@ export async function getMusicUrlResult(
       url: backupResult.url,
       source: backupResult.source || 'music-source'
     }
+  }
+
+  if (neteaseOfficialFirst) {
+    const pluginResult = await tryPlugins()
+    if (pluginResult) return pluginResult
   }
 
   // VIP 登录态官方链路失败：ChKSz 作为次优先

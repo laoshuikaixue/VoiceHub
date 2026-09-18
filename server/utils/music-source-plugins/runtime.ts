@@ -1,4 +1,4 @@
-import { newQuickJSWASMModule, type QuickJSContext, type QuickJSHandle } from 'quickjs-emscripten-core'
+import { newQuickJSWASMModuleFromVariant, type QuickJSContext, type QuickJSHandle } from 'quickjs-emscripten-core'
 import variant from '@jitl/quickjs-singlefile-browser-release-sync'
 import { createCipheriv, createHash, publicEncrypt, constants, randomBytes } from 'node:crypto'
 import { inflate, deflate } from 'node:zlib'
@@ -9,7 +9,7 @@ import { requestNetwork } from './network.ts'
 import { pluginError } from './errors.ts'
 import type { PluginCapability, PluginProtocol } from './types.ts'
 
-const loading = newQuickJSWASMModule(variant)
+const loading = newQuickJSWASMModuleFromVariant(variant)
 let active = 0
 
 function dump(context: QuickJSContext, handle: QuickJSHandle) {
@@ -51,7 +51,8 @@ export async function runPlugin(options: {
         if (serialized.length > limits.itemBytes) throw new Error('输入过大')
         const args = JSON.parse(serialized)
         let result: any = null
-        if (method === 'random') {
+        if (method === 'abort') { controllers.get(Number(args))?.abort() }
+        else if (method === 'random') {
           if (!Number.isInteger(args) || args < 0 || args > 65536) throw new Error('长度无效')
           result = Array.from(randomBytes(args))
         } else if (method === 'md5') result = createHash('md5').update(Buffer.from(args)).digest('hex')
@@ -64,13 +65,13 @@ export async function runPlugin(options: {
         } else if (method === 'log') { if (++logs > 100) throw new Error('日志超限') }
         else throw new Error('未知宿主能力')
         return ctx.newString(JSON.stringify(result))
-      } catch { return ctx.throw(ctx.newError('Host operation rejected')) }
+      } catch { throw new Error('Host operation rejected') }
     })
     ctx.setProp(ctx.global, '__hostSync', sync); sync.dispose()
     const asyncBridge = ctx.newFunction('__hostAsync', (methodHandle, argsHandle) => {
       const method = ctx.getString(methodHandle)
       const serialized = ctx.getString(argsHandle)
-      if (serialized.length > limits.responseBytes || ++calls > limits.requests) return ctx.throw(ctx.newError('Host limit reached'))
+      if (serialized.length > limits.responseBytes || ++calls > limits.requests) throw new Error('Host limit reached')
       const deferred = ctx.newPromise()
       waiting.add(deferred)
       const task = (async () => {
@@ -134,6 +135,9 @@ export async function runPlugin(options: {
     }
     const capability = await awaitGuest(`__inspect(${JSON.stringify(options.protocol)})`) as PluginCapability
     if (!capability || !['lx', 'musicfree'].includes(capability.protocol) || Object.keys(capability.sources || {}).length > 20) throw pluginError('PLUGIN_LOAD_FAILED')
+    for (const value of Object.values(capability.sources)) {
+      if (!value || !Array.isArray(value.actions) || !Array.isArray(value.qualities) || value.actions.length > 20 || value.qualities.length > 20 || [...value.actions, ...value.qualities].some((v) => typeof v !== 'string' || v.length > 100)) throw pluginError('PLUGIN_LOAD_FAILED')
+    }
     const result = options.action ? await awaitGuest(`__invoke(${JSON.stringify(options.action)},${JSON.stringify(options.params || {})})`) : undefined
     return { capability, result }
   } finally {

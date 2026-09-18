@@ -137,7 +137,7 @@ export const usePlatformConfig = () => {
    * 判断平台是否可用（MusicFree 插件平台始终视为启用，不受后台开关控制）
    */
   const isPlatformEnabled = (platform: string): boolean => {
-    if (isMusicFreePlatform(platform)) return true
+    if (isMusicFreePlatform(platform)) return cache.musicFreePlugins.value.some((plugin) => plugin.platform === platform)
     return enabledPlatforms.value.includes(platform)
   }
 

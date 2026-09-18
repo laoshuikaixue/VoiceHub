@@ -22,6 +22,7 @@
 <script setup>
 import { ref, watch, nextTick, computed } from 'vue'
 import { isMusicFreePlatform } from '~/utils/musicfreePlatform'
+import { getCachedMusicUrlSource } from '~/utils/musicUrl'
 
 const props = defineProps({
   song: {
@@ -47,7 +48,7 @@ const audioPlayer = ref(null)
 // 会直接导致 MEDIA_ELEMENT_ERROR_SRC_NOT_SUPPORTED，需退回 no-cors 模式加载
 const isNoCorsSource = computed(() => {
   const platform = props.song?.musicPlatform
-  return platform === 'migu' || isMusicFreePlatform(platform)
+  return platform === 'migu' || isMusicFreePlatform(platform) || (getCachedMusicUrlSource(props.song?.musicUrl)?.startsWith('plugin:') ?? false)
 })
 const crossOriginVal = computed(() => (isNoCorsSource.value ? null : 'anonymous'))
 const referrerPolicyVal = computed(() => (isNoCorsSource.value ? null : 'no-referrer'))

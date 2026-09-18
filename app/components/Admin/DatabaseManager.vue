@@ -748,6 +748,9 @@ const restoreBackup = async () => {
     }
 
     const tableOrder = [
+      'musicSourcePlugins',
+      'musicSourcePluginRevisions',
+      'musicSourceConfigState',
       'users',
       'userIdentities',
       'systemSettings',

@@ -3254,6 +3254,7 @@ const playSong = async (result, playlist, playlistIndex) => {
     musicId: finalMusicId,
     albumId: result.albumId,
     sourceInfo: result.sourceInfo,
+    selectionToken: result.selectionToken,
     bilibiliCid: result.bilibiliCid // 确保传递 cid
   }
 
@@ -3300,7 +3301,8 @@ const playSong = async (result, playlist, playlistIndex) => {
       await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId, {
         title: song.title,
         artist: song.artist,
-        album: result.album || ''
+        album: result.album || '',
+        selectionToken: result.selectionToken
       })
     } catch (error) {
       console.error('获取歌词失败:', error)
@@ -3667,6 +3669,7 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
+      selectionToken: result.selectionToken,
       durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,

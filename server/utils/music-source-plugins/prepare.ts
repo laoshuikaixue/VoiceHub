@@ -7,7 +7,9 @@ import { pluginError } from './errors.ts'
 
 let preparing: Promise<string> | undefined
 export function preparePrelude(): Promise<string> {
-  return preparing ||= build({
+  return preparing ||= (async () => {
+    const buffer = await build({ stdin: { contents: 'export { Buffer } from "buffer"', resolveDir: process.cwd() }, bundle: true, write: false, format: 'iife', globalName: '__guestBuffer', platform: 'browser', minify: true })
+    const result = await build({
     entryPoints: [resolve(process.cwd(), 'server/utils/music-source-plugins/guest.js')],
     bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2020', minify: true,
     define: { 'process.env.NODE_ENV': '"production"' },
@@ -15,7 +17,9 @@ export function preparePrelude(): Promise<string> {
       builder.onResolve({ filter: /^(node:)?crypto$/ }, () => ({ path: 'crypto', namespace: 'guest-empty' }))
       builder.onLoad({ filter: /.*/, namespace: 'guest-empty' }, () => ({ contents: 'export default {}' }))
     } }]
-  }).then((result) => result.outputFiles![0].text).catch((error) => { preparing = undefined; throw error })
+    })
+    return buffer.outputFiles![0]!.text + '\nglobalThis.Buffer=__guestBuffer.Buffer;\n' + result.outputFiles![0]!.text
+  })().catch((error) => { preparing = undefined; throw error })
 }
 
 export function codeHash(source: string) { return createHash('sha256').update(source).digest('hex') }

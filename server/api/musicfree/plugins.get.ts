@@ -1,20 +1,7 @@
-import { getMusicFreePluginsConfig } from '~~/server/utils/musicfree'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { pluginAccess } from '~~/server/utils/music-source-plugins/access'
+import { pluginCapabilities } from '~~/server/utils/music-source-plugins/resolver'
 
-export default defineEventHandler(async () => {
-  try {
-    // 没有 search 方法的插件无法作为独立平台参与搜索，不暴露
-    const data = (await getMusicFreePluginsConfig())
-      .filter((handle) => typeof handle.instance?.search === 'function')
-      .map((handle) => ({
-        platform: `musicfree:${handle.id}`,
-        displayName: handle.displayName,
-        // 稳定唯一 id，供客户端直接取用（与 platform 后缀一致）
-        id: handle.id
-      }))
-    return { success: true, data }
-  } catch (error: any) {
-    throw createApiError(502, SERVER_ERROR_CODES.MUSICFREE_PLUGINS_FETCH_FAILED, error?.message || '获取 MusicFree 插件列表失败')
-  }
+export default defineEventHandler(async (event) => {
+  await pluginAccess(event)
+  return { success: true, data: (await pluginCapabilities()).filter((p) => p.search) }
 })

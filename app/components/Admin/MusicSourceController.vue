@@ -42,6 +42,7 @@
     </div>
 
     <div v-else class="space-y-6">
+      <MusicSourcePlugins />
       <!-- 平台开关 -->
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
@@ -157,6 +158,7 @@ import {
   CheckCircle2
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import MusicSourcePlugins from '~/components/Admin/MusicSourcePlugins.vue'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'

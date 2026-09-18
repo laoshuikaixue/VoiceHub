@@ -1,4 +1,5 @@
 import { db } from '~/drizzle/db'
+import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
   backupHistory,
   systemSettings,
@@ -120,6 +121,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
   }
 
   const tablesToBackup: Record<string, { query: () => Promise<any[]>; description: string }> = {
+    ...Object.fromEntries(Object.entries(pluginBackupTables).map(([name, table]) => [name, { query: () => db.select().from(table), description: '音源插件配置' }])),
     users: { query: () => db.select().from(users), description: '用户数据' },
     songs: { query: () => db.select().from(songs), description: '歌曲数据' },
     schedules: { query: () => db.select().from(schedules), description: '排期数据' },

@@ -525,14 +525,15 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
     musicInfo: {
       name: song.title,
       artist: song.artist,
-      album: song.album || undefined
+      album: song.album || undefined,
+      rawItem: song
     }
   }
 }
 
 const trySwitchPlaybackSource = async () => {
   const song = activeSong.value
-  if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song) || isMusicFreePlatform(song.musicPlatform)) {
+  if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song)) {
     return false
   }
 
@@ -554,6 +555,8 @@ const trySwitchPlaybackSource = async () => {
 
   isFallbackHandling.value = true
   control.isLoadingTrack.value = true
+  const playbackKey = `${song.id}:${song.musicPlatform}:${song.musicId}`
+  const resumePosition = audioPlayer.value?.currentTime || 0
 
   try {
     const result = await getMusicUrlResult(
@@ -562,6 +565,9 @@ const trySwitchPlaybackSource = async () => {
       song.playUrl,
       buildFallbackResolveOptions(song, excludeSources)
     )
+
+    const current = activeSong.value
+    if (`${current?.id}:${current?.musicPlatform}:${current?.musicId}` !== playbackKey) return false
 
     if (!result.url) {
       return false
@@ -591,6 +597,10 @@ const trySwitchPlaybackSource = async () => {
 
     await nextTick()
     if (audioPlayer.value) {
+      const element = audioPlayer.value
+      element.addEventListener('loadedmetadata', () => {
+        if (Number.isFinite(element.duration) && resumePosition < element.duration) element.currentTime = resumePosition
+      }, { once: true })
       audioPlayer.value.load()
       await control.play()
     }

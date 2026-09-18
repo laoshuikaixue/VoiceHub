@@ -75,6 +75,5 @@ ENV NODE_ENV=production \
 # 暴露端口
 EXPOSE $PORT
 
-# 启动命令：先按 MUSICFREE_PLUGIN_ZIP_URL 构建插件产物（服务端启动时动态加载这些产物；
-# 未配置时生成空清单并正常退出，不阻塞启动），再执行数据库迁移，最后启动应用
-CMD ["sh", "-c", "pnpm run build:plugins && node scripts/deploy.js && node .output/server/index.mjs"]
+# 完成数据库迁移后启动应用，插件配置由服务端读取。
+CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]

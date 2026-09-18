@@ -216,7 +216,7 @@ export const useLyrics = () => {
   const fetchLyrics = async (
     platform: string,
     musicId: string,
-    meta?: { title?: string; artist?: string; album?: string }
+    meta?: { title?: string; artist?: string; album?: string; selectionToken?: string }
   ): Promise<void> => {
     if (!platform || !musicId) {
       console.error('[useLyrics] fetchLyrics 参数错误:', { platform, musicId })
@@ -235,6 +235,8 @@ export const useLyrics = () => {
       const { getLyrics } = useMusicSources()
       const currentSong = audioPlayer.getCurrentSong().value as any
       const result = await getLyrics(platform as 'netease' | 'tencent', musicId, {
+        selectionToken: meta?.selectionToken || currentSong?.selectionToken,
+        songId: !currentSong?.selectionToken && Number.isInteger(currentSong?.id) && (currentSong?.requesterId !== undefined || currentSong?.createdAt) ? currentSong.id : undefined,
         title: meta?.title ?? currentSong?.title ?? '',
         artist: meta?.artist ?? currentSong?.artist ?? '',
         album: meta?.album ?? currentSong?.album ?? '',

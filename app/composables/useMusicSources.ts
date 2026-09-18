@@ -75,6 +75,8 @@ type LyricProgressPayload = {
 type LyricProgressCallback = (payload: LyricProgressPayload) => void
 
 type LyricUpgradeMeta = {
+  selectionToken?: string
+  songId?: number
   title?: string
   artist?: string
   album?: string
@@ -824,6 +826,7 @@ export const useMusicSources = () => {
             musicPlatform: platform,
             actualMusicPlatform: platform,
             musicFreePlugin: pluginId,
+            selectionToken: meta?.selectionToken,
             ...(meta?.title ? { title: meta.title } : {}),
             ...(meta?.artist ? { artist: meta.artist } : {}),
             ...(meta?.album ? { album: meta.album } : {})
@@ -831,7 +834,7 @@ export const useMusicSources = () => {
           try {
             const resp = await $fetch('/api/musicfree/lyric', {
               method: 'POST',
-              body: { musicItem },
+              body: { musicItem, songId: meta?.songId },
               timeout: 10000
             })
             const lrc = resp?.data?.rawLrc
@@ -1863,6 +1866,7 @@ export const useMusicSources = () => {
         const musicItem = {
           // 复用搜索期的完整 item，插件可能依赖搜索时特有的平台字段
           ...(rawItem && typeof rawItem === 'object' ? rawItem : { id: idParam }),
+          id: idParam,
           musicId: idParam,
           musicPlatform: platform,
           actualMusicPlatform: platform,
@@ -1880,11 +1884,7 @@ export const useMusicSources = () => {
           })
           if (response?.success && response?.url) {
             const url = String(response.url)
-              .replace(/^http:\/\//, 'https://')
-            const validation = await validatePlayUrl(url)
-            return validation.valid
-              ? { success: true, url, source: 'musicfree' }
-              : { success: false, error: validation.error || audioPlayer.value.musicFreeInvalidUrl }
+            return { success: true, url, source: response.source || 'musicfree' }
           }
           return { success: false, error: audioPlayer.value.musicFreeNoUrl }
         } catch (musicFreeError: any) {

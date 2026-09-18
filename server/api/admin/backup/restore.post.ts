@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
+import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
   apiKeyPermissions,
   apiKeys,
@@ -293,6 +294,9 @@ export default defineEventHandler(async (event) => {
 
     // 定义恢复顺序（考虑外键依赖）
     const restoreOrder = [
+      'musicSourcePlugins',
+      'musicSourcePluginRevisions',
+      'musicSourceConfigState',
       'systemSettings',
       'playTimes',
       'semesters',
@@ -355,6 +359,11 @@ export default defineEventHandler(async (event) => {
                     }
                     // 根据表名选择恢复策略
                     switch (tableName) {
+                      case 'musicSourcePlugins':
+                      case 'musicSourcePluginRevisions':
+                      case 'musicSourceConfigState':
+                        await restorePluginRecord(tx, tableName, record)
+                        break
                       case 'users':
                         // 动态构建用户数据，自动跳过不存在的字段
                         const buildUserData = (includePassword = false) => {
@@ -887,6 +896,7 @@ export default defineEventHandler(async (event) => {
                           'cover',
                           'musicPlatform',
                           'musicId',
+                          'musicSourceData',
                           'durationSeconds',
                           'submissionNote',
                           'submissionNotePublic',

@@ -433,7 +433,7 @@ function runNuxtBuild() {
 }
 
 async function runMusicFreePluginBuild() {
-  const scriptPath = path.resolve(process.cwd(), 'scripts/build-musicfree-plugins.js')
+  const scriptPath = path.resolve(process.cwd(), 'scripts/build-music-source-plugins.ts')
   if (!fs.existsSync(scriptPath)) return true
   log('🧩 构建 MusicFree 插件...', 'cyan')
   return new Promise((resolve) => {
@@ -443,7 +443,7 @@ async function runMusicFreePluginBuild() {
       settled = true
       resolve(success)
     }
-    const child = spawn(process.execPath, [scriptPath], { stdio: 'inherit', env: process.env })
+    const child = spawn(process.execPath, ['--import', 'tsx', scriptPath], { stdio: 'inherit', env: process.env })
     child.on('error', () => finish(false))
     child.on('exit', (code) => finish(code === 0))
   })

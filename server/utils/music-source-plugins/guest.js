@@ -6,11 +6,15 @@ import dayjs from 'dayjs'
 import bigInteger from 'big-integer'
 import qs from 'qs'
 import he from 'he'
+import GuestURL from 'core-js-pure/features/url/index.js'
+import GuestURLSearchParams from 'core-js-pure/features/url-search-params/index.js'
 
 const sync = (method, data) => JSON.parse(globalThis.__hostSync(method, JSON.stringify(data)))
 const asyncCall = async (method, data) => JSON.parse(await globalThis.__hostAsync(method, JSON.stringify(data)))
 const bytes = (value) => Array.from(typeof value === 'string' ? Buffer.from(value) : Buffer.from(value || []))
 globalThis.Buffer = Buffer
+globalThis.URL = GuestURL
+globalThis.URLSearchParams = GuestURLSearchParams
 globalThis.window = globalThis
 globalThis.self = globalThis
 globalThis.btoa = (value) => Buffer.from(value, 'binary').toString('base64')
@@ -32,7 +36,7 @@ globalThis.setTimeout = (fn, delay = 0, ...args) => {
 globalThis.clearTimeout = (id) => timers.delete(id)
 globalThis.console = Object.fromEntries(['log', 'info', 'warn', 'error', 'debug', 'group', 'groupEnd', 'groupCollapsed', 'table', 'time', 'timeEnd', 'trace', 'assert', 'clear'].map((name) => [name, (...args) => sync('log', args.map(String).join(' ').slice(0, 2000))]))
 
-const http = async (url, config = {}) => {
+const http = async (url, config = {}, requestId = ++sequence) => {
   let body = config.body
   const headers = { ...(config.headers || {}) }
   if (config.form) {
@@ -46,8 +50,12 @@ const http = async (url, config = {}) => {
     body = JSON.stringify(body)
     headers['content-type'] ||= 'application/json'
   }
-  const requestId = ++sequence
-  const result = await asyncCall('http', { id: requestId, url, method: config.method, timeout: config.timeout, headers, body: body === undefined ? undefined : bytes(body) })
+  const cancel = () => sync('abort', requestId)
+  config.signal?.addEventListener('abort', cancel, { once: true })
+  let result
+  try {
+    result = await asyncCall('http', { id: requestId, url, method: config.method, timeout: config.timeout, headers, body: body === undefined ? undefined : bytes(body) })
+  } finally { config.signal?.removeEventListener('abort', cancel) }
   result.raw = Buffer.from(result.bytes)
   const text = result.raw.toString('utf8')
   try { result.body = JSON.parse(text) } catch { result.body = text }
@@ -98,10 +106,11 @@ const lx = {
   },
   request(url, options, callback) {
     let aborted = false
-    http(url, options).then((result) => {
+    const id = ++sequence
+    http(url, options, id).then((result) => {
       if (!aborted) callback(null, { statusCode: result.status, headers: result.headers, raw: result.raw, bytes: result.raw.length, body: result.body }, result.body)
     }).catch((error) => { if (!aborted) callback(error, null, null) })
-    return () => { aborted = true }
+    return () => { aborted = true; sync('abort', id) }
   },
   utils: {
     buffer: { from: (...args) => Buffer.from(...args), bufToString: (value, encoding = 'utf8') => Buffer.from(value).toString(encoding) },

@@ -724,7 +724,8 @@ const getDownloadResolveOptions = (song, quality, excludeSources = [], ignorePro
     musicInfo: {
       name: song?.title,
       artist: song?.artist,
-      album: song?.album || undefined
+      album: song?.album || undefined,
+      rawItem: song
     }
   }
 }

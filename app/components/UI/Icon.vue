@@ -199,6 +199,10 @@
     />
 
     <!-- 音乐图标 -->
+    <g v-else-if="name === 'ListMusic'">
+      <path d="M3 6h12M3 10h12M3 14h7M17 14V4l4 1v3l-4-1" />
+      <circle cx="14" cy="17" r="3" />
+    </g>
     <g v-else-if="name === 'music'">
       <path d="M9 18V5l12-2v13" />
       <circle cx="6" cy="18" r="3" />

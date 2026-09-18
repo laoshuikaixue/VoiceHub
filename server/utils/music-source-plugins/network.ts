@@ -64,7 +64,7 @@ export async function openNetwork(input: string, options: NetworkOptions): Promi
     const addresses = isIP(hostname) ? [{ address: hostname, family: isIP(hostname) }] : await lookup(hostname, { all: true })
     options.signal.throwIfAborted()
     if (!addresses.length || addresses.some((a) => !publicAddress(a.address))) throw pluginError('PLUGIN_NETWORK_BLOCKED')
-    const address = addresses[0]
+    const address = addresses[0]!
     const response = await new Promise<IncomingMessage>((resolve, reject) => {
       const request = (url.protocol === 'https:' ? https : http).request(url, {
         method, headers, signal: options.signal, agent: false,

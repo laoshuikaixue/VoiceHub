@@ -19,6 +19,7 @@ export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
 ]
 
 export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/music-source-plugins/media', methods: GET_METHODS },
   { path: '/api/auth/login', methods: ['POST'] },
   { path: '/api/auth/register', methods: ['POST'] },
   { path: '/api/auth/email-code', methods: ['POST'] },

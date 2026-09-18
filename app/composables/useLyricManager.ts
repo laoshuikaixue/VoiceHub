@@ -235,6 +235,8 @@ export const useLyricManager = () => {
       console.log(`[LyricManager] 开始获取歌词: ${track.title} (${platform}:${musicId})`)
 
       const result = await getLyrics(platform, musicId, {
+        selectionToken: track.selectionToken,
+        songId: !track.selectionToken && Number.isInteger(track.id) && (track.requesterId !== undefined || track.createdAt) ? track.id : undefined,
         title: track.title,
         artist: track.artist,
         album: track.album,
