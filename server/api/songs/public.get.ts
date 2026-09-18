@@ -7,17 +7,7 @@ import { maskPublicScheduleData,
   type PublicScheduleItem
 } from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
-
-const formatDisplayName = (
-  user: { name?: string | null; grade?: string | null; class?: string | null },
-  nameCount = 1,
-  gradeCount = 1
-) => {
-  if (!user?.name) return '未知用户'
-  if (nameCount <= 1 || !user.grade) return user.name
-  if (gradeCount > 1 && user.class) return `${user.name}（${user.grade} ${user.class}）`
-  return `${user.name}（${user.grade}）`
-}
+import { formatDisambiguatedName, NAME_DISAMBIGUATION_CTES } from '~~/server/utils/userDisplayName'
 
 const isSchemaCompatibilityError = (error: unknown) => {
   const value = error as { code?: string; cause?: { code?: string } } | null
@@ -92,7 +82,7 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
       id: Number(row.songId),
       title: row.title,
       artist: row.artist,
-      requester: formatDisplayName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
+      requester: formatDisambiguatedName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
       requesterGrade: row.requesterGrade || null,
       requesterClass: row.requesterClass || null,
       collaborators: [],
@@ -169,18 +159,7 @@ export default defineEventHandler(async (event) => {
 
     const schedulesQuery = `
       WITH
-      user_name_counts AS (
-        SELECT name, COUNT(*)::int AS name_count
-        FROM "User"
-        WHERE name IS NOT NULL
-        GROUP BY name
-      ),
-      user_grade_counts AS (
-        SELECT name, grade, COUNT(*)::int AS grade_count
-        FROM "User"
-        WHERE name IS NOT NULL
-        GROUP BY name, grade
-      ),
+      ${NAME_DISAMBIGUATION_CTES},
       vote_counts AS (
         SELECT "songId", COUNT(*)::int AS vote_count
         FROM "Vote"
@@ -338,7 +317,7 @@ export default defineEventHandler(async (event) => {
         ? row.collaborators.map((collaborator: any) => ({
             id: collaborator.id,
             name: collaborator.name,
-            displayName: formatDisplayName(
+            displayName: formatDisambiguatedName(
               collaborator,
               Number(collaborator.nameCount),
               Number(collaborator.gradeCount)
@@ -352,7 +331,7 @@ export default defineEventHandler(async (event) => {
         ? row.replayRequesters.map((requester: any) => ({
             id: requester.id,
             name: requester.name || '未知用户',
-            displayName: formatDisplayName(
+            displayName: formatDisambiguatedName(
               requester,
               Number(requester.nameCount),
               Number(requester.gradeCount)
@@ -406,7 +385,7 @@ export default defineEventHandler(async (event) => {
           id: Number(row.songId),
           title: row.title,
           artist: row.artist,
-          requester: formatDisplayName(
+          requester: formatDisambiguatedName(
             {
               name: row.requesterName,
               grade: row.requesterGrade,
