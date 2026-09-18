@@ -1061,6 +1061,15 @@ VoiceHub/
 │   │   │   │   ├── reset.post.ts    # 重置数据库
 │   │   │   │   └── status.get.ts    # 数据库状态
 │   │   │   ├── music-source-plugins/ # 音源插件配置、启停、排序与验证
+│   │   │   │   ├── [id].delete.ts   # 移除音源插件
+│   │   │   │   ├── [id].put.ts      # 更新音源插件
+│   │   │   │   ├── [id]/            # 单个插件操作
+│   │   │   │   │   ├── enabled.patch.ts # 启用/停用
+│   │   │   │   │   ├── refresh.post.ts  # 重新加载插件产物
+│   │   │   │   │   └── test.post.ts     # 验证插件初始化
+│   │   │   │   ├── index.get.ts     # 插件列表与配置版本
+│   │   │   │   ├── index.post.ts    # 新增音源插件
+│   │   │   │   └── order.put.ts     # 保存解析优先级排序
 │   │   │   ├── db-status.get.ts     # 数据库状态检查
 │   │   │   ├── email-templates/     # 邮件模板管理API
 │   │   │   │   ├── index.delete.ts  # 删除邮件模板
@@ -1374,13 +1383,26 @@ VoiceHub/
 │   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
 │   │   ├── log-manager.ts  # 日志管理工具
+│   │   ├── music-source-plugins/ # LX Music 与 MusicFree 音源插件运行时、沙箱与凭证管理
+│   │   │   ├── access.ts    # 后台权限、同源校验与调用限流
+│   │   │   ├── backup.ts    # 插件表备份清单与恢复写入
+│   │   │   ├── errors.ts    # 插件错误码构造
+│   │   │   ├── guest.js     # 注入沙箱的宿主环境与 __inspect/__invoke
+│   │   │   ├── manifest.ts  # 部署快照模块转发（实际快照为构建产物）
+│   │   │   ├── network.ts   # 出站请求校验、重定向与体积限制
+│   │   │   ├── platform.ts  # plugin:/musicfree: 平台键解析
+│   │   │   ├── prepare.ts   # 沙箱预置环境打包与脚本下载
+│   │   │   ├── resolver.ts  # 能力列表、搜索、解析回退与歌词
+│   │   │   ├── runtime.ts   # QuickJS/WASM 沙箱与协议适配
+│   │   │   ├── store.ts     # 配置读写、名称解析、产物落盘与刷新
+│   │   │   ├── tickets.ts   # 加密凭证签发与校验
+│   │   │   └── types.ts     # 插件类型定义
 │   │   ├── native_common.ts # 原生API通用工具
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
-│   │   ├── music-source-plugins/ # LX Music 与 MusicFree 音源插件运行时、沙箱与凭证管理
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── permissions.js  # 权限系统配置

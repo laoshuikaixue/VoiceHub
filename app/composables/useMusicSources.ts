@@ -1274,7 +1274,7 @@ export const useMusicSources = () => {
           console.warn('[searchSongs] Native Music 搜索失败，回退到其他音源:', e)
         }
       } else if (!shouldUseNativeFirst) {
-        console.log(`[searchSongs] 服务器位于海外，跳过 Native Music 优先使用第三方音源`)
+        console.log(`[searchSongs] 服务器位于海外，优先使用第三方音源`)
       }
 
       const enabledSources = getEnabledSources()

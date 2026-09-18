@@ -594,13 +594,27 @@ const trySwitchPlaybackSource = async () => {
     }
 
     await nextTick()
+    let started = false
     if (audioPlayer.value) {
       const element = audioPlayer.value
+      // 起播前清掉上一轮的错误态：control.play() 见到 hasError 会直接返回 false，表现为换源成功却停在暂停
+      control.hasError.value = false
       element.addEventListener('loadedmetadata', () => {
         if (Number.isFinite(element.duration) && resumePosition < element.duration) element.currentTime = resumePosition
       }, { once: true })
-      audioPlayer.value.load()
-      await control.play()
+      // 不调用 load()：song.musicUrl 变化会通过 :src 绑定自动走加载算法，
+      // 额外一次 load() 会多排一轮 pause/emptied 事件，可能把刚起的播放又改回暂停
+      started = await control.play()
+      // 以元素真实状态为准纠正播放标记，避免排队的 pause 事件把界面留在暂停态
+      if (started && !element.paused) {
+        control.isPlaying.value = true
+        control.isLoadingTrack.value = false
+      }
+    }
+
+    if (!started) {
+      failedPlaybackSources.value = excludeSources
+      return false
     }
 
     return true
