@@ -1,6 +1,9 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import {
+  apiKeyPermissions,
+  apiKeys,
+  apiLogs,
   cardCodeRedeemLogs,
   cardCodes,
   emailTemplates,
@@ -72,6 +75,10 @@ export default defineEventHandler(async (event) => {
   const cardCodeIdMapping = new Map(
     Object.entries(mappings?.cardCodes || {}).map(([k, v]) => [Number(k), Number(v)])
   )
+  // API Key 的 id 为 uuid，映射键值保持字符串
+  const apiKeyIdMapping = new Map(
+    Object.entries(mappings?.apiKeys || {}).map(([k, v]) => [String(k), String(v)])
+  )
   const preservedSuperAdminIds = new Set(
     (mappings?.meta?.preservedSuperAdminIds || []).map((id) => Number(id))
   )
@@ -87,7 +94,8 @@ export default defineEventHandler(async (event) => {
   const newMappings = {
     users: {},
     songs: {},
-    cardCodes: {}
+    cardCodes: {},
+    apiKeys: {}
   }
 
   const stats = {
@@ -1413,6 +1421,223 @@ export default defineEventHandler(async (event) => {
 
           case 'scheduleSongPool': {
             await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
+            break
+          }
+
+          case 'apiKeys': {
+            let validCreatedByUserId = record.createdByUserId
+            if (record.createdByUserId) {
+              const mappedUserId = userIdMapping.get(record.createdByUserId)
+              if (mappedUserId) {
+                validCreatedByUserId = mappedUserId
+              } else {
+                const userExists = await tx.query.users.findFirst({
+                  where: eq(users.id, record.createdByUserId)
+                })
+                if (!userExists) {
+                  stats.warnings.push(`API密钥 ${record.name ?? record.id ?? ''} 的创建者不存在，已跳过`)
+                  break
+                }
+              }
+            } else {
+              stats.warnings.push(`API密钥 ${record.id ?? ''} 缺少创建者，已跳过`)
+              break
+            }
+
+            if (!record.name || !record.keyHash || !record.keyPrefix) {
+              stats.warnings.push(`API密钥 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            const apiKeyData: any = {
+              name: record.name,
+              description: record.description || null,
+              keyHash: record.keyHash,
+              keyPrefix: record.keyPrefix,
+              isActive: record.isActive !== undefined ? record.isActive : true,
+              expiresAt: record.expiresAt ? new Date(record.expiresAt) : null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
+              lastUsedAt: record.lastUsedAt ? new Date(record.lastUsedAt) : null,
+              createdByUserId: validCreatedByUserId,
+              usageCount: record.usageCount || 0
+            }
+
+            let restoredApiKey
+            if (mode === 'merge') {
+              // keyHash 唯一：已存在则更新并沿用其 ID，供权限与日志映射
+              const existingApiKey = await tx.query.apiKeys.findFirst({
+                where: eq(apiKeys.keyHash, record.keyHash)
+              })
+              if (existingApiKey) {
+                restoredApiKey = (
+                  await tx
+                    .update(apiKeys)
+                    .set(apiKeyData)
+                    .where(eq(apiKeys.id, existingApiKey.id))
+                    .returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredApiKey = (await tx.insert(apiKeys).values(apiKeyData).returning())[0]
+                stats.created++
+              }
+            } else if (record.id) {
+              const existingApiKeyWithId = await tx.query.apiKeys.findFirst({
+                where: eq(apiKeys.id, record.id)
+              })
+              if (existingApiKeyWithId) {
+                restoredApiKey = (
+                  await tx
+                    .update(apiKeys)
+                    .set(apiKeyData)
+                    .where(eq(apiKeys.id, record.id))
+                    .returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredApiKey = (
+                  await tx
+                    .insert(apiKeys)
+                    .values({ ...apiKeyData, id: record.id })
+                    .returning()
+                )[0]
+                stats.created++
+              }
+            } else {
+              restoredApiKey = (await tx.insert(apiKeys).values(apiKeyData).returning())[0]
+              stats.created++
+            }
+
+            if (record.id && restoredApiKey?.id) {
+              newMappings.apiKeys[record.id] = restoredApiKey.id
+            }
+            break
+          }
+
+          case 'apiKeyPermissions': {
+            let validApiKeyId = null
+            if (record.apiKeyId) {
+              const mappedApiKeyId = apiKeyIdMapping.get(String(record.apiKeyId))
+              if (mappedApiKeyId) {
+                validApiKeyId = mappedApiKeyId
+              } else {
+                const apiKeyExists = await tx.query.apiKeys.findFirst({
+                  where: eq(apiKeys.id, record.apiKeyId)
+                })
+                validApiKeyId = apiKeyExists ? record.apiKeyId : null
+              }
+            }
+
+            if (!validApiKeyId || !record.permission) {
+              stats.warnings.push(`API密钥权限 ${record.id ?? ''} 关联的密钥不存在或缺少权限值，已跳过`)
+              break
+            }
+
+            const apiKeyPermissionData: any = {
+              apiKeyId: validApiKeyId,
+              permission: record.permission,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              const existingPermission = await tx.query.apiKeyPermissions.findFirst({
+                where: and(
+                  eq(apiKeyPermissions.apiKeyId, validApiKeyId),
+                  eq(apiKeyPermissions.permission, record.permission)
+                )
+              })
+              if (existingPermission) {
+                await tx
+                  .update(apiKeyPermissions)
+                  .set(apiKeyPermissionData)
+                  .where(eq(apiKeyPermissions.id, existingPermission.id))
+                stats.updated++
+              } else {
+                await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
+                stats.created++
+              }
+            } else if (record.id) {
+              const existingPermissionWithId = await tx.query.apiKeyPermissions.findFirst({
+                where: eq(apiKeyPermissions.id, record.id)
+              })
+              if (existingPermissionWithId) {
+                await tx
+                  .update(apiKeyPermissions)
+                  .set(apiKeyPermissionData)
+                  .where(eq(apiKeyPermissions.id, record.id))
+                stats.updated++
+              } else {
+                await tx
+                  .insert(apiKeyPermissions)
+                  .values({ ...apiKeyPermissionData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'apiLogs': {
+            let validApiLogApiKeyId = null
+            if (record.apiKeyId) {
+              const mappedApiKeyId = apiKeyIdMapping.get(String(record.apiKeyId))
+              if (mappedApiKeyId) {
+                validApiLogApiKeyId = mappedApiKeyId
+              } else {
+                const apiKeyExists = await tx.query.apiKeys.findFirst({
+                  where: eq(apiKeys.id, record.apiKeyId)
+                })
+                validApiLogApiKeyId = apiKeyExists ? record.apiKeyId : null
+              }
+            }
+
+            if (
+              !record.endpoint ||
+              !record.method ||
+              !record.ipAddress ||
+              record.statusCode === undefined ||
+              record.responseTimeMs === undefined
+            ) {
+              stats.warnings.push(`API日志 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            const apiLogData: any = {
+              apiKeyId: validApiLogApiKeyId,
+              endpoint: record.endpoint,
+              method: record.method,
+              ipAddress: record.ipAddress,
+              userAgent: record.userAgent || null,
+              statusCode: record.statusCode,
+              responseTimeMs: record.responseTimeMs,
+              requestBody: record.requestBody || null,
+              responseBody: record.responseBody || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              errorMessage: record.errorMessage || null
+            }
+
+            if (mode === 'merge') {
+              // 访问日志无需去重，直接追加
+              await tx.insert(apiLogs).values(apiLogData)
+              stats.created++
+            } else if (record.id) {
+              const existingApiLogWithId = await tx.query.apiLogs.findFirst({
+                where: eq(apiLogs.id, record.id)
+              })
+              if (existingApiLogWithId) {
+                await tx.update(apiLogs).set(apiLogData).where(eq(apiLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(apiLogs).values({ ...apiLogData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(apiLogs).values(apiLogData)
+              stats.created++
+            }
             break
           }
         }

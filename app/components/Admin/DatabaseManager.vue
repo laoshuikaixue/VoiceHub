@@ -771,12 +771,16 @@ const restoreBackup = async () => {
       'notificationSettings',
       'notifications',
       'songBlacklist',
-      'userStatusLogs'
+      'userStatusLogs',
+      'apiKeys',
+      'apiKeyPermissions',
+      'apiLogs'
     ]
 
     const mappings = {
       users: {},
       songs: {},
+      apiKeys: {},
       meta: {
         preservedSuperAdminIds,
         temporaryPreservedUserId,
@@ -825,6 +829,8 @@ const restoreBackup = async () => {
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
+          // API Key 的 id 为 uuid，用于权限与日志的关联重映射
+          if (response.newMappings.apiKeys) Object.assign(mappings.apiKeys, response.newMappings.apiKeys)
         }
         totalProcessed += chunk.length
       }
