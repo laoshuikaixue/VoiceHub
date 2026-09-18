@@ -142,7 +142,4 @@ export function cleanupRateLimits(force = false) {
   }
 }
 
-// 尝试设置定时清理器，但在 Serverless 环境中可能不会按预期工作，所以主要依赖惰性清理
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => cleanupRateLimits(false), 60 * 60 * 1000)
-}
+// Serverless/边缘运行时不应在模块加载时创建常驻定时器；容量检查时会惰性清理。

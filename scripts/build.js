@@ -36,6 +36,7 @@ const SUPPORTED_ENV_VARIABLES = [
   'SKIP_BUILD',
   'CI',
   'DATABASE_URL',
+  'MUSIC_PLUGIN_DATABASE_URL',
   'JWT_SECRET',
   'REDIS_URL',
   'DEBUG_SQL',
@@ -235,6 +236,13 @@ function printBuildEnvironment(rawNodeOptions) {
 
   log('\n服务能力：', 'cyan')
   printSensitiveItem('DATABASE_URL', process.env.DATABASE_URL)
+  printSensitiveItem(
+    'MUSIC_PLUGIN_DATABASE_URL',
+    process.env.MUSIC_PLUGIN_DATABASE_URL,
+    isProvided(process.env.MUSIC_PLUGIN_DATABASE_URL)
+      ? '用于生成音源插件只读快照'
+      : '未配置，将回退 DATABASE_URL 或生成空快照'
+  )
   printSensitiveItem('JWT_SECRET', process.env.JWT_SECRET)
   printSensitiveItem(
     'REDIS_URL',

@@ -3,6 +3,14 @@ import { sql } from 'drizzle-orm'
 
 export default defineNitroPlugin(async (nitroApp) => {
 
+  // Workers 不支持进程级异常监听与常驻健康检查定时器，数据库连接由请求期管理。
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.userAgent === 'Cloudflare-Workers'
+  ) {
+    return
+  }
+
   // 全局未处理的Promise拒绝处理器
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason)

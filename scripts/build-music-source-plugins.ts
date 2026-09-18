@@ -14,27 +14,40 @@ const mode = preset === 'node-server' ? 'hot' : 'snapshot'
 const prelude = await preparePrelude()
 const artifacts: PluginArtifact[] = []
 if (mode === 'snapshot') {
-  if (!process.env.DATABASE_URL) throw new Error('插件部署快照需要 DATABASE_URL')
-  const client = postgres(process.env.DATABASE_URL, { max: 1, prepare: false })
-  try {
-    const rows = await client.begin('isolation level repeatable read read only', async (tx) => tx`
-      SELECT p.id, p.enabled, r.revision, r."scriptUrl", r.protocol, r.variables
-      FROM "MusicSourcePlugin" p JOIN "MusicSourcePluginRevision" r
-      ON r."pluginId" = p.id AND r.revision = p."desiredRevision"
-      WHERE p."deletedAt" IS NULL ORDER BY p.priority, p.id
-    `)
-    for (const row of rows) {
-      try {
-        const code = await downloadScript(row.scriptUrl)
-        const protocol = row.protocol as PluginProtocol
-        const { capability } = await runPlugin({ prelude, source: code.source, protocol, variables: unseal(row.variables, 'variables') })
-        artifacts.push({ id: row.id, revision: row.revision, protocol, ...code, capability })
-      } catch {
-        if (row.enabled) throw new Error(`插件 ${row.id} 下载或验证失败，部署已终止`)
-        console.warn(`已跳过未启用且验证失败的插件 ${row.id}`)
+  const snapshotDatabaseUrl = process.env.MUSIC_PLUGIN_DATABASE_URL || process.env.DATABASE_URL
+  if (!snapshotDatabaseUrl) {
+    console.warn(
+      '未配置 MUSIC_PLUGIN_DATABASE_URL/DATABASE_URL，将生成空音源插件快照；站点核心功能不受影响'
+    )
+  } else {
+    const client = postgres(snapshotDatabaseUrl, { max: 1, prepare: false })
+    try {
+      const rows = await client.begin('isolation level repeatable read read only', async (tx) => tx`
+        SELECT p.id, p.enabled, r.revision, r."scriptUrl", r.protocol, r.variables
+        FROM "MusicSourcePlugin" p JOIN "MusicSourcePluginRevision" r
+        ON r."pluginId" = p.id AND r.revision = p."desiredRevision"
+        WHERE p."deletedAt" IS NULL ORDER BY p.priority, p.id
+      `)
+      for (const row of rows) {
+        try {
+          const code = await downloadScript(row.scriptUrl)
+          const protocol = row.protocol as PluginProtocol
+          const { capability } = await runPlugin({
+            prelude,
+            source: code.source,
+            protocol,
+            variables: unseal(row.variables, 'variables')
+          })
+          artifacts.push({ id: row.id, revision: row.revision, protocol, ...code, capability })
+        } catch {
+          if (row.enabled) throw new Error(`插件 ${row.id} 下载或验证失败，部署已终止`)
+          console.warn(`已跳过未启用且验证失败的插件 ${row.id}`)
+        }
       }
+    } finally {
+      await client.end()
     }
-  } finally { await client.end() }
+  }
 }
 const manifestPath = 'server/utils/music-source-plugins/manifest.snapshot.ts'
 const buildId = randomUUID()

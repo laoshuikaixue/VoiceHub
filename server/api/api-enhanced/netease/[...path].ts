@@ -35,9 +35,6 @@ const ensureNcmConfig = (): Promise<void> => {
   return ncmConfigPromise
 }
 
-// 预热配置，不阻塞启动
-ensureNcmConfig()
-
 const normalizeParams = (input: Record<string, any>) => {
   const output: Record<string, any> = {}
   for (const [key, value] of Object.entries(input || {})) {

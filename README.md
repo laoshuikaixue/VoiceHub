@@ -126,7 +126,7 @@
 
 ### 一键部署
 
-本项目可以一键部署到Vercel/Netlify/EdgeOne平台：
+本项目可以部署到 Vercel、Netlify、EdgeOne 和 Cloudflare Workers：
 
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flaoshuikaixue%2FVoiceHub&env=DATABASE_URL,JWT_SECRET,NODE_ENV&envDefaults=%7B%22NODE_ENV%22%3A%22production%22%7D&envDescription=%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AF%B4%E6%98%8E&envLink=https%3A%2F%2Fgithub.com%2Flaoshuikaixue%2FVoiceHub%23%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AF%B4%E6%98%8E)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
@@ -136,6 +136,30 @@
 
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
+
+### Cloudflare Workers
+
+仓库已包含 `wrangler.jsonc` 与 `cloudflare_module` 构建适配，可运行完整 Nuxt SSR 与 Server API。
+
+```bash
+# 本地使用真实 workerd 验证
+pnpm run dev:cloudflare
+
+# 部署
+pnpm run deploy:cloudflare
+```
+
+部署前至少配置：
+
+```bash
+wrangler secret put DATABASE_URL
+wrangler secret put JWT_SECRET
+```
+
+- `DATABASE_URL` 建议使用 Neon/Supabase 等支持 Serverless 的 PostgreSQL；当前适配通过 Worker secret 读取该连接串。
+- 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
+- Workers 下 Redis、SMTP、本地文件备份、网易云易盾 jsdom 接口与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
+- 网易云解灰保留 7 个 HTTP 音源；仅 `unm` 音源因依赖 Node 服务端包不可用。
 
 ### Linux 服务器部署
 
@@ -1442,6 +1466,7 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
+│   ├── build-cloudflare.js # Cloudflare Workers 构建入口
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
@@ -1455,6 +1480,8 @@ VoiceHub/
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
+├── deploy/                # 边缘运行时兼容模块
+│   └── stubs/             # Workers 不兼容 Node 依赖的受控替代实现
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
@@ -1501,7 +1528,8 @@ VoiceHub/
 ├── sh/                    # 一键部署脚本目录
 ├── tsconfig.json          # TypeScript配置文件
 ├── UPGRADE.md             # 升级指南
-└── vercel.json            # Vercel部署配置
+├── vercel.json            # Vercel部署配置
+└── wrangler.jsonc         # Cloudflare Workers 部署配置
 ```
 
 ### 目录说明

@@ -738,6 +738,56 @@ export default defineNuxtConfig({
       : process.env.NETLIFY
         ? 'netlify'
         : process.env.NITRO_PRESET || 'node-server',
+    // 边缘运行时（Cloudflare Workers 等）：nodejs_compat 下 punycode 用 Node 内置实现，
+    // 绕过 unenv 对 'punycode/'（tr46/tough-cookie 等带尾斜杠 require）的 polyfill 解析 bug（ENOTDIR）
+    ...(process.env.NITRO_PRESET?.includes('cloudflare')
+      ? {
+          alias: {
+            punycode: 'node:punycode',
+            'punycode/': 'node:punycode',
+            // jsdom 可选依赖 canvas 在边缘环境不可用，stub 掉
+            canvas: fileURLToPath(new URL('./deploy/stubs/canvas.js', import.meta.url)),
+            // redis 客户端可选原生依赖 @node-rs/xxhash，stub 掉
+            '@node-rs/xxhash': fileURLToPath(new URL('./deploy/stubs/node-rs-xxhash.js', import.meta.url)),
+            // 网易云增强 API 的 PAC 代理依赖在边缘运行时无用且其依赖链（get-uri→debug polyfill）
+            // 在 workerd 下 CJS 互操作崩溃，stub 掉
+            'pac-proxy-agent': fileURLToPath(new URL('./deploy/stubs/pac-proxy-agent.js', import.meta.url)),
+            // unenv 的 debug polyfill 在 workerd 下 CJS 互操作得到不可调用对象，
+            // follow-redirects/require-in-the-middle 等顶层 require('debug')('ns') 会崩，stub 掉
+            debug: fileURLToPath(new URL('./deploy/stubs/debug.js', import.meta.url)),
+            // @sentry/node 的 OpenTelemetry instrumentation 在模块 init 阶段 patch Node 内置模块，
+            // 在 workerd 下崩溃；边缘构建用空实现替代，遥测由插件内 enabled 逻辑自然关闭
+            '@sentry/node': fileURLToPath(new URL('./deploy/stubs/sentry-node.mjs', import.meta.url)),
+            // jsdom 依赖 DOM 标准类，在 workerd 初始化即崩；唯一使用方是网易云易盾反作弊
+            // token 获取（register_checktoken_v2），stub 后该接口报错降级，其余功能不受影响
+            jsdom: fileURLToPath(new URL('./deploy/stubs/jsdom.js', import.meta.url)),
+            // node-redis 依赖 Node 内置类与 TCP，其 metrics instrumentation 在 workerd 初始化即崩；
+            // Redis 在边缘不可用，VoiceHub 未配置 REDIS_URL 时本就走无缓存降级路径
+            redis: fileURLToPath(new URL('./deploy/stubs/redis.mjs', import.meta.url)),
+            // nodemailer 的 SMTP 层基于 node:net/tls 原生 socket，其 events 互操作在 workerd
+            // 模块 init 阶段即崩；边缘部署邮件应改用 HTTP API（Resend/SendGrid 等）
+            nodemailer: fileURLToPath(new URL('./deploy/stubs/nodemailer.mjs', import.meta.url)),
+            // jsonwebtoken 依赖 jws 的 Node Stream 继承链，workerd 下初始化失败；
+            // VoiceHub 仅需 HS256 同步 sign/verify/decode，用边缘兼容实现替代
+            jsonwebtoken: fileURLToPath(new URL('./deploy/stubs/jsonwebtoken.mjs', import.meta.url)),
+            // 歌词 WASM 仅在浏览器播放器中使用；SSR glue 在 workerd 严格模块下会报 URL 未定义
+            '@applemusic-like-lyrics/lyric': fileURLToPath(
+              new URL('./deploy/stubs/applemusic-like-lyrics.mjs', import.meta.url)
+            ),
+            // 音源插件预置环境已在 Node 构建阶段写入快照，Workers 运行期不打包原生 esbuild
+            esbuild: fileURLToPath(new URL('./deploy/stubs/esbuild.mjs', import.meta.url)),
+            // 网易云增强 API 的 main.js 顶层会加载其内置 Express 服务器（server.js），
+            // VoiceHub 仅用其函数式接口，stub 掉 express 斩断整条服务器依赖链
+            express: fileURLToPath(new URL('./deploy/stubs/express.js', import.meta.url)),
+            // 解灰工具：原包入口是 Express 服务器、模块加载依赖 fs，无法在边缘打包。
+            // 用 deploy/stubs/unblockmusic-utils-edge.mjs（纯 fetch 实现 7 个 HTTP 音源）等价替换，
+            // 解灰功能保持可用；仅缺依赖 @unblockneteasemusic/server 的 unm 音源
+            '@neteasecloudmusicapienhanced/unblockmusic-utils': fileURLToPath(
+              new URL('./deploy/stubs/unblockmusic-utils-edge.mjs', import.meta.url)
+            )
+          }
+        }
+      : {}),
     // 增强错误处理和稳定性
     experimental: {
       wasm: true,
@@ -851,7 +901,24 @@ export default defineNuxtConfig({
 
   // Vite 配置
   vite: {
-    plugins: [wasm()],
+    plugins: [
+      ...(process.env.NITRO_PRESET?.includes('cloudflare')
+        ? [
+            {
+              name: 'voicehub-cloudflare-ssr-lyric-stub',
+              enforce: 'pre' as const,
+              resolveId(source: string, _importer: string | undefined, options: { ssr?: boolean }) {
+                if (options?.ssr && source === '@applemusic-like-lyrics/lyric') {
+                  return fileURLToPath(
+                    new URL('./deploy/stubs/applemusic-like-lyrics.mjs', import.meta.url)
+                  )
+                }
+              }
+            }
+          ]
+        : []),
+      wasm()
+    ],
     optimizeDeps: {
       include: ['drizzle-orm'],
       exclude: [
