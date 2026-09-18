@@ -4,6 +4,7 @@ import { useChkszSource } from '~/composables/useChkszSource'
 import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
+import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { persistQqMusicCookie } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
 import { useServerErrors } from '~/composables/useLocaleText'
@@ -207,6 +208,16 @@ export const isKnownInvalidQqAudioUrl = (url: string | null | undefined) => {
   return urlWithoutParams.endsWith(INVALID_QQ_AUDIO_URL_SUFFIX)
 }
 
+/** 接受一个解析结果：播放端已确认无效的地址直接丢弃，让链路继续尝试其它来源 */
+const acceptResult = (url: string, source: string): MusicUrlResolveResult | null => {
+  if (isPlaybackUrlInvalid(url)) {
+    console.warn(`[musicUrl] 跳过已知无效地址（来源 ${source}）`)
+    return null
+  }
+  rememberMusicUrlSource(url, source)
+  return { url, source }
+}
+
 const rememberMusicUrlSource = (url: string | null | undefined, source?: string) => {
   if (!url || !source) return
   musicUrlSourceCache.set(normalizeCacheUrl(url), source)
@@ -262,8 +273,7 @@ export async function getMusicUrlResult(
     }
     const chkszUrl = await getChkszMusicUrl(platform, musicId, chkszQuality)
     if (chkszUrl) {
-      rememberMusicUrlSource(chkszUrl, 'chksz')
-      return { url: chkszUrl, source: 'chksz' }
+      return acceptResult(chkszUrl, 'chksz')
     }
     return null
   }
@@ -281,7 +291,7 @@ export async function getMusicUrlResult(
   const tryPlugins = async () => {
     try {
       const result = await resolvePluginUrl(platform, musicId, quality, options)
-      if (result?.url) { rememberMusicUrlSource(result.url, result.source); return result }
+      if (result?.url) return acceptResult(result.url, result.source)
     } catch (error) { console.warn('[musicUrl] 插件解析阶段失败', error) }
     return null
   }
@@ -510,11 +520,8 @@ export async function getMusicUrlResult(
   // 先使用统一组件的音源选择逻辑
   const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
   if (backupResult.success && backupResult.url) {
-    rememberMusicUrlSource(backupResult.url, backupResult.source || 'music-source')
-    return {
-      url: backupResult.url,
-      source: backupResult.source || 'music-source'
-    }
+    const accepted = acceptResult(backupResult.url, backupResult.source || 'music-source')
+    if (accepted) return accepted
   }
 
   if (neteaseOfficialFirst) {
@@ -604,11 +611,8 @@ export async function getMusicUrlResult(
     // 官方接口失败时回退星海音源
     const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo, quality)
     if (xinghaiUrl) {
-      rememberMusicUrlSource(xinghaiUrl, 'xinghai')
-      return {
-        url: xinghaiUrl,
-        source: 'xinghai'
-      }
+      const accepted = acceptResult(xinghaiUrl, 'xinghai')
+      if (accepted) return accepted
     }
     throw new Error('咪咕音乐播放链接获取失败')
   }
@@ -638,11 +642,9 @@ export async function getMusicUrlResult(
       if (endpoint === 'tencent' && isKnownInvalidQqAudioUrl(url)) {
         continue
       }
-      rememberMusicUrlSource(url, 'vkeys')
-      return {
-        url,
-        source: 'vkeys'
-      }
+      const accepted = acceptResult(url, 'vkeys')
+      if (accepted) return accepted
+      continue
     }
   }
 

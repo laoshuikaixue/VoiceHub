@@ -51,6 +51,7 @@
             dragOverIndex === index ? 'border-t-2 border-t-primary' : ''
           ]"
           @dragstart="handleDragStart($event, index)"
+          @dragover.prevent
           @dragenter.prevent="handleDragEnter(index)"
           @dragleave="handleDragLeave"
           @drop.stop.prevent="handleDrop($event, index)"

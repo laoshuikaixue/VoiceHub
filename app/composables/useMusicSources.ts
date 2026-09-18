@@ -18,6 +18,7 @@ import {
 } from '~/utils/musicSources'
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
 import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
+import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
@@ -2122,13 +2123,18 @@ export const useMusicSources = () => {
               url = url.replace('http://', 'https://')
             }
 
-            // 验证播放链接
-            const validation = await validatePlayUrl(url)
-
-            if (validation.valid) {
-              return { success: true, url, source: source.id }
+            // 播放端已确认该地址无效时跳过，继续尝试下一个音源
+            if (isPlaybackUrlInvalid(url)) {
+              console.warn(`[getSongUrl] 音源 ${source.id} 返回已知无效地址，跳过`)
             } else {
-              // 继续尝试下一个音源
+              // 验证播放链接
+              const validation = await validatePlayUrl(url)
+
+              if (validation.valid) {
+                return { success: true, url, source: source.id }
+              } else {
+                // 继续尝试下一个音源
+              }
             }
           } else {
             // 未返回有效链接，继续尝试下一个音源

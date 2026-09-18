@@ -271,6 +271,7 @@ import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
@@ -548,10 +549,8 @@ const trySwitchPlaybackSource = async () => {
     excludeSources.push('vkeys')
   }
 
-  if (!excludeSources.length) {
-    return false
-  }
-
+  // 无法判定失败来源（如直接使用库里存的 playUrl）时也要重试一次：
+  // buildFallbackResolveOptions 会带 ignoreProvidedUrl，解析链路同时会跳过已登记无效的地址
   isFallbackHandling.value = true
   control.isLoadingTrack.value = true
   const playbackKey = `${song.id}:${song.musicPlatform}:${song.musicId}`
@@ -960,6 +959,14 @@ const handleError = async (error) => {
 
   // 如果正在处理 fallback，直接返回，不走重试逻辑
   if (isFallbackHandling.value) return
+
+  // 解码失败/来源不支持说明地址本身失效（如网易外链对无版权歌曲返回 403），
+  // 登记后换源重试时解析链路会跳过它，避免反复拿到同一条坏链
+  const failedSrc = audioEl.currentSrc || audioEl.src
+  const mediaErrorCode = audioEl.error?.code
+  if (mediaErrorCode === MediaError.MEDIA_ERR_DECODE || mediaErrorCode === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+    markPlaybackUrlInvalid(failedSrc)
+  }
 
   const switchedSource = await trySwitchPlaybackSource()
   if (switchedSource) {

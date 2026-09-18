@@ -979,6 +979,7 @@ VoiceHub/
 │       ├── debounce.ts       # 防抖工具
 │       ├── grade-class-input.ts # 年级班级批量输入解析
 │       ├── gradeClassWeights.js # 年级排序权重
+│       ├── invalidPlaybackUrls.ts # 播放端确认无效的地址登记（换源时跳过坏链）
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
@@ -1199,11 +1200,6 @@ VoiceHub/
 │   │   │   ├── resolve-url.post.ts # 音乐播放链接统一解析
 │   │   │   ├── state.post.ts        # 音乐状态管理
 │   │   │   └── websocket.ts         # 音乐WebSocket连接
-│   │   ├── musicfree/      # 旧版 MusicFree 插件 API 兼容路由
-│   │   │   ├── lyric.post.ts        # 插件歌词获取
-│   │   │   ├── media-source.post.ts # 插件播放链接获取
-│   │   │   ├── plugins.get.ts       # 插件列表与用户变量声明
-│   │   │   └── search.post.ts       # 插件搜索
 │   │   ├── music-source-plugins/ # 统一音源插件接口
 │   │   │   ├── capabilities.get.ts  # 插件能力与平台列表
 │   │   │   ├── lyric.post.ts        # 插件歌词获取
@@ -1444,7 +1440,10 @@ VoiceHub/
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
+│       ├── invalid-playback-urls.test.ts # 无效播放地址登记与淘汰测试
 │       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
+│       ├── music-source-plugin-platform.test.ts # 插件平台键解析测试
+│       ├── music-source-runtime.test.ts # 插件沙箱与网络策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
