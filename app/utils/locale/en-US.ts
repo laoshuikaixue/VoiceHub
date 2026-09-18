@@ -2920,7 +2920,7 @@ export const admin = {
     removeConfirm: '{0} will stop resolving. Requested plugin songs can no longer play.',
     name: 'Name (optional)',
     nameHint: 'Leave blank to read the plugin name from the script.',
-    url: 'JS URL (HTTP/HTTPS)',
+    url: 'JS URL',
     protocol: 'Protocol',
     catalog: 'Music catalog',
     catalogHint: 'Select an official catalog only if the plugin uses the same track IDs.',

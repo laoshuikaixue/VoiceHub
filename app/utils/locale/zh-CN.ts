@@ -2929,7 +2929,7 @@ export const admin = {
     removeConfirm: '移除后 {0} 不再参与解析，已投稿的插件歌曲将无法播放。',
     name: '名称（可选）',
     nameHint: '留空时自动读取插件自身名称。',
-    url: 'JS 直链（HTTP/HTTPS）',
+    url: 'JS 直链',
     protocol: '插件协议',
     catalog: '歌曲目录',
     catalogHint: '只有确认插件歌曲 ID 与官方平台一致时才选择对应目录。',
