@@ -1407,6 +1407,7 @@ VoiceHub/
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
+│   │   ├── userDisplayName.ts # 同名用户消歧统一口径（仅在读用户参与统计）
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── user-archive.ts # 账号归档判定转发导出（权威实现在 app/utils）

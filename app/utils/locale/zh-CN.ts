@@ -3590,6 +3590,7 @@ export const admin = {
       selectBackupFile: '请选择备份文件',
       restoreSuccessRelogin: '数据库恢复成功，正在重新登录',
       restoreSuccess: '数据库恢复成功',
+      restoreAdminMissing: '未检测到新的超级管理员账户，已保留当前账户，请检查后重试',
       sequenceResetSuccess: '序列重置成功',
       databaseResetSuccess: '数据库已成功重置'
     },
