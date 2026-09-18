@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { config } from 'dotenv'
 import postgres from 'postgres'
@@ -35,6 +35,22 @@ if (mode === 'snapshot') {
     }
   } finally { await client.end() }
 }
-const manifest = { mode, buildId: randomUUID(), prelude, artifacts }
-await writeFile('server/utils/music-source-plugins/manifest.ts', `// 构建生成的受限脚本数据。\nimport type { PluginManifest } from './types'\nexport const pluginManifest: PluginManifest = ${JSON.stringify(manifest)}\n`)
+const manifestPath = 'server/utils/music-source-plugins/manifest.ts'
+const buildId = randomUUID()
+// 快照里含沙箱预置环境与下载的第三方脚本，任意字符都可能破坏巨型字符串字面量的转义，
+// 因此统一用 base64 承载，生成的源码只含 ASCII，解码在运行时完成。
+const encoded = Buffer.from(JSON.stringify({ mode, buildId, prelude, artifacts }), 'utf8').toString('base64')
+const output = [
+  '// 构建生成的受限脚本数据，请勿手工编辑。',
+  "import type { PluginManifest } from './types'",
+  '',
+  'const encoded = [',
+  ...(encoded.match(/.{1,1024}/g) || []).map((chunk) => `  '${chunk}',`),
+  "].join('')",
+  '',
+  "export const pluginManifest: PluginManifest = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'))",
+  ''
+].join('\n')
+await writeFile(manifestPath, output)
+if (await readFile(manifestPath, 'utf8') !== output) throw new Error('插件部署快照写入校验失败，产物内容与预期不一致')
 console.info(`插件构建完成：${mode}，${artifacts.length} 个脚本`)
