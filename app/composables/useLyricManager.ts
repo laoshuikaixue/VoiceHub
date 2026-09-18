@@ -3,6 +3,7 @@ import { useAudioPlayer } from './useAudioPlayer'
 import { useMusicSources } from './useMusicSources'
 import { useLyricSettings } from './useLyricSettings'
 import { useLocale } from '~/utils/locale'
+import { getPersistedSongId } from '~/utils/pluginPlatform'
 import {
   parseSmartLrc,
   alignLyrics,
@@ -235,6 +236,8 @@ export const useLyricManager = () => {
       console.log(`[LyricManager] 开始获取歌词: ${track.title} (${platform}:${musicId})`)
 
       const result = await getLyrics(platform, musicId, {
+        selectionToken: track.selectionToken,
+        songId: getPersistedSongId(track),
         title: track.title,
         artist: track.artist,
         album: track.album,

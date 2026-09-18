@@ -60,7 +60,8 @@ export const useSongPlayer = () => {
           musicInfo: {
             name: song.title,
             artist: song.artist,
-            album: song.album || undefined
+            album: song.album || undefined,
+            rawItem: song
           }
         })
       }

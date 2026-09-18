@@ -1,6 +1,7 @@
 import { computed, readonly, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
 import { getLoginStatus } from '~/utils/neteaseApi'
+import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX } from '~/utils/pluginPlatform'
 
 // 音质配置
 export const QUALITY_OPTIONS = {
@@ -24,6 +25,11 @@ export const QUALITY_OPTIONS = {
     { value: 2, key: 'miguHq' },
     { value: 3, key: 'miguSq' },
     { value: 4, key: 'miguZq24' },
+  ],
+  plugin: [
+    { value: 2, key: 'pluginStandard' },
+    { value: 4, key: 'pluginHigh' },
+    { value: 5, key: 'pluginSuper' }
   ]
 }
 
@@ -32,7 +38,15 @@ const DEFAULT_QUALITY = {
   netease: 4, // HQ极高 (320k)
   tencent: 8, // HQ高音质
   bilibili: 1,
-  migu: 1 // 标准音质（咪咕匿名仅提供 128k）
+  migu: 1, // 标准音质（咪咕匿名仅提供 128k）
+  plugin: 4 // 高品质
+}
+
+// 将平台名归一化为音质配置键（plugin:<id> → plugin，netease-podcast → netease）
+const normalizeQualityPlatform = (platform: string): string => {
+  if (platform.startsWith(PLUGIN_PLATFORM_PREFIX) || platform.startsWith(LEGACY_PLUGIN_PLATFORM_PREFIX)) return 'plugin'
+  if (platform === 'netease-podcast') return 'netease'
+  return platform
 }
 
 // 全局音质状态，确保所有组件共享同一个状态
@@ -113,7 +127,11 @@ export function useAudioQuality() {
   const getStoredQuality = () => {
     try {
       const stored = localStorage.getItem('audioQuality')
-      return stored ? JSON.parse(stored) : DEFAULT_QUALITY
+      if (!stored) return DEFAULT_QUALITY
+      const parsed = JSON.parse(stored)
+      // 旧版本以 musicfree 作为插件音质配置键，迁移到 plugin
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && !('plugin' in parsed) && 'musicfree' in parsed) parsed.plugin = parsed.musicfree
+      return parsed || DEFAULT_QUALITY
     } catch {
       return DEFAULT_QUALITY
     }
@@ -156,36 +174,30 @@ export function useAudioQuality() {
 
   // 保存音质设置到localStorage
   const saveQuality = (platform: string, quality: number) => {
-    audioQuality.value[platform] = quality
+    audioQuality.value[normalizeQualityPlatform(platform)] = quality
     // localStorage保存已经通过watch自动处理
   }
 
   // 获取指定平台的音质设置
   const getQuality = (platform: string) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
+    const key = normalizeQualityPlatform(platform)
 
-    const stored = audioQuality.value[platform]
+    const stored = audioQuality.value[key]
     // 已保存的音质值不再存在于选项列表时（如咪咕音质收敛后残留旧值），回落默认值
     const platformOptions =
-      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string }>>)[platform] || []
+      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string }>>)[key] || []
     const isValid = platformOptions.some((option) => option.value === stored)
     if (isValid) {
       return stored
     }
-    return (DEFAULT_QUALITY as Record<string, number>)[platform]
+    return (DEFAULT_QUALITY as Record<string, number>)[key]
   }
 
   // 获取指定平台的音质选项
   const getQualityOptions = (platform: string) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
+    const key = normalizeQualityPlatform(platform)
 
-    return (QUALITY_OPTIONS[platform] || []).map((option) => ({
+    return (QUALITY_OPTIONS[key] || []).map((option) => ({
       ...option,
       label: locale.value?.options?.[option.key]?.label || option.key,
       description: locale.value?.options?.[option.key]?.description || '使用推荐音质设置'
@@ -194,10 +206,6 @@ export function useAudioQuality() {
 
   // 获取音质标签
   const getQualityLabel = (platform: string, quality: number) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
     const options = getQualityOptions(platform)
     const option = options.find((opt) => opt.value === quality)
     return option ? option.label : locale.value.unknown
@@ -205,10 +213,6 @@ export function useAudioQuality() {
 
   // 获取音质描述
   const getQualityDescription = (platform: string, quality: number) => {
-    // 处理 netease-podcast 别名
-    if (platform === 'netease-podcast') {
-      platform = 'netease'
-    }
     const options = getQualityOptions(platform)
     const option = options.find((opt) => opt.value === quality)
     return option ? option.description : ''

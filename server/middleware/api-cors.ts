@@ -6,8 +6,9 @@ export default defineEventHandler((event) => {
   const method = getMethod(event)
   
   // 只处理特定的内部API路由，防止站外调用
-  const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
-                         pathname.startsWith('/api/native-api')
+  const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') ||
+                         pathname.startsWith('/api/native-api') ||
+                         pathname.startsWith('/api/music-source-plugins/')
 
   if (!isProtectedApi) {
     return

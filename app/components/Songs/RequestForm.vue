@@ -230,7 +230,7 @@
                 type="button"
                 @click="switchPlatform(pKey)"
               >
-                {{ locale.platforms[pKey] || pKey }}
+                {{ getPlatformButtonLabel(pKey) }}
               </button>
             </div>
 
@@ -1479,6 +1479,7 @@ import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { onQqMusicCookieUpdated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
+import { getPluginId, isPluginPlatform } from '~/utils/pluginPlatform'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1558,9 +1559,19 @@ const voting = ref(false)
 const {
   getAvailablePlatforms,
   loadPlatformConfig,
-  loaded: platformConfigLoaded
+  loaded: platformConfigLoaded,
+  pluginPlatforms
 } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
+
+// 平台按钮显示名：内置音源用词典，插件音源用其 displayName
+const getPlatformButtonLabel = (key) => {
+  if (isPluginPlatform(key)) {
+    const plugin = pluginPlatforms.value.find((p) => p.platform === key)
+    return plugin?.displayName ?? getPluginId(key)
+  }
+  return ((locale.value.platforms) || {})[key] ?? key
+}
 
 // 监听平台可用性与排序变化：
 // - 当前平台被禁用时，强制切换到第一个可用平台并提示
@@ -1570,7 +1581,7 @@ watch(availablePlatforms, (available) => {
   if (!available.includes(platform.value)) {
     platform.value = available[0]
     if (window.$showNotification) {
-      const switchedName = locale.value.platforms[platform.value] || ''
+      const switchedName = getPlatformButtonLabel(platform.value) || ''
       const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
       window.$showNotification(msg, 'info')
     }
@@ -3181,7 +3192,8 @@ const getAudioUrl = async (result) => {
             musicInfo: {
               name: result.title,
               artist: result.artist,
-              album: result.album || undefined
+              album: result.album || undefined,
+              rawItem: result
             }
           }
         )
@@ -3243,6 +3255,7 @@ const playSong = async (result, playlist, playlistIndex) => {
     musicId: finalMusicId,
     albumId: result.albumId,
     sourceInfo: result.sourceInfo,
+    selectionToken: result.selectionToken,
     bilibiliCid: result.bilibiliCid // 确保传递 cid
   }
 
@@ -3289,7 +3302,8 @@ const playSong = async (result, playlist, playlistIndex) => {
       await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId, {
         title: song.title,
         artist: song.artist,
-        album: result.album || ''
+        album: result.album || '',
+        selectionToken: result.selectionToken
       })
     } catch (error) {
       console.error('获取歌词失败:', error)
@@ -3656,6 +3670,7 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
+      selectionToken: result.selectionToken,
       durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,

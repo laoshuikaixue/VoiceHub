@@ -154,6 +154,7 @@ export const siteConfig = {
   platformTencent: 'QQ Music',
   platformBilibili: 'Bilibili',
   platformMigu: 'Migu Music',
+  platformPlugin: 'Source Plugins',
   platformEnabled: 'Enabled',
   platformDisabled: 'Disabled',
 
@@ -1141,7 +1142,10 @@ export const pages = {
         bilibiliDefault: { label: 'Default', description: 'Default quality' },
         miguHq: { label: 'HQ High', description: 'High-quality music experience' },
         miguSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
-        miguZq24: { label: 'ZQ24 Lossless', description: 'High-resolution quality, larger files, more data' }
+        miguZq24: { label: 'ZQ24 Lossless', description: 'High-resolution quality, larger files, more data' },
+        pluginStandard: { label: 'Standard', description: 'Standard quality' },
+        pluginHigh: { label: 'High', description: 'High quality' },
+        pluginSuper: { label: 'Super', description: 'Highest quality' }
       }
     },
     bilibiliIframe: {
@@ -1218,6 +1222,9 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
+    pluginExcluded: 'Source plugin is excluded',
+    pluginInvalidUrl: 'Source plugin returned an invalid playback link',
+    pluginNoUrl: 'Source plugin did not return a playback link',
     loopOneEnabled: 'Repeat one enabled',
     singleEnabled: 'Single-play mode enabled',
     listLoopEnabled: 'Playlist loop enabled'
@@ -1530,7 +1537,8 @@ export const pages = {
         netease: 'NetEase Cloud Music',
         tencent: 'QQ Music',
         bilibili: 'Bilibili',
-        migu: 'Migu Music'
+        migu: 'Migu Music',
+        plugin: 'Source Plugin'
       },
       refreshing: 'Refreshing',
       neteaseLoginTitle: 'Sign in to NetEase for full features',
@@ -2236,7 +2244,8 @@ export const admin = {
       netease: 'NetEase Cloud Music',
       tencent: 'QQ Music',
       bilibili: 'Bilibili',
-      migu: 'Migu Music'
+      migu: 'Migu Music',
+      plugin: 'Source Plugin'
     },
     timeAgo: {
       justNow: 'Just now',
@@ -2871,6 +2880,7 @@ export const admin = {
     }
   },
   musicSourceController: {
+    
     title: 'Music Source Control',
     description: 'Manage music platform switches and search order. Changes take effect immediately.',
     saveConfig: 'Save Config',
@@ -2887,6 +2897,49 @@ export const admin = {
     orderDesc: 'Drag to reorder platform buttons in the search area',
     resetOrder: 'Reset Order',
     mustKeepOne: 'At least one platform must stay enabled'
+  },
+  musicSourcePlugins: {
+    test: 'Test init',
+    testPassed: 'Plugin initialization passed',
+    title: 'Source plugins',
+    hotHint: 'Add an LX Music or MusicFree JS URL. Save to validate and load. Drag to change resolver priority.',
+    snapshotHint: 'Script and variable changes require redeployment. Toggles and order apply immediately to deployed sources.',
+    add: 'Add source',
+    empty: 'No source plugins configured',
+    loading: 'Loading sources',
+    fetchFailed: 'Failed to load sources',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    up: 'Move up',
+    down: 'Move down',
+    edit: 'Edit',
+    refresh: 'Reload',
+    deployRequired: 'Next deploy',
+    remove: 'Remove',
+    removeTitle: 'Remove source',
+    removeConfirm: '{0} will stop resolving. Requested plugin songs can no longer play.',
+    name: 'Name (optional)',
+    nameHint: 'Leave blank to read the plugin name from the script.',
+    url: 'JS URL',
+    protocol: 'Protocol',
+    catalog: 'Music catalog',
+    catalogHint: 'Select an official catalog only if the plugin uses the same track IDs.',
+    variables: 'Plugin variables (JSON)',
+    variablesHint: 'Use string keys and values. Leave blank to keep current values; enter {} to clear.',
+    legacy: 'Legacy plugin ID (migration)',
+    cancel: 'Cancel',
+    saveDeploy: 'Save',
+    saveLoad: 'Save & load',
+    auto: 'Auto',
+    privateCatalog: 'Plugin catalog',
+    failed: 'Update failed',
+    invalidVariables: 'Variables unreadable, re-enter them',
+    active: 'Active version',
+    deployed: 'Deployed',
+    canSearch: 'Search',
+    resolveOnly: 'Resolve only',
+    pending: 'Pending load / deploy',
+    invalidJson: 'Enter valid JSON variables',
   },
   playTimeManager: {
     title: 'Play Time Management',
@@ -4252,6 +4305,7 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'Too many incorrect authenticator codes. Please try again in 5 minutes.',
   AUTH_INCOMPLETE_PARAMS: 'Incomplete parameters',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
+  COMMON_RATE_LIMITED_SECONDS: 'Too many requests. Try again in {0} seconds.',
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',
@@ -4445,6 +4499,14 @@ export const serverErrors = {
   BACKUP_DISABLED: 'Auto backup is disabled',
   MUSIC_SOURCE_PLATFORM_DISABLED: 'Platform "{0}" is disabled. Available platforms: {1}',
   QQ_COMMENT_FETCH_FAILED: 'Failed to load QQ Music comments. Please try again later.',
+  PLUGIN_INVALID_CONFIG: 'Invalid source plugin configuration',
+  PLUGIN_CONFIG_CONFLICT: 'Configuration changed. Refresh and try again.',
+  PLUGIN_LOAD_FAILED: 'Plugin download or loading failed. The previous version is retained.',
+  PLUGIN_RESOLVE_FAILED: 'No available plugin returned a playable URL',
+  PLUGIN_UNAVAILABLE: 'Source disabled, unavailable, or missing from this deployment',
+  PLUGIN_NETWORK_BLOCKED: 'Plugin request or response rejected by network policy',
+  PLUGIN_TIMEOUT: 'Source plugin timed out',
+  PLUGIN_INVALID_TICKET: 'Invalid or expired track or media credential',
   BACKUP_NOT_CONFIGURED: 'Auto backup is not configured',
   NO_BACKUP_METHOD_ENABLED: 'No backup methods enabled',
   BACKUP_FAILED: 'Backup execution failed',

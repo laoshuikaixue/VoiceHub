@@ -205,19 +205,21 @@
         </Transition>
 
         <!-- 音频元素 -->
-        <AudioElement
-          ref="audioElementRef"
-          :song="song"
-          @canplay="handleCanPlay"
-          @ended="handleEnded"
-          @error="handleError"
-          @loadedmetadata="handleLoaded"
-          @durationchange="handleDurationChange"
-          @loadstart="handleLoadStart"
-          @pause="handlePause"
-          @play="handlePlay"
-          @timeupdate="handleTimeUpdate"
-        />
+        <ClientOnly>
+          <AudioElement
+            ref="audioElementRef"
+            :song="song"
+            @canplay="handleCanPlay"
+            @ended="handleEnded"
+            @error="handleError"
+            @loadedmetadata="handleLoaded"
+            @durationchange="handleDurationChange"
+            @loadstart="handleLoadStart"
+            @pause="handlePause"
+            @play="handlePlay"
+            @timeupdate="handleTimeUpdate"
+          />
+        </ClientOnly>
       </div>
     </Transition>
 
@@ -269,6 +271,7 @@ import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
@@ -522,7 +525,8 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
     musicInfo: {
       name: song.title,
       artist: song.artist,
-      album: song.album || undefined
+      album: song.album || undefined,
+      rawItem: song
     }
   }
 }
@@ -545,12 +549,12 @@ const trySwitchPlaybackSource = async () => {
     excludeSources.push('vkeys')
   }
 
-  if (!excludeSources.length) {
-    return false
-  }
-
+  // 无法判定失败来源（如直接使用库里存的 playUrl）时也要重试一次：
+  // buildFallbackResolveOptions 会带 ignoreProvidedUrl，解析链路同时会跳过已登记无效的地址
   isFallbackHandling.value = true
   control.isLoadingTrack.value = true
+  const playbackKey = `${song.id}:${song.musicPlatform}:${song.musicId}`
+  const resumePosition = audioPlayer.value?.currentTime || 0
 
   try {
     const result = await getMusicUrlResult(
@@ -559,6 +563,9 @@ const trySwitchPlaybackSource = async () => {
       song.playUrl,
       buildFallbackResolveOptions(song, excludeSources)
     )
+
+    const current = activeSong.value
+    if (`${current?.id}:${current?.musicPlatform}:${current?.musicId}` !== playbackKey) return false
 
     if (!result.url) {
       return false
@@ -587,9 +594,27 @@ const trySwitchPlaybackSource = async () => {
     }
 
     await nextTick()
+    let started = false
     if (audioPlayer.value) {
-      audioPlayer.value.load()
-      await control.play()
+      const element = audioPlayer.value
+      // 起播前清掉上一轮的错误态：control.play() 见到 hasError 会直接返回 false，表现为换源成功却停在暂停
+      control.hasError.value = false
+      element.addEventListener('loadedmetadata', () => {
+        if (Number.isFinite(element.duration) && resumePosition < element.duration) element.currentTime = resumePosition
+      }, { once: true })
+      // 不调用 load()：song.musicUrl 变化会通过 :src 绑定自动走加载算法，
+      // 额外一次 load() 会多排一轮 pause/emptied 事件，可能把刚起的播放又改回暂停
+      started = await control.play()
+      // 以元素真实状态为准纠正播放标记，避免排队的 pause 事件把界面留在暂停态
+      if (started && !element.paused) {
+        control.isPlaying.value = true
+        control.isLoadingTrack.value = false
+      }
+    }
+
+    if (!started) {
+      failedPlaybackSources.value = excludeSources
+      return false
     }
 
     return true
@@ -948,6 +973,14 @@ const handleError = async (error) => {
 
   // 如果正在处理 fallback，直接返回，不走重试逻辑
   if (isFallbackHandling.value) return
+
+  // 解码失败/来源不支持说明地址本身失效（如网易外链对无版权歌曲返回 403），
+  // 登记后换源重试时解析链路会跳过它，避免反复拿到同一条坏链
+  const failedSrc = audioEl.currentSrc || audioEl.src
+  const mediaErrorCode = audioEl.error?.code
+  if (mediaErrorCode === MediaError.MEDIA_ERR_DECODE || mediaErrorCode === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+    markPlaybackUrlInvalid(failedSrc)
+  }
 
   const switchedSource = await trySwitchPlaybackSource()
   if (switchedSource) {

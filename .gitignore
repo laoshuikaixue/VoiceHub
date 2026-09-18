@@ -9,6 +9,9 @@ docs
 .pnpm-store
 .mimosa
 
+# 构建生成的音源插件部署快照（scripts/build-music-source-plugins.ts 输出）
+server/utils/music-source-plugins/manifest.snapshot.ts
+
 # Node dependencies
 node_modules
 
@@ -31,6 +34,7 @@ backups/
 .vscode
 .trae
 .qoder
+.codebuddy
 .figma
 .codex
 .agents

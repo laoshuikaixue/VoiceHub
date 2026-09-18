@@ -27,6 +27,7 @@ import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECOND
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
 import { z } from 'zod'
+import { readSelection } from '~~/server/utils/music-source-plugins/resolver'
 
 type SongRequestUser = {
   id: number
@@ -34,6 +35,7 @@ type SongRequestUser = {
 }
 
 const songRequestBodySchema = z.object({
+  selectionToken: z.string().max(200000).optional(),
   title: z.string().trim().min(1, '歌曲名称不能为空').max(200, '歌曲名称不能超过200个字符'),
   artist: z.string().trim().min(1, '艺术家不能为空').max(200, '艺术家不能超过200个字符'),
   cover: z
@@ -78,6 +80,9 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
   }
 
   const requestBody = parsedBody.data
+  const musicSourceData = requestBody.selectionToken
+    ? readSelection(requestBody.selectionToken, user.id, requestBody.musicPlatform || undefined, requestBody.musicId || undefined)
+    : null
 
   try {
     // 标准化后再比较，避免同一首歌因标点或空格差异绕过重复检查。
@@ -483,6 +488,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           cover: requestBody.cover || null,
           musicPlatform: isBilibili ? 'bilibili' : requestBody.musicPlatform || null,
           musicId: finalMusicId,
+          musicSourceData,
           cardCodeId: providedCardCodeId || null,
           playUrl: requestBody.playUrl || null,
           durationSeconds: requestBody.durationSeconds || null,

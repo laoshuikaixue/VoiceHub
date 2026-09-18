@@ -19,6 +19,7 @@ export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
 ]
 
 export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/music-source-plugins/media', methods: GET_METHODS },
   { path: '/api/auth/login', methods: ['POST'] },
   { path: '/api/auth/register', methods: ['POST'] },
   { path: '/api/auth/email-code', methods: ['POST'] },
@@ -46,6 +47,11 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/sys/time', methods: GET_METHODS }
 ]
 
+// /api/music-source-plugins/* 不在公开 API 白名单中，要求登录态。
+// 与 /api/native-api/ 的区别：native-api 是标准内置音源功能，面向匿名用户；
+// 插件音源是管理员录入的第三方脚本，虽在 QuickJS/WASM 沙箱内执行（无宿主模块与文件、进程能力），
+// 但沙箱仍按协议开放出站 http 能力，存在 SSRF 与出站请求放大风险，故要求登录。
+// 例外：/api/music-source-plugins/media 由密封 ticket 授权，需作为 <audio> 直接请求的媒体代理匿名放行。
 export const PUBLIC_API_PREFIX_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/proxy/', methods: GET_METHODS },
   { path: '/api/bilibili/', methods: GET_METHODS },

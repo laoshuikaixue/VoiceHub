@@ -75,5 +75,5 @@ ENV NODE_ENV=production \
 # 暴露端口
 EXPOSE $PORT
 
-# 启动命令：先执行数据库迁移，再启动应用
+# 完成数据库迁移后启动应用，插件配置由服务端读取。
 CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]

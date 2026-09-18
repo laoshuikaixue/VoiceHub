@@ -165,6 +165,7 @@ export const siteConfig = {
   platformTencent: 'QQ音乐',
   platformBilibili: '哔哩哔哩',
   platformMigu: '咪咕音乐',
+  platformPlugin: '插件音源',
   platformEnabled: '已启用',
   platformDisabled: '已禁用',
 
@@ -1152,7 +1153,10 @@ export const pages = {
         bilibiliDefault: { label: '默认', description: '默认音质' },
         miguHq: { label: 'HQ高音质', description: '高品质音乐体验' },
         miguSq: { label: 'SQ无损', description: '无损音质，文件较大' },
-        miguZq24: { label: 'ZQ24无损', description: '高解析度音质，文件更大，需要更多流量' }
+        miguZq24: { label: 'ZQ24无损', description: '高解析度音质，文件更大，需要更多流量' },
+        pluginStandard: { label: '标准', description: '标准音质' },
+        pluginHigh: { label: '高品质', description: '高品质音质' },
+        pluginSuper: { label: '超高', description: '最高音质' }
       }
     },
     bilibiliIframe: {
@@ -1229,6 +1233,9 @@ export const pages = {
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
+    pluginExcluded: '插件音源已排除',
+    pluginInvalidUrl: '插件音源返回的播放链接无效',
+    pluginNoUrl: '插件音源未返回播放链接',
     loopOneEnabled: '已切换为单曲循环',
     singleEnabled: '已切换为单曲播放',
     listLoopEnabled: '已切换为列表循环'
@@ -1539,7 +1546,8 @@ export const pages = {
         netease: '网易云音乐',
         tencent: 'QQ音乐',
         bilibili: '哔哩哔哩',
-        migu: '咪咕音乐'
+        migu: '咪咕音乐',
+        plugin: '插件音源'
       },
       refreshing: '刷新中',
       neteaseLoginTitle: '登录网易云获取完整体验',
@@ -2245,7 +2253,8 @@ export const admin = {
       netease: '网易云音乐',
       tencent: 'QQ音乐',
       bilibili: '哔哩哔哩',
-      migu: '咪咕音乐'
+      migu: '咪咕音乐',
+      plugin: '插件音源'
     },
     timeAgo: {
       justNow: '刚刚',
@@ -2880,6 +2889,7 @@ export const admin = {
     }
   },
   musicSourceController: {
+    
     title: '音源控制',
     description: '管理音乐平台的开关状态和搜索顺序，配置后立即生效',
     saveConfig: '保存配置',
@@ -2896,6 +2906,49 @@ export const admin = {
     orderDesc: '拖拽调整平台在搜索按钮区的显示顺序',
     resetOrder: '重置顺序',
     mustKeepOne: '至少保留一个平台启用'
+  },
+  musicSourcePlugins: {
+    test: '验证初始化',
+    testPassed: '插件初始化验证通过',
+    title: '插件音源',
+    hotHint: '添加 LX Music 或 MusicFree 的 JS 直链。保存后验证并生效，拖拽调整解析优先级。',
+    snapshotHint: '脚本和参数变更在下次部署生效。已部署音源的开关、排序立即生效。',
+    add: '添加音源',
+    empty: '尚未配置插件音源',
+    loading: '加载插件音源',
+    fetchFailed: '音源列表加载失败',
+    enabled: '已启用',
+    disabled: '已禁用',
+    up: '上移',
+    down: '下移',
+    edit: '编辑',
+    refresh: '重新加载',
+    deployRequired: '待下次部署',
+    remove: '移除',
+    removeTitle: '移除插件音源',
+    removeConfirm: '移除后 {0} 不再参与解析，已投稿的插件歌曲将无法播放。',
+    name: '名称（可选）',
+    nameHint: '留空时自动读取插件自身名称。',
+    url: 'JS 直链',
+    protocol: '插件协议',
+    catalog: '歌曲目录',
+    catalogHint: '只有确认插件歌曲 ID 与官方平台一致时才选择对应目录。',
+    variables: '插件参数（JSON）',
+    variablesHint: '键和值均为字符串。编辑时留空保留现有参数，填写 {} 清空。',
+    legacy: '旧插件标识（旧数据迁移用）',
+    cancel: '取消',
+    saveDeploy: '保存配置',
+    saveLoad: '保存并加载',
+    auto: '自动识别',
+    privateCatalog: '插件独立目录',
+    failed: '更新失败',
+    invalidVariables: '插件参数无法解密，需重新填写',
+    active: '当前版本',
+    deployed: '已部署',
+    canSearch: '支持搜索',
+    resolveOnly: '仅解析',
+    pending: '待加载 / 待部署',
+    invalidJson: '请输入有效的 JSON 参数',
   },
   playTimeManager: {
     title: '播出时段管理',
@@ -4261,6 +4314,7 @@ export const serverErrors = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: '动态验证码错误次数过多，请在 5 分钟后重试',
   AUTH_INCOMPLETE_PARAMS: '参数不完整',
   COMMON_INVALID_PARAMS: '参数错误',
+  COMMON_RATE_LIMITED_SECONDS: '操作过于频繁，请 {0} 秒后再试',
   THEME_INVALID_LIST: '启用的主题列表无效',
   THEME_INVALID_DEFAULT: '默认主题必须有效且处于启用状态',
   THEME_SYSTEM_REQUIRES_CLASSIC: '跟随系统时必须同时启用经典深色和经典浅色',
@@ -4454,6 +4508,14 @@ export const serverErrors = {
   BACKUP_DISABLED: '自动备份未启用',
   MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
   QQ_COMMENT_FETCH_FAILED: 'QQ 音乐评论获取失败，请稍后重试',
+  PLUGIN_INVALID_CONFIG: '音源插件配置无效',
+  PLUGIN_CONFIG_CONFLICT: '配置已被修改，请刷新后重试',
+  PLUGIN_LOAD_FAILED: '插件下载或加载失败，旧版本仍会保留',
+  PLUGIN_RESOLVE_FAILED: '所有可用插件均未返回可播放地址',
+  PLUGIN_UNAVAILABLE: '音源未启用、未加载或当前部署不包含该音源',
+  PLUGIN_NETWORK_BLOCKED: '插件请求地址或响应不符合网络限制',
+  PLUGIN_TIMEOUT: '音源插件执行超时',
+  PLUGIN_INVALID_TICKET: '歌曲或媒体凭证无效、已过期',
   BACKUP_NOT_CONFIGURED: '自动备份未配置',
   NO_BACKUP_METHOD_ENABLED: '没有启用任何备份方式',
   BACKUP_FAILED: '备份执行失败',

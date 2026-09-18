@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
   apiKeys,
   apiKeyPermissions,
@@ -63,7 +64,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 定义要备份的表和对应的查询
-    const tablesToBackup = {
+    const tablesToBackup: Record<string, { query: () => Promise<any[]>; description: string }> = {
       users: {
         query: async () => {
           const usersData = await db.select().from(users)
@@ -436,6 +437,7 @@ export default defineEventHandler(async (event) => {
 
     // 如果包含系统数据，添加系统设置表
     if (includeSystemData) {
+      Object.assign(tablesToBackup, Object.fromEntries(Object.entries(pluginBackupTables).map(([name, table]) => [name, { query: () => db.select().from(table), description: '音源插件配置' }])))
       tablesToBackup.systemSettings = {
         query: async () => {
           const settings = await db.select().from(systemSettings)
@@ -488,6 +490,10 @@ export default defineEventHandler(async (event) => {
     }
 
     let totalRecords = 0
+
+    if (includeSystemData) {
+      for (const name of Object.keys(pluginBackupTables)) if (!tablesToProcess.includes(name)) tablesToProcess.push(name)
+    }
 
     for (const tableName of tablesToProcess) {
       if (!tablesToBackup[tableName]) {

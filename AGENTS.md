@@ -65,6 +65,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 加载转圈统一用 `~/components/UI/Common/AppSpinner.vue`（scoped CSS 实现，不依赖 UnoCSS utility），支持 `size`（直径 px，默认 32）、`borderWidth`、`label` 属性；复杂加载状态（标题/进度/步骤）用 `LoadingState.vue`（其 circle 类型内部复用 AppSpinner）
 - 禁止手写 `border-*-20/30 border-t-primary rounded-full animate-spin` 或自建 `.loading-spinner` 圆环类；此写法依赖 UnoCSS 生成的 border 工具类，preflight 未设置 `border-style: solid` 时整个圆环不可见
 - 按钮内加载态可用 Lucide 图标（`Loader2`/`RefreshCw` 等）+ `animate-spin`；错误语义色（如网易云红色转圈）保留专用类
+- `AppSpinner` 放在深色/填充底色（`bg-primary`、`bg-primary-hover` 等按钮）内时必须传 `color`（如 `color="white"`），其默认主题色与蓝底同色会不可见；Lucide 图标靠 `text-*` 继承色不受此限
 - 全局 border 重置：`main.css` 的 `*` 规则含 `border-style: solid; border-width: 0`，勿删除
 
 ## 4. 配置与扩展功能开发规范

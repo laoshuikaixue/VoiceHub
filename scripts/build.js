@@ -2,6 +2,7 @@
 
 import { spawn } from 'child_process'
 import { config } from 'dotenv'
+import fs from 'fs'
 import path from 'path'
 
 config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
@@ -431,6 +432,23 @@ function runNuxtBuild() {
   })
 }
 
+async function runMusicSourcePluginBuild() {
+  const scriptPath = path.resolve(process.cwd(), 'scripts/build-music-source-plugins.ts')
+  if (!fs.existsSync(scriptPath)) return true
+  log('🧩 构建音源插件运行时...', 'cyan')
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (success) => {
+      if (settled) return
+      settled = true
+      resolve(success)
+    }
+    const child = spawn(process.execPath, ['--import', 'tsx', scriptPath], { stdio: 'inherit', env: process.env })
+    child.on('error', () => finish(false))
+    child.on('exit', (code) => finish(code === 0))
+  })
+}
+
 async function build() {
   const rawNodeOptions = process.env.NODE_OPTIONS
   normalizeBlankEnvironment()
@@ -439,7 +457,8 @@ async function build() {
 
   if (process.argv.includes('--diagnostics-only')) return
 
-  log('🔨 开始执行 Nuxt 构建...', 'cyan')
+  log('\n🔨 开始构建...', 'cyan')
+  if (!(await runMusicSourcePluginBuild())) throw new Error('音源插件运行时构建失败')
   if (!(await runNuxtBuild())) throw new Error('Nuxt 构建失败')
   log('✅ Nuxt 构建完成', 'green')
 }

@@ -155,6 +155,7 @@ export default defineEventHandler(async (event) => {
       playUrl: song.playUrl,
       musicPlatform: song.musicPlatform,
       musicId: song.musicId,
+      musicSourceData: song.musicSourceData,
       durationSeconds: normalizeStoredDuration(song.durationSeconds),
       createdAt: now,
       updatedAt: now

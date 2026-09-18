@@ -270,6 +270,7 @@ export const useSongs = () => {
     cover?: string | null
     musicPlatform?: string | null
     musicId?: string | null
+    selectionToken?: string
     submissionNote?: string | null
     submissionNotePublic?: boolean
     cardCode?: string | null

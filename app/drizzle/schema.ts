@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -106,6 +106,7 @@ export const songs = pgTable('Song', {
   playUrl: text('playUrl'),
   musicPlatform: text('musicPlatform'),
   musicId: text('musicId'),
+  musicSourceData: jsonb('musicSourceData'),
   durationSeconds: integer('durationSeconds'),
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
@@ -118,6 +119,37 @@ export const songs = pgTable('Song', {
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
   index('song_requester_id_idx').on(table.requesterId)
 ]);
+
+// 插件配置与不可变历史分开保存，部署快照引用精确版本。
+export const musicSourcePlugins = pgTable('MusicSourcePlugin', {
+  id: uuid('id').primaryKey(),
+  name: text('name').notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+  priority: integer('priority').default(0).notNull(),
+  desiredRevision: integer('desiredRevision').default(1).notNull(),
+  activeRevision: integer('activeRevision'),
+  activeHash: text('activeHash'),
+  legacyPlatformKey: text('legacyPlatformKey'),
+  lastError: text('lastError'),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  deletedAt: timestamp('deletedAt'),
+}, (table) => [uniqueIndex('music_source_legacy_key').on(table.legacyPlatformKey)]);
+
+export const musicSourcePluginRevisions = pgTable('MusicSourcePluginRevision', {
+  pluginId: uuid('pluginId').notNull().references(() => musicSourcePlugins.id),
+  revision: integer('revision').notNull(),
+  scriptUrl: text('scriptUrl').notNull(),
+  protocol: text('protocol').notNull(),
+  variables: text('variables').notNull(),
+  catalog: text('catalog'),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+}, (table) => [primaryKey({ columns: [table.pluginId, table.revision] })]);
+
+export const musicSourceConfigState = pgTable('MusicSourceConfigState', {
+  id: integer('id').primaryKey(),
+  revision: integer('revision').default(0).notNull(),
+});
 
 // 投票表
 export const votes = pgTable('Vote', {
@@ -337,7 +369,7 @@ export const systemSettings = pgTable('SystemSettings', {
   // 主题管理配置
   defaultTheme: text('defaultTheme').default('System').notNull(),
   enabledThemes: text('enabledThemes').default('["System","ClassicDark","ClassicLight","ModernLight"]').notNull(),
-  // 平台管理配置
+  // 平台管理配置（仅内置音源；插件音源由插件管理的启用状态与排序控制，不入库）
   enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),
 });

@@ -20,7 +20,7 @@
           @click="saveConfig"
         >
           <template v-if="saving">
-            <AppSpinner :size="14" /> {{ t.saving }}
+            <AppSpinner :size="14" color="white" /> {{ t.saving }}
           </template>
           <template v-else-if="saveSuccess">
             <CheckCircle2 :size="14" /> {{ t.saved }}
@@ -42,6 +42,7 @@
     </div>
 
     <div v-else class="space-y-6">
+      <MusicSourcePlugins />
       <!-- 平台开关 -->
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
@@ -58,7 +59,7 @@
         <p class="text-[10px] text-text-tertiary">{{ t.switchDesc }}</p>
         <div class="grid grid-cols-2 gap-3">
           <div
-            v-for="pf in platformOrder"
+            v-for="pf in managedPlatforms"
             :key="pf"
             :class="[
               'flex items-center justify-between p-3 border rounded-xl transition-all',
@@ -105,7 +106,7 @@
         <div class="space-y-2">
           <TransitionGroup name="platform-order" tag="div" class="space-y-2">
             <div
-              v-for="(pf, idx) in platformOrder"
+              v-for="(pf, idx) in managedPlatforms"
               :key="pf"
               :class="[
                 'flex items-center gap-3 p-3 border rounded-xl transition-all cursor-move select-none',
@@ -157,11 +158,12 @@ import {
   CheckCircle2
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import MusicSourcePlugins from '~/components/Admin/MusicSourcePlugins.vue'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { DEFAULT_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { refreshPlatformConfig } = usePlatformConfig()
@@ -206,19 +208,28 @@ const loading = ref(true)
 const saving = ref(false)
 const saveSuccess = ref(false)
 
-const enabledPlatforms = ref([...DEFAULT_PLATFORMS])
-const platformOrder = ref([...DEFAULT_PLATFORMS])
-
-const parsePlatformArray = (value) => {
+const enabledPlatforms = ref([...BUILTIN_PLATFORMS])
+const platformOrder = ref([...BUILTIN_PLATFORMS])
+// allowBackfill=false 用于 enabledPlatforms：只做白名单过滤，禁止补齐缺失平台，否则用户禁用操作会被覆盖
+// allowBackfill=true 用于 platformOrder：补齐白名单中缺失平台到末尾，保证排序列表完整
+const parsePlatformArray = (value, allowBackfill = false) => {
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value
-    if (!Array.isArray(parsed)) return [...DEFAULT_PLATFORMS]
-    const valid = parsed.filter((p) => DEFAULT_PLATFORMS.includes(p))
-    return valid.length > 0 ? valid : [...DEFAULT_PLATFORMS]
+    if (!Array.isArray(parsed)) return [...BUILTIN_PLATFORMS]
+    const valid = parsed.filter((p) => BUILTIN_PLATFORMS.includes(p))
+    if (!allowBackfill) return valid.length > 0 ? valid : [...BUILTIN_PLATFORMS]
+    const seen = new Set(valid)
+    const merged = [...valid]
+    for (const p of BUILTIN_PLATFORMS) {
+      if (!seen.has(p)) merged.push(p)
+    }
+    return merged.length > 0 ? merged : [...BUILTIN_PLATFORMS]
   } catch {
-    return [...DEFAULT_PLATFORMS]
+    return [...BUILTIN_PLATFORMS]
   }
 }
+// 后台仅管理内置音源（插件音源的启用状态与排序由插件音源配置管理，不在此暴露开关）
+const managedPlatforms = computed(() => platformOrder.value.filter((p) => BUILTIN_PLATFORMS.includes(p)))
 
 const getPlatformLabel = (key) => getPlatformDisplayName(key, siteConfig.value, currentLocale.value)
 
@@ -263,40 +274,36 @@ const handleDragEnd = (e) => {
 }
 
 const togglePlatform = (pf) => {
-  const enabled = enabledPlatforms.value
-  if (enabled.length <= 1 && enabled.includes(pf)) {
+  // enabledPlatforms 只含内置音源，按“至少保留一个”保护
+  if (enabledPlatforms.value.length <= 1 && enabledPlatforms.value.includes(pf)) {
     showNotification(t.value.mustKeepOne || '至少保留一个平台启用', 'warning')
     return
   }
-  if (enabled.includes(pf)) {
-    enabledPlatforms.value = enabled.filter((p) => p !== pf)
-  } else {
-    enabledPlatforms.value = [...enabled, pf]
-  }
+  const enabled = enabledPlatforms.value
+  enabledPlatforms.value = enabled.includes(pf) ? enabled.filter((p) => p !== pf) : [...enabled, pf]
 }
 
-// 重置启用状态到默认值
+// 重置启用状态到默认值（仅内置音源）
 const resetEnabledPlatforms = () => {
-  enabledPlatforms.value = [...DEFAULT_PLATFORMS]
+  enabledPlatforms.value = [...BUILTIN_PLATFORMS]
 }
 
-// 重置排序到默认值
+// 重置排序到默认值（仅内置音源）
 const resetPlatformOrder = () => {
-  platformOrder.value = [...DEFAULT_PLATFORMS]
+  platformOrder.value = [...BUILTIN_PLATFORMS]
 }
 
-// 加载配置
 const loadConfig = async () => {
   try {
     loading.value = true
     const data = await $fetch('/api/admin/system-settings', { credentials: 'include' })
-    enabledPlatforms.value = parsePlatformArray(data.enabledPlatforms)
-    platformOrder.value = parsePlatformArray(data.platformOrder)
+    enabledPlatforms.value = parsePlatformArray(data.enabledPlatforms, false)
+    platformOrder.value = parsePlatformArray(data.platformOrder, true)
   } catch (error) {
     console.error('加载音源配置失败:', error)
     showNotification(t.value.fetchFailed || '加载配置失败', 'error')
-    enabledPlatforms.value = [...DEFAULT_PLATFORMS]
-    platformOrder.value = [...DEFAULT_PLATFORMS]
+    enabledPlatforms.value = [...BUILTIN_PLATFORMS]
+    platformOrder.value = [...BUILTIN_PLATFORMS]
   } finally {
     loading.value = false
   }

@@ -269,7 +269,7 @@ export const useAudioPlayerControl = () => {
             songUrlOrSong.musicPlatform,
             songUrlOrSong.musicId,
             songUrlOrSong.playUrl,
-            options
+            { ...options, musicInfo: { ...(options?.musicInfo || {}), rawItem: songUrlOrSong } }
           )
           if (!songUrl) {
             throw new Error('无法获取歌曲URL')
@@ -385,7 +385,8 @@ export const useAudioPlayerControl = () => {
           musicInfo: {
             name: currentSongForQuality?.title,
             artist: currentSongForQuality?.artist,
-            album: currentSongForQuality?.album || undefined
+            album: currentSongForQuality?.album || undefined,
+            rawItem: currentSongForQuality
           }
         }
       )

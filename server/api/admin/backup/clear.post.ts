@@ -26,6 +26,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq, inArray, isNull, ne, notInArray, or } from 'drizzle-orm'
+import { pluginClearOrder } from '~~/server/utils/music-source-plugins/backup'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -132,6 +133,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(semesters)
       await db.delete(requestTimes)
       await db.delete(gradeClass)
+      for (const table of pluginClearOrder) await db.delete(table)
       await db.delete(systemSettings)
       if (temporaryPreservedUserId) {
         await db.delete(users).where(notInArray(users.id, [temporaryPreservedUserId]))
@@ -181,6 +183,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(semesters)
       await db.delete(requestTimes)
       await db.delete(gradeClass)
+      for (const table of pluginClearOrder) await db.delete(table)
       await db.delete(systemSettings)
       await db.delete(users).where(notInArray(users.id, preservedSuperAdminIds))
     }

@@ -137,7 +137,8 @@ export function useAudioPlayer() {
           options.musicInfo = {
             name: nextSong.title,
             artist: nextSong.artist,
-            album: nextSong.album || undefined
+            album: nextSong.album || undefined,
+            rawItem: nextSong
           }
 
           const url = await getMusicUrl(
@@ -227,7 +228,8 @@ export function useAudioPlayer() {
           options.musicInfo = {
             name: prevSong.title,
             artist: prevSong.artist,
-            album: prevSong.album || undefined
+            album: prevSong.album || undefined,
+            rawItem: prevSong
           }
 
           const url = await getMusicUrl(
@@ -367,7 +369,8 @@ export function useAudioPlayer() {
       options.musicInfo = {
         name: nextSong.title,
         artist: nextSong.artist,
-        album: nextSong.album || undefined
+        album: nextSong.album || undefined,
+        rawItem: nextSong
       }
 
       const url = await getMusicUrl(

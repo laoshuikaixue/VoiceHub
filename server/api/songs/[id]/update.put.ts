@@ -83,6 +83,9 @@ export default defineEventHandler(async (event) => {
       updateData.preferredPlayTimeId = body.preferredPlayTimeId || null
     if (body.musicPlatform !== undefined) updateData.musicPlatform = body.musicPlatform || null
     if (body.musicId !== undefined) updateData.musicId = body.musicId || null
+    if ((body.musicPlatform !== undefined && body.musicPlatform !== existingSong.musicPlatform) ||
+        (body.musicId !== undefined && body.musicId !== existingSong.musicId)) updateData.musicSourceData = null
+    if (body.selectionToken) updateData.musicSourceData = (await import('~~/server/utils/music-source-plugins/resolver')).readSelection(body.selectionToken, user.id, body.musicPlatform, body.musicId)
     if (body.cover !== undefined) updateData.cover = body.cover || null
     if (body.playUrl !== undefined) updateData.playUrl = body.playUrl || null
     if (durationSeconds !== undefined) updateData.durationSeconds = durationSeconds ?? null
