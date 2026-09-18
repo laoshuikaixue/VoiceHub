@@ -432,10 +432,10 @@ function runNuxtBuild() {
   })
 }
 
-async function runMusicFreePluginBuild() {
+async function runMusicSourcePluginBuild() {
   const scriptPath = path.resolve(process.cwd(), 'scripts/build-music-source-plugins.ts')
   if (!fs.existsSync(scriptPath)) return true
-  log('🧩 构建 MusicFree 插件...', 'cyan')
+  log('🧩 构建音源插件运行时...', 'cyan')
   return new Promise((resolve) => {
     let settled = false
     const finish = (success) => {
@@ -458,7 +458,7 @@ async function build() {
   if (process.argv.includes('--diagnostics-only')) return
 
   log('\n🔨 开始构建...', 'cyan')
-  if (!(await runMusicFreePluginBuild())) throw new Error('MusicFree 插件构建失败')
+  if (!(await runMusicSourcePluginBuild())) throw new Error('音源插件运行时构建失败')
   if (!(await runNuxtBuild())) throw new Error('Nuxt 构建失败')
   log('✅ Nuxt 构建完成', 'green')
 }

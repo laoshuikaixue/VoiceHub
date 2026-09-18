@@ -499,10 +499,6 @@ export const MUSIC_PLUGIN_LIMITS = {
   concurrency: 2
 } as const
 
-// MusicFree 插件打包产物目录（scripts/build-musicfree-plugins.js 的唯一输出位置）。
-// 构建脚本无法引入 TS 常量，两处路径字面量需保持一致
-export const MUSICFREE_BUNDLES_DIR = 'server/utils/musicfree-bundles'
-
 // 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
 export const SONG_DURATION_MIN_SECONDS = 0
 export const SONG_DURATION_MAX_SECONDS = 7200

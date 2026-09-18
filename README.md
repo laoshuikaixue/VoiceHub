@@ -1375,9 +1375,7 @@ VoiceHub/
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
-│   │   ├── musicfree.ts    # MusicFree插件运行时（构建产物优先，本地目录回退）
-│   │   ├── musicfree-bundles/ # MusicFree构建期打包产物（manifest.ts已提交，*.mjs已忽略）
-│   │   ├── musicfreeRateLimit.ts # MusicFree未鉴权端点的按IP限流
+│   │   ├── music-source-plugins/ # LX Music 与 MusicFree 音源插件运行时、沙箱与凭证管理
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── permissions.js  # 权限系统配置
@@ -1417,7 +1415,7 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
-│   ├── build-musicfree-plugins.js # 下载并打包 MusicFree 插件（见下文说明）
+│   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
@@ -2037,31 +2035,16 @@ const confirmUnbind = (provider) => {
 
 ### 音源扩展开发指南
 
-VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动态扩展。开发者可以轻松添加新的音乐API源，提高系统的可用性和音乐资源覆盖率。也可以把 MusicFree 插件文件放进项目根目录的 `musicfree-plugins/` 文件夹，运行时会自动读取该目录中的 `.js` 插件并参与搜索与播放解析。
+VoiceHub 采用了模块化的音源架构，支持多音源故障转移和动态扩展。开发者可以在后台录入多个 LX Music 或 MusicFree 插件 JavaScript 直链，提高系统的可用性和音乐资源覆盖率。URL、插件参数、启用状态和优先级只保存在数据库，不再读取音源环境变量或本地目录。
 
-#### MusicFree 插件运行时说明
+#### 音源插件运行时说明
 
-- **三个加载来源（按 id 合并去重，先到先留）**：
-  1. **启动期产物**：`MUSICFREE_PLUGIN_ZIP_URL` 指向的 zip 由 `scripts/build-musicfree-plugins.js` 用 esbuild 打成 `server/utils/musicfree-bundles/*.mjs`，服务端启动时动态 `import`。**更新 zip 无需重建镜像**，重启容器即生效。
-  2. **构建期固化**：`pnpm run build` 把当次产物写入 `manifest.ts` 并被 Nitro 内联进 `.output` 服务端包，是 EdgeOne Pages / Vercel / Netlify 等 serverless 环境的唯一可用来源。
-  3. **本地目录**：`musicfree-plugins/` 下的 `.js` 插件以 `node:vm` 加载。适合本地开发与挂载更新。
-  三个来源**不互斥**：URL 插件与本地插件可同时生效；同一 id 时优先级为 启动期产物 > 构建期固化 > 本地目录（文件名归一化后即 id）。
-- **独立构建脚本**：`pnpm run build:plugins` 可单独执行插件下载与打包（`pnpm run build` 内部已先调用它），Docker 镜像的启动命令也会在容器启动时执行一次。未设置 `MUSICFREE_PLUGIN_ZIP_URL` 时生成空清单、清理旧产物并正常退出，不会阻塞容器启动。
-- **构建产物目录**：`server/utils/musicfree-bundles/`。`*.mjs` 已被 `.gitignore` 忽略；`manifest.ts` 已提交（默认为空），保证干净 clone 不跑构建脚本也能直接构建。
-- **失败策略**：未设置 URL → 生成空清单并继续构建；已设置 URL 但下载、解压或打包失败 → **构建失败**。不做静默降级，避免产出"以为有插件"的坏产物。
-- **插件目录（本地模式）**：`musicfree-plugins/`（已被 `.gitignore` 忽略）。启动时扫描该目录下所有 `.js` 文件；目录不存在时不加载任何插件，功能自动降级为内置音源。实际扫描的绝对路径见启动日志（相对进程工作目录解析）。
-- **信任模型（重要）**：插件以服务器完整权限运行。`vm` 上下文**不是安全边界**——插件可通过宿主对象原型链触达 `process` 等宿主能力；构建期打包模式下白名单在构建时强制校验，但插件代码本身仍与主服务同权。请只使用你信任的插件来源。
-- **构建期打包的限制**：zip ≤ 60MB，单个插件 ≤ 5MB，最多 30 个插件；仅接受 `.js` 条目，其他文件被忽略。插件不得直接 `require` Node 内置模块（esbuild 插件会拒绝并中止构建），只能引入约定的 npm 依赖。
-- **插件加载**：插件在启动时一次性加载并缓存在内存中，**三个来源任一变更后都需重启服务生效**（URL 只需更新 zip；构建期固化的清单需重建镜像）。单个插件加载失败只跳过该插件，不影响其他插件与内置音源。
-  - **Docker 特别注意**：构建期固化的插件不会因运行时 zip 变更而移除——若构建镜像时 URL 指向了插件 A/B，运行时改为仅含 C，B 仍从内联清单加载（serverless 回退设计）。如需完全清除构建期固化插件，须用空 URL 重建镜像。
-- **依赖解析（重要）**：插件内的 `require('axios')` 等统一钿定到进程工作目录（项目根）解析。Nitro 构建后 `import.meta.url` 会被重写为 `file:///_entry.js`，若按 `import.meta.url` 创建 require，打包产物中将解析不到任何 npm 依赖。
-- **登录态（cookie）**：本项目对接的是公用音源，cookie 等登录态由插件源码自行携带，**不需要任何配置**。`env.getUserVariables()` 保留作为协议兼容，始终返回空对象，调用它的插件不会报错。
-- **已知限制**：
-  - 插件 `getMediaSource` 返回的 `headers`（Referer / User-Agent 等）在浏览器 `<audio>` 直连时无法携带，依赖自定义请求头的播放链接会 403；支持这类插件需在服务端做代理转发。
-  - 歌曲表只持久化 `playUrl` / `musicPlatform` / `musicId` / `title` / `artist` / `cover`，插件搜索期的平台特有字段（hash、mid 等）不会入库。仅依赖 `id` 的插件可正常重放；依赖搜索期独有字段的插件在页面重载或次日播报后会解析失败。
-  - 插件搜索结果的 `isEnd` 分页标记尚未接入前端"没有更多"判断。
-  - 构建期打包的插件在编译期即已固化，无运行时 `vm` 编译超时保护；插件顶层代码死循环会挂起服务启动。只使用可信插件来源。
-  - `/api/musicfree/*` 为未鉴权端点，已按 IP 限流（搜索 20 次/分钟，播放链接与歌词各 30 次/分钟），防止被当作出站请求放大器刷接口。
+- **兼容协议**：运行时兼容 LX Music 的 `lx.on` / `lx.send` / `lx.request` 协议，以及 MusicFree 的 CommonJS `search`、`getMediaSource`、`getLyric` 协议。协议可自动识别，也可以在后台明确指定。
+- **安全执行**：第三方脚本在 QuickJS/WASM 中运行，不会直接导入 Nitro 主进程。宿主仅提供受限 HTTP、加密、压缩、随机数和日志能力；网络请求会校验协议、重定向、DNS 和内网地址，并受限于超时、内存、响应体积与并发数。
+- **常驻部署**：Node/Docker 保存或刷新插件后立即下载、校验并原子切换到新版本。下载或验证失败时，已生效版本继续服务；启用开关和拖拽排序立即生效。
+- **Serverless 部署**：构建时 `pnpm run build:plugins` 从数据库读取配置并生成部署快照。新增或修改脚本在下一次部署后生效；已部署版本的启用开关和排序仍从数据库读取。
+- **回退与播放**：搜索、歌词和播放链接会按启用且排序后的插件依次尝试。媒体链接经受限代理提供 Range 支持，服务端保存加密的短期选择凭证，避免插件特有字段在后续播放时丢失。
+- **配置与备份**：插件参数加密保存，管理接口仅返回是否已配置；脚本 URL 会脱敏展示。系统数据备份包含插件配置、版本和歌曲的插件选择数据。
 
 #### 音源架构概述
 

@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.js",
-    "build:plugins": "node scripts/build-musicfree-plugins.js",
+    "build:plugins": "node --import tsx scripts/build-music-source-plugins.ts",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
