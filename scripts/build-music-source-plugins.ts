@@ -35,7 +35,7 @@ if (mode === 'snapshot') {
     }
   } finally { await client.end() }
 }
-const manifestPath = 'server/utils/music-source-plugins/manifest.ts'
+const manifestPath = 'server/utils/music-source-plugins/manifest.snapshot.ts'
 const buildId = randomUUID()
 // 快照里含沙箱预置环境与下载的第三方脚本，任意字符都可能破坏巨型字符串字面量的转义，
 // 因此统一用 base64 承载，生成的源码只含 ASCII，解码在运行时完成。
