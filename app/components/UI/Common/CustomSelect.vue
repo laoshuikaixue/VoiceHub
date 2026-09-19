@@ -63,7 +63,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'

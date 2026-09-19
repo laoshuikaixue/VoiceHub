@@ -330,7 +330,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, reactive, ref, computed } from 'vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {

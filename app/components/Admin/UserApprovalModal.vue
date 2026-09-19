@@ -130,7 +130,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ClipboardCheck, RefreshCw, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'

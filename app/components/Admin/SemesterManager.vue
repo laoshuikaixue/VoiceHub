@@ -495,7 +495,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'

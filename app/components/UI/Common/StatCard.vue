@@ -78,7 +78,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {

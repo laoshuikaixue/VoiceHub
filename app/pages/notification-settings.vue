@@ -157,7 +157,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Bell, ArrowLeft, Save, Loader2 } from '@lucide/vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'

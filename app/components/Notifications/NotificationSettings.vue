@@ -135,7 +135,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { Loader2, AlertCircle } from '@lucide/vue'
 import { useNotifications } from '~/composables/useNotifications'

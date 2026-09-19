@@ -226,7 +226,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Plus, RefreshCw, Trash2, GraduationCap, Sparkles, X, Users, Info } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'

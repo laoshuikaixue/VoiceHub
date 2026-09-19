@@ -19,7 +19,7 @@
   ></audio>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue'
 
 const props = defineProps({

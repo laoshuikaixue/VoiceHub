@@ -51,7 +51,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { Lock, Home, ArrowLeft } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'

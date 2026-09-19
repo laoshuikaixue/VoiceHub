@@ -302,7 +302,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { convertToHttps } from '~/utils/url'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'

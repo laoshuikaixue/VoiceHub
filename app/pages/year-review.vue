@@ -87,7 +87,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import IntroSlide from '~/components/year-review/IntroSlide.vue'
 import FirstSongSlide from '~/components/year-review/FirstSongSlide.vue'
 import StatsSlide from '~/components/year-review/StatsSlide.vue'

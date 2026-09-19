@@ -96,7 +96,7 @@
   </Transition>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { X } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'

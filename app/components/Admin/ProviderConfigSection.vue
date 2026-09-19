@@ -79,7 +79,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Download } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'

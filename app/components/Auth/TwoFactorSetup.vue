@@ -116,7 +116,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ShieldCheck, X, Copy, Loader2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'

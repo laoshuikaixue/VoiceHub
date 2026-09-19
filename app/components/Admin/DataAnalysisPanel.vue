@@ -611,7 +611,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, computed, nextTick } from 'vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {

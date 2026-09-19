@@ -66,7 +66,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { ShieldAlert, X, LogIn, Home } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'

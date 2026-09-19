@@ -405,7 +405,7 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download, Trash2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'

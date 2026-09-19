@@ -162,7 +162,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'

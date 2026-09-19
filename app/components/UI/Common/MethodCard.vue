@@ -31,7 +31,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const props = defineProps({
   enabled: { type: Boolean, default: false },
   masterOff: { type: Boolean, default: false },

@@ -6,7 +6,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { SpeedInsights } from '@vercel/speed-insights/nuxt'

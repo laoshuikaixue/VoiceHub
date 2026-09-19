@@ -111,7 +111,7 @@
   </aside>
 </template>
 
-<script setup>
+<script setup lang="ts">
 /**
  * 后台管理侧边栏组件
  */

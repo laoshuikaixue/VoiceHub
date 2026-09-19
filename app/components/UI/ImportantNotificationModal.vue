@@ -108,7 +108,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useImportantNotification } from '~/composables/useImportantNotification'

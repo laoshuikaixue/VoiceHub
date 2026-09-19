@@ -40,7 +40,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'

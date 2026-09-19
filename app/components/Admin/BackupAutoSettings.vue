@@ -322,7 +322,7 @@ crontab -e
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'

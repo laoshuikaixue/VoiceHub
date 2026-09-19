@@ -273,7 +273,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { AlertCircle, Loader2, Mail, Share2, Smartphone } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'

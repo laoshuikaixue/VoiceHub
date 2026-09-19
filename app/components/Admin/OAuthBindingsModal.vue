@@ -159,7 +159,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Fingerprint, Link, ShieldCheck, X } from '@lucide/vue'
 import Icon from '~/components/UI/Icon.vue'

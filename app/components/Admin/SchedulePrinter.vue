@@ -445,7 +445,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'

@@ -417,7 +417,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'

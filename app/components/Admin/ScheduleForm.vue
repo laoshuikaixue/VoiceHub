@@ -69,7 +69,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'

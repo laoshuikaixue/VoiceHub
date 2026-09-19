@@ -11,7 +11,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps({
   label: { type: String, required: true },
   modelValue: { type: String, default: '' },
