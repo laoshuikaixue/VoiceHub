@@ -1238,7 +1238,10 @@ export const pages = {
     pluginNoUrl: '插件音源未返回播放链接',
     loopOneEnabled: '已切换为单曲循环',
     singleEnabled: '已切换为单曲播放',
-    listLoopEnabled: '已切换为列表循环'
+    listLoopEnabled: '已切换为列表循环',
+    playerFreeDrag: '切换为自由拖拽模式',
+    playerDock: '固定到底部',
+    freeDragEnabled: '已切换为自由拖拽模式，拖动播放器可移动到任意位置'
   },
   songs: {
     actions: {
