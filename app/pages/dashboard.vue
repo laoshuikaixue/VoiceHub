@@ -7,7 +7,7 @@
           :is-open="sidebarOpen"
           :active-tab="activeTab"
           :current-user="currentUser"
-          :permissions="permissions"
+          :permissions="rbac"
           :site-title="siteTitle"
           @navigate="handleNavigate"
           @close="closeSidebar"
@@ -57,7 +57,7 @@
 
             <!-- 数据概览 -->
             <div
-              v-if="activeTab === 'overview' && permissions.canAccessPage('overview')"
+              v-if="activeTab === 'overview' && rbac.canAccessPage('overview')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminOverviewDashboard @navigate="handleNavigate" />
@@ -65,7 +65,7 @@
 
             <!-- 歌曲管理 -->
             <div
-              v-if="activeTab === 'songs' && permissions.canAccessPage('songs')"
+              v-if="activeTab === 'songs' && rbac.canAccessPage('songs')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminSongManagement />
@@ -73,7 +73,7 @@
 
             <!-- 排期管理 -->
             <div
-              v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')"
+              v-if="activeTab === 'schedule' && rbac.canAccessPage('schedule')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
             >
               <LazyAdminScheduleManager />
@@ -81,7 +81,7 @@
 
             <!-- 打印排期 -->
             <div
-              v-if="activeTab === 'print' && permissions.canAccessPage('print')"
+              v-if="activeTab === 'print' && rbac.canAccessPage('print')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
             >
               <LazyAdminSchedulePrinter />
@@ -89,7 +89,7 @@
 
             <!-- 数据分析 -->
             <div
-              v-if="activeTab === 'data-analysis' && permissions.canAccessPage('data-analysis')"
+              v-if="activeTab === 'data-analysis' && rbac.canAccessPage('data-analysis')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminDataAnalysisPanel />
@@ -97,7 +97,7 @@
 
             <!-- 用户管理 -->
             <div
-              v-if="activeTab === 'users' && permissions.canAccessPage('users')"
+              v-if="activeTab === 'users' && rbac.canAccessPage('users')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminUserManager />
@@ -105,7 +105,7 @@
 
             <!-- 消息管理 -->
             <div
-              v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')"
+              v-if="activeTab === 'notifications' && rbac.canAccessPage('notifications')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminNotificationSender />
@@ -113,7 +113,7 @@
 
             <!-- SMTP邮件配置 -->
             <div
-              v-if="activeTab === 'smtp-config' && permissions.canAccessPage('smtp-config')"
+              v-if="activeTab === 'smtp-config' && rbac.canAccessPage('smtp-config')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminSmtpManager />
@@ -121,7 +121,7 @@
 
             <!-- 播出时段 -->
             <div
-              v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')"
+              v-if="activeTab === 'playtimes' && rbac.canAccessPage('playtimes')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminPlayTimeManager />
@@ -129,7 +129,7 @@
 
             <!-- 投稿管理 -->
             <div
-              v-if="activeTab === 'request-times' && permissions.canAccessPage('request-times')"
+              v-if="activeTab === 'request-times' && rbac.canAccessPage('request-times')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminRequestTimeManager />
@@ -137,7 +137,7 @@
 
             <!-- 学期管理 -->
             <div
-              v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')"
+              v-if="activeTab === 'semesters' && rbac.canAccessPage('semesters')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminSemesterManager />
@@ -145,7 +145,7 @@
 
             <!-- 黑名单管理 -->
             <div
-              v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')"
+              v-if="activeTab === 'blacklist' && rbac.canAccessPage('blacklist')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminBlacklistManager />
@@ -153,7 +153,7 @@
 
             <!-- 年级班级管理 -->
             <div
-              v-if="activeTab === 'grade-class' && permissions.canAccessPage('grade-class')"
+              v-if="activeTab === 'grade-class' && rbac.canAccessPage('grade-class')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminGradeClassManager />
@@ -161,7 +161,7 @@
 
             <!-- 站点配置 -->
             <div
-              v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')"
+              v-if="activeTab === 'site-config' && rbac.canAccessPage('site-config')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminSiteConfigManager />
@@ -169,7 +169,7 @@
 
             <!-- 音源控制 -->
             <div
-              v-if="activeTab === 'music-source' && permissions.canAccessPage('music-source')"
+              v-if="activeTab === 'music-source' && rbac.canAccessPage('music-source')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminMusicSourceController />
@@ -177,7 +177,7 @@
 
             <!-- 数据库操作 -->
             <div
-              v-if="activeTab === 'database' && permissions.canAccessPage('database')"
+              v-if="activeTab === 'database' && rbac.canAccessPage('database')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminDatabaseManager />
@@ -185,21 +185,21 @@
 
             <!-- API密钥管理 -->
             <div
-              v-if="activeTab === 'api-keys' && permissions.canAccessPage('api-keys')"
+              v-if="activeTab === 'api-keys' && rbac.canAccessPage('api-keys')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminApiKeyManager />
             </div>
             <!-- 角色权限管理（SUPER_ADMIN） -->
             <div
-              v-if="activeTab === 'rbac' && permissions.canAccessPage('rbac')"
+              v-if="activeTab === 'rbac' && rbac.canAccessPage('rbac')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminRbacManager />
             </div>
             <!-- 卡密管理 -->
             <div
-              v-if="activeTab === 'card-codes' && permissions.canAccessPage('card-codes')"
+              v-if="activeTab === 'card-codes' && rbac.canAccessPage('card-codes')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               <LazyAdminCardCodesManager />
@@ -211,11 +211,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { Menu, ChevronUp } from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
-import { usePermissions } from '~/composables/usePermissions'
+import { useRbac } from '~/composables/useRbac'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { useScrollMemory } from '~/composables/useScrollMemory'
@@ -256,8 +256,8 @@ const registerBeforeNavigate = (hook) => {
 provide('registerBeforeNavigate', registerBeforeNavigate)
 
 // 服务
-let auth = null
-const permissions = usePermissions()
+const auth = useAuth()
+const rbac = useRbac()
 
 // 方法
 const getPageTitle = () => {
@@ -389,9 +389,6 @@ onMounted(async () => {
   // 初始化站点配置
   await initSiteConfig()
 
-  // 初始化服务
-  auth = useAuth()
-
   // 检查认证状态（plugin已经初始化过了）
 
   if (!auth.isAuthenticated.value) {
@@ -400,17 +397,16 @@ onMounted(async () => {
   }
 
   // 检查用户是否有访问后台的权限
-  if (!permissions.canAccessAdmin.value) {
+  if (!auth.isAdmin.value) {
     await navigateTo('/')
     return
   }
 
   currentUser.value = auth.user.value
 
-  // 设置默认页面
-  const userPages = permissions.getUserPages.value
-  if (userPages.length > 0 && !userPages.includes(activeTab.value)) {
-    activeTab.value = userPages[0]
+  // 设置默认页面：activeTab 默认 'overview'。如果当前 tab 已被 RBAC 拒绝则重定向到 'overview'。
+  if (activeTab.value !== 'overview' && !rbac.canAccessPage(activeTab.value)) {
+    activeTab.value = 'overview'
   }
 
   // 设置初始页面标题
