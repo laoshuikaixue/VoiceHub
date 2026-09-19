@@ -4,6 +4,13 @@
 // 空实现保持与 @sentry/node 相同的 API 面，插件里的 enabled 检查会让遥测链路自然关闭。
 const noop = () => {}
 
+const noopScope = () => ({
+  setTag: noop,
+  setContext: noop,
+  setUser: noop,
+  setLevel: noop
+})
+
 const SentryStub = {
   init: noop,
   close: async () => true,
@@ -23,11 +30,11 @@ const SentryStub = {
   startInactiveSpan: () => ({ end: noop }),
   withScope: (_scopeOrFn, maybeFn) => {
     const fn = typeof _scopeOrFn === 'function' ? _scopeOrFn : maybeFn
-    if (typeof fn === 'function') fn({ setTag: noop, setContext: noop, setUser: noop })
+    if (typeof fn === 'function') fn(noopScope())
   },
-  getCurrentScope: () => ({ setTag: noop, setContext: noop, setUser: noop }),
-  getGlobalScope: () => ({ setTag: noop, setContext: noop }),
-  getIsolationScope: () => ({ setTag: noop, setContext: noop }),
+  getCurrentScope: noopScope,
+  getGlobalScope: noopScope,
+  getIsolationScope: noopScope,
   addBreadcrumb: noop,
   flush: async () => true,
   getClient: () => undefined,

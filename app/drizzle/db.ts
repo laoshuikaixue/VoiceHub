@@ -36,7 +36,10 @@ const isNeonDatabase =
   isDomainOrSubdomain(databaseHostname, 'neon.database.com');
 
 // Serverless 部署（每个函数实例独立建池，必须压低单实例连接数，防止实例数×池大小超过数据库 max_connections）
-const isServerlessDatabase = !!process.env.VERCEL || !!process.env.NETLIFY;
+const isServerlessDatabase =
+  !!process.env.VERCEL ||
+  !!process.env.NETLIFY ||
+  process.env.NITRO_PRESET?.includes('cloudflare') === true;
 
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {

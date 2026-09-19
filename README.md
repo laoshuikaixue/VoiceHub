@@ -139,7 +139,7 @@
 
 ### Cloudflare Workers
 
-仓库已包含 `wrangler.jsonc` 与 `cloudflare_module` 构建适配，可运行完整 Nuxt SSR 与 Server API。
+仓库已包含 `wrangler.jsonc` 与 `cloudflare_module` 构建适配，可运行 Nuxt SSR 与常规 Server API。依赖 Node request/response 流的接口（备份上传、SSE/WebSocket、媒体请求取消）在 Workers 下不可用或降级，不属于当前适配范围。
 
 ```bash
 # 本地使用真实 workerd 验证
@@ -163,7 +163,7 @@ DATABASE_URL=postgres://user:pass@host:5432/db
 JWT_SECRET=本地开发用密钥
 ```
 
-- `DATABASE_URL` 建议使用 Neon/Supabase 等支持 Serverless 的 PostgreSQL；当前适配通过 Worker secret 读取该连接串。
+- `DATABASE_URL` 建议使用 Neon/Supabase 等支持 Serverless 的 PostgreSQL；Workers 的 `nodejs_compat` 支持 Postgres.js TCP 连接，生产环境建议配置 Cloudflare Hyperdrive 以获得连接池与查询缓存。
 - 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
 - Workers 下 Redis、SMTP、本地文件备份、网易云易盾 jsdom 接口与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
 - 网易云解灰保留 7 个 HTTP 音源；仅 `unm` 音源因依赖 Node 服务端包不可用。
@@ -1492,6 +1492,7 @@ VoiceHub/
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── cloudflare-stubs.test.ts # Cloudflare 边缘兼容模块测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试

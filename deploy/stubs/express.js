@@ -2,14 +2,13 @@
 // （server.js），VoiceHub 只使用其函数式接口（module/*.js），不需要服务器。
 // stub 掉 express 以斩断 server.js 的整条 Node 依赖链（body-parser/express-fileupload 等），
 // 边缘运行时（Cloudflare Workers 等）打包和启动均可通过
-const app = {}
 const chain = () => new Proxy(function () {}, {
   get: (t, p) => (p === '__esModule' ? false : chain()),
   apply: () => chain()
 })
 
 module.exports = function express() {
-  return app
+  return chain()
 }
 module.exports.default = module.exports
 module.exports.json = () => (req, res, next) => next && next()
