@@ -1227,7 +1227,10 @@ export const pages = {
     pluginNoUrl: 'Source plugin did not return a playback link',
     loopOneEnabled: 'Repeat one enabled',
     singleEnabled: 'Single-play mode enabled',
-    listLoopEnabled: 'Playlist loop enabled'
+    listLoopEnabled: 'Playlist loop enabled',
+    playerFreeDrag: 'Switch to free drag',
+    playerDock: 'Dock to bottom',
+    freeDragEnabled: 'Free drag enabled, drag the player anywhere'
   },
   songs: {
     actions: {

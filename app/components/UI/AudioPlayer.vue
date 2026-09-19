@@ -1,20 +1,34 @@
 <template>
   <div>
     <Transition name="overlay-animation">
-      <div v-show="visible && !isMobile" class="player-overlay" />
+      <!-- 自由拖拽模式不占用页面底部，底衬渐变一并隐藏 -->
+      <div v-show="visible && !isMobile && !isFloating" class="player-overlay" />
     </Transition>
 
     <Transition name="player-animation">
       <div
         v-show="visible"
+        ref="widgetRef"
         class="music-widget"
-        :class="{ 'mobile-player-bar': isMobile }"
+        :class="{
+          'mobile-player-bar': isMobile,
+          'player-floating': isFloating,
+          'player-positioned': isFloating && !!layoutPosition,
+          'player-dragging': isDragging
+        }"
+        :style="floatingStyle"
         @click="handlePlayerClick"
+        @pointerdown="handleDragStart"
+        @pointermove="handleDragMove"
+        @pointerup="handleDragEnd"
+        @pointercancel="handleDragEnd"
+        @dragstart.prevent
       >
         <!-- 移动端顶部进度条 -->
         <div
           v-if="isMobile"
           class="mobile-top-progress"
+          data-player-no-drag
           @click.stop="handleSeekToPosition"
           @touchstart.stop="handleStartTouchDrag"
         >
@@ -26,6 +40,7 @@
           <!-- 封面 -->
           <div
             class="cover-container clickable"
+            data-player-no-drag
             @click.stop="isBilibiliSong(activeSong) ? openBilibiliVideo() : toggleLyrics()"
           >
             <template v-if="activeSong && activeSong.cover && !coverError">
@@ -57,7 +72,7 @@
           </div>
 
           <!-- 移动端播放控制 -->
-          <div v-if="isMobile" class="mobile-controls">
+          <div v-if="isMobile" class="mobile-controls" data-player-no-drag>
             <button class="mobile-control-btn" @click.stop="handleTogglePlay">
               <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="white" />
               <Icon
@@ -67,19 +82,50 @@
                 color="white"
               />
             </button>
+            <button
+              class="mobile-control-btn"
+              :aria-label="playerLayoutToggleLabel"
+              :title="playerLayoutToggleLabel"
+              type="button"
+              data-player-no-drag
+              @click.stop="togglePlayerLayout"
+            >
+              <Pin v-if="isFloating" :size="18" color="var(--overlay-60)" />
+              <Move v-else :size="18" color="var(--overlay-60)" />
+            </button>
             <button class="mobile-control-btn" @click.stop="stopPlaying">
               <Icon name="close" :size="20" color="var(--overlay-60)" />
             </button>
           </div>
 
+          <!-- 播放器布局切换（固定底部 / 自由拖拽） -->
+          <button
+            v-if="!isMobile"
+            class="player-mode-button"
+            :aria-label="playerLayoutToggleLabel"
+            :title="playerLayoutToggleLabel"
+            type="button"
+            data-player-no-drag
+            @click.stop="togglePlayerLayout"
+          >
+            <Pin v-if="isFloating" :size="16" />
+            <Move v-else :size="16" />
+          </button>
+
           <!-- PC端右上角关闭按钮 -->
-          <div v-if="!isMobile" class="close-button" title="关闭播放器" @click="stopPlaying">
+          <div
+            v-if="!isMobile"
+            class="close-button"
+            data-player-no-drag
+            title="关闭播放器"
+            @click="stopPlaying"
+          >
             <span class="music-icon">×</span>
           </div>
         </div>
 
         <!-- 媒体控制区域 (PC端显示) -->
-        <div v-if="!isMobile" class="media-controls">
+        <div v-if="!isMobile" class="media-controls" data-player-no-drag>
           <!-- 进度条区域 -->
           <div class="time">
             <!-- 进度条 -->
@@ -168,7 +214,7 @@
 
         <!-- 音质选择下拉菜单 -->
         <Transition name="quality-dropdown">
-          <div v-if="showQualitySettings" class="quality-dropdown">
+          <div v-if="showQualitySettings" class="quality-dropdown" data-player-no-drag>
             <div
               v-for="option in currentPlatformOptions"
               :key="option.value"
@@ -183,7 +229,7 @@
 
         <!-- 歌词显示区域 -->
         <Transition name="lyrics-slide">
-          <div v-if="showLyrics" class="lyrics-panel">
+          <div v-if="showLyrics" class="lyrics-panel" data-player-no-drag>
             <AppleMusicLyrics
               :allow-seek="true"
               :current-lyric-index="control.lyrics.currentLyricIndex.value"
@@ -253,6 +299,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { Move, Pin } from '@lucide/vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
@@ -266,7 +313,13 @@ import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
+import { usePlayerLayout } from '~/composables/usePlayerLayout'
 import { useMediaSession } from '~/composables/useMediaSession'
+import {
+  PLAYER_LAYOUT_MARGIN,
+  PLAYER_LAYOUT_MARGIN_MOBILE,
+  clampPlayerPosition
+} from '~/utils/playerLayout'
 import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
@@ -312,10 +365,20 @@ const sync = useAudioPlayerSync()
 const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
+// 播放器布局：固定底部 / 自由拖拽（偏好存本浏览器）
+const {
+  position: layoutPosition,
+  isFloating,
+  load: loadPlayerLayout,
+  toggleMode: togglePlayerLayoutMode,
+  setPosition: setLayoutPosition,
+  savePosition: saveLayoutPosition
+} = usePlayerLayout()
 
 // 组件引用
 const audioElementRef = ref(null)
 const playerControlsRef = ref(null)
+const widgetRef = ref(null)
 
 // UI 状态
 const isClosing = ref(false)
@@ -1136,10 +1199,6 @@ const handleNext = async () => {
   }
 }
 
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
-})
-
 // 确保音频播放器引用的辅助函数
 const ensureAudioPlayerRef = () => {
   // 首先检查计算属性是否有值
@@ -1577,8 +1636,24 @@ const checkMobile = () => {
   }
 }
 
+// 自由拖拽：区分点击与拖拽的位移阈值
+const DRAG_MOVE_THRESHOLD = 4
+// 拖拽结束后浏览器仍会补发一次 click，用短窗口抑制，避免被当成点击
+const DRAG_CLICK_SUPPRESS_MS = 350
+const isDragging = ref(false)
+const suppressNextClick = ref(false)
+let suppressClickTimer = null
+let dragSession = null
+// 播放器自身尺寸变化（歌词面板/音质下拉展开、移动端与桌面端样式切换）后需要重新限位
+let widgetResizeObserver = null
+
 // 移动端点击播放条处理
 const handlePlayerClick = () => {
+  // 拖拽结束后的这次 click 不再当作点击
+  if (suppressNextClick.value) {
+    suppressNextClick.value = false
+    return
+  }
   if (isMobile.value) {
     if (activeSong.value?.musicPlatform === 'bilibili') {
       openBilibiliVideo()
@@ -1587,6 +1662,163 @@ const handlePlayerClick = () => {
     }
   }
 }
+
+// 拖拽限位边距：移动端播放条左右 10px，桌面端与固定模式的 bottom: 1rem 对齐
+const layoutMargin = computed(() =>
+  isMobile.value ? PLAYER_LAYOUT_MARGIN_MOBILE : PLAYER_LAYOUT_MARGIN
+)
+
+// 记录过坐标后改用内联定位；未记录时沿用固定模式的底部居中，切换瞬间不跳位
+const floatingStyle = computed(() => {
+  const point = layoutPosition.value
+  if (!isFloating.value || !point) return undefined
+  return { left: `${point.x}px`, top: `${point.y}px` }
+})
+
+// 文案与图标都表示即将执行的动作，而非当前状态
+const playerLayoutToggleLabel = computed(() =>
+  isFloating.value ? audioPlayerLocale.value.playerDock : audioPlayerLocale.value.playerFreeDrag
+)
+
+// 切换布局模式
+const togglePlayerLayout = () => {
+  togglePlayerLayoutMode()
+  if (isFloating.value && window.$showNotification) {
+    window.$showNotification(audioPlayerLocale.value.freeDragEnabled, 'info')
+  }
+}
+
+// 播放器当前渲染尺寸（未渲染时返回 null）
+const readWidgetSize = () => {
+  const rect = widgetRef.value?.getBoundingClientRect()
+  if (!rect || !rect.width || !rect.height) return null
+  return { width: rect.width, height: rect.height }
+}
+
+// 按视口与播放器尺寸夹回坐标；播放器未渲染时返回 null（无法限位）
+// size 由拖拽调用方缓存，避免拖拽过程中反复读取布局
+const clampLayoutPoint = (point, size) => {
+  const box = size || readWidgetSize()
+  if (!box) return null
+  const viewport = { width: window.innerWidth, height: window.innerHeight }
+  return clampPlayerPosition(point, box, viewport, layoutMargin.value)
+}
+
+// 更新自由拖拽坐标（仅改内存，拖拽结束时才落盘）
+const applyLayoutPosition = (point, size) => {
+  const clamped = clampLayoutPoint(point, size)
+  if (clamped) setLayoutPosition(clamped)
+}
+
+// 视口或播放器尺寸变化后重新限位并落盘；播放器隐藏时先不写，等尺寸可读时再夹回
+const clampLayoutToViewport = () => {
+  if (!isFloating.value || !layoutPosition.value) return
+  saveLayoutPosition()
+}
+
+const handleResize = () => {
+  checkMobile()
+  // 等移动端/桌面端样式切换完成后再限位，避免按旧尺寸计算
+  nextTick(clampLayoutToViewport)
+}
+
+// 拖拽期间在 window 上兜底监听：指针离开播放器或捕获被回收时仍能继续拖动并正常收尾
+const attachDragListeners = () => {
+  window.addEventListener('pointermove', handleDragMove)
+  window.addEventListener('pointerup', handleDragEnd)
+  window.addEventListener('pointercancel', handleDragEnd)
+}
+
+const detachDragListeners = () => {
+  window.removeEventListener('pointermove', handleDragMove)
+  window.removeEventListener('pointerup', handleDragEnd)
+  window.removeEventListener('pointercancel', handleDragEnd)
+}
+
+// 命中即视为控件操作：原生可交互元素（含播放器内所有按钮）与显式标注区域都不启动拖拽
+const DRAG_IGNORE_SELECTOR =
+  'button, a, input, select, textarea, [role="button"], [data-player-no-drag]'
+
+// 按下阶段只登记候选拖拽，不拦截事件：一旦在此处调用 preventDefault 或 setPointerCapture，
+// 随后的 click 会被重定向到播放器容器（触屏下还会被直接吞掉），导致播放器内按钮全部失效
+const handleDragStart = (event) => {
+  if (!isFloating.value || !import.meta.client) return
+  if (event.pointerType === 'mouse' && event.button !== 0) return
+  if (event.target instanceof Element && event.target.closest(DRAG_IGNORE_SELECTOR)) return
+
+  const rect = widgetRef.value?.getBoundingClientRect()
+  if (!rect || !rect.width || !rect.height) return
+
+  dragSession = {
+    pointerId: event.pointerId,
+    size: { width: rect.width, height: rect.height },
+    offsetX: event.clientX - rect.left,
+    offsetY: event.clientY - rect.top,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false
+  }
+}
+
+// 位移超过阈值后正式进入拖拽：此时才接管指针与默认行为
+const beginDrag = (event) => {
+  dragSession.moved = true
+  isDragging.value = true
+
+  // 首次拖拽以当前渲染位置为起点
+  const rect = widgetRef.value?.getBoundingClientRect()
+  if (rect && !layoutPosition.value) setLayoutPosition({ x: rect.left, y: rect.top })
+
+  attachDragListeners()
+  try {
+    widgetRef.value?.setPointerCapture(event.pointerId)
+  } catch {
+    /* 指针已释放时忽略 */
+  }
+}
+
+const handleDragMove = (event) => {
+  if (!dragSession || event.pointerId !== dragSession.pointerId) return
+  if (!dragSession.moved) {
+    const distance =
+      Math.abs(event.clientX - dragSession.startX) + Math.abs(event.clientY - dragSession.startY)
+    if (distance < DRAG_MOVE_THRESHOLD) return
+    beginDrag(event)
+  }
+  // 拖动过程中阻止选中文字与原生拖拽（按下阶段不做，避免影响按钮点击）
+  event.preventDefault()
+  applyLayoutPosition(
+    { x: event.clientX - dragSession.offsetX, y: event.clientY - dragSession.offsetY },
+    dragSession.size
+  )
+}
+
+const handleDragEnd = (event) => {
+  if (!dragSession || event.pointerId !== dragSession.pointerId) return
+  const moved = dragSession.moved
+  dragSession = null
+  isDragging.value = false
+  detachDragListeners()
+  try {
+    widgetRef.value?.releasePointerCapture(event.pointerId)
+  } catch {
+    /* 指针已释放时忽略 */
+  }
+  if (!moved) return
+  saveLayoutPosition()
+  // 抑制拖拽收尾时补发的那次 click；窗口到期或首次 click 消费后解除
+  suppressNextClick.value = true
+  if (suppressClickTimer) clearTimeout(suppressClickTimer)
+  suppressClickTimer = setTimeout(() => {
+    suppressNextClick.value = false
+    suppressClickTimer = null
+  }, DRAG_CLICK_SUPPRESS_MS)
+}
+
+// 播放器显示状态变化后限位（此刻可能仍是 display:none，交给 ResizeObserver 重试）
+watch(visible, (shown) => {
+  if (shown) clampLayoutToViewport()
+})
 
 onMounted(async () => {
   // 处理热重载清理
@@ -1597,7 +1829,13 @@ onMounted(async () => {
 
   // 移动端检查
   checkMobile()
-  window.addEventListener('resize', checkMobile)
+  window.addEventListener('resize', handleResize)
+
+  // 读取播放器布局偏好（仅客户端，避免 SSR 水合差异），越界坐标按当前视口夹回
+  loadPlayerLayout(clampLayoutPoint)
+
+  widgetResizeObserver = new ResizeObserver(clampLayoutToViewport)
+  widgetResizeObserver.observe(widgetRef.value)
 
   // 尽早初始化鸿蒙系统控制事件
   if (sync.isHarmonyOS()) {
@@ -1830,6 +2068,20 @@ onMounted(async () => {
 onUnmounted(() => {
   // 清理音频播放器
   control.cleanup()
+
+  // 移除窗口尺寸监听
+  window.removeEventListener('resize', handleResize)
+
+  // 移除播放器尺寸监听
+  widgetResizeObserver?.disconnect()
+  widgetResizeObserver = null
+
+  // 移除拖拽兜底监听
+  detachDragListeners()
+  if (suppressClickTimer) {
+    clearTimeout(suppressClickTimer)
+    suppressClickTimer = null
+  }
 
   // 清理 Media Session
   if (mediaSession.isSupported.value) {
@@ -2084,6 +2336,32 @@ const getFirstChar = (text) => {
   opacity: 0;
 }
 
+/* 自由拖拽模式：可拖动区域光标与触摸行为 */
+.music-widget.player-floating {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* 记录过坐标后的自由定位：内联 left/top + 取消居中 transform */
+.music-widget.player-floating.player-positioned {
+  bottom: auto;
+  right: auto;
+  transform: none;
+  /* 拖拽逐帧写 left/top，必须从 .music-widget 的 all 过渡中排除，否则播放器跟不上指针 */
+  transition-property: transform, opacity, box-shadow, border-color;
+}
+
+.music-widget.player-floating.player-positioned:hover {
+  transform: translateY(-2px);
+}
+
+.music-widget.player-floating.player-dragging {
+  cursor: grabbing;
+  transition: none;
+  user-select: none;
+}
+
 /* 时间区域 */
 .time {
   display: flex;
@@ -2336,6 +2614,29 @@ const getFirstChar = (text) => {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 播放器布局切换按钮（固定底部 / 自由拖拽） */
+.player-mode-button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100px;
+  background: var(--bg-primary-25);
+  width: 32px;
+  height: 32px;
+  color: var(--text-primary);
+  backdrop-filter: blur(34px);
+  -webkit-backdrop-filter: blur(34px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.player-mode-button:hover {
+  background: var(--mask-60);
+  transform: scale(1.05);
 }
 
 /* 媒体控制区域 */

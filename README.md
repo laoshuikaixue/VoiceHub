@@ -895,6 +895,7 @@ VoiceHub/
 │   │   ├── usePlatformConfig.ts    # 平台管理配置hooks
 │   │   ├── usePermissions.ts   # 权限管理hooks
 │   │   ├── usePasswordStrength.ts # 密码强度检测hooks
+│   │   ├── usePlayerLayout.ts  # 播放器布局（固定底部/自由拖拽）偏好hooks
 │   │   ├── useProgress.ts      # 进度管理hooks
 │   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
@@ -988,6 +989,7 @@ VoiceHub/
 │       ├── pluginResolver.ts   # 插件音源搜索、歌词与媒体解析接入
 │       ├── pluginPlatform.ts # 插件音源平台键、插件 ID 与音质映射（LX Music / MusicFree）
 │       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
+│       ├── playerLayout.ts    # 播放器布局模式与自由拖拽坐标解析
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
@@ -1470,6 +1472,7 @@ VoiceHub/
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
+│       ├── player-layout.test.ts # 播放器自由拖拽限位与偏好解析测试
 │       ├── qq-comment-normalize.test.ts # QQ音乐评论归一化测试
 │       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
 │       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
