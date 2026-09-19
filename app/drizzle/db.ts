@@ -5,6 +5,7 @@ import * as schema from './schema.ts';
 import {config} from 'dotenv';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import { useEvent } from 'nitropack/runtime';
 import { getHyperdriveConnectionString } from '#voicehub-cloudflare-bindings';
 import {
   resolveDatabaseConnectionString,
@@ -112,20 +113,65 @@ const getDatabaseConfig = (runtime: ReturnType<typeof resolveRuntimeOptions>) =>
   }
 };
 
-// 惰性初始化：模块顶层只做无副作用准备，首次请求才创建连接（Workers 下才能访问 env 绑定）
+// 惰性初始化：模块顶层只做无副作用准备，首次使用时才创建连接（Workers 下才能访问 env 绑定）
 type DbInstances = {
   client: ReturnType<typeof postgres>
   db: ReturnType<typeof drizzle>
 }
-let instances: DbInstances | null = null;
+
+const isCloudflareWorkerRuntime = () =>
+  typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+
+function createInstances(): DbInstances {
+  const runtime = resolveRuntimeOptions();
+  const created = postgres(runtime.connectionString, getDatabaseConfig(runtime));
+  return { client: created, db: drizzle(created, { schema }) };
+}
+
+// Workers（stateless）下连接不得跨请求存活：socket 与定时器归属于创建请求的上下文，
+// 请求结束后 I/O 被取消，后续请求复用会产生跨请求 promise resolve 警告或请求挂死。
+// 因此按 H3Event 维度缓存实例，响应结束后由 error-handler 插件的 afterResponse 钩子关闭。
+const workerInstances = new WeakMap<object, DbInstances>();
+// Workers 下无请求上下文的调用（预热等）兜底实例
+let workerFallbackInstances: DbInstances | null = null;
+let nodeInstances: DbInstances | null = null;
+
+function tryCurrentEvent(): object | undefined {
+  try {
+    return useEvent() as unknown as object;
+  } catch {
+    return undefined;
+  }
+}
 
 function getInstances(): DbInstances {
-  if (!instances) {
-    const runtime = resolveRuntimeOptions();
-    const created = postgres(runtime.connectionString, getDatabaseConfig(runtime));
-    instances = { client: created, db: drizzle(created, { schema }) };
+  if (!isCloudflareWorkerRuntime()) {
+    if (!nodeInstances) nodeInstances = createInstances();
+    return nodeInstances;
   }
-  return instances;
+  const event = tryCurrentEvent();
+  if (!event) {
+    if (!workerFallbackInstances) workerFallbackInstances = createInstances();
+    return workerFallbackInstances;
+  }
+  let inst = workerInstances.get(event);
+  if (!inst) {
+    inst = createInstances();
+    workerInstances.set(event, inst);
+  }
+  return inst;
+}
+
+// 请求结束时关闭该请求的数据库客户端（Workers 专用，由 afterResponse 钩子调用）
+export async function closeRequestDb(event: object) {
+  const inst = workerInstances.get(event);
+  if (!inst || inst.client.ended) return;
+  workerInstances.delete(event);
+  try {
+    await inst.client.end({ timeout: 1 });
+  } catch {
+    // 关闭失败不影响响应，socket 会随请求上下文销毁
+  }
 }
 
 // 首次请求前不触碰连接；属性读取、调用（含标签模板）都转发到惰性实例
@@ -190,6 +236,8 @@ const IDLE_TIMEOUT = isNeonDatabase ? 5 * 60 * 1000 : 10 * 60 * 1000; // Neon: 5
 
 // 重置空闲计时器
 function resetIdleTimer() {
+  // Workers 下连接按请求创建与关闭（见 closeRequestDb），空闲自动断开无意义
+  if (isCloudflareWorkerRuntime()) return;
   if (idleTimer) {
     clearTimeout(idleTimer);
   }

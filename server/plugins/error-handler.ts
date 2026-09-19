@@ -1,11 +1,21 @@
 export default defineNitroPlugin(async (nitroApp) => {
+  const isCloudflareWorker =
+    typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
 
-  // Workers 不支持进程级异常监听与常驻健康检查定时器，数据库连接由请求期管理。
-  if (
-    typeof navigator !== 'undefined' &&
-    navigator.userAgent === 'Cloudflare-Workers'
-  ) {
-    return
+  // Workers（stateless）下连接不得跨请求存活：socket 归属创建请求的上下文，
+  // 复用会产生跨请求 promise resolve（被运行时取消）或请求挂死。
+  // 每请求结束即关闭该请求的数据库客户端。
+  if (isCloudflareWorker) {
+    const { closeRequestDb } = await import('~/drizzle/db');
+    nitroApp.hooks.hook('afterResponse', async (event) => {
+      const close = closeRequestDb(event as unknown as object);
+      const waitUntil = (event as unknown as {
+        context?: { cloudflare?: { context?: { waitUntil?: (p: Promise<unknown>) => void } } }
+      }).context?.cloudflare?.context?.waitUntil;
+      if (waitUntil) waitUntil(close);
+      else await close;
+    });
+    return;
   }
 
   // 健康检查依赖只在 Node 运行时加载，避免边缘运行时求值数据库连接模块。
