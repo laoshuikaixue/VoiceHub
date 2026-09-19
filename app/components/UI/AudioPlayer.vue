@@ -1929,7 +1929,7 @@ const getFirstChar = (text) => {
   right: 0;
   height: 20vh;
   background: linear-gradient(to bottom, transparent, var(--mask-30));
-  z-index: 999;
+  z-index: var(--z-audio-player);
   pointer-events: none;
 }
 
@@ -2146,7 +2146,7 @@ const getFirstChar = (text) => {
     inset 0 1px 0 var(--overlay-30),
     inset 0 -1px 0 var(--mask-10),
     0 0 0 1px var(--overlay-5);
-  z-index: 1000;
+  z-index: var(--z-audio-player);
   will-change: transform, opacity;
   font-family:
     'SF Pro Display', 'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial,
