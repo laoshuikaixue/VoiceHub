@@ -1137,9 +1137,7 @@
     :songs="localScheduledSongs"
     :play-times="playTimes"
     :schedule-date="selectedDate"
-    :play-time-label="
-      playTimeEnabled && selectedPlayTime ? getPlayTimeName(selectedPlayTime) : locale.allPlayTimes
-    "
+    :play-time-label="playTimeEnabled && selectedPlayTime ? getPlayTimeName(selectedPlayTime) : ''"
     @close="showPlaylistExportDialog = false"
   />
 

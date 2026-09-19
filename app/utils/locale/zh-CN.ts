@@ -2727,10 +2727,14 @@ export const admin = {
       title: '导出歌单',
       scope: '导出范围：{0}',
       songCount: '{0} 首',
+      allPlayTimes: '全部时段',
       columnCount: '共 {0} 列',
       groupSchedule: '排期信息',
       groupSong: '歌曲信息',
       groupRequest: '投稿信息',
+      noteOptionsTitle: '留言选项',
+      includeUnapprovedNotes: '包含未通过公开审核的留言',
+      includeUnapprovedNotesHint: '关闭后，投稿留言仅保留已通过公开审核的内容，其余留空',
       resetDefault: '恢复默认',
       cancel: '取消',
       exportButton: '导出 CSV',
@@ -2757,7 +2761,8 @@ export const admin = {
       statusValues: {
         draft: '草稿',
         published: '已发布',
-        played: '已播放'
+        played: '已播放',
+        unsaved: '未保存'
       }
     },
     remarkDialog: {

@@ -9,6 +9,7 @@ import {
   songReplayRequests
 } from '~/drizzle/schema'
 import { and, asc, count, countDistinct, eq, gte, lt, inArray, desc } from 'drizzle-orm'
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import {
   buildNameToUsersMap,
   formatDisambiguatedNameFromMap
@@ -95,6 +96,8 @@ export default defineEventHandler(async (event) => {
         songDurationSeconds: songs.durationSeconds,
         songCardCodeId: songs.cardCodeId,
         songSubmissionNote: songs.submissionNote,
+        songSubmissionNotePublic: songs.submissionNotePublic,
+        songSubmissionNotePublicStatus: songs.submissionNotePublicStatus,
         songSemester: songs.semester,
         songCreatedAt: songs.createdAt,
         requesterName: users.name,
@@ -328,6 +331,10 @@ export default defineEventHandler(async (event) => {
         song: (() => {
           const replayMeta = linkedReplayRequestId ? replayMetadataByIdMap.get(linkedReplayRequestId) : null
           const hasReplayMeta = !!replayMeta
+          const originalNotePublic =
+            schedule.songSubmissionNotePublic === true &&
+            schedule.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
+            schedule.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
 
           return {
             id: schedule.songId,
@@ -353,6 +360,7 @@ export default defineEventHandler(async (event) => {
             hasSubmissionNote: hasReplayMeta && !!replayMeta.submissionNote,
             // 歌曲自身投稿时填写的留言，与重播申请备注相互独立
             originalSubmissionNote: schedule.songSubmissionNote || null,
+            originalSubmissionNotePublic: originalNotePublic,
             preferredPlayTimeId: hasReplayMeta ? replayMeta.preferredPlayTimeId : null,
             // 重播申请信息
             replayRequestCount: isReplaySong ? replayRequestCount : 0,

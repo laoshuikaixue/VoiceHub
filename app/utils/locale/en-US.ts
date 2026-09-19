@@ -2718,10 +2718,14 @@ export const admin = {
       title: 'Export Playlist',
       scope: 'Scope: {0}',
       songCount: '{0} song(s)',
+      allPlayTimes: 'All Slots',
       columnCount: '{0} column(s)',
       groupSchedule: 'Schedule',
       groupSong: 'Song',
       groupRequest: 'Request',
+      noteOptionsTitle: 'Note Options',
+      includeUnapprovedNotes: 'Include Unapproved Notes',
+      includeUnapprovedNotesHint: 'When off, only notes approved for public display are kept; others stay empty',
       resetDefault: 'Reset',
       cancel: 'Cancel',
       exportButton: 'Export CSV',
@@ -2748,7 +2752,8 @@ export const admin = {
       statusValues: {
         draft: 'Draft',
         published: 'Published',
-        played: 'Played'
+        played: 'Played',
+        unsaved: 'Unsaved'
       }
     },
     remarkDialog: {

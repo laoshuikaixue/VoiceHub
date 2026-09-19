@@ -61,6 +61,28 @@
                 </button>
               </div>
             </div>
+
+            <div v-if="selectedFields.includes('submissionNote')" class="space-y-2">
+              <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+                {{ locale.noteOptionsTitle }}
+              </label>
+              <button
+                type="button"
+                :class="[
+                  'flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-[11px] font-bold transition-all text-left',
+                  includeUnapprovedNotes
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
+                ]"
+                @click="includeUnapprovedNotes = !includeUnapprovedNotes"
+              >
+                <span class="flex-1">{{ locale.includeUnapprovedNotes }}</span>
+                <Check v-if="includeUnapprovedNotes" class="w-3.5 h-3.5 shrink-0" />
+              </button>
+              <p class="text-[10px] leading-relaxed text-text-disabled">
+                {{ locale.includeUnapprovedNotesHint }}
+              </p>
+            </div>
           </div>
 
           <!-- Footer -->
@@ -137,6 +159,7 @@ const DEFAULT_FIELDS = [
 ]
 
 const selectedFields = ref([...DEFAULT_FIELDS])
+const includeUnapprovedNotes = ref(true)
 
 const fieldGroups = computed(() =>
   FIELD_GROUPS.map((group) => ({
@@ -168,9 +191,9 @@ const isDefaultSelection = computed(
 const scopeText = computed(() => {
   const parts = []
   if (props.scheduleDate) parts.push(props.scheduleDate)
-  if (props.playTimeLabel) parts.push(props.playTimeLabel)
+  parts.push(props.playTimeLabel || locale.value.allPlayTimes)
   parts.push(locale.value.songCount(props.songs.length))
-  return parts.filter(Boolean).join(' · ')
+  return parts.join(' · ')
 })
 
 const playTimeNameById = (playTimeId) => {
@@ -184,15 +207,20 @@ const playTimeNameById = (playTimeId) => {
 }
 
 const playTimeLabelOf = (playTime) => {
-  if (!playTime) return scheduleLocale.value.allDay || ''
-  if (playTime.startTime && playTime.endTime) {
-    return `${playTime.name} (${playTime.startTime}-${playTime.endTime})`
+  if (playTime) {
+    if (playTime.startTime && playTime.endTime) {
+      return `${playTime.name} (${playTime.startTime}-${playTime.endTime})`
+    }
+    return playTime.name || ''
   }
-  return playTime.name || ''
+  // 未落库的本地行没有 playTime，发布时会归入当前筛选时段
+  if (props.playTimeLabel) return props.playTimeLabel
+  return scheduleLocale.value.allDay || ''
 }
 
 const statusLabelOf = (schedule) => {
   const status = locale.value.statusValues || {}
+  if (schedule.isNew || schedule.isLocalOnly) return status.unsaved
   if (schedule.played) return status.played
   if (schedule.isDraft) return status.draft || scheduleLocale.value.draft || ''
   return status.published || ''
@@ -232,10 +260,15 @@ const fieldValue = (fieldKey, schedule) => {
       return song.voteCount ?? 0
     case 'preferredPlayTime':
       return playTimeNameById(song.preferredPlayTimeId)
-    case 'submissionNote':
-      return song.originalSubmissionNote || ''
+    case 'submissionNote': {
+      const note = song.originalSubmissionNote || ''
+      if (!note) return ''
+      if (includeUnapprovedNotes.value) return note
+      return song.originalSubmissionNotePublic === true ? note : ''
+    }
+    // submissionNote 在重播行上是被申请人留言覆盖后的值，非重播行与投稿留言重复
     case 'replayNote':
-      return song.submissionNote || ''
+      return schedule.replayRequestId != null ? song.submissionNote || '' : ''
     default:
       return ''
   }
