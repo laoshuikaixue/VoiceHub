@@ -167,8 +167,14 @@ wrangler secret put JWT_SECRET
 本地运行 `dev:cloudflare` 前需在项目根目录创建 `.dev.vars`（已被 gitignore，仅本地生效），提供启动必需变量：
 
 ```ini
-DATABASE_URL=postgres://user:pass@host:5432/db
+DATABASE_URL=postgres://user:***@host:5432/db
 JWT_SECRET=本地开发用密钥
+```
+
+workerd 本地不连接真实 Hyperdrive，用 `DATABASE_URL` 模拟其 `connectionString`；本地 PostgreSQL 需真实可达：
+
+```ini
+CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://user:***@localhost:5432/db
 ```
 
 - `DATABASE_URL` 用于 Node/Vercel/Netlify 部署，并作为创建 Hyperdrive 配置时的源站连接串。

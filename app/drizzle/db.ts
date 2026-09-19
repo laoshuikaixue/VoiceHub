@@ -132,8 +132,6 @@ function createInstances(): DbInstances {
 // 请求结束后 I/O 被取消，后续请求复用会产生跨请求 promise resolve 警告或请求挂死。
 // 因此按 H3Event 维度缓存实例，响应结束后由 error-handler 插件的 afterResponse 钩子关闭。
 const workerInstances = new WeakMap<object, DbInstances>();
-// Workers 下无请求上下文的调用（预热等）兜底实例
-let workerFallbackInstances: DbInstances | null = null;
 let nodeInstances: DbInstances | null = null;
 
 function tryCurrentEvent(): object | undefined {
@@ -150,9 +148,12 @@ function getInstances(): DbInstances {
     return nodeInstances;
   }
   const event = tryCurrentEvent();
+  // Workers 下所有数据库访问必须发生在请求处理器内：
+  // 无请求上下文的实例无法按请求回收（socket 归属创建请求），禁止创建可复用的共享实例
   if (!event) {
-    if (!workerFallbackInstances) workerFallbackInstances = createInstances();
-    return workerFallbackInstances;
+    throw new Error(
+      '数据库访问发生在 Workers 请求上下文之外，无法创建可回收的连接；请在事件处理器内访问 db/client'
+    );
   }
   let inst = workerInstances.get(event);
   if (!inst) {

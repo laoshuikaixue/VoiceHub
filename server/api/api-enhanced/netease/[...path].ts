@@ -3,6 +3,8 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 import { isNeteaseEnhancedApiAvailable } from '~~/server/utils/netease-enhanced-runtime'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // xeapi 公钥缓存文件路径（由 generateConfig 写入系统临时目录）
 const xeapiPublicKeyPath = join(tmpdir(), 'xeapi_public_key')
@@ -53,10 +55,11 @@ const normalizeParams = (input: Record<string, any>) => {
 
 export default defineEventHandler(async (event) => {
   if (!isNeteaseEnhancedApiAvailable(globalThis.navigator?.userAgent)) {
-    throw createError({
-      statusCode: 501,
-      message: 'Cloudflare Workers 不支持 Node 文件系统版网易云增强 API'
-    })
+    throw createApiError(
+      501,
+      SERVER_ERROR_CODES.NETEASE_ENHANCED_UNSUPPORTED,
+      '网易云增强 API 在当前部署环境不可用'
+    )
   }
 
   const rawPath = getRouterParam(event, 'path')

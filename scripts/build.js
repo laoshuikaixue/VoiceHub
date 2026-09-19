@@ -463,8 +463,10 @@ async function injectCloudflareHyperdrive() {
   const hyperdriveId = process.env.CLOUDFLARE_HYPERDRIVE_ID?.trim() || ''
   if (!hyperdriveId) return
   if (!fs.existsSync('.wrangler/deploy/config.json')) {
-    log('⚠️ 未找到 .wrangler/deploy/config.json，跳过 Hyperdrive 绑定注入', 'yellow')
-    return
+    throw new Error(
+      'CLOUDFLARE_HYPERDRIVE_ID 已配置但未生成 .wrangler/deploy/config.json：' +
+        '缺少部署重定向会导致 wrangler deploy 使用不含 HYPERDRIVE 绑定的本地配置并报错 10021'
+    )
   }
   const deployRedirect = JSON.parse(await readFile('.wrangler/deploy/config.json', 'utf8'))
   const generatedConfigPath = path.resolve(process.cwd(), path.dirname('.wrangler/deploy/config.json'), deployRedirect.configPath ?? '')
