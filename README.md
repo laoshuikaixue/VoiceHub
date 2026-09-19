@@ -171,7 +171,8 @@ DATABASE_URL=postgres://user:pass@host:5432/db
 JWT_SECRET=本地开发用密钥
 ```
 
-- `DATABASE_URL` 建议使用 Neon/Supabase 等支持 Serverless 的 PostgreSQL；Workers 的 `nodejs_compat` 支持 Postgres.js TCP 连接，生产环境建议配置 Cloudflare Hyperdrive 以获得连接池与查询缓存。
+- `DATABASE_URL` 用于 Node/Vercel/Netlify 部署，并作为创建 Hyperdrive 配置时的源站连接串。
+- Cloudflare Workers 必须在 **Settings → Bindings → Hyperdrive** 新增名为 `HYPERDRIVE` 的绑定。绑定可连接 Neon、Supabase、自建或其他 PostgreSQL，运行时使用其 `connectionString`，避免跨边缘请求复用原始 TCP 连接导致请求挂起。
 - 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
 - Workers 下 Redis、SMTP、本地文件备份、网易云增强 API（依赖 Node 动态文件资源）与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
 - 网易云解灰保留 7 个 HTTP 音源；仅 `unm` 音源因依赖 Node 服务端包不可用。
@@ -1496,12 +1497,14 @@ VoiceHub/
 │   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
 ├── deploy/                # 边缘运行时兼容模块
+│   ├── cloudflare-bindings.mjs # Cloudflare Hyperdrive 绑定读取
 │   └── stubs/             # Workers 不兼容 Node 依赖的受控替代实现
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cloudflare-stubs.test.ts # Cloudflare 边缘兼容模块测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
+│       ├── database-runtime-config.test.ts # 数据库运行时与 Hyperdrive 配置测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试

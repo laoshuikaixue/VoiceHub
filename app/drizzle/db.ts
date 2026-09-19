@@ -5,6 +5,11 @@ import * as schema from './schema.ts';
 import {config} from 'dotenv';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import { getHyperdriveConnectionString } from '#voicehub-cloudflare-bindings';
+import {
+  resolveDatabaseConnectionString,
+  resolveDatabasePoolConfig
+} from './runtime-config.ts';
 
 // 加载环境变量（优先使用工作目录的 .env，确保构建后运行时能正确加载）
 config({ path: path.resolve(process.cwd(), '.env') });
@@ -15,7 +20,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 // 创建PostgreSQL连接
-const connectionString = process.env.DATABASE_URL;
+const directConnectionString = process.env.DATABASE_URL;
 
 // 检测数据库类型
 const getDatabaseHostname = (value: string) => {
@@ -30,28 +35,48 @@ const isDomainOrSubdomain = (hostname: string, domain: string) => {
   return hostname === domain || hostname.endsWith(`.${domain}`);
 };
 
-const databaseHostname = getDatabaseHostname(connectionString);
+const databaseHostname = getDatabaseHostname(directConnectionString);
 const isNeonDatabase =
   isDomainOrSubdomain(databaseHostname, 'neon.tech') ||
   isDomainOrSubdomain(databaseHostname, 'neon.database.com');
 
-// Serverless 部署（每个函数实例独立建池，必须压低单实例连接数，防止实例数×池大小超过数据库 max_connections）
+// Cloudflare 优先使用 Hyperdrive；未绑定时回退 DATABASE_URL 直连。
 const isCloudflareRuntime =
   typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
-const isServerlessDatabase =
-  !!process.env.VERCEL ||
-  !!process.env.NETLIFY ||
-  isCloudflareRuntime;
+const hyperdriveConnectionString = isCloudflareRuntime
+  ? getHyperdriveConnectionString()
+  : undefined;
+const connectionString = resolveDatabaseConnectionString({
+  isCloudflare: isCloudflareRuntime,
+  databaseUrl: directConnectionString,
+  hyperdriveUrl: hyperdriveConnectionString,
+  isNeon: isNeonDatabase
+});
+const runtimePoolConfig = resolveDatabasePoolConfig({
+  isCloudflare: isCloudflareRuntime,
+  databaseUrl: directConnectionString,
+  hyperdriveUrl: hyperdriveConnectionString,
+  isNeon: isNeonDatabase
+});
 
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {
+  if (isCloudflareRuntime) {
+    return {
+      ...runtimePoolConfig,
+      ssl: connectionString.includes('sslmode=require') || connectionString.includes('ssl=true') ? 'require' : false,
+      prepare: false,
+      transform: { undefined: null },
+      connection: { application_name: 'voicehub-app' },
+      onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
+      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
+    };
+  }
+
   if (isNeonDatabase) {
     // Neon Database Serverless 优化配置
     return {
-      max: 1, // Serverless 环境下每个实例保持最小连接数，利用 Neon 自身的连接池
-      idle_timeout: 0, // 立即释放空闲连接，适应 Serverless 的快速冻结特性
-      connect_timeout: 10, // Neon 连接速度快，减少超时时间
-      max_lifetime: 3600, // 连接最大生命周期（1小时）
+      ...runtimePoolConfig,
       ssl: 'require', // Neon 默认需要 SSL
       prepare: false, // 禁用预处理语句以提高兼容性
       transform: {
@@ -66,12 +91,7 @@ const getDatabaseConfig = () => {
   } else {
     // 标准 PostgreSQL 数据库配置
     return {
-      // Serverless 下单实例池压到 2：1 vCPU 数据库同时只能执行一条查询，大池只会耗尽 max_connections
-      max: isServerlessDatabase ? 2 : process.env.NODE_ENV === 'production' ? 10 : 5,
-      idle_timeout: 20, // 增加空闲超时时间
-      // 连接失败快速抛出，避免 30 秒挂起拖垮函数实例并引发重试风暴
-      connect_timeout: isServerlessDatabase ? 10 : 30,
-      max_lifetime: 3600, // 连接最大生命周期（1小时）
+      ...runtimePoolConfig,
       ssl: connectionString.includes('sslmode=require') || connectionString.includes('ssl=true') ? 'require' : false,
       prepare: false, // 禁用预处理语句以提高兼容性
       transform: {

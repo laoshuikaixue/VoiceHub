@@ -743,6 +743,9 @@ export default defineNuxtConfig({
     ...(process.env.NITRO_PRESET?.includes('cloudflare')
       ? {
           alias: {
+            '#voicehub-cloudflare-bindings': fileURLToPath(
+              new URL('./deploy/cloudflare-bindings.mjs', import.meta.url)
+            ),
             punycode: 'node:punycode',
             'punycode/': 'node:punycode',
             // jsdom 可选依赖 canvas 在边缘环境不可用，stub 掉
@@ -787,7 +790,13 @@ export default defineNuxtConfig({
             )
           }
         }
-      : {}),
+      : {
+          alias: {
+            '#voicehub-cloudflare-bindings': fileURLToPath(
+              new URL('./deploy/stubs/cloudflare-bindings.mjs', import.meta.url)
+            )
+          }
+        }),
     // 增强错误处理和稳定性
     experimental: {
       wasm: true,
