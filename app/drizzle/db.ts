@@ -41,26 +41,32 @@ const isNeonDatabase =
   isDomainOrSubdomain(databaseHostname, 'neon.database.com');
 
 // Cloudflare 优先使用 Hyperdrive；未绑定时回退 DATABASE_URL 直连。
-const isCloudflareRuntime =
-  typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
-const hyperdriveConnectionString = isCloudflareRuntime
-  ? getHyperdriveConnectionString()
-  : undefined;
-const connectionString = resolveDatabaseConnectionString({
-  isCloudflare: isCloudflareRuntime,
-  databaseUrl: directConnectionString,
-  hyperdriveUrl: hyperdriveConnectionString,
-  isNeon: isNeonDatabase
-});
-const runtimePoolConfig = resolveDatabasePoolConfig({
-  isCloudflare: isCloudflareRuntime,
-  databaseUrl: directConnectionString,
-  hyperdriveUrl: hyperdriveConnectionString,
-  isNeon: isNeonDatabase
-});
+// 注意：Workers 下 env 绑定（含 HYPERDRIVE）只允许在请求处理器内访问，
+// 模块顶层读取会触发部署校验 10021（Disallowed operation called within global scope），
+// 因此连接串解析、client 与 drizzle 实例全部延迟到首次请求（见 getInstances）。
+const resolveRuntimeOptions = () => {
+  const isCloudflareRuntime =
+    typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+  const hyperdriveConnectionString = isCloudflareRuntime
+    ? getHyperdriveConnectionString()
+    : undefined;
+  const runtimeOptions = {
+    isCloudflare: isCloudflareRuntime,
+    databaseUrl: directConnectionString,
+    hyperdriveUrl: hyperdriveConnectionString,
+    isNeon: isNeonDatabase
+  };
+  return {
+    isCloudflareRuntime,
+    isNeonDatabase,
+    connectionString: resolveDatabaseConnectionString(runtimeOptions),
+    runtimePoolConfig: resolveDatabasePoolConfig(runtimeOptions)
+  };
+};
 
 // 根据数据库类型选择配置
-const getDatabaseConfig = () => {
+const getDatabaseConfig = (runtime: ReturnType<typeof resolveRuntimeOptions>) => {
+  const { isCloudflareRuntime, connectionString, runtimePoolConfig } = runtime;
   if (isCloudflareRuntime) {
     return {
       ...runtimePoolConfig,
@@ -106,13 +112,44 @@ const getDatabaseConfig = () => {
   }
 };
 
-const client = postgres(connectionString, getDatabaseConfig());
+// 惰性初始化：模块顶层只做无副作用准备，首次请求才创建连接（Workers 下才能访问 env 绑定）
+type DbInstances = {
+  client: ReturnType<typeof postgres>
+  db: ReturnType<typeof drizzle>
+}
+let instances: DbInstances | null = null;
+
+function getInstances(): DbInstances {
+  if (!instances) {
+    const runtime = resolveRuntimeOptions();
+    const created = postgres(runtime.connectionString, getDatabaseConfig(runtime));
+    instances = { client: created, db: drizzle(created, { schema }) };
+  }
+  return instances;
+}
+
+// 首次请求前不触碰连接；属性读取、调用（含标签模板）都转发到惰性实例
+function lazyProxy<T extends object>(resolve: () => T): T {
+  const callable = function () {} as T;
+  return new Proxy(callable, {
+    apply(_target, thisArg, args) {
+      return (resolve() as unknown as (...fnArgs: unknown[]) => unknown).apply(thisArg, args);
+    },
+    get(_target, prop, receiver) {
+      const value = Reflect.get(resolve(), prop, resolve());
+      return typeof value === 'function' ? value.bind(resolve()) : value;
+    },
+    has(_target, prop) {
+      return Reflect.has(resolve(), prop);
+    }
+  }) as T;
+}
 
 // 创建Drizzle数据库实例
-export const db = drizzle(client, { schema });
+export const db = lazyProxy<ReturnType<typeof drizzle>>(() => getInstances().db);
 
 // 导出连接客户端（用于手动查询或关闭连接）
-export { client };
+export const client = lazyProxy<ReturnType<typeof postgres>>(() => getInstances().client);
 
 // 导出schema以便在其他地方使用
 export * from './schema.ts';
@@ -210,8 +247,10 @@ export async function closeConnection() {
   }
 }
 
-// 设置优雅关闭处理
-if (typeof process !== 'undefined') {
+// 设置优雅关闭处理（仅 Node 运行时；Workers 全局作用域禁止事件/信号操作且无意义）
+const isCloudflareWorker =
+  typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+if (typeof process !== 'undefined' && !isCloudflareWorker) {
   const gracefulShutdown = async () => {
     console.log('🔄 Shutting down database connections...');
     await closeConnection();
