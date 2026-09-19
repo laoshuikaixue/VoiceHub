@@ -285,7 +285,11 @@ export async function getMusicUrlResult(
       return result
     }
     const { localize } = useServerErrors()
-    throw new Error(localize({ data: { code: 'PLUGIN_RESOLVE_FAILED' } }))
+    const message = localize({ data: { code: 'PLUGIN_RESOLVE_FAILED' } })
+    const resolveError: Error & { data?: { code: string } } = new Error(message)
+    // 附带错误码，让遥测过滤不依赖界面语言
+    resolveError.data = { code: 'PLUGIN_RESOLVE_FAILED' }
+    throw resolveError
   }
 
   const tryPlugins = async () => {

@@ -13,11 +13,39 @@ export const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
   'The operation was aborted due to timeout',
   'request timed out',
   'timeout exceeded',
-  'TimeoutError'
+  'TimeoutError',
+  // 音源插件运行期失败：取不到播放地址、插件不可用、上游超时、媒体票据失效
+  'PLUGIN_RESOLVE_FAILED',
+  'PLUGIN_UNAVAILABLE',
+  'PLUGIN_TIMEOUT',
+  'PLUGIN_NETWORK_BLOCKED',
+  'PLUGIN_INVALID_TICKET',
+  // ofetch 错误消息自带请求路径，按路径过滤可与界面语言无关
+  '/api/music-source-plugins/search',
+  '/api/music-source-plugins/resolve',
+  '/api/music-source-plugins/lyric'
+]
+
+// 插件音源运行期接口（搜索、解析、媒体流代理）
+const PLUGIN_RUNTIME_PATH_PREFIX = '/api/music-source-plugins/'
+
+// 上游断连、被中止等传输层失败：客户端切歌、插件源站点掐连接都会触发，非代码缺陷
+const UPSTREAM_TRANSPORT_ERROR_PATTERNS = [
+  'aborted',
+  'socket hang up',
+  'econnreset',
+  'epipe',
+  'premature close',
+  'err_stream',
+  'write after end'
 ]
 
 type SentryLikeEvent = {
   message?: unknown
+  request?: {
+    url?: unknown
+  }
+  extra?: Record<string, unknown>
   exception?: {
     values?: Array<{
       type?: unknown
@@ -62,6 +90,8 @@ export const stringifyErrorValue = (
     errorMessage,
     record.statusMessage,
     record.statusCode,
+    // 机器可读错误码（Node 系统错误 code、客户端附加的 data.code 同族标记）
+    record.code,
     // Sentry 日志参数（console.error 传入的错误对象）
     stringifyErrorValue(record.params, depth + 1, seen),
     // H3Error.data / FetchError.data
@@ -88,6 +118,8 @@ export const getSentryEventSearchText = (
     event.message,
     logEntry.message,
     ...(Array.isArray(logEntry.params) ? logEntry.params : []),
+    // console 集成把原始参数放在 extra.arguments，只有这里能看到错误的 code 与 cause
+    stringifyErrorValue(event.extra?.arguments),
     ...exceptionTexts,
     stringifyErrorValue(hint?.originalException),
     stringifyErrorValue(hint?.syntheticException)
@@ -102,4 +134,24 @@ export const isExpectedUpstreamMusicError = (text: string): boolean => {
   return EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS.some((pattern) =>
     normalizedText.includes(pattern.toLowerCase())
   )
+}
+
+const getRequestPath = (url: unknown): string => {
+  if (typeof url !== 'string' || !url) return ''
+  const withoutQuery = url.split('?')[0]
+  try {
+    return new URL(withoutQuery, 'http://voicehub.invalid').pathname
+  } catch {
+    return withoutQuery
+  }
+}
+
+/** 插件音源接口上的上游断连/中止：属于插件源站点与播放器切换的正常波动，本地日志保留即可 */
+export const isExpectedPluginRuntimeTransportError = (
+  text: string,
+  requestUrl: unknown
+): boolean => {
+  if (!getRequestPath(requestUrl).startsWith(PLUGIN_RUNTIME_PATH_PREFIX)) return false
+  const normalizedText = text.toLowerCase()
+  return UPSTREAM_TRANSPORT_ERROR_PATTERNS.some((pattern) => normalizedText.includes(pattern))
 }
