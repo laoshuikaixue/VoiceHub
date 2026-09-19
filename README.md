@@ -141,6 +141,14 @@
 
 仓库已包含 `wrangler.jsonc` 与 `cloudflare_module` 构建适配，可运行 Nuxt SSR 与常规 Server API。依赖 Node request/response 流的接口（备份上传、SSE/WebSocket、媒体请求取消）在 Workers 下不可用或降级，不属于当前适配范围。
 
+使用 Cloudflare 控制台连接 Git 仓库时，必须在 **构建配置**中填写：
+
+- 构建命令：`pnpm run build:cloudflare`（不能使用通用的 `pnpm run build`，否则会产出 `node-server`）
+- 部署命令：`npx wrangler deploy`
+- 根目录：`/`
+
+构建日志应显示 `Nitro preset: cloudflare_module`；若显示 `node-server`，说明控制台仍在使用错误的构建命令。
+
 ```bash
 # 本地使用真实 workerd 验证
 pnpm run dev:cloudflare
