@@ -142,7 +142,7 @@ export default defineEventHandler(async (event) => {
           status: config?.oauthRegisterRequiresApproval ? 'pending' : 'active',
           remark: remark || null,
           email: email || null,
-          emailVerified: email ? true : null,
+          emailVerified: !!email,
           createdAt: now,
           updatedAt: now,
           passwordChangedAt: now,
@@ -211,7 +211,8 @@ export default defineEventHandler(async (event) => {
   } catch (e: any) {
     // 业务错误码（如用户名冲突 409）直接透传
     if (e?.statusCode) throw e
+    // drizzle 的 message 包含完整 SQL 与参数（含密码哈希），不能回给客户端；数据库原始错误在 e.cause 中
     console.error('OAuth register error:', e)
-    throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, e.message || '注册失败，请稍后重试')
+    throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, '注册失败，请稍后重试')
   }
 })
