@@ -20,7 +20,10 @@ export function resolveDatabasePoolConfig(options: DatabaseRuntimeOptions) {
       idle_timeout: 0,
       connect_timeout: 5,
       max_lifetime: 60,
-      fetch_types: false
+      fetch_types: false,
+      // Workers 下禁止指数退避重试：postgres.js 失败后退避最长 20s，
+      // 期间查询 promise 不 settle，workerd 判定请求挂起并强制取消
+      backoff: 0
     }
   }
 

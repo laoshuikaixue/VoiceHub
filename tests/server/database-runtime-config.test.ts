@@ -34,6 +34,7 @@ test('Cloudflare 数据库连接池限制为单连接并快速释放', () => {
     idle_timeout: 0,
     connect_timeout: 5,
     max_lifetime: 60,
-    fetch_types: false
+    fetch_types: false,
+    backoff: 0
   })
 })
