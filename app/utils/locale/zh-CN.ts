@@ -4550,6 +4550,7 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
   BACKUP_DISABLED: '自动备份未启用',
   MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
+  NETEASE_ENHANCED_UNSUPPORTED: '网易云增强 API 在当前部署环境不可用',
   QQ_COMMENT_FETCH_FAILED: 'QQ 音乐评论获取失败，请稍后重试',
   PLUGIN_INVALID_CONFIG: '音源插件配置无效',
   PLUGIN_CONFIG_CONFLICT: '配置已被修改，请刷新后重试',

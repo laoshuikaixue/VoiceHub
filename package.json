@@ -7,6 +7,9 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.js",
+    "build:cloudflare": "node scripts/build-cloudflare.js",
+    "dev:cloudflare": "pnpm run build:cloudflare && wrangler dev",
+    "deploy:cloudflare": "pnpm run build:cloudflare && wrangler deploy",
     "build:plugins": "node --import tsx scripts/build-music-source-plugins.ts",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
@@ -127,6 +130,7 @@
     "eslint": "^9.39.5",
     "prettier": "^3.9.8",
     "typescript": "^5.9.3",
-    "unocss": "^66.10.5"
+    "unocss": "^66.10.5",
+    "wrangler": "4.135.0"
   }
 }

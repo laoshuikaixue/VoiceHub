@@ -126,7 +126,7 @@
 
 ### 一键部署
 
-本项目可以一键部署到Vercel/Netlify/EdgeOne平台：
+本项目可以部署到 Vercel、Netlify、EdgeOne 和 Cloudflare Workers：
 
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flaoshuikaixue%2FVoiceHub&env=DATABASE_URL,JWT_SECRET,NODE_ENV&envDefaults=%7B%22NODE_ENV%22%3A%22production%22%7D&envDescription=%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AF%B4%E6%98%8E&envLink=https%3A%2F%2Fgithub.com%2Flaoshuikaixue%2FVoiceHub%23%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E8%AF%B4%E6%98%8E)
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/laoshuikaixue/VoiceHub)
@@ -136,6 +136,53 @@
 
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
+
+### Cloudflare Workers
+
+仓库已包含 `wrangler.jsonc` 与 `cloudflare_module` 构建适配，可运行 Nuxt SSR 与常规 Server API。依赖 Node request/response 流的接口（备份上传、SSE/WebSocket、媒体请求取消）在 Workers 下不可用或降级，不属于当前适配范围。
+
+使用 Cloudflare 控制台连接 Git 仓库时，必须在 **构建配置**中填写：
+
+- 构建命令：`pnpm run build:cloudflare`（不能使用通用的 `pnpm run build`，否则会产出 `node-server`）
+- 部署命令：`npx wrangler deploy`
+- 根目录：`/`
+
+构建日志应显示 `Nitro preset: cloudflare_module`；若显示 `node-server`，说明控制台仍在使用错误的构建命令。
+
+```bash
+# 本地使用真实 workerd 验证
+pnpm run dev:cloudflare
+
+# 部署
+pnpm run deploy:cloudflare
+```
+
+部署前至少配置：
+
+```bash
+wrangler secret put DATABASE_URL
+wrangler secret put JWT_SECRET
+```
+
+本地运行 `dev:cloudflare` 前需在项目根目录创建 `.dev.vars`（已被 gitignore，仅本地生效），提供启动必需变量：
+
+```ini
+DATABASE_URL=postgres://user:***@host:5432/db
+JWT_SECRET=本地开发用密钥
+```
+
+workerd 本地不连接真实 Hyperdrive，用 `DATABASE_URL` 模拟其 `connectionString`；本地 PostgreSQL 需真实可达：
+
+```ini
+CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://user:***@localhost:5432/db
+```
+
+- `DATABASE_URL` 用于 Node/Vercel/Netlify 部署，并作为创建 Hyperdrive 配置时的源站连接串。
+- Cloudflare Workers 必须绑定名为 `HYPERDRIVE` 的 Hyperdrive 配置（在 **Settings → Bindings → Hyperdrive** 创建）。绑定可连接 Neon、Supabase、自建或其他 PostgreSQL，运行时使用其 `connectionString`，避免跨边缘请求复用原始 TCP 连接导致请求挂起。
+- Git 构建部署时须在构建环境变量中配置 `CLOUDFLARE_HYPERDRIVE_ID`（Hyperdrive 配置的 ID）：构建脚本会把 `HYPERDRIVE` 绑定注入 Nitro 生成的 Wrangler 配置，避免 `wrangler deploy` 以本地配置为准删除控制台绑定。`keep_vars` 已默认启用，控制台变量（Secrets 除外）不会被部署删除；未配置该变量时跳过注入。
+- 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
+- Workers 下 Redis、SMTP、本地文件备份、网易云增强 API（依赖 Node 动态文件资源）与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
+- 网易云解灰保留 7 个 HTTP 音源；仅 `unm` 音源因依赖 Node 服务端包不可用。
 
 ### Linux 服务器部署
 
@@ -1443,6 +1490,8 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
+│   ├── build-cloudflare.js # Cloudflare Workers 构建入口
+│   ├── inject-cloudflare-config.js # Cloudflare 生成配置的 Hyperdrive 绑定注入
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
@@ -1456,10 +1505,16 @@ VoiceHub/
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
+├── deploy/                # 边缘运行时兼容模块
+│   ├── cloudflare-bindings.mjs # Cloudflare Hyperdrive 绑定读取
+│   └── stubs/             # Workers 不兼容 Node 依赖的受控替代实现
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── cloudflare-stubs.test.ts # Cloudflare 边缘兼容模块测试
+│       ├── cloudflare-deploy-config.test.ts # Cloudflare 部署配置 Hyperdrive 注入测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
+│       ├── database-runtime-config.test.ts # 数据库运行时与 Hyperdrive 配置测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
@@ -1467,6 +1522,7 @@ VoiceHub/
 │       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
 │       ├── music-source-plugin-platform.test.ts # 插件平台键解析测试
 │       ├── music-source-runtime.test.ts # 插件沙箱与网络策略测试
+│       ├── netease-enhanced-runtime.test.ts # 网易云增强 API 运行时策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
@@ -1502,7 +1558,8 @@ VoiceHub/
 ├── sh/                    # 一键部署脚本目录
 ├── tsconfig.json          # TypeScript配置文件
 ├── UPGRADE.md             # 升级指南
-└── vercel.json            # Vercel部署配置
+├── vercel.json            # Vercel部署配置
+└── wrangler.jsonc         # Cloudflare Workers 部署配置
 ```
 
 ### 目录说明

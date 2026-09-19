@@ -1,0 +1,16 @@
+{
+  // VoiceHub — Cloudflare Workers 部署配置（Nitro cloudflare_module preset 会读取本文件）
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "voicehub",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2025-09-15",
+  "compatibility_flags": ["nodejs_compat", "nodejs_compat_populate_process_env"],
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "keep_vars": true
+}

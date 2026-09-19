@@ -4541,6 +4541,7 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
   BACKUP_DISABLED: 'Auto backup is disabled',
   MUSIC_SOURCE_PLATFORM_DISABLED: 'Platform "{0}" is disabled. Available platforms: {1}',
+  NETEASE_ENHANCED_UNSUPPORTED: 'The NetEase enhanced API is unavailable in this deployment environment',
   QQ_COMMENT_FETCH_FAILED: 'Failed to load QQ Music comments. Please try again later.',
   PLUGIN_INVALID_CONFIG: 'Invalid source plugin configuration',
   PLUGIN_CONFIG_CONFLICT: 'Configuration changed. Refresh and try again.',

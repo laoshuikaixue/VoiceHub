@@ -1,7 +1,28 @@
-import { db } from '~/drizzle/db'
-import { sql } from 'drizzle-orm'
-
 export default defineNitroPlugin(async (nitroApp) => {
+  const isCloudflareWorker =
+    typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+
+  // Workers（stateless）下连接不得跨请求存活：socket 归属创建请求的上下文，
+  // 复用会产生跨请求 promise resolve（被运行时取消）或请求挂死。
+  // 每请求结束即关闭该请求的数据库客户端。
+  if (isCloudflareWorker) {
+    const { closeRequestDb } = await import('~/drizzle/db');
+    nitroApp.hooks.hook('afterResponse', async (event) => {
+      const close = closeRequestDb(event as unknown as object);
+      const waitUntil = (event as unknown as {
+        context?: { cloudflare?: { context?: { waitUntil?: (p: Promise<unknown>) => void } } }
+      }).context?.cloudflare?.context?.waitUntil;
+      if (waitUntil) waitUntil(close);
+      else await close;
+    });
+    return;
+  }
+
+  // 健康检查依赖只在 Node 运行时加载，避免边缘运行时求值数据库连接模块。
+  const [{ db }, { sql }] = await Promise.all([
+    import('~/drizzle/db'),
+    import('drizzle-orm')
+  ])
 
   // 全局未处理的Promise拒绝处理器
   process.on('unhandledRejection', async (reason, promise) => {

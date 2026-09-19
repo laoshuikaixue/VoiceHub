@@ -913,5 +913,4 @@ export async function isPasswordLoginCaptchaRequired(
   return failCount >= config.threshold
 }
 
-// 定期清理过期记录（每5分钟执行一次）
-setInterval(cleanupExpiredLocks, 5 * 60 * 1000)
+// Serverless/边缘运行时不应在模块加载时创建常驻定时器；过期数据由读写路径惰性清理。

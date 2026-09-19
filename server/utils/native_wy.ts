@@ -31,18 +31,31 @@ const EAPI_MAX_ATTEMPTS = 3
 const EAPI_USER_AGENT =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36'
 
-// 进程级设备指纹：只生成一次，避免每次请求都被识别为新设备
-const NTES_NUID = randomBytes(16).toString('hex')
-const NTES_NNID = `${NTES_NUID},${getServerTimestamp()}`
-const DEVICE_ID = randomBytes(26).toString('hex').toUpperCase()
-const WNMCID = (() => {
+// 进程级设备指纹：请求期惰性生成。Workers 禁止在模块全局作用域生成随机值。
+let deviceFingerprint: {
+  ntesNuid: string
+  ntesNnid: string
+  deviceId: string
+  wnmcid: string
+} | null = null
+
+const getDeviceFingerprint = () => {
+  if (deviceFingerprint) return deviceFingerprint
+  const ntesNuid = randomBytes(16).toString('hex')
   const chars = 'abcdefghijklmnopqrstuvwxyz'
   let suffix = ''
   for (let i = 0; i < 6; i += 1) {
     suffix += chars.charAt(Math.floor(Math.random() * chars.length))
   }
-  return `${suffix}.${getServerTimestamp()}.01.0`
-})()
+  const timestamp = getServerTimestamp()
+  deviceFingerprint = {
+    ntesNuid,
+    ntesNnid: `${ntesNuid},${timestamp}`,
+    deviceId: randomBytes(26).toString('hex').toUpperCase(),
+    wnmcid: `${suffix}.${timestamp}.01.0`
+  }
+  return deviceFingerprint
+}
 
 /** 服务端仅在未携带 NMTID 的 eapi 请求上下发 Set-Cookie: NMTID=...，取得后缓存复用 */
 let cachedNmtid = ''
@@ -51,15 +64,16 @@ let nmtidProbeLeft = 3
 
 /** 组装 eapi 客户端必备 Cookie；未取到 NMTID 时不带该字段，交给服务端下发 */
 const buildEapiCookie = () => {
+  const fingerprint = getDeviceFingerprint()
   const fields: Record<string, string> = {
     __remember_me: 'true',
     ntes_kaola_ad: '1',
-    _ntes_nuid: NTES_NUID,
-    _ntes_nnid: NTES_NNID,
-    WNMCID,
+    _ntes_nuid: fingerprint.ntesNuid,
+    _ntes_nnid: fingerprint.ntesNnid,
+    WNMCID: fingerprint.wnmcid,
     WEVNSM: '1.0.0',
     osver: 'Microsoft-Windows-10-Professional-build-19045-64bit',
-    deviceId: DEVICE_ID,
+    deviceId: fingerprint.deviceId,
     os: 'pc',
     channel: 'netease',
     appver: '3.1.29.205117'

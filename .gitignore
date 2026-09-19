@@ -47,6 +47,10 @@ result
 .env
 .env.*
 !.env.example
+.dev.vars
+
+# Cloudflare Workers local state
+.wrangler/
 
 # Tencent Cloud EdgeOne
 .edgeone/*

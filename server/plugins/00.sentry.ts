@@ -114,6 +114,18 @@ const captureInstanceOnlineTransaction = (instanceId: string, deploymentTarget: 
 }
 
 export default defineNitroPlugin((nitroApp) => {
+  // Workers 下禁用 Sentry Node 插件：
+  // 1) 初始化链路（isTelemetryEnabled/instance-id）依赖数据库，插件阶段无请求上下文，
+  //    会创建无法按请求回收的连接；2) buildRequestContext 读取 event.node.req，
+  //    Fetch 事件（Workers）上不存在，错误上报时会再抛错掩盖原始异常。
+  // 边缘遥测由前端 @sentry/vue 链路承担。
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.userAgent === 'Cloudflare-Workers'
+  ) {
+    return
+  }
+
   const config = useRuntimeConfig()
   const jwtSecret = process.env.JWT_SECRET || config.jwtSecret
   if (!jwtSecret) {
