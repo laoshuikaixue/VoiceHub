@@ -2,8 +2,10 @@
 
 import { spawn } from 'child_process'
 import { config } from 'dotenv'
+import { readFile, writeFile } from 'node:fs/promises'
 import fs from 'fs'
 import path from 'path'
+import { applyCloudflareDeployConfig } from './inject-cloudflare-config.js'
 
 config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
 
@@ -457,6 +459,24 @@ async function runMusicSourcePluginBuild() {
   })
 }
 
+async function injectCloudflareHyperdrive() {
+  const hyperdriveId = process.env.CLOUDFLARE_HYPERDRIVE_ID?.trim() || ''
+  if (!hyperdriveId) return
+  if (!fs.existsSync('.wrangler/deploy/config.json')) {
+    log('⚠️ 未找到 .wrangler/deploy/config.json，跳过 Hyperdrive 绑定注入', 'yellow')
+    return
+  }
+  const deployRedirect = JSON.parse(await readFile('.wrangler/deploy/config.json', 'utf8'))
+  const generatedConfigPath = path.resolve(process.cwd(), path.dirname('.wrangler/deploy/config.json'), deployRedirect.configPath ?? '')
+  if (!fs.existsSync(generatedConfigPath)) {
+    throw new Error(`部署重定向配置指向的文件不存在：${deployRedirect.configPath}`)
+  }
+  const generated = JSON.parse(await readFile(generatedConfigPath, 'utf8'))
+  const updated = applyCloudflareDeployConfig(generated, hyperdriveId)
+  await writeFile(generatedConfigPath, `${JSON.stringify(updated, null, 2)}\n`)
+  log(`✅ 已注入 HYPERDRIVE 绑定到 ${path.relative(process.cwd(), generatedConfigPath)}`, 'green')
+}
+
 async function build() {
   const rawNodeOptions = process.env.NODE_OPTIONS
   normalizeBlankEnvironment()
@@ -469,6 +489,9 @@ async function build() {
   if (!(await runMusicSourcePluginBuild())) throw new Error('音源插件运行时构建失败')
   if (!(await runNuxtBuild())) throw new Error('Nuxt 构建失败')
   log('✅ Nuxt 构建完成', 'green')
+  if (process.env.NITRO_PRESET === 'cloudflare_module') {
+    await injectCloudflareHyperdrive()
+  }
 }
 
 build().catch((error) => {

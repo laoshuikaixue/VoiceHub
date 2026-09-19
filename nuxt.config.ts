@@ -742,6 +742,14 @@ export default defineNuxtConfig({
     // 绕过 unenv 对 'punycode/'（tr46/tough-cookie 等带尾斜杠 require）的 polyfill 解析 bug（ENOTDIR）
     ...(process.env.NITRO_PRESET?.includes('cloudflare')
       ? {
+          // 显式生成 .output/server/wrangler.json 与部署重定向（本地默认不生成，仅 CF 构建环境自动开启），
+          // 保证本地与 Git 构建行为一致，构建脚本得以注入 HYPERDRIVE 绑定（CLOUDFLARE_HYPERDRIVE_ID）
+          cloudflare: {
+            deployConfig: true,
+            wrangler: {
+              keep_vars: true
+            }
+          },
           alias: {
             '#voicehub-cloudflare-bindings': fileURLToPath(
               new URL('./deploy/cloudflare-bindings.mjs', import.meta.url)

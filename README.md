@@ -172,7 +172,8 @@ JWT_SECRET=本地开发用密钥
 ```
 
 - `DATABASE_URL` 用于 Node/Vercel/Netlify 部署，并作为创建 Hyperdrive 配置时的源站连接串。
-- Cloudflare Workers 必须在 **Settings → Bindings → Hyperdrive** 新增名为 `HYPERDRIVE` 的绑定。绑定可连接 Neon、Supabase、自建或其他 PostgreSQL，运行时使用其 `connectionString`，避免跨边缘请求复用原始 TCP 连接导致请求挂起。
+- Cloudflare Workers 必须绑定名为 `HYPERDRIVE` 的 Hyperdrive 配置（在 **Settings → Bindings → Hyperdrive** 创建）。绑定可连接 Neon、Supabase、自建或其他 PostgreSQL，运行时使用其 `connectionString`，避免跨边缘请求复用原始 TCP 连接导致请求挂起。
+- Git 构建部署时须在构建环境变量中配置 `CLOUDFLARE_HYPERDRIVE_ID`（Hyperdrive 配置的 ID）：构建脚本会把 `HYPERDRIVE` 绑定注入 Nitro 生成的 Wrangler 配置，避免 `wrangler deploy` 以本地配置为准删除控制台绑定。`keep_vars` 已默认启用，控制台变量（Secrets 除外）不会被部署删除；未配置该变量时跳过注入。
 - 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
 - Workers 下 Redis、SMTP、本地文件备份、网易云增强 API（依赖 Node 动态文件资源）与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
 - 网易云解灰保留 7 个 HTTP 音源；仅 `unm` 音源因依赖 Node 服务端包不可用。
@@ -1483,6 +1484,7 @@ VoiceHub/
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-cloudflare.js # Cloudflare Workers 构建入口
+│   ├── inject-cloudflare-config.js # Cloudflare 生成配置的 Hyperdrive 绑定注入
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
@@ -1503,6 +1505,7 @@ VoiceHub/
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cloudflare-stubs.test.ts # Cloudflare 边缘兼容模块测试
+│       ├── cloudflare-deploy-config.test.ts # Cloudflare 部署配置 Hyperdrive 注入测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── database-runtime-config.test.ts # 数据库运行时与 Hyperdrive 配置测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
