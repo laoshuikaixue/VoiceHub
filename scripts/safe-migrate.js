@@ -227,6 +227,18 @@ async function safeMigrate() {
 
     // 8. 验证迁移结果
     log('✅ 数据库迁移流程完成！', 'green')
+
+    // 9. 写入 RBAC 权限种子数据（M-08 fix：与 deploy.js 对齐，迁移成功后自动 seed，避免 RBAC 5 张表空白）
+    // seed-permissions.js 是 idempotent：permissions UPSERT + role_permissions DO NOTHING
+    log('🌱 写入 RBAC 权限种子数据...', 'cyan')
+    if (fileExists('scripts/seed-permissions.js')) {
+      if (!safeExec('cd .. && pnpm run db:seed', { env })) {
+        throw new Error('RBAC 权限种子写入失败')
+      }
+      logSuccess('RBAC 权限种子写入完成')
+    } else {
+      logWarning('scripts/seed-permissions.js 不存在，跳过 seed')
+    }
   } catch (error) {
     logError(`迁移失败: ${error.message}`)
     logError('请检查数据库连接和迁移文件')

@@ -487,6 +487,18 @@ async function main() {
     await sql.end()
   }
 
+  // M-08 fix：数据库同步成功后自动 seed RBAC 权限目录（idempotent：permissions UPSERT + role_permissions DO NOTHING）
+  // 不在 db-sync 链里调 seed → 走 db-sync 路径的运维会重蹈 fresh deploy 空白页
+  if (fileExists('scripts/seed-permissions.js')) {
+    log('🌱 写入 RBAC 权限种子数据...', 'cyan')
+    if (!safeExec('pnpm run db:seed', { env: NON_INTERACTIVE_ENV })) {
+      throw new Error('RBAC 权限种子写入失败')
+    }
+    ok('RBAC 权限种子写入完成')
+  } else {
+    warn('scripts/seed-permissions.js 不存在，跳过 seed')
+  }
+
   ok('数据库同步流程完成')
 }
 
