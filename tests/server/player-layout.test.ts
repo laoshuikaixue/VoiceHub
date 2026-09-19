@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   PLAYER_LAYOUT_MARGIN,
+  PLAYER_LAYOUT_MARGIN_MOBILE,
   PLAYER_LAYOUT_STORAGE_KEY,
   clampPlayerPosition,
   parsePlayerLayout,
@@ -14,6 +15,11 @@ const VIEWPORT = { width: 1280, height: 800 }
 
 test('存储键固定，避免改动后丢失用户偏好', () => {
   assert.equal(PLAYER_LAYOUT_STORAGE_KEY, 'voicehub-player-layout')
+})
+
+test('限位间距与播放器 CSS 取值一致', () => {
+  assert.equal(PLAYER_LAYOUT_MARGIN, 16)
+  assert.equal(PLAYER_LAYOUT_MARGIN_MOBILE, 10)
 })
 
 test('布局模式只认 floating，其余一律固定模式', () => {
@@ -41,15 +47,21 @@ test('越界坐标回收到安全间距内', () => {
 })
 
 test('支持自定义间距（移动端播放条左右各 10px）', () => {
+  const margin = PLAYER_LAYOUT_MARGIN_MOBILE
   const mobileSize = { width: 340, height: 64 }
   const mobileViewport = { width: 360, height: 780 }
-  assert.deepEqual(clampPlayerPosition({ x: 10, y: 300 }, mobileSize, mobileViewport, 10), {
+  assert.deepEqual(clampPlayerPosition({ x: 10, y: 300 }, mobileSize, mobileViewport, margin), {
     x: 10,
     y: 300
   })
-  assert.deepEqual(clampPlayerPosition({ x: 999, y: 999 }, mobileSize, mobileViewport, 10), {
-    x: 10,
-    y: 780 - 64 - 10
+  assert.deepEqual(clampPlayerPosition({ x: 999, y: 999 }, mobileSize, mobileViewport, margin), {
+    x: margin,
+    y: 780 - 64 - margin
+  })
+  // 播放条铺满可视宽度，横向被钉在贴边位置
+  assert.deepEqual(clampPlayerPosition({ x: 120, y: 300 }, mobileSize, mobileViewport, margin), {
+    x: margin,
+    y: 300
   })
 })
 

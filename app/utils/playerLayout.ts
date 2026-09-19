@@ -17,11 +17,16 @@ export interface PlayerLayoutState {
   position: PlayerLayoutPoint | null
 }
 
+// 视口限位回调：由持有播放器元素的组件注入，元素未渲染无法测量时返回 null
+export type PlayerLayoutClamp = (point: PlayerLayoutPoint) => PlayerLayoutPoint | null
+
 // 浏览器本地存储键：布局模式与自由拖拽坐标（仅存本机，不落库）
 export const PLAYER_LAYOUT_STORAGE_KEY = 'voicehub-player-layout'
 
-// 自由拖拽时元素与视口边缘的间距，取值与固定模式的 bottom: 1rem 一致
+// 自由拖拽时元素与视口边缘的间距，桌面端取值与固定模式的 bottom: 1rem 一致，
+// 移动端与 .mobile-player-bar 的 left/right 一致
 export const PLAYER_LAYOUT_MARGIN = 16
+export const PLAYER_LAYOUT_MARGIN_MOBILE = 10
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)

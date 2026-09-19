@@ -84,7 +84,8 @@
             </button>
             <button
               class="mobile-control-btn"
-              :title="isFloating ? audioPlayerLocale.playerDock : audioPlayerLocale.playerFreeDrag"
+              :aria-label="playerLayoutToggleLabel"
+              :title="playerLayoutToggleLabel"
               type="button"
               data-player-no-drag
               @click.stop="togglePlayerLayout"
@@ -101,7 +102,8 @@
           <button
             v-if="!isMobile"
             class="player-mode-button"
-            :title="isFloating ? audioPlayerLocale.playerDock : audioPlayerLocale.playerFreeDrag"
+            :aria-label="playerLayoutToggleLabel"
+            :title="playerLayoutToggleLabel"
             type="button"
             data-player-no-drag
             @click.stop="togglePlayerLayout"
@@ -313,7 +315,11 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { usePlayerLayout } from '~/composables/usePlayerLayout'
 import { useMediaSession } from '~/composables/useMediaSession'
-import { PLAYER_LAYOUT_MARGIN, clampPlayerPosition } from '~/utils/playerLayout'
+import {
+  PLAYER_LAYOUT_MARGIN,
+  PLAYER_LAYOUT_MARGIN_MOBILE,
+  clampPlayerPosition
+} from '~/utils/playerLayout'
 import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
@@ -1193,10 +1199,6 @@ const handleNext = async () => {
   }
 }
 
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
-})
-
 // 确保音频播放器引用的辅助函数
 const ensureAudioPlayerRef = () => {
   // 首先检查计算属性是否有值
@@ -1642,6 +1644,8 @@ const isDragging = ref(false)
 const suppressNextClick = ref(false)
 let suppressClickTimer = null
 let dragSession = null
+// 播放器自身尺寸变化（歌词面板/音质下拉展开、移动端与桌面端样式切换）后需要重新限位
+let widgetResizeObserver = null
 
 // 移动端点击播放条处理
 const handlePlayerClick = () => {
@@ -1659,8 +1663,10 @@ const handlePlayerClick = () => {
   }
 }
 
-// 拖拽限位边距：移动端播放条左右各 10px，桌面端与固定模式的 bottom: 1rem 对齐
-const layoutMargin = computed(() => (isMobile.value ? 10 : PLAYER_LAYOUT_MARGIN))
+// 拖拽限位边距：移动端播放条左右 10px，桌面端与固定模式的 bottom: 1rem 对齐
+const layoutMargin = computed(() =>
+  isMobile.value ? PLAYER_LAYOUT_MARGIN_MOBILE : PLAYER_LAYOUT_MARGIN
+)
 
 // 记录过坐标后改用内联定位；未记录时沿用固定模式的底部居中，切换瞬间不跳位
 const floatingStyle = computed(() => {
@@ -1668,6 +1674,11 @@ const floatingStyle = computed(() => {
   if (!isFloating.value || !point) return undefined
   return { left: `${point.x}px`, top: `${point.y}px` }
 })
+
+// 文案与图标都表示即将执行的动作，而非当前状态
+const playerLayoutToggleLabel = computed(() =>
+  isFloating.value ? audioPlayerLocale.value.playerDock : audioPlayerLocale.value.playerFreeDrag
+)
 
 // 切换布局模式
 const togglePlayerLayout = () => {
@@ -1684,19 +1695,25 @@ const readWidgetSize = () => {
   return { width: rect.width, height: rect.height }
 }
 
-// 更新自由拖拽坐标，persist 为真时落盘；size 由调用方缓存，避免拖拽过程中反复读取布局
-const applyLayoutPosition = (point, size, persist) => {
+// 按视口与播放器尺寸夹回坐标；播放器未渲染时返回 null（无法限位）
+// size 由拖拽调用方缓存，避免拖拽过程中反复读取布局
+const clampLayoutPoint = (point, size) => {
   const box = size || readWidgetSize()
-  if (!box) return
+  if (!box) return null
   const viewport = { width: window.innerWidth, height: window.innerHeight }
-  setLayoutPosition(clampPlayerPosition(point, box, viewport, layoutMargin.value))
-  if (persist) saveLayoutPosition()
+  return clampPlayerPosition(point, box, viewport, layoutMargin.value)
 }
 
-// 视口变化后重新限位，避免播放器被挤出可见区域
+// 更新自由拖拽坐标（仅改内存，拖拽结束时才落盘）
+const applyLayoutPosition = (point, size) => {
+  const clamped = clampLayoutPoint(point, size)
+  if (clamped) setLayoutPosition(clamped)
+}
+
+// 视口或播放器尺寸变化后重新限位并落盘；播放器隐藏时先不写，等尺寸可读时再夹回
 const clampLayoutToViewport = () => {
   if (!isFloating.value || !layoutPosition.value) return
-  applyLayoutPosition(layoutPosition.value, null, true)
+  saveLayoutPosition()
 }
 
 const handleResize = () => {
@@ -1772,8 +1789,7 @@ const handleDragMove = (event) => {
   event.preventDefault()
   applyLayoutPosition(
     { x: event.clientX - dragSession.offsetX, y: event.clientY - dragSession.offsetY },
-    dragSession.size,
-    false
+    dragSession.size
   )
 }
 
@@ -1799,11 +1815,9 @@ const handleDragEnd = (event) => {
   }, DRAG_CLICK_SUPPRESS_MS)
 }
 
-// 播放器重新显示时按当前视口限位
-watch(visible, async (shown) => {
-  if (!shown) return
-  await nextTick()
-  clampLayoutToViewport()
+// 播放器显示状态变化后限位（此刻可能仍是 display:none，交给 ResizeObserver 重试）
+watch(visible, (shown) => {
+  if (shown) clampLayoutToViewport()
 })
 
 onMounted(async () => {
@@ -1817,8 +1831,11 @@ onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', handleResize)
 
-  // 读取播放器布局偏好（仅客户端，避免 SSR 水合差异）
-  loadPlayerLayout()
+  // 读取播放器布局偏好（仅客户端，避免 SSR 水合差异），越界坐标按当前视口夹回
+  loadPlayerLayout(clampLayoutPoint)
+
+  widgetResizeObserver = new ResizeObserver(clampLayoutToViewport)
+  widgetResizeObserver.observe(widgetRef.value)
 
   // 尽早初始化鸿蒙系统控制事件
   if (sync.isHarmonyOS()) {
@@ -2054,6 +2071,10 @@ onUnmounted(() => {
 
   // 移除窗口尺寸监听
   window.removeEventListener('resize', handleResize)
+
+  // 移除播放器尺寸监听
+  widgetResizeObserver?.disconnect()
+  widgetResizeObserver = null
 
   // 移除拖拽兜底监听
   detachDragListeners()
@@ -2327,9 +2348,8 @@ const getFirstChar = (text) => {
   bottom: auto;
   right: auto;
   transform: none;
-  transition:
-    box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    border-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* 拖拽逐帧写 left/top，必须从 .music-widget 的 all 过渡中排除，否则播放器跟不上指针 */
+  transition-property: transform, opacity, box-shadow, border-color;
 }
 
 .music-widget.player-floating.player-positioned:hover {
@@ -2340,17 +2360,6 @@ const getFirstChar = (text) => {
   cursor: grabbing;
   transition: none;
   user-select: none;
-}
-
-/* 自由定位后进出场动画只做垂直位移 */
-.player-animation-enter-from.player-positioned,
-.player-animation-leave-to.player-positioned {
-  transform: translateY(100%) scale(0.98);
-}
-
-.player-animation-enter-to.player-positioned,
-.player-animation-leave-from.player-positioned {
-  transform: translateY(0) scale(1);
 }
 
 /* 时间区域 */
