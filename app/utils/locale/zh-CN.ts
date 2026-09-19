@@ -2533,6 +2533,7 @@ export const admin = {
     refreshPageDurations: '从平台重新获取本页歌曲时长',
     refreshCandidateDurations: '从平台重新获取候选歌曲时长',
     downloadSongs: '下载歌曲',
+    exportPlaylist: '导出歌单',
     markAllPlayed: '全部已播放',
     moveDate: '迁移日期',
     copyDate: '复制排期',
@@ -2720,6 +2721,48 @@ export const admin = {
         newSongs: '新歌榜',
         original: '原创榜',
         hotSongs: '热歌榜'
+      }
+    },
+    playlistExportModal: {
+      title: '导出歌单',
+      scope: '导出范围：{0}',
+      songCount: '{0} 首',
+      allPlayTimes: '全部时段',
+      columnCount: '共 {0} 列',
+      groupSchedule: '排期信息',
+      groupSong: '歌曲信息',
+      groupRequest: '投稿信息',
+      noteOptionsTitle: '留言选项',
+      includeUnapprovedNotes: '包含未通过公开审核的留言',
+      includeUnapprovedNotesHint: '关闭后，投稿留言仅保留已通过公开审核的内容，其余留空',
+      resetDefault: '恢复默认',
+      cancel: '取消',
+      exportButton: '导出 CSV',
+      fileNamePrefix: '歌单',
+      exportSuccess: '已导出 {0} 首歌曲',
+      exportFailed: '导出失败',
+      fields: {
+        sequence: '播出序号',
+        playDate: '播出日期',
+        playTime: '播出时段',
+        status: '状态',
+        title: '歌名',
+        artist: '歌手',
+        duration: '时长',
+        platform: '音源',
+        requester: '投稿人',
+        requesterClass: '年级班级',
+        collaborators: '联合投稿人',
+        voteCount: '投票数',
+        preferredPlayTime: '期望时段',
+        submissionNote: '投稿留言',
+        replayNote: '重播留言'
+      },
+      statusValues: {
+        draft: '草稿',
+        published: '已发布',
+        played: '已播放',
+        unsaved: '未保存'
       }
     },
     remarkDialog: {

@@ -268,6 +268,7 @@ export default defineEventHandler(async (event) => {
         s."createdAt",
         s."submissionNote",
         s."submissionNotePublic",
+        s."submissionNotePublicStatus" AS "songSubmissionNotePublicStatus",
         CASE WHEN rm.id IS NOT NULL THEN rm.submission_note ELSE s."submissionNote" END AS "effectiveSubmissionNote",
         CASE WHEN rm.id IS NOT NULL THEN COALESCE(rm.submission_note_public, false) ELSE s."submissionNotePublic" END AS "effectiveSubmissionNotePublic",
         CASE WHEN rm.id IS NOT NULL THEN rm.submission_note_public_status ELSE s."submissionNotePublicStatus" END AS "effectiveSubmissionNotePublicStatus",
@@ -362,6 +363,11 @@ export default defineEventHandler(async (event) => {
       const canViewSubmissionNote =
         Boolean(effectiveSubmissionNote) &&
         (effectiveNotePublic || Boolean(user && (isAdmin || isNoteOwner)))
+      // 歌曲自身投稿留言的公开状态，与重播申请留言相互独立
+      const songNotePublic =
+        row.submissionNotePublic === true &&
+        row.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
+        row.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
       const replayRequestCount = Number(row.replayRequestCount || 0)
 
       return {
@@ -411,6 +417,9 @@ export default defineEventHandler(async (event) => {
           hasSubmissionNote: canViewSubmissionNote,
           submissionNote: canViewSubmissionNote ? effectiveSubmissionNote : null,
           submissionNotePublic: canViewSubmissionNote ? effectiveSubmissionNotePublic : false,
+          // 歌曲投稿时的原始留言；重播行的 submissionNote 已被申请人留言覆盖，此字段独立保留
+          originalSubmissionNote: isAdmin ? row.submissionNote || null : null,
+          originalSubmissionNotePublic: isAdmin ? songNotePublic : false,
           preferredPlayTimeId: effectivePlayTimeId,
           requesterId: row.requesterId ? Number(row.requesterId) : null,
           replayRequestCount,
