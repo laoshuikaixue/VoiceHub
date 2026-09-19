@@ -77,6 +77,7 @@ export interface Schedule {
     hasSubmissionNote?: boolean
     submissionNote?: string | null
     submissionNotePublic?: boolean
+    originalSubmissionNote?: string | null
     cardCodeId?: number | null
     usedCardCode?: boolean
   }

@@ -94,6 +94,7 @@ export default defineEventHandler(async (event) => {
         songMusicId: songs.musicId,
         songDurationSeconds: songs.durationSeconds,
         songCardCodeId: songs.cardCodeId,
+        songSubmissionNote: songs.submissionNote,
         songSemester: songs.semester,
         songCreatedAt: songs.createdAt,
         requesterName: users.name,
@@ -350,6 +351,8 @@ export default defineEventHandler(async (event) => {
             submissionNotePublic: hasReplayMeta ? replayMeta.submissionNotePublic : false,
             submissionNotePublicStatus: hasReplayMeta ? (replayMeta.submissionNotePublicStatus || null) : null,
             hasSubmissionNote: hasReplayMeta && !!replayMeta.submissionNote,
+            // 歌曲自身投稿时填写的留言，与重播申请备注相互独立
+            originalSubmissionNote: schedule.songSubmissionNote || null,
             preferredPlayTimeId: hasReplayMeta ? replayMeta.preferredPlayTimeId : null,
             // 重播申请信息
             replayRequestCount: isReplaySong ? replayRequestCount : 0,

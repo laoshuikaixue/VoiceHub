@@ -2524,6 +2524,7 @@ export const admin = {
     refreshPageDurations: 'Refresh this page song durations from platform',
     refreshCandidateDurations: 'Refresh candidate song durations from platform',
     downloadSongs: 'Download Songs',
+    exportPlaylist: 'Export List',
     markAllPlayed: 'Mark All Played',
     moveDate: 'Move Date',
     copyDate: 'Copy Schedule',
@@ -2711,6 +2712,43 @@ export const admin = {
         newSongs: 'New Songs Chart',
         original: 'Original Chart',
         hotSongs: 'Hot Songs Chart'
+      }
+    },
+    playlistExportModal: {
+      title: 'Export Playlist',
+      scope: 'Scope: {0}',
+      songCount: '{0} song(s)',
+      columnCount: '{0} column(s)',
+      groupSchedule: 'Schedule',
+      groupSong: 'Song',
+      groupRequest: 'Request',
+      resetDefault: 'Reset',
+      cancel: 'Cancel',
+      exportButton: 'Export CSV',
+      fileNamePrefix: 'playlist',
+      exportSuccess: 'Exported {0} song(s)',
+      exportFailed: 'Export failed',
+      fields: {
+        sequence: 'Order',
+        playDate: 'Date',
+        playTime: 'Slot',
+        status: 'Status',
+        title: 'Title',
+        artist: 'Artist',
+        duration: 'Length',
+        platform: 'Source',
+        requester: 'Requester',
+        requesterClass: 'Class',
+        collaborators: 'Co-requesters',
+        voteCount: 'Votes',
+        preferredPlayTime: 'Preferred',
+        submissionNote: 'Message',
+        replayNote: 'Replay Msg'
+      },
+      statusValues: {
+        draft: 'Draft',
+        published: 'Published',
+        played: 'Played'
       }
     },
     remarkDialog: {

@@ -679,6 +679,17 @@
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="openPlaylistExportDialog"
+                >
+                  <FileSpreadsheet class="w-3.5 h-3.5" />
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    >{{ locale.exportPlaylist }}</span
+                  >
+                </button>
+                <button
+                  :disabled="localScheduledSongs.length === 0"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-success rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="markAllAsPlayed"
                 >
@@ -1015,6 +1026,14 @@
               <Download class="w-5 h-5" />
             </button>
             <button
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="localScheduledSongs.length === 0"
+              :title="locale.exportPlaylist"
+              @click="openPlaylistExportDialog"
+            >
+              <FileSpreadsheet class="w-5 h-5" />
+            </button>
+            <button
               class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all"
               @click="saveDraft"
             >
@@ -1110,6 +1129,18 @@
     :show="showDownloadDialog"
     :songs="localScheduledSongs"
     @close="showDownloadDialog = false"
+  />
+
+  <!-- 导出歌单对话框 -->
+  <SchedulePlaylistExportModal
+    :show="showPlaylistExportDialog"
+    :songs="localScheduledSongs"
+    :play-times="playTimes"
+    :schedule-date="selectedDate"
+    :play-time-label="
+      playTimeEnabled && selectedPlayTime ? getPlayTimeName(selectedPlayTime) : locale.allPlayTimes
+    "
+    @close="showPlaylistExportDialog = false"
   />
 
   <div
@@ -1847,9 +1878,11 @@ import {
   Loader2,
   Sparkles,
   FolderPlus,
+  FileSpreadsheet,
   Lock
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
+import SchedulePlaylistExportModal from './SchedulePlaylistExportModal.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import Icon from '~/components/UI/Icon.vue'
@@ -2087,6 +2120,12 @@ const confirmAction = ref(null)
 const showDownloadDialog = ref(false)
 const openDownloadDialog = () => {
   showDownloadDialog.value = true
+}
+
+// 导出歌单（CSV）
+const showPlaylistExportDialog = ref(false)
+const openPlaylistExportDialog = () => {
+  showPlaylistExportDialog.value = true
 }
 
 // 重播申请弹窗相关
