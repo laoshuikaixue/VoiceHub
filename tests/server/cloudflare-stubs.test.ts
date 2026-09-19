@@ -24,20 +24,20 @@ afterEach(() => {
 
 test('debug stub 默认关闭日志', () => {
   delete process.env.DEBUG
-  const debug = loadCjsStub('../../deploy/stubs/debug.js')
+  const debug = loadCjsStub('../../deploy/stubs/debug.cjs')
   const logger = debug('voicehub:test')
   assert.equal(logger.enabled, false)
 })
 
 test('debug stub 仅在命名空间匹配时启用', () => {
   process.env.DEBUG = 'voicehub:*'
-  const debug = loadCjsStub('../../deploy/stubs/debug.js')
+  const debug = loadCjsStub('../../deploy/stubs/debug.cjs')
   assert.equal(debug('voicehub:test').enabled, true)
   assert.equal(debug('other:test').enabled, false)
 })
 
 test('express stub 返回可链式调用的应用对象', () => {
-  const express = loadCjsStub('../../deploy/stubs/express.js')
+  const express = loadCjsStub('../../deploy/stubs/express.cjs')
   const app = express()
   assert.equal(typeof app.use, 'function')
   assert.equal(typeof app.listen, 'function')

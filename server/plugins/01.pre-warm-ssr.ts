@@ -1,5 +1,3 @@
-import { pluginCapabilities } from '~~/server/utils/music-source-plugins/resolver'
-
 export default defineNitroPlugin(async (nitroApp) => {
   // Workers 禁止在模块/插件初始化阶段执行异步 I/O；边缘运行时首次请求由 Nitro 正常加载渲染器
   if (
@@ -8,6 +6,11 @@ export default defineNitroPlugin(async (nitroApp) => {
   ) {
     return
   }
+
+  // 仅 Node 运行时加载音源沙箱，避免 Workers 在守卫前初始化 QuickJS WASM。
+  const { pluginCapabilities } = await import(
+    '~~/server/utils/music-source-plugins/resolver'
+  )
 
   // 预热 SSR 渲染器，避免首次请求因模块循环依赖导致的 500 错误
   // server.mjs 静态引用 renderer.mjs，renderer.mjs 动态引用 server.mjs，

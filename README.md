@@ -173,7 +173,7 @@ JWT_SECRET=本地开发用密钥
 
 - `DATABASE_URL` 建议使用 Neon/Supabase 等支持 Serverless 的 PostgreSQL；Workers 的 `nodejs_compat` 支持 Postgres.js TCP 连接，生产环境建议配置 Cloudflare Hyperdrive 以获得连接池与查询缓存。
 - 构建时配置 `MUSIC_PLUGIN_DATABASE_URL` 可把已启用的 LX Music/MusicFree 插件写入只读部署快照；不配置时生成空快照，不影响内置音源。
-- Workers 下 Redis、SMTP、本地文件备份、网易云易盾 jsdom 接口与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
+- Workers 下 Redis、SMTP、本地文件备份、网易云增强 API（依赖 Node 动态文件资源）与 Sentry Node SDK 会关闭或降级；邮件建议改用 HTTP 邮件 API，备份建议使用 S3/OSS/WebDAV。
 - 网易云解灰保留 7 个 HTTP 音源；仅 `unm` 音源因依赖 Node 服务端包不可用。
 
 ### Linux 服务器部署
@@ -1509,6 +1509,7 @@ VoiceHub/
 │       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
 │       ├── music-source-plugin-platform.test.ts # 插件平台键解析测试
 │       ├── music-source-runtime.test.ts # 插件沙箱与网络策略测试
+│       ├── netease-enhanced-runtime.test.ts # 网易云增强 API 运行时策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
