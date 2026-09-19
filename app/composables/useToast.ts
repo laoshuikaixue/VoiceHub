@@ -87,7 +87,11 @@ const exactToastTranslations = new Map<string, string>([
   ['备份创建失败：无效的响应格式', 'Backup creation failed: invalid response format'],
   ['备份创建失败：服务器响应格式错误', 'Backup creation failed: invalid server response format'],
   ['文件下载失败', 'File download failed'],
-  ['未知错误', 'Unknown error']
+  ['未知错误', 'Unknown error'],
+  [
+    '权限加载失败，部分功能可能不可用，请刷新页面重试',
+    'Failed to load permissions. Some features may be unavailable. Please refresh the page to retry.'
+  ]
 ])
 
 const toastOperationTranslations = new Map<string, string>([
