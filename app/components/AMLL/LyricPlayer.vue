@@ -327,13 +327,14 @@ watch(
 )
 
 // 当前播放时间
+// 不显式传 isSeek：AMLL 会逐帧推导跳转（进度倒退无条件识别，超量前进自动识别），
+// 覆盖点击歌词行/拖拽进度条等所有跳转来源，包括幅度小于 1s 的回跳
 watch(
   () => props.currentTime,
-  (time, oldTime) => {
+  (time) => {
     if (time === undefined) return
     latestTime = time
-    const isSeek = oldTime !== undefined && Math.abs(time - oldTime) > 1000
-    playerRef.value?.setCurrentTime(time, isSeek)
+    playerRef.value?.setCurrentTime(time)
   },
   { immediate: true }
 )

@@ -5,7 +5,6 @@
         v-if="isVisible"
         class="lyrics-modal-overlay"
         tabindex="-1"
-        style="--main-cover-color: 255, 255, 255"
         @click="handleOverlayClick"
       >
         <div

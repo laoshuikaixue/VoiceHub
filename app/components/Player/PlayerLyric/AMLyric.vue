@@ -5,7 +5,8 @@
       'align-right': settings.lyricAlignRight.value
     }"
     :style="{
-      '--amll-lp-color': 'rgb(var(--main-cover-color, 239 239 239))',
+      '--amll-lp-color':
+        'rgb(var(--main-cover-lyric-color, var(--main-cover-color, 239 239 239)))',
       '--amll-lp-hover-bg-color': 'var(--lyrics-modal-surface, rgba(255, 255, 255, 0.1))',
       '--amll-lyric-left-padding': settings.lyricAlignRight.value
         ? ''

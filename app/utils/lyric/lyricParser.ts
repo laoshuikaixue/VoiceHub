@@ -270,7 +270,10 @@ const matchLyricLines = (
   let i = 0
   let j = 0
   while (i < lyrics.length && j < others.length) {
-    const diff = lyrics[i].startTime - others[j].startTime
+    const main = lyrics[i]
+    const other = others[j]
+    if (!main || !other) break
+    const diff = main.startTime - other.startTime
     if (Math.abs(diff) <= ALIGN_TOLERANCE_MS) {
       matchIndexes[i] = j
       used.add(j)
@@ -285,11 +288,15 @@ const matchLyricLines = (
 
   for (let m = 0; m < lyrics.length; m++) {
     if (matchIndexes[m] !== null) continue
+    const main = lyrics[m]
+    if (!main) continue
     let bestK = -1
     let bestDiff = Infinity
     for (let k = 0; k < others.length; k++) {
       if (used.has(k)) continue
-      const diff = Math.abs(lyrics[m].startTime - others[k].startTime)
+      const other = others[k]
+      if (!other) continue
+      const diff = Math.abs(main.startTime - other.startTime)
       if (diff < bestDiff) {
         bestDiff = diff
         bestK = k
@@ -325,7 +332,9 @@ export const alignLyrics = (
   const others = sortByStartTime(otherLyrics)
 
   matchLyricLines(result, others).forEach((idx, i) => {
-    if (idx !== null) result[i][key] = getLineText(others[idx])
+    const target = result[i]
+    const source = idx === null ? undefined : others[idx]
+    if (target && source) target[key] = getLineText(source)
   })
   return result
 }
@@ -346,17 +355,19 @@ export const alignRomanization = (
   const others = sortByStartTime(romaLines)
 
   matchLyricLines(result, others).forEach((idx, i) => {
-    if (idx === null) return
     const line = result[i]
-    const romaWords = others[idx].words
-    const lineText = getLineText(others[idx])
+    const romaLine = idx === null ? undefined : others[idx]
+    if (!line || !romaLine) return
+    const romaWords = romaLine.words
+    const lineText = getLineText(romaLine)
     if (!lineText.trim()) return
 
     line.romanLyric = lineText
     // 单词数为 1 的参照行没有可用的逐字时间轴，只作整行处理
     if (romaWords.length > 1 && romaWords.length === line.words.length) {
       line.words.forEach((word, wi) => {
-        word.romanWord = romaWords[wi].word
+        const romaWord = romaWords[wi]
+        if (romaWord) word.romanWord = romaWord.word
       })
     }
   })
