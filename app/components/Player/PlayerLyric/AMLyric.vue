@@ -97,7 +97,8 @@ const lyricLines = computed(() => {
 
   // 使用 cloneDeep 剥离 Vue 响应式代理，防止 structuredClone 错误
   return cloneDeep(lines).map((line) => {
-    const useWordRoma = showWordsRoma.value && hasWordRomanization(line)
+    // showRoma 是音译总开关，showWordsRoma 只决定用逐字还是逐行形态
+    const useWordRoma = showRoma.value && showWordsRoma.value && hasWordRomanization(line)
     const translationText = showTranslation.value ? line.translatedLyric || '' : ''
     const romanText = useWordRoma || !showRoma.value ? '' : line.romanLyric || ''
 

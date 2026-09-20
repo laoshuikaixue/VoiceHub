@@ -435,10 +435,24 @@ const qrcLineToLyricLine = (line: QrcLine): LyricLine => ({
 })
 
 /**
+ * 解析音译（罗马音）原始内容
+ * QRC（XML）与 YRC（[ms,dur] 文本）保留逐字时间轴，其余按 LRC 解析
+ */
+export const parseRomanizationContent = (roma: string): LyricLine[] => {
+  const isWordLevel =
+    roma.trim().startsWith('<') || roma.includes('LyricContent="') || /^\[\d+,\d+\]/m.test(roma)
+  if (isWordLevel) {
+    const parsed = parseQRCContent(roma).map(qrcLineToLyricLine)
+    if (parsed.length) return parsed
+  }
+  return parseSmartLrc(roma).lines
+}
+
+/**
  * 解析 QQ 音乐 QRC 格式歌词
  * @param qrcContent QRC 原始内容
  * @param trans 翻译歌词
- * @param roma 罗马音歌词（QRC 格式，逐字时间轴与主歌词对齐）
+ * @param roma 罗马音歌词（逐字 QRC/YRC 或普通 LRC）
  * @returns LyricLine 数组
  */
 export const parseQRCLyric = (qrcContent: string, trans?: string, roma?: string): LyricLine[] => {
@@ -461,25 +475,11 @@ export const parseQRCLyric = (qrcContent: string, trans?: string, roma?: string)
 
   // 处理音译
   if (roma) {
-    const romaLines = parseQRCContent(roma).map(qrcLineToLyricLine)
+    const romaLines = parseRomanizationContent(roma)
     if (romaLines.length) result = alignRomanization(result, romaLines)
   }
 
   return result
-}
-
-/**
- * 解析音译（罗马音）原始内容
- * QRC（XML）与 YRC（[ms,dur] 文本）保留逐字时间轴，其余按 LRC 解析
- */
-export const parseRomanizationContent = (roma: string): LyricLine[] => {
-  const isWordLevel =
-    roma.trim().startsWith('<') || roma.includes('LyricContent="') || /^\[\d+,\d+\]/m.test(roma)
-  if (isWordLevel) {
-    const parsed = parseQRCContent(roma).map(qrcLineToLyricLine)
-    if (parsed.length) return parsed
-  }
-  return parseSmartLrc(roma).lines
 }
 
 /**
