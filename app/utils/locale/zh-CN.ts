@@ -1117,6 +1117,8 @@ export const pages = {
       lyricOffset: '歌词偏移 (ms)',
       showTranslation: '显示翻译',
       showRoma: '显示罗马音',
+      showWordsRoma: '逐字罗马音',
+      swapTranRoma: '音译置于翻译前',
       showYrc: '逐字歌词 (YRC)',
       amllNormalizeSpaces: '规范空格',
       amllResetLineTimestamps: '对齐行时间戳',

@@ -1106,6 +1106,8 @@ export const pages = {
       lyricOffset: 'Lyric offset (ms)',
       showTranslation: 'Show translation',
       showRoma: 'Show romanization',
+      showWordsRoma: 'Word romaji',
+      swapTranRoma: 'Roma before trans',
       showYrc: 'Word-by-word lyrics (YRC)',
       amllNormalizeSpaces: 'Normalize spaces',
       amllResetLineTimestamps: 'Reset line times',

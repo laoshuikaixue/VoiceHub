@@ -9,8 +9,11 @@ import {
   alignLyrics,
   cleanTTMLTranslations,
   parseQRCLyric,
+  parseRomanizationContent,
+  alignRomanization,
   type LrcFormat
 } from '~/utils/lyric/lyricParser'
+import { hasAnyRomanization } from '~/utils/lyric/lyricText'
 import { formatLyric } from '~/utils/lyric/lyricFormat'
 import type { LyricLine } from '@applemusic-like-lyrics/lyric'
 import { parseTTML, parseYrc } from '@applemusic-like-lyrics/lyric'
@@ -92,15 +95,16 @@ export const useLyricManager = () => {
       yrc?: string
       ttml?: string
       ytrans?: string
+      roma?: string
     } | null | undefined,
     sourceLabel: string,
     stage: string
   ) => {
     if (!lyricData) return false
 
-    const { lrc, trans, yrc, ttml, ytrans } = lyricData
+    const { lrc, trans, yrc, ttml, ytrans, roma } = lyricData
     console.log(
-      `[LyricManager] ${sourceLabel} 获取结果: LRC=${!!lrc}, TRANS=${!!trans}, YRC=${!!yrc}, TTML=${!!ttml}, YTRANS=${!!ytrans}`
+      `[LyricManager] ${sourceLabel} 获取结果: LRC=${!!lrc}, TRANS=${!!trans}, YRC=${!!yrc}, TTML=${!!ttml}, YTRANS=${!!ytrans}, ROMA=${!!roma}`
     )
 
     let parsedLyrics: LyricLine[] = []
@@ -126,7 +130,7 @@ export const useLyricManager = () => {
       // QRC：QQ音乐 XML 格式
       if (yrc.trim().startsWith('<') || yrc.includes('LyricContent="')) {
         try {
-          const qrcLines = parseQRCLyric(yrc, trans, undefined)
+          const qrcLines = parseQRCLyric(yrc, trans, roma)
           if (qrcLines.length > 0) {
             parsedLyrics = qrcLines
             format = 'qrc'
@@ -193,6 +197,16 @@ export const useLyricManager = () => {
         }
       }
     }
+
+    // 对齐音译：QRC 已在 parseQRCLyric 内按逐字时间轴对齐，TTML 音译由解析库内嵌
+    if (roma && format !== 'qrc' && format !== 'ttml') {
+      const romaLines = parseRomanizationContent(roma)
+      if (romaLines.length > 0) {
+        parsedLyrics = alignRomanization(parsedLyrics, romaLines)
+        console.log(`[LyricManager] 已对齐音译，共 ${romaLines.length} 行`)
+      }
+    }
+    hasRoma.value = parsedLyrics.some(hasAnyRomanization)
 
     const metadata = {
       title: track.title,

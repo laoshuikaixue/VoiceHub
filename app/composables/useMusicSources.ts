@@ -98,6 +98,8 @@ type LyricResultData = {
   ttml?: string
   /** YRC 对齐的翻译（ytlrc），时间戳与逐字主歌词行边界一致 */
   ytrans?: string
+  /** 音译（罗马音），QQ 为 QRC 格式、网易云为 LRC 格式 */
+  roma?: string
 }
 
 /**
@@ -336,7 +338,8 @@ const cloneLyricData = (data: LyricResultData): LyricResultData => ({
   trans: data.trans || '',
   yrc: data.yrc || '',
   ttml: data.ttml || '',
-  ytrans: data.ytrans || ''
+  ytrans: data.ytrans || '',
+  roma: data.roma || ''
 })
 
 const subscribeLyricProgress = (
@@ -563,6 +566,7 @@ export const useMusicSources = () => {
           if (upgraded.data.ytrans && !currentData.ytrans) {
             currentData.ytrans = upgraded.data.ytrans
           }
+          if (upgraded.data.roma && !currentData.roma) currentData.roma = upgraded.data.roma
           return true
         }
       } catch (error: any) {
@@ -599,7 +603,13 @@ export const useMusicSources = () => {
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')
 
-        const resultData: LyricResultData = { lrc: '', trans: '', yrc: '', ttml: '' }
+        const resultData: LyricResultData = {
+          lrc: '',
+          trans: '',
+          yrc: '',
+          ttml: '',
+          roma: ''
+        }
         let hasResult = false
         let lastProgressSignature = ''
         let ttmlValidated = false
@@ -611,7 +621,8 @@ export const useMusicSources = () => {
             resultData.trans?.length || 0,
             resultData.yrc?.length || 0,
             resultData.ttml?.length || 0,
-            resultData.ytrans?.length || 0
+            resultData.ytrans?.length || 0,
+            resultData.roma?.length || 0
           ].join(':')
           if (signature === lastProgressSignature) return
           lastProgressSignature = signature
@@ -664,6 +675,7 @@ export const useMusicSources = () => {
               const lr = lrcResp.value
               if (lr?.lrc?.lyric) resultData.lrc = lr.lrc.lyric
               if (lr?.tlyric?.lyric) resultData.trans = lr.tlyric.lyric
+              if (lr?.roma?.lyric) resultData.roma = lr.roma.lyric
             }
             if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
               const yr = yrcResp.value
@@ -674,6 +686,8 @@ export const useMusicSources = () => {
               if (!resultData.ytrans && yr?.tlyric?.lyric && !resultData.trans) {
                 resultData.trans = yr.tlyric.lyric
               }
+              // 音译（罗马音）
+              if (yr?.roma?.lyric) resultData.roma = yr.roma.lyric
             }
 
             if (resultData.lrc || resultData.yrc) {
@@ -738,6 +752,7 @@ export const useMusicSources = () => {
                 if (d.qrc) resultData.yrc = d.qrc // 用 yrc 字段承载 QRC，解析器会识别 XML 格式
                 if (d.lrc) resultData.lrc = d.lrc
                 if (d.trans) resultData.trans = d.trans
+                if (d.roma) resultData.roma = d.roma
                 if (d.qrc || d.lrc) {
                   hasResult = true
                   emitProgress('qm')
@@ -773,6 +788,7 @@ export const useMusicSources = () => {
               if (d.lrc) resultData.lrc = d.lrc
               if (d.trans) resultData.trans = d.trans
               if (d.yrc) resultData.yrc = d.yrc
+              if (d.roma) resultData.roma = d.roma
               if (d.lrc || d.yrc) {
                 hasResult = true
                 emitProgress('qm')
