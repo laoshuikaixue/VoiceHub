@@ -49,6 +49,62 @@ const hasError = ref(false)
 const coverError = ref(false)
 const showQualitySettings = ref(false)
 
+// 播放/暂停淡入淡出时长
+const FADE_IN_MS = 180
+const FADE_OUT_MS = 150
+// requestAnimationFrame 在后台标签页会被节流，用定时兜底保证包络一定落到目标值
+const FADE_GUARD_MS = 120
+
+// 淡入淡出只改这个包络，元素音量恒为 volume * fadeEnvelope
+let fadeEnvelope = 1
+let fadeSeq = 0
+
+const applyElementVolume = () => {
+  if (!audioPlayer.value) return
+  audioPlayer.value.volume = clampVolume(volume.value * fadeEnvelope)
+}
+
+// 作废淡变并把包络归位，用于换源、重建元素等必须回到正常音量的路径
+const cancelFade = () => {
+  fadeSeq++
+  fadeEnvelope = 1
+  applyElementVolume()
+}
+
+const startFade = (target: number, durationMs: number, onFinish?: () => void) => {
+  const seq = ++fadeSeq
+  const from = fadeEnvelope
+  let settled = false
+
+  const finish = () => {
+    if (settled || seq !== fadeSeq) return
+    settled = true
+    fadeEnvelope = target
+    applyElementVolume()
+    onFinish?.()
+  }
+
+  if (!import.meta.client || durationMs <= 0 || from === target) {
+    finish()
+    return
+  }
+
+  const startTime = performance.now()
+  const step = (now: number) => {
+    if (seq !== fadeSeq) return
+    const ratio = Math.min(1, (now - startTime) / durationMs)
+    fadeEnvelope = from + (target - from) * ratio
+    applyElementVolume()
+    if (ratio >= 1) {
+      finish()
+      return
+    }
+    requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+  setTimeout(finish, durationMs + FADE_GUARD_MS)
+}
+
 // 拖拽状态
 const isDragging = ref(false)
 const dragStartX = ref(0)
@@ -91,24 +147,44 @@ export const useAudioPlayerControl = () => {
       return false
     }
 
+    const element = audioPlayer.value
+    // 结束进行中的淡变并归位音量：既作废上一次淡出遗留的暂停回调，
+    // 也避免重复 play() 把淡入卡在中间值造成持续偏静
+    cancelFade()
+    const wasPlaying = !element.paused
+
     try {
       // 确保音频已经加载
-      if (audioPlayer.value.readyState < 2) {
-        await waitForCanPlay(audioPlayer.value)
+      if (element.readyState < 2) {
+        await waitForCanPlay(element)
       }
 
       // 设置音频属性以支持自动播放
-      audioPlayer.value.autoplay = true
-      audioPlayer.value.preload = 'auto'
+      element.autoplay = true
+      element.preload = 'auto'
 
-      const playPromise = audioPlayer.value.play()
+      if (!wasPlaying) {
+        // 起播前先把音量压到 0，避免 play() 生效瞬间的硬启爆音
+        fadeEnvelope = 0
+        applyElementVolume()
+      }
+
+      const playPromise = element.play()
 
       // 处理播放 Promise
       if (playPromise !== undefined) {
         await playPromise
       }
+
+      if (!wasPlaying) {
+        startFade(1, FADE_IN_MS)
+      } else {
+        // 淡出没走完就恢复播放时元素一直在播，play 事件不会重复触发，需自行修正状态
+        isPlaying.value = true
+      }
       return true
     } catch (error) {
+      cancelFade()
       // 检查是否是自动播放被阻止的错误
       if (error.name === 'NotAllowedError') {
         console.warn('[AudioPlayerControl] ⚠️ 自动播放被浏览器阻止，需要用户交互')
@@ -131,10 +207,26 @@ export const useAudioPlayerControl = () => {
       return false
     }
 
+    if (audioPlayer.value.paused) {
+      cancelFade()
+      return true
+    }
+
     try {
-      audioPlayer.value.pause()
+      // 淡出仍需 150ms 才真正暂停，界面先进入暂停态，避免按钮停在播放态
+      isPlaying.value = false
+      startFade(0, FADE_OUT_MS, () => {
+        try {
+          audioPlayer.value?.pause()
+        } catch (error) {
+          console.error('暂停失败:', error)
+        }
+        // 淡出结束即归位包络，保证下次起播从正常音量开始
+        cancelFade()
+      })
       return true
     } catch (error) {
+      cancelFade()
       console.error('暂停失败:', error)
       return false
     }
@@ -144,6 +236,7 @@ export const useAudioPlayerControl = () => {
     if (!audioPlayer.value) return false
 
     try {
+      cancelFade()
       audioPlayer.value.pause()
       audioPlayer.value.src = ''
       audioPlayer.value.load()
@@ -729,6 +822,8 @@ export const useAudioPlayerControl = () => {
   }
 
   const onEnded = () => {
+    // 曲目已自然结束，遗留的淡出回调不应再去暂停下一段播放
+    cancelFade()
     // 根据播放模式处理播放结束事件
     if (playMode.value === 'loopOne') {
       // 单曲循环：重新播放当前歌曲
@@ -781,7 +876,8 @@ export const useAudioPlayerControl = () => {
   const setAudioPlayerRef = (element: HTMLAudioElement | null) => {
     audioPlayer.value = element
     if (element) {
-      element.volume = volume.value
+      // 换平台会因 :key 重建元素，新元素必须从正常音量开始
+      cancelFade()
     }
   }
 
@@ -789,6 +885,7 @@ export const useAudioPlayerControl = () => {
   const cleanup = () => {
     if (audioPlayer.value) {
       // 先暂停播放
+      cancelFade()
       audioPlayer.value.pause()
 
       // 不设置空的 src，避免触发 MEDIA_ERR_SRC_NOT_SUPPORTED 错误
@@ -880,9 +977,7 @@ export const useAudioPlayerControl = () => {
     
     volume.value = newVolume
     isMuted.value = newVolume === 0
-    if (audioPlayer.value) {
-      audioPlayer.value.volume = newVolume
-    }
+    applyElementVolume()
   }
 
   const toggleMute = () => {
