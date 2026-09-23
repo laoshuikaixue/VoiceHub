@@ -4501,6 +4501,7 @@ export const serverErrors = {
   SONG_DURATION_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取时长',
   SONG_COVER_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取封面',
   SONG_CARD_RELEASE_FAILED: '点歌券释放失败，撤回已终止',
+  SONG_CARD_RESTORE_FAILED: '点歌券返还失败，保存草稿已终止',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。',
   SONG_FETCH_VOTERS_FAILED: '获取投票人员列表失败',
   SONG_FETCH_STATUS_FAILED: '获取投稿状态失败',

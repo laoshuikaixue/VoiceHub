@@ -1101,6 +1101,7 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建点歌时间
 │   │   │   │   └── index.ts         # 点歌时间列表
 │   │   │   ├── schedule/            # 排期管理API
+│   │   │   │   ├── bulk-draft.post.ts # 批量保存排期草稿
 │   │   │   │   ├── bulk-publish.post.ts # 批量发布排期
 │   │   │   │   ├── copy.post.ts     # 复制排期到指定日期
 │   │   │   │   ├── draft.post.ts    # 保存排期草稿
