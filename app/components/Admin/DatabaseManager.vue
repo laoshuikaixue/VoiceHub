@@ -98,7 +98,7 @@
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.backupTitle }}</h3>
           <button
-            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
+            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -169,7 +169,7 @@
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.restoreTitle }}</h3>
           <button
-            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
+            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -304,7 +304,7 @@
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.resetSequenceTitle }}</h3>
           <button
-            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
+            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -370,7 +370,7 @@
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-black text-error tracking-tight">{{ locale.dangerResetTitle }}</h3>
           <button
-            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
+            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />

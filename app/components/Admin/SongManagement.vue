@@ -362,7 +362,7 @@
               class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
             >
               <button
-                class="p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.edit"
                 @click="editSong(song)"
               >
@@ -371,7 +371,7 @@
 
               <button
                 v-if="!song.played"
-                class="p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
               >
@@ -379,7 +379,7 @@
               </button>
               <button
                 v-else
-                class="p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
               >
@@ -387,14 +387,14 @@
               </button>
 
               <button
-                class="p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
-                class="p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
               >

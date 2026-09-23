@@ -6,7 +6,7 @@
         <!-- 标题栏 -->
         <div class="sticky top-0 z-10 bg-panel-bg-deepest-95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
           <h3 class="text-lg font-black text-text-primary-lighter tracking-tight">{{ locale.title }}</h3>
-          <button class="p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light" @click="$emit('close')">
+          <button class="flex items-center justify-center p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light" @click="$emit('close')">
             <X class="w-5 h-5" />
           </button>
         </div>

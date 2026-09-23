@@ -137,7 +137,7 @@
               <Edit2 v-else :size="14" />
             </button>
             <button
-              class="p-2 text-text-tertiary hover:text-error transition-colors"
+              class="flex items-center justify-center p-2 text-text-tertiary hover:text-error transition-colors"
               :disabled="loadingViewId !== null || loadingEditId !== null"
               @click="deleteApiKey(apiKey)"
             >

@@ -369,7 +369,7 @@
                   >
                     <button
                       :disabled="!canManageUser(user)"
-                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.editUser"
                       @click="editUser(user)"
                     >
@@ -400,7 +400,7 @@
                     </button>
                     <button
                       :disabled="!canManageUser(user)"
-                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.deleteUser"
                       @click="confirmDeleteUser(user)"
                     >
@@ -562,7 +562,7 @@
               </button>
               <button
                 :disabled="!canManageUser(user)"
-                class="px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary active:bg-error active:text-text-primary transition-colors disabled:opacity-20 action-btn"
+                class="flex items-center justify-center px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary active:bg-error active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="confirmDeleteUser(user)"
               >
                 <Trash2 :size="14" />
@@ -613,7 +613,7 @@
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.form.desc }}</p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="closeModal"
               >
                 <X :size="20" />
@@ -908,7 +908,7 @@
                 </p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="closeImportModal"
               >
                 <X :size="20" />
@@ -1172,7 +1172,7 @@
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.detail.desc }}</p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="closeUserDetailModal"
               >
                 <X :size="20" />

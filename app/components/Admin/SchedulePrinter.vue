@@ -309,7 +309,7 @@
                     </div>
                   </button>
                   <button
-                    class="shrink-0 p-1 rounded text-text-tertiary hover:text-error transition-colors"
+                    class="flex items-center justify-center shrink-0 p-1 rounded text-text-tertiary hover:text-error transition-colors"
                     :title="locale.deletePreset"
                     @click="removePreset(preset)"
                   >

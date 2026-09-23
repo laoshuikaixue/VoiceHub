@@ -408,7 +408,7 @@
                     <!-- 单个预下载/删除按钮 -->
                     <button
                       v-if="getUsablePreload(song.song.id, selectedQuality)"
-                      class="p-1.5 rounded-lg hover:bg-error-10 text-text-disabled hover:text-error transition-colors"
+                      class="flex items-center justify-center p-1.5 rounded-lg hover:bg-error-10 text-text-disabled hover:text-error transition-colors"
                       :title="locale.deleteCache"
                       @click.stop="removePreloaded(song.song.id)"
                     >
@@ -416,7 +416,7 @@
                     </button>
                     <button
                       v-else
-                      class="p-1.5 rounded-lg hover:bg-primary-10 text-text-disabled hover:text-primary transition-colors"
+                      class="flex items-center justify-center p-1.5 rounded-lg hover:bg-primary-10 text-text-disabled hover:text-primary transition-colors"
                       :title="locale.preloadSong"
                       @click.stop="preloadSong(song.song)"
                     >

@@ -218,7 +218,7 @@
               </button>
               <button
                 :disabled="loading"
-                class="p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95"
+                class="flex items-center justify-center p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95"
                 @click="deleteItem(item)"
               >
                 <Trash2 :size="16" />

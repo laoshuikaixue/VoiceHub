@@ -32,7 +32,7 @@
             </p>
           </div>
           <button
-            class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
+            class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
             @click="$emit('close')"
           >
             <X :size="20" />
