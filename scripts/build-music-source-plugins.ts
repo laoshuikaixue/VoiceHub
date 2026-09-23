@@ -29,9 +29,8 @@ if (mode === 'snapshot') {
         const protocol = row.protocol as PluginProtocol
         const { capability } = await runPlugin({ prelude, source: code.source, protocol, variables: unseal(row.variables, 'variables') })
         artifacts.push({ id: row.id, revision: row.revision, protocol, ...code, capability })
-      } catch {
-        if (row.enabled) throw new Error(`插件 ${row.id} 下载或验证失败，部署已终止`)
-        console.warn(`已跳过未启用且验证失败的插件 ${row.id}`)
+      } catch (error) {
+        console.warn(`已跳过下载或验证失败的插件 ${row.id}${row.enabled ? '（该插件已启用，本次部署不提供其音源）' : ''}：${(error as Error)?.message || error}`)
       }
     }
   } finally { await client.end() }
