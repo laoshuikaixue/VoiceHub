@@ -2027,6 +2027,7 @@ export const admin = {
       download: 'Download',
       delete: 'Delete',
       addManual: 'Add Manually',
+      duplicate: 'Duplicates',
       refresh: 'Refresh',
       viewRemark: 'View Remark',
       edit: 'Edit Song',
@@ -2070,6 +2071,15 @@ export const admin = {
     empty: {
       search: 'No matching songs found',
       default: 'No song data'
+    },
+    duplicateModal: {
+      title: 'Duplicate Check',
+      subtitle: (groups: number, songs: number) => `${groups} dup group(s), ${songs} songs in current filter`,
+      matchHint: 'Matched by title and artist, ignoring case, spaces, punctuation, Chinese character variants and feat. tags',
+      empty: 'No duplicate songs in the current filter',
+      dupCount: (count: number) => `${count} dup`,
+      sameSource: 'Same source',
+      diffSource: 'Diff sources'
     },
     dialog: {
       cancel: 'Cancel',

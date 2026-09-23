@@ -2036,6 +2036,7 @@ export const admin = {
       download: '下载',
       delete: '删除',
       addManual: '手动添加',
+      duplicate: '重复检测',
       refresh: '刷新',
       viewRemark: '查看备注留言',
       edit: '编辑歌曲',
@@ -2079,6 +2080,15 @@ export const admin = {
     empty: {
       search: '没有找到匹配的歌曲',
       default: '暂无歌曲数据'
+    },
+    duplicateModal: {
+      title: '重复歌曲检测',
+      subtitle: (groups: number, songs: number) => `当前筛选下发现 ${groups} 组重复，共 ${songs} 首`,
+      matchHint: '按歌名与歌手判定重复，忽略大小写、空格、标点、繁简体与 feat. 标记',
+      empty: '当前筛选范围内没有重复歌曲',
+      dupCount: (count: number) => `${count} 首重复`,
+      sameSource: '音源相同',
+      diffSource: '音源不同'
     },
     dialog: {
       cancel: '取消',

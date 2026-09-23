@@ -66,6 +66,14 @@
 
           <button
             class="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-lg transition-all active:scale-95"
+            @click="showDuplicateModal = true"
+          >
+            <Copy :size="16" />
+            {{ locale.actions.duplicate }}
+            <span v-if="duplicateGroups.length" class="text-primary">({{ duplicateGroups.length }})</span>
+          </button>
+          <button
+            class="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-lg transition-all active:scale-95"
             @click="openAddSongModal"
           >
             <Plus :size="16" /> {{ locale.actions.addManual }}
@@ -580,6 +588,15 @@
 
     <!-- 投票人员弹窗 -->
     <VotersModal :show="showVotersModal" :song-id="selectedSongId" @close="closeVotersModal" />
+
+    <!-- 重复歌曲检测弹窗 -->
+    <DuplicateSongsModal
+      :show="showDuplicateModal"
+      :groups="duplicateGroups"
+      @close="showDuplicateModal = false"
+      @edit-song="editFromDuplicate"
+      @delete-song="deleteSong"
+    />
 
     <!-- 下载歌曲对话框 -->
     <SongDownloadDialog
@@ -1149,6 +1166,7 @@
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
+import DuplicateSongsModal from '~/components/Admin/DuplicateSongsModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
@@ -1157,6 +1175,7 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Search,
   Plus,
+  Copy,
   RotateCcw,
   Edit2,
   Check,
@@ -1182,6 +1201,7 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl, convertToHttps } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
@@ -1271,6 +1291,9 @@ const deleteAction = ref(null)
 // 投票人员弹窗相关
 const showVotersModal = ref(false)
 const selectedSongId = ref(null)
+
+// 重复歌曲检测弹窗相关
+const showDuplicateModal = ref(false)
 
 // 下载对话框相关
 const showDownloadDialog = ref(false)
@@ -1462,6 +1485,33 @@ const filteredSongs = computed(() => {
   })
 
   return filtered
+})
+
+// 归一化歌名+歌手一致的视为重复，仅在当前筛选结果内分组
+const duplicateGroups = computed(() => {
+  const grouped = new Map()
+
+  for (const song of filteredSongs.value) {
+    const normalizedTitle = normalizeForMatch(song.title)
+    const normalizedArtist = normalizeForMatch(song.artist)
+    if (!normalizedTitle || !normalizedArtist) continue
+
+    const key = `${normalizedTitle}|${normalizedArtist}`
+    if (!grouped.has(key)) grouped.set(key, [])
+    grouped.get(key).push(song)
+  }
+
+  return [...grouped.entries()]
+    .filter(([, list]) => list.length > 1)
+    .map(([key, list]) => ({
+      key,
+      title: list[0].title,
+      artist: list[0].artist,
+      songs: list,
+      sameSource:
+        list.every((song) => song.musicPlatform && song.musicId) &&
+        new Set(list.map((song) => `${song.musicPlatform}:${song.musicId}`)).size === 1
+    }))
 })
 
 const paginatedSongs = computed(() => {
@@ -2005,6 +2055,12 @@ const editSong = (song) => {
   }
 
   showEditModal.value = true
+}
+
+// 从重复检测弹窗进入编辑：先关闭弹窗，避免与编辑模态框层级重叠
+const editFromDuplicate = (song) => {
+  showDuplicateModal.value = false
+  editSong(song)
 }
 
 const saveEditSong = async () => {
