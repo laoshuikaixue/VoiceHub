@@ -41,6 +41,15 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 新增错误码须三处同步：`SERVER_ERROR_CODES` + zh/en 的 `serverErrors`（键完全对齐）
 - 英文长文本须考虑页面布局排布：按钮/Tab/徽章/菜单/开关标签等空间受限位置优先使用缩写（如 Previous → Prev），避免溢出或换行错位；描述性文本（Desc/Placeholder/Hint/Message 等）可自然换行不受限；缩写仅调整 en-US 词典值，键名与词典结构保持不变
 
+### 2.6. 时间与时区
+设计口径：数据库统一存 UTC（`timestamp` 无时区 + `default now()`），只在"展示"和"按北京日期计算"时转成北京时间（UTC+8）；前端展示的时间必须一律是北京时间，不允许出现偏移。
+- 时区换算只允许在 `app/utils/timeUtils.ts`（唯一权威实现，dayjs + `Asia/Shanghai`，前后端共用）里完成；数据库不存北京时间，也不在 SQL 里手工加减小时
+- 接口返回的原始时间字段（`createdAt`、`playedAt`、`updatedAt` 等）是**无时区标记的 UTC 墙钟字符串**（形如 `2026-09-24 04:38:31`，即 UTC 的 04:38）；凡前端要展示的时间，接口必须同时给出用 `formatDateTime()` 生成的北京时间字段（如 `requestedAt`，格式 `YYYY/M/D H:mm:ss`）
+- 前端展示优先直接渲染接口给的北京时间字段（如首页歌曲列表用 `song.requestedAt`）；需要对时间点做运算（相对时间、排序、倒计时）时，用 `timeUtils` 的北京时区函数显式按北京时区解析
+- 禁止 `new Date(原始时间戳)` / `dayjs(原始时间戳)` 解析接口原始时间字段——无时区字符串会被浏览器按本地时区解释，东八区整体偏移 8 小时
+- 禁止手写时区换算（`+ 8 * 3600 * 1000`、`toISOString().split('T')[0]`、`getHours()` 等）；当天/本周/本月的边界用 `getBeijingStartOfDay` / `getBeijingStartOfWeek` / `getBeijingEndOfMonth` 等
+- 取"当前时间"：服务端 `getServerTimestamp()` / `getServerDate()`（见 2.3），客户端 `getSyncedTimestamp()` / `getSyncedDate()`（`app/composables/useSyncedTime.ts`）
+
 ## 3. 项目关键模式
 
 ### 3.1. 音频播放器

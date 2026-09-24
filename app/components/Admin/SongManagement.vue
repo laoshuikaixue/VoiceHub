@@ -308,7 +308,7 @@
               </p>
               <span
                 class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
-                >{{ formatDate(song.createdAt) }}</span
+                >{{ formatDate(song.requestedAt) }}</span
               >
             </div>
           </div>
@@ -329,7 +329,7 @@
                 </span>
                 <span
                   class="hidden lg:inline text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-60"
-                  >{{ formatDate(song.createdAt) }}</span
+                  >{{ formatDate(song.requestedAt) }}</span
                 >
               </div>
 
@@ -1575,8 +1575,9 @@ const canClearEditSubmissionNote = computed(() => {
 })
 
 // 方法
+// 入参为服务端转好北京时间的 requestedAt（"YYYY/M/D H:mm:ss"）
 const formatDate = (dateString) => {
-  const date = new Date(dateString)
+  const date = dayjs(dateString, 'YYYY/M/D H:mm:ss').toDate()
   const now = getSyncedDate()
   const diff = now - date
 
