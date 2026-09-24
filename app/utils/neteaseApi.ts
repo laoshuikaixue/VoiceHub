@@ -25,10 +25,12 @@ export function normalizeNeteaseResponse(data) {
       ? data.body
       : data
   const code = typeof body.code === 'number' ? body.code : undefined
-  const message = typeof body.message === 'string' ? body.message : ''
+  // api-enhanced 各模块失败原因写在 body.msg，部分网关错误用 message
+  const rawMessage =
+    typeof body.msg === 'string' ? body.msg : typeof body.message === 'string' ? body.message : ''
   return {
     code,
-    message,
+    message: rawMessage,
     body
   }
 }
@@ -88,5 +90,5 @@ export async function getLoginStatus(cookie) {
 }
 
 export async function scrobbleSong(params, cookie) {
-  return fetchNetease('/scrobble', params, cookie)
+  return fetchNetease('/scrobble/v1', params, cookie)
 }

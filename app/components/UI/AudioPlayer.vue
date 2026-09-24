@@ -775,24 +775,26 @@ const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded =
   }
 
   const cookie = window.localStorage.getItem('netease_cookie')
-  if (!cookie) return
+  // NCBL 上报以 MUSIC_U 作为鉴权令牌，缺失时上游直接拒绝
+  if (!cookie || !cookie.includes('MUSIC_U=')) return
 
   neteaseScrobblePendingKey.value = scrobbleKey
   neteaseScrobbleRetryCount.value++
   const playEpoch = neteaseScrobblePlayEpoch.value
   try {
+    const totalSec =
+      normalizeSongDurationSeconds(durationValue) || normalizeSongDurationSeconds(song.duration)
     const playTime = Math.max(
       1,
-      Math.round(
-        Math.min(currentTimeValue, normalizeSongDurationSeconds(durationValue) || currentTimeValue)
-      )
+      Math.round(Math.min(currentTimeValue, totalSec || currentTimeValue))
     )
 
     const result = await scrobbleSong(
       {
         id: songId,
         sourceid: sourceId,
-        time: playTime
+        time: playTime,
+        total: totalSec || undefined
       },
       cookie
     )

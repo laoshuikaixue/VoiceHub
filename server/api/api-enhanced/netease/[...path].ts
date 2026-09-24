@@ -104,10 +104,14 @@ export default defineEventHandler(async (event) => {
     }
     return result?.body ?? result
   } catch (error: any) {
+    // 上游模块以 { status, body: { code, msg } } 形态抛出失败，真实原因在 body.msg
+    const upstream = error?.body ?? null
+    const upstreamMessage = upstream?.msg || upstream?.message || error?.message
+    console.warn(`[Netease] ${endpointPath} 调用失败: ${error?.status || 500} ${upstreamMessage}`)
     throw createError({
       statusCode: error?.statusCode || error?.status || 500,
-      message: error?.body?.message || error?.message || '网易云接口调用失败',
-      data: error?.body || null
+      message: upstreamMessage || '网易云接口调用失败',
+      data: { endpoint: endpointPath, upstream }
     })
   }
 })
