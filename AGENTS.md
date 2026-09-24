@@ -32,6 +32,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 
 ### 2.4. 第三方库
 - otplib: `import otplib from 'otplib'` 然后 `const { authenticator } = otplib`
+- 给第三方接口/依赖模块传参前，必须追到实际构造请求体的函数确认该字段被消费；文档未列出的参数一律不得自行添加，中间对象里被读过但没进 payload 的视为无效
 
 ### 2.5. 国际化 (i18n)
 - 支持 `zh-CN`（基底，静态内置）与 `en-US`（动态按需加载）；词典 `app/utils/locale/{zh-CN,en-US}.ts` 结构必须完全一致，新增文案键须两文件同步添加

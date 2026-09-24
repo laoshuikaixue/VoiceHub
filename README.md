@@ -445,7 +445,7 @@ nix run .#default --impure
 
 ##### 更新 pnpm 依赖哈希
 
-当 `pnpm-lock.yaml` 更新后，需要同步 `flake.nix` 中的 `pnpmDeps` 哈希。仓库已配置 GitHub Actions，会在 `pnpm-lock.yaml` 或 `flake.nix` 变更时自动计算新哈希并提交回触发分支。
+当 `pnpm-lock.yaml` 更新后，需要同步 `flake.nix` 中的 `pnpmDeps` 哈希。Nix CI 在构建因哈希过期失败时，会自动计算新哈希、验证构建并提交回触发分支；fork PR 与 bot 自身触发的运行只报错不写回，需要人工更新。
 
 如果需要在本地手动更新，可以先将 `flake.nix` 中 `pnpmDeps.hash` 临时改为空字符串，然后运行：
 
@@ -719,8 +719,7 @@ VoiceHub/
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
-│       ├── nix.yml            # Nix 构建校验
-│       └── update-nix-pnpm-hash.yml # 自动同步 pnpmDeps 哈希
+│       └── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
