@@ -195,6 +195,7 @@
                 </button>
               </div>
 
+              <!-- 必须用 v-if：v-show 隐藏期间歌词播放器被测量为 0 尺寸，切回后排版塌缩 -->
               <div v-if="activePanel === 'lyrics'" class="lyrics-display-area">
                 <div class="lyrics-container">
                   <!-- 集成 AMLyric 组件 (传入毫秒) -->
