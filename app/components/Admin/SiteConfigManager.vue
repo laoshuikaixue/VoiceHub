@@ -811,7 +811,11 @@
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
           <div class="legal-document-header"><div class="legal-document-title"><span class="legal-document-icon"><FileText :size="17" /></span><div><strong>{{ doc.name || locale.legalConsentUntitled }}</strong><span>/legal/{{ doc.slug || locale.legalConsentSlugPlaceholder }}</span></div></div><button type="button" class="legal-delete-button" :aria-label="locale.delete" @click="removeLegalDocument(index)"><Trash2 :size="16" /></button></div>
           <div class="legal-document-fields"><div><label :class="labelClass">{{ locale.legalConsentName }}</label><input v-model="doc.name" :placeholder="locale.legalConsentNamePlaceholder" :class="inputClass"></div><div><label :class="labelClass">{{ locale.legalConsentSlug }}</label><div class="legal-slug-input"><span>/legal/</span><input v-model="doc.slug" :placeholder="locale.legalConsentSlugPlaceholder" :class="[inputClass, 'rounded-l-none']"></div></div></div>
-          <div><label :class="labelClass">{{ locale.legalConsentContent }}</label><textarea v-model="doc.content" :placeholder="locale.legalConsentContentPlaceholder" :rows="7" :class="[inputClass, 'font-mono text-xs leading-relaxed resize-y']" /></div>
+          <div>
+            <div class="flex items-center justify-between"><label :class="labelClass">{{ locale.legalConsentContent }}</label><div class="flex gap-1 bg-bg-primary rounded-lg p-1 -mb-2"><button type="button" :class="['px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider', (legalDocEditModes[index] || 'edit') === 'edit' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'edit'">{{ locale.guidelinesEdit }}</button><button type="button" :class="['px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider', legalDocEditModes[index] === 'preview' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'preview'">{{ locale.guidelinesPreview }}</button></div></div>
+            <textarea v-if="(legalDocEditModes[index] || 'edit') === 'edit'" v-model="doc.content" :placeholder="locale.legalConsentContentPlaceholder" :rows="7" :class="[inputClass, 'font-mono text-xs leading-relaxed resize-y']" />
+            <div v-else class="guidelines-preview markdown-body w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-secondary leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto" v-html="renderedLegalDoc(doc)" />
+          </div>
         </div>
       </section>
 
@@ -920,6 +924,10 @@ const saving = ref(false)
 const saveSuccess = ref(false)
 const editMode = ref('edit') // 投稿须知编辑/预览模式
 
+// 协议文档内容编辑/预览模式，按卡片索引记录
+const legalDocEditModes = ref({})
+const renderedLegalDoc = (doc) => renderMarkdown(doc?.content || '')
+
 // 投稿须知 Markdown 预览
 const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
 
@@ -938,6 +946,14 @@ const removeLegalDocument = (index) => {
     return
   }
   formData.value.legalConsentDocuments.splice(index, 1)
+  // 删除卡片后同步前移预览模式，避免错位
+  const modes = {}
+  Object.keys(legalDocEditModes.value).forEach((key) => {
+    const pos = Number(key)
+    if (pos < index) modes[pos] = legalDocEditModes.value[pos]
+    else if (pos > index) modes[pos - 1] = legalDocEditModes.value[pos]
+  })
+  legalDocEditModes.value = modes
 }
 const parseLegalDocuments = (value) => {
   try {
