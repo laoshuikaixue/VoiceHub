@@ -402,11 +402,6 @@
         <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
 
-      <div v-if="legalConsentDisplayMode === 'modal' && legalConsentActive && (loginTermsBlocked || legalConsentRejected)" class="login-terms-blocked">
-        <span class="blocked-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div class="blocked-copy"><strong>{{ locale.legalConsentRequiredTitle }}</strong><span>{{ locale.legalConsentBlocked }}</span></div>
-        <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView }}</button>
-      </div>
-
       <label v-if="legalConsentActive && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
         <input v-model="loginTermsAccepted" type="checkbox">
         <span class="terms-text"><span>{{ locale.legalConsentPrefix }}</span><template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug"><a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span></template></span>
@@ -428,9 +423,7 @@
       </div>
     </form>
 
-    <div v-if="!isBindMode && !showRegisterMode" @click.capture="guardTermsInteraction">
-      <AuthOAuthQuickLogin :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
-    </div>
+    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
     <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
@@ -442,9 +435,7 @@
       </button>
     </div>
 
-    <div v-if="!isBindMode && !showRegisterMode" @click.capture="guardTermsInteraction">
-      <AuthOAuthButtons :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
-    </div>
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -576,7 +567,6 @@ const password = ref('')
 const loginTermsAccepted = ref(false)
 const legalConsentStorageKey = computed(() => `voicehub.legalConsent.${legalConsentVersion.value || 'none'}`)
 const showLegalConsentModal = ref(false)
-const legalConsentRejected = ref(false)
 const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
 const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
 const confirmPassword = ref('')
@@ -616,44 +606,30 @@ const codeCountdown = ref(0)
 const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
-// 弹窗模式下待同意条款后继续的登录动作
+// 弹窗模式下登录成功后、待用户同意条款后继续进入系统的动作
 const pendingConsentAction = ref(null)
 
-// 条款未同意时拦截登录动作：弹窗模式弹出条款弹窗，复选框模式仅提示错误；返回是否已拦截
-const requireLegalConsent = (resume) => {
+// 复选框模式提交前拦截；弹窗模式改为登录成功后按账号向服务端校验（见 redirectAfterLogin）
+const requireLegalConsent = () => {
+  if (legalConsentDisplayMode.value === 'modal') return false
   if (!legalConsentActive.value || loginTermsAccepted.value) return false
-  if (legalConsentDisplayMode.value === 'modal') {
-    pendingConsentAction.value = typeof resume === 'function' ? resume : null
-    showLegalConsentModal.value = true
-  } else {
-    error.value = locale.value.legalConsentBlocked
-  }
+  error.value = locale.value.legalConsentBlocked
   return true
 }
 
-// 弹窗模式下快捷登录点击时拦截弹出条款弹窗
-const guardTermsInteraction = (event) => {
-  if (!loginTermsBlocked.value || legalConsentDisplayMode.value !== 'modal') return
-  event.preventDefault()
-  event.stopPropagation()
-  showLegalConsentModal.value = true
-}
-
-const acceptLegalConsent = () => {
-  loginTermsAccepted.value = true
-  legalConsentRejected.value = false
+const acceptLegalConsent = async () => {
   showLegalConsentModal.value = false
   const resume = pendingConsentAction.value
   pendingConsentAction.value = null
-  if (resume) resume()
+  if (resume) await resume()
 }
-const rejectLegalConsent = () => {
-  loginTermsAccepted.value = false
-  legalConsentRejected.value = true
+const rejectLegalConsent = async () => {
   showLegalConsentModal.value = false
+  const wasPostLogin = Boolean(pendingConsentAction.value)
   pendingConsentAction.value = null
-  error.value = locale.value.legalConsentBlocked
   toastError(locale.value.legalConsentBlocked)
+  // 登录后拒绝条款：终止本次会话，不进入系统
+  if (wasPostLogin) await auth.logout(false)
 }
 
 // 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
@@ -761,6 +737,23 @@ const gradeClassRequiredError = () => {
 }
 
 const redirectAfterLogin = async () => {
+  // 弹窗模式：登录成功后按账号校验是否需要确认当前条款，未确认则弹窗，同意后才进入系统
+  if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+    let status = null
+    try {
+      status = await $fetch('/api/legal-consent')
+    } catch {
+      // 状态查询失败不阻断进入系统
+    }
+    if (status?.enabled && !status.accepted) {
+      pendingConsentAction.value = async () => {
+        await postLegalConsent(status.consentVersion)
+        await redirectAfterLogin()
+      }
+      showLegalConsentModal.value = true
+      return
+    }
+  }
   if (auth.user.value?.requirePasswordChange) {
     return navigateTo('/change-password')
   }
@@ -773,13 +766,18 @@ const handle2FASuccess = async () => {
   await redirectAfterLogin()
 }
 
-const recordLegalConsent = async () => {
-  if (!legalConsentActive.value || !loginTermsAccepted.value) return
+const postLegalConsent = async (version) => {
   try {
-    await $fetch('/api/legal-consent', { method: 'POST', body: { version: legalConsentVersion.value } })
-  } catch (error) {
-    console.error('记录条款同意状态失败:', error)
+    await $fetch('/api/legal-consent', { method: 'POST', body: { version } })
+  } catch (e) {
+    console.error('记录条款同意状态失败:', e)
   }
+}
+
+const recordLegalConsent = async () => {
+  // 复选框模式：本地显式勾选后才记录；弹窗模式统一在登录后弹窗显式同意时记录
+  if (!legalConsentActive.value || !loginTermsAccepted.value || legalConsentDisplayMode.value === 'modal') return
+  await postLegalConsent(legalConsentVersion.value)
 }
 
 onMounted(async () => {
@@ -839,7 +837,7 @@ const switchToLogin = () => {
 }
 
 const handleLogin = async () => {
-  if (requireLegalConsent(() => handleLogin())) return
+  if (requireLegalConsent()) return
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return
@@ -1251,7 +1249,7 @@ const startConditionalWebAuthnLogin = async () => {
 }
 
 const handleWebAuthnLogin = async () => {
-  if (requireLegalConsent(() => handleWebAuthnLogin())) return
+  if (requireLegalConsent()) return
   loading.value = true
   error.value = ''
 
@@ -1456,13 +1454,6 @@ const handleWebAuthnLogin = async () => {
   text-decoration: underline;
 }
 
-.login-terms-blocked { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--info-border); border-radius:8px; background:var(--info-light); color:var(--text-secondary); font-size:12px; }
-.blocked-icon { display:grid; place-items:center; flex:0 0 20px; color:var(--info); }
-.blocked-icon svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
-.blocked-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:4px; line-height:1.45; }
-.blocked-copy strong { display:block !important; color:var(--text-primary); font-weight:700; }
-.blocked-copy span { display:block !important; color:var(--text-secondary); font-weight:400; }
-.login-terms-blocked button { flex:0 0 auto; padding:7px 12px; border-radius:6px; background:var(--primary); color:var(--btn-primary-text) !important; font-weight:700; white-space:nowrap; }
 .legal-consent-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
 .legal-consent-modal { width: min(600px, 100%); max-height: 90vh; overflow: auto; padding: 28px; border: 1px solid var(--border-secondary); border-radius: 18px; background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .legal-consent-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }

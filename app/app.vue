@@ -72,6 +72,8 @@ const syncAcceptedLegalConsent = async () => {
   try {
     const info = await $fetch('/api/legal-consent')
     if (!info?.enabled || info.accepted || !info.consentVersion) return
+    // 弹窗模式由登录后的条款弹窗按账号显式记录，禁止依据本地存储自动补记（本地记录与账号无关）
+    if (info.displayMode === 'modal') return
     // 必须显式同意过“当前版本”（登录页仅在用户点击同意时写入该键），否则绝不记录，避免旧版本记录污染当前版本
     if (localStorage.getItem(`voicehub.legalConsent.${info.consentVersion}`) !== 'true') return
     await $fetch('/api/legal-consent', { method: 'POST', body: { version: info.consentVersion } })

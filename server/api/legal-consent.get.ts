@@ -5,12 +5,13 @@ import { computeLegalConsentVersion } from '~~/server/utils/legal-consent'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   const settings = await db.query.systemSettings.findFirst({
-    columns: { legalConsentEnabled: true, legalConsentUpdatedDate: true, legalConsentDocuments: true }
+    columns: { legalConsentEnabled: true, legalConsentUpdatedDate: true, legalConsentDocuments: true, legalConsentDisplayMode: true }
   })
   const enabled = Boolean(settings?.legalConsentEnabled)
   const consentVersion = computeLegalConsentVersion(settings ?? null) || ''
   return {
     enabled,
+    displayMode: settings?.legalConsentDisplayMode || 'modal',
     consentVersion,
     accepted: enabled && Boolean(user?.legalConsentVersion) && user.legalConsentVersion === consentVersion
   }
