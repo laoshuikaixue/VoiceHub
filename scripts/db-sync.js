@@ -291,7 +291,7 @@ async function checkSchemaConsistency(sql) {
       'turnstileSiteKey',
       'turnstileSecretKey',
       'esaCaptchaPrefix',
-      'esaCaptchaSceneId',
+      'esaCaptchaScenes',
       'esaCaptchaRegion',
       'forcePasswordChangeOnFirstLogin',
       'allowOAuthRegistration',

@@ -1286,7 +1286,7 @@ export default defineEventHandler(async (event) => {
                           'turnstileSiteKey',
                           'turnstileSecretKey',
                           'esaCaptchaPrefix',
-                          'esaCaptchaSceneId',
+                          'esaCaptchaScenes',
                           'esaCaptchaRegion',
                           'autoBackupEnabled',
                           'autoBackupConfig',

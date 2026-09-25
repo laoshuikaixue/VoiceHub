@@ -80,7 +80,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   turnstileSecretKey: null,
   // 阿里云 ESA AI 验证码（身份标与场景 ID 均由 ESA 控制台生成，非机密信息）
   esaCaptchaPrefix: null,
-  esaCaptchaSceneId: null,
+  // 场景 ID 规则列表：[{ endpoint: 'login' | 'register', host: '*', sceneId }]
+  esaCaptchaScenes: '[]',
   esaCaptchaRegion: 'cn',
   // 自动备份
   autoBackupEnabled: false,
@@ -151,7 +152,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'captchaProvider',
   'turnstileSiteKey',
   'esaCaptchaPrefix',
-  'esaCaptchaSceneId',
+  'esaCaptchaScenes',
   'esaCaptchaRegion',
   'enabledPlatforms',
   'platformOrder',

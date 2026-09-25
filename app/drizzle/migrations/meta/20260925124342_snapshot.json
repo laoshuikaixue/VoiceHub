@@ -1,5 +1,5 @@
 {
-  "id": "0f361887-91c5-4f38-920b-5225d3e20fd4",
+  "id": "bb1cbb69-0e65-4510-9523-8c2fa11ada59",
   "prevId": "d3a66aa1-bd3c-46d0-99d3-d24c2ad448e7",
   "version": "7",
   "dialect": "postgresql",
@@ -2691,11 +2691,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "esaCaptchaSceneId": {
-          "name": "esaCaptchaSceneId",
+        "esaCaptchaScenes": {
+          "name": "esaCaptchaScenes",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'[]'"
         },
         "esaCaptchaRegion": {
           "name": "esaCaptchaRegion",

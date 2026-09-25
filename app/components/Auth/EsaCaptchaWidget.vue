@@ -16,6 +16,11 @@ const props = defineProps({
   buttonSelector: {
     type: String,
     required: true
+  },
+  // 当前接口与域名对应的场景 ID，由调用方解析后传入
+  sceneId: {
+    type: String,
+    default: ''
   }
 })
 
@@ -38,7 +43,7 @@ const resolveLanguage = () => (currentLocale.value === 'en-US' ? 'en' : 'cn')
 const initCaptcha = () => {
   if (initialized.value) return
 
-  const sceneId = siteConfig.value.esaCaptchaSceneId
+  const sceneId = props.sceneId
   const prefix = siteConfig.value.esaCaptchaPrefix
   if (!sceneId || !prefix) return
 
@@ -111,6 +116,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (retryTimer) clearTimeout(retryTimer)
+  captchaInstance = null
 })
 </script>
 

@@ -340,9 +340,11 @@
           v-model="turnstileToken"
         />
         <EsaCaptchaWidget
-          v-else-if="captchaProvider === 'esa'"
+          v-else-if="captchaProvider === 'esa' && esaSceneId"
+          :key="esaSceneId"
           ref="esaCaptchaRef"
           v-model="esaVerifyParam"
+          :scene-id="esaSceneId"
           :button-selector="esaButtonSelector"
           @verified="handleLogin"
         />
@@ -500,9 +502,9 @@ import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
-import { ESA_CAPTCHA_VERIFY_HEADER } from '~/utils/esaCaptcha'
+import { ESA_CAPTCHA_VERIFY_HEADER, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -530,6 +532,20 @@ const turnstileRef = ref(null)
 const esaVerifyParam = ref('')
 const esaCaptchaRef = ref(null)
 const esaButtonSelector = '#auth-submit-button'
+// 一条 ESA 规则只覆盖一个接口，登录与注册需按当前模式各自的场景 ID 初始化
+// SSR 阶段无域名，仅能命中「任意域名」规则
+const esaSceneId = computed(() =>
+  resolveEsaCaptchaSceneId(
+    esaCaptchaScenes.value,
+    showRegisterMode.value ? 'register' : 'login',
+    import.meta.client ? window.location.hostname : ''
+  )
+)
+
+// 验签参数一次性有效且与场景绑定，切换登录/注册时丢弃旧参数
+watch(showRegisterMode, () => {
+  esaVerifyParam.value = ''
+})
 
 const showCaptcha = computed(() => {
   // 注册模式开启验证码服务时强制显示验证码
@@ -794,6 +810,11 @@ const switchToLogin = () => {
 // ESA AI 验证码必须先取得验签参数（参数一次性有效，由 handleLogin 的 verified 回调重新进入提交）
 const ensureEsaCaptchaVerified = () => {
   if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  // 当前接口未配置场景 ID 时验证码无法初始化，避免提交后静默无响应
+  if (!esaSceneId.value) {
+    error.value = locale.value.esaCaptchaSceneMissing || ''
+    return false
+  }
   return !!esaVerifyParam.value
 }
 
