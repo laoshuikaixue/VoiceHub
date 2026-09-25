@@ -11,6 +11,9 @@
     <!-- 微信/QQ 内置浏览器账号密码登录后的绑定引导 -->
     <OAuthBindReminderModal />
 
+    <!-- 弹窗模式的登录条款全局确认弹窗（覆盖所有登录方式） -->
+    <LegalConsentModal />
+
     <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
     <LazyUIAudioPlayer
       v-show="isPlayerVisible"
@@ -37,6 +40,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useImportantNotification } from '~/composables/useImportantNotification'
 import ImportantNotificationModal from '~/components/UI/ImportantNotificationModal.vue'
 import OAuthBindReminderModal from '~/components/Auth/OAuthBindReminderModal.vue'
+import LegalConsentModal from '~/components/Auth/LegalConsentModal.vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()

@@ -462,23 +462,6 @@
       @confirm="handleBindConfirm"
       @cancel="showBindConfirm = false"
     />
-
-    <Teleport to="body">
-      <div v-if="showLegalConsentModal" class="legal-consent-overlay">
-        <div class="legal-consent-modal">
-          <div class="legal-consent-heading"><span class="legal-consent-shield"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div><h3>{{ locale.legalConsentModalTitle }}</h3><span class="legal-consent-date">{{ legalConsentUpdatedDate }}</span></div></div>
-          <p>{{ locale.legalConsentModalDesc }}</p>
-          <h4 class="legal-consent-related">{{ locale.legalConsentRelatedDocs }}</h4>
-          <div class="legal-consent-docs">
-            <a v-for="doc in legalConsentDocuments" :key="doc.slug" :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><span class="doc-symbol"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6zM9 13h6M9 17h4" /></svg></span><strong>{{ doc.name }}</strong><span class="external-symbol"><svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-9 9M19 13v6H5V5h6" /></svg></span></a>
-          </div>
-          <div class="legal-consent-actions">
-            <button type="button" class="legal-consent-reject" @click="rejectLegalConsent">{{ locale.legalConsentReject }}</button>
-            <button type="button" class="legal-consent-accept" @click="acceptLegalConsent">{{ locale.legalConsentAccept }}</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -486,6 +469,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useLegalConsentPrompt } from '~/composables/useLegalConsentPrompt'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import {
@@ -512,7 +496,7 @@ const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, cap
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
-const { success: toastSuccess, error: toastError } = useToast()
+const { success: toastSuccess } = useToast()
 
 const showCreateMode = ref(false)
 const showRegisterMode = ref(false)
@@ -566,7 +550,6 @@ const studentClass = ref('')
 const password = ref('')
 const loginTermsAccepted = ref(false)
 const legalConsentStorageKey = computed(() => `voicehub.legalConsent.${legalConsentVersion.value || 'none'}`)
-const showLegalConsentModal = ref(false)
 const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
 const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
 const confirmPassword = ref('')
@@ -606,30 +589,12 @@ const codeCountdown = ref(0)
 const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
-// 弹窗模式下登录成功后、待用户同意条款后继续进入系统的动作
-const pendingConsentAction = ref(null)
-
 // 复选框模式提交前拦截；弹窗模式改为登录成功后按账号向服务端校验（见 redirectAfterLogin）
 const requireLegalConsent = () => {
   if (legalConsentDisplayMode.value === 'modal') return false
   if (!legalConsentActive.value || loginTermsAccepted.value) return false
   error.value = locale.value.legalConsentBlocked
   return true
-}
-
-const acceptLegalConsent = async () => {
-  showLegalConsentModal.value = false
-  const resume = pendingConsentAction.value
-  pendingConsentAction.value = null
-  if (resume) await resume()
-}
-const rejectLegalConsent = async () => {
-  showLegalConsentModal.value = false
-  const wasPostLogin = Boolean(pendingConsentAction.value)
-  pendingConsentAction.value = null
-  toastError(locale.value.legalConsentBlocked)
-  // 登录后拒绝条款：终止本次会话，不进入系统
-  if (wasPostLogin) await auth.logout(false)
 }
 
 // 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
@@ -668,6 +633,7 @@ const bindConfirmMessage = computed(() => {
 const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
+const { ensureLegalConsent, ensureLegalConsentForRegister } = useLegalConsentPrompt()
 
 // 只允许站内绝对路径，避免登录参数被用于开放重定向。
 const getSafeRedirect = (fallback = '/') => {
@@ -737,23 +703,8 @@ const gradeClassRequiredError = () => {
 }
 
 const redirectAfterLogin = async () => {
-  // 弹窗模式：登录成功后按账号校验是否需要确认当前条款，未确认则弹窗，同意后才进入系统
-  if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
-    let status = null
-    try {
-      status = await $fetch('/api/legal-consent')
-    } catch {
-      // 状态查询失败不阻断进入系统
-    }
-    if (status?.enabled && !status.accepted) {
-      pendingConsentAction.value = async () => {
-        await postLegalConsent(status.consentVersion)
-        await redirectAfterLogin()
-      }
-      showLegalConsentModal.value = true
-      return
-    }
-  }
+  // 弹窗模式：登录成功后按账号校验是否需要确认当前条款，由全局 LegalConsentModal 弹窗处理，确认后才进入系统
+  if (!(await ensureLegalConsent())) return
   if (auth.user.value?.requirePasswordChange) {
     return navigateTo('/change-password')
   }
@@ -1005,14 +956,13 @@ const handleRegisterOAuth = async () => {
   }
 
   error.value = ''
-  loading.value = true
 
   try {
-    // 提交前换取服务端签发的条款同意凭证（未开启条款时跳过）
-    let legalConsentToken = ''
-    if (legalConsentActive.value) {
-      legalConsentToken = (await $fetch('/api/legal-consent'))?.token || ''
+    // 弹窗模式：注册前通过全局条款弹窗确认，同意后由请求体显式携带同意版本
+    if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+      if (!(await ensureLegalConsentForRegister())) return
     }
+    loading.value = true
     const response = await $fetch('/api/auth/oauth-register', {
       method: 'POST',
       body: {
@@ -1025,7 +975,10 @@ const handleRegisterOAuth = async () => {
         remark: remark.value.trim(),
         email: emailValue || undefined,
         emailCode: emailCode.value.trim() || undefined,
-        legalConsentToken
+        ...(legalConsentActive.value && {
+          legalConsentAccepted: legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true,
+          legalConsentVersion: legalConsentVersion.value
+        })
       }
     })
 
@@ -1121,9 +1074,13 @@ const handleRegister = async () => {
   }
 
   error.value = ''
-  loading.value = true
 
   try {
+    // 弹窗模式：注册前通过全局条款弹窗确认，同意后由请求体显式携带同意版本
+    if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+      if (!(await ensureLegalConsentForRegister())) return
+    }
+    loading.value = true
     const requestBody = {
       username: username.value,
       name: name.value,
@@ -1137,7 +1094,7 @@ const handleRegister = async () => {
     }
     // 条款确认：显式提交用户已同意的内容版本，服务端校验其与当前版本一致（未开启条款时跳过）
     if (legalConsentActive.value) {
-      requestBody.legalConsentAccepted = loginTermsAccepted.value === true
+      requestBody.legalConsentAccepted = legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true
       requestBody.legalConsentVersion = legalConsentVersion.value
     }
     if (showCaptcha.value) {
@@ -1453,18 +1410,6 @@ const handleWebAuthnLogin = async () => {
   color: var(--primary);
   text-decoration: underline;
 }
-
-.legal-consent-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
-.legal-consent-modal { width: min(600px, 100%); max-height: 90vh; overflow: auto; padding: 28px; border: 1px solid var(--border-secondary); border-radius: 18px; background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
-.legal-consent-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-.legal-consent-heading { display:flex; align-items:center; gap:14px; margin-bottom:12px; }.legal-consent-heading h3{margin:0}.legal-consent-shield{display:grid;place-items:center;width:50px;height:50px;border-radius:12px;background:var(--info-light);color:var(--info)}.legal-consent-shield svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.doc-symbol{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary)}.external-symbol{display:grid;place-items:center;margin-left:auto;color:var(--text-tertiary)}.external-symbol svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.doc-symbol svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.legal-consent-date{display:inline-block;margin-top:4px;padding:4px 9px;border-radius:999px;background:var(--bg-tertiary);color:var(--text-tertiary);font-size:11px}.legal-consent-related{margin:20px 0 12px;font-size:13px;color:var(--text-secondary)}
-.legal-consent-modal p { color:var(--text-secondary); font-size:13px; line-height:1.7; padding-bottom:20px; border-bottom:1px solid var(--border-secondary); }
-.legal-consent-docs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 20px 0; }
-.legal-consent-docs a { display:flex; align-items:center; gap:10px; min-height:62px; padding:12px 16px; border:1px solid var(--border-secondary); border-radius:12px; color:var(--text-primary); background:var(--bg-tertiary); font-weight:700; }
-.legal-consent-actions { display: flex; gap: 12px; padding-top:20px; border-top:1px solid var(--border-secondary); }
-.legal-consent-actions button { flex: 1; min-height: 44px; padding: 12px; border-radius: 10px; font-size: 14px !important; line-height: 1.2; font-weight: 800; opacity: 1 !important; visibility: visible !important; }
-.legal-consent-reject { background: var(--bg-tertiary); color: var(--text-primary) !important; }
-.legal-consent-accept { background: var(--primary); color: #fff !important; }
 
 .class-row {
   display: grid;

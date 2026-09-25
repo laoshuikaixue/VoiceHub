@@ -2,7 +2,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { computeLegalConsentVersion } from '~~/server/utils/legal-consent'
@@ -20,6 +20,6 @@ export default defineEventHandler(async (event) => {
   if (typeof body?.version !== 'string' || body.version !== currentVersion) {
     throw createApiError(409, SERVER_ERROR_CODES.AUTH_LEGAL_CONSENT_REQUIRED, '条款已更新，请重新阅读并同意')
   }
-  await db.update(users).set({ legalConsentVersion: currentVersion, legalConsentAt: getServerTimestamp() }).where(eq(users.id, user.id))
+  await db.update(users).set({ legalConsentVersion: currentVersion, legalConsentAt: getServerDate() }).where(eq(users.id, user.id))
   return { success: true, version: currentVersion }
 })
