@@ -135,3 +135,14 @@ test('场景 ID 存储值异常时解析结果为空', () => {
   assert.equal(resolveEsaCaptchaSceneId('{ broken', 'login', 'hub.example.com'), '')
   assert.equal(resolveEsaCaptchaSceneId(null, 'login', 'hub.example.com'), '')
 })
+
+test('未启用 ESA 时后台提交的未填完占位行被丢弃而不报错', () => {
+  // 保存接口在非 ESA 服务商下走此容错路径，保证默认一行空场景不阻断整页设置保存
+  const raw = JSON.stringify([
+    { endpoint: 'login', host: ESA_CAPTCHA_ANY_HOST, sceneId: '' },
+    { endpoint: 'register', host: 'hub.example.com', sceneId: 'ValidR' }
+  ])
+  assert.deepEqual(parseEsaCaptchaScenes(raw), [
+    { endpoint: 'register', host: 'hub.example.com', sceneId: 'ValidR' }
+  ])
+})

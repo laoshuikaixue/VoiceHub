@@ -106,7 +106,8 @@ export default defineEventHandler(async (event) => {
           throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
         }
       } else if (captchaSettings.provider === 'esa') {
-        // ESA AI 验证码的验签在 ESA 边缘完成，源站只要求请求携带验签参数（不解析内容）
+        // ESA 验签在边缘完成，源站无服务端验签接口，只能判断验签参数是否随请求到达
+        // 前提：源站必须只接受 ESA 回源流量，否则直连源站即可附带任意请求头绕过验证
         if (!getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
           throw createApiError(400, 'AUTH_CAPTCHA_REQUIRED', '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
         }

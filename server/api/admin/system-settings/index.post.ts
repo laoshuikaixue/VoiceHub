@@ -563,6 +563,9 @@ export default defineEventHandler(async (event) => {
       updateData.captchaMaxFailures = body.captchaMaxFailures
     }
 
+    // 生效的服务商：本次提交优先，未提交时回落到已持久化值
+    const effectiveCaptchaProvider = body.captchaProvider ?? settings?.captchaProvider
+
     if (body.captchaProvider !== undefined) {
       if (!CAPTCHA_PROVIDERS.includes(body.captchaProvider)) {
         throw createApiError(
@@ -589,48 +592,51 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // ESA AI 验证码的身份标与场景 ID 由前端 SDK 使用，缺失时页面无法发起验证
-      const nextEsaCaptchaPrefix =
-        body.esaCaptchaPrefix !== undefined ? body.esaCaptchaPrefix : settings?.esaCaptchaPrefix
-      const nextEsaCaptchaScenes =
-        body.esaCaptchaScenes !== undefined
+      updateData.captchaProvider = body.captchaProvider
+    }
+
+    // ESA AI 验证码的身份标与场景 ID 由前端 SDK 使用，缺失时页面无法发起验证
+    // 只有 ESA 生效时才做拒绝式校验，其他服务商下未填完的占位行按容错丢弃
+    const nextEsaCaptchaPrefix =
+      body.esaCaptchaPrefix !== undefined ? body.esaCaptchaPrefix : settings?.esaCaptchaPrefix
+    const nextEsaCaptchaScenes =
+      body.esaCaptchaScenes !== undefined
+        ? effectiveCaptchaProvider === 'esa'
           ? validateEsaCaptchaScenes(body.esaCaptchaScenes)
-          : parseEsaCaptchaScenes(settings?.esaCaptchaScenes)
+          : parseEsaCaptchaScenes(body.esaCaptchaScenes)
+        : parseEsaCaptchaScenes(settings?.esaCaptchaScenes)
 
-      if (body.captchaProvider === 'esa') {
-        if (!nextEsaCaptchaPrefix) {
-          throw createApiError(
-            400,
-            SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING,
-            '启用阿里云 ESA AI 验证码前，请先配置身份标'
-          )
-        }
-
-        // 一条 ESA 规则只覆盖一个接口，登录接口无场景 ID 时登录页无法初始化验证码
-        if (!nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'login')) {
-          throw createApiError(
-            400,
-            SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
-            '启用阿里云 ESA AI 验证码前，请先为登录接口配置场景 ID'
-          )
-        }
-
-        // 注册入口开启时，注册接口需有自己独立的 ESA 规则与场景 ID
-        const nextAllowRegister =
-          body.allowRegister !== undefined ? body.allowRegister : settings?.allowRegister
-        if (
-          nextAllowRegister === true &&
-          !nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'register')
-        ) {
-          throw createApiError(
-            400,
-            SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
-            '开放用户注册时，请为注册接口配置场景 ID，或先关闭注册入口'
-          )
-        }
+    if (effectiveCaptchaProvider === 'esa') {
+      if (!nextEsaCaptchaPrefix) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING,
+          '启用阿里云 ESA AI 验证码前，请先配置身份标'
+        )
       }
 
-      updateData.captchaProvider = body.captchaProvider
+      // 一条 ESA 规则只覆盖一个接口，登录接口无场景 ID 时登录页无法初始化验证码
+      if (!nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'login')) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
+          '启用阿里云 ESA AI 验证码前，请先为登录接口配置场景 ID'
+        )
+      }
+
+      // 注册入口开启时，注册接口需有自己独立的 ESA 规则与场景 ID
+      const nextAllowRegister =
+        body.allowRegister !== undefined ? body.allowRegister : settings?.allowRegister
+      if (
+        nextAllowRegister === true &&
+        !nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'register')
+      ) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
+          '开放用户注册时，请为注册接口配置场景 ID，或先关闭注册入口'
+        )
+      }
     }
 
     if (body.turnstileSiteKey !== undefined) {
@@ -646,7 +652,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.esaCaptchaScenes !== undefined) {
-      updateData.esaCaptchaScenes = JSON.stringify(validateEsaCaptchaScenes(body.esaCaptchaScenes))
+      updateData.esaCaptchaScenes = JSON.stringify(nextEsaCaptchaScenes)
     }
 
     if (body.esaCaptchaRegion !== undefined) {

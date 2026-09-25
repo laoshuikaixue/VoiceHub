@@ -24,7 +24,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'verified', 'failed'])
+const emit = defineEmits(['update:modelValue', 'verified', 'failed', 'load-error'])
 
 const { siteConfig } = useSiteConfig()
 const { currentLocale } = useLocale()
@@ -53,6 +53,7 @@ const initCaptcha = () => {
       retryTimer = setTimeout(initCaptcha, 100)
     } else {
       console.error('ESA 验证码脚本加载超时')
+      emit('load-error')
     }
     return
   }
@@ -111,6 +112,7 @@ onMounted(() => {
   script.src = SCRIPT_SRC
   script.async = true
   script.onload = () => initCaptcha()
+  script.onerror = () => emit('load-error')
   document.head.appendChild(script)
 })
 

@@ -336,7 +336,7 @@
       <div
         v-show="showCaptcha"
         class="form-group"
-        :class="{ 'esa-captcha-mount': captchaProvider === 'esa' }"
+        :class="{ 'esa-captcha-mount': captchaProvider === 'esa' && esaSceneId }"
       >
         <TurnstileWidget
           v-if="captchaProvider === 'turnstile'"
@@ -351,7 +351,12 @@
           :scene-id="esaSceneId"
           :button-selector="esaButtonSelector"
           @verified="handleLogin"
+          @load-error="handleEsaCaptchaLoadError"
         />
+        <!-- ESA 已启用但当前接口与域名解析不到场景 ID，不能回落成图形验证码 -->
+        <p v-else-if="captchaProvider === 'esa'" class="esa-scene-hint">
+          {{ locale.esaCaptchaSceneMissing }}
+        </p>
         <CaptchaInput
           v-else
           ref="captchaRef"
@@ -811,12 +816,17 @@ const switchToLogin = () => {
   remark.value = ''
 }
 
+// ESA SDK 脚本加载失败时验证码不会出现，给出可操作提示而非静默无响应
+const handleEsaCaptchaLoadError = () => {
+  error.value = locale.value.esaCaptchaLoadFailed || '人机验证组件加载失败，请刷新页面重试'
+}
+
 // ESA AI 验证码必须先取得验签参数（参数一次性有效，由 handleLogin 的 verified 回调重新进入提交）
 const ensureEsaCaptchaVerified = () => {
   if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
   // 当前接口未配置场景 ID 时验证码无法初始化，避免提交后静默无响应
   if (!esaSceneId.value) {
-    error.value = locale.value.esaCaptchaSceneMissing || ''
+    error.value = locale.value.esaCaptchaSceneMissing || '当前接口尚未配置 ESA 验证码场景 ID，请联系管理员'
     return false
   }
   return !!esaVerifyParam.value
@@ -1322,6 +1332,13 @@ const handleWebAuthnLogin = async () => {
 /* ESA 为弹窗形态，挂载点没有可见内容；移出 flex 布局避免在表单里占出一段空白 */
 .esa-captcha-mount {
   position: absolute;
+}
+
+/* ESA 已启用但场景 ID 缺失时的提示 */
+.esa-scene-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--error);
 }
 
 .form-group label {
