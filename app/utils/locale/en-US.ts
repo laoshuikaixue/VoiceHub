@@ -3773,6 +3773,7 @@ export const admin = {
     add: 'Add',
     import: 'Import',
     update: 'Update',
+    export: 'Export',
     searchPlaceholder: 'Search by name or student ID...',
     role: 'Role',
     allRoles: 'All Roles',
@@ -3942,6 +3943,80 @@ export const admin = {
       cancel: 'Cancel',
       importing: 'Importing...',
       confirm: 'Start Import'
+    },
+    exportModal: {
+      title: 'Export Users',
+      desc: 'Choose fields and filter scope, export to an Excel spreadsheet',
+      scopeTitle: 'Filter Scope',
+      fieldTitle: 'Export Fields',
+      scope: {
+        label: 'Archive Scope',
+        active: 'Active only',
+        all: 'All (incl. archived)',
+        archived: 'Archived only'
+      },
+      filter: {
+        grade: 'Grade',
+        allGrades: 'All Grades',
+        unsetGrade: 'No Grade',
+        class: 'Class',
+        allClasses: 'All Classes',
+        unsetClass: 'No Class',
+        role: 'Role',
+        allRoles: 'All Roles',
+        status: 'Status',
+        allStatus: 'All Statuses',
+        searchPlaceholder: 'Name / Username / IP'
+      },
+      groups: {
+        basic: 'Basic Info',
+        contact: 'Contact',
+        login: 'Login Info',
+        time: 'Timestamps',
+        oauth: 'Linked Accounts'
+      },
+      fields: {
+        id: 'User ID',
+        username: 'Username / ID',
+        name: 'Name',
+        role: 'Role',
+        grade: 'Grade',
+        class: 'Class',
+        status: 'Status',
+        email: 'Email',
+        emailVerified: 'Email Verified',
+        meowNickname: 'MeoW Nickname',
+        remark: 'Remark',
+        lastLogin: 'Last Login',
+        lastLoginIp: 'Last Login IP',
+        statusChangedAt: 'Status Changed',
+        passwordChangedAt: 'Password Changed',
+        meowBoundAt: 'MeoW Bound',
+        forcePasswordChange: 'Force Password Change',
+        createdAt: 'Created At',
+        updatedAt: 'Updated At',
+        providers: 'Linked Platforms'
+      },
+      boolean: {
+        yes: 'Yes',
+        no: 'No'
+      },
+      verified: {
+        yes: 'Verified',
+        no: 'Unverified'
+      },
+      selectAll: 'Select All',
+      clearAll: 'Clear',
+      resetDefault: 'Reset',
+      columnCount: (count: number) => `${count} columns selected`,
+      cancel: 'Cancel',
+      export: 'Export',
+      exporting: 'Exporting...',
+      emptyResult: 'No users match the selected filters',
+      success: (count: number) => `Exported ${count} users`,
+      failed: (message: string) => `Export failed: ${message}`,
+      fileNamePrefix: 'users',
+      sheetName: 'Users'
     },
     batchUpdateModal: {
       title: 'Batch Update Student Info',

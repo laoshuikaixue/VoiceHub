@@ -3782,6 +3782,7 @@ export const admin = {
     add: '添加',
     import: '导入',
     update: '更新',
+    export: '导出',
     searchPlaceholder: '通过姓名或学号搜索...',
     role: '角色',
     allRoles: '全部角色',
@@ -3951,6 +3952,80 @@ export const admin = {
       cancel: '取消',
       importing: '正在导入...',
       confirm: '确认开始导入'
+    },
+    exportModal: {
+      title: '导出用户',
+      desc: '选择导出字段与筛选范围，导出为 Excel 表格',
+      scopeTitle: '筛选范围',
+      fieldTitle: '导出字段',
+      scope: {
+        label: '归档范围',
+        active: '仅在读成员',
+        all: '全部（含已归档）',
+        archived: '仅已归档'
+      },
+      filter: {
+        grade: '年级',
+        allGrades: '全部年级',
+        unsetGrade: '未设置年级',
+        class: '班级',
+        allClasses: '全部班级',
+        unsetClass: '未设置班级',
+        role: '身份',
+        allRoles: '全部身份',
+        status: '状态',
+        allStatus: '全部状态',
+        searchPlaceholder: '姓名 / 用户名 / IP'
+      },
+      groups: {
+        basic: '基本信息',
+        contact: '联系方式',
+        login: '登录信息',
+        time: '时间记录',
+        oauth: '第三方绑定'
+      },
+      fields: {
+        id: '用户 ID',
+        username: '用户名/学号',
+        name: '姓名',
+        role: '身份/角色',
+        grade: '年级',
+        class: '班级',
+        status: '账户状态',
+        email: '邮箱',
+        emailVerified: '邮箱验证',
+        meowNickname: 'MeoW 昵称',
+        remark: '备注',
+        lastLogin: '最近登录时间',
+        lastLoginIp: '最近登录 IP',
+        statusChangedAt: '状态变更时间',
+        passwordChangedAt: '密码修改时间',
+        meowBoundAt: 'MeoW 绑定时间',
+        forcePasswordChange: '需强制改密',
+        createdAt: '创建时间',
+        updatedAt: '更新时间',
+        providers: '绑定平台'
+      },
+      boolean: {
+        yes: '是',
+        no: '否'
+      },
+      verified: {
+        yes: '已验证',
+        no: '未验证'
+      },
+      selectAll: '全选',
+      clearAll: '清空',
+      resetDefault: '恢复默认',
+      columnCount: (count: number) => `已选 ${count} 列`,
+      cancel: '取消',
+      export: '导出 Excel',
+      exporting: '正在导出...',
+      emptyResult: '没有符合筛选条件的用户',
+      success: (count: number) => `已导出 ${count} 位用户`,
+      failed: (message: string) => `导出失败: ${message}`,
+      fileNamePrefix: '用户列表',
+      sheetName: '用户数据'
     },
     batchUpdateModal: {
       title: '批量更新学生信息',
