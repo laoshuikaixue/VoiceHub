@@ -152,6 +152,7 @@ export const useAdmin = () => {
     title: string
     content: string
     important?: boolean
+    broadcast?: boolean
     scope: 'ALL' | 'GRADE' | 'CLASS' | 'MULTI_CLASS' | 'SPECIFIC_USERS'
     filter: {
       grade?: string

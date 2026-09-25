@@ -42,6 +42,11 @@ export default defineEventHandler(async (event) => {
   const pathname = url.pathname
   const method = event.method.toUpperCase()
 
+  // 机器人回调只接受专用共享令牌，由接口自身校验；忽略浏览器残留 Cookie。
+  if (method === 'POST' && (pathname === '/api/bot/voicehub/bind' || pathname === '/api/bot/voicehub/unbind')) {
+    return
+  }
+
   // 跳过非API路由
   if (!pathname.startsWith('/api/')) {
     return

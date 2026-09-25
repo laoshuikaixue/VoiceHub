@@ -383,6 +383,8 @@ export default defineEventHandler(async (event) => {
                             'lastLoginIp',
                             'forcePasswordChange',
                             'meowNickname',
+                            'astrbotUmo',
+                            'astrbotPlatform',
                             'status',
                             'statusChangedBy',
                             'remark',
@@ -397,6 +399,7 @@ export default defineEventHandler(async (event) => {
                             'lastLogin',
                             'passwordChangedAt',
                             'meowBoundAt',
+                            'astrbotBoundAt',
                             'statusChangedAt'
                           ]
 
@@ -1239,6 +1242,10 @@ export default defineEventHandler(async (event) => {
                           'smtpPassword',
                           'smtpFromEmail',
                           'smtpFromName',
+                          'astrbotEnabled',
+                          'astrbotBaseUrl',
+                          'astrbotToken',
+                          'astrbotBroadcastEnabled',
                           'allowOAuthRegistration',
                           'allowRegister',
                           'registerRequiresApproval',

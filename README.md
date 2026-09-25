@@ -1245,6 +1245,7 @@ VoiceHub/
 │   │   ├── platform-config/  # 平台管理公开API
 │   │   │   └── index.get.ts      # 获取平台启用与排序配置
 │   │   ├── notifications/  # 通知系统API
+│   │   │   ├── astrbot/             # AstrBot 绑定码、状态、解绑与测试推送
 │   │   │   ├── [id]/                # 通知操作子目录
 │   │   │   │   └── read.post.ts     # 标记通知已读
 │   │   │   ├── [id].delete.ts       # 删除通知
@@ -1257,6 +1258,7 @@ VoiceHub/
 │   │   │   ├── read-all.post.ts     # 标记所有已读
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
+│   │   ├── bot/            # AstrBot 插件令牌回调（绑定/解绑）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
 │   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
@@ -1360,6 +1362,7 @@ VoiceHub/
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── durationValidationService.ts # 歌曲时长校验与补齐服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
+│   │   ├── astrbotNotificationService.ts # AstrBot通知服务（VoiceHub只出站HTTP）
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
@@ -1371,6 +1374,7 @@ VoiceHub/
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
+│   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
@@ -1464,6 +1468,7 @@ VoiceHub/
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试

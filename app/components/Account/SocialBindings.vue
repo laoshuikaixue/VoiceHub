@@ -258,6 +258,27 @@
           </div>
         </div>
       </div>
+
+      <div v-if="astrbotEnabled" class="rounded-2xl border border-primary-20 bg-primary-5 p-5 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-primary-10 rounded-lg"><MessageCircle :size="16" class="text-primary" /></div>
+          <h3 class="text-sm font-bold text-text-primary">{{ locale.astrbot.title }}</h3>
+        </div>
+        <p class="text-xs text-text-tertiary">{{ locale.astrbot.desc }}</p>
+        <div v-if="astrbotBound" class="space-y-3">
+          <p class="text-sm text-text-primary break-all">{{ locale.astrbot.bound }}<span v-if="astrbotAccount">：{{ astrbotAccount }}</span></p>
+          <button :disabled="astrbotBusy" class="px-4 py-2 bg-error-10 text-error text-xs font-bold rounded-xl disabled:opacity-50" @click="confirmAstrbotUnbind">{{ locale.astrbot.unbind }}</button>
+        </div>
+        <div v-else class="space-y-3">
+          <button :disabled="astrbotBusy" class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="createAstrbotCode">{{ astrbotBusy ? locale.pleaseWait : locale.astrbot.generate }}</button>
+          <div v-if="astrbotCode" class="p-3 rounded-xl border border-border-secondary bg-bg-primary space-y-2">
+            <p class="text-xs text-text-tertiary">{{ locale.astrbot.instruction }}</p>
+            <code class="block font-mono text-lg font-bold text-primary select-all break-all">{{ astrbotCode }}</code>
+            <p class="text-xs text-text-tertiary">{{ locale.astrbot.expires.replace('{0}', String(astrbotExpiresIn)) }}</p>
+            <button class="text-xs text-primary font-bold" @click="refreshAstrbotStatus">{{ locale.astrbot.refresh }}</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 确认对话框 -->
@@ -275,7 +296,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { AlertCircle, Loader2, Mail, Share2, Smartphone } from '@lucide/vue'
+import { AlertCircle, Loader2, Mail, MessageCircle, Share2, Smartphone } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
@@ -285,6 +306,69 @@ const { smtpEnabled } = useSiteConfig()
 const { showToast } = useToast()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.account?.social || {})
+const { localize: localizeServerError } = useServerErrors()
+const astrbotEnabled = ref(false)
+const astrbotBound = ref(false)
+const astrbotAccount = ref('')
+const astrbotCode = ref('')
+const astrbotExpiresIn = ref(600)
+const astrbotBusy = ref(false)
+
+const refreshAstrbotStatus = async () => {
+  try {
+    const response = await $fetch('/api/notifications/astrbot/status')
+    const status = response.data || response
+    astrbotEnabled.value = !!(status.enabled ?? status.astrbotEnabled)
+    astrbotBound.value = !!(status.bound ?? status.isBound)
+    astrbotAccount.value = status.account || status.qqId || status.qqUserId || ''
+    if (astrbotBound.value || !astrbotEnabled.value) astrbotCode.value = ''
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.astrbot.loadFailed), 'error')
+  }
+}
+
+const createAstrbotCode = async () => {
+  astrbotBusy.value = true
+  try {
+    const response = await $fetch('/api/notifications/astrbot/bind-code', { method: 'POST' })
+    if (!response.success || !response.code) throw new Error(locale.value.astrbot.codeFailed)
+    astrbotCode.value = response.code
+    astrbotExpiresIn.value = response.expiresIn || 600
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.astrbot.codeFailed), 'error')
+  } finally {
+    astrbotBusy.value = false
+  }
+}
+
+const confirmAstrbotUnbind = () => {
+  confirmDialog.value = {
+    title: locale.value.astrbot.unbindTitle,
+    message: locale.value.astrbot.unbindMessage,
+    type: 'danger',
+    loading: false,
+    onConfirm: async () => {
+      confirmDialog.value.loading = true
+      astrbotBusy.value = true
+      try {
+        const response = await $fetch('/api/notifications/astrbot/unbind', { method: 'POST' })
+        if (!response.success) throw new Error(locale.value.astrbot.unbindFailed)
+        astrbotBound.value = false
+        astrbotAccount.value = ''
+        astrbotCode.value = ''
+        showConfirmDialog.value = false
+        showToast(locale.value.astrbot.unbound, 'success')
+      } catch (err) {
+        showToast(localizeServerError(err, locale.value.astrbot.unbindFailed), 'error')
+      } finally {
+        confirmDialog.value.loading = false
+        astrbotBusy.value = false
+      }
+    },
+    onCancel: () => { showConfirmDialog.value = false }
+  }
+  showConfirmDialog.value = true
+}
 
 // 卡片样式类常量（sectionClass 由父组件 account/index.vue 控制）
 const cardClass =
@@ -329,6 +413,7 @@ const confirmDialog = ref({
 
 onMounted(() => {
   loadBindings()
+  refreshAstrbotStatus()
 })
 
 // 加载绑定状态

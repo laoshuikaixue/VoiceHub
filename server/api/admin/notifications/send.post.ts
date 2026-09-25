@@ -48,6 +48,13 @@ export default defineEventHandler(async (event) => {
   const rawContent = typeof body?.content === 'string' ? body.content : body?.message
   const content = typeof rawContent === 'string' ? rawContent.trim() : ''
   const important = resolveImportantFlag(body?.important)
+  if (body?.broadcast !== undefined && typeof body.broadcast !== 'boolean') {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群广播标记必须是布尔值')
+  }
+
+  if (body?.broadcast === true && body?.userId !== undefined) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '单人通知不能同时广播到群聊')
+  }
 
   if (important === null) {
     throw createApiError(
@@ -203,7 +210,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const result = await createBatchSystemNotifications(userIds, title, content, important, sender)
+  const result = await createBatchSystemNotifications(userIds, title, content, important, sender, body?.broadcast === true)
   if (!result) {
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
   }

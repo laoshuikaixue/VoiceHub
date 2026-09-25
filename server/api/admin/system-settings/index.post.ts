@@ -12,6 +12,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
+import { normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -596,6 +597,41 @@ export default defineEventHandler(async (event) => {
 
     if (body.smtpFromName !== undefined) {
       updateData.smtpFromName = body.smtpFromName
+    }
+
+    // AstrBot 推送通道配置；密钥从不回显明文。
+    if (body.astrbotEnabled !== undefined) {
+      if (typeof body.astrbotEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'astrbotEnabled 必须是布尔值')
+      }
+      updateData.astrbotEnabled = body.astrbotEnabled
+    }
+    if (body.astrbotBroadcastEnabled !== undefined) {
+      if (typeof body.astrbotBroadcastEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'astrbotBroadcastEnabled 必须是布尔值')
+      }
+      updateData.astrbotBroadcastEnabled = body.astrbotBroadcastEnabled
+    }
+    if (body.astrbotBaseUrl !== undefined) {
+      if (typeof body.astrbotBaseUrl !== 'string' || body.astrbotBaseUrl.length > 2048) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址无效')
+      }
+      const value = body.astrbotBaseUrl.trim() ? normalizeAstrbotBaseUrl(body.astrbotBaseUrl) : null
+      if (body.astrbotBaseUrl.trim() && !value) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址必须为无凭证的 HTTP(S) 根地址')
+      }
+      updateData.astrbotBaseUrl = value || null
+    }
+    if (body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK) {
+      if (typeof body.astrbotToken !== 'string' || body.astrbotToken.length > 512) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人令牌无效')
+      }
+      updateData.astrbotToken = body.astrbotToken.trim() || null
+    }
+    if ((body.astrbotEnabled ?? settings?.astrbotEnabled) &&
+        (!(updateData.astrbotBaseUrl ?? (body.astrbotBaseUrl !== undefined ? '' : settings?.astrbotBaseUrl)) ||
+         !(updateData.astrbotToken ?? (body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK ? '' : settings?.astrbotToken)))) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先配置机器人服务地址和令牌')
     }
 
     // OAuth 配置字段

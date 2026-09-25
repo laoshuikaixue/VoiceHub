@@ -488,7 +488,23 @@ export const pages = {
       sendFailed: '发送失败',
       unbindEmailTitle: '确认解绑邮箱',
       unbindEmailMessage: '解绑后将无法接收邮件通知，确定要继续吗？',
-      emailUnbound: '邮箱已解绑'
+      emailUnbound: '邮箱已解绑',
+      astrbot: {
+        title: 'QQ 私聊通知（AstrBot）',
+        desc: '生成一次性绑定码后，在机器人私聊中发送该码完成绑定。群消息由管理员在插件中配置。',
+        bound: '已绑定 QQ 私聊',
+        generate: '生成绑定码',
+        instruction: '请将下方绑定码发送给 AstrBot 机器人私聊，不要发到群聊。',
+        expires: '绑定码在 {0} 秒后失效；重新生成会替换旧码。',
+        refresh: '我已发送，刷新绑定状态',
+        unbind: '解除 QQ 绑定',
+        unbindTitle: '解除 QQ 私聊绑定',
+        unbindMessage: '解绑后将不再收到 QQ 私聊通知，确定继续吗？',
+        unbound: 'QQ 私聊已解绑',
+        unbindFailed: '解绑失败',
+        codeFailed: '生成绑定码失败',
+        loadFailed: '加载 QQ 绑定状态失败'
+      }
     },
     personalApiKey: {
       title: '个人 API Key',
@@ -3273,6 +3289,24 @@ export const admin = {
       sendTestEmailFailed: { raw: '发送测试邮件失败', text: '发送测试邮件失败' }
     }
   },
+  astrbotManager: {
+    title: 'AstrBot 通知配置',
+    desc: '配置 QQ 私聊通知连接；群消息目标由 AstrBot 插件单独管理。',
+    enabled: '启用 AstrBot 通知',
+    baseUrl: 'AstrBot 服务地址',
+    baseUrlPlaceholder: 'https://bot.example.com',
+    token: '访问令牌',
+    tokenPlaceholder: '输入访问令牌',
+    tokenUnchanged: '已配置；留空保持不变',
+    tokenHint: '密钥只在输入新值时更新，页面不会显示已有密钥。',
+    broadcast: '启用广播通知',
+    broadcastHint: '仅控制广播发送；群消息接收目标在插件侧配置。',
+    save: '保存配置',
+    saving: '保存中...',
+    saved: 'AstrBot 配置已保存',
+    loadFailed: '加载 AstrBot 配置失败',
+    saveFailed: '保存 AstrBot 配置失败'
+  },
   emailTemplateManager: {
     title: '邮件模板管理',
     desc: '自定义系统邮件的主题与内容，支持变量替换',
@@ -3318,6 +3352,7 @@ export const admin = {
     markdownHint: '支持 Markdown 格式，将按右侧预览安全渲染。',
     importantToggleTitle: '重要通知弹窗提醒',
     importantToggleDescription: '用户登录后将立即弹窗展示，关闭后标记为已读',
+    astrbotBroadcast: '同时推送到 AstrBot 插件配置的群会话（可选）',
     scope: '通知范围',
     allUsersHint: '将向系统中所有已注册的活跃用户发送此通知。',
     selectGrade: '选择年级',
@@ -4580,6 +4615,15 @@ export const serverErrors = {
   BACKUP_FAILED: '备份执行失败',
   SMTP_NOT_CONFIGURED: '邮件服务未配置',
   NOTIFICATION_AUTH_REQUIRED: '请先登录后再操作通知',
+  ASTRBOT_NOT_CONFIGURED: '机器人推送未启用或尚未配置',
+  ASTRBOT_BIND_CODE_INVALID: '绑定码无效、已过期或已使用',
+  ASTRBOT_BIND_CODE_EXPIRED: '绑定码已过期',
+  ASTRBOT_BIND_CODE_USED: '绑定码已使用',
+  ASTRBOT_UMO_INVALID: '机器人会话 ID 无效',
+  ASTRBOT_UMO_BOUND: '此会话已绑定其他账号',
+  ASTRBOT_BIND_FAILED: '机器人绑定失败',
+  ASTRBOT_UNBIND_FAILED: '机器人解绑失败',
+  ASTRBOT_TEST_FAILED: '机器人测试推送失败',
   NOTIFICATION_ADMIN_REQUIRED: '只有管理员可以发送系统通知',
   NOTIFICATION_IMPORTANT_INVALID: '重要通知标记必须是布尔值',
   NOTIFICATION_TITLE_CONTENT_REQUIRED: '通知标题和内容不能为空',

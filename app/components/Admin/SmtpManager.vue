@@ -201,6 +201,23 @@
         <EmailTemplateManager />
       </div>
     </div>
+    <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-5">
+      <h3 class="text-sm font-black text-text-primary">{{ astrbotLocale.title }}</h3>
+      <p class="text-xs text-text-tertiary">{{ astrbotLocale.desc }}</p>
+      <div v-if="astrbotLoaded" class="space-y-4">
+        <label class="flex items-center gap-2 text-sm text-text-primary"><input v-model="astrbotConfig.astrbotEnabled" type="checkbox">{{ astrbotLocale.enabled }}</label>
+        <label class="block text-xs text-text-secondary">{{ astrbotLocale.baseUrl }}
+          <input v-model.trim="astrbotConfig.astrbotBaseUrl" type="url" :placeholder="astrbotLocale.baseUrlPlaceholder" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
+        </label>
+        <label class="block text-xs text-text-secondary">{{ astrbotLocale.token }}
+          <input v-model="astrbotTokenInput" type="password" autocomplete="new-password" :placeholder="astrbotTokenConfigured ? astrbotLocale.tokenUnchanged : astrbotLocale.tokenPlaceholder" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
+        </label>
+        <p class="text-xs text-text-tertiary">{{ astrbotLocale.tokenHint }}</p>
+        <label class="flex items-center gap-2 text-sm text-text-primary"><input v-model="astrbotConfig.astrbotBroadcastEnabled" type="checkbox">{{ astrbotLocale.broadcast }}</label>
+        <p class="text-xs text-text-tertiary">{{ astrbotLocale.broadcastHint }}</p>
+        <button :disabled="astrbotSaving" class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="saveAstrbotConfig">{{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}</button>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -215,6 +232,45 @@ import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from '@luci
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.smtpManager || {})
+const astrbotLocale = computed(() => admin.value?.astrbotManager || {})
+const { localize: localizeServerError } = useServerErrors()
+const astrbotLoaded = ref(false)
+const astrbotSaving = ref(false)
+const astrbotTokenConfigured = ref(false)
+const astrbotTokenInput = ref('')
+const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotBroadcastEnabled: false })
+
+const loadAstrbotConfig = async () => {
+  try {
+    const response = await $fetch('/api/admin/system-settings')
+    astrbotConfig.value = {
+      astrbotEnabled: !!response.astrbotEnabled,
+      astrbotBaseUrl: response.astrbotBaseUrl || '',
+      astrbotBroadcastEnabled: !!response.astrbotBroadcastEnabled
+    }
+    astrbotTokenConfigured.value = !!response.astrbotToken
+    astrbotTokenInput.value = ''
+    astrbotLoaded.value = true
+  } catch (err) {
+    showNotification(localizeServerError(err, astrbotLocale.value.loadFailed), 'error')
+  }
+}
+
+const saveAstrbotConfig = async () => {
+  astrbotSaving.value = true
+  try {
+    const body = { ...astrbotConfig.value }
+    // 不回传掩码；空输入表示保留已有密钥。
+    if (astrbotTokenInput.value) body.astrbotToken = astrbotTokenInput.value
+    await $fetch('/api/admin/system-settings', { method: 'POST', body })
+    showNotification(astrbotLocale.value.saved, 'success')
+    await loadAstrbotConfig()
+  } catch (err) {
+    showNotification(localizeServerError(err, astrbotLocale.value.saveFailed), 'error')
+  } finally {
+    astrbotSaving.value = false
+  }
+}
 const getLocaleMessage = (key) => locale.value?.[key] || `SMTP 配置：${key}`
 const getOptionText = (value, fallback) => {
   if (typeof value === 'function') return value() || fallback
@@ -417,6 +473,7 @@ const sendTestEmail = async () => {
 // 生命周期
 onMounted(() => {
   loadConfig()
+  loadAstrbotConfig()
 })
 </script>
 

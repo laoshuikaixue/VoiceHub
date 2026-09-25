@@ -33,6 +33,9 @@ export const users = pgTable('User', {
   tokenVersion: integer('tokenVersion').default(0).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
+  astrbotUmo: text('astrbotUmo'),
+  astrbotPlatform: text('astrbotPlatform'),
+  astrbotBoundAt: timestamp('astrbotBoundAt'),
   avatarProvider: text('avatarProvider'),
   avatarProviderUserId: text('avatarProviderUserId'),
   status: userStatusEnum('status').default('active').notNull(),
@@ -40,7 +43,10 @@ export const users = pgTable('User', {
   statusChangedBy: integer('statusChangedBy'),
   // 注册时可选填写的备注，管理员审核时可修改
   remark: text('remark'),
-}, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
+}, (table) => [
+  uniqueIndex('User_username_unique').on(table.username),
+  uniqueIndex('User_astrbot_umo_unique').on(table.astrbotUmo)
+]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
 export const authSessions = pgTable('auth_sessions', {
@@ -237,6 +243,15 @@ export const notificationSettings = pgTable('NotificationSettings', {
   songVotedThreshold: integer('songVotedThreshold').default(1).notNull(),
 });
 
+// AstrBot 绑定码持久化，避免 serverless 多实例内存状态不一致。
+export const astrbotBindingCodes = pgTable('AstrbotBindingCode', {
+  userId: integer('userId').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  codeHash: text('codeHash').notNull(),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  attempts: integer('attempts').default(0).notNull(),
+  consumedAt: timestamp('consumedAt', { withTimezone: true })
+}, (table) => [uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
+
 // 学期表
 export const semesters = pgTable('Semester', {
   id: serial('id').primaryKey(),
@@ -283,6 +298,10 @@ export const systemSettings = pgTable('SystemSettings', {
   smtpPassword: text('smtpPassword'),
   smtpFromEmail: text('smtpFromEmail'),
   smtpFromName: text('smtpFromName').default('校园广播站'),
+  astrbotEnabled: boolean('astrbotEnabled').default(false).notNull(),
+  astrbotBaseUrl: text('astrbotBaseUrl'),
+  astrbotToken: text('astrbotToken'),
+  astrbotBroadcastEnabled: boolean('astrbotBroadcastEnabled').default(false).notNull(),
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
   forcePasswordChangeOnFirstLogin: boolean('forcePasswordChangeOnFirstLogin').default(false).notNull(),

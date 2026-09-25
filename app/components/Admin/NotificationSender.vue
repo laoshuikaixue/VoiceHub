@@ -75,6 +75,11 @@
             </label>
 
             <!-- 范围选择 -->
+            <label class="flex items-center gap-3 rounded-xl border border-border-secondary p-4 text-sm text-text-secondary">
+              <input v-model="form.broadcast" type="checkbox" class="accent-primary">
+              <span>{{ locale.astrbotBroadcast }}</span>
+            </label>
+
             <div class="space-y-3 pt-4 border-t border-border-secondary-50">
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.scope }}</label
@@ -541,6 +546,7 @@ const form = ref({
   title: '',
   content: '',
   important: false,
+  broadcast: false,
   scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'
   grade: '',
   classGrade: '',
@@ -784,6 +790,7 @@ const sendNotification = async () => {
       title: form.value.title,
       content: form.value.content,
       important: form.value.important,
+      broadcast: form.value.broadcast,
       scope: form.value.scope,
       filter: {}
     }
@@ -817,6 +824,7 @@ const sendNotification = async () => {
         title: '',
         content: '',
         important: false,
+        broadcast: false,
         scope: 'ALL',
         grade: '',
         classGrade: '',

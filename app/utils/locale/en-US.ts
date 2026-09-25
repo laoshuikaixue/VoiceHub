@@ -477,7 +477,23 @@ export const pages = {
       sendFailed: 'Failed to send',
       unbindEmailTitle: 'Confirm Email Unbind',
       unbindEmailMessage: 'You will no longer receive email notifications after unbinding. Continue?',
-      emailUnbound: 'Email unbound'
+      emailUnbound: 'Email unbound',
+      astrbot: {
+        title: 'QQ Private Chat (AstrBot)',
+        desc: 'Send a one-time bind code to the bot in a private chat. Group destinations are configured in the plugin by an admin.',
+        bound: 'QQ private chat linked',
+        generate: 'Get Bind Code',
+        instruction: 'Send this code to the AstrBot bot in a private chat, not a group chat.',
+        expires: 'Code expires in {0} seconds. Generating a new one replaces it.',
+        refresh: 'Sent it? Refresh status',
+        unbind: 'Unlink QQ',
+        unbindTitle: 'Unlink QQ Chat',
+        unbindMessage: 'You will stop receiving QQ private notifications. Continue?',
+        unbound: 'QQ chat unlinked',
+        unbindFailed: 'Failed to unlink',
+        codeFailed: 'Failed to generate code',
+        loadFailed: 'Failed to load QQ link status'
+      }
     },
     personalApiKey: {
       title: 'Personal API Key',
@@ -3264,6 +3280,24 @@ export const admin = {
       sendTestEmailFailed: { raw: '发送测试邮件失败', text: 'Failed to send test email' }
     }
   },
+  astrbotManager: {
+    title: 'AstrBot Notifications',
+    desc: 'Configure QQ private-chat notifications. Group destinations are managed in the AstrBot plugin.',
+    enabled: 'Enable AstrBot',
+    baseUrl: 'AstrBot Service URL',
+    baseUrlPlaceholder: 'https://bot.example.com',
+    token: 'Access Token',
+    tokenPlaceholder: 'Enter access token',
+    tokenUnchanged: 'Configured; leave blank to keep',
+    tokenHint: 'The token only changes when you enter a new value; the saved value is never displayed.',
+    broadcast: 'Enable Broadcasts',
+    broadcastHint: 'Controls broadcast delivery only; group destinations are configured in the plugin.',
+    save: 'Save Config',
+    saving: 'Saving...',
+    saved: 'AstrBot settings saved',
+    loadFailed: 'Failed to load AstrBot settings',
+    saveFailed: 'Failed to save AstrBot settings'
+  },
   emailTemplateManager: {
     title: 'Email Template Management',
     desc: 'Customize system email subjects and content with variable substitution',
@@ -3309,6 +3343,7 @@ export const admin = {
     markdownHint: 'Markdown is supported and rendered safely in the preview.',
     importantToggleTitle: 'Important Pop-up',
     importantToggleDescription: 'Shown in a pop-up after sign-in and marked as read when closed',
+    astrbotBroadcast: 'Also broadcast to group chats configured in the AstrBot plugin (optional)',
     scope: 'Notification Scope',
     allUsersHint: 'This notification will be sent to all active registered users.',
     selectGrade: 'Select Grade',
@@ -4571,6 +4606,15 @@ export const serverErrors = {
   BACKUP_FAILED: 'Backup execution failed',
   SMTP_NOT_CONFIGURED: 'Email service is not configured',
   NOTIFICATION_AUTH_REQUIRED: 'Please sign in before working with notifications',
+  ASTRBOT_NOT_CONFIGURED: 'Bot push is disabled or not configured',
+  ASTRBOT_BIND_CODE_INVALID: 'Binding code is invalid, expired, or already used',
+  ASTRBOT_BIND_CODE_EXPIRED: 'Binding code has expired',
+  ASTRBOT_BIND_CODE_USED: 'Binding code was already used',
+  ASTRBOT_UMO_INVALID: 'Invalid bot session ID',
+  ASTRBOT_UMO_BOUND: 'This chat is already linked to another account',
+  ASTRBOT_BIND_FAILED: 'Could not link this chat',
+  ASTRBOT_UNBIND_FAILED: 'Could not unlink this chat',
+  ASTRBOT_TEST_FAILED: 'Bot test push failed',
   NOTIFICATION_ADMIN_REQUIRED: 'Only administrators can send system notifications',
   NOTIFICATION_IMPORTANT_INVALID: 'The important notice flag must be a boolean',
   NOTIFICATION_TITLE_CONTENT_REQUIRED: 'Notification title and content are required',
