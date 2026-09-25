@@ -601,7 +601,7 @@ export const pages = {
       print: '打印排期',
       users: '用户管理',
       notifications: '通知管理',
-      'smtp-config': '邮件配置',
+      'smtp-config': '推送配置',
       playtimes: '播出时段',
       'request-times': '投稿管理',
       semesters: '学期管理',
@@ -1883,7 +1883,7 @@ export const admin = {
       gradeClass: '年级班级',
       apiKeys: 'API密钥管理',
       notifications: '通知管理',
-      smtpConfig: '邮件配置',
+      smtpConfig: '推送配置',
       playtimes: '播出时段',
       requestTimes: '投稿管理',
       semesters: '学期管理',
@@ -3226,8 +3226,8 @@ export const admin = {
     }
   },
   smtpManager: {
-    title: '邮件服务配置',
-    desc: '配置 SMTP 服务以发送系统验证码、投稿通知及其他重要提醒',
+    title: '推送配置',
+    desc: '配置邮件服务及机器人通知；邮件可用于验证码、投稿通知及其他重要提醒。',
     reload: '重载SMTP',
     reloading: '重载中...',
     save: '保存配置',

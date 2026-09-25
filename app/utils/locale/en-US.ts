@@ -590,7 +590,7 @@ export const pages = {
       print: 'Print Schedule',
       users: 'User Management',
       notifications: 'Notification Management',
-      'smtp-config': 'Email Configuration',
+      'smtp-config': 'Push Configuration',
       playtimes: 'Play Times',
       'request-times': 'Request Management',
       semesters: 'Semester Management',
@@ -1874,7 +1874,7 @@ export const admin = {
       gradeClass: 'Grade / Class',
       apiKeys: 'API Keys',
       notifications: 'Notifications',
-      smtpConfig: 'Mail Config',
+      smtpConfig: 'Push Configuration',
       playtimes: 'Play Times',
       requestTimes: 'Requests',
       semesters: 'Semesters',
@@ -3217,8 +3217,8 @@ export const admin = {
     }
   },
   smtpManager: {
-    title: 'Mail Service Configuration',
-    desc: 'Configure SMTP for verification codes, request notifications, and other important reminders',
+    title: 'Push Configuration',
+    desc: 'Configure email and bot notifications. Email also supports verification codes and important reminders.',
     reload: 'Reload SMTP',
     reloading: 'Reloading...',
     save: 'Save Config',
