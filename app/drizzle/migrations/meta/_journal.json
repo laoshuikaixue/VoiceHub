@@ -358,6 +358,13 @@
       "when": 1790326842814,
       "tag": "20260925090042_auto-migration",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1790342504449,
+      "tag": "20260925132144_auto-migration",
+      "breakpoints": true
     }
   ]
 }

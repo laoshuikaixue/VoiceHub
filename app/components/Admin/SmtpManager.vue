@@ -215,6 +215,10 @@
         <p class="text-xs text-text-tertiary">{{ astrbotLocale.tokenHint }}</p>
         <label class="flex items-center gap-2 text-sm text-text-primary"><input v-model="astrbotConfig.astrbotBroadcastEnabled" type="checkbox">{{ astrbotLocale.broadcast }}</label>
         <p class="text-xs text-text-tertiary">{{ astrbotLocale.broadcastHint }}</p>
+        <label class="block text-xs text-text-secondary">{{ astrbotLocale.pushMode }}
+          <CustomSelect v-model="astrbotConfig.astrbotPushMode" class="mt-1" :options="pushModeOptions" />
+        </label>
+        <p class="text-xs text-text-tertiary">{{ astrbotLocale.pushModeHint }}</p>
         <button :disabled="astrbotSaving" class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="saveAstrbotConfig">{{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}</button>
       </div>
     </section>
@@ -238,7 +242,12 @@ const astrbotLoaded = ref(false)
 const astrbotSaving = ref(false)
 const astrbotTokenConfigured = ref(false)
 const astrbotTokenInput = ref('')
-const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotBroadcastEnabled: false })
+const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotBroadcastEnabled: false, astrbotPushMode: 'push' })
+
+const pushModeOptions = computed(() => [
+  { value: 'push', label: astrbotLocale.value.pushModePush || 'push' },
+  { value: 'pull', label: astrbotLocale.value.pushModePull || 'pull' }
+])
 
 const loadAstrbotConfig = async () => {
   try {
@@ -246,7 +255,8 @@ const loadAstrbotConfig = async () => {
     astrbotConfig.value = {
       astrbotEnabled: !!response.astrbotEnabled,
       astrbotBaseUrl: response.astrbotBaseUrl || '',
-      astrbotBroadcastEnabled: !!response.astrbotBroadcastEnabled
+      astrbotBroadcastEnabled: !!response.astrbotBroadcastEnabled,
+      astrbotPushMode: response.astrbotPushMode === 'pull' ? 'pull' : 'push'
     }
     astrbotTokenConfigured.value = !!response.astrbotToken
     astrbotTokenInput.value = ''

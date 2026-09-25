@@ -70,6 +70,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   astrbotBaseUrl: null,
   astrbotToken: null,
   astrbotBroadcastEnabled: false,
+  astrbotPushMode: 'push',
   allowOAuthRegistration: false,
   allowRegister: false,
   registerRequiresApproval: true,

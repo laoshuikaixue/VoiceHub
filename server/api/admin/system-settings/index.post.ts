@@ -612,6 +612,12 @@ export default defineEventHandler(async (event) => {
       }
       updateData.astrbotBroadcastEnabled = body.astrbotBroadcastEnabled
     }
+    if (body.astrbotPushMode !== undefined) {
+      if (body.astrbotPushMode !== 'push' && body.astrbotPushMode !== 'pull') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '推送方向只能是 push 或 pull')
+      }
+      updateData.astrbotPushMode = body.astrbotPushMode
+    }
     if (body.astrbotBaseUrl !== undefined) {
       if (typeof body.astrbotBaseUrl !== 'string' || body.astrbotBaseUrl.length > 2048) {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址无效')

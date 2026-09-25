@@ -1,0 +1,108 @@
+import { and, asc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { astrbotOutbox, notificationSettings, users } from '~/drizzle/schema'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
+import { isAstrbotOutboxExhausted } from '~~/server/utils/astrbot-pull'
+
+/** 一次领取的最大条数与租约时长：插件崩溃后条目可被重新领取。 */
+export const ASTRBOT_OUTBOX_MAX_CLAIM = 20
+export const ASTRBOT_OUTBOX_LEASE_SECONDS = 120
+/** 单条通知最多携带的目标数，与插件入站模式同一上限。 */
+const ASTRBOT_OUTBOX_TARGETS_PER_ITEM = 200
+
+/**
+ * 通知入队，供无法访问插件的部署使用（插件主动轮询取件）。
+ *
+ * 目标在入队时即解析完成：不像 push 模式那样在请求内直连插件，因此 VH 只需
+ * 写库。返回入队条数；调用方据此判断是否有内容待投递。
+ */
+export async function enqueueAstrbotNotifications(
+  userIds: number[], title: string, content: string, broadcast = false
+): Promise<number> {
+  const settings = await getSystemSettingsCached()
+  if (!settings?.astrbotEnabled) return 0
+
+  const uniqueIds = [...new Set(userIds.filter((id) => Number.isInteger(id) && id > 0))]
+  const rows = uniqueIds.length
+    ? await db.select({ umo: users.astrbotUmo, enabled: notificationSettings.enabled })
+      .from(users)
+      .leftJoin(notificationSettings, eq(notificationSettings.userId, users.id))
+      .where(and(inArray(users.id, uniqueIds), isNotNull(users.astrbotUmo)))
+    : []
+  const umos = rows.filter((row) => row.enabled !== false && !!row.umo).map((row) => row.umo!)
+  const shouldBroadcast = broadcast && !!settings.astrbotBroadcastEnabled
+  if (!shouldBroadcast && !umos.length) return 0
+  // 插件按单条请求体上限投递，超限的正文无法投递，不入队以免插件永远失败重试。
+  if (!fitsAstrbotPayload([], title, content, false)) {
+    console.error('AstrBot 通知未入队：正文超过单条投递大小限制')
+    return 0
+  }
+
+  const rowsToInsert: { title: string; message: string; umos: string[]; broadcast: boolean }[] = []
+  for (let index = 0; index < umos.length; index += ASTRBOT_OUTBOX_TARGETS_PER_ITEM) {
+    rowsToInsert.push({
+      title, message: content, broadcast: false,
+      umos: umos.slice(index, index + ASTRBOT_OUTBOX_TARGETS_PER_ITEM)
+    })
+  }
+  if (shouldBroadcast) rowsToInsert.unshift({ title, message: content, umos: [], broadcast: true })
+  if (!rowsToInsert.length) return 0
+
+  await db.insert(astrbotOutbox).values(rowsToInsert)
+  return rowsToInsert.length
+}
+
+/**
+ * 领取一批待投递通知。
+ *
+ * 租约（leasedUntil）避免同一批被并发领取两次；过期租约可被重新领取，
+ * 使插件崩溃后不丢通知。领取即增加 attempts 计数。
+ */
+export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
+  const now = new Date()
+  const until = new Date(now.getTime() + ASTRBOT_OUTBOX_LEASE_SECONDS * 1000)
+
+  return db.transaction(async (tx) => {
+    const claimable = await tx.select({ id: astrbotOutbox.id }).from(astrbotOutbox)
+      .where(and(
+        isNull(astrbotOutbox.deliveredAt),
+        isNull(astrbotOutbox.failedAt),
+        or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now))
+      ))
+      .orderBy(asc(astrbotOutbox.id))
+      .limit(Math.min(Math.max(limit, 1), ASTRBOT_OUTBOX_MAX_CLAIM))
+      .for('update', { skipLocked: true })
+    if (!claimable.length) return []
+
+    const ids = claimable.map((row) => row.id)
+    return tx.update(astrbotOutbox)
+      .set({ leasedUntil: until, attempts: sql`${astrbotOutbox.attempts} + 1` })
+      .where(inArray(astrbotOutbox.id, ids))
+      .returning()
+  })
+}
+
+/** 回执：标记投递成功。 */
+export async function completeAstrbotOutbox(id: number) {
+  await db.update(astrbotOutbox)
+    .set({ deliveredAt: new Date(), leasedUntil: null, lastError: null })
+    .where(eq(astrbotOutbox.id, id))
+}
+
+/**
+ * 回执：标记本条投递失败。
+ *
+ * 达到 3 次尝试后落 failedAt 停止重试，避免无解的目标被永久重试；
+ * 否则释放租约让下一次轮询重试。
+ */
+export async function failAstrbotOutbox(id: number, reason: string) {
+  const [row] = await db.select({ attempts: astrbotOutbox.attempts }).from(astrbotOutbox)
+    .where(eq(astrbotOutbox.id, id)).limit(1)
+  const exhausted = isAstrbotOutboxExhausted(row?.attempts ?? 0)
+  await db.update(astrbotOutbox).set({
+    leasedUntil: null,
+    lastError: reason.slice(0, 500),
+    ...(exhausted ? { failedAt: new Date() } : {})
+  }).where(eq(astrbotOutbox.id, id))
+}

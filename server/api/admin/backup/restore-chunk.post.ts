@@ -884,6 +884,7 @@ export default defineEventHandler(async (event) => {
               'astrbotBaseUrl',
               'astrbotToken',
               'astrbotBroadcastEnabled',
+              'astrbotPushMode',
               'allowOAuthRegistration',
               'allowRegister',
               'registerRequiresApproval',

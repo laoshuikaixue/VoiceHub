@@ -9,8 +9,15 @@ import {
   chunkAstrbotTargets,
   fitsAstrbotPayload
 } from '~~/server/utils/astrbot-payload'
+import { enqueueAstrbotNotifications } from '~~/server/services/astrbotOutboxService'
 
 export { ASTRBOT_PAYLOAD_MAX_BYTES, astrbotPayloadBytes, chunkAstrbotTargets, fitsAstrbotPayload }
+
+/** 推送方向为 pull 时通知只入队，由插件主动领取；此处不得再直连插件。 */
+async function isPullMode() {
+  const settings = await getSystemSettingsCached()
+  return settings?.astrbotPushMode === 'pull'
+}
 
 /** 仅在单次请求内投递，超时并记录错误；不依赖进程内队列或后台定时器。 */
 export async function postAstrbotNotification(
@@ -55,6 +62,11 @@ export async function sendAstrbotNotificationToUser(userId: number, title: strin
   const [setting] = await db.select({ enabled: notificationSettings.enabled }).from(notificationSettings)
     .where(eq(notificationSettings.userId, userId)).limit(1)
   if (setting && !setting.enabled) return false
+  // pull 模式：入队即视为已受理，实际投递由插件领取后完成。
+  if (await isPullMode()) {
+    const queued = await enqueueAstrbotNotifications([userId], title, content, false)
+    return queued > 0
+  }
   const result = await postAstrbotNotification([user.umo], title, content)
   return result.sent > 0
 }
@@ -62,6 +74,11 @@ export async function sendAstrbotNotificationToUser(userId: number, title: strin
 export async function sendBatchAstrbotNotifications(userIds: number[], title: string, content: string, broadcast = false) {
   const settings = await getSystemSettingsCached()
   if (!settings?.astrbotEnabled) return { success: 0, failed: 0 }
+  // pull 模式：通知只入队，由插件按轮询周期领取投递。
+  if (settings.astrbotPushMode === 'pull') {
+    const queued = await enqueueAstrbotNotifications(userIds, title, content, broadcast)
+    return { success: queued, failed: 0, queued }
+  }
   const uniqueIds = [...new Set(userIds.filter((id) => Number.isInteger(id) && id > 0))]
   const rows = uniqueIds.length ? await db.select({ umo: users.astrbotUmo, enabled: notificationSettings.enabled })
     .from(users)

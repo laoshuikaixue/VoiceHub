@@ -252,6 +252,23 @@ export const astrbotBindingCodes = pgTable('AstrbotBindingCode', {
   consumedAt: timestamp('consumedAt', { withTimezone: true })
 }, (table) => [uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
 
+// AstrBot 待投递队列：插件无法被 VoiceHub 访问（内网/NAT）时，由插件主动轮询取件。
+// 目标在入队时即由绑定表解析完毕，插件只按队列内容投递。
+export const astrbotOutbox = pgTable('AstrbotOutbox', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  title: text('title'),
+  message: text('message').notNull(),
+  url: text('url'),
+  umos: jsonb('umos').$type<string[]>().default([]).notNull(),
+  broadcast: boolean('broadcast').default(false).notNull(),
+  attempts: integer('attempts').default(0).notNull(),
+  leasedUntil: timestamp('leasedUntil', { withTimezone: true }),
+  deliveredAt: timestamp('deliveredAt', { withTimezone: true }),
+  failedAt: timestamp('failedAt', { withTimezone: true }),
+  lastError: text('lastError')
+}, (table) => [index('astrbot_outbox_pending_idx').on(table.deliveredAt, table.failedAt, table.id)]);
+
 // 学期表
 export const semesters = pgTable('Semester', {
   id: serial('id').primaryKey(),
@@ -302,6 +319,9 @@ export const systemSettings = pgTable('SystemSettings', {
   astrbotBaseUrl: text('astrbotBaseUrl'),
   astrbotToken: text('astrbotToken'),
   astrbotBroadcastEnabled: boolean('astrbotBroadcastEnabled').default(false).notNull(),
+  // 推送方向：push = VoiceHub 主动 POST 到插件（需插件可被访问）；
+  // pull = 通知入队，由插件主动轮询领取（插件在内网/NAT 后时使用）。
+  astrbotPushMode: text('astrbotPushMode').default('push').notNull(),
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
   forcePasswordChangeOnFirstLogin: boolean('forcePasswordChangeOnFirstLogin').default(false).notNull(),
