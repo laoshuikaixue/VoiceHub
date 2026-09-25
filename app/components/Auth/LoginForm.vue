@@ -339,6 +339,13 @@
           ref="turnstileRef"
           v-model="turnstileToken"
         />
+        <EsaCaptchaWidget
+          v-else-if="captchaProvider === 'esa'"
+          ref="esaCaptchaRef"
+          v-model="esaVerifyParam"
+          :button-selector="esaButtonSelector"
+          @verified="handleLogin"
+        />
         <CaptchaInput
           v-else
           ref="captchaRef"
@@ -368,6 +375,7 @@
       </div>
 
       <button
+        id="auth-submit-button"
         :disabled="loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')"
         :class="['submit-btn', { 'is-disabled': loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal') }]"
         type="submit"
@@ -487,10 +495,12 @@ import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
+import EsaCaptchaWidget from './EsaCaptchaWidget.vue'
 import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
+import { ESA_CAPTCHA_VERIFY_HEADER } from '~/utils/esaCaptcha'
 
 const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
@@ -516,6 +526,10 @@ const captchaInput = ref('')
 const captchaRef = ref(null)
 const turnstileToken = ref('')
 const turnstileRef = ref(null)
+// 阿里云 ESA AI 验证码：验签参数由前端 SDK 产出，随请求头交给 ESA 边缘验签
+const esaVerifyParam = ref('')
+const esaCaptchaRef = ref(null)
+const esaButtonSelector = '#auth-submit-button'
 
 const showCaptcha = computed(() => {
   // 注册模式开启验证码服务时强制显示验证码
@@ -526,13 +540,14 @@ const showCaptcha = computed(() => {
   if (!captchaEnabled.value) return false
   // 阈值为 0 时每次都显示（bind 接口不校验验证码，绑定模式除外）
   if (captchaProvider.value === 'graphic' && !isBindMode.value && captchaMaxFailures.value === 0) return true
-  return captchaProvider.value === 'turnstile'
+  // Turnstile 与 ESA AI 验证码每次登录均需验证
+  return captchaProvider.value === 'turnstile' || captchaProvider.value === 'esa'
 })
 
-// 验证码未加载完成时禁用提交
+// 验证码未加载完成时禁用提交（Turnstile 与 ESA 均由外部 SDK 自行渲染）
 const captchaPending = computed(() => {
   if (!showCaptcha.value) return false
-  if (captchaProvider.value === 'turnstile') return false
+  if (captchaProvider.value !== 'graphic') return false
   return !captchaId.value
 })
 
@@ -776,6 +791,12 @@ const switchToLogin = () => {
   remark.value = ''
 }
 
+// ESA AI 验证码必须先取得验签参数（参数一次性有效，由 handleLogin 的 verified 回调重新进入提交）
+const ensureEsaCaptchaVerified = () => {
+  if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  return !!esaVerifyParam.value
+}
+
 const handleLogin = async () => {
   if (requireLegalConsent()) return
   if (!username.value || !password.value) {
@@ -794,6 +815,7 @@ const handleLogin = async () => {
       error.value = gradeClassError
       return
     }
+    if (!ensureEsaCaptchaVerified()) return
     return handleRegister()
   }
 
@@ -819,13 +841,15 @@ const handleLogin = async () => {
     return
   }
 
+  if (!ensureEsaCaptchaVerified()) return
+
   await performLogin()
 }
 
 // 发起登录/绑定请求，成功后跳转；返回 'success' | '2fa' | 'failed'
 const performLogin = async () => {
-  // 兜底：验证码未就绪时不提交
-  if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
+  // 兜底：图形验证码未就绪时不提交
+  if (showCaptcha.value && captchaProvider.value === 'graphic' && !captchaId.value) {
     error.value = authLocale.value?.captchaInput?.loadFailed || locale.value.loginFailed
     return 'failed'
   }
@@ -837,9 +861,13 @@ const performLogin = async () => {
     username: username.value,
     password: password.value
   }
+  // 图形验证码与 Turnstile 走请求体；ESA 验签参数走请求头，供 ESA 边缘读取
+  const requestHeaders = {}
   if (showCaptcha.value) {
     if (captchaProvider.value === 'turnstile') {
       requestBody.turnstileToken = turnstileToken.value
+    } else if (captchaProvider.value === 'esa') {
+      requestHeaders[ESA_CAPTCHA_VERIFY_HEADER] = esaVerifyParam.value
     } else {
       requestBody.captchaId = captchaId.value
       requestBody.captchaInput = captchaInput.value.trim()
@@ -852,7 +880,8 @@ const performLogin = async () => {
 
     const response = await $fetch(url, {
       method: 'POST',
-      body: requestBody
+      body: requestBody,
+      headers: requestHeaders
     })
 
     // 账号密码登录成功后记录来源，供微信/QQ 内置浏览器进入主页时引导绑定
@@ -893,6 +922,8 @@ const performLogin = async () => {
       await nextTick()
       if (captchaProvider.value === 'turnstile') {
         turnstileRef.value?.reset?.()
+      } else if (captchaProvider.value === 'esa') {
+        esaCaptchaRef.value?.reset?.()
       } else {
         captchaRef.value?.refreshCaptcha?.()
       }
@@ -1086,9 +1117,13 @@ const handleRegister = async () => {
       requestBody.legalConsentAccepted = legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true
       requestBody.legalConsentVersion = legalConsentVersion.value
     }
+    // 图形验证码与 Turnstile 走请求体；ESA 验签参数走请求头，供 ESA 边缘读取
+    const requestHeaders = {}
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {
         requestBody.turnstileToken = turnstileToken.value
+      } else if (captchaProvider.value === 'esa') {
+        requestHeaders[ESA_CAPTCHA_VERIFY_HEADER] = esaVerifyParam.value
       } else {
         requestBody.captchaId = captchaId.value
         requestBody.captchaInput = captchaInput.value.trim()
@@ -1097,7 +1132,8 @@ const handleRegister = async () => {
 
     const response = await $fetch('/api/auth/register', {
       method: 'POST',
-      body: requestBody
+      body: requestBody,
+      headers: requestHeaders
     })
 
     if (response.success) {
@@ -1126,6 +1162,8 @@ const handleRegister = async () => {
       await nextTick()
       if (captchaProvider.value === 'turnstile') {
         turnstileRef.value?.reset?.()
+      } else if (captchaProvider.value === 'esa') {
+        esaCaptchaRef.value?.reset?.()
       } else {
         captchaRef.value?.refreshCaptcha?.()
       }

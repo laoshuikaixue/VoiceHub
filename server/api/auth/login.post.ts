@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import { getRequestHeader } from 'h3'
 import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
@@ -18,6 +19,7 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
@@ -102,6 +104,11 @@ export default defineEventHandler(async (event) => {
           if (err.statusCode === 400) throw err
           console.error('Turnstile verification error:', err)
           throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
+        }
+      } else if (captchaSettings.provider === 'esa') {
+        // ESA AI 验证码的验签在 ESA 边缘完成，源站只要求请求携带验签参数（不解析内容）
+        if (!getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
+          throw createApiError(400, 'AUTH_CAPTCHA_REQUIRED', '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
         }
       } else {
         captchaId = body.captchaId
