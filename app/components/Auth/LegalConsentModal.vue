@@ -26,16 +26,22 @@ import { useLocale } from '~/utils/locale'
 
 const auth = useAuth()
 const { legalConsentDocuments, legalConsentUpdatedDate } = useSiteConfig()
-const { visible, pendingVersion, ensureLegalConsent, resolveLegalConsentPrompt } = useLegalConsentPrompt()
+const { visible, pendingVersion, promptActive, ensureLegalConsent, resolveLegalConsentPrompt } = useLegalConsentPrompt()
 const { auth: authLocale } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { error: toastError } = useToast()
 const accepting = ref(false)
 
-// 会话建立/恢复（含 OAuth、WebAuthn、刷新重登）后按账号校验是否需要确认条款
-watch([() => auth.isAuthenticated.value, () => auth.user.value?.id], () => {
-  void ensureLegalConsent()
-})
+// 会话建立/恢复后按账号校验是否需要确认条款；覆盖 OAuth 整页重定向、WebAuthn、刷新重登等场景
+// promptActive 依赖异步加载的站点配置，须 immediate 并纳入监听，避免首屏配置未就绪时校验被跳过且不再重跑
+watch(
+  [() => auth.isAuthenticated.value, () => auth.user.value?.id, () => promptActive.value],
+  () => {
+    if (import.meta.server) return
+    void ensureLegalConsent()
+  },
+  { immediate: true }
+)
 
 const handleAccept = async () => {
   if (accepting.value) return
