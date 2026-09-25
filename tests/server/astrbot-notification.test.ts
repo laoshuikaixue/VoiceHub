@@ -31,6 +31,14 @@ test('只允许所支持平台的私聊 UMO', () => {
   assert.equal(parseAstrbotPrivateUmo('one:FriendMessage:', 'lark'), null)
 })
 
+test('中文平台实例 ID 的私聊 UMO 可绑定，仍拒绝分隔符和控制字符', () => {
+  const umo = 'QQ（诺玛劳恩斯）:FriendMessage:1375899646'
+  assert.deepEqual(parseAstrbotPrivateUmo(umo, 'aiocqhttp'), { umo, platform: 'aiocqhttp' })
+  for (const prefix of ['QQ:副本', 'QQ\n副本', 'QQ\u0000副本', 'QQ 副本']) {
+    assert.equal(parseAstrbotPrivateUmo(`${prefix}:FriendMessage:1375899646`, 'aiocqhttp'), null)
+  }
+})
+
 test('机器人服务地址仅接受无凭证 HTTP(S) 根地址', () => {
   assert.equal(normalizeAstrbotBaseUrl('https://astrbot.example.com:6199/'), 'https://astrbot.example.com:6199')
   assert.equal(normalizeAstrbotBaseUrl('http://127.0.0.1:6199'), 'http://127.0.0.1:6199')

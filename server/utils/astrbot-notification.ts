@@ -39,7 +39,7 @@ export function isAstrbotPrivateUmoShape(umo: unknown): umo is string {
   if (typeof umo !== 'string' || umo.length > 512) return false
   const parts = umo.split(':')
   return parts.length === 3 && parts[1] === 'FriendMessage' && !!parts[0] && !!parts[2] &&
-    /^[A-Za-z0-9_-]+$/.test(parts[0]) && !/[\r\n]/.test(umo)
+    !/[\s\p{Cc}]/u.test(parts[0]) && !/[\r\n]/.test(umo)
 }
 
 /** 仅允许带正确适配器 ID 的私聊 UMO；不接受群聊/OtherMessage。 */
