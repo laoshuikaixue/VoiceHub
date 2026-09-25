@@ -779,6 +779,7 @@ VoiceHub/
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserApprovalModal.vue  # 用户注册审核弹窗
+│   │   │   ├── UserExportModal.vue    # 用户导出弹窗
 │   │   │   ├── GradeClassManager.vue  # 年级班级配置管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
@@ -1161,6 +1162,7 @@ VoiceHub/
 │   │   │       ├── batch-status.put.ts # 批量状态更新
 │   │   │       ├── batch-update.post.ts # 批量更新用户
 │   │   │       ├── batch.post.ts    # 批量操作用户
+│   │   │       ├── export.get.ts    # 导出用户列表
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
@@ -1443,6 +1445,7 @@ VoiceHub/
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── user-archive.ts # 账号归档判定转发导出（权威实现在 app/utils）
 │   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
+│   │   ├── user-filter.ts  # 用户列表/导出共用筛选条件构建
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置

@@ -1,11 +1,9 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { and, asc, desc, count, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm'
+import { asc, desc, count, sql } from 'drizzle-orm'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
-import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/user-archive'
-
-const UNSET_FILTER_VALUE = '__UNSET__'
+import { buildUserFilterConditions } from '~~/server/utils/user-filter'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,65 +18,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const query = getQuery(event)
-    const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc', archived } = query
+    const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
 
     // 构建筛选条件
-    const whereConditions = []
-
-    // 年级筛选
-    if (grade && typeof grade === 'string' && grade.trim()) {
-      const gradeFilter = grade.trim()
-      whereConditions.push(
-        gradeFilter === UNSET_FILTER_VALUE
-          ? or(isNull(users.grade), eq(users.grade, ''))
-          : eq(users.grade, gradeFilter)
-      )
-    }
-
-    // 班级筛选
-    if (className && typeof className === 'string' && className.trim()) {
-      const classFilter = className.trim()
-      whereConditions.push(
-        classFilter === UNSET_FILTER_VALUE
-          ? or(isNull(users.class), eq(users.class, ''))
-          : eq(users.class, classFilter)
-      )
-    }
-
-    // 角色筛选
-    if (role && typeof role === 'string' && role.trim()) {
-      whereConditions.push(eq(users.role, role.trim()))
-    }
-
-    // 状态筛选
-    if (status && typeof status === 'string' && status.trim()) {
-      const statusFilter = status.trim()
-      if (['active', 'pending', 'withdrawn', 'graduate'].includes(statusFilter)) {
-        whereConditions.push(eq(users.status, statusFilter as 'active' | 'pending' | 'withdrawn' | 'graduate'))
-      }
-    }
-
-    // 归档筛选：archived=1 仅查已归档（graduate/withdrawn）；archived=0 排除已归档；缺省不限制
-    const archivedFilter = resolveArchivedFilter(archived)
-    if (archivedFilter === 'archived') {
-      whereConditions.push(inArray(users.status, [...ARCHIVED_USER_STATUSES]))
-    } else if (archivedFilter === 'unarchived') {
-      whereConditions.push(notInArray(users.status, [...ARCHIVED_USER_STATUSES]))
-    }
-
-    // 搜索功能（姓名、用户名或IP地址）
-    if (search && typeof search === 'string' && search.trim()) {
-      const searchTerm = search.trim()
-      whereConditions.push(
-        or(
-          ilike(users.name, `%${searchTerm}%`),
-          ilike(users.username, `%${searchTerm}%`),
-          ilike(users.lastLoginIp, `%${searchTerm}%`)
-        )
-      )
-    }
-
-    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
+    const whereClause = buildUserFilterConditions(query)
 
     // 分页参数
     const pageNum = Math.max(1, parseInt(page as string) || 1)

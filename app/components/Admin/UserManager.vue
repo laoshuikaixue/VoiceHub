@@ -25,6 +25,13 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          @click="openExportModal"
+        >
+          <Download class="text-primary" :size="14" />
+          {{ locale.export }}
+        </button>
+        <button
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
           @click="showBatchUpdateModal = true"
         >
           <Layers class="text-info" :size="14" />
@@ -1118,6 +1125,18 @@
       @update-success="handleBatchUpdateSuccess"
     />
 
+    <!-- 导出用户模态框 -->
+    <UserExportModal
+      :show="showExportModal"
+      :exporting="exporting"
+      :grades="gradeOptions"
+      :classes="classOptions"
+      :role-options="allRoles"
+      :initial-filters="exportInitialFilters"
+      @close="showExportModal = false"
+      @export="handleExportUsers"
+    />
+
     <!-- 用户歌曲模态框 -->
     <UserSongsModal
       :show="showUserSongsModal"
@@ -1641,6 +1660,7 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import OAuthBindingsModal from '~/components/Admin/OAuthBindingsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
+import UserExportModal from '~/components/Admin/UserExportModal.vue'
 import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
@@ -1648,6 +1668,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
+import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
@@ -1772,6 +1793,12 @@ const importProgressText = ref('')
 
 // 批量更新状态
 const showBatchUpdateModal = ref(false)
+
+// 导出用户状态
+const showExportModal = ref(false)
+const exporting = ref(false)
+const gradeOptions = ref([])
+const classOptions = ref([])
 
 // 删除确认状态
 const showDeleteModal = ref(false)
@@ -2583,12 +2610,129 @@ const loadUserTree = async () => {
 
     treeUsers.value = response.treeUsers || []
     archivedCount.value = response.archivedCount || 0
+    // 供导出模态框的年级/班级筛选下拉使用
+    gradeOptions.value = response.grades || []
+    classOptions.value = response.classes || []
     expandDefaultTreeNodes()
   } catch (error) {
     console.error('加载组织结构失败:', error)
     treeError.value = getErrorDetail(error) || locale.value.organization.loadFailed
   } finally {
     treeLoading.value = false
+  }
+}
+
+// 导出用户：以当前列表筛选作为导出窗口初始值
+const exportInitialFilters = computed(() => ({
+  role: roleFilter.value || '',
+  status: statusFilter.value || '',
+  grade: toUserFilterQuery(gradeFilter.value, unsetGradeLabel.value) || '',
+  class: toUserFilterQuery(classFilter.value, unsetClassLabel.value) || '',
+  archived: showArchived.value ? '1' : '0'
+}))
+
+const openExportModal = () => {
+  showExportModal.value = true
+}
+
+// 将导出行的指定字段转为可读文本（role/status 按界面语言本地化，时间已在服务端格式化为北京时间）
+const exportCellValue = (fieldKey, user) => {
+  const exportLocale = locale.value.exportModal || {}
+  const bool = exportLocale.boolean || {}
+  const verified = exportLocale.verified || {}
+  switch (fieldKey) {
+    case 'id':
+      return user.id ?? ''
+    case 'username':
+      return user.username || ''
+    case 'name':
+      return user.name || ''
+    case 'role':
+      return getRoleName(user.role)
+    case 'grade':
+      return user.grade || ''
+    case 'class':
+      return user.class || ''
+    case 'status':
+      return getStatusName(user.status)
+    case 'email':
+      return user.email || ''
+    case 'emailVerified':
+      return user.emailVerified ? verified.yes : verified.no
+    case 'meowNickname':
+      return user.meowNickname || ''
+    case 'remark':
+      return user.remark || ''
+    case 'lastLogin':
+      return user.lastLogin || ''
+    case 'lastLoginIp':
+      return user.lastLoginIp || ''
+    case 'statusChangedAt':
+      return user.statusChangedAt || ''
+    case 'passwordChangedAt':
+      return user.passwordChangedAt || ''
+    case 'meowBoundAt':
+      return user.meowBoundAt || ''
+    case 'forcePasswordChange':
+      return user.forcePasswordChange ? bool.yes : bool.no
+    case 'createdAt':
+      return user.createdAt || ''
+    case 'updatedAt':
+      return user.updatedAt || ''
+    case 'providers':
+      return (user.providers || []).map((provider) => getProviderDisplayName(provider)).join('、')
+    default:
+      return ''
+  }
+}
+
+const buildExportFileName = () => {
+  const prefix = (locale.value.exportModal || {}).fileNamePrefix || 'users'
+  return `${prefix}_${formatDateTime(getBeijingTime(), 'YYYYMMDD')}.xlsx`
+}
+
+const handleExportUsers = async ({ fields, filters }) => {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    // 复用导入的 XLSX 加载逻辑（CDN 动态引入）
+    if (!window.XLSX) {
+      await loadXLSX()
+      if (!window.XLSX) {
+        window.$showNotification?.(locale.value.errors.xlsxLoadFailed, 'error')
+        return
+      }
+    }
+
+    const exportLocale = locale.value.exportModal || {}
+    const response = await $fetch('/api/admin/users/export', {
+      query: filters,
+      ...auth.getAuthConfig()
+    })
+    const rows = response.users || []
+    if (rows.length === 0) {
+      window.$showNotification?.(exportLocale.emptyResult, 'info')
+      return
+    }
+
+    const headerMap = exportLocale.fields || {}
+    const sheetData = [
+      fields.map((key) => headerMap[key] || key),
+      ...rows.map((user) => fields.map((key) => exportCellValue(key, user)))
+    ]
+    const ws = window.XLSX.utils.aoa_to_sheet(sheetData)
+    const wb = window.XLSX.utils.book_new()
+    window.XLSX.utils.book_append_sheet(wb, ws, exportLocale.sheetName || 'Sheet1')
+    window.XLSX.writeFile(wb, buildExportFileName())
+
+    window.$showNotification?.(formatMessage(exportLocale.success, rows.length), 'success')
+    showExportModal.value = false
+  } catch (error) {
+    console.error('导出用户失败:', error)
+    const exportLocale = locale.value.exportModal || {}
+    window.$showNotification?.(exportLocale.failed, 'error')
+  } finally {
+    exporting.value = false
   }
 }
 
