@@ -33,12 +33,29 @@ const SCRIPT_ID = 'aliyun-captcha-script'
 const SCRIPT_SRC = 'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js'
 const MAX_RETRIES = 50 // 每次 100ms，共 5 秒
 
+// 验证码主体宽度；官方对滑块形态建议不小于 320px，低于 320 会被服务端按 320 处理
+const CAPTCHA_SLIDE_WIDTH = 360
+const CAPTCHA_POPUP_PADDING = 32 // 弹窗左右各 16px 内边距
+const CAPTCHA_MIN_REM = 0.5
+
 let captchaInstance = null
 let retryCount = 0
 let retryTimer = null
 const initialized = ref(false)
 
 const resolveLanguage = () => (currentLocale.value === 'en-US' ? 'en' : 'cn')
+
+/**
+ * 窄屏缩放系数。官方 rem 参数会等比缩放整套验证码 UI（含内部坐标系），
+ * 因此不会像覆盖 SDK 内部样式那样让滑块、拼图形态的校验失败。
+ */
+const resolveRem = () => {
+  const viewportWidth = document.documentElement.clientWidth || window.innerWidth || 0
+  const need = CAPTCHA_SLIDE_WIDTH + CAPTCHA_POPUP_PADDING
+  const available = viewportWidth - 16
+  if (!viewportWidth || available >= need) return 1
+  return Math.max(CAPTCHA_MIN_REM, Math.floor((available / need) * 100) / 100)
+}
 
 const initCaptcha = () => {
   if (initialized.value) return
@@ -85,9 +102,11 @@ const initCaptcha = () => {
     },
     server: getEsaCaptchaServers(siteConfig.value.esaCaptchaRegion),
     slideStyle: {
-      width: 360,
+      width: CAPTCHA_SLIDE_WIDTH,
       height: 40
-    }
+    },
+    // 窄屏时由官方 rem 参数等比缩放，避免弹窗宽度超出视口
+    rem: resolveRem()
   })
 }
 
@@ -140,41 +159,5 @@ onUnmounted(() => {
 .esa-captcha-widget {
   display: flex;
   justify-content: center;
-}
-</style>
-
-<style>
-@media (max-width: 768px) {
-  #aliyunCaptcha-window-popup:has(#aliyunCaptcha-checkbox-wrapper) {
-    box-sizing: border-box;
-    width: 360px !important;
-    max-width: calc(100vw - 32px) !important;
-  }
-
-  #aliyunCaptcha-checkbox-wrapper {
-    box-sizing: border-box;
-    width: 100% !important;
-  }
-
-  #aliyunCaptcha-checkbox-body {
-    position: relative;
-    width: 100%;
-  }
-
-  #aliyunCaptcha-checkbox-logo {
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
-  }
-
-  #aliyunCaptcha-checkbox-text-box {
-    flex: 0 0 auto;
-    width: auto;
-  }
-
-  #aliyunCaptcha-checkbox-text {
-    white-space: nowrap !important;
-  }
 }
 </style>
