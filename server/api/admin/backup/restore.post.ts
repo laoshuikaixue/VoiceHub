@@ -1289,7 +1289,10 @@ export default defineEventHandler(async (event) => {
                           'autoBackupConfig',
                           'statisticsCodeEnabled',
                           'statisticsCode',
-                          'legalConsentEnabled', 'legalConsentDisplayMode', 'legalConsentUpdatedDate', 'legalConsentDocuments',
+                          'legalConsentEnabled',
+                          'legalConsentDisplayMode',
+                          'legalConsentUpdatedDate',
+                          'legalConsentDocuments',
                           'enabledPlatforms',
                           'platformOrder'
                         ]

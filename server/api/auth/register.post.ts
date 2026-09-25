@@ -192,7 +192,7 @@ export default defineEventHandler(async (event) => {
         lastLogin: now,
         forcePasswordChange: false,
         legalConsentVersion: legalConsentVersion || null,
-        legalConsentAt: legalConsentVersion ? getServerDate() : null
+        legalConsentAt: legalConsentVersion ? now : null
       })
       .onConflictDoNothing()
       .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]

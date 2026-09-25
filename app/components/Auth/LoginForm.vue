@@ -492,7 +492,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentUpdatedDate, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -549,7 +549,6 @@ const grade = ref('')
 const studentClass = ref('')
 const password = ref('')
 const loginTermsAccepted = ref(false)
-const legalConsentStorageKey = computed(() => `voicehub.legalConsent.${legalConsentVersion.value || 'none'}`)
 const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
 const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
 const confirmPassword = ref('')
@@ -566,20 +565,10 @@ const userId2FA = ref(0)
 const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
-onMounted(() => {
-  const restoreLegalConsent = () => {
-    if (!legalConsentActive.value) return
-    // 按浏览器本地记忆恢复勾选状态（与账号无关），条款内容版本变化后自动失效
-    try { loginTermsAccepted.value = localStorage.getItem(legalConsentStorageKey.value) === 'true' } catch { loginTermsAccepted.value = false }
-  }
-  restoreLegalConsent()
-  watch(legalConsentActive, restoreLegalConsent)
-  watch(loginTermsAccepted, (accepted) => {
-    // 无论勾选还是取消都记录，刷新后恢复上一次的状态
-    try { localStorage.setItem(legalConsentStorageKey.value, String(accepted)) } catch {}
-    if (!accepted && legalConsentActive.value) error.value = locale.value.legalConsentBlocked
-    if (accepted && error.value === locale.value.legalConsentBlocked) error.value = ''
-  })
+watch(loginTermsAccepted, (accepted) => {
+  // 复选框每次均需手动勾选（不本地持久化，避免跨账号预勾选），取消勾选时同步提示错误
+  if (!accepted && legalConsentActive.value) error.value = locale.value.legalConsentBlocked
+  if (accepted && error.value === locale.value.legalConsentBlocked) error.value = ''
 })
 const remark = ref('')
 const email = ref('')
@@ -712,8 +701,8 @@ const redirectAfterLogin = async () => {
 }
 
 const handle2FASuccess = async () => {
-  await recordLegalConsent()
   await auth.initAuth(true)
+  await recordLegalConsent()
   await redirectAfterLogin()
 }
 
@@ -1172,6 +1161,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
     if (verification.success) {
       // 登录成功
       await auth.initAuth(true)
+      await recordLegalConsent()
       return redirectAfterLogin()
     }
   } catch (e) {

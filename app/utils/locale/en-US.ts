@@ -4616,4 +4616,3 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_UPDATE_FAILED: 'Failed to update notification',
   NOTIFICATION_HISTORY_DELETE_FAILED: 'Failed to delete notification',
 } as const
-

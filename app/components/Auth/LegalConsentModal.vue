@@ -29,6 +29,7 @@ const { legalConsentDocuments, legalConsentUpdatedDate } = useSiteConfig()
 const { visible, pendingVersion, promptActive, ensureLegalConsent, resolveLegalConsentPrompt } = useLegalConsentPrompt()
 const { auth: authLocale } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
+const { localize: localizeServerError } = useServerErrors()
 const { error: toastError } = useToast()
 const accepting = ref(false)
 
@@ -51,7 +52,25 @@ const handleAccept = async () => {
     try {
       await $fetch('/api/legal-consent', { method: 'POST', body: { version: pendingVersion.value } })
     } catch (e) {
-      console.error('记录条款同意状态失败:', e)
+      accepting.value = false
+      // 会话已失效：关闭弹窗并终止本次登录
+      if (e?.statusCode === 401 || e?.data?.statusCode === 401) {
+        visible.value = false
+        resolveLegalConsentPrompt(false)
+        await auth.logout()
+        return
+      }
+      // 条款版本刚被更新（409）：拉取最新指纹，保持弹窗打开供用户重新确认
+      if (extractErrorCode(e) === 'AUTH_LEGAL_CONSENT_REQUIRED') {
+        try {
+          const status = await $fetch('/api/legal-consent')
+          if (status?.consentVersion) pendingVersion.value = status.consentVersion
+        } catch {
+          // 拉取失败则保留当前版本，用户重试时由服务端 409 再次纠正
+        }
+      }
+      toastError(localizeServerError(e, locale.value.legalConsentBlocked))
+      return
     }
   }
   accepting.value = false

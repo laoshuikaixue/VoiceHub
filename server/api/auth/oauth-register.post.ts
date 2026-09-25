@@ -156,7 +156,7 @@ export default defineEventHandler(async (event) => {
           avatarProvider: avatarUrl ? payload.provider : null,
           avatarProviderUserId: avatarUrl ? payload.providerUserId : null,
           legalConsentVersion: legalConsentVersion || null,
-          legalConsentAt: legalConsentVersion ? getServerDate() : null
+          legalConsentAt: legalConsentVersion ? now : null
         })
         .onConflictDoNothing()
         .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]

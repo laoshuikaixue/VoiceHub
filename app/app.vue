@@ -65,27 +65,6 @@ const audioPlayer = useAudioPlayer()
 const currentSong = ref(null)
 const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
 const shouldHidePlayer = computed(() => route.path === '/change-password')
-let legalConsentSynced = false
-
-const syncAcceptedLegalConsent = async () => {
-  if (legalConsentSynced || !isAuthenticated.value || typeof localStorage === 'undefined') return
-  // 本地无任何同意记录时跳过，避免每次登录都请求
-  const hasAnyConsent = Object.keys(localStorage).some((key) => key.startsWith('voicehub.legalConsent.'))
-  if (!hasAnyConsent) return
-  legalConsentSynced = true
-  try {
-    const info = await $fetch('/api/legal-consent')
-    if (!info?.enabled || info.accepted || !info.consentVersion) return
-    // 弹窗模式由登录后的条款弹窗按账号显式记录，禁止依据本地存储自动补记（本地记录与账号无关）
-    if (info.displayMode === 'modal') return
-    // 必须显式同意过“当前版本”（登录页仅在用户点击同意时写入该键），否则绝不记录，避免旧版本记录污染当前版本
-    if (localStorage.getItem(`voicehub.legalConsent.${info.consentVersion}`) !== 'true') return
-    await $fetch('/api/legal-consent', { method: 'POST', body: { version: info.consentVersion } })
-  } catch (error) {
-    legalConsentSynced = false
-    console.warn('同步条款同意状态失败:', error)
-  }
-}
 
 // 判断是否为播放列表模式
 // 投稿页面、搜索预览等场景不是播放列表模式，不应该自动跳过
@@ -231,14 +210,9 @@ const setupHarmonyOSListeners = () => {
 }
 
 // 在组件挂载后初始化认证（只会在客户端执行）
-onMounted(async () => {
+onMounted(() => {
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
-  await syncAcceptedLegalConsent()
-})
-
-watch(() => isAuthenticated.value, () => {
-  void syncAcceptedLegalConsent()
 })
 
 // 重要通知仅在登录或会话恢复时检查一次，不做轮询，避免增加服务器负担
