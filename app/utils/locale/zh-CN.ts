@@ -342,7 +342,9 @@ export const common = {
     title: '服务条款',
     updated: '最后更新：',
     notFound: '文档不存在',
-    login: '登录'
+    login: '登录',
+    related: '相关文档',
+    backHome: '返回首页'
   }
 } as const
 

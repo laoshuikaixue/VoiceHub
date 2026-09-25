@@ -331,7 +331,9 @@ export const common = {
     title: 'Terms of Service',
     updated: 'Last updated: ',
     notFound: 'Document not found',
-    login: 'Log In'
+    login: 'Log In',
+    related: 'Related documents',
+    backHome: 'Back to home'
   }
 } as const
 
