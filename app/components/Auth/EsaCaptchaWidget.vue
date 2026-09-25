@@ -151,6 +151,16 @@ onUnmounted(() => {
     max-width: calc(100vw - 32px) !important;
   }
 
+  #aliyunCaptcha-checkbox-wrapper {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  #aliyunCaptcha-checkbox-logo {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
   #aliyunCaptcha-checkbox-text-box {
     flex: 0 0 auto;
     width: auto;
