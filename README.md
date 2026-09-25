@@ -1258,7 +1258,11 @@ VoiceHub/
 │   │   │   ├── read-all.post.ts     # 标记所有已读
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
-│   │   ├── bot/            # AstrBot 插件令牌回调（绑定/解绑）
+│   │   ├── bot/            # AstrBot 插件令牌回调（绑定/解绑/目标校验）
+│   │   │   ├── voicehub/            # 私聊绑定与目标校验回调
+│   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
+│   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
+│   │   │   │   └── verify-targets.post.ts # 推送前逐个核对私聊绑定
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
 │   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
@@ -1482,6 +1486,7 @@ VoiceHub/
 │       ├── password-policy.test.ts # 密码策略测试
 │       ├── player-layout.test.ts # 播放器自由拖拽限位与偏好解析测试
 │       ├── qq-comment-normalize.test.ts # QQ音乐评论归一化测试
+│       ├── registration-astrbot.test.ts # 注册审核机器人通知调用路径测试
 │       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
 │       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
 │       ├── token-version-policy.test.ts # 令牌版本策略测试

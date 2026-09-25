@@ -3,6 +3,14 @@ import { db } from '~/drizzle/db'
 import { notificationSettings, users } from '~/drizzle/schema'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { ASTRBOT_TOKEN_HEADER, normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
+import {
+  ASTRBOT_PAYLOAD_MAX_BYTES,
+  astrbotPayloadBytes,
+  chunkAstrbotTargets,
+  fitsAstrbotPayload
+} from '~~/server/utils/astrbot-payload'
+
+export { ASTRBOT_PAYLOAD_MAX_BYTES, astrbotPayloadBytes, chunkAstrbotTargets, fitsAstrbotPayload }
 
 /** 仅在单次请求内投递，超时并记录错误；不依赖进程内队列或后台定时器。 */
 export async function postAstrbotNotification(
@@ -14,6 +22,10 @@ export async function postAstrbotNotification(
     return { sent: 0, failed: 0 }
   }
 
+  if (!fitsAstrbotPayload(umos, title, content, group)) {
+    throw new Error('AstrBot 推送请求超过大小限制')
+  }
+
   const targets = { umo: [...new Set(umos)], group }
   const url = `${baseUrl}/voicehub/push`
   const controller = new AbortController()
@@ -23,7 +35,8 @@ export async function postAstrbotNotification(
       method: 'POST',
       headers: { 'content-type': 'application/json', [ASTRBOT_TOKEN_HEADER]: settings.astrbotToken },
       body: JSON.stringify({ title, content, targets }),
-      signal: controller.signal
+      signal: controller.signal,
+      redirect: 'error'
     })
     const result = await response.json().catch(() => null)
     if (!response.ok || !result || result.success !== true || typeof result.sent !== 'number') {
@@ -57,23 +70,27 @@ export async function sendBatchAstrbotNotifications(userIds: number[], title: st
   const umos = rows.filter((row) => row.enabled !== false && !!row.umo).map((row) => row.umo!)
   let success = 0
   let failed = 0
-  // 插件单次请求最多接收 200 个目标；广播只随第一批发送一次。
-  const chunks = [] as string[][]
   const shouldBroadcast = broadcast && !!settings.astrbotBroadcastEnabled
   if (!shouldBroadcast && !umos.length) return { success: 0, failed: 0 }
-  for (let i = 0; i < umos.length; i += 200) chunks.push(umos.slice(i, i + 200))
-  if (shouldBroadcast && chunks.length && chunks[0]!.length === 200) {
-    chunks.unshift([])
+  // 正文本身超出插件请求体上限时无法投递任何目标；这里按失败计数返回并明确记录，
+  // 避免调用方只看到“通知发送成功”而机器人推送其实被静默丢弃。
+  if (!fitsAstrbotPayload([], title, content, false)) {
+    console.error('AstrBot 推送已跳过：通知正文超过单次请求大小限制')
+    return { success: 0, failed: Math.max(umos.length, 1) }
   }
-  if (!chunks.length && shouldBroadcast) chunks.push([])
-  for (const [index, chunk] of chunks.entries()) {
+  const { chunks, skipped } = chunkAstrbotTargets(umos, title, content)
+  failed += skipped
+  if (shouldBroadcast) {
+    if (fitsAstrbotPayload([], title, content, true)) chunks.unshift([])
+    else failed++
+  }
+  for (const chunk of chunks) {
     try {
-      const result = await postAstrbotNotification(chunk, title, content,
-        index === 0 && shouldBroadcast)
+      const result = await postAstrbotNotification(chunk, title, content, shouldBroadcast && chunk.length === 0)
       success += result.sent
       failed += result.failed
     } catch (error) {
-      failed += chunk.length
+      failed += chunk.length || (shouldBroadcast ? 1 : 0)
       console.error('批量发送 AstrBot 通知失败:', error)
     }
   }

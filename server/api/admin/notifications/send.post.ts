@@ -124,6 +124,9 @@ export default defineEventHandler(async (event) => {
   if (!supportedScopes.includes(scope as (typeof supportedScopes)[number])) {
     throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_SCOPE_INVALID, '无效的通知范围')
   }
+  if (body?.broadcast === true && scope !== 'ALL') {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群广播仅可用于全员通知')
+  }
 
   const filter = (
     body?.filter && typeof body.filter === 'object' ? body.filter : {}
@@ -202,6 +205,9 @@ export default defineEventHandler(async (event) => {
   }
 
   if (userIds.length === 0) {
+    if (body?.broadcast === true) {
+      throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_USERS_REQUIRED, '无全员用户可发送，群广播已取消')
+    }
     return {
       success: true,
       message: '没有找到符合条件的用户',

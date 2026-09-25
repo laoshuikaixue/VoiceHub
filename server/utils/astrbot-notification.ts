@@ -22,15 +22,42 @@ export function equalAstrbotToken(actual: string, expected: string) {
   return a.length === b.length && timingSafeEqual(a, b)
 }
 
+/** 平台标识是否在受支持的适配器白名单内。 */
+export function isSupportedAstrbotPlatform(value: unknown): value is string {
+  return typeof value === 'string' &&
+    (ASTRBOT_PLATFORM_NAMES as readonly string[]).includes(value)
+}
+
+/**
+ * 仅校验私聊 UMO 的形态，不限定平台标识。
+ *
+ * AstrBot 的 UMO 前缀取自平台实例 ID（platform_meta.id），它可以被管理员
+ * 改成任意合法字符串，因此不能要求它等于适配器名；适配器是否受支持改由
+ * 绑定阶段记录的 platform 字段判定。
+ */
+export function isAstrbotPrivateUmoShape(umo: unknown): umo is string {
+  if (typeof umo !== 'string' || umo.length > 512) return false
+  const parts = umo.split(':')
+  return parts.length === 3 && parts[1] === 'FriendMessage' && !!parts[0] && !!parts[2] &&
+    /^[A-Za-z0-9_-]+$/.test(parts[0]) && !/[\r\n]/.test(umo)
+}
+
 /** 仅允许带正确适配器 ID 的私聊 UMO；不接受群聊/OtherMessage。 */
 export function parseAstrbotPrivateUmo(umo: unknown, platform: unknown) {
-  if (typeof umo !== 'string' || typeof platform !== 'string' ||
-    umo.length > 512 || !ASTRBOT_PLATFORM_NAMES.includes(platform as typeof ASTRBOT_PLATFORM_NAMES[number])) return null
-  const parts = umo.split(':')
-  if (parts.length !== 3 || parts[1] !== 'FriendMessage' || !parts[0] || !parts[2] ||
-    !/^[A-Za-z0-9_-]+$/.test(parts[0]) ||
-    /[\r\n]/.test(umo)) return null
-  return { umo, platform }
+  if (!isSupportedAstrbotPlatform(platform)) return null
+  return isAstrbotPrivateUmoShape(umo) ? { umo, platform } : null
+}
+
+/**
+ * 校验 UMO 形态，并要求其前缀本身是一个受支持的适配器名。
+ *
+ * 注意：AstrBot 的 UMO 前缀取自平台实例 ID（可被管理员改名），并不保证等于
+ * 适配器名，因此**不要**用本函数校验推送目标；目标确认请用绑定表的
+ * `astrbotPlatform` 列（见 selectConfirmedAstrbotTargets）。
+ */
+export function isSupportedAstrbotPrivateUmo(umo: unknown): umo is string {
+  return isAstrbotPrivateUmoShape(umo) &&
+    parseAstrbotPrivateUmo(umo, umo.split(':')[0]) !== null
 }
 
 export function normalizeAstrbotBaseUrl(raw: unknown) {

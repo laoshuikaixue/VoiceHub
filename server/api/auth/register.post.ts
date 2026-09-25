@@ -196,8 +196,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 需要审核：不签发登录态，等待管理员审核
-    // 注册通知（异步，不阻塞主流程）
-    void notifyRegistration(insertedUser.id, username, name, email, requiresApproval)
+    // 注册通知：待审核时通知管理员，失败不影响注册结果
+    await notifyRegistration(username, name, email, requiresApproval)
 
     if (requiresApproval) {
       return {

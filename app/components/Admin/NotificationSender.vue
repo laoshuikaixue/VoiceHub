@@ -75,7 +75,7 @@
             </label>
 
             <!-- 范围选择 -->
-            <label class="flex items-center gap-3 rounded-xl border border-border-secondary p-4 text-sm text-text-secondary">
+            <label v-if="form.scope === 'ALL'" class="flex items-center gap-3 rounded-xl border border-border-secondary p-4 text-sm text-text-secondary">
               <input v-model="form.broadcast" type="checkbox" class="accent-primary">
               <span>{{ locale.astrbotBroadcast }}</span>
             </label>
@@ -790,7 +790,7 @@ const sendNotification = async () => {
       title: form.value.title,
       content: form.value.content,
       important: form.value.important,
-      broadcast: form.value.broadcast,
+      broadcast: form.value.scope === 'ALL' && form.value.broadcast,
       scope: form.value.scope,
       filter: {}
     }

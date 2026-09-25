@@ -248,7 +248,7 @@ export const astrbotBindingCodes = pgTable('AstrbotBindingCode', {
   userId: integer('userId').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   codeHash: text('codeHash').notNull(),
   expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
-  attempts: integer('attempts').default(0).notNull(),
+  attempts: integer('attempts').default(0).notNull(), // 历史遗留字段：绑定码已改为一次性消费 + 过期时间控制，当前不再累加或校验
   consumedAt: timestamp('consumedAt', { withTimezone: true })
 }, (table) => [uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
 
