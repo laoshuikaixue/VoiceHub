@@ -333,7 +333,11 @@
         </div>
       </div>
 
-      <div v-show="showCaptcha" class="form-group">
+      <div
+        v-show="showCaptcha"
+        class="form-group"
+        :class="{ 'esa-captcha-mount': captchaProvider === 'esa' }"
+      >
         <TurnstileWidget
           v-if="captchaProvider === 'turnstile'"
           ref="turnstileRef"
@@ -1313,6 +1317,11 @@ const handleWebAuthnLogin = async () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ESA 为弹窗形态，挂载点没有可见内容；移出 flex 布局避免在表单里占出一段空白 */
+.esa-captcha-mount {
+  position: absolute;
 }
 
 .form-group label {

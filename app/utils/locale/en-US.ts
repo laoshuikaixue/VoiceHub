@@ -107,7 +107,7 @@ export const siteConfig = {
   esaCaptchaPrefixPlaceholder: 'Enter the Identity shown at the top right of the ESA AI CAPTCHA configuration page',
   esaCaptchaSceneId: 'Scene ID',
   esaCaptchaScenes: 'Scene ID Rules',
-  esaCaptchaScenesDesc: 'Each row maps to one CAPTCHA rule in the ESA console: the Endpoint column decides whether the Scene ID is used for login or registration, and the Domain column tells rules apart in multi-domain deployments, where an exact domain wins over *.domain, which wins over *.',
+  esaCaptchaScenesDesc: 'Each row maps to one CAPTCHA rule in the ESA console. The "API to be verified" field takes a path only, without the protocol or the domain (the path of each endpoint is shown under the Endpoint column, e.g. /api/auth/login), and one rule covers only one path, so create a separate rule for the login and registration endpoints on every public domain, then copy their Scene IDs into the table below. The Domain column tells rules apart in multi-domain deployments, where an exact domain wins over *.domain, which wins over *.',
   esaCaptchaAddScene: 'Add Rule',
   esaCaptchaEndpoint: 'Endpoint',
   esaCaptchaEndpointLogin: 'Login',

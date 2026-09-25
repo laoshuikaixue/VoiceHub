@@ -4,6 +4,7 @@ import {
   ESA_CAPTCHA_ANY_HOST,
   ESA_CAPTCHA_DEFAULT_REGION,
   ESA_CAPTCHA_ENDPOINTS,
+  ESA_CAPTCHA_ENDPOINT_PATHS,
   ESA_CAPTCHA_REGIONS,
   ESA_CAPTCHA_VERIFY_HEADER,
   getEsaCaptchaServers,
@@ -48,6 +49,15 @@ test('验签参数请求头名称固定为 captcha-verify-param', () => {
 test('受保护接口枚举包含登录与注册', () => {
   assert.deepEqual([...ESA_CAPTCHA_ENDPOINTS], ['login', 'register'])
   assert.equal(ESA_CAPTCHA_ANY_HOST, '*')
+})
+
+test('每个受保护接口都登记了可供填写的路径', () => {
+  // 路径会直接展示在后台供管理员粘到 ESA 控制台，漏配会显示为空白
+  assert.deepEqual(Object.keys(ESA_CAPTCHA_ENDPOINT_PATHS).sort(), [...ESA_CAPTCHA_ENDPOINTS].sort())
+  for (const endpoint of ESA_CAPTCHA_ENDPOINTS) {
+    const path = ESA_CAPTCHA_ENDPOINT_PATHS[endpoint]
+    assert.match(path, /^\/api\/auth\/[a-z-]+$/, `${endpoint} 的路径应为 /api/auth/ 下的接口`)
+  }
 })
 
 test('非法的场景 ID 存储值回退空数组', () => {

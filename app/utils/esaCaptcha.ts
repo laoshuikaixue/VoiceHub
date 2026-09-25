@@ -27,6 +27,12 @@ export const ESA_CAPTCHA_VERIFY_HEADER = 'captcha-verify-param'
 // 需要 ESA 验签的业务接口（唯一权威定义），与 ESA 控制台「需验签的接口」一一对应
 export const ESA_CAPTCHA_ENDPOINTS = ['login', 'register'] as const
 
+// 各接口对应的服务端路径，即 ESA 控制台「需验签的接口」直接填写此路径（不含协议与域名）
+export const ESA_CAPTCHA_ENDPOINT_PATHS: Record<string, string> = {
+  login: '/api/auth/login',
+  register: '/api/auth/register'
+}
+
 // 域名列填此值表示匹配任意域名
 export const ESA_CAPTCHA_ANY_HOST = '*'
 

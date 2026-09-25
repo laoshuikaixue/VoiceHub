@@ -121,10 +121,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 弹窗模式下本元素仅作 SDK 挂载点，验证内容渲染在 body 的弹层里，因此不预留外边距，避免登录表单出现空白 */
 .esa-captcha-widget {
   display: flex;
   justify-content: center;
-  margin-top: 8px;
-  margin-bottom: 8px;
 }
 </style>

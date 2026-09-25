@@ -649,11 +649,15 @@
                         :key="index"
                         class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
                       >
-                        <CustomSelect
-                          v-model="scene.endpoint"
-                          :options="esaEndpointOptions"
-                          :disabled="!formData.captchaEnabled"
-                        />
+                        <div class="min-w-0">
+                          <CustomSelect
+                            v-model="scene.endpoint"
+                            :options="esaEndpointOptions"
+                            :disabled="!formData.captchaEnabled"
+                          />
+                          <!-- 该行路径可直接粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
+                          <code class="block mt-1 truncate text-[10px] text-text-tertiary">{{ esaEndpointPath(scene.endpoint) }}</code>
+                        </div>
                         <input
                           v-model="scene.host"
                           type="text"
@@ -961,7 +965,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
-import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
+import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_ENDPOINT_PATHS, ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
@@ -1099,6 +1103,8 @@ const esaEndpointOptions = computed(() => {
 })
 const esaSceneInputClass =
   'w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50'
+// 接口对应的服务端路径，与 ESA 控制台「需验签的接口」逐字对应
+const esaEndpointPath = (endpoint) => ESA_CAPTCHA_ENDPOINT_PATHS[endpoint] || ''
 
 const addEsaCaptchaScene = () => {
   formData.value.esaCaptchaScenes.push(createEsaCaptchaScene('register'))

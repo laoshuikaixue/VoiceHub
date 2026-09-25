@@ -116,7 +116,7 @@ export const siteConfig = {
   esaCaptchaPrefixPlaceholder: '在此输入 ESA 控制台 AI 验证码配置页右上角的身份标',
   esaCaptchaSceneId: '场景 ID (SceneId)',
   esaCaptchaScenes: '场景 ID 规则',
-  esaCaptchaScenesDesc: '每行对应 ESA 控制台的一条验证码规则：接口列决定该场景 ID 用于登录还是注册，域名列用于多域名部署时区分规则，精确域名优先于 *.域名，*.域名优先于 *。',
+  esaCaptchaScenesDesc: '每行对应 ESA 控制台的一条验证码规则。「需验签的接口」只填路径、不带协议与域名（接口列下方已标出对应路径，如 /api/auth/login），且一条规则只能填一个路径，因此登录与注册接口、以及每个对外域名都要各建一条规则，再把各自的场景 ID 抄回下表。域名列用于多域名部署时区分规则，精确域名优先于 *.域名，*.域名优先于 *。',
   esaCaptchaAddScene: '添加场景',
   esaCaptchaEndpoint: '接口',
   esaCaptchaEndpointLogin: '登录',
