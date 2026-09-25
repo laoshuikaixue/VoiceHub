@@ -511,7 +511,7 @@ import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
-import { ESA_CAPTCHA_VERIFY_HEADER, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
+import { ESA_CAPTCHA_VERIFY_HEADER, getEsaCaptchaRejectCode, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 
 const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
@@ -821,6 +821,21 @@ const handleEsaCaptchaLoadError = () => {
   error.value = locale.value.esaCaptchaLoadFailed || '人机验证组件加载失败，请刷新页面重试'
 }
 
+// 请求被 ESA 边缘拦截时源站收不到该请求，错误体并非本项目的 API 错误，只能按响应头原因码提示
+const applyEsaCaptchaRejectError = (err) => {
+  const code = getEsaCaptchaRejectCode(err)
+  if (!code) return false
+  const reason = locale.value.esaVerifyCodes?.[code]
+  error.value = reason
+    ? formatLocale(
+        locale.value.esaVerifyFailedWithReason || '人机验证未通过：{0}（原因码 {1}），请重试或联系管理员',
+        reason,
+        code
+      )
+    : formatLocale(locale.value.esaVerifyFailed || '人机验证未通过（原因码 {0}），请重试或联系管理员', code)
+  return true
+}
+
 // ESA AI 验证码必须先取得验签参数（参数一次性有效，由 handleLogin 的 verified 回调重新进入提交）
 const ensureEsaCaptchaVerified = () => {
   if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
@@ -947,6 +962,8 @@ const performLogin = async () => {
       err,
       isBindMode.value ? locale.value.bindFailed : locale.value.loginFailed
     )
+    // 被 ESA 边缘拦截时换成带原因码的提示，避免把边缘拦截页当成本项目的登录失败
+    applyEsaCaptchaRejectError(err)
 
     // 如果后端要求验证码，则显示验证码区域（针对图形验证码）
     if (innerData?.captchaRequired) {
@@ -1187,6 +1204,8 @@ const handleRegister = async () => {
     const innerData = apiError.data?.data
     // 统一按错误码本地化服务端错误，未命中再回退到默认文案
     error.value = localizeServerError(apiError, locale.value.registerFailed)
+    // 被 ESA 边缘拦截时换成带原因码的提示
+    applyEsaCaptchaRejectError(apiError)
 
     // 如果后端要求验证码，则显示验证码区域
     if (innerData?.captchaRequired) {

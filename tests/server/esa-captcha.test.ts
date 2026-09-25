@@ -5,8 +5,11 @@ import {
   ESA_CAPTCHA_DEFAULT_REGION,
   ESA_CAPTCHA_ENDPOINTS,
   ESA_CAPTCHA_ENDPOINT_PATHS,
+  ESA_CAPTCHA_PASS_CODES,
   ESA_CAPTCHA_REGIONS,
+  ESA_CAPTCHA_VERIFY_CODE_HEADER,
   ESA_CAPTCHA_VERIFY_HEADER,
+  getEsaCaptchaRejectCode,
   getEsaCaptchaServers,
   matchEsaCaptchaHost,
   normalizeEsaCaptchaRegion,
@@ -145,4 +148,23 @@ test('未启用 ESA 时后台提交的未填完占位行被丢弃而不报错', 
   assert.deepEqual(parseEsaCaptchaScenes(raw), [
     { endpoint: 'register', host: 'hub.example.com', sceneId: 'ValidR' }
   ])
+})
+
+test('边缘拦截的原因码从响应头识别，通过码与无响应头均视为未拦截', () => {
+  const withHeader = (value?: string) => ({
+    response: { headers: new Headers(value ? { [ESA_CAPTCHA_VERIFY_CODE_HEADER]: value } : {}) }
+  })
+  assert.equal(getEsaCaptchaRejectCode(withHeader('F016')), 'F016')
+  // 大小写与首尾空白不影响判定
+  assert.equal(getEsaCaptchaRejectCode(withHeader(' f021 ')), 'F021')
+  for (const passCode of ESA_CAPTCHA_PASS_CODES) {
+    assert.equal(getEsaCaptchaRejectCode(withHeader(passCode)), '')
+  }
+  assert.equal(getEsaCaptchaRejectCode(withHeader()), '')
+  // 非官方原因码格式的内容不得拼进提示文案
+  assert.equal(getEsaCaptchaRejectCode(withHeader('<img src=x>')), '')
+  assert.equal(getEsaCaptchaRejectCode(withHeader('OK')), '')
+  // 请求未到达边缘或网络层失败时没有 response
+  assert.equal(getEsaCaptchaRejectCode(new Error('fetch failed')), '')
+  assert.equal(getEsaCaptchaRejectCode(undefined), '')
 })

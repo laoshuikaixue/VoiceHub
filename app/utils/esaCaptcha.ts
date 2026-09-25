@@ -24,6 +24,27 @@ export const ESA_CAPTCHA_DEFAULT_REGION = 'cn'
 // ESA 边缘按此请求头读取验签参数（captchaVerifyParam）
 export const ESA_CAPTCHA_VERIFY_HEADER = 'captcha-verify-param'
 
+// ESA 边缘在响应头回传验签原因码，源站不参与验签，只有客户端能读到
+export const ESA_CAPTCHA_VERIFY_CODE_HEADER = 'x-captcha-verify-code'
+
+// 通过类原因码：T001 验证通过、T005 测试模式放行、T006 命中白名单放行
+export const ESA_CAPTCHA_PASS_CODES = ['T001', 'T005', 'T006'] as const
+
+/**
+ * 从请求错误中取出 ESA 边缘拦截的原因码
+ * 拦截发生在边缘，请求不会到达源站，错误体并非本项目的 API 错误，只能靠响应头识别
+ * @returns 未被拦截或响应未回传原因码时返回空字符串
+ */
+export const getEsaCaptchaRejectCode = (err: unknown): string => {
+  const headers = (err as { response?: { headers?: { get?: (name: string) => string | null } } })?.response?.headers
+  // Headers.get 在缺失时返回 null，必须先回退空串，否则会被拼成 "NULL"
+  const raw = typeof headers?.get === 'function' ? headers.get(ESA_CAPTCHA_VERIFY_CODE_HEADER) : null
+  const code = String(raw ?? '').trim().toUpperCase()
+  // 只接受官方原因码格式，防止响应头任意内容进入提示文案
+  if (!/^[TF]\d{3}$/.test(code)) return ''
+  return (ESA_CAPTCHA_PASS_CODES as readonly string[]).includes(code) ? '' : code
+}
+
 // 需要 ESA 验签的业务接口（唯一权威定义），与 ESA 控制台「需验签的接口」一一对应
 export const ESA_CAPTCHA_ENDPOINTS = ['login', 'register'] as const
 
