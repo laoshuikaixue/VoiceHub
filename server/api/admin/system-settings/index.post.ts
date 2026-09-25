@@ -10,7 +10,13 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/server/config/constants'
+import {
+  SERVER_ERROR_CODES,
+  MUSIC_SOURCE_PLATFORMS,
+  DEFAULT_THEMES,
+  CAPTCHA_PROVIDERS,
+  ALIYUN_ESA_CAPTCHA_REGIONS
+} from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
 
@@ -491,11 +497,12 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.captchaProvider !== undefined) {
-      if (body.captchaProvider !== 'graphic' && body.captchaProvider !== 'turnstile') {
-        throw createError({
-          statusCode: 400,
-          message: 'captchaProvider 必须是 graphic 或 turnstile'
-        })
+      if (!CAPTCHA_PROVIDERS.includes(body.captchaProvider)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_CAPTCHA_PROVIDER_INVALID,
+          `captchaProvider 必须是 ${CAPTCHA_PROVIDERS.join(' 或 ')}`
+        )
       }
 
       const nextTurnstileSiteKey =
@@ -515,6 +522,23 @@ export default defineEventHandler(async (event) => {
         })
       }
 
+      // ESA AI 验证码的身份标与场景 ID 由前端 SDK 使用，缺失时页面无法发起验证
+      const nextEsaCaptchaPrefix =
+        body.esaCaptchaPrefix !== undefined ? body.esaCaptchaPrefix : settings?.esaCaptchaPrefix
+      const nextEsaCaptchaSceneId =
+        body.esaCaptchaSceneId !== undefined ? body.esaCaptchaSceneId : settings?.esaCaptchaSceneId
+
+      if (
+        body.captchaProvider === 'esa' &&
+        (!nextEsaCaptchaPrefix || !nextEsaCaptchaSceneId)
+      ) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING,
+          '启用阿里云 ESA AI 验证码前，请先配置身份标和场景 ID'
+        )
+      }
+
       updateData.captchaProvider = body.captchaProvider
     }
 
@@ -524,6 +548,25 @@ export default defineEventHandler(async (event) => {
 
     if (body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK) {
       updateData.turnstileSecretKey = body.turnstileSecretKey
+    }
+
+    if (body.esaCaptchaPrefix !== undefined) {
+      updateData.esaCaptchaPrefix = body.esaCaptchaPrefix
+    }
+
+    if (body.esaCaptchaSceneId !== undefined) {
+      updateData.esaCaptchaSceneId = body.esaCaptchaSceneId
+    }
+
+    if (body.esaCaptchaRegion !== undefined) {
+      if (!ALIYUN_ESA_CAPTCHA_REGIONS.includes(body.esaCaptchaRegion)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          `esaCaptchaRegion 必须是 ${ALIYUN_ESA_CAPTCHA_REGIONS.join(' 或 ')}`
+        )
+      }
+      updateData.esaCaptchaRegion = body.esaCaptchaRegion
     }
 
     if (body.enableRequestTimeLimitation !== undefined) {

@@ -556,6 +556,16 @@
                       />
                       <span class="text-sm text-text-secondary">{{ locale.captchaTurnstile }}</span>
                     </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="formData.captchaProvider"
+                        type="radio"
+                        value="esa"
+                        :disabled="!formData.captchaEnabled"
+                        class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span class="text-sm text-text-secondary">{{ locale.captchaEsa }}</span>
+                    </label>
                   </div>
                 </div>
 
@@ -601,6 +611,58 @@
                       {{ locale.turnstileSecretKeyDesc }}
                     </p>
                   </div>
+                </div>
+
+                <!-- 阿里云 ESA AI 验证码配置 -->
+                <div v-if="formData.captchaProvider === 'esa'" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.esaCaptchaPrefix }}</label>
+                    <input
+                      v-model="formData.esaCaptchaPrefix"
+                      type="text"
+                      :disabled="!formData.captchaEnabled"
+                      :placeholder="locale.esaCaptchaPrefixPlaceholder"
+                      class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.esaCaptchaSceneId }}</label>
+                    <input
+                      v-model="formData.esaCaptchaSceneId"
+                      type="text"
+                      :disabled="!formData.captchaEnabled"
+                      :placeholder="locale.esaCaptchaSceneIdPlaceholder"
+                      class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.esaCaptchaRegion }}</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          v-model="formData.esaCaptchaRegion"
+                          type="radio"
+                          value="cn"
+                          :disabled="!formData.captchaEnabled"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span class="text-sm text-text-secondary">{{ locale.esaCaptchaRegionCn }}</span>
+                      </label>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          v-model="formData.esaCaptchaRegion"
+                          type="radio"
+                          value="sgp"
+                          :disabled="!formData.captchaEnabled"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span class="text-sm text-text-secondary">{{ locale.esaCaptchaRegionSgp }}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-text-tertiary leading-relaxed">
+                    {{ locale.esaCaptchaDesc }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1009,6 +1071,9 @@ const formData = ref({
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
   turnstileSecretKey: '',
+  esaCaptchaPrefix: '',
+  esaCaptchaSceneId: '',
+  esaCaptchaRegion: 'cn',
   captchaMaxFailures: 3,
   allowRegister: false,
   registerRequiresApproval: true,
@@ -1153,6 +1218,9 @@ const loadConfig = async () => {
       captchaProvider: data.captchaProvider || 'graphic',
       turnstileSiteKey: data.turnstileSiteKey || '',
       turnstileSecretKey: undefined,
+      esaCaptchaPrefix: data.esaCaptchaPrefix || '',
+      esaCaptchaSceneId: data.esaCaptchaSceneId || '',
+      esaCaptchaRegion: data.esaCaptchaRegion || 'cn',
       captchaMaxFailures: data.captchaMaxFailures ?? 3,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       allowRegister: !!data.allowRegister,

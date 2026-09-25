@@ -358,6 +358,13 @@
       "when": 1790315264789,
       "tag": "20260925054744_legal_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1790334069942,
+      "tag": "20260925110109_add_aliyun_esa_captcha",
+      "breakpoints": true
     }
   ]
 }
