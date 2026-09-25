@@ -81,18 +81,6 @@
                   label-key="label"
                   value-key="value"
                 />
-                <div class="relative flex items-center">
-                  <Search
-                    class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled pointer-events-none"
-                    :size="14"
-                  />
-                  <input
-                    v-model="searchValue"
-                    class="w-full bg-bg-primary border border-border-secondary-80 rounded-lg pl-9 pr-3 py-2 text-[11px] font-bold text-text-primary focus:outline-none focus:border-primary-30 transition-all"
-                    :placeholder="locale.filter.searchPlaceholder"
-                    type="text"
-                  >
-                </div>
               </div>
             </div>
 
@@ -180,7 +168,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Check, Download, FileSpreadsheet, Search, X } from '@lucide/vue'
+import { Check, Download, FileSpreadsheet, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
@@ -220,7 +208,6 @@ const roleValue = ref('')
 const gradeValue = ref('')
 const classValue = ref('')
 const statusValue = ref('')
-const searchValue = ref('')
 
 // 打开时以当前列表筛选作为初始值
 watch(
@@ -233,7 +220,6 @@ watch(
     gradeValue.value = init.grade || ''
     classValue.value = init.class || ''
     statusValue.value = init.status || ''
-    searchValue.value = init.search || ''
   }
 )
 
@@ -338,7 +324,6 @@ const handleExport = () => {
     class: classValue.value || undefined,
     role: roleValue.value || undefined,
     status: statusValue.value || undefined,
-    search: searchValue.value.trim() || undefined,
     archived: scopeValue.value === 'all' ? undefined : scopeValue.value
   }
 

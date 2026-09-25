@@ -3974,8 +3974,7 @@ export const admin = {
         role: '身份',
         allRoles: '全部身份',
         status: '状态',
-        allStatus: '全部状态',
-        searchPlaceholder: '姓名 / 用户名 / IP'
+        allStatus: '全部状态'
       },
       groups: {
         basic: '基本信息',
@@ -4023,7 +4022,7 @@ export const admin = {
       exporting: '正在导出...',
       emptyResult: '没有符合筛选条件的用户',
       success: (count: number) => `已导出 ${count} 位用户`,
-      failed: (message: string) => `导出失败: ${message}`,
+      failed: '导出失败，请稍后重试',
       fileNamePrefix: '用户列表',
       sheetName: '用户数据'
     },

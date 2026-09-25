@@ -3965,8 +3965,7 @@ export const admin = {
         role: 'Role',
         allRoles: 'All Roles',
         status: 'Status',
-        allStatus: 'All Statuses',
-        searchPlaceholder: 'Name / Username / IP'
+        allStatus: 'All Statuses'
       },
       groups: {
         basic: 'Basic Info',
@@ -4014,7 +4013,7 @@ export const admin = {
       exporting: 'Exporting...',
       emptyResult: 'No users match the selected filters',
       success: (count: number) => `Exported ${count} users`,
-      failed: (message: string) => `Export failed: ${message}`,
+      failed: 'Export failed, please try again later.',
       fileNamePrefix: 'users',
       sheetName: 'Users'
     },

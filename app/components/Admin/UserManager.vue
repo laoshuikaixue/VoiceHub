@@ -25,17 +25,17 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
-          @click="showBatchUpdateModal = true"
-        >
-          <Layers class="text-info" :size="14" />
-          {{ locale.update }}
-        </button>
-        <button
-          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
           @click="openExportModal"
         >
           <Download class="text-primary" :size="14" />
           {{ locale.export }}
+        </button>
+        <button
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          @click="showBatchUpdateModal = true"
+        >
+          <Layers class="text-info" :size="14" />
+          {{ locale.update }}
         </button>
       </div>
     </div>
@@ -2628,7 +2628,6 @@ const exportInitialFilters = computed(() => ({
   status: statusFilter.value || '',
   grade: toUserFilterQuery(gradeFilter.value, unsetGradeLabel.value) || '',
   class: toUserFilterQuery(classFilter.value, unsetClassLabel.value) || '',
-  search: searchQuery.value || '',
   archived: showArchived.value ? '1' : '0'
 }))
 
@@ -2731,7 +2730,7 @@ const handleExportUsers = async ({ fields, filters }) => {
   } catch (error) {
     console.error('导出用户失败:', error)
     const exportLocale = locale.value.exportModal || {}
-    window.$showNotification?.(formatMessage(exportLocale.failed, getErrorDetail(error)), 'error')
+    window.$showNotification?.(exportLocale.failed, 'error')
   } finally {
     exporting.value = false
   }
