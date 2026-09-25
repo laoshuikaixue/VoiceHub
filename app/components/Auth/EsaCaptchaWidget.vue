@@ -78,6 +78,11 @@ const initCaptcha = () => {
     getInstance: (instance) => {
       captchaInstance = instance
     },
+    // SDK 内置的初始化错误回调，覆盖初始化接口请求与资源加载失败/超时
+    onError: (errorInfo) => {
+      console.error('ESA 验证码初始化失败:', errorInfo?.code, errorInfo?.msg)
+      emit('load-error')
+    },
     server: getEsaCaptchaServers(siteConfig.value.esaCaptchaRegion),
     slideStyle: {
       width: 360,
@@ -118,6 +123,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (retryTimer) clearTimeout(retryTimer)
+  // 多次调用 initAliyunCaptcha 会在触发按钮上重复注册事件、重复添加验证码元素，
+  // 而提交按钮由父组件持有、不随本组件重挂载而重建，故卸载时必须销毁实例；
+  // destroyCaptcha 会连带移除元素，可能与 Vue 的卸载竞争，失败时忽略即可
+  try {
+    captchaInstance?.destroyCaptcha?.()
+  } catch (e) {
+    console.warn('ESA 验证码实例销毁失败:', e)
+  }
   captchaInstance = null
 })
 </script>
