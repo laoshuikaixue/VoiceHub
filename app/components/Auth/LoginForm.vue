@@ -368,8 +368,8 @@
       </div>
 
       <button
-        :disabled="loading || captchaPending || loginTermsBlocked"
-        :class="['submit-btn', { 'is-disabled': loading || captchaPending || loginTermsBlocked }]"
+        :disabled="loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal') }]"
         type="submit"
       >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
@@ -428,19 +428,23 @@
       </div>
     </form>
 
-    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked" />
+    <div v-if="!isBindMode && !showRegisterMode" @click.capture="guardTermsInteraction">
+      <AuthOAuthQuickLogin :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
+    </div>
 
     <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button type="button" class="webauthn-btn" :disabled="loading || loginTermsBlocked" @click="handleWebAuthnLogin">
+      <button type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked" />
+    <div v-if="!isBindMode && !showRegisterMode" @click.capture="guardTermsInteraction">
+      <AuthOAuthButtons :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
+    </div>
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -590,16 +594,13 @@ const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 onMounted(() => {
-  const syncLegalConsent = ([enabled, mode] = [legalConsentActive.value, legalConsentDisplayMode.value]) => {
-    if (!enabled) return
-    // 按浏览器本地记忆恢复勾选状态（与账号无关），条款更新日期变化后自动失效
+  const restoreLegalConsent = () => {
+    if (!legalConsentActive.value) return
+    // 按浏览器本地记忆恢复勾选状态（与账号无关），条款内容版本变化后自动失效
     try { loginTermsAccepted.value = localStorage.getItem(legalConsentStorageKey.value) === 'true' } catch { loginTermsAccepted.value = false }
-    if (mode === 'modal' && !loginTermsAccepted.value) showLegalConsentModal.value = true
   }
-  syncLegalConsent()
-  watch([legalConsentActive, legalConsentDisplayMode], ([enabled, mode]) => {
-    syncLegalConsent([enabled, mode])
-  })
+  restoreLegalConsent()
+  watch(legalConsentActive, restoreLegalConsent)
   watch(loginTermsAccepted, (accepted) => {
     // 无论勾选还是取消都记录，刷新后恢复上一次的状态
     try { localStorage.setItem(legalConsentStorageKey.value, String(accepted)) } catch {}
@@ -615,15 +616,42 @@ const codeCountdown = ref(0)
 const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
+// 弹窗模式下待同意条款后继续的登录动作
+const pendingConsentAction = ref(null)
+
+// 条款未同意时拦截登录动作：弹窗模式弹出条款弹窗，复选框模式仅提示错误；返回是否已拦截
+const requireLegalConsent = (resume) => {
+  if (!legalConsentActive.value || loginTermsAccepted.value) return false
+  if (legalConsentDisplayMode.value === 'modal') {
+    pendingConsentAction.value = typeof resume === 'function' ? resume : null
+    showLegalConsentModal.value = true
+  } else {
+    error.value = locale.value.legalConsentBlocked
+  }
+  return true
+}
+
+// 弹窗模式下快捷登录点击时拦截弹出条款弹窗
+const guardTermsInteraction = (event) => {
+  if (!loginTermsBlocked.value || legalConsentDisplayMode.value !== 'modal') return
+  event.preventDefault()
+  event.stopPropagation()
+  showLegalConsentModal.value = true
+}
+
 const acceptLegalConsent = () => {
   loginTermsAccepted.value = true
   legalConsentRejected.value = false
   showLegalConsentModal.value = false
+  const resume = pendingConsentAction.value
+  pendingConsentAction.value = null
+  if (resume) resume()
 }
 const rejectLegalConsent = () => {
   loginTermsAccepted.value = false
   legalConsentRejected.value = true
   showLegalConsentModal.value = false
+  pendingConsentAction.value = null
   error.value = locale.value.legalConsentBlocked
   toastError(locale.value.legalConsentBlocked)
 }
@@ -811,10 +839,7 @@ const switchToLogin = () => {
 }
 
 const handleLogin = async () => {
-  if (loginTermsBlocked.value) {
-    error.value = locale.value.legalConsentBlocked
-    return
-  }
+  if (requireLegalConsent(() => handleLogin())) return
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return
@@ -1226,6 +1251,7 @@ const startConditionalWebAuthnLogin = async () => {
 }
 
 const handleWebAuthnLogin = async () => {
+  if (requireLegalConsent(() => handleWebAuthnLogin())) return
   loading.value = true
   error.value = ''
 
