@@ -58,7 +58,6 @@
             :class="{ 'input-error': error }"
             :autocomplete="!isBindMode && !showCreateMode ? 'username webauthn' : 'username'"
             :placeholder="showCreateMode ? locale.usernamePattern : locale.usernamePlaceholder"
-            :disabled="loginTermsBlocked"
             required
             type="text"
             @input="error = ''"
@@ -88,7 +87,6 @@
             v-model="name"
             :class="{ 'input-error': error }"
             :placeholder="locale.realNamePlaceholder"
-            :disabled="loginTermsBlocked"
             required
             type="text"
             @input="error = ''"
@@ -102,7 +100,7 @@
           <CustomSelect
             v-model="grade"
             :options="gradeSelectOptions"
-            :disabled="loginTermsBlocked || classOptionsLoading || gradeOptions.length === 0"
+            :disabled="classOptionsLoading || gradeOptions.length === 0"
             :label="locale.gradeLabel"
             :placeholder="registerRequiresGradeClass ? locale.selectGrade : locale.optional"
             class-name="class-select"
@@ -111,7 +109,7 @@
           <CustomSelect
             v-model="studentClass"
             :options="classSelectOptions"
-            :disabled="loginTermsBlocked || classOptionsLoading || !grade || availableClassOptions.length === 0"
+            :disabled="classOptionsLoading || !grade || availableClassOptions.length === 0"
             :label="locale.classLabel"
             :placeholder="grade ? locale.selectClass : locale.selectGradeFirst"
             class-name="class-select"
@@ -157,7 +155,6 @@
             :class="{ 'input-error': error }"
             :type="showPassword ? 'text' : 'password'"
             :placeholder="showCreateMode ? locale.createPasswordPlaceholder : locale.passwordPlaceholder"
-            :disabled="loginTermsBlocked"
             required
             @input="error = ''"
           />
@@ -225,7 +222,6 @@
             :class="{ 'input-error': error }"
             :type="showConfirmPassword ? 'text' : 'password'"
             :placeholder="locale.confirmPasswordPlaceholder"
-            :disabled="loginTermsBlocked"
             required
             @input="error = ''"
           />
@@ -271,7 +267,6 @@
             id="remark"
             v-model="remark"
             :placeholder="locale.remarkPlaceholder"
-            :disabled="loginTermsBlocked"
             maxlength="200"
             type="text"
             @input="error = ''"
@@ -298,7 +293,6 @@
             v-model="email"
             type="email"
             :placeholder="locale.emailPlaceholder"
-            :disabled="loginTermsBlocked"
             maxlength="100"
             @input="error = ''"
           />
@@ -326,7 +320,6 @@
             maxlength="6"
             class="code-input"
             :placeholder="locale.emailCodePlaceholder"
-            :disabled="loginTermsBlocked"
             @input="error = ''"
           />
           <button
@@ -375,8 +368,8 @@
       </div>
 
       <button
-        :disabled="loading || captchaPending"
-        :class="['submit-btn', { 'is-disabled': loading || captchaPending }]"
+        :disabled="loading || captchaPending || loginTermsBlocked"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending || loginTermsBlocked }]"
         type="submit"
       >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
@@ -755,7 +748,7 @@ const handle2FASuccess = async () => {
 const recordLegalConsent = async () => {
   if (!legalConsentActive.value || !loginTermsAccepted.value) return
   try {
-    await $fetch('/api/legal-consent', { method: 'POST' })
+    await $fetch('/api/legal-consent', { method: 'POST', body: { version: legalConsentVersion.value } })
   } catch (error) {
     console.error('记录条款同意状态失败:', error)
   }
