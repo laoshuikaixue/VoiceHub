@@ -145,7 +145,8 @@ export default defineEventHandler(async (event) => {
         forcePasswordChange: users.forcePasswordChange,
         tokenVersion: users.tokenVersion,
         email: users.email,
-        emailVerified: users.emailVerified
+        emailVerified: users.emailVerified,
+        legalConsentVersion: users.legalConsentVersion
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -297,6 +298,7 @@ export default defineEventHandler(async (event) => {
       sessionId: authSession?.id,
       email: user.email,
       emailVerified: user.emailVerified,
+      legalConsentVersion: user.legalConsentVersion,
       requirePasswordChange,
       ...passwordSetupState
     }

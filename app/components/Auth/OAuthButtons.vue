@@ -11,6 +11,7 @@
         :key="provider.key"
         type="button"
         :class="providerButtonClass(provider)"
+        :disabled="disabled"
         :title="formatLocale(locale.loginWith, provider.name)"
         @click="loginWith(provider)"
       >
@@ -34,7 +35,9 @@ import { useLocale } from '~/utils/locale'
 import Icon from '~/components/UI/Icon.vue'
 import { getAggregateOAuthLoginTypeIcon } from '~/utils/oauth'
 
+const props = defineProps({ disabled: { type: Boolean, default: false } })
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
+const disabled = computed(() => props.disabled)
 const route = useRoute()
 const { auth } = useLocale()
 const locale = computed(() => auth.value?.oauthButtons || {})
@@ -60,8 +63,9 @@ const hasEnabledProviders = computed(() => {
 
 const providerButtonClass = (provider) => {
   const key = provider.routeProvider || provider.key
-  const baseClass =
-    'w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[var(--bg-tertiary)]'
+  const baseClass = disabled.value
+    ? 'w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] flex items-center justify-center cursor-not-allowed opacity-50'
+    : 'w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[var(--bg-tertiary)]'
 
   if (key === 'github') {
     return `${baseClass} hover:bg-[var(--panel-bg-subtle)] hover:text-text-primary hover:border-[var(--panel-bg-subtle)]`

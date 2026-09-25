@@ -3,6 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { parseLegalConsentDocuments } from '~~/server/utils/legal-consent'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
@@ -199,6 +200,43 @@ export default defineEventHandler(async (event) => {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCode 必须是字符串或 null')
       }
       updateData.statisticsCode = body.statisticsCode
+    }
+
+    if (body.legalConsentEnabled !== undefined) {
+      if (typeof body.legalConsentEnabled !== 'boolean') throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款确认开关必须是布尔值')
+      updateData.legalConsentEnabled = body.legalConsentEnabled
+    }
+    if (body.legalConsentDisplayMode !== undefined) {
+      if (!['modal', 'checkbox'].includes(body.legalConsentDisplayMode)) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '展示形式无效')
+      updateData.legalConsentDisplayMode = body.legalConsentDisplayMode
+    }
+    if (body.legalConsentUpdatedDate !== undefined) {
+      const date = body.legalConsentUpdatedDate || null
+      if (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款更新日期格式无效')
+      updateData.legalConsentUpdatedDate = date
+    }
+    // 交叉校验：启用条款确认时（合并提交值与持久化值后）必须存在更新日期与合法的协议文档
+    const legalConsentEffectiveEnabled =
+      body.legalConsentEnabled !== undefined ? body.legalConsentEnabled === true : settings?.legalConsentEnabled === true
+    if (legalConsentEffectiveEnabled) {
+      const finalUpdatedDate =
+        body.legalConsentUpdatedDate !== undefined ? updateData.legalConsentUpdatedDate : settings?.legalConsentUpdatedDate
+      if (!finalUpdatedDate) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须填写条款更新日期')
+      const finalDocsRaw =
+        body.legalConsentDocuments !== undefined ? updateData.legalConsentDocuments : settings?.legalConsentDocuments
+      const finalDocs = parseLegalConsentDocuments(finalDocsRaw)
+      const docsInvalid =
+        !finalDocs.length ||
+        finalDocs.some((d) => !d?.name?.trim() || !d?.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d?.slug || '')) ||
+        new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length
+      if (docsInvalid) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须配置合法的协议文档')
+    }
+    if (body.legalConsentDocuments !== undefined) {
+      let docs
+      try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }
+      const effectiveEnabled = body.legalConsentEnabled !== undefined ? body.legalConsentEnabled : settings?.legalConsentEnabled === true
+      if (!Array.isArray(docs) || (effectiveEnabled && (!docs.length || docs.some((d) => !d || !d.name?.trim() || !d.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d.slug || '')) || new Set(docs.map((d) => d.slug)).size !== docs.length))) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档配置无效')
+      updateData.legalConsentDocuments = JSON.stringify(docs)
     }
 
     if (body.statisticsCodeEnabled !== undefined) {

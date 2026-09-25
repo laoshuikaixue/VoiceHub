@@ -801,6 +801,7 @@ VoiceHub/
 │   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
 │   │   │   ├── OAuthQuickLogin.vue   # 微信/QQ内置浏览器快速登录按钮
 │   │   │   ├── OAuthBindReminderModal.vue # 微信/QQ内置浏览器账号密码登录绑定引导弹窗
+│   │   │   ├── LegalConsentModal.vue # 登录条款全局确认弹窗
 │   │   │   ├── TwoFactorSetup.vue    # 双重认证设置组件
 │   │   │   └── TwoFactorVerify.vue   # 双重认证验证组件
 │   │   ├── Common/            # 通用组件
@@ -883,6 +884,7 @@ VoiceHub/
 │   │   ├── useChkszSource.ts   # ChKSz音源hooks
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
 │   │   ├── useImportantNotification.ts # 重要通知全局状态与已读处理
+│   │   ├── useLegalConsentPrompt.js # 全局登录条款确认弹窗状态hooks
 │   │   ├── useLocaleText.ts   # i18n 文案访问与服务端错误码本地化hooks
 │   │   ├── useLyricManager.ts  # 歌词管理hooks
 │   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
@@ -931,6 +933,8 @@ VoiceHub/
 │   │   ├── dashboard.vue       # 用户仪表盘
 │   │   ├── forgot-password.vue # 找回密码页面
 │   │   ├── index.vue           # 首页
+│   │   ├── legal/              # 协议文档页面
+│   │   │   └── [slug].vue      # 协议文档内容页（按 slug 动态渲染）
 │   │   ├── login.vue           # 登录页面
 │   │   ├── notification-settings.vue # 通知设置页面
 │   │   ├── reset-password.vue  # 重置密码页面
@@ -1287,6 +1291,9 @@ VoiceHub/
 │   │   ├── semesters/      # 学期API
 │   │   │   ├── current.get.ts       # 获取当前学期
 │   │   │   └── options.get.ts       # 获取学期选项
+│   │   ├── legal-consent.get.ts      # 条款确认状态查询API
+│   │   ├── legal-consent.post.ts     # 条款同意记录API
+│   │   ├── legal-documents.get.ts    # 协议文档公开查询API
 │   │   ├── site-config.get.ts       # 站点配置API
 │   │   ├── songs/          # 歌曲相关API
 │   │   │   ├── [id]/                # 歌曲详情操作
@@ -1417,6 +1424,7 @@ VoiceHub/
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
+│   │   ├── legal-consent.ts # 条款内容指纹计算与注册同意校验
 │   │   ├── register-validation.ts # 注册校验纯函数
 │   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
@@ -1531,7 +1539,6 @@ VoiceHub/
   - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
-  - **`useTheme.ts`**: 主题管理 composable，支持深色/浅色主题切换与 localStorage 持久化
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
 
 #### 配置目录 (app/)

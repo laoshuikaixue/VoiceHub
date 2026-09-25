@@ -325,7 +325,7 @@
           <button
             type="button"
             class="code-btn"
-            :disabled="sendingCode || codeCountdown > 0"
+            :disabled="loginTermsBlocked || sendingCode || codeCountdown > 0"
             @click="sendEmailCode"
           >
             {{ codeCountdown > 0 ? locale.codeCountdown(codeCountdown) : locale.sendCode }}
@@ -360,11 +360,16 @@
           <line x1="12" x2="12.01" y1="16" y2="16" />
         </svg>
         <span class="error-message">{{ error }}</span>
+        <button class="error-close" type="button" aria-label="关闭提示" @click="error = ''">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       <button
-        :disabled="loading || captchaPending"
-        :class="['submit-btn', { 'is-disabled': loading || captchaPending }]"
+        :disabled="loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal') }]"
         type="submit"
       >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
@@ -397,6 +402,11 @@
         <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
 
+      <label v-if="legalConsentActive && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
+        <input v-model="loginTermsAccepted" type="checkbox">
+        <span class="terms-text"><span>{{ locale.legalConsentPrefix }}</span><template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug"><a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span></template></span>
+      </label>
+
       <!-- 登录/注册模式切换 -->
       <div v-if="!isBindMode && allowRegister" class="mode-switch">
         <button
@@ -413,19 +423,19 @@
       </div>
     </form>
 
-    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" />
+    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
     <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button type="button" class="webauthn-btn" :disabled="loading" @click="handleWebAuthnLogin">
+      <button type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" />
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -459,6 +469,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useLegalConsentPrompt } from '~/composables/useLegalConsentPrompt'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import {
@@ -481,11 +492,14 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
 const { success: toastSuccess } = useToast()
+
+const showCreateMode = ref(false)
+const showRegisterMode = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -534,6 +548,9 @@ const name = ref('')
 const grade = ref('')
 const studentClass = ref('')
 const password = ref('')
+const loginTermsAccepted = ref(false)
+const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
+const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
 const confirmPassword = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -548,8 +565,11 @@ const userId2FA = ref(0)
 const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
-const showCreateMode = ref(false)
-const showRegisterMode = ref(false)
+watch(loginTermsAccepted, (accepted) => {
+  // 复选框每次均需手动勾选（不本地持久化，避免跨账号预勾选），取消勾选时同步提示错误
+  if (!accepted && legalConsentActive.value) error.value = locale.value.legalConsentBlocked
+  if (accepted && error.value === locale.value.legalConsentBlocked) error.value = ''
+})
 const remark = ref('')
 const email = ref('')
 const emailCode = ref('')
@@ -558,6 +578,13 @@ const codeCountdown = ref(0)
 const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
+// 复选框模式提交前拦截；弹窗模式改为登录成功后按账号向服务端校验（见 redirectAfterLogin）
+const requireLegalConsent = () => {
+  if (legalConsentDisplayMode.value === 'modal') return false
+  if (!legalConsentActive.value || loginTermsAccepted.value) return false
+  error.value = locale.value.legalConsentBlocked
+  return true
+}
 
 // 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
 let captchaPrecheckTimer = null
@@ -595,6 +622,7 @@ const bindConfirmMessage = computed(() => {
 const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
+const { ensureLegalConsent, ensureLegalConsentForRegister } = useLegalConsentPrompt()
 
 // 只允许站内绝对路径，避免登录参数被用于开放重定向。
 const getSafeRedirect = (fallback = '/') => {
@@ -664,6 +692,8 @@ const gradeClassRequiredError = () => {
 }
 
 const redirectAfterLogin = async () => {
+  // 弹窗模式：登录成功后按账号校验是否需要确认当前条款，由全局 LegalConsentModal 弹窗处理，确认后才进入系统
+  if (!(await ensureLegalConsent())) return
   if (auth.user.value?.requirePasswordChange) {
     return navigateTo('/change-password')
   }
@@ -671,7 +701,23 @@ const redirectAfterLogin = async () => {
 }
 
 const handle2FASuccess = async () => {
+  await auth.initAuth(true)
+  await recordLegalConsent()
   await redirectAfterLogin()
+}
+
+const postLegalConsent = async (version) => {
+  try {
+    await $fetch('/api/legal-consent', { method: 'POST', body: { version } })
+  } catch (e) {
+    console.error('记录条款同意状态失败:', e)
+  }
+}
+
+const recordLegalConsent = async () => {
+  // 复选框模式：本地显式勾选后才记录；弹窗模式统一在登录后弹窗显式同意时记录
+  if (!legalConsentActive.value || !loginTermsAccepted.value || legalConsentDisplayMode.value === 'modal') return
+  await postLegalConsent(legalConsentVersion.value)
 }
 
 onMounted(async () => {
@@ -731,6 +777,7 @@ const switchToLogin = () => {
 }
 
 const handleLogin = async () => {
+  if (requireLegalConsent()) return
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return
@@ -825,6 +872,7 @@ const performLogin = async () => {
 
     // 登录成功，刷新认证状态
     await auth.initAuth(true)
+    await recordLegalConsent()
     await redirectAfterLogin()
     return 'success'
   } catch (err) {
@@ -897,9 +945,13 @@ const handleRegisterOAuth = async () => {
   }
 
   error.value = ''
-  loading.value = true
 
   try {
+    // 弹窗模式：注册前通过全局条款弹窗确认，同意后由请求体显式携带同意版本
+    if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+      if (!(await ensureLegalConsentForRegister())) return
+    }
+    loading.value = true
     const response = await $fetch('/api/auth/oauth-register', {
       method: 'POST',
       body: {
@@ -911,7 +963,11 @@ const handleRegisterOAuth = async () => {
         confirmPassword: confirmPassword.value,
         remark: remark.value.trim(),
         email: emailValue || undefined,
-        emailCode: emailCode.value.trim() || undefined
+        emailCode: emailCode.value.trim() || undefined,
+        ...(legalConsentActive.value && {
+          legalConsentAccepted: legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true,
+          legalConsentVersion: legalConsentVersion.value
+        })
       }
     })
 
@@ -1007,9 +1063,13 @@ const handleRegister = async () => {
   }
 
   error.value = ''
-  loading.value = true
 
   try {
+    // 弹窗模式：注册前通过全局条款弹窗确认，同意后由请求体显式携带同意版本
+    if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+      if (!(await ensureLegalConsentForRegister())) return
+    }
+    loading.value = true
     const requestBody = {
       username: username.value,
       name: name.value,
@@ -1020,6 +1080,11 @@ const handleRegister = async () => {
       remark: remark.value.trim(),
       email: emailValue || undefined,
       emailCode: emailCode.value.trim() || undefined
+    }
+    // 条款确认：显式提交用户已同意的内容版本，服务端校验其与当前版本一致（未开启条款时跳过）
+    if (legalConsentActive.value) {
+      requestBody.legalConsentAccepted = legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true
+      requestBody.legalConsentVersion = legalConsentVersion.value
     }
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {
@@ -1096,6 +1161,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
     if (verification.success) {
       // 登录成功
       await auth.initAuth(true)
+      await recordLegalConsent()
       return redirectAfterLogin()
     }
   } catch (e) {
@@ -1130,6 +1196,7 @@ const startConditionalWebAuthnLogin = async () => {
 }
 
 const handleWebAuthnLogin = async () => {
+  if (requireLegalConsent()) return
   loading.value = true
   error.value = ''
 
@@ -1295,6 +1362,45 @@ const handleWebAuthnLogin = async () => {
   filter: brightness(1.03);
 }
 
+.input-wrapper input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+}
+
+.login-terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.login-terms-check .terms-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-terms-check input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+}
+
+.login-terms-check a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 .class-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1389,6 +1495,26 @@ const handleWebAuthnLogin = async () => {
 .error-message {
   font-size: 14px;
   font-weight: var(--font-medium);
+}
+
+.error-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  color: var(--error);
+  opacity: 0.7;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+.error-close svg {
+  width: 14px;
+  height: 14px;
 }
 
 .submit-btn {
@@ -1629,3 +1755,9 @@ const handleWebAuthnLogin = async () => {
   line-height: 1.4;
 }
 </style>
+
+
+
+
+
+

@@ -787,6 +787,38 @@
         />
       </section>
 
+      <!-- 登录条款确认 -->
+      <section class="lg:col-span-2 legal-consent-panel">
+        <div class="legal-consent-header">
+          <div class="legal-consent-heading">
+            <h3 class="text-sm font-black text-text-primary flex items-center gap-2"><FileText :size="16" class="text-primary" /> {{ locale.legalConsentTitle }}</h3>
+            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.legalConsentDesc }}</p>
+          </div>
+          <label class="legal-enable-control"><span :class="{ 'is-enabled': formData.legalConsentEnabled }">{{ formData.legalConsentEnabled ? (locale.legalConsentEnabledLabel || '已启用') : (locale.legalConsentDisabledLabel || '未启用') }}</span><span class="legal-toggle"><input v-model="formData.legalConsentEnabled" type="checkbox"><i /></span></label>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label :class="labelClass">{{ locale.legalConsentDisplayMode }}</label>
+            <div class="legal-mode-switch mt-2">
+              <span class="legal-mode-indicator" :class="{ 'is-checkbox': formData.legalConsentDisplayMode === 'checkbox' }" />
+              <button v-for="mode in ['modal', 'checkbox']" :key="mode" type="button" :class="['legal-mode-option', { 'is-active': formData.legalConsentDisplayMode === mode }]" @click="formData.legalConsentDisplayMode = mode"><Shield v-if="mode === 'modal'" :size="14" /><CircleCheck v-else :size="14" />{{ mode === 'modal' ? locale.legalConsentModal : locale.legalConsentCheckbox }}</button>
+            </div>
+            <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
+          </div>
+          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
+        </div>
+        <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
+        <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
+          <div class="legal-document-header"><div class="legal-document-title"><span class="legal-document-icon"><FileText :size="17" /></span><div><strong>{{ doc.name || locale.legalConsentUntitled }}</strong><span>/legal/{{ doc.slug || locale.legalConsentSlugPlaceholder }}</span></div></div><button type="button" class="legal-delete-button" :aria-label="locale.delete" @click="removeLegalDocument(index)"><Trash2 :size="16" /></button></div>
+          <div class="legal-document-fields"><div><label :class="labelClass">{{ locale.legalConsentName }}</label><input v-model="doc.name" :placeholder="locale.legalConsentNamePlaceholder" :class="inputClass"></div><div><label :class="labelClass">{{ locale.legalConsentSlug }}</label><div class="legal-slug-input"><span>/legal/</span><input v-model="doc.slug" :placeholder="locale.legalConsentSlugPlaceholder" :class="[inputClass, 'rounded-l-none']"></div></div></div>
+          <div>
+            <div class="flex items-center justify-between mb-2"><label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ locale.legalConsentContent }}</label><div class="flex gap-1 bg-bg-primary rounded-lg p-1"><button type="button" :class="['px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider', (legalDocEditModes[index] || 'edit') === 'edit' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'edit'">{{ locale.guidelinesEdit }}</button><button type="button" :class="['px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider', legalDocEditModes[index] === 'preview' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'preview'">{{ locale.guidelinesPreview }}</button></div></div>
+            <textarea v-if="(legalDocEditModes[index] || 'edit') === 'edit'" v-model="doc.content" :placeholder="locale.legalConsentContentPlaceholder" :rows="7" :class="[inputClass, 'font-mono text-xs leading-relaxed resize-y']" />
+            <div v-else class="guidelines-preview markdown-body w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-secondary leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto" v-html="renderedLegalDoc(doc)" />
+          </div>
+        </div>
+      </section>
+
       <!-- OAuth 第三方登录配置 -->
       <OAuthConfigManager v-model="formData" class="lg:col-span-2" />
     </div>
@@ -799,6 +831,8 @@ import {
   Globe,
   ImageIcon,
   FileText,
+  Trash2,
+  CircleCheck,
   Settings2,
   Shield,
   Save,
@@ -890,6 +924,10 @@ const saving = ref(false)
 const saveSuccess = ref(false)
 const editMode = ref('edit') // 投稿须知编辑/预览模式
 
+// 协议文档内容编辑/预览模式，按卡片索引记录
+const legalDocEditModes = ref({})
+const renderedLegalDoc = (doc) => renderMarkdown(doc?.content || '')
+
 // 投稿须知 Markdown 预览
 const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
 
@@ -899,7 +937,36 @@ const inputClass =
 const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
 const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
+
 const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '请遵守校园广播站投稿规范。')
+
+const removeLegalDocument = (index) => {
+  if (formData.value.legalConsentDocuments.length <= 1) {
+    showNotification(locale.value?.legalConsentKeepOne || '至少保留一份协议文档', 'error')
+    return
+  }
+  formData.value.legalConsentDocuments.splice(index, 1)
+  // 删除卡片后同步前移预览模式，避免错位
+  const modes = {}
+  Object.keys(legalDocEditModes.value).forEach((key) => {
+    const pos = Number(key)
+    if (pos < index) modes[pos] = legalDocEditModes.value[pos]
+    else if (pos > index) modes[pos - 1] = legalDocEditModes.value[pos]
+  })
+  legalDocEditModes.value = modes
+}
+const parseLegalDocuments = (value) => {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    return Array.isArray(parsed) ? parsed.filter((doc) => doc && typeof doc === 'object').map((doc) => ({
+      name: typeof doc.name === 'string' ? doc.name : '',
+      slug: typeof doc.slug === 'string' ? doc.slug : '',
+      content: typeof doc.content === 'string' ? doc.content : ''
+    })) : [{ name: '', slug: '', content: '' }]
+  } catch {
+    return [{ name: '', slug: '', content: '' }]
+  }
+}
 
 const formData = ref({
   siteTitle: '',
@@ -913,6 +980,10 @@ const formData = ref({
   gonganNumber: '',
   statisticsCode: '',
   statisticsCodeEnabled: false,
+  legalConsentEnabled: false,
+  legalConsentDisplayMode: 'modal',
+  legalConsentUpdatedDate: '',
+  legalConsentDocuments: [{ name: '', slug: '', content: '' }],
   showBeianIcon: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
@@ -1053,6 +1124,10 @@ const loadConfig = async () => {
       gonganNumber: data.gonganNumber || '',
       statisticsCode: data.statisticsCode || '',
       statisticsCodeEnabled: !!data.statisticsCodeEnabled,
+      legalConsentEnabled: !!data.legalConsentEnabled,
+      legalConsentDisplayMode: ['modal', 'checkbox'].includes(data.legalConsentDisplayMode) ? data.legalConsentDisplayMode : 'modal',
+      legalConsentUpdatedDate: data.legalConsentUpdatedDate || '',
+      legalConsentDocuments: parseLegalDocuments(data.legalConsentDocuments),
       showBeianIcon: !!data.showBeianIcon,
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
@@ -1150,6 +1225,7 @@ const saveConfig = async () => {
       : ''
     const configToSave = {
       ...formData.value,
+      legalConsentDocuments: JSON.stringify(formData.value.legalConsentDocuments),
       schoolLogoHomeUrl: joinThemeLogoUrl(
         schoolLogoHomeDarkUrl,
         schoolLogoHomeLightUrl
@@ -1261,4 +1337,56 @@ input::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
 }
+
+.legal-consent-panel { grid-column: 1 / -1; padding: 24px; border: 1px solid var(--border-secondary); border-radius: 16px; background: var(--bg-secondary-40); box-shadow: var(--shadow-xl); }
+.legal-consent-header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:18px; border-bottom:1px solid var(--border-secondary); }
+.legal-consent-heading { min-width: 0; }
+.legal-mode-switch { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--border-secondary); border-radius: 10px; background: var(--bg-primary-50); overflow: hidden; }
+.legal-mode-indicator { position: absolute; inset: 4px calc(50% + 2px) 4px 4px; border-radius: 7px; background: var(--primary); box-shadow: 0 3px 10px var(--primary-glow); transition: transform 260ms cubic-bezier(.22, 1, .36, 1); pointer-events: none; }
+.legal-mode-indicator.is-checkbox { transform: translateX(calc(100% + 4px)); }
+.legal-mode-option { position: relative; z-index: 1; min-height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--text-tertiary); font-size: 11px; font-weight: 800; cursor: pointer; transition: color 180ms ease; }
+.legal-mode-option.is-active { color: var(--text-primary); }
+.legal-mode-option:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.legal-setting-hint { margin-top: 7px; color: var(--text-tertiary); font-size: 10px; line-height: 1.5; }
+.legal-documents-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; }
+.legal-add-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 9px; background: var(--primary); color: var(--text-primary); font-size: 11px; font-weight: 800; white-space: nowrap; transition: filter .2s ease, transform .2s ease; }
+.legal-add-button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.legal-document-card { margin-top: 14px; padding: 16px; border: 1px solid var(--border-secondary); border-radius: 11px; background: var(--bg-primary-50); }
+.legal-document-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.legal-document-title { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.legal-document-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex: 0 0 38px; border: 1px solid var(--border-secondary); border-radius: 8px; background: var(--bg-secondary); color: var(--text-tertiary); }
+.legal-document-title div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.legal-document-title strong { overflow: hidden; color: var(--text-primary); font-size: 13px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.legal-document-title span { overflow: hidden; color: var(--text-tertiary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.legal-delete-button { display: inline-flex; align-items: center; justify-content: center; padding: 6px; border: 0; color: var(--error); border-radius: 7px; background: transparent; cursor: pointer; }
+.legal-delete-button:hover { background: var(--error-light); }
+.legal-document-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.legal-slug-input { display: flex; }
+.legal-slug-input > span { display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--border-secondary); border-right: 0; border-radius: 10px 0 0 10px; background: var(--bg-secondary); color: var(--text-tertiary); font-size: 12px; }
+.legal-slug-input input { min-width: 0; }
+@media (max-width: 640px) {
+  .legal-consent-panel { padding: 16px; }
+  .legal-documents-toolbar { align-items: flex-start; flex-direction: column; }
+  .legal-add-button { width: 100%; justify-content: center; }
+  .legal-document-fields { grid-template-columns: 1fr; }
+}
+.legal-consent-header { align-items: flex-start; margin-bottom: 4px; }
+.legal-consent-heading h3 { font-size: 16px; line-height: 1.35; }
+.legal-consent-heading p { margin-top: 8px; font-size: 12px; line-height: 1.6; }
+.legal-enable-control { display:flex; align-items:center; gap:8px; color:var(--text-tertiary); font-size:12px; font-weight:700; line-height:24px; }
+.legal-enable-control .is-enabled { color:var(--primary); }
+.legal-enable-control:not(:has(input:checked)) > span:first-child { color:#ef4444; }
+.legal-toggle { position:relative; display:inline-flex; width:44px; height:24px; flex:0 0 44px; }
+.legal-toggle input { position:absolute; opacity:0; inset:0; cursor:pointer; }
+.legal-toggle i { width:44px; height:24px; border-radius:999px; background:var(--bg-tertiary); transition:.2s; }
+.legal-toggle i:after { content:''; display:block; width:18px; height:18px; margin:3px; border-radius:50%; background:#fff; transition:.2s; }
+.legal-toggle input:checked + i { background:var(--primary); }
+.legal-toggle input:checked + i:after { transform:translateX(20px); }
+.legal-consent-panel > .grid { align-items:start; column-gap:24px; margin-top:22px; }
+.legal-consent-panel > .grid > div { min-width:0; }
+.legal-mode-switch { min-height:38px; padding:3px; margin-top:10px !important; }
+.legal-mode-option { min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12px; line-height:1; }
+.legal-mode-option svg { width:14px; height:14px; flex:0 0 14px; }
+.legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
+.legal-date-field { min-width:0; } .legal-date-field input { width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
 </style>

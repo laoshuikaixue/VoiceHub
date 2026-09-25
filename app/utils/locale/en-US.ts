@@ -19,6 +19,8 @@ export const siteConfig = {
   siteDescription: 'Site Description',
   siteDescriptionPlaceholder: 'Enter the site description',
   statisticsCode: 'Site Statistics Code',
+  legalConsentTitle: 'Login Terms Confirmation', legalConsentDesc: 'Require users to read and agree to terms before login.', legalConsentDisplayMode: 'Display mode', legalConsentModal: 'Modal', legalConsentCheckbox: 'Checkbox', legalConsentModalHint: 'Shown after login when the account has not confirmed the current terms; accepting enters the system.', legalConsentCheckboxHint: 'The checkbox appears below the login button; every login method stays disabled until it is checked.', legalConsentUpdatedDate: 'Terms update date', legalConsentDocuments: 'Legal documents', legalConsentAdd: 'Add document', legalConsentDocument: 'Document', legalConsentName: 'Document name', legalConsentSlug: 'Route slug', legalConsentContent: 'Markdown content', legalConsentKeepOne: 'Keep at least one legal document', delete: 'Delete',
+  legalConsentPrefix: 'I have read and agree to ', legalConsentSeparator: ', ', legalConsentBlocked: 'Please read and accept the latest terms before logging in.', legalConsentDisplayModeHint: 'The checkbox appears below the login button; all login methods stay disabled until it is checked.', legalConsentUpdatedDateHint: 'Users must agree again when this date or the document content changes.', legalConsentDocumentsDesc: 'Customize names and save content as Markdown. Examples: terms of service, usage policy, supported countries, and service-specific terms.', legalConsentUntitled: 'Untitled document', legalConsentNamePlaceholder: 'e.g. Terms of Service', legalConsentSlugPlaceholder: 'e.g. terms', legalConsentContentPlaceholder: 'Write the official Markdown terms here.',
   statisticsCodeEnabled: 'Enable Site Statistics Code',
   statisticsCodeEnabledDesc: 'Only injects the snippet below into pages when enabled',
   statisticsCodePlaceholder: 'Paste your statistics snippet (e.g. Baidu Analytics, 51.la, Clarity, Google Analytics)',
@@ -323,6 +325,15 @@ export const common = {
       scheduled: 'Scheduled',
       pending: 'Pending'
     }
+  },
+  legalPage: {
+    category: 'Terms of Service',
+    title: 'Terms of Service',
+    updated: 'Last updated: ',
+    notFound: 'Document not found',
+    login: 'Log In',
+    related: 'Related documents',
+    backHome: 'Back to home'
   }
 } as const
 
@@ -888,7 +899,15 @@ export const pages = {
       confirmBind: 'Confirm Bind',
       confirmBindTitle: 'Confirm Binding',
       confirmBindMessage: (providerName: string, providerUsername: string, username: string) =>
-        `Bind the ${providerName} account "${providerUsername}" to "${username}"? You can then sign in with ${providerName} directly.`
+        `Bind the ${providerName} account "${providerUsername}" to "${username}"? You can then sign in with ${providerName} directly.`,
+      legalConsentPrefix: 'I have read and agree to ',
+      legalConsentSeparator: ', ',
+      legalConsentBlocked: 'Please read and accept the latest terms before logging in.',
+      legalConsentRelatedDocs: 'Related documents',
+      legalConsentModalTitle: 'Terms update',
+      legalConsentModalDesc: 'Please read the terms below to continue.',
+      legalConsentReject: 'Reject',
+      legalConsentAccept: 'Agree and continue'
     },
     oauthButtons: {
       divider: 'Or sign in with a third-party account',
@@ -4497,6 +4516,7 @@ export const serverErrors = {
   AUTH_OAUTH_REGISTER_DISABLED: 'Third-party account registration is disabled',
   AUTH_OAUTH_REGISTER_DISABLED_BIND: 'Third-party account registration is disabled. Please sign in to an existing account to bind.',
   AUTH_REGISTER_DISABLED: 'Registration is not open',
+  AUTH_LEGAL_CONSENT_REQUIRED: 'Please read and accept the latest terms before registering.',
   AUTH_USER_PENDING_APPROVAL: 'Your account is pending admin approval. Please wait.',
   AUTH_SYSTEM_ERROR: 'System error. Please try again later.',
   AUTH_BINDING_SESSION_INVALID: 'The binding session is invalid. Please restart binding.',

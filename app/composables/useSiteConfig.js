@@ -66,6 +66,11 @@ const siteConfig = ref({
   submissionNoteRequiresApproval: false,
   registerEmailRequired: false,
   registerRequiresGradeClass: false,
+  legalConsentEnabled: false,
+  legalConsentDisplayMode: 'modal',
+  legalConsentUpdatedDate: '',
+  legalConsentDocuments: '[]',
+  legalConsentVersion: '',
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
@@ -197,6 +202,17 @@ export const useSiteConfig = () => {
   const registerRequiresGradeClass = computed(
     () => siteConfig.value.registerRequiresGradeClass === true
   )
+  const legalConsentEnabled = computed(() => siteConfig.value.legalConsentEnabled === true)
+  const legalConsentDisplayMode = computed(() => siteConfig.value.legalConsentDisplayMode || 'modal')
+  const legalConsentUpdatedDate = computed(() => siteConfig.value.legalConsentUpdatedDate || '')
+  const legalConsentDocuments = computed(() => {
+    try {
+      const docs = typeof siteConfig.value.legalConsentDocuments === 'string' ? JSON.parse(siteConfig.value.legalConsentDocuments) : siteConfig.value.legalConsentDocuments
+      return Array.isArray(docs) ? docs.filter((doc) => doc?.name && doc?.slug) : []
+    } catch { return [] }
+  })
+  // 条款内容版本指纹（服务端派生），登录页据此判定是否需重新同意，随文档内容变化而变化
+  const legalConsentVersion = computed(() => siteConfig.value.legalConsentVersion || '')
   const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
   )
@@ -293,6 +309,11 @@ export const useSiteConfig = () => {
     submissionNoteRequiresApproval,
     registerEmailRequired,
     registerRequiresGradeClass,
+    legalConsentEnabled,
+    legalConsentDisplayMode,
+    legalConsentUpdatedDate,
+    legalConsentDocuments,
+    legalConsentVersion,
     captchaEnabled,
     captchaProvider,
     captchaMaxFailures,
