@@ -411,7 +411,7 @@
 
       <div v-if="legalConsentDisplayMode === 'modal' && legalConsentActive && (loginTermsBlocked || legalConsentRejected)" class="login-terms-blocked">
         <span class="blocked-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div class="blocked-copy"><strong>{{ locale.legalConsentRequiredTitle }}</strong><span>{{ locale.legalConsentBlocked }}</span></div>
-        <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView || '查看条款' }}</button>
+        <button type="button" @click="showLegalConsentModal = true">{{ locale.legalConsentView }}</button>
       </div>
 
       <label v-if="legalConsentActive && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
@@ -478,15 +478,15 @@
     <Teleport to="body">
       <div v-if="showLegalConsentModal" class="legal-consent-overlay">
         <div class="legal-consent-modal">
-          <div class="legal-consent-heading"><span class="legal-consent-shield"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div><h3>{{ locale.legalConsentModalTitle || '条款更新通知' }}</h3><span class="legal-consent-date">{{ legalConsentUpdatedDate }}</span></div></div>
-          <p>{{ locale.legalConsentModalDesc || '我们的服务条款已更新。在继续使用服务之前，请仔细阅读并同意以下条款。' }}</p>
-          <h4 class="legal-consent-related">相关文档</h4>
+          <div class="legal-consent-heading"><span class="legal-consent-shield"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3zM9 12l2 2 4-4" /></svg></span><div><h3>{{ locale.legalConsentModalTitle }}</h3><span class="legal-consent-date">{{ legalConsentUpdatedDate }}</span></div></div>
+          <p>{{ locale.legalConsentModalDesc }}</p>
+          <h4 class="legal-consent-related">{{ locale.legalConsentRelatedDocs }}</h4>
           <div class="legal-consent-docs">
             <a v-for="doc in legalConsentDocuments" :key="doc.slug" :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><span class="doc-symbol"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6zM9 13h6M9 17h4" /></svg></span><strong>{{ doc.name }}</strong><span class="external-symbol"><svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-9 9M19 13v6H5V5h6" /></svg></span></a>
           </div>
           <div class="legal-consent-actions">
-            <button type="button" class="legal-consent-reject" @click="rejectLegalConsent">{{ locale.legalConsentReject || '拒绝' }}</button>
-            <button type="button" class="legal-consent-accept" @click="acceptLegalConsent">{{ locale.legalConsentAccept || '同意并继续' }}</button>
+            <button type="button" class="legal-consent-reject" @click="rejectLegalConsent">{{ locale.legalConsentReject }}</button>
+            <button type="button" class="legal-consent-accept" @click="acceptLegalConsent">{{ locale.legalConsentAccept }}</button>
           </div>
         </div>
       </div>
@@ -520,7 +520,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentUpdatedDate, legalConsentDocuments } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentUpdatedDate, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -577,7 +577,7 @@ const grade = ref('')
 const studentClass = ref('')
 const password = ref('')
 const loginTermsAccepted = ref(false)
-const legalConsentStorageKey = computed(() => `voicehub.legalConsent.${legalConsentUpdatedDate.value || 'unversioned'}`)
+const legalConsentStorageKey = computed(() => `voicehub.legalConsent.${legalConsentVersion.value || 'none'}`)
 const showLegalConsentModal = ref(false)
 const legalConsentRejected = ref(false)
 const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
@@ -632,7 +632,7 @@ const rejectLegalConsent = () => {
   legalConsentRejected.value = true
   showLegalConsentModal.value = false
   error.value = locale.value.legalConsentBlocked
-  toastError('未同意最新条款前，无法输入账号密码或使用快捷登录。')
+  toastError(locale.value.legalConsentBlocked)
 }
 
 // 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
@@ -1119,9 +1119,10 @@ const handleRegister = async () => {
       email: emailValue || undefined,
       emailCode: emailCode.value.trim() || undefined
     }
-    // 提交前换取服务端签发的条款同意凭证（未开启条款时跳过）
+    // 条款确认：显式提交用户已同意的内容版本，服务端校验其与当前版本一致（未开启条款时跳过）
     if (legalConsentActive.value) {
-      requestBody.legalConsentToken = (await $fetch('/api/legal-consent'))?.token || ''
+      requestBody.legalConsentAccepted = loginTermsAccepted.value === true
+      requestBody.legalConsentVersion = legalConsentVersion.value
     }
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {

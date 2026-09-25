@@ -11,6 +11,6 @@ export default defineEventHandler(async () => {
     return { updatedDate: settings[0]?.updatedDate || '', documents: documents.map(({ name, slug, content }) => ({ name, slug, content })) }
   } catch (error) {
     console.error('获取条款文档失败:', error)
-    throw createApiError(500, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '获取条款文档失败')
+    throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, '获取条款文档失败')
   }
 })

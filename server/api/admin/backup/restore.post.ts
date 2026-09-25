@@ -387,7 +387,8 @@ export default defineEventHandler(async (event) => {
                             'statusChangedBy',
                             'remark',
                             'avatarProvider',
-                            'avatarProviderUserId'
+                            'avatarProviderUserId',
+                            'legalConsentVersion'
                           ]
 
                           // 处理日期字段
@@ -397,7 +398,8 @@ export default defineEventHandler(async (event) => {
                             'lastLogin',
                             'passwordChangedAt',
                             'meowBoundAt',
-                            'statusChangedAt'
+                            'statusChangedAt',
+                            'legalConsentAt'
                           ]
 
                           // 添加基本字段

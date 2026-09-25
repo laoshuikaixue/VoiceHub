@@ -12,7 +12,7 @@ import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
 import { notifyRegistration } from '~~/server/utils/registration-notify'
-import { verifyLegalConsentToken } from '~~/server/utils/legal-consent'
+import { resolveRegisteredLegalConsentVersion } from '~~/server/utils/legal-consent'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -34,8 +34,8 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { password, confirmPassword } = body
 
-  // 条款确认：开启登录条款后，必须携带服务端签发的当前版本同意凭证
-  const legalConsentVersion = verifyLegalConsentToken(config, body)
+  // 条款确认：开启登录条款后，必须显式提交与当前内容版本一致的同意版本
+  const legalConsentVersion = resolveRegisteredLegalConsentVersion(config, body)
 
   const username = typeof body.username === 'string' ? body.username.trim() : ''
   const name = typeof body.name === 'string' ? body.name.trim() : ''

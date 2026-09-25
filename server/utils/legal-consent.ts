@@ -1,36 +1,47 @@
-// 登录条款同意凭证：签发与校验（注册与 OAuth 注册共用）
-import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+// 登录条款同意：内容版本指纹与注册同意校验
+import { createHash } from 'node:crypto'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
-// 未配置更新日期时的兜底版本号
-export const UNVERSIONED_LEGAL_CONSENT = 'unversioned'
-
-const LEGAL_CONSENT_TOKEN_TTL = '30m'
-
-export const getLegalConsentRequiredVersion = (config: { legalConsentUpdatedDate?: string | null } | null) =>
-  config?.legalConsentUpdatedDate || UNVERSIONED_LEGAL_CONSENT
-
-// 签发匿名同意凭证（短期有效，绑定当前条款版本）
-export const signLegalConsentToken = (version: string) =>
-  JWTEnhanced.sign({ type: 'legal-consent', version }, { expiresIn: LEGAL_CONSENT_TOKEN_TTL })
-
-// 校验注册请求携带的同意凭证：通过返回同意版本号（供落库），未开启条款返回 null
-export const verifyLegalConsentToken = (
-  config: { legalConsentEnabled?: boolean | null } | null,
-  body: { legalConsentToken?: unknown }
-) => {
-  if (!config?.legalConsentEnabled) return null
-  const requiredVersion = getLegalConsentRequiredVersion(config)
-  let version = ''
+// 解析协议文档 JSON，非法或非数组时回退空数组
+export const parseLegalConsentDocuments = (raw: unknown): Array<{ slug?: string; name?: string; content?: string }> => {
   try {
-    const payload = JWTEnhanced.verify(String(body?.legalConsentToken || ''))
-    if (payload?.type === 'legal-consent' && typeof payload.version === 'string') version = payload.version
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return Array.isArray(parsed) ? parsed : []
   } catch {
-    version = ''
+    return []
   }
-  if (!version || version !== requiredVersion) {
+}
+
+// 内容版本指纹：更新日期与每份文档（slug/name/content）任一变化即产生新版本；未开启时返回 null
+export const computeLegalConsentVersion = (
+  config: {
+    legalConsentEnabled?: boolean | null
+    legalConsentUpdatedDate?: string | null
+    legalConsentDocuments?: string | null
+  } | null
+): string | null => {
+  if (!config?.legalConsentEnabled) return null
+  const date = typeof config.legalConsentUpdatedDate === 'string' ? config.legalConsentUpdatedDate.trim() : ''
+  const docs = parseLegalConsentDocuments(config.legalConsentDocuments)
+  const canonical = `${date}\n${docs.map((d) => `${d?.slug ?? ''}\u0001${d?.name ?? ''}\u0001${d?.content ?? ''}`).join('\u0002')}`
+  return createHash('sha256').update(canonical).digest('hex').slice(0, 16)
+}
+
+// 注册同意校验：需用户显式提交所同意的版本号且与当前内容指纹一致；未开启条款返回 null
+export const resolveRegisteredLegalConsentVersion = (
+  config: {
+    legalConsentEnabled?: boolean | null
+    legalConsentUpdatedDate?: string | null
+    legalConsentDocuments?: string | null
+  } | null,
+  body: { legalConsentAccepted?: unknown; legalConsentVersion?: unknown }
+): string | null => {
+  if (!config?.legalConsentEnabled) return null
+  const required = computeLegalConsentVersion(config)
+  const submitted = typeof body?.legalConsentVersion === 'string' ? body.legalConsentVersion : ''
+  if (body?.legalConsentAccepted !== true || !required || submitted !== required) {
     throw createApiError(403, SERVER_ERROR_CODES.AUTH_LEGAL_CONSENT_REQUIRED, '请先阅读并同意最新条款后再注册')
   }
-  return version
+  return required
 }

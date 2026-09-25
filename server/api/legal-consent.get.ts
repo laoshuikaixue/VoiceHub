@@ -1,21 +1,17 @@
-// 条款同意状态查询；开启条款时附签匿名同意凭证（注册请求需携带以证明已同意当前版本）
+// 条款同意状态查询：返回当前内容版本指纹及用户是否已同意该版本
 import { db } from '~/drizzle/db'
-import { getLegalConsentRequiredVersion, signLegalConsentToken } from '~~/server/utils/legal-consent'
+import { computeLegalConsentVersion } from '~~/server/utils/legal-consent'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   const settings = await db.query.systemSettings.findFirst({
-    columns: { legalConsentEnabled: true, legalConsentUpdatedDate: true }
+    columns: { legalConsentEnabled: true, legalConsentUpdatedDate: true, legalConsentDocuments: true }
   })
-  const response = {
-    accepted: Boolean(user?.legalConsentVersion),
-    version: user?.legalConsentVersion || null,
-    token: '',
-    consentVersion: ''
+  const enabled = Boolean(settings?.legalConsentEnabled)
+  const consentVersion = computeLegalConsentVersion(settings ?? null) || ''
+  return {
+    enabled,
+    consentVersion,
+    accepted: enabled && Boolean(user?.legalConsentVersion) && user.legalConsentVersion === consentVersion
   }
-  if (settings?.legalConsentEnabled) {
-    response.consentVersion = getLegalConsentRequiredVersion(settings)
-    response.token = signLegalConsentToken(response.consentVersion)
-  }
-  return response
 })

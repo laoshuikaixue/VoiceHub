@@ -214,6 +214,14 @@ export default defineEventHandler(async (event) => {
       if (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款更新日期格式无效')
       updateData.legalConsentUpdatedDate = date
     }
+    // 交叉校验：启用条款确认时（合并提交值与持久化值后）必须存在更新日期
+    const legalConsentEffectiveEnabled =
+      body.legalConsentEnabled !== undefined ? body.legalConsentEnabled === true : settings?.legalConsentEnabled === true
+    if (legalConsentEffectiveEnabled) {
+      const finalUpdatedDate =
+        body.legalConsentUpdatedDate !== undefined ? updateData.legalConsentUpdatedDate : settings?.legalConsentUpdatedDate
+      if (!finalUpdatedDate) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须填写条款更新日期')
+    }
     if (body.legalConsentDocuments !== undefined) {
       let docs
       try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }

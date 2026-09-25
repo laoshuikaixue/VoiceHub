@@ -70,6 +70,7 @@ const siteConfig = ref({
   legalConsentDisplayMode: 'modal',
   legalConsentUpdatedDate: '',
   legalConsentDocuments: '[]',
+  legalConsentVersion: '',
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
@@ -210,6 +211,8 @@ export const useSiteConfig = () => {
       return Array.isArray(docs) ? docs.filter((doc) => doc?.name && doc?.slug) : []
     } catch { return [] }
   })
+  // 条款内容版本指纹（服务端派生），登录页据此判定是否需重新同意，随文档内容变化而变化
+  const legalConsentVersion = computed(() => siteConfig.value.legalConsentVersion || '')
   const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
   )
@@ -310,6 +313,7 @@ export const useSiteConfig = () => {
     legalConsentDisplayMode,
     legalConsentUpdatedDate,
     legalConsentDocuments,
+    legalConsentVersion,
     captchaEnabled,
     captchaProvider,
     captchaMaxFailures,
