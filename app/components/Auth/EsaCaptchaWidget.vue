@@ -153,12 +153,19 @@ onUnmounted(() => {
 
   #aliyunCaptcha-checkbox-wrapper {
     box-sizing: border-box;
-    max-width: 100%;
+    width: 100% !important;
+  }
+
+  #aliyunCaptcha-checkbox-body {
+    position: relative;
+    width: 100%;
   }
 
   #aliyunCaptcha-checkbox-logo {
-    flex-shrink: 0;
-    margin-left: auto;
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
   }
 
   #aliyunCaptcha-checkbox-text-box {
