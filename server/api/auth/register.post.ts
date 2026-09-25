@@ -4,7 +4,8 @@ import { eq, inArray } from 'drizzle-orm'
 import { db, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
-import { isSecureRequest } from '~~/server/utils/request-utils'
+import { isSecureRequest, getRequestHostname } from '~~/server/utils/request-utils'
+import { resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 import { getClientIP } from '~~/server/utils/ip-utils'
@@ -90,7 +91,9 @@ export default defineEventHandler(async (event) => {
     } else if (captchaProvider === 'esa') {
       // ESA 验签在边缘完成，源站无服务端验签接口，只能判断验签参数是否随请求到达
       // 前提：源站必须只接受 ESA 回源流量，否则直连源站即可附带任意请求头绕过验证
-      if (!getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
+      // 当前接口+域名未配置可用场景 ID 时，边缘不会拦截该请求，视为未开启人机验证，不拦截注册
+      const esaSceneId = resolveEsaCaptchaSceneId(config?.esaCaptchaScenes, 'register', getRequestHostname(event))
+      if (esaSceneId && !getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
         throw createApiError(400, SERVER_ERROR_CODES.AUTH_CAPTCHA_REQUIRED, '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
       }
     } else {

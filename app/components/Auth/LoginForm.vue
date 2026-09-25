@@ -557,6 +557,8 @@ watch(showRegisterMode, () => {
 })
 
 const showCaptcha = computed(() => {
+  // ESA 已选择但当前接口与域名解析不到场景 ID 时，视为未开启人机验证，不拦截登录/注册
+  if (captchaProvider.value === 'esa' && !esaSceneId.value) return false
   // 注册模式开启验证码服务时强制显示验证码
   if (showRegisterMode.value) return captchaEnabled.value
   // 如果后端明确要求显示验证码，则优先显示
@@ -837,13 +839,9 @@ const applyEsaCaptchaRejectError = (err) => {
 }
 
 // ESA AI 验证码必须先取得验签参数（参数一次性有效，由 handleLogin 的 verified 回调重新进入提交）
+// 未解析到场景 ID 时 showCaptcha 已为 false，此处直接放行，等同于未开启人机验证
 const ensureEsaCaptchaVerified = () => {
   if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
-  // 当前接口未配置场景 ID 时验证码无法初始化，避免提交后静默无响应
-  if (!esaSceneId.value) {
-    error.value = locale.value.esaCaptchaSceneMissing || '当前接口尚未配置 ESA 验证码场景 ID，请联系管理员'
-    return false
-  }
   return !!esaVerifyParam.value
 }
 

@@ -861,13 +861,16 @@ export interface CaptchaSettings {
   provider: string
   threshold: number
   turnstileSecretKey: string
+  // ESA 场景 ID 规则列表（数据库原始 JSON），供按接口+域名解析是否有可用场景
+  esaScenes: unknown
 }
 
 const CAPTCHA_SETTINGS_DEFAULTS: CaptchaSettings = {
   enabled: false,
   provider: 'graphic',
   threshold: SYSTEM_SETTINGS_DEFAULTS.captchaMaxFailures,
-  turnstileSecretKey: ''
+  turnstileSecretKey: '',
+  esaScenes: '[]'
 }
 
 /**
@@ -889,7 +892,8 @@ export async function resolveCaptchaSettings(): Promise<CaptchaSettings> {
       enabled: true,
       provider: settings.captchaProvider || 'graphic',
       threshold,
-      turnstileSecretKey: settings.turnstileSecretKey || ''
+      turnstileSecretKey: settings.turnstileSecretKey || '',
+      esaScenes: settings.esaCaptchaScenes
     }
   } catch (error) {
     console.warn('读取验证码配置失败，已暂时禁用:', error)

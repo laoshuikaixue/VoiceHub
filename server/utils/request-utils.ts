@@ -97,3 +97,20 @@ export function getRequestOrigin(event: H3Event): string {
     throw createError({ statusCode: 400, message: '请求 Host 无效' })
   }
 }
+
+/**
+ * 获取请求的主机名（不含端口），优先取 x-forwarded-host，回退 host
+ * 与前端 window.location.hostname 口径一致，供按域名匹配的配置（如 ESA 场景 ID）解析使用
+ * @param event H3Event
+ * @returns 解析失败时返回空字符串
+ */
+export function getRequestHostname(event: H3Event): string {
+  const headers = getRequestHeaders(event)
+  const forwardedHost = getFirstForwardedValue(headers['x-forwarded-host']?.toString())
+  const host = forwardedHost || headers['host']?.toString() || getRequestURL(event).host
+  try {
+    return new URL(`http://${normalizeHostForUrl(host)}`).hostname
+  } catch {
+    return ''
+  }
+}
