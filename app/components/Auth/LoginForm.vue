@@ -1304,9 +1304,7 @@ const handleWebAuthnLogin = async () => {
 .login-form {
   width: 100%;
   max-width: 400px;
-  /* 不能用 both/forwards：动画结束会滞留 translateY(0)，非 none 的 transform 会成为
-     验证码弹窗 position:fixed 的包含块，使弹窗被限制在本卡片宽度内导致移动端布局塌陷 */
-  animation: fadeInUp 0.4s ease;
+  animation: fadeInUp 0.4s ease both;
 }
 
 @keyframes fadeInUp {

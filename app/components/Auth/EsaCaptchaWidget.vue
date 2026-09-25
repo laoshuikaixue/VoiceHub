@@ -142,3 +142,21 @@ onUnmounted(() => {
   justify-content: center;
 }
 </style>
+
+<style>
+/* 弹窗渲染在 body 上，scoped 命不中，故用全局样式；仅限移动端。
+   一点即过弹窗按内容撑开，窄屏下提示文字框被 flex 压缩到近 0，导致“确认您不是机器人”竖排、弹窗整体塌陷；
+   滑块弹窗靠 slideStyle.width 撑开不受影响。只把 checkbox 的文字框改为按内容宽度且禁止换行，
+   弹窗会随之撑宽；不去改共用的 #aliyunCaptcha-window-popup 宽度，避免误伤更宽的滑块弹窗。
+   仅涉及排版，不复写拼图/滑块的图片尺寸（那类复写会导致验证异常） */
+@media (max-width: 480px) {
+  #aliyunCaptcha-checkbox-text-box {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  #aliyunCaptcha-checkbox-text {
+    white-space: nowrap !important;
+  }
+}
+</style>
