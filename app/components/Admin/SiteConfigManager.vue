@@ -556,6 +556,16 @@
                       />
                       <span class="text-sm text-text-secondary">{{ locale.captchaTurnstile }}</span>
                     </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input
+                        v-model="formData.captchaProvider"
+                        type="radio"
+                        value="esa"
+                        :disabled="!formData.captchaEnabled"
+                        class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span class="text-sm text-text-secondary">{{ locale.captchaEsa }}</span>
+                    </label>
                   </div>
                 </div>
 
@@ -601,6 +611,109 @@
                       {{ locale.turnstileSecretKeyDesc }}
                     </p>
                   </div>
+                </div>
+
+                <!-- 阿里云 ESA AI 验证码配置 -->
+                <div v-if="formData.captchaProvider === 'esa'" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.esaCaptchaPrefix }}</label>
+                    <input
+                      v-model="formData.esaCaptchaPrefix"
+                      type="text"
+                      :disabled="!formData.captchaEnabled"
+                      :placeholder="locale.esaCaptchaPrefixPlaceholder"
+                      class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                      <label class="block text-xs font-bold text-text-tertiary">{{ locale.esaCaptchaScenes }}</label>
+                      <button
+                        type="button"
+                        class="legal-add-button disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="!formData.captchaEnabled"
+                        @click="addEsaCaptchaScene"
+                      >
+                        <Plus :size="12" /> {{ locale.esaCaptchaAddScene }}
+                      </button>
+                    </div>
+                    <div class="space-y-2">
+                      <div class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
+                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaEndpoint }}</span>
+                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaHost }}</span>
+                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaSceneId }}</span>
+                        <span aria-hidden="true" />
+                      </div>
+                      <div
+                        v-for="(scene, index) in formData.esaCaptchaScenes"
+                        :key="index"
+                        class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
+                      >
+                        <div class="min-w-0">
+                          <CustomSelect
+                            v-model="scene.endpoint"
+                            :options="esaEndpointOptions"
+                            :disabled="!formData.captchaEnabled"
+                          />
+                          <!-- 该行路径可直接粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
+                          <code class="block mt-1 truncate text-[10px] text-text-tertiary">{{ esaEndpointPath(scene.endpoint) }}</code>
+                        </div>
+                        <input
+                          v-model="scene.host"
+                          type="text"
+                          :disabled="!formData.captchaEnabled"
+                          :placeholder="locale.esaCaptchaHostPlaceholder"
+                          :class="esaSceneInputClass"
+                        />
+                        <input
+                          v-model="scene.sceneId"
+                          type="text"
+                          :disabled="!formData.captchaEnabled"
+                          :class="esaSceneInputClass"
+                        />
+                        <button
+                          type="button"
+                          class="legal-delete-button disabled:opacity-50 disabled:cursor-not-allowed"
+                          :disabled="!formData.captchaEnabled"
+                          :aria-label="locale.delete"
+                          @click="removeEsaCaptchaScene(index)"
+                        >
+                          <Trash2 :size="16" />
+                        </button>
+                      </div>
+                    </div>
+                    <p class="text-[10px] text-text-tertiary leading-relaxed mt-2">
+                      {{ locale.esaCaptchaScenesDesc }}
+                    </p>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.esaCaptchaRegion }}</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          v-model="formData.esaCaptchaRegion"
+                          type="radio"
+                          value="cn"
+                          :disabled="!formData.captchaEnabled"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span class="text-sm text-text-secondary">{{ locale.esaCaptchaRegionCn }}</span>
+                      </label>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          v-model="formData.esaCaptchaRegion"
+                          type="radio"
+                          value="sgp"
+                          :disabled="!formData.captchaEnabled"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span class="text-sm text-text-secondary">{{ locale.esaCaptchaRegionSgp }}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-text-tertiary leading-relaxed">
+                    {{ locale.esaCaptchaDesc }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -841,15 +954,18 @@ import {
   AlertCircle,
   Palette,
   Star,
+  Plus,
   CalendarRange
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { joinThemeLogoUrl, splitThemeLogoUrl, useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
+import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_ENDPOINT_PATHS, ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
@@ -968,6 +1084,40 @@ const parseLegalDocuments = (value) => {
   }
 }
 
+// ESA 场景 ID 规则：一条 ESA 规则只覆盖一个接口 + 一个域名，登录与注册需分别登记
+const createEsaCaptchaScene = (endpoint = 'login') => ({
+  endpoint,
+  host: ESA_CAPTCHA_ANY_HOST,
+  sceneId: ''
+})
+const parseEsaScenes = (value) => {
+  const scenes = parseEsaCaptchaScenes(value)
+  return scenes.length > 0 ? scenes : [createEsaCaptchaScene()]
+}
+const esaEndpointOptions = computed(() => {
+  const labels = {
+    login: locale.value?.esaCaptchaEndpointLogin,
+    register: locale.value?.esaCaptchaEndpointRegister
+  }
+  return ESA_CAPTCHA_ENDPOINTS.map((endpoint) => ({ value: endpoint, label: labels[endpoint] || endpoint }))
+})
+const esaSceneInputClass =
+  'w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50'
+// 接口对应的服务端路径，与 ESA 控制台「需验签的接口」逐字对应
+const esaEndpointPath = (endpoint) => ESA_CAPTCHA_ENDPOINT_PATHS[endpoint] || ''
+
+const addEsaCaptchaScene = () => {
+  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene('register'))
+}
+
+const removeEsaCaptchaScene = (index) => {
+  if (formData.value.esaCaptchaScenes.length <= 1) {
+    showNotification(locale.value?.esaCaptchaKeepOne || '至少保留一条场景配置', 'error')
+    return
+  }
+  formData.value.esaCaptchaScenes.splice(index, 1)
+}
+
 const formData = ref({
   siteTitle: '',
   siteLogoUrl: '',
@@ -1009,6 +1159,9 @@ const formData = ref({
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
   turnstileSecretKey: '',
+  esaCaptchaPrefix: '',
+  esaCaptchaScenes: [createEsaCaptchaScene()],
+  esaCaptchaRegion: 'cn',
   captchaMaxFailures: 3,
   allowRegister: false,
   registerRequiresApproval: true,
@@ -1153,6 +1306,9 @@ const loadConfig = async () => {
       captchaProvider: data.captchaProvider || 'graphic',
       turnstileSiteKey: data.turnstileSiteKey || '',
       turnstileSecretKey: undefined,
+      esaCaptchaPrefix: data.esaCaptchaPrefix || '',
+      esaCaptchaScenes: parseEsaScenes(data.esaCaptchaScenes),
+      esaCaptchaRegion: data.esaCaptchaRegion || 'cn',
       captchaMaxFailures: data.captchaMaxFailures ?? 3,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       allowRegister: !!data.allowRegister,
@@ -1226,6 +1382,7 @@ const saveConfig = async () => {
     const configToSave = {
       ...formData.value,
       legalConsentDocuments: JSON.stringify(formData.value.legalConsentDocuments),
+      esaCaptchaScenes: JSON.stringify(formData.value.esaCaptchaScenes),
       schoolLogoHomeUrl: joinThemeLogoUrl(
         schoolLogoHomeDarkUrl,
         schoolLogoHomeLightUrl

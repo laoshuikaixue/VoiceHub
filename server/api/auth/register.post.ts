@@ -1,11 +1,12 @@
 import bcrypt from 'bcryptjs'
+import { getRequestHeader } from 'h3'
 import { eq, inArray } from 'drizzle-orm'
 import { db, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
@@ -85,6 +86,12 @@ export default defineEventHandler(async (event) => {
         if (err.statusCode === 400) throw err
         console.error('Turnstile verification error:', err)
         throw createApiError(500, SERVER_ERROR_CODES.AUTH_CAPTCHA_SERVICE_UNAVAILABLE, '人机验证服务暂时不可用')
+      }
+    } else if (captchaProvider === 'esa') {
+      // ESA 验签在边缘完成，源站无服务端验签接口，只能判断验签参数是否随请求到达
+      // 前提：源站必须只接受 ESA 回源流量，否则直连源站即可附带任意请求头绕过验证
+      if (!getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
+        throw createApiError(400, SERVER_ERROR_CODES.AUTH_CAPTCHA_REQUIRED, '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
       }
     } else {
       const captchaId = body.captchaId

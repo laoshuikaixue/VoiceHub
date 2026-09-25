@@ -798,6 +798,7 @@ VoiceHub/
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
 │   │   │   ├── CaptchaInput.vue      # 图形验证码输入组件
 │   │   │   ├── TurnstileWidget.vue   # Cloudflare Turnstile验证组件
+│   │   │   ├── EsaCaptchaWidget.vue  # 阿里云 ESA AI验证码组件
 │   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
 │   │   │   ├── OAuthQuickLogin.vue   # 微信/QQ内置浏览器快速登录按钮
 │   │   │   ├── OAuthBindReminderModal.vue # 微信/QQ内置浏览器账号密码登录绑定引导弹窗
@@ -986,6 +987,7 @@ VoiceHub/
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── cover-theme.ts    # 封面取色与歌词主题色（AMLL 调色板）
 │       ├── debounce.ts       # 防抖工具
+│       ├── esaCaptcha.ts     # 阿里云 ESA AI验证码区域与服务端节点共享常量
 │       ├── grade-class-input.ts # 年级班级批量输入解析
 │       ├── gradeClassWeights.js # 年级排序权重
 │       ├── invalidPlaybackUrls.ts # 播放端确认无效的地址登记（换源时跳过坏链）
@@ -1477,6 +1479,7 @@ VoiceHub/
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
+│       ├── esa-captcha.test.ts # 阿里云 ESA AI验证码区域与服务端节点解析测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
 │       ├── invalid-playback-urls.test.ts # 无效播放地址登记与淘汰测试

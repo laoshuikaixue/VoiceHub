@@ -907,7 +907,8 @@ export async function isPasswordLoginCaptchaRequired(
 ): Promise<boolean> {
   const config = settings ?? (await resolveCaptchaSettings())
   if (!config.enabled) return false
-  if (config.provider === 'turnstile') return true
+  // Turnstile 与 ESA AI 验证码由外部服务在每次登录时验证，不依赖失败次数
+  if (config.provider === 'turnstile' || config.provider === 'esa') return true
   if (config.threshold === 0) return true
   const failCount = await getLoginFailureCount(username, ip)
   return failCount >= config.threshold

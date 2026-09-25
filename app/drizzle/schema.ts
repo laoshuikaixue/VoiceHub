@@ -305,6 +305,10 @@ export const systemSettings = pgTable('SystemSettings', {
   captchaProvider: text('captchaProvider').default('graphic').notNull(),
   turnstileSiteKey: text('turnstileSiteKey'),
   turnstileSecretKey: text('turnstileSecretKey'),
+  // 阿里云 ESA AI 验证码：身份标 / 场景 ID 规则列表（JSON：接口 + 域名 → 场景 ID）/ 部署区域（cn=中国内地，sgp=新加坡）
+  esaCaptchaPrefix: text('esaCaptchaPrefix'),
+  esaCaptchaScenes: text('esaCaptchaScenes').default('[]').notNull(),
+  esaCaptchaRegion: text('esaCaptchaRegion').default('cn').notNull(),
   
   // 注册配置
   allowRegister: boolean('allowRegister').default(false).notNull(),

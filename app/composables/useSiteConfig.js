@@ -1,5 +1,6 @@
 import { computed, ref, readonly } from 'vue'
 import { getAggregateOAuthLoginTypesOrDefault, getProviderDisplayName } from '~/utils/oauth'
+import { parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 import { applyThemeConfig, useTheme } from '~/composables/useTheme'
 
 const THEME_LOGO_SEPARATOR = '||'
@@ -51,6 +52,9 @@ const siteConfig = ref({
   captchaProvider: 'graphic',
   captchaMaxFailures: 3,
   turnstileSiteKey: '',
+  esaCaptchaPrefix: '',
+  esaCaptchaScenes: '[]',
+  esaCaptchaRegion: 'cn',
   enableSubmissionLimit: false,
   enableCardCodeRequests: false,
   requireCardCodeForRequests: false,
@@ -136,6 +140,9 @@ export const useSiteConfig = () => {
         captchaEnabled: false,
         captchaProvider: 'graphic',
         turnstileSiteKey: '',
+        esaCaptchaPrefix: '',
+        esaCaptchaScenes: '[]',
+        esaCaptchaRegion: 'cn',
         enableSubmissionLimit: false,
         enableCardCodeRequests: false,
         requireCardCodeForRequests: false,
@@ -226,6 +233,8 @@ export const useSiteConfig = () => {
     return Number.isInteger(value) && value >= 0 ? value : 3
   })
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
+  // ESA 场景 ID 规则列表（接口 + 域名），非法存储值回退空数组
+  const esaCaptchaScenes = computed(() => parseEsaCaptchaScenes(siteConfig.value.esaCaptchaScenes))
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({
     github: !!siteConfig.value.githubOAuthEnabled,
@@ -318,6 +327,7 @@ export const useSiteConfig = () => {
     captchaProvider,
     captchaMaxFailures,
     turnstileSiteKey,
+    esaCaptchaScenes,
     smtpEnabled,
     oauth,
     oauthProviders,
