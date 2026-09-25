@@ -230,13 +230,13 @@
             <div class="flex gap-2">
               <button
                 v-show="!slot.past"
-                class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
                 @click="editRequestTime(slot)"
               >
                 <Edit2 :size="14" />
               </button>
               <button
-                class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error hover:border-error-30 transition-all"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error hover:border-error-30 transition-all"
                 @click="confirmDelete(slot)"
               >
                 <Trash2 :size="14" />

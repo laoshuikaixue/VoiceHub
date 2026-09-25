@@ -37,8 +37,8 @@
         <div
           v-if="isOpen"
           ref="dropdownRef"
-          :style="dropdownStyle"
-          class="fixed z-[9999] p-1 bg-bg-primary border border-border-secondary rounded-lg shadow-2xl backdrop-blur-xl"
+          :style="[dropdownStyle, { zIndex }]"
+          class="fixed p-1 bg-bg-primary border border-border-secondary rounded-lg shadow-2xl backdrop-blur-xl"
         >
           <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
             <button
@@ -67,6 +67,7 @@
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
+import { usePopupZIndex } from '~/composables/useZIndex'
 
 const props = defineProps({
   label: String,
@@ -105,6 +106,8 @@ const isOpen = ref(false)
 const containerRef = ref(null)
 const dropdownRef = ref(null)
 const dropdownStyle = ref({})
+// 下拉层需压过所在弹窗，层级在展开时动态分配
+const { zIndex, onOpenChange } = usePopupZIndex()
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
 const resolvedPlaceholder = computed(() => props.placeholder || locale.value?.selectPlaceholder || '请选择')
@@ -236,6 +239,7 @@ const handleScrollOrResize = () => {
 
 // 监听 isOpen 变化来添加/移除事件监听
 watch(isOpen, (val) => {
+  onOpenChange(val)
   if (val) {
     window.addEventListener('scroll', handleScrollOrResize, true) // capture=true 以捕获子元素的滚动
     window.addEventListener('resize', handleScrollOrResize)

@@ -9,7 +9,7 @@
               <ClipboardCheck :size="18" />
               {{ locale.approval.title }}
             </h3>
-            <button type="button" class="p-1.5 text-text-tertiary hover:text-text-primary transition-colors" @click="closeModal">
+            <button type="button" class="flex items-center justify-center p-1.5 text-text-tertiary hover:text-text-primary transition-colors" @click="closeModal">
               <X :size="18" />
             </button>
           </div>

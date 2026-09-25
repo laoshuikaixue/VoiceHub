@@ -230,7 +230,7 @@
                 type="button"
                 @click="switchPlatform(pKey)"
               >
-                {{ locale.platforms[pKey] || pKey }}
+                {{ getPlatformButtonLabel(pKey) }}
               </button>
             </div>
 
@@ -1476,8 +1476,10 @@ import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import { onQqMusicCookieUpdated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
+import { getPluginId, isPluginPlatform } from '~/utils/pluginPlatform'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1557,9 +1559,19 @@ const voting = ref(false)
 const {
   getAvailablePlatforms,
   loadPlatformConfig,
-  loaded: platformConfigLoaded
+  loaded: platformConfigLoaded,
+  pluginPlatforms
 } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
+
+// 平台按钮显示名：内置音源用词典，插件音源用其 displayName
+const getPlatformButtonLabel = (key) => {
+  if (isPluginPlatform(key)) {
+    const plugin = pluginPlatforms.value.find((p) => p.platform === key)
+    return plugin?.displayName ?? getPluginId(key)
+  }
+  return ((locale.value.platforms) || {})[key] ?? key
+}
 
 // 监听平台可用性与排序变化：
 // - 当前平台被禁用时，强制切换到第一个可用平台并提示
@@ -1569,7 +1581,7 @@ watch(availablePlatforms, (available) => {
   if (!available.includes(platform.value)) {
     platform.value = available[0]
     if (window.$showNotification) {
-      const switchedName = locale.value.platforms[platform.value] || ''
+      const switchedName = getPlatformButtonLabel(platform.value) || ''
       const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
       window.$showNotification(msg, 'info')
     }
@@ -1590,6 +1602,8 @@ const isQQMusicLoggedIn = ref(false)
 const qqMusicUser = ref(null)
 const qqMusicCookie = ref('')
 const checkingQQLogin = ref(false)
+// QQ Cookie 续期广播的取消订阅函数
+let unsubscribeQqCookie = null
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -2209,6 +2223,10 @@ const useAudioMatchResult = async (match) => {
 
 onBeforeUnmount(() => {
   stopAudioMatchSession()
+  if (unsubscribeQqCookie) {
+    unsubscribeQqCookie()
+    unsubscribeQqCookie = null
+  }
 })
 
 const handleImportSuccess = async () => {
@@ -2403,7 +2421,13 @@ const validateQqCookie = async (cookie) => {
     method: 'POST',
     body: { cookie }
   })
-  return res?.data || {}
+  const data = res?.data || {}
+  // 校验失败时服务端会用 refresh_token 续期，成功则替换本地登录态
+  if (data.cookie) {
+    persistQqMusicCookie(data.cookie)
+    qqMusicCookie.value = data.cookie
+  }
+  return data
 }
 
 // 持久化服务端返回的 VIP 状态，供取链优先级判断（仅 VIP 时优先官方链路）
@@ -2414,9 +2438,11 @@ const persistQqVipFlag = (data) => {
 
 // 用服务端校验结果补全真实昵称与头像，仅在有增量时更新
 const refreshQqProfileFromServer = async (cookie) => {
-  if (!cookie) return
+  // 校验过程可能触发续期，优先使用已替换的最新登录态
+  const activeCookie = qqMusicCookie.value || cookie
+  if (!activeCookie) return
   try {
-    const data = await validateQqCookie(cookie)
+    const data = await validateQqCookie(activeCookie)
     if (!data.valid) return
     persistQqVipFlag(data)
     if (!(data.user?.nickname || data.user?.avatarUrl)) return
@@ -2597,6 +2623,10 @@ watch(
 onMounted(async () => {
   // 后台加载平台配置（不阻塞其他初始化）；平台可用性变化由 watch 自动处理
   loadPlatformConfig()
+  // 播放链路触发续期后同步内存登录态，避免歌单等后续请求仍用旧凭据
+  unsubscribeQqCookie = onQqMusicCookieUpdated((cookie) => {
+    qqMusicCookie.value = cookie
+  })
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()
@@ -3162,7 +3192,8 @@ const getAudioUrl = async (result) => {
             musicInfo: {
               name: result.title,
               artist: result.artist,
-              album: result.album || undefined
+              album: result.album || undefined,
+              rawItem: result
             }
           }
         )
@@ -3224,6 +3255,7 @@ const playSong = async (result, playlist, playlistIndex) => {
     musicId: finalMusicId,
     albumId: result.albumId,
     sourceInfo: result.sourceInfo,
+    selectionToken: result.selectionToken,
     bilibiliCid: result.bilibiliCid // 确保传递 cid
   }
 
@@ -3270,7 +3302,8 @@ const playSong = async (result, playlist, playlistIndex) => {
       await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId, {
         title: song.title,
         artist: song.artist,
-        album: result.album || ''
+        album: result.album || '',
+        selectionToken: result.selectionToken
       })
     } catch (error) {
       console.error('获取歌词失败:', error)
@@ -3637,6 +3670,7 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
+      selectionToken: result.selectionToken,
       durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,

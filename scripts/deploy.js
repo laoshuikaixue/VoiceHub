@@ -69,61 +69,23 @@ function safeExec(command, options = {}) {
 
 function execAsync(command, args = [], options = {}) {
   return new Promise((resolve) => {
-    const { signal, ...spawnOptions } = options
-    let abortHandler
     let settled = false
     const finish = (success) => {
       if (settled) return
       settled = true
-      if (signal && abortHandler) signal.removeEventListener('abort', abortHandler)
       resolve(success)
     }
     let child
     try {
-      child = spawn(command, args, {
-        stdio: 'inherit',
-        detached: Boolean(signal) && process.platform !== 'win32',
-        ...spawnOptions
-      })
+      child = spawn(command, args, { stdio: 'inherit', ...options })
     } catch {
       finish(false)
       return
     }
 
-    if (signal) {
-      abortHandler = () => {
-        if (child.exitCode !== null || child.signalCode !== null) return
-        if (process.platform === 'win32') {
-          const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
-            stdio: 'ignore',
-            windowsHide: true
-          })
-          killer.once('error', () => child.kill('SIGTERM'))
-          killer.once('exit', (code) => {
-            if (code !== 0 && child.exitCode === null) child.kill('SIGTERM')
-          })
-        } else {
-          try {
-            process.kill(-child.pid, 'SIGTERM')
-          } catch {
-            child.kill('SIGTERM')
-          }
-        }
-      }
-      signal.addEventListener('abort', abortHandler, { once: true })
-      if (signal.aborted) abortHandler()
-    }
-
     child.once('error', () => finish(false))
     child.once('exit', (code) => finish(code === 0))
   })
-}
-
-function settleTask(task) {
-  return task.then(
-    () => ({ success: true }),
-    (error) => ({ success: false, error })
-  )
 }
 
 async function syncDatabase() {
@@ -157,14 +119,14 @@ async function syncDatabase() {
   }
 }
 
-async function buildApplication(signal) {
+async function buildApplication() {
   if (process.env.SKIP_BUILD === 'true') {
     logStep('🔨', '跳过应用构建 (SKIP_BUILD=true)...')
     return
   }
 
   logStep('🔨', '构建应用...')
-  if (!(await execAsync(process.execPath, ['scripts/build.js'], { env: process.env, signal }))) {
+  if (!(await execAsync(process.execPath, ['scripts/build.js'], { env: process.env }))) {
     throw new Error('应用构建失败')
   }
   logSuccess('应用构建完成')
@@ -250,20 +212,9 @@ async function deploy() {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
-    const buildController = new AbortController()
-    const databaseTask = syncDatabase().catch((error) => {
-      buildController.abort()
-      throw error
-    })
-
-    // 数据库失败时主动取消构建；构建失败时等待迁移安全结束，避免中断数据库事务。
-    const [databaseResult, buildResult] = await Promise.all([
-      settleTask(databaseTask),
-      settleTask(buildApplication(buildController.signal))
-    ])
-    if (!databaseResult.success) throw databaseResult.error
-    if (!buildResult.success) throw buildResult.error
+    // 迁移必须先于构建完成：插件部署快照要在构建期读取插件表，schema 落后会产出错误的部署产物
+    await syncDatabase()
+    await buildApplication()
 
     log('🎉 部署完成！', 'green')
   } catch (error) {

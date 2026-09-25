@@ -18,10 +18,13 @@ import {
 } from '~/utils/musicSources'
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
 import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
+import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
+import { useLocale } from '~/utils/locale'
 import { getPlatformDisplayName } from '~/utils/platforms'
+import { getPluginId, getPluginQuality, isPluginPlatform } from '~/utils/pluginPlatform'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -73,6 +76,8 @@ type LyricProgressPayload = {
 type LyricProgressCallback = (payload: LyricProgressPayload) => void
 
 type LyricUpgradeMeta = {
+  selectionToken?: string
+  songId?: number
   title?: string
   artist?: string
   album?: string
@@ -93,6 +98,8 @@ type LyricResultData = {
   ttml?: string
   /** YRC 对齐的翻译（ytlrc），时间戳与逐字主歌词行边界一致 */
   ytrans?: string
+  /** 音译（罗马音），QQ 为 QRC 格式、网易云为 LRC 格式 */
+  roma?: string
 }
 
 /**
@@ -331,7 +338,8 @@ const cloneLyricData = (data: LyricResultData): LyricResultData => ({
   trans: data.trans || '',
   yrc: data.yrc || '',
   ttml: data.ttml || '',
-  ytrans: data.ytrans || ''
+  ytrans: data.ytrans || '',
+  roma: data.roma || ''
 })
 
 const subscribeLyricProgress = (
@@ -558,6 +566,7 @@ export const useMusicSources = () => {
           if (upgraded.data.ytrans && !currentData.ytrans) {
             currentData.ytrans = upgraded.data.ytrans
           }
+          if (upgraded.data.roma && !currentData.roma) currentData.roma = upgraded.data.roma
           return true
         }
       } catch (error: any) {
@@ -594,7 +603,13 @@ export const useMusicSources = () => {
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')
 
-        const resultData: LyricResultData = { lrc: '', trans: '', yrc: '', ttml: '' }
+        const resultData: LyricResultData = {
+          lrc: '',
+          trans: '',
+          yrc: '',
+          ttml: '',
+          roma: ''
+        }
         let hasResult = false
         let lastProgressSignature = ''
         let ttmlValidated = false
@@ -606,7 +621,8 @@ export const useMusicSources = () => {
             resultData.trans?.length || 0,
             resultData.yrc?.length || 0,
             resultData.ttml?.length || 0,
-            resultData.ytrans?.length || 0
+            resultData.ytrans?.length || 0,
+            resultData.roma?.length || 0
           ].join(':')
           if (signature === lastProgressSignature) return
           lastProgressSignature = signature
@@ -659,6 +675,7 @@ export const useMusicSources = () => {
               const lr = lrcResp.value
               if (lr?.lrc?.lyric) resultData.lrc = lr.lrc.lyric
               if (lr?.tlyric?.lyric) resultData.trans = lr.tlyric.lyric
+              if (lr?.roma?.lyric) resultData.roma = lr.roma.lyric
             }
             if (yrcResp.status === 'fulfilled' && yrcResp.value?.code === 200) {
               const yr = yrcResp.value
@@ -669,6 +686,8 @@ export const useMusicSources = () => {
               if (!resultData.ytrans && yr?.tlyric?.lyric && !resultData.trans) {
                 resultData.trans = yr.tlyric.lyric
               }
+              // 音译（罗马音）
+              if (yr?.roma?.lyric) resultData.roma = yr.roma.lyric
             }
 
             if (resultData.lrc || resultData.yrc) {
@@ -733,6 +752,7 @@ export const useMusicSources = () => {
                 if (d.qrc) resultData.yrc = d.qrc // 用 yrc 字段承载 QRC，解析器会识别 XML 格式
                 if (d.lrc) resultData.lrc = d.lrc
                 if (d.trans) resultData.trans = d.trans
+                if (d.roma) resultData.roma = d.roma
                 if (d.qrc || d.lrc) {
                   hasResult = true
                   emitProgress('qm')
@@ -768,6 +788,7 @@ export const useMusicSources = () => {
               if (d.lrc) resultData.lrc = d.lrc
               if (d.trans) resultData.trans = d.trans
               if (d.yrc) resultData.yrc = d.yrc
+              if (d.roma) resultData.roma = d.roma
               if (d.lrc || d.yrc) {
                 hasResult = true
                 emitProgress('qm')
@@ -806,9 +827,49 @@ export const useMusicSources = () => {
         }
 
         const priority = meta?.priority || settings.lyricPriority.value
+        /**
+         * 获取插件音源歌词：插件平台只走插件自带的 getLyric，
+         * 不参与内置音源的来源锁定与回退判定
+         */
+        const fetchPluginLyric = async () => {
+          if (!isPluginPlatform(platform)) return
+
+          const pluginId = getPluginId(platform)
+          const musicItem = {
+            id: String(id),
+            musicId: String(id),
+            musicPlatform: platform,
+            actualMusicPlatform: platform,
+            pluginId,
+            selectionToken: meta?.selectionToken,
+            ...(meta?.title ? { title: meta.title } : {}),
+            ...(meta?.artist ? { artist: meta.artist } : {}),
+            ...(meta?.album ? { album: meta.album } : {})
+          }
+          try {
+            const resp = await $fetch('/api/music-source-plugins/lyric', {
+              method: 'POST',
+              body: { ...musicItem, platform, songId: meta?.songId },
+              timeout: 10000
+            })
+            const lrc = resp?.data?.rawLrc
+            const trans = resp?.data?.translation
+            if (typeof lrc === 'string' && lrc.trim()) resultData.lrc = lrc
+            if (typeof trans === 'string' && trans.trim()) resultData.trans = trans
+            if (resultData.lrc || resultData.trans) {
+              hasResult = true
+              emitProgress('official')
+            }
+          } catch (e) {
+            console.warn('[getLyrics] 插件音源歌词获取失败:', e)
+          }
+        }
+
         // 指定具体来源（非 auto）时锁定该来源，失败不回退、不做跨平台升级
         const sourceLocked = priority === 'qm' || priority === 'official' || priority === 'ttml'
-        if (sourceLocked) {
+        if (isPluginPlatform(platform)) {
+          await fetchPluginLyric()
+        } else if (sourceLocked) {
           if (platform === 'migu') {
             await fetchMigu()
           } else if (priority === 'qm') {
@@ -870,7 +931,8 @@ export const useMusicSources = () => {
 
         // 跨平台升级：当前无 TTML 时尝试（有 yrc 也可升级到 ttml，有 lrc 可升级到 yrc/ttml）
         // 指定具体来源时不做升级，保证结果确实来自所选来源
-        if (!sourceLocked && !resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
+        // 插件音源不参与跨平台升级：插件曲目 ID 与内置平台无对应关系，升级会挂上错误版本的歌词
+        if (!sourceLocked && !isPluginPlatform(platform) && !resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
           const upgraded = await tryUpgradeLyric(platform, resultData, meta)
           if (upgraded) {
             hasResult = true
@@ -1144,7 +1206,8 @@ export const useMusicSources = () => {
       // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
       // 检查平台是否启用（SSR 阶段跳过，$fetch 无 cookie）
-      if (import.meta.client) {
+      // 插件音源是否可用由插件管理的启用状态决定，不走 enabledPlatforms 校验
+      if (import.meta.client && !isPluginPlatform(platform)) {
         if (!globalEnabledPlatforms.value.includes(platform)) {
           const { currentLocale, siteConfig } = useLocale()
           const available = globalEnabledPlatforms.value.filter((p) => p !== platform)
@@ -1172,6 +1235,35 @@ export const useMusicSources = () => {
       }
       const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
 
+      if (isPluginPlatform(platform)) {
+        try {
+          const response: any = await $fetch('/api/music-source-plugins/search', {
+            method: 'POST',
+            body: {
+              query: params.keywords,
+              page: Math.floor((params.offset || 0) / (params.limit || 20)) + 1,
+              limit: params.limit || 20,
+              pluginId: platform
+            },
+            signal
+          })
+          currentSource.value = platform
+          lastUsedSource.value = platform
+          updateSourceStatus(platform, 'online')
+          return {
+            success: true,
+            source: 'plugin',
+            data: Array.isArray(response?.data) ? response.data : [],
+            error: undefined
+          }
+        } catch (error: any) {
+          const { localize } = useServerErrors()
+          const wrappedError = new Error(localize(error, '插件音源搜索失败'))
+          wrappedError.cause = error
+          throw wrappedError
+        }
+      }
+
       if (
         shouldUseNativeFirst &&
         (platform === 'netease' || platform === 'tencent') &&
@@ -1198,7 +1290,7 @@ export const useMusicSources = () => {
           console.warn('[searchSongs] Native Music 搜索失败，回退到其他音源:', e)
         }
       } else if (!shouldUseNativeFirst) {
-        console.log(`[searchSongs] 服务器位于海外，跳过 Native Music 优先使用第三方音源`)
+        console.log(`[searchSongs] 服务器位于海外，优先使用第三方音源`)
       }
 
       const enabledSources = getEnabledSources()
@@ -1723,6 +1815,7 @@ export const useMusicSources = () => {
       unblock?: boolean
       bilibiliCid?: string
       excludeSources?: string[]
+      musicInfo?: { title?: string; artist?: string; album?: string; rawItem?: any }
     }
   ): Promise<{
     success: boolean
@@ -1772,6 +1865,41 @@ export const useMusicSources = () => {
           if (!options.bilibiliCid) {
             options.bilibiliCid = parsed.cid
           }
+        }
+      }
+
+      if (isPluginPlatform(platform)) {
+        const { audioPlayer } = useLocale()
+        if (options?.excludeSources?.some((source) => isPluginPlatform(source))) {
+          return { success: false, error: audioPlayer.value.pluginExcluded }
+        }
+
+        const { musicInfo } = options || {}
+        try {
+          const response: any = await $fetch('/api/music-source-plugins/resolve', {
+            method: 'POST',
+            body: {
+              platform,
+              musicId: idParam,
+              quality: getPluginQuality(quality),
+              selectionToken: musicInfo?.selectionToken,
+              songId: options?.songId,
+              title: musicInfo?.title,
+              artist: musicInfo?.artist,
+              album: musicInfo?.album,
+              duration: musicInfo?.duration ?? musicInfo?.durationSeconds,
+              excludeSources: options?.excludeSources || []
+            },
+            timeout: 20000
+          })
+          if (response?.success && response?.url) {
+            const url = String(response.url)
+            return { success: true, url, source: response.source || `plugin:${getPluginId(platform)}` }
+          }
+          return { success: false, error: audioPlayer.value.pluginNoUrl }
+        } catch (pluginResolveError: any) {
+          const { localize } = useServerErrors()
+          return { success: false, error: localize(pluginResolveError, '插件音源解析失败') }
         }
       }
 
@@ -2011,13 +2139,18 @@ export const useMusicSources = () => {
               url = url.replace('http://', 'https://')
             }
 
-            // 验证播放链接
-            const validation = await validatePlayUrl(url)
-
-            if (validation.valid) {
-              return { success: true, url, source: source.id }
+            // 播放端已确认该地址无效时跳过，继续尝试下一个音源
+            if (isPlaybackUrlInvalid(url)) {
+              console.warn(`[getSongUrl] 音源 ${source.id} 返回已知无效地址，跳过`)
             } else {
-              // 继续尝试下一个音源
+              // 验证播放链接
+              const validation = await validatePlayUrl(url)
+
+              if (validation.valid) {
+                return { success: true, url, source: source.id }
+              } else {
+                // 继续尝试下一个音源
+              }
             }
           } else {
             // 未返回有效链接，继续尝试下一个音源

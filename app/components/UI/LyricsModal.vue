@@ -5,7 +5,6 @@
         v-if="isVisible"
         class="lyrics-modal-overlay"
         tabindex="-1"
-        style="--main-cover-color: 255, 255, 255"
         @click="handleOverlayClick"
       >
         <div
@@ -243,13 +242,21 @@
                           <button @click="lyricSettings.lyricOffset.value += 100">+</button>
                         </div>
                       </div>
-                      <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
+                      <div class="setting-item switch">
                         <span class="label">{{ locale.showTranslation }}</span>
                         <input v-model="lyricSettings.showTranslation.value" type="checkbox" />
                       </div>
-                      <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
+                      <div class="setting-item switch">
                         <span class="label">{{ locale.showRoma }}</span>
                         <input v-model="lyricSettings.showRoma.value" type="checkbox" />
+                      </div>
+                      <div v-if="lyricSettings.useAMLyrics.value" class="setting-item switch">
+                        <span class="label">{{ locale.showWordsRoma }}</span>
+                        <input v-model="lyricSettings.showWordsRoma.value" type="checkbox" />
+                      </div>
+                      <div class="setting-item switch">
+                        <span class="label">{{ locale.swapTranRoma }}</span>
+                        <input v-model="lyricSettings.swapTranRoma.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
                         <span class="label">{{ locale.showYrc }}</span>

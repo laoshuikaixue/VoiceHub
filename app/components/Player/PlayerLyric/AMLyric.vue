@@ -5,7 +5,8 @@
       'align-right': settings.lyricAlignRight.value
     }"
     :style="{
-      '--amll-lp-color': 'rgb(var(--main-cover-color, 239 239 239))',
+      '--amll-lp-color':
+        'rgb(var(--main-cover-lyric-color, var(--main-cover-color, 239 239 239)))',
       '--amll-lp-hover-bg-color': 'var(--lyrics-modal-surface, rgba(255, 255, 255, 0.1))',
       '--amll-lyric-left-padding': settings.lyricAlignRight.value
         ? ''
@@ -64,6 +65,7 @@ import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useLocale } from '~/utils/locale'
+import { hasWordRomanization } from '~/utils/lyric/lyricText'
 import type { LyricLineMouseEvent } from '@applemusic-like-lyrics/core'
 import { cloneDeep } from 'lodash-es'
 
@@ -83,9 +85,33 @@ const locale = computed(() => ui.value?.lyrics || {})
 
 const lyricPlayerRef = ref<LyricPlayerRef | null>(null)
 
+/**
+ * 按显示设置裁剪歌词行
+ * AMLL 核心会同时渲染 word.romanWord（逐字音译）与 line.romanLyric（逐行音译），
+ * 两者必须在传入前互斥裁剪，否则有逐字音译的行会重复显示一遍逐行音译
+ */
 const lyricLines = computed(() => {
+  const lines = lyricManager.lyrics.value
+  if (!lines.length) return []
+
+  const { showTranslation, showRoma, showWordsRoma, swapTranRoma } = settings
+
   // 使用 cloneDeep 剥离 Vue 响应式代理，防止 structuredClone 错误
-  return cloneDeep(lyricManager.lyrics.value)
+  return cloneDeep(lines).map((line) => {
+    // showRoma 是音译总开关，showWordsRoma 只决定用逐字还是逐行形态
+    const useWordRoma = showRoma.value && showWordsRoma.value && hasWordRomanization(line)
+    const translationText = showTranslation.value ? line.translatedLyric || '' : ''
+    const romanText = useWordRoma || !showRoma.value ? '' : line.romanLyric || ''
+
+    if (!useWordRoma) {
+      line.words.forEach((word) => {
+        word.romanWord = ''
+      })
+    }
+    line.translatedLyric = swapTranRoma.value ? romanText : translationText
+    line.romanLyric = swapTranRoma.value ? translationText : romanText
+    return line
+  })
 })
 
 // AMLL 歌词优化配置

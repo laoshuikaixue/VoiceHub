@@ -585,7 +585,7 @@ onBeforeUnmount(() => {
         height: 28px;
         margin-right: 12px;
         border-radius: 50%;
-        background-color: rgb(var(--main-cover-color));
+        background-color: rgb(var(--main-cover-color, 255, 255, 255));
         transition: opacity 0.5s;
         @media (max-width: 900px) {
           width: 24px;
@@ -720,7 +720,7 @@ onBeforeUnmount(() => {
       width: 100%;
       height: 100%;
       border-radius: 8px;
-      background-color: rgba(var(--main-cover-color), 0.14);
+      background-color: rgba(var(--main-cover-color, 255, 255, 255), 0.14);
       opacity: 0;
       z-index: 0;
       transform: scale(1.05);

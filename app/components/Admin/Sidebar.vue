@@ -99,7 +99,7 @@
           </div>
           <!-- 退出按钮 -->
           <button
-            class="p-2 text-text-disabled hover:text-error hover:bg-error-10 rounded-lg transition-all"
+            class="flex items-center justify-center p-2 text-text-disabled hover:text-error hover:bg-error-10 rounded-lg transition-all"
             :title="locale.logout"
             @click="$emit('logout')"
           >

@@ -7,26 +7,151 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+concurrency:
+  group: nix-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   nix-check:
+    name: 构建校验与 pnpmDeps 哈希同步
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      contents: write
 
-      - name: Install Nix
+    env:
+      # PR 统一从基仓库检出 refs/pull/<n>/head，fork 的提交也能取到
+      CHECKOUT_REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref_name }}
+      # 哈希更新写回的目标分支
+      TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+      # fork PR 与 bot 自身触发的运行不允许写回
+      CAN_SYNC: ${{ github.actor != 'github-actions[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+
+    steps:
+      - name: 检出触发代码
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CHECKOUT_REF }}
+
+      - name: 安装 Nix
         uses: DeterminateSystems/determinate-nix-action@v3
 
-      - name: Setup Cachix binary cache
+      - name: 配置 Cachix 二进制缓存
         uses: cachix/cachix-action@v14
         with:
           name: voicehub
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Run nix flake check
-        run: nix flake check
+      - name: 构建 voicehub（哈希过期时自动同步）
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
 
-      - name: Build voicehub (validate hashes)
-        run: nix build .#voicehub
+          build_log="${RUNNER_TEMP:-/tmp}/nix-build.log"
+          hash_log="${RUNNER_TEMP:-/tmp}/nix-build-hash.log"
+
+          if nix build .#voicehub --no-link --print-build-logs 2>&1 | tee "$build_log"; then
+            echo "构建成功，pnpmDeps 哈希无需更新。"
+            echo "synced=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! grep -Eq 'hash mismatch|got:[[:space:]]+sha256-|ERR_PNPM_' "$build_log"; then
+            echo "构建失败，且与 pnpm 依赖无关，不做哈希同步。"
+            exit 1
+          fi
+
+          if [ "${CAN_SYNC}" != "true" ]; then
+            echo "::error::pnpmDeps 哈希已过期，但当前运行无权写回（fork PR 或 bot 触发）。请按 README 的步骤在本地更新 flake.nix 中的哈希后重试。"
+            exit 1
+          fi
+
+          echo "::notice::检测到 pnpmDeps 哈希过期，正在计算新哈希"
+
+          # 置空哈希后重建，从 Nix 的哈希不匹配报错中取真实哈希
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("flake.nix")
+          text = path.read_text(encoding="utf-8")
+          marker = "pnpmDeps = pkgs.fetchPnpmDeps {"
+          start = text.index(marker)
+          key = 'hash = "'
+          hash_start = text.index(key, start) + len(key)
+          hash_end = text.index('"', hash_start)
+          path.write_text(text[:hash_start] + text[hash_end:], encoding="utf-8")
+          PY
+
+          if nix build .#voicehub --no-link --print-build-logs 2>&1 | tee "$hash_log"; then
+            echo "::error::空哈希下构建意外成功，无法提取新的 pnpmDeps 哈希。"
+            exit 1
+          fi
+
+          new_hash="$(grep -Eo 'got:[[:space:]]+sha256-[A-Za-z0-9+/=_-]+' "$hash_log" | tail -n 1 | sed -E 's/got:[[:space:]]+//' || true)"
+
+          if [ -z "$new_hash" ]; then
+            echo "::error::没有在 Nix 输出中找到 got: sha256-...，请人工检查 flake.nix 与 pnpm-lock.yaml。"
+            exit 1
+          fi
+
+          HASH="$new_hash" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          new_hash = os.environ["HASH"]
+          path = Path("flake.nix")
+          text = path.read_text(encoding="utf-8")
+          marker = "pnpmDeps = pkgs.fetchPnpmDeps {"
+          start = text.index(marker)
+          key = 'hash = "'
+          hash_start = text.index(key, start) + len(key)
+          hash_end = text.index('"', hash_start)
+          path.write_text(text[:hash_start] + new_hash + text[hash_end:], encoding="utf-8")
+          PY
+
+          if git diff --quiet -- flake.nix; then
+            echo "::error::计算出的哈希与现有值相同，构建失败与哈希无关。"
+            exit 1
+          fi
+
+          echo "新的 pnpmDeps 哈希: $new_hash"
+          echo "synced=true" >> "$GITHUB_OUTPUT"
+
+      - name: 提交、验证并推送哈希更新
+        if: steps.build.outputs.synced == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          verify_log="${RUNNER_TEMP:-/tmp}/nix-build-verify.log"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.nix
+          git commit -m "ci: 同步 pnpmDeps 哈希"
+
+          # 提交后工作树干净，先在新哈希下验证构建再推送
+          if nix build .#voicehub --no-link --print-build-logs 2>&1 | tee "$verify_log"; then
+            verify_status=0
+          else
+            verify_status=$?
+          fi
+
+          if [ "$verify_status" -ne 0 ] && grep -Eq 'hash mismatch|ERR_PNPM_' "$verify_log"; then
+            echo "::error::按新哈希构建仍因 pnpm 依赖失败，已跳过推送，请人工检查 flake.nix 与 pnpm-lock.yaml。"
+            exit 1
+          fi
+
+          if ! git push origin "HEAD:${TARGET_BRANCH}"; then
+            echo "::error::推送 pnpmDeps 哈希更新失败，目标分支可能有新提交。"
+            exit 1
+          fi
+          echo "已推送 pnpmDeps 哈希更新。"
+
+          if [ "$verify_status" -ne 0 ]; then
+            echo "::error::哈希更新后构建仍然失败，请查看上方日志。"
+            exit 1
+          fi
+
+      - name: 运行 nix flake check
+        run: nix flake check

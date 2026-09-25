@@ -116,6 +116,8 @@
   --z-popover: 600;
   --z-tooltip: 700;
   --z-toast: 800;
+  /* 常驻播放器栏：须高于业务弹窗（z-[2000]），低于 --z-app-loader 与全屏歌词层（9999） */
+  --z-audio-player: 8000;
   --z-app-loader: 9000;
   /* 特殊状态颜色 */
   --status-pending: #fbbf24;

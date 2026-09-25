@@ -95,7 +95,8 @@ export const useAudioPlayerEnhanced = () => {
       options.musicInfo = {
         name: song.title,
         artist: song.artist,
-        album: song.album || undefined
+        album: song.album || undefined,
+        rawItem: song
       }
 
       const result = await getMusicUrl(platform, song.musicId, newQuality, options)
@@ -135,7 +136,8 @@ export const useAudioPlayerEnhanced = () => {
       options.musicInfo = {
         name: song.title,
         artist: song.artist,
-        album: song.album || undefined
+        album: song.album || undefined,
+        rawItem: song
       }
 
       const result = await getMusicUrl(platform, song.musicId, newQuality, options)
@@ -284,7 +286,8 @@ export const useAudioPlayerEnhanced = () => {
         musicInfo: {
           name: song.title,
           artist: song.artist,
-          album: song.album || undefined
+          album: song.album || undefined,
+          rawItem: song
         }
       })
 

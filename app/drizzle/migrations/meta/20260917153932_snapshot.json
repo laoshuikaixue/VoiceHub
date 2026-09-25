@@ -1,5 +1,5 @@
 {
-  "id": "67a5214d-6e81-489f-881a-10bdedb6de20",
+  "id": "3d91970f-0720-48f6-8730-956d34539423",
   "prevId": "3129c79d-58c6-42ed-bb89-7db5bdbab8f9",
   "version": "7",
   "dialect": "postgresql",
@@ -856,6 +856,216 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.MusicSourceConfigState": {
+      "name": "MusicSourceConfigState",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.MusicSourcePluginRevision": {
+      "name": "MusicSourcePluginRevision",
+      "schema": "",
+      "columns": {
+        "pluginId": {
+          "name": "pluginId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scriptUrl": {
+          "name": "scriptUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "protocol": {
+          "name": "protocol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "variables": {
+          "name": "variables",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog": {
+          "name": "catalog",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "MusicSourcePluginRevision_pluginId_MusicSourcePlugin_id_fk": {
+          "name": "MusicSourcePluginRevision_pluginId_MusicSourcePlugin_id_fk",
+          "tableFrom": "MusicSourcePluginRevision",
+          "tableTo": "MusicSourcePlugin",
+          "columnsFrom": [
+            "pluginId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "MusicSourcePluginRevision_pluginId_revision_pk": {
+          "name": "MusicSourcePluginRevision_pluginId_revision_pk",
+          "columns": [
+            "pluginId",
+            "revision"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.MusicSourcePlugin": {
+      "name": "MusicSourcePlugin",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "desiredRevision": {
+          "name": "desiredRevision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "activeRevision": {
+          "name": "activeRevision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activeHash": {
+          "name": "activeHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacyPlatformKey": {
+          "name": "legacyPlatformKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastError": {
+          "name": "lastError",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deletedAt": {
+          "name": "deletedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "music_source_legacy_key": {
+          "name": "music_source_legacy_key",
+          "columns": [
+            {
+              "expression": "legacyPlatformKey",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2031,6 +2241,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "musicSourceData": {
+          "name": "musicSourceData",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "durationSeconds": {
           "name": "durationSeconds",
           "type": "integer",
@@ -2757,33 +2973,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "legalConsentEnabled": {
-          "name": "legalConsentEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "legalConsentDisplayMode": {
-          "name": "legalConsentDisplayMode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'modal'"
-        },
-        "legalConsentUpdatedDate": {
-          "name": "legalConsentUpdatedDate",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legalConsentDocuments": {
-          "name": "legalConsentDocuments",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'"
-        },
         "defaultTheme": {
           "name": "defaultTheme",
           "type": "text",
@@ -3124,18 +3313,6 @@
         "remark": {
           "name": "remark",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legal_consent_version": {
-          "name": "legal_consent_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legal_consent_at": {
-          "name": "legal_consent_at",
-          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         }

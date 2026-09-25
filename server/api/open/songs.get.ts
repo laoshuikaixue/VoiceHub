@@ -3,6 +3,10 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, users, votes } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
+import {
+  buildNameToUsersMap,
+  formatDisambiguatedNameFromMap
+} from '~~/server/utils/userDisplayName'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -151,47 +155,18 @@ export default defineEventHandler(async (event) => {
         id: users.id,
         name: users.name,
         grade: users.grade,
-        class: users.class
+        class: users.class,
+        status: users.status
       })
       .from(users)
 
-    // 创建姓名到用户数组的映射
-    const nameToUsers = new Map()
-    allUsers.forEach((u) => {
-      if (u.name) {
-        if (!nameToUsers.has(u.name)) {
-          nameToUsers.set(u.name, [])
-        }
-        nameToUsers.get(u.name).push(u)
-      }
-    })
+    // 仅在读用户参与重名统计
+    const nameToUsers = buildNameToUsersMap(allUsers)
 
     // 转换数据格式
     let formattedSongs = songsData.map((song) => {
-      // 处理投稿人姓名，如果是同名用户则添加后缀
-      let requesterName = song.requester?.name || '未知用户'
-
-      // 检查是否有同名用户
-      const sameNameUsers = nameToUsers.get(requesterName)
-      if (sameNameUsers && sameNameUsers.length > 1) {
-        const requesterWithGradeClass = song.requester
-
-        // 如果有年级信息，则添加年级后缀
-        if (requesterWithGradeClass?.grade) {
-          // 检查同一个年级是否有同名
-          const sameGradeUsers = sameNameUsers.filter(
-            (u: { grade?: string; class?: string }) => u.grade === requesterWithGradeClass.grade
-          )
-
-          if (sameGradeUsers.length > 1 && requesterWithGradeClass.class) {
-            // 同一个年级有同名，添加班级后缀
-            requesterName = `${requesterName}（${requesterWithGradeClass.grade} ${requesterWithGradeClass.class}）`
-          } else {
-            // 只添加年级后缀
-            requesterName = `${requesterName}（${requesterWithGradeClass.grade}）`
-          }
-        }
-      }
+      // 投稿人姓名按在读同名用户做消歧
+      const requesterName = formatDisambiguatedNameFromMap(song.requester, nameToUsers)
 
       // 创建歌曲对象
       const songObject: any = {

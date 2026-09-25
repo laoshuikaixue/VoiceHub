@@ -7,17 +7,7 @@ import { maskPublicScheduleData,
   type PublicScheduleItem
 } from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
-
-const formatDisplayName = (
-  user: { name?: string | null; grade?: string | null; class?: string | null },
-  nameCount = 1,
-  gradeCount = 1
-) => {
-  if (!user?.name) return '未知用户'
-  if (nameCount <= 1 || !user.grade) return user.name
-  if (gradeCount > 1 && user.class) return `${user.name}（${user.grade} ${user.class}）`
-  return `${user.name}（${user.grade}）`
-}
+import { formatDisambiguatedName, NAME_DISAMBIGUATION_CTES } from '~~/server/utils/userDisplayName'
 
 const isSchemaCompatibilityError = (error: unknown) => {
   const value = error as { code?: string; cause?: { code?: string } } | null
@@ -92,7 +82,7 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
       id: Number(row.songId),
       title: row.title,
       artist: row.artist,
-      requester: formatDisplayName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
+      requester: formatDisambiguatedName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
       requesterGrade: row.requesterGrade || null,
       requesterClass: row.requesterClass || null,
       collaborators: [],
@@ -169,18 +159,7 @@ export default defineEventHandler(async (event) => {
 
     const schedulesQuery = `
       WITH
-      user_name_counts AS (
-        SELECT name, COUNT(*)::int AS name_count
-        FROM "User"
-        WHERE name IS NOT NULL
-        GROUP BY name
-      ),
-      user_grade_counts AS (
-        SELECT name, grade, COUNT(*)::int AS grade_count
-        FROM "User"
-        WHERE name IS NOT NULL
-        GROUP BY name, grade
-      ),
+      ${NAME_DISAMBIGUATION_CTES},
       vote_counts AS (
         SELECT "songId", COUNT(*)::int AS vote_count
         FROM "Vote"
@@ -289,6 +268,7 @@ export default defineEventHandler(async (event) => {
         s."createdAt",
         s."submissionNote",
         s."submissionNotePublic",
+        s."submissionNotePublicStatus" AS "songSubmissionNotePublicStatus",
         CASE WHEN rm.id IS NOT NULL THEN rm.submission_note ELSE s."submissionNote" END AS "effectiveSubmissionNote",
         CASE WHEN rm.id IS NOT NULL THEN COALESCE(rm.submission_note_public, false) ELSE s."submissionNotePublic" END AS "effectiveSubmissionNotePublic",
         CASE WHEN rm.id IS NOT NULL THEN rm.submission_note_public_status ELSE s."submissionNotePublicStatus" END AS "effectiveSubmissionNotePublicStatus",
@@ -338,7 +318,7 @@ export default defineEventHandler(async (event) => {
         ? row.collaborators.map((collaborator: any) => ({
             id: collaborator.id,
             name: collaborator.name,
-            displayName: formatDisplayName(
+            displayName: formatDisambiguatedName(
               collaborator,
               Number(collaborator.nameCount),
               Number(collaborator.gradeCount)
@@ -352,7 +332,7 @@ export default defineEventHandler(async (event) => {
         ? row.replayRequesters.map((requester: any) => ({
             id: requester.id,
             name: requester.name || '未知用户',
-            displayName: formatDisplayName(
+            displayName: formatDisambiguatedName(
               requester,
               Number(requester.nameCount),
               Number(requester.gradeCount)
@@ -383,6 +363,11 @@ export default defineEventHandler(async (event) => {
       const canViewSubmissionNote =
         Boolean(effectiveSubmissionNote) &&
         (effectiveNotePublic || Boolean(user && (isAdmin || isNoteOwner)))
+      // 歌曲自身投稿留言的公开状态，与重播申请留言相互独立
+      const songNotePublic =
+        row.submissionNotePublic === true &&
+        row.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
+        row.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
       const replayRequestCount = Number(row.replayRequestCount || 0)
 
       return {
@@ -406,7 +391,7 @@ export default defineEventHandler(async (event) => {
           id: Number(row.songId),
           title: row.title,
           artist: row.artist,
-          requester: formatDisplayName(
+          requester: formatDisambiguatedName(
             {
               name: row.requesterName,
               grade: row.requesterGrade,
@@ -432,6 +417,9 @@ export default defineEventHandler(async (event) => {
           hasSubmissionNote: canViewSubmissionNote,
           submissionNote: canViewSubmissionNote ? effectiveSubmissionNote : null,
           submissionNotePublic: canViewSubmissionNote ? effectiveSubmissionNotePublic : false,
+          // 歌曲投稿时的原始留言；重播行的 submissionNote 已被申请人留言覆盖，此字段独立保留
+          originalSubmissionNote: isAdmin ? row.submissionNote || null : null,
+          originalSubmissionNotePublic: isAdmin ? songNotePublic : false,
           preferredPlayTimeId: effectivePlayTimeId,
           requesterId: row.requesterId ? Number(row.requesterId) : null,
           replayRequestCount,

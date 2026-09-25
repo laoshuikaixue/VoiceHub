@@ -24,6 +24,9 @@ export default defineEventHandler(async (event) => {
 
     // 获取请求体
     const body = await readBody(event)
+    const musicSourceData = body.selectionToken
+      ? (await import('~~/server/utils/music-source-plugins/resolver')).readSelection(body.selectionToken, user.id, body.musicPlatform, body.musicId)
+      : null
     const {
       title,
       artist,
@@ -103,6 +106,7 @@ export default defineEventHandler(async (event) => {
         preferredPlayTimeId: preferredPlayTimeId || null,
         musicPlatform: musicPlatform || null,
         musicId: musicId || null,
+        musicSourceData,
         durationSeconds: durationSeconds ? Number(durationSeconds) : null,
         cover: cover || null,
         playUrl: playUrl || null

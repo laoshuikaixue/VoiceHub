@@ -9,6 +9,11 @@ import {
   songReplayRequests
 } from '~/drizzle/schema'
 import { and, asc, count, countDistinct, eq, gte, lt, inArray, desc } from 'drizzle-orm'
+import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import {
+  buildNameToUsersMap,
+  formatDisambiguatedNameFromMap
+} from '~~/server/utils/userDisplayName'
 
 export default defineEventHandler(async (event) => {
   // 检查用户身份验证和权限
@@ -90,6 +95,9 @@ export default defineEventHandler(async (event) => {
         songMusicId: songs.musicId,
         songDurationSeconds: songs.durationSeconds,
         songCardCodeId: songs.cardCodeId,
+        songSubmissionNote: songs.submissionNote,
+        songSubmissionNotePublic: songs.submissionNotePublic,
+        songSubmissionNotePublicStatus: songs.submissionNotePublicStatus,
         songSemester: songs.semester,
         songCreatedAt: songs.createdAt,
         requesterName: users.name,
@@ -113,20 +121,13 @@ export default defineEventHandler(async (event) => {
         id: users.id,
         name: users.name,
         grade: users.grade,
-        class: users.class
+        class: users.class,
+        status: users.status
       })
       .from(users)
 
-    // 创建姓名到用户的映射用于消歧
-    const nameToUsers = new Map()
-    allUsers.forEach((user) => {
-      if (user.name) {
-        if (!nameToUsers.has(user.name)) {
-          nameToUsers.set(user.name, [])
-        }
-        nameToUsers.get(user.name).push(user)
-      }
-    })
+    // 仅在读用户参与重名统计
+    const nameToUsers = buildNameToUsersMap(allUsers)
 
     // 获取每首歌的投票数
     const songIds = schedulesData.map((s) => s.songId)
@@ -276,49 +277,13 @@ export default defineEventHandler(async (event) => {
     const formattedSchedules = schedulesData.map((schedule) => {
       const dateOnly = schedule.playDate
 
-      // 处理投稿人姓名消歧
-      let requesterName = schedule.requesterName || 'Unknown User'
-
-      const sameNameUsers = nameToUsers.get(requesterName)
-      if (sameNameUsers && sameNameUsers.length > 1) {
-        if (schedule.requesterGrade) {
-          const sameGradeUsers = sameNameUsers.filter(
-            (u: { id: number; name: string | null; grade: string | null; class: string | null }) =>
-              u.grade === schedule.requesterGrade
-          )
-
-          if (sameGradeUsers.length > 1 && schedule.requesterClass) {
-            requesterName = `${requesterName}（${schedule.requesterGrade} ${schedule.requesterClass}）`
-          } else {
-            requesterName = `${requesterName}（${schedule.requesterGrade}）`
-          }
-        }
-      }
-
-      // 辅助函数：格式化显示名称 (用于联合投稿人)
-      const formatDisplayName = (userObj: any) => {
-        if (!userObj || !userObj.name) return '未知用户'
-        let displayName = userObj.name
-
-        const sameNameUsers = nameToUsers.get(displayName)
-        if (sameNameUsers && sameNameUsers.length > 1) {
-          if (userObj.grade) {
-            const sameGradeUsers = sameNameUsers.filter((u: any) => u.grade === userObj.grade)
-            if (sameGradeUsers.length > 1 && userObj.class) {
-              displayName = `${displayName}（${userObj.grade} ${userObj.class}）`
-            } else {
-              displayName = `${displayName}（${userObj.grade}）`
-            }
-          }
-        }
-        return displayName
-      }
+      const requesterName = schedule.requesterName || 'Unknown User'
 
       const collaborators = collaboratorsMap.get(schedule.songId) || []
       const formattedCollaborators = collaborators.map((c: any) => ({
         id: c.id,
         name: c.name,
-        displayName: formatDisplayName(c),
+        displayName: formatDisambiguatedNameFromMap(c, nameToUsers),
         grade: c.grade,
         class: c.class
       }))
@@ -332,7 +297,7 @@ export default defineEventHandler(async (event) => {
       const formattedReplayRequesters = replayRequesters.map((r: any) => ({
         id: r.id,
         name: r.name,
-        displayName: formatDisplayName(r),
+        displayName: formatDisambiguatedNameFromMap(r, nameToUsers),
         grade: r.grade,
         class: r.class,
         status: r.status
@@ -366,6 +331,10 @@ export default defineEventHandler(async (event) => {
         song: (() => {
           const replayMeta = linkedReplayRequestId ? replayMetadataByIdMap.get(linkedReplayRequestId) : null
           const hasReplayMeta = !!replayMeta
+          const originalNotePublic =
+            schedule.songSubmissionNotePublic === true &&
+            schedule.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.PENDING &&
+            schedule.songSubmissionNotePublicStatus !== SUBMISSION_NOTE_STATUS.REJECTED
 
           return {
             id: schedule.songId,
@@ -389,6 +358,9 @@ export default defineEventHandler(async (event) => {
             submissionNotePublic: hasReplayMeta ? replayMeta.submissionNotePublic : false,
             submissionNotePublicStatus: hasReplayMeta ? (replayMeta.submissionNotePublicStatus || null) : null,
             hasSubmissionNote: hasReplayMeta && !!replayMeta.submissionNote,
+            // 歌曲自身投稿时填写的留言，与重播申请备注相互独立
+            originalSubmissionNote: schedule.songSubmissionNote || null,
+            originalSubmissionNotePublic: originalNotePublic,
             preferredPlayTimeId: hasReplayMeta ? replayMeta.preferredPlayTimeId : null,
             // 重播申请信息
             replayRequestCount: isReplaySong ? replayRequestCount : 0,

@@ -1,7 +1,11 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
 import { inArray, and, eq, gte, lte } from 'drizzle-orm'
-import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
+import {
+  createSongSelectedNotifications,
+  createReplaySongSelectedNotifications,
+  type SongSelectedEntry
+} from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   redeemCardCodeForSchedule,
@@ -94,17 +98,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 需要发送通知的列表
-    const notificationsToSend: Array<{
-      requesterId: number
-      songId: number
-      songInfo: { title: string; artist: string; playDate: Date }
-    }> = []
-    const replayNotificationsToSend: Array<{
-      userId: number
-      songId: number
-      songInfo: { title: string; artist: string; playDate: Date }
-      scheduleId: number
-    }> = []
+    const notificationsToSend: SongSelectedEntry[] = []
+    const replayNotificationsToSend: SongSelectedEntry[] = []
 
     // 开始事务
     await db.transaction(async (tx) => {
@@ -255,7 +250,7 @@ export default defineEventHandler(async (event) => {
         // 如果该歌曲之前未在此时间段发布过，则发送通知
         if (!existingPublishedSongIds.has(item.songId)) {
           notificationsToSend.push({
-            requesterId: song.requesterId,
+            userId: song.requesterId,
             songId: song.id,
             songInfo: {
               title: song.title,
@@ -275,28 +270,24 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    // 发送重播安排通知
+    // 发送重播安排通知（同一用户同一天多首歌曲合并为一条）
     if (replayNotificationsToSend.length > 0) {
       event.waitUntil(
-        Promise.allSettled(
-          replayNotificationsToSend.map((n) =>
-            createReplaySongSelectedNotification(n.userId, n.songId, n.songInfo, n.scheduleId)
+        createReplaySongSelectedNotifications(replayNotificationsToSend).then((created) => {
+          console.log(
+            `[Notification] 批量发布重播通知发送完成: ${created.length} 条（覆盖 ${replayNotificationsToSend.length} 首歌曲）`
           )
-        )
+        })
       )
     }
 
     // 由运行时托管后台通知，避免 Serverless 在响应结束后中止任务。
+    // 同一用户同一天多首歌曲合并为一条通知
     if (notificationsToSend.length > 0) {
       event.waitUntil(
-        Promise.allSettled(
-          notificationsToSend.map((n) =>
-            createSongSelectedNotification(n.requesterId, n.songId, n.songInfo)
-          )
-        ).then((results) => {
-          const successCount = results.filter((r) => r.status === 'fulfilled').length
+        createSongSelectedNotifications(notificationsToSend).then((created) => {
           console.log(
-            `[Notification] 批量发布通知发送完成: ${successCount}/${notificationsToSend.length} 成功`
+            `[Notification] 批量发布通知发送完成: ${created.length} 条（覆盖 ${notificationsToSend.length} 首歌曲）`
           )
         })
       )

@@ -1,10 +1,12 @@
-import { computed, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import type {
   AbstractBaseRenderer,
   BackgroundRender,
   MeshGradientRenderer
 } from '@applemusic-like-lyrics/core'
 import { getSizedCoverUrl } from '~/utils/url'
+import { useTheme } from '~/composables/useTheme'
+import { applyCoverTheme, extractCoverTheme } from '~/utils/cover-theme'
 
 const isClient = typeof window !== 'undefined'
 let CoreModule: typeof import('@applemusic-like-lyrics/core') | null = null
@@ -84,6 +86,24 @@ export const useBackgroundRenderer = () => {
   const hasRenderError = ref(false)
   const currentCoverUrl = ref('')
   const loadedCoverUrl = ref('')
+  /** 最近一次成功加载的封面元素，兼作取色输入（已按 CORS 匿名加载） */
+  const coverImage = shallowRef<HTMLImageElement | null>(null)
+  const { isDark } = useTheme()
+
+  const refreshCoverTheme = async () => {
+    if (!isClient) return
+    const image = coverImage.value
+    if (!image) {
+      applyCoverTheme(null)
+      return
+    }
+    const Core = await ensureCoreModule()
+    if (!Core) return
+    applyCoverTheme(extractCoverTheme(Core, image, isDark.value))
+  }
+
+  // 主题明暗切换时文字色的明度目标随之改变，需用同一张封面重新计算
+  watch(isDark, () => void refreshCoverTheme())
 
   const config = ref<BackgroundConfig>({
     type: 'gradient',
@@ -138,13 +158,16 @@ export const useBackgroundRenderer = () => {
       try {
         if (cover) {
           const image = await loadCoverImage(toBackgroundCoverUrl(cover))
+          coverImage.value = image
           await renderer.setAlbum(image, false)
         } else {
+          coverImage.value = null
           await renderer.setAlbum('', false)
         }
         if (currentCoverUrl.value === cover) {
           loadedCoverUrl.value = cover
           hasRenderError.value = false
+          await refreshCoverTheme()
         }
       } catch (error) {
         if (currentCoverUrl.value === cover) {
@@ -261,6 +284,8 @@ export const useBackgroundRenderer = () => {
     coverBlurElement.value = null
     currentCoverUrl.value = ''
     loadedCoverUrl.value = ''
+    coverImage.value = null
+    applyCoverTheme(null)
   }
 
   onUnmounted(() => {

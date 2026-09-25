@@ -119,30 +119,106 @@ export async function createCollaborationResponseNotification(
   }
 }
 
+type SongSelectedKind = 'submission' | 'replay'
+
 /**
- * 创建歌曲被选中的通知
+ * 入选通知条目：一条通知可包含同一用户同一天入选的多首歌曲
  */
-export async function createSongSelectedNotification(
-  userId: number,
-  songId: number,
+export interface SongSelectedEntry {
+  userId: number
+  songId: number
   songInfo: {
     title: string
     artist: string
     playDate: Date
   }
+  scheduleId?: number | null
+}
+
+const SONG_SELECTED_TEXT: Record<
+  SongSelectedKind,
+  {
+    meowTitle: string
+    emailTitle: string
+    emailTemplateKey: string
+    buildMessage: (mergedSongTitle: string, playDate: string) => string
+  }
+> = {
+  submission: {
+    meowTitle: '收到新选中',
+    emailTitle: '歌曲被选中',
+    emailTemplateKey: 'notification.songSelected',
+    buildMessage: (mergedSongTitle, playDate) =>
+      `您投稿的歌曲《${mergedSongTitle}》已被安排播放，播放日期：${playDate}。`
+  },
+  replay: {
+    meowTitle: '重播已安排',
+    emailTitle: '重播申请已安排',
+    emailTemplateKey: 'notification.replaySongSelected',
+    buildMessage: (mergedSongTitle, playDate) =>
+      `您申请重播的歌曲《${mergedSongTitle}》已安排播放，播放日期：${playDate}。`
+  }
+}
+
+interface SongSelectedGroup {
+  userId: number
+  playDate: Date
+  songIds: number[]
+  songTitles: string[]
+  scheduleIds: number[]
+}
+
+/**
+ * 按用户 + 播放日期分组，同一天多首歌曲只发一条通知
+ */
+function groupSongSelectedEntries(entries: SongSelectedEntry[]): SongSelectedGroup[] {
+  const groups = new Map<string, SongSelectedGroup>()
+  for (const entry of entries) {
+    const key = `${entry.userId}|${formatDate(entry.songInfo.playDate)}`
+    let group = groups.get(key)
+    if (!group) {
+      group = {
+        userId: entry.userId,
+        playDate: entry.songInfo.playDate,
+        songIds: [],
+        songTitles: [],
+        scheduleIds: []
+      }
+      groups.set(key, group)
+    }
+    group.songIds.push(entry.songId)
+    group.songTitles.push(entry.songInfo.title)
+    if (entry.scheduleId) {
+      group.scheduleIds.push(entry.scheduleId)
+    }
+  }
+  return [...groups.values()]
+}
+
+/**
+ * 发送一条入选通知（站内 + MeoW + 邮件），多首歌曲时歌曲名以《A、B、C》合并
+ */
+async function sendSongSelectedNotification(
+  kind: SongSelectedKind,
+  group: SongSelectedGroup
 ) {
   try {
+    const text = SONG_SELECTED_TEXT[kind]
+    const { userId, playDate, songIds, songTitles, scheduleIds } = group
+
     // 获取系统设置，检查是否启用播出时段功能
     const systemConfig = await getSystemSettingsCached()
     const isPlayTimeEnabled = systemConfig?.enablePlayTimeSelection || false
 
+    // 优先按排期 ID 取播出时段，避免同日同歌多排期时取错时段
+    const whereClause =
+      scheduleIds.length === songIds.length
+        ? inArray(schedules.id, scheduleIds)
+        : and(inArray(schedules.songId, songIds), eq(schedules.playDate, playDate))
+
     // 获取排期对应的播出时段
     const scheduleResult = await db
       .select({
-        id: schedules.id,
-        songId: schedules.songId,
-        playDate: schedules.playDate,
-        playTimeId: schedules.playTimeId,
         playTime: {
           id: playTimes.id,
           name: playTimes.name,
@@ -152,9 +228,9 @@ export async function createSongSelectedNotification(
       })
       .from(schedules)
       .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-      .where(and(eq(schedules.songId, songId), eq(schedules.playDate, songInfo.playDate)))
+      .where(whereClause)
       .limit(1)
-    const schedule = scheduleResult[0]
+    const playTime = scheduleResult[0]?.playTime
 
     // 获取用户通知设置
     const settingsResult = await db
@@ -169,44 +245,42 @@ export async function createSongSelectedNotification(
       return null
     }
 
+    const songTitleText = songTitles.join('、')
+    const playDateText = formatDate(playDate)
+
     // 创建通知，根据播出时段功能启用状态决定显示内容
-    let message = `您投稿的歌曲《${songInfo.title}》已被安排播放，播放日期：${formatDate(songInfo.playDate)}。`
+    let message = text.buildMessage(songTitleText, playDateText)
 
     // 只有在启用播出时段功能且有播出时段信息时，才添加播出时段详情
-    if (isPlayTimeEnabled && schedule?.playTime) {
+    if (isPlayTimeEnabled && playTime) {
       let timeInfo = ''
 
       // 根据开始和结束时间的情况，格式化显示
-      if (schedule.playTime.startTime && schedule.playTime.endTime) {
-        timeInfo = `(${schedule.playTime.startTime}-${schedule.playTime.endTime})`
-      } else if (schedule.playTime.startTime) {
-        timeInfo = `(开始时间：${schedule.playTime.startTime})`
-      } else if (schedule.playTime.endTime) {
-        timeInfo = `(结束时间：${schedule.playTime.endTime})`
+      if (playTime.startTime && playTime.endTime) {
+        timeInfo = `(${playTime.startTime}-${playTime.endTime})`
+      } else if (playTime.startTime) {
+        timeInfo = `(开始时间：${playTime.startTime})`
+      } else if (playTime.endTime) {
+        timeInfo = `(结束时间：${playTime.endTime})`
       }
 
-      message += `播出时段：${schedule.playTime.name}${timeInfo ? ' ' + timeInfo : ''}。`
+      message += `播出时段：${playTime.name}${timeInfo ? ' ' + timeInfo : ''}。`
     }
 
-    let notification
-    try {
-      const notificationResult = await db
-        .insert(notifications)
-        .values({
-          userId,
-          type: 'SONG_SELECTED',
-          message,
-          songId
-        })
-        .returning()
-      notification = notificationResult[0]
-    } catch (error) {
-      throw error
-    }
+    const notificationResult = await db
+      .insert(notifications)
+      .values({
+        userId,
+        type: 'SONG_SELECTED',
+        message,
+        // 合并多首歌曲时不再指向单首歌曲
+        songId: songIds.length === 1 ? songIds[0]! : null
+      })
+      .returning()
 
     // 同步发送 MeoW 通知
     try {
-      await sendMeowNotificationToUser(userId, '收到新选中', message)
+      await sendMeowNotificationToUser(userId, text.meowTitle, message)
     } catch (error) {
       console.error('发送 MeoW 通知失败:', error)
     }
@@ -215,19 +289,17 @@ export async function createSongSelectedNotification(
     try {
       await sendEmailNotificationToUser(
         userId,
-        '歌曲被选中',
+        text.emailTitle,
         message,
         undefined,
-        'notification.songSelected',
+        text.emailTemplateKey,
         {
-          songTitle: songInfo.title,
-          playDate: formatDate(songInfo.playDate),
-          playTimeName: isPlayTimeEnabled && schedule?.playTime ? schedule.playTime.name : '',
+          songTitle: songTitleText,
+          playDate: playDateText,
+          playTimeName: isPlayTimeEnabled && playTime ? playTime.name : '',
           playTimeRange:
-            isPlayTimeEnabled &&
-            schedule?.playTime &&
-            (schedule.playTime.startTime || schedule.playTime.endTime)
-              ? `${schedule.playTime.startTime || ''}${schedule.playTime.startTime && schedule.playTime.endTime ? '-' : ''}${schedule.playTime.endTime || ''}`
+            isPlayTimeEnabled && playTime && (playTime.startTime || playTime.endTime)
+              ? `${playTime.startTime || ''}${playTime.startTime && playTime.endTime ? '-' : ''}${playTime.endTime || ''}`
               : ''
         }
       )
@@ -235,10 +307,50 @@ export async function createSongSelectedNotification(
       console.error('发送邮件通知失败:', error)
     }
 
-    return notification
+    return notificationResult[0]
   } catch (err) {
     return null
   }
+}
+
+/**
+ * 创建歌曲被选中的通知（同一用户同一天多首歌曲合并为一条）
+ */
+export async function createSongSelectedNotifications(entries: SongSelectedEntry[]) {
+  const results = await Promise.allSettled(
+    groupSongSelectedEntries(entries).map((group) =>
+      sendSongSelectedNotification('submission', group)
+    )
+  )
+  return results.flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
+}
+
+/**
+ * 创建歌曲被选中的通知
+ */
+export async function createSongSelectedNotification(
+  userId: number,
+  songId: number,
+  songInfo: {
+    title: string
+    artist: string
+    playDate: Date
+  }
+) {
+  const created = await createSongSelectedNotifications([{ userId, songId, songInfo }])
+  return created[0] || null
+}
+
+/**
+ * 创建重播申请已安排排期的通知（发送给重播申请人，同一用户同一天多首歌曲合并为一条）
+ */
+export async function createReplaySongSelectedNotifications(entries: SongSelectedEntry[]) {
+  const results = await Promise.allSettled(
+    groupSongSelectedEntries(entries).map((group) =>
+      sendSongSelectedNotification('replay', group)
+    )
+  )
+  return results.flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
 }
 
 /**
@@ -254,101 +366,10 @@ export async function createReplaySongSelectedNotification(
   },
   scheduleId?: number
 ) {
-  try {
-    // 获取系统设置，检查是否启用播出时段功能
-    const systemConfig = await getSystemSettingsCached()
-    const isPlayTimeEnabled = systemConfig?.enablePlayTimeSelection || false
-
-    // 优先按排期 ID 精确查询，避免同日同歌多排期时取错时段
-    const scheduleResult = await db
-      .select({
-        id: schedules.id,
-        playTime: {
-          id: playTimes.id,
-          name: playTimes.name,
-          startTime: playTimes.startTime,
-          endTime: playTimes.endTime
-        }
-      })
-      .from(schedules)
-      .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-      .where(
-        scheduleId
-          ? eq(schedules.id, scheduleId)
-          : and(eq(schedules.songId, songId), eq(schedules.playDate, songInfo.playDate))
-      )
-      .limit(1)
-    const schedule = scheduleResult[0]
-
-    // 获取用户通知设置
-    const settingsResult = await db
-      .select()
-      .from(notificationSettings)
-      .where(eq(notificationSettings.userId, userId))
-      .limit(1)
-    const settings = settingsResult[0]
-
-    if (settings && !settings.enabled) {
-      return null
-    }
-
-    let message = `您申请重播的歌曲《${songInfo.title}》已安排播放，播放日期：${formatDate(songInfo.playDate)}。`
-
-    if (isPlayTimeEnabled && schedule?.playTime) {
-      let timeInfo = ''
-      if (schedule.playTime.startTime && schedule.playTime.endTime) {
-        timeInfo = `(${schedule.playTime.startTime}-${schedule.playTime.endTime})`
-      } else if (schedule.playTime.startTime) {
-        timeInfo = `(开始时间：${schedule.playTime.startTime})`
-      } else if (schedule.playTime.endTime) {
-        timeInfo = `(结束时间：${schedule.playTime.endTime})`
-      }
-      message += `播出时段：${schedule.playTime.name}${timeInfo ? ' ' + timeInfo : ''}。`
-    }
-
-    let notification
-    try {
-      const notificationResult = await db
-        .insert(notifications)
-        .values({
-          userId,
-          type: 'SONG_SELECTED',
-          message,
-          songId
-        })
-        .returning()
-      notification = notificationResult[0]
-    } catch (error) {
-      throw error
-    }
-
-    try {
-      await sendMeowNotificationToUser(userId, '重播已安排', message)
-    } catch (error) {
-      console.error('发送 MeoW 通知失败:', error)
-    }
-
-    try {
-      await sendEmailNotificationToUser(
-        userId,
-        '重播申请已安排',
-        message,
-        undefined,
-        'notification.replaySongSelected',
-        {
-          songTitle: songInfo.title,
-          playDate: formatDate(songInfo.playDate),
-          playTimeName: isPlayTimeEnabled && schedule?.playTime ? schedule.playTime.name : ''
-        }
-      )
-    } catch (error) {
-      console.error('发送邮件通知失败:', error)
-    }
-
-    return notification
-  } catch (err) {
-    return null
-  }
+  const created = await createReplaySongSelectedNotifications([
+    { userId, songId, songInfo, scheduleId }
+  ])
+  return created[0] || null
 }
 
 // 格式化日期为 yyyy-MM-dd 格式（北京时间）

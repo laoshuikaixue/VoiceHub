@@ -5,15 +5,46 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
 import type { MusicTrackMeta } from '~/utils/musicUrl'
 
+/**
+ * 音量持久化：仅记录最后一次非 0 音量，静音属于瞬时状态不落盘，
+ * 避免刷新后出现「看起来在播但没声音」
+ */
+const VOLUME_STORAGE_KEY = 'voicehub_player_volume'
+
+const clampVolume = (value: number): number => Math.max(0, Math.min(1, value))
+
+const readStoredVolume = (): number => {
+  if (!import.meta.client) return 1
+  try {
+    const raw = localStorage.getItem(VOLUME_STORAGE_KEY)
+    if (raw === null) return 1
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed) || parsed <= 0) return 1
+    return clampVolume(parsed)
+  } catch {
+    return 1
+  }
+}
+
+const persistVolume = (value: number) => {
+  if (!import.meta.client) return
+  try {
+    localStorage.setItem(VOLUME_STORAGE_KEY, String(value))
+  } catch {
+    // 隐私模式 / 配额不足时写入失败不影响播放
+  }
+}
+
 // 单例状态
 const audioPlayer = ref<HTMLAudioElement | null>(null)
 const isPlaying = ref(false)
 const progress = ref(0)
 const currentTime = ref(0)
 const duration = ref(0)
-const volume = ref(1) // 0.0 到 1.0
+const initialVolume = readStoredVolume()
+const volume = ref(initialVolume) // 0.0 到 1.0
 const isMuted = ref(false)
-const preMuteVolume = ref(1)
+const preMuteVolume = ref(initialVolume)
 const hasError = ref(false)
 const coverError = ref(false)
 const showQualitySettings = ref(false)
@@ -269,7 +300,7 @@ export const useAudioPlayerControl = () => {
             songUrlOrSong.musicPlatform,
             songUrlOrSong.musicId,
             songUrlOrSong.playUrl,
-            options
+            { ...options, musicInfo: { ...(options?.musicInfo || {}), rawItem: songUrlOrSong } }
           )
           if (!songUrl) {
             throw new Error('无法获取歌曲URL')
@@ -385,7 +416,8 @@ export const useAudioPlayerControl = () => {
           musicInfo: {
             name: currentSongForQuality?.title,
             artist: currentSongForQuality?.artist,
-            album: currentSongForQuality?.album || undefined
+            album: currentSongForQuality?.album || undefined,
+            rawItem: currentSongForQuality
           }
         }
       )
@@ -838,11 +870,12 @@ export const useAudioPlayerControl = () => {
 
   // 音量控制
   const setVolume = (val: number) => {
-    const newVolume = Math.max(0, Math.min(1, val))
-    
-    // 当用户手动调节非0音量时，记录为下一次取消静音的恢复值
+    const newVolume = clampVolume(val)
+
+    // 当用户手动调节非0音量时，记录为下一次取消静音的恢复值并持久化
     if (newVolume > 0) {
       preMuteVolume.value = newVolume
+      persistVolume(newVolume)
     }
     
     volume.value = newVolume

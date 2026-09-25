@@ -35,7 +35,7 @@
           >
             <h3 class="text-lg font-semibold text-text-primary">{{ locale.title }}</h3>
             <button
-              class="p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
+              class="flex items-center justify-center p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
               @click="$emit('close')"
             >
               <Icon name="x" :size="20" />

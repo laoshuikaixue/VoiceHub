@@ -1,5 +1,6 @@
 import { db, songs, songReplayRequests, users } from '~/drizzle/db'
 import { desc, eq, sql, and } from 'drizzle-orm'
+import { buildNameToUsersMap, formatDisambiguatedNameFromMap } from '~~/server/utils/userDisplayName'
 
 export default defineEventHandler(async (event) => {
   // 1. 检查权限
@@ -69,32 +70,13 @@ export default defineEventHandler(async (event) => {
   const allUsers = await db
     .select({
       name: users.name,
-      grade: users.grade
+      grade: users.grade,
+      status: users.status
     })
     .from(users)
 
-  const nameToUsers = new Map()
-  allUsers.forEach((u) => {
-    if (u.name) {
-      if (!nameToUsers.has(u.name)) {
-        nameToUsers.set(u.name, [])
-      }
-      nameToUsers.get(u.name).push(u)
-    }
-  })
-
-  const formatDisplayName = (userObj: any) => {
-    if (!userObj || !userObj.name) return '未知用户'
-    let displayName = userObj.name
-
-    const sameNameUsers = nameToUsers.get(displayName)
-    if (sameNameUsers && sameNameUsers.length > 1) {
-      if (userObj.grade) {
-        displayName = `${displayName}（${userObj.grade}）`
-      }
-    }
-    return displayName
-  }
+  // 仅在读用户参与重名统计
+  const nameToUsers = buildNameToUsersMap(allUsers)
 
   // 获取详细的重播申请人信息
   const requestDetailsQuery = db
@@ -139,7 +121,7 @@ export default defineEventHandler(async (event) => {
     detailsMap.get(d.songId).push({
       id: d.id,
       userId: d.user.id,
-      name: formatDisplayName(d.user),
+      name: formatDisambiguatedNameFromMap(d.user, nameToUsers),
       grade: d.user.grade,
       class: d.user.class,
       createdAt: d.createdAt,

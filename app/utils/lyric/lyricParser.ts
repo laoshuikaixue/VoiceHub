@@ -2,6 +2,7 @@ import { cloneDeep } from 'lodash-es'
 import type { LyricLine } from '@applemusic-like-lyrics/lyric'
 import { parseTTML as parseTTMLLib } from '@applemusic-like-lyrics/lyric'
 import { extractLyricContent } from './qrc-parser'
+import { getLineText } from './lyricText'
 import { parseLrc, parseTimeToMs } from './parseLrc'
 
 /**
@@ -249,12 +250,72 @@ export const isWordLevelFormat = (format: LrcFormat): boolean =>
   format === LrcFormat.WordByWord || format === LrcFormat.Enhanced
 
 /**
- * 歌词内容对齐
+ * 计算主歌词行与参照行的时间轴匹配关系
  * 两阶段策略：
- * 1. 双指针严格匹配（容差 300ms），与主/翻译行数不一致时按时间方向跳跃
- * 2. 对仍未命中的主行，与剩余未使用的翻译行做最近邻匹配（容差放宽到 1500ms）
+ * 1. 双指针严格匹配（容差 300ms），行数不一致时按时间方向跳跃
+ * 2. 对第一轮未命中的主行，与剩余未使用的参照行做最近邻匹配（容差放宽到 1500ms）
  *    兜底时间轴整体漂移较大的来源（vkeys、第三方翻译 LRC 等），
- *    避免个别行漂移导致大面积翻译丢失
+ *    避免个别行漂移导致大面积内容丢失
+ * @param lyrics 主歌词行
+ * @param others 参照行，必须已按 startTime 升序
+ * @returns matchIndexes[i] 为第 i 行匹配到的 others 下标，未命中为 null
+ */
+const matchLyricLines = (
+  lyrics: Readonly<LyricLine[]>,
+  others: Readonly<LyricLine[]>
+): Array<number | null> => {
+  const matchIndexes: Array<number | null> = new Array(lyrics.length).fill(null)
+  const used = new Set<number>()
+
+  let i = 0
+  let j = 0
+  while (i < lyrics.length && j < others.length) {
+    const main = lyrics[i]
+    const other = others[j]
+    if (!main || !other) break
+    const diff = main.startTime - other.startTime
+    if (Math.abs(diff) <= ALIGN_TOLERANCE_MS) {
+      matchIndexes[i] = j
+      used.add(j)
+      i++
+      j++
+    } else if (diff < 0) {
+      i++
+    } else {
+      j++
+    }
+  }
+
+  for (let m = 0; m < lyrics.length; m++) {
+    if (matchIndexes[m] !== null) continue
+    const main = lyrics[m]
+    if (!main) continue
+    let bestK = -1
+    let bestDiff = Infinity
+    for (let k = 0; k < others.length; k++) {
+      if (used.has(k)) continue
+      const other = others[k]
+      if (!other) continue
+      const diff = Math.abs(main.startTime - other.startTime)
+      if (diff < bestDiff) {
+        bestDiff = diff
+        bestK = k
+      }
+    }
+    if (bestK !== -1 && bestDiff <= DRIFT_TOLERANCE_MS) {
+      matchIndexes[m] = bestK
+      used.add(bestK)
+    }
+  }
+  return matchIndexes
+}
+
+/** 按 startTime 升序返回副本，部分解析路径（逐字 LRC）不保证输出有序 */
+const sortByStartTime = (lines: Readonly<LyricLine[]>): LyricLine[] =>
+  [...lines].sort((a, b) => a.startTime - b.startTime)
+
+/**
+ * 歌词内容对齐（翻译等行级文本）
  * @param lyrics 歌词数据 (Readonly)
  * @param otherLyrics 其他歌词数据
  * @param key 对齐类型
@@ -268,68 +329,66 @@ export const alignLyrics = (
   if (!lyrics.length || !otherLyrics.length) return cloneDeep(lyrics) as LyricLine[]
 
   const result = cloneDeep(lyrics) as LyricLine[]
-  // 防御性排序：部分解析路径（逐字 LRC）不保证输出按时间有序
-  const others = [...otherLyrics].sort((a, b) => a.startTime - b.startTime)
+  const others = sortByStartTime(otherLyrics)
 
-  const textOf = (line: LyricLine): string => line.words.map((word) => word.word).join('')
-  const used = new Set<number>()
-
-  // 第一轮：双指针严格匹配
-  let i = 0
-  let j = 0
-  while (i < result.length && j < others.length) {
-    const diff = result[i].startTime - others[j].startTime
-    if (Math.abs(diff) <= ALIGN_TOLERANCE_MS) {
-      result[i][key] = textOf(others[j])
-      used.add(j)
-      i++
-      j++
-    } else if (diff < 0) {
-      i++
-    } else {
-      j++
-    }
-  }
-
-  // 第二轮：最近邻兜底（1:1 约束，只填充第一轮未命中的行）
-  for (let m = 0; m < result.length; m++) {
-    if (result[m][key]) continue
-    let bestK = -1
-    let bestDiff = Infinity
-    for (let k = 0; k < others.length; k++) {
-      if (used.has(k)) continue
-      const diff = Math.abs(result[m].startTime - others[k].startTime)
-      if (diff < bestDiff) {
-        bestDiff = diff
-        bestK = k
-      }
-    }
-    if (bestK !== -1 && bestDiff <= DRIFT_TOLERANCE_MS) {
-      result[m][key] = textOf(others[bestK])
-      used.add(bestK)
-    }
-  }
+  matchLyricLines(result, others).forEach((idx, i) => {
+    const target = result[i]
+    const source = idx === null ? undefined : others[idx]
+    if (target && source) target[key] = getLineText(source)
+  })
   return result
+}
+
+/**
+ * 音译（罗马音）对齐
+ * 参照行是逐字、且单词数与主歌词逐字数一致时额外写入 word.romanWord（逐字音译）；
+ * 两种形态都保留在数据里，由显示层决定用哪一种（AMLL 会同时渲染两者，必须在其裁剪）
+ * @returns 对齐后的歌词数据 (新副本)
+ */
+export const alignRomanization = (
+  lyrics: Readonly<LyricLine[]>,
+  romaLines: Readonly<LyricLine[]>
+): LyricLine[] => {
+  if (!lyrics.length || !romaLines.length) return cloneDeep(lyrics) as LyricLine[]
+
+  const result = cloneDeep(lyrics) as LyricLine[]
+  const others = sortByStartTime(romaLines)
+
+  matchLyricLines(result, others).forEach((idx, i) => {
+    const line = result[i]
+    const romaLine = idx === null ? undefined : others[idx]
+    if (!line || !romaLine) return
+    const romaWords = romaLine.words
+    const lineText = getLineText(romaLine)
+    if (!lineText.trim()) return
+
+    line.romanLyric = lineText
+    // 单词数为 1 的参照行没有可用的逐字时间轴，只作整行处理
+    if (romaWords.length > 1 && romaWords.length === line.words.length) {
+      line.words.forEach((word, wi) => {
+        const romaWord = romaWords[wi]
+        if (romaWord) word.romanWord = romaWord.word
+      })
+    }
+  })
+  return result
+}
+
+/** QRC 单行解析结果 */
+type QrcLine = {
+  startTime: number
+  endTime: number
+  words: Array<{ word: string; startTime: number; endTime: number }>
 }
 
 /**
  * 解析 QRC 内容为行数据
  */
-const parseQRCContent = (
-  rawContent: string
-): Array<{
-  startTime: number
-  endTime: number
-  words: Array<{ word: string; startTime: number; endTime: number }>
-}> => {
+const parseQRCContent = (rawContent: string): QrcLine[] => {
   // 使用策略模式提取 LyricContent (自动适配 Browser/Node 环境)
   const content = extractLyricContent(rawContent) || rawContent
 
-  const result: Array<{
-    startTime: number
-    endTime: number
-    words: Array<{ word: string; startTime: number; endTime: number }>
-  }> = []
+  const result: QrcLine[] = []
 
   for (const rawLine of content.split('\n')) {
     const line = rawLine.trim()
@@ -375,30 +434,41 @@ const parseQRCContent = (
   return result
 }
 
+/** QrcLine → LyricLine，保留逐字时间轴 */
+const qrcLineToLyricLine = (line: QrcLine): LyricLine => ({
+  words: line.words.map((word) => createWord(word.word, word.startTime, word.endTime)),
+  startTime: line.startTime,
+  endTime: line.endTime,
+  translatedLyric: '',
+  romanLyric: '',
+  isBG: false,
+  isDuet: false
+})
+
+/**
+ * 解析音译（罗马音）原始内容
+ * QRC（XML）与 YRC（[ms,dur] 文本）保留逐字时间轴，其余按 LRC 解析
+ */
+export const parseRomanizationContent = (roma: string): LyricLine[] => {
+  const isWordLevel =
+    roma.trim().startsWith('<') || roma.includes('LyricContent="') || /^\[\d+,\d+\]/m.test(roma)
+  if (isWordLevel) {
+    const parsed = parseQRCContent(roma).map(qrcLineToLyricLine)
+    if (parsed.length) return parsed
+  }
+  return parseSmartLrc(roma).lines
+}
+
 /**
  * 解析 QQ 音乐 QRC 格式歌词
  * @param qrcContent QRC 原始内容
  * @param trans 翻译歌词
- * @param roma 罗马音歌词（QRC 格式）
+ * @param roma 罗马音歌词（逐字 QRC/YRC 或普通 LRC）
  * @returns LyricLine 数组
  */
 export const parseQRCLyric = (qrcContent: string, trans?: string, roma?: string): LyricLine[] => {
   // 解析主歌词
-  const qrcLines = parseQRCContent(qrcContent)
-  let result: LyricLine[] = qrcLines.map((qrcLine) => {
-    return {
-      words: qrcLine.words.map((word) => ({
-        ...word,
-        romanWord: ''
-      })),
-      startTime: qrcLine.startTime,
-      endTime: qrcLine.endTime,
-      translatedLyric: '',
-      romanLyric: '',
-      isBG: false,
-      isDuet: false
-    }
-  })
+  let result: LyricLine[] = parseQRCContent(qrcContent).map(qrcLineToLyricLine)
 
   // 处理翻译
   if (trans) {
@@ -407,7 +477,7 @@ export const parseQRCLyric = (qrcContent: string, trans?: string, roma?: string)
     if (transLines?.length) {
       // 过滤包含 "//" 或 "作品的著作权" 的翻译行
       transLines = transLines.filter((line) => {
-        const text = line.words.map((w) => w.word).join('')
+        const text = getLineText(line)
         return !text.includes('//') && !text.includes('作品的著作权')
       })
       result = alignLyrics(result, transLines, 'translatedLyric')
@@ -416,28 +486,8 @@ export const parseQRCLyric = (qrcContent: string, trans?: string, roma?: string)
 
   // 处理音译
   if (roma) {
-    const qrcRomaLines = parseQRCContent(roma)
-    if (qrcRomaLines?.length) {
-      const romaLines: LyricLine[] = qrcRomaLines.map((line) => {
-        return {
-          words: [
-            {
-              startTime: line.startTime,
-              endTime: line.endTime,
-              word: line.words.map((w) => w.word).join(''),
-              romanWord: ''
-            }
-          ],
-          startTime: line.startTime,
-          endTime: line.endTime,
-          translatedLyric: '',
-          romanLyric: '',
-          isBG: false,
-          isDuet: false
-        }
-      })
-      result = alignLyrics(result, romaLines, 'romanLyric')
-    }
+    const romaLines = parseRomanizationContent(roma)
+    if (romaLines.length) result = alignRomanization(result, romaLines)
   }
 
   return result

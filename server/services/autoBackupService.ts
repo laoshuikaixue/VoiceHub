@@ -1,4 +1,5 @@
 import { db } from '~/drizzle/db'
+import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
   backupHistory,
   systemSettings,
@@ -9,6 +10,7 @@ import {
   cardCodes,
   collaborationLogs,
   emailTemplates,
+  gradeClass,
   notifications,
   notificationSettings,
   playTimes,
@@ -120,15 +122,17 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
   }
 
   const tablesToBackup: Record<string, { query: () => Promise<any[]>; description: string }> = {
+    ...Object.fromEntries(Object.entries(pluginBackupTables).map(([name, table]) => [name, { query: () => db.select().from(table), description: '音源插件配置' }])),
     users: { query: () => db.select().from(users), description: '用户数据' },
     songs: { query: () => db.select().from(songs), description: '歌曲数据' },
     schedules: { query: () => db.select().from(schedules), description: '排期数据' },
     playTimes: { query: () => db.select().from(playTimes), description: '播出时段' },
     requestTimes: { query: () => db.select().from(requestTimes), description: '请求时段' },
     semesters: { query: () => db.select().from(semesters), description: '学期数据' },
+    gradeClass: { query: () => db.select().from(gradeClass), description: '年级班级配置' },
     notifications: { query: () => db.select().from(notifications), description: '通知数据' },
     notificationSettings: { query: () => db.select().from(notificationSettings), description: '通知设置' },
-    songBlacklists: { query: () => db.select().from(songBlacklists), description: '歌曲黑名单' },
+    songBlacklist: { query: () => db.select().from(songBlacklists), description: '歌曲黑名单' },
     votes: { query: () => db.select().from(votes), description: '投票数据' },
     cardCodes: { query: () => db.select().from(cardCodes), description: '点歌券数据' },
     cardCodeRedeemLogs: { query: () => db.select().from(cardCodeRedeemLogs), description: '点歌券日志' },

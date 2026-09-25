@@ -3,6 +3,7 @@ import { hostname } from 'node:os'
 import type { H3Event } from 'h3'
 import {
   getSentryEventSearchText,
+  isExpectedPluginRuntimeTransportError,
   isExpectedUpstreamMusicError,
   stringifyErrorValue
 } from '~~/app/utils/sentryUpstreamMusicErrors'
@@ -54,7 +55,7 @@ const isEmailServiceConfigError = (error: unknown): boolean => {
   )
 }
 
-const shouldCaptureServerError = (error: unknown): boolean => {
+const shouldCaptureServerError = (error: unknown, requestUrl?: string): boolean => {
   if (!error || typeof error !== 'object') return true
   const maybeStatusCode = (error as { statusCode?: unknown }).statusCode
   const statusCode = typeof maybeStatusCode === 'number' ? maybeStatusCode : undefined
@@ -67,6 +68,10 @@ const shouldCaptureServerError = (error: unknown): boolean => {
   // 外部音源接口波动属于预期失败，本地保留日志和接口返回即可。
   const errorText = stringifyErrorValue(error)
   if (isExpectedUpstreamMusicError(errorText) || isExpectedAggregateOAuthError(errorText)) {
+    return false
+  }
+
+  if (requestUrl && isExpectedPluginRuntimeTransportError(errorText, requestUrl)) {
     return false
   }
 
@@ -180,6 +185,10 @@ export default defineNitroPlugin((nitroApp) => {
             return null
           }
 
+          if (isExpectedPluginRuntimeTransportError(eventText, event.request?.url)) {
+            return null
+          }
+
           return event
         },
         beforeSendLog(log) {
@@ -230,7 +239,7 @@ export default defineNitroPlugin((nitroApp) => {
   }
 
   nitroApp.hooks.hook('error', async (error, context) => {
-    if (!shouldCaptureServerError(error)) {
+    if (!shouldCaptureServerError(error, context?.event?.node.req.url)) {
       return
     }
 

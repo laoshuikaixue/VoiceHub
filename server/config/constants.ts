@@ -69,6 +69,14 @@ export const API_ERROR_MESSAGES = {
 // 配合 server/utils/apiError.ts 的 createApiError() 抛出，客户端通过 serverErrors 词典按 code 本地化。
 // 说明：admin/** 子系统暂缓码化，仍直接返回中文文案，故此处不含 ADMIN_* 分组。
 export const SERVER_ERROR_CODES = {
+  PLUGIN_INVALID_CONFIG: 'PLUGIN_INVALID_CONFIG',
+  PLUGIN_CONFIG_CONFLICT: 'PLUGIN_CONFIG_CONFLICT',
+  PLUGIN_LOAD_FAILED: 'PLUGIN_LOAD_FAILED',
+  PLUGIN_RESOLVE_FAILED: 'PLUGIN_RESOLVE_FAILED',
+  PLUGIN_UNAVAILABLE: 'PLUGIN_UNAVAILABLE',
+  PLUGIN_NETWORK_BLOCKED: 'PLUGIN_NETWORK_BLOCKED',
+  PLUGIN_TIMEOUT: 'PLUGIN_TIMEOUT',
+  PLUGIN_INVALID_TICKET: 'PLUGIN_INVALID_TICKET',
   // 点歌券（card-codes）
   CARD_CODE_AUTH_REQUIRED: 'CARD_CODE_AUTH_REQUIRED',
   CARD_CODE_REQUIRED: 'CARD_CODE_REQUIRED',
@@ -99,6 +107,7 @@ export const SERVER_ERROR_CODES = {
   AUTH_TOTP_TOO_MANY_ATTEMPTS: 'AUTH_TOTP_TOO_MANY_ATTEMPTS',
   AUTH_INCOMPLETE_PARAMS: 'AUTH_INCOMPLETE_PARAMS',
   COMMON_INVALID_PARAMS: 'COMMON_INVALID_PARAMS',
+  COMMON_RATE_LIMITED_SECONDS: 'COMMON_RATE_LIMITED_SECONDS',
   THEME_INVALID_LIST: 'THEME_INVALID_LIST',
   THEME_INVALID_DEFAULT: 'THEME_INVALID_DEFAULT',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'THEME_SYSTEM_REQUIRES_CLASSIC',
@@ -238,6 +247,7 @@ export const SERVER_ERROR_CODES = {
   SONG_DURATION_PLATFORM_REQUIRED: 'SONG_DURATION_PLATFORM_REQUIRED',
   SONG_COVER_PLATFORM_REQUIRED: 'SONG_COVER_PLATFORM_REQUIRED',
   SONG_CARD_RELEASE_FAILED: 'SONG_CARD_RELEASE_FAILED',
+  SONG_CARD_RESTORE_FAILED: 'SONG_CARD_RESTORE_FAILED',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: 'SONG_NO_ACTIVE_SEMESTER_IMPORT',
   SONG_FETCH_VOTERS_FAILED: 'SONG_FETCH_VOTERS_FAILED',
   SONG_FETCH_STATUS_FAILED: 'SONG_FETCH_STATUS_FAILED',
@@ -461,8 +471,28 @@ export const MUSIC_PLATFORMS = {
   MIGU: 'migu'
 } as const
 
-// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/utils/platforms.ts）
+// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；插件平台由独立配置管理）
 export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
+
+export const MUSIC_PLUGIN_PROTOCOLS = ['auto', 'lx', 'musicfree'] as const
+export const MUSIC_PLUGIN_CATALOGS = ['netease', 'tencent', 'migu', 'kugou', 'kuwo'] as const
+export const MUSIC_PLUGIN_LX_SOURCES: Record<string, string> = {
+  netease: 'wy', tencent: 'tx', migu: 'mg', kugou: 'kg', kuwo: 'kw'
+}
+export const MUSIC_PLUGIN_LIMITS = {
+  count: 20,
+  scriptBytes: 5 * 1024 * 1024,
+  responseBytes: 5 * 1024 * 1024,
+  itemBytes: 64 * 1024,
+  memoryBytes: 32 * 1024 * 1024,
+  callMs: 8000,
+  batchMs: 24000,
+  requests: 12,
+  redirects: 4,
+  concurrency: 2,
+  // serverless 部署快照（prelude + 全部插件脚本）的解码后总量上限，超出会在构建期终止部署
+  snapshotBytes: 24 * 1024 * 1024
+} as const
 
 // 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
 export const SONG_DURATION_MIN_SECONDS = 0

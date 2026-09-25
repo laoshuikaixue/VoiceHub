@@ -1,16 +1,24 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
+  apiKeyPermissions,
+  apiKeys,
+  apiLogs,
   cardCodeRedeemLogs,
   cardCodes,
+  collaborationLogs,
   emailTemplates,
   gradeClass,
   notificationSettings,
   notifications,
   playTimes,
+  requestTimes,
   schedules,
   semesters,
   songBlacklists,
+  songCollaborators,
+  songReplayRequests,
   songs,
   systemSettings,
   userIdentities,
@@ -18,7 +26,7 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 import { createApiError } from '~~/server/utils/apiError'
@@ -71,18 +79,27 @@ export default defineEventHandler(async (event) => {
   const cardCodeIdMapping = new Map(
     Object.entries(mappings?.cardCodes || {}).map(([k, v]) => [Number(k), Number(v)])
   )
+  // API Key 的 id 为 uuid，映射键值保持字符串
+  const apiKeyIdMapping = new Map(
+    Object.entries(mappings?.apiKeys || {}).map(([k, v]) => [String(k), String(v)])
+  )
   const preservedSuperAdminIds = new Set(
     (mappings?.meta?.preservedSuperAdminIds || []).map((id) => Number(id))
   )
   const temporaryPreservedUserId = mappings?.meta?.temporaryPreservedUserId
     ? Number(mappings.meta.temporaryPreservedUserId)
     : null
+  // 备份最大用户ID之后预留的新ID，供与临时保留管理员冲突的记录使用
+  const reservedUserIdRaw = Number(mappings?.meta?.reservedUserId)
+  const reservedUserId =
+    Number.isInteger(reservedUserIdRaw) && reservedUserIdRaw > 0 ? reservedUserIdRaw : null
   const shouldOverwriteSuperAdmin = overwriteSuperAdmin && hasSuperAdminInBackup
 
   const newMappings = {
     users: {},
     songs: {},
-    cardCodes: {}
+    cardCodes: {},
+    apiKeys: {}
   }
 
   const stats = {
@@ -99,6 +116,12 @@ export default defineEventHandler(async (event) => {
     try {
       await db.transaction(async (tx) => {
         switch (tableName) {
+          case 'musicSourcePlugins':
+          case 'musicSourcePluginRevisions':
+          case 'musicSourceConfigState':
+            await restorePluginRecord(tx, tableName, record)
+            stats.created++
+            break
           case 'users': {
             const buildUserData = (includePassword = false) => {
               const userData: any = {}
@@ -205,7 +228,20 @@ export default defineEventHandler(async (event) => {
                 temporaryPreservedUserId &&
                 Number(record.id) === temporaryPreservedUserId
               ) {
-                createdUser = (await tx.insert(users).values(buildUserData(true)).returning())[0]
+                // 临时保留的当前管理员仍占用原ID，改用预留ID插入，避免主键冲突及被后续记录覆盖
+                let newUserId = reservedUserId
+                if (!newUserId) {
+                  const [maxRow] = await tx
+                    .select({ maxId: sql<number>`COALESCE(MAX(${users.id}), 0)` })
+                    .from(users)
+                  newUserId = Number(maxRow?.maxId ?? 0) + 1
+                }
+                createdUser = (
+                  await tx
+                    .insert(users)
+                    .values({ ...buildUserData(true), id: newUserId })
+                    .returning()
+                )[0]
                 stats.created++
                 if (record.id && createdUser?.id) {
                   newMappings.users[record.id] = createdUser.id
@@ -527,6 +563,7 @@ export default defineEventHandler(async (event) => {
               'cover',
               'musicPlatform',
               'musicId',
+              'musicSourceData',
               'durationSeconds',
               'submissionNote',
               'submissionNotePublic',
@@ -652,6 +689,61 @@ export default defineEventHandler(async (event) => {
               } else {
                 await tx.insert(playTimes).values({
                   ...playTimeData,
+                  id: record.id
+                })
+                stats.created++
+              }
+            }
+            break
+          }
+
+          case 'requestTimes': {
+            if (!record.name || !record.startTime || !record.endTime) {
+              stats.warnings.push(`requestTimes 记录 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            const requestTimeData: any = {
+              name: record.name,
+              startTime: new Date(record.startTime),
+              endTime: new Date(record.endTime),
+              enabled: record.enabled !== undefined ? record.enabled : true,
+              description: record.description || null,
+              expected: record.expected || 0,
+              accepted: record.accepted || 0,
+              past: record.past !== undefined ? record.past : false,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              const existingRequestTime = await tx.query.requestTimes.findFirst({
+                where: eq(requestTimes.name, requestTimeData.name)
+              })
+              if (existingRequestTime) {
+                await tx
+                  .update(requestTimes)
+                  .set(requestTimeData)
+                  .where(eq(requestTimes.id, existingRequestTime.id))
+                stats.updated++
+              } else {
+                await tx.insert(requestTimes).values(requestTimeData)
+                stats.created++
+              }
+            } else {
+              const existingRequestTimeWithId = await tx.query.requestTimes.findFirst({
+                where: eq(requestTimes.id, record.id)
+              })
+
+              if (existingRequestTimeWithId) {
+                await tx
+                  .update(requestTimes)
+                  .set(requestTimeData)
+                  .where(eq(requestTimes.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(requestTimes).values({
+                  ...requestTimeData,
                   id: record.id
                 })
                 stats.created++
@@ -1341,6 +1433,411 @@ export default defineEventHandler(async (event) => {
 
           case 'scheduleSongPool': {
             await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
+            break
+          }
+
+          case 'songCollaborators': {
+            if (!record.songId || !record.userId) {
+              stats.warnings.push(`联合投稿人 ${record.id ?? ''} 缺少歌曲或用户，已跳过`)
+              break
+            }
+
+            let validCollabSongId = record.songId
+            const mappedCollabSongId = songIdMapping.get(record.songId)
+            if (mappedCollabSongId) {
+              validCollabSongId = mappedCollabSongId
+            } else {
+              const songExists = await tx.query.songs.findFirst({
+                where: eq(songs.id, record.songId)
+              })
+              if (!songExists) {
+                stats.warnings.push(`联合投稿人的歌曲 ${record.songId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            let validCollabUserId = record.userId
+            const mappedCollabUserId = userIdMapping.get(record.userId)
+            if (mappedCollabUserId) {
+              validCollabUserId = mappedCollabUserId
+            } else {
+              const userExists = await tx.query.users.findFirst({
+                where: eq(users.id, record.userId)
+              })
+              if (!userExists) {
+                stats.warnings.push(`联合投稿人的用户 ${record.userId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            const collabData: any = {
+              songId: validCollabSongId,
+              userId: validCollabUserId,
+              status: record.status || 'PENDING',
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+
+            if (record.id) {
+              const existingCollab = await tx.query.songCollaborators.findFirst({
+                where: eq(songCollaborators.id, record.id)
+              })
+              if (existingCollab) {
+                await tx
+                  .update(songCollaborators)
+                  .set(collabData)
+                  .where(eq(songCollaborators.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(songCollaborators).values({ ...collabData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(songCollaborators).values(collabData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'collaborationLogs': {
+            if (!record.collaboratorId || !record.action) {
+              stats.warnings.push(`联合投稿日志 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            // collaboratorId 为 uuid：协作人行恢复时保留原 uuid，可直接沿用
+            const collabLogData: any = {
+              collaboratorId: record.collaboratorId,
+              action: record.action,
+              operatorId: record.operatorId,
+              ipAddress: record.ipAddress || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (record.operatorId) {
+              const mappedOperatorId = userIdMapping.get(record.operatorId)
+              if (mappedOperatorId) collabLogData.operatorId = mappedOperatorId
+            }
+
+            if (record.id) {
+              const existingCollabLog = await tx.query.collaborationLogs.findFirst({
+                where: eq(collaborationLogs.id, record.id)
+              })
+              if (existingCollabLog) {
+                await tx
+                  .update(collaborationLogs)
+                  .set(collabLogData)
+                  .where(eq(collaborationLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(collaborationLogs).values({ ...collabLogData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(collaborationLogs).values(collabLogData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'songReplayRequests': {
+            if (!record.songId || !record.userId) {
+              stats.warnings.push(`重播申请 ${record.id ?? ''} 缺少歌曲或用户，已跳过`)
+              break
+            }
+
+            let validReplaySongId = record.songId
+            const mappedReplaySongId = songIdMapping.get(record.songId)
+            if (mappedReplaySongId) {
+              validReplaySongId = mappedReplaySongId
+            } else {
+              const songExists = await tx.query.songs.findFirst({
+                where: eq(songs.id, record.songId)
+              })
+              if (!songExists) {
+                stats.warnings.push(`重播申请的歌曲 ${record.songId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            let validReplayUserId = record.userId
+            const mappedReplayUserId = userIdMapping.get(record.userId)
+            if (mappedReplayUserId) {
+              validReplayUserId = mappedReplayUserId
+            } else {
+              const userExists = await tx.query.users.findFirst({
+                where: eq(users.id, record.userId)
+              })
+              if (!userExists) {
+                stats.warnings.push(`重播申请的用户 ${record.userId} 不存在，已跳过`)
+                break
+              }
+            }
+
+            let validReplayPlayTimeId = record.preferredPlayTimeId || null
+            if (validReplayPlayTimeId) {
+              const playTimeExists = await tx.query.playTimes.findFirst({
+                where: eq(playTimes.id, validReplayPlayTimeId)
+              })
+              if (!playTimeExists) validReplayPlayTimeId = null
+            }
+
+            const replayData: any = {
+              songId: validReplaySongId,
+              userId: validReplayUserId,
+              status: record.status || 'PENDING',
+              preferredPlayTimeId: validReplayPlayTimeId,
+              submissionNote: record.submissionNote ?? null,
+              submissionNotePublic: record.submissionNotePublic === true,
+              submissionNotePublicStatus: record.submissionNotePublicStatus ?? null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              // 同一用户同一首歌最多一条待处理申请（部分唯一索引），冲突时跳过
+              const inserted = await tx
+                .insert(songReplayRequests)
+                .values(replayData)
+                .onConflictDoNothing()
+                .returning()
+              if (inserted.length > 0) stats.created++
+              else stats.warnings.push(`重播申请 ${record.id ?? ''} 存在待处理重复记录，已跳过`)
+            } else if (record.id) {
+              const existingReplay = await tx.query.songReplayRequests.findFirst({
+                where: eq(songReplayRequests.id, record.id)
+              })
+              if (existingReplay) {
+                await tx
+                  .update(songReplayRequests)
+                  .set(replayData)
+                  .where(eq(songReplayRequests.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(songReplayRequests).values({ ...replayData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(songReplayRequests).values(replayData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'apiKeys': {
+            let validCreatedByUserId = record.createdByUserId
+            if (record.createdByUserId) {
+              const mappedUserId = userIdMapping.get(record.createdByUserId)
+              if (mappedUserId) {
+                validCreatedByUserId = mappedUserId
+              } else {
+                const userExists = await tx.query.users.findFirst({
+                  where: eq(users.id, record.createdByUserId)
+                })
+                if (!userExists) {
+                  stats.warnings.push(`API密钥 ${record.name ?? record.id ?? ''} 的创建者不存在，已跳过`)
+                  break
+                }
+              }
+            } else {
+              stats.warnings.push(`API密钥 ${record.id ?? ''} 缺少创建者，已跳过`)
+              break
+            }
+
+            if (!record.name || !record.keyHash || !record.keyPrefix) {
+              stats.warnings.push(`API密钥 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            const apiKeyData: any = {
+              name: record.name,
+              description: record.description || null,
+              keyHash: record.keyHash,
+              keyPrefix: record.keyPrefix,
+              isActive: record.isActive !== undefined ? record.isActive : true,
+              expiresAt: record.expiresAt ? new Date(record.expiresAt) : null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
+              lastUsedAt: record.lastUsedAt ? new Date(record.lastUsedAt) : null,
+              createdByUserId: validCreatedByUserId,
+              usageCount: record.usageCount || 0
+            }
+
+            let restoredApiKey
+            if (mode === 'merge') {
+              // keyHash 唯一：已存在则更新并沿用其 ID，供权限与日志映射
+              const existingApiKey = await tx.query.apiKeys.findFirst({
+                where: eq(apiKeys.keyHash, record.keyHash)
+              })
+              if (existingApiKey) {
+                restoredApiKey = (
+                  await tx
+                    .update(apiKeys)
+                    .set(apiKeyData)
+                    .where(eq(apiKeys.id, existingApiKey.id))
+                    .returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredApiKey = (await tx.insert(apiKeys).values(apiKeyData).returning())[0]
+                stats.created++
+              }
+            } else if (record.id) {
+              const existingApiKeyWithId = await tx.query.apiKeys.findFirst({
+                where: eq(apiKeys.id, record.id)
+              })
+              if (existingApiKeyWithId) {
+                restoredApiKey = (
+                  await tx
+                    .update(apiKeys)
+                    .set(apiKeyData)
+                    .where(eq(apiKeys.id, record.id))
+                    .returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredApiKey = (
+                  await tx
+                    .insert(apiKeys)
+                    .values({ ...apiKeyData, id: record.id })
+                    .returning()
+                )[0]
+                stats.created++
+              }
+            } else {
+              restoredApiKey = (await tx.insert(apiKeys).values(apiKeyData).returning())[0]
+              stats.created++
+            }
+
+            if (record.id && restoredApiKey?.id) {
+              newMappings.apiKeys[record.id] = restoredApiKey.id
+            }
+            break
+          }
+
+          case 'apiKeyPermissions': {
+            let validApiKeyId = null
+            if (record.apiKeyId) {
+              const mappedApiKeyId = apiKeyIdMapping.get(String(record.apiKeyId))
+              if (mappedApiKeyId) {
+                validApiKeyId = mappedApiKeyId
+              } else {
+                const apiKeyExists = await tx.query.apiKeys.findFirst({
+                  where: eq(apiKeys.id, record.apiKeyId)
+                })
+                validApiKeyId = apiKeyExists ? record.apiKeyId : null
+              }
+            }
+
+            if (!validApiKeyId || !record.permission) {
+              stats.warnings.push(`API密钥权限 ${record.id ?? ''} 关联的密钥不存在或缺少权限值，已跳过`)
+              break
+            }
+
+            const apiKeyPermissionData: any = {
+              apiKeyId: validApiKeyId,
+              permission: record.permission,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              const existingPermission = await tx.query.apiKeyPermissions.findFirst({
+                where: and(
+                  eq(apiKeyPermissions.apiKeyId, validApiKeyId),
+                  eq(apiKeyPermissions.permission, record.permission)
+                )
+              })
+              if (existingPermission) {
+                await tx
+                  .update(apiKeyPermissions)
+                  .set(apiKeyPermissionData)
+                  .where(eq(apiKeyPermissions.id, existingPermission.id))
+                stats.updated++
+              } else {
+                await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
+                stats.created++
+              }
+            } else if (record.id) {
+              const existingPermissionWithId = await tx.query.apiKeyPermissions.findFirst({
+                where: eq(apiKeyPermissions.id, record.id)
+              })
+              if (existingPermissionWithId) {
+                await tx
+                  .update(apiKeyPermissions)
+                  .set(apiKeyPermissionData)
+                  .where(eq(apiKeyPermissions.id, record.id))
+                stats.updated++
+              } else {
+                await tx
+                  .insert(apiKeyPermissions)
+                  .values({ ...apiKeyPermissionData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'apiLogs': {
+            let validApiLogApiKeyId = null
+            if (record.apiKeyId) {
+              const mappedApiKeyId = apiKeyIdMapping.get(String(record.apiKeyId))
+              if (mappedApiKeyId) {
+                validApiLogApiKeyId = mappedApiKeyId
+              } else {
+                const apiKeyExists = await tx.query.apiKeys.findFirst({
+                  where: eq(apiKeys.id, record.apiKeyId)
+                })
+                validApiLogApiKeyId = apiKeyExists ? record.apiKeyId : null
+              }
+            }
+
+            if (
+              !record.endpoint ||
+              !record.method ||
+              !record.ipAddress ||
+              record.statusCode === undefined ||
+              record.responseTimeMs === undefined
+            ) {
+              stats.warnings.push(`API日志 ${record.id ?? ''} 缺少必填字段，已跳过`)
+              break
+            }
+
+            const apiLogData: any = {
+              apiKeyId: validApiLogApiKeyId,
+              endpoint: record.endpoint,
+              method: record.method,
+              ipAddress: record.ipAddress,
+              userAgent: record.userAgent || null,
+              statusCode: record.statusCode,
+              responseTimeMs: record.responseTimeMs,
+              requestBody: record.requestBody || null,
+              responseBody: record.responseBody || null,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+              errorMessage: record.errorMessage || null
+            }
+
+            if (mode === 'merge') {
+              // 访问日志无需去重，直接追加
+              await tx.insert(apiLogs).values(apiLogData)
+              stats.created++
+            } else if (record.id) {
+              const existingApiLogWithId = await tx.query.apiLogs.findFirst({
+                where: eq(apiLogs.id, record.id)
+              })
+              if (existingApiLogWithId) {
+                await tx.update(apiLogs).set(apiLogData).where(eq(apiLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(apiLogs).values({ ...apiLogData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(apiLogs).values(apiLogData)
+              stats.created++
+            }
             break
           }
         }

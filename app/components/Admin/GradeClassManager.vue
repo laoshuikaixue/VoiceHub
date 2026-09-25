@@ -165,7 +165,7 @@
           </div>
           <button
             type="button"
-            class="p-2 rounded-lg text-text-tertiary hover:text-error hover:bg-error-10 transition-colors"
+            class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-error hover:bg-error-10 transition-colors"
             :title="locale.deleteGradeButton"
             @click="openDeleteGradeConfirm(group)"
           >
@@ -186,7 +186,7 @@
             </span>
             <button
               type="button"
-              class="p-0.5 rounded text-text-tertiary opacity-60 group-hover/chip:opacity-100 hover:text-error hover:bg-error-10 transition-all"
+              class="flex items-center justify-center p-0.5 rounded text-text-tertiary opacity-60 group-hover/chip:opacity-100 hover:text-error hover:bg-error-10 transition-all"
               :title="locale.deleteButton"
               @click="openDeleteConfirm(item)"
             >

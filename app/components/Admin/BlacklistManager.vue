@@ -101,7 +101,7 @@
             @click="addBlacklistItem"
           >
             <Plus v-if="!loading" :size="16" />
-            <AppSpinner :size="16" />
+            <AppSpinner v-else :size="16" color="white" />
             {{ loading ? locale.processing : locale.addButton }}
           </button>
         </div>
@@ -218,7 +218,7 @@
               </button>
               <button
                 :disabled="loading"
-                class="p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95"
+                class="flex items-center justify-center p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95"
                 @click="deleteItem(item)"
               >
                 <Trash2 :size="16" />

@@ -8,6 +8,7 @@ import {
   cardCodes,
   collaborationLogs,
   emailTemplates,
+  gradeClass,
   notifications,
   notificationSettings,
   playTimes,
@@ -24,7 +25,8 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
-import { eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, notInArray, or } from 'drizzle-orm'
+import { pluginClearOrder } from '~~/server/utils/music-source-plugins/backup'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -45,6 +47,22 @@ export default defineEventHandler(async (event) => {
 
     if (finalizeTempUser) {
       const currentUserId = Number(user.id)
+
+      // 恢复未产生新的超级管理员时保留临时账户，避免站点失去管理入口
+      const otherSuperAdmin = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.role, 'SUPER_ADMIN'), ne(users.id, currentUserId)))
+        .limit(1)
+
+      if (otherSuperAdmin.length === 0) {
+        return {
+          success: false,
+          finalized: false,
+          message: '未检测到新的超级管理员账户，已保留当前管理员账户'
+        }
+      }
+
       const currentUserApiKeys = await db
         .select({ id: apiKeys.id })
         .from(apiKeys)
@@ -83,6 +101,12 @@ export default defineEventHandler(async (event) => {
       preservedSuperAdminIds = preservedUsers.map((item) => item.id)
     } else {
       temporaryPreservedUserId = Number(user.id)
+      // 临时保留行占用当前管理员的原用户名，改名释放，避免与备份中同名记录的唯一约束冲突
+      // （该行仅用于恢复期间维持登录态，恢复完成后由 finalizeTempUser 删除）
+      await db
+        .update(users)
+        .set({ username: `__restore_temp_${temporaryPreservedUserId}` })
+        .where(eq(users.id, temporaryPreservedUserId))
     }
 
     console.log('清空现有数据...')
@@ -108,6 +132,8 @@ export default defineEventHandler(async (event) => {
       await db.delete(playTimes)
       await db.delete(semesters)
       await db.delete(requestTimes)
+      await db.delete(gradeClass)
+      for (const table of pluginClearOrder) await db.delete(table)
       await db.delete(systemSettings)
       if (temporaryPreservedUserId) {
         await db.delete(users).where(notInArray(users.id, [temporaryPreservedUserId]))
@@ -156,6 +182,8 @@ export default defineEventHandler(async (event) => {
       await db.delete(playTimes)
       await db.delete(semesters)
       await db.delete(requestTimes)
+      await db.delete(gradeClass)
+      for (const table of pluginClearOrder) await db.delete(table)
       await db.delete(systemSettings)
       await db.delete(users).where(notInArray(users.id, preservedSuperAdminIds))
     }

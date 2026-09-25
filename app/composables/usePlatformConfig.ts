@@ -5,25 +5,59 @@
 
 import { ref } from 'vue'
 import { useSiteConfig } from './useSiteConfig'
-import { DEFAULT_PLATFORMS } from '~/utils/platforms'
+import { BUILTIN_PLATFORMS } from '~/utils/platforms'
+
+/** 插件音源信息（platform 为带前缀的插件标识 plugin:<id>，也是搜索/播放时的路由键） */
+export type PluginPlatformInfo = {
+  platform: string
+  displayName: string
+  // 稳定唯一 id（与 platform 后缀一致），供客户端直接取用
+  id?: string
+}
 
 const cache = {
-  enabledPlatforms: ref<string[]>([...DEFAULT_PLATFORMS]),
-  platformOrder: ref<string[]>([...DEFAULT_PLATFORMS]),
+  enabledPlatforms: ref<string[]>([...BUILTIN_PLATFORMS]),
+  platformOrder: ref<string[]>([...BUILTIN_PLATFORMS]),
   loaded: ref(false),
+  // 插件音源列表：每个插件作为独立平台
+  pluginPlatforms: ref<PluginPlatformInfo[]>([]),
   // 加载中的 promise，避免并发重复请求
   inflight: null as Promise<void> | null
 }
 
 /** 安全解析平台数组，解析失败时回退默认值 */
-const parsePlatformArray = (value: unknown): string[] => {
+// allowBackfill=false 用于 enabledPlatforms：只做白名单过滤，禁止补齐缺失平台，否则用户禁用操作会被覆盖
+// allowBackfill=true 用于 platformOrder：补齐白名单中缺失平台到末尾，保证排序列表完整
+const parsePlatformArray = (value: unknown, allowBackfill = false): string[] => {
+  let parsed: unknown
   try {
-    const arr = typeof value === 'string' ? JSON.parse(value) : value
-    if (!Array.isArray(arr)) return [...DEFAULT_PLATFORMS]
-    const valid = arr.filter((p: unknown) => (DEFAULT_PLATFORMS as readonly string[]).includes(p as string))
-    return valid.length > 0 ? (valid as string[]) : [...DEFAULT_PLATFORMS]
+    parsed = typeof value === 'string' ? JSON.parse(value) : value
   } catch {
-    return [...DEFAULT_PLATFORMS]
+    parsed = null
+  }
+
+  const valid = (Array.isArray(parsed) ? parsed : []).filter(
+    (p) => (BUILTIN_PLATFORMS as readonly string[]).includes(p as string)
+  ) as string[]
+  if (valid.length === 0) return [...BUILTIN_PLATFORMS]
+  if (!allowBackfill) return valid
+  // 已存在的按原顺序保留，白名单中缺失的补到末尾（BUILTIN_PLATFORMS 非空，结果必然非空）
+  const merged = [...valid]
+  for (const p of BUILTIN_PLATFORMS) {
+    if (!merged.includes(p)) merged.push(p)
+  }
+  return merged
+}
+
+/** 加载可搜索的插件音源列表：只有声明了搜索能力的插件才作为独立平台 */
+const loadPluginPlatforms = async () => {
+  try {
+    const res = await $fetch<{ data?: PluginPlatformInfo[] }>('/api/music-source-plugins/capabilities')
+    // LX Music 音源插件只作为内置平台的解析器，没有搜索 Tab
+    cache.pluginPlatforms.value = Array.isArray(res?.data) ? res.data.filter((plugin: any) => plugin?.search === true) : []
+  } catch {
+    // 拉取失败时清空而非保留旧列表：否则被删除/禁用的插件会一直挂着可用的搜索 Tab
+    cache.pluginPlatforms.value = []
   }
 }
 
@@ -42,8 +76,10 @@ export const usePlatformConfig = () => {
       try {
         const { siteConfig, isLoaded } = useSiteConfig()
         if (isLoaded.value && siteConfig.value?.enabledPlatforms) {
-          enabledPlatforms.value = parsePlatformArray(siteConfig.value.enabledPlatforms)
-          platformOrder.value = parsePlatformArray(siteConfig.value.platformOrder)
+          enabledPlatforms.value = parsePlatformArray(siteConfig.value.enabledPlatforms, false)
+          platformOrder.value = parsePlatformArray(siteConfig.value.platformOrder, true)
+          // 插件列表与内置平台一起就绪，避免搜索 Tab 在首屏之后突然插入
+          await loadPluginPlatforms()
           loaded.value = true
           return
         }
@@ -54,14 +90,16 @@ export const usePlatformConfig = () => {
 
     try {
       const res = await $fetch('/api/platform-config')
-      enabledPlatforms.value = parsePlatformArray(res.enabledPlatforms)
-      platformOrder.value = parsePlatformArray(res.platformOrder)
+      enabledPlatforms.value = parsePlatformArray(res.enabledPlatforms, false)
+      platformOrder.value = parsePlatformArray(res.platformOrder, true)
+      await loadPluginPlatforms()
       loaded.value = true
     } catch {
       // SSR 阶段 $fetch 不可用，保持 loaded=false 让客户端重试
       if (import.meta.server) return
-      enabledPlatforms.value = [...DEFAULT_PLATFORMS]
-      platformOrder.value = [...DEFAULT_PLATFORMS]
+      enabledPlatforms.value = [...BUILTIN_PLATFORMS]
+      platformOrder.value = [...BUILTIN_PLATFORMS]
+      await loadPluginPlatforms()
       loaded.value = true
     }
   }
@@ -85,26 +123,24 @@ export const usePlatformConfig = () => {
   }
 
   /**
-   * 获取启用的平台列表（按配置的排序顺序）
+   * 获取启用的平台列表：内置音源按排序+启用过滤，插件平台始终启用并固定排在内置音源之后
    */
   const getAvailablePlatforms = (): string[] => {
-    return platformOrder.value.filter((p) => enabledPlatforms.value.includes(p))
-  }
-
-  /**
-   * 判断平台是否可用
-   */
-  const isPlatformEnabled = (platform: string): boolean => {
-    return enabledPlatforms.value.includes(platform)
+    const builtin = platformOrder.value.filter(
+      (p) => (BUILTIN_PLATFORMS as readonly string[]).includes(p) && enabledPlatforms.value.includes(p)
+    )
+    // 每个插件音源作为独立平台，固定排在内置音源之后
+    const pluginPlatforms = cache.pluginPlatforms.value.map((p) => p.platform)
+    return [...builtin, ...pluginPlatforms]
   }
 
   return {
     enabledPlatforms,
     platformOrder,
     loaded,
+    pluginPlatforms: cache.pluginPlatforms,
     loadPlatformConfig,
     refreshPlatformConfig,
-    getAvailablePlatforms,
-    isPlatformEnabled
+    getAvailablePlatforms
   }
 }

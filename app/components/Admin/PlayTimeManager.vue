@@ -76,7 +76,7 @@
       v-else-if="playTimes.length === 0"
       class="flex flex-col items-center justify-center py-20 space-y-6 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl"
     >
-      <div class="p-6 rounded-xl bg-bg-primary border border-border-secondary text-text-secondary">
+      <div class="flex items-center justify-center p-6 rounded-xl bg-bg-primary border border-border-secondary text-text-secondary">
         <Clock :size="48" />
       </div>
       <div class="text-center space-y-2">
@@ -116,7 +116,7 @@
               >
                 {{ playTime.enabled ? locale.enabled : locale.disabled }}
               </span>
-              <button class="p-1.5 text-text-secondary hover:text-text-tertiary">
+              <button class="flex items-center justify-center p-1.5 text-text-secondary hover:text-text-tertiary">
                 <MoreVertical :size="14" />
               </button>
             </div>
@@ -146,13 +146,13 @@
           <div class="mt-8 pt-6 border-t border-border-secondary-50 flex items-center justify-between">
             <div class="flex gap-2">
               <button
-                class="p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
                 @click="editPlayTime(playTime)"
               >
                 <Edit2 :size="14" />
               </button>
               <button
-                class="p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-error hover:border-error-30 transition-all"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-error hover:border-error-30 transition-all"
                 @click="confirmDelete(playTime)"
               >
                 <Trash2 :size="14" />
@@ -191,7 +191,7 @@
                 {{ editingPlayTime ? locale.editTitle : locale.addTitle }}
               </h3>
               <button
-                class="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+                class="flex items-center justify-center p-2 text-text-tertiary hover:text-text-primary transition-colors"
                 @click="cancelForm"
               >
                 <X :size="20" />

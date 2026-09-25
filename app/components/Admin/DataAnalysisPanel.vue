@@ -27,7 +27,7 @@
       v-else-if="error && !hasInitialData"
       class="flex flex-col items-center justify-center min-h-[60vh] space-y-6"
     >
-      <div class="p-6 bg-error-10 border border-error-20 rounded-3xl">
+      <div class="flex items-center justify-center p-6 bg-error-10 border border-error-20 rounded-3xl">
         <X class="text-error" :size="48" />
       </div>
       <div class="text-center">
@@ -193,7 +193,7 @@
               </div>
               <button
                 v-if="panelStates.trends.error"
-                class="p-2 text-error hover:text-error transition-colors"
+                class="flex items-center justify-center p-2 text-error hover:text-error transition-colors"
                 :title="locale.retry"
                 @click="loadTrends"
               >
@@ -215,7 +215,7 @@
             v-else-if="panelStates.trends.error && trendData.length === 0"
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
-            <div class="p-4 bg-error-10 rounded-2xl">
+            <div class="flex items-center justify-center p-4 bg-error-10 rounded-2xl">
               <Activity class="text-error-50" :size="32" />
             </div>
             <p class="text-xs font-black text-error uppercase tracking-widest">
