@@ -1162,6 +1162,7 @@ VoiceHub/
 │   │   │       ├── batch-status.put.ts # 批量状态更新
 │   │   │       ├── batch-update.post.ts # 批量更新用户
 │   │   │       ├── batch.post.ts    # 批量操作用户
+│   │   │       ├── export.get.ts    # 导出用户列表
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
