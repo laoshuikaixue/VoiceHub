@@ -195,7 +195,7 @@
                 </button>
               </div>
 
-              <div v-show="activePanel === 'lyrics'" class="lyrics-display-area">
+              <div v-if="activePanel === 'lyrics'" class="lyrics-display-area">
                 <div class="lyrics-container">
                   <!-- 集成 AMLyric 组件 (传入毫秒) -->
                   <AMLyric v-if="lyricSettings.useAMLyrics.value" :current-time="currentTime" />
