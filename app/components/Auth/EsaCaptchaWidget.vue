@@ -145,6 +145,23 @@ onUnmounted(() => {
 
 <style>
 @media (max-width: 768px) {
+  #aliyunCaptcha-window-popup:has(#aliyunCaptcha-checkbox-wrapper) {
+    box-sizing: border-box;
+    width: 360px !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  #aliyunCaptcha-checkbox-wrapper,
+  #aliyunCaptcha-checkbox-body {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #aliyunCaptcha-checkbox-left {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
   #aliyunCaptcha-checkbox-text-box {
     flex: 0 0 auto;
     width: auto;
