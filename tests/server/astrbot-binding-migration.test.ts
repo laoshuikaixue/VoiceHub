@@ -21,6 +21,15 @@ test('db-sync 升级路径会调用旧绑定搬迁，且搬迁在 schema 同步�
   assert.ok(syncIndex > -1 && migrateIndex > syncIndex, '搬迁必须在 schema 同步完成后执行')
 })
 
+test('已执行被取代的 AstrBot 迁移时，在任何 schema 写入前拒绝自动同步', () => {
+  const guard = dbSync.indexOf('await rejectSupersededAstrbotMigrations(sql)')
+  const usernameWrite = dbSync.indexOf('await ensureNoDuplicateUsernames(sql)')
+  const migrate = dbSync.indexOf("safeExec('pnpm run db:migrate'")
+  assert.ok(guard > -1 && guard < usernameWrite && guard < migrate)
+  assert.match(dbSync, /FROM public\.__drizzle_migrations__/)
+  assert.match(dbSync, /旧版 AstrBot 迁移已执行/)
+})
+
 test('旧绑定搬迁使用 ON CONFLICT DO NOTHING，冲突时不覆盖新表既有绑定', () => {
   const block = dbSync.slice(
     dbSync.indexOf('async function migrateLegacyAstrbotBindings'),
@@ -136,4 +145,12 @@ test('safe-migrate 迁移后同样调用 db-sync.js 完成回填，失败即中�
   const migrateDone = safeMigrate.indexOf("log('✅ 数据库迁移流程完成！', 'green')")
   const backfill = safeMigrate.indexOf('scripts/db-sync.js')
   assert.ok(migrateDone > -1 && backfill > migrateDone, '回填必须排在迁移完成之后')
+})
+
+test('safe-migrate 在 push 或 migrate 前也拒绝被取代的 AstrBot 旧迁移链', () => {
+  const safeMigrate = read('../../scripts/safe-migrate.js')
+  const guard = safeMigrate.indexOf('await rejectSupersededAstrbotMigrations()')
+  const push = safeMigrate.indexOf('drizzle-kit push --force --config=drizzle.config.ts')
+  const migrate = safeMigrate.indexOf('pnpm run db:migrate')
+  assert.ok(guard > -1 && guard < push && guard < migrate)
 })

@@ -84,6 +84,18 @@ async function hasMigrationRecords(sql) {
   return (result[0]?.count || 0) > 0
 }
 
+// 已发布过的旧 AstrBot 分支迁移被合并为一笔新迁移；已执行旧链的库不能重放建表。
+// 在任何 schema 写入前中止，避免 migrate 撞表后自动回退 push --force。
+async function rejectSupersededAstrbotMigrations(sql) {
+  const [table] = await sql`SELECT to_regclass('public.__drizzle_migrations__') AS table_name`
+  if (!table?.table_name) return
+  const superseded = [1790326842814, 1790342504449, 1790359178874,
+    1790380598636, 1790381044650, 1790396438534, 1790402496386]
+  const rows = await sql`SELECT created_at FROM public.__drizzle_migrations__
+    WHERE created_at IN ${sql(superseded)} LIMIT 1`
+  if (rows.length) throw new Error('旧版 AstrBot 迁移已执行：当前合并迁移不可直接重放，须先使用受控升级方案；已停止自动同步')
+}
+
 function loadMigrationJournalEntries() {
   const journalPath = path.resolve(process.cwd(), 'app/drizzle/migrations/meta/_journal.json')
   const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'))
@@ -551,6 +563,7 @@ async function main() {
   const sql = createSqlClient()
 
   try {
+    await rejectSupersededAstrbotMigrations(sql)
     const emptyDb = await isEmptyDatabase(sql)
     if (emptyDb) {
       log('🆕 检测到空库，执行迁移 (migrate)...', 'cyan')
