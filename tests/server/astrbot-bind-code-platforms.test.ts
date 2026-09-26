@@ -43,19 +43,15 @@ test('前端发码不清空其它平台的码，解绑只清本平台的码', ()
   assert.match(account, /astrbotCodes\.value\[platform\] = null/)
 })
 
-test('迁移由 drizzle-kit 生成并安全清理旧数据：先删 NULL platform 行，再改约束', () => {
+test('迁移一次建成复合主键且不保留分支内废弃字段', () => {
   const dir = new URL('../../app/drizzle/migrations/', import.meta.url)
   const files = readdirSync(dir).filter((name) => name.endsWith('.sql'))
   const migrated = files.filter((name) => readFileSync(new URL(name, dir), 'utf8').includes('AstrbotBindingCode_userId_platform_pk'))
   assert.equal(migrated.length, 1, `应恰有一个迁移建立复合主键，实际 ${migrated.join(', ')}`)
   const sql = readFileSync(new URL(migrated[0], dir), 'utf8')
-  // 结构变更必须来自 drizzle-kit（保留其生成的 PK 命名提示注释）。
-  assert.match(sql, /drizzle-kit version/)
-  assert.match(sql, /ALTER TABLE "AstrbotBindingCode" ALTER COLUMN "platform" SET NOT NULL/)
-  assert.match(sql, /ADD CONSTRAINT "AstrbotBindingCode_userId_platform_pk" PRIMARY KEY\("userId","platform"\)/)
-  // 旧单列主键按实际约束名动态删除（内联主键名为 AstrbotBindingCode_pkey，push 路径可能不同）。
-  assert.match(sql, /SELECT conname INTO pk_name FROM pg_constraint/)
-  assert.match(sql, /DROP CONSTRAINT %I/)
-  // 清库 DML 必须排在 SET NOT NULL 之前，否则既有 NULL 行会让迁移失败。
-  assert.ok(sql.indexOf('DELETE FROM "AstrbotBindingCode" WHERE "platform" IS NULL') < sql.indexOf('SET NOT NULL'))
+  assert.match(sql, /CREATE TABLE "AstrbotBindingCode"/)
+  assert.match(sql, /"platform" text NOT NULL/)
+  assert.match(sql, /CONSTRAINT "AstrbotBindingCode_userId_platform_pk" PRIMARY KEY\("userId","platform"\)/)
+  assert.doesNotMatch(sql.slice(0, sql.indexOf('CREATE TABLE "AstrbotBinding"')), /"attempts"/)
+  assert.doesNotMatch(sql, /ALTER TABLE "AstrbotBindingCode" (?:ALTER COLUMN|DROP CONSTRAINT|ADD CONSTRAINT "AstrbotBindingCode_userId_platform_pk")/)
 })

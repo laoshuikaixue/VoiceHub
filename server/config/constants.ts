@@ -38,6 +38,18 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503
 } as const
 
+// 机器人端点仅以共享令牌鉴权，禁止浏览器 Cookie 参与。
+export const BOT_ROUTES = new Set([
+  'POST /api/bot/voicehub/bind',
+  'POST /api/bot/voicehub/unbind',
+  'POST /api/bot/voicehub/verify-targets',
+  'POST /api/bot/voicehub/pull',
+  'POST /api/bot/voicehub/ack',
+  'POST /api/bot/voicehub/song-search',
+  'POST /api/bot/voicehub/song-request',
+  'GET /api/bot/voicehub/weekly-schedule'
+])
+
 // API 错误码常量
 export const API_ERROR_CODES = {
   MISSING_API_KEY: 'MISSING_API_KEY',

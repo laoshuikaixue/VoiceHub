@@ -9,9 +9,12 @@ import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService
  * 因此这里可以直接调用而无需自己限流。上报失败只记录，绝不向外抛出，
  * 否则错误处理器本身会变成新的异常源。
  */
-function reportSystemError(source: string, detail: string) {
-  enqueueAstrbotGroupEvent('systemError', 'VoiceHub 系统异常', `${source}：${detail}`)
-    .catch((error) => console.error('上报系统异常到群聊失败:', error))
+async function reportSystemError(source: string, detail: string) {
+  try {
+    await enqueueAstrbotGroupEvent('systemError', 'VoiceHub 系统异常', `${source}：${detail}`)
+  } catch (error) {
+    console.error('上报系统异常到群聊失败:', error)
+  }
 }
 
 export default defineNitroPlugin(async (nitroApp) => {
@@ -23,7 +26,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     // 检查是否是数据库连接错误
     if (reason && typeof reason === 'object' && 'message' in reason) {
       const errorMessage = (reason as Error).message
-      reportSystemError('未处理的 Promise 拒绝', errorMessage)
+      await reportSystemError('未处理的 Promise 拒绝', errorMessage)
 
       if (
         errorMessage.includes('ECONNRESET') ||
@@ -62,9 +65,9 @@ export default defineNitroPlugin(async (nitroApp) => {
   })
 
   // 全局未捕获异常处理器
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', async (error) => {
     console.error('Uncaught Exception:', error)
-    reportSystemError('未捕获异常', error?.message || String(error))
+    await reportSystemError('未捕获异常', error?.message || String(error))
 
     // 检查是否是数据库相关错误
     if (

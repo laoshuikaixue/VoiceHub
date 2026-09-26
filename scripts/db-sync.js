@@ -299,7 +299,7 @@ async function migrateLegacyAstrbotBindings(sql) {
         const platforms = knownAdapters.map((adapter) => astrbotPlatformOf(adapter))
         const inserted = await tx`
           INSERT INTO "AstrbotBinding" ("userId", "platform", "adapter", "umo", "boundAt")
-          SELECT u.id, m.platform, u."astrbotPlatform", u."astrbotUmo", u."astrbotBoundAt"
+          SELECT u.id, m.platform, u."astrbotPlatform", u."astrbotUmo", COALESCE(u."astrbotBoundAt", now())
           FROM "User" u
           JOIN unnest(${adapters}::text[], ${platforms}::text[]) AS m(adapter, platform)
             ON m.adapter = u."astrbotPlatform"

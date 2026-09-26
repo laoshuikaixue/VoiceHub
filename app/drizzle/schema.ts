@@ -33,9 +33,6 @@ export const users = pgTable('User', {
   tokenVersion: integer('tokenVersion').default(0).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
-  astrbotUmo: text('astrbotUmo'),
-  astrbotPlatform: text('astrbotPlatform'),
-  astrbotBoundAt: timestamp('astrbotBoundAt'),
   avatarProvider: text('avatarProvider'),
   avatarProviderUserId: text('avatarProviderUserId'),
   status: userStatusEnum('status').default('active').notNull(),
@@ -45,10 +42,7 @@ export const users = pgTable('User', {
   remark: text('remark'),
   legalConsentVersion: text('legal_consent_version'),
   legalConsentAt: timestamp('legal_consent_at'),
-}, (table) => [
-  uniqueIndex('User_username_unique').on(table.username),
-  uniqueIndex('User_astrbot_umo_unique').on(table.astrbotUmo)
-]);
+}, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
 export const authSessions = pgTable('auth_sessions', {
@@ -251,7 +245,6 @@ export const astrbotBindingCodes = pgTable('AstrbotBindingCode', {
   platform: text('platform').notNull(),
   codeHash: text('codeHash').notNull(),
   expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
-  attempts: integer('attempts').default(0).notNull(), // 历史遗留字段：绑定码已改为一次性消费 + 过期时间控制，当前不再累加或校验
   consumedAt: timestamp('consumedAt', { withTimezone: true })
 }, (table) => [primaryKey({ columns: [table.userId, table.platform] }),
   uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
@@ -262,7 +255,7 @@ export const astrbotBindings = pgTable('AstrbotBinding', {
   platform: text('platform').notNull(),
   adapter: text('adapter').notNull(),
   umo: text('umo').notNull(),
-  boundAt: timestamp('boundAt')
+  boundAt: timestamp('boundAt').defaultNow().notNull()
 }, (table) => [primaryKey({ columns: [table.userId, table.platform] }), uniqueIndex('AstrbotBinding_umo_unique').on(table.umo)]);
 
 // AstrBot 待投递队列：插件无法被 VoiceHub 访问（内网/NAT）时，由插件主动轮询取件。
@@ -285,6 +278,7 @@ export const astrbotOutbox = pgTable('AstrbotOutbox', {
   notifyAfter: timestamp('notifyAfter', { withTimezone: true }),
   attempts: integer('attempts').default(0).notNull(),
   leasedUntil: timestamp('leasedUntil', { withTimezone: true }),
+  claimToken: text('claimToken'),
   deliveredAt: timestamp('deliveredAt', { withTimezone: true }),
   failedAt: timestamp('failedAt', { withTimezone: true }),
   lastError: text('lastError')

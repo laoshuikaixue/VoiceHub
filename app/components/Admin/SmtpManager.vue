@@ -275,6 +275,9 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { ASTRBOT_PLATFORMS, DEFAULT_ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
+import { ASTRBOT_GROUP_EVENT_KEYS, DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
+import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from '@lucide/vue'
 
 const { showToast: showNotification } = useToast()
@@ -286,24 +289,19 @@ const astrbotLoaded = ref(false)
 const astrbotSaving = ref(false)
 const astrbotTokenConfigured = ref(false)
 const astrbotTokenInput = ref('')
-const platformKeys = ['qq', 'wecom', 'dingtalk', 'lark']
-const astrbotPlatforms = ref(Object.fromEntries(platformKeys.map(platform => [platform, false])))
+const platformKeys = ASTRBOT_PLATFORMS
+const astrbotPlatforms = ref({ ...DEFAULT_ASTRBOT_PLATFORMS })
 const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotPushMode: 'push' })
-const weeklyConfigKeys = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate']
-const weeklyDefaults = { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true }
+const weeklyDefaults = SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig
+const weeklyConfigKeys = Object.keys(weeklyDefaults)
 const astrbotWeeklyConfig = ref({ ...weeklyDefaults })
-const groupEventKeys = ['songRequest', 'registrationPending', 'backupFailed', 'systemError', 'systemNotice', 'songPlayed', 'replayRequest']
-const groupEventDefaults = { songRequest: true, registrationPending: true, backupFailed: true, systemError: true, systemNotice: true, songPlayed: false, replayRequest: false }
+const groupEventKeys = ASTRBOT_GROUP_EVENT_KEYS
+const groupEventDefaults = DEFAULT_ASTRBOT_GROUP_EVENTS
 const astrbotGroupEvents = ref({ ...groupEventDefaults })
 const astrbotGroupTargets = ref([])
-const astrbotGroupThrottle = ref({ mergeWindowSeconds: 300, minIntervalSeconds: 60 })
+const astrbotGroupThrottle = ref({ ...DEFAULT_ASTRBOT_GROUP_THROTTLE })
 // 平台归属必须由管理员指定：UMO 前缀是 AstrBot 平台实例 ID，无法反推适配器。
-const groupPlatformOptions = [
-  { value: 'qq', label: 'QQ' },
-  { value: 'wecom', label: '企业微信' },
-  { value: 'dingtalk', label: '钉钉' },
-  { value: 'lark', label: '飞书' }
-]
+const groupPlatformOptions = computed(() => platformKeys.map(value => ({ value, label: astrbotLocale.value.platforms?.[value] || value })))
 
 const addGroupTarget = () => { astrbotGroupTargets.value.push({ umo: '', platform: 'qq', label: '' }) }
 const removeGroupTarget = (index) => { astrbotGroupTargets.value.splice(index, 1) }
@@ -333,7 +331,7 @@ const loadAstrbotConfig = async () => {
     astrbotGroupTargets.value = Array.isArray(response.astrbotGroupTargets)
       ? response.astrbotGroupTargets.map(target => ({
         umo: typeof target?.umo === 'string' ? target.umo : '',
-        platform: groupPlatformOptions.some(option => option.value === target?.platform) ? target.platform : 'qq',
+        platform: groupPlatformOptions.value.some(option => option.value === target?.platform) ? target.platform : 'qq',
         label: typeof target?.label === 'string' ? target.label : ''
       }))
       : []
@@ -341,8 +339,8 @@ const loadAstrbotConfig = async () => {
       key, typeof response.astrbotGroupEvents?.[key] === 'boolean' ? response.astrbotGroupEvents[key] : groupEventDefaults[key]
     ]))
     astrbotGroupThrottle.value = {
-      mergeWindowSeconds: Number.isFinite(response.astrbotGroupThrottle?.mergeWindowSeconds) ? response.astrbotGroupThrottle.mergeWindowSeconds : 300,
-      minIntervalSeconds: Number.isFinite(response.astrbotGroupThrottle?.minIntervalSeconds) ? response.astrbotGroupThrottle.minIntervalSeconds : 60
+      mergeWindowSeconds: Number.isFinite(response.astrbotGroupThrottle?.mergeWindowSeconds) ? response.astrbotGroupThrottle.mergeWindowSeconds : DEFAULT_ASTRBOT_GROUP_THROTTLE.mergeWindowSeconds,
+      minIntervalSeconds: Number.isFinite(response.astrbotGroupThrottle?.minIntervalSeconds) ? response.astrbotGroupThrottle.minIntervalSeconds : DEFAULT_ASTRBOT_GROUP_THROTTLE.minIntervalSeconds
     }
     astrbotTokenConfigured.value = !!response.astrbotToken
     astrbotTokenInput.value = ''

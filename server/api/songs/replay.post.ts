@@ -130,8 +130,7 @@ export default defineEventHandler(async (event) => {
       submissionNotePublicStatus
     })
     // 群聊推送：重播申请（默认关闭，按需开启）。申请人姓名由推送侧统一取 users 表。
-    enqueueAstrbotGroupEvent('replayRequest', '新的重播申请', `《${song.title}》- ${song.artist} 收到重播申请`)
-      .catch((err) => console.error('发送群聊重播申请通知失败:', err))
+    await enqueueAstrbotGroupEvent('replayRequest', '新的重播申请', `《${song.title}》- ${song.artist} 收到重播申请`)
     return { success: true, message: latestRequest ? '重新申请重播成功' : '申请重播成功' }
   } catch (error: any) {
     // 并发提交时命中待处理申请的部分唯一索引

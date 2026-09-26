@@ -14,7 +14,7 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
-import { SERVER_ERROR_CODES } from '../config/constants'
+import { BOT_ROUTES, SERVER_ERROR_CODES } from '../config/constants'
 import {
   ensureAuthSession,
   isAuthSessionStorageError,
@@ -43,10 +43,7 @@ export default defineEventHandler(async (event) => {
   const method = event.method.toUpperCase()
 
   // 机器人回调只接受专用共享令牌，由接口自身校验；忽略浏览器残留 Cookie。
-  if (
-    (method === 'POST' && (pathname === '/api/bot/voicehub/bind' || pathname === '/api/bot/voicehub/unbind' || pathname === '/api/bot/voicehub/verify-targets' || pathname === '/api/bot/voicehub/pull' || pathname === '/api/bot/voicehub/ack' || pathname === '/api/bot/voicehub/song-search' || pathname === '/api/bot/voicehub/song-request')) ||
-    (method === 'GET' && pathname === '/api/bot/voicehub/weekly-schedule')
-  ) {
+  if (BOT_ROUTES.has(`${method} ${pathname}`)) {
     return
   }
 

@@ -1,5 +1,3 @@
-import { isSupportedAstrbotPlatform } from './astrbot-notification.ts'
-
 /**
  * AstrBot 推送的请求体预算。
  *
@@ -39,19 +37,4 @@ export function chunkAstrbotTargets(umos: string[], title: string, content: stri
     }
   }
   return { chunks, skipped }
-}
-
-/**
- * 确认私聊目标：只有同时满足「UMO 命中绑定行」与「该行记录的平台仍在白名单内」
- * 的目标才算通过。UMO 前缀是 AstrBot 的平台实例 ID（可被改名），因此不能拿
- * 前缀比对适配器名。
- */
-export function selectConfirmedAstrbotTargets(
-  rows: Array<{ umo?: string | null; platform?: string | null }>,
-  umos: string[]
-) {
-  const confirmed = new Set(
-    rows.filter((row) => isSupportedAstrbotPlatform(row.platform)).map((row) => row.umo)
-  )
-  return confirmed.size === umos.length && umos.every((umo) => confirmed.has(umo))
 }

@@ -1,6 +1,7 @@
-import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
+import { and, asc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm'
+import { randomBytes } from 'node:crypto'
 import { db } from '~/drizzle/db'
-import { astrbotOutbox, systemSettings } from '~/drizzle/schema'
+import { astrbotOutbox } from '~/drizzle/schema'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import {
@@ -15,6 +16,7 @@ import {
 } from '~~/server/utils/astrbot-group'
 import type { AstrbotGroupEventKey, AstrbotGroupThrottle } from '~~/server/utils/astrbot-group'
 import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { postAstrbotNotification } from '~~/server/services/astrbotNotificationService'
 
 /**
@@ -90,7 +92,10 @@ async function queueToGroups(
   const pending = new Set<string>()
   let affected = 0
 
-  const candidates = await db.select().from(astrbotOutbox)
+  return db.transaction(async (tx) => {
+  // 同类型事件串行合并，避免没有候选行时两个请求同时插入，或互相覆盖正文。
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${eventKey}))`)
+  const candidates = await tx.select().from(astrbotOutbox)
     .where(and(
       eq(astrbotOutbox.broadcast, true),
       eq(astrbotOutbox.eventKey, eventKey),
@@ -105,7 +110,7 @@ async function queueToGroups(
     const rowUmox = Array.isArray(row.umos) ? row.umos : []
     const targets = rowUmox.filter((umo) => umos.includes(umo) && !pending.has(umo))
     if (!targets.length) continue
-    await db.update(astrbotOutbox).set({
+    await tx.update(astrbotOutbox).set({
       message: appendAstrbotGroupContent(row.message, content),
       notifyAfter: computeAstrbotGroupNotifyAfter(row.createdAt, now, throttle)
     }).where(eq(astrbotOutbox.id, row.id))
@@ -119,7 +124,7 @@ async function queueToGroups(
     console.error(`AstrBot 群事件未入队：正文超过单条投递大小限制（${eventKey}）`)
     return affected
   }
-  await db.insert(astrbotOutbox).values({
+  await tx.insert(astrbotOutbox).values({
     title,
     message: content,
     umos: fresh,
@@ -130,6 +135,7 @@ async function queueToGroups(
     notifyAfter: computeAstrbotGroupNotifyAfter(now, now, throttle)
   })
   return affected + fresh.length
+  })
 }
 
 /**
@@ -139,7 +145,8 @@ async function queueToGroups(
  */
 export async function claimAstrbotGroupOutbox(limit = ASTRBOT_GROUP_FLUSH_LIMIT) {
   const now = getServerDate()
-  const rows = await db.select().from(astrbotOutbox)
+  return db.transaction(async (tx) => {
+  const rows = await tx.select({ id: astrbotOutbox.id }).from(astrbotOutbox)
     .where(and(
       eq(astrbotOutbox.broadcast, true),
       isNull(astrbotOutbox.deliveredAt),
@@ -149,14 +156,22 @@ export async function claimAstrbotGroupOutbox(limit = ASTRBOT_GROUP_FLUSH_LIMIT)
     ))
     .orderBy(asc(astrbotOutbox.id))
     .limit(Math.min(Math.max(limit, 1), ASTRBOT_GROUP_MERGE_SCAN))
+    .for('update', { skipLocked: true })
   if (!rows.length) return []
-  await db.update(astrbotOutbox)
-    .set({
-      leasedUntil: new Date(now.getTime() + ASTRBOT_GROUP_LEASE_MS),
-      attempts: sql`${astrbotOutbox.attempts} + 1`
-    })
-    .where(inArray(astrbotOutbox.id, rows.map((row) => row.id)))
-  return rows
+  const claimed = [] as (typeof astrbotOutbox.$inferSelect)[]
+  for (const { id } of rows) {
+    const [row] = await tx.update(astrbotOutbox)
+      .set({
+        leasedUntil: new Date(now.getTime() + ASTRBOT_GROUP_LEASE_MS),
+        claimToken: randomBytes(32).toString('hex'),
+        attempts: sql`${astrbotOutbox.attempts} + 1`
+      })
+      .where(eq(astrbotOutbox.id, id))
+      .returning()
+    if (row) claimed.push(row)
+  }
+  return claimed
+  })
 }
 
 /**
@@ -170,43 +185,49 @@ export async function flushAstrbotGroupOutbox(): Promise<{ sent: number; failed:
   let failed = 0
   const settings = await readGroupSettings()
   if (!settings.enabled) return { sent, failed }
+  const runtime = await getSystemSettingsCached()
+  if (isAstrbotPullMode(runtime?.astrbotPushMode)) return { sent, failed }
   const targets = normalizeAstrbotGroupTargets(settings.targets) ?? []
   for (const row of await claimAstrbotGroupOutbox()) {
-    const umos = (Array.isArray(row.umos) ? row.umos : [])
+    const owned = and(eq(astrbotOutbox.id, row.id), eq(astrbotOutbox.claimToken, row.claimToken!),
+      gt(astrbotOutbox.leasedUntil, getServerDate()), isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt))
+    const originalUmos = Array.isArray(row.umos) ? row.umos : []
+    const umos = originalUmos
       .filter((umo) => isAstrbotGroupTargetAllowed(targets, settings.platforms, umo))
     if (!umos.length) {
       await db.update(astrbotOutbox)
-        .set({ failedAt: getServerDate(), leasedUntil: null, lastError: '群目标已移出白名单' })
-        .where(eq(astrbotOutbox.id, row.id))
+        .set({ failedAt: getServerDate(), leasedUntil: null, claimToken: null, lastError: '群目标已移出白名单' })
+        .where(owned)
       failed++
       continue
     }
     try {
       const result = await postAstrbotNotification(umos, row.title ?? '', row.message, true)
-      if (result.sent > 0) {
-        await db.update(astrbotOutbox)
-          .set({ deliveredAt: getServerDate(), leasedUntil: null, lastError: null })
-          .where(eq(astrbotOutbox.id, row.id))
-        sent += result.sent
+      if (result.sent >= umos.length && result.failed === 0) {
+        const updated = await db.update(astrbotOutbox)
+          .set({ deliveredAt: getServerDate(), umos, leasedUntil: null, claimToken: null, lastError: null })
+          .where(owned)
+          .returning({ id: astrbotOutbox.id })
+        if (updated.length) sent += result.sent
       } else {
-        await db.update(astrbotOutbox)
-          .set({ leasedUntil: null, lastError: '群投递未成功' })
-          .where(eq(astrbotOutbox.id, row.id))
-        failed++
+        const retryUmos = result.failedUmos
+        const knownFailures = retryUmos?.length && retryUmos.length === result.failed &&
+          retryUmos.every((umo) => umos.includes(umo)) && new Set(retryUmos).size === retryUmos.length
+        const updated = await db.update(astrbotOutbox)
+          .set({ leasedUntil: null, claimToken: null,
+            umos: knownFailures ? retryUmos : umos, lastError: '群投递未成功' })
+          .where(owned)
+          .returning({ id: astrbotOutbox.id })
+        if (updated.length) failed++
       }
     } catch (error) {
-      await db.update(astrbotOutbox)
-        .set({ leasedUntil: null, lastError: String(error).slice(0, 500) })
-        .where(eq(astrbotOutbox.id, row.id))
-      failed++
+      const updated = await db.update(astrbotOutbox)
+        .set({ umos, leasedUntil: null, claimToken: null, lastError: String(error).slice(0, 500) })
+        .where(owned)
+        .returning({ id: astrbotOutbox.id })
+      if (updated.length) failed++
       console.error('AstrBot 群事件投递失败:', error)
     }
   }
   return { sent, failed }
-}
-
-/** 读取当前防刷屏参数（供后台展示与测试复用）。 */
-export async function describeGroupThrottle(): Promise<AstrbotGroupThrottle> {
-  const [row] = await db.select({ throttle: systemSettings.astrbotGroupThrottle }).from(systemSettings).limit(1)
-  return normalizeAstrbotGroupThrottle(row?.throttle)
 }

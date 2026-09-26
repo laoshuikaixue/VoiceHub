@@ -4,7 +4,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot-notification'
-import { toAstrbotPullItem } from '~~/server/utils/astrbot-pull'
+import { isAstrbotPullMode, toAstrbotPullItem } from '~~/server/utils/astrbot-pull'
 import { claimAstrbotOutbox } from '~~/server/services/astrbotOutboxService'
 
 /**
@@ -16,11 +16,12 @@ import { claimAstrbotOutbox } from '~~/server/services/astrbotOutboxService'
  */
 export default defineEventHandler(async (event) => {
   const [settings] = await db
-    .select({ token: systemSettings.astrbotToken, enabled: systemSettings.astrbotEnabled })
+    .select({ token: systemSettings.astrbotToken, enabled: systemSettings.astrbotEnabled,
+      mode: systemSettings.astrbotPushMode })
     .from(systemSettings).limit(1)
   if (!settings?.enabled || !equalAstrbotToken(getHeader(event, ASTRBOT_TOKEN_HEADER) ?? '', settings.token ?? '')) {
     throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '机器人令牌无效')
   }
-  const rows = await claimAstrbotOutbox()
+  const rows = isAstrbotPullMode(settings.mode) ? await claimAstrbotOutbox() : []
   return { success: true, items: rows.map(toAstrbotPullItem) }
 })

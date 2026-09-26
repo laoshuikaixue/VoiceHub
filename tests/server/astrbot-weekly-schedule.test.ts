@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { BOT_ROUTES } from '../../server/config/constants.ts'
+import { formatDateTime, getBeijingStartOfWeek, getBeijingEndOfWeek, getBeijingWeekdayLabel } from '../../app/utils/timeUtils.ts'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -24,20 +26,13 @@ const apiSrc = readFileSync(
 // ── 中间件放行逻辑 ──────────────────────────────────────────────
 
 test('中间件对 GET /api/bot/voicehub/weekly-schedule 放行', () => {
-  assert.ok(
-    middlewareSrc.includes("method === 'GET' && pathname === '/api/bot/voicehub/weekly-schedule'"),
-    '中间件应包含 GET weekly-schedule 放行条件'
-  )
+  assert.equal(BOT_ROUTES.has('GET /api/bot/voicehub/weekly-schedule'), true)
+  assert.match(middlewareSrc, /BOT_ROUTES\.has\(`\$\{method\} \$\{pathname\}`\)/)
 })
 
-test('中间件 GET 放行条件与 POST 条件并列（||）', () => {
-  // 确保 GET 条件在同一 if 块内以 || 连接，而非独立 if
-  const ifBlock = middlewareSrc.match(/if\s*\(\s*[\s\S]*?method === 'GET'[\s\S]*?\) \{[\s\n]+return/)
-  assert.ok(ifBlock, '应在同一 if 块中同时包含 POST 和 GET 放行')
-  assert.ok(
-    ifBlock[0].includes("method === 'POST'"),
-    'GET 放行块中应仍包含 POST 条件'
-  )
+test('GET 与 POST 均由同一机器人路由集合鉴权', () => {
+  assert.equal(BOT_ROUTES.has('POST /api/bot/voicehub/pull'), true)
+  assert.equal(BOT_ROUTES.has('GET /api/bot/voicehub/pull'), false)
 })
 
 test('其他机器人 POST 端点仍在放行列表中', () => {
@@ -51,7 +46,7 @@ test('其他机器人 POST 端点仍在放行列表中', () => {
     '/api/bot/voicehub/song-request',
   ]
   for (const path of botPaths) {
-    assert.ok(middlewareSrc.includes(`'${path}'`), `中间件应包含 ${path}`)
+    assert.equal(BOT_ROUTES.has(`POST ${path}`), true, `中间件应包含 ${path}`)
   }
 })
 
@@ -89,7 +84,9 @@ test('使用 getBeijingStartOfWeek 计算本周开始', () => {
 })
 
 test('weekEnd = weekStart + 7 天，覆盖完整一周', () => {
-  assert.ok(apiSrc.includes("add(7, 'day')"), '应在 weekStart 基础上加 7 天得到 weekEnd')
+  assert.match(apiSrc, /getBeijingEndOfWeek\(now\)\.getTime\(\) \+ 1/)
+  const sunday = dayjs.tz('2026-09-27 12:00:00', BEIJING_TIMEZONE).toDate()
+  assert.equal(getBeijingEndOfWeek(sunday).getTime() + 1 - getBeijingStartOfWeek(sunday).getTime(), 7 * 24 * 60 * 60 * 1000)
 })
 
 test('getBeijingStartOfWeek 在周日（day=0）时向前退 6 天到周一', () => {
@@ -115,8 +112,8 @@ test('getBeijingStartOfWeek 在周一时 diff=0，返回当天', () => {
 test('weekRange 格式为 YYYY/MM/DD - YYYY/MM/DD', () => {
   // 验证代码中 weekRange 格式化字符串
   assert.ok(
-    apiSrc.includes("format('YYYY/MM/DD')"),
-    "weekRange 应使用 format('YYYY/MM/DD')"
+    apiSrc.includes("formatDateTime(weekStart, 'YYYY/MM/DD')"),
+    "weekRange 应使用 timeUtils 格式化"
   )
   assert.ok(apiSrc.includes('weekRange'), '应返回 weekRange 字段')
   // 用真实 dayjs 验证格式正确性
@@ -128,28 +125,21 @@ test('weekRange 格式为 YYYY/MM/DD - YYYY/MM/DD', () => {
 
 // ── 日期/星期标签格式 ────────────────────────────────────────────
 
-test('CN_WEEKDAYS 数组包含完整中文周几（周日~周六，共7项）', () => {
-  assert.ok(apiSrc.includes('CN_WEEKDAYS'), '应定义 CN_WEEKDAYS')
-  const cnDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  for (const d of cnDays) {
-    assert.ok(apiSrc.includes(`'${d}'`), `CN_WEEKDAYS 应包含 ${d}`)
-  }
+test('星期标签由 timeUtils 统一生成', () => {
+  assert.match(apiSrc, /getBeijingWeekdayLabel\(row\.playDate\)/)
+  assert.doesNotMatch(apiSrc, /CN_WEEKDAYS|dayjs\.extend|BEIJING_TIMEZONE/)
 })
 
 test('date 字段格式为 YYYY/MM/DD 周X', () => {
   // 模拟格式化逻辑
   const playDate = dayjs.tz('2026-09-21 00:00:00', BEIJING_TIMEZONE).toDate()
-  const CN_WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  const bj = dayjs(playDate).tz(BEIJING_TIMEZONE)
-  const label = `${bj.format('YYYY/MM/DD')} ${CN_WEEKDAYS[bj.day()]}`
+  const label = `${formatDateTime(playDate, 'YYYY/MM/DD')} ${getBeijingWeekdayLabel(playDate)}`
   assert.equal(label, '2026/09/21 周一')
 })
 
 test('周日对应 CN_WEEKDAYS[0]（dayjs.day()=0）', () => {
-  const CN_WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
   const sunday = dayjs.tz('2026-09-27 00:00:00', BEIJING_TIMEZONE).toDate()
-  const bj = dayjs(sunday).tz(BEIJING_TIMEZONE)
-  assert.equal(CN_WEEKDAYS[bj.day()], '周日')
+  assert.equal(getBeijingWeekdayLabel(sunday), '周日')
 })
 
 // ── 字段映射 ─────────────────────────────────────────────────────

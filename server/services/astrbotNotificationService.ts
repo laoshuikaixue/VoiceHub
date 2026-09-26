@@ -12,19 +12,14 @@ import {
   fitsAstrbotPayload
 } from '~~/server/utils/astrbot-payload'
 import { enqueueAstrbotNotifications } from '~~/server/services/astrbotOutboxService'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 
 export { ASTRBOT_PAYLOAD_MAX_BYTES, astrbotPayloadBytes, chunkAstrbotTargets, fitsAstrbotPayload }
-
-/** 推送方向为 pull 时通知只入队，由插件主动领取；此处不得再直连插件。 */
-async function isPullMode() {
-  const settings = await getSystemSettingsCached()
-  return settings?.astrbotPushMode === 'pull'
-}
 
 /** 仅在单次请求内投递，超时并记录错误；不依赖进程内队列或后台定时器。 */
 export async function postAstrbotNotification(
   umos: string[], title: string, content: string, group = false
-): Promise<{ sent: number; failed: number }> {
+): Promise<{ sent: number; failed: number; failedUmos?: string[] }> {
   const settings = await getSystemSettingsCached()
   const baseUrl = normalizeAstrbotBaseUrl(settings?.astrbotBaseUrl)
   if (!settings?.astrbotEnabled || !settings.astrbotToken || !baseUrl || !umos.length) {
@@ -60,10 +55,22 @@ export async function postAstrbotNotification(
       redirect: 'error'
     })
     const result = await response.json().catch(() => null)
-    if (!response.ok || !result || result.success !== true || typeof result.sent !== 'number') {
+    if (!response.ok || !result || typeof result.sent !== 'number' ||
+      !Number.isInteger(result.sent) || result.sent < 0 || result.sent > confirmed.length ||
+      !Array.isArray(result.failed)) {
       throw new Error(`机器人推送失败: HTTP ${response.status}`)
     }
-    return { sent: result.sent, failed: umos.length - confirmed.length + (Array.isArray(result.failed) ? result.failed.length : 0) }
+    const rejected = umos.filter((umo) => !confirmed.includes(umo))
+    const failedUmos = result.failed.map((item: unknown) =>
+      item && typeof item === 'object' && 'umo' in item ? (item as { umo: unknown }).umo : null)
+    if (failedUmos.some((umo: unknown) => typeof umo !== 'string' || !confirmed.includes(umo as string)) ||
+      new Set(failedUmos).size !== failedUmos.length ||
+      result.sent + failedUmos.length !== confirmed.length) {
+      throw new Error('机器人推送返回的目标结果不完整')
+    }
+    if (result.success !== (result.sent > 0)) throw new Error('机器人推送返回的成功状态不一致')
+    return { sent: result.sent, failed: rejected.length + failedUmos.length,
+      failedUmos: [...rejected, ...failedUmos] as string[] }
   } finally {
     clearTimeout(timer)
   }
@@ -79,7 +86,7 @@ export async function sendAstrbotNotificationToUser(userId: number, title: strin
     .where(eq(notificationSettings.userId, userId)).limit(1)
   if (setting && !setting.enabled) return false
   // pull 模式：入队即视为已受理，实际投递由插件领取后完成。
-  if (await isPullMode()) {
+  if (isAstrbotPullMode(settings.astrbotPushMode)) {
     const queued = await enqueueAstrbotNotifications([userId], title, content)
     return queued > 0
   }
@@ -91,7 +98,7 @@ export async function sendBatchAstrbotNotifications(userIds: number[], title: st
   const settings = await getSystemSettingsCached()
   if (!settings?.astrbotEnabled) return { success: 0, failed: 0 }
   // pull 模式：通知只入队，由插件按轮询周期领取投递。
-  if (settings.astrbotPushMode === 'pull') {
+  if (isAstrbotPullMode(settings.astrbotPushMode)) {
     const queued = await enqueueAstrbotNotifications(userIds, title, content)
     return { success: queued, failed: 0, queued }
   }

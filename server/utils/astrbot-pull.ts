@@ -17,6 +17,7 @@ export type AstrbotOutboxRow = {
   url: string | null
   umos: string[] | null
   broadcast: boolean
+  claimToken: string | null
 }
 
 export type AstrbotPullItem = {
@@ -26,6 +27,7 @@ export type AstrbotPullItem = {
   url?: string
   umos: string[]
   broadcast: boolean
+  claimToken: string
 }
 
 /** 把队列行转成插件可消费的取件条目。 */
@@ -36,11 +38,12 @@ export function toAstrbotPullItem(row: AstrbotOutboxRow): AstrbotPullItem {
     content: row.message,
     ...(row.url ? { url: row.url } : {}),
     umos: Array.isArray(row.umos) ? row.umos : [],
-    broadcast: row.broadcast === true
+    broadcast: row.broadcast === true,
+    claimToken: row.claimToken ?? ''
   }
 }
 
-export type AstrbotAckResult = { id: number; success: boolean; reason: string }
+export type AstrbotAckResult = { id: number; claimToken: string; success: boolean; reason: string; failedUmos: string[] | null }
 
 /**
  * 校验回执请求体。
@@ -59,10 +62,17 @@ export function parseAstrbotAckResults(body: unknown): AstrbotAckResult[] | null
     const record = raw as Record<string, unknown>
     if (!Number.isInteger(record.id) || (record.id as number) <= 0) return null
     if (typeof record.success !== 'boolean') return null
+    if (typeof record.claimToken !== 'string' || !/^[a-f0-9]{64}$/.test(record.claimToken)) return null
+    const failedUmos = record.failedUmos
+    if (failedUmos !== undefined && (!Array.isArray(failedUmos) || !failedUmos.length || failedUmos.length > 200 ||
+      failedUmos.some((umo) => typeof umo !== 'string' || !umo || umo.length > 512) ||
+      new Set(failedUmos).size !== failedUmos.length || record.success)) return null
     parsed.push({
       id: record.id as number,
+      claimToken: record.claimToken,
       success: record.success,
-      reason: typeof record.reason === 'string' ? record.reason : ''
+      reason: typeof record.reason === 'string' ? record.reason : '',
+      failedUmos: Array.isArray(failedUmos) ? failedUmos : null
     })
   }
   return parsed

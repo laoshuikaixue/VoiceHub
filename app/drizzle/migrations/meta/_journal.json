@@ -362,57 +362,15 @@
     {
       "idx": 51,
       "version": "7",
-      "when": 1790326842814,
-      "tag": "20260925090042_auto-migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 52,
-      "version": "7",
       "when": 1790340222774,
       "tag": "20260925124342_add_aliyun_esa_captcha",
       "breakpoints": true
     },
     {
-      "idx": 53,
+      "idx": 52,
       "version": "7",
-      "when": 1790342504449,
-      "tag": "20260925132144_auto-migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 54,
-      "version": "7",
-      "when": 1790359178874,
-      "tag": "20260925175938_auto-migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 55,
-      "version": "7",
-      "when": 1790380598636,
-      "tag": "20260925235638_auto-migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 56,
-      "version": "7",
-      "when": 1790381044650,
-      "tag": "20260926000404_auto-migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 57,
-      "version": "7",
-      "when": 1790396438534,
-      "tag": "20260926042038_auto-migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 58,
-      "version": "7",
-      "when": 1790402496386,
-      "tag": "20260926060136_auto-migration",
+      "when": 1790435780014,
+      "tag": "20260926151620_auto-migration",
       "breakpoints": true
     }
   ]

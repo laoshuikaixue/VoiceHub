@@ -305,13 +305,14 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 
 const { smtpEnabled } = useSiteConfig()
 const { showToast } = useToast()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.account?.social || {})
 const { localize: localizeServerError } = useServerErrors()
-const platformKeys = ['qq', 'wecom', 'dingtalk', 'lark']
+const platformKeys = ASTRBOT_PLATFORMS
 const platformStatus = ref(Object.fromEntries(platformKeys.map(key => [key, { enabled: false, bound: false }])))
 const enabledPlatforms = computed(() => platformKeys.filter(key => platformStatus.value[key]?.enabled))
 const astrbotCodes = ref({})

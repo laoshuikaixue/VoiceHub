@@ -1,1 +1,0 @@
-ALTER TABLE "SystemSettings" ADD COLUMN "astrbotWeeklyConfig" jsonb DEFAULT '{"showCover":true,"showSequence":true,"showRequester":true,"showVotes":false,"showPlayTime":true,"showDate":true}'::jsonb NOT NULL;

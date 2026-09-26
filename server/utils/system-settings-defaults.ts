@@ -1,4 +1,5 @@
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
 
 export const normalizeScheduleVisibilitySettings = (settings) => {
   for (const field of [
@@ -75,19 +76,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 因此每条目标显式记录所属平台与备注，投递时按平台开关逐个校验。
   astrbotGroupTargets: [] as Array<{ umo: string; platform: string; label: string }>,
   // 群事件开关：默认只开高频需求（新点歌投稿、注册待审核），其余按需开启。
-  astrbotGroupEvents: {
-    songRequest: true,
-    registrationPending: true,
-    backupFailed: true,
-    systemError: true,
-    songScheduled: false,
-    songPlayed: false,
-    voteMilestone: false,
-    replayRequest: false,
-    dailySummary: false
-  },
+  astrbotGroupEvents: DEFAULT_ASTRBOT_GROUP_EVENTS,
   // 防刷屏：同群同类型事件在窗口内合并为一条，并按单群频率上限节流。
-  astrbotGroupThrottle: { mergeWindowSeconds: 300, minIntervalSeconds: 60 },
+  astrbotGroupThrottle: DEFAULT_ASTRBOT_GROUP_THROTTLE,
   astrbotPushMode: 'push',
   astrbotWeeklyConfig: { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true },
   allowOAuthRegistration: false,

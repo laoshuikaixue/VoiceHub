@@ -6,7 +6,7 @@ import {
   createAstrbotBindCode,
   equalAstrbotToken,
   hashAstrbotBindCode,
-  isSupportedAstrbotPrivateUmo,
+  isAstrbotPrivateUmoShape,
   normalizeAstrbotBaseUrl,
   parseAstrbotPrivateUmo
 } from '../../server/utils/astrbot-notification.ts'
@@ -46,15 +46,15 @@ test('机器人服务地址仅接受无凭证 HTTP(S) 根地址', () => {
     'https://example.com/?x=1', 'invalid']) assert.equal(normalizeAstrbotBaseUrl(bad), null)
 })
 
-test('目标校验与绑定共用同一套平台白名单与私聊形态判定', () => {
-  assert.equal(isSupportedAstrbotPrivateUmo('aiocqhttp:FriendMessage:user1'), true)
-  assert.equal(isSupportedAstrbotPrivateUmo('qq_official:FriendMessage:ABCDEF'), true)
-  for (const bad of ['bot:FriendMessage:user', 'unknown:FriendMessage:user',
+test('私聊形态校验不按可改名的平台实例 ID 判定适配器', () => {
+  assert.equal(isAstrbotPrivateUmoShape('aiocqhttp:FriendMessage:user1'), true)
+  assert.equal(isAstrbotPrivateUmoShape('自定义实例:FriendMessage:ABCDEF'), true)
+  for (const bad of [
     'aiocqhttp:GroupMessage:123', 'aiocqhttp:OtherMessage:1', 'aiocqhttp:FriendMessage:',
     '', 42, null, 'aiocqhttp:FriendMessage:a:b']) {
-    assert.equal(isSupportedAstrbotPrivateUmo(bad), false)
+    assert.equal(isAstrbotPrivateUmoShape(bad), false)
   }
-  assert.equal(isSupportedAstrbotPrivateUmo(`aiocqhttp:FriendMessage:${'x'.repeat(512)}`), false)
+  assert.equal(isAstrbotPrivateUmoShape(`aiocqhttp:FriendMessage:${'x'.repeat(512)}`), false)
 })
 
 test('令牌校验拒绝缺失、错误及长度不同的值', () => {

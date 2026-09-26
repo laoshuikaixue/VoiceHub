@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { randomBytes } from 'node:crypto'
 import { db } from '~/drizzle/db'
 import { astrbotOutbox, astrbotBindings, notificationSettings } from '~/drizzle/schema'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -6,14 +7,11 @@ import { selectAstrbotTargets } from '~~/server/utils/astrbot-platforms'
 import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { isAstrbotGroupTargetAllowed, normalizeAstrbotGroupTargets } from '~~/server/utils/astrbot-group'
-import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
-import { isAstrbotOutboxExhausted } from '~~/server/utils/astrbot-pull'
+import { ASTRBOT_MAX_TARGETS_PER_REQUEST, fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
 
 /** 一次领取的最大条数与租约时长：插件崩溃后条目可被重新领取。 */
 export const ASTRBOT_OUTBOX_MAX_CLAIM = 20
 export const ASTRBOT_OUTBOX_LEASE_SECONDS = 120
-/** 单条通知最多携带的目标数，与插件入站模式同一上限。 */
-const ASTRBOT_OUTBOX_TARGETS_PER_ITEM = 200
 
 /**
  * 通知入队，供无法访问插件的部署使用（插件主动轮询取件）。
@@ -47,8 +45,8 @@ export async function enqueueAstrbotNotifications(
 
   const rowsToInsert: { title: string; message: string; umos: string[]; broadcast: boolean;
     targetOwners: Record<string, { userId: number; boundAt: string }> }[] = []
-  for (let index = 0; index < umos.length; index += ASTRBOT_OUTBOX_TARGETS_PER_ITEM) {
-    const batch = umos.slice(index, index + ASTRBOT_OUTBOX_TARGETS_PER_ITEM)
+  for (let index = 0; index < umos.length; index += ASTRBOT_MAX_TARGETS_PER_REQUEST) {
+    const batch = umos.slice(index, index + ASTRBOT_MAX_TARGETS_PER_REQUEST)
     rowsToInsert.push({
       title, message: content, broadcast: false,
       umos: batch, targetOwners: Object.fromEntries(batch.map((umo) => [umo, owners.get(umo)!]))
@@ -87,10 +85,14 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
     if (!claimable.length) return []
 
     const ids = claimable.map((row) => row.id)
-    const claimed = await tx.update(astrbotOutbox)
-      .set({ leasedUntil: until, attempts: sql`${astrbotOutbox.attempts} + 1` })
-      .where(inArray(astrbotOutbox.id, ids))
-      .returning()
+    const claimed = [] as (typeof astrbotOutbox.$inferSelect)[]
+    for (const id of ids) {
+      const [row] = await tx.update(astrbotOutbox)
+        .set({ leasedUntil: until, claimToken: randomBytes(32).toString('hex'), attempts: sql`${astrbotOutbox.attempts} + 1` })
+        .where(eq(astrbotOutbox.id, id))
+        .returning()
+      if (row) claimed.push(row)
+    }
     const settings = await getSystemSettingsCached()
     if (!settings?.astrbotEnabled) return []
 
@@ -119,7 +121,7 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
     // 目标全部失效（私聊解绑 / 群移出白名单）的条目直接判失败，避免永久重试。
     const stale = filtered.filter((row) => !row.umos.length).map((row) => row.id)
     if (stale.length) await tx.update(astrbotOutbox).set({
-      failedAt: now, leasedUntil: null,
+      failedAt: now, leasedUntil: null, claimToken: null,
       lastError: '目标已解绑、移出白名单或平台已禁用'
     }).where(inArray(astrbotOutbox.id, stale))
     return filtered.filter((row) => row.umos.length > 0)
@@ -127,10 +129,14 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
 }
 
 /** 回执：标记投递成功。 */
-export async function completeAstrbotOutbox(id: number) {
-  await db.update(astrbotOutbox)
-    .set({ deliveredAt: new Date(), leasedUntil: null, lastError: null })
-    .where(eq(astrbotOutbox.id, id))
+export async function completeAstrbotOutbox(id: number, claimToken: string) {
+  const now = getServerDate()
+  const updated = await db.update(astrbotOutbox)
+    .set({ deliveredAt: now, leasedUntil: null, claimToken: null, lastError: null })
+    .where(and(eq(astrbotOutbox.id, id), eq(astrbotOutbox.claimToken, claimToken),
+      sql`${astrbotOutbox.leasedUntil} > ${now}`, isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
+    .returning({ id: astrbotOutbox.id })
+  return updated.length === 1
 }
 
 /**
@@ -139,13 +145,23 @@ export async function completeAstrbotOutbox(id: number) {
  * 达到 3 次尝试后落 failedAt 停止重试，避免无解的目标被永久重试；
  * 否则释放租约让下一次轮询重试。
  */
-export async function failAstrbotOutbox(id: number, reason: string) {
-  const [row] = await db.select({ attempts: astrbotOutbox.attempts }).from(astrbotOutbox)
-    .where(eq(astrbotOutbox.id, id)).limit(1)
-  const exhausted = isAstrbotOutboxExhausted(row?.attempts ?? 0)
-  await db.update(astrbotOutbox).set({
-    leasedUntil: null,
-    lastError: reason.slice(0, 500),
-    ...(exhausted ? { failedAt: new Date() } : {})
-  }).where(eq(astrbotOutbox.id, id))
+export async function failAstrbotOutbox(id: number, claimToken: string, reason: string, failedUmos: string[] | null = null) {
+  const now = getServerDate()
+  return db.transaction(async (tx) => {
+    const [row] = await tx.select({ umos: astrbotOutbox.umos, broadcast: astrbotOutbox.broadcast })
+      .from(astrbotOutbox)
+      .where(and(eq(astrbotOutbox.id, id), eq(astrbotOutbox.claimToken, claimToken),
+        sql`${astrbotOutbox.leasedUntil} > ${now}`, isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
+      .for('update')
+    if (!row) return false
+    if (failedUmos && (!Array.isArray(row.umos) ||
+      failedUmos.some((umo) => !row.umos?.includes(umo)))) return false
+    const updated = await tx.update(astrbotOutbox).set({
+      leasedUntil: null, claimToken: null,
+      ...(failedUmos ? { umos: failedUmos } : {}),
+      lastError: reason.slice(0, 500),
+      failedAt: sql`CASE WHEN ${astrbotOutbox.attempts} >= 3 THEN ${now} ELSE NULL END`
+    }).where(eq(astrbotOutbox.id, id)).returning({ id: astrbotOutbox.id })
+    return updated.length === 1
+  })
 }

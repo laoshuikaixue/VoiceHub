@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { build } from 'esbuild'
+import { fileURLToPath } from 'node:url'
 
 // 将服务依赖替换为最小桩，直接运行真实领取与入队逻辑，而非检查源码字符串。
-const source = new URL('../../server/services/astrbotOutboxService.ts', import.meta.url).pathname
+const source = fileURLToPath(new URL('../../server/services/astrbotOutboxService.ts', import.meta.url))
 const modules: Record<string, string> = {
   'drizzle-orm': `export const and=(...args)=>args, asc=x=>x, eq=(a,b)=>[a,b], inArray=(a,b)=>[a,b], isNull=x=>x, lt=(a,b)=>[a,b], or=(...args)=>args, sql=(strings,...values)=>strings;`,
   '~/drizzle/schema': `export const astrbotOutbox={id:'id',attempts:'attempts',deliveredAt:'deliveredAt',failedAt:'failedAt',leasedUntil:'leasedUntil'}; export const astrbotBindings={umo:'umo',userId:'userId',boundAt:'boundAt',adapter:'adapter',platform:'platform'}; export const notificationSettings={userId:'userId',enabled:'enabled'};`,
@@ -12,7 +13,7 @@ const modules: Record<string, string> = {
   '~~/server/utils/astrbot-platforms': `export const selectAstrbotTargets=(rows,settings)=>rows.filter(x=>x.enabled!==false && settings?.[x.platform]===true).map(x=>x.umo);`,
   '~~/server/utils/astrbot-group': `export const normalizeAstrbotGroupTargets=(raw)=>Array.isArray(raw)?raw:[]; export const isAstrbotGroupTargetAllowed=(targets,platforms,umo)=>Array.isArray(targets)&&targets.some(t=>t.umo===umo && platforms?.[t.platform]===true);`,
   '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached=async()=>({astrbotEnabled:true,astrbotPlatforms:{qq:true}});`,
-  '~~/server/utils/astrbot-payload': `export const fitsAstrbotPayload=()=>true;`,
+  '~~/server/utils/astrbot-payload': `export const ASTRBOT_MAX_TARGETS_PER_REQUEST=200; export const fitsAstrbotPayload=()=>true;`,
   '~~/server/utils/astrbot-pull': `export const isAstrbotOutboxExhausted=x=>x>=3;`
 }
 Object.assign(globalThis, { __outboxDb: { select() {}, transaction() {} } })

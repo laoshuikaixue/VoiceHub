@@ -48,18 +48,6 @@ export function parseAstrbotPrivateUmo(umo: unknown, platform: unknown) {
   return isAstrbotPrivateUmoShape(umo) ? { umo, platform } : null
 }
 
-/**
- * 校验 UMO 形态，并要求其前缀本身是一个受支持的适配器名。
- *
- * 注意：AstrBot 的 UMO 前缀取自平台实例 ID（可被管理员改名），并不保证等于
- * 适配器名，因此**不要**用本函数校验推送目标；目标确认请用绑定表的
- * `astrbotPlatform` 列（见 selectConfirmedAstrbotTargets）。
- */
-export function isSupportedAstrbotPrivateUmo(umo: unknown): umo is string {
-  return isAstrbotPrivateUmoShape(umo) &&
-    parseAstrbotPrivateUmo(umo, umo.split(':')[0]) !== null
-}
-
 export function normalizeAstrbotBaseUrl(raw: unknown) {
   if (typeof raw !== 'string' || raw.length > 2048) return null
   try {

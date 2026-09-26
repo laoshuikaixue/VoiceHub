@@ -6,8 +6,17 @@ if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 未配置')
 const sql = postgres(process.env.DATABASE_URL, { max: 1 })
 try {
   await sql.begin(async (tx) => {
-    const rows = await tx`SELECT id, "astrbotUmo" AS umo, "astrbotPlatform" AS adapter, "astrbotBoundAt" AS bound_at
-      FROM "User" WHERE "astrbotUmo" IS NOT NULL FOR UPDATE`
+    const legacyColumns = await tx`SELECT column_name FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = 'User'
+        AND column_name IN ('astrbotUmo', 'astrbotPlatform', 'astrbotBoundAt')`
+    const columns = new Set(legacyColumns.map((row) => row.column_name))
+    const rows = columns.has('astrbotUmo') && columns.has('astrbotPlatform')
+      ? columns.has('astrbotBoundAt')
+        ? await tx`SELECT id, "astrbotUmo" AS umo, "astrbotPlatform" AS adapter, COALESCE("astrbotBoundAt", now()) AS bound_at
+          FROM "User" WHERE "astrbotUmo" IS NOT NULL FOR UPDATE`
+        : await tx`SELECT id, "astrbotUmo" AS umo, "astrbotPlatform" AS adapter, now() AS bound_at
+          FROM "User" WHERE "astrbotUmo" IS NOT NULL FOR UPDATE`
+      : []
     const platformOf = (adapter: string) => {
       if (['aiocqhttp', 'qq_official', 'qq_official_webhook'].includes(adapter)) return 'qq'
       if (adapter === 'wecom_ai_bot') return 'wecom'

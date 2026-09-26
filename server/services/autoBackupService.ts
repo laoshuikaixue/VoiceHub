@@ -441,8 +441,7 @@ export async function executeUploads(prepared: {
   const failures = results.filter(r => !r.success)
   if (failures.length) {
     const detail = failures.map(r => `${r.method}：${r.error || '未知错误'}`).join('；')
-    enqueueAstrbotGroupEvent('backupFailed', '自动备份失败', `${filename} 备份失败 — ${detail}`)
-      .catch(err => console.error('发送备份失败群通知失败:', err))
+    await enqueueAstrbotGroupEvent('backupFailed', '自动备份失败', `${filename} 备份失败 — ${detail}`)
   }
 
   // 更新整体成功状态

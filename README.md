@@ -590,6 +590,8 @@ pnpm run safe-migrate
 
 > **升级到内置 AstrBot 四平台绑定的版本时**：除执行数据库迁移外，部署流程还会自动回填旧绑定数据与站点开关。`scripts/db-sync.js` 在迁移完成后会把 `User` 表中的旧字段（`astrbotUmo`/`astrbotPlatform`/`astrbotBoundAt`）搬迁到新的 `AstrbotBinding` 表，并把历史开启的 AstrBot 站点（`astrbotEnabled=true`）延续为 `qq` 平台开关。该回填幂等：重复执行不会覆盖新表的既有绑定，也不会重置管理员改动过的平台开关；未知适配器会被跳过并输出告警。回填失败会中止部署。
 >
+> **AstrBot 群事件投递边界**：群事件 push 仅支持常驻部署。合并窗口到期后的冲刷依赖常驻服务的定时任务；Vercel、Netlify 等按请求冻结实例的 Serverless 环境应在 VoiceHub 与 AstrBot 插件两端均选择 pull 模式，由插件主动领取并回执。切换模式前确认旧队列已处理，避免旧模式遗留条目滞留。
+>
 > 也可手动重跑回填脚本（等价逻辑，独立执行便于排查）：
 >
 > ```bash
@@ -1501,6 +1503,7 @@ VoiceHub/
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
 │       ├── astrbot-platforms.test.ts # 四平台开关与绑定目标测试
+│       ├── astrbot-restore-fields.test.ts # AstrBot 配置备份恢复白名单测试
 │       ├── push-config-contract.test.ts # 推送配置与通知路径契约测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试

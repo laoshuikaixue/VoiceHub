@@ -107,14 +107,9 @@ export function normalizeAstrbotGroupThrottle(raw: unknown): AstrbotGroupThrottl
   }
 }
 
-/** 从原始库值中解析出群事件开关（容错读取，不抛错）。 */
-export function readAstrbotGroupEvents(raw: unknown): AstrbotGroupEventSettings {
-  return normalizeAstrbotGroupEvents(raw)
-}
-
 /** 事件开关是否打开。 */
 export function isAstrbotGroupEventEnabled(raw: unknown, eventKey: AstrbotGroupEventKey): boolean {
-  return readAstrbotGroupEvents(raw)[eventKey] === true
+  return normalizeAstrbotGroupEvents(raw)[eventKey] === true
 }
 
 /**
@@ -128,7 +123,7 @@ export function selectAstrbotGroupTargets(
   eventKey: AstrbotGroupEventKey
 ): string[] {
   if (!settings.astrbotEnabled || !settings.astrbotBroadcastEnabled) return []
-  if (!isAstrbotGroupEventEnabled(readAstrbotGroupEvents((settings as { astrbotGroupEvents?: unknown }).astrbotGroupEvents), eventKey)) {
+  if (!isAstrbotGroupEventEnabled((settings as { astrbotGroupEvents?: unknown }).astrbotGroupEvents, eventKey)) {
     return []
   }
   const targets = normalizeAstrbotGroupTargets(raw) ?? []

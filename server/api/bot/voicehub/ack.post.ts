@@ -26,12 +26,13 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '回执格式无效')
   }
 
+  let updated = 0
   for (const item of results) {
     if (item.success) {
-      await completeAstrbotOutbox(item.id)
+      if (await completeAstrbotOutbox(item.id, item.claimToken)) updated++
     } else {
-      await failAstrbotOutbox(item.id, item.reason)
+      if (await failAstrbotOutbox(item.id, item.claimToken, item.reason, item.failedUmos)) updated++
     }
   }
-  return { success: true, updated: results.length }
+  return { success: true, updated }
 })

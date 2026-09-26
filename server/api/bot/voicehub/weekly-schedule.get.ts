@@ -6,17 +6,8 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot-notification'
 import { getServerDate } from '~~/server/utils/serverTime'
-import { formatDateTime, getBeijingStartOfWeek } from '~/utils/timeUtils'
+import { formatDateTime, getBeijingStartOfWeek, getBeijingEndOfWeek, getBeijingWeekdayLabel } from '~/utils/timeUtils'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc.js'
-import timezone from 'dayjs/plugin/timezone.js'
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-
-const BEIJING_TIMEZONE = 'Asia/Shanghai'
-const CN_WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 /**
  * 机器人本周歌单接口
@@ -43,12 +34,10 @@ export default defineEventHandler(async (event) => {
 
   // 北京时间本周一 00:00 → 下周一 00:00（UTC）
   const weekStart = getBeijingStartOfWeek(now)
-  const weekEnd = dayjs(weekStart).tz(BEIJING_TIMEZONE).add(7, 'day').toDate()
+  const weekEnd = new Date(getBeijingEndOfWeek(now).getTime() + 1)
 
   // 用于 weekRange 展示
-  const weekStartBj = dayjs(weekStart).tz(BEIJING_TIMEZONE)
-  const weekEndBj = weekStartBj.add(6, 'day')
-  const weekRange = `${weekStartBj.format('YYYY/MM/DD')} - ${weekEndBj.format('YYYY/MM/DD')}`
+  const weekRange = `${formatDateTime(weekStart, 'YYYY/MM/DD')} - ${formatDateTime(getBeijingEndOfWeek(now), 'YYYY/MM/DD')}`
 
   // 查询本周已发布排期，关联 songs / users / playTimes
   const rows = await db
@@ -121,9 +110,7 @@ export default defineEventHandler(async (event) => {
 
   // 格式化排期列表
   const scheduleItems = rows.map((row) => {
-    const playDateBj = dayjs(row.playDate).tz(BEIJING_TIMEZONE)
-    const weekdayLabel = CN_WEEKDAYS[playDateBj.day()]
-    const dateLabel = `${playDateBj.format('YYYY/MM/DD')} ${weekdayLabel}`
+    const dateLabel = `${formatDateTime(row.playDate, 'YYYY/MM/DD')} ${getBeijingWeekdayLabel(row.playDate)}`
 
     // 投稿人名称，附联合投稿人后缀
     const collabNames = collaboratorsMap.get(row.songId) ?? []

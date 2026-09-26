@@ -228,7 +228,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const result = await createBatchSystemNotifications(userIds, title, content, important, sender, false)
+  const result = await createBatchSystemNotifications(userIds, title, content, important, sender)
   if (!result) {
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
   }

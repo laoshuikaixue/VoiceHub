@@ -5,10 +5,10 @@ import {
   ASTRBOT_PAYLOAD_MAX_BYTES,
   astrbotPayloadBytes,
   chunkAstrbotTargets,
-  fitsAstrbotPayload,
-  selectConfirmedAstrbotTargets
+  fitsAstrbotPayload
 } from '../../server/utils/astrbot-payload.ts'
 import { isSupportedAstrbotPlatform } from '../../server/utils/astrbot-notification.ts'
+import { selectAstrbotTargets } from '../../server/utils/astrbot-platforms.ts'
 
 const registration = readFileSync(new URL('../../server/utils/registration-notify.ts', import.meta.url), 'utf8')
 const approval = readFileSync(new URL('../../server/api/admin/users/[id]/approval.post.ts', import.meta.url), 'utf8')
@@ -91,25 +91,18 @@ test('正文超限时计入失败而非静默跳过', () => {
 
 test('私聊目标确认同时要求命中绑定行且平台在白名单内', () => {
   const umo = 'default:FriendMessage:12345678'
+  const permitted = { qq: true }
+  const row = { umo, platform: 'qq', adapter: 'aiocqhttp' }
   // 平台实例 ID 被改名（AstrBot 默认模板 id 为 default），仍是合法绑定。
   assert.equal(isSupportedAstrbotPlatform('aiocqhttp'), true)
-  assert.equal(selectConfirmedAstrbotTargets([{ umo, platform: 'aiocqhttp' }], [umo]), true)
+  assert.deepEqual(selectAstrbotTargets([row], permitted), [umo])
   // 未命中绑定行。
-  assert.equal(selectConfirmedAstrbotTargets([], [umo]), false)
-  assert.equal(selectConfirmedAstrbotTargets([{ umo: 'x:FriendMessage:y', platform: 'aiocqhttp' }], [umo]), false)
+  assert.deepEqual(selectAstrbotTargets([], permitted), [])
+  assert.deepEqual(selectAstrbotTargets([{ ...row, umo: 'x:FriendMessage:y' }], permitted), ['x:FriendMessage:y'])
   // 命中但平台已不在白名单内。
-  assert.equal(selectConfirmedAstrbotTargets([{ umo, platform: 'unknown_adapter' }], [umo]), false)
-  assert.equal(selectConfirmedAstrbotTargets([{ umo, platform: null }], [umo]), false)
-  // 多目标必须逐个确认，缺少任一即整体拒绝。
-  const other = 'default:FriendMessage:87654321'
-  assert.equal(selectConfirmedAstrbotTargets([{ umo, platform: 'aiocqhttp' }], [umo, other]), false)
-  assert.equal(
-    selectConfirmedAstrbotTargets(
-      [{ umo, platform: 'aiocqhttp' }, { umo: other, platform: 'qq_official' }],
-      [umo, other]
-    ),
-    true
-  )
+  assert.deepEqual(selectAstrbotTargets([row], { qq: false }), [])
+  assert.deepEqual(selectAstrbotTargets([{ ...row, adapter: 'unknown_adapter' }], permitted), [])
+  assert.deepEqual(selectAstrbotTargets([{ ...row, platform: null }], permitted), [])
 })
 
 test('目标校验与绑定共用同一套平台白名单，且不对 UMO 前缀做白名单比对', () => {

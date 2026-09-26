@@ -5,7 +5,7 @@ import {
   isPublicApiPath,
   shouldBypassPublicApiAuthentication
 } from '../../server/utils/auth-route-policy.ts'
-import { SERVER_ERROR_CODES } from '../../server/config/constants.ts'
+import { BOT_ROUTES, SERVER_ERROR_CODES } from '../../server/config/constants.ts'
 import {
   ASTRBOT_SONG_CANDIDATE_LIMIT,
   ASTRBOT_SONG_SOURCES,
@@ -39,7 +39,8 @@ function ticketWith(candidates: SongCandidate[], overrides: Record<string, unkno
 
 test('两个点歌回调在中间件按精确路径放行，且不进入通用公开白名单', () => {
   for (const path of [SEARCH_PATH, REQUEST_PATH]) {
-    assert.match(middleware, new RegExp(`pathname === '${path}'`))
+    assert.equal(BOT_ROUTES.has(`POST ${path}`), true)
+    assert.match(middleware, /BOT_ROUTES\.has/)
     // 不带登录态也不能绕过：这两个端点靠自身令牌校验，不走公共白名单
     assert.equal(isPublicApiPath(path, 'POST'), false)
     assert.equal(shouldBypassPublicApiAuthentication(path, 'POST', false), false)
