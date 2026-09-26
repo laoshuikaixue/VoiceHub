@@ -40,3 +40,9 @@ test('拉取领取在群广播关闭时只保留私聊行，不消耗群租约',
   const outbox = read('../../server/services/astrbotOutboxService.ts')
   assert.match(outbox, /settings\.astrbotBroadcastEnabled \? undefined : eq\(astrbotOutbox\.broadcast, false\)/)
 })
+
+test('群目标授权回查同时受群广播总开关约束', () => {
+  const route = read('../../server/api/bot/voicehub/verify-targets.post.ts')
+  assert.match(route, /groupBroadcastEnabled: systemSettings\.astrbotBroadcastEnabled/)
+  assert.match(route, /groupUmos\.length && !settings\.groupBroadcastEnabled/)
+})

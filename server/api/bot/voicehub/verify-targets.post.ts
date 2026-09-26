@@ -18,7 +18,7 @@ import {
  *
  * 私聊目标：UMO 必须逐个命中某账号的绑定记录，且该行记录的 astrbotPlatform
  * 仍在受支持的适配器白名单内（与绑定接口同一套判定）。
- * 群目标：UMO 必须在管理员配置的群白名单内，且该群所属平台的开关为开。
+ * 群目标：群广播开关开启、UMO 在管理员白名单内，且所属平台开关为开。
  *
  * UMO 前缀是 AstrBot 的平台实例 ID，可由管理员改名，因此两种情况都不能拿它
  * 比对适配器名。任一目标无法确认即整体拒绝，避免任何未经确认的投递。
@@ -27,6 +27,7 @@ export default defineEventHandler(async (event) => {
   const [settings] = await db.select({
     token: systemSettings.astrbotToken,
     enabled: systemSettings.astrbotEnabled,
+    groupBroadcastEnabled: systemSettings.astrbotBroadcastEnabled,
     platforms: systemSettings.astrbotPlatforms,
     groupTargets: systemSettings.astrbotGroupTargets
   }).from(systemSettings).limit(1)
@@ -43,7 +44,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const groupUmos = umos.filter((umo) => isAstrbotGroupUmoShape(umo))
-  if (groupUmos.some((umo) => !isAstrbotGroupTargetAllowed(settings.groupTargets, settings.platforms, umo))) {
+  if ((groupUmos.length && !settings.groupBroadcastEnabled) ||
+      groupUmos.some((umo) => !isAstrbotGroupTargetAllowed(settings.groupTargets, settings.platforms, umo))) {
     throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '包含未授权的群目标')
   }
 
