@@ -113,7 +113,12 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
       .filter((umo) => isAstrbotGroupTargetAllowed(groups, settings.astrbotPlatforms, umo)))
 
     const targets = [...new Set(privateRows.flatMap((row) => Array.isArray(row.umos) ? row.umos : []))]
-    const bindings = targets.length ? await tx.select().from(astrbotBindings).where(inArray(astrbotBindings.umo, targets)) : []
+    const bindings = targets.length ? await tx.select({
+      umo: astrbotBindings.umo, userId: astrbotBindings.userId, boundAt: astrbotBindings.boundAt,
+      adapter: astrbotBindings.adapter, platform: astrbotBindings.platform, enabled: notificationSettings.enabled
+    }).from(astrbotBindings)
+      .leftJoin(notificationSettings, eq(notificationSettings.userId, astrbotBindings.userId))
+      .where(inArray(astrbotBindings.umo, targets)) : []
     const valid = new Set(selectAstrbotTargets(bindings, settings.astrbotPlatforms))
     const current = new Map(bindings.map((binding) => [binding.umo, binding]))
     // 缺失快照的历史队列及解绑重绑后的队列均不可交付，避免 UMO 易主泄露。

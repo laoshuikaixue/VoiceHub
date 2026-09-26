@@ -29,17 +29,20 @@ function fixture(owner: number, existing?: { targets?: unknown; umos: string[]; 
   ;(globalThis as any).__outboxSettings = { astrbotEnabled: true, astrbotPlatforms: { qq: true } }
   const state = { bindings: [{ userId: owner, umo, platform: 'qq', adapter: 'aiocqhttp', enabled: true,
     boundAt: new Date('2026-09-24T12:00:00Z') }],
-    rows: existing ? [{ id: 1, attempts: 0, ...existing }] : [] as any[] }
+    rows: existing ? [{ id: 1, attempts: 0, ...existing }] : [] as any[], notificationsEnabled: true }
   const transaction = {
     select(fields?: object) { return {
       from(table: object) { const isQueue = 'id' in table; const rows = isQueue ? state.rows : state.bindings
         let predicate: unknown
+        let joinedNotifications = false
         const chain: any = { where(value: unknown) { predicate = value; return chain }, orderBy() { return chain }, limit() { return chain }, for() { return chain },
-          leftJoin() { return chain }, then(resolve: (v: unknown) => void) {
+          leftJoin() { joinedNotifications = true; return chain }, then(resolve: (v: unknown) => void) {
             const broadcastDisabled = Array.isArray(predicate) && predicate.some((part) =>
               Array.isArray(part) && part[0] === 'broadcast' && part[1] === false)
             const selected = isQueue && broadcastDisabled ? rows.filter((row) => !row.broadcast) : rows
-            resolve(isQueue && fields ? selected.map(row => ({ id: row.id })) : selected)
+            resolve(isQueue && fields ? selected.map(row => ({ id: row.id })) :
+              isQueue ? selected : joinedNotifications
+                ? selected.map(row => ({ ...row, enabled: state.notificationsEnabled })) : selected)
           } }
         return chain
       }
@@ -80,6 +83,13 @@ test('同一账号解绑后重新绑定也拒绝旧队列', async () => {
   const state = fixture(1)
   await service.enqueueAstrbotNotifications([1], '私信', '旧通知')
   state.bindings[0].boundAt = new Date('2026-09-25T12:00:00Z')
+  assert.deepEqual(await service.claimAstrbotOutbox(), [])
+})
+
+test('用户入队后关闭通知时不再交付旧队列', async () => {
+  const state = fixture(1)
+  await service.enqueueAstrbotNotifications([1], '私信', '旧通知')
+  state.notificationsEnabled = false
   assert.deepEqual(await service.claimAstrbotOutbox(), [])
 })
 
