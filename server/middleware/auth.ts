@@ -43,7 +43,10 @@ export default defineEventHandler(async (event) => {
   const method = event.method.toUpperCase()
 
   // 机器人回调只接受专用共享令牌，由接口自身校验；忽略浏览器残留 Cookie。
-  if (method === 'POST' && (pathname === '/api/bot/voicehub/bind' || pathname === '/api/bot/voicehub/unbind' || pathname === '/api/bot/voicehub/verify-targets' || pathname === '/api/bot/voicehub/pull' || pathname === '/api/bot/voicehub/ack' || pathname === '/api/bot/voicehub/song-search' || pathname === '/api/bot/voicehub/song-request')) {
+  if (
+    (method === 'POST' && (pathname === '/api/bot/voicehub/bind' || pathname === '/api/bot/voicehub/unbind' || pathname === '/api/bot/voicehub/verify-targets' || pathname === '/api/bot/voicehub/pull' || pathname === '/api/bot/voicehub/ack' || pathname === '/api/bot/voicehub/song-search' || pathname === '/api/bot/voicehub/song-request')) ||
+    (method === 'GET' && pathname === '/api/bot/voicehub/weekly-schedule')
+  ) {
     return
   }
 
