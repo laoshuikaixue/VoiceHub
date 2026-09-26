@@ -188,3 +188,8 @@ export function canMergeAstrbotGroupEvent(
   if (row.leasedUntil && row.leasedUntil.getTime() > now.getTime()) return false
   return now.getTime() - row.createdAt.getTime() < throttle.mergeWindowSeconds * 1000
 }
+
+/** 合并只允许整行目标都属于本次受众，避免新事件被送往其他群。 */
+export function canMergeAstrbotGroupTargets(existing: string[], incoming: string[], pending: Set<string>): boolean {
+  return existing.length > 0 && existing.every((umo) => incoming.includes(umo) && !pending.has(umo))
+}

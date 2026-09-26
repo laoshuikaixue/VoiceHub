@@ -8,6 +8,7 @@ import {
   ASTRBOT_GROUP_EVENT_KEYS,
   appendAstrbotGroupContent,
   canMergeAstrbotGroupEvent,
+  canMergeAstrbotGroupTargets,
   computeAstrbotGroupNotifyAfter,
   isAstrbotGroupTargetAllowed,
   normalizeAstrbotGroupTargets,
@@ -100,22 +101,23 @@ async function queueToGroups(
       eq(astrbotOutbox.broadcast, true),
       eq(astrbotOutbox.eventKey, eventKey),
       isNull(astrbotOutbox.deliveredAt),
-      isNull(astrbotOutbox.failedAt)
+      isNull(astrbotOutbox.failedAt),
+      eq(astrbotOutbox.attempts, 0)
     ))
     .orderBy(asc(astrbotOutbox.id))
     .limit(ASTRBOT_GROUP_MERGE_SCAN)
+    .for('update', { skipLocked: true })
 
   for (const row of candidates) {
     if (!canMergeAstrbotGroupEvent(row, now, throttle)) continue
     const rowUmox = Array.isArray(row.umos) ? row.umos : []
-    const targets = rowUmox.filter((umo) => umos.includes(umo) && !pending.has(umo))
-    if (!targets.length) continue
+    if (!canMergeAstrbotGroupTargets(rowUmox, umos, pending)) continue
     await tx.update(astrbotOutbox).set({
       message: appendAstrbotGroupContent(row.message, content),
       notifyAfter: computeAstrbotGroupNotifyAfter(row.createdAt, now, throttle)
     }).where(eq(astrbotOutbox.id, row.id))
-    targets.forEach((umo) => pending.add(umo))
-    affected += targets.length
+    rowUmox.forEach((umo) => pending.add(umo))
+    affected += rowUmox.length
   }
 
   const fresh = umos.filter((umo) => !pending.has(umo))

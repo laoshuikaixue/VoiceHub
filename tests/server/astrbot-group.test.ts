@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import {
   ASTRBOT_GROUP_EVENT_KEYS,
   DEFAULT_ASTRBOT_GROUP_EVENTS,
   appendAstrbotGroupContent,
   canMergeAstrbotGroupEvent,
+  canMergeAstrbotGroupTargets,
   computeAstrbotGroupNotifyAfter,
   isAstrbotGroupEventEnabled,
   isAstrbotGroupTargetAllowed,
@@ -168,4 +170,16 @@ test('可合并判定：已投递、已失败、被领取中的条目都不再�
   // 租约过期仍可能已经对外发送；发送过的条目绝不能再混入新事件。
   assert.equal(canMergeAstrbotGroupEvent({ createdAt, attempts: 1, leasedUntil: new Date('2026-09-26T00:00:30Z') }, now, throttle), false)
   assert.equal(canMergeAstrbotGroupEvent({ createdAt, attempts: 3 }, now, throttle), false)
+})
+
+test('群目标不一致时不得把新事件合并进包含其他群的旧行', () => {
+  assert.equal(canMergeAstrbotGroupTargets(['group:A', 'group:B'], ['group:A'], new Set()), false)
+  assert.equal(canMergeAstrbotGroupTargets(['group:A'], ['group:A', 'group:B'], new Set()), true)
+  assert.equal(canMergeAstrbotGroupTargets(['group:A'], ['group:A'], new Set(['group:A'])), false)
+})
+
+test('合并候选读取必须锁定队列行，避免并发领取后覆盖正文', () => {
+  const source = readFileSync(new URL('../../server/services/astrbotGroupService.ts', import.meta.url), 'utf8')
+  const candidates = source.slice(source.indexOf('const candidates ='), source.indexOf('for (const row of candidates)'))
+  assert.match(candidates, /\.for\('update', \{ skipLocked: true \}\)/)
 })
