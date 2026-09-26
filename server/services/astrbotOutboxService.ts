@@ -84,6 +84,8 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
       .where(and(
         isNull(astrbotOutbox.deliveredAt),
         isNull(astrbotOutbox.failedAt),
+        // 关闭群广播时只领取私聊行，群事件保留至重新启用。
+        settings.astrbotBroadcastEnabled ? undefined : eq(astrbotOutbox.broadcast, false),
         sql`${astrbotOutbox.attempts} < ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
         or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now)),
         // 冷却未过的群条目留在队列里等合并，不得提前投递。

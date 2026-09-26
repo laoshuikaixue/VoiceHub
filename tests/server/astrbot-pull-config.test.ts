@@ -35,3 +35,8 @@ test('群事件按事件开关与防刷屏参数入队，投递前复核白名�
   // 移出白名单的旧队列条目不得继续投递。
   assert.match(service, /群目标已移出白名单/)
 })
+
+test('拉取领取在群广播关闭时只保留私聊行，不消耗群租约', () => {
+  const outbox = read('../../server/services/astrbotOutboxService.ts')
+  assert.match(outbox, /settings\.astrbotBroadcastEnabled \? undefined : eq\(astrbotOutbox\.broadcast, false\)/)
+})
