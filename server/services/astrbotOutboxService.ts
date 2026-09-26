@@ -68,6 +68,8 @@ export async function enqueueAstrbotNotifications(
  * 因此这里一并处理：私聊行校验绑定归属，群行校验白名单与冷却闸门。
  */
 export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
+  const settings = await getSystemSettingsCached()
+  if (!settings?.astrbotEnabled) return []
   const now = getServerDate()
   const until = new Date(now.getTime() + ASTRBOT_OUTBOX_LEASE_SECONDS * 1000)
 
@@ -101,9 +103,6 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
         .returning()
       if (row) claimed.push(row)
     }
-    const settings = await getSystemSettingsCached()
-    if (!settings?.astrbotEnabled) return []
-
     // 群条目：按后台白名单（含平台开关）复核目标，与私聊绑定校验互不干扰。
     const groupRows = claimed.filter((row) => row.broadcast)
     const privateRows = claimed.filter((row) => !row.broadcast)

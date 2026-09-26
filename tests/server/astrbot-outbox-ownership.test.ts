@@ -12,7 +12,7 @@ const modules: Record<string, string> = {
   '~~/server/utils/serverTime': `export const getServerDate=()=>new Date('2026-09-25T00:00:00Z');`,
   '~~/server/utils/astrbot-platforms': `export const selectAstrbotTargets=(rows,settings)=>rows.filter(x=>x.enabled!==false && settings?.[x.platform]===true).map(x=>x.umo);`,
   '~~/server/utils/astrbot-group': `export const normalizeAstrbotGroupTargets=(raw)=>Array.isArray(raw)?raw:[]; export const isAstrbotGroupTargetAllowed=(targets,platforms,umo)=>Array.isArray(targets)&&targets.some(t=>t.umo===umo && platforms?.[t.platform]===true);`,
-  '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached=async()=>({astrbotEnabled:true,astrbotPlatforms:{qq:true}});`,
+  '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached=async()=>globalThis.__outboxSettings;`,
   '~~/server/utils/astrbot-payload': `export const ASTRBOT_MAX_TARGETS_PER_REQUEST=200; export const fitsAstrbotPayload=()=>true;`,
   '~~/server/utils/astrbot-pull': `export const ASTRBOT_OUTBOX_MAX_ATTEMPTS=3; export const isAstrbotOutboxExhausted=x=>x>=3;`
 }
@@ -26,6 +26,7 @@ const service = await import(`data:text/javascript;base64,${Buffer.from(compiled
 const umo = 'bot:FriendMessage:shared'
 
 function fixture(owner: number, existing?: { targets?: unknown; umos: string[]; broadcast: boolean }) {
+  ;(globalThis as any).__outboxSettings = { astrbotEnabled: true, astrbotPlatforms: { qq: true } }
   const state = { bindings: [{ userId: owner, umo, platform: 'qq', adapter: 'aiocqhttp', enabled: true,
     boundAt: new Date('2026-09-24T12:00:00Z') }],
     rows: existing ? [{ id: 1, attempts: 0, ...existing }] : [] as any[] }
@@ -76,5 +77,12 @@ test('绑定版本缺失时即便主体相同也不交付', async () => {
   const state = fixture(1)
   state.bindings[0].boundAt = null as any
   await service.enqueueAstrbotNotifications([1], '私信', '旧通知')
+  assert.deepEqual(await service.claimAstrbotOutbox(), [])
+})
+
+test('功能关闭时不进入领取事务、不占用租约或尝试次数', async () => {
+  fixture(1, { umos: [umo], broadcast: false })
+  ;(globalThis as any).__outboxSettings.astrbotEnabled = false
+  ;(globalThis as any).__outboxDb.transaction = () => { throw new Error('关闭时不应进入领取事务') }
   assert.deepEqual(await service.claimAstrbotOutbox(), [])
 })
