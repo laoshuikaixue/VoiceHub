@@ -10,6 +10,7 @@ const modules: Record<string, string> = {
   '~/drizzle/db': `export const db=globalThis.__outboxDb;`,
   '~~/server/utils/serverTime': `export const getServerDate=()=>new Date('2026-09-25T00:00:00Z');`,
   '~~/server/utils/astrbot-platforms': `export const selectAstrbotTargets=(rows,settings)=>rows.filter(x=>x.enabled!==false && settings?.[x.platform]===true).map(x=>x.umo);`,
+  '~~/server/utils/astrbot-group': `export const normalizeAstrbotGroupTargets=(raw)=>Array.isArray(raw)?raw:[]; export const isAstrbotGroupTargetAllowed=(targets,platforms,umo)=>Array.isArray(targets)&&targets.some(t=>t.umo===umo && platforms?.[t.platform]===true);`,
   '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached=async()=>({astrbotEnabled:true,astrbotPlatforms:{qq:true}});`,
   '~~/server/utils/astrbot-payload': `export const fitsAstrbotPayload=()=>true;`,
   '~~/server/utils/astrbot-pull': `export const isAstrbotOutboxExhausted=x=>x>=3;`

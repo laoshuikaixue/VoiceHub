@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { astrbotBindings, notificationSettings } from '~/drizzle/schema'
 import { selectAstrbotTargets } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { isAstrbotGroupUmoShape } from '~~/server/utils/astrbot-group'
 import { ASTRBOT_TOKEN_HEADER, normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
 import {
   ASTRBOT_PAYLOAD_MAX_BYTES,
@@ -29,10 +30,18 @@ export async function postAstrbotNotification(
   if (!settings?.astrbotEnabled || !settings.astrbotToken || !baseUrl || !umos.length) {
     return { sent: 0, failed: 0 }
   }
-  const bindings = umos.length ? await db.select().from(astrbotBindings).where(inArray(astrbotBindings.umo, umos)) : []
-  const valid = new Set(selectAstrbotTargets(bindings, settings.astrbotPlatforms))
-  const confirmed = [...new Set(umos)].filter((umo) => valid.has(umo))
-  if (!confirmed.length && !group) return { sent: 0, failed: umos.length }
+  let confirmed: string[]
+  if (group) {
+    // 群目标不走绑定表：它的授权依据是后台白名单，由调用方在投递前复核
+    // （见 astrbotGroupService 的 flushAstrbotGroupOutbox）。这里只做去重与形态检查。
+    confirmed = [...new Set(umos)].filter((umo) => isAstrbotGroupUmoShape(umo))
+    if (!confirmed.length) return { sent: 0, failed: umos.length }
+  } else {
+    const bindings = await db.select().from(astrbotBindings).where(inArray(astrbotBindings.umo, umos))
+    const valid = new Set(selectAstrbotTargets(bindings, settings.astrbotPlatforms))
+    confirmed = [...new Set(umos)].filter((umo) => valid.has(umo))
+    if (!confirmed.length) return { sent: 0, failed: umos.length }
+  }
 
   if (!fitsAstrbotPayload(confirmed, title, content, group)) {
     throw new Error('AstrBot 推送请求超过大小限制')

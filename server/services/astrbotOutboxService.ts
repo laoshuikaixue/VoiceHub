@@ -5,6 +5,7 @@ import { getServerDate } from '~~/server/utils/serverTime'
 import { selectAstrbotTargets } from '~~/server/utils/astrbot-platforms'
 import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { isAstrbotGroupTargetAllowed, normalizeAstrbotGroupTargets } from '~~/server/utils/astrbot-group'
 import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
 import { isAstrbotOutboxExhausted } from '~~/server/utils/astrbot-pull'
 
@@ -59,10 +60,13 @@ export async function enqueueAstrbotNotifications(
 }
 
 /**
- * 领取一批待投递通知。
+ * 领取一批待投递通知（私聊）。
  *
  * 租约（leasedUntil）避免同一批被并发领取两次；过期租约可被重新领取，
  * 使插件崩溃后不丢通知。领取即增加 attempts 计数。
+ *
+ * 群广播条目同样经此队列流转，但目标校验方式不同（按管理员白名单而非绑定表），
+ * 因此这里一并处理：私聊行校验绑定归属，群行校验白名单与冷却闸门。
  */
 export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
   const now = getServerDate()
@@ -73,7 +77,9 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
       .where(and(
         isNull(astrbotOutbox.deliveredAt),
         isNull(astrbotOutbox.failedAt),
-        or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now))
+        or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now)),
+        // 冷却未过的群条目留在队列里等合并，不得提前投递。
+        or(isNull(astrbotOutbox.notifyAfter), lt(astrbotOutbox.notifyAfter, now))
       ))
       .orderBy(asc(astrbotOutbox.id))
       .limit(Math.min(Math.max(limit, 1), ASTRBOT_OUTBOX_MAX_CLAIM))
@@ -87,21 +93,36 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
       .returning()
     const settings = await getSystemSettingsCached()
     if (!settings?.astrbotEnabled) return []
-    const targets = [...new Set(claimed.flatMap((row) => Array.isArray(row.umos) ? row.umos : []))]
+
+    // 群条目：按后台白名单（含平台开关）复核目标，与私聊绑定校验互不干扰。
+    const groupRows = claimed.filter((row) => row.broadcast)
+    const privateRows = claimed.filter((row) => !row.broadcast)
+    const groups = normalizeAstrbotGroupTargets(settings.astrbotGroupTargets) ?? []
+    const allowedGroups = new Set(groupRows.flatMap((row) => (Array.isArray(row.umos) ? row.umos : []))
+      .filter((umo) => isAstrbotGroupTargetAllowed(groups, settings.astrbotPlatforms, umo)))
+
+    const targets = [...new Set(privateRows.flatMap((row) => Array.isArray(row.umos) ? row.umos : []))]
     const bindings = targets.length ? await tx.select().from(astrbotBindings).where(inArray(astrbotBindings.umo, targets)) : []
     const valid = new Set(selectAstrbotTargets(bindings, settings.astrbotPlatforms))
     const current = new Map(bindings.map((binding) => [binding.umo, binding]))
     // 缺失快照的历史队列及解绑重绑后的队列均不可交付，避免 UMO 易主泄露。
-    const filtered = claimed.map((row) => ({ ...row, umos: (Array.isArray(row.umos) ? row.umos : []).filter((umo) => {
-      const original = row.targetOwners?.[umo]
-      const binding = current.get(umo)
-      return valid.has(umo) && !!original && !!original.boundAt && !!binding?.boundAt &&
-        original.userId === binding.userId && original.boundAt === binding.boundAt.toISOString()
-    }) }))
-    const stale = filtered.filter((row) => row.broadcast || !row.umos.length).map((row) => row.id)
-    if (stale.length) await tx.update(astrbotOutbox).set({ failedAt: now, leasedUntil: null,
-      lastError: '目标已解绑或平台已禁用' }).where(inArray(astrbotOutbox.id, stale))
-    return filtered.filter((row) => !row.broadcast && row.umos.length > 0)
+    const filtered = [
+      ...privateRows.map((row) => ({ ...row, umos: (Array.isArray(row.umos) ? row.umos : []).filter((umo) => {
+        const original = row.targetOwners?.[umo]
+        const binding = current.get(umo)
+        return valid.has(umo) && !!original && !!original.boundAt && !!binding?.boundAt &&
+          original.userId === binding.userId && original.boundAt === binding.boundAt.toISOString()
+      }) })),
+      ...groupRows.map((row) => ({ ...row, umos: (Array.isArray(row.umos) ? row.umos : [])
+        .filter((umo) => allowedGroups.has(umo)) }))
+    ]
+    // 目标全部失效（私聊解绑 / 群移出白名单）的条目直接判失败，避免永久重试。
+    const stale = filtered.filter((row) => !row.umos.length).map((row) => row.id)
+    if (stale.length) await tx.update(astrbotOutbox).set({
+      failedAt: now, leasedUntil: null,
+      lastError: '目标已解绑、移出白名单或平台已禁用'
+    }).where(inArray(astrbotOutbox.id, stale))
+    return filtered.filter((row) => row.umos.length > 0)
   })
 }
 

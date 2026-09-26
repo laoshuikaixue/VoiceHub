@@ -230,6 +230,39 @@
             <input v-model="astrbotWeeklyConfig[key]" type="checkbox">{{ astrbotLocale.weeklyFields[key] }}
           </label>
         </div>
+        <div class="space-y-4 border-t border-border-secondary pt-4">
+          <h4 class="text-sm font-bold text-text-primary">{{ astrbotLocale.groupTitle }}</h4>
+          <p class="text-xs text-text-tertiary">{{ astrbotLocale.groupHint }}</p>
+          <label class="flex items-center gap-2 text-sm text-text-primary">
+            <input v-model="astrbotConfig.astrbotBroadcastEnabled" type="checkbox">{{ astrbotLocale.groupEnabled }}
+          </label>
+          <div class="space-y-2">
+            <p class="text-xs text-text-secondary">{{ astrbotLocale.groupTargetsTitle }}</p>
+            <p class="text-xs text-text-tertiary">{{ astrbotLocale.groupTargetsHint }}</p>
+            <div v-for="(target, index) in astrbotGroupTargets" :key="index" class="flex flex-wrap items-center gap-2">
+              <input v-model.trim="target.umo" type="text" :placeholder="astrbotLocale.groupTargetPlaceholder" class="flex-1 min-w-[16rem] bg-bg-primary border border-border-secondary rounded-xl px-3 py-2 text-text-primary text-xs">
+              <CustomSelect v-model="target.platform" :options="groupPlatformOptions" />
+              <input v-model.trim="target.label" type="text" :placeholder="astrbotLocale.groupLabelPlaceholder" class="w-32 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2 text-text-primary text-xs">
+              <button type="button" class="px-3 py-2 text-xs text-text-secondary hover:text-primary" @click="removeGroupTarget(index)">{{ astrbotLocale.groupRemove }}</button>
+            </div>
+            <button type="button" class="px-3 py-2 text-xs border border-border-secondary rounded-xl text-text-secondary hover:text-primary" @click="addGroupTarget">{{ astrbotLocale.groupAdd }}</button>
+          </div>
+          <div class="space-y-2">
+            <p class="text-xs text-text-secondary">{{ astrbotLocale.groupEventsTitle }}</p>
+            <label v-for="key in groupEventKeys" :key="key" class="flex items-center gap-2 text-sm text-text-primary">
+              <input v-model="astrbotGroupEvents[key]" type="checkbox">{{ astrbotLocale.groupEvents[key] }}
+            </label>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block text-xs text-text-secondary">{{ astrbotLocale.groupMergeWindow }}
+              <input v-model.number="astrbotGroupThrottle.mergeWindowSeconds" type="number" min="0" max="3600" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
+            </label>
+            <label class="block text-xs text-text-secondary">{{ astrbotLocale.groupMinInterval }}
+              <input v-model.number="astrbotGroupThrottle.minIntervalSeconds" type="number" min="0" max="3600" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
+            </label>
+          </div>
+          <p class="text-xs text-text-tertiary">{{ astrbotLocale.groupThrottleHint }}</p>
+        </div>
         <button :disabled="astrbotSaving" class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="saveAstrbotConfig">{{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}</button>
       </div>
     </section>
@@ -259,6 +292,25 @@ const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotPu
 const weeklyConfigKeys = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate']
 const weeklyDefaults = { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true }
 const astrbotWeeklyConfig = ref({ ...weeklyDefaults })
+const groupEventKeys = ['songRequest', 'registrationPending', 'backupFailed', 'systemError', 'songPlayed', 'replayRequest']
+const groupEventDefaults = { songRequest: true, registrationPending: true, backupFailed: true, systemError: true, songPlayed: false, replayRequest: false }
+const astrbotGroupEvents = ref({ ...groupEventDefaults })
+const astrbotGroupTargets = ref([])
+const astrbotGroupThrottle = ref({ mergeWindowSeconds: 300, minIntervalSeconds: 60 })
+// 平台归属必须由管理员指定：UMO 前缀是 AstrBot 平台实例 ID，无法反推适配器。
+const groupPlatformOptions = [
+  { value: 'qq', label: 'QQ' },
+  { value: 'wecom', label: '企业微信' },
+  { value: 'dingtalk', label: '钉钉' },
+  { value: 'lark', label: '飞书' }
+]
+
+const addGroupTarget = () => { astrbotGroupTargets.value.push({ umo: '', platform: 'qq', label: '' }) }
+const removeGroupTarget = (index) => { astrbotGroupTargets.value.splice(index, 1) }
+// 空行是管理员点「添加」后还没填的占位，提交前剔除，否则会被服务端判为非法。
+const filledGroupTargets = computed(() => astrbotGroupTargets.value
+  .filter(target => (target.umo || '').trim())
+  .map(target => ({ umo: target.umo.trim(), platform: target.platform, label: (target.label || '').trim() })))
 
 const pushModeOptions = computed(() => [
   { value: 'push', label: astrbotLocale.value.pushModePush || 'push' },
@@ -275,7 +327,22 @@ const loadAstrbotConfig = async () => {
     astrbotConfig.value = {
       astrbotEnabled: !!response.astrbotEnabled,
       astrbotBaseUrl: response.astrbotBaseUrl || '',
-      astrbotPushMode: response.astrbotPushMode === 'pull' ? 'pull' : 'push'
+      astrbotPushMode: response.astrbotPushMode === 'pull' ? 'pull' : 'push',
+      astrbotBroadcastEnabled: !!response.astrbotBroadcastEnabled
+    }
+    astrbotGroupTargets.value = Array.isArray(response.astrbotGroupTargets)
+      ? response.astrbotGroupTargets.map(target => ({
+        umo: typeof target?.umo === 'string' ? target.umo : '',
+        platform: groupPlatformOptions.some(option => option.value === target?.platform) ? target.platform : 'qq',
+        label: typeof target?.label === 'string' ? target.label : ''
+      }))
+      : []
+    astrbotGroupEvents.value = Object.fromEntries(groupEventKeys.map(key => [
+      key, typeof response.astrbotGroupEvents?.[key] === 'boolean' ? response.astrbotGroupEvents[key] : groupEventDefaults[key]
+    ]))
+    astrbotGroupThrottle.value = {
+      mergeWindowSeconds: Number.isFinite(response.astrbotGroupThrottle?.mergeWindowSeconds) ? response.astrbotGroupThrottle.mergeWindowSeconds : 300,
+      minIntervalSeconds: Number.isFinite(response.astrbotGroupThrottle?.minIntervalSeconds) ? response.astrbotGroupThrottle.minIntervalSeconds : 60
     }
     astrbotTokenConfigured.value = !!response.astrbotToken
     astrbotTokenInput.value = ''
@@ -288,7 +355,14 @@ const loadAstrbotConfig = async () => {
 const saveAstrbotConfig = async () => {
   astrbotSaving.value = true
   try {
-    const body = { ...astrbotConfig.value, astrbotBroadcastEnabled: false, astrbotPlatforms: { ...astrbotPlatforms.value }, astrbotWeeklyConfig: { ...astrbotWeeklyConfig.value } }
+    const body = {
+      ...astrbotConfig.value,
+      astrbotPlatforms: { ...astrbotPlatforms.value },
+      astrbotWeeklyConfig: { ...astrbotWeeklyConfig.value },
+      astrbotGroupTargets: filledGroupTargets.value,
+      astrbotGroupEvents: { ...astrbotGroupEvents.value },
+      astrbotGroupThrottle: { ...astrbotGroupThrottle.value }
+    }
     // 不回传掩码；空输入表示保留已有密钥。
     if (astrbotTokenInput.value) body.astrbotToken = astrbotTokenInput.value
     await $fetch('/api/admin/system-settings', { method: 'POST', body })

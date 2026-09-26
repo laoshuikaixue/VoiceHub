@@ -12,20 +12,26 @@ test('仅拉取模式的机器人无需配置服务地址，只有令牌是必�
   assert.match(bindCode, /settings\.astrbotPushMode !== 'pull' && !settings\.astrbotBaseUrl/)
 })
 
-test('群广播能力已移除，接口与投递路径都不再有广播分支', () => {
-  const send = read('../../server/api/admin/notifications/send.post.ts')
-  const notification = read('../../server/services/notificationService.ts')
-  const astrbot = read('../../server/services/astrbotNotificationService.ts')
+test('群推送恢复但必须带平台归属：目标走白名单校验，而非靠 UMO 前缀推断', () => {
+  const settings = read('../../server/api/admin/system-settings/index.post.ts')
   const outbox = read('../../server/services/astrbotOutboxService.ts')
-  for (const source of [send, notification, astrbot, outbox]) {
-    assert.doesNotMatch(source, /shouldBroadcast/)
-  }
-  assert.match(send, /群广播无法按平台校验接收目标，已停用/)
-  assert.match(notification, /sendBatchAstrbotNotifications\(\s*notificationsToCreate\.map\(\(row\) => row\.userId\), title, content\s*\)/)
+  const service = read('../../server/services/astrbotGroupService.ts')
+  // 广播开关本身可被保存（历史实现一律拒绝，导致功能无法启用）。
+  assert.match(settings, /updateData\.astrbotBroadcastEnabled = body\.astrbotBroadcastEnabled/)
+  // 群目标的唯一判定依据是管理员白名单 + 平台开关，不得回退到前缀推断。
+  assert.match(outbox, /isAstrbotGroupTargetAllowed\(groups, settings\.astrbotPlatforms, umo\)/)
+  assert.match(service, /isAstrbotGroupTargetAllowed\(targets, settings\.platforms, umo\)/)
+  // 群目标未保存平台归属时不得入队。
+  assert.match(settings, /astrbotGroupTargets/)
 })
 
-test('系统设置启用开关为 true 时不再接受广播开关', () => {
-  const settings = read('../../server/api/admin/system-settings/index.post.ts')
-  assert.match(settings, /body\.astrbotBroadcastEnabled === true/)
-  assert.match(settings, /四平台独立开关下暂不支持群广播/)
+test('群事件按事件开关与防刷屏参数入队，投递前复核白名单', () => {
+  const service = read('../../server/services/astrbotGroupService.ts')
+  // 事件开关关闭时不投递：选择逻辑必须看到事件键。
+  assert.match(service, /selectAstrbotGroupTargets\(settings\.targets/)
+  // 合并与冷却：高频事件合并成一条，冷却闸门控制投递时机。
+  assert.match(service, /canMergeAstrbotGroupEvent\(row, now, throttle\)/)
+  assert.match(service, /computeAstrbotGroupNotifyAfter\(/)
+  // 移出白名单的旧队列条目不得继续投递。
+  assert.match(service, /群目标已移出白名单/)
 })

@@ -175,7 +175,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 注册通知（站内通知管理员 + 邮件；失败不影响主流程）
-    await notifyRegistration(username, name, email, Boolean(config?.oauthRegisterRequiresApproval))
+    await notifyRegistration(username, name, email, Boolean(config?.oauthRegisterRequiresApproval), { grade: selectedGrade, class: selectedClass })
 
     // 需要审核时：不签发登录态，等待管理员审核
     if (config?.oauthRegisterRequiresApproval) {

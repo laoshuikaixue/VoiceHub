@@ -275,6 +275,12 @@ export const astrbotOutbox = pgTable('AstrbotOutbox', {
   // NULL 为迁移前队列：无法确认原绑定主体，领取时必须丢弃。
   targetOwners: jsonb('targetOwners').$type<Record<string, { userId: number; boundAt: string }>>(),
   broadcast: boolean('broadcast').default(false).notNull(),
+  // 群事件类型（新点歌投稿 / 注册待审核 / 备份失败…）。私聊通知为 NULL。
+  // 合并与冷却都以它 + 目标会话为键，避免把不同类型的事件混进同一条。
+  eventKey: text('eventKey'),
+  // 冷却闸门：早于该时刻不得投递。同群同类型事件在冷却期内合并为一条，
+  // 由领取逻辑与冲刷逻辑共同遵守。
+  notifyAfter: timestamp('notifyAfter', { withTimezone: true }),
   attempts: integer('attempts').default(0).notNull(),
   leasedUntil: timestamp('leasedUntil', { withTimezone: true }),
   deliveredAt: timestamp('deliveredAt', { withTimezone: true }),
@@ -334,6 +340,13 @@ export const systemSettings = pgTable('SystemSettings', {
   astrbotBaseUrl: text('astrbotBaseUrl'),
   astrbotToken: text('astrbotToken'),
   astrbotBroadcastEnabled: boolean('astrbotBroadcastEnabled').default(false).notNull(),
+  // 群广播目标：UMO 前缀是 AstrBot 平台实例 ID（可被改名），无法从会话串推断平台，
+  // 因此每条目标显式记录所属平台与备注，投递与校验都以本列白名单为准。
+  astrbotGroupTargets: jsonb('astrbotGroupTargets').$type<Array<{ umo: string; platform: string; label: string }>>()
+    .default(sql`'[]'::jsonb`).notNull(),
+  // 群事件开关与防刷屏参数，均由后台按需配置。
+  astrbotGroupEvents: jsonb('astrbotGroupEvents').$type<Record<string, boolean>>(),
+  astrbotGroupThrottle: jsonb('astrbotGroupThrottle').$type<{ mergeWindowSeconds: number; minIntervalSeconds: number }>(),
   // 推送方向：push = VoiceHub 主动 POST 到插件（需插件可被访问）；
   // pull = 通知入队，由插件主动轮询领取（插件在内网/NAT 后时使用）。
   astrbotPushMode: text('astrbotPushMode').default('push').notNull(),

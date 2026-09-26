@@ -13,6 +13,12 @@ import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS, DEFAULT_THEMES } from '~~/s
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
 import { normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
+import {
+  ASTRBOT_GROUP_EVENT_KEYS,
+  normalizeAstrbotGroupEvents,
+  normalizeAstrbotGroupTargets,
+  normalizeAstrbotGroupThrottle
+} from '~~/server/utils/astrbot-group'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -616,10 +622,43 @@ export default defineEventHandler(async (event) => {
       }
       updateData.astrbotPlatforms = Object.fromEntries(keys.map((key) => [key, platforms[key]]))
     }
-    if (body.astrbotBroadcastEnabled === true) {
-      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '四平台独立开关下暂不支持群广播')
+    if (body.astrbotBroadcastEnabled !== undefined) {
+      if (typeof body.astrbotBroadcastEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊推送开关必须是布尔值')
+      }
+      updateData.astrbotBroadcastEnabled = body.astrbotBroadcastEnabled
     }
-    if (body.astrbotBroadcastEnabled === false) updateData.astrbotBroadcastEnabled = false
+    // 群目标白名单：每条显式标注平台归属，逐项规范化后保存（非法项丢弃而非整批拒绝，
+    // 管理员录入的一处笔误不应让整份配置无法保存）。
+    if (body.astrbotGroupTargets !== undefined) {
+      const targets = normalizeAstrbotGroupTargets(body.astrbotGroupTargets)
+      if (!targets) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊推送目标必须是数组')
+      }
+      const dropped = body.astrbotGroupTargets.length - targets.length
+      if (dropped > 0) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          `有 ${dropped} 条群聊目标格式无效（需为「平台实例:GroupMessage:群号」，且平台受支持、不重复）`)
+      }
+      updateData.astrbotGroupTargets = targets
+    }
+    if (body.astrbotGroupEvents !== undefined) {
+      const events = body.astrbotGroupEvents
+      if (!events || typeof events !== 'object' || Array.isArray(events) ||
+        !ASTRBOT_GROUP_EVENT_KEYS.every((key) => typeof (events as Record<string, unknown>)[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊事件开关格式无效')
+      }
+      updateData.astrbotGroupEvents = normalizeAstrbotGroupEvents(events)
+    }
+    if (body.astrbotGroupThrottle !== undefined) {
+      const throttle = body.astrbotGroupThrottle
+      if (!throttle || typeof throttle !== 'object' || Array.isArray(throttle) ||
+        typeof (throttle as Record<string, unknown>).mergeWindowSeconds !== 'number' ||
+        typeof (throttle as Record<string, unknown>).minIntervalSeconds !== 'number') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊节流参数格式无效')
+      }
+      updateData.astrbotGroupThrottle = normalizeAstrbotGroupThrottle(throttle)
+    }
     if (body.astrbotPushMode !== undefined) {
       if (body.astrbotPushMode !== 'push' && body.astrbotPushMode !== 'pull') {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '推送方向只能是 push 或 pull')
