@@ -15,7 +15,8 @@ function fakeSql(records: bigint[], tables: string[]) {
 
 test('空库与已登记新合并迁移的库允许继续', async () => {
   await assert.doesNotReject(() => rejectSupersededAstrbotMigrations(fakeSql([], [])))
-  await assert.doesNotReject(() => rejectSupersededAstrbotMigrations(fakeSql([1790435780014n], ['AstrbotBinding'])))
+  await assert.doesNotReject(() => rejectSupersededAstrbotMigrations(fakeSql([1790435780014n],
+    ['AstrbotBindingCode', 'AstrbotBinding', 'AstrbotOutbox'])))
 })
 
 test('执行过被取代的旧迁移时停止升级，即便新迁移也有记录', async () => {
@@ -26,4 +27,11 @@ test('执行过被取代的旧迁移时停止升级，即便新迁移也有记�
 test('无新合并迁移记录但已有 AstrBot 表时停止升级', async () => {
   await assert.rejects(() => rejectSupersededAstrbotMigrations(fakeSql([], ['AstrbotOutbox'])), /已有 AstrBot 表/)
   await assert.rejects(() => rejectSupersededAstrbotMigrations(fakeSql([1790340222774n], ['AstrbotBindingCode'])), /已有 AstrBot 表/)
+})
+
+test('已登记合并迁移但三张 AstrBot 表不齐时停止自动修复', async () => {
+  await assert.rejects(() => rejectSupersededAstrbotMigrations(fakeSql([1790435780014n], [])), /合并迁移记录与表结构不一致/)
+  await assert.rejects(() => rejectSupersededAstrbotMigrations(fakeSql([1790435780014n], ['AstrbotBinding'])), /合并迁移记录与表结构不一致/)
+  await assert.doesNotReject(() => rejectSupersededAstrbotMigrations(fakeSql([1790435780014n],
+    ['AstrbotBindingCode', 'AstrbotBinding', 'AstrbotOutbox'])))
 })
