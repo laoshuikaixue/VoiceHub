@@ -3,7 +3,9 @@
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { config } from 'dotenv'
+import postgres from 'postgres'
 
 // 加载环境变量
 config({ path: path.resolve(process.cwd(), '.env') })
@@ -61,6 +63,21 @@ function fileExists(filePath) {
   }
 }
 
+async function rejectSupersededAstrbotMigrations() {
+  const sql = postgres(process.env.DATABASE_URL, { max: 1 })
+  try {
+    const [table] = await sql`SELECT to_regclass('public.__drizzle_migrations__') AS table_name`
+    if (!table?.table_name) return
+    const superseded = [1790326842814, 1790342504449, 1790359178874,
+      1790380598636, 1790381044650, 1790396438534, 1790402496386]
+    const rows = await sql`SELECT created_at FROM public.__drizzle_migrations__
+      WHERE created_at IN ${sql(superseded)} LIMIT 1`
+    if (rows.length) throw new Error('旧版 AstrBot 迁移已执行：当前合并迁移不可直接重放，须先使用受控升级方案；已停止自动同步')
+  } finally {
+    await sql.end()
+  }
+}
+
 // 处理数据冲突的函数
 async function handleDataConflicts() {
   try {
@@ -82,6 +99,7 @@ async function safeMigrate() {
   log('🔄 开始安全数据库迁移流程...', 'bright')
 
   try {
+    await rejectSupersededAstrbotMigrations()
     // 获取项目根目录路径
     const projectRoot = path.resolve(process.cwd(), '..')
     const drizzleConfigPath = path.join(projectRoot, 'drizzle.config.ts')
@@ -227,6 +245,21 @@ async function safeMigrate() {
 
     // 8. 验证迁移结果
     log('✅ 数据库迁移流程完成！', 'green')
+
+    // 9. 迁移后执行数据回填与 schema 一致性检查（与部署流程共用 db-sync.js）。
+    // 单独跑迁移不会搬迁 AstrBot 旧绑定，这里补齐避免升级后绑定失效。
+    const scriptDir = path.dirname(fileURLToPath(import.meta.url))
+    const syncRoot = path.resolve(scriptDir, '..')
+    log('🔄 执行数据库同步与 AstrBot 旧绑定回填...', 'cyan')
+    if (
+      !safeExec(`${process.execPath} ${path.join(syncRoot, 'scripts/db-sync.js')}`, {
+        cwd: syncRoot,
+        env
+      })
+    ) {
+      throw new Error('数据库同步或 AstrBot 旧绑定回填失败')
+    }
+    logSuccess('数据库同步与 AstrBot 旧绑定回填完成')
   } catch (error) {
     logError(`迁移失败: ${error.message}`)
     logError('请检查数据库连接和迁移文件')

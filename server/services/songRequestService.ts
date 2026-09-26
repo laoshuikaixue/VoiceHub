@@ -15,6 +15,7 @@ import { createError } from 'h3'
 import { reconcileSongDurationOnSubmit } from '~~/server/services/durationValidationService'
 import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
   isCardCodeLimitBypassActive,
   isLimitReached
@@ -608,6 +609,21 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       } catch (error) {
         console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
       }
+    }
+
+    // 群聊推送：谁点了什么歌。后台事件开关关闭或无群目标时该调用直接返回 0；
+    // 通知失败不得影响投稿结果。
+    try {
+      const [requester] = await db.select({ name: users.name, username: users.username })
+        .from(users).where(eq(users.id, user.id)).limit(1)
+      const displayName = requester?.name || requester?.username || `用户 ${user.id}`
+      await enqueueAstrbotGroupEvent(
+        'songRequest',
+        '新的点歌投稿',
+        `${displayName} 点了《${song.title}》- ${song.artist}`
+      )
+    } catch (error) {
+      console.error('发送群聊点歌通知失败:', error)
     }
 
     return song

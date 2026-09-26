@@ -19,6 +19,13 @@ import {
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
+import { normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
+import {
+  ASTRBOT_GROUP_EVENT_KEYS,
+  normalizeAstrbotGroupEvents,
+  normalizeAstrbotGroupTargets,
+  normalizeAstrbotGroupThrottle
+} from '~~/server/utils/astrbot-group'
 import { ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 
 /**
@@ -774,6 +781,102 @@ export default defineEventHandler(async (event) => {
 
     if (body.smtpFromName !== undefined) {
       updateData.smtpFromName = body.smtpFromName
+    }
+
+    // AstrBot 推送通道配置；密钥从不回显明文。
+    if (body.astrbotEnabled !== undefined) {
+      if (typeof body.astrbotEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'astrbotEnabled 必须是布尔值')
+      }
+      updateData.astrbotEnabled = body.astrbotEnabled
+    }
+    if (body.astrbotPlatforms !== undefined) {
+      const platforms = body.astrbotPlatforms
+      const keys = ['qq', 'wecom', 'dingtalk', 'lark']
+      if (!platforms || typeof platforms !== 'object' || Array.isArray(platforms) ||
+        Object.keys(platforms).length !== keys.length ||
+        !keys.every((key) => typeof platforms[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人平台开关格式无效')
+      }
+      updateData.astrbotPlatforms = Object.fromEntries(keys.map((key) => [key, platforms[key]]))
+    }
+    if (body.astrbotBroadcastEnabled !== undefined) {
+      if (typeof body.astrbotBroadcastEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊推送开关必须是布尔值')
+      }
+      updateData.astrbotBroadcastEnabled = body.astrbotBroadcastEnabled
+    }
+    // 群目标白名单：每条显式标注平台归属，逐项规范化后保存（非法项丢弃而非整批拒绝，
+    // 管理员录入的一处笔误不应让整份配置无法保存）。
+    if (body.astrbotGroupTargets !== undefined) {
+      const targets = normalizeAstrbotGroupTargets(body.astrbotGroupTargets)
+      if (!targets) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊推送目标必须是数组')
+      }
+      const dropped = body.astrbotGroupTargets.length - targets.length
+      if (dropped > 0) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          `有 ${dropped} 条群聊目标格式无效（需为「平台实例:GroupMessage:群号」，且平台受支持、不重复）`)
+      }
+      updateData.astrbotGroupTargets = targets
+    }
+    if (body.astrbotGroupEvents !== undefined) {
+      const events = body.astrbotGroupEvents
+      if (!events || typeof events !== 'object' || Array.isArray(events) ||
+        !ASTRBOT_GROUP_EVENT_KEYS.every((key) => typeof (events as Record<string, unknown>)[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊事件开关格式无效')
+      }
+      updateData.astrbotGroupEvents = normalizeAstrbotGroupEvents(events)
+    }
+    if (body.astrbotGroupThrottle !== undefined) {
+      const throttle = body.astrbotGroupThrottle
+      if (!throttle || typeof throttle !== 'object' || Array.isArray(throttle) ||
+        typeof (throttle as Record<string, unknown>).mergeWindowSeconds !== 'number' ||
+        typeof (throttle as Record<string, unknown>).minIntervalSeconds !== 'number') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊节流参数格式无效')
+      }
+      updateData.astrbotGroupThrottle = normalizeAstrbotGroupThrottle(throttle)
+    }
+    if (body.astrbotPushMode !== undefined) {
+      if (body.astrbotPushMode !== 'push' && body.astrbotPushMode !== 'pull') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '推送方向只能是 push 或 pull')
+      }
+      updateData.astrbotPushMode = body.astrbotPushMode
+    }
+    if (body.astrbotWeeklyConfig !== undefined) {
+      const config = body.astrbotWeeklyConfig
+      const keys = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate'] as const
+      if (!config || typeof config !== 'object' || Array.isArray(config) ||
+        Object.keys(config).length !== keys.length || !keys.every(key => typeof config[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '本周歌单显示项格式无效')
+      }
+      updateData.astrbotWeeklyConfig = Object.fromEntries(keys.map(key => [key, config[key]]))
+    }
+    if (body.astrbotBaseUrl !== undefined) {
+      if (typeof body.astrbotBaseUrl !== 'string' || body.astrbotBaseUrl.length > 2048) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址无效')
+      }
+      const value = body.astrbotBaseUrl.trim() ? normalizeAstrbotBaseUrl(body.astrbotBaseUrl) : null
+      if (body.astrbotBaseUrl.trim() && !value) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址必须为无凭证的 HTTP(S) 根地址')
+      }
+      updateData.astrbotBaseUrl = value || null
+    }
+    if (body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK) {
+      if (typeof body.astrbotToken !== 'string' || body.astrbotToken.length > 512) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人令牌无效')
+      }
+      updateData.astrbotToken = body.astrbotToken.trim() || null
+    }
+    if (body.astrbotEnabled ?? settings?.astrbotEnabled) {
+      const token = body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK
+        ? updateData.astrbotToken : settings?.astrbotToken
+      const baseUrl = body.astrbotBaseUrl !== undefined ? updateData.astrbotBaseUrl : settings?.astrbotBaseUrl
+      const mode = body.astrbotPushMode ?? settings?.astrbotPushMode
+      if (!token || (mode !== 'pull' && !baseUrl)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          mode === 'pull' ? '请先配置机器人令牌' : '请先配置机器人服务地址和令牌')
+      }
     }
 
     // OAuth 配置字段

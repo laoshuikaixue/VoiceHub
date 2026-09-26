@@ -3,6 +3,7 @@ export const SECRET_FIELD_MASK = '•••••••••••••••�
 
 const SECRET_FIELDS = [
   ['smtpPassword', SMTP_PASSWORD_MASK],
+  ['astrbotToken', SECRET_FIELD_MASK],
   ['oauthStateSecret', SECRET_FIELD_MASK],
   ['githubClientSecret', SECRET_FIELD_MASK],
   ['casdoorClientSecret', SECRET_FIELD_MASK],
@@ -18,6 +19,7 @@ export const maskSystemSettingsSecrets = <T extends Record<string, any>>(setting
   return {
     ...settings,
     smtpPassword: settings.smtpPassword ? SMTP_PASSWORD_MASK : settings.smtpPassword,
+    astrbotToken: settings.astrbotToken ? SECRET_FIELD_MASK : settings.astrbotToken,
     oauthStateSecret: settings.oauthStateSecret ? SECRET_FIELD_MASK : settings.oauthStateSecret,
     githubClientSecret: settings.githubClientSecret ? SECRET_FIELD_MASK : settings.githubClientSecret,
     casdoorClientSecret: settings.casdoorClientSecret ? SECRET_FIELD_MASK : settings.casdoorClientSecret,

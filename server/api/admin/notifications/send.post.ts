@@ -13,6 +13,7 @@ import {
   NOTIFICATION_TITLE_MAX_LENGTH,
   resolveImportantFlag
 } from '~~/server/utils/important-notification-policy'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 
 type NotificationFilter = {
   grade?: unknown
@@ -22,6 +23,22 @@ type NotificationFilter = {
 }
 
 const supportedScopes = ['ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'] as const
+
+/**
+ * 把管理员发送的系统通知再转发一份到群聊（按后台配置的事件开关与目标白名单）。
+ *
+ * 一次通知只入队一条群事件：白名单里的全部群由 enqueueAstrbotGroupEvent 展开，
+ * 冷却与合并仍由群事件队列统一处理。转发失败不得影响站内通知的发送结果，
+ * 因此这里吞掉异常并记录日志。
+ */
+async function forwardSystemNoticeToGroups(enabled: boolean, title: string, content: string) {
+  if (!enabled) return
+  try {
+    await enqueueAstrbotGroupEvent('systemNotice', title, content)
+  } catch (error) {
+    console.error('转发系统通知到群聊失败:', error)
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -48,6 +65,12 @@ export default defineEventHandler(async (event) => {
   const rawContent = typeof body?.content === 'string' ? body.content : body?.message
   const content = typeof rawContent === 'string' ? rawContent.trim() : ''
   const important = resolveImportantFlag(body?.important)
+  if (body?.broadcast !== undefined && typeof body.broadcast !== 'boolean') {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊转发标记必须是布尔值')
+  }
+  // 群聊转发：勾选后除站内通知外，再向 VoiceHub 后台配置的群目标白名单推送一条。
+  // 未勾选（或未传）时仅发送站内通知，行为与旧版一致。
+  const broadcastToGroups = body?.broadcast === true
 
   if (important === null) {
     throw createApiError(
@@ -104,6 +127,8 @@ export default defineEventHandler(async (event) => {
     if (!result) {
       throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
     }
+
+    await forwardSystemNoticeToGroups(broadcastToGroups, title, content)
 
     return {
       success: true,
@@ -207,6 +232,8 @@ export default defineEventHandler(async (event) => {
   if (!result) {
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
   }
+
+  await forwardSystemNoticeToGroups(broadcastToGroups, title, content)
 
   const sentCount = Array.isArray(result) ? result.length : result.count
   const totalUsers = Array.isArray(result) ? userIds.length : result.total || userIds.length

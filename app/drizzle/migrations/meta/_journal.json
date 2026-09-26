@@ -365,6 +365,13 @@
       "when": 1790340222774,
       "tag": "20260925124342_add_aliyun_esa_captcha",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790435780014,
+      "tag": "20260926151620_auto-migration",
+      "breakpoints": true
     }
   ]
 }

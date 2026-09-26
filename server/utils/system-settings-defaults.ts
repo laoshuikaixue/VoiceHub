@@ -1,4 +1,5 @@
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
 
 export const normalizeScheduleVisibilitySettings = (settings) => {
   for (const field of [
@@ -66,6 +67,20 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpPassword: null,
   smtpFromEmail: null,
   smtpFromName: '校园广播站',
+  astrbotEnabled: false,
+  astrbotPlatforms: { qq: false, wecom: false, dingtalk: false, lark: false },
+  astrbotBaseUrl: null,
+  astrbotToken: null,
+  astrbotBroadcastEnabled: false,
+  // 群广播目标由管理员在后台维护：UMO 前缀是 AstrBot 平台实例 ID，无法推断适配器，
+  // 因此每条目标显式记录所属平台与备注，投递时按平台开关逐个校验。
+  astrbotGroupTargets: [] as Array<{ umo: string; platform: string; label: string }>,
+  // 群事件开关：默认只开高频需求（新点歌投稿、注册待审核），其余按需开启。
+  astrbotGroupEvents: DEFAULT_ASTRBOT_GROUP_EVENTS,
+  // 防刷屏：同群同类型事件在窗口内合并为一条，并按单群频率上限节流。
+  astrbotGroupThrottle: DEFAULT_ASTRBOT_GROUP_THROTTLE,
+  astrbotPushMode: 'push',
+  astrbotWeeklyConfig: { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true },
   allowOAuthRegistration: false,
   allowRegister: false,
   registerRequiresApproval: true,

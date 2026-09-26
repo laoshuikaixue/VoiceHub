@@ -33,6 +33,7 @@ import { SmtpService } from '../../../services/smtpService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 import { restoreScheduleSongPoolRecord } from '~~/server/utils/restoreScheduleSongPool'
 import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
+import { restoreAstrbotBindings } from '~~/server/utils/astrbot-backup'
 import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -383,6 +384,9 @@ export default defineEventHandler(async (event) => {
                             'lastLoginIp',
                             'forcePasswordChange',
                             'meowNickname',
+                            'astrbotUmo',
+
+                            'astrbotPlatform',
                             'status',
                             'statusChangedBy',
                             'remark',
@@ -398,6 +402,7 @@ export default defineEventHandler(async (event) => {
                             'lastLogin',
                             'passwordChangedAt',
                             'meowBoundAt',
+                            'astrbotBoundAt',
                             'statusChangedAt',
                             'legalConsentAt'
                           ]
@@ -580,6 +585,7 @@ export default defineEventHandler(async (event) => {
                           }
                         }
                         // 建立ID映射
+                        await restoreAstrbotBindings(tx, createdUser.id, record)
                         if (record.id && createdUser.id) {
                           userIdMapping.set(record.id, createdUser.id)
                         }
@@ -1241,6 +1247,16 @@ export default defineEventHandler(async (event) => {
                           'smtpPassword',
                           'smtpFromEmail',
                           'smtpFromName',
+                          'astrbotEnabled',
+                          'astrbotPlatforms',
+                          'astrbotBaseUrl',
+                          'astrbotToken',
+                          'astrbotBroadcastEnabled',
+                          'astrbotGroupTargets',
+                          'astrbotGroupEvents',
+                          'astrbotGroupThrottle',
+                          'astrbotPushMode',
+                          'astrbotWeeklyConfig',
                           'allowOAuthRegistration',
                           'allowRegister',
                           'registerRequiresApproval',

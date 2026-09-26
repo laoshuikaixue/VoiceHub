@@ -5,6 +5,7 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import { z } from 'zod'
 
 const markPlayedSchema = z.object({
@@ -126,6 +127,19 @@ export default defineEventHandler(async (event) => {
         )
       )
     )
+    // 群聊推送：歌曲已播放（默认关闭，噪音较大，按需在后台开启）。
+    // 批量标播放时逐首发一条，但同群同事件的合并窗口会把它们并成一条消息。
+    event.waitUntil((async () => {
+      try {
+        const played = await db.select({ title: songs.title, artist: songs.artist })
+          .from(songs).where(inArray(songs.id, updatedSongIds))
+        for (const song of played) {
+          await enqueueAstrbotGroupEvent('songPlayed', '歌曲已播放', `《${song.title}》- ${song.artist} 已播放`)
+        }
+      } catch (err) {
+        console.error('发送群聊已播放通知失败:', err)
+      }
+    })())
   }
 
   return {

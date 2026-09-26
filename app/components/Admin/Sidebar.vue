@@ -200,7 +200,7 @@ const menuGroups = computed(() => [
     section: locale.value.sections?.system || '系统设置',
     items: [
       { icon: Bell, label: locale.value.menu?.notifications || '通知管理', id: 'notifications' },
-      { icon: Mail, label: locale.value.menu?.smtpConfig || 'SMTP 配置', id: 'smtp-config' },
+      { icon: Mail, label: locale.value.menu?.smtpConfig || '推送配置', id: 'smtp-config' },
       { icon: Clock, label: locale.value.menu?.playtimes || '播放时段', id: 'playtimes' },
       { icon: FileEdit, label: locale.value.menu?.requestTimes || '点歌时段', id: 'request-times' },
       { icon: BookOpen, label: locale.value.menu?.semesters || '学期管理', id: 'semesters' },
