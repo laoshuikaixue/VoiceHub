@@ -179,11 +179,12 @@ export function computeAstrbotGroupNotifyAfter(
 
 /** 待投递条目是否可以承接新事件：仍在合并窗口内且尚未被领取投递。 */
 export function canMergeAstrbotGroupEvent(
-  row: { createdAt: Date; leasedUntil?: Date | null; deliveredAt?: Date | null; failedAt?: Date | null },
+  row: { createdAt: Date; attempts?: number; leasedUntil?: Date | null; deliveredAt?: Date | null; failedAt?: Date | null },
   now: Date,
   throttle: AstrbotGroupThrottle
 ): boolean {
   if (row.deliveredAt || row.failedAt) return false
+  if ((row.attempts ?? 0) > 0) return false
   if (row.leasedUntil && row.leasedUntil.getTime() > now.getTime()) return false
   return now.getTime() - row.createdAt.getTime() < throttle.mergeWindowSeconds * 1000
 }

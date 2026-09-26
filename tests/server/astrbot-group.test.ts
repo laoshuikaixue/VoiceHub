@@ -165,5 +165,7 @@ test('可合并判定：已投递、已失败、被领取中的条目都不再�
   assert.equal(canMergeAstrbotGroupEvent({ createdAt, failedAt: now }, now, throttle), false)
   // 已被领取（租约未过期）：不能改正文，否则投递内容与已读内容不一致。
   assert.equal(canMergeAstrbotGroupEvent({ createdAt, leasedUntil: new Date('2026-09-26T00:02:00Z') }, now, throttle), false)
-  assert.equal(canMergeAstrbotGroupEvent({ createdAt, leasedUntil: new Date('2026-09-26T00:00:30Z') }, now, throttle), true)
+  // 租约过期仍可能已经对外发送；发送过的条目绝不能再混入新事件。
+  assert.equal(canMergeAstrbotGroupEvent({ createdAt, attempts: 1, leasedUntil: new Date('2026-09-26T00:00:30Z') }, now, throttle), false)
+  assert.equal(canMergeAstrbotGroupEvent({ createdAt, attempts: 3 }, now, throttle), false)
 })
