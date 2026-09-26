@@ -3319,6 +3319,7 @@ export const admin = {
       registrationPending: 'Pending user registration',
       backupFailed: 'Automatic backup failed',
       systemError: 'System error (uncaught exception / unhandled rejection)',
+      systemNotice: 'System notice sent by an admin (opt in when sending)',
       songPlayed: 'Song played',
       replayRequest: 'Replay request submitted'
     },
@@ -3376,6 +3377,8 @@ export const admin = {
     markdownHint: 'Markdown is supported and rendered safely in the preview.',
     importantToggleTitle: 'Important Pop-up',
     importantToggleDescription: 'Shown in a pop-up after sign-in and marked as read when closed',
+    groupForwardToggleTitle: 'Also forward to groups',
+    groupForwardToggleDescription: 'Push this notice to the groups in the target allowlist under Bot Notification Config → Group Push.',
     scope: 'Notification Scope',
     allUsersHint: 'This notification will be sent to all active registered users.',
     selectGrade: 'Select Grade',

@@ -16,6 +16,7 @@ export const ASTRBOT_GROUP_EVENT_KEYS = [
   'registrationPending',
   'backupFailed',
   'systemError',
+  'systemNotice',
   'songPlayed',
   'replayRequest'
 ] as const
@@ -30,6 +31,8 @@ export const DEFAULT_ASTRBOT_GROUP_EVENTS: AstrbotGroupEventSettings = {
   registrationPending: true,
   backupFailed: true,
   systemError: true,
+  // 管理员手动发送的系统通知：默认转发到白名单全部群，可在发送时取消勾选。
+  systemNotice: true,
   songPlayed: false,
   replayRequest: false
 }

@@ -72,15 +72,21 @@ test('机器人回调不列入通用公开路由白名单，由中间件精确�
   assert.equal(isPublicApiPath('/api/bot/voicehub/other', 'POST'), false)
 })
 
-test('群广播已从界面与接口入口停用，服务层不再尝试广播投递', () => {
+test('系统通知的群聊转发：接口按白名单入队，界面勾选真实生效', () => {
   const send = readFileSync(new URL('../../server/api/admin/notifications/send.post.ts', import.meta.url), 'utf8')
   const sender = readFileSync(new URL('../../app/components/Admin/NotificationSender.vue', import.meta.url), 'utf8')
-  const service = readFileSync(new URL('../../server/services/astrbotNotificationService.ts', import.meta.url), 'utf8')
-  // 接口层明确拒绝群广播，避免出现「可开启但永不投递」的开关
-  assert.match(send, /body\?\.broadcast === true/)
-  assert.match(send, /群广播无法按平台校验接收目标，已停用/)
-  assert.doesNotMatch(sender, /form\.value\.broadcast/)
-  assert.match(sender, /broadcast: false/)
+  const service = readFileSync(new URL('../../server/services/astrbotGroupService.ts', import.meta.url), 'utf8')
+  // 接口层不再拒绝群转发，而是把提醒入队到群事件队列（目标由白名单决定，不信任调用方）。
+  assert.doesNotMatch(send, /群广播无法按平台校验接收目标，已停用/)
+  assert.match(send, /enqueueAstrbotGroupEvent\('systemNotice', title, content\)/)
+  assert.match(send, /broadcastToGroups/)
+  // 界面勾选必须真实提交，而不是写死 false（否则开关点了没反应）。
+  // 只检查提交体：表单初始化与重置处的 broadcast: false 是合法默认值。
+  const submitBody = sender.slice(sender.indexOf('const notificationData = {'), sender.indexOf('// 添加过滤条件'))
+  assert.match(submitBody, /broadcast: form\.value\.broadcast/)
+  assert.doesNotMatch(submitBody, /broadcast: false/)
+  // 服务层只按事件键与白名单投递，不信任调用方传来的目标列表。
+  assert.match(service, /selectAstrbotGroupTargets/)
   assert.doesNotMatch(service, /shouldBroadcast/)
 })
 

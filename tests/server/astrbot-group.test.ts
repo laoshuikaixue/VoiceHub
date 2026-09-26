@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   ASTRBOT_GROUP_EVENT_KEYS,
+  DEFAULT_ASTRBOT_GROUP_EVENTS,
   appendAstrbotGroupContent,
   canMergeAstrbotGroupEvent,
   computeAstrbotGroupNotifyAfter,
@@ -62,6 +63,17 @@ test('事件开关规范化：未知键丢弃、缺失回退默认、非布尔�
   assert.deepEqual(Object.keys(events).sort(), [...ASTRBOT_GROUP_EVENT_KEYS].sort())
   assert.equal(isAstrbotGroupEventEnabled({ songPlayed: true }, 'songPlayed'), true)
   assert.equal(isAstrbotGroupEventEnabled(null, 'songPlayed'), false)
+})
+
+test('管理员系统通知默认转发到群，且与自动事件共用同一套开关', () => {
+  // 默认开启：不配置时也会转发，符合「系统通知要进群」的预期。
+  assert.equal(DEFAULT_ASTRBOT_GROUP_EVENTS.systemNotice, true)
+  assert.equal(isAstrbotGroupEventEnabled(null, 'systemNotice'), true)
+  assert.equal(isAstrbotGroupEventEnabled({ systemNotice: false }, 'systemNotice'), false)
+  // 未知键被丢弃后，规范化结果仍保有 systemNotice（否则界面开关会读不到值）。
+  const events = normalizeAstrbotGroupEvents({})
+  assert.equal(Object.hasOwn(events, 'systemNotice'), true)
+  assert.equal(events.systemNotice, true)
 })
 
 test('节流参数规范化：越界与非法值回退默认，不会得到 0 或负数导致放弃合并', () => {

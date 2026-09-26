@@ -3328,6 +3328,7 @@ export const admin = {
       registrationPending: '用户注册待审核',
       backupFailed: '自动备份失败',
       systemError: '系统异常（未捕获异常与未处理拒绝）',
+      systemNotice: '管理员发送的系统通知（可在发送时勾选转发）',
       songPlayed: '歌曲已播放',
       replayRequest: '重播申请提交'
     },
@@ -3385,6 +3386,8 @@ export const admin = {
     markdownHint: '支持 Markdown 格式，将按右侧预览安全渲染。',
     importantToggleTitle: '重要通知弹窗提醒',
     importantToggleDescription: '用户登录后将立即弹窗展示，关闭后标记为已读',
+    groupForwardToggleTitle: '同时转发到群聊',
+    groupForwardToggleDescription: '按「机器人通知配置 → 群聊推送」的目标白名单与事件开关，把这条通知也推送到群里。',
     scope: '通知范围',
     allUsersHint: '将向系统中所有已注册的活跃用户发送此通知。',
     selectGrade: '选择年级',
