@@ -232,6 +232,118 @@ async function ensureNoDuplicateUsernames(sql) {
   }
 }
 
+// 适配器到平台的归类，与 scripts/migrate-astrbot-bindings.ts 保持一致。
+const ASTRBOT_ADAPTER_PLATFORMS = [
+  ['aiocqhttp', 'qq'],
+  ['qq_official', 'qq'],
+  ['qq_official_webhook', 'qq'],
+  ['wecom_ai_bot', 'wecom'],
+  ['dingtalk', 'dingtalk'],
+  ['lark', 'lark']
+]
+
+// 未识别适配器不得猜测为 QQ，返回 null 交由调用方跳过并告警。
+function astrbotPlatformOf(adapter) {
+  if (typeof adapter !== 'string') return null
+  const matched = ASTRBOT_ADAPTER_PLATFORMS.find(([name]) => name === adapter)
+  return matched ? matched[1] : null
+}
+
+// 升级时把 User 上的旧绑定搬迁到 AstrbotBinding，并把 astrbotEnabled=true 的站点开关延续到 astrbotPlatforms。
+// 幂等：已存在的绑定不覆盖，已转换过（任一平台为 true）的开关不再改写；
+// 表/列缺失时直接跳过，保证空库与新库路径不报错。搬迁失败即抛错终止部署。
+async function migrateLegacyAstrbotBindings(sql) {
+  if (!(await tableExists(sql, 'AstrbotBinding'))) {
+    warn('未检测到 AstrbotBinding 表，跳过 AstrBot 旧绑定搬迁')
+    return
+  }
+
+  const hasLegacyBindings =
+    (await columnExists(sql, 'User', 'astrbotUmo')) &&
+    (await columnExists(sql, 'User', 'astrbotPlatform')) &&
+    (await columnExists(sql, 'User', 'astrbotBoundAt'))
+  const hasPlatformsColumn =
+    (await columnExists(sql, 'SystemSettings', 'astrbotPlatforms')) &&
+    (await columnExists(sql, 'SystemSettings', 'astrbotEnabled'))
+
+  if (!hasLegacyBindings && !hasPlatformsColumn) {
+    log('AstrBot 旧绑定搬迁：数据库无旧绑定字段与开关列，跳过', 'cyan')
+    return
+  }
+
+  let legacyRows = []
+  if (hasLegacyBindings) {
+    legacyRows = await sql`
+      SELECT u."astrbotPlatform" AS adapter, array_agg(u.id ORDER BY u.id) AS "userIds"
+      FROM "User" u
+      WHERE u."astrbotUmo" IS NOT NULL
+      GROUP BY u."astrbotPlatform"
+    `
+    for (const row of legacyRows) {
+      if (astrbotPlatformOf(row.adapter)) continue
+      warn(
+        `AstrBot 旧绑定搬迁：跳过 ${row.userIds.length} 个用户（适配器 ${row.adapter ?? '<未设置>'} 无对应平台）: ${row.userIds
+          .map((id) => `User#${id}`)
+          .join(', ')}`
+      )
+    }
+  }
+  const knownAdapters = legacyRows.filter((row) => astrbotPlatformOf(row.adapter)).map((row) => row.adapter)
+
+  try {
+    const result = await sql.begin(async (tx) => {
+      let migrated = 0
+      if (knownAdapters.length > 0) {
+        // 通过适配器->平台映射表 join 完成归类，未在映射表中的未知适配器自然被排除，不会被当作 QQ。
+        const adapters = knownAdapters
+        const platforms = knownAdapters.map((adapter) => astrbotPlatformOf(adapter))
+        const inserted = await tx`
+          INSERT INTO "AstrbotBinding" ("userId", "platform", "adapter", "umo", "boundAt")
+          SELECT u.id, m.platform, u."astrbotPlatform", u."astrbotUmo", u."astrbotBoundAt"
+          FROM "User" u
+          JOIN unnest(${adapters}::text[], ${platforms}::text[]) AS m(adapter, platform)
+            ON m.adapter = u."astrbotPlatform"
+          WHERE u."astrbotUmo" IS NOT NULL
+          ON CONFLICT DO NOTHING
+          RETURNING "userId"
+        `
+        migrated = inserted.length
+      }
+
+      let converted = 0
+      if (hasPlatformsColumn) {
+        // 仅在四平台开关仍为迁移默认值（全 false，尚未转换）时改写：历史开启的站点延续 QQ，
+        // 已有绑定的其它平台一并置 true；已转换过的记录不再触碰，避免覆盖管理员后续选择。
+        const updated = await tx`
+          UPDATE "SystemSettings" SET "astrbotPlatforms" = jsonb_build_object(
+            'qq', true,
+            'wecom', COALESCE(("astrbotPlatforms"->>'wecom')::boolean, false)
+              OR EXISTS (SELECT 1 FROM "AstrbotBinding" WHERE platform = 'wecom'),
+            'dingtalk', COALESCE(("astrbotPlatforms"->>'dingtalk')::boolean, false)
+              OR EXISTS (SELECT 1 FROM "AstrbotBinding" WHERE platform = 'dingtalk'),
+            'lark', COALESCE(("astrbotPlatforms"->>'lark')::boolean, false)
+              OR EXISTS (SELECT 1 FROM "AstrbotBinding" WHERE platform = 'lark'))
+          WHERE "astrbotEnabled" = true
+            AND "astrbotPlatforms" = '{"qq":false,"wecom":false,"dingtalk":false,"lark":false}'::jsonb
+          RETURNING "instance_id"
+        `
+        converted = updated.length
+      }
+
+      return { migrated, converted }
+    })
+
+    if (result.migrated === 0 && result.converted === 0) {
+      log('AstrBot 旧绑定搬迁：无需变更', 'cyan')
+    } else {
+      ok(`AstrBot 旧绑定搬迁完成：新增绑定 ${result.migrated} 条，站点开关转换 ${result.converted} 个`)
+    }
+  } catch (e) {
+    // 抛出交由 main 顶层处理：非零退出码会中止部署，不静默继续。
+    throw new Error(`AstrBot 旧绑定搬迁失败，已中止部署: ${e.message || e}`, { cause: e })
+  }
+}
+
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
@@ -242,6 +354,9 @@ async function checkSchemaConsistency(sql) {
     'api_keys',
     'api_key_permissions',
     'api_logs',
+    'AstrbotBinding',
+    'AstrbotOutbox',
+    'AstrbotBindingCode',
     'BackupHistory',
     'CardCode',
     'CardCodeRedeemLog',
@@ -335,8 +450,11 @@ async function checkSchemaConsistency(sql) {
       'captchaEnabled',
       'captchaMaxFailures',
       'autoBackupEnabled',
-      'autoBackupConfig'
+      'autoBackupConfig',
+      'astrbotEnabled',
+      'astrbotPlatforms'
     ],
+    AstrbotOutbox: ['targetOwners'],
     PasswordAuditLog: [
       'userId',
       'actorId',
@@ -483,6 +601,9 @@ async function main() {
         ok('legacy schema同步完成，迁移基线记录已写入')
       }
     }
+
+    // schema 就绪后再搬迁 AstrBot 旧绑定与站点开关，失败即抛错中止部署。
+    await migrateLegacyAstrbotBindings(sql)
   } finally {
     await sql.end()
   }

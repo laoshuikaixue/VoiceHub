@@ -245,12 +245,23 @@ export const notificationSettings = pgTable('NotificationSettings', {
 
 // AstrBot 绑定码持久化，避免 serverless 多实例内存状态不一致。
 export const astrbotBindingCodes = pgTable('AstrbotBindingCode', {
-  userId: integer('userId').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  platform: text('platform').notNull(),
   codeHash: text('codeHash').notNull(),
   expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
   attempts: integer('attempts').default(0).notNull(), // 历史遗留字段：绑定码已改为一次性消费 + 过期时间控制，当前不再累加或校验
   consumedAt: timestamp('consumedAt', { withTimezone: true })
-}, (table) => [uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
+}, (table) => [primaryKey({ columns: [table.userId, table.platform] }),
+  uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
+
+// 每个用户每个平台一条绑定；适配器名与 UMO 实例名分离存储。
+export const astrbotBindings = pgTable('AstrbotBinding', {
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  platform: text('platform').notNull(),
+  adapter: text('adapter').notNull(),
+  umo: text('umo').notNull(),
+  boundAt: timestamp('boundAt')
+}, (table) => [primaryKey({ columns: [table.userId, table.platform] }), uniqueIndex('AstrbotBinding_umo_unique').on(table.umo)]);
 
 // AstrBot 待投递队列：插件无法被 VoiceHub 访问（内网/NAT）时，由插件主动轮询取件。
 // 目标在入队时即由绑定表解析完毕，插件只按队列内容投递。
@@ -261,6 +272,8 @@ export const astrbotOutbox = pgTable('AstrbotOutbox', {
   message: text('message').notNull(),
   url: text('url'),
   umos: jsonb('umos').$type<string[]>().default([]).notNull(),
+  // NULL 为迁移前队列：无法确认原绑定主体，领取时必须丢弃。
+  targetOwners: jsonb('targetOwners').$type<Record<string, { userId: number; boundAt: string }>>(),
   broadcast: boolean('broadcast').default(false).notNull(),
   attempts: integer('attempts').default(0).notNull(),
   leasedUntil: timestamp('leasedUntil', { withTimezone: true }),
@@ -316,6 +329,8 @@ export const systemSettings = pgTable('SystemSettings', {
   smtpFromEmail: text('smtpFromEmail'),
   smtpFromName: text('smtpFromName').default('校园广播站'),
   astrbotEnabled: boolean('astrbotEnabled').default(false).notNull(),
+  astrbotPlatforms: jsonb('astrbotPlatforms').$type<{ qq: boolean; wecom: boolean; dingtalk: boolean; lark: boolean }>()
+    .default({ qq: false, wecom: false, dingtalk: false, lark: false }).notNull(),
   astrbotBaseUrl: text('astrbotBaseUrl'),
   astrbotToken: text('astrbotToken'),
   astrbotBroadcastEnabled: boolean('astrbotBroadcastEnabled').default(false).notNull(),

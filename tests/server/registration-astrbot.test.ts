@@ -115,5 +115,6 @@ test('私聊目标确认同时要求命中绑定行且平台在白名单内', ()
 test('目标校验与绑定共用同一套平台白名单，且不对 UMO 前缀做白名单比对', () => {
   assert.match(verifyTargets, /isAstrbotPrivateUmoShape/)
   assert.doesNotMatch(verifyTargets, /isSupportedAstrbotPrivateUmo/)
-  assert.match(verifyTargets, /selectConfirmedAstrbotTargets/)
+  assert.match(verifyTargets, /adapterToAstrbotPlatform/)
+  assert.match(verifyTargets, /isAstrbotPlatformEnabled/)
 })

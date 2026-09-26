@@ -72,14 +72,16 @@ test('机器人回调不列入通用公开路由白名单，由中间件精确�
   assert.equal(isPublicApiPath('/api/bot/voicehub/other', 'POST'), false)
 })
 
-test('群广播仅在全员范围开启，且只随一次空目标批次发送', () => {
+test('群广播已从界面与接口入口停用，服务层不再尝试广播投递', () => {
   const send = readFileSync(new URL('../../server/api/admin/notifications/send.post.ts', import.meta.url), 'utf8')
   const sender = readFileSync(new URL('../../app/components/Admin/NotificationSender.vue', import.meta.url), 'utf8')
   const service = readFileSync(new URL('../../server/services/astrbotNotificationService.ts', import.meta.url), 'utf8')
-  assert.match(send, /body\?\.broadcast === true && scope !== 'ALL'/)
-  assert.match(sender, /broadcast: form\.value\.scope === 'ALL' && form\.value\.broadcast/)
-  assert.match(sender, /v-if="form\.scope === 'ALL'"/)
-  assert.match(service, /shouldBroadcast && chunk\.length === 0/)
+  // 接口层明确拒绝群广播，避免出现「可开启但永不投递」的开关
+  assert.match(send, /body\?\.broadcast === true/)
+  assert.match(send, /群广播无法按平台校验接收目标，已停用/)
+  assert.doesNotMatch(sender, /form\.value\.broadcast/)
+  assert.match(sender, /broadcast: false/)
+  assert.doesNotMatch(service, /shouldBroadcast/)
 })
 
 test('绑定、解绑及发码使用同一用户行锁，绑定码仅在所有校验完成后消耗', () => {
@@ -102,7 +104,8 @@ test('绑定、解绑及发码使用同一用户行锁，绑定码仅在所有�
   assert.match(botUnbind, /db\.transaction\(async \(tx\) =>/)
   assert.match(botUnbind, /\.from\(users\)[\s\S]*?\.for\('update'\)/)
   assert.match(botUnbind, /tx\.delete\(astrbotBindingCodes\)/)
-  assert.match(botUnbind, /account\?\.umo !== umo/)
+  assert.match(botUnbind, /isNull\(astrbotBindingCodes\.consumedAt\)/)
+  assert.match(botUnbind, /tx\.delete\(astrbotBindings\)\.where\(eq\(astrbotBindings\.umo, umo\)\)/)
   assert.match(userUnbind, /tx\.delete\(astrbotBindingCodes\)/)
   assert.match(issue, /tx\.insert\(astrbotBindingCodes\)/)
 })

@@ -74,11 +74,7 @@
               </span>
             </label>
 
-            <!-- 范围选择 -->
-            <label v-if="form.scope === 'ALL'" class="flex items-center gap-3 rounded-xl border border-border-secondary p-4 text-sm text-text-secondary">
-              <input v-model="form.broadcast" type="checkbox" class="accent-primary">
-              <span>{{ locale.astrbotBroadcast }}</span>
-            </label>
+            <!-- 群广播目前无法按平台验证接收目标，暂不展示。 -->
 
             <div class="space-y-3 pt-4 border-t border-border-secondary-50">
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
@@ -790,7 +786,7 @@ const sendNotification = async () => {
       title: form.value.title,
       content: form.value.content,
       important: form.value.important,
-      broadcast: form.value.scope === 'ALL' && form.value.broadcast,
+      broadcast: false,
       scope: form.value.scope,
       filter: {}
     }

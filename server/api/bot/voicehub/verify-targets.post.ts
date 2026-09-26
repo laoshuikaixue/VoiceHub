@@ -1,7 +1,8 @@
 import { defineEventHandler, getHeader, readBody } from 'h3'
 import { inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { systemSettings, users } from '~/drizzle/schema'
+import { astrbotBindings, systemSettings } from '~/drizzle/schema'
+import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
@@ -9,7 +10,7 @@ import {
   equalAstrbotToken,
   isAstrbotPrivateUmoShape
 } from '~~/server/utils/astrbot-notification'
-import { selectConfirmedAstrbotTargets } from '~~/server/utils/astrbot-payload'
+
 
 /**
  * 校验私聊目标是否均为当前有效绑定。
@@ -20,7 +21,7 @@ import { selectConfirmedAstrbotTargets } from '~~/server/utils/astrbot-payload'
  * 适配器名。任一目标无法确认即整体拒绝，避免任何未经确认的投递。
  */
 export default defineEventHandler(async (event) => {
-  const [settings] = await db.select({ token: systemSettings.astrbotToken, enabled: systemSettings.astrbotEnabled })
+  const [settings] = await db.select({ token: systemSettings.astrbotToken, enabled: systemSettings.astrbotEnabled, platforms: systemSettings.astrbotPlatforms })
     .from(systemSettings).limit(1)
   if (!settings?.enabled || !equalAstrbotToken(getHeader(event, ASTRBOT_TOKEN_HEADER) ?? '', settings.token ?? '')) {
     throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '机器人令牌无效')
@@ -32,9 +33,10 @@ export default defineEventHandler(async (event) => {
       new Set(umos).size !== umos.length) {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '私聊目标无效')
   }
-  const rows = await db.select({ umo: users.astrbotUmo, platform: users.astrbotPlatform }).from(users)
-    .where(inArray(users.astrbotUmo, umos))
-  if (!selectConfirmedAstrbotTargets(rows, umos)) {
+  const rows = await db.select({ umo: astrbotBindings.umo, platform: astrbotBindings.platform, adapter: astrbotBindings.adapter }).from(astrbotBindings)
+    .where(inArray(astrbotBindings.umo, umos))
+  if (rows.length !== umos.length || rows.some((row) => !isAstrbotPlatformEnabled(settings.platforms, row.platform) ||
+    adapterToAstrbotPlatform(row.adapter) !== row.platform)) {
     throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '包含未绑定的私聊目标')
   }
   return { success: true, umos }

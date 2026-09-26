@@ -1,6 +1,9 @@
-import { and, asc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { astrbotOutbox, notificationSettings, users } from '~/drizzle/schema'
+import { astrbotOutbox, astrbotBindings, notificationSettings } from '~/drizzle/schema'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { selectAstrbotTargets } from '~~/server/utils/astrbot-platforms'
+import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
 import { isAstrbotOutboxExhausted } from '~~/server/utils/astrbot-pull'
@@ -18,37 +21,39 @@ const ASTRBOT_OUTBOX_TARGETS_PER_ITEM = 200
  * 写库。返回入队条数；调用方据此判断是否有内容待投递。
  */
 export async function enqueueAstrbotNotifications(
-  userIds: number[], title: string, content: string, broadcast = false
+  userIds: number[], title: string, content: string, platform?: AstrbotPlatform
 ): Promise<number> {
   const settings = await getSystemSettingsCached()
   if (!settings?.astrbotEnabled) return 0
 
   const uniqueIds = [...new Set(userIds.filter((id) => Number.isInteger(id) && id > 0))]
   const rows = uniqueIds.length
-    ? await db.select({ umo: users.astrbotUmo, enabled: notificationSettings.enabled })
-      .from(users)
-      .leftJoin(notificationSettings, eq(notificationSettings.userId, users.id))
-      .where(and(inArray(users.id, uniqueIds), isNotNull(users.astrbotUmo)))
+    ? await db.select({ umo: astrbotBindings.umo, userId: astrbotBindings.userId, boundAt: astrbotBindings.boundAt,
+      adapter: astrbotBindings.adapter, platform: astrbotBindings.platform, enabled: notificationSettings.enabled })
+      .from(astrbotBindings)
+      .leftJoin(notificationSettings, eq(notificationSettings.userId, astrbotBindings.userId))
+      .where(inArray(astrbotBindings.userId, uniqueIds))
     : []
-  const umos = rows.filter((row) => row.enabled !== false && !!row.umo).map((row) => row.umo!)
-  const shouldBroadcast = broadcast && !!settings.astrbotBroadcastEnabled
-  if (!shouldBroadcast && !umos.length) return 0
+  const umos = selectAstrbotTargets(platform ? rows.filter((row) => row.platform === platform) : rows, settings.astrbotPlatforms)
+  const owners = new Map(rows.map((row) => [row.umo, { userId: row.userId, boundAt: row.boundAt?.toISOString() ?? '' }]))
+  // 群广播无法按平台过滤，四平台共用插件时禁止越过各平台开关：只投递已绑定的私聊会话。
+  if (!umos.length) return 0
   // 插件按单条请求体上限投递，超限的正文无法投递，不入队以免插件永远失败重试。
   if (!fitsAstrbotPayload([], title, content, false)) {
     console.error('AstrBot 通知未入队：正文超过单条投递大小限制')
     return 0
   }
 
-  const rowsToInsert: { title: string; message: string; umos: string[]; broadcast: boolean }[] = []
+  const rowsToInsert: { title: string; message: string; umos: string[]; broadcast: boolean;
+    targetOwners: Record<string, { userId: number; boundAt: string }> }[] = []
   for (let index = 0; index < umos.length; index += ASTRBOT_OUTBOX_TARGETS_PER_ITEM) {
+    const batch = umos.slice(index, index + ASTRBOT_OUTBOX_TARGETS_PER_ITEM)
     rowsToInsert.push({
       title, message: content, broadcast: false,
-      umos: umos.slice(index, index + ASTRBOT_OUTBOX_TARGETS_PER_ITEM)
+      umos: batch, targetOwners: Object.fromEntries(batch.map((umo) => [umo, owners.get(umo)!]))
     })
   }
-  if (shouldBroadcast) rowsToInsert.unshift({ title, message: content, umos: [], broadcast: true })
   if (!rowsToInsert.length) return 0
-
   await db.insert(astrbotOutbox).values(rowsToInsert)
   return rowsToInsert.length
 }
@@ -60,7 +65,7 @@ export async function enqueueAstrbotNotifications(
  * 使插件崩溃后不丢通知。领取即增加 attempts 计数。
  */
 export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
-  const now = new Date()
+  const now = getServerDate()
   const until = new Date(now.getTime() + ASTRBOT_OUTBOX_LEASE_SECONDS * 1000)
 
   return db.transaction(async (tx) => {
@@ -76,10 +81,27 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
     if (!claimable.length) return []
 
     const ids = claimable.map((row) => row.id)
-    return tx.update(astrbotOutbox)
+    const claimed = await tx.update(astrbotOutbox)
       .set({ leasedUntil: until, attempts: sql`${astrbotOutbox.attempts} + 1` })
       .where(inArray(astrbotOutbox.id, ids))
       .returning()
+    const settings = await getSystemSettingsCached()
+    if (!settings?.astrbotEnabled) return []
+    const targets = [...new Set(claimed.flatMap((row) => Array.isArray(row.umos) ? row.umos : []))]
+    const bindings = targets.length ? await tx.select().from(astrbotBindings).where(inArray(astrbotBindings.umo, targets)) : []
+    const valid = new Set(selectAstrbotTargets(bindings, settings.astrbotPlatforms))
+    const current = new Map(bindings.map((binding) => [binding.umo, binding]))
+    // 缺失快照的历史队列及解绑重绑后的队列均不可交付，避免 UMO 易主泄露。
+    const filtered = claimed.map((row) => ({ ...row, umos: (Array.isArray(row.umos) ? row.umos : []).filter((umo) => {
+      const original = row.targetOwners?.[umo]
+      const binding = current.get(umo)
+      return valid.has(umo) && !!original && !!original.boundAt && !!binding?.boundAt &&
+        original.userId === binding.userId && original.boundAt === binding.boundAt.toISOString()
+    }) }))
+    const stale = filtered.filter((row) => row.broadcast || !row.umos.length).map((row) => row.id)
+    if (stale.length) await tx.update(astrbotOutbox).set({ failedAt: now, leasedUntil: null,
+      lastError: '目标已解绑或平台已禁用' }).where(inArray(astrbotOutbox.id, stale))
+    return filtered.filter((row) => !row.broadcast && row.umos.length > 0)
   })
 }
 

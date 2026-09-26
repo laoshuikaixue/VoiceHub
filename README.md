@@ -588,6 +588,16 @@ pnpm run safe-migrate
 
 有关如何升级现有部署和迁移数据，请参阅 [升级指南](UPGRADE.md)。
 
+> **升级到内置 AstrBot 四平台绑定的版本时**：除执行数据库迁移外，部署流程还会自动回填旧绑定数据与站点开关。`scripts/db-sync.js` 在迁移完成后会把 `User` 表中的旧字段（`astrbotUmo`/`astrbotPlatform`/`astrbotBoundAt`）搬迁到新的 `AstrbotBinding` 表，并把历史开启的 AstrBot 站点（`astrbotEnabled=true`）延续为 `qq` 平台开关。该回填幂等：重复执行不会覆盖新表的既有绑定，也不会重置管理员改动过的平台开关；未知适配器会被跳过并输出告警。回填失败会中止部署。
+>
+> 也可手动重跑回填脚本（等价逻辑，独立执行便于排查）：
+>
+> ```bash
+> pnpm exec tsx scripts/migrate-astrbot-bindings.ts
+> ```
+>
+> 若部署日志出现「检测到数据库schema不完整，缺少: AstrbotBinding table / AstrbotOutbox.targetOwners column」等提示，说明迁移未成功应用，请先排查迁移失败原因再重新部署。
+
 ## 系统配置
 
 ### 站点配置管理
@@ -1379,6 +1389,8 @@ VoiceHub/
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
+│   │   ├── astrbot-platforms.ts # 机器人适配器与通知平台映射
+│   │   ├── astrbot-backup.ts # 四平台绑定备份恢复
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
@@ -1460,7 +1472,8 @@ VoiceHub/
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
-│   ├── db-sync.js         # 数据库同步
+│   ├── db-sync.js         # 数据库同步（含 AstrBot 旧绑定回填与 schema 完整性检查）
+│   ├── migrate-astrbot-bindings.ts # 旧版机器人绑定数据回填（可手动重跑）
 │   ├── deploy.js          # 一键部署脚本
 │   ├── drizzle/           # Drizzle 迁移辅助脚本
 │   │   └── migrations/
@@ -1470,9 +1483,12 @@ VoiceHub/
 │   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
 ├── tests/                 # 自动化测试
+│   ├── frontend/          # 推送配置与绑定界面契约测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
+│       ├── astrbot-platforms.test.ts # 四平台开关与绑定目标测试
+│       ├── push-config-contract.test.ts # 推送配置与通知路径契约测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试

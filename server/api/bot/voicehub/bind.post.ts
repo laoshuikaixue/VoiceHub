@@ -1,7 +1,8 @@
 import { defineEventHandler, getHeader, readBody } from 'h3'
 import { and, eq, gt, isNull } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { astrbotBindingCodes, systemSettings, users } from '~/drizzle/schema'
+import { astrbotBindingCodes, astrbotBindings, systemSettings, users } from '~/drizzle/schema'
+import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -11,7 +12,7 @@ import {
 } from '~~/server/utils/astrbot-notification'
 
 export default defineEventHandler(async (event) => {
-  const [settings] = await db.select({ token: systemSettings.astrbotToken, enabled: systemSettings.astrbotEnabled })
+  const [settings] = await db.select({ token: systemSettings.astrbotToken, enabled: systemSettings.astrbotEnabled, platforms: systemSettings.astrbotPlatforms })
     .from(systemSettings).limit(1)
   if (!settings?.enabled || !equalAstrbotToken(getHeader(event, ASTRBOT_TOKEN_HEADER) ?? '', settings.token ?? '')) {
     throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '机器人令牌无效')
@@ -24,9 +25,13 @@ export default defineEventHandler(async (event) => {
   }
 
   const hash = hashAstrbotBindCode(rawCode)
-  const [codeRow] = await db.select({ userId: astrbotBindingCodes.userId })
+  const [codeRow] = await db.select({ userId: astrbotBindingCodes.userId, platform: astrbotBindingCodes.platform })
     .from(astrbotBindingCodes).where(eq(astrbotBindingCodes.codeHash, hash)).limit(1)
-  if (!codeRow) {
+  const requestedPlatform = adapterToAstrbotPlatform(target?.platform)
+  if (!requestedPlatform || !isAstrbotPlatformEnabled(settings.platforms, requestedPlatform)) {
+    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_NOT_CONFIGURED, '该机器人平台未启用')
+  }
+  if (!codeRow || codeRow.platform !== requestedPlatform) {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_BIND_CODE_INVALID, '绑定码无效、已过期或已使用')
   }
 
@@ -37,8 +42,8 @@ export default defineEventHandler(async (event) => {
         .from(users).where(eq(users.id, codeRow.userId)).for('update')
       if (!account) throw createApiError(404, SERVER_ERROR_CODES.ASTRBOT_BIND_FAILED, '账号不存在')
 
-      const [owner] = await tx.select({ id: users.id })
-        .from(users).where(eq(users.astrbotUmo, target.umo)).limit(1)
+      const [owner] = await tx.select({ id: astrbotBindings.userId })
+        .from(astrbotBindings).where(eq(astrbotBindings.umo, target.umo)).limit(1)
       if (owner && owner.id !== codeRow.userId) {
         throw createApiError(409, SERVER_ERROR_CODES.ASTRBOT_UMO_BOUND, '此会话已绑定其他账号')
       }
@@ -48,17 +53,17 @@ export default defineEventHandler(async (event) => {
         .where(and(
           eq(astrbotBindingCodes.userId, codeRow.userId),
           eq(astrbotBindingCodes.codeHash, hash),
+          eq(astrbotBindingCodes.platform, requestedPlatform),
           gt(astrbotBindingCodes.expiresAt, getServerDate()),
           isNull(astrbotBindingCodes.consumedAt)
         )).returning({ userId: astrbotBindingCodes.userId })
       if (!claim) {
         throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_BIND_CODE_INVALID, '绑定码无效、已过期或已使用')
       }
-      await tx.update(users).set({
-        astrbotUmo: target.umo,
-        astrbotPlatform: target.platform,
-        astrbotBoundAt: getServerDate()
-      }).where(eq(users.id, codeRow.userId))
+      await tx.insert(astrbotBindings).values({ userId: codeRow.userId, platform: requestedPlatform,
+        adapter: target.platform, umo: target.umo, boundAt: getServerDate() })
+        .onConflictDoUpdate({ target: [astrbotBindings.userId, astrbotBindings.platform],
+          set: { adapter: target.platform, umo: target.umo, boundAt: getServerDate() } })
       return { success: true, username: account.username }
     })
   } catch (error) {

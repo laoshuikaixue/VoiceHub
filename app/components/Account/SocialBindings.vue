@@ -259,22 +259,26 @@
         </div>
       </div>
 
-      <div v-if="astrbotEnabled" class="rounded-2xl border border-primary-20 bg-primary-5 p-5 space-y-4">
+      <div v-for="platform in enabledPlatforms" :key="platform" class="rounded-2xl border border-primary-20 bg-primary-5 p-5 space-y-4">
         <div class="flex items-center gap-3">
           <div class="p-2 bg-primary-10 rounded-lg"><MessageCircle :size="16" class="text-primary" /></div>
-          <h3 class="text-sm font-bold text-text-primary">{{ locale.astrbot.title }}</h3>
+          <h3 class="text-sm font-bold text-text-primary">{{ locale.astrbot.platforms[platform] }}</h3>
         </div>
         <p class="text-xs text-text-tertiary">{{ locale.astrbot.desc }}</p>
-        <div v-if="astrbotBound" class="space-y-3">
-          <p class="text-sm text-text-primary break-all">{{ locale.astrbot.bound }}<span v-if="astrbotAccount">：{{ astrbotAccount }}</span></p>
-          <button :disabled="astrbotBusy" class="px-4 py-2 bg-error-10 text-error text-xs font-bold rounded-xl disabled:opacity-50" @click="confirmAstrbotUnbind">{{ locale.astrbot.unbind }}</button>
+        <div v-if="platformStatus[platform].bound" class="space-y-3">
+          <p class="text-sm text-text-primary">{{ locale.astrbot.bound }}</p>
+          <p v-if="platformStatus[platform].boundAt" class="text-xs text-text-tertiary">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
+          <div class="flex flex-wrap gap-2">
+            <button :disabled="astrbotBusy[platform]" class="px-4 py-2 bg-bg-tertiary text-text-primary text-xs font-bold rounded-xl disabled:opacity-50" @click="testAstrbot(platform)">{{ locale.astrbot.test }}</button>
+            <button :disabled="astrbotBusy[platform]" class="px-4 py-2 bg-error-10 text-error text-xs font-bold rounded-xl disabled:opacity-50" @click="confirmAstrbotUnbind(platform)">{{ locale.astrbot.unbind }}</button>
+          </div>
         </div>
         <div v-else class="space-y-3">
-          <button :disabled="astrbotBusy" class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="createAstrbotCode">{{ astrbotBusy ? locale.pleaseWait : locale.astrbot.generate }}</button>
-          <div v-if="astrbotCode" class="p-3 rounded-xl border border-border-secondary bg-bg-primary space-y-2">
+          <button :disabled="astrbotBusy[platform]" class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="createAstrbotCode(platform)">{{ astrbotBusy[platform] ? locale.pleaseWait : locale.astrbot.generate }}</button>
+          <div v-if="astrbotCodes[platform]" class="p-3 rounded-xl border border-border-secondary bg-bg-primary space-y-2">
             <p class="text-xs text-text-tertiary">{{ locale.astrbot.instruction }}</p>
-            <code class="block font-mono text-lg font-bold text-primary select-all break-all">{{ astrbotCode }}</code>
-            <p class="text-xs text-text-tertiary">{{ locale.astrbot.expires.replace('{0}', String(astrbotExpiresIn)) }}</p>
+            <code class="block font-mono text-lg font-bold text-primary select-all break-all">{{ astrbotCodes[platform].code }}</code>
+            <p class="text-xs text-text-tertiary">{{ locale.astrbot.expires.replace('{0}', String(astrbotCodes[platform].expiresIn)) }}</p>
             <button class="text-xs text-primary font-bold" @click="refreshAstrbotStatus">{{ locale.astrbot.refresh }}</button>
           </div>
         </div>
@@ -307,62 +311,79 @@ const { showToast } = useToast()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.account?.social || {})
 const { localize: localizeServerError } = useServerErrors()
-const astrbotEnabled = ref(false)
-const astrbotBound = ref(false)
-const astrbotAccount = ref('')
-const astrbotCode = ref('')
-const astrbotExpiresIn = ref(600)
-const astrbotBusy = ref(false)
+const platformKeys = ['qq', 'wecom', 'dingtalk', 'lark']
+const platformStatus = ref(Object.fromEntries(platformKeys.map(key => [key, { enabled: false, bound: false }])))
+const enabledPlatforms = computed(() => platformKeys.filter(key => platformStatus.value[key]?.enabled))
+const astrbotCodes = ref({})
+const astrbotBusy = ref({})
 
 const refreshAstrbotStatus = async () => {
   try {
     const response = await $fetch('/api/notifications/astrbot/status')
     const status = response.data || response
-    astrbotEnabled.value = !!(status.enabled ?? status.astrbotEnabled)
-    astrbotBound.value = !!(status.bound ?? status.isBound)
-    astrbotAccount.value = status.account || status.qqId || status.qqUserId || ''
-    if (astrbotBound.value || !astrbotEnabled.value) astrbotCode.value = ''
+    // The public status contains flags and timestamps only; never infer a bound identity.
+    for (const platform of platformKeys) {
+      const entry = status.platforms?.[platform]
+      platformStatus.value[platform] = {
+        enabled: entry?.enabled === true,
+        bound: entry?.bound === true,
+        boundAt: entry?.boundAt || null
+      }
+      if (!entry?.enabled || entry.bound) astrbotCodes.value[platform] = null
+    }
   } catch (err) {
     showToast(localizeServerError(err, locale.value.astrbot.loadFailed), 'error')
   }
 }
 
-const createAstrbotCode = async () => {
-  astrbotBusy.value = true
+const createAstrbotCode = async (platform) => {
+  astrbotBusy.value[platform] = true
   try {
-    const response = await $fetch('/api/notifications/astrbot/bind-code', { method: 'POST' })
+    const response = await $fetch('/api/notifications/astrbot/bind-code', { method: 'POST', body: { platform } })
     if (!response.success || !response.code) throw new Error(locale.value.astrbot.codeFailed)
-    astrbotCode.value = response.code
-    astrbotExpiresIn.value = response.expiresIn || 600
+    // 各平台各自持码，发码只覆盖本平台的旧码。
+    astrbotCodes.value[platform] = { code: response.code, expiresIn: response.expiresIn || 600 }
   } catch (err) {
     showToast(localizeServerError(err, locale.value.astrbot.codeFailed), 'error')
   } finally {
-    astrbotBusy.value = false
+    astrbotBusy.value[platform] = false
   }
 }
 
-const confirmAstrbotUnbind = () => {
+const testAstrbot = async (platform) => {
+  astrbotBusy.value[platform] = true
+  try {
+    const response = await $fetch('/api/notifications/astrbot/test', { method: 'POST', body: { platform } })
+    if (!response.success) throw new Error(locale.value.astrbot.testFailed)
+    showToast(response.queued ? locale.value.astrbot.testQueued : locale.value.astrbot.testSuccess, 'success')
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.astrbot.testFailed), 'error')
+  } finally {
+    astrbotBusy.value[platform] = false
+  }
+}
+
+const confirmAstrbotUnbind = (platform) => {
   confirmDialog.value = {
     title: locale.value.astrbot.unbindTitle,
-    message: locale.value.astrbot.unbindMessage,
+    message: locale.value.astrbot.unbindMessage.replace('{0}', locale.value.astrbot.platforms[platform]),
     type: 'danger',
     loading: false,
     onConfirm: async () => {
       confirmDialog.value.loading = true
-      astrbotBusy.value = true
+      astrbotBusy.value[platform] = true
       try {
-        const response = await $fetch('/api/notifications/astrbot/unbind', { method: 'POST' })
+        const response = await $fetch('/api/notifications/astrbot/unbind', { method: 'POST', body: { platform } })
         if (!response.success) throw new Error(locale.value.astrbot.unbindFailed)
-        astrbotBound.value = false
-        astrbotAccount.value = ''
-        astrbotCode.value = ''
+        astrbotCodes.value[platform] = null
         showConfirmDialog.value = false
         showToast(locale.value.astrbot.unbound, 'success')
+        await refreshAstrbotStatus()
       } catch (err) {
         showToast(localizeServerError(err, locale.value.astrbot.unbindFailed), 'error')
       } finally {
         confirmDialog.value.loading = false
-        astrbotBusy.value = false
+        astrbotBusy.value[platform] = false
       }
     },
     onCancel: () => { showConfirmDialog.value = false }

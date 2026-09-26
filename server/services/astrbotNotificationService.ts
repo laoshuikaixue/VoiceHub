@@ -1,6 +1,7 @@
-import { and, eq, inArray, isNotNull } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { notificationSettings, users } from '~/drizzle/schema'
+import { astrbotBindings, notificationSettings } from '~/drizzle/schema'
+import { selectAstrbotTargets } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { ASTRBOT_TOKEN_HEADER, normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
 import {
@@ -25,15 +26,19 @@ export async function postAstrbotNotification(
 ): Promise<{ sent: number; failed: number }> {
   const settings = await getSystemSettingsCached()
   const baseUrl = normalizeAstrbotBaseUrl(settings?.astrbotBaseUrl)
-  if (!settings?.astrbotEnabled || !settings.astrbotToken || !baseUrl || (!umos.length && !group)) {
+  if (!settings?.astrbotEnabled || !settings.astrbotToken || !baseUrl || !umos.length) {
     return { sent: 0, failed: 0 }
   }
+  const bindings = umos.length ? await db.select().from(astrbotBindings).where(inArray(astrbotBindings.umo, umos)) : []
+  const valid = new Set(selectAstrbotTargets(bindings, settings.astrbotPlatforms))
+  const confirmed = [...new Set(umos)].filter((umo) => valid.has(umo))
+  if (!confirmed.length && !group) return { sent: 0, failed: umos.length }
 
-  if (!fitsAstrbotPayload(umos, title, content, group)) {
+  if (!fitsAstrbotPayload(confirmed, title, content, group)) {
     throw new Error('AstrBot 推送请求超过大小限制')
   }
 
-  const targets = { umo: [...new Set(umos)], group }
+  const targets = { umo: confirmed, group }
   const url = `${baseUrl}/voicehub/push`
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 10_000)
@@ -49,46 +54,48 @@ export async function postAstrbotNotification(
     if (!response.ok || !result || result.success !== true || typeof result.sent !== 'number') {
       throw new Error(`机器人推送失败: HTTP ${response.status}`)
     }
-    return { sent: result.sent, failed: Array.isArray(result.failed) ? result.failed.length : 0 }
+    return { sent: result.sent, failed: umos.length - confirmed.length + (Array.isArray(result.failed) ? result.failed.length : 0) }
   } finally {
     clearTimeout(timer)
   }
 }
 
 export async function sendAstrbotNotificationToUser(userId: number, title: string, content: string) {
-  const [user] = await db.select({ umo: users.astrbotUmo }).from(users)
-    .where(eq(users.id, userId)).limit(1)
-  if (!user?.umo) return false
+  const settings = await getSystemSettingsCached()
+  if (!settings?.astrbotEnabled) return false
+  const rows = await db.select().from(astrbotBindings).where(eq(astrbotBindings.userId, userId))
+  const umos = selectAstrbotTargets(rows, settings.astrbotPlatforms)
+  if (!umos.length) return false
   const [setting] = await db.select({ enabled: notificationSettings.enabled }).from(notificationSettings)
     .where(eq(notificationSettings.userId, userId)).limit(1)
   if (setting && !setting.enabled) return false
   // pull 模式：入队即视为已受理，实际投递由插件领取后完成。
   if (await isPullMode()) {
-    const queued = await enqueueAstrbotNotifications([userId], title, content, false)
+    const queued = await enqueueAstrbotNotifications([userId], title, content)
     return queued > 0
   }
-  const result = await postAstrbotNotification([user.umo], title, content)
+  const result = await postAstrbotNotification(umos, title, content)
   return result.sent > 0
 }
 
-export async function sendBatchAstrbotNotifications(userIds: number[], title: string, content: string, broadcast = false) {
+export async function sendBatchAstrbotNotifications(userIds: number[], title: string, content: string) {
   const settings = await getSystemSettingsCached()
   if (!settings?.astrbotEnabled) return { success: 0, failed: 0 }
   // pull 模式：通知只入队，由插件按轮询周期领取投递。
   if (settings.astrbotPushMode === 'pull') {
-    const queued = await enqueueAstrbotNotifications(userIds, title, content, broadcast)
+    const queued = await enqueueAstrbotNotifications(userIds, title, content)
     return { success: queued, failed: 0, queued }
   }
   const uniqueIds = [...new Set(userIds.filter((id) => Number.isInteger(id) && id > 0))]
-  const rows = uniqueIds.length ? await db.select({ umo: users.astrbotUmo, enabled: notificationSettings.enabled })
-    .from(users)
-    .leftJoin(notificationSettings, eq(notificationSettings.userId, users.id))
-    .where(and(inArray(users.id, uniqueIds), isNotNull(users.astrbotUmo))) : []
-  const umos = rows.filter((row) => row.enabled !== false && !!row.umo).map((row) => row.umo!)
+  const rows = uniqueIds.length ? await db.select({ umo: astrbotBindings.umo, adapter: astrbotBindings.adapter, platform: astrbotBindings.platform, enabled: notificationSettings.enabled })
+    .from(astrbotBindings)
+    .leftJoin(notificationSettings, eq(notificationSettings.userId, astrbotBindings.userId))
+    .where(inArray(astrbotBindings.userId, uniqueIds)) : []
+  const umos = selectAstrbotTargets(rows, settings.astrbotPlatforms)
   let success = 0
   let failed = 0
-  const shouldBroadcast = broadcast && !!settings.astrbotBroadcastEnabled
-  if (!shouldBroadcast && !umos.length) return { success: 0, failed: 0 }
+  // 群广播没有目标绑定，无法证明其平台归属，拒绝跨平台广播：只投递已绑定的私聊会话。
+  if (!umos.length) return { success: 0, failed: 0 }
   // 正文本身超出插件请求体上限时无法投递任何目标；这里按失败计数返回并明确记录，
   // 避免调用方只看到“通知发送成功”而机器人推送其实被静默丢弃。
   if (!fitsAstrbotPayload([], title, content, false)) {
@@ -97,17 +104,13 @@ export async function sendBatchAstrbotNotifications(userIds: number[], title: st
   }
   const { chunks, skipped } = chunkAstrbotTargets(umos, title, content)
   failed += skipped
-  if (shouldBroadcast) {
-    if (fitsAstrbotPayload([], title, content, true)) chunks.unshift([])
-    else failed++
-  }
   for (const chunk of chunks) {
     try {
-      const result = await postAstrbotNotification(chunk, title, content, shouldBroadcast && chunk.length === 0)
+      const result = await postAstrbotNotification(chunk, title, content, false)
       success += result.sent
       failed += result.failed
     } catch (error) {
-      failed += chunk.length || (shouldBroadcast ? 1 : 0)
+      failed += chunk.length
       console.error('批量发送 AstrBot 通知失败:', error)
     }
   }

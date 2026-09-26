@@ -1,0 +1,1 @@
+ALTER TABLE "AstrbotOutbox" ADD COLUMN "targetOwners" jsonb;

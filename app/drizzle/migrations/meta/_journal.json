@@ -365,6 +365,27 @@
       "when": 1790342504449,
       "tag": "20260925132144_auto-migration",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790359178874,
+      "tag": "20260925175938_auto-migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790380598636,
+      "tag": "20260925235638_auto-migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790381044650,
+      "tag": "20260926000404_auto-migration",
+      "breakpoints": true
     }
   ]
 }

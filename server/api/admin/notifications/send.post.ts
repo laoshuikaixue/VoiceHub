@@ -52,8 +52,9 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群广播标记必须是布尔值')
   }
 
-  if (body?.broadcast === true && body?.userId !== undefined) {
-    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '单人通知不能同时广播到群聊')
+  if (body?.broadcast === true) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      '群广播无法按平台校验接收目标，已停用；通知只发送到用户已绑定并启用的私聊会话')
   }
 
   if (important === null) {
@@ -123,9 +124,6 @@ export default defineEventHandler(async (event) => {
   const scope = typeof body?.scope === 'string' ? body.scope : ''
   if (!supportedScopes.includes(scope as (typeof supportedScopes)[number])) {
     throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_SCOPE_INVALID, '无效的通知范围')
-  }
-  if (body?.broadcast === true && scope !== 'ALL') {
-    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群广播仅可用于全员通知')
   }
 
   const filter = (
@@ -205,9 +203,6 @@ export default defineEventHandler(async (event) => {
   }
 
   if (userIds.length === 0) {
-    if (body?.broadcast === true) {
-      throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_USERS_REQUIRED, '无全员用户可发送，群广播已取消')
-    }
     return {
       success: true,
       message: '没有找到符合条件的用户',
@@ -216,7 +211,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const result = await createBatchSystemNotifications(userIds, title, content, important, sender, body?.broadcast === true)
+  const result = await createBatchSystemNotifications(userIds, title, content, important, sender, false)
   if (!result) {
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
   }

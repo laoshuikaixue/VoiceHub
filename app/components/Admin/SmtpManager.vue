@@ -206,6 +206,12 @@
       <p class="text-xs text-text-tertiary">{{ astrbotLocale.desc }}</p>
       <div v-if="astrbotLoaded" class="space-y-4">
         <label class="flex items-center gap-2 text-sm text-text-primary"><input v-model="astrbotConfig.astrbotEnabled" type="checkbox">{{ astrbotLocale.enabled }}</label>
+        <div class="space-y-2">
+          <p class="text-xs text-text-tertiary">{{ astrbotLocale.platformHint }}</p>
+          <label v-for="platform in platformKeys" :key="platform" class="flex items-center gap-2 text-sm text-text-primary">
+            <input v-model="astrbotPlatforms[platform]" type="checkbox">{{ astrbotLocale.platforms[platform] }}
+          </label>
+        </div>
         <label class="block text-xs text-text-secondary">{{ astrbotLocale.baseUrl }}
           <input v-model.trim="astrbotConfig.astrbotBaseUrl" type="url" :placeholder="astrbotLocale.baseUrlPlaceholder" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
         </label>
@@ -213,8 +219,6 @@
           <input v-model="astrbotTokenInput" type="password" autocomplete="new-password" :placeholder="astrbotTokenConfigured ? astrbotLocale.tokenUnchanged : astrbotLocale.tokenPlaceholder" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
         </label>
         <p class="text-xs text-text-tertiary">{{ astrbotLocale.tokenHint }}</p>
-        <label class="flex items-center gap-2 text-sm text-text-primary"><input v-model="astrbotConfig.astrbotBroadcastEnabled" type="checkbox">{{ astrbotLocale.broadcast }}</label>
-        <p class="text-xs text-text-tertiary">{{ astrbotLocale.broadcastHint }}</p>
         <label class="block text-xs text-text-secondary">{{ astrbotLocale.pushMode }}
           <CustomSelect v-model="astrbotConfig.astrbotPushMode" class="mt-1" :options="pushModeOptions" />
         </label>
@@ -242,7 +246,9 @@ const astrbotLoaded = ref(false)
 const astrbotSaving = ref(false)
 const astrbotTokenConfigured = ref(false)
 const astrbotTokenInput = ref('')
-const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotBroadcastEnabled: false, astrbotPushMode: 'push' })
+const platformKeys = ['qq', 'wecom', 'dingtalk', 'lark']
+const astrbotPlatforms = ref(Object.fromEntries(platformKeys.map(platform => [platform, false])))
+const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotPushMode: 'push' })
 
 const pushModeOptions = computed(() => [
   { value: 'push', label: astrbotLocale.value.pushModePush || 'push' },
@@ -252,10 +258,10 @@ const pushModeOptions = computed(() => [
 const loadAstrbotConfig = async () => {
   try {
     const response = await $fetch('/api/admin/system-settings')
+    astrbotPlatforms.value = Object.fromEntries(platformKeys.map(platform => [platform, response.astrbotPlatforms?.[platform] === true]))
     astrbotConfig.value = {
       astrbotEnabled: !!response.astrbotEnabled,
       astrbotBaseUrl: response.astrbotBaseUrl || '',
-      astrbotBroadcastEnabled: !!response.astrbotBroadcastEnabled,
       astrbotPushMode: response.astrbotPushMode === 'pull' ? 'pull' : 'push'
     }
     astrbotTokenConfigured.value = !!response.astrbotToken
@@ -269,7 +275,7 @@ const loadAstrbotConfig = async () => {
 const saveAstrbotConfig = async () => {
   astrbotSaving.value = true
   try {
-    const body = { ...astrbotConfig.value }
+    const body = { ...astrbotConfig.value, astrbotBroadcastEnabled: false, astrbotPlatforms: { ...astrbotPlatforms.value } }
     // 不回传掩码；空输入表示保留已有密钥。
     if (astrbotTokenInput.value) body.astrbotToken = astrbotTokenInput.value
     await $fetch('/api/admin/system-settings', { method: 'POST', body })

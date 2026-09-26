@@ -67,6 +67,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpFromEmail: null,
   smtpFromName: '校园广播站',
   astrbotEnabled: false,
+  astrbotPlatforms: { qq: false, wecom: false, dingtalk: false, lark: false },
   astrbotBaseUrl: null,
   astrbotToken: null,
   astrbotBroadcastEnabled: false,

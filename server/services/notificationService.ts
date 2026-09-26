@@ -813,8 +813,7 @@ export async function createBatchSystemNotifications(
   title: string,
   content: string,
   important = false,
-  sender: NotificationSenderInput | null = null,
-  broadcast = false
+  sender: NotificationSenderInput | null = null
 ) {
   try {
     if (!userIds.length) {
@@ -891,7 +890,7 @@ export async function createBatchSystemNotifications(
     let astrbotResults = { success: 0, failed: 0 }
     try {
       astrbotResults = await sendBatchAstrbotNotifications(
-        notificationsToCreate.map((row) => row.userId), title, content, broadcast
+        notificationsToCreate.map((row) => row.userId), title, content
       )
     } catch (error) {
       console.error('批量发送 AstrBot 通知失败:', error)

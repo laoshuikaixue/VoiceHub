@@ -1,23 +1,28 @@
 import { defineEventHandler } from 'h3'
 import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
+import { astrbotBindings } from '~/drizzle/schema'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { ASTRBOT_PLATFORMS, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
+import { formatDateTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '请先登录')
-  const [row] = await db.select({ umo: users.astrbotUmo, platform: users.astrbotPlatform })
-    .from(users).where(eq(users.id, user.id)).limit(1)
+  const rows = await db.select().from(astrbotBindings).where(eq(astrbotBindings.userId, user.id))
   const settings = await getSystemSettingsCached()
   return {
     success: true,
     enabled: !!settings?.astrbotEnabled,
-    bound: !!row?.umo,
-    platform: row?.platform ?? null,
-    umo: row?.umo ?? null,
-    account: row?.umo ?? null
+    platforms: Object.fromEntries(ASTRBOT_PLATFORMS.map((platform) => {
+      const row = rows.find((item) => item.platform === platform)
+      return [platform, {
+        enabled: !!settings?.astrbotEnabled && isAstrbotPlatformEnabled(settings.astrbotPlatforms, platform),
+        bound: !!row,
+        boundAt: row?.boundAt ? formatDateTime(row.boundAt) : null
+      }]
+    }))
   }
 })

@@ -606,12 +606,20 @@ export default defineEventHandler(async (event) => {
       }
       updateData.astrbotEnabled = body.astrbotEnabled
     }
-    if (body.astrbotBroadcastEnabled !== undefined) {
-      if (typeof body.astrbotBroadcastEnabled !== 'boolean') {
-        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'astrbotBroadcastEnabled 必须是布尔值')
+    if (body.astrbotPlatforms !== undefined) {
+      const platforms = body.astrbotPlatforms
+      const keys = ['qq', 'wecom', 'dingtalk', 'lark']
+      if (!platforms || typeof platforms !== 'object' || Array.isArray(platforms) ||
+        Object.keys(platforms).length !== keys.length ||
+        !keys.every((key) => typeof platforms[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人平台开关格式无效')
       }
-      updateData.astrbotBroadcastEnabled = body.astrbotBroadcastEnabled
+      updateData.astrbotPlatforms = Object.fromEntries(keys.map((key) => [key, platforms[key]]))
     }
+    if (body.astrbotBroadcastEnabled === true) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '四平台独立开关下暂不支持群广播')
+    }
+    if (body.astrbotBroadcastEnabled === false) updateData.astrbotBroadcastEnabled = false
     if (body.astrbotPushMode !== undefined) {
       if (body.astrbotPushMode !== 'push' && body.astrbotPushMode !== 'pull') {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '推送方向只能是 push 或 pull')
@@ -634,10 +642,15 @@ export default defineEventHandler(async (event) => {
       }
       updateData.astrbotToken = body.astrbotToken.trim() || null
     }
-    if ((body.astrbotEnabled ?? settings?.astrbotEnabled) &&
-        (!(updateData.astrbotBaseUrl ?? (body.astrbotBaseUrl !== undefined ? '' : settings?.astrbotBaseUrl)) ||
-         !(updateData.astrbotToken ?? (body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK ? '' : settings?.astrbotToken)))) {
-      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请先配置机器人服务地址和令牌')
+    if (body.astrbotEnabled ?? settings?.astrbotEnabled) {
+      const token = body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK
+        ? updateData.astrbotToken : settings?.astrbotToken
+      const baseUrl = body.astrbotBaseUrl !== undefined ? updateData.astrbotBaseUrl : settings?.astrbotBaseUrl
+      const mode = body.astrbotPushMode ?? settings?.astrbotPushMode
+      if (!token || (mode !== 'pull' && !baseUrl)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          mode === 'pull' ? '请先配置机器人令牌' : '请先配置机器人服务地址和令牌')
+      }
     }
 
     // OAuth 配置字段
