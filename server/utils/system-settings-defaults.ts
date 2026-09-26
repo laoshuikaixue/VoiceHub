@@ -102,12 +102,21 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   captchaProvider: 'graphic', // 默认使用图形验证码
   turnstileSiteKey: null,
   turnstileSecretKey: null,
+  // 阿里云 ESA AI 验证码（身份标与场景 ID 均由 ESA 控制台生成，非机密信息）
+  esaCaptchaPrefix: null,
+  // 场景 ID 规则列表：[{ endpoint: 'login' | 'register', host: '*', sceneId }]
+  esaCaptchaScenes: '[]',
+  esaCaptchaRegion: 'cn',
   // 自动备份
   autoBackupEnabled: false,
   autoBackupConfig: null,
   // 站点统计代码（任意统计平台 HTML/JS 片段）
   statisticsCodeEnabled: false,
   statisticsCode: null,
+  legalConsentEnabled: false,
+  legalConsentDisplayMode: 'modal',
+  legalConsentUpdatedDate: null,
+  legalConsentDocuments: '[]',
   // 主题管理
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
@@ -123,6 +132,10 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'schoolLogoPrintUrl',
   'siteDescription',
   'submissionGuidelines',
+  'legalConsentEnabled',
+  'legalConsentDisplayMode',
+  'legalConsentUpdatedDate',
+  'legalConsentDocuments',
   'icpNumber',
   'gonganNumber',
   'showBeianIcon',
@@ -162,6 +175,9 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'captchaMaxFailures',
   'captchaProvider',
   'turnstileSiteKey',
+  'esaCaptchaPrefix',
+  'esaCaptchaScenes',
+  'esaCaptchaRegion',
   'enabledPlatforms',
   'platformOrder',
   'defaultTheme',

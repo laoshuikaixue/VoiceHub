@@ -861,13 +861,16 @@ export interface CaptchaSettings {
   provider: string
   threshold: number
   turnstileSecretKey: string
+  // ESA 场景 ID 规则列表（数据库原始 JSON），供按接口+域名解析是否有可用场景
+  esaScenes: unknown
 }
 
 const CAPTCHA_SETTINGS_DEFAULTS: CaptchaSettings = {
   enabled: false,
   provider: 'graphic',
   threshold: SYSTEM_SETTINGS_DEFAULTS.captchaMaxFailures,
-  turnstileSecretKey: ''
+  turnstileSecretKey: '',
+  esaScenes: '[]'
 }
 
 /**
@@ -889,7 +892,8 @@ export async function resolveCaptchaSettings(): Promise<CaptchaSettings> {
       enabled: true,
       provider: settings.captchaProvider || 'graphic',
       threshold,
-      turnstileSecretKey: settings.turnstileSecretKey || ''
+      turnstileSecretKey: settings.turnstileSecretKey || '',
+      esaScenes: settings.esaCaptchaScenes
     }
   } catch (error) {
     console.warn('读取验证码配置失败，已暂时禁用:', error)
@@ -907,7 +911,8 @@ export async function isPasswordLoginCaptchaRequired(
 ): Promise<boolean> {
   const config = settings ?? (await resolveCaptchaSettings())
   if (!config.enabled) return false
-  if (config.provider === 'turnstile') return true
+  // Turnstile 与 ESA AI 验证码由外部服务在每次登录时验证，不依赖失败次数
+  if (config.provider === 'turnstile' || config.provider === 'esa') return true
   if (config.threshold === 0) return true
   const failCount = await getLoginFailureCount(username, ip)
   return failCount >= config.threshold

@@ -1,11 +1,13 @@
 import bcrypt from 'bcryptjs'
+import { getRequestHeader } from 'h3'
 import { eq, inArray } from 'drizzle-orm'
 import { db, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
-import { isSecureRequest } from '~~/server/utils/request-utils'
+import { isSecureRequest, getRequestHostname } from '~~/server/utils/request-utils'
+import { resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
@@ -14,6 +16,7 @@ import { resolveGradeClassError, REMARK_MAX_LENGTH } from '~~/server/utils/regis
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { verifyEmailCode } from '~~/server/utils/email-verification'
 import { notifyRegistration } from '~~/server/utils/registration-notify'
+import { resolveRegisteredLegalConsentVersion } from '~~/server/utils/legal-consent'
 
 const REGISTER_RATE_LIMIT = 5
 const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
@@ -44,6 +47,9 @@ export default defineEventHandler(async (event) => {
     const waitMinutes = Math.ceil((limitResult.resetTime - getServerTimestamp()) / 60000)
     throw createApiError(429, SERVER_ERROR_CODES.AUTH_RATE_LIMITED_MINUTES, `注册请求过于频繁，请等待 ${waitMinutes} 分钟后再试`, { params: [waitMinutes] })
   }
+
+  // 条款确认：开启登录条款后，必须显式提交与当前内容版本一致的同意版本
+  const legalConsentVersion = resolveRegisteredLegalConsentVersion(config, body)
 
   // 验证码：开启验证码服务时注册必须通过（图形验证码或 Turnstile）
   const captchaEnabled = Boolean(config?.captchaEnabled)
@@ -81,6 +87,14 @@ export default defineEventHandler(async (event) => {
         if (err.statusCode === 400) throw err
         console.error('Turnstile verification error:', err)
         throw createApiError(500, SERVER_ERROR_CODES.AUTH_CAPTCHA_SERVICE_UNAVAILABLE, '人机验证服务暂时不可用')
+      }
+    } else if (captchaProvider === 'esa') {
+      // ESA 验签在边缘完成，源站无服务端验签接口，只能判断验签参数是否随请求到达
+      // 前提：源站必须只接受 ESA 回源流量，否则直连源站即可附带任意请求头绕过验证
+      // 当前接口+域名未配置可用场景 ID 时，边缘不会拦截该请求，视为未开启人机验证，不拦截注册
+      const esaSceneId = resolveEsaCaptchaSceneId(config?.esaCaptchaScenes, 'register', getRequestHostname(event))
+      if (esaSceneId && !getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
+        throw createApiError(400, SERVER_ERROR_CODES.AUTH_CAPTCHA_REQUIRED, '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
       }
     } else {
       const captchaId = body.captchaId
@@ -186,7 +200,9 @@ export default defineEventHandler(async (event) => {
         updatedAt: now,
         passwordChangedAt: now,
         lastLogin: now,
-        forcePasswordChange: false
+        forcePasswordChange: false,
+        legalConsentVersion: legalConsentVersion || null,
+        legalConsentAt: legalConsentVersion ? now : null
       })
       .onConflictDoNothing()
       .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]

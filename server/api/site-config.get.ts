@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
 import { getInstanceId } from '../utils/instance-id'
+import { computeLegalConsentVersion } from '../utils/legal-consent'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,6 +29,11 @@ export default defineEventHandler(async (event) => {
     }
 
     const publicSettings = filterPublicSettings(settings)
+
+    // 条款内容版本指纹为派生值（非数据库列），供登录页按内容变化判定是否需重新同意
+    if (publicSettings.legalConsentEnabled) {
+      publicSettings.legalConsentVersion = computeLegalConsentVersion(settings) || ''
+    }
 
     return publicSettings
   } catch (error) {

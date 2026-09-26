@@ -325,7 +325,7 @@
           <button
             type="button"
             class="code-btn"
-            :disabled="sendingCode || codeCountdown > 0"
+            :disabled="loginTermsBlocked || sendingCode || codeCountdown > 0"
             @click="sendEmailCode"
           >
             {{ codeCountdown > 0 ? locale.codeCountdown(codeCountdown) : locale.sendCode }}
@@ -333,12 +333,30 @@
         </div>
       </div>
 
-      <div v-show="showCaptcha" class="form-group">
+      <div
+        v-show="showCaptcha"
+        class="form-group"
+        :class="{ 'esa-captcha-mount': captchaProvider === 'esa' && esaSceneId }"
+      >
         <TurnstileWidget
           v-if="captchaProvider === 'turnstile'"
           ref="turnstileRef"
           v-model="turnstileToken"
         />
+        <EsaCaptchaWidget
+          v-else-if="captchaProvider === 'esa' && esaSceneId"
+          :key="esaSceneId"
+          ref="esaCaptchaRef"
+          v-model="esaVerifyParam"
+          :scene-id="esaSceneId"
+          :button-selector="esaButtonSelector"
+          @verified="handleLogin"
+          @load-error="handleEsaCaptchaLoadError"
+        />
+        <!-- ESA 已启用但当前接口与域名解析不到场景 ID，不能回落成图形验证码 -->
+        <p v-else-if="captchaProvider === 'esa'" class="esa-scene-hint">
+          {{ locale.esaCaptchaSceneMissing }}
+        </p>
         <CaptchaInput
           v-else
           ref="captchaRef"
@@ -360,11 +378,17 @@
           <line x1="12" x2="12.01" y1="16" y2="16" />
         </svg>
         <span class="error-message">{{ error }}</span>
+        <button class="error-close" type="button" aria-label="关闭提示" @click="error = ''">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       <button
-        :disabled="loading || captchaPending"
-        :class="['submit-btn', { 'is-disabled': loading || captchaPending }]"
+        id="auth-submit-button"
+        :disabled="loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal') }]"
         type="submit"
       >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
@@ -397,6 +421,11 @@
         <span v-else>{{ showRegisterMode ? locale.register : isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
 
+      <label v-if="legalConsentActive && legalConsentDisplayMode === 'checkbox'" class="login-terms-check">
+        <input v-model="loginTermsAccepted" type="checkbox">
+        <span class="terms-text"><span>{{ locale.legalConsentPrefix }}</span><template v-for="(doc, index) in legalConsentDocuments" :key="doc.slug"><a :href="`/legal/${doc.slug}`" target="_blank" rel="noopener noreferrer"><strong>{{ doc.name }}</strong></a><span v-if="index < legalConsentDocuments.length - 1">{{ locale.legalConsentSeparator }}</span></template></span>
+      </label>
+
       <!-- 登录/注册模式切换 -->
       <div v-if="!isBindMode && allowRegister" class="mode-switch">
         <button
@@ -413,19 +442,19 @@
       </div>
     </form>
 
-    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" />
+    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
     <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button type="button" class="webauthn-btn" :disabled="loading" @click="handleWebAuthnLogin">
+      <button type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" />
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -459,6 +488,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useLegalConsentPrompt } from '~/composables/useLegalConsentPrompt'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import {
@@ -476,16 +506,21 @@ import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
+import EsaCaptchaWidget from './EsaCaptchaWidget.vue'
 import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
+import { ESA_CAPTCHA_VERIFY_HEADER, getEsaCaptchaRejectCode, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, registerEmailRequired, registerRequiresGradeClass } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
 const { success: toastSuccess } = useToast()
+
+const showCreateMode = ref(false)
+const showRegisterMode = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -502,8 +537,28 @@ const captchaInput = ref('')
 const captchaRef = ref(null)
 const turnstileToken = ref('')
 const turnstileRef = ref(null)
+// 阿里云 ESA AI 验证码：验签参数由前端 SDK 产出，随请求头交给 ESA 边缘验签
+const esaVerifyParam = ref('')
+const esaCaptchaRef = ref(null)
+const esaButtonSelector = '#auth-submit-button'
+// 一条 ESA 规则只覆盖一个接口，登录与注册需按当前模式各自的场景 ID 初始化
+// SSR 阶段无域名，仅能命中「任意域名」规则
+const esaSceneId = computed(() =>
+  resolveEsaCaptchaSceneId(
+    esaCaptchaScenes.value,
+    showRegisterMode.value ? 'register' : 'login',
+    import.meta.client ? window.location.hostname : ''
+  )
+)
+
+// 验签参数一次性有效且与场景绑定，切换登录/注册时丢弃旧参数
+watch(showRegisterMode, () => {
+  esaVerifyParam.value = ''
+})
 
 const showCaptcha = computed(() => {
+  // ESA 已选择但当前接口与域名解析不到场景 ID 时，视为未开启人机验证，不拦截登录/注册
+  if (captchaProvider.value === 'esa' && !esaSceneId.value) return false
   // 注册模式开启验证码服务时强制显示验证码
   if (showRegisterMode.value) return captchaEnabled.value
   // 如果后端明确要求显示验证码，则优先显示
@@ -512,13 +567,14 @@ const showCaptcha = computed(() => {
   if (!captchaEnabled.value) return false
   // 阈值为 0 时每次都显示（bind 接口不校验验证码，绑定模式除外）
   if (captchaProvider.value === 'graphic' && !isBindMode.value && captchaMaxFailures.value === 0) return true
-  return captchaProvider.value === 'turnstile'
+  // Turnstile 与 ESA AI 验证码每次登录均需验证
+  return captchaProvider.value === 'turnstile' || captchaProvider.value === 'esa'
 })
 
-// 验证码未加载完成时禁用提交
+// 验证码未加载完成时禁用提交（Turnstile 与 ESA 均由外部 SDK 自行渲染）
 const captchaPending = computed(() => {
   if (!showCaptcha.value) return false
-  if (captchaProvider.value === 'turnstile') return false
+  if (captchaProvider.value !== 'graphic') return false
   return !captchaId.value
 })
 
@@ -534,6 +590,9 @@ const name = ref('')
 const grade = ref('')
 const studentClass = ref('')
 const password = ref('')
+const loginTermsAccepted = ref(false)
+const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
+const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
 const confirmPassword = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -548,8 +607,11 @@ const userId2FA = ref(0)
 const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
-const showCreateMode = ref(false)
-const showRegisterMode = ref(false)
+watch(loginTermsAccepted, (accepted) => {
+  // 复选框每次均需手动勾选（不本地持久化，避免跨账号预勾选），取消勾选时同步提示错误
+  if (!accepted && legalConsentActive.value) error.value = locale.value.legalConsentBlocked
+  if (accepted && error.value === locale.value.legalConsentBlocked) error.value = ''
+})
 const remark = ref('')
 const email = ref('')
 const emailCode = ref('')
@@ -558,6 +620,13 @@ const codeCountdown = ref(0)
 const codeTimer = ref(null)
 const showBindConfirm = ref(false)
 const bindConfirmLoading = ref(false)
+// 复选框模式提交前拦截；弹窗模式改为登录成功后按账号向服务端校验（见 redirectAfterLogin）
+const requireLegalConsent = () => {
+  if (legalConsentDisplayMode.value === 'modal') return false
+  if (!legalConsentActive.value || loginTermsAccepted.value) return false
+  error.value = locale.value.legalConsentBlocked
+  return true
+}
 
 // 预检：输入用户名后查询服务端是否已要求验证码，刷新后无需先被 400 拒绝一次
 let captchaPrecheckTimer = null
@@ -595,6 +664,7 @@ const bindConfirmMessage = computed(() => {
 const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
+const { ensureLegalConsent, ensureLegalConsentForRegister } = useLegalConsentPrompt()
 
 // 只允许站内绝对路径，避免登录参数被用于开放重定向。
 const getSafeRedirect = (fallback = '/') => {
@@ -664,6 +734,8 @@ const gradeClassRequiredError = () => {
 }
 
 const redirectAfterLogin = async () => {
+  // 弹窗模式：登录成功后按账号校验是否需要确认当前条款，由全局 LegalConsentModal 弹窗处理，确认后才进入系统
+  if (!(await ensureLegalConsent())) return
   if (auth.user.value?.requirePasswordChange) {
     return navigateTo('/change-password')
   }
@@ -671,7 +743,23 @@ const redirectAfterLogin = async () => {
 }
 
 const handle2FASuccess = async () => {
+  await auth.initAuth(true)
+  await recordLegalConsent()
   await redirectAfterLogin()
+}
+
+const postLegalConsent = async (version) => {
+  try {
+    await $fetch('/api/legal-consent', { method: 'POST', body: { version } })
+  } catch (e) {
+    console.error('记录条款同意状态失败:', e)
+  }
+}
+
+const recordLegalConsent = async () => {
+  // 复选框模式：本地显式勾选后才记录；弹窗模式统一在登录后弹窗显式同意时记录
+  if (!legalConsentActive.value || !loginTermsAccepted.value || legalConsentDisplayMode.value === 'modal') return
+  await postLegalConsent(legalConsentVersion.value)
 }
 
 onMounted(async () => {
@@ -730,7 +818,35 @@ const switchToLogin = () => {
   remark.value = ''
 }
 
+// ESA SDK 脚本加载失败时验证码不会出现，给出可操作提示而非静默无响应
+const handleEsaCaptchaLoadError = () => {
+  error.value = locale.value.esaCaptchaLoadFailed || '人机验证组件加载失败，请刷新页面重试'
+}
+
+// 请求被 ESA 边缘拦截时源站收不到该请求，错误体并非本项目的 API 错误，只能按响应头原因码提示
+const applyEsaCaptchaRejectError = (err) => {
+  const code = getEsaCaptchaRejectCode(err)
+  if (!code) return false
+  const reason = locale.value.esaVerifyCodes?.[code]
+  error.value = reason
+    ? formatLocale(
+        locale.value.esaVerifyFailedWithReason || '人机验证未通过：{0}（原因码 {1}），请重试或联系管理员',
+        reason,
+        code
+      )
+    : formatLocale(locale.value.esaVerifyFailed || '人机验证未通过（原因码 {0}），请重试或联系管理员', code)
+  return true
+}
+
+// ESA AI 验证码必须先取得验签参数（参数一次性有效，由 handleLogin 的 verified 回调重新进入提交）
+// 未解析到场景 ID 时 showCaptcha 已为 false，此处直接放行，等同于未开启人机验证
+const ensureEsaCaptchaVerified = () => {
+  if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  return !!esaVerifyParam.value
+}
+
 const handleLogin = async () => {
+  if (requireLegalConsent()) return
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return
@@ -747,6 +863,7 @@ const handleLogin = async () => {
       error.value = gradeClassError
       return
     }
+    if (!ensureEsaCaptchaVerified()) return
     return handleRegister()
   }
 
@@ -772,13 +889,15 @@ const handleLogin = async () => {
     return
   }
 
+  if (!ensureEsaCaptchaVerified()) return
+
   await performLogin()
 }
 
 // 发起登录/绑定请求，成功后跳转；返回 'success' | '2fa' | 'failed'
 const performLogin = async () => {
-  // 兜底：验证码未就绪时不提交
-  if (showCaptcha.value && captchaProvider.value !== 'turnstile' && !captchaId.value) {
+  // 兜底：图形验证码未就绪时不提交
+  if (showCaptcha.value && captchaProvider.value === 'graphic' && !captchaId.value) {
     error.value = authLocale.value?.captchaInput?.loadFailed || locale.value.loginFailed
     return 'failed'
   }
@@ -790,9 +909,13 @@ const performLogin = async () => {
     username: username.value,
     password: password.value
   }
+  // 图形验证码与 Turnstile 走请求体；ESA 验签参数走请求头，供 ESA 边缘读取
+  const requestHeaders = {}
   if (showCaptcha.value) {
     if (captchaProvider.value === 'turnstile') {
       requestBody.turnstileToken = turnstileToken.value
+    } else if (captchaProvider.value === 'esa') {
+      requestHeaders[ESA_CAPTCHA_VERIFY_HEADER] = esaVerifyParam.value
     } else {
       requestBody.captchaId = captchaId.value
       requestBody.captchaInput = captchaInput.value.trim()
@@ -805,7 +928,8 @@ const performLogin = async () => {
 
     const response = await $fetch(url, {
       method: 'POST',
-      body: requestBody
+      body: requestBody,
+      headers: requestHeaders
     })
 
     // 账号密码登录成功后记录来源，供微信/QQ 内置浏览器进入主页时引导绑定
@@ -825,6 +949,7 @@ const performLogin = async () => {
 
     // 登录成功，刷新认证状态
     await auth.initAuth(true)
+    await recordLegalConsent()
     await redirectAfterLogin()
     return 'success'
   } catch (err) {
@@ -835,6 +960,8 @@ const performLogin = async () => {
       err,
       isBindMode.value ? locale.value.bindFailed : locale.value.loginFailed
     )
+    // 被 ESA 边缘拦截时换成带原因码的提示，避免把边缘拦截页当成本项目的登录失败
+    applyEsaCaptchaRejectError(err)
 
     // 如果后端要求验证码，则显示验证码区域（针对图形验证码）
     if (innerData?.captchaRequired) {
@@ -845,6 +972,8 @@ const performLogin = async () => {
       await nextTick()
       if (captchaProvider.value === 'turnstile') {
         turnstileRef.value?.reset?.()
+      } else if (captchaProvider.value === 'esa') {
+        esaCaptchaRef.value?.reset?.()
       } else {
         captchaRef.value?.refreshCaptcha?.()
       }
@@ -897,9 +1026,13 @@ const handleRegisterOAuth = async () => {
   }
 
   error.value = ''
-  loading.value = true
 
   try {
+    // 弹窗模式：注册前通过全局条款弹窗确认，同意后由请求体显式携带同意版本
+    if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+      if (!(await ensureLegalConsentForRegister())) return
+    }
+    loading.value = true
     const response = await $fetch('/api/auth/oauth-register', {
       method: 'POST',
       body: {
@@ -911,7 +1044,11 @@ const handleRegisterOAuth = async () => {
         confirmPassword: confirmPassword.value,
         remark: remark.value.trim(),
         email: emailValue || undefined,
-        emailCode: emailCode.value.trim() || undefined
+        emailCode: emailCode.value.trim() || undefined,
+        ...(legalConsentActive.value && {
+          legalConsentAccepted: legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true,
+          legalConsentVersion: legalConsentVersion.value
+        })
       }
     })
 
@@ -1007,9 +1144,13 @@ const handleRegister = async () => {
   }
 
   error.value = ''
-  loading.value = true
 
   try {
+    // 弹窗模式：注册前通过全局条款弹窗确认，同意后由请求体显式携带同意版本
+    if (legalConsentActive.value && legalConsentDisplayMode.value === 'modal') {
+      if (!(await ensureLegalConsentForRegister())) return
+    }
+    loading.value = true
     const requestBody = {
       username: username.value,
       name: name.value,
@@ -1021,9 +1162,18 @@ const handleRegister = async () => {
       email: emailValue || undefined,
       emailCode: emailCode.value.trim() || undefined
     }
+    // 条款确认：显式提交用户已同意的内容版本，服务端校验其与当前版本一致（未开启条款时跳过）
+    if (legalConsentActive.value) {
+      requestBody.legalConsentAccepted = legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true
+      requestBody.legalConsentVersion = legalConsentVersion.value
+    }
+    // 图形验证码与 Turnstile 走请求体；ESA 验签参数走请求头，供 ESA 边缘读取
+    const requestHeaders = {}
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {
         requestBody.turnstileToken = turnstileToken.value
+      } else if (captchaProvider.value === 'esa') {
+        requestHeaders[ESA_CAPTCHA_VERIFY_HEADER] = esaVerifyParam.value
       } else {
         requestBody.captchaId = captchaId.value
         requestBody.captchaInput = captchaInput.value.trim()
@@ -1032,7 +1182,8 @@ const handleRegister = async () => {
 
     const response = await $fetch('/api/auth/register', {
       method: 'POST',
-      body: requestBody
+      body: requestBody,
+      headers: requestHeaders
     })
 
     if (response.success) {
@@ -1051,6 +1202,8 @@ const handleRegister = async () => {
     const innerData = apiError.data?.data
     // 统一按错误码本地化服务端错误，未命中再回退到默认文案
     error.value = localizeServerError(apiError, locale.value.registerFailed)
+    // 被 ESA 边缘拦截时换成带原因码的提示
+    applyEsaCaptchaRejectError(apiError)
 
     // 如果后端要求验证码，则显示验证码区域
     if (innerData?.captchaRequired) {
@@ -1061,6 +1214,8 @@ const handleRegister = async () => {
       await nextTick()
       if (captchaProvider.value === 'turnstile') {
         turnstileRef.value?.reset?.()
+      } else if (captchaProvider.value === 'esa') {
+        esaCaptchaRef.value?.reset?.()
       } else {
         captchaRef.value?.refreshCaptcha?.()
       }
@@ -1096,6 +1251,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
     if (verification.success) {
       // 登录成功
       await auth.initAuth(true)
+      await recordLegalConsent()
       return redirectAfterLogin()
     }
   } catch (e) {
@@ -1130,6 +1286,7 @@ const startConditionalWebAuthnLogin = async () => {
 }
 
 const handleWebAuthnLogin = async () => {
+  if (requireLegalConsent()) return
   loading.value = true
   error.value = ''
 
@@ -1187,6 +1344,18 @@ const handleWebAuthnLogin = async () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ESA 为弹窗形态，挂载点没有可见内容；移出 flex 布局避免在表单里占出一段空白 */
+.esa-captcha-mount {
+  position: absolute;
+}
+
+/* ESA 已启用但场景 ID 缺失时的提示 */
+.esa-scene-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--error);
 }
 
 .form-group label {
@@ -1295,6 +1464,45 @@ const handleWebAuthnLogin = async () => {
   filter: brightness(1.03);
 }
 
+.input-wrapper input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+}
+
+.login-terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.login-terms-check .terms-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-terms-check input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+}
+
+.login-terms-check a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 .class-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1389,6 +1597,26 @@ const handleWebAuthnLogin = async () => {
 .error-message {
   font-size: 14px;
   font-weight: var(--font-medium);
+}
+
+.error-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  color: var(--error);
+  opacity: 0.7;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+.error-close svg {
+  width: 14px;
+  height: 14px;
 }
 
 .submit-btn {
@@ -1629,3 +1857,9 @@ const handleWebAuthnLogin = async () => {
   line-height: 1.4;
 }
 </style>
+
+
+
+
+
+

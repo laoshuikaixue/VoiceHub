@@ -1,6 +1,6 @@
 {
-  "id": "1f63a983-2633-42aa-b34b-3ddbb18d3b75",
-  "prevId": "d3a66aa1-bd3c-46d0-99d3-d24c2ad448e7",
+  "id": "d3a66aa1-bd3c-46d0-99d3-d24c2ad448e7",
+  "prevId": "3d91970f-0720-48f6-8730-956d34539423",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3027,32 +3027,6 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'[\"netease\",\"tencent\",\"bilibili\",\"migu\"]'"
-        },
-        "astrbotEnabled": {
-          "name": "astrbotEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "astrbotBaseUrl": {
-          "name": "astrbotBaseUrl",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotToken": {
-          "name": "astrbotToken",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotBroadcastEnabled": {
-          "name": "astrbotBroadcastEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {},
@@ -3380,24 +3354,6 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
-        },
-        "astrbotUmo": {
-          "name": "astrbotUmo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotPlatform": {
-          "name": "astrbotPlatform",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotBoundAt": {
-          "name": "astrbotBoundAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -3406,21 +3362,6 @@
           "columns": [
             {
               "expression": "username",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "User_astrbot_umo_unique": {
-          "name": "User_astrbot_umo_unique",
-          "columns": [
-            {
-              "expression": "astrbotUmo",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -3504,80 +3445,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.AstrbotBindingCode": {
-      "name": "AstrbotBindingCode",
-      "schema": "",
-      "columns": {
-        "userId": {
-          "name": "userId",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "codeHash": {
-          "name": "codeHash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expiresAt": {
-          "name": "expiresAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "consumedAt": {
-          "name": "consumedAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "AstrbotBindingCode_hash_unique": {
-          "name": "AstrbotBindingCode_hash_unique",
-          "columns": [
-            {
-              "expression": "codeHash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "AstrbotBindingCode_userId_User_id_fk": {
-          "name": "AstrbotBindingCode_userId_User_id_fk",
-          "tableFrom": "AstrbotBindingCode",
-          "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

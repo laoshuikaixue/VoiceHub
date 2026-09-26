@@ -144,7 +144,8 @@ export default defineEventHandler(async (event) => {
                 'statusChangedBy',
                 'remark',
                 'avatarProvider',
-                'avatarProviderUserId'
+                'avatarProviderUserId',
+                'legalConsentVersion'
               ]
               const dateFields = [
                 'createdAt',
@@ -153,7 +154,8 @@ export default defineEventHandler(async (event) => {
                 'passwordChangedAt',
                 'meowBoundAt',
                 'astrbotBoundAt',
-                'statusChangedAt'
+                'statusChangedAt',
+                'legalConsentAt'
               ]
 
               userFields.forEach((field) => {
@@ -937,10 +939,17 @@ export default defineEventHandler(async (event) => {
               'captchaProvider',
               'turnstileSiteKey',
               'turnstileSecretKey',
+              'esaCaptchaPrefix',
+              'esaCaptchaScenes',
+              'esaCaptchaRegion',
               'autoBackupEnabled',
               'autoBackupConfig',
               'statisticsCodeEnabled',
               'statisticsCode',
+              'legalConsentEnabled',
+              'legalConsentDisplayMode',
+              'legalConsentUpdatedDate',
+              'legalConsentDocuments',
               'enabledPlatforms',
               'platformOrder'
             ]

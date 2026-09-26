@@ -228,310 +228,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.AstrbotBindingCode": {
-      "name": "AstrbotBindingCode",
-      "schema": "",
-      "columns": {
-        "userId": {
-          "name": "userId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "platform": {
-          "name": "platform",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "codeHash": {
-          "name": "codeHash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expiresAt": {
-          "name": "expiresAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "consumedAt": {
-          "name": "consumedAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "AstrbotBindingCode_hash_unique": {
-          "name": "AstrbotBindingCode_hash_unique",
-          "columns": [
-            {
-              "expression": "codeHash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "AstrbotBindingCode_userId_User_id_fk": {
-          "name": "AstrbotBindingCode_userId_User_id_fk",
-          "tableFrom": "AstrbotBindingCode",
-          "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "AstrbotBindingCode_userId_platform_pk": {
-          "name": "AstrbotBindingCode_userId_platform_pk",
-          "columns": [
-            "userId",
-            "platform"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.AstrbotBinding": {
-      "name": "AstrbotBinding",
-      "schema": "",
-      "columns": {
-        "userId": {
-          "name": "userId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "platform": {
-          "name": "platform",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "adapter": {
-          "name": "adapter",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "umo": {
-          "name": "umo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "boundAt": {
-          "name": "boundAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "AstrbotBinding_umo_unique": {
-          "name": "AstrbotBinding_umo_unique",
-          "columns": [
-            {
-              "expression": "umo",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "AstrbotBinding_userId_User_id_fk": {
-          "name": "AstrbotBinding_userId_User_id_fk",
-          "tableFrom": "AstrbotBinding",
-          "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "AstrbotBinding_userId_platform_pk": {
-          "name": "AstrbotBinding_userId_platform_pk",
-          "columns": [
-            "userId",
-            "platform"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.AstrbotOutbox": {
-      "name": "AstrbotOutbox",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "umos": {
-          "name": "umos",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "targetOwners": {
-          "name": "targetOwners",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "broadcast": {
-          "name": "broadcast",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "eventKey": {
-          "name": "eventKey",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "notifyAfter": {
-          "name": "notifyAfter",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "leasedUntil": {
-          "name": "leasedUntil",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deliveredAt": {
-          "name": "deliveredAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "failedAt": {
-          "name": "failedAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lastError": {
-          "name": "lastError",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "astrbot_outbox_pending_idx": {
-          "name": "astrbot_outbox_pending_idx",
-          "columns": [
-            {
-              "expression": "deliveredAt",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "failedAt",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.auth_sessions": {
       "name": "auth_sessions",
       "schema": "",
@@ -2881,72 +2577,6 @@
           "notNull": false,
           "default": "'校园广播站'"
         },
-        "astrbotEnabled": {
-          "name": "astrbotEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "astrbotPlatforms": {
-          "name": "astrbotPlatforms",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{\"qq\":false,\"wecom\":false,\"dingtalk\":false,\"lark\":false}'::jsonb"
-        },
-        "astrbotBaseUrl": {
-          "name": "astrbotBaseUrl",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotToken": {
-          "name": "astrbotToken",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotBroadcastEnabled": {
-          "name": "astrbotBroadcastEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "astrbotGroupTargets": {
-          "name": "astrbotGroupTargets",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "astrbotGroupEvents": {
-          "name": "astrbotGroupEvents",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotGroupThrottle": {
-          "name": "astrbotGroupThrottle",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotPushMode": {
-          "name": "astrbotPushMode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'push'"
-        },
-        "astrbotWeeklyConfig": {
-          "name": "astrbotWeeklyConfig",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{\"showCover\":true,\"showSequence\":true,\"showRequester\":true,\"showVotes\":false,\"showPlayTime\":true,\"showDate\":true}'::jsonb"
-        },
         "enableRequestTimeLimitation": {
           "name": "enableRequestTimeLimitation",
           "type": "boolean",
@@ -3343,6 +2973,33 @@
           "primaryKey": false,
           "notNull": false
         },
+        "legalConsentEnabled": {
+          "name": "legalConsentEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "legalConsentDisplayMode": {
+          "name": "legalConsentDisplayMode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'modal'"
+        },
+        "legalConsentUpdatedDate": {
+          "name": "legalConsentUpdatedDate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legalConsentDocuments": {
+          "name": "legalConsentDocuments",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'"
+        },
         "defaultTheme": {
           "name": "defaultTheme",
           "type": "text",
@@ -3370,6 +3027,92 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'[\"netease\",\"tencent\",\"bilibili\",\"migu\"]'"
+        },
+        "astrbotEnabled": {
+          "name": "astrbotEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "astrbotBaseUrl": {
+          "name": "astrbotBaseUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "astrbotToken": {
+          "name": "astrbotToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "astrbotBroadcastEnabled": {
+          "name": "astrbotBroadcastEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "esaCaptchaPrefix": {
+          "name": "esaCaptchaPrefix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "esaCaptchaScenes": {
+          "name": "esaCaptchaScenes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'"
+        },
+        "esaCaptchaRegion": {
+          "name": "esaCaptchaRegion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'cn'"
+        },
+        "astrbotPushMode": {
+          "name": "astrbotPushMode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'push'"
+        },
+        "astrbotPlatforms": {
+          "name": "astrbotPlatforms",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"qq\":false,\"wecom\":false,\"dingtalk\":false,\"lark\":false}'::jsonb"
+        },
+        "astrbotWeeklyConfig": {
+          "name": "astrbotWeeklyConfig",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"showCover\":true,\"showSequence\":true,\"showRequester\":true,\"showVotes\":false,\"showPlayTime\":true,\"showDate\":true}'::jsonb"
+        },
+        "astrbotGroupTargets": {
+          "name": "astrbotGroupTargets",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "astrbotGroupEvents": {
+          "name": "astrbotGroupEvents",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "astrbotGroupThrottle": {
+          "name": "astrbotGroupThrottle",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -3647,24 +3390,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "astrbotUmo": {
-          "name": "astrbotUmo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotPlatform": {
-          "name": "astrbotPlatform",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "astrbotBoundAt": {
-          "name": "astrbotBoundAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "avatarProvider": {
           "name": "avatarProvider",
           "type": "text",
@@ -3701,6 +3426,36 @@
         "remark": {
           "name": "remark",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legal_consent_version": {
+          "name": "legal_consent_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legal_consent_at": {
+          "name": "legal_consent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "astrbotUmo": {
+          "name": "astrbotUmo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "astrbotPlatform": {
+          "name": "astrbotPlatform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "astrbotBoundAt": {
+          "name": "astrbotBoundAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         }
@@ -3809,6 +3564,310 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.AstrbotBindingCode": {
+      "name": "AstrbotBindingCode",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codeHash": {
+          "name": "codeHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "consumedAt": {
+          "name": "consumedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "AstrbotBindingCode_hash_unique": {
+          "name": "AstrbotBindingCode_hash_unique",
+          "columns": [
+            {
+              "expression": "codeHash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "AstrbotBindingCode_userId_User_id_fk": {
+          "name": "AstrbotBindingCode_userId_User_id_fk",
+          "tableFrom": "AstrbotBindingCode",
+          "tableTo": "User",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "AstrbotBindingCode_userId_platform_pk": {
+          "name": "AstrbotBindingCode_userId_platform_pk",
+          "columns": [
+            "userId",
+            "platform"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.AstrbotOutbox": {
+      "name": "AstrbotOutbox",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "umos": {
+          "name": "umos",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "broadcast": {
+          "name": "broadcast",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "leasedUntil": {
+          "name": "leasedUntil",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deliveredAt": {
+          "name": "deliveredAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failedAt": {
+          "name": "failedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastError": {
+          "name": "lastError",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "targetOwners": {
+          "name": "targetOwners",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eventKey": {
+          "name": "eventKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notifyAfter": {
+          "name": "notifyAfter",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "astrbot_outbox_pending_idx": {
+          "name": "astrbot_outbox_pending_idx",
+          "columns": [
+            {
+              "expression": "deliveredAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "failedAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.AstrbotBinding": {
+      "name": "AstrbotBinding",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adapter": {
+          "name": "adapter",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "umo": {
+          "name": "umo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "boundAt": {
+          "name": "boundAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "AstrbotBinding_umo_unique": {
+          "name": "AstrbotBinding_umo_unique",
+          "columns": [
+            {
+              "expression": "umo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "AstrbotBinding_userId_User_id_fk": {
+          "name": "AstrbotBinding_userId_User_id_fk",
+          "tableFrom": "AstrbotBinding",
+          "tableTo": "User",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "AstrbotBinding_userId_platform_pk": {
+          "name": "AstrbotBinding_userId_platform_pk",
+          "columns": [
+            "userId",
+            "platform"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
