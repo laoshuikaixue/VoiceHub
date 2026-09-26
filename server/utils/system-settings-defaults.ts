@@ -72,6 +72,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   astrbotToken: null,
   astrbotBroadcastEnabled: false,
   astrbotPushMode: 'push',
+  astrbotWeeklyConfig: { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true },
   allowOAuthRegistration: false,
   allowRegister: false,
   registerRequiresApproval: true,

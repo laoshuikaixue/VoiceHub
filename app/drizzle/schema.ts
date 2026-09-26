@@ -337,6 +337,8 @@ export const systemSettings = pgTable('SystemSettings', {
   // 推送方向：push = VoiceHub 主动 POST 到插件（需插件可被访问）；
   // pull = 通知入队，由插件主动轮询领取（插件在内网/NAT 后时使用）。
   astrbotPushMode: text('astrbotPushMode').default('push').notNull(),
+  astrbotWeeklyConfig: jsonb('astrbotWeeklyConfig').$type<{ showCover: boolean; showSequence: boolean; showRequester: boolean; showVotes: boolean; showPlayTime: boolean; showDate: boolean }>()
+    .default({ showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true }).notNull(),
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
   forcePasswordChangeOnFirstLogin: boolean('forcePasswordChangeOnFirstLogin').default(false).notNull(),

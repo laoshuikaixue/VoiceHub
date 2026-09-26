@@ -223,6 +223,13 @@
           <CustomSelect v-model="astrbotConfig.astrbotPushMode" class="mt-1" :options="pushModeOptions" />
         </label>
         <p class="text-xs text-text-tertiary">{{ astrbotLocale.pushModeHint }}</p>
+        <div class="space-y-2 border-t border-border-secondary pt-4">
+          <h4 class="text-sm font-bold text-text-primary">{{ astrbotLocale.weeklyTitle }}</h4>
+          <p class="text-xs text-text-tertiary">{{ astrbotLocale.weeklyHint }}</p>
+          <label v-for="key in weeklyConfigKeys" :key="key" class="flex items-center gap-2 text-sm text-text-primary">
+            <input v-model="astrbotWeeklyConfig[key]" type="checkbox">{{ astrbotLocale.weeklyFields[key] }}
+          </label>
+        </div>
         <button :disabled="astrbotSaving" class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="saveAstrbotConfig">{{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}</button>
       </div>
     </section>
@@ -249,6 +256,9 @@ const astrbotTokenInput = ref('')
 const platformKeys = ['qq', 'wecom', 'dingtalk', 'lark']
 const astrbotPlatforms = ref(Object.fromEntries(platformKeys.map(platform => [platform, false])))
 const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotPushMode: 'push' })
+const weeklyConfigKeys = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate']
+const weeklyDefaults = { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true }
+const astrbotWeeklyConfig = ref({ ...weeklyDefaults })
 
 const pushModeOptions = computed(() => [
   { value: 'push', label: astrbotLocale.value.pushModePush || 'push' },
@@ -259,6 +269,9 @@ const loadAstrbotConfig = async () => {
   try {
     const response = await $fetch('/api/admin/system-settings')
     astrbotPlatforms.value = Object.fromEntries(platformKeys.map(platform => [platform, response.astrbotPlatforms?.[platform] === true]))
+    astrbotWeeklyConfig.value = Object.fromEntries(weeklyConfigKeys.map(key => [
+      key, typeof response.astrbotWeeklyConfig?.[key] === 'boolean' ? response.astrbotWeeklyConfig[key] : weeklyDefaults[key]
+    ]))
     astrbotConfig.value = {
       astrbotEnabled: !!response.astrbotEnabled,
       astrbotBaseUrl: response.astrbotBaseUrl || '',
@@ -275,7 +288,7 @@ const loadAstrbotConfig = async () => {
 const saveAstrbotConfig = async () => {
   astrbotSaving.value = true
   try {
-    const body = { ...astrbotConfig.value, astrbotBroadcastEnabled: false, astrbotPlatforms: { ...astrbotPlatforms.value } }
+    const body = { ...astrbotConfig.value, astrbotBroadcastEnabled: false, astrbotPlatforms: { ...astrbotPlatforms.value }, astrbotWeeklyConfig: { ...astrbotWeeklyConfig.value } }
     // 不回传掩码；空输入表示保留已有密钥。
     if (astrbotTokenInput.value) body.astrbotToken = astrbotTokenInput.value
     await $fetch('/api/admin/system-settings', { method: 'POST', body })

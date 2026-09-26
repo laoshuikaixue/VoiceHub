@@ -386,6 +386,13 @@
       "when": 1790381044650,
       "tag": "20260926000404_auto-migration",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1790396438534,
+      "tag": "20260926042038_auto-migration",
+      "breakpoints": true
     }
   ]
 }

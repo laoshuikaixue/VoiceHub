@@ -626,6 +626,15 @@ export default defineEventHandler(async (event) => {
       }
       updateData.astrbotPushMode = body.astrbotPushMode
     }
+    if (body.astrbotWeeklyConfig !== undefined) {
+      const config = body.astrbotWeeklyConfig
+      const keys = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate'] as const
+      if (!config || typeof config !== 'object' || Array.isArray(config) ||
+        Object.keys(config).length !== keys.length || !keys.every(key => typeof config[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '本周歌单显示项格式无效')
+      }
+      updateData.astrbotWeeklyConfig = Object.fromEntries(keys.map(key => [key, config[key]]))
+    }
     if (body.astrbotBaseUrl !== undefined) {
       if (typeof body.astrbotBaseUrl !== 'string' || body.astrbotBaseUrl.length > 2048) {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址无效')

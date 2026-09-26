@@ -199,11 +199,17 @@ test('排序为 playDate asc、sequence asc', () => {
   )
 })
 
-test('displayConfig 包含六个布尔字段', () => {
+test('displayConfig 从持久化配置读取六个布尔字段并对脏数据回退默认值', () => {
   const fields = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate']
+  const defaults = readFileSync(join(import.meta.dirname, '../../server/utils/system-settings-defaults.ts'), 'utf8')
+  const schema = readFileSync(join(import.meta.dirname, '../../app/drizzle/schema.ts'), 'utf8')
   for (const f of fields) {
-    assert.ok(apiSrc.includes(f), `displayConfig 应包含 ${f}`)
+    assert.ok(defaults.includes(`${f}:`), `默认配置应包含 ${f}`)
   }
+  assert.ok(schema.includes("jsonb('astrbotWeeklyConfig')"))
+  assert.ok(apiSrc.includes('weeklyConfig: systemSettings.astrbotWeeklyConfig'))
+  assert.ok(apiSrc.includes('typeof settings.weeklyConfig?.'))
+  assert.ok(apiSrc.includes('displayConfig: Object.fromEntries('))
 })
 
 test('isDraft = false 过滤只返回已发布排期', () => {

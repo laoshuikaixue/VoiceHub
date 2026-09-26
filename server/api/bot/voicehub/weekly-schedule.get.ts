@@ -7,6 +7,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot-notification'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { formatDateTime, getBeijingStartOfWeek } from '~/utils/timeUtils'
+import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -29,6 +30,7 @@ export default defineEventHandler(async (event) => {
       token: systemSettings.astrbotToken,
       enabled: systemSettings.astrbotEnabled,
       siteTitle: systemSettings.siteTitle,
+      weeklyConfig: systemSettings.astrbotWeeklyConfig,
     })
     .from(systemSettings)
     .limit(1)
@@ -150,13 +152,11 @@ export default defineEventHandler(async (event) => {
     generatedAt: formatDateTime(now),
     siteTitle: settings.siteTitle ?? 'VoiceHub',
     schedules: scheduleItems,
-    displayConfig: {
-      showCover: true,
-      showSequence: true,
-      showRequester: true,
-      showVotes: false,
-      showPlayTime: true,
-      showDate: true,
-    },
+    displayConfig: Object.fromEntries(
+      Object.entries(SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig).map(([key, fallback]) => [
+        key, typeof settings.weeklyConfig?.[key as keyof typeof settings.weeklyConfig] === 'boolean'
+          ? settings.weeklyConfig[key as keyof typeof settings.weeklyConfig] : fallback
+      ])
+    ),
   }
 })
