@@ -14,7 +14,7 @@ const modules: Record<string, string> = {
   '~~/server/utils/astrbot-group': `export const normalizeAstrbotGroupTargets=(raw)=>Array.isArray(raw)?raw:[]; export const isAstrbotGroupTargetAllowed=(targets,platforms,umo)=>Array.isArray(targets)&&targets.some(t=>t.umo===umo && platforms?.[t.platform]===true);`,
   '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached=async()=>({astrbotEnabled:true,astrbotPlatforms:{qq:true}});`,
   '~~/server/utils/astrbot-payload': `export const ASTRBOT_MAX_TARGETS_PER_REQUEST=200; export const fitsAstrbotPayload=()=>true;`,
-  '~~/server/utils/astrbot-pull': `export const isAstrbotOutboxExhausted=x=>x>=3;`
+  '~~/server/utils/astrbot-pull': `export const ASTRBOT_OUTBOX_MAX_ATTEMPTS=3; export const isAstrbotOutboxExhausted=x=>x>=3;`
 }
 Object.assign(globalThis, { __outboxDb: { select() {}, transaction() {} } })
 const compiled = await build({ entryPoints: [source], bundle: true, platform: 'node', format: 'esm', write: false,

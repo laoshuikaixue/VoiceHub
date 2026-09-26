@@ -8,6 +8,7 @@ import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { isAstrbotGroupTargetAllowed, normalizeAstrbotGroupTargets } from '~~/server/utils/astrbot-group'
 import { ASTRBOT_MAX_TARGETS_PER_REQUEST, fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
+import { ASTRBOT_OUTBOX_MAX_ATTEMPTS } from '~~/server/utils/astrbot-pull'
 
 /** 一次领取的最大条数与租约时长：插件崩溃后条目可被重新领取。 */
 export const ASTRBOT_OUTBOX_MAX_CLAIM = 20
@@ -71,10 +72,17 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
   const until = new Date(now.getTime() + ASTRBOT_OUTBOX_LEASE_SECONDS * 1000)
 
   return db.transaction(async (tx) => {
+    await tx.update(astrbotOutbox).set({ failedAt: now, leasedUntil: null, claimToken: null,
+      lastError: '投递超过重试上限' }).where(and(
+      isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt),
+      sql`${astrbotOutbox.attempts} >= ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
+      or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now))
+    ))
     const claimable = await tx.select({ id: astrbotOutbox.id }).from(astrbotOutbox)
       .where(and(
         isNull(astrbotOutbox.deliveredAt),
         isNull(astrbotOutbox.failedAt),
+        sql`${astrbotOutbox.attempts} < ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
         or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now)),
         // 冷却未过的群条目留在队列里等合并，不得提前投递。
         or(isNull(astrbotOutbox.notifyAfter), lt(astrbotOutbox.notifyAfter, now))

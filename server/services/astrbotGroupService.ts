@@ -16,7 +16,7 @@ import {
 } from '~~/server/utils/astrbot-group'
 import type { AstrbotGroupEventKey, AstrbotGroupThrottle } from '~~/server/utils/astrbot-group'
 import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
-import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
+import { ASTRBOT_OUTBOX_MAX_ATTEMPTS, isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { postAstrbotNotification } from '~~/server/services/astrbotNotificationService'
 
 /**
@@ -146,11 +146,18 @@ async function queueToGroups(
 export async function claimAstrbotGroupOutbox(limit = ASTRBOT_GROUP_FLUSH_LIMIT) {
   const now = getServerDate()
   return db.transaction(async (tx) => {
+  await tx.update(astrbotOutbox).set({ failedAt: now, leasedUntil: null, claimToken: null,
+    lastError: '群投递超过重试上限' }).where(and(
+    eq(astrbotOutbox.broadcast, true), isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt),
+    sql`${astrbotOutbox.attempts} >= ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
+    or(isNull(astrbotOutbox.leasedUntil), lte(astrbotOutbox.leasedUntil, now))
+  ))
   const rows = await tx.select({ id: astrbotOutbox.id }).from(astrbotOutbox)
     .where(and(
       eq(astrbotOutbox.broadcast, true),
       isNull(astrbotOutbox.deliveredAt),
       isNull(astrbotOutbox.failedAt),
+      sql`${astrbotOutbox.attempts} < ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
       or(isNull(astrbotOutbox.leasedUntil), lte(astrbotOutbox.leasedUntil, now)),
       or(isNull(astrbotOutbox.notifyAfter), lte(astrbotOutbox.notifyAfter, now))
     ))
@@ -195,10 +202,11 @@ export async function flushAstrbotGroupOutbox(): Promise<{ sent: number; failed:
     const umos = originalUmos
       .filter((umo) => isAstrbotGroupTargetAllowed(targets, settings.platforms, umo))
     if (!umos.length) {
-      await db.update(astrbotOutbox)
+      const updated = await db.update(astrbotOutbox)
         .set({ failedAt: getServerDate(), leasedUntil: null, claimToken: null, lastError: '群目标已移出白名单' })
         .where(owned)
-      failed++
+        .returning({ id: astrbotOutbox.id })
+      if (updated.length) failed++
       continue
     }
     try {
@@ -215,14 +223,16 @@ export async function flushAstrbotGroupOutbox(): Promise<{ sent: number; failed:
           retryUmos.every((umo) => umos.includes(umo)) && new Set(retryUmos).size === retryUmos.length
         const updated = await db.update(astrbotOutbox)
           .set({ leasedUntil: null, claimToken: null,
-            umos: knownFailures ? retryUmos : umos, lastError: '群投递未成功' })
+            umos: knownFailures ? retryUmos : umos, lastError: '群投递未成功',
+            failedAt: row.attempts >= ASTRBOT_OUTBOX_MAX_ATTEMPTS ? getServerDate() : null })
           .where(owned)
           .returning({ id: astrbotOutbox.id })
         if (updated.length) failed++
       }
     } catch (error) {
       const updated = await db.update(astrbotOutbox)
-        .set({ umos, leasedUntil: null, claimToken: null, lastError: String(error).slice(0, 500) })
+        .set({ umos, leasedUntil: null, claimToken: null, lastError: String(error).slice(0, 500),
+          failedAt: row.attempts >= ASTRBOT_OUTBOX_MAX_ATTEMPTS ? getServerDate() : null })
         .where(owned)
         .returning({ id: astrbotOutbox.id })
       if (updated.length) failed++
