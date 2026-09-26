@@ -590,7 +590,7 @@ pnpm run safe-migrate
 
 > **升级到内置 AstrBot 四平台绑定的版本时**：除执行数据库迁移外，部署流程还会自动回填旧绑定数据与站点开关。`scripts/db-sync.js` 在迁移完成后会把 `User` 表中的旧字段（`astrbotUmo`/`astrbotPlatform`/`astrbotBoundAt`）搬迁到新的 `AstrbotBinding` 表，并把历史开启的 AstrBot 站点（`astrbotEnabled=true`）延续为 `qq` 平台开关。该回填幂等：重复执行不会覆盖新表的既有绑定，也不会重置管理员改动过的平台开关；未知适配器会被跳过并输出告警。回填失败会中止部署。
 >
-> **已部署过早期 AstrBot 分支迁移的数据库不能直接升级到合并迁移。** 部署入口会检查旧迁移记录并在写入 schema 前中止，避免重放 `CREATE TABLE` 或自动回退到 `push --force`。请先备份数据库并制定保留既有绑定、群队列和设置的受控升级方案；不要删除迁移记录或直接强推结构。
+> **已部署过早期 AstrBot 分支迁移的数据库不能直接升级到合并迁移。** 部署入口会检查旧迁移记录；即使迁移记录缺失，只要存在 AstrBot 表且未登记新合并迁移，也会在写入 schema 前中止，避免重放 `CREATE TABLE` 或自动回退到 `push --force`。请先备份数据库并制定保留既有绑定、群队列和设置的受控升级方案；不要删除迁移记录或直接强推结构。
 >
 > **AstrBot 群事件投递边界**：群事件 push 仅支持常驻部署。合并窗口到期后的冲刷依赖常驻服务的定时任务；Vercel、Netlify 等按请求冻结实例的 Serverless 环境应在 VoiceHub 与 AstrBot 插件两端均选择 pull 模式，由插件主动领取并回执。切换模式前确认旧队列已处理，避免旧模式遗留条目滞留。
 >
@@ -1484,6 +1484,7 @@ VoiceHub/
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
+│   ├── astrbot-migration-guard.js # AstrBot 旧迁移记录与未登记表的只读升级保护
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
@@ -1503,6 +1504,7 @@ VoiceHub/
 │   ├── frontend/          # 推送配置与绑定界面契约测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── astrbot-migration-guard.test.ts # AstrBot 升级前数据库状态保护测试
 │       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
 │       ├── astrbot-platforms.test.ts # 四平台开关与绑定目标测试
 │       ├── astrbot-restore-fields.test.ts # AstrBot 配置备份恢复白名单测试

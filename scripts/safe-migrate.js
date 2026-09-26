@@ -6,6 +6,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { config } from 'dotenv'
 import postgres from 'postgres'
+import { rejectSupersededAstrbotMigrations as checkAstrbotMigrations } from './astrbot-migration-guard.js'
 
 // 加载环境变量
 config({ path: path.resolve(process.cwd(), '.env') })
@@ -66,13 +67,7 @@ function fileExists(filePath) {
 async function rejectSupersededAstrbotMigrations() {
   const sql = postgres(process.env.DATABASE_URL, { max: 1 })
   try {
-    const [table] = await sql`SELECT to_regclass('public.__drizzle_migrations__') AS table_name`
-    if (!table?.table_name) return
-    const superseded = [1790326842814, 1790342504449, 1790359178874,
-      1790380598636, 1790381044650, 1790396438534, 1790402496386]
-    const rows = await sql`SELECT created_at FROM public.__drizzle_migrations__
-      WHERE created_at IN ${sql(superseded)} LIMIT 1`
-    if (rows.length) throw new Error('旧版 AstrBot 迁移已执行：当前合并迁移不可直接重放，须先使用受控升级方案；已停止自动同步')
+    await checkAstrbotMigrations(sql)
   } finally {
     await sql.end()
   }

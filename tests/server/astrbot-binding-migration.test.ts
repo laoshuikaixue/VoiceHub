@@ -5,6 +5,7 @@ import test from 'node:test'
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
 
 const dbSync = read('../../scripts/db-sync.js')
+const migrationGuard = read('../../scripts/astrbot-migration-guard.js')
 const deploy = read('../../scripts/deploy.js')
 
 test('部署流程仍在迁移后调用 db-sync.js，且 db-sync 失败会中止部署', () => {
@@ -26,8 +27,9 @@ test('已执行被取代的 AstrBot 迁移时，在任何 schema 写入前拒绝
   const usernameWrite = dbSync.indexOf('await ensureNoDuplicateUsernames(sql)')
   const migrate = dbSync.indexOf("safeExec('pnpm run db:migrate'")
   assert.ok(guard > -1 && guard < usernameWrite && guard < migrate)
-  assert.match(dbSync, /FROM public\.__drizzle_migrations__/)
-  assert.match(dbSync, /旧版 AstrBot 迁移已执行/)
+  assert.match(dbSync, /import \{ rejectSupersededAstrbotMigrations \} from '\.\/astrbot-migration-guard\.js'/)
+  assert.match(migrationGuard, /FROM public\.__drizzle_migrations__/)
+  assert.match(migrationGuard, /旧版 AstrBot 迁移已执行/)
 })
 
 test('旧绑定搬迁使用 ON CONFLICT DO NOTHING，冲突时不覆盖新表既有绑定', () => {
