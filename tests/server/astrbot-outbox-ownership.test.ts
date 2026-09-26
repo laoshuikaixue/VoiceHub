@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 const source = fileURLToPath(new URL('../../server/services/astrbotOutboxService.ts', import.meta.url))
 const modules: Record<string, string> = {
   'drizzle-orm': `export const and=(...args)=>args, asc=x=>x, eq=(a,b)=>[a,b], inArray=(a,b)=>[a,b], isNull=x=>x, lt=(a,b)=>[a,b], or=(...args)=>args, sql=(strings,...values)=>strings;`,
-  '~/drizzle/schema': `export const astrbotOutbox={id:'id',attempts:'attempts',deliveredAt:'deliveredAt',failedAt:'failedAt',leasedUntil:'leasedUntil'}; export const astrbotBindings={umo:'umo',userId:'userId',boundAt:'boundAt',adapter:'adapter',platform:'platform'}; export const notificationSettings={userId:'userId',enabled:'enabled'};`,
+  '~/drizzle/schema': `export const astrbotOutbox={id:'id',broadcast:'broadcast',attempts:'attempts',deliveredAt:'deliveredAt',failedAt:'failedAt',leasedUntil:'leasedUntil'}; export const astrbotBindings={umo:'umo',userId:'userId',boundAt:'boundAt',adapter:'adapter',platform:'platform'}; export const notificationSettings={userId:'userId',enabled:'enabled'};`,
   '~/drizzle/db': `export const db=globalThis.__outboxDb;`,
   '~~/server/utils/serverTime': `export const getServerDate=()=>new Date('2026-09-25T00:00:00Z');`,
   '~~/server/utils/astrbot-platforms': `export const selectAstrbotTargets=(rows,settings)=>rows.filter(x=>x.enabled!==false && settings?.[x.platform]===true).map(x=>x.umo);`,
@@ -33,13 +33,23 @@ function fixture(owner: number, existing?: { targets?: unknown; umos: string[]; 
   const transaction = {
     select(fields?: object) { return {
       from(table: object) { const isQueue = 'id' in table; const rows = isQueue ? state.rows : state.bindings
-        const chain: any = { where() { return chain }, orderBy() { return chain }, limit() { return chain }, for() { return chain },
-          leftJoin() { return chain }, then(resolve: (v: unknown) => void) { resolve(isQueue && fields ? rows.map(row => ({ id: row.id })) : rows) } }
+        let predicate: unknown
+        const chain: any = { where(value: unknown) { predicate = value; return chain }, orderBy() { return chain }, limit() { return chain }, for() { return chain },
+          leftJoin() { return chain }, then(resolve: (v: unknown) => void) {
+            const broadcastDisabled = Array.isArray(predicate) && predicate.some((part) =>
+              Array.isArray(part) && part[0] === 'broadcast' && part[1] === false)
+            const selected = isQueue && broadcastDisabled ? rows.filter((row) => !row.broadcast) : rows
+            resolve(isQueue && fields ? selected.map(row => ({ id: row.id })) : selected)
+          } }
         return chain
       }
     } },
-    update() { return { set(values: object) { return { where() { return { returning: async () => state.rows.map(row => ({ ...row, ...values })) } } } } } },
-    insert() { return { values: async (rows: any[]) => { state.rows.push(...rows.map((row, i) => ({ id: i + 1, attempts: 0, ...row }))) } } },
+    update() { return { set(values: object) { return { where(predicate: unknown) { return { returning: async () => {
+      const idEquals = Array.isArray(predicate) && predicate[0] === 'id' ? predicate[1] : null
+      return state.rows.filter((row) => idEquals === null || row.id === idEquals)
+        .map((row) => ({ ...row, ...values }))
+    } } } } } } },
+    insert() { return { values: async (rows: any[]) => { const firstId = state.rows.length + 1; state.rows.push(...rows.map((row, i) => ({ id: firstId + i, attempts: 0, ...row }))) } } },
     transaction(fn: (tx: unknown) => Promise<unknown>) { return fn(transaction) }
   }
   Object.assign((globalThis as any).__outboxDb, transaction)
@@ -85,4 +95,13 @@ test('功能关闭时不进入领取事务、不占用租约或尝试次数', as
   ;(globalThis as any).__outboxSettings.astrbotEnabled = false
   ;(globalThis as any).__outboxDb.transaction = () => { throw new Error('关闭时不应进入领取事务') }
   assert.deepEqual(await service.claimAstrbotOutbox(), [])
+})
+
+test('群广播关闭时领取只返回私聊，群行不消耗尝试次数', async () => {
+  const state = fixture(1, { umos: ['bot:GroupMessage:900'], broadcast: true })
+  await service.enqueueAstrbotNotifications([1], '私信', '只给 A')
+  ;(globalThis as any).__outboxSettings.astrbotBroadcastEnabled = false
+  const rows = await service.claimAstrbotOutbox()
+  assert.deepEqual(rows.map((row: { id: number }) => row.id), [2])
+  assert.equal(state.rows[0].attempts, 0)
 })
