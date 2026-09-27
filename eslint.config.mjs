@@ -1,4 +1,6 @@
 import withNuxt from './.nuxt/eslint.config.mjs'
+import noRawRoleCheck from './eslint-rules/no-raw-role-check.js'
+import noLangTs from './eslint-rules/no-lang-ts.js'
 
 export default withNuxt(
   // 全局忽略配置
@@ -44,5 +46,22 @@ export default withNuxt(
       // 允许未处理的Promise
       '@typescript-eslint/no-floating-promises': 'off'
     }
+  },
+  // RBAC 自定义规则（S2-3）：一次落 error，存量由 eslint-baseline.json 吸收（只减不增）
+  {
+    files: ['server/api/**/*.{ts,js}', 'app/**/*.vue'],
+    plugins: {
+      voicehub: {
+        rules: {
+          'no-raw-role-check': noRawRoleCheck,
+          'no-lang-ts': noLangTs
+        }
+      }
+    },
+    rules: {
+      'voicehub/no-raw-role-check': 'error',
+      'voicehub/no-lang-ts': 'error'
+    }
   }
 )
+
