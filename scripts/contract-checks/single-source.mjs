@@ -28,16 +28,15 @@ const LITERAL_ALLOWLIST = [
   'tests/server/rbac/' // 内核单测：key 是最小输入的「冻结期望值」，属有意字面量
 ]
 
-/** 待迁移的 legacy 冒号字面量消费方（唯一属主见 planning/plan/TASKS.md；标 `未排期` 者为本轮写范围缺口） */
+/** 待迁移的 legacy 冒号字面量消费方（唯一属主见 planning/plan/TASKS.md） */
 const LEGACY_CONSUMERS = [
   { file: 'server/middleware/api-auth.ts', owner: 'S5-4' },
   { file: 'server/config/constants.ts', owner: 'S5-5' },
   { file: 'server/api/admin/api-keys/permissions.ts', owner: 'S5-5' },
-  { file: 'app/components/Admin/ApiKeyManager.vue', owner: 'S5-6' },
-  { file: 'server/api/user/api-keys/index.get.ts', owner: '未排期（S1 偏差 D-S1-a）' },
-  { file: 'server/api/user/api-keys/index.post.ts', owner: '未排期（S1 偏差 D-S1-a）' },
-  { file: 'server/api/user/api-keys/[id].delete.ts', owner: '未排期（S1 偏差 D-S1-a）' },
-  { file: 'server/api/user/api-keys/[id]/logs.get.ts', owner: '未排期（S1 偏差 D-S1-a）' }
+  { file: 'app/components/Admin/ApiKeyManager.vue', owner: 'S5-6' }
+  // D-S1-a（4 个 user/api-keys 端点硬编码 songs:request）已于 S3-B1 收口到
+  // server/utils/rbac/policies.ts 的 PERSONAL_INTEGRATION_PERMISSION_* 策略，条目已按
+  // 「允许名单只减不增」规则移除 —— 该 ratchet 正是靠这一步暴露「改完了但名单没删」。
 ]
 
 const LEGACY_ALLOWLIST = [...LITERAL_ALLOWLIST, ...LEGACY_CONSUMERS.map((entry) => entry.file)]

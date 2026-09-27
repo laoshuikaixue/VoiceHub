@@ -1,16 +1,18 @@
 /**
- * 契约检查 · RBAC 内核隔离（S2-4 · R-26 / R-41）。
+ * 契约检查 · RBAC 内核隔离（S2-4 建立 / S3-B1 升级 · R-26 / R-41）。
  *
- * A. `server/api/**` 零引用 `utils/rbac`：内核零调用方 ⇒ 本片部署后行为 100% 不变。
+ * A. **依赖面收敛**：`server/api/**` 只允许 import 内核的**公共入口**（`~~/server/utils/rbac`），
+ *    禁止深层 import 实现文件（`.../rbac/resolvePermissions` 之类）。
+ *    为什么从「零引用」改为「只允许公共入口」：S2 阶段的内核零调用方是**该片的判据**
+ *    （证明部署后行为不变，证据见 tools/server/verification-s2.md），而 S3 的使命就是把路由接到内核上；
+ *    不变的是架构约束 —— 路由只依赖公共 API，实现细节（解析/缓存/legacy 兜底）不得被路由直接触达。
  * B. 权限解析只有一条权威实现：
  *    - `resolveUserPermissions` 只在 `server/utils/rbac/resolvePermissions.ts` 定义；
  *    - 除内核外，`server/**` 不得直接查 `role_permissions` / `user_permissions` 表。
  * C. `server/utils/rbac/**` 内不得出现第二份 catalog key 字面量（R-32）。
  * D. legacy 回滚路径必须从 catalog 派生（R-25 的回归护栏）：
- *    - `legacyRoleCheck.ts` 必须用 `roleHasPermission`，且不得自带 min-role 映射表
- *      （上一轮把 35 条 minRole 手抄进该文件 = 第二份字面量，与 catalog 漂移后回滚语义失真）；
- *    - `guards.ts` 里 `requirePermission` 与 `requireAnyPermission` 都必须分叉 `isRbacEnabled()`
- *      （上一轮 `requireAnyPermission` 漏了分叉，应急开关对它完全无效）。
+ *    - `legacyRoleCheck.ts` 必须用 `roleHasPermission`，且不得自带 min-role 映射表；
+ *    - `guards.ts` 里 `requirePermission` 与 `requireAnyPermission` 都必须分叉 `isRbacEnabled()`。
  *
  * 跑器：`node scripts/check-permission-contract.mjs`。
  */
@@ -44,15 +46,23 @@ function walk(dir, collected = []) {
   return collected
 }
 
-function checkNoApiCallers() {
-  const violations = walk(path.join(ROOT, 'server', 'api')).filter((file) => {
-    const text = fs.readFileSync(file, 'utf8')
-    return text.includes('utils/rbac') || text.includes('utils\\rbac')
-  })
+function checkApiKernelDependencySurface() {
+  const violations = []
+  for (const file of walk(path.join(ROOT, 'server', 'api'))) {
+    const text = stripComments(fs.readFileSync(file, 'utf8'))
+    const specifiers = [
+      ...text.matchAll(/['"`]([^'"`]*(?:utils\/rbac|utils\\rbac)[^'"`]*)['"`]/g)
+    ].map((match) => match[1])
+    for (const specifier of specifiers) {
+      const rest = (specifier.split(/utils[\\/]rbac/)[1] ?? '').replace(/\.ts$/, '')
+      const allowed = rest === '' || rest === '/index'
+      if (!allowed) violations.push(`${relative(file)} → ${specifier}`)
+    }
+  }
   assert.equal(
     violations.length,
     0,
-    `server/api 出现内核引用（S2 要求内核零调用方）：${violations.map(relative).join(', ')}`
+    `server/api 只能依赖内核公共入口（~~/server/utils/rbac），禁止深层 import 实现文件：\n  ${violations.join('\n  ')}`
   )
 }
 
@@ -122,7 +132,7 @@ function checkLegacyDerivesFromCatalog() {
 }
 
 export const checks = [
-  { name: '内核隔离 A：server/api 零引用 utils/rbac', run: checkNoApiCallers },
+  { name: '内核隔离 A：server/api 只依赖内核公共入口（禁止深层 import）', run: checkApiKernelDependencySurface },
   { name: '内核隔离 B：权限解析唯一权威实现（含无第二份表直查）', run: checkSingleAuthority },
   { name: '内核隔离 C：内核目录内零 catalog key 字面量', run: checkNoSecondLiteralCopy },
   { name: '内核隔离 D：legacy 走 catalog 派生 + 两个 require* 都分叉开关', run: checkLegacyDerivesFromCatalog }
