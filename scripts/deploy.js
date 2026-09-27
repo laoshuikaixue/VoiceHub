@@ -104,7 +104,7 @@ async function syncDatabase() {
   try {
     runSeedStep()
   } catch (error) {
-    throw new Error(`RBAC 权限 seed 失败，已终止部署：${error.message}`)
+    throw new Error(`RBAC 权限 seed 失败，已终止部署：${error.message}`, { cause: error })
   }
   logSuccess('RBAC 权限目录已幂等就位')
 
