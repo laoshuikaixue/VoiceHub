@@ -67,7 +67,8 @@ test('S1-1 legacy 冻结映射：8 条逐条硬编码（防「同源自洽」假
 })
 
 test('S1-4 归一化拒绝近似 key（复数 / 连字符 / 大小写均不容错）', () => {
-  for (const value of ['songs.read', 'song_read', 'song.READ', 'card_codes.read', 'card_codes:read']) {
+  // 注意：card_codes.read 是**合法** catalog key（下划线是目录键的正字法），不能放进负例
+  for (const value of ['songs.read', 'song_read', 'song.READ', 'card-codes.read', 'card_code.read', 'card_codes:read']) {
     assert.equal(normalizePermission(value), null, `必须拒绝：${value}`)
   }
   assert.equal(normalizePermission('song.read'), 'song.read')

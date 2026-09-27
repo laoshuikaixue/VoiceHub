@@ -32,6 +32,8 @@ const FROZEN_NEGATIVE_CASES = [
   'Song.read',
   'schedules.read',
   'cards:read',
+  'card-codes.read',
+  'card_code.read',
   'song.read.all',
   'song',
   '.read',
