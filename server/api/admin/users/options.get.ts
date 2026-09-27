@@ -4,18 +4,12 @@ import { users, gradeClass } from '~/drizzle/schema'
 import { and, count, inArray, ne, notInArray } from 'drizzle-orm'
 import { smartSort } from '~~/server/utils/grade-class-core'
 import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/user-archive'
+import { canReadUsers } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查用户是否为管理员
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以访问此选项'
-      })
-    }
+    // 权限：user.read（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    await canReadUsers(event)
 
     // 归档筛选：archived=1 仅查已归档（graduate/withdrawn）；archived=0 排除已归档；缺省不限制
     const query = getQuery(event)
@@ -94,6 +88,8 @@ export default defineEventHandler(async (event) => {
       archivedCount
     }
   } catch (error) {
+    // 守卫异常（401/403）必须原样抛出：旧实现把权限错误吞成 500（已修）
+    if ((error as { statusCode?: number })?.statusCode) throw error
     console.error('获取用户筛选选项失败:', error)
     throw createError({
       statusCode: 500,
