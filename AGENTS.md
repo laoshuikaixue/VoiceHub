@@ -128,6 +128,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 服务端判权只用 `requirePermission(event, PERMISSIONS.*)`（唯一权威 guard）；确需按角色分支时用内核白名单函数（`isSuperAdmin` / `isAdminRole` / `isSongAdminRole` / `getUserRole` / `extractUserIdentity`）。`voicehub/no-raw-role-check`（error）覆盖 `server/api/**`：任意 `.role` 读取都报错，唯一豁免是「白名单函数的直接实参」
 - Vue 组件禁 `lang="ts"`：`voicehub/no-lang-ts`（error）覆盖 `app/**/*.vue`（存量债已由 eslint 基线吸收，只减不增）
 - 内核契约由 `scripts/contract-checks/kernel-isolation.mjs` 把关：`server/api/**` 零引用 `utils/rbac`、权限解析只有 `resolvePermissions.ts` 一处权威实现（除内核外不得直查 `role_permissions` / `user_permissions`）、内核零 key 字面量、legacy 路径必须由 catalog 派生
+- 新增/改动路由必须在 `server/utils/rbac/routePermissionMap.ts` 登记：**未登记 = 拒绝**（`server/api/admin/**` 与 `server/api/open/**` 没有「仅登录」兜底）；`scripts/contract-checks/route-coverage.mjs` 会断言 `server/api/**` 每条路由都被显式分类，并把放错位置的辅助模块（无 `defineEventHandler`）拦下
 
 ## 5. 文件变更提醒
 

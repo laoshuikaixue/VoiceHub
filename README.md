@@ -1493,7 +1493,7 @@ VoiceHub/
 │   │   ├── _selftest.test.ts # 嵌套 glob 自证用例（S0-5）
 │   │   └── permission-catalog.test.ts # S1 冻结基线：35 项 / 矩阵 0-12-25-35 / legacy 8 条
 │   └── server/             # 服务端策略与安全测试
-│       └── rbac/kernel/    # RBAC 内核单测（权限解析 / 缓存 / guards / legacy 降级 / ESLint 规则）
+│       └── rbac/           # RBAC 单测（kernel/ 解析·缓存·guards·legacy·规则；routes/ 路由映射·具名策略）
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
