@@ -410,6 +410,15 @@ export const apiKeys = pgTable('api_keys', {
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   createdByUserId: integer('created_by_user_id').notNull(),
   usageCount: integer('usage_count').default(0).notNull(),
+  // 所有者模型 / 限流 / 配额 / IP 白名单 / 回调（列名沿用仓库主流约定 camelCase）
+  ownerType: varchar('ownerType', { length: 20 }).default('system').notNull(),
+  ownerId: integer('ownerId'),
+  rateLimitPerMinute: integer('rateLimitPerMinute'),
+  quotaDaily: integer('quotaDaily'),
+  quotaMonthly: integer('quotaMonthly'),
+  ipWhitelist: jsonb('ipWhitelist').$type<string[]>(),
+  webhookUrl: text('webhookUrl'),
+  webhookSecretHash: text('webhookSecretHash'),
 
 });
 
@@ -802,3 +811,109 @@ export const backupHistory = pgTable('BackupHistory', {
 
 export type BackupHistory = typeof backupHistory.$inferSelect;
 export type NewBackupHistory = typeof backupHistory.$inferInsert;
+
+// ============ RBAC 权限体系（S1 数据骨架）============
+
+// 权限目录表：与 shared/rbac/permission-catalog.js 一致，由 seed 幂等写入
+export const permissions = pgTable('permissions', {
+  id: serial('id').primaryKey(),
+  key: varchar('key', { length: 100 }).notNull().unique(),
+  category: varchar('category', { length: 50 }).notNull(),
+  descriptionZh: text('descriptionZh').notNull(),
+  descriptionEn: text('descriptionEn').notNull(),
+  minRole: varchar('minRole', { length: 20 }).notNull(),
+  isApiPermission: boolean('isApiPermission').default(false).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  index('permissions_category_idx').on(table.category)
+]);
+
+// 角色 → 权限矩阵。复合主键即业务唯一键：seed 幂等与「降权生效」都依赖它
+export const rolePermissions = pgTable('role_permissions', {
+  role: varchar('role', { length: 32 }).notNull(),
+  permissionId: integer('permissionId').notNull().references(() => permissions.id, { onDelete: 'cascade' })
+}, (table) => [
+  primaryKey({ columns: [table.role, table.permissionId] }),
+  index('role_permissions_role_idx').on(table.role),
+  index('role_permissions_permission_id_idx').on(table.permissionId)
+]);
+
+// 个人加授/减授：revoke 优先于 assign，expiresAt 为空表示永久
+export const userPermissions = pgTable('user_permissions', {
+  id: serial('id').primaryKey(),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  permissionId: integer('permissionId').notNull().references(() => permissions.id, { onDelete: 'cascade' }),
+  grantType: varchar('grantType', { length: 10 }).notNull(), // assign | revoke
+  expiresAt: timestamp('expiresAt', { withTimezone: true }),
+  grantedBy: integer('grantedBy').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  reason: text('reason'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  unique('user_permissions_user_permission_unique').on(table.userId, table.permissionId),
+  index('user_permissions_user_id_idx').on(table.userId),
+  index('user_permissions_permission_id_idx').on(table.permissionId)
+]);
+
+// 旧权限字符串 → 新 key 的迁移审计
+export const permissionMigrationLog = pgTable('permission_migration_log', {
+  id: serial('id').primaryKey(),
+  oldValue: varchar('oldValue', { length: 100 }).notNull(),
+  newValue: varchar('newValue', { length: 100 }).notNull(),
+  apiKeyId: uuid('apiKeyId'),
+  migratedAt: timestamp('migratedAt', { withTimezone: true }).defaultNow().notNull()
+});
+
+// 分钟级限流计数：服务端用 ON CONFLICT (apiKeyId, bucketMinute) 原子累加
+export const apiRateLimitCounters = pgTable('api_rate_limit_counters', {
+  id: serial('id').primaryKey(),
+  apiKeyId: uuid('apiKeyId').notNull(),
+  bucketMinute: timestamp('bucketMinute', { withTimezone: true }).notNull(),
+  count: integer('count').default(0).notNull()
+}, (table) => [
+  unique('api_rate_limit_counters_key_bucket_unique').on(table.apiKeyId, table.bucketMinute)
+]);
+
+// 日配额用量：ON CONFLICT (apiKeyId, usageDate)
+export const apiUsageDaily = pgTable('api_usage_daily', {
+  id: serial('id').primaryKey(),
+  apiKeyId: uuid('apiKeyId').notNull(),
+  usageDate: varchar('usageDate', { length: 10 }).notNull(), // YYYY-MM-DD
+  requestCount: integer('requestCount').default(0).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  unique('api_usage_daily_key_date_unique').on(table.apiKeyId, table.usageDate)
+]);
+
+// 月配额用量：ON CONFLICT (apiKeyId, usageMonth)
+export const apiUsageMonthly = pgTable('api_usage_monthly', {
+  id: serial('id').primaryKey(),
+  apiKeyId: uuid('apiKeyId').notNull(),
+  usageMonth: varchar('usageMonth', { length: 7 }).notNull(), // YYYY-MM
+  requestCount: integer('requestCount').default(0).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  unique('api_usage_monthly_key_month_unique').on(table.apiKeyId, table.usageMonth)
+]);
+
+// Webhook 投递失败日志
+export const webhookFailures = pgTable('webhook_failures', {
+  id: serial('id').primaryKey(),
+  apiKeyId: uuid('apiKeyId'),
+  webhookUrl: text('webhookUrl').notNull(),
+  event: varchar('event', { length: 100 }).notNull(),
+  statusCode: integer('statusCode'),
+  attempts: integer('attempts').default(0).notNull(),
+  errorMessage: text('errorMessage'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => [
+  index('webhook_failures_api_key_created_idx').on(table.apiKeyId, table.createdAt)
+]);
+
+export type Permission = typeof permissions.$inferSelect;
+export type NewPermission = typeof permissions.$inferInsert;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type UserPermission = typeof userPermissions.$inferSelect;
+export type ApiRateLimitCounter = typeof apiRateLimitCounters.$inferSelect;
+export type ApiUsageDaily = typeof apiUsageDaily.$inferSelect;
+export type ApiUsageMonthly = typeof apiUsageMonthly.$inferSelect;
+export type WebhookFailure = typeof webhookFailures.$inferSelect;
