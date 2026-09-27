@@ -98,7 +98,7 @@ function cmdRegen() {
 
 function cmdCheck() {
   const baseline = readBaseline()
-  if (!baseline) return fail('缺少 eslint-baseline.json，请先执行 --regen')
+  if (!baseline) return fail('缺少或无法解析 eslint-baseline.json（存在但 JSON 解析失败也会走到这里），请先执行 --regen')
   const res = lintJson()
   if (res.error) return fail(res.error)
   const tolerance = Number(baseline.filesTolerance ?? DEFAULT_FILES_TOLERANCE)
