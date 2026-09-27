@@ -34,5 +34,5 @@
 
 1. 本机：`git bundle create voicehub-s1.bundle rbac/S1-integration` → `scp` 到服务器 → `git clone -b rbac/S1-integration voicehub-s1.bundle voicehub`
 2. 服务器：`scp tools/server/srv-verify-s1.sh /root/ && bash /root/srv-verify-s1.sh`
-3. 把 `/root/s1-verify.log` 的关键段落逐项贴入上表「实测」列，并把日志原文存到 `tools/server/logs/s1-verify.log`（如体积过大，只保留含 `=====` 分节的片段）
+3. 把 `/root/s1-verify.log` 的关键段落逐项贴入上表「实测」列；原始日志取回后放 `tools/server/logs/s1-verify.log`（该目录被 `.gitignore` 的 `logs` 规则忽略，仅本地留档，**回填进本文件的文字才算提交证据**）
 4. 任何一项失败：在此文件追加「失败分析」小节，写明现象、复现命令与根因，不得静默改成「已通过」

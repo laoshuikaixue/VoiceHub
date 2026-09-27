@@ -36,7 +36,8 @@ git bundle create "$env:TEMP\voicehub-s1.bundle" rbac/S1-integration
 & sshpass -e scp -P <port> -o StrictHostKeyChecking=no tools/server/srv-verify-s1.sh root@<host>:/root/srv-verify-s1.sh
 & sshpass -e ssh -p <port> -o StrictHostKeyChecking=no root@<host> 'bash /root/srv-verify-s1.sh'
 
-# 4) 取回日志（证据回填到 verification-s1.md）
+# 4) 取回日志（证据回填到 verification-s1.md；logs/ 被 .gitignore 忽略，仅本地留档）
+New-Item -ItemType Directory -Force tools/server/logs | Out-Null
 & sshpass -e scp -P <port> -o StrictHostKeyChecking=no root@<host>:/root/s1-verify.log tools/server/logs/s1-verify.log
 ```
 
