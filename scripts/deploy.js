@@ -4,6 +4,7 @@ import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import { config } from 'dotenv'
 import path from 'path'
+import { runSeedStep } from './lib/seed-step.js'
 
 // 加载环境变量（从项目根目录）
 config({ path: path.resolve(process.cwd(), '.env') })
@@ -46,15 +47,6 @@ function logWarning(message) {
 
 function logError(message) {
   log(`❌ ${message}`, 'red')
-}
-
-// 检查文件是否存在
-function fileExists(filePath) {
-  try {
-    return fs.existsSync(filePath)
-  } catch {
-    return false
-  }
 }
 
 // 安全执行命令
@@ -106,7 +98,17 @@ async function syncDatabase() {
   }
   logSuccess('数据库同步成功')
 
-  if (fileExists('scripts/create-admin.js')) {
+  // 权限 seed（与 db:migrate 链 / db-sync / safe-migrate 共用同一实现）：
+  // 失败一律中断部署，禁止「部署成功但权限表为空」的静默降级（R-21）
+  logStep('🔐', '写入 RBAC 权限目录（seed）...')
+  try {
+    runSeedStep()
+  } catch (error) {
+    throw new Error(`RBAC 权限 seed 失败，已终止部署：${error.message}`)
+  }
+  logSuccess('RBAC 权限目录已幂等就位')
+
+  if (fs.existsSync('scripts/create-admin.js')) {
     logStep('👤', '检查管理员账户...')
     if (
       !(await execAsync('pnpm run create-admin', [], {
@@ -176,7 +178,7 @@ async function deploy() {
       let installed = false
 
       // 优先尝试 pnpm install --frozen-lockfile
-      if (fileExists('pnpm-lock.yaml')) {
+      if (fs.existsSync('pnpm-lock.yaml')) {
         log('尝试使用 pnpm install --frozen-lockfile 安装...', 'cyan')
         if (safeExec('pnpm install --frozen-lockfile')) {
           installed = true
@@ -200,15 +202,15 @@ async function deploy() {
 
     // 2. 检查 Drizzle 配置
     if (
-      !fileExists('drizzle.config.ts') ||
-      !fileExists('app/drizzle/schema.ts') ||
-      !fileExists('app/drizzle/db.ts')
+      !fs.existsSync('drizzle.config.ts') ||
+      !fs.existsSync('app/drizzle/schema.ts') ||
+      !fs.existsSync('app/drizzle/db.ts')
     ) {
       throw new Error('Drizzle 配置文件不完整')
     }
 
     // 2.1. 确保迁移目录存在
-    if (!fileExists('app/drizzle/migrations')) {
+    if (!fs.existsSync('app/drizzle/migrations')) {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 

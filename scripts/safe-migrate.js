@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { config } from 'dotenv'
+import { runSeedStep } from './lib/seed-step.js'
 
 // 加载环境变量
 config({ path: path.resolve(process.cwd(), '.env') })
@@ -52,15 +53,6 @@ function safeExec(command, options = {}) {
   }
 }
 
-// 检查文件是否存在
-function fileExists(filePath) {
-  try {
-    return fs.existsSync(filePath)
-  } catch {
-    return false
-  }
-}
-
 // 处理数据冲突的函数
 async function handleDataConflicts() {
   try {
@@ -88,18 +80,18 @@ async function safeMigrate() {
     const schemaPath = path.join(projectRoot, 'app/drizzle/schema.ts')
     const migrationsPath = path.join(projectRoot, 'app/drizzle/migrations')
 
-    // 1. 确保drizzle配置存在
-    if (!fileExists(drizzleConfigPath)) {
+    // 1. 关键文件缺失一律显式失败（禁止 fileExists 家族的静默跳过，R-21）
+    if (!fs.existsSync(drizzleConfigPath)) {
       throw new Error(`drizzle.config.ts 配置文件不存在: ${drizzleConfigPath}`)
     }
 
     // 2. 检查schema文件
-    if (!fileExists(schemaPath)) {
+    if (!fs.existsSync(schemaPath)) {
       throw new Error(`app/drizzle/schema.ts 文件不存在: ${schemaPath}`)
     }
 
     // 3. 创建迁移目录（如果不存在）
-    if (!fileExists(migrationsPath)) {
+    if (!fs.existsSync(migrationsPath)) {
       log('创建迁移目录...', 'cyan')
       fs.mkdirSync(migrationsPath, { recursive: true })
     }
@@ -107,7 +99,6 @@ async function safeMigrate() {
     // 自动执行 generate 命令并处理交互
     async function runGenerateWithAutoConfirm(env) {
       return new Promise((resolve) => {
-        const { spawn } = require('child_process')
         const child = spawn('pnpm', ['run', 'db:generate'], {
           env,
           shell: true
@@ -227,6 +218,12 @@ async function safeMigrate() {
 
     // 8. 验证迁移结果
     log('✅ 数据库迁移流程完成！', 'green')
+
+    // 9. 权限数据（seed）：唯一迁移链的一部分；seed 缺失/失败一律非零退出（R-21）
+    //    重复执行安全（seed 幂等）：同一命令内 db:migrate 链也会 seed 一次
+    log('🔐 写入 RBAC 权限目录（seed）...', 'cyan')
+    runSeedStep()
+    logSuccess('RBAC 权限目录已幂等就位')
   } catch (error) {
     logError(`迁移失败: ${error.message}`)
     logError('请检查数据库连接和迁移文件')

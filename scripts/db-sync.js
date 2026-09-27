@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { config } from 'dotenv'
 import postgres from 'postgres'
+import { runSeedStep } from './lib/seed-step.js'
 config({ path: path.resolve(process.cwd(), '.env') })
 
 const colors = {
@@ -36,19 +37,16 @@ function safeExec(command, options = {}) {
   }
 }
 
-function fileExists(p) {
-  try {
-    return fs.existsSync(p)
-  } catch {
-    return false
-  }
-}
-
 function ensureDrizzleFiles() {
-  if (!fileExists('drizzle.config.ts')) throw new Error('Drizzle 配置文件不存在')
-  if (!fileExists('app/drizzle/schema.ts')) throw new Error('Schema 文件不存在')
-  if (!fileExists('app/drizzle/migrations/meta/_journal.json'))
-    throw new Error('Drizzle journal 文件不存在')
+  // 关键文件缺失一律显式失败（禁止 fileExists 家族的静默跳过，R-21）
+  const required = [
+    ['Drizzle 配置文件', 'drizzle.config.ts'],
+    ['Schema 文件', 'app/drizzle/schema.ts'],
+    ['Drizzle journal 文件', 'app/drizzle/migrations/meta/_journal.json']
+  ]
+  for (const [label, file] of required) {
+    if (!fs.existsSync(file)) throw new Error(`${label}不存在: ${file}`)
+  }
 }
 
 function createSqlClient() {
@@ -489,6 +487,12 @@ async function main() {
   } finally {
     await sql.end()
   }
+
+  // 权限 seed（与 db:migrate 链 / safe-migrate / deploy 共用同一实现）：
+  // seed 缺失或失败一律非零退出，禁止「结构同步成功但权限表为空」的静默降级（R-21）
+  log('🔐 写入 RBAC 权限目录（seed）...', 'cyan')
+  runSeedStep()
+  ok('RBAC 权限目录已幂等就位')
 
   ok('数据库同步流程完成')
 }

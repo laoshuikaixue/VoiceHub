@@ -18,7 +18,7 @@
     "lint:baseline": "node scripts/eslint-baseline.mjs",
     "db:seed": "node scripts/seed-permissions.js",
     "rbac:rollback": "node scripts/rbac-rollback.js",
-    "db:migrate": "pnpm exec drizzle-kit migrate",
+    "db:migrate": "node scripts/db-migrate.js",
     "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
     "db:push": "pnpm exec drizzle-kit push --force",
     "db:studio": "pnpm exec drizzle-kit studio",
