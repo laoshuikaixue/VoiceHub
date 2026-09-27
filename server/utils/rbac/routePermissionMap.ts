@@ -63,7 +63,9 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   { method: 'DELETE', pattern: /^\/api\/admin\/rbac\/user-permissions\/[^/]+$/, key: PERMISSIONS.USER_PERMISSIONS_MANAGE },
 
   // ── users 域（读 / 管理 / 状态三线分开）──
-  { method: 'GET', pattern: /^\/api\/admin\/users(\/.*)?$/, key: PERMISSIONS.USER_READ, note: '含 export/options/status-logs/[id]/[id]/songs' },
+  // 注意：`[id]/songs` 必须先于下面的 users 宽规则注册（它返回歌曲数据、旧行为含 SONG_ADMIN）
+  { method: 'GET', pattern: /^\/api\/admin\/users\/[^/]+\/songs$/, key: PERMISSIONS.SONG_READ, note: '用户歌曲视图（旧行为：SONG_ADMIN 及以上）' },
+  { method: 'GET', pattern: /^\/api\/admin\/users(\/.*)?$/, key: PERMISSIONS.USER_READ, note: '含 export/options/status-logs/[id]/[id]/status-logs' },
   { method: 'PUT', pattern: /^\/api\/admin\/users\/batch-status$/, key: PERMISSIONS.USER_STATUS },
   { method: 'PUT', pattern: /^\/api\/admin\/users\/[^/]+\/status$/, key: PERMISSIONS.USER_STATUS },
   { method: 'POST', pattern: /^\/api\/admin\/users\/[^/]+\/approval$/, key: PERMISSIONS.USER_STATUS, note: '审批＝状态流转' },
