@@ -755,7 +755,7 @@ VoiceHub/
 │   │           └── ModernLight.css # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
-│   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
+│   │   │   └── SocialBindings.vue     # 社交账号绑定
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
@@ -855,7 +855,7 @@ VoiceHub/
 │   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
 │   │   │   │   ├── InputField.vue     # 通用输入框组件
 │   │   │   │   ├── LoadingState.vue   # 加载状态组件
-│   │   │   │   ├── MethodCard.vue     # 可展开卡片组件（带开关）
+│   │   │   │   ├── MethodCard.vue     # 可展开卡片组件
 │   │   │   │   ├── Pagination.vue     # 翻页组件
 │   │   │   │   ├── PasswordField.vue  # 密码输入框组件
 │   │   │   │   ├── Popover.vue        # 弹出框组件
@@ -924,7 +924,7 @@ VoiceHub/
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
-│   │   ├── useTheme.ts         # 主题管理（深色/浅色/现代浅色切换）
+│   │   ├── useTheme.ts         # 主题管理
 │   │   ├── useThemeImage.ts    # 主题图片获取
 │   │   ├── useToast.ts         # Toast提示hooks
 │   │   ├── useUserFilters.ts  # 用户过滤器hooks
@@ -949,7 +949,7 @@ VoiceHub/
 │   │   ├── forgot-password.vue # 找回密码页面
 │   │   ├── index.vue           # 首页
 │   │   ├── legal/              # 协议文档页面
-│   │   │   └── [slug].vue      # 协议文档内容页（按 slug 动态渲染）
+│   │   │   └── [slug].vue      # 协议文档内容页
 │   │   ├── login.vue           # 登录页面
 │   │   ├── notification-settings.vue # 通知设置页面
 │   │   ├── reset-password.vue  # 重置密码页面
@@ -962,7 +962,7 @@ VoiceHub/
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
 │   │   │   └── beian.png      # 备案图标
-│   │   ├── themes/            # 主题图片（按主题分目录，仅 SVG 随主题切换）
+│   │   ├── themes/            # 主题图片
 │   │   │   ├── ClassicDark/          # 经典深色主题图片
 │   │   │   │   ├── logo.svg   # SVG格式Logo
 │   │   │   │   ├── search.svg # 搜索图标
@@ -1284,7 +1284,7 @@ VoiceHub/
 │   │   │   ├── read-all.post.ts     # 标记所有已读
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
-│   │   ├── bot/            # AstrBot 插件令牌回调（绑定/解绑/目标校验）
+│   │   ├── bot/            # AstrBot 插件令牌回调
 │   │   │   ├── voicehub/            # 私聊绑定与目标校验回调
 │   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
 │   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
@@ -1395,7 +1395,7 @@ VoiceHub/
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── durationValidationService.ts # 歌曲时长校验与补齐服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
-│   │   ├── astrbotNotificationService.ts # AstrBot通知服务（VoiceHub只出站HTTP）
+│   │   ├── astrbotNotificationService.ts # AstrBot通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
@@ -1494,8 +1494,8 @@ VoiceHub/
 │   ├── check-deploy.js    # 部署前检查
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
-│   ├── db-sync.js         # 数据库同步（含 AstrBot 旧绑定回填与 schema 完整性检查）
-│   ├── migrate-astrbot-bindings.ts # 旧版机器人绑定数据回填（可手动重跑）
+│   ├── db-sync.js         # 数据库同步
+│   ├── migrate-astrbot-bindings.ts # 旧版机器人绑定数据回填
 │   ├── deploy.js          # 一键部署脚本
 │   ├── drizzle/           # Drizzle 迁移辅助脚本
 │   │   └── migrations/

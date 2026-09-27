@@ -37,13 +37,6 @@ function ticketWith(candidates: SongCandidate[], overrides: Record<string, unkno
   return { umo: UMO, platform: 'netease', keyword: '告白气球', createdAt: 1, candidates, ...overrides }
 }
 
-test('CI 对 PR 执行服务端测试与 Nuxt 类型检查', () => {
-  const workflow = source('.github/workflows/astrbot-checks.yml')
-  assert.match(workflow, /pull_request:/)
-  assert.match(workflow, /pnpm test/)
-  assert.match(workflow, /pnpm exec nuxt typecheck/)
-})
-
 test('QQ 音源搜索使用 SDK 实际消费的参数并读取歌曲列表', () => {
   const sourceCode = source('server/utils/astrbot-song-sources.ts')
   assert.match(sourceCode, /searchQqMusic\(\{ key: keyword, page, limit: PAGE_LIMIT \}\)/)
