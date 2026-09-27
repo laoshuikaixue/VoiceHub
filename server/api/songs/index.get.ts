@@ -9,6 +9,7 @@ import {
   type MaskableSong
 } from '~~/server/utils/studentMask'
 import { formatDisambiguatedName, NAME_DISAMBIGUATION_CTES } from '~~/server/utils/userDisplayName'
+import { isSongAdminRole } from '~~/server/utils/rbac'
 
 interface SongResponse extends MaskableSong {
   id: number
@@ -137,7 +138,7 @@ export default defineEventHandler(async (event) => {
     const sortBy = String(query.sortBy || 'createdAt')
     const sortOrder = String(query.sortOrder || 'desc') === 'asc' ? 'asc' : 'desc'
     const user = event.context.user || null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = isSongAdminRole(user)
 
     const params: any[] = [user?.id ?? null]
     const conditions: string[] = []
@@ -468,7 +469,7 @@ export default defineEventHandler(async (event) => {
         const fallbackSortBy = String(fallbackQuery.sortBy || 'createdAt')
         const fallbackSortOrder = String(fallbackQuery.sortOrder || 'desc')
         const fallbackUser = event.context.user || null
-        const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+        const fallbackIsAdmin = isSongAdminRole(fallbackUser)
         return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin, {
           scope: fallbackScope,
           sortBy: fallbackSortBy,

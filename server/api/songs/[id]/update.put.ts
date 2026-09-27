@@ -12,6 +12,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { canWriteSongs } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,16 +21,8 @@ export default defineEventHandler(async (event) => {
       throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', 'Method Not Allowed')
     }
 
-    // 获取已验证的用户信息（由中间件提供）
-    const user = event.context.user
-    if (!user) {
-      throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
-    }
-
-    // 检查权限
-    if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
-    }
+    // 权限：song.write（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const user = await canWriteSongs(event)
 
     // 获取歌曲ID
     const songId = parseInt(getRouterParam(event, 'id'))

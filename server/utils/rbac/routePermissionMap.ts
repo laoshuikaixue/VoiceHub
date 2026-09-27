@@ -125,7 +125,13 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   { method: 'ANY', pattern: /^\/api\/admin\/backup(\/.*)?$/, key: PERMISSIONS.BACKUP_EXECUTE },
 
   // ── 数据库 / 序列修复（统一 SUPER_ADMIN；reset 属收紧，见文件头第 3 条）──
-  { method: 'ANY', pattern: /^\/api\/admin\/(database|fix-sequence)(\/.*)?$/, key: PERMISSIONS.DATABASE_RESET }
+  { method: 'ANY', pattern: /^\/api\/admin\/(database|fix-sequence)(\/.*)?$/, key: PERMISSIONS.DATABASE_RESET },
+
+  // ── 用户域中**确有权限门槛**的少数路由（其余 `/api/**` 均为「仅需登录」）──
+  // 这些是旧实现就带角色判断的端点；登记进表后，路由文件与映射表可互相校验（见 B3 单测）。
+  { method: 'PUT', pattern: /^\/api\/songs\/[^/]+\/update$/, key: PERMISSIONS.SONG_WRITE, note: '歌曲编辑（SONG_ADMIN 及以上）' },
+  { method: 'GET', pattern: /^\/api\/songs\/[^/]+\/voters$/, key: PERMISSIONS.SONG_READ, note: '投票人员列表（SONG_ADMIN 及以上）' },
+  { method: 'POST', pattern: /^\/api\/songs\/add$/, key: PERMISSIONS.SONG_WRITE, note: '管理员代投稿（SONG_ADMIN 及以上；TASKS.md §3.9 漂移回修点）' }
 ])
 
 /**
