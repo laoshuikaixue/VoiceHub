@@ -1463,12 +1463,16 @@ VoiceHub/
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
+│   ├── check-permission-contract.mjs # 权限契约检查跑器（执行 contract-checks/*.mjs）
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
 │   ├── db-sync.js         # 数据库同步
 │   ├── deploy.js          # 一键部署脚本
 │   ├── drizzle/           # Drizzle 迁移辅助脚本
 │   │   └── migrations/
+│   ├── eslint-baseline.mjs # ESLint 增量基线 ratchet（只禁新增 error）
+│   ├── gate.mjs           # 本地门禁：install/db:check/lint/test/contract/build 六步
+│   ├── lib/               # 门禁脚本共享工具（跨平台命令解析、Nuxt 产物准备）
 │   ├── netlify-build.js   # Netlify 构建脚本
 │   ├── postinstall.js     # 安装后脚本
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
@@ -1520,6 +1524,7 @@ VoiceHub/
 ├── pnpm-workspace.yaml    # pnpm 依赖构建许可配置
 ├── README.md              # 项目说明文档
 ├── sh/                    # 一键部署脚本目录
+├── tools/server/          # Linux 测试服务器运维脚本（环境盘点/装 PG/门禁验证，非运行时依赖）
 ├── tsconfig.json          # TypeScript配置文件
 ├── UPGRADE.md             # 升级指南
 └── vercel.json            # Vercel部署配置
