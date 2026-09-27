@@ -6,6 +6,7 @@ import path from 'path'
 import { config } from 'dotenv'
 import postgres from 'postgres'
 import { ASTRBOT_LEGACY_BRIDGE_HASH, rejectSupersededAstrbotMigrations } from './astrbot-migration-guard.js'
+import { classifyAstrbotAdapter } from '../server/utils/astrbot-adapters.js'
 config({ path: path.resolve(process.cwd(), '.env') })
 
 const colors = {
@@ -239,23 +240,6 @@ async function ensureNoDuplicateUsernames(sql) {
   }
 }
 
-// 适配器到平台的归类，与 scripts/migrate-astrbot-bindings.ts 保持一致。
-const ASTRBOT_ADAPTER_PLATFORMS = [
-  ['aiocqhttp', 'qq'],
-  ['qq_official', 'qq'],
-  ['qq_official_webhook', 'qq'],
-  ['wecom_ai_bot', 'wecom'],
-  ['dingtalk', 'dingtalk'],
-  ['lark', 'lark']
-]
-
-// 未识别适配器不得猜测为 QQ，返回 null 交由调用方跳过并告警。
-function astrbotPlatformOf(adapter) {
-  if (typeof adapter !== 'string') return null
-  const matched = ASTRBOT_ADAPTER_PLATFORMS.find(([name]) => name === adapter)
-  return matched ? matched[1] : null
-}
-
 // 升级时把 User 上的旧绑定搬迁到 AstrbotBinding，并把 astrbotEnabled=true 的站点开关延续到 astrbotPlatforms。
 // 幂等：已存在的绑定不覆盖，已转换过（任一平台为 true）的开关不再改写；
 // 表/列缺失时直接跳过，保证空库与新库路径不报错。搬迁失败即抛错终止部署。
@@ -287,7 +271,7 @@ async function migrateLegacyAstrbotBindings(sql) {
       GROUP BY u."astrbotPlatform"
     `
     for (const row of legacyRows) {
-      if (astrbotPlatformOf(row.adapter)) continue
+      if (classifyAstrbotAdapter(row.adapter)) continue
       warn(
         `AstrBot 旧绑定搬迁：跳过 ${row.userIds.length} 个用户（适配器 ${row.adapter ?? '<未设置>'} 无对应平台）: ${row.userIds
           .map((id) => `User#${id}`)
@@ -295,7 +279,7 @@ async function migrateLegacyAstrbotBindings(sql) {
       )
     }
   }
-  const knownAdapters = legacyRows.filter((row) => astrbotPlatformOf(row.adapter)).map((row) => row.adapter)
+  const knownAdapters = legacyRows.filter((row) => classifyAstrbotAdapter(row.adapter)).map((row) => row.adapter)
 
   try {
     const result = await sql.begin(async (tx) => {
@@ -303,7 +287,7 @@ async function migrateLegacyAstrbotBindings(sql) {
       if (knownAdapters.length > 0) {
         // 通过适配器->平台映射表 join 完成归类，未在映射表中的未知适配器自然被排除，不会被当作 QQ。
         const adapters = knownAdapters
-        const platforms = knownAdapters.map((adapter) => astrbotPlatformOf(adapter))
+        const platforms = knownAdapters.map((adapter) => classifyAstrbotAdapter(adapter))
         const inserted = await tx`
           INSERT INTO "AstrbotBinding" ("userId", "platform", "adapter", "umo", "boundAt")
           SELECT u.id, m.platform, u."astrbotPlatform", u."astrbotUmo", COALESCE(u."astrbotBoundAt", now())

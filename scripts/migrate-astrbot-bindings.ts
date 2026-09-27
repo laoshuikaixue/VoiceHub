@@ -1,5 +1,6 @@
 import postgres from 'postgres'
 import { config } from 'dotenv'
+import { classifyAstrbotAdapter } from '../server/utils/astrbot-adapters.js'
 
 config()
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 未配置')
@@ -17,15 +18,8 @@ try {
         : await tx`SELECT id, "astrbotUmo" AS umo, "astrbotPlatform" AS adapter, now() AS bound_at
           FROM "User" WHERE "astrbotUmo" IS NOT NULL FOR UPDATE`
       : []
-    const platformOf = (adapter: string) => {
-      if (['aiocqhttp', 'qq_official', 'qq_official_webhook'].includes(adapter)) return 'qq'
-      if (adapter === 'wecom_ai_bot') return 'wecom'
-      if (adapter === 'dingtalk') return 'dingtalk'
-      if (adapter === 'lark') return 'lark'
-      return null
-    }
     for (const row of rows) {
-      const platform = platformOf(row.adapter)
+      const platform = classifyAstrbotAdapter(row.adapter)
       if (!platform) {
         console.warn(`跳过用户 ${row.id} 的未知适配器 ${row.adapter}`)
         continue

@@ -46,19 +46,20 @@ test('旧绑定搬迁使用 ON CONFLICT DO NOTHING，冲突时不覆盖新表既
 })
 
 test('搬迁只归类受支持的适配器，未知适配器不猜测为 QQ 且告警跳过', () => {
+  const mapping = read('../../server/utils/astrbot-adapters.js')
   const block = dbSync.slice(
-    dbSync.indexOf('const ASTRBOT_ADAPTER_PLATFORMS'),
+    dbSync.indexOf('async function migrateLegacyAstrbotBindings'),
     dbSync.indexOf('// 检查数据库schema是否包含当前代码依赖的关键对象')
   )
   for (const adapter of ['aiocqhttp', 'qq_official', 'qq_official_webhook']) {
-    assert.match(block, new RegExp(`\\['${adapter}', 'qq'\\]`), `${adapter} 应归为 qq`)
+    assert.match(mapping, new RegExp(`\\['${adapter}', 'qq'\\]`), `${adapter} 应归为 qq`)
   }
-  assert.match(block, /\['wecom_ai_bot', 'wecom'\]/)
-  assert.match(block, /\['dingtalk', 'dingtalk'\]/)
-  assert.match(block, /\['lark', 'lark'\]/)
+  assert.match(mapping, /\['wecom_ai_bot', 'wecom'\]/)
+  assert.match(mapping, /\['dingtalk', 'dingtalk'\]/)
+  assert.match(mapping, /\['lark', 'lark'\]/)
   assert.match(block, /无对应平台/)
-  // 未命中映射表返回 null，不得回退成任何平台。
-  assert.match(block, /const matched = ASTRBOT_ADAPTER_PLATFORMS\.find\(\(\[name\]\) => name === adapter\)\s*\n\s*return matched \? matched\[1\] : null/)
+  assert.match(block, /classifyAstrbotAdapter\(row\.adapter\)/)
+  assert.match(mapping, /ADAPTER_PLATFORMS\.get\(adapter\) \?\? null/)
 })
 
 test('开关回填以 astrbotEnabled 与四平台全 false 为前置条件，已转换的记录不再改写', () => {
