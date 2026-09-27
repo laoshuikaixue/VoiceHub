@@ -20,6 +20,28 @@
 | `srv-verify.sh` | **主验证脚本**：克隆 fork → install → 迁移到真实 PG → 幂等复跑 → 单元测试 → 时间口径抽查 |
 | `migrations-probe.sql` | 只读 SQL 探针：迁移记录条数、`api_keys` 列清单、RBAC 表是否存在 |
 
+## S1（RBAC 数据骨架）验证：用 git bundle 传输本地分支
+
+S1 分支**只存在于本机**（按用户要求不 push，fork 远程仍只有 `main`），服务器侧用 bundle 还原：
+
+```powershell
+# 1) 本机仓库根：打包分支
+git bundle create "$env:TEMP\voicehub-s1.bundle" rbac/S1-integration
+
+# 2) 传到服务器并克隆出该分支
+& sshpass -e scp -P <port> -o StrictHostKeyChecking=no "$env:TEMP\voicehub-s1.bundle" root@<host>:/root/
+& sshpass -e ssh -p <port> -o StrictHostKeyChecking=no root@<host> 'rm -rf /root/voicehub && git clone -q -b rbac/S1-integration /root/voicehub-s1.bundle /root/voicehub && git -C /root/voicehub log --oneline -1'
+
+# 3) 传验证脚本并执行（SKIP_GATE=1 可只跑 PG 部分）
+& sshpass -e scp -P <port> -o StrictHostKeyChecking=no tools/server/srv-verify-s1.sh root@<host>:/root/srv-verify-s1.sh
+& sshpass -e ssh -p <port> -o StrictHostKeyChecking=no root@<host> 'bash /root/srv-verify-s1.sh'
+
+# 4) 取回日志（证据回填到 verification-s1.md）
+& sshpass -e scp -P <port> -o StrictHostKeyChecking=no root@<host>:/root/s1-verify.log tools/server/logs/s1-verify.log
+```
+
+`srv-verify-s1.sh` 覆盖：迁移前基线 → `pnpm db:migrate`（链）→ 表数/迁移记录/矩阵计数 → 唯一约束 `pg_indexes` 断言 → seed 连跑 3 次不变量 → 删一项重跑收敛 → 42P10 探针 → 回滚往返（40→32→40）→ `pnpm test` → `pnpm gate`。
+
 ## 安全约定
 
 - 只用专用测试库 `voicehub_gate_test` / `voicehub_migrate_test`，**不碰任何其它库**
