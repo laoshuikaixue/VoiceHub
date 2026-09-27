@@ -290,7 +290,7 @@
             <div class="song-card-main">
               <!-- 添加歌曲封面 -->
               <div class="song-cover" @click.stop="togglePlaySong(song)">
-                <template v-if="song.cover">
+                <template v-if="song.cover && !failedCovers[song.cover]">
                   <img
                     :alt="song.title"
                     :src="convertToHttps(song.cover)"
@@ -298,7 +298,7 @@
                     decoding="async"
                     loading="lazy"
                     referrerpolicy="no-referrer"
-                    @error="handleImageError($event, song)"
+                    @error="handleImageError(song)"
                   >
                 </template>
                 <div v-else class="text-cover">
@@ -498,7 +498,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSemesters } from '~/composables/useSemesters'
@@ -1043,15 +1043,11 @@ const closeSubmissionNote = () => {
   submissionNoteDialog.value.show = false
 }
 
-// 处理图片加载错误
-const handleImageError = (event, song) => {
-  if (event?.target) {
-    event.target.style.display = 'none'
-    if (event.target.parentNode) {
-      event.target.parentNode.classList.add('text-cover')
-      event.target.parentNode.textContent = getFirstChar(song.title)
-    }
-  }
+// 封面加载失败的 URL；命中后由模板切到文字封面分支，容器尺寸与播放按钮保持原样
+const failedCovers = reactive({})
+
+const handleImageError = (song) => {
+  if (song?.cover) failedCovers[song.cover] = true
 }
 
 // 获取歌曲标题的第一个字符作为封面
@@ -2121,7 +2117,7 @@ const vRipple = {
   display: block;
 }
 
-/* 文字封面样式 */
+/* 文字封面样式：只能作为 .song-cover 的子元素；与 .song-cover 同特异性且源序靠后，加到容器上会顶掉其固定宽高 */
 .text-cover {
   width: 100%;
   height: 100%;
