@@ -1457,7 +1457,7 @@ VoiceHub/
 │   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── user-filter.ts  # 用户列表/导出共用筛选条件构建
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
-│   │   ├── rbac/           # RBAC 内核目录（constants.ts = permission-catalog.js 的薄 re-export）
+│   │   ├── rbac/           # RBAC 内核（constants / cache / resolvePermissions / guards / legacyRoleCheck / fallback / index）
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
@@ -1465,7 +1465,7 @@ VoiceHub/
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
 │   ├── check-permission-contract.mjs # 权限契约检查跑器（执行 contract-checks/*.mjs）
-│   ├── contract-checks/   # 权限契约检查模块（catalog 结构/派生、legacy 硬编码期望、单一来源扫描）
+│   ├── contract-checks/   # 权限契约检查模块（catalog 结构/派生、legacy 硬编码期望、单一来源扫描、内核隔离）
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
 │   ├── db-migrate.js      # 唯一迁移链入口：drizzle-kit migrate → seed（pnpm db:migrate）
@@ -1493,6 +1493,7 @@ VoiceHub/
 │   │   ├── _selftest.test.ts # 嵌套 glob 自证用例（S0-5）
 │   │   └── permission-catalog.test.ts # S1 冻结基线：35 项 / 矩阵 0-12-25-35 / legacy 8 条
 │   └── server/             # 服务端策略与安全测试
+│       └── rbac/kernel/    # RBAC 内核单测（权限解析 / 缓存 / guards / legacy 降级 / ESLint 规则）
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
@@ -1526,6 +1527,7 @@ VoiceHub/
 ├── drizzle.config.ts      # Drizzle配置文件
 ├── edgeone.json           # EdgeOne Pages 部署配置
 ├── eslint-baseline.json   # ESLint 增量基线冻结值（由 pnpm lint:baseline --regen 生成）
+├── eslint-rules/          # 自定义 ESLint 规则（voicehub/no-raw-role-check、voicehub/no-lang-ts）
 ├── eslint.config.mjs      # ESLint 配置
 ├── flake.lock             # Nix flake锁定文件
 ├── flake.nix              # Nix构建与NixOS模块配置

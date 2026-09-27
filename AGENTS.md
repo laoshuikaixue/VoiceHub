@@ -125,6 +125,9 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 权限 key 或角色矩阵变更属契约变更：除 catalog 外必须同步 `tests/contract/permission-catalog.test.ts`（冻结基线 + 8 条 legacy 期望）与 `scripts/contract-checks/legacy-map.mjs`，并跑 `pnpm contract:check` 确认全绿
 - 数据层回滚：`pnpm rbac:rollback`（执行 `scripts/rbac-rollback.sql`：DROP 8 张表 + `api_keys` 8 列 + 清理迁移记录，全部 `IF EXISTS` 幂等）；执行前先 `pg_dump`，S5 上线后该脚本须改为「保留列、只回滚代码」
 - 迁移文件仍只能由 `pnpm db:generate` 生成（见 §4.2）：回滚脚本里记录的 sha256 必须等于该迁移 SQL 的文件哈希，`when` 必须等于 journal 条目
+- 服务端判权只用 `requirePermission(event, PERMISSIONS.*)`（唯一权威 guard）；确需按角色分支时用内核白名单函数（`isSuperAdmin` / `isAdminRole` / `isSongAdminRole` / `getUserRole` / `extractUserIdentity`）。`voicehub/no-raw-role-check`（error）覆盖 `server/api/**`：任意 `.role` 读取都报错，唯一豁免是「白名单函数的直接实参」
+- Vue 组件禁 `lang="ts"`：`voicehub/no-lang-ts`（error）覆盖 `app/**/*.vue`（存量债已由 eslint 基线吸收，只减不增）
+- 内核契约由 `scripts/contract-checks/kernel-isolation.mjs` 把关：`server/api/**` 零引用 `utils/rbac`、权限解析只有 `resolvePermissions.ts` 一处权威实现（除内核外不得直查 `role_permissions` / `user_permissions`）、内核零 key 字面量、legacy 路径必须由 catalog 派生
 
 ## 5. 文件变更提醒
 
