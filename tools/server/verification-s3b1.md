@@ -11,7 +11,7 @@
 | 1 | 覆盖 `server/api/**` 全部路由（未覆盖 = 拒绝，有测试） | 零 `unmapped` | `route-coverage.mjs` A 项遍历全部路由文件（含无方法后缀文件的 5 个方法）→ 零未分类；计数 = permission 138 / login 118 / public 9（见服务器日志） | ✅ |
 | 2 | `/api/open/songs`、`/api/open/schedules` 精确路径已覆盖 | 有映射 | C 项断言 `GET /api/open/songs → song.read`、`GET /api/open/schedules → schedule.read` | ✅ |
 | 3 | 客体策略有单测（ADMIN 对 SUPER_ADMIN 目标拒绝） | 拒绝 | `policies.test.ts`：`canMutateTarget(ADMIN, SUPER_ADMIN)=false`、`assertCanMutateTarget` 403、**开关关闭时仍拒绝** | ✅ |
-| 4 | `index.ts` 只多一行 export | +1 行 | `git diff --stat 9ec159f..HEAD -- server/utils/rbac/index.ts` → `1 insertion(+)` | ✅ |
+| 4 | `index.ts` 只多一行 export | +1 行 | `git diff --stat 97d2c35..HEAD -- server/utils/rbac/index.ts` → `1 insertion(+)`（相对 S2 tip；若与 S1 tip 比较会把「新建文件」也算进去） | ✅ |
 | 5 | `requireSongAdmin.ts` 语义修正 | 无第二份角色矩阵 | 委托内核（`requireActiveUser` + catalog 角色谓词 `isSongAdminRole`），角色数组已删除 | ✅ |
 | 6 | 全量单测 | 全 pass | `# tests 237 / # pass 237 / # fail 0`（+15：route-permission-map 8 + policies 7） | ✅ |
 | 7 | 契约检查 | exit 0 | `✔ contract: 21 checks passed (6 module(s))`（+4：路由覆盖 A–D） | ✅ |
