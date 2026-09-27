@@ -590,9 +590,9 @@ pnpm run safe-migrate
 
 > **升级到内置 AstrBot 四平台绑定的版本时**：除执行数据库迁移外，部署流程还会自动回填旧绑定数据与站点开关。`scripts/db-sync.js` 在迁移完成后会把 `User` 表中的旧字段（`astrbotUmo`/`astrbotPlatform`/`astrbotBoundAt`）搬迁到新的 `AstrbotBinding` 表，并把历史开启的 AstrBot 站点（`astrbotEnabled=true`）延续为 `qq` 平台开关。该回填幂等：重复执行不会覆盖新表的既有绑定，也不会重置管理员改动过的平台开关；未知适配器会被跳过并输出告警。回填失败会中止部署。
 >
-> **已部署过早期 AstrBot 分支迁移的数据库不能直接升级到合并迁移。** 未桥接的旧库会在自动部署写入 schema 前中止，避免重放 `CREATE TABLE`。仅当七条旧迁移完整、旧表列、主外键和关键索引通过核验时，停写并做好可恢复备份后，先运行 `ASTRBOT_UPGRADE_DATABASE=<数据库名> node scripts/inspect-legacy-astrbot-upgrade.js --inspect` 核验阶段与行数，再显式执行 `ASTRBOT_UPGRADE_DATABASE=<数据库名> node scripts/upgrade-legacy-astrbot-esa.js --apply`，只补执行仓库现有的上游 ESA 迁移；确认三列与迁移记录后，再执行 `ASTRBOT_UPGRADE_DATABASE=<数据库名> node scripts/upgrade-legacy-astrbot.js --apply`。第二步会保留旧迁移记录与业务行，事务内补齐 `claimToken`、收紧非空绑定时间并登记专用桥接标记；失败回滚。若旧绑定时间为空或结构不同会拒绝，不得删除迁移记录或直接 `push --force`。桥接后核对三表逐行数据、待投递条目、列与迁移记录，再运行 `db-sync.js`；`safe-migrate` 对桥接库会直接拒绝。
->
 > **AstrBot 群事件投递边界**：群事件 push 仅支持常驻部署。合并窗口到期后的冲刷依赖常驻服务的定时任务；Vercel、Netlify 等按请求冻结实例的 Serverless 环境应在 VoiceHub 与 AstrBot 插件两端均选择 pull 模式，由插件主动领取并回执。切换模式前确认旧队列已处理，避免旧模式遗留条目滞留。
+>
+> **pull 模式回执契约**：`POST /api/bot/voicehub/pull` 领取的每条条目附带一次性租约令牌 `claimToken`，插件回执（`POST /api/bot/voicehub/ack`）时必须逐条原样回传；未回传、回传错误或租约已过期的回执会被拒绝，条目将在租约到期后重新投递。插件方实现需与 VoiceHub 同版本升级，不得丢弃或缓存后延迟使用 `claimToken`。
 >
 > 也可手动重跑回填脚本（等价逻辑，独立执行便于排查）：
 >
@@ -730,7 +730,6 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
 VoiceHub/
 ├── .github/                   # GitHub 配置目录
 │   └── workflows/             # GitHub Actions 工作流
-│       ├── astrbot-checks.yml # AstrBot 回归与 Nuxt 类型检查
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
@@ -1269,6 +1268,10 @@ VoiceHub/
 │   │   │   └── index.get.ts      # 获取平台启用与排序配置
 │   │   ├── notifications/  # 通知系统API
 │   │   │   ├── astrbot/             # AstrBot 绑定码、状态、解绑与测试推送
+│   │   │   │   ├── bind-code.post.ts # 发放指定平台的绑定码
+│   │   │   │   ├── status.get.ts     # 查询四平台绑定状态
+│   │   │   │   ├── test.post.ts      # 向当前绑定目标发送测试推送
+│   │   │   │   └── unbind.post.ts    # 解除指定平台的绑定
 │   │   │   ├── [id]/                # 通知操作子目录
 │   │   │   │   └── read.post.ts     # 标记通知已读
 │   │   │   ├── [id].delete.ts       # 删除通知
@@ -1486,7 +1489,6 @@ VoiceHub/
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
-│   ├── astrbot-migration-guard.js # AstrBot 旧迁移记录与未登记表的只读升级保护
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
@@ -1501,15 +1503,11 @@ VoiceHub/
 │   ├── postinstall.js     # 安装后脚本
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
-│   ├── inspect-legacy-astrbot-upgrade.js # 旧库升级阶段只读预检
-│   ├── safe-migrate.js    # 安全迁移（带备份）
-│   ├── upgrade-legacy-astrbot-esa.js # 旧 AstrBot 库的上游 ESA 前置迁移
-│   └── upgrade-legacy-astrbot.js # 已执行旧迁移链的 AstrBot 数据保留桥接
+│   └── safe-migrate.js    # 安全迁移（带备份）
 ├── tests/                 # 自动化测试
 │   ├── frontend/          # 推送配置与绑定界面契约测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
-│       ├── astrbot-migration-guard.test.ts # AstrBot 升级前数据库状态保护测试
 │       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
 │       ├── astrbot-platforms.test.ts # 四平台开关与绑定目标测试
 │       ├── astrbot-restore-fields.test.ts # AstrBot 配置备份恢复白名单测试

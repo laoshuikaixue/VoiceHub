@@ -5,6 +5,8 @@
  * 避免「插件能投什么」与「VoiceHub 发什么」两处规则漂移。
  */
 
+import { ASTRBOT_MAX_TARGETS_PER_REQUEST } from './astrbot-payload.ts'
+
 /** 仅显式配置为 pull 才走拉取；其余值（含历史数据的 undefined）按 push 处理。 */
 export function isAstrbotPullMode(value: unknown) {
   return value === 'pull'
@@ -64,7 +66,7 @@ export function parseAstrbotAckResults(body: unknown): AstrbotAckResult[] | null
     if (typeof record.success !== 'boolean') return null
     if (typeof record.claimToken !== 'string' || !/^[a-f0-9]{64}$/.test(record.claimToken)) return null
     const failedUmos = record.failedUmos
-    if (failedUmos !== undefined && (!Array.isArray(failedUmos) || !failedUmos.length || failedUmos.length > 200 ||
+    if (failedUmos !== undefined && (!Array.isArray(failedUmos) || !failedUmos.length || failedUmos.length > ASTRBOT_MAX_TARGETS_PER_REQUEST ||
       failedUmos.some((umo) => typeof umo !== 'string' || !umo || umo.length > 512) ||
       new Set(failedUmos).size !== failedUmos.length || record.success)) return null
     parsed.push({

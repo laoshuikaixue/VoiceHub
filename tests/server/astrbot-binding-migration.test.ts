@@ -5,8 +5,6 @@ import test from 'node:test'
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
 
 const dbSync = read('../../scripts/db-sync.js')
-const migrationGuard = read('../../scripts/astrbot-migration-guard.js')
-const controlledUpgrade = read('../../scripts/upgrade-legacy-astrbot.js')
 const deploy = read('../../scripts/deploy.js')
 
 test('部署流程仍在迁移后调用 db-sync.js，且 db-sync 失败会中止部署', () => {
@@ -21,16 +19,6 @@ test('db-sync 升级路径会调用旧绑定搬迁，且搬迁在 schema 同步�
   const syncIndex = dbSync.indexOf('ok(\'legacy schema同步完成，迁移基线记录已写入\')')
   const migrateIndex = dbSync.indexOf('await migrateLegacyAstrbotBindings(sql)')
   assert.ok(syncIndex > -1 && migrateIndex > syncIndex, '搬迁必须在 schema 同步完成后执行')
-})
-
-test('已执行被取代的 AstrBot 迁移时，在任何 schema 写入前拒绝自动同步', () => {
-  const guard = dbSync.indexOf('await rejectSupersededAstrbotMigrations(sql)')
-  const usernameWrite = dbSync.indexOf('await ensureNoDuplicateUsernames(sql)')
-  const migrate = dbSync.indexOf("safeExec('pnpm run db:migrate'")
-  assert.ok(guard > -1 && guard < usernameWrite && guard < migrate)
-  assert.match(dbSync, /import \{[^}]*rejectSupersededAstrbotMigrations[^}]*\} from '\.\/astrbot-migration-guard\.js'/)
-  assert.match(migrationGuard, /FROM public\.__drizzle_migrations__/)
-  assert.match(migrationGuard, /旧版 AstrBot 迁移已执行/)
 })
 
 test('旧绑定搬迁使用 ON CONFLICT DO NOTHING，冲突时不覆盖新表既有绑定', () => {
@@ -149,85 +137,4 @@ test('safe-migrate 迁移后同样调用 db-sync.js 完成回填，失败即中�
   const migrateDone = safeMigrate.indexOf("log('✅ 数据库迁移流程完成！', 'green')")
   const backfill = safeMigrate.indexOf('scripts/db-sync.js')
   assert.ok(migrateDone > -1 && backfill > migrateDone, '回填必须排在迁移完成之后')
-})
-
-test('safe-migrate 在 push 或 migrate 前也拒绝被取代的 AstrBot 旧迁移链', () => {
-  const safeMigrate = read('../../scripts/safe-migrate.js')
-  const guard = safeMigrate.indexOf('await rejectSupersededAstrbotMigrations()')
-  const push = safeMigrate.indexOf('drizzle-kit push --force --config=drizzle.config.ts')
-  const migrate = safeMigrate.indexOf('pnpm run db:migrate')
-  assert.ok(guard > -1 && guard < push && guard < migrate)
-})
-
-test('safe-migrate 对受控桥接库在 push 前直接拒绝', () => {
-  const safeMigrate = read('../../scripts/safe-migrate.js')
-  assert.match(safeMigrate, /if \(await hasAstrbotLegacyBridge\(sql\)\) throw new Error\('受控桥接库禁止 safe-migrate/)
-  const guard = safeMigrate.indexOf('await checkAstrbotMigrations(sql)')
-  const bridge = safeMigrate.indexOf("if (await hasAstrbotLegacyBridge(sql)) throw new Error('受控桥接库禁止 safe-migrate")
-  const push = safeMigrate.indexOf('drizzle-kit push --force')
-  assert.ok(guard > -1 && bridge > guard && bridge < push)
-})
-
-test('受控桥接库结构异常时绝不回退 push --force', () => {
-  assert.match(dbSync, /const bridgedLegacy = migrationRecordsExist && \(await hasAstrbotLegacyBridge\(sql\)\)/)
-  assert.match(dbSync, /if \(bridgedLegacy\) throw new Error\('受控桥接库结构不完整[^']*'\)/)
-  assert.ok(dbSync.indexOf("if (bridgedLegacy) throw new Error('受控桥接库结构不完整") <
-    dbSync.indexOf("if (!(await repairSchemaWithPush(sql)))"))
-})
-
-test('ESA 未安装阶段也先核验旧表桥接准入', () => {
-  const preview = read('../../scripts/inspect-legacy-astrbot-upgrade.js')
-  const branch = preview.slice(preview.indexOf("stage = 'esa-ready'"), preview.indexOf("stage = 'esa-needed'"))
-  assert.match(branch, /await inspectLegacyAstrbotSchema\(sql\)/)
-})
-
-test('旧库预检与桥接共用约束和索引检查，不能误报 ESA 已就绪', () => {
-  const preview = read('../../scripts/inspect-legacy-astrbot-upgrade.js')
-  const upgrade = read('../../scripts/upgrade-legacy-astrbot.js')
-  assert.match(preview, /inspectLegacyAstrbotSchema\(sql\)/)
-  assert.match(upgrade, /inspectLegacyAstrbotSchema\(tx\)/)
-})
-
-test('旧库升级只读预检不会执行迁移或写表', () => {
-  const source = read('../../scripts/inspect-legacy-astrbot-upgrade.js')
-  assert.match(source, /inspectLegacyAstrbotUpgrade/)
-  assert.match(source, /rejectSupersededAstrbotMigrations/)
-  assert.match(source, /ASTRBOT_UPGRADE_DATABASE/)
-  assert.doesNotMatch(source, /INSERT INTO|ALTER TABLE|DROP TABLE|UPDATE |DELETE FROM|\.unsafe\(/)
-})
-
-test('ESA 前置脚本在执行 SQL 前共用旧表约束和索引准入', () => {
-  const source = read('../../scripts/upgrade-legacy-astrbot-esa.js')
-  assert.match(source, /await inspectLegacyAstrbotSchema\(tx\)/)
-  assert.ok(source.indexOf('await inspectLegacyAstrbotSchema(tx)') < source.indexOf('for (const statement of statements)'))
-})
-
-test('旧库 ESA 前置升级只执行现成上游迁移并显式核验目标库', () => {
-  const source = read('../../scripts/upgrade-legacy-astrbot-esa.js')
-  assert.match(source, /process\.argv\[2\] !== '--apply'/)
-  assert.match(source, /ASTRBOT_UPGRADE_DATABASE/)
-  assert.match(source, /sql\.begin\(async \(tx\) => \{/)
-  assert.match(source, /20260925124342_add_aliyun_esa_captcha/)
-  assert.match(source, /createHash\('sha256'\)/)
-  assert.match(source, /331608ac93e5e74be0a8db9b9fb19fcc176458bf718e9859f3003964abd558df/)
-  assert.match(source, /1790340222774/)
-  assert.doesNotMatch(source, /DROP TABLE|DELETE FROM public\.__drizzle_migrations__/)
-})
-
-test('旧库升级只能显式执行并在事务内核验、补列及登记桥接', () => {
-  assert.match(controlledUpgrade, /process\.argv\[2\] !== '--apply'/)
-  assert.match(controlledUpgrade, /ASTRBOT_UPGRADE_DATABASE/)
-  assert.match(controlledUpgrade, /sql\.begin\(async \(tx\) => \{/)
-  assert.match(controlledUpgrade, /await inspectLegacyAstrbotUpgrade\(tx\)/)
-  assert.match(controlledUpgrade, /ALTER TABLE "AstrbotOutbox" ADD COLUMN "claimToken" text/)
-  assert.match(controlledUpgrade, /ALTER COLUMN "boundAt" SET NOT NULL/)
-  assert.match(controlledUpgrade, /ASTRBOT_LEGACY_BRIDGE_HASH/)
-  assert.match(controlledUpgrade, /await inspectLegacyAstrbotSchema\(tx\)/)
-  const sharedSchema = read('../../scripts/astrbot-migration-guard.js')
-  assert.match(sharedSchema, /pg_constraint/)
-  assert.match(sharedSchema, /pg_indexes/)
-  assert.match(sharedSchema, /AstrbotBindingCode_userId_platform_pk/)
-  assert.match(sharedSchema, /AstrbotBinding_userId_User_id_fk/)
-  assert.match(sharedSchema, /astrbot_outbox_pending_idx/)
-  assert.doesNotMatch(controlledUpgrade, /DROP TABLE|DELETE FROM public\.__drizzle_migrations__/)
 })

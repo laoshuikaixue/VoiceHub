@@ -23,7 +23,8 @@ export default defineEventHandler(async (event) => {
 
   const results = parseAstrbotAckResults(await readBody(event))
   if (!results) {
-    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '回执格式无效')
+    // claimToken 是 pull 时下发的单次租约令牌，必须逐条原样回传；插件方漏传即整体拒绝
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '回执格式无效：每条结果必须原样回传领取时返回的 claimToken')
   }
 
   let updated = 0

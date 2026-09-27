@@ -136,9 +136,6 @@ export default defineEventHandler(async (event) => {
                 'emailVerified',
                 'lastLoginIp',
                 'meowNickname',
-                'astrbotUmo',
-
-                'astrbotPlatform',
                 'forcePasswordChange',
                 'status',
                 'statusChangedBy',
@@ -153,7 +150,6 @@ export default defineEventHandler(async (event) => {
                 'lastLogin',
                 'passwordChangedAt',
                 'meowBoundAt',
-                'astrbotBoundAt',
                 'statusChangedAt',
                 'legalConsentAt'
               ]
@@ -854,6 +850,7 @@ export default defineEventHandler(async (event) => {
               'submissionGuidelines',
               'icpNumber',
               'gonganNumber',
+              'showBeianIcon',
               'enableSubmissionLimit',
               'dailySubmissionLimit',
               'weeklySubmissionLimit',

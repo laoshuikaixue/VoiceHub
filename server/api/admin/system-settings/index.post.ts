@@ -3,6 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { parseLegalConsentDocuments } from '~~/server/utils/legal-consent'
 import {
   getAggregateOAuthLoginTypesOrDefault,
@@ -838,7 +839,7 @@ export default defineEventHandler(async (event) => {
       updateData.astrbotGroupThrottle = normalizeAstrbotGroupThrottle(throttle)
     }
     if (body.astrbotPushMode !== undefined) {
-      if (body.astrbotPushMode !== 'push' && body.astrbotPushMode !== 'pull') {
+      if (!['push', 'pull'].includes(body.astrbotPushMode)) {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '推送方向只能是 push 或 pull')
       }
       updateData.astrbotPushMode = body.astrbotPushMode
@@ -873,9 +874,9 @@ export default defineEventHandler(async (event) => {
         ? updateData.astrbotToken : settings?.astrbotToken
       const baseUrl = body.astrbotBaseUrl !== undefined ? updateData.astrbotBaseUrl : settings?.astrbotBaseUrl
       const mode = body.astrbotPushMode ?? settings?.astrbotPushMode
-      if (!token || (mode !== 'pull' && !baseUrl)) {
+      if (!token || (!isAstrbotPullMode(mode) && !baseUrl)) {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
-          mode === 'pull' ? '请先配置机器人令牌' : '请先配置机器人服务地址和令牌')
+          isAstrbotPullMode(mode) ? '请先配置机器人令牌' : '请先配置机器人服务地址和令牌')
       }
     }
 

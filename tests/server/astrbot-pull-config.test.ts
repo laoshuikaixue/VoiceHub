@@ -6,8 +6,8 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf
 
 test('仅拉取模式的机器人无需配置服务地址，只有令牌是必填项', () => {
   const settings = read('../../server/api/admin/system-settings/index.post.ts')
-  // pull 模式下 Base URL 只对 push 必需；否则管理员无法保存「仅拉取」配置。
-  assert.match(settings, /if \(!token \|\| \(mode !== 'pull' && !baseUrl\)\)/)
+  // pull 模式下 Base URL 只对 push 必需；否则管理员无法保存「仅拉取」配置。判定同样复用共享函数。
+  assert.match(settings, /if \(!token \|\| \(!isAstrbotPullMode\(mode\) && !baseUrl\)\)/)
   const bindCode = read('../../server/api/notifications/astrbot/bind-code.post.ts')
   // 推拉判定复用共享函数，禁止再次出现字面量比较。
   assert.match(bindCode, /!isAstrbotPullMode\(settings\.astrbotPushMode\) && !settings\.astrbotBaseUrl/)

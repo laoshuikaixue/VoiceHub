@@ -23,6 +23,15 @@ import {
 } from '~~/server/utils/important-notification-policy'
 import { randomUUID } from 'node:crypto'
 
+/** AstrBot 私聊投递失败不阻断业务流程：统一吞异常并记日志。 */
+async function sendAstrbotToUserSafely(userId: number, title: string, content: string) {
+  try {
+    await sendAstrbotNotificationToUser(userId, title, content)
+  } catch (error) {
+    console.error(`发送 AstrBot 通知失败 (User: ${userId}):`, error)
+  }
+}
+
 /**
  * 创建联合投稿邀请通知
  */
@@ -76,11 +85,7 @@ export async function createCollaborationInvitationNotification(
       console.error('发送邮件通知失败:', error)
     }
 
-    try {
-      await sendAstrbotNotificationToUser(inviteeId, '收到联合投稿邀请', message)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(inviteeId, '收到联合投稿邀请', message)
 
     return notificationResult[0]
   } catch (error) {
@@ -119,11 +124,7 @@ export async function createCollaborationResponseNotification(
       })
       .returning()
 
-    try {
-      await sendAstrbotNotificationToUser(inviterId, '联合投稿邀请回复', message)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(inviterId, '联合投稿邀请回复', message)
 
     return notificationResult[0]
   } catch (error) {
@@ -320,11 +321,7 @@ async function sendSongSelectedNotification(
       console.error('发送邮件通知失败:', error)
     }
 
-    try {
-      await sendAstrbotNotificationToUser(userId, text.meowTitle, message)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(userId, text.meowTitle, message)
 
     return notificationResult[0]
   } catch (err) {
@@ -495,11 +492,7 @@ export async function createSongPlayedNotification(songId: number) {
         } catch (error) {
           console.error(`发送邮件通知失败 (User: ${targetUserId}):`, error)
         }
-        try {
-          await sendAstrbotNotificationToUser(targetUserId, '歌曲已播放', userMessage)
-        } catch (error) {
-          console.error(`发送 AstrBot 通知失败 (User: ${targetUserId}):`, error)
-        }
+        await sendAstrbotToUserSafely(targetUserId, '歌曲已播放', userMessage)
       } catch (err) {
         console.error(`处理播放通知失败 (User: ${targetUserId}):`, err)
       }
@@ -629,11 +622,7 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       console.error('发送邮件通知失败:', error)
     }
 
-    try {
-      await sendAstrbotNotificationToUser(song.requesterId, '收到新投票', message)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(song.requesterId, '收到新投票', message)
 
     return notification
   } catch (err) {
@@ -697,11 +686,7 @@ export async function createSongRejectedNotification(
       console.error('发送邮件通知失败:', error)
     }
 
-    try {
-      await sendAstrbotNotificationToUser(userId, '歌曲被驳回', message)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(userId, '歌曲被驳回', message)
 
     return notification
   } catch (err) {
@@ -793,11 +778,7 @@ export async function createSystemNotification(
       console.error('发送邮件通知失败:', error)
     }
 
-    try {
-      await sendAstrbotNotificationToUser(userId, title, content)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(userId, title, content)
 
     return notification
   } catch (err) {
@@ -953,11 +934,7 @@ export async function createReplayRequestRejectedNotification(
       console.error('发送邮件通知失败:', error)
     }
 
-    try {
-      await sendAstrbotNotificationToUser(userId, '重播申请已拒绝', message)
-    } catch (error) {
-      console.error('发送 AstrBot 通知失败:', error)
-    }
+    await sendAstrbotToUserSafely(userId, '重播申请已拒绝', message)
 
     return notification
   } catch (err) {

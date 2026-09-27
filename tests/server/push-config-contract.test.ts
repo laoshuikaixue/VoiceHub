@@ -36,7 +36,8 @@ test('推拉模式判定唯一权威：所有调用点复用 isAstrbotPullMode�
     'server/api/notifications/astrbot/test.post.ts',
     'server/api/notifications/astrbot/bind-code.post.ts',
     'server/plugins/astrbot-group-flush.ts',
-    'server/api/bot/voicehub/pull.post.ts'
+    'server/api/bot/voicehub/pull.post.ts',
+    'server/api/admin/system-settings/index.post.ts'
   ]
   for (const file of callers) {
     const code = read(`../../${file}`).replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')

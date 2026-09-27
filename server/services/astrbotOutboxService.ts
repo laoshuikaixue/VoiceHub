@@ -8,7 +8,7 @@ import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { isAstrbotGroupTargetAllowed, normalizeAstrbotGroupTargets } from '~~/server/utils/astrbot-group'
 import { ASTRBOT_MAX_TARGETS_PER_REQUEST, fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
-import { ASTRBOT_OUTBOX_MAX_ATTEMPTS } from '~~/server/utils/astrbot-pull'
+import { ASTRBOT_OUTBOX_MAX_ATTEMPTS, isAstrbotOutboxExhausted } from '~~/server/utils/astrbot-pull'
 
 /** 一次领取的最大条数与租约时长：插件崩溃后条目可被重新领取。 */
 export const ASTRBOT_OUTBOX_MAX_CLAIM = 20
@@ -162,7 +162,7 @@ export async function completeAstrbotOutbox(id: number, claimToken: string) {
 export async function failAstrbotOutbox(id: number, claimToken: string, reason: string, failedUmos: string[] | null = null) {
   const now = getServerDate()
   return db.transaction(async (tx) => {
-    const [row] = await tx.select({ umos: astrbotOutbox.umos, broadcast: astrbotOutbox.broadcast })
+    const [row] = await tx.select({ umos: astrbotOutbox.umos, broadcast: astrbotOutbox.broadcast, attempts: astrbotOutbox.attempts })
       .from(astrbotOutbox)
       .where(and(eq(astrbotOutbox.id, id), eq(astrbotOutbox.claimToken, claimToken),
         sql`${astrbotOutbox.leasedUntil} > ${now}`, isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
@@ -174,7 +174,7 @@ export async function failAstrbotOutbox(id: number, claimToken: string, reason: 
       leasedUntil: null, claimToken: null,
       ...(failedUmos ? { umos: failedUmos } : {}),
       lastError: reason.slice(0, 500),
-      failedAt: sql`CASE WHEN ${astrbotOutbox.attempts} >= 3 THEN ${now} ELSE NULL END`
+      failedAt: isAstrbotOutboxExhausted(row.attempts) ? now : null
     }).where(eq(astrbotOutbox.id, id)).returning({ id: astrbotOutbox.id })
     return updated.length === 1
   })

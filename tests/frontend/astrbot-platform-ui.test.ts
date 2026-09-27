@@ -13,7 +13,9 @@ const platforms = ['qq', 'wecom', 'dingtalk', 'lark']
 test('account renders one card per enabled platform from the public status map', () => {
   assert.match(account, /v-for="platform in enabledPlatforms"/)
   assert.match(account, /status\.platforms/)
-  for (const platform of platforms) assert.match(account, new RegExp(`'${platform}'`))
+  // 平台枚举唯一权威：组件只 import ASTRBOT_PLATFORMS，禁止自带四字面量副本
+  assert.match(account, /import \{ ASTRBOT_PLATFORMS[^}]*\} from '~~\/server\/utils\/astrbot-platforms'/)
+  assert.doesNotMatch(account, /\[\s*'qq',\s*'wecom',\s*'dingtalk',\s*'lark'\s*\]/)
   assert.match(account, /\.enabled/)
   assert.match(account, /\.bound/)
   assert.doesNotMatch(account, /astrbotAccount|status\.qqId|status\.qqUserId|status\.astrbotEnabled|status\.isBound/)
@@ -35,7 +37,9 @@ test('account posts platform-scoped bind, unbind and test, preserving existing r
 test('administrator loads and saves four platform toggles alongside existing settings', () => {
   assert.match(admin, /response\.astrbotPlatforms/)
   assert.match(admin, /astrbotPlatforms:.*astrbotPlatforms\.value|astrbotPlatforms:.*platforms/)
-  for (const platform of platforms) assert.match(admin, new RegExp(`'${platform}'`))
+  // 同上：复用权威枚举，不留字面量副本
+  assert.match(admin, /import \{ ASTRBOT_PLATFORMS[^}]*\} from '~~\/server\/utils\/astrbot-platforms'/)
+  assert.doesNotMatch(admin, /\[\s*'qq',\s*'wecom',\s*'dingtalk',\s*'lark'\s*\]/)
   assert.match(admin, /astrbotBaseUrl/)
   assert.match(admin, /smtpEnabled/)
 })

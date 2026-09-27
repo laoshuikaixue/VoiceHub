@@ -5,7 +5,6 @@ import fs from 'fs'
 import path from 'path'
 import { config } from 'dotenv'
 import postgres from 'postgres'
-import { ASTRBOT_LEGACY_BRIDGE_HASH, rejectSupersededAstrbotMigrations } from './astrbot-migration-guard.js'
 import { classifyAstrbotAdapter } from '../server/utils/astrbot-adapters.js'
 config({ path: path.resolve(process.cwd(), '.env') })
 
@@ -85,12 +84,6 @@ async function hasMigrationRecords(sql) {
 
   return (result[0]?.count || 0) > 0
 }
-
-async function hasAstrbotLegacyBridge(sql) {
-  const rows = await sql`SELECT 1 FROM public.__drizzle_migrations__ WHERE hash = ${ASTRBOT_LEGACY_BRIDGE_HASH} LIMIT 1`
-  return rows.length > 0
-}
-
 
 function loadMigrationJournalEntries() {
   const journalPath = path.resolve(process.cwd(), 'app/drizzle/migrations/meta/_journal.json')
@@ -542,7 +535,6 @@ async function main() {
   const sql = createSqlClient()
 
   try {
-    await rejectSupersededAstrbotMigrations(sql)
     const emptyDb = await isEmptyDatabase(sql)
     if (emptyDb) {
       log('🆕 检测到空库，执行迁移 (migrate)...', 'cyan')
@@ -559,7 +551,6 @@ async function main() {
       // 重复 username 会阻塞唯一索引创建（push/migrate 均失败），先修复数据再同步
       await ensureNoDuplicateUsernames(sql)
       const migrationRecordsExist = await hasMigrationRecords(sql)
-      const bridgedLegacy = migrationRecordsExist && (await hasAstrbotLegacyBridge(sql))
       if (migrationRecordsExist) {
         // 正常数据库必须先应用待执行迁移，再检查最终结构；否则新增字段会被误判为schema损坏。
         log('🔁 检测到迁移记录，先执行 migrate 同步...', 'cyan')
@@ -571,7 +562,6 @@ async function main() {
         if (migrateSuccess && schemaConsistent) {
           ok('migrate 同步成功')
         } else {
-          if (bridgedLegacy) throw new Error('受控桥接库结构不完整：拒绝 push --force，请先核对迁移及结构')
           if (migrateSuccess) {
             warn('migrate 已执行，但数据库schema仍不完整。')
           } else {
