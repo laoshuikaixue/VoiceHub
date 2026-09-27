@@ -6,7 +6,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { config } from 'dotenv'
 import postgres from 'postgres'
-import { rejectSupersededAstrbotMigrations as checkAstrbotMigrations } from './astrbot-migration-guard.js'
+import { ASTRBOT_LEGACY_BRIDGE_HASH, rejectSupersededAstrbotMigrations as checkAstrbotMigrations } from './astrbot-migration-guard.js'
 
 // 加载环境变量
 config({ path: path.resolve(process.cwd(), '.env') })
@@ -64,10 +64,18 @@ function fileExists(filePath) {
   }
 }
 
+async function hasAstrbotLegacyBridge(sql) {
+  const [table] = await sql`SELECT to_regclass('public.__drizzle_migrations__') AS table_name`
+  if (!table?.table_name) return false
+  const rows = await sql`SELECT 1 FROM public.__drizzle_migrations__ WHERE hash = ${ASTRBOT_LEGACY_BRIDGE_HASH} LIMIT 1`
+  return rows.length > 0
+}
+
 async function rejectSupersededAstrbotMigrations() {
   const sql = postgres(process.env.DATABASE_URL, { max: 1 })
   try {
     await checkAstrbotMigrations(sql)
+    if (await hasAstrbotLegacyBridge(sql)) throw new Error('受控桥接库禁止 safe-migrate 强推，请改用 db-sync.js')
   } finally {
     await sql.end()
   }

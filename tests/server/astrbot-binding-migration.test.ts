@@ -6,6 +6,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf
 
 const dbSync = read('../../scripts/db-sync.js')
 const migrationGuard = read('../../scripts/astrbot-migration-guard.js')
+const controlledUpgrade = read('../../scripts/upgrade-legacy-astrbot.js')
 const deploy = read('../../scripts/deploy.js')
 
 test('部署流程仍在迁移后调用 db-sync.js，且 db-sync 失败会中止部署', () => {
@@ -27,7 +28,7 @@ test('已执行被取代的 AstrBot 迁移时，在任何 schema 写入前拒绝
   const usernameWrite = dbSync.indexOf('await ensureNoDuplicateUsernames(sql)')
   const migrate = dbSync.indexOf("safeExec('pnpm run db:migrate'")
   assert.ok(guard > -1 && guard < usernameWrite && guard < migrate)
-  assert.match(dbSync, /import \{ rejectSupersededAstrbotMigrations \} from '\.\/astrbot-migration-guard\.js'/)
+  assert.match(dbSync, /import \{[^}]*rejectSupersededAstrbotMigrations[^}]*\} from '\.\/astrbot-migration-guard\.js'/)
   assert.match(migrationGuard, /FROM public\.__drizzle_migrations__/)
   assert.match(migrationGuard, /旧版 AstrBot 迁移已执行/)
 })
@@ -129,7 +130,7 @@ test('schema 一致性检查覆盖 AstrBot 表与关键列', () => {
   for (const table of ['AstrbotBinding', 'AstrbotOutbox', 'AstrbotBindingCode']) {
     assert.match(block, new RegExp(`'${table}'`), `${table} 必须列入 requiredTables`)
   }
-  assert.match(block, /AstrbotOutbox: \['targetOwners'\]/)
+  assert.match(block, /AstrbotOutbox: \['targetOwners', 'claimToken'\]/)
   const settings = block.slice(block.indexOf('SystemSettings: ['), block.indexOf('AstrbotOutbox:'))
   assert.match(settings, /'astrbotPlatforms'/)
   assert.match(settings, /'astrbotEnabled'/)
@@ -155,4 +156,31 @@ test('safe-migrate 在 push 或 migrate 前也拒绝被取代的 AstrBot 旧迁�
   const push = safeMigrate.indexOf('drizzle-kit push --force --config=drizzle.config.ts')
   const migrate = safeMigrate.indexOf('pnpm run db:migrate')
   assert.ok(guard > -1 && guard < push && guard < migrate)
+})
+
+test('safe-migrate 对受控桥接库在 push 前直接拒绝', () => {
+  const safeMigrate = read('../../scripts/safe-migrate.js')
+  assert.match(safeMigrate, /if \(await hasAstrbotLegacyBridge\(sql\)\) throw new Error\('受控桥接库禁止 safe-migrate/)
+  const guard = safeMigrate.indexOf('await checkAstrbotMigrations(sql)')
+  const bridge = safeMigrate.indexOf("if (await hasAstrbotLegacyBridge(sql)) throw new Error('受控桥接库禁止 safe-migrate")
+  const push = safeMigrate.indexOf('drizzle-kit push --force')
+  assert.ok(guard > -1 && bridge > guard && bridge < push)
+})
+
+test('受控桥接库结构异常时绝不回退 push --force', () => {
+  assert.match(dbSync, /const bridgedLegacy = migrationRecordsExist && \(await hasAstrbotLegacyBridge\(sql\)\)/)
+  assert.match(dbSync, /if \(bridgedLegacy\) throw new Error\('受控桥接库结构不完整[^']*'\)/)
+  assert.ok(dbSync.indexOf("if (bridgedLegacy) throw new Error('受控桥接库结构不完整") <
+    dbSync.indexOf("if (!(await repairSchemaWithPush(sql)))"))
+})
+
+test('旧库升级只能显式执行并在事务内核验、补列及登记桥接', () => {
+  assert.match(controlledUpgrade, /process\.argv\[2\] !== '--apply'/)
+  assert.match(controlledUpgrade, /ASTRBOT_UPGRADE_DATABASE/)
+  assert.match(controlledUpgrade, /sql\.begin\(async \(tx\) => \{/)
+  assert.match(controlledUpgrade, /await inspectLegacyAstrbotUpgrade\(tx\)/)
+  assert.match(controlledUpgrade, /ALTER TABLE "AstrbotOutbox" ADD COLUMN "claimToken" text/)
+  assert.match(controlledUpgrade, /ALTER COLUMN "boundAt" SET NOT NULL/)
+  assert.match(controlledUpgrade, /ASTRBOT_LEGACY_BRIDGE_HASH/)
+  assert.doesNotMatch(controlledUpgrade, /DROP TABLE|DELETE FROM public\.__drizzle_migrations__/)
 })

@@ -590,7 +590,7 @@ pnpm run safe-migrate
 
 > **升级到内置 AstrBot 四平台绑定的版本时**：除执行数据库迁移外，部署流程还会自动回填旧绑定数据与站点开关。`scripts/db-sync.js` 在迁移完成后会把 `User` 表中的旧字段（`astrbotUmo`/`astrbotPlatform`/`astrbotBoundAt`）搬迁到新的 `AstrbotBinding` 表，并把历史开启的 AstrBot 站点（`astrbotEnabled=true`）延续为 `qq` 平台开关。该回填幂等：重复执行不会覆盖新表的既有绑定，也不会重置管理员改动过的平台开关；未知适配器会被跳过并输出告警。回填失败会中止部署。
 >
-> **已部署过早期 AstrBot 分支迁移的数据库不能直接升级到合并迁移。** 部署入口会检查旧迁移记录；即使迁移记录缺失，只要存在 AstrBot 表且未登记新合并迁移，也会在写入 schema 前中止，避免重放 `CREATE TABLE` 或自动回退到 `push --force`。请先备份数据库并制定保留既有绑定、群队列和设置的受控升级方案；不要删除迁移记录或直接强推结构。
+> **已部署过早期 AstrBot 分支迁移的数据库不能直接升级到合并迁移。** 未桥接的旧库会在自动部署写入 schema 前中止，避免重放 `CREATE TABLE`。仅当七条旧迁移和上游 ESA 迁移均完整、旧表结构通过核验时，停写并做好可恢复备份后，才可单独执行 `ASTRBOT_UPGRADE_DATABASE=<数据库名> node scripts/upgrade-legacy-astrbot.js --apply`。该脚本保留旧迁移记录与业务行，事务内补齐 `claimToken`、收紧非空绑定时间并登记专用桥接标记；失败回滚。若旧绑定时间为空或结构不同会拒绝，不得删除迁移记录或直接 `push --force`。升级后先核对行数、列与迁移记录，再运行 `db-sync.js`。
 >
 > **AstrBot 群事件投递边界**：群事件 push 仅支持常驻部署。合并窗口到期后的冲刷依赖常驻服务的定时任务；Vercel、Netlify 等按请求冻结实例的 Serverless 环境应在 VoiceHub 与 AstrBot 插件两端均选择 pull 模式，由插件主动领取并回执。切换模式前确认旧队列已处理，避免旧模式遗留条目滞留。
 >
@@ -1499,7 +1499,8 @@ VoiceHub/
 │   ├── postinstall.js     # 安装后脚本
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
-│   └── safe-migrate.js    # 安全迁移（带备份）
+│   ├── safe-migrate.js    # 安全迁移（带备份）
+│   └── upgrade-legacy-astrbot.js # 已执行旧迁移链的 AstrBot 数据保留桥接
 ├── tests/                 # 自动化测试
 │   ├── frontend/          # 推送配置与绑定界面契约测试
 │   └── server/             # 服务端策略与安全测试
