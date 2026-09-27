@@ -174,6 +174,14 @@ test('受控桥接库结构异常时绝不回退 push --force', () => {
     dbSync.indexOf("if (!(await repairSchemaWithPush(sql)))"))
 })
 
+test('旧库升级只读预检不会执行迁移或写表', () => {
+  const source = read('../../scripts/inspect-legacy-astrbot-upgrade.js')
+  assert.match(source, /inspectLegacyAstrbotUpgrade/)
+  assert.match(source, /rejectSupersededAstrbotMigrations/)
+  assert.match(source, /ASTRBOT_UPGRADE_DATABASE/)
+  assert.doesNotMatch(source, /INSERT INTO|ALTER TABLE|DROP TABLE|UPDATE |DELETE FROM|\.unsafe\(/)
+})
+
 test('旧库 ESA 前置升级只执行现成上游迁移并显式核验目标库', () => {
   const source = read('../../scripts/upgrade-legacy-astrbot-esa.js')
   assert.match(source, /process\.argv\[2\] !== '--apply'/)
