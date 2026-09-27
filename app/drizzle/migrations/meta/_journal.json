@@ -369,8 +369,8 @@
     {
       "idx": 52,
       "version": "7",
-      "when": 1790435780014,
-      "tag": "20260926151620_auto-migration",
+      "when": 1790488086779,
+      "tag": "20260927054806_add_astrbot_notification",
       "breakpoints": true
     }
   ]

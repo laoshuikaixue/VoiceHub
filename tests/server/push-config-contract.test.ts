@@ -28,3 +28,23 @@ test('管理员发布通知自动分发给有绑定 UMO 的目标，推拉模式
   // 四平台独立开关下群广播已停用，入队只针对已绑定私聊目标。
   assert.match(astrbot, /await enqueueAstrbotNotifications\(userIds, title, content\)/)
 })
+
+test('推拉模式判定唯一权威：所有调用点复用 isAstrbotPullMode，禁止自写字面量比较', () => {
+  const callers = [
+    'server/services/astrbotNotificationService.ts',
+    'server/services/astrbotGroupService.ts',
+    'server/api/notifications/astrbot/test.post.ts',
+    'server/api/notifications/astrbot/bind-code.post.ts',
+    'server/plugins/astrbot-group-flush.ts',
+    'server/api/bot/voicehub/pull.post.ts'
+  ]
+  for (const file of callers) {
+    const code = read(`../../${file}`).replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
+    assert.doesNotMatch(code, /astrbotPushMode\s*[!=]==?\s*'pull'/, `${file} 应复用 isAstrbotPullMode`)
+    assert.doesNotMatch(code, /mode\s*[!=]==?\s*'pull'/, `${file} 应复用 isAstrbotPullMode`)
+  }
+  for (const file of ['server/api/notifications/astrbot/test.post.ts',
+    'server/api/notifications/astrbot/bind-code.post.ts', 'server/plugins/astrbot-group-flush.ts']) {
+    assert.match(read(`../../${file}`), /isAstrbotPullMode\(/, `${file} 应调用 isAstrbotPullMode`)
+  }
+})

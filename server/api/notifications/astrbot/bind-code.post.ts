@@ -7,6 +7,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { isAstrbotPlatformEnabled, parseAstrbotPlatform } from '~~/server/utils/astrbot-platforms'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import {
   ASTRBOT_BIND_TTL_SECONDS, createAstrbotBindCode, hashAstrbotBindCode
 } from '~~/server/utils/astrbot-notification'
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   if (!platform) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '平台无效')
   const settings = await getSystemSettingsCached()
   if (!settings?.astrbotEnabled || !isAstrbotPlatformEnabled(settings.astrbotPlatforms, platform) || !settings.astrbotToken ||
-    (settings.astrbotPushMode !== 'pull' && !settings.astrbotBaseUrl)) {
+    (!isAstrbotPullMode(settings.astrbotPushMode) && !settings.astrbotBaseUrl)) {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_NOT_CONFIGURED, '机器人推送未启用')
   }
 

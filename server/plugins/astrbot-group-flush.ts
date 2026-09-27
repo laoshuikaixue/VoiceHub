@@ -1,4 +1,5 @@
 import { flushAstrbotGroupOutbox } from '~~/server/services/astrbotGroupService'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 
 /**
  * push 模式下的群事件投递器。
@@ -19,7 +20,7 @@ export default defineNitroPlugin((nitroApp) => {
     try {
       const { getSystemSettingsCached } = await import('~~/server/utils/system-settings-helper')
       const settings = await getSystemSettingsCached()
-      if (settings?.astrbotPushMode !== 'pull') {
+      if (!isAstrbotPullMode(settings?.astrbotPushMode)) {
         await flushAstrbotGroupOutbox()
       }
     } catch (error) {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BOT_ROUTES } from '../../server/config/constants.ts'
 import { formatDateTime, getBeijingStartOfWeek, getBeijingEndOfWeek, getBeijingWeekdayLabel } from '../../app/utils/timeUtils.ts'
@@ -77,6 +77,26 @@ test('使用 getServerDate() 获取当前时间，禁止 new Date()', () => {
   // 不应直接出现 new Date()（注释除外）
   const codeWithoutComments = apiSrc.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
   assert.ok(!codeWithoutComments.includes('new Date()'), '禁止直接使用 new Date()')
+})
+
+test('AstrBot 全部服务端模块禁止裸 new Date()，守卫覆盖整个切片而非单个文件', () => {
+  const dirs = ['server/services', 'server/utils', 'server/plugins', 'server/api/bot/voicehub', 'server/api/notifications']
+  const files: string[] = []
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = `${dir}/${entry.name}`
+      if (entry.isDirectory()) walk(full)
+      else if (/astrbot.*\.ts$/.test(entry.name) && !entry.name.endsWith('.test.ts')) files.push(full)
+    }
+  }
+  dirs.forEach(walk)
+  assert.ok(files.length >= 8, `应扫描到 AstrBot 服务端模块，实际 ${files.length}`)
+  for (const file of files) {
+    // 注释里的 new Date() 是说明，不作为违规；只看真实代码。
+    const code = readFileSync(join(process.cwd(), file), 'utf8')
+      .replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
+    assert.ok(!code.includes('new Date()'), `${file} 禁止直接使用 new Date()`)
+  }
 })
 
 test('使用 getBeijingStartOfWeek 计算本周开始', () => {

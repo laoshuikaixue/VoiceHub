@@ -9,7 +9,8 @@ test('仅拉取模式的机器人无需配置服务地址，只有令牌是必�
   // pull 模式下 Base URL 只对 push 必需；否则管理员无法保存「仅拉取」配置。
   assert.match(settings, /if \(!token \|\| \(mode !== 'pull' && !baseUrl\)\)/)
   const bindCode = read('../../server/api/notifications/astrbot/bind-code.post.ts')
-  assert.match(bindCode, /settings\.astrbotPushMode !== 'pull' && !settings\.astrbotBaseUrl/)
+  // 推拉判定复用共享函数，禁止再次出现字面量比较。
+  assert.match(bindCode, /!isAstrbotPullMode\(settings\.astrbotPushMode\) && !settings\.astrbotBaseUrl/)
 })
 
 test('群推送恢复但必须带平台归属：目标走白名单校验，而非靠 UMO 前缀推断', () => {

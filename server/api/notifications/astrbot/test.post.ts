@@ -8,6 +8,7 @@ import { db } from '~/drizzle/db'
 import { astrbotBindings } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import { isAstrbotPlatformEnabled, parseAstrbotPlatform } from '~~/server/utils/astrbot-platforms'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const [target] = await db.select({ umo: astrbotBindings.umo }).from(astrbotBindings)
     .where(and(eq(astrbotBindings.userId, user.id), eq(astrbotBindings.platform, platform))).limit(1)
   if (!target?.umo) throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '请先绑定机器人会话')
-  if (settings.astrbotPushMode === 'pull') {
+  if (isAstrbotPullMode(settings.astrbotPushMode)) {
     const queued = await enqueueAstrbotNotifications([user.id], 'VoiceHub 测试通知', '机器人测试消息。', platform)
     if (!queued) throw createApiError(502, SERVER_ERROR_CODES.ASTRBOT_TEST_FAILED, '机器人测试消息未入队')
     return { success: true, queued: true }
