@@ -588,19 +588,11 @@ pnpm run safe-migrate
 
 有关如何升级现有部署和迁移数据，请参阅 [升级指南](UPGRADE.md)。
 
-> **升级到内置 AstrBot 四平台绑定的版本时**：除执行数据库迁移外，部署流程还会自动回填旧绑定数据与站点开关。`scripts/db-sync.js` 在迁移完成后会把 `User` 表中的旧字段（`astrbotUmo`/`astrbotPlatform`/`astrbotBoundAt`）搬迁到新的 `AstrbotBinding` 表，并把历史开启的 AstrBot 站点（`astrbotEnabled=true`）延续为 `qq` 平台开关。该回填幂等：重复执行不会覆盖新表的既有绑定，也不会重置管理员改动过的平台开关；未知适配器会被跳过并输出告警。回填失败会中止部署。
+> **升级到内置 AstrBot 四平台绑定的版本时**：部署流程会自动将旧版用户绑定迁移到 `AstrbotBinding` 表，并保留站点原有的平台开关。未知适配器不会迁移，部署日志会提示。
 >
 > **AstrBot 群事件投递边界**：群事件 push 仅支持常驻部署。合并窗口到期后的冲刷依赖常驻服务的定时任务；Vercel、Netlify 等按请求冻结实例的 Serverless 环境应在 VoiceHub 与 AstrBot 插件两端均选择 pull 模式，由插件主动领取并回执。切换模式前确认旧队列已处理，避免旧模式遗留条目滞留。
 >
-> **pull 模式回执契约**：`POST /api/bot/voicehub/pull` 领取的每条条目附带一次性租约令牌 `claimToken`，插件回执（`POST /api/bot/voicehub/ack`）时必须逐条原样回传；未回传、回传错误或租约已过期的回执会被拒绝，条目将在租约到期后重新投递。插件方实现需与 VoiceHub 同版本升级，不得丢弃或缓存后延迟使用 `claimToken`。
->
-> 也可手动重跑回填脚本（等价逻辑，独立执行便于排查）：
->
-> ```bash
-> pnpm exec tsx scripts/migrate-astrbot-bindings.ts
-> ```
->
-> 若部署日志出现「检测到数据库schema不完整，缺少: AstrbotBinding table / AstrbotOutbox.targetOwners column」等提示，说明迁移未成功应用，请先排查迁移失败原因再重新部署。
+> **pull 模式回执契约**：`POST /api/bot/voicehub/pull` 返回的条目带有 `claimToken`，插件回执时须原样带回。
 
 ## 系统配置
 
@@ -1257,10 +1249,10 @@ VoiceHub/
 │   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
 │   │   │   │   ├── check-wx-login.post.ts # 检查微信扫码登录状态
 │   │   │   │   ├── login-qr.get.ts  # 获取QQ登录二维码
-│   │   │   │   └── login-qr-wx.get.ts # 获取微信登录二维码
+│   │   │   │   ├── login-qr-wx.get.ts # 获取微信登录二维码
 │   │   │   │   ├── playlist-songs.post.ts # 获取QQ音乐歌单内歌曲
-│   │   │   │   └── playlists.post.ts # 获取用户创建与收藏的歌单
-│   │   │   └── search/              # 搜索API
+│   │   │   │   ├── playlists.post.ts # 获取用户创建与收藏的歌单
+│   │   │   │   └── search/              # 搜索API
 │   │   │       ├── mg.get.ts        # 咪咕音乐搜索
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
