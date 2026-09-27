@@ -24,7 +24,8 @@ const LITERAL_ALLOWLIST = [
   'shared/rbac/permission-catalog.js', // 唯一权威定义本身
   'server/utils/rbac/constants.ts', // 薄 re-export（零字面量由 catalog.mjs 另行断言）
   'scripts/contract-checks/', // 契约检查的冻结期望值（见 legacy-map.mjs 顶部说明）
-  'tests/contract/' // 冻结基线测试
+  'tests/contract/', // 冻结基线测试
+  'tests/server/rbac/' // 内核单测：key 是最小输入的「冻结期望值」，属有意字面量
 ]
 
 /** 待迁移的 legacy 冒号字面量消费方（唯一属主见 planning/plan/TASKS.md；标 `未排期` 者为本轮写范围缺口） */
@@ -59,6 +60,14 @@ function walk(dir, collected = []) {
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+/**
+ * 扫描前剥离注释：注释里说明「某模块提到 role_permissions」不是违规，
+ * 但注释里的字面量示例（如 `role.manage`）也不该被当成第二份定义。
+ * 简单实现足够：本检查只关心源码里的字符串字面量，注释一律视为噪声。
+ */
+const stripComments = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+
 const relative = (absolutePath) => path.relative(ROOT, absolutePath).split(path.sep).join('/')
 
 const isAllowed = (relativePath, allowlist) =>
@@ -82,7 +91,7 @@ function checkCatalogKeyLiterals() {
     if (isAllowed(relativePath, LITERAL_ALLOWLIST)) continue
     if (fs.statSync(file).size > MAX_FILE_BYTES) continue
 
-    const source = fs.readFileSync(file, 'utf8')
+    const source = stripComments(fs.readFileSync(file, 'utf8'))
     for (const match of source.matchAll(pattern)) {
       const line = source.slice(0, match.index).split('\n').length
       violations.push(`${relativePath}:${line} → ${match[1]}`)
@@ -129,7 +138,7 @@ function checkLegacyLiteralsOutsideAllowlist() {
     if (isAllowed(relativePath, LEGACY_ALLOWLIST)) continue
     if (fs.statSync(file).size > MAX_FILE_BYTES) continue
 
-    const source = fs.readFileSync(file, 'utf8')
+    const source = stripComments(fs.readFileSync(file, 'utf8'))
     for (const match of source.matchAll(pattern)) {
       const line = source.slice(0, match.index).split('\n').length
       violations.push(`${relativePath}:${line} → ${match[1]}`)
