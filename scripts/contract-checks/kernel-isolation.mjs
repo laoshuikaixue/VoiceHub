@@ -84,7 +84,10 @@ function checkSingleAuthority() {
   )
 
   const tableReaders = serverFiles
-    .filter((file) => /\brole_permissions\b|\buser_permissions\b/.test(stripComments(fs.readFileSync(file, 'utf8'))))
+    .filter((file) =>
+      // 负向断言排除 `user_permissions.manage` 这类**权限 key**（后面紧跟点号），只匹配表引用
+      /\brole_permissions\b(?!\.)|\buser_permissions\b(?!\.)/.test(stripComments(fs.readFileSync(file, 'utf8')))
+    )
     .map(relative)
     .sort()
 
