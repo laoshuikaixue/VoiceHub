@@ -149,7 +149,7 @@ test('S3-B2-2 静态接线：10 个文件均已接入具名策略，且零角色
     )
     // ② 角色字面量数组（旧的矩阵形态；`ROLE_ORDER.includes(x)` 这类目录派生校验不算）
     assert.equal(
-      /\[\s*'[A-Z_]+'\s*,[^\]]*\]\s*\.includes\(/.test(text),
+      /\[\s*'(USER|SONG_ADMIN|ADMIN|SUPER_ADMIN)'[^\]]*\]\s*\.includes\(/.test(text),
       false,
       `${item.file} 仍有角色字面量数组`
     )

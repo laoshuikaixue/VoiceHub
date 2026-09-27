@@ -113,7 +113,12 @@ test('S3-B2-1 静态接线：8 个文件已无角色比较 / 内联角色数组 
   for (const item of READ_ROUTES) {
     const text = fs.readFileSync(path.join(ROOT, item.file), 'utf8')
     assert.equal(/\.role\s*(===|!==)/.test(text), false, `${item.file} 仍有 .role 比较`)
-    assert.equal(/includes\(\s*[\w.]*[Rr]ole/.test(text), false, `${item.file} 仍有内联角色数组判断`)    assert.equal(/context\.user/.test(text), false, `${item.file} 仍在直读 event.context.user（应走 guard）`)
+    assert.equal(
+      /\[\s*'(USER|SONG_ADMIN|ADMIN|SUPER_ADMIN)'[^\]]*\]\s*\.includes\(/.test(text),
+      false,
+      `${item.file} 仍有角色字面量数组`
+    )
+    assert.equal(/context\.user/.test(text), false, `${item.file} 仍在直读 event.context.user（应走 guard）`)
   }
 })
 
