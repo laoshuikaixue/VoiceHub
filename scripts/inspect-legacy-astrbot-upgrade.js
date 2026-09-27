@@ -2,7 +2,7 @@
 // 只读检查旧 AstrBot 数据库；不自动应用迁移。
 import { config } from 'dotenv'
 import postgres from 'postgres'
-import { inspectLegacyAstrbotUpgrade, rejectSupersededAstrbotMigrations } from './astrbot-migration-guard.js'
+import { inspectLegacyAstrbotUpgrade, inspectLegacyAstrbotSchema, rejectSupersededAstrbotMigrations, ASTRBOT_LEGACY_BRIDGE_HASH } from './astrbot-migration-guard.js'
 
 config()
 if (process.argv[2] !== '--inspect' || !process.env.DATABASE_URL || !process.env.ASTRBOT_UPGRADE_DATABASE) {
@@ -31,10 +31,11 @@ try {
   let stage = 'unknown'
   if (applied.has(1790435780014n)) {
     await rejectSupersededAstrbotMigrations(sql)
-    stage = records.some((row) => BigInt(row.created_at) === 1790435780014n && row.hash === 'astrbot-legacy-bridge:v1')
+    stage = records.some((row) => BigInt(row.created_at) === 1790435780014n && row.hash === ASTRBOT_LEGACY_BRIDGE_HASH)
       ? 'bridged' : 'combined'
   } else if (applied.has(1790340222774n)) {
     await inspectLegacyAstrbotUpgrade(sql)
+    await inspectLegacyAstrbotSchema(sql)
     stage = 'esa-ready'
   } else {
     const old = [1790326842814n, 1790342504449n, 1790359178874n,
@@ -42,6 +43,7 @@ try {
     if (old.some((when) => !applied.has(when)) || esaColumns.length !== 0 || claim.length !== 0) {
       throw new Error('旧迁移链或 ESA/桥接结构不符合前置升级条件')
     }
+    await inspectLegacyAstrbotSchema(sql)
     stage = 'esa-needed'
   }
   console.log(JSON.stringify({ stage, counts: counts[0], esaColumns: esaColumns.length, claimColumn: claim.length }))

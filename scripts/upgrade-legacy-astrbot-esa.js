@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { config } from 'dotenv'
 import postgres from 'postgres'
-import { inspectLegacyAstrbotUpgrade } from './astrbot-migration-guard.js'
+import { inspectLegacyAstrbotUpgrade, inspectLegacyAstrbotSchema } from './astrbot-migration-guard.js'
 
 config()
 if (process.argv[2] !== '--apply' || !process.env.DATABASE_URL || !process.env.ASTRBOT_UPGRADE_DATABASE) {
@@ -48,6 +48,7 @@ try {
     const columns = await tx`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public'
       AND table_name = 'SystemSettings' AND column_name IN ('esaCaptchaPrefix', 'esaCaptchaScenes', 'esaCaptchaRegion')`
     if (columns.length) throw new Error('ESA 列已存在或部分存在，拒绝重放')
+    await inspectLegacyAstrbotSchema(tx)
     for (const statement of statements) await tx.unsafe(statement)
     await tx`INSERT INTO public.__drizzle_migrations__ (hash, created_at) VALUES (${migrationHash}, ${1790340222774})`
     // 此时预检应通过，但正式桥接仍须由单独脚本执行。
