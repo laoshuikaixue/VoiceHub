@@ -174,6 +174,18 @@ test('受控桥接库结构异常时绝不回退 push --force', () => {
     dbSync.indexOf("if (!(await repairSchemaWithPush(sql)))"))
 })
 
+test('旧库 ESA 前置升级只执行现成上游迁移并显式核验目标库', () => {
+  const source = read('../../scripts/upgrade-legacy-astrbot-esa.js')
+  assert.match(source, /process\.argv\[2\] !== '--apply'/)
+  assert.match(source, /ASTRBOT_UPGRADE_DATABASE/)
+  assert.match(source, /sql\.begin\(async \(tx\) => \{/)
+  assert.match(source, /20260925124342_add_aliyun_esa_captcha/)
+  assert.match(source, /createHash\('sha256'\)/)
+  assert.match(source, /331608ac93e5e74be0a8db9b9fb19fcc176458bf718e9859f3003964abd558df/)
+  assert.match(source, /1790340222774/)
+  assert.doesNotMatch(source, /DROP TABLE|DELETE FROM public\.__drizzle_migrations__/)
+})
+
 test('旧库升级只能显式执行并在事务内核验、补列及登记桥接', () => {
   assert.match(controlledUpgrade, /process\.argv\[2\] !== '--apply'/)
   assert.match(controlledUpgrade, /ASTRBOT_UPGRADE_DATABASE/)
