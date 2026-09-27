@@ -11,6 +11,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { assertCanAssignRole, assertCanMutateTarget, canManageUsers, ROLE_ORDER } from '~~/server/utils/rbac'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -27,14 +28,8 @@ const roleNames: Record<string, string> = {
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    // 权限：user.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const user = await canManageUsers(event)
 
     const userId = getRouterParam(event, 'id')
     const userIdNum = Number.parseInt(String(userId), 10)
@@ -87,14 +82,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 3. 越级修改保护
-    // 如果目标用户是 SUPER_ADMIN，操作者必须是 SUPER_ADMIN
-    if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足：普通管理员无法修改超级管理员信息'
-      })
-    }
+    // 3. 越级修改保护（客体策略 D8：目标为 SUPER_ADMIN 时仅 SUPER_ADMIN 可操作）
+    assertCanMutateTarget(event, targetUser, { message: '权限不足：普通管理员无法修改超级管理员信息' })
 
     // 检查用户名是否被其他用户使用
     if (normalizedUsername !== targetUser.username) {
@@ -115,7 +104,7 @@ export default defineEventHandler(async (event) => {
     // 角色权限控制
     let validRole = targetUser.role
     if (role) {
-      if (!['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      if (typeof role !== 'string' || !ROLE_ORDER.includes(role)) {
         throw createError({
           statusCode: 400,
           message: '无效的用户角色'
@@ -124,28 +113,11 @@ export default defineEventHandler(async (event) => {
     }
 
     if (role && role !== targetUser.role) {
-      // 超级管理员可以设置任何角色
-      if (user.role === 'SUPER_ADMIN') {
-        validRole = role
-      }
-      // 管理员只能设置管理员以下的角色（USER, SONG_ADMIN）
-      else if (user.role === 'ADMIN') {
-        if (['USER', 'SONG_ADMIN'].includes(role)) {
-          validRole = role
-        } else {
-          throw createError({
-            statusCode: 403,
-            message: '管理员只能设置用户和歌曲管理员角色'
-          })
-        }
-      }
-      // 其他角色不能设置角色
-      else {
-        throw createError({
-          statusCode: 403,
-          message: '没有权限设置用户角色'
-        })
-      }
+      // 角色变更走客体策略：只能设置**严格弱于自己**的角色（ADMIN → USER/SONG_ADMIN）；
+      // 提升为 SUPER_ADMIN 仅 SUPER_ADMIN 可做。
+      // 旧实现分 SUPER_ADMIN / ADMIN / 其他 三个分支，其中「其他」在顶层 user.manage 守卫下不可达。
+      assertCanAssignRole(event, role, { message: '管理员只能设置用户和歌曲管理员角色' })
+      validRole = role
     }
 
     // 验证status字段的有效性

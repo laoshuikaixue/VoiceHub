@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
+import { canManageUsers, canMutateTarget } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -54,23 +55,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 使用认证中间件提供的用户信息
-    const currentUser = event.context.user
-
-    if (!currentUser) {
-      throw createError({
-        statusCode: 401,
-        message: 'Authentication required'
-      })
-    }
-
-    // 检查权限 - 只有管理员和超级管理员可以执行批量更新
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      throw createError({
-        statusCode: 403,
-        message: 'Insufficient permissions'
-      })
-    }
+    // 权限：user.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const currentUser = await canManageUsers(event)
 
     // 验证用户ID是否存在
     const existingUsers = await db
@@ -119,7 +105,7 @@ export default defineEventHandler(async (event) => {
         errors.push({ userId: user.id, error: '禁止在用户管理中批量更新自己的账户' })
         continue
       }
-      if (user.role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+      if (!canMutateTarget(currentUser, user)) {
         failed++
         errors.push({ userId: user.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
         continue

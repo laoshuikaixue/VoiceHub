@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { canAssignRole, canManageUsers, ROLE_ORDER } from '~~/server/utils/rbac'
 
 interface UserData {
   name: string
@@ -25,14 +26,8 @@ const normalizeOptionalText = (value: unknown) => {
 }
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  // 权限：user.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canManageUsers(event)
 
   const body = await readBody(event)
 
@@ -159,17 +154,15 @@ export default defineEventHandler(async (event) => {
 
     // 5. 准备批量插入的数据
     const insertValues = usersToInsertData.map((userData, idx) => {
-      // 角色权限控制
+      // 角色权限控制：ADMIN 只能创建 USER / SONG_ADMIN；SUPER_ADMIN 可创建任意角色
+      // 批量导入沿用旧行为：不满足层级规则时**不抛错**，落回默认 USER
       let validRole = 'USER' // 默认角色
-      if (userData.role) {
-        const rolePermissions: Record<string, string[]> = {
-          SUPER_ADMIN: ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'],
-          ADMIN: ['USER', 'SONG_ADMIN']
-        }
-        const allowedRoles = rolePermissions[user.role]
-        if (allowedRoles?.includes(userData.role)) {
-          validRole = userData.role
-        }
+      if (
+        typeof userData.role === 'string' &&
+        ROLE_ORDER.includes(userData.role) &&
+        canAssignRole(user, userData.role)
+      ) {
+        validRole = userData.role
       }
 
       // 状态验证

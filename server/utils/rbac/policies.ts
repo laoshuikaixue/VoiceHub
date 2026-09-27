@@ -20,11 +20,13 @@ import {
   PERMISSIONS,
   PERSONAL_INTEGRATION_LEGACY_PERMISSION,
   ROLES,
+  ROLE_RANK,
   isPermissionKey,
   normalizePermission,
+  roleRank,
   type PermissionKey
 } from './constants.ts'
-import { isAdminRole, isSuperAdmin, requirePermission, type GuardDependencies } from './guards.ts'
+import { getUserRole, isAdminRole, isSuperAdmin, requirePermission, type GuardDependencies } from './guards.ts'
 import { requireActiveUser, type RequestUser } from './legacyRoleCheck.ts'
 
 /**
@@ -99,10 +101,20 @@ export function canMutateTarget(actor: unknown, target: unknown): boolean {
   return isSuperAdmin(actor)
 }
 
-/** 能否把账号角色改为 nextRole（禁止把他人提权到 SUPER_ADMIN，除非操作者本身就是 SUPER_ADMIN） */
+/**
+ * 能否把账号角色改为 nextRole。
+ *
+ * 层级规则（与旧实现逐条等价，且完全由 catalog 的 roleRank 派生）：
+ *   - 只能设置**严格弱于自己**的角色（ADMIN 可设 USER / SONG_ADMIN，但不能设 ADMIN）；
+ *   - 「把他人设为 SUPER_ADMIN」仅 SUPER_ADMIN 可做；
+ *   - 未知/缺失角色值：空值放行（不改角色），未知值拒绝。
+ */
 export function canAssignRole(actor: unknown, nextRole: string | null | undefined): boolean {
-  if (nextRole !== ROLES.SUPER_ADMIN) return true
-  return isSuperAdmin(actor)
+  if (!nextRole) return true
+  const nextRank = roleRank(nextRole)
+  if (nextRank < 0) return false
+  if (isSuperAdmin(actor) && nextRank === ROLE_RANK[ROLES.SUPER_ADMIN]) return true
+  return nextRank < roleRank(getUserRole(actor))
 }
 
 /** 客体护栏：不满足即 403（401 / 403-账号异常由 requireActiveUser 统一给出） */

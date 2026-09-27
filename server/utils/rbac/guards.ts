@@ -163,9 +163,16 @@ export function isAdminRole(input: unknown): boolean {
   return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
 }
 
-/** 静默判断是否 SONG_ADMIN / ADMIN / SUPER_ADMIN */
+/**
+ * 静默判断是否 SONG_ADMIN / ADMIN / SUPER_ADMIN
+ */
 export function isSongAdminRole(input: unknown): boolean {
   return resolveRoleValue(input) === ROLES.SONG_ADMIN || isAdminRole(input)
+}
+
+/** 静默判断是否「学生用户」（role = USER）—— 客体域规则用（如「只有学生用户的状态可改」） */
+export function isStudentUser(input: unknown): boolean {
+  return resolveRoleValue(input) === ROLES.USER
 }
 
 /** 取 role 字符串（JWT 签发等极少数场景；S3 用它替代裸读 `.role`） */
