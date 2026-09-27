@@ -22,6 +22,7 @@ import {
   isPersonalIntegrationPermission
 } from '../../../../server/utils/rbac/policies.ts'
 import { mergePermissionState } from '../../../../server/utils/rbac/resolvePermissions.ts'
+import { isStudentUser } from '../../../../server/utils/rbac/guards.ts'
 
 type FakeError = { statusCode?: number; statusMessage?: string; message?: string }
 
@@ -49,12 +50,30 @@ test('S3-B1 客体策略 canMutateTarget：ADMIN 不能操作 SUPER_ADMIN，其�
   assert.equal(canMutateTarget({ role: 'USER' }, { role: 'ADMIN' }), true)
 })
 
-test('S3-B1 客体策略 canAssignRole：禁止把他人提权为 SUPER_ADMIN', () => {
-  assert.equal(canAssignRole({ role: 'ADMIN' }, 'SUPER_ADMIN'), false)
+test('S3-B1 客体策略 canAssignRole：层级规则（只能设严格弱于自己的角色；提升为 SUPER_ADMIN 仅 SUPER_ADMIN 可做）', () => {
+  // SUPER_ADMIN：可设任意角色（含 SUPER_ADMIN）
   assert.equal(canAssignRole({ role: 'SUPER_ADMIN' }, 'SUPER_ADMIN'), true)
-  assert.equal(canAssignRole({ role: 'ADMIN' }, 'ADMIN'), true)
-  assert.equal(canAssignRole({ role: 'SONG_ADMIN' }, 'USER'), true)
+  assert.equal(canAssignRole({ role: 'SUPER_ADMIN' }, 'ADMIN'), true)
+  assert.equal(canAssignRole({ role: 'SUPER_ADMIN' }, 'USER'), true)
+  // ADMIN：只能设 USER / SONG_ADMIN（不能设 ADMIN，也不能把他人提为 SUPER_ADMIN）
+  assert.equal(canAssignRole({ role: 'ADMIN' }, 'SONG_ADMIN'), true)
+  assert.equal(canAssignRole({ role: 'ADMIN' }, 'USER'), true)
+  assert.equal(canAssignRole({ role: 'ADMIN' }, 'ADMIN'), false)
+  assert.equal(canAssignRole({ role: 'ADMIN' }, 'SUPER_ADMIN'), false)
+  // 非管理员：不能设任何角色
+  assert.equal(canAssignRole({ role: 'SONG_ADMIN' }, 'USER'), true, '严格弱于自己即可（角色强度单调递减）')
+  assert.equal(canAssignRole({ role: 'USER' }, 'USER'), false)
+  assert.equal(canAssignRole({ role: 'SONG_ADMIN' }, 'ADMIN'), false)
+  // 边界：空值放行（不改角色）、未知角色拒绝
   assert.equal(canAssignRole({ role: 'ADMIN' }, null), true)
+  assert.equal(canAssignRole({ role: 'ADMIN' }, 'NOT_A_ROLE'), false)
+})
+
+test('S3-B2-2 客体谓词 isStudentUser：仅 role = USER 为真', () => {
+  assert.equal(isStudentUser({ role: 'USER' }), true)
+  assert.equal(isStudentUser({ role: 'SONG_ADMIN' }), false)
+  assert.equal(isStudentUser({ role: 'ADMIN' }), false)
+  assert.equal(isStudentUser(null), false)
 })
 
 test('S3-B1 assertCanMutateTarget：未登录 401 / 越权 403', async () => {
