@@ -119,11 +119,11 @@ export function isAstrbotGroupEventEnabled(raw: unknown, eventKey: AstrbotGroupE
  */
 export function selectAstrbotGroupTargets(
   raw: unknown,
-  settings: { astrbotEnabled?: boolean | null; astrbotBroadcastEnabled?: boolean | null; astrbotPlatforms?: unknown },
+  settings: { astrbotEnabled?: boolean | null; astrbotBroadcastEnabled?: boolean | null; astrbotPlatforms?: unknown; astrbotGroupEvents?: unknown },
   eventKey: AstrbotGroupEventKey
 ): string[] {
   if (!settings.astrbotEnabled || !settings.astrbotBroadcastEnabled) return []
-  if (!isAstrbotGroupEventEnabled((settings as { astrbotGroupEvents?: unknown }).astrbotGroupEvents, eventKey)) {
+  if (!isAstrbotGroupEventEnabled(settings.astrbotGroupEvents, eventKey)) {
     return []
   }
   const targets = normalizeAstrbotGroupTargets(raw) ?? []

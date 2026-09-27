@@ -56,8 +56,20 @@ export async function fetchAstrbotSongSource(
     case 'tencent': {
       // 优先走 SDK（QQ 官方接口），失败退回 tx 直连
       try {
-        const sdkResult: any = await searchQqMusic({ keyword, page, num: PAGE_LIMIT })
-        if (sdkResult?.list?.length) return sdkResult.list
+        const sdkResult: any = await searchQqMusic({ key: keyword, page, limit: PAGE_LIMIT })
+        const sdkList = sdkResult?.song?.list || sdkResult?.data?.song?.list || []
+        if (sdkList.length) return sdkList.map((item: any) => ({
+          singer: Array.isArray(item.singer) ? item.singer.map((s: any) => s.name).join('、') : '',
+          name: item.name || item.title || '',
+          albumName: item.album?.name || '',
+          albumId: item.album?.mid || '',
+          source: 'tx',
+          duration: Number(item.interval || item.duration || 0),
+          songmid: item.mid || item.id,
+          songId: item.id,
+          strMediaMid: item.file?.media_mid || item.mid,
+          img: item.album?.mid ? `https://y.gtimg.cn/music/photo_new/T002R300x300M000${item.album.mid}.jpg` : ''
+        }))
       } catch {
         // SDK 失败，降级到 tx 直连
       }

@@ -26,6 +26,7 @@ test('发码 upsert 目标为 (userId, platform)，只覆盖同平台旧码', ()
   assert.doesNotMatch(issue, /target: astrbotBindingCodes\.userId/)
   // 冲突时不得再改写 platform 列。
   assert.doesNotMatch(issue, /set: \{[^}]*platform/)
+  assert.doesNotMatch(issue, /attempts:\s*0/, '绑定码表没有 attempts 列，发码不应写入')
   assert.match(issue, /各平台可并存/)
 })
 

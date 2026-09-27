@@ -30,10 +30,10 @@ export default defineEventHandler(async (event) => {
       .from(users).where(eq(users.id, user.id)).for('update')
     if (!account) throw createApiError(404, SERVER_ERROR_CODES.ASTRBOT_BIND_FAILED, '账号不存在')
     await tx.insert(astrbotBindingCodes).values({
-      userId: user.id, platform, codeHash: hashAstrbotBindCode(code), expiresAt, attempts: 0
+      userId: user.id, platform, codeHash: hashAstrbotBindCode(code), expiresAt
     }).onConflictDoUpdate({
       target: [astrbotBindingCodes.userId, astrbotBindingCodes.platform],
-      set: { codeHash: sql`excluded."codeHash"`, expiresAt, attempts: 0, consumedAt: null }
+      set: { codeHash: sql`excluded."codeHash"`, expiresAt, consumedAt: null }
     })
   })
   return { success: true, code, expiresIn: ASTRBOT_BIND_TTL_SECONDS }

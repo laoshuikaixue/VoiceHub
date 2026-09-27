@@ -730,6 +730,7 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
 VoiceHub/
 ├── .github/                   # GitHub 配置目录
 │   └── workflows/             # GitHub Actions 工作流
+│       ├── astrbot-checks.yml # AstrBot 回归与 Nuxt 类型检查
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建

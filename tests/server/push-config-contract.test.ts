@@ -24,7 +24,7 @@ test('管理员发布通知自动分发给有绑定 UMO 的目标，推拉模式
   assert.match(send, /await createBatchSystemNotifications\(/)
   assert.match(service, /await sendAstrbotNotificationToUser\(userId, title, content\)/)
   assert.match(service, /await sendBatchAstrbotNotifications\(/)
-  assert.match(astrbot, /settings\.astrbotPushMode === 'pull'/)
+  assert.match(astrbot, /isAstrbotPullMode\(settings\.astrbotPushMode\)/)
   // 四平台独立开关下群广播已停用，入队只针对已绑定私聊目标。
   assert.match(astrbot, /await enqueueAstrbotNotifications\(userIds, title, content\)/)
 })
