@@ -11,8 +11,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import fs from 'node:fs'
-import { globSync } from 'node:fs'
+import fs, { globSync } from 'node:fs'
 import path from 'node:path'
 
 /** 仓库根 = 当前工作目录。所有门禁脚本必须从仓库根执行。 */
@@ -86,6 +85,40 @@ export function runNode(scriptPath, args = []) {
 /** 直调 eslint 的 JS 入口（不要走 pnpm/npx）。 */
 export function runEslint(args) {
   return runNode(repoPath('node_modules', 'eslint', 'bin', 'eslint.js'), args)
+}
+
+/**
+ * 确保 Nuxt 生成物存在（.nuxt/eslint.config.mjs 是 eslint.config.mjs 的第一行 import）。
+ *
+ * 为什么必须显式准备：`pnpm install` 之后 `.nuxt/eslint.config.mjs` 会消失，
+ * 此时任何 eslint 调用都会 ERR_MODULE_NOT_FOUND 并以 exit 2 结束（而不是真实的 lint 结果），
+ * ratchet 会把这种情况当成「报告为空」而误判。实测 @nuxt/eslint 只在
+ * NODE_ENV=development（或 npm_lifecycle_event 含 lint）时才生成该文件。
+ */
+export function ensureNuxtPrepare({ quiet = true } = {}) {
+  const target = repoPath('.nuxt', 'eslint.config.mjs')
+  if (fs.existsSync(target)) return { ok: true, prepared: false }
+
+  const nuxtBin = repoPath('node_modules', 'nuxt', 'bin', 'nuxt.mjs')
+  if (!fs.existsSync(nuxtBin)) {
+    return { ok: false, prepared: false, error: 'node_modules/nuxt 不存在，请先 pnpm install' }
+  }
+
+  const attempts = [{ NODE_ENV: 'development' }, { NODE_ENV: 'development', npm_lifecycle_event: 'lint' }]
+  for (const env of attempts) {
+    const res = run(process.execPath, [nuxtBin, 'prepare'], {
+      env: { ...process.env, ...env }
+    })
+    if (fs.existsSync(target)) {
+      if (!quiet && res.stdout) process.stdout.write(res.stdout)
+      return { ok: true, prepared: true }
+    }
+  }
+  return {
+    ok: false,
+    prepared: false,
+    error: `.nuxt/eslint.config.mjs 仍未生成 —— eslint.config.mjs 会 import 失败，无法给出可信 lint 结果`
+  }
 }
 
 /** 收集测试文件列表。 */

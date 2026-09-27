@@ -17,13 +17,19 @@
  */
 
 import fs from 'node:fs'
-import { ROOT, runEslint, repoPath, fail, ok } from './lib/gate-utils.mjs'
+import { ROOT, runEslint, repoPath, ensureNuxtPrepare, fail, ok } from './lib/gate-utils.mjs'
 
 const BASELINE_PATH = repoPath('eslint-baseline.json')
 const ESLINT_CONFIG = repoPath('eslint.config.mjs')
 
 /** 跑一次 eslint（JSON 格式），返回 { problems, fileCount, perRule }。 */
 function lintJson() {
+  // .nuxt/eslint.config.mjs 缺失时 eslint 会 exit 2 且无输出 —— 先确保它存在，
+  // 否则会把「配置没准备好」误报成「报告为空」。
+  const prepared = ensureNuxtPrepare()
+  if (!prepared.ok) {
+    return { error: `Nuxt 产物准备失败：${prepared.error}` }
+  }
   const result = runEslint(['.', '-f', 'json'])
   const raw = result.stdout.trim()
   if (!raw) {

@@ -12,7 +12,7 @@
  * 六步：install → db:check → lint ratchet → test → contract → build
  */
 
-import { run, runNode, repoPath, collectTestFiles, workflowsDirty, fail, ok } from './lib/gate-utils.mjs'
+import { run, runNode, repoPath, collectTestFiles, workflowsDirty, ensureNuxtPrepare, fail, ok } from './lib/gate-utils.mjs'
 
 const args = process.argv.slice(2)
 const skipBuild = args.includes('--no-build')
@@ -38,7 +38,15 @@ const steps = [
   {
     id: 'lint',
     title: 'lint ratchet（eslint 增量基线）',
-    run: () => runNode(repoPath('scripts', 'eslint-baseline.mjs'), ['--check'])
+    run: () => {
+      // pnpm install 之后 .nuxt/eslint.config.mjs 会消失，必须先生成；否则 eslint 以
+      // exit 2 + 空报告结束，会被 ratchet 误读成「零新增 error」。
+      const prepared = ensureNuxtPrepare()
+      if (!prepared.ok) {
+        return { code: 1, stdout: '', stderr: `Nuxt 产物准备失败：${prepared.error}` }
+      }
+      return runNode(repoPath('scripts', 'eslint-baseline.mjs'), ['--check'])
+    }
   },
   {
     id: 'test',
