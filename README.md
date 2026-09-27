@@ -1457,6 +1457,7 @@ VoiceHub/
 │   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── user-filter.ts  # 用户列表/导出共用筛选条件构建
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
+│   │   ├── rbac/           # RBAC 内核目录（constants.ts = permission-catalog.js 的薄 re-export）
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
@@ -1464,21 +1465,33 @@ VoiceHub/
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
 │   ├── check-permission-contract.mjs # 权限契约检查跑器（执行 contract-checks/*.mjs）
+│   ├── contract-checks/   # 权限契约检查模块（catalog 结构/派生、legacy 硬编码期望、单一来源扫描）
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
-│   ├── db-sync.js         # 数据库同步
+│   ├── db-migrate.js      # 唯一迁移链入口：drizzle-kit migrate → seed（pnpm db:migrate）
+│   ├── db-sync.js         # 数据库同步（成功后写 RBAC seed）
 │   ├── deploy.js          # 一键部署脚本
 │   ├── drizzle/           # Drizzle 迁移辅助脚本
 │   │   └── migrations/
 │   ├── eslint-baseline.mjs # ESLint 增量基线 ratchet（只禁新增 error）
 │   ├── gate.mjs           # 本地门禁：install/db:check/lint/test/contract/build 六步
-│   ├── lib/               # 门禁脚本共享工具（跨平台命令解析、Nuxt 产物准备）
+│   ├── lib/               # 门禁与迁移链共享工具（跨平台命令解析、Nuxt 产物准备、seed 步骤）
 │   ├── netlify-build.js   # Netlify 构建脚本
+│   ├── normalize-api-permissions.js # 旧冒号风格 API Key 权限归一化（映射取自 catalog）
 │   ├── postinstall.js     # 安装后脚本
+│   ├── rbac-rollback.js   # 数据层回滚执行器（执行 rbac-rollback.sql 并核对结果）
+│   ├── rbac-rollback.sql  # 数据层回滚 SQL（DROP 8 表 + api_keys 8 列 + 清理迁移记录，幂等）
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
-│   └── safe-migrate.js    # 安全迁移（带备份）
+│   ├── safe-migrate.js    # 安全迁移（带备份，成功后写 RBAC seed）
+│   └── seed-permissions.js # RBAC 权限 seed（从 catalog 派生，幂等，随迁移链自动执行）
+├── shared/                # 前后端共享模块（Nuxt 4 shared/ 自动扫描层）
+│   └── rbac/
+│       └── permission-catalog.js # RBAC 权限目录唯一权威定义（35 key + minRole 派生 + legacy 映射）
 ├── tests/                 # 自动化测试
+│   ├── contract/          # 权限契约冻结基线测试（tests/contract/permission-catalog.test.ts）
+│   │   ├── _selftest.test.ts # 嵌套 glob 自证用例（S0-5）
+│   │   └── permission-catalog.test.ts # S1 冻结基线：35 项 / 矩阵 0-12-25-35 / legacy 8 条
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
@@ -1512,6 +1525,7 @@ VoiceHub/
 ├── Dockerfile-postgres    # PostgreSQL Docker构建文件
 ├── drizzle.config.ts      # Drizzle配置文件
 ├── edgeone.json           # EdgeOne Pages 部署配置
+├── eslint-baseline.json   # ESLint 增量基线冻结值（由 pnpm lint:baseline --regen 生成）
 ├── eslint.config.mjs      # ESLint 配置
 ├── flake.lock             # Nix flake锁定文件
 ├── flake.nix              # Nix构建与NixOS模块配置
@@ -1571,6 +1585,11 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
+  - **`server/utils/rbac/`**: RBAC 内核目录（`constants.ts` 为 `shared/rbac/permission-catalog.js` 的薄 re-export，导出名冻结）
+
+#### 共享模块 (shared/)
+
+- **`shared/rbac/permission-catalog.js`**: RBAC 权限目录唯一权威定义（35 个 key + `minRole` 派生角色矩阵 + legacy 冒号词表 + 命名正则）；server / app / scripts / seed 一律 import 本模块
 
 #### 静态资源
 
