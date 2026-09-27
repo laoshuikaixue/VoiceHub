@@ -11,7 +11,9 @@
  *
  * 三个必须内建的反假绿保护（均有实测依据）：
  *   1. 报告为空 → 判失败（干净检出裸跑 eslint 会因缺 .nuxt/eslint.config.mjs 产出 0 条结果）；
- *   2. 扫描文件数 < 基线 → 判失败（防止只扫到少数文件却「零新增 error」）；
+ *   2. 扫描文件数 < (基线 − 跨平台容差) → 判失败（防止只扫到少数文件却「零新增 error」；
+ *      容差是必须的：同一份代码在 Windows 扫到 665 个文件、Linux 扫到 662 个（实测差 3），
+ *      冻结基线的平台不能要求另一平台 ≥ 原值 —— 该断言防的是「扫描范围塌缩」而不是钉死数字）；
  *   3. --report 指定的 ruleId 必须已在 eslint.config.mjs 注册，否则非零退出
  *      （实测：不存在的规则同样返回 0/exit 0，与「规则已生效且零违规」无法区分）。
  */
@@ -21,6 +23,9 @@ import { ROOT, runEslint, repoPath, ensureNuxtPrepare, fail, ok } from './lib/ga
 
 const BASELINE_PATH = repoPath('eslint-baseline.json')
 const ESLINT_CONFIG = repoPath('eslint.config.mjs')
+
+/** 跨平台扫描文件数容差（Windows/Linux 实测差 3；留 10 的余量仍能抓住「范围塌缩」） */
+const DEFAULT_FILES_TOLERANCE = 10
 
 /** 跑一次 eslint（JSON 格式），返回 { problems, fileCount, perRule }。 */
 function lintJson() {
@@ -81,6 +86,8 @@ function cmdRegen() {
   const baseline = {
     note: 'ESLint 增量基线（生成物）。只允许减少，不允许新增 error。改动此文件必须说明原因。',
     generatedBy: 'node scripts/eslint-baseline.mjs --regen',
+    frozenOn: process.platform,
+    filesTolerance: DEFAULT_FILES_TOLERANCE,
     errors: res.errors,
     warnings: res.warnings,
     files: res.files
@@ -91,11 +98,15 @@ function cmdRegen() {
 
 function cmdCheck() {
   const baseline = readBaseline()
-  if (!baseline) return fail('缺少 eslint-baseline.json，请先执行 --regen')
+  if (!baseline) return fail('缺少或无法解析 eslint-baseline.json（存在但 JSON 解析失败也会走到这里），请先执行 --regen')
   const res = lintJson()
   if (res.error) return fail(res.error)
-  if (res.files < baseline.files) {
-    return fail(`扫描文件数 ${res.files} < 基线 ${baseline.files} —— 疑似扫描范围被缩小，拒绝判定通过`)
+  const tolerance = Number(baseline.filesTolerance ?? DEFAULT_FILES_TOLERANCE)
+  const minFiles = Math.max(baseline.files - tolerance, 1)
+  if (res.files < minFiles) {
+    return fail(
+      `扫描文件数 ${res.files} < 下限 ${minFiles}（基线 ${baseline.files} − 跨平台容差 ${tolerance}）—— 疑似扫描范围被缩小，拒绝判定通过`
+    )
   }
   const delta = res.errors - baseline.errors
   if (delta > 0) {

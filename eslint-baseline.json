@@ -1,6 +1,8 @@
 {
   "note": "ESLint 增量基线（生成物）。只允许减少，不允许新增 error。改动此文件必须说明原因。",
   "generatedBy": "node scripts/eslint-baseline.mjs --regen",
+  "frozenOn": "win32",
+  "filesTolerance": 10,
   "errors": 185,
   "warnings": 1252,
   "files": 638
