@@ -1,7 +1,7 @@
 import { defineEventHandler, getHeader, readBody } from 'h3'
-import { inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { astrbotBindings, systemSettings } from '~/drizzle/schema'
+import { astrbotBindings, notificationSettings, systemSettings } from '~/drizzle/schema'
 import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
 import { isAstrbotGroupTargetAllowed, isAstrbotGroupUmoShape } from '~~/server/utils/astrbot-group'
 import { createApiError } from '~~/server/utils/apiError'
@@ -51,10 +51,13 @@ export default defineEventHandler(async (event) => {
 
   const privateUmos = umos.filter((umo) => !isAstrbotGroupUmoShape(umo))
   if (privateUmos.length) {
-    const rows = await db.select({ umo: astrbotBindings.umo, platform: astrbotBindings.platform, adapter: astrbotBindings.adapter })
-      .from(astrbotBindings).where(inArray(astrbotBindings.umo, privateUmos))
+    const rows = await db.select({ umo: astrbotBindings.umo, platform: astrbotBindings.platform,
+      adapter: astrbotBindings.adapter, enabled: notificationSettings.enabled })
+      .from(astrbotBindings)
+      .leftJoin(notificationSettings, eq(notificationSettings.userId, astrbotBindings.userId))
+      .where(inArray(astrbotBindings.umo, privateUmos))
     if (rows.length !== privateUmos.length || rows.some((row) => !isAstrbotPlatformEnabled(settings.platforms, row.platform) ||
-      adapterToAstrbotPlatform(row.adapter) !== row.platform)) {
+      adapterToAstrbotPlatform(row.adapter) !== row.platform || row.enabled === false)) {
       throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '包含未绑定的私聊目标')
     }
   }

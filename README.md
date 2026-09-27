@@ -1284,7 +1284,7 @@ VoiceHub/
 │   │   │   ├── voicehub/            # 私聊绑定与目标校验回调
 │   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
 │   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
-│   │   │   │   └── verify-targets.post.ts # 推送前逐个核对私聊绑定
+│   │   │   │   └── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
 │   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
@@ -1508,6 +1508,7 @@ VoiceHub/
 │       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
 │       ├── astrbot-platforms.test.ts # 四平台开关与绑定目标测试
 │       ├── astrbot-restore-fields.test.ts # AstrBot 配置备份恢复白名单测试
+│       ├── astrbot-verify-targets-route.test.ts # AstrBot 投递前目标授权路由行为测试
 │       ├── push-config-contract.test.ts # 推送配置与通知路径契约测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
