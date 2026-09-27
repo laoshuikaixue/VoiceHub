@@ -109,12 +109,17 @@ async function writeSeed(sql) {
     }
 
     const rows = await tx`SELECT role, count(*)::int AS count FROM role_permissions GROUP BY role`
+    const countByRole = new Map(rows.map((row) => [row.role, row.count]))
     for (const row of rows) {
       if (!ROLE_ORDER.includes(row.role)) {
         throw new SeedError(`role_permissions 存在未知角色行：${row.role}（请人工确认后处理）`)
       }
-      if (row.count !== expectedByRole[row.role]) {
-        throw new SeedError(`角色 ${row.role} 行数 ${row.count} != 派生矩阵 ${expectedByRole[row.role]}`)
+    }
+    // 逐角色比对（含 USER=0：空角色也必须显式成立，不能靠「没出现在 GROUP BY 结果里」蒙混）
+    for (const role of ROLE_ORDER) {
+      const actual = countByRole.get(role) ?? 0
+      if (actual !== expectedByRole[role]) {
+        throw new SeedError(`角色 ${role} 行数 ${actual} != 派生矩阵 ${expectedByRole[role]}`)
       }
     }
   })
