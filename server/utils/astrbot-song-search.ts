@@ -9,7 +9,9 @@
  * 上游实现按需动态载入，避免把音源 SDK（含 Nuxt 别名）拖进纯逻辑层。
  */
 
-export const ASTRBOT_SONG_SOURCES = ['netease', 'tencent', 'migu', 'bilibili'] as const
+import { MUSIC_SOURCE_PLATFORMS } from '../config/constants.ts'
+
+export const ASTRBOT_SONG_SOURCES = MUSIC_SOURCE_PLATFORMS
 
 export type AstrbotSongSource = typeof ASTRBOT_SONG_SOURCES[number]
 

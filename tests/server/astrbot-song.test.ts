@@ -5,7 +5,7 @@ import {
   isPublicApiPath,
   shouldBypassPublicApiAuthentication
 } from '../../server/utils/auth-route-policy.ts'
-import { BOT_ROUTES, SERVER_ERROR_CODES } from '../../server/config/constants.ts'
+import { BOT_ROUTES, MUSIC_SOURCE_PLATFORMS, SERVER_ERROR_CODES } from '../../server/config/constants.ts'
 import {
   ASTRBOT_SONG_CANDIDATE_LIMIT,
   ASTRBOT_SONG_SOURCES,
@@ -204,7 +204,7 @@ test('音源层复用同进程实现，不做 /api 自请求', () => {
 })
 
 test('统一候选结构：netease/tencent/migu 共用 native 映射，字段齐全', () => {
-  assert.deepEqual([...ASTRBOT_SONG_SOURCES], ['netease', 'tencent', 'migu', 'bilibili'])
+  assert.deepEqual([...ASTRBOT_SONG_SOURCES], [...MUSIC_SOURCE_PLATFORMS])
   assert.equal(parseAstrbotSongSource('netease'), 'netease')
   assert.equal(parseAstrbotSongSource('bilibili'), 'bilibili')
   assert.equal(parseAstrbotSongSource('qq'), null)
