@@ -437,6 +437,15 @@ export const API_PERMISSION_KEYS = Object.freeze(
 )
 
 /**
+ * 个人集成令牌的默认权限（历史语义「点歌申请」）。
+ *
+ * 按 §5.1 / §8-③ 裁决，`songs:request` 与 `songs:read` 归一化后同为 `song.read`；
+ * 写这条常量是为了让「个人集成令牌用哪个权限」有唯一具名来源（`PERMISSIONS.SONG_READ` 是目标形态，
+ * 本常量是其过渡期遗留写法），避免各端点各自硬编码冒号字符串。
+ */
+export const PERSONAL_INTEGRATION_LEGACY_PERMISSION = 'songs:request'
+
+/**
  * 旧冒号风格 → catalog key（读取期归一化）
  * 值为 PERMISSIONS.* 引用而非点分字面量，key 改动时本表自动跟随。
  */
@@ -444,7 +453,7 @@ export const LEGACY_PERMISSION_MAP = Object.freeze({
   'schedules:read': PERMISSIONS.SCHEDULE_READ,
   'songs:read': PERMISSIONS.SONG_READ,
   // 历史语义合并：点歌申请（songs:request）→ song.read（§5.1 / §8-③ 裁决）
-  'songs:request': PERMISSIONS.SONG_READ,
+  [PERSONAL_INTEGRATION_LEGACY_PERMISSION]: PERMISSIONS.SONG_READ,
   'songs:write': PERMISSIONS.SONG_WRITE,
   'card-codes:read': PERMISSIONS.CARD_CODES_READ,
   'card-codes:write': PERMISSIONS.CARD_CODES_WRITE,
