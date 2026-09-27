@@ -154,13 +154,13 @@
                     <div class="song-card-main">
                       <!-- 歌曲封面 -->
                       <div class="song-cover" @click="togglePlaySong(schedule.song)">
-                        <template v-if="schedule.song.cover">
+                        <template v-if="schedule.song.cover && !failedCovers[schedule.song.cover]">
                           <img
                             :alt="schedule.song.title"
                             :src="convertToHttps(schedule.song.cover)"
                             class="cover-image"
                             referrerpolicy="no-referrer"
-                            @error="handleImageError($event, schedule.song)"
+                            @error="handleImageError(schedule.song)"
                           >
                         </template>
                         <div v-else class="text-cover">
@@ -644,7 +644,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
@@ -1129,15 +1129,11 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
 
-// 处理图片加载错误
-const handleImageError = (event, song) => {
-  if (event?.target) {
-    event.target.style.display = 'none'
-    if (event.target.parentNode) {
-      event.target.parentNode.classList.add('text-cover')
-      event.target.parentNode.textContent = getFirstChar(song.title)
-    }
-  }
+// 封面加载失败的 URL；命中后由模板切到文字封面分支，容器尺寸与播放按钮保持原样
+const failedCovers = reactive({})
+
+const handleImageError = (song) => {
+  if (song?.cover) failedCovers[song.cover] = true
 }
 
 // 获取歌曲标题的第一个字符作为封面
@@ -2783,7 +2779,7 @@ const vRipple = {
   display: block;
 }
 
-/* 文字封面样式 */
+/* 文字封面样式：只能作为 .song-cover 的子元素；与 .song-cover 同特异性且源序靠后，加到容器上会顶掉其固定宽高 */
 .text-cover {
   width: 100%;
   height: 100%;
