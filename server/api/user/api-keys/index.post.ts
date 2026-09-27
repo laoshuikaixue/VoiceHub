@@ -1,10 +1,15 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, notInArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
 import { createApiError } from '~~/server/utils/apiError'
+import {
+  PERSONAL_INTEGRATION_PERMISSION_FORMS,
+  PERSONAL_INTEGRATION_PERMISSION_STORED
+} from '~~/server/utils/rbac'
 
-const PERSONAL_PERMISSION = 'songs:request'
+/** 个人集成令牌默认权限：查询用等价写法集合、写入用当前存储形态（唯一来源 server/utils/rbac/policies.ts） */
+const personalPermissionForms = [...PERSONAL_INTEGRATION_PERMISSION_FORMS]
 
 const createPersonalApiKeySchema = z.object({
   name: z.string().min(1, '令牌名称不能为空').max(100, '令牌名称不能超过100个字符').optional(),
@@ -37,12 +42,12 @@ export default defineEventHandler(async (event) => {
         .where(
           and(
             eq(apiKeys.createdByUserId, user.id),
-            eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
+            inArray(apiKeyPermissions.permission, personalPermissionForms),
             sql`NOT EXISTS (
               SELECT 1
               FROM ${apiKeyPermissions}
               WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
-                AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
+                AND ${notInArray(apiKeyPermissions.permission, personalPermissionForms)}
             )`
           )
         )
@@ -77,7 +82,7 @@ export default defineEventHandler(async (event) => {
 
       await tx.insert(apiKeyPermissions).values({
         apiKeyId,
-        permission: PERSONAL_PERMISSION
+        permission: PERSONAL_INTEGRATION_PERMISSION_STORED
       })
 
       return {
