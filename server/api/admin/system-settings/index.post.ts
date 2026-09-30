@@ -27,6 +27,7 @@ import {
   normalizeAstrbotGroupTargets,
   normalizeAstrbotGroupThrottle
 } from '~~/server/utils/astrbot-group'
+import { ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 import { ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 
 /**
@@ -793,7 +794,7 @@ export default defineEventHandler(async (event) => {
     }
     if (body.astrbotPlatforms !== undefined) {
       const platforms = body.astrbotPlatforms
-      const keys = ['qq', 'wecom', 'dingtalk', 'lark']
+      const keys = ASTRBOT_PLATFORMS
       if (!platforms || typeof platforms !== 'object' || Array.isArray(platforms) ||
         Object.keys(platforms).length !== keys.length ||
         !keys.every((key) => typeof platforms[key] === 'boolean')) {

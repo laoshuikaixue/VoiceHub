@@ -122,14 +122,16 @@ export default defineEventHandler(async (event) => {
   try {
     song = await requestSongForUser(event, { id: binding.userId, role: user.role }, payload)
   } catch (error: any) {
-    // 站点侧业务错误（限额、时段、重复投稿等）原样透传，保留 statusCode/statusMessage/data
+    // 站点侧业务错误保留原错误码；无稳定码的参数错误统一归入通用参数错误。
     if (error?.statusCode) {
-      throw createError({
-        statusCode: error.statusCode,
-        statusMessage: error.statusMessage,
-        message: error.message,
-        data: error.data
-      })
+      const code = typeof error.data?.code === 'string'
+        ? error.data.code
+        : typeof error.statusMessage === 'string' && Object.values(SERVER_ERROR_CODES).includes(error.statusMessage)
+          ? error.statusMessage
+          : SERVER_ERROR_CODES.COMMON_INVALID_PARAMS
+      const data = error.data && typeof error.data === 'object' ? { ...error.data } : undefined
+      if (data) delete data.code
+      throw createApiError(error.statusCode, code, error.message || '点歌失败', data)
     }
     throw error
   }

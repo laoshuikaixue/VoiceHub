@@ -139,10 +139,10 @@ test('投稿端点：券码大写化、note 映射 submissionNote、时段按开
   assert.match(songRequest, /enablePlayTimeSelection === true/)
   // 候选序号已由本接口自己的票据保护，不再叠加站点选择票据
   assert.doesNotMatch(songRequest, /selectionToken/)
-  // 站点侧错误必须原样透传（保留 statusCode/statusMessage/data）
-  assert.match(songRequest, /throw createError\(\{/)
-  assert.match(songRequest, /statusCode: error\.statusCode/)
-  assert.match(songRequest, /statusMessage: error\.statusMessage/)
+  // 站点侧错误统一转换为带稳定错误码的 API 错误，并保留原始参数。
+  assert.match(songRequest, /throw createApiError\(error\.statusCode, code, error\.message \|\| '点歌失败', data\)/)
+  assert.match(songRequest, /error\.data\?\.code/)
+  assert.match(songRequest, /SERVER_ERROR_CODES\.COMMON_INVALID_PARAMS/)
 })
 
 test('投稿端点：成功响应文案与字段逐字', () => {
