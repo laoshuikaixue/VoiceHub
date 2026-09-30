@@ -219,7 +219,15 @@ test('displayConfig 从持久化配置读取六个布尔字段并对脏数据回
   assert.ok(schema.includes("jsonb('astrbotWeeklyConfig')"))
   assert.ok(apiSrc.includes('weeklyConfig: systemSettings.astrbotWeeklyConfig'))
   assert.ok(apiSrc.includes('typeof settings.weeklyConfig?.'))
-  assert.ok(apiSrc.includes('displayConfig: Object.fromEntries('))
+  assert.ok(apiSrc.includes('const displayConfig = Object.fromEntries('))
+})
+
+test('本周歌单同时提供纯文本字段，并支持 format=text 直接返回文本', () => {
+  assert.match(apiSrc, /formatAstrbotWeeklyScheduleText\(/)
+  assert.match(apiSrc, /text,\s*\n?\s*}/)
+  assert.match(apiSrc, /getQuery\(event\)\.format === 'text'/)
+  assert.match(apiSrc, /content-type', 'text\/plain; charset=utf-8'/)
+  assert.match(apiSrc, /暂无已发布排期/)
 })
 
 test('isDraft = false 过滤只返回已发布排期', () => {

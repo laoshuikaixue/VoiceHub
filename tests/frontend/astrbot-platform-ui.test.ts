@@ -8,6 +8,7 @@ import { pages as enPages, admin as enAdmin } from '../../app/utils/locale/en-US
 const source = (path: string) => readFileSync(new URL(`../../app/${path}`, import.meta.url), 'utf8')
 const account = source('components/Account/SocialBindings.vue')
 const admin = source('components/Admin/SmtpManager.vue')
+const platformUtils = readFileSync(new URL('../../server/utils/astrbot-platforms.ts', import.meta.url), 'utf8')
 const platforms = ['qq', 'wecom', 'dingtalk', 'lark']
 
 test('account renders one card per enabled platform from the public status map', () => {
@@ -42,6 +43,10 @@ test('administrator loads and saves four platform toggles alongside existing set
   assert.doesNotMatch(admin, /\[\s*'qq',\s*'wecom',\s*'dingtalk',\s*'lark'\s*\]/)
   assert.match(admin, /astrbotBaseUrl/)
   assert.match(admin, /smtpEnabled/)
+})
+
+test('后台共享平台工具不引入服务端加密模块', () => {
+  assert.doesNotMatch(platformUtils, /astrbot-notification|node:crypto/)
 })
 
 test('both locales have identical account and administrator platform message keys', () => {

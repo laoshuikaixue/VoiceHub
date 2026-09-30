@@ -1,4 +1,4 @@
-import { defineEventHandler, getHeader } from 'h3'
+import { defineEventHandler, getHeader, getQuery, setResponseHeader } from 'h3'
 import { and, asc, eq, gte, inArray, lt, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songCollaborators, songs, systemSettings, users, votes } from '~/drizzle/schema'
@@ -8,6 +8,38 @@ import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot
 import { getServerDate } from '~~/server/utils/serverTime'
 import { formatDateTime, getBeijingStartOfWeek, getBeijingEndOfWeek, getBeijingWeekdayLabel } from '~/utils/timeUtils'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+
+type WeeklyScheduleItem = {
+  date: string
+  playTime: string
+  sequence: number
+  title: string
+  artist: string
+  requester: string
+  voteCount: number
+}
+
+/** 将结构化歌单转为机器人可直接发送的纯文本。 */
+export function formatAstrbotWeeklyScheduleText(
+  siteTitle: string,
+  weekRange: string,
+  schedules: WeeklyScheduleItem[],
+  displayConfig: Record<string, boolean>
+) {
+  const lines = [`${siteTitle} 本周歌单`, weekRange]
+  if (!schedules.length) return `${lines.join('\n')}\n\n暂无已发布排期`
+
+  lines.push('')
+  for (const item of schedules) {
+    const prefix = displayConfig.showSequence ? `${item.sequence}. ` : ''
+    const date = displayConfig.showDate ? `${item.date} ` : ''
+    const playTime = displayConfig.showPlayTime && item.playTime ? `｜${item.playTime}` : ''
+    const requester = displayConfig.showRequester && item.requester ? `｜投稿：${item.requester}` : ''
+    const votes = displayConfig.showVotes ? `｜票数：${item.voteCount}` : ''
+    lines.push(`${date}${prefix}${item.title} - ${item.artist}${playTime}${requester}${votes}`)
+  }
+  return lines.join('\n')
+}
 
 /**
  * 机器人本周歌单接口
@@ -133,17 +165,28 @@ export default defineEventHandler(async (event) => {
     }
   })
 
+  const displayConfig = Object.fromEntries(
+    Object.entries(SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig).map(([key, fallback]) => [
+      key, typeof settings.weeklyConfig?.[key as keyof typeof settings.weeklyConfig] === 'boolean'
+        ? settings.weeklyConfig[key as keyof typeof settings.weeklyConfig] : fallback
+    ])
+  ) as Record<string, boolean>
+  const text = formatAstrbotWeeklyScheduleText(
+    settings.siteTitle ?? 'VoiceHub', weekRange, scheduleItems, displayConfig
+  )
+
+  if (getQuery(event).format === 'text') {
+    setResponseHeader(event, 'content-type', 'text/plain; charset=utf-8')
+    return text
+  }
+
   return {
     success: true,
     weekRange,
     generatedAt: formatDateTime(now),
     siteTitle: settings.siteTitle ?? 'VoiceHub',
     schedules: scheduleItems,
-    displayConfig: Object.fromEntries(
-      Object.entries(SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig).map(([key, fallback]) => [
-        key, typeof settings.weeklyConfig?.[key as keyof typeof settings.weeklyConfig] === 'boolean'
-          ? settings.weeklyConfig[key as keyof typeof settings.weeklyConfig] : fallback
-      ])
-    ),
+    displayConfig,
+    text,
   }
 })

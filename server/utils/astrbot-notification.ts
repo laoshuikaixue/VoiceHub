@@ -1,4 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { isAstrbotPrivateUmoShape } from './astrbot-platforms.ts'
+
+export { isAstrbotPrivateUmoShape } from './astrbot-platforms.ts'
 
 export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token'
 export const ASTRBOT_BIND_TTL_SECONDS = 600
@@ -26,20 +29,6 @@ export function equalAstrbotToken(actual: string, expected: string) {
 export function isSupportedAstrbotPlatform(value: unknown): value is string {
   return typeof value === 'string' &&
     (ASTRBOT_PLATFORM_NAMES as readonly string[]).includes(value)
-}
-
-/**
- * 仅校验私聊 UMO 的形态，不限定平台标识。
- *
- * AstrBot 的 UMO 前缀取自平台实例 ID（platform_meta.id），它可以被管理员
- * 改成任意合法字符串，因此不能要求它等于适配器名；适配器是否受支持改由
- * 绑定阶段记录的 platform 字段判定。
- */
-export function isAstrbotPrivateUmoShape(umo: unknown): umo is string {
-  if (typeof umo !== 'string' || umo.length > 512) return false
-  const parts = umo.split(':')
-  return parts.length === 3 && parts[1] === 'FriendMessage' && !!parts[0] && !!parts[2] &&
-    !/[\s\p{Cc}]/u.test(parts[0]) && !/[\r\n]/.test(umo)
 }
 
 /** 仅允许带正确适配器 ID 的私聊 UMO；不接受群聊/OtherMessage。 */
