@@ -259,22 +259,32 @@
         </div>
       </div>
 
-      <div v-for="platform in enabledPlatforms" :key="platform" class="rounded-2xl border border-primary-20 bg-primary-5 p-5 space-y-4">
-        <div class="flex items-center gap-3">
-          <div class="p-2 bg-primary-10 rounded-lg"><MessageCircle :size="16" class="text-primary" /></div>
-          <h3 class="text-sm font-bold text-text-primary">{{ locale.astrbot.platforms[platform] }}</h3>
+      <div v-for="platform in enabledPlatforms" :key="platform" class="rounded-2xl border border-border-secondary bg-bg-primary-45 p-4 space-y-4 transition-all hover:border-border-tertiary">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 shrink-0 rounded-xl bg-primary-10 border border-primary-20 flex items-center justify-center">
+              <MessageCircle :size="17" class="w-[17px] h-[17px] shrink-0 text-primary" />
+            </div>
+            <h3 class="text-sm font-black text-text-primary truncate">{{ locale.astrbot.platforms[platform] }}</h3>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-bg-tertiary text-text-tertiary shrink-0">
+            {{ platformStatus[platform].bound ? locale.astrbot.bound : locale.astrbot.unbound }}
+          </span>
         </div>
-        <p class="text-xs text-text-tertiary">{{ locale.astrbot.desc }}</p>
+        <p class="text-xs text-text-tertiary leading-relaxed">{{ locale.astrbot.desc }}</p>
         <div v-if="platformStatus[platform].bound" class="space-y-3">
-          <p class="text-sm text-text-primary">{{ locale.astrbot.bound }}</p>
-          <p v-if="platformStatus[platform].boundAt" class="text-xs text-text-tertiary">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
+          <div class="rounded-xl border border-primary-20 bg-primary-5 p-3">
+            <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1">{{ locale.astrbot.boundUser }}</p>
+            <p class="text-sm font-black text-text-primary truncate">{{ platformStatus[platform].boundUser || locale.astrbot.bound }}</p>
+            <p v-if="platformStatus[platform].boundAt" class="text-[11px] text-text-tertiary mt-1">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
+          </div>
           <div class="flex flex-wrap gap-2">
-            <button :disabled="astrbotBusy[platform]" class="px-4 py-2 bg-bg-tertiary text-text-primary text-xs font-bold rounded-xl disabled:opacity-50" @click="testAstrbot(platform)">{{ locale.astrbot.test }}</button>
-            <button :disabled="astrbotBusy[platform]" class="px-4 py-2 bg-error-10 text-error text-xs font-bold rounded-xl disabled:opacity-50" @click="confirmAstrbotUnbind(platform)">{{ locale.astrbot.unbind }}</button>
+            <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-bg-tertiary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50" @click="testAstrbot(platform)"><Send :size="13" />{{ locale.astrbot.test }}</button>
+            <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-bold rounded-xl transition-all disabled:opacity-50" @click="confirmAstrbotUnbind(platform)"><Unlink :size="13" />{{ locale.astrbot.unbind }}</button>
           </div>
         </div>
         <div v-else class="space-y-3">
-          <button :disabled="astrbotBusy[platform]" class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="createAstrbotCode(platform)">{{ astrbotBusy[platform] ? locale.pleaseWait : locale.astrbot.generate }}</button>
+          <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all disabled:opacity-50" @click="createAstrbotCode(platform)"><KeyRound :size="13" />{{ astrbotBusy[platform] ? locale.pleaseWait : locale.astrbot.generate }}</button>
           <div v-if="astrbotCodes[platform]" class="p-3 rounded-xl border border-border-secondary bg-bg-primary space-y-2">
             <p class="text-xs text-text-tertiary">{{ locale.astrbot.instruction }}</p>
             <code class="block font-mono text-lg font-bold text-primary select-all break-all">{{ astrbotCodes[platform].code }}</code>
@@ -300,7 +310,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { AlertCircle, Loader2, Mail, MessageCircle, Share2, Smartphone } from '@lucide/vue'
+import { AlertCircle, KeyRound, Loader2, Mail, MessageCircle, Send, Share2, Smartphone, Unlink } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'

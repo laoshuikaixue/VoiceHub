@@ -201,69 +201,168 @@
         <EmailTemplateManager />
       </div>
     </div>
-    <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-5">
-      <h3 class="text-sm font-black text-text-primary">{{ astrbotLocale.title }}</h3>
+    <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-center gap-2 min-w-0">
+          <Bot :size="16" class="text-primary shrink-0" />
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest truncate">{{ astrbotLocale.title }}</h3>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="astrbotConfig.astrbotEnabled"
+          :aria-label="astrbotLocale.enabled"
+          class="relative w-10 h-5 rounded-full transition-colors shrink-0"
+          :class="astrbotConfig.astrbotEnabled ? 'bg-primary-hover' : 'bg-bg-tertiary'"
+          @click="astrbotConfig.astrbotEnabled = !astrbotConfig.astrbotEnabled"
+        >
+          <span
+            class="absolute top-1 w-3 h-3 bg-bg-secondary rounded-full transition-all"
+            :class="astrbotConfig.astrbotEnabled ? 'left-6' : 'left-1'"
+          />
+        </button>
+      </div>
       <p class="text-xs text-text-tertiary">{{ astrbotLocale.desc }}</p>
-      <div v-if="astrbotLoaded" class="space-y-4">
-        <label class="flex items-center gap-2 text-sm text-text-primary"><input v-model="astrbotConfig.astrbotEnabled" type="checkbox">{{ astrbotLocale.enabled }}</label>
-        <div class="space-y-2">
-          <p class="text-xs text-text-tertiary">{{ astrbotLocale.platformHint }}</p>
-          <label v-for="platform in platformKeys" :key="platform" class="flex items-center gap-2 text-sm text-text-primary">
-            <input v-model="astrbotPlatforms[platform]" type="checkbox">{{ astrbotLocale.platforms[platform] }}
-          </label>
+
+      <div v-if="astrbotLoaded" class="space-y-6">
+        <div class="space-y-3">
+          <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.platformHint }}</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <button
+              v-for="platform in platformKeys"
+              :key="platform"
+              type="button"
+              role="switch"
+              :aria-checked="astrbotPlatforms[platform]"
+              class="flex items-center justify-between gap-3 p-3 bg-bg-primary border rounded-xl text-left transition-all"
+              :class="astrbotPlatforms[platform] ? 'border-primary-30 bg-primary-hover-5' : 'border-border-secondary hover:border-border-tertiary'"
+              @click="astrbotPlatforms[platform] = !astrbotPlatforms[platform]"
+            >
+              <span class="text-xs font-bold text-text-primary truncate">{{ astrbotLocale.platforms[platform] }}</span>
+              <span class="relative w-8 h-4 rounded-full transition-colors shrink-0" :class="astrbotPlatforms[platform] ? 'bg-primary-hover' : 'bg-bg-tertiary'">
+                <span class="absolute top-0.5 w-3 h-3 bg-bg-secondary rounded-full transition-all" :class="astrbotPlatforms[platform] ? 'left-[18px]' : 'left-0.5'" />
+              </span>
+            </button>
+          </div>
         </div>
-        <label class="block text-xs text-text-secondary">{{ astrbotLocale.baseUrl }}
-          <input v-model.trim="astrbotConfig.astrbotBaseUrl" type="url" :placeholder="astrbotLocale.baseUrlPlaceholder" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
-        </label>
-        <label class="block text-xs text-text-secondary">{{ astrbotLocale.token }}
-          <input v-model="astrbotTokenInput" type="password" autocomplete="new-password" :placeholder="astrbotTokenConfigured ? astrbotLocale.tokenUnchanged : astrbotLocale.tokenPlaceholder" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
-        </label>
-        <p class="text-xs text-text-tertiary">{{ astrbotLocale.tokenHint }}</p>
-        <label class="block text-xs text-text-secondary">{{ astrbotLocale.pushMode }}
-          <CustomSelect v-model="astrbotConfig.astrbotPushMode" class="mt-1" :options="pushModeOptions" />
-        </label>
-        <p class="text-xs text-text-tertiary">{{ astrbotLocale.pushModeHint }}</p>
-        <div class="space-y-2 border-t border-border-secondary pt-4">
-          <h4 class="text-sm font-bold text-text-primary">{{ astrbotLocale.weeklyTitle }}</h4>
-          <p class="text-xs text-text-tertiary">{{ astrbotLocale.weeklyHint }}</p>
-          <label v-for="key in weeklyConfigKeys" :key="key" class="flex items-center gap-2 text-sm text-text-primary">
-            <input v-model="astrbotWeeklyConfig[key]" type="checkbox">{{ astrbotLocale.weeklyFields[key] }}
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 border-t border-border-secondary pt-5">
+          <label class="space-y-1.5 block">
+            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.baseUrl }}</span>
+            <input v-model.trim="astrbotConfig.astrbotBaseUrl" type="url" :placeholder="astrbotLocale.baseUrlPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
           </label>
+          <label class="space-y-1.5 block">
+            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.token }}</span>
+            <input v-model="astrbotTokenInput" type="password" autocomplete="new-password" :placeholder="astrbotTokenConfigured ? astrbotLocale.tokenUnchanged : astrbotLocale.tokenPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
+          </label>
+          <p class="lg:col-span-2 text-[10px] text-text-tertiary px-1 -mt-1">{{ astrbotLocale.tokenHint }}</p>
+          <label class="space-y-1.5 block">
+            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.pushMode }}</span>
+            <CustomSelect v-model="astrbotConfig.astrbotPushMode" class="w-full" :options="pushModeOptions" />
+          </label>
+          <p class="lg:col-span-2 text-[10px] text-text-tertiary px-1 -mt-1">{{ astrbotLocale.pushModeHint }}</p>
         </div>
-        <div class="space-y-4 border-t border-border-secondary pt-4">
-          <h4 class="text-sm font-bold text-text-primary">{{ astrbotLocale.groupTitle }}</h4>
-          <p class="text-xs text-text-tertiary">{{ astrbotLocale.groupHint }}</p>
-          <label class="flex items-center gap-2 text-sm text-text-primary">
-            <input v-model="astrbotConfig.astrbotBroadcastEnabled" type="checkbox">{{ astrbotLocale.groupEnabled }}
-          </label>
-          <div class="space-y-2">
-            <p class="text-xs text-text-secondary">{{ astrbotLocale.groupTargetsTitle }}</p>
-            <p class="text-xs text-text-tertiary">{{ astrbotLocale.groupTargetsHint }}</p>
-            <div v-for="(target, index) in astrbotGroupTargets" :key="index" class="flex flex-wrap items-center gap-2">
-              <input v-model.trim="target.umo" type="text" :placeholder="astrbotLocale.groupTargetPlaceholder" class="flex-1 min-w-[16rem] bg-bg-primary border border-border-secondary rounded-xl px-3 py-2 text-text-primary text-xs">
-              <CustomSelect v-model="target.platform" :options="groupPlatformOptions" />
-              <input v-model.trim="target.label" type="text" :placeholder="astrbotLocale.groupLabelPlaceholder" class="w-32 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2 text-text-primary text-xs">
-              <button type="button" class="px-3 py-2 text-xs text-text-secondary hover:text-primary" @click="removeGroupTarget(index)">{{ astrbotLocale.groupRemove }}</button>
+
+        <div class="space-y-3 border-t border-border-secondary pt-5">
+          <div>
+            <h4 class="text-sm font-black text-text-primary">{{ astrbotLocale.weeklyTitle }}</h4>
+            <p class="text-xs text-text-tertiary mt-1">{{ astrbotLocale.weeklyHint }}</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <button
+              v-for="key in weeklyConfigKeys"
+              :key="key"
+              type="button"
+              role="switch"
+              :aria-checked="astrbotWeeklyConfig[key]"
+              class="flex items-center justify-between gap-3 p-3 bg-bg-primary border rounded-xl text-left transition-all"
+              :class="astrbotWeeklyConfig[key] ? 'border-primary-30 bg-primary-hover-5' : 'border-border-secondary hover:border-border-tertiary'"
+              @click="astrbotWeeklyConfig[key] = !astrbotWeeklyConfig[key]"
+            >
+              <span class="text-xs font-bold text-text-primary">{{ astrbotLocale.weeklyFields[key] }}</span>
+              <span class="relative w-8 h-4 rounded-full transition-colors shrink-0" :class="astrbotWeeklyConfig[key] ? 'bg-primary-hover' : 'bg-bg-tertiary'">
+                <span class="absolute top-0.5 w-3 h-3 bg-bg-secondary rounded-full transition-all" :class="astrbotWeeklyConfig[key] ? 'left-[18px]' : 'left-0.5'" />
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-5 border-t border-border-secondary pt-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h4 class="text-sm font-black text-text-primary">{{ astrbotLocale.groupTitle }}</h4>
+              <p class="text-xs text-text-tertiary mt-1">{{ astrbotLocale.groupHint }}</p>
             </div>
-            <button type="button" class="px-3 py-2 text-xs border border-border-secondary rounded-xl text-text-secondary hover:text-primary" @click="addGroupTarget">{{ astrbotLocale.groupAdd }}</button>
+            <button
+              type="button"
+              role="switch"
+              :aria-checked="astrbotConfig.astrbotBroadcastEnabled"
+              :aria-label="astrbotLocale.groupEnabled"
+              class="relative w-10 h-5 rounded-full transition-colors shrink-0"
+              :class="astrbotConfig.astrbotBroadcastEnabled ? 'bg-primary-hover' : 'bg-bg-tertiary'"
+              @click="astrbotConfig.astrbotBroadcastEnabled = !astrbotConfig.astrbotBroadcastEnabled"
+            >
+              <span class="absolute top-1 w-3 h-3 bg-bg-secondary rounded-full transition-all" :class="astrbotConfig.astrbotBroadcastEnabled ? 'left-6' : 'left-1'" />
+            </button>
           </div>
-          <div class="space-y-2">
-            <p class="text-xs text-text-secondary">{{ astrbotLocale.groupEventsTitle }}</p>
-            <label v-for="key in groupEventKeys" :key="key" class="flex items-center gap-2 text-sm text-text-primary">
-              <input v-model="astrbotGroupEvents[key]" type="checkbox">{{ astrbotLocale.groupEvents[key] }}
+          <div class="space-y-3">
+            <div>
+              <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupTargetsTitle }}</p>
+              <p class="text-xs text-text-tertiary mt-1 px-1">{{ astrbotLocale.groupTargetsHint }}</p>
+            </div>
+            <div v-for="(target, index) in astrbotGroupTargets" :key="index" class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_9rem_8rem_2.5rem] gap-2 items-center">
+              <input v-model.trim="target.umo" type="text" :placeholder="astrbotLocale.groupTargetPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
+              <CustomSelect v-model="target.platform" class="w-full" :options="groupPlatformOptions" />
+              <input v-model.trim="target.label" type="text" :placeholder="astrbotLocale.groupLabelPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
+              <button type="button" class="flex items-center justify-center w-10 h-10 rounded-xl text-text-tertiary hover:text-error hover:bg-error-10 transition-colors" :title="astrbotLocale.groupRemove" :aria-label="astrbotLocale.groupRemove" @click="removeGroupTarget(index)">
+                <Trash2 :size="15" />
+              </button>
+            </div>
+            <button type="button" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold border border-border-secondary rounded-xl text-text-secondary hover:text-primary hover:border-primary-30 transition-colors" @click="addGroupTarget">
+              <Plus :size="14" /> {{ astrbotLocale.groupAdd }}
+            </button>
+          </div>
+          <div class="space-y-3">
+            <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupEventsTitle }}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <button
+                v-for="key in groupEventKeys"
+                :key="key"
+                type="button"
+                role="switch"
+                :aria-checked="astrbotGroupEvents[key]"
+                class="flex items-center justify-between gap-3 p-3 bg-bg-primary border rounded-xl text-left transition-all"
+                :class="astrbotGroupEvents[key] ? 'border-primary-30 bg-primary-hover-5' : 'border-border-secondary hover:border-border-tertiary'"
+                @click="astrbotGroupEvents[key] = !astrbotGroupEvents[key]"
+              >
+                <span class="text-xs font-bold text-text-primary">{{ astrbotLocale.groupEvents[key] }}</span>
+                <span class="relative w-8 h-4 rounded-full transition-colors shrink-0" :class="astrbotGroupEvents[key] ? 'bg-primary-hover' : 'bg-bg-tertiary'">
+                  <span class="absolute top-0.5 w-3 h-3 bg-bg-secondary rounded-full transition-all" :class="astrbotGroupEvents[key] ? 'left-[18px]' : 'left-0.5'" />
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="space-y-1.5 block">
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupMergeWindow }}</span>
+              <input v-model.number="astrbotGroupThrottle.mergeWindowSeconds" type="number" min="0" max="3600" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
+            </label>
+            <label class="space-y-1.5 block">
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupMinInterval }}</span>
+              <input v-model.number="astrbotGroupThrottle.minIntervalSeconds" type="number" min="0" max="3600" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
             </label>
           </div>
-          <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block text-xs text-text-secondary">{{ astrbotLocale.groupMergeWindow }}
-              <input v-model.number="astrbotGroupThrottle.mergeWindowSeconds" type="number" min="0" max="3600" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
-            </label>
-            <label class="block text-xs text-text-secondary">{{ astrbotLocale.groupMinInterval }}
-              <input v-model.number="astrbotGroupThrottle.minIntervalSeconds" type="number" min="0" max="3600" class="block w-full mt-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-text-primary">
-            </label>
-          </div>
-          <p class="text-xs text-text-tertiary">{{ astrbotLocale.groupThrottleHint }}</p>
+          <p class="text-[10px] text-text-tertiary px-1">{{ astrbotLocale.groupThrottleHint }}</p>
         </div>
-        <button :disabled="astrbotSaving" class="px-5 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-50" @click="saveAstrbotConfig">{{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}</button>
+
+        <div class="flex justify-end border-t border-border-secondary pt-5">
+          <button :disabled="astrbotSaving" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" @click="saveAstrbotConfig">
+            <Save :size="14" /> {{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}
+          </button>
+        </div>
+      </div>
+      <div v-else class="flex justify-center py-8">
+        <AppSpinner :size="20" />
       </div>
     </section>
   </div>
@@ -275,10 +374,11 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { ASTRBOT_PLATFORMS, DEFAULT_ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 import { ASTRBOT_GROUP_EVENT_KEYS, DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
-import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from '@lucide/vue'
+import { Bot, Server, Save, Check, Send, CheckCircle, XCircle, RotateCw, Plus, Trash2 } from '@lucide/vue'
 
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
