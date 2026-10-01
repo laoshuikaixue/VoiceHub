@@ -46,9 +46,11 @@ export function sanitizeAstrbotErrorDetail(detail: unknown): string {
   let safe = text.trim()
   for (const pattern of CREDENTIAL_PATTERNS) {
     safe = safe.replace(pattern, (match, prefix?: string) => {
-      // 连接串保留 scheme://，其余整体替换为占位，便于定位主机又不见口令
-      const kept = typeof prefix === 'string' && match.startsWith(prefix) ? prefix : ''
-      return `${kept}[已脱敏]`
+      // 连接串保留 scheme:// 与 @，只抹掉用户名口令，便于定位主机又不见凭据
+      if (typeof prefix === 'string' && match.startsWith(prefix) && match.endsWith('@')) {
+        return `${prefix}[已脱敏]@`
+      }
+      return '[已脱敏]'
     })
   }
   safe = safe.replace(/\s+/g, ' ').trim()
