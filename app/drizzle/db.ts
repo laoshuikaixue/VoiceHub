@@ -9,6 +9,10 @@ import {fileURLToPath} from 'url';
 // 加载环境变量（优先使用工作目录的 .env，确保构建后运行时能正确加载）
 config({ path: path.resolve(process.cwd(), '.env') });
 
+// 无时区 timestamp 列按 Node 本地时区解析，非 UTC 容器会导致读出时刻整体偏移；
+// 展示层已统一用 Asia/Shanghai 显式转换，不依赖容器时区
+process.env.TZ = 'UTC';
+
 // 检查环境变量
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
@@ -53,7 +57,10 @@ const getDatabaseConfig = () => {
         undefined: null, // 将undefined转换为null
       },
       connection: {
-        application_name: 'voicehub-app'
+        application_name: 'voicehub-app',
+        // 强制会话时区为 UTC：数据库容器 TZ 非 UTC 时（如自建设为 Asia/Shanghai），
+        // defaultNow() 写入无时区 timestamp 列的会是北京墙钟，前端展示会整体 +8 偏移到次日
+        timezone: 'UTC'
       },
       onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
       debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
@@ -73,7 +80,9 @@ const getDatabaseConfig = () => {
         undefined: null, // 将undefined转换为null
       },
       connection: {
-        application_name: 'voicehub-app'
+        application_name: 'voicehub-app',
+        // 强制会话时区为 UTC，同 Neon 分支说明
+        timezone: 'UTC'
       },
       onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
       debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
