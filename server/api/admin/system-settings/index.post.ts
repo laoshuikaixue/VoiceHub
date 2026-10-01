@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
-import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { ASTRBOT_WEEKLY_BOOLEAN_KEYS, ASTRBOT_WEEKLY_LAYOUTS, SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { parseLegalConsentDocuments } from '~~/server/utils/legal-consent'
 import {
@@ -847,12 +847,19 @@ export default defineEventHandler(async (event) => {
     }
     if (body.astrbotWeeklyConfig !== undefined) {
       const config = body.astrbotWeeklyConfig
-      const keys = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate'] as const
+      const booleanKeys = ASTRBOT_WEEKLY_BOOLEAN_KEYS
+      const hasValidLayout = config && typeof config === 'object' && !Array.isArray(config) &&
+        ASTRBOT_WEEKLY_LAYOUTS.includes(config.layoutStyle) && (config.listColumns === 1 || config.listColumns === 2)
       if (!config || typeof config !== 'object' || Array.isArray(config) ||
-        Object.keys(config).length !== keys.length || !keys.every(key => typeof config[key] === 'boolean')) {
+        Object.keys(config).length !== booleanKeys.length + 2 ||
+        !booleanKeys.every(key => typeof config[key] === 'boolean') || !hasValidLayout) {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '本周歌单显示项格式无效')
       }
-      updateData.astrbotWeeklyConfig = Object.fromEntries(keys.map(key => [key, config[key]]))
+      updateData.astrbotWeeklyConfig = {
+        layoutStyle: config.layoutStyle,
+        listColumns: config.listColumns,
+        ...Object.fromEntries(booleanKeys.map(key => [key, config[key]]))
+      }
     }
     if (body.astrbotBaseUrl !== undefined) {
       if (typeof body.astrbotBaseUrl !== 'string' || body.astrbotBaseUrl.length > 2048) {

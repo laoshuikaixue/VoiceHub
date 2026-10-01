@@ -24,19 +24,22 @@ export function formatAstrbotWeeklyScheduleText(
   siteTitle: string,
   weekRange: string,
   schedules: WeeklyScheduleItem[],
-  displayConfig: Record<string, boolean>
+  displayConfig: Record<string, unknown>
 ) {
   const lines = [`${siteTitle} 本周歌单`, weekRange]
   if (!schedules.length) return `${lines.join('\n')}\n\n暂无已发布排期`
 
   lines.push('')
   for (const item of schedules) {
-    const prefix = displayConfig.showSequence ? `${item.sequence}. ` : ''
-    const date = displayConfig.showDate ? `${item.date} ` : ''
-    const playTime = displayConfig.showPlayTime && item.playTime ? `｜${item.playTime}` : ''
-    const requester = displayConfig.showRequester && item.requester ? `｜投稿：${item.requester}` : ''
-    const votes = displayConfig.showVotes ? `｜票数：${item.voteCount}` : ''
-    lines.push(`${date}${prefix}${item.title} - ${item.artist}${playTime}${requester}${votes}`)
+    const prefix = displayConfig.showSequence === true ? `${item.sequence}. ` : ''
+    const date = displayConfig.showDate === true ? `${item.date} ` : ''
+    const playTime = displayConfig.showPlayTime === true && item.playTime ? `｜${item.playTime}` : ''
+    const requester = displayConfig.showRequester === true && item.requester ? `｜投稿：${item.requester}` : ''
+    const votes = displayConfig.showVotes === true ? `｜热度：${item.voteCount}` : ''
+    const title = displayConfig.showTitle === true ? item.title : ''
+    const artist = displayConfig.showArtist === true ? item.artist : ''
+    const song = [title, artist].filter(Boolean).join(' - ')
+    lines.push(`${date}${prefix}${song || item.title}${playTime}${requester}${votes}`)
   }
   return lines.join('\n')
 }
@@ -53,6 +56,8 @@ export default defineEventHandler(async (event) => {
       token: systemSettings.astrbotToken,
       enabled: systemSettings.astrbotEnabled,
       siteTitle: systemSettings.siteTitle,
+      siteLogoUrl: systemSettings.siteLogoUrl,
+      schoolLogoPrintUrl: systemSettings.schoolLogoPrintUrl,
       weeklyConfig: systemSettings.astrbotWeeklyConfig,
     })
     .from(systemSettings)
@@ -170,7 +175,12 @@ export default defineEventHandler(async (event) => {
       key, typeof settings.weeklyConfig?.[key as keyof typeof settings.weeklyConfig] === 'boolean'
         ? settings.weeklyConfig[key as keyof typeof settings.weeklyConfig] : fallback
     ])
-  ) as Record<string, boolean>
+  ) as Record<string, unknown>
+  const imageConfig = {
+    ...displayConfig,
+    siteLogoUrl: settings.siteLogoUrl ?? '/assets/logo.png',
+    schoolLogoUrl: settings.schoolLogoPrintUrl ?? ''
+  }
   const text = formatAstrbotWeeklyScheduleText(
     settings.siteTitle ?? 'VoiceHub', weekRange, scheduleItems, displayConfig
   )
@@ -187,6 +197,7 @@ export default defineEventHandler(async (event) => {
     siteTitle: settings.siteTitle ?? 'VoiceHub',
     schedules: scheduleItems,
     displayConfig,
+    imageConfig,
     text,
   }
 })

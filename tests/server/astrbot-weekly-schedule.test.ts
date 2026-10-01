@@ -209,8 +209,11 @@ test('排序为 playDate asc、sequence asc', () => {
   )
 })
 
-test('displayConfig 从持久化配置读取六个布尔字段并对脏数据回退默认值', () => {
-  const fields = ['showCover', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate']
+test('displayConfig 从持久化配置读取图片样式字段并对脏数据回退默认值', () => {
+  const fields = [
+    'layoutStyle', 'listColumns', 'showLogo', 'showSchoolLogo', 'showCover', 'showTitle',
+    'showArtist', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate'
+  ]
   const defaults = readFileSync(join(import.meta.dirname, '../../server/utils/system-settings-defaults.ts'), 'utf8')
   const schema = readFileSync(join(import.meta.dirname, '../../app/drizzle/schema.ts'), 'utf8')
   for (const f of fields) {
@@ -220,6 +223,9 @@ test('displayConfig 从持久化配置读取六个布尔字段并对脏数据回
   assert.ok(apiSrc.includes('weeklyConfig: systemSettings.astrbotWeeklyConfig'))
   assert.ok(apiSrc.includes('typeof settings.weeklyConfig?.'))
   assert.ok(apiSrc.includes('const displayConfig = Object.fromEntries('))
+  assert.ok(apiSrc.includes('siteLogoUrl: systemSettings.siteLogoUrl'))
+  assert.ok(apiSrc.includes('schoolLogoPrintUrl: systemSettings.schoolLogoPrintUrl'))
+  assert.ok(apiSrc.includes('imageConfig'))
 })
 
 test('本周歌单同时提供纯文本字段，并支持 format=text 直接返回文本', () => {

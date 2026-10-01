@@ -1,6 +1,36 @@
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
 
+export const ASTRBOT_WEEKLY_BOOLEAN_KEYS = [
+  'showLogo',
+  'showSchoolLogo',
+  'showCover',
+  'showTitle',
+  'showArtist',
+  'showRequester',
+  'showVotes',
+  'showSequence',
+  'showPlayTime',
+  'showDate'
+] as const
+
+export const ASTRBOT_WEEKLY_LAYOUTS = ['classic', 'table'] as const
+
+export const DEFAULT_ASTRBOT_WEEKLY_CONFIG = {
+  layoutStyle: 'classic',
+  listColumns: 1,
+  showLogo: true,
+  showSchoolLogo: false,
+  showCover: true,
+  showTitle: true,
+  showArtist: true,
+  showRequester: true,
+  showVotes: false,
+  showSequence: true,
+  showPlayTime: true,
+  showDate: true
+} as const
+
 export const normalizeScheduleVisibilitySettings = (settings) => {
   for (const field of [
     'scheduleDaysBeforeEnabled',
@@ -80,7 +110,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 防刷屏：同群同类型事件在窗口内合并为一条，并按单群频率上限节流。
   astrbotGroupThrottle: DEFAULT_ASTRBOT_GROUP_THROTTLE,
   astrbotPushMode: 'push',
-  astrbotWeeklyConfig: { showCover: true, showSequence: true, showRequester: true, showVotes: false, showPlayTime: true, showDate: true },
+  astrbotWeeklyConfig: DEFAULT_ASTRBOT_WEEKLY_CONFIG,
   allowOAuthRegistration: false,
   allowRegister: false,
   registerRequiresApproval: true,

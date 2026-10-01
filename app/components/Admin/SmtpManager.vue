@@ -268,9 +268,19 @@
             <h4 class="text-sm font-black text-text-primary">{{ astrbotLocale.weeklyTitle }}</h4>
             <p class="text-xs text-text-tertiary mt-1">{{ astrbotLocale.weeklyHint }}</p>
           </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="space-y-1.5 block">
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.weeklyLayout }}</span>
+              <CustomSelect v-model="astrbotWeeklyConfig.layoutStyle" :options="weeklyLayoutOptions" />
+            </label>
+            <label class="space-y-1.5 block">
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.weeklyListColumns }}</span>
+              <CustomSelect v-model="astrbotWeeklyConfig.listColumns" :options="weeklyColumnOptions" />
+            </label>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <button
-              v-for="key in weeklyConfigKeys"
+              v-for="key in weeklyBooleanKeys"
               :key="key"
               type="button"
               role="switch"
@@ -377,7 +387,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { ASTRBOT_PLATFORMS, DEFAULT_ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 import { ASTRBOT_GROUP_EVENT_KEYS, DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
-import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { ASTRBOT_WEEKLY_BOOLEAN_KEYS, ASTRBOT_WEEKLY_LAYOUTS, SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { Bot, Server, Save, Check, Send, CheckCircle, XCircle, RotateCw, Plus, Trash2 } from '@lucide/vue'
 
 const { showToast: showNotification } = useToast()
@@ -393,7 +403,7 @@ const platformKeys = ASTRBOT_PLATFORMS
 const astrbotPlatforms = ref({ ...DEFAULT_ASTRBOT_PLATFORMS })
 const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotPushMode: 'push' })
 const weeklyDefaults = SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig
-const weeklyConfigKeys = Object.keys(weeklyDefaults)
+const weeklyBooleanKeys = ASTRBOT_WEEKLY_BOOLEAN_KEYS
 const astrbotWeeklyConfig = ref({ ...weeklyDefaults })
 const groupEventKeys = ASTRBOT_GROUP_EVENT_KEYS
 const groupEventDefaults = DEFAULT_ASTRBOT_GROUP_EVENTS
@@ -415,13 +425,27 @@ const pushModeOptions = computed(() => [
   { value: 'pull', label: astrbotLocale.value.pushModePull || 'pull' }
 ])
 
+const weeklyLayoutOptions = computed(() => ASTRBOT_WEEKLY_LAYOUTS.map(value => ({
+  value,
+  label: value === 'table' ? (astrbotLocale.value.weeklyLayoutTable || 'Table') : (astrbotLocale.value.weeklyLayoutClassic || 'Classic list')
+})))
+const weeklyColumnOptions = computed(() => [
+  { value: 1, label: astrbotLocale.value.weeklyOneColumn || 'One column' },
+  { value: 2, label: astrbotLocale.value.weeklyTwoColumns || 'Two columns' }
+])
+
 const loadAstrbotConfig = async () => {
   try {
     const response = await $fetch('/api/admin/system-settings')
     astrbotPlatforms.value = Object.fromEntries(platformKeys.map(platform => [platform, response.astrbotPlatforms?.[platform] === true]))
-    astrbotWeeklyConfig.value = Object.fromEntries(weeklyConfigKeys.map(key => [
-      key, typeof response.astrbotWeeklyConfig?.[key] === 'boolean' ? response.astrbotWeeklyConfig[key] : weeklyDefaults[key]
-    ]))
+    astrbotWeeklyConfig.value = {
+      ...weeklyDefaults,
+      layoutStyle: response.astrbotWeeklyConfig?.layoutStyle === 'table' ? 'table' : 'classic',
+      listColumns: response.astrbotWeeklyConfig?.listColumns === 2 ? 2 : 1,
+      ...Object.fromEntries(weeklyBooleanKeys.map(key => [
+        key, typeof response.astrbotWeeklyConfig?.[key] === 'boolean' ? response.astrbotWeeklyConfig[key] : weeklyDefaults[key]
+      ]))
+    }
     astrbotConfig.value = {
       astrbotEnabled: !!response.astrbotEnabled,
       astrbotBaseUrl: response.astrbotBaseUrl || '',
