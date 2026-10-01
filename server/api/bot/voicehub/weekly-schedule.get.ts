@@ -5,9 +5,9 @@ import { playTimes, schedules, songCollaborators, songs, systemSettings, users, 
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot-notification'
+import { normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { formatDateTime, getBeijingStartOfWeek, getBeijingEndOfWeek, getBeijingWeekdayLabel } from '~/utils/timeUtils'
-import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 
 type WeeklyScheduleItem = {
   date: string
@@ -170,12 +170,7 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  const displayConfig = Object.fromEntries(
-    Object.entries(SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig).map(([key, fallback]) => [
-      key, typeof settings.weeklyConfig?.[key as keyof typeof settings.weeklyConfig] === 'boolean'
-        ? settings.weeklyConfig[key as keyof typeof settings.weeklyConfig] : fallback
-    ])
-  ) as Record<string, unknown>
+  const displayConfig = normalizeAstrbotWeeklyConfig(settings.weeklyConfig)
   const imageConfig = {
     ...displayConfig,
     siteLogoUrl: settings.siteLogoUrl ?? '/assets/logo.png',

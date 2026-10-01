@@ -1,35 +1,13 @@
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
+import { DEFAULT_ASTRBOT_WEEKLY_CONFIG } from '~~/server/utils/astrbot-weekly-config'
 
-export const ASTRBOT_WEEKLY_BOOLEAN_KEYS = [
-  'showLogo',
-  'showSchoolLogo',
-  'showCover',
-  'showTitle',
-  'showArtist',
-  'showRequester',
-  'showVotes',
-  'showSequence',
-  'showPlayTime',
-  'showDate'
-] as const
-
-export const ASTRBOT_WEEKLY_LAYOUTS = ['classic', 'table'] as const
-
-export const DEFAULT_ASTRBOT_WEEKLY_CONFIG = {
-  layoutStyle: 'classic',
-  listColumns: 1,
-  showLogo: true,
-  showSchoolLogo: false,
-  showCover: true,
-  showTitle: true,
-  showArtist: true,
-  showRequester: true,
-  showVotes: false,
-  showSequence: true,
-  showPlayTime: true,
-  showDate: true
-} as const
+// 本周歌单显示配置的唯一权威定义在 astrbot-weekly-config.ts，这里仅转发导出。
+export {
+  ASTRBOT_WEEKLY_BOOLEAN_KEYS,
+  ASTRBOT_WEEKLY_LAYOUTS,
+  DEFAULT_ASTRBOT_WEEKLY_CONFIG
+} from '~~/server/utils/astrbot-weekly-config'
 
 export const normalizeScheduleVisibilitySettings = (settings) => {
   for (const field of [

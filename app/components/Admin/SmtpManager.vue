@@ -387,7 +387,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { ASTRBOT_PLATFORMS, DEFAULT_ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 import { ASTRBOT_GROUP_EVENT_KEYS, DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
-import { ASTRBOT_WEEKLY_BOOLEAN_KEYS, ASTRBOT_WEEKLY_LAYOUTS, SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { ASTRBOT_WEEKLY_BOOLEAN_KEYS, ASTRBOT_WEEKLY_LAYOUTS, DEFAULT_ASTRBOT_WEEKLY_CONFIG } from '~~/server/utils/astrbot-weekly-config'
 import { Bot, Server, Save, Check, Send, CheckCircle, XCircle, RotateCw, Plus, Trash2 } from '@lucide/vue'
 
 const { showToast: showNotification } = useToast()
@@ -402,7 +402,7 @@ const astrbotTokenInput = ref('')
 const platformKeys = ASTRBOT_PLATFORMS
 const astrbotPlatforms = ref({ ...DEFAULT_ASTRBOT_PLATFORMS })
 const astrbotConfig = ref({ astrbotEnabled: false, astrbotBaseUrl: '', astrbotPushMode: 'push' })
-const weeklyDefaults = SYSTEM_SETTINGS_DEFAULTS.astrbotWeeklyConfig
+const weeklyDefaults = DEFAULT_ASTRBOT_WEEKLY_CONFIG
 const weeklyBooleanKeys = ASTRBOT_WEEKLY_BOOLEAN_KEYS
 const astrbotWeeklyConfig = ref({ ...weeklyDefaults })
 const groupEventKeys = ASTRBOT_GROUP_EVENT_KEYS

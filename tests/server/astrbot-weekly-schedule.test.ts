@@ -214,15 +214,19 @@ test('displayConfig 从持久化配置读取图片样式字段并对脏数据回
     'layoutStyle', 'listColumns', 'showLogo', 'showSchoolLogo', 'showCover', 'showTitle',
     'showArtist', 'showSequence', 'showRequester', 'showVotes', 'showPlayTime', 'showDate'
   ]
-  const defaults = readFileSync(join(import.meta.dirname, '../../server/utils/system-settings-defaults.ts'), 'utf8')
+  const defaults = readFileSync(join(import.meta.dirname, '../../server/utils/astrbot-weekly-config.ts'), 'utf8')
   const schema = readFileSync(join(import.meta.dirname, '../../app/drizzle/schema.ts'), 'utf8')
   for (const f of fields) {
     assert.ok(defaults.includes(`${f}:`), `默认配置应包含 ${f}`)
   }
   assert.ok(schema.includes("jsonb('astrbotWeeklyConfig')"))
   assert.ok(apiSrc.includes('weeklyConfig: systemSettings.astrbotWeeklyConfig'))
-  assert.ok(apiSrc.includes('typeof settings.weeklyConfig?.'))
-  assert.ok(apiSrc.includes('const displayConfig = Object.fromEntries('))
+  // 归一化唯一权威：排版与列数必须经 normalizeAstrbotWeeklyConfig，禁止回退成「只认布尔」的内联实现
+  assert.ok(apiSrc.includes('normalizeAstrbotWeeklyConfig'), '应复用归一化权威')
+  assert.ok(
+    !apiSrc.includes('typeof settings.weeklyConfig?.'),
+    '不得保留只透传布尔值的内联实现（会吞掉 layoutStyle / listColumns）'
+  )
   assert.ok(apiSrc.includes('siteLogoUrl: systemSettings.siteLogoUrl'))
   assert.ok(apiSrc.includes('schoolLogoPrintUrl: systemSettings.schoolLogoPrintUrl'))
   assert.ok(apiSrc.includes('imageConfig'))
