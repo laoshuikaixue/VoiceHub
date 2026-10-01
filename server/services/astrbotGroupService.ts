@@ -17,6 +17,7 @@ import {
 } from '~~/server/utils/astrbot-group'
 import type { AstrbotGroupEventKey, AstrbotGroupThrottle } from '~~/server/utils/astrbot-group'
 import { chunkAstrbotTargets } from '~~/server/utils/astrbot-payload'
+import { sanitizeAstrbotErrorDetail } from '~~/server/utils/astrbot-error-telemetry'
 import { ASTRBOT_OUTBOX_MAX_ATTEMPTS, isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { postAstrbotNotification } from '~~/server/services/astrbotNotificationService'
 
@@ -69,6 +70,9 @@ export async function enqueueAstrbotGroupEvent(
 ): Promise<number> {
   if (!(ASTRBOT_GROUP_EVENT_KEYS as readonly string[]).includes(eventKey)) return 0
   if (!content.trim()) return 0
+  // 异常类事件的正文是异常消息，可能夹带连接串/令牌；其余事件（点歌、注册等）
+  // 是正常业务文案，不能改写。这里按事件类型做最后一道脱敏。
+  const safeContent = eventKey === 'systemError' ? sanitizeAstrbotErrorDetail(content) : content
   try {
     const settings = await readGroupSettings()
     const umos = selectAstrbotGroupTargets(settings.targets, {
@@ -78,7 +82,7 @@ export async function enqueueAstrbotGroupEvent(
       astrbotGroupEvents: settings.eventSettings
     }, eventKey)
     if (!umos.length) return 0
-    return await queueToGroups(umos, title, content, eventKey, settings.throttle)
+    return await queueToGroups(umos, title, safeContent, eventKey, settings.throttle)
   } catch (error) {
     console.error(`AstrBot 群事件入队失败（${eventKey}）:`, error)
     return 0

@@ -242,10 +242,12 @@ async function migrateLegacyAstrbotBindings(sql) {
     return
   }
 
+  // 旧库可能只有 astrbotUmo/astrbotPlatform，没有 astrbotBoundAt（该列是后加的）。
+  // 与独立脚本 scripts/migrate-astrbot-bindings.ts 一致：缺列不阻塞搬迁，回填时用 now()。
   const hasLegacyBindings =
     (await columnExists(sql, 'User', 'astrbotUmo')) &&
-    (await columnExists(sql, 'User', 'astrbotPlatform')) &&
-    (await columnExists(sql, 'User', 'astrbotBoundAt'))
+    (await columnExists(sql, 'User', 'astrbotPlatform'))
+  const hasBoundAtColumn = await columnExists(sql, 'User', 'astrbotBoundAt')
   const hasPlatformsColumn =
     (await columnExists(sql, 'SystemSettings', 'astrbotPlatforms')) &&
     (await columnExists(sql, 'SystemSettings', 'astrbotEnabled'))
@@ -279,11 +281,13 @@ async function migrateLegacyAstrbotBindings(sql) {
       let migrated = 0
       if (knownAdapters.length > 0) {
         // 通过适配器->平台映射表 join 完成归类，未在映射表中的未知适配器自然被排除，不会被当作 QQ。
+        // 缺少 astrbotBoundAt 的旧库没有绑定时间可用，回填 now()（与独立迁移脚本一致）。
         const adapters = knownAdapters
         const platforms = knownAdapters.map((adapter) => classifyAstrbotAdapter(adapter))
+        const boundAt = hasBoundAtColumn ? tx`COALESCE(u."astrbotBoundAt", now())` : tx`now()`
         const inserted = await tx`
           INSERT INTO "AstrbotBinding" ("userId", "platform", "adapter", "umo", "boundAt")
-          SELECT u.id, m.platform, u."astrbotPlatform", u."astrbotUmo", COALESCE(u."astrbotBoundAt", now())
+          SELECT u.id, m.platform, u."astrbotPlatform", u."astrbotUmo", ${boundAt}
           FROM "User" u
           JOIN unnest(${adapters}::text[], ${platforms}::text[]) AS m(adapter, platform)
             ON m.adapter = u."astrbotPlatform"

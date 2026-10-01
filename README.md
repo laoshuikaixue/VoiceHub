@@ -1408,6 +1408,7 @@ VoiceHub/
 │   │   ├── astrbot-adapters.js # 旧绑定回填与通知共用的适配器平台映射
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
+│   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略

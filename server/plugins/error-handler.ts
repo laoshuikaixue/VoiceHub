@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
+import { sanitizeAstrbotErrorDetail } from '~~/server/utils/astrbot-error-telemetry'
 
 /**
  * 上报系统异常到已配置的群聊。
@@ -28,7 +29,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     const rejectionDetail = reason instanceof Error
       ? reason.message
       : typeof reason === 'string' ? reason : String(reason)
-    await reportSystemError('未处理的 Promise 拒绝', rejectionDetail)
+    await reportSystemError('未处理的 Promise 拒绝', sanitizeAstrbotErrorDetail(rejectionDetail))
 
     if (reason && typeof reason === 'object' && 'message' in reason) {
       const errorMessage = (reason as Error).message
@@ -72,7 +73,8 @@ export default defineNitroPlugin(async (nitroApp) => {
   // 全局未捕获异常处理器
   process.on('uncaughtException', async (error) => {
     console.error('Uncaught Exception:', error)
-    await reportSystemError('未捕获异常', error?.message || String(error))
+    // 异常消息可能夹带连接串/令牌，入队前统一脱敏并限长。
+    await reportSystemError('未捕获异常', sanitizeAstrbotErrorDetail(error))
 
     // 检查是否是数据库相关错误
     if (
