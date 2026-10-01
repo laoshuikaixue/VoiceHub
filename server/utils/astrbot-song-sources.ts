@@ -106,7 +106,7 @@ export async function fetchAstrbotSongSource(
     }
 
     case 'bilibili': {
-      const tracks = await searchBilibiliVideos(keyword)
+      const tracks = await searchBilibiliVideos(keyword, page)
       return tracks
     }
 

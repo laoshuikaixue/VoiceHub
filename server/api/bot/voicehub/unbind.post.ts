@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
     const [account] = await tx.select({ id: users.id })
       .from(users).where(eq(users.id, candidate.id)).for('update')
     if (!account) throw createApiError(404, SERVER_ERROR_CODES.ASTRBOT_UNBIND_FAILED, '此会话尚未绑定')
-    const [removed] = await tx.delete(astrbotBindings).where(eq(astrbotBindings.umo, umo)).returning()
+    const [removed] = await tx.delete(astrbotBindings).where(and(eq(astrbotBindings.umo, umo),
+      eq(astrbotBindings.userId, candidate.id), eq(astrbotBindings.platform, candidate.platform))).returning()
     if (!removed) throw createApiError(404, SERVER_ERROR_CODES.ASTRBOT_UNBIND_FAILED, '此会话尚未绑定')
     // 解绑只清该平台未消费的码；已消费的保留，便于审计与幂等（与用户侧解绑一致）。
     await tx.delete(astrbotBindingCodes).where(and(eq(astrbotBindingCodes.userId, candidate.id),

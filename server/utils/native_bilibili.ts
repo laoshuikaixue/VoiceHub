@@ -95,12 +95,12 @@ export function biConvertSong(song_info: BilibiliSearchSongInfo, pages?: Bilibil
 }
 
 /** 按关键词搜索视频并逐条补充分 P（detail 失败时退回搜索条目本身）。 */
-export async function searchBilibiliVideos(keyword: string, pageSize = 15): Promise<BilibiliTrack[]> {
+export async function searchBilibiliVideos(keyword: string, page = 1, pageSize = 15): Promise<BilibiliTrack[]> {
   const resp = await $fetch<BilibiliSearchRes>('https://api.bilibili.com/x/web-interface/search/type', {
     method: 'GET',
     params: {
       __refresh__: true,
-      page: 1,
+      page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
       page_size: pageSize,
       platform: 'pc',
       highlight: 1,

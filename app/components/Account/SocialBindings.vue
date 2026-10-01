@@ -338,7 +338,8 @@ const refreshAstrbotStatus = async () => {
       platformStatus.value[platform] = {
         enabled: entry?.enabled === true,
         bound: entry?.bound === true,
-        boundAt: entry?.boundAt || null
+        boundAt: entry?.boundAt || null,
+        boundUser: entry?.boundUser || null
       }
       if (!entry?.enabled || entry.bound) astrbotCodes.value[platform] = null
     }

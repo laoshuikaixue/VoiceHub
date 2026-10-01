@@ -111,7 +111,10 @@ test('绑定、解绑及发码使用同一用户行锁，绑定码仅在所有�
   assert.match(botUnbind, /\.from\(users\)[\s\S]*?\.for\('update'\)/)
   assert.match(botUnbind, /tx\.delete\(astrbotBindingCodes\)/)
   assert.match(botUnbind, /isNull\(astrbotBindingCodes\.consumedAt\)/)
-  assert.match(botUnbind, /tx\.delete\(astrbotBindings\)\.where\(eq\(astrbotBindings\.umo, umo\)\)/)
+  // 解绑删除必须同时限定候选主体：只按 UMO 删除会在并发重绑时误删新账号的绑定。
+  assert.match(botUnbind, /tx\.delete\(astrbotBindings\)\.where\(and\(eq\(astrbotBindings\.umo, umo\)[\s\S]*?eq\(astrbotBindings\.userId, candidate\.id\), eq\(astrbotBindings\.platform, candidate\.platform\)\)\)/)
+  assert.ok(botUnbind.indexOf('.for(\'update\')') < botUnbind.indexOf('.delete(astrbotBindings)'),
+    '必须在同一事务内先锁住候选账号再删除绑定')
   assert.match(userUnbind, /tx\.delete\(astrbotBindingCodes\)/)
   assert.match(issue, /tx\.insert\(astrbotBindingCodes\)/)
 })

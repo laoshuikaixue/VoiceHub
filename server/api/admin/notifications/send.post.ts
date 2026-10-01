@@ -220,9 +220,11 @@ export default defineEventHandler(async (event) => {
   }
 
   if (userIds.length === 0) {
+    // 站内没有收件人不代表群转发要跳过：群白名单是独立目标，管理员勾选转发后仍应送达。
+    await forwardSystemNoticeToGroups(broadcastToGroups, title, content)
     return {
       success: true,
-      message: '没有找到符合条件的用户',
+      message: broadcastToGroups ? '没有找到符合条件的用户，已转发到群聊' : '没有找到符合条件的用户',
       sentCount: 0,
       totalUsers: 0
     }

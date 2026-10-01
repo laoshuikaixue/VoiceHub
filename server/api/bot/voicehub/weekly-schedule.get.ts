@@ -39,7 +39,9 @@ export function formatAstrbotWeeklyScheduleText(
     const title = displayConfig.showTitle === true ? item.title : ''
     const artist = displayConfig.showArtist === true ? item.artist : ''
     const song = [title, artist].filter(Boolean).join(' - ')
-    lines.push(`${date}${prefix}${song || item.title}${playTime}${requester}${votes}`)
+    const hideSong = displayConfig.showTitle !== true && displayConfig.showArtist !== true
+    const songPart = song || (hideSong ? '（未显示曲目信息）' : '')
+    lines.push(`${date}${prefix}${songPart}${playTime}${requester}${votes}`)
   }
   return lines.join('\n')
 }
@@ -171,13 +173,15 @@ export default defineEventHandler(async (event) => {
   })
 
   const displayConfig = normalizeAstrbotWeeklyConfig(settings.weeklyConfig)
+  const siteTitle = settings.siteTitle ?? 'VoiceHub'
   const imageConfig = {
     ...displayConfig,
+    siteTitle,
     siteLogoUrl: settings.siteLogoUrl ?? '/assets/logo.png',
     schoolLogoUrl: settings.schoolLogoPrintUrl ?? ''
   }
   const text = formatAstrbotWeeklyScheduleText(
-    settings.siteTitle ?? 'VoiceHub', weekRange, scheduleItems, displayConfig
+    siteTitle, weekRange, scheduleItems, displayConfig
   )
 
   if (getQuery(event).format === 'text') {

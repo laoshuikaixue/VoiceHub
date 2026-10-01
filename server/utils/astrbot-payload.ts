@@ -20,17 +20,17 @@ export function fitsAstrbotPayload(umos: string[], title: string, content: strin
  * 把目标切分为多个请求：单请求不超过 200 个目标，且请求体不超过
  * ASTRBOT_PAYLOAD_MAX_BYTES。单目标本身就超限时计入 skipped，由调用方上报失败。
  */
-export function chunkAstrbotTargets(umos: string[], title: string, content: string) {
+export function chunkAstrbotTargets(umos: string[], title: string, content: string, group = false) {
   const chunks: string[][] = []
   let skipped = 0
   for (const umo of umos) {
-    if (!fitsAstrbotPayload([umo], title, content)) {
+    if (!fitsAstrbotPayload([umo], title, content, group)) {
       skipped++
       continue
     }
     const chunk = chunks[chunks.length - 1]
     if (!chunk || chunk.length >= ASTRBOT_MAX_TARGETS_PER_REQUEST ||
-      !fitsAstrbotPayload([...chunk, umo], title, content)) {
+      !fitsAstrbotPayload([...chunk, umo], title, content, group)) {
       chunks.push([umo])
     } else {
       chunk.push(umo)

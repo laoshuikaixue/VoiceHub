@@ -23,10 +23,15 @@ export default defineNitroPlugin(async (nitroApp) => {
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason)
 
-    // 检查是否是数据库连接错误
+    // 拒绝值可以是任意原始值（如 Promise.reject('...')）：先规范化为字符串并无条件上报，
+    // 再做数据库连接判断；只在 Error 分支上报会让原始值拒绝静默漏报。
+    const rejectionDetail = reason instanceof Error
+      ? reason.message
+      : typeof reason === 'string' ? reason : String(reason)
+    await reportSystemError('未处理的 Promise 拒绝', rejectionDetail)
+
     if (reason && typeof reason === 'object' && 'message' in reason) {
       const errorMessage = (reason as Error).message
-      await reportSystemError('未处理的 Promise 拒绝', errorMessage)
 
       if (
         errorMessage.includes('ECONNRESET') ||

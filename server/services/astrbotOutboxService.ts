@@ -7,7 +7,7 @@ import { selectAstrbotTargets } from '~~/server/utils/astrbot-platforms'
 import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { isAstrbotGroupTargetAllowed, normalizeAstrbotGroupTargets } from '~~/server/utils/astrbot-group'
-import { ASTRBOT_MAX_TARGETS_PER_REQUEST, fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
+import { chunkAstrbotTargets } from '~~/server/utils/astrbot-payload'
 import { ASTRBOT_OUTBOX_MAX_ATTEMPTS, isAstrbotOutboxExhausted } from '~~/server/utils/astrbot-pull'
 
 /** 一次领取的最大条数与租约时长：插件崩溃后条目可被重新领取。 */
@@ -38,22 +38,17 @@ export async function enqueueAstrbotNotifications(
   const owners = new Map(rows.map((row) => [row.umo, { userId: row.userId, boundAt: row.boundAt?.toISOString() ?? '' }]))
   // 群广播无法按平台过滤，四平台共用插件时禁止越过各平台开关：只投递已绑定的私聊会话。
   if (!umos.length) return 0
-  // 插件按单条请求体上限投递，超限的正文无法投递，不入队以免插件永远失败重试。
-  if (!fitsAstrbotPayload([], title, content, false)) {
-    console.error('AstrBot 通知未入队：正文超过单条投递大小限制')
-    return 0
-  }
+  // 目标同样计入预算：私聊 UMO 最长 512 字符，按固定条数分批会让整批序列化超限。
+  // 正文本身超限时所有目标都会被计入 skipped，由下面的日志统一上报。
+  const { chunks, skipped } = chunkAstrbotTargets(umos, title, content)
+  if (skipped) console.error(`AstrBot 通知入队跳过 ${skipped} 个目标：单条请求体超过大小限制`)
+  if (!chunks.length) return 0
 
   const rowsToInsert: { title: string; message: string; umos: string[]; broadcast: boolean;
-    targetOwners: Record<string, { userId: number; boundAt: string }> }[] = []
-  for (let index = 0; index < umos.length; index += ASTRBOT_MAX_TARGETS_PER_REQUEST) {
-    const batch = umos.slice(index, index + ASTRBOT_MAX_TARGETS_PER_REQUEST)
-    rowsToInsert.push({
-      title, message: content, broadcast: false,
-      umos: batch, targetOwners: Object.fromEntries(batch.map((umo) => [umo, owners.get(umo)!]))
-    })
-  }
-  if (!rowsToInsert.length) return 0
+    targetOwners: Record<string, { userId: number; boundAt: string }> }[] = chunks.map((batch) => ({
+    title, message: content, broadcast: false,
+    umos: batch, targetOwners: Object.fromEntries(batch.map((umo) => [umo, owners.get(umo)!]))
+  }))
   await db.insert(astrbotOutbox).values(rowsToInsert)
   return rowsToInsert.length
 }

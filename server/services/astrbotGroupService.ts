@@ -16,7 +16,7 @@ import {
   selectAstrbotGroupTargets
 } from '~~/server/utils/astrbot-group'
 import type { AstrbotGroupEventKey, AstrbotGroupThrottle } from '~~/server/utils/astrbot-group'
-import { fitsAstrbotPayload } from '~~/server/utils/astrbot-payload'
+import { chunkAstrbotTargets } from '~~/server/utils/astrbot-payload'
 import { ASTRBOT_OUTBOX_MAX_ATTEMPTS, isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { postAstrbotNotification } from '~~/server/services/astrbotNotificationService'
 
@@ -122,21 +122,21 @@ async function queueToGroups(
 
   const fresh = umos.filter((umo) => !pending.has(umo))
   if (!fresh.length) return affected
-  if (!fitsAstrbotPayload(fresh, title, content, true)) {
-    console.error(`AstrBot 群事件未入队：正文超过单条投递大小限制（${eventKey}）`)
-    return affected
-  }
-  await tx.insert(astrbotOutbox).values({
+  // 目标数少但 UMO 很长时整批也会超限：按序列化字节切分成多条队列行，而不是整批丢弃。
+  const { chunks, skipped } = chunkAstrbotTargets(fresh, title, content, true)
+  if (skipped) console.error(`AstrBot 群事件跳过 ${skipped} 个目标：单目标请求体超过大小限制（${eventKey}）`)
+  if (!chunks.length) return affected
+  await tx.insert(astrbotOutbox).values(chunks.map((batch) => ({
     title,
     message: content,
-    umos: fresh,
+    umos: batch,
     broadcast: true,
     eventKey,
     // 群目标不绑定用户，没有归属快照；投递前按白名单复核，故此处显式留空。
     targetOwners: null,
     notifyAfter: computeAstrbotGroupNotifyAfter(now, now, throttle)
-  })
-  return affected + fresh.length
+  })))
+  return affected + fresh.length - skipped
   })
 }
 

@@ -13,7 +13,7 @@ const modules: Record<string, string> = {
   '~~/server/utils/astrbot-platforms': `export const selectAstrbotTargets=(rows,settings)=>rows.filter(x=>x.enabled!==false && settings?.[x.platform]===true).map(x=>x.umo);`,
   '~~/server/utils/astrbot-group': `export const normalizeAstrbotGroupTargets=(raw)=>Array.isArray(raw)?raw:[]; export const isAstrbotGroupTargetAllowed=(targets,platforms,umo)=>Array.isArray(targets)&&targets.some(t=>t.umo===umo && platforms?.[t.platform]===true);`,
   '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached=async()=>globalThis.__outboxSettings;`,
-  '~~/server/utils/astrbot-payload': `export const ASTRBOT_MAX_TARGETS_PER_REQUEST=200; export const fitsAstrbotPayload=()=>true;`,
+  '~~/server/utils/astrbot-payload': `export const ASTRBOT_MAX_TARGETS_PER_REQUEST=200; export const ASTRBOT_PAYLOAD_MAX_BYTES=60*1024; export const fitsAstrbotPayload=(umos,title,content,group=false)=>JSON.stringify({title,content,targets:{umo:umos,group}}).length<=ASTRBOT_PAYLOAD_MAX_BYTES; export const chunkAstrbotTargets=(umos,title,content,group=false)=>{const chunks=[];let skipped=0;for(const umo of umos){if(!fitsAstrbotPayload([umo],title,content,group)){skipped++;continue}const c=chunks[chunks.length-1];if(!c||c.length>=ASTRBOT_MAX_TARGETS_PER_REQUEST||!fitsAstrbotPayload([...c,umo],title,content,group))chunks.push([umo]);else c.push(umo)}return{chunks,skipped}};`,
   '~~/server/utils/astrbot-pull': `export const ASTRBOT_OUTBOX_MAX_ATTEMPTS=3; export const isAstrbotOutboxExhausted=x=>x>=3;`
 }
 Object.assign(globalThis, { __outboxDb: { select() {}, transaction() {} } })

@@ -1277,10 +1277,15 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── bot/            # AstrBot 插件令牌回调
-│   │   │   ├── voicehub/            # 私聊绑定与目标校验回调
+│   │   │   ├── voicehub/            # 私聊绑定、歌单与投递回调
 │   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
 │   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
-│   │   │   │   └── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
+│   │   │   │   ├── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
+│   │   │   │   ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）
+│   │   │   │   ├── ack.post.ts      # 回执投递结果（claimToken 原样带回）
+│   │   │   │   ├── song-search.post.ts # 机器人侧点歌搜索
+│   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
+│   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
 │   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
