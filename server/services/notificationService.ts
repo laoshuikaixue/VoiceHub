@@ -378,52 +378,67 @@ function formatDate(date: Date): string {
 }
 
 /**
- * 创建歌曲已播放的通知
+ * 创建歌曲已播放的通知（同一用户多首歌曲合并为一条）
  */
-export async function createSongPlayedNotification(songId: number) {
+export async function createSongPlayedNotifications(songIds: number[]) {
   try {
+    if (songIds.length === 0) {
+      return []
+    }
+
     // 获取歌曲信息
-    const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
-    const song = songResult[0]
+    const songList = await db.select().from(songs).where(inArray(songs.id, songIds))
 
-    if (!song) {
-      return null
+    if (songList.length === 0) {
+      return []
     }
 
-    // 获取用户通知设置
-    const settingsResult = await db
-      .select()
-      .from(notificationSettings)
-      .where(eq(notificationSettings.userId, song.requesterId))
-      .limit(1)
-    const settings = settingsResult[0]
-
-    // 如果用户关闭了此类通知，则不发送
-    if (settings && !settings.songPlayedEnabled) {
-      return null
-    }
-
-    // 创建通知
-    const message = `您投稿的歌曲《${song.title}》已播放。`
-
-    // 获取所有关联用户（投稿人 + 联合投稿人）
-    const userIdsToNotify = [song.requesterId]
-
-    // 获取联合投稿人
-    const collaborators = await db
+    // 获取所有歌曲已接受的联合投稿人
+    const collaboratorRows = await db
       .select()
       .from(songCollaborators)
-      .where(and(eq(songCollaborators.songId, songId), eq(songCollaborators.status, 'ACCEPTED')))
+      .where(
+        and(
+          inArray(songCollaborators.songId, songList.map((s) => s.id)),
+          eq(songCollaborators.status, 'ACCEPTED')
+        )
+      )
 
-    collaborators.forEach((c) => {
-      if (!userIdsToNotify.includes(c.userId)) {
-        userIdsToNotify.push(c.userId)
+    // 按用户分组：投稿人取其投稿歌曲，联合投稿人取其参与歌曲
+    interface SongPlayedGroup {
+      requestedTitles: string[]
+      collaboratedTitles: string[]
+      songIds: Set<number>
+    }
+    const groups = new Map<number, SongPlayedGroup>()
+    const ensureGroup = (userId: number): SongPlayedGroup => {
+      let group = groups.get(userId)
+      if (!group) {
+        group = { requestedTitles: [], collaboratedTitles: [], songIds: new Set() }
+        groups.set(userId, group)
       }
-    })
+      return group
+    }
+
+    for (const song of songList) {
+      const group = ensureGroup(song.requesterId)
+      group.requestedTitles.push(song.title)
+      group.songIds.add(song.id)
+    }
+
+    for (const collaborator of collaboratorRows) {
+      const song = songList.find((s) => s.id === collaborator.songId)
+      if (!song) continue
+      // 投稿人不再重复计入联合投稿
+      if (song.requesterId === collaborator.userId) continue
+      const group = ensureGroup(collaborator.userId)
+      group.collaboratedTitles.push(song.title)
+      group.songIds.add(song.id)
+    }
 
     const notificationsCreated = []
 
-    for (const targetUserId of userIdsToNotify) {
+    for (const [targetUserId, group] of groups) {
       try {
         // 获取用户通知设置
         const settingsResult = await db
@@ -438,10 +453,21 @@ export async function createSongPlayedNotification(songId: number) {
           continue
         }
 
-        const userMessage =
-          targetUserId === song.requesterId
-            ? message
-            : `您参与联合投稿的歌曲《${song.title}》已播放。`
+        // 多首歌曲名以《A、B、C》合并，投稿与联合投稿分别成句
+        const messageParts = []
+        if (group.requestedTitles.length > 0) {
+          messageParts.push(`您投稿的歌曲《${group.requestedTitles.join('、')}》已播放。`)
+        }
+        if (group.collaboratedTitles.length > 0) {
+          messageParts.push(
+            `您参与联合投稿的歌曲《${group.collaboratedTitles.join('、')}》已播放。`
+          )
+        }
+        const userMessage = messageParts.join('')
+        const songTitleText = [...group.requestedTitles, ...group.collaboratedTitles].join('、')
+
+        // 合并多首歌曲时不再指向单首歌曲
+        const singleSongId = group.songIds.size === 1 ? [...group.songIds][0]! : null
 
         const notificationResult = await db
           .insert(notifications)
@@ -449,7 +475,7 @@ export async function createSongPlayedNotification(songId: number) {
             userId: targetUserId,
             type: 'SONG_PLAYED',
             message: userMessage,
-            songId: songId
+            songId: singleSongId
           })
           .returning()
         notificationsCreated.push(notificationResult[0])
@@ -470,7 +496,7 @@ export async function createSongPlayedNotification(songId: number) {
             undefined,
             'notification.songPlayed',
             {
-              songTitle: song.title
+              songTitle: songTitleText
             }
           )
         } catch (error) {
@@ -481,10 +507,18 @@ export async function createSongPlayedNotification(songId: number) {
       }
     }
 
-    return notificationsCreated.length > 0 ? notificationsCreated[0] : null
+    return notificationsCreated
   } catch (err) {
-    return null
+    return []
   }
+}
+
+/**
+ * 创建单首歌曲已播放的通知
+ */
+export async function createSongPlayedNotification(songId: number) {
+  const created = await createSongPlayedNotifications([songId])
+  return created[0] || null
 }
 
 /**

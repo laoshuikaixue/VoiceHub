@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { createSongPlayedNotification } from '~~/server/services/notificationService'
+import { createSongPlayedNotifications } from '~~/server/services/notificationService'
 import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
@@ -115,16 +115,12 @@ export default defineEventHandler(async (event) => {
     return { updatedSongsResult, updatedSongIds }
   })
 
-  // 异步发送通知
+  // 异步发送通知（同一用户多首歌曲合并为一条）
   if (!isUnmark && updatedSongIds.length > 0) {
     event.waitUntil(
-      Promise.allSettled(
-        updatedSongIds.map((songId) =>
-          createSongPlayedNotification(songId).catch((err) => {
-            console.error(`发送歌曲(${songId})已播放通知失败:`, err)
-          })
-        )
-      )
+      createSongPlayedNotifications(updatedSongIds).catch((err) => {
+        console.error('发送歌曲已播放通知失败:', err)
+      })
     )
   }
 
