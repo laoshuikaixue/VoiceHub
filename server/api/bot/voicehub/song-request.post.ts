@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { astrbotBindings, systemSettings, users } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, SUBMISSION_NOTE_MAX_LENGTH } from '~~/server/config/constants'
 import {
   ASTRBOT_TOKEN_HEADER,
   equalAstrbotToken,
@@ -92,12 +92,32 @@ export default defineEventHandler(async (event) => {
   }
 
   // 可选参数
-  const note = typeof body?.note === 'string' && body.note.trim() ? body.note.trim() : undefined
+  // 留言（submissionNote）：站点未开启留言功能时，songRequestService 会把它静默
+  // 丢弃（`enableSubmissionRemarks && rawSubmissionNote`）并照常返回成功，用户会收到
+  // 「点歌成功」而留言已丢失。这里必须前置拒绝，不能把静默丢弃当成功。
+  const siteSettings = await getSystemSettingsCached()
+  const rawNote = typeof body?.note === 'string' ? body.note.trim() : ''
+  if (rawNote) {
+    if (siteSettings?.enableSubmissionRemarks !== true) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.ASTRBOT_SONG_NOTE_DISABLED,
+        '本站未开启留言功能，无法提交留言。'
+      )
+    }
+    if (rawNote.length > SUBMISSION_NOTE_MAX_LENGTH) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        `留言不能超过 ${SUBMISSION_NOTE_MAX_LENGTH} 个字符。`
+      )
+    }
+  }
+  const note = rawNote || undefined
   const rawCard = typeof body?.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : undefined
   const cardCode = rawCard || undefined
 
   // 播出时段：仅在站点启用时段选择时传入，避免在未开启时段功能的站点传入无效 ID
-  const siteSettings = await getSystemSettingsCached()
   const rawPlayTime = body?.preferredPlayTimeId !== undefined && body.preferredPlayTimeId !== null
     ? Number(body.preferredPlayTimeId)
     : undefined
