@@ -1,26 +1,14 @@
 import { db } from '~/drizzle/db'
 import { schedules, songReplayRequests, songs, users, votes } from '~/drizzle/schema'
 import { and, count, desc, eq, inArray } from 'drizzle-orm'
+import { canReadSongs } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 使用认证中间件提供的用户信息
-    const currentUser = event.context.user
-    if (!currentUser) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权访问'
-      })
-    }
-
-    // 检查是否为管理员、歌曲管理员或超级管理员
-    const allowedRoles = ['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
-    if (!allowedRoles.includes(currentUser.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
-    }
+    // 权限：song.read（SONG_ADMIN 及以上）——该端点返回歌曲 / 投票 / 重播数据，
+    // 取 song.read 与旧行为逐条等价（旧码允许 ADMIN / SONG_ADMIN / SUPER_ADMIN）。
+    // 未登录 401 / 账号异常 403 / 缺权限 403 由 guard 统一给出。
+    await canReadSongs(event)
 
     // 获取用户 ID
     const userId = parseInt(getRouterParam(event, 'id') as string)

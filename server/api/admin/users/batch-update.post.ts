@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
+import { canManageUsers, canMutateTarget } from '~~/server/utils/rbac'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({
@@ -21,23 +22,8 @@ const batchUpdateSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    // 使用认证中间件提供的用户信息
-    const currentUser = event.context.user
-
-    if (!currentUser) {
-      throw createError({
-        statusCode: 401,
-        message: 'Authentication required'
-      })
-    }
-
-    // 检查权限 - 只有管理员和超级管理员可以执行批量更新
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      throw createError({
-        statusCode: 403,
-        message: 'Insufficient permissions'
-      })
-    }
+    // 权限：user.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const currentUser = await canManageUsers(event)
 
     // 验证请求体
     const body = await readBody(event)
@@ -106,8 +92,8 @@ export default defineEventHandler(async (event) => {
           continue
         }
 
-        // 越级修改保护
-        if (targetUser.role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+        // 越级修改保护（客体策略 D8：目标为 SUPER_ADMIN 时仅 SUPER_ADMIN 可操作）
+        if (!canMutateTarget(currentUser, targetUser)) {
           errors.push({
             userId: update.userId,
             error: '权限不足：普通管理员无法修改超级管理员信息'

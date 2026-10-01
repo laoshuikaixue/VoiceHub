@@ -3,6 +3,7 @@ import { songs, users } from '~/drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { canWriteSongs } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,16 +12,9 @@ export default defineEventHandler(async (event) => {
       throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', 'Method Not Allowed')
     }
 
-    // 获取已验证的用户信息（由中间件提供）
-    const user = event.context.user
-    if (!user) {
-      throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
-    }
-
-    // 检查权限
-    if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
-    }
+    // 权限：song.write（SONG_ADMIN 及以上）—— 语义漂移回修点：本端点必须放行 SONG_ADMIN
+    // （上一轮把这里收紧成 ADMIN，会切断歌曲管理员的投稿能力；见 TASKS.md S3-B3-1 §3.9）
+    const user = await canWriteSongs(event)
 
     // 获取请求体
     const body = await readBody(event)

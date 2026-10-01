@@ -1,9 +1,11 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { createApiError } from '~~/server/utils/apiError'
+import { PERSONAL_INTEGRATION_PERMISSION_FORMS } from '~~/server/utils/rbac'
 
-const PERSONAL_PERMISSION = 'songs:request'
+/** 个人集成令牌的默认权限（唯一具名来源：server/utils/rbac/policies.ts；此前此处硬编码冒号串） */
+const personalPermissionForms = [...PERSONAL_INTEGRATION_PERMISSION_FORMS]
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -29,12 +31,12 @@ export default defineEventHandler(async (event) => {
       .where(
         and(
           eq(apiKeys.createdByUserId, user.id),
-          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
+          inArray(apiKeyPermissions.permission, personalPermissionForms),
           sql`NOT EXISTS (
             SELECT 1
             FROM ${apiKeyPermissions}
             WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
-              AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
+              AND ${notInArray(apiKeyPermissions.permission, personalPermissionForms)}
           )`
         )
       )

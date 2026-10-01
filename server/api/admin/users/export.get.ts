@@ -4,19 +4,14 @@ import { users } from '~/drizzle/schema'
 import { asc } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
 import { buildUserFilterConditions } from '~~/server/utils/user-filter'
+import { canReadUsers } from '~~/server/utils/rbac'
 
 // 用户导出：按当前筛选条件返回全量用户（不分页），时间字段统一格式化为北京时间字符串，
 // role/status 保留原始枚举值交由前端按界面语言本地化，实际生成 .xlsx 由前端完成。
 export default defineEventHandler(async (event) => {
   try {
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以导出用户列表'
-      })
-    }
+    // 权限：user.read（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    await canReadUsers(event)
 
     const query = getQuery(event)
     const whereClause = buildUserFilterConditions(query)
@@ -83,6 +78,8 @@ export default defineEventHandler(async (event) => {
       users: exportedUsers
     }
   } catch (error: any) {
+    // 守卫异常（401/403）必须带 code 原样抛出：旧实现重建错误会丢掉 data.code（客户端本地化依赖它）
+    if (error?.statusCode) throw error
     console.error('导出用户列表失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

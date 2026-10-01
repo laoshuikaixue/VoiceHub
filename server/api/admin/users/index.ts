@@ -1,16 +1,11 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { asc } from 'drizzle-orm'
+import { canReadUsers } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  // 权限：user.read（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canReadUsers(event)
 
   try {
     // 获取所有用户
