@@ -17,13 +17,6 @@
           <RotateCw :size="14" :class="reloading ? 'animate-spin' : ''" />
           {{ reloading ? locale.reloading : locale.reload }}
         </button>
-        <button
-          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
-          :disabled="saving"
-          @click="saveConfig"
-        >
-          <Save :size="14" /> {{ saving ? locale.saving : locale.save }}
-        </button>
       </div>
     </div>
 
@@ -137,6 +130,15 @@
                 class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
+          </div>
+          <div class="flex justify-end border-t border-border-secondary pt-5">
+            <button
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="saving"
+              @click="saveConfig"
+            >
+              <Save :size="14" /> {{ saving ? locale.saving : locale.save }}
+            </button>
           </div>
         </section>
 

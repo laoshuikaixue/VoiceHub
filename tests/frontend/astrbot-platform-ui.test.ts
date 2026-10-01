@@ -45,6 +45,14 @@ test('administrator loads and saves four platform toggles alongside existing set
   assert.match(admin, /smtpEnabled/)
 })
 
+test('SMTP 与 AstrBot 使用独立的局部保存按钮', () => {
+  assert.match(admin, /@click="saveConfig"/)
+  assert.match(admin, /@click="saveAstrbotConfig"/)
+  assert.match(admin, /:disabled="saving"[\s\S]*@click="saveConfig"/)
+  assert.match(admin, /:disabled="astrbotSaving"[\s\S]*@click="saveAstrbotConfig"/)
+  assert.doesNotMatch(admin.slice(0, admin.indexOf('<div class="grid grid-cols-1 xl:grid-cols-12')), /@click="saveConfig"/)
+})
+
 test('后台共享平台工具不引入服务端加密模块', () => {
   assert.doesNotMatch(platformUtils, /astrbot-notification|node:crypto/)
 })
