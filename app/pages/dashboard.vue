@@ -111,7 +111,7 @@
               <LazyAdminNotificationSender />
             </div>
 
-            <!-- SMTP邮件配置 -->
+            <!-- 邮件与机器人推送配置 -->
             <div
               v-if="activeTab === 'smtp-config' && permissions.canAccessPage('smtp-config')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500"

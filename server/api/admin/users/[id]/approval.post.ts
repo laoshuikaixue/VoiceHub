@@ -9,33 +9,33 @@ import { validateGradeClassPair } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { SmtpService } from '~~/server/services/smtpService'
 
-// 审核通过邮件通知（异步，失败不影响主流程）
-async function notifyApproved(name, email) {
-  try {
-    const smtpService = SmtpService.getInstance()
-    if (await smtpService.ensureInitialized()) {
+// 审核结果仅保留原有申请人邮件，机器人待审通知只发给管理员。
+async function notifyApproved(name: string | null, email: string | null) {
+  const message = `${name}，您的注册申请已通过审核，现在可以使用账号登录了。`
+  if (email) {
+    try {
+      const smtpService = SmtpService.getInstance()
       await smtpService.renderAndSend(email, 'register-approved', {
-        title: '注册审核已通过',
-        message: `${name}，您的注册申请已通过审核，现在可以使用账号登录了。`
+        title: '注册审核已通过', message
       })
+    } catch (error) {
+      console.error('审核通过邮件发送失败:', error)
     }
-  } catch (error) {
-    console.error('审核通过邮件发送失败:', error)
   }
 }
 
-// 审核拒绝邮件通知（用户已删除，用快照 email 发信；异步，失败不影响主流程）
-async function notifyRejected(name, email, reason) {
-  try {
-    const smtpService = SmtpService.getInstance()
-    if (await smtpService.ensureInitialized()) {
+// 审核拒绝邮件（失败不影响主流程）
+async function notifyRejected(name: string | null, email: string | null, reason: string) {
+  const message = `${name}，您的注册申请未通过审核${reason ? `，原因：${reason}` : ''}。如有疑问请联系管理员。`
+  if (email) {
+    try {
+      const smtpService = SmtpService.getInstance()
       await smtpService.renderAndSend(email, 'register-rejected', {
-        title: '注册申请未通过审核',
-        message: `${name}，您的注册申请未通过审核${reason ? `，原因：${reason}` : ''}。如有疑问请联系管理员。`
+        title: '注册申请未通过审核', message
       })
+    } catch (error) {
+      console.error('审核拒绝邮件发送失败:', error)
     }
-  } catch (error) {
-    console.error('审核拒绝邮件发送失败:', error)
   }
 }
 
@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(404, SERVER_ERROR_CODES.COMMON_TARGET_NOT_FOUND, '用户不存在')
   }
 
-  const targetUser = targetResult[0]
+  const targetUser = targetResult[0]!
   if (targetUser.status !== 'pending') {
     throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '仅待审核用户可执行审核操作')
   }
@@ -150,10 +150,7 @@ export default defineEventHandler(async (event) => {
       })
     })
 
-    // 审核通过邮件通知（异步，失败不影响主流程）
-    if (targetUser.email) {
-      notifyApproved(targetUser.name, targetUser.email)
-    }
+    await notifyApproved(typeof updateData.name === 'string' ? updateData.name : targetUser.name, targetUser.email)
 
     return {
       success: true,
@@ -185,10 +182,7 @@ export default defineEventHandler(async (event) => {
     })
   })
 
-  // 审核拒绝邮件通知（用户已删除，用快照 email 发信）
-  if (targetUser.email) {
-    notifyRejected(targetUser.name, targetUser.email, rejectReason)
-  }
+  await notifyRejected(targetUser.name, targetUser.email, rejectReason)
 
   return {
     success: true,

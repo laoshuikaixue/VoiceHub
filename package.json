@@ -12,9 +12,10 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
-    "test": "node --experimental-strip-types --test \"tests/server/*.test.ts\"",
+    "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "db:migrate": "pnpm exec drizzle-kit migrate",
     "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
+    "db:generate:name": "pnpm exec drizzle-kit generate --name",
     "db:push": "pnpm exec drizzle-kit push --force",
     "db:studio": "pnpm exec drizzle-kit studio",
     "db:drop": "pnpm exec drizzle-kit drop",
@@ -41,7 +42,7 @@
     "@applemusic-like-lyrics/vue": "^0.6.0",
     "@breezystack/lamejs": "^1.2.7",
     "@jitl/quickjs-singlefile-browser-release-sync": "0.32.0",
-    "@lucide/vue": "^1.48.0",
+    "@lucide/vue": "^1.50.0",
     "@neteasecloudmusicapienhanced/api": "^4.40.1",
     "@netlify/functions": "^2.8.2",
     "@nuxt/kit": "4.5.0",
@@ -61,7 +62,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/lodash-es": "^4.17.12",
-    "@types/multer": "^2.2.0",
+    "@types/multer": "^2.3.0",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@ungap/structured-clone": "^1.4.0",
@@ -102,7 +103,7 @@
     "qs": "^6.16.0",
     "quickjs-emscripten-core": "0.32.0",
     "redis": "^5.12.1",
-    "sass": "^1.105.0",
+    "sass": "^1.105.1",
     "svg-captcha": "^1.4.0",
     "tsx": "^4.23.15",
     "vite-plugin-wasm": "^3.6.0",
@@ -127,6 +128,7 @@
     "eslint": "^9.39.5",
     "prettier": "^3.9.9",
     "typescript": "^5.9.3",
-    "unocss": "^66.10.5"
+    "unocss": "^66.10.5",
+    "vue-tsc": "3.3.11"
   }
 }

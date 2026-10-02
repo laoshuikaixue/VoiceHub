@@ -38,6 +38,18 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503
 } as const
 
+// 机器人端点仅以共享令牌鉴权，禁止浏览器 Cookie 参与。
+export const BOT_ROUTES = new Set([
+  'POST /api/bot/voicehub/bind',
+  'POST /api/bot/voicehub/unbind',
+  'POST /api/bot/voicehub/verify-targets',
+  'POST /api/bot/voicehub/pull',
+  'POST /api/bot/voicehub/ack',
+  'POST /api/bot/voicehub/song-search',
+  'POST /api/bot/voicehub/song-request',
+  'GET /api/bot/voicehub/weekly-schedule'
+])
+
 // API 错误码常量
 export const API_ERROR_CODES = {
   MISSING_API_KEY: 'MISSING_API_KEY',
@@ -315,6 +327,21 @@ export const SERVER_ERROR_CODES = {
   SMTP_NOT_CONFIGURED: 'SMTP_NOT_CONFIGURED',
   // 通知
   NOTIFICATION_AUTH_REQUIRED: 'NOTIFICATION_AUTH_REQUIRED',
+  ASTRBOT_NOT_CONFIGURED: 'ASTRBOT_NOT_CONFIGURED',
+  ASTRBOT_BIND_CODE_INVALID: 'ASTRBOT_BIND_CODE_INVALID',
+  ASTRBOT_BIND_CODE_EXPIRED: 'ASTRBOT_BIND_CODE_EXPIRED',
+  ASTRBOT_BIND_CODE_USED: 'ASTRBOT_BIND_CODE_USED',
+  ASTRBOT_UMO_INVALID: 'ASTRBOT_UMO_INVALID',
+  ASTRBOT_UMO_BOUND: 'ASTRBOT_UMO_BOUND',
+  ASTRBOT_BIND_FAILED: 'ASTRBOT_BIND_FAILED',
+  ASTRBOT_UNBIND_FAILED: 'ASTRBOT_UNBIND_FAILED',
+  ASTRBOT_TEST_FAILED: 'ASTRBOT_TEST_FAILED',
+  ASTRBOT_UMO_UNBOUND: 'ASTRBOT_UMO_UNBOUND',
+  ASTRBOT_SONG_KEYWORD_INVALID: 'ASTRBOT_SONG_KEYWORD_INVALID',
+  ASTRBOT_SONG_PLATFORM_INVALID: 'ASTRBOT_SONG_PLATFORM_INVALID',
+  ASTRBOT_SONG_SESSION_INVALID: 'ASTRBOT_SONG_SESSION_INVALID',
+  ASTRBOT_SONG_INDEX_INVALID: 'ASTRBOT_SONG_INDEX_INVALID',
+  ASTRBOT_SONG_NOTE_DISABLED: 'ASTRBOT_SONG_NOTE_DISABLED',
   NOTIFICATION_ADMIN_REQUIRED: 'NOTIFICATION_ADMIN_REQUIRED',
   NOTIFICATION_IMPORTANT_INVALID: 'NOTIFICATION_IMPORTANT_INVALID',
   NOTIFICATION_TITLE_CONTENT_REQUIRED: 'NOTIFICATION_TITLE_CONTENT_REQUIRED',
@@ -501,6 +528,10 @@ export const MUSIC_PLUGIN_LIMITS = {
 // 歌曲时长合法区间（秒），投稿、往期导入、后台补齐共用
 export const SONG_DURATION_MIN_SECONDS = 0
 export const SONG_DURATION_MAX_SECONDS = 7200
+
+// 投稿留言长度上限：站点表单（RequestForm.vue 的 maxlength）、投稿校验（zod）
+// 与机器人端点前置校验共用同一个数值
+export const SUBMISSION_NOTE_MAX_LENGTH = 300
 
 // 主题白名单（主题管理校验用；新增主题需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/composables/useTheme.ts）
 export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const

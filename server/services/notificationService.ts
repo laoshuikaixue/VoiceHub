@@ -12,6 +12,7 @@ import {
 import { and, eq, gte, inArray } from 'drizzle-orm'
 import { sendBatchMeowNotifications, sendMeowNotificationToUser } from './meowNotificationService'
 import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtpService'
+import { sendAstrbotNotificationToUser, sendBatchAstrbotNotifications } from './astrbotNotificationService'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import {
@@ -21,6 +22,15 @@ import {
   type NotificationSenderInput
 } from '~~/server/utils/important-notification-policy'
 import { randomUUID } from 'node:crypto'
+
+/** AstrBot 私聊投递失败不阻断业务流程：统一吞异常并记日志。 */
+async function sendAstrbotToUserSafely(userId: number, title: string, content: string) {
+  try {
+    await sendAstrbotNotificationToUser(userId, title, content)
+  } catch (error) {
+    console.error(`发送 AstrBot 通知失败 (User: ${userId}):`, error)
+  }
+}
 
 /**
  * 创建联合投稿邀请通知
@@ -75,6 +85,8 @@ export async function createCollaborationInvitationNotification(
       console.error('发送邮件通知失败:', error)
     }
 
+    await sendAstrbotToUserSafely(inviteeId, '收到联合投稿邀请', message)
+
     return notificationResult[0]
   } catch (error) {
     console.error('创建联合投稿邀请通知失败:', error)
@@ -111,6 +123,8 @@ export async function createCollaborationResponseNotification(
         // songId // 这里可能不需要songId，或者需要传进来
       })
       .returning()
+
+    await sendAstrbotToUserSafely(inviterId, '联合投稿邀请回复', message)
 
     return notificationResult[0]
   } catch (error) {
@@ -307,6 +321,8 @@ async function sendSongSelectedNotification(
       console.error('发送邮件通知失败:', error)
     }
 
+    await sendAstrbotToUserSafely(userId, text.meowTitle, message)
+
     return notificationResult[0]
   } catch (err) {
     return null
@@ -502,6 +518,7 @@ export async function createSongPlayedNotifications(songIds: number[]) {
         } catch (error) {
           console.error(`发送邮件通知失败 (User: ${targetUserId}):`, error)
         }
+        await sendAstrbotToUserSafely(targetUserId, '歌曲已播放', userMessage)
       } catch (err) {
         console.error(`处理播放通知失败 (User: ${targetUserId}):`, err)
       }
@@ -639,6 +656,8 @@ export async function createSongVotedNotification(songId: number, voterId: numbe
       console.error('发送邮件通知失败:', error)
     }
 
+    await sendAstrbotToUserSafely(song.requesterId, '收到新投票', message)
+
     return notification
   } catch (err) {
     return null
@@ -671,20 +690,11 @@ export async function createSongRejectedNotification(
     const message = `您投稿的歌曲《${songInfo.title} - ${songInfo.artist}》已被管理员驳回。驳回原因：${reason}`
 
     // 创建站内通知
-    let notification
-    try {
-      const notificationResult = await db
-        .insert(notifications)
-        .values({
-          userId,
-          type: 'SONG_REJECTED',
-          message
-        })
-        .returning()
-      notification = notificationResult[0]
-    } catch (error) {
-      throw error
-    }
+    const notificationResult = await db
+      .insert(notifications)
+      .values({ userId, type: 'SONG_REJECTED', message })
+      .returning()
+    const notification = notificationResult[0]
 
     // 同步发送 MeoW 通知
     try {
@@ -709,6 +719,8 @@ export async function createSongRejectedNotification(
     } catch (error) {
       console.error('发送邮件通知失败:', error)
     }
+
+    await sendAstrbotToUserSafely(userId, '歌曲被驳回', message)
 
     return notification
   } catch (err) {
@@ -800,6 +812,8 @@ export async function createSystemNotification(
       console.error('发送邮件通知失败:', error)
     }
 
+    await sendAstrbotToUserSafely(userId, title, content)
+
     return notification
   } catch (err) {
     return null
@@ -888,11 +902,21 @@ export async function createBatchSystemNotifications(
       console.error('批量发送邮件通知失败:', error)
     }
 
+    let astrbotResults = { success: 0, failed: 0 }
+    try {
+      astrbotResults = await sendBatchAstrbotNotifications(
+        notificationsToCreate.map((row) => row.userId), title, content
+      )
+    } catch (error) {
+      console.error('批量发送 AstrBot 通知失败:', error)
+    }
+
     return {
       count: notificationCount.count,
       total: userIds.length,
       meowNotifications: meowResults,
-      emailNotifications: emailResults
+      emailNotifications: emailResults,
+      astrbotNotifications: astrbotResults
     }
   } catch (err) {
     return null
@@ -924,20 +948,11 @@ export async function createReplayRequestRejectedNotification(
     const message = `您的重播申请《${songInfo.title}》已被管理员拒绝。`
 
     // 创建站内通知
-    let notification
-    try {
-      const notificationResult = await db
-        .insert(notifications)
-        .values({
-          userId,
-          type: 'REPLAY_REJECTED',
-          message
-        })
-        .returning()
-      notification = notificationResult[0]
-    } catch (error) {
-      throw error
-    }
+    const notificationResult = await db
+      .insert(notifications)
+      .values({ userId, type: 'REPLAY_REJECTED', message })
+      .returning()
+    const notification = notificationResult[0]
 
     // 同步发送 MeoW 通知
     try {
@@ -952,6 +967,8 @@ export async function createReplayRequestRejectedNotification(
     } catch (error) {
       console.error('发送邮件通知失败:', error)
     }
+
+    await sendAstrbotToUserSafely(userId, '重播申请已拒绝', message)
 
     return notification
   } catch (err) {

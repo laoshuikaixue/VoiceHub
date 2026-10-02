@@ -22,6 +22,7 @@ import {
   songs,
   systemSettings,
   users,
+  astrbotBindings,
   userIdentities,
   userStatusLogs,
   gradeClass,
@@ -69,10 +70,12 @@ export default defineEventHandler(async (event) => {
         query: async () => {
           const usersData = await db.select().from(users)
           const settingsData = await db.select().from(notificationSettings)
+          const bindingData = await db.select().from(astrbotBindings)
 
           // 手动关联通知设置
           return usersData.map((user) => ({
             ...user,
+            astrbotBindings: bindingData.filter((binding) => binding.userId === user.id),
             notificationSettings: settingsData.filter((setting) => setting.userId === user.id)
           }))
         },

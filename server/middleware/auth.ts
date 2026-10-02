@@ -14,7 +14,7 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
-import { SERVER_ERROR_CODES } from '../config/constants'
+import { BOT_ROUTES, SERVER_ERROR_CODES } from '../config/constants'
 import {
   ensureAuthSession,
   isAuthSessionStorageError,
@@ -41,6 +41,11 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   const pathname = url.pathname
   const method = event.method.toUpperCase()
+
+  // 机器人回调只接受专用共享令牌，由接口自身校验；忽略浏览器残留 Cookie。
+  if (BOT_ROUTES.has(`${method} ${pathname}`)) {
+    return
+  }
 
   // 跳过非API路由
   if (!pathname.startsWith('/api/')) {

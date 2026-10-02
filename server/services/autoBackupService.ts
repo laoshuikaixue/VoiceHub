@@ -30,6 +30,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
 import { desc, eq, lt, sql } from 'drizzle-orm'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 
 /** 外部服务调用超时（毫秒） */
 const UPLOAD_TIMEOUT = 120_000
@@ -434,6 +435,14 @@ export async function executeUploads(prepared: {
   const results: Array<{ method: string; success: boolean; error?: string }> = await Promise.all(tasks)
 
   const overallSuccess = results.some(r => r.success)
+
+  // 群聊推送：备份失败需要管理员尽快知道，否则数据在无声中丢保护。
+  // 只报失败的方法，成功的方法不占篇幅；全部成功时不发消息。
+  const failures = results.filter(r => !r.success)
+  if (failures.length) {
+    const detail = failures.map(r => `${r.method}：${r.error || '未知错误'}`).join('；')
+    await enqueueAstrbotGroupEvent('backupFailed', '自动备份失败', `${filename} 备份失败 — ${detail}`)
+  }
 
   // 更新整体成功状态
   await db.update(backupHistory)

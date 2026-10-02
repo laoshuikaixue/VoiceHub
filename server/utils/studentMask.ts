@@ -88,6 +88,16 @@ export function maskPublicScheduleData(data: PublicScheduleItem[]) {
   })
 }
 
+/**
+ * 批量脱敏「扁平排期项」：机器人本周歌单把投稿人直接放在 `requester` 上，
+ * 而不是公共排期的 `{ song: {...} }` 嵌套结构。
+ *
+ * @param items 含 `requester` / `requesterGrade` / `requesterClass` 的排期项
+ */
+export function maskScheduleItemsInfo(items: MaskableSong[]) {
+  items.forEach(maskSongInfo)
+}
+
 /** 移除匿名响应中的内部用户和点歌券标识，避免通过 ID 关联被脱敏的数据。 */
 export function stripAnonymousSongIdentifiers(song: MaskableSong) {
   delete song.requesterId

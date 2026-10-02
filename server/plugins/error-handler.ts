@@ -1,5 +1,22 @@
 import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
+import { sanitizeAstrbotErrorDetail } from '~~/server/utils/astrbot-error-telemetry'
+
+/**
+ * 上报系统异常到已配置的群聊。
+ *
+ * 异常风暴由群事件的合并窗口兜住：同一窗口内的多条异常会被合并成一条消息，
+ * 因此这里可以直接调用而无需自己限流。上报失败只记录，绝不向外抛出，
+ * 否则错误处理器本身会变成新的异常源。
+ */
+async function reportSystemError(source: string, detail: string) {
+  try {
+    await enqueueAstrbotGroupEvent('systemError', 'VoiceHub 系统异常', `${source}：${detail}`)
+  } catch (error) {
+    console.error('上报系统异常到群聊失败:', error)
+  }
+}
 
 export default defineNitroPlugin(async (nitroApp) => {
 
@@ -7,7 +24,13 @@ export default defineNitroPlugin(async (nitroApp) => {
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason)
 
-    // 检查是否是数据库连接错误
+    // 拒绝值可以是任意原始值（如 Promise.reject('...')）：先规范化为字符串并无条件上报，
+    // 再做数据库连接判断；只在 Error 分支上报会让原始值拒绝静默漏报。
+    const rejectionDetail = reason instanceof Error
+      ? reason.message
+      : typeof reason === 'string' ? reason : String(reason)
+    await reportSystemError('未处理的 Promise 拒绝', sanitizeAstrbotErrorDetail(rejectionDetail))
+
     if (reason && typeof reason === 'object' && 'message' in reason) {
       const errorMessage = (reason as Error).message
 
@@ -48,8 +71,10 @@ export default defineNitroPlugin(async (nitroApp) => {
   })
 
   // 全局未捕获异常处理器
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', async (error) => {
     console.error('Uncaught Exception:', error)
+    // 异常消息可能夹带连接串/令牌，入队前统一脱敏并限长。
+    await reportSystemError('未捕获异常', sanitizeAstrbotErrorDetail(error))
 
     // 检查是否是数据库相关错误
     if (

@@ -15,6 +15,7 @@ import { createError } from 'h3'
 import { reconcileSongDurationOnSubmit } from '~~/server/services/durationValidationService'
 import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
   isCardCodeLimitBypassActive,
   isLimitReached
@@ -23,7 +24,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
-import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECONDS, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECONDS, SUBMISSION_NOTE_MAX_LENGTH, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
 import { z } from 'zod'
@@ -52,7 +53,9 @@ const songRequestBodySchema = z.object({
   bilibiliPage: z.union([z.string(), z.number()]).optional().nullable(),
   playUrl: z.string().trim().max(2000, '播放链接不能超过2000个字符').optional().nullable(),
   durationSeconds: z.number().int().min(SONG_DURATION_MIN_SECONDS, '时长不能为负数').max(SONG_DURATION_MAX_SECONDS, '时长不能超过2小时').optional().nullable(),
-  submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
+  // 留言长度上限：与 RequestForm.vue 的 maxlength 同源，导出供机器人端点前置校验，
+  // 保持「站点表单 / 机器人 / zod」三处同一个数值
+  submissionNote: z.string().trim().max(SUBMISSION_NOTE_MAX_LENGTH, `备注留言不能超过${SUBMISSION_NOTE_MAX_LENGTH}个字符`).optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
@@ -608,6 +611,21 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       } catch (error) {
         console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
       }
+    }
+
+    // 群聊推送：谁点了什么歌。后台事件开关关闭或无群目标时该调用直接返回 0；
+    // 通知失败不得影响投稿结果。
+    try {
+      const [requester] = await db.select({ name: users.name, username: users.username })
+        .from(users).where(eq(users.id, user.id)).limit(1)
+      const displayName = requester?.name || requester?.username || `用户 ${user.id}`
+      await enqueueAstrbotGroupEvent(
+        'songRequest',
+        '新的点歌投稿',
+        `${displayName} 点了《${song.title}》- ${song.artist}`
+      )
+    } catch (error) {
+      console.error('发送群聊点歌通知失败:', error)
     }
 
     return song

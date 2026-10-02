@@ -258,6 +258,41 @@
           </div>
         </div>
       </div>
+
+      <div v-for="platform in enabledPlatforms" :key="platform" class="rounded-2xl border border-border-secondary bg-bg-primary-45 p-4 space-y-4 transition-all hover:border-border-tertiary">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 shrink-0 rounded-xl bg-primary-10 border border-primary-20 flex items-center justify-center">
+              <MessageCircle :size="17" class="w-[17px] h-[17px] shrink-0 text-primary" />
+            </div>
+            <h3 class="text-sm font-black text-text-primary truncate">{{ locale.astrbot.platforms[platform] }}</h3>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-bg-tertiary text-text-tertiary shrink-0">
+            {{ platformStatus[platform].bound ? locale.astrbot.bound : locale.astrbot.unbound }}
+          </span>
+        </div>
+        <p class="text-xs text-text-tertiary leading-relaxed">{{ locale.astrbot.desc }}</p>
+        <div v-if="platformStatus[platform].bound" class="space-y-3">
+          <div class="rounded-xl border border-primary-20 bg-primary-5 p-3">
+            <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1">{{ locale.astrbot.boundUser }}</p>
+            <p class="text-sm font-black text-text-primary truncate">{{ platformStatus[platform].boundUser || locale.astrbot.bound }}</p>
+            <p v-if="platformStatus[platform].boundAt" class="text-[11px] text-text-tertiary mt-1">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-bg-tertiary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50" @click="testAstrbot(platform)"><Send :size="13" />{{ locale.astrbot.test }}</button>
+            <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-bold rounded-xl transition-all disabled:opacity-50" @click="confirmAstrbotUnbind(platform)"><Unlink :size="13" />{{ locale.astrbot.unbind }}</button>
+          </div>
+        </div>
+        <div v-else class="space-y-3">
+          <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all disabled:opacity-50" @click="createAstrbotCode(platform)"><KeyRound :size="13" />{{ astrbotBusy[platform] ? locale.pleaseWait : locale.astrbot.generate }}</button>
+          <div v-if="astrbotCodes[platform]" class="p-3 rounded-xl border border-border-secondary bg-bg-primary space-y-2">
+            <p class="text-xs text-text-tertiary">{{ locale.astrbot.instruction }}</p>
+            <code class="block font-mono text-lg font-bold text-primary select-all break-all">{{ astrbotCodes[platform].code }}</code>
+            <p class="text-xs text-text-tertiary">{{ locale.astrbot.expires.replace('{0}', String(astrbotCodes[platform].expiresIn)) }}</p>
+            <button class="text-xs text-primary font-bold" @click="refreshAstrbotStatus">{{ locale.astrbot.refresh }}</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 确认对话框 -->
@@ -275,16 +310,98 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { AlertCircle, Loader2, Mail, Share2, Smartphone } from '@lucide/vue'
+import { AlertCircle, KeyRound, Loader2, Mail, MessageCircle, Send, Share2, Smartphone, Unlink } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 
 const { smtpEnabled } = useSiteConfig()
 const { showToast } = useToast()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.account?.social || {})
+const { localize: localizeServerError } = useServerErrors()
+const platformKeys = ASTRBOT_PLATFORMS
+const platformStatus = ref(Object.fromEntries(platformKeys.map(key => [key, { enabled: false, bound: false }])))
+const enabledPlatforms = computed(() => platformKeys.filter(key => platformStatus.value[key]?.enabled))
+const astrbotCodes = ref({})
+const astrbotBusy = ref({})
+
+const refreshAstrbotStatus = async () => {
+  try {
+    const response = await $fetch('/api/notifications/astrbot/status')
+    const status = response.data || response
+    // The public status contains flags and timestamps only; never infer a bound identity.
+    for (const platform of platformKeys) {
+      const entry = status.platforms?.[platform]
+      platformStatus.value[platform] = {
+        enabled: entry?.enabled === true,
+        bound: entry?.bound === true,
+        boundAt: entry?.boundAt || null,
+        boundUser: entry?.boundUser || null
+      }
+      if (!entry?.enabled || entry.bound) astrbotCodes.value[platform] = null
+    }
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.astrbot.loadFailed), 'error')
+  }
+}
+
+const createAstrbotCode = async (platform) => {
+  astrbotBusy.value[platform] = true
+  try {
+    const response = await $fetch('/api/notifications/astrbot/bind-code', { method: 'POST', body: { platform } })
+    if (!response.success || !response.code) throw new Error(locale.value.astrbot.codeFailed)
+    // 各平台各自持码，发码只覆盖本平台的旧码。
+    astrbotCodes.value[platform] = { code: response.code, expiresIn: response.expiresIn || 600 }
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.astrbot.codeFailed), 'error')
+  } finally {
+    astrbotBusy.value[platform] = false
+  }
+}
+
+const testAstrbot = async (platform) => {
+  astrbotBusy.value[platform] = true
+  try {
+    const response = await $fetch('/api/notifications/astrbot/test', { method: 'POST', body: { platform } })
+    if (!response.success) throw new Error(locale.value.astrbot.testFailed)
+    showToast(response.queued ? locale.value.astrbot.testQueued : locale.value.astrbot.testSuccess, 'success')
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.astrbot.testFailed), 'error')
+  } finally {
+    astrbotBusy.value[platform] = false
+  }
+}
+
+const confirmAstrbotUnbind = (platform) => {
+  confirmDialog.value = {
+    title: locale.value.astrbot.unbindTitle,
+    message: locale.value.astrbot.unbindMessage.replace('{0}', locale.value.astrbot.platforms[platform]),
+    type: 'danger',
+    loading: false,
+    onConfirm: async () => {
+      confirmDialog.value.loading = true
+      astrbotBusy.value[platform] = true
+      try {
+        const response = await $fetch('/api/notifications/astrbot/unbind', { method: 'POST', body: { platform } })
+        if (!response.success) throw new Error(locale.value.astrbot.unbindFailed)
+        astrbotCodes.value[platform] = null
+        showConfirmDialog.value = false
+        showToast(locale.value.astrbot.unbound, 'success')
+        await refreshAstrbotStatus()
+      } catch (err) {
+        showToast(localizeServerError(err, locale.value.astrbot.unbindFailed), 'error')
+      } finally {
+        confirmDialog.value.loading = false
+        astrbotBusy.value[platform] = false
+      }
+    },
+    onCancel: () => { showConfirmDialog.value = false }
+  }
+  showConfirmDialog.value = true
+}
 
 // 卡片样式类常量（sectionClass 由父组件 account/index.vue 控制）
 const cardClass =
@@ -329,6 +446,7 @@ const confirmDialog = ref({
 
 onMounted(() => {
   loadBindings()
+  refreshAstrbotStatus()
 })
 
 // 加载绑定状态
