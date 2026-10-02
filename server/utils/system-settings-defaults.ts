@@ -2,13 +2,6 @@ import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
 import { DEFAULT_ASTRBOT_WEEKLY_CONFIG } from '~~/server/utils/astrbot-weekly-config'
 
-// 本周歌单显示配置的唯一权威定义在 astrbot-weekly-config.ts，这里仅转发导出。
-export {
-  ASTRBOT_WEEKLY_BOOLEAN_KEYS,
-  ASTRBOT_WEEKLY_LAYOUTS,
-  DEFAULT_ASTRBOT_WEEKLY_CONFIG
-} from '~~/server/utils/astrbot-weekly-config'
-
 export const normalizeScheduleVisibilitySettings = (settings) => {
   for (const field of [
     'scheduleDaysBeforeEnabled',
