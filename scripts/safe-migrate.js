@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { execFileSync, execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -48,6 +48,18 @@ function safeExec(command, options = {}) {
     return true
   } catch (error) {
     logError(`命令执行失败: ${command}`)
+    logError(error.message)
+    return false
+  }
+}
+
+// 安全执行可执行文件（argv 形式不经过 shell，路径含空格或特殊字符时不会被重新分词）
+function safeExecFile(file, args, options = {}) {
+  try {
+    execFileSync(file, args, { stdio: 'inherit', ...options })
+    return true
+  } catch (error) {
+    logError(`命令执行失败: ${file} ${args.join(' ')}`)
     logError(error.message)
     return false
   }
@@ -234,7 +246,7 @@ async function safeMigrate() {
     const syncRoot = path.resolve(scriptDir, '..')
     log('🔄 执行数据库同步...', 'cyan')
     if (
-      !safeExec(`${process.execPath} ${path.join(syncRoot, 'scripts/db-sync.js')}`, {
+      !safeExecFile(process.execPath, [path.join(syncRoot, 'scripts/db-sync.js')], {
         cwd: syncRoot,
         env
       })
