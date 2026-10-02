@@ -44,22 +44,15 @@ test('前端发码不清空其它平台的码，解绑只清本平台的码', ()
   assert.match(account, /astrbotCodes\.value\[platform\] = null/)
 })
 
-test('AstrBot 迁移命名有意义，不再沿用脚本默认的 auto-migration', () => {
+test('AstrBot 迁移按语义命名，一次建成复合主键且不含分支内废弃字段', () => {
   const dir = new URL('../../app/drizzle/migrations/', import.meta.url)
   const files = readdirSync(dir).filter((name) => name.endsWith('.sql'))
-  const astrbotMigration = files.filter((name) =>
+  const astrbotMigrations = files.filter((name) =>
     readFileSync(new URL(name, dir), 'utf8').includes('CREATE TABLE "AstrbotBinding"'))
-  assert.equal(astrbotMigration.length, 1, `应恰有一个 AstrBot 迁移，实际 ${astrbotMigration.join(', ')}`)
-  assert.doesNotMatch(astrbotMigration[0], /auto-migration/, '迁移名必须表达变更内容')
-  assert.match(astrbotMigration[0], /add_astrbot_notification/)
-})
-
-test('迁移一次建成复合主键且不保留分支内废弃字段', () => {
-  const dir = new URL('../../app/drizzle/migrations/', import.meta.url)
-  const files = readdirSync(dir).filter((name) => name.endsWith('.sql'))
-  const migrated = files.filter((name) => readFileSync(new URL(name, dir), 'utf8').includes('AstrbotBindingCode_userId_platform_pk'))
-  assert.equal(migrated.length, 1, `应恰有一个迁移建立复合主键，实际 ${migrated.join(', ')}`)
-  const sql = readFileSync(new URL(migrated[0], dir), 'utf8')
+  assert.equal(astrbotMigrations.length, 1, `应恰有一个 AstrBot 迁移，实际 ${astrbotMigrations.join(', ')}`)
+  assert.match(astrbotMigrations[0], /add_astrbot_notification/, '迁移名必须表达变更内容')
+  assert.doesNotMatch(astrbotMigrations[0], /auto-migration/)
+  const sql = readFileSync(new URL(astrbotMigrations[0], dir), 'utf8')
   assert.match(sql, /CREATE TABLE "AstrbotBindingCode"/)
   assert.match(sql, /"platform" text NOT NULL/)
   assert.match(sql, /CONSTRAINT "AstrbotBindingCode_userId_platform_pk" PRIMARY KEY\("userId","platform"\)/)

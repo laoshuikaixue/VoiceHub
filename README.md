@@ -1405,7 +1405,7 @@ VoiceHub/
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
-│   │   ├── astrbot-adapters.js # 旧绑定回填与通知共用的适配器平台映射
+│   │   ├── astrbot-adapters.js # 适配器平台映射（绑定鉴权与恢复共用）
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
 │   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长
@@ -1494,7 +1494,6 @@ VoiceHub/
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
 │   ├── db-sync.js         # 数据库同步
-│   ├── migrate-astrbot-bindings.ts # 旧版机器人绑定数据回填
 │   ├── deploy.js          # 一键部署脚本
 │   ├── drizzle/           # Drizzle 迁移辅助脚本
 │   │   └── migrations/
@@ -1503,35 +1502,6 @@ VoiceHub/
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
-├── tests/                 # 自动化测试
-│   ├── frontend/          # 推送配置与绑定界面契约测试
-│   └── server/             # 服务端策略与安全测试
-│       ├── auth-route-policy.test.ts # 强制改密路由策略测试
-│       ├── astrbot-notification.test.ts # AstrBot绑定码与目标校验策略测试
-│       ├── astrbot-platforms.test.ts # 四平台开关与绑定目标测试
-│       ├── astrbot-restore-fields.test.ts # AstrBot 配置备份恢复白名单测试
-│       ├── astrbot-verify-targets-route.test.ts # AstrBot 投递前目标授权路由行为测试
-│       ├── push-config-contract.test.ts # 推送配置与通知路径契约测试
-│       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
-│       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
-│       ├── esa-captcha.test.ts # 阿里云 ESA AI验证码区域与服务端节点解析测试
-│       ├── important-notification-policy.test.ts # 重要通知策略测试
-│       ├── initial-password-policy.test.ts # 初始密码状态策略测试
-│       ├── invalid-playback-urls.test.ts # 无效播放地址登记与淘汰测试
-│       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
-│       ├── music-source-plugin-platform.test.ts # 插件平台键解析测试
-│       ├── music-source-runtime.test.ts # 插件沙箱与网络策略测试
-│       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
-│       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
-│       ├── password-policy.test.ts # 密码策略测试
-│       ├── player-layout.test.ts # 播放器自由拖拽限位与偏好解析测试
-│       ├── qq-comment-normalize.test.ts # QQ音乐评论归一化测试
-│       ├── registration-astrbot.test.ts # 注册审核机器人通知调用路径测试
-│       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
-│       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
-│       ├── token-version-policy.test.ts # 令牌版本策略测试
-│       ├── user-archive.test.ts # 账号归档筛选参数解析测试
-│       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义

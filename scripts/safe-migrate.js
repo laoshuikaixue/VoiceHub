@@ -230,19 +230,18 @@ async function safeMigrate() {
     log('✅ 数据库迁移流程完成！', 'green')
 
     // 9. 迁移后执行数据回填与 schema 一致性检查（与部署流程共用 db-sync.js）。
-    // 单独跑迁移不会搬迁 AstrBot 旧绑定，这里补齐避免升级后绑定失效。
     const scriptDir = path.dirname(fileURLToPath(import.meta.url))
     const syncRoot = path.resolve(scriptDir, '..')
-    log('🔄 执行数据库同步与 AstrBot 旧绑定回填...', 'cyan')
+    log('🔄 执行数据库同步...', 'cyan')
     if (
       !safeExec(`${process.execPath} ${path.join(syncRoot, 'scripts/db-sync.js')}`, {
         cwd: syncRoot,
         env
       })
     ) {
-      throw new Error('数据库同步或 AstrBot 旧绑定回填失败')
+      throw new Error('数据库同步失败')
     }
-    logSuccess('数据库同步与 AstrBot 旧绑定回填完成')
+    logSuccess('数据库同步完成')
   } catch (error) {
     logError(`迁移失败: ${error.message}`)
     logError('请检查数据库连接和迁移文件')

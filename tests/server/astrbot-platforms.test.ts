@@ -27,6 +27,11 @@ test('禁用平台或错误适配器的目标不得投递，UMO 实例前缀不�
     { umo: 'fourth:GroupMessage:4', adapter: 'dingtalk', platform: 'dingtalk', enabled: true }
   ]
   assert.deepEqual(selectAstrbotTargets(rows, { qq: true, wecom: true, dingtalk: true, lark: false }), ['renamed:FriendMessage:1'])
+  // 未命中绑定行、平台归属缺失的目标不投递
+  assert.deepEqual(selectAstrbotTargets([], { qq: true }), [])
+  assert.deepEqual(selectAstrbotTargets([
+    { umo: 'x:FriendMessage:y', adapter: 'aiocqhttp', platform: null }
+  ], { qq: true }), [])
   assert.equal(isAstrbotPlatformEnabled({ qq: false, wecom: true, dingtalk: true, lark: true }, 'qq'), false)
   assert.equal(isAstrbotPlatformEnabled(null, 'qq'), false)
 })

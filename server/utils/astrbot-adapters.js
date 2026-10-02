@@ -1,4 +1,4 @@
-// 旧绑定回填与新绑定鉴权共用的适配器归类。
+// 适配器名到平台的归类，供绑定鉴权与绑定数据恢复共用。
 /** @type {Map<string, 'qq' | 'wecom' | 'dingtalk' | 'lark'>} */
 const ADAPTER_PLATFORMS = new Map([
   ['aiocqhttp', 'qq'],

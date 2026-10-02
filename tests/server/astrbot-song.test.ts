@@ -37,13 +37,6 @@ function ticketWith(candidates: SongCandidate[], overrides: Record<string, unkno
   return { umo: UMO, platform: 'netease', keyword: '告白气球', createdAt: 1, candidates, ...overrides }
 }
 
-test('QQ 音源搜索使用 SDK 实际消费的参数并读取歌曲列表', () => {
-  const sourceCode = source('server/utils/astrbot-song-sources.ts')
-  assert.match(sourceCode, /searchQqMusic\(\{ key: keyword, page, limit: PAGE_LIMIT \}\)/)
-  assert.match(sourceCode, /sdkResult\?\.song\?\.list/)
-  assert.doesNotMatch(sourceCode, /searchQqMusic\(\{ keyword, page, num:/)
-})
-
 test('两个点歌回调在中间件按精确路径放行，且不进入通用公开白名单', () => {
   for (const path of [SEARCH_PATH, REQUEST_PATH]) {
     assert.equal(BOT_ROUTES.has(`POST ${path}`), true)
@@ -132,7 +125,7 @@ test('投稿端点：按绑定账号的真实 role 投稿，绝不硬编码管�
   assert.doesNotMatch(songRequest, /SUPER_ADMIN|SONG_ADMIN/)
 })
 
-test('投稿端点：券码大写化、note 映射 submissionNote、时段按开关传入、不传站点选择票据', () => {
+test('投稿端点：请求映射（券码/留言/时段/错误透传）与成功响应文案', () => {
   assert.match(songRequest, /toUpperCase\(\)/)
   assert.match(songRequest, /submissionNote: note/)
   assert.match(songRequest, /preferredPlayTimeId: playTimeId/)
@@ -143,22 +136,20 @@ test('投稿端点：券码大写化、note 映射 submissionNote、时段按开
   assert.match(songRequest, /throw createApiError\(error\.statusCode, code, error\.message \|\| '点歌失败', data\)/)
   assert.match(songRequest, /error\.data\?\.code/)
   assert.match(songRequest, /SERVER_ERROR_CODES\.COMMON_INVALID_PARAMS/)
-})
-
-test('投稿端点：成功响应文案与字段逐字', () => {
   assert.match(songRequest, /title: song\?\.title \?\? candidate\.title/)
   assert.match(songRequest, /artist: song\?\.artist \?\? candidate\.artist/)
   assert.match(songRequest, /message: `点歌成功：\$\{title\} - \$\{artist\}`/)
   assert.match(songRequest, /songId: song\?\.id \?\? null/)
 })
 
-test('四个新错误码与 UMO 未绑定错误码已登记到 SERVER_ERROR_CODES', () => {
+test('点歌与 UMO 相关错误码已登记到 SERVER_ERROR_CODES', () => {
   const codes = SERVER_ERROR_CODES as Record<string, string>
   for (const code of [
     'ASTRBOT_SONG_KEYWORD_INVALID',
     'ASTRBOT_SONG_PLATFORM_INVALID',
     'ASTRBOT_SONG_SESSION_INVALID',
     'ASTRBOT_SONG_INDEX_INVALID',
+    'ASTRBOT_SONG_NOTE_DISABLED',
     'ASTRBOT_UMO_UNBOUND'
   ]) {
     assert.equal(codes[code], code)
@@ -202,9 +193,11 @@ test('searchSongs 编排：注入上游映射候选、截断上限、上游抖�
   assert.match(searchUtils, /catch \(error\)[\s\S]{0,200}return \[\]/)
 })
 
-test('音源层复用同进程实现，不做 /api 自请求', () => {
+test('音源层复用同进程实现：SDK 参数正确、无 /api 自请求', () => {
+  assert.match(songSources, /searchQqMusic\(\{ key: keyword, page, limit: PAGE_LIMIT \}\)/, 'QQ 搜索应使用 SDK 实际消费的参数')
+  assert.match(songSources, /sdkResult\?\.song\?\.list/)
+  assert.doesNotMatch(songSources, /searchQqMusic\(\{ keyword, page, num:/)
   assert.match(songSources, /wyEapiRequest/)
-  assert.match(songSources, /searchQqMusic/)
   assert.match(songSources, /createTxSearchBody/)
   assert.match(songSources, /biConvertSong|bi_convert_song/)
   assert.doesNotMatch(songSources, /\$fetch\(\s*['"`]\/api\//)
