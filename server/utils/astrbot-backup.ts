@@ -1,7 +1,6 @@
 
 import { astrbotBindings } from '~/drizzle/schema'
-import { adapterToAstrbotPlatform, parseAstrbotPlatform } from './astrbot-platforms'
-import { isAstrbotPrivateUmoShape } from './astrbot-notification'
+import { adapterToAstrbotPlatform, isAstrbotPrivateUmoShape, parseAstrbotPlatform } from './astrbot-platforms'
 
 // 老备份只有 User 上的单条绑定；新备份包含四个平台的独立记录。
 export async function restoreAstrbotBindings(tx: any, userId: number, record: any) {

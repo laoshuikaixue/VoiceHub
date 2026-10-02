@@ -28,10 +28,10 @@ const modules: Record<string, string> = {
       ASTRBOT_SONG_NOTE_DISABLED: 'note_disabled', COMMON_INVALID_PARAMS: 'params'
     };`,
   '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token';
-    export const equalAstrbotToken = (a, b) => a === b && !!a;
-    export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && /^bot:FriendMessage:[^:]+$/.test(umo);`,
+    export const equalAstrbotToken = (a, b) => a === b && !!a;`,
   '~~/server/utils/astrbot-platforms': `export const adapterToAstrbotPlatform = adapter => adapter === 'aiocqhttp' ? 'qq' : null;
-    export const isAstrbotPlatformEnabled = (settings, platform) => settings?.[platform] === true;`,
+    export const isAstrbotPlatformEnabled = (settings, platform) => settings?.[platform] === true;
+    export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && /^bot:FriendMessage:[^:]+$/.test(umo);`,
   '~~/server/utils/astrbot-song-search': `export const ASTRBOT_SONG_TICKET_PURPOSE = 'song';
     export const isAstrbotSongTicket = () => true;`,
   '~~/server/utils/music-source-plugins/tickets': `export const unseal = () => ({ candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'netease', musicId: '1' }] });`,

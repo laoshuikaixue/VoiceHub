@@ -6,10 +6,13 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, SUBMISSION_NOTE_MAX_LENGTH } from '~~/server/config/constants'
 import {
   ASTRBOT_TOKEN_HEADER,
-  equalAstrbotToken,
-  isAstrbotPrivateUmoShape
+  equalAstrbotToken
 } from '~~/server/utils/astrbot-notification'
-import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
+import {
+  adapterToAstrbotPlatform,
+  isAstrbotPlatformEnabled,
+  isAstrbotPrivateUmoShape
+} from '~~/server/utils/astrbot-platforms'
 import {
   ASTRBOT_SONG_TICKET_PURPOSE,
   isAstrbotSongTicket

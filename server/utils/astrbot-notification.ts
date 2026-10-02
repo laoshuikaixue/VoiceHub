@@ -1,8 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 import { isAstrbotPrivateUmoShape } from './astrbot-platforms.ts'
 
-export { isAstrbotPrivateUmoShape } from './astrbot-platforms.ts'
-
 export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token'
 export const ASTRBOT_BIND_TTL_SECONDS = 600
 export const ASTRBOT_PLATFORM_NAMES = [

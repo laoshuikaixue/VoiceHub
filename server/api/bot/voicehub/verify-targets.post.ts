@@ -2,22 +2,25 @@ import { defineEventHandler, getHeader, readBody } from 'h3'
 import { eq, inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { astrbotBindings, notificationSettings, systemSettings } from '~/drizzle/schema'
-import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
+import {
+  adapterToAstrbotPlatform,
+  isAstrbotPlatformEnabled,
+  isAstrbotPrivateUmoShape
+} from '~~/server/utils/astrbot-platforms'
 import { isAstrbotGroupTargetAllowed, isAstrbotGroupUmoShape } from '~~/server/utils/astrbot-group'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   ASTRBOT_TOKEN_HEADER,
-  equalAstrbotToken,
-  isAstrbotPrivateUmoShape
+  equalAstrbotToken
 } from '~~/server/utils/astrbot-notification'
 
 
 /**
  * 校验推送目标是否获授权（插件投递前回查）。
  *
- * 私聊目标：UMO 必须逐个命中某账号的绑定记录，且该行记录的 astrbotPlatform
- * 仍在受支持的适配器白名单内（与绑定接口同一套判定）。
+ * 私聊目标：UMO 必须逐个命中某账号的绑定记录，且该行记录的适配器归类
+ * 仍在受支持的平台白名单内（与绑定接口同一套判定）。
  * 群目标：群广播开关开启、UMO 在管理员白名单内，且所属平台开关为开。
  *
  * UMO 前缀是 AstrBot 的平台实例 ID，可由管理员改名，因此两种情况都不能拿它

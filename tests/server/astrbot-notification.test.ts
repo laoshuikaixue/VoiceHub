@@ -6,10 +6,10 @@ import {
   createAstrbotBindCode,
   equalAstrbotToken,
   hashAstrbotBindCode,
-  isAstrbotPrivateUmoShape,
   normalizeAstrbotBaseUrl,
   parseAstrbotPrivateUmo
 } from '../../server/utils/astrbot-notification.ts'
+import { isAstrbotPrivateUmoShape } from '../../server/utils/astrbot-platforms.ts'
 import { isPublicApiPath } from '../../server/utils/auth-route-policy.ts'
 
 test('绑定码为随机 24 位十六进制，摘要不等于明文', () => {

@@ -9,11 +9,11 @@ const modules: Record<string, string> = {
   'drizzle-orm': `export const inArray = (column, values) => [column, values]; export const eq = (column, value) => [column, value];`,
   '~/drizzle/db': `export const db = globalThis.__verifyDb;`,
   '~/drizzle/schema': `export const systemSettings = { astrbotToken: 'token', astrbotEnabled: 'enabled', astrbotBroadcastEnabled: 'broadcastEnabled', astrbotPlatforms: 'platforms', astrbotGroupTargets: 'groups' }; export const astrbotBindings = { umo: 'umo', platform: 'platform', adapter: 'adapter', userId: 'userId' }; export const notificationSettings = { userId: 'notificationUserId', enabled: 'notificationEnabled' };`,
-  '~~/server/utils/astrbot-platforms': `export const adapterToAstrbotPlatform = adapter => adapter === 'aiocqhttp' ? 'qq' : null; export const isAstrbotPlatformEnabled = (settings, platform) => settings?.[platform] === true;`,
+  '~~/server/utils/astrbot-platforms': `export const adapterToAstrbotPlatform = adapter => adapter === 'aiocqhttp' ? 'qq' : null; export const isAstrbotPlatformEnabled = (settings, platform) => settings?.[platform] === true; export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && /^bot:FriendMessage:[^:]+$/.test(umo);`,
   '~~/server/utils/astrbot-group': `export const isAstrbotGroupUmoShape = umo => typeof umo === 'string' && /^bot:GroupMessage:[^:]+$/.test(umo); export const isAstrbotGroupTargetAllowed = (targets, platforms, umo) => targets.some(target => target.umo === umo && platforms[target.platform] === true);`,
   '~~/server/utils/apiError': `export const createApiError = (statusCode, code, message) => Object.assign(new Error(message), { statusCode, code });`,
   '~~/server/config/constants': `export const SERVER_ERROR_CODES = { NOTIFICATION_AUTH_REQUIRED: 'auth', ASTRBOT_UMO_INVALID: 'umo' };`,
-  '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token'; export const equalAstrbotToken = (a, b) => a === b && !!a; export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && /^bot:FriendMessage:[^:]+$/.test(umo);`
+  '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token'; export const equalAstrbotToken = (a, b) => a === b && !!a;`
 }
 Object.assign(globalThis, { __verifyDb: {} })
 const compiled = await build({ entryPoints: [source], bundle: true, platform: 'node', format: 'esm', write: false,

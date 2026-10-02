@@ -492,7 +492,6 @@ async function main() {
         ok('legacy schema同步完成，迁移基线记录已写入')
       }
     }
-
   } finally {
     await sql.end()
   }

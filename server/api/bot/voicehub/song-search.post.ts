@@ -7,10 +7,13 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import {
   ASTRBOT_TOKEN_HEADER,
-  equalAstrbotToken,
-  isAstrbotPrivateUmoShape
+  equalAstrbotToken
 } from '~~/server/utils/astrbot-notification'
-import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
+import {
+  adapterToAstrbotPlatform,
+  isAstrbotPlatformEnabled,
+  isAstrbotPrivateUmoShape
+} from '~~/server/utils/astrbot-platforms'
 import {
   ASTRBOT_SONG_CANDIDATE_LIMIT,
   ASTRBOT_SONG_KEYWORD_MAX_LENGTH,

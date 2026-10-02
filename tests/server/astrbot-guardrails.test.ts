@@ -37,7 +37,7 @@ test('同时关闭 showTitle 与 showArtist 时不得回退输出歌名', () => 
 })
 
 test('群聊转发在站内收件人为空时仍要执行', () => {
-  const emptyBranch = SEND_API.match(/if \(userIds\.length === 0\) \{[\s\S]*?\n  \}/)
+  const emptyBranch = SEND_API.match(/if \(userIds\.length === 0\) \{[\s\S]*?\n {2}\}/)
   assert.ok(emptyBranch, '应存在 userIds 为空的提前返回分支')
   assert.match(emptyBranch[0], /forwardSystemNoticeToGroups\(broadcastToGroups, title, content\)/,
     '空收件人分支必须先执行群转发再返回，否则勾选转发也收不到')
@@ -89,7 +89,7 @@ test('前端绑定状态保留接口返回的 boundUser', () => {
 })
 
 test('异常上报统一脱敏，拒绝值在对象分支之前无条件上报', () => {
-  const rejectBlock = ERROR_HANDLER.match(/process\.on\('unhandledRejection',[\s\S]*?\n  \}\)/)
+  const rejectBlock = ERROR_HANDLER.match(/process\.on\('unhandledRejection',[\s\S]*?\n {2}\}\)/)
   assert.ok(rejectBlock, '应存在 unhandledRejection 处理')
   const reportIndex = rejectBlock[0].indexOf('reportSystemError')
   const objectBranchIndex = rejectBlock[0].indexOf("typeof reason === 'object'")
