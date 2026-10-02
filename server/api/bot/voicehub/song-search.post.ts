@@ -21,6 +21,7 @@ import {
   searchSongs
 } from '~~/server/utils/astrbot-song-search'
 import { seal } from '~~/server/utils/music-source-plugins/tickets'
+import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 
 /**
  * 机器人点歌搜索：按关键词搜索候选曲目，把结果与发起会话密封为票据。
@@ -68,6 +69,12 @@ export default defineEventHandler(async (event) => {
   const platform = parseAstrbotSongSource(body?.platform ?? DEFAULT_ASTRBOT_SONG_SOURCE)
   if (!platform) {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '不支持的音源平台')
+  }
+
+  // 站点平台管理停用的音源不下发候选：与播放解析共用 enabledCatalog 判定，
+  // 避免被停用平台的歌曲仍能经由机器人搜索进入投稿队列。
+  if (!(await enabledCatalog(platform))) {
+    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用')
   }
 
   const page = Number.isInteger(body?.page) && body.page > 0 ? body.page : 1

@@ -1,5 +1,5 @@
 /**
- * Bilibili 搜索的共用实现（原 server/api/bilibili/search.get.ts 内联逻辑外移）。
+ * Bilibili 搜索实现。
  *
  * 抽出的原因：机器人点歌需要在**不**自请求 /api/bilibili/search 的前提下复用同一套
  * 上游调用与条目转换，放 utils 里让 HTTP 端点与机器人回调共用一份实现。

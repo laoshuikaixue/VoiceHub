@@ -88,7 +88,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 迁移文件（SQL + snapshot + journal 条目）必须且只能通过 `pnpm db:generate` 自动生成，禁止手工编写 SQL、手工创建 snapshot、手工编辑 `_journal.json`；手工迁移会导致 snapshot 格式与 drizzle-kit 版本不兼容，后续 `db:generate`/`db:check`/`db:migrate` 均会失败
 - 迁移时间戳使用真实生成时刻，禁止随意编造
 - 迁移文件命名保持 drizzle-kit 自动生成的时间戳格式，禁止手动改名（改名会导致数据库中已执行的迁移记录无法匹配，产生重复迁移）
-- 迁移文件要求使用语义化名称，使用 `pnpm db:generate:name <name>` 由 drizzle-kit 生成，仍禁止生成后手动改名
+- 迁移文件要求使用语义化名称，使用 `pnpm db:generate:name <name>` 由 drizzle-kit 生成，禁止生成后手动改名
 
 ### 4.3. 新增 SystemSettings 字段同步清单
 新增字段必须全部同步，遗漏会导致备份能进不能出、初始化缺字段：

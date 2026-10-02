@@ -108,6 +108,12 @@ test('搜索端点经统一音源层取候选，并截断为上限条数', () =>
   assert.match(searchUtils, /slice\(0, ASTRBOT_SONG_CANDIDATE_LIMIT\)/)
 })
 
+test('搜索端点遵守站点平台启用配置：被停用音源不下发候选', () => {
+  assert.match(songSearch, /import \{ enabledCatalog \} from '~~\/server\/utils\/music-source-plugins\/resolver'/)
+  assert.match(songSearch, /if \(!\(await enabledCatalog\(platform\)\)\)/)
+  assert.match(songSearch, /SERVER_ERROR_CODES\.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用'/)
+})
+
 test('投稿端点：unseal 校验票据，跨会话/过期统一 400 文案', () => {
   assert.match(songRequest, /unseal\(body\?\.sessionToken, ASTRBOT_SONG_TICKET_PURPOSE\)/)
   assert.match(songRequest, /isAstrbotSongTicket\(ticket, umo\)/)

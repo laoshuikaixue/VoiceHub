@@ -132,3 +132,41 @@ test('脱敏工具屏蔽凭据样式的内容并限制长度', async () => {
   assert.match(sanitizeAstrbotErrorDetail('ECONNRESET'), /ECONNRESET/)
   assert.equal(sanitizeAstrbotErrorDetail(''), '未知错误')
 })
+
+test('音源搜索端点与机器人共用同一份上游实现', () => {
+  const mgEndpoint = read('../../server/api/native-api/search/mg.get.ts')
+  const bilibiliEndpoint = read('../../server/api/bilibili/search.get.ts')
+  assert.match(mgEndpoint, /from '~~\/server\/utils\/native_mg'/, 'mg 端点应复用 utils 实现')
+  assert.match(bilibiliEndpoint, /from '~~\/server\/utils\/native_bilibili'/, 'bilibili 端点应复用 utils 实现')
+  assert.doesNotMatch(mgEndpoint, /async function search(?:PC|Mobile)\(/, '端点内不得再保留第二份上游实现')
+  assert.doesNotMatch(bilibiliEndpoint, /bi_convert_song|htmlToPlainText/, '端点内不得再保留第二份转换逻辑')
+})
+
+test('目标按字节预算切分：不超限、不丢失、顺序保持', async () => {
+  const { chunkAstrbotTargets, astrbotPayloadBytes, ASTRBOT_PAYLOAD_MAX_BYTES, ASTRBOT_MAX_TARGETS_PER_REQUEST } =
+    await import('../../server/utils/astrbot-payload.ts')
+  const umos = Array.from({ length: 450 }, (_, i) => `default:FriendMessage:${i}`)
+  const { chunks, skipped } = chunkAstrbotTargets(umos, '标题', '内容')
+  assert.equal(skipped, 0)
+  assert.ok(chunks.length >= 3, '条数上限应触发切分')
+  for (const chunk of chunks) {
+    assert.ok(chunk.length <= ASTRBOT_MAX_TARGETS_PER_REQUEST)
+    assert.ok(astrbotPayloadBytes(chunk, '标题', '内容') <= ASTRBOT_PAYLOAD_MAX_BYTES)
+  }
+  assert.deepEqual(chunks.flat(), umos, '切分不得丢失或重排目标')
+
+  // 长 UMO：条数未满也应先触发字节预算切分
+  const longUmos = Array.from({ length: 200 }, (_, i) => `default:FriendMessage:${i}${'y'.repeat(480)}`)
+  const byBytes = chunkAstrbotTargets(longUmos, '标题', '内容')
+  assert.equal(byBytes.skipped, 0)
+  assert.ok(byBytes.chunks.length >= 2)
+  for (const chunk of byBytes.chunks) {
+    assert.ok(astrbotPayloadBytes(chunk, '标题', '内容') <= ASTRBOT_PAYLOAD_MAX_BYTES)
+  }
+  assert.deepEqual(byBytes.chunks.flat(), longUmos)
+
+  // 单目标自身超限：计入 skipped，不影响其余目标
+  const withSkip = chunkAstrbotTargets(['default:FriendMessage:1', 'x'.repeat(64 * 1024), 'default:FriendMessage:2'], '标题', '内容')
+  assert.equal(withSkip.skipped, 1)
+  assert.deepEqual(withSkip.chunks.flat(), ['default:FriendMessage:1', 'default:FriendMessage:2'])
+})

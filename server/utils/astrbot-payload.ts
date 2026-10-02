@@ -19,21 +19,29 @@ export function fitsAstrbotPayload(umos: string[], title: string, content: strin
 /**
  * 把目标切分为多个请求：单请求不超过 200 个目标，且请求体不超过
  * ASTRBOT_PAYLOAD_MAX_BYTES。单目标本身就超限时计入 skipped，由调用方上报失败。
+ *
+ * 预算按序列化字节数递减累计：外壳只算一次，逐个目标累加自身字节，
+ * 避免为每个候选重建整段 JSON 的 O(n²) 序列化。
  */
 export function chunkAstrbotTargets(umos: string[], title: string, content: string, group = false) {
   const chunks: string[][] = []
   let skipped = 0
+  const shellBytes = Buffer.byteLength(JSON.stringify({ title, content, targets: { umo: [], group } }))
+  let used = shellBytes
   for (const umo of umos) {
-    if (!fitsAstrbotPayload([umo], title, content, group)) {
+    const umoBytes = Buffer.byteLength(JSON.stringify(umo))
+    if (shellBytes + umoBytes > ASTRBOT_PAYLOAD_MAX_BYTES) {
       skipped++
       continue
     }
     const chunk = chunks[chunks.length - 1]
     if (!chunk || chunk.length >= ASTRBOT_MAX_TARGETS_PER_REQUEST ||
-      !fitsAstrbotPayload([...chunk, umo], title, content, group)) {
+      used + (chunk.length ? 1 : 0) + umoBytes > ASTRBOT_PAYLOAD_MAX_BYTES) {
       chunks.push([umo])
+      used = shellBytes + umoBytes
     } else {
       chunk.push(umo)
+      used += 1 + umoBytes
     }
   }
   return { chunks, skipped }

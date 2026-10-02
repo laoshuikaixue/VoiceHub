@@ -1252,7 +1252,7 @@ VoiceHub/
 │   │   │   │   ├── login-qr-wx.get.ts # 获取微信登录二维码
 │   │   │   │   ├── playlist-songs.post.ts # 获取QQ音乐歌单内歌曲
 │   │   │   │   ├── playlists.post.ts # 获取用户创建与收藏的歌单
-│   │   │   │   └── search/              # 搜索API
+│   │   │   └── search/              # 搜索API
 │   │   │       ├── mg.get.ts        # 咪咕音乐搜索
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
