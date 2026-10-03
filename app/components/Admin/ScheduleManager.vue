@@ -486,6 +486,26 @@
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
                     </div>
+                    <!-- 管理员扩展信息：投稿平台与投稿统计（独立一行，避免被上行截断） -->
+                    <div
+                      v-if="auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null))"
+                      class="text-[10px] text-text-tertiary flex items-center gap-1 flex-wrap mt-0.5"
+                    >
+                      <span
+                        v-if="song.musicPlatform"
+                        class="platform-tag px-1.5 py-0.5 rounded whitespace-nowrap"
+                        :class="'platform-' + platformTagClass(song.musicPlatform)"
+                        :title="callLocale('platformSource', '投稿平台')"
+                      >
+                        {{ platformLabel(song.musicPlatform) }}
+                      </span>
+                      <span
+                        v-if="song.submissionCount != null && song.playCount != null"
+                        class="px-1.5 py-0.5 bg-bg-quaternary rounded text-[9px] whitespace-nowrap"
+                      >
+                        {{ callLocale('requesterStats', `投稿 ${song.submissionCount} 次 · 播出 ${song.playCount} 次`, song.submissionCount, song.playCount) }}
+                      </span>
+                    </div>
                   </div>
 
                   <div class="flex items-center gap-2">
@@ -1925,6 +1945,7 @@ import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
@@ -2783,6 +2804,11 @@ const currentPage = computed({
   }
 })
 const pageSize = ref(10)
+
+// 管理员扩展信息：仅管理员在待排歌曲列表显示投稿平台与投稿统计
+const { currentLocale } = useLocale()
+const platformTagClass = (platform) => BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin'
+const platformLabel = (platform) => getPlatformDisplayName(platform, null, currentLocale.value)
 
 // 服务
 let songsService = null
@@ -5840,4 +5866,15 @@ const handleTouchReturnToDraggable = async () => {
   position: absolute;
   width: 100%;
 }
+
+/* 管理员扩展信息：投稿平台标签 */
+.platform-tag {
+  font-size: 9px;
+  font-weight: 500;
+}
+.platform-netease { color: #c3484d; }
+.platform-tencent { color: #2f9e63; }
+.platform-bilibili { color: #d96f9b; }
+.platform-migu { color: #d97a2f; }
+.platform-plugin { color: var(--overlay-40); }
 </style>
