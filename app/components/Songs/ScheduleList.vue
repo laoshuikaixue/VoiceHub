@@ -83,7 +83,15 @@
       <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
-          <h2 class="current-date" v-html="currentDateFormatted" />
+          <div class="date-title-row">
+            <h2 class="current-date" v-html="currentDateFormatted" />
+            <!-- 管理员扩展信息：当日总时长 -->
+            <span
+              v-if="currentDateTotalDuration"
+              class="total-duration"
+              :title="locale.totalDurationTitle"
+            >{{ totalDurationText(currentDateTotalDuration) }}</span>
+          </div>
           <button
             v-if="isNeteaseLoggedIn"
             class="add-playlist-btn"
@@ -272,6 +280,34 @@
                               }}
                             </span>
                           </span>
+                          <!-- 管理员扩展信息：投稿平台、投稿统计与音频时长（仅管理员可见） -->
+                          <template v-if="showAdminExtra">
+                            <span
+                              v-if="schedule.song.musicPlatform"
+                              class="platform-tag"
+                              :class="'platform-' + platformTagClass(schedule.song.musicPlatform)"
+                              :title="locale.platformSource"
+                            >
+                              {{ platformLabel(schedule.song.musicPlatform) }}
+                            </span>
+                            <span
+                              v-if="schedule.song.requesterStats || Number(schedule.song.durationSeconds) > 0"
+                              class="stats-line"
+                            >
+                              <span
+                                v-if="schedule.song.requesterStats"
+                                class="requester-stats"
+                              >
+                                {{ requesterStatsText(schedule.song.requesterStats) }}
+                              </span>
+                              <span
+                                v-if="Number(schedule.song.durationSeconds) > 0"
+                                class="song-duration"
+                              >
+                                {{ formatDuration(Number(schedule.song.durationSeconds)) }}
+                              </span>
+                            </span>
+                          </template>
                         </div>
                       </div>
 
@@ -656,6 +692,8 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
+import { formatDuration } from '~/utils/timeUtils'
 import { useLocale } from '~/utils/locale'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {
@@ -686,6 +724,17 @@ const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus, persistNeteaseVipFla
 const { currentLocale, songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.scheduleList || {})
 const { t: callLocale } = useLocaleText(locale)
+
+// 管理员扩展信息：仅管理员可见，在排期卡片显示投稿平台、投稿统计与音频时长
+const { isAdmin } = useAuth()
+const { siteConfig: publicSiteConfig } = useSiteConfig()
+const showAdminExtra = computed(() => isAdmin.value)
+const platformTagClass = (platform) =>
+  BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin'
+const platformLabel = (platform) =>
+  getPlatformDisplayName(platform, publicSiteConfig.value, currentLocale.value)
+const requesterStatsText = (stats) =>
+  callLocale('requesterStats', '', stats.submissionCount, stats.playCount)
 
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
@@ -943,6 +992,26 @@ const currentDateSchedules = computed(() => {
   if (!currentDate.value) return []
   return safeGroupedSchedules.value[currentDate.value] || []
 })
+
+// 管理员扩展信息：当日总时长（仅统计有时长数据的歌曲，缺失时标记为约数）
+const currentDateTotalDuration = computed(() => {
+  if (!showAdminExtra.value) return null
+  const list = currentDateSchedules.value || []
+  let total = 0
+  let known = 0
+  for (const schedule of list) {
+    const seconds = Number(schedule.song?.durationSeconds)
+    if (isFinite(seconds) && seconds > 0) {
+      total += seconds
+      known++
+    }
+  }
+  if (!known) return null
+  return { text: formatDuration(total), partial: known < list.length }
+})
+
+const totalDurationText = (info) =>
+  callLocale(info.partial ? 'totalDurationApprox' : 'totalDuration', '', info.text)
 
 const neteaseSongs = computed(() => {
   if (!currentDateSchedules.value || currentDateSchedules.value.length === 0) return []
@@ -2909,8 +2978,10 @@ const vRipple = {
 
 .song-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 8px;
   margin-bottom: 0.5rem;
 }
 
@@ -2928,6 +2999,71 @@ const vRipple = {
   color: var(--overlay-40);
   font-weight: normal;
   cursor: help;
+}
+
+/* 管理员扩展信息：投稿平台（按平台着色）与投稿统计 */
+.platform-tag {
+  font-size: 11px;
+  font-weight: 500;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.platform-netease {
+  color: #c3484d;
+}
+
+.platform-tencent {
+  color: #2f9e63;
+}
+
+.platform-bilibili {
+  color: #d96f9b;
+}
+
+.platform-migu {
+  color: #d97a2f;
+}
+
+.platform-plugin {
+  color: var(--overlay-40);
+}
+
+.stats-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.requester-stats {
+  font-size: 11px;
+  color: var(--overlay-40);
+  white-space: nowrap;
+}
+
+.song-duration {
+  font-size: 11px;
+  color: var(--overlay-40);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.total-duration {
+  font-size: 13px;
+  color: var(--overlay-40);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 热度样式 */
