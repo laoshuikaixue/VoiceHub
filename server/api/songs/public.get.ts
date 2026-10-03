@@ -313,6 +313,42 @@ export default defineEventHandler(async (event) => {
     const rows = await client.unsafe(schedulesQuery, params)
     const shouldHideStudentInfo = rows[0]?.hideStudentInfo ?? true
 
+    // 管理员扩展信息：对管理员统计每位投稿人的投稿次数与播出次数（按已播出的排期条目计）
+    const requesterStatsMap = new Map<number, { submissionCount: number; playCount: number }>()
+    if (isAdmin) {
+      const requesterIds = [
+        ...new Set(
+          rows
+            .map((row: any) => (row.requesterId ? Number(row.requesterId) : null))
+            .filter((id): id is number => id !== null)
+        )
+      ]
+      if (requesterIds.length > 0) {
+        const statsRows = await client.unsafe(
+          `
+          SELECT
+            s."requesterId",
+            COUNT(DISTINCT s.id)::int AS "submissionCount",
+            COUNT(sch.id)::int AS "playCount"
+          FROM "Song" s
+          LEFT JOIN "Schedule" sch
+            ON sch."songId" = s.id
+            AND sch."isDraft" = false
+            AND sch.played = true
+          WHERE s."requesterId" = ANY($1::int[])
+          GROUP BY s."requesterId"
+        `,
+          [requesterIds]
+        )
+        for (const statsRow of statsRows) {
+          requesterStatsMap.set(Number(statsRow.requesterId), {
+            submissionCount: Number(statsRow.submissionCount || 0),
+            playCount: Number(statsRow.playCount || 0)
+          })
+        }
+      }
+    }
+
     const formattedSchedules = rows.map((row: any) => {
       const collaborators = Array.isArray(row.collaborators)
         ? row.collaborators.map((collaborator: any) => ({
@@ -422,6 +458,14 @@ export default defineEventHandler(async (event) => {
           originalSubmissionNotePublic: isAdmin ? songNotePublic : false,
           preferredPlayTimeId: effectivePlayTimeId,
           requesterId: row.requesterId ? Number(row.requesterId) : null,
+          ...(isAdmin && row.requesterId
+            ? {
+                requesterStats: requesterStatsMap.get(Number(row.requesterId)) || {
+                  submissionCount: 0,
+                  playCount: 0
+                }
+              }
+            : {}),
           replayRequestCount,
           replayRequesters,
           isReplay: linkedReplayRequestId !== null
