@@ -471,7 +471,7 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-                          :disabled="submissionNoteRequiresApproval || !siteConfigLoaded"
+                          :disabled="!siteConfigLoaded"
                         />
                         <span class="custom-checkbox-box">
                           <svg
