@@ -2,8 +2,13 @@ import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
 import { createSystemNotification } from '~~/server/services/notificationService'
-import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
+
+const parsePlayTimeId = (raw: unknown): number | null => {
+  if (raw === undefined || raw === null || raw === '') return null
+  const num = Number(raw)
+  return Number.isInteger(num) && num > 0 ? num : null
+}
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -17,11 +22,14 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const fromDate = typeof body?.fromDate === 'string' ? body.fromDate.trim() : ''
   const toDate = typeof body?.toDate === 'string' ? body.toDate.trim() : ''
+  const fromPlayTimeId = parsePlayTimeId(body?.fromPlayTimeId)
+  const toPlayTimeId = parsePlayTimeId(body?.toPlayTimeId)
 
-  if (fromDate === toDate) {
+  // 仅当既不改变日期也不改变时段时才视为无意义操作
+  if (fromDate === toDate && fromPlayTimeId === null && toPlayTimeId === null) {
     throw createError({
       statusCode: 400,
-      message: '目标日期不能与当前日期相同'
+      message: '目标日期与时段均未改变'
     })
   }
 
@@ -48,19 +56,31 @@ export default defineEventHandler(async (event) => {
 
   try {
     const moveResult = await db.transaction(async (tx) => {
-      const existingOnToDate = await tx
+      // 冲突校验：若指定了目标时段，只校验目标时段；否则校验目标日期全天
+      const conflictWhere = [gte(schedules.playDate, toStart), lte(schedules.playDate, toEnd)]
+      if (toPlayTimeId !== null) {
+        conflictWhere.push(eq(schedules.playTimeId, toPlayTimeId))
+      }
+      const existingOnTarget = await tx
         .select({ id: schedules.id })
         .from(schedules)
-        .where(and(gte(schedules.playDate, toStart), lte(schedules.playDate, toEnd)))
+        .where(and(...conflictWhere))
         .limit(1)
 
-      if (existingOnToDate.length > 0) {
+      if (existingOnTarget.length > 0) {
         throw createError({
           statusCode: 409,
-          message: '目标日期已存在排期，无法迁移。请先清空目标日期的排期。'
+          message: toPlayTimeId !== null
+            ? '目标时段已存在排期，无法迁移。请先清空目标时段的排期。'
+            : '目标日期已存在排期，无法迁移。请先清空目标日期的排期。'
         })
       }
 
+      // 源排期查询：按源时段过滤（若指定）
+      const sourceWhere = [gte(schedules.playDate, fromStart), lte(schedules.playDate, fromEnd)]
+      if (fromPlayTimeId !== null) {
+        sourceWhere.push(eq(schedules.playTimeId, fromPlayTimeId))
+      }
       const sourceSchedules = await tx
         .select({
           id: schedules.id,
@@ -70,7 +90,7 @@ export default defineEventHandler(async (event) => {
         })
         .from(schedules)
         .innerJoin(songs, eq(schedules.songId, songs.id))
-        .where(and(gte(schedules.playDate, fromStart), lte(schedules.playDate, fromEnd)))
+        .where(and(...sourceWhere))
 
       if (sourceSchedules.length === 0) {
         return {
@@ -81,12 +101,16 @@ export default defineEventHandler(async (event) => {
 
       const scheduleIds = sourceSchedules.map((item) => item.id)
       const updateTime = getServerDate()
+      const updateSet: Record<string, any> = {
+        playDate: toPlayDate,
+        updatedAt: updateTime
+      }
+      if (toPlayTimeId !== null) {
+        updateSet.playTimeId = toPlayTimeId
+      }
       const movedSchedules = await tx
         .update(schedules)
-        .set({
-          playDate: toPlayDate,
-          updatedAt: updateTime
-        })
+        .set(updateSet)
         .where(inArray(schedules.id, scheduleIds))
         .returning({
           id: schedules.id
@@ -113,6 +137,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       fromDate,
       toDate,
+      fromPlayTimeId,
+      toPlayTimeId,
       movedCount: moveResult.movedCount
     }
   } catch (error: any) {

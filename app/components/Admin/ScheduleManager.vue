@@ -1165,6 +1165,20 @@
           class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-info transition-colors"
           type="date"
         />
+        <template v-if="playTimeEnabled">
+          <CustomSelect
+            v-model="moveSourcePlayTime"
+            :label="locale.moveSourcePlayTime"
+            :options="moveSourcePlayTimeOptions"
+            class-name="w-full"
+          />
+          <CustomSelect
+            v-model="moveTargetPlayTime"
+            :label="locale.moveTargetPlayTime"
+            :options="moveTargetPlayTimeOptions"
+            class-name="w-full"
+          />
+        </template>
         <div class="flex gap-3">
           <button
             class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
@@ -2403,6 +2417,8 @@ const filteredPoolSongs = computed(() => {
 })
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
+const moveSourcePlayTime = ref('')
+const moveTargetPlayTime = ref('')
 const showCopyDateDialog = ref(false)
 const copyMode = ref('single')
 const copyFromStart = ref('')
@@ -2665,6 +2681,36 @@ const filterPlayTimeOptions = computed(() => {
 // 播出时段选项
 const playTimeOptions = computed(() => {
   const options = [{ label: locale.value.noPlayTimeAllDay, value: '' }]
+  if (playTimes.value) {
+    playTimes.value.forEach((pt) => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
+
+// 迁移弹窗：源时段选项（全部时段 / 指定时段）
+const moveSourcePlayTimeOptions = computed(() => {
+  const options = [{ label: locale.value.allPlayTimes || '全部时段', value: '' }]
+  if (playTimes.value) {
+    playTimes.value.forEach((pt) => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
+
+// 迁移弹窗：目标时段选项（保持不变 / 指定时段）
+const moveTargetPlayTimeOptions = computed(() => {
+  const options = [{ label: locale.value.keepOriginalPlayTime || '保持原时段', value: '' }]
   if (playTimes.value) {
     playTimes.value.forEach((pt) => {
       let label = pt.name
@@ -4767,6 +4813,8 @@ const openMoveDateDialog = () => {
   }
 
   moveTargetDate.value = selectedDate.value
+  moveSourcePlayTime.value = selectedPlayTime.value || ''
+  moveTargetPlayTime.value = ''
   showMoveDateDialog.value = true
 }
 
@@ -4795,6 +4843,8 @@ const switchCopyMode = (mode) => {
 
 const confirmMoveDate = async () => {
   const targetDate = moveTargetDate.value.trim()
+  const sourcePlayTimeId = moveSourcePlayTime.value || ''
+  const targetPlayTimeId = moveTargetPlayTime.value || ''
 
   if (!parseDateValue(targetDate)) {
     if (window.$showNotification) {
@@ -4806,17 +4856,25 @@ const confirmMoveDate = async () => {
     return
   }
 
-  if (targetDate === selectedDate.value) {
+  const sourceDate = selectedDate.value
+  const changingDate = targetDate !== sourceDate
+  const changingPlayTime = targetPlayTimeId !== ''
+
+  if (!changingDate && !changingPlayTime) {
     if (window.$showNotification) {
       window.$showNotification(locale.value.errors.sameTargetDate, 'warning')
     }
     return
   }
 
-  const sourceDate = selectedDate.value
+  // 源排期：按日期 + 源时段过滤
   const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
     if (!schedule.playDate) return false
-    return getScheduleDateValue(schedule.playDate) === sourceDate
+    if (getScheduleDateValue(schedule.playDate) !== sourceDate) return false
+    if (sourcePlayTimeId) {
+      return String(schedule.playTimeId) === String(sourcePlayTimeId)
+    }
+    return true
   })
 
   if (sourceSchedules.length === 0) {
@@ -4826,13 +4884,23 @@ const confirmMoveDate = async () => {
     return
   }
 
+  // 构建确认文案
+  const sourcePlayTimeLabel = sourcePlayTimeId
+    ? getPlayTimeName(Number(sourcePlayTimeId))
+    : (locale.value.allPlayTimes || '全部时段')
+  const targetPlayTimeLabel = targetPlayTimeId
+    ? getPlayTimeName(Number(targetPlayTimeId))
+    : (locale.value.keepOriginalPlayTime || '保持原时段')
+
   confirmDialogTitle.value = locale.value.moveDateTitle
   confirmDialogMessage.value = callLocale(
     'confirmations.moveDateMessage',
-    `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
+    `确定将 ${sourceDate}（${sourcePlayTimeLabel}）的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel}）吗？歌曲顺序与内容将保持不变。`,
     sourceDate,
     sourceSchedules.length,
-    targetDate
+    targetDate,
+    sourcePlayTimeLabel,
+    targetPlayTimeLabel
   )
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
@@ -4841,12 +4909,16 @@ const confirmMoveDate = async () => {
   confirmAction.value = async () => {
     loading.value = true
     try {
+      const body = {
+        fromDate: sourceDate,
+        toDate: targetDate
+      }
+      if (sourcePlayTimeId) body.fromPlayTimeId = Number(sourcePlayTimeId)
+      if (targetPlayTimeId) body.toPlayTimeId = Number(targetPlayTimeId)
+
       const result = await $fetch('/api/admin/schedule/move-date', {
         method: 'POST',
-        body: {
-          fromDate: sourceDate,
-          toDate: targetDate
-        },
+        body,
         ...auth.getAuthConfig()
       })
 
