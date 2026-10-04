@@ -2759,6 +2759,8 @@ export const admin = {
       clearListConfirm: 'Clear',
       moveDateMessage: (sourceDate: string, count: number, targetDate: string, sourcePlayTime: string, targetPlayTime: string) => `Move ${count} song(s) from ${sourceDate} (${sourcePlayTime}) to ${targetDate} (${targetPlayTime})? Order and content will be preserved.`,
       moveDateConfirm: 'Move',
+      moveDateAppendMessage: (targetDate: string, targetPlayTime: string) => `${targetDate} (${targetPlayTime}) already has a schedule. Moved songs will be appended after the existing ones. Continue?`,
+      moveDateAppendConfirm: 'Append',
       copyDateMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number) => `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Source will cycle to fill.`,
       copyDateOverwriteMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number, draftDays: number) => `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Drafts on ${draftDays} target date(s) will be overwritten. Source will cycle to fill.`,
       copyDateConfirm: 'Copy',

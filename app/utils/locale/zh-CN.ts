@@ -2768,6 +2768,8 @@ export const admin = {
       clearListConfirm: '确认清空',
       moveDateMessage: (sourceDate: string, count: number, targetDate: string, sourcePlayTime: string, targetPlayTime: string) => `确定将 ${sourceDate}（${sourcePlayTime}）的 ${count} 首歌曲迁移到 ${targetDate}（${targetPlayTime}）吗？歌曲顺序与内容将保持不变。`,
       moveDateConfirm: '确认迁移',
+      moveDateAppendMessage: (targetDate: string, targetPlayTime: string) => `目标日期 ${targetDate}（${targetPlayTime}）已存在排期，迁移的歌曲将追加在已有歌曲之后。是否继续？`,
+      moveDateAppendConfirm: '继续追加',
       copyDateMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number) => `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？源排期将循环复用至填满目标区间。`,
       copyDateOverwriteMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number, draftDays: number) => `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？目标区间内有 ${draftDays} 个日期的草稿将被覆盖。源排期将循环复用至填满目标区间。`,
       copyDateConfirm: '确认复制',

@@ -1952,6 +1952,9 @@ const locale = computed(() => {
     confirmations: {
       moveDateMessage: (sourceDate, count, targetDate, sourcePlayTimeLabel, targetPlayTimeLabel) =>
         `确定将 ${sourceDate}（${sourcePlayTimeLabel || '全部时段'}）的所有 ${count} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel || '保持原时段'}）吗？歌曲顺序与内容将保持不变。`,
+      moveDateAppendMessage: (targetDate, targetPlayTimeLabel) =>
+        `目标日期 ${targetDate}（${targetPlayTimeLabel || '保持原时段'}）已存在排期，迁移的歌曲将追加在已有歌曲之后。是否继续？`,
+      moveDateAppendConfirm: '继续追加',
       publishDraftMessage: (title) =>
         `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
       ...(base.confirmations || {})
@@ -3130,7 +3133,9 @@ const updateScrollButtonState = () => {
 // 确认对话框处理
 const handleConfirm = async () => {
   if (confirmAction.value) {
-    await confirmAction.value()
+    // action 返回 'keepOpen' 表示已在内部重新配置对话框（二级确认），保持打开且不清空 action
+    const result = await confirmAction.value()
+    if (result === 'keepOpen') return
   }
   showConfirmDialog.value = false
   confirmAction.value = null
@@ -4911,21 +4916,21 @@ const confirmMoveDate = async () => {
     ? getPlayTimeName(Number(targetPlayTimeId))
     : (locale.value.keepOriginalPlayTime || '保持原时段')
 
-  confirmDialogTitle.value = locale.value.moveDateTitle
-  confirmDialogMessage.value = callLocale(
-    'confirmations.moveDateMessage',
-    `确定将 ${sourceDate}（${sourcePlayTimeLabel}）的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel}）吗？歌曲顺序与内容将保持不变。`,
-    sourceDate,
-    sourceSchedules.length,
-    targetDate,
-    sourcePlayTimeLabel,
-    targetPlayTimeLabel
+  // 目标日期/时段是否已有排期：迁移歌曲将被追加到末尾，需要二级确认
+  const movedScheduleIds = new Set(sourceSchedules.map((s) => s.id))
+  const landingSlots = new Set(
+    targetPlayTimeId
+      ? [String(targetPlayTimeId)]
+      : sourceSchedules.map((s) => String(s.playTimeId ?? ''))
   )
-  confirmDialogType.value = 'warning'
-  confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
-  showMoveDateDialog.value = false
+  const targetOccupied = [...publicSchedules.value, ...drafts.value].some((schedule) => {
+    if (!schedule.playDate) return false
+    if (movedScheduleIds.has(schedule.id)) return false
+    if (getScheduleDateValue(schedule.playDate) !== targetDate) return false
+    return landingSlots.has(String(schedule.playTimeId ?? ''))
+  })
 
-  confirmAction.value = async () => {
+  const executeMove = async () => {
     loading.value = true
     try {
       const body = {
@@ -4980,6 +4985,38 @@ const confirmMoveDate = async () => {
     } finally {
       loading.value = false
     }
+  }
+
+  confirmDialogTitle.value = locale.value.moveDateTitle
+  confirmDialogMessage.value = callLocale(
+    'confirmations.moveDateMessage',
+    `确定将 ${sourceDate}（${sourcePlayTimeLabel}）的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel}）吗？歌曲顺序与内容将保持不变。`,
+    sourceDate,
+    sourceSchedules.length,
+    targetDate,
+    sourcePlayTimeLabel,
+    targetPlayTimeLabel
+  )
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
+  showMoveDateDialog.value = false
+
+  confirmAction.value = async () => {
+    // 目标已有排期时先做二级确认：询问是否追加到已有歌曲之后
+    if (targetOccupied) {
+      confirmDialogTitle.value = locale.value.moveDateTitle
+      confirmDialogMessage.value = callLocale(
+        'confirmations.moveDateAppendMessage',
+        `目标日期 ${targetDate}（${targetPlayTimeLabel}）已存在排期，迁移的歌曲将追加在已有歌曲之后。是否继续？`,
+        targetDate,
+        targetPlayTimeLabel
+      )
+      confirmDialogType.value = 'warning'
+      confirmDialogConfirmText.value = locale.value.confirmations.moveDateAppendConfirm
+      confirmAction.value = executeMove
+      return 'keepOpen'
+    }
+    await executeMove()
   }
 
   showConfirmDialog.value = true
