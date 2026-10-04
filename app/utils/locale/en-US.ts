@@ -2769,6 +2769,8 @@ export const admin = {
       saveBeforeMove: 'Save current unpublished changes before moving schedules',
       saveBeforeCopy: 'Save current unpublished changes before copying schedules',
       moveDateSuccess: (count: number, date: string) => `Moved ${count} songs to ${date}`,
+      moveDateSkipped: (count: number) => `skipped ${count} duplicate(s)`,
+      moveDateAllSkipped: (count: number) => `All songs already exist at target, skipped ${count}`,
       copyDateSuccess: (count: number, toStart: string, toEnd: string) => `Copied ${count} songs to ${toStart} ~ ${toEnd}`,
       draftSaved: 'Schedule draft saved!',
       allDraftsDeleted: 'All drafts deleted!',

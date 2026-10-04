@@ -2778,6 +2778,8 @@ export const admin = {
       saveBeforeMove: '请先保存当前未发布修改后再执行迁移',
       saveBeforeCopy: '请先保存当前未发布修改后再执行复制',
       moveDateSuccess: (count: number, date: string) => `已迁移 ${count} 首歌曲到 ${date}`,
+      moveDateSkipped: (count: number) => `跳过 ${count} 首重复歌曲`,
+      moveDateAllSkipped: (count: number) => `目标位置已存在这些歌曲，全部跳过（${count} 首）`,
       copyDateSuccess: (count: number, toStart: string, toEnd: string) => `已逐日复制 ${count} 首歌曲至 ${toStart} ~ ${toEnd}`,
       draftSaved: '排期草稿保存成功！',
       allDraftsDeleted: '所有草稿已删除！',

@@ -4926,17 +4926,27 @@ const confirmMoveDate = async () => {
       updateLocalScheduledSongs()
 
       if (window.$showNotification) {
-        window.$showNotification(
-          result?.movedCount > 0
-            ? callLocale(
-                'messages.moveDateSuccess',
-                `已迁移 ${result.movedCount} 首歌曲到 ${targetDate}`,
-                result.movedCount,
-                targetDate
-              )
-            : locale.value.errors.noMovableSongs,
-          result?.movedCount > 0 ? 'success' : 'warning'
-        )
+        const moved = result?.movedCount || 0
+        const skipped = result?.skippedCount || 0
+        if (moved > 0) {
+          const base = callLocale(
+            'messages.moveDateSuccess',
+            `已迁移 ${moved} 首歌曲到 ${targetDate}`,
+            moved,
+            targetDate
+          )
+          const msg = skipped > 0
+            ? `${base}（${callLocale('messages.moveDateSkipped', `跳过 ${skipped} 首重复歌曲`, skipped)}）`
+            : base
+          window.$showNotification(msg, 'success')
+        } else if (skipped > 0) {
+          window.$showNotification(
+            callLocale('messages.moveDateAllSkipped', `目标位置已存在这些歌曲，全部跳过（${skipped} 首）`, skipped),
+            'warning'
+          )
+        } else {
+          window.$showNotification(locale.value.errors.noMovableSongs, 'warning')
+        }
       }
     } catch (error) {
       console.error('迁移排期日期失败:', error)
