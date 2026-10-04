@@ -1950,8 +1950,8 @@ const locale = computed(() => {
       ...(base.errors || {})
     },
     confirmations: {
-      moveDateMessage: (sourceDate, count, targetDate) =>
-        `确定将 ${sourceDate} 的所有 ${count} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
+      moveDateMessage: (sourceDate, count, targetDate, sourcePlayTimeLabel, targetPlayTimeLabel) =>
+        `确定将 ${sourceDate}（${sourcePlayTimeLabel || '全部时段'}）的所有 ${count} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel || '保持原时段'}）吗？歌曲顺序与内容将保持不变。`,
       publishDraftMessage: (title) =>
         `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
       ...(base.confirmations || {})
@@ -4876,7 +4876,8 @@ const confirmMoveDate = async () => {
 
   const sourceDate = selectedDate.value
   const changingDate = targetDate !== sourceDate
-  const changingPlayTime = targetPlayTimeId !== ''
+  // 目标时段需与源时段实质不同才算变更：同日且目标时段等于源时段（或源为全部时段时目标未指定）是无效操作
+  const changingPlayTime = targetPlayTimeId !== '' && targetPlayTimeId !== sourcePlayTimeId
 
   if (!changingDate && !changingPlayTime) {
     if (window.$showNotification) {

@@ -1,6 +1,6 @@
-import { and, asc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, eq, gte, isNull, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { schedules, songs } from '~/drizzle/schema'
+import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import { getServerDate } from '~~/server/utils/serverTime'
 
@@ -54,6 +54,21 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 目标时段必须真实存在，避免写入悬空 playTimeId 导致歌曲落入未知分组
+  if (toPlayTimeId !== null) {
+    const targetPlayTime = await db
+      .select({ id: playTimes.id })
+      .from(playTimes)
+      .where(eq(playTimes.id, toPlayTimeId))
+      .limit(1)
+    if (targetPlayTime.length === 0) {
+      throw createError({
+        statusCode: 400,
+        message: '目标播出时段不存在'
+      })
+    }
+  }
+
   try {
     const moveResult = await db.transaction(async (tx) => {
       // 源排期查询：按源时段过滤（若指定），需要 playTimeId 用于"保持原时段"场景
@@ -99,7 +114,7 @@ export default defineEventHandler(async (event) => {
         // 查询目标日期+该时段已有排期，用于去重与计算起始 sequence
         const existWhere = [gte(schedules.playDate, toStart), lte(schedules.playDate, toEnd)]
         if (targetPt === null) {
-          existWhere.push(eq(schedules.playTimeId, null))
+          existWhere.push(isNull(schedules.playTimeId))
         } else {
           existWhere.push(eq(schedules.playTimeId, targetPt))
         }
@@ -137,10 +152,12 @@ export default defineEventHandler(async (event) => {
       return { movedCount, skippedCount, movedSongs }
     })
 
-    const notificationsToSend = moveResult.movedSongs.map((item) => {
-      const message = `您投稿的歌曲《${item.songTitle}》原定于 ${fromDate} 播放，已调整至 ${toDate}。`
-      return createSystemNotification(item.requesterId, '排期调整通知', message)
-    })
+    const notificationsToSend = moveResult.movedSongs
+      .filter((item) => item.requesterId !== null)
+      .map((item) => {
+        const message = `您投稿的歌曲《${item.songTitle}》原定于 ${fromDate} 播放，已调整至 ${toDate}。`
+        return createSystemNotification(item.requesterId as number, '排期调整通知', message)
+      })
 
     if (notificationsToSend.length > 0) {
       Promise.allSettled(notificationsToSend).catch((error) => {
