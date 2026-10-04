@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 pb-8">
+  <div class="space-y-6 pb-24 md:pb-8">
     <!-- 日期选择器 -->
     <div class="relative bg-bg-secondary-50 border border-border-secondary-50 rounded-2xl p-1 overflow-hidden">
       <div class="flex items-center" @touchstart.stop>
@@ -217,17 +217,16 @@
                 </button>
               </div>
               <button
-                class="flex items-center justify-center gap-1 p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-info hover:border-info-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                class="hidden lg:flex p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-info hover:border-info-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                 v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
                 :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
                 :title="locale.addCurrentPage"
                 @click="moveAllToPool"
               >
                 <FolderPlus class="w-3.5 h-3.5" />
-                <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.addCurrentPage }}</span>
               </button>
               <button
-                class="flex items-center justify-center gap-1 p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
+                class="hidden lg:flex items-center justify-center gap-1 p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
                 :disabled="refreshingAllDurations.running"
                 :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
                 @click="refreshAllDurations"
@@ -236,7 +235,6 @@
                   class="w-3.5 h-3.5"
                   :class="{ 'animate-spin': refreshingAllDurations.running }"
                 />
-                <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.refreshPageDurations }}</span>
                 <span
                   v-if="refreshingAllDurations.running"
                   class="text-[9px] font-bold tabular-nums whitespace-nowrap"
@@ -642,7 +640,7 @@
           ]"
         >
           <div
-            class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
+            class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
           >
             <div class="flex items-baseline gap-3">
               <h3 class="text-lg font-black tracking-tight text-text-primary uppercase">{{ locale.playOrder }}</h3>
@@ -652,71 +650,66 @@
               </span>
             </div>
             <div
-              class="flex flex-wrap items-center gap-2 p-1.5 bg-bg-secondary-50 border border-border-secondary-50 rounded-2xl overflow-x-auto scrollbar-hide"
+              class="flex flex-wrap items-center gap-2 p-1.5 bg-bg-secondary-50 border border-border-secondary-50 rounded-2xl"
             >
               <div class="flex gap-1">
                 <button
                   :disabled="
                     !hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts
                   "
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="saveDraft"
                 >
                   <Save class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.saveDraft }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.saveDraft }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openDownloadDialog"
                 >
                   <Download class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.downloadSongs }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.downloadSongs }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openPlaylistExportDialog"
                 >
                   <FileSpreadsheet class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.exportPlaylist }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.exportPlaylist }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-success rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-success rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="markAllAsPlayed"
                 >
                   <CheckCircle2 class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.markAllPlayed }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.markAllPlayed }}</span
                   >
                 </button>
                 <button
                   :disabled="refreshingAllDurations.running"
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="refreshAllDurations('scheduled')"
                 >
                   <RefreshCcw
                     class="w-3.5 h-3.5"
                     :class="{ 'animate-spin': refreshingAllDurations.running }"
                   />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.refreshPageDurations }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.refreshPageDurations }}{{
                       refreshingAllDurations.running
                         ? ` (${refreshingAllDurations.progress})`
@@ -726,47 +719,43 @@
                 </button>
                 <button
                   :disabled="autoScheduleCandidates.length === 0"
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openAutoScheduleDialog"
                 >
                   <Sparkles class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.autoSchedule }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.autoSchedule }}</span
                   >
                 </button>
                 <button
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative"
                   @click="openMoveDateDialog"
                 >
                   <ArrowRight class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.moveDate }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.moveDate }}</span
                   >
                 </button>
                 <button
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative"
                   @click="openCopyDateDialog"
                 >
                   <Copy class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.copyDate }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.copyDate }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="flex items-center justify-center gap-1 p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-error rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-error rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="clearScheduleList"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
-                  <span class="lg:hidden text-[10px] font-bold whitespace-nowrap">{{ locale.clearList }}</span>
                   <span
-                    class="hidden lg:block absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.clearList }}</span
                   >
                 </button>
@@ -1024,6 +1013,120 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- 移动端底部操作栏 -->
+  <div
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-2 bg-bg-primary-90 backdrop-blur-xl border-t border-border-secondary flex items-center gap-2 pb-6"
+  >
+    <div class="flex-1 overflow-x-auto scrollbar-hide">
+      <div class="flex items-center gap-1.5 w-max">
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
+          :title="locale.downloadSongs"
+          @click="openDownloadDialog"
+        >
+          <Download class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.downloadSongsShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="localScheduledSongs.length === 0"
+          :title="locale.exportPlaylist"
+          @click="openPlaylistExportDialog"
+        >
+          <FileSpreadsheet class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.exportPlaylistShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
+          :title="locale.saveDraft"
+          @click="saveDraft"
+        >
+          <Save class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveDraftShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-success rounded-lg active:scale-95 transition-all"
+          :title="locale.markAllPlayed"
+          @click="markAllAsPlayed"
+        >
+          <CheckCircle2 class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.markAllPlayedShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all"
+          :title="locale.moveDate"
+          @click="openMoveDateDialog"
+        >
+          <ArrowRight class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.moveDateShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
+          :title="locale.copyDate"
+          @click="openCopyDateDialog"
+        >
+          <Copy class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.copyDateShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-error rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="localScheduledSongs.length === 0"
+          :title="locale.clearList"
+          @click="clearScheduleList"
+        >
+          <Trash2 class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.clearListShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+          :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+          :title="locale.addCurrentPage"
+          @click="moveAllToPool"
+        >
+          <FolderPlus class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.addCurrentPageShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!canPublish"
+          :title="locale.publishOnly"
+          @click="publishSchedule"
+        >
+          <Send class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.publishScheduleShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="refreshingAllDurations.running"
+          :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
+          @click="refreshAllDurations"
+        >
+          <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': refreshingAllDurations.running }" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.refreshPageDurationsShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
+          :title="locale.autoSchedule"
+          @click="openAutoScheduleDialog"
+        >
+          <Sparkles class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.autoScheduleShort }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 主要操作 -->
+    <button
+      :disabled="!hasChanges"
+      class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+      @click="saveSequence"
+    >
+      <FileBadge class="w-4 h-4" />
+      <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveAndPublishShort }}</span>
+    </button>
   </div>
 
   <!-- 确认对话框 -->
