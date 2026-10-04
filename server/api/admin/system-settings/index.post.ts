@@ -306,7 +306,7 @@ export default defineEventHandler(async (event) => {
         body.legalConsentUpdatedDate !== undefined ? updateData.legalConsentUpdatedDate : settings?.legalConsentUpdatedDate
       if (!finalUpdatedDate) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须填写条款更新日期')
       const finalDocsRaw =
-        body.legalConsentDocuments !== undefined ? updateData.legalConsentDocuments : settings?.legalConsentDocuments
+        body.legalConsentDocuments !== undefined ? body.legalConsentDocuments : settings?.legalConsentDocuments
       const finalDocs = parseLegalConsentDocuments(finalDocsRaw)
       const docsInvalid =
         !finalDocs.length ||
