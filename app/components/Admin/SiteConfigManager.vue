@@ -1566,23 +1566,27 @@ input[type='number'] {
 .legal-date-input-wrap { position: relative; width: 100%; }
 .legal-date-input-wrap input[type="date"] {
   width: 100%;
-  color-scheme: dark;
   color: var(--text-primary);
 }
 .legal-date-input-wrap input[type="date"]:placeholder-shown {
   color: transparent;
 }
 .legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  filter: brightness(0) invert(1);
   cursor: pointer;
-  opacity: 0.9;
+  opacity: 1;
 }
 .legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+.legal-date-input-wrap input[type="date"]:focus::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1);
   opacity: 1;
 }
 .legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.9;
+  filter: brightness(0) invert(1);
+  opacity: 1;
 }
 .legal-date-placeholder {
   position: absolute;
