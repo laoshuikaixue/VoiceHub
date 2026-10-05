@@ -918,7 +918,7 @@
             </div>
             <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
           </div>
-          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
+          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" maxlength="10" pattern="\d{4}-\d{2}-\d{2}" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
         </div>
         <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
@@ -1439,10 +1439,14 @@ const saveConfig = async () => {
     }
 
     saveSuccess.value = true
+    // 启用条款确认且日期为空时，前端同步补当前日期（后端也会兜底），避免保存后仍显示空值
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     formData.value = {
       ...formData.value,
       siteTitle: configToSave.siteTitle,
-      siteLogoUrl: configToSave.siteLogoUrl
+      siteLogoUrl: configToSave.siteLogoUrl,
+      legalConsentUpdatedDate: formData.value.legalConsentEnabled && !formData.value.legalConsentUpdatedDate ? todayStr : formData.value.legalConsentUpdatedDate
     }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
