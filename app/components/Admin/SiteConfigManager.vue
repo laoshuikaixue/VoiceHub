@@ -1424,8 +1424,14 @@ const saveConfig = async () => {
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
-
-        message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
+        // 参数错误优先展示后端返回的具体原因，而非通用的"参数错误"
+        const code = errorData?.data?.code || errorData?.code || errorData?.statusMessage
+        const serverMessage = errorData?.data?.message || errorData?.message
+        if (code === 'COMMON_INVALID_PARAMS' && typeof serverMessage === 'string' && serverMessage) {
+          message = serverMessage
+        } else {
+          message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
+        }
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }

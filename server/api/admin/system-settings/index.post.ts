@@ -6,6 +6,7 @@ import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { parseLegalConsentDocuments } from '~~/server/utils/legal-consent'
+import { getServerDate } from '~~/server/utils/serverTime'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
@@ -302,17 +303,24 @@ export default defineEventHandler(async (event) => {
     const legalConsentEffectiveEnabled =
       body.legalConsentEnabled !== undefined ? body.legalConsentEnabled === true : settings?.legalConsentEnabled === true
     if (legalConsentEffectiveEnabled) {
+      // 启用时日期为空则自动填当前系统日期
       const finalUpdatedDate =
         body.legalConsentUpdatedDate !== undefined ? updateData.legalConsentUpdatedDate : settings?.legalConsentUpdatedDate
-      if (!finalUpdatedDate) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须填写条款更新日期')
+      if (!finalUpdatedDate) {
+        const today = getServerDate()
+        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        updateData.legalConsentUpdatedDate = dateStr
+      }
       const finalDocsRaw =
         body.legalConsentDocuments !== undefined ? body.legalConsentDocuments : settings?.legalConsentDocuments
       const finalDocs = parseLegalConsentDocuments(finalDocsRaw)
-      const docsInvalid =
-        !finalDocs.length ||
-        finalDocs.some((d) => !d?.name?.trim() || !d?.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d?.slug || '')) ||
-        new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length
-      if (docsInvalid) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须配置合法的协议文档')
+      if (!finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时至少需要配置一份协议文档')
+      for (const doc of finalDocs) {
+        if (!doc?.name?.trim()) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档名称不能为空')
+        if (!doc?.content?.trim()) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `协议文档「${doc.name}」的内容不能为空`)
+        if (!/^[A-Za-z0-9_-]+$/.test(doc?.slug || '')) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `协议文档「${doc.name || ''}」的标识只能包含字母、数字、下划线和连字符`)
+      }
+      if (new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档标识不能重复')
     }
     if (body.legalConsentDocuments !== undefined) {
       let docs
