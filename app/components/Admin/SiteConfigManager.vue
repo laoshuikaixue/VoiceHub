@@ -1564,35 +1564,35 @@ input[type='number'] {
 .legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
 .legal-date-field { min-width:0; }
 .legal-date-input-wrap { position: relative; width: 100%; }
-.legal-date-input-wrap input[type="date"] {
+.legal-date-input-wrap :deep(input[type="date"]) {
   width: 100%;
   color: var(--text-primary);
 }
-.legal-date-input-wrap input[type="date"]:placeholder-shown {
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown) {
   color: transparent;
 }
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit,
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-fields-wrapper,
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-text,
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-month-field,
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-day-field,
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-year-field {
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit),
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-fields-wrapper),
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-text),
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-month-field),
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-day-field),
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-year-field) {
   color: transparent;
 }
-.legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1);
   cursor: pointer;
   opacity: 1;
 }
-.legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator:hover {
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator:hover) {
   filter: brightness(0) invert(1);
   opacity: 1;
 }
-.legal-date-input-wrap input[type="date"]:focus::-webkit-calendar-picker-indicator {
+.legal-date-input-wrap :deep(input[type="date"]:focus::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1);
   opacity: 1;
 }
-.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-calendar-picker-indicator {
+.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1);
   opacity: 1;
 }
