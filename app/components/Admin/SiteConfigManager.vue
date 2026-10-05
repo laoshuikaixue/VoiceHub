@@ -918,7 +918,14 @@
             </div>
             <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
           </div>
-          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" maxlength="10" pattern="\d{4}-\d{2}-\d{2}" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
+          <div class="legal-date-field">
+            <label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label>
+            <div class="legal-date-input-wrap mt-2">
+              <input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" />
+              <span v-if="!formData.legalConsentUpdatedDate" class="legal-date-placeholder">YYYY-MM-DD</span>
+            </div>
+            <p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p>
+          </div>
         </div>
         <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
@@ -1555,5 +1562,39 @@ input[type='number'] {
 .legal-mode-option { min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12px; line-height:1; }
 .legal-mode-option svg { width:14px; height:14px; flex:0 0 14px; }
 .legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
-.legal-date-field { min-width:0; } .legal-date-field input { width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
+.legal-date-field { min-width:0; }
+.legal-date-input-wrap { position: relative; width: 100%; }
+.legal-date-input-wrap input[type="date"] {
+  width: 100%;
+  color-scheme: dark;
+  color: var(--text-primary);
+}
+.legal-date-input-wrap input[type="date"]:placeholder-shown {
+  color: transparent;
+}
+.legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.9;
+}
+.legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.9;
+}
+.legal-date-placeholder {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+.legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; }
+@media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
 </style>
