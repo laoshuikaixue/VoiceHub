@@ -921,8 +921,7 @@
           <div class="legal-date-field">
             <label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label>
             <div class="legal-date-input-wrap mt-2">
-              <input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" />
-              <span v-if="!formData.legalConsentUpdatedDate" class="legal-date-placeholder">YYYY-MM-DD</span>
+              <input v-model="formData.legalConsentUpdatedDate" type="date" lang="en" :class="inputClass" />
             </div>
             <p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p>
           </div>
@@ -1569,15 +1568,15 @@ input[type='number'] {
   color: var(--text-primary);
 }
 .legal-date-input-wrap :deep(input[type="date"]:placeholder-shown) {
-  color: transparent;
+  color: var(--text-primary);
 }
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit),
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-fields-wrapper),
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-text),
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-month-field),
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-day-field),
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-datetime-edit-year-field) {
-  color: transparent;
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-fields-wrapper),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-text),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-month-field),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-day-field),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-year-field) {
+  color: var(--text-primary);
 }
 .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1);
@@ -1591,21 +1590,6 @@ input[type='number'] {
 .legal-date-input-wrap :deep(input[type="date"]:focus::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1);
   opacity: 1;
-}
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown::-webkit-calendar-picker-indicator) {
-  filter: brightness(0) invert(1);
-  opacity: 1;
-}
-.legal-date-placeholder {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-primary);
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
 }
 .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; }
 @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
