@@ -1571,6 +1571,14 @@ input[type='number'] {
 .legal-date-input-wrap input[type="date"]:placeholder-shown {
   color: transparent;
 }
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit,
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-fields-wrapper,
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-text,
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-month-field,
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-day-field,
+.legal-date-input-wrap input[type="date"]:placeholder-shown::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
 .legal-date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
   filter: brightness(0) invert(1);
   cursor: pointer;
