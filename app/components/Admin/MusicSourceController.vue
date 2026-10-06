@@ -160,7 +160,6 @@ import {
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import MusicSourcePlugins from '~/components/Admin/MusicSourcePlugins.vue'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { DEFAULT_PLATFORMS } from '~/utils/platforms'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
