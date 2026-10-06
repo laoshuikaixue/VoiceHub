@@ -472,17 +472,24 @@ async function main() {
           env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
         })
 
-        const schemaConsistent = migrateSuccess && (await checkSchemaConsistency(sql))
+        // 迁移失败时仍校验最终结构：历史版本可能已经手动同步过 schema，只有迁移记录未对齐。
+        // 结构完整时补齐基线即可；结构不完整仍然终止，禁止用 push --force 掩盖问题。
+        const schemaConsistent = await checkSchemaConsistency(sql)
         if (migrateSuccess && schemaConsistent) {
           ok('migrate 同步成功')
         } else {
           if (migrateSuccess) {
             warn('migrate 已执行，但数据库schema仍不完整。')
+          } else if (schemaConsistent) {
+            warn('migrate 未完成，但数据库schema已完整，按现有结构补齐迁移基线。')
+            await seedMissingMigrationRecords(sql)
           } else {
             warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
           }
-          err('部署期间禁止自动执行 push --force。请检查数据库连接、迁移记录和迁移文件。')
-          process.exit(1)
+          if (!schemaConsistent) {
+            err('部署期间禁止自动执行 push --force。请检查数据库连接、迁移记录和迁移文件。')
+            process.exit(1)
+          }
         }
       } else {
         warn('检测到 legacy 数据库迁移记录为空，检查schema并写入迁移基线。')
