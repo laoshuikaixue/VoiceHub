@@ -158,13 +158,9 @@ import {
   CheckCircle2
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-<<<<<<< HEAD
 import MusicSourcePlugins from '~/components/Admin/MusicSourcePlugins.vue'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-=======
-import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { DEFAULT_PLATFORMS } from '~/utils/platforms'
->>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'

@@ -250,15 +250,12 @@ async function checkSchemaConsistency(sql) {
     'CardCodeRedeemLog',
     'PasswordAuditLog',
     'PasswordRateLimit',
-<<<<<<< HEAD
     'GradeClass',
-    'auth_sessions'
-=======
+    'auth_sessions',
     'admin_operation_logs',
     'user_sessions',
     'operations_metric_buckets',
     'operations_dependency_buckets'
->>>>>>> d20eaf20 (chore(db + api): 更新数据库表校验与操作日志接口)
   ]
   // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
   const requiredIndexes = [['User', 'User_username_unique']]
@@ -416,7 +413,6 @@ async function checkSchemaConsistency(sql) {
   return true
 }
 
-<<<<<<< HEAD
 async function repairSchemaWithPush(sql) {
   // 先补齐枚举值，再执行 push
   await ensureUserStatusEnumValues(sql)
@@ -440,9 +436,6 @@ async function repairSchemaWithPush(sql) {
   ok('强制同步完成，迁移记录已补齐')
   return true
 }
-
-=======
->>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 async function main() {
   log('🔄 数据库同步', 'cyan')
 

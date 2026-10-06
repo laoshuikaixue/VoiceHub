@@ -376,15 +376,8 @@
     {
       "idx": 53,
       "version": "7",
-      "when": 1785669366654,
-      "tag": "20260802180000_add_operations_metric_buckets",
-      "breakpoints": true
-    },
-    {
-      "idx": 40,
-      "version": "7",
-      "when": 1785763825061,
-      "tag": "20260803235900_add_admin_operation_logs",
+      "when": 1791303563903,
+      "tag": "20261006161923_operations-monitoring",
       "breakpoints": true
     }
   ]

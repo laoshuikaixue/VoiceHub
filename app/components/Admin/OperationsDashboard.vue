@@ -91,14 +91,6 @@
 
     <template v-if="activeGroup === 'overview'">
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-<<<<<<< HEAD
-        <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="overallStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!operationsData.status && !initialOperationsLoading" :refreshable="false">
-          <div class="health-layout">
-            <div class="health-score-wrap">
-              <div class="health-score-ring">
-                <strong>{{ availabilitySli }}</strong>
-                <span>{{ locale.overview.availabilitySli }}</span>
-=======
         <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="sloAvailabilityStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
           <div class="slo-health" :class="`slo-health--${sloAvailabilityStatus}`">
             <div class="slo-health__main">
@@ -119,7 +111,6 @@
                     <small>{{ item.score == null ? locale.overview.sloNotScored : `${locale.overview.sloMetricScore} ${Math.round(item.score)}` }}</small>
                   </div>
                 </div>
->>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
               </div>
             </div>
 
@@ -1388,18 +1379,6 @@ const musicApiRows = computed(() => [
 const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : '采集正常')
-<<<<<<< HEAD
-const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
-const healthScore = computed(() => {
-  const total = runtimeHttpMetrics.value?.recentRequests || 0
-  const errors = runtimeHttpMetrics.value?.recent5xx || 0
-  return total ? `${Math.max(0, (1 - errors / total) * 100).toFixed(2)}%` : 'N/A'
-})
-const healthScoreTone = computed(() => {
-  const score = Number.parseFloat(healthScore.value)
-  if (!Number.isFinite(score)) return 'unknown'
-  return score >= 99 ? 'good' : score >= 95 ? 'warn' : 'critical'
-=======
 const clampScore = (value) => Math.min(100, Math.max(0, value))
 const scoreLowerIsBetter = (value, good, warning, critical) => {
   if (value <= good) return 100
@@ -1477,7 +1456,6 @@ const sloHealthRecommendations = computed(() => {
   if (sloHealthMetrics.value.some((item) => item.status === 'unknown')) recommendations.push(messages.sloAdviceCoverage)
   if (!recommendations.length) recommendations.push(messages.sloAdviceHealthy)
   return [...new Set(recommendations.filter(Boolean))].slice(0, 3)
->>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 })
 const formatBytes = (value) => {
   const bytes = Number(value)
@@ -1687,7 +1665,6 @@ const isServerlessRuntime = computed(() => {
   if (publicRuntimeConfig.isNetlify) return true
   return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
 })
-<<<<<<< HEAD
 const deploymentModeLabel = computed(() => isServerlessRuntime.value ? '无服务器部署' : systemSnapshot.value?.platform ? 'Node 服务部署' : locale.value.overview?.detectionPending)
 
 const healthLiveDetails = computed(() => [
@@ -1696,8 +1673,6 @@ const healthLiveDetails = computed(() => [
   { label: locale.value.overview?.collectionStatus, value: collectionStatusText.value }
 ])
 
-=======
->>>>>>> e1d644c6 (refactor(admin): 重构运营大盘健康评分逻辑，优化多语言文案)
 const backupStatusFields = computed(() => [
   { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
   { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? '成功' : '失败') : '--' },
