@@ -50,6 +50,8 @@ interface SongResponse extends MaskableSong {
   submissionNotePublic?: boolean
   submissionNotePublicStatus?: string | null
   replayRequestId?: number | null
+  submissionCount?: number
+  playCount?: number
 }
 
 const calculateReplayCooldown = (status?: string | null, updatedAt?: Date | string | null) => {
@@ -332,6 +334,49 @@ export default defineEventHandler(async (event) => {
     const baseRows = await client.unsafe(baseQuery, params)
     const shouldHideStudentInfo = baseRows[0]?.hideStudentInfo ?? true
 
+    // 管理员扩展信息：统计每位投稿人的投稿次数与播出次数（按已播出的排期条目计）
+    const requesterStatsMap = new Map<number, { submissionCount: number; playCount: number }>()
+    if (isAdmin) {
+      const requesterIds = [
+        ...new Set(
+          baseRows
+            .map((row: any) => (row.requesterId ? Number(row.requesterId) : null))
+            .filter((id): id is number => id !== null)
+        )
+      ]
+      if (requesterIds.length > 0) {
+        // 与列表所选学期保持一致：投稿与播出均仅统计该学期内的记录
+        const statsParams: any[] = [requesterIds]
+        let semesterCondition = ''
+        if (semester) {
+          statsParams.push(semester)
+          semesterCondition = ` AND s.semester = $${statsParams.length}`
+        }
+        const statsRows = await client.unsafe(
+          `
+          SELECT
+            s."requesterId",
+            COUNT(DISTINCT s.id)::int AS "submissionCount",
+            COUNT(sch.id)::int AS "playCount"
+          FROM "Song" s
+          LEFT JOIN "Schedule" sch
+            ON sch."songId" = s.id
+            AND sch."isDraft" = false
+            AND sch.played = true
+          WHERE s."requesterId" = ANY($1::int[])${semesterCondition}
+          GROUP BY s."requesterId"
+        `,
+          statsParams
+        )
+        for (const statsRow of statsRows) {
+          requesterStatsMap.set(Number(statsRow.requesterId), {
+            submissionCount: Number(statsRow.submissionCount || 0),
+            playCount: Number(statsRow.playCount || 0)
+          })
+        }
+      }
+    }
+
     const formattedSongs: SongResponse[] = baseRows.map((row: any) => {
       const collaborators = Array.isArray(row.collaborators)
         ? row.collaborators.map((collaborator: any) => ({
@@ -409,7 +454,13 @@ export default defineEventHandler(async (event) => {
         submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
         submissionNotePublicStatus: canViewSubmissionNote ? (row.submissionNotePublicStatus || null) : null,
         replayRequestId: row.replayRequestId ? Number(row.replayRequestId) : null,
-        preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null
+        preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null,
+        ...(isAdmin && row.requesterId && requesterStatsMap.has(Number(row.requesterId))
+          ? {
+              submissionCount: requesterStatsMap.get(Number(row.requesterId))!.submissionCount,
+              playCount: requesterStatsMap.get(Number(row.requesterId))!.playCount
+            }
+          : {})
       }
 
       if (user) {

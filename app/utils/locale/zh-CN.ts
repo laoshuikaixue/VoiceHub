@@ -2584,6 +2584,8 @@ export const admin = {
     loadingTitle: '正在加载排期数据',
     loadingMessage: '请稍候...',
     pendingSongs: '待排歌曲',
+    platformSource: '投稿平台',
+    requesterStats: '投稿 {0} 次 · 播出 {1} 次',
     poolList: '备选列表',
     poolItemName: '备选歌曲',
     addAllPending: '将全部待排歌曲移入备选池',

@@ -346,7 +346,7 @@
                 v-for="song in filteredUnscheduledSongs"
                 :key="song.id"
                 :class="[
-                  'draggable-song relative group rounded-xl p-3 transition-all select-none',
+                  'draggable-song relative group rounded-xl p-2.5 transition-all select-none',
                   song.cardCodeId
                     ? 'bg-warning-5 border border-warning-30'
                     : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
@@ -359,10 +359,10 @@
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
                 <!-- 歌曲卡片内容 -->
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2.5">
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer hover:opacity-80 transition-opacity"
+                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer group-hover:opacity-90 transition-opacity"
                     @click.stop="playSong(song)"
                   >
                     <img
@@ -377,14 +377,20 @@
                       v-else
                       class="w-full h-full flex items-center justify-center text-text-disabled"
                     >
-                      <Music2 class="w-6 h-6 opacity-50" />
+                      <Music2 class="w-5 h-5 opacity-50" />
+                    </div>
+                    <div
+                      class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Play class="w-3 h-3 text-white fill-white" />
                     </div>
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div class="flex items-center gap-2 min-w-0">
+                    <!-- 第一行：歌名 + 时长 -->
+                    <div class="flex items-center gap-1.5 min-w-0">
                       <h4
-                        class="font-bold text-text-primary text-sm truncate flex items-center gap-2 min-w-0"
+                        class="font-bold text-text-primary text-xs truncate flex items-center gap-2 min-w-0 flex-1"
                       >
                         <span
                           v-if="isBilibiliSong(song)"
@@ -437,62 +443,30 @@
                         }}
                       </span>
                     </div>
-                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
-                      <span>{{ song.artist }}</span>
-                      <!-- 时长显示 / 行内编辑 -->
-                      <span
-                        v-if="song.durationSeconds && !editingDuration[song.id]"
-                        :class="[
-                          'shrink-0 px-1 rounded transition-colors cursor-pointer',
-                          durationRefreshStatus[song.id] === 'success'
-                            ? 'text-success bg-success-10'
-                            : durationRefreshStatus[song.id] === 'error'
-                              ? 'text-error bg-error-10'
-                              : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
-                        ]"
-                        :title="locale.messages?.editDuration || '点击编辑时长'"
-                        @click.stop="startEditDuration(song)"
-                      >{{ formatDuration(song.durationSeconds) }}</span>
-                      <input
-                        v-else-if="editingDuration[song.id]"
-                        ref="editingDurationInput"
-                        v-model="editingDurationValue"
-                        type="text"
-                        inputmode="text"
-                        pattern="[0-9:]*"
-                        class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                        :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                        @focusout="saveDurationEdit(song)"
-                        @keydown="handleDurationKeydown($event, song)"
-                      >
-                    </div>
-                    <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
-                      <span>{{ song.requester }}</span>
-                      <span v-if="song.requesterGrade || song.grade" class="text-text-disabled">|</span>
-                      <span v-if="song.requesterGrade || song.grade">
-                        {{ song.requesterGrade || song.grade }}
-                        {{ song.requesterClass || song.class }}
-                      </span>
+                    <!-- 第二行：歌手 · 期望时段 -->
+                    <div class="text-[11px] text-text-tertiary truncate flex items-center gap-1">
+                      <span class="truncate max-w-[120px]">{{ song.artist }}</span>
                       <span
                         v-if="song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap"
+                        class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap shrink-0"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                       <span
                         v-if="activeTab === 'pool' && song.addedByName"
-                        class="ml-1 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap"
+                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap shrink-0"
                       >
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2">
+                  <!-- 右侧操作区 -->
+                  <div class="flex items-center gap-1.5 shrink-0">
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"
-                      class="flex items-center gap-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 px-2 py-1 rounded-md border border-border-secondary-50"
+                      class="flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 rounded-md border border-border-secondary-50"
                     >
                       <Heart class="w-3 h-3 text-error-50" />
                       {{ song.voteCount || 0 }}
@@ -597,6 +571,79 @@
                     >
                       <MoreVertical class="w-4 h-4" />
                     </button>
+                  </div>
+                  <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
+                  <div
+                    v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
+                    class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
+                  >
+                    <template v-if="song.requester">
+                      <span class="truncate max-w-[120px]">{{ song.requester }}</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                        class="text-text-disabled shrink-0"
+                      >|</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                        class="shrink-0"
+                      >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
+                    </template>
+                    <template v-if="auth?.isAdmin">
+                      <span
+                        v-if="song.requester && song.musicPlatform"
+                        class="text-text-disabled shrink-0"
+                      >·</span>
+                      <span
+                        v-if="song.musicPlatform"
+                        class="platform-tag px-1 whitespace-nowrap"
+                        :class="'platform-' + platformTagClass(song.musicPlatform)"
+                        :title="callLocale('platformSource', '投稿平台')"
+                      >
+                        {{ platformLabel(song.musicPlatform) }}
+                      </span>
+                      <template
+                        v-if="song.submissionCount != null && song.playCount != null"
+                      >
+                        <span class="text-text-disabled">·</span>
+                        <span
+                          >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
+                        >
+                        <span class="text-text-disabled">·</span>
+                        <span
+                          >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
+                        >
+                      </template>
+                    </template>
+                    <!-- 时长显示 / 行内编辑（放在行末） -->
+                    <span
+                      v-if="(song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))) && (song.durationSeconds || editingDuration[song.id])"
+                      class="text-text-disabled shrink-0"
+                    >·</span>
+                    <span
+                      v-if="song.durationSeconds && !editingDuration[song.id]"
+                      :class="[
+                        'shrink-0 px-1 rounded transition-colors cursor-pointer font-mono tabular-nums',
+                        durationRefreshStatus[song.id] === 'success'
+                          ? 'text-success bg-success-10'
+                          : durationRefreshStatus[song.id] === 'error'
+                            ? 'text-error bg-error-10'
+                            : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
+                      ]"
+                      :title="locale.messages?.editDuration || '点击编辑时长'"
+                      @click.stop="startEditDuration(song)"
+                    >{{ formatDuration(song.durationSeconds) }}</span>
+                    <input
+                      v-else-if="editingDuration[song.id]"
+                      ref="editingDurationInput"
+                      v-model="editingDurationValue"
+                      type="text"
+                      inputmode="text"
+                      pattern="[0-9:]*"
+                      class="w-16 text-[10px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                      :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
+                      @focusout="saveDurationEdit(song)"
+                      @keydown="handleDurationKeydown($event, song)"
+                    >
                   </div>
                 </div>
               </div>
@@ -1925,6 +1972,7 @@ import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
@@ -2783,6 +2831,11 @@ const currentPage = computed({
   }
 })
 const pageSize = ref(10)
+
+// 管理员扩展信息：仅管理员在待排歌曲列表显示投稿平台与投稿统计
+const { currentLocale } = useLocale()
+const platformTagClass = (platform) => BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin'
+const platformLabel = (platform) => getPlatformDisplayName(platform, null, currentLocale.value)
 
 // 服务
 let songsService = null
@@ -5840,4 +5893,15 @@ const handleTouchReturnToDraggable = async () => {
   position: absolute;
   width: 100%;
 }
+
+/* 管理员扩展信息：投稿平台标签 */
+.platform-tag {
+  font-size: 9px;
+  font-weight: 500;
+}
+.platform-netease { color: #c3484d; }
+.platform-tencent { color: #2f9e63; }
+.platform-bilibili { color: #d96f9b; }
+.platform-migu { color: #d97a2f; }
+.platform-plugin { color: var(--overlay-40); }
 </style>

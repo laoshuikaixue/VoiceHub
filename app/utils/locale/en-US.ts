@@ -2575,6 +2575,8 @@ export const admin = {
     loadingTitle: 'Loading schedule data',
     loadingMessage: 'Please wait...',
     pendingSongs: 'Pending Songs',
+    platformSource: 'Source platform',
+    requesterStats: '{0} submitted · {1} played',
     poolList: 'Backup List',
     poolItemName: 'backup songs',
     addAllPending: 'Move all pending songs to backup pool',
