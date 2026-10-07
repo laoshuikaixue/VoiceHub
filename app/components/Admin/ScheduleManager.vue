@@ -470,14 +470,9 @@
                         @keydown="handleDurationKeydown($event, song)"
                       >
                     </div>
-                    <!-- 第二行：艺术家 · 点歌人（班级）· 期望时段 -->
+                    <!-- 第二行：歌手 · 期望时段 -->
                     <div class="text-[11px] text-text-tertiary truncate flex items-center gap-1">
                       <span class="truncate max-w-[120px]">{{ song.artist }}</span>
-                      <span class="text-text-disabled shrink-0">·</span>
-                      <span class="truncate">{{ song.requester }}</span>
-                      <span v-if="song.requesterGrade || song.grade" class="shrink-0">
-                        ({{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }})
-                      </span>
                       <span
                         v-if="song.preferredPlayTimeId"
                         class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap shrink-0"
@@ -491,30 +486,47 @@
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
                     </div>
-                    <!-- 第三行：平台标签 · 投 x · 播 x（管理员可见） -->
+                    <!-- 第三行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（平台与统计仅管理员可见） -->
                     <div
-                      v-if="auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null))"
-                      class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap"
+                      v-if="song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
+                      class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap w-full min-w-0"
                     >
-                      <span
-                        v-if="song.musicPlatform"
-                        class="platform-tag px-1 whitespace-nowrap"
-                        :class="'platform-' + platformTagClass(song.musicPlatform)"
-                        :title="callLocale('platformSource', '投稿平台')"
-                      >
-                        {{ platformLabel(song.musicPlatform) }}
-                      </span>
-                      <template
-                        v-if="song.submissionCount != null && song.playCount != null"
-                      >
-                        <span class="text-text-disabled">·</span>
+                      <template v-if="song.requester">
+                        <span class="truncate max-w-[120px]">{{ song.requester }}</span>
                         <span
-                          >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
-                        >
-                        <span class="text-text-disabled">·</span>
+                          v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                          class="text-text-disabled shrink-0"
+                        >|</span>
                         <span
-                          >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
+                          v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                          class="shrink-0"
+                        >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
+                      </template>
+                      <template v-if="auth?.isAdmin">
+                        <span
+                          v-if="song.requester && song.musicPlatform"
+                          class="text-text-disabled shrink-0"
+                        >·</span>
+                        <span
+                          v-if="song.musicPlatform"
+                          class="platform-tag px-1 whitespace-nowrap"
+                          :class="'platform-' + platformTagClass(song.musicPlatform)"
+                          :title="callLocale('platformSource', '投稿平台')"
                         >
+                          {{ platformLabel(song.musicPlatform) }}
+                        </span>
+                        <template
+                          v-if="song.submissionCount != null && song.playCount != null"
+                        >
+                          <span class="text-text-disabled">·</span>
+                          <span
+                            >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
+                          >
+                          <span class="text-text-disabled">·</span>
+                          <span
+                            >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
+                          >
+                        </template>
                       </template>
                     </div>
                   </div>
