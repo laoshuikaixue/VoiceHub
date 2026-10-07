@@ -345,6 +345,13 @@ export default defineEventHandler(async (event) => {
         )
       ]
       if (requesterIds.length > 0) {
+        // 与列表所选学期保持一致：投稿与播出均仅统计该学期内的记录
+        const statsParams: any[] = [requesterIds]
+        let semesterCondition = ''
+        if (semester) {
+          statsParams.push(semester)
+          semesterCondition = ` AND s.semester = $${statsParams.length}`
+        }
         const statsRows = await client.unsafe(
           `
           SELECT
@@ -356,10 +363,10 @@ export default defineEventHandler(async (event) => {
             ON sch."songId" = s.id
             AND sch."isDraft" = false
             AND sch.played = true
-          WHERE s."requesterId" = ANY($1::int[])
+          WHERE s."requesterId" = ANY($1::int[])${semesterCondition}
           GROUP BY s."requesterId"
         `,
-          [requesterIds]
+          statsParams
         )
         for (const statsRow of statsRows) {
           requesterStatsMap.set(Number(statsRow.requesterId), {
