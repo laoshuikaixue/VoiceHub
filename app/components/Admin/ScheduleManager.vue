@@ -442,33 +442,6 @@
                             : song.submissionNote
                         }}
                       </span>
-
-                      <!-- 时长显示 / 行内编辑 -->
-                      <span
-                        v-if="song.durationSeconds && !editingDuration[song.id]"
-                        :class="[
-                          'shrink-0 px-1 rounded transition-colors cursor-pointer font-mono text-[10px] tabular-nums',
-                          durationRefreshStatus[song.id] === 'success'
-                            ? 'text-success bg-success-10'
-                            : durationRefreshStatus[song.id] === 'error'
-                              ? 'text-error bg-error-10'
-                              : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
-                        ]"
-                        :title="locale.messages?.editDuration || '点击编辑时长'"
-                        @click.stop="startEditDuration(song)"
-                      >{{ formatDuration(song.durationSeconds) }}</span>
-                      <input
-                        v-else-if="editingDuration[song.id]"
-                        ref="editingDurationInput"
-                        v-model="editingDurationValue"
-                        type="text"
-                        inputmode="text"
-                        pattern="[0-9:]*"
-                        class="w-16 text-[10px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                        :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                        @focusout="saveDurationEdit(song)"
-                        @keydown="handleDurationKeydown($event, song)"
-                      >
                     </div>
                     <!-- 第二行：歌手 · 期望时段 -->
                     <div class="text-[11px] text-text-tertiary truncate flex items-center gap-1">
@@ -601,7 +574,7 @@
                   </div>
                   <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
                   <div
-                    v-if="song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
+                    v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
                     class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
                   >
                     <template v-if="song.requester">
@@ -641,6 +614,36 @@
                         >
                       </template>
                     </template>
+                    <!-- 时长显示 / 行内编辑（放在行末） -->
+                    <span
+                      v-if="(song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))) && (song.durationSeconds || editingDuration[song.id])"
+                      class="text-text-disabled shrink-0"
+                    >·</span>
+                    <span
+                      v-if="song.durationSeconds && !editingDuration[song.id]"
+                      :class="[
+                        'shrink-0 px-1 rounded transition-colors cursor-pointer font-mono tabular-nums',
+                        durationRefreshStatus[song.id] === 'success'
+                          ? 'text-success bg-success-10'
+                          : durationRefreshStatus[song.id] === 'error'
+                            ? 'text-error bg-error-10'
+                            : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
+                      ]"
+                      :title="locale.messages?.editDuration || '点击编辑时长'"
+                      @click.stop="startEditDuration(song)"
+                    >{{ formatDuration(song.durationSeconds) }}</span>
+                    <input
+                      v-else-if="editingDuration[song.id]"
+                      ref="editingDurationInput"
+                      v-model="editingDurationValue"
+                      type="text"
+                      inputmode="text"
+                      pattern="[0-9:]*"
+                      class="w-16 text-[10px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                      :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
+                      @focusout="saveDurationEdit(song)"
+                      @keydown="handleDurationKeydown($event, song)"
+                    >
                   </div>
                 </div>
               </div>
