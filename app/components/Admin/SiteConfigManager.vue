@@ -921,7 +921,7 @@
           <div class="legal-date-field">
             <label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label>
             <div class="legal-date-input-wrap mt-2">
-              <input v-model="formData.legalConsentUpdatedDate" type="date" lang="en" :class="inputClass" />
+              <input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" />
             </div>
             <p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p>
           </div>
@@ -1430,14 +1430,8 @@ const saveConfig = async () => {
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
-        // 参数错误优先展示后端返回的具体原因，而非通用的"参数错误"
-        const code = errorData?.data?.code || errorData?.code || errorData?.statusMessage
-        const serverMessage = errorData?.data?.message || errorData?.message
-        if (code === 'COMMON_INVALID_PARAMS' && typeof serverMessage === 'string' && serverMessage) {
-          message = serverMessage
-        } else {
-          message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
-        }
+        // 统一走 localize：按错误码查词典得到当前语言的具体文案，避免英文界面泄漏中文
+        message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }
@@ -1445,14 +1439,21 @@ const saveConfig = async () => {
     }
 
     saveSuccess.value = true
-    // 启用条款确认且日期为空时，前端同步补当前日期（后端也会兜底），避免保存后仍显示空值
-    const today = new Date()
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    // 读取后端返回的权威设置（含自动补全的北京时间条款日期），避免前端自行按本地时区补日期
+    let savedSettings = null
+    try {
+      savedSettings = await response.json()
+    } catch {
+      savedSettings = null
+    }
     formData.value = {
       ...formData.value,
       siteTitle: configToSave.siteTitle,
       siteLogoUrl: configToSave.siteLogoUrl,
-      legalConsentUpdatedDate: formData.value.legalConsentEnabled && !formData.value.legalConsentUpdatedDate ? todayStr : formData.value.legalConsentUpdatedDate
+      legalConsentUpdatedDate:
+        savedSettings && typeof savedSettings.legalConsentUpdatedDate === 'string'
+          ? savedSettings.legalConsentUpdatedDate
+          : formData.value.legalConsentUpdatedDate
     }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
@@ -1567,9 +1568,6 @@ input[type='number'] {
   width: 100%;
   color: var(--text-primary);
 }
-.legal-date-input-wrap :deep(input[type="date"]:placeholder-shown) {
-  color: var(--text-primary);
-}
 .legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit),
 .legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-fields-wrapper),
 .legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-text),
@@ -1578,18 +1576,15 @@ input[type='number'] {
 .legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-year-field) {
   color: var(--text-primary);
 }
+/* 日历图标：深色主题下 UA 默认黑色图标在深色背景不可见，仅此时刷白；浅色主题保留默认黑色 */
 .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator) {
-  filter: brightness(0) invert(1);
   cursor: pointer;
   opacity: 1;
 }
-.legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator:hover) {
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator),
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator:hover),
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]:focus::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1);
-  opacity: 1;
-}
-.legal-date-input-wrap :deep(input[type="date"]:focus::-webkit-calendar-picker-indicator) {
-  filter: brightness(0) invert(1);
-  opacity: 1;
 }
 .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; }
 @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}

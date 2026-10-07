@@ -6,7 +6,7 @@ import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { parseLegalConsentDocuments } from '~~/server/utils/legal-consent'
-import { getServerDate } from '~~/server/utils/serverTime'
+import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
@@ -299,35 +299,44 @@ export default defineEventHandler(async (event) => {
       if (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款更新日期格式无效')
       updateData.legalConsentUpdatedDate = date
     }
+    // 协议文档：提交时先做结构校验（非法 JSON / 非数组拒绝），再序列化落库
+    let normalizedLegalConsentDocuments: unknown
+    if (body.legalConsentDocuments !== undefined) {
+      let docs
+      try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }
+      if (!Array.isArray(docs)) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_INVALID, '协议文档配置无效')
+      normalizedLegalConsentDocuments = docs
+      updateData.legalConsentDocuments = JSON.stringify(docs)
+    }
+
     // 交叉校验：启用条款确认时（合并提交值与持久化值后）必须存在更新日期与合法的协议文档
     const legalConsentEffectiveEnabled =
       body.legalConsentEnabled !== undefined ? body.legalConsentEnabled === true : settings?.legalConsentEnabled === true
     if (legalConsentEffectiveEnabled) {
-      // 启用时日期为空则自动填当前系统日期
       const finalUpdatedDate =
         body.legalConsentUpdatedDate !== undefined ? updateData.legalConsentUpdatedDate : settings?.legalConsentUpdatedDate
       if (!finalUpdatedDate) {
-        const today = getServerDate()
-        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-        updateData.legalConsentUpdatedDate = dateStr
+        // 仅在本次请求显式操作条款字段时才自动补当天（北京时间），避免无关的部分保存静默改写条款版本
+        const explicitLegalConsentSubmit = body.legalConsentEnabled === true || body.legalConsentUpdatedDate !== undefined
+        if (!explicitLegalConsentSubmit) {
+          throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DATE_MISSING, '启用条款确认时必须填写条款更新日期')
+        }
+        updateData.legalConsentUpdatedDate = formatDateTime(getBeijingTime(), 'YYYY-MM-DD')
       }
-      const finalDocsRaw =
-        body.legalConsentDocuments !== undefined ? body.legalConsentDocuments : settings?.legalConsentDocuments
-      const finalDocs = parseLegalConsentDocuments(finalDocsRaw)
-      if (!finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时至少需要配置一份协议文档')
+      const finalDocs = parseLegalConsentDocuments(
+        normalizedLegalConsentDocuments !== undefined ? normalizedLegalConsentDocuments : settings?.legalConsentDocuments
+      )
+      const truncateName = (name: unknown): string => {
+        const s = typeof name === 'string' ? name.trim() : ''
+        return s.length > 30 ? `${s.slice(0, 30)}…` : s
+      }
+      if (!finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_EMPTY, '启用条款确认时至少需要配置一份协议文档')
       for (const doc of finalDocs) {
-        if (!doc?.name?.trim()) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档名称不能为空')
-        if (!doc?.content?.trim()) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `协议文档「${doc.name}」的内容不能为空`)
-        if (!/^[A-Za-z0-9_-]+$/.test(doc?.slug || '')) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `协议文档「${doc.name || ''}」的标识只能包含字母、数字、下划线和连字符`)
+        if (!doc?.name?.trim()) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_NAME_MISSING, '协议文档名称不能为空')
+        if (!doc?.content?.trim()) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_CONTENT_MISSING, `协议文档「${truncateName(doc.name)}」的内容不能为空`, { params: [truncateName(doc.name)] })
+        if (!/^[A-Za-z0-9_-]+$/.test(doc?.slug || '')) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_SLUG_INVALID, `协议文档「${truncateName(doc.name)}」的标识只能包含字母、数字、下划线和连字符`, { params: [truncateName(doc.name)] })
       }
-      if (new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档标识不能重复')
-    }
-    if (body.legalConsentDocuments !== undefined) {
-      let docs
-      try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }
-      const effectiveEnabled = body.legalConsentEnabled !== undefined ? body.legalConsentEnabled : settings?.legalConsentEnabled === true
-      if (!Array.isArray(docs) || (effectiveEnabled && (!docs.length || docs.some((d) => !d || !d.name?.trim() || !d.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d.slug || '')) || new Set(docs.map((d) => d.slug)).size !== docs.length))) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档配置无效')
-      updateData.legalConsentDocuments = JSON.stringify(docs)
+      if (new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_SLUG_DUPLICATE, '协议文档标识不能重复')
     }
 
     if (body.statisticsCodeEnabled !== undefined) {
