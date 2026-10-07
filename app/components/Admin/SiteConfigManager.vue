@@ -918,7 +918,13 @@
             </div>
             <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
           </div>
-          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
+          <div class="legal-date-field">
+            <label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label>
+            <div class="legal-date-input-wrap mt-2">
+              <input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" />
+            </div>
+            <p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p>
+          </div>
         </div>
         <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
@@ -1424,7 +1430,7 @@ const saveConfig = async () => {
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
-
+        // 统一走 localize：按错误码查词典得到当前语言的具体文案，避免英文界面泄漏中文
         message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
@@ -1433,10 +1439,21 @@ const saveConfig = async () => {
     }
 
     saveSuccess.value = true
+    // 读取后端返回的权威设置（含自动补全的北京时间条款日期），避免前端自行按本地时区补日期
+    let savedSettings = null
+    try {
+      savedSettings = await response.json()
+    } catch {
+      savedSettings = null
+    }
     formData.value = {
       ...formData.value,
       siteTitle: configToSave.siteTitle,
-      siteLogoUrl: configToSave.siteLogoUrl
+      siteLogoUrl: configToSave.siteLogoUrl,
+      legalConsentUpdatedDate:
+        savedSettings && typeof savedSettings.legalConsentUpdatedDate === 'string'
+          ? savedSettings.legalConsentUpdatedDate
+          : formData.value.legalConsentUpdatedDate
     }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
@@ -1545,5 +1562,30 @@ input[type='number'] {
 .legal-mode-option { min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12px; line-height:1; }
 .legal-mode-option svg { width:14px; height:14px; flex:0 0 14px; }
 .legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
-.legal-date-field { min-width:0; } .legal-date-field input { width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
+.legal-date-field { min-width:0; }
+.legal-date-input-wrap { position: relative; width: 100%; }
+.legal-date-input-wrap :deep(input[type="date"]) {
+  width: 100%;
+  color: var(--text-primary);
+}
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-fields-wrapper),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-text),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-month-field),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-day-field),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-year-field) {
+  color: var(--text-primary);
+}
+/* 日历图标：深色主题下 UA 默认黑色图标在深色背景不可见，仅此时刷白；浅色主题保留默认黑色 */
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator) {
+  cursor: pointer;
+  opacity: 1;
+}
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator),
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator:hover),
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]:focus::-webkit-calendar-picker-indicator) {
+  filter: brightness(0) invert(1);
+}
+.legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; }
+@media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
 </style>
