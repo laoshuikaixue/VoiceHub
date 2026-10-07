@@ -359,7 +359,7 @@
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
                 <!-- 歌曲卡片内容 -->
-                <div class="flex items-center gap-2.5">
+                <div class="flex flex-wrap items-center gap-2.5">
                   <!-- 封面图片 -->
                   <div
                     class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer group-hover:opacity-90 transition-opacity"
@@ -486,49 +486,6 @@
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
                     </div>
-                    <!-- 第三行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（平台与统计仅管理员可见） -->
-                    <div
-                      v-if="song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
-                      class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap w-full min-w-0"
-                    >
-                      <template v-if="song.requester">
-                        <span class="truncate max-w-[120px]">{{ song.requester }}</span>
-                        <span
-                          v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
-                          class="text-text-disabled shrink-0"
-                        >|</span>
-                        <span
-                          v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
-                          class="shrink-0"
-                        >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
-                      </template>
-                      <template v-if="auth?.isAdmin">
-                        <span
-                          v-if="song.requester && song.musicPlatform"
-                          class="text-text-disabled shrink-0"
-                        >·</span>
-                        <span
-                          v-if="song.musicPlatform"
-                          class="platform-tag px-1 whitespace-nowrap"
-                          :class="'platform-' + platformTagClass(song.musicPlatform)"
-                          :title="callLocale('platformSource', '投稿平台')"
-                        >
-                          {{ platformLabel(song.musicPlatform) }}
-                        </span>
-                        <template
-                          v-if="song.submissionCount != null && song.playCount != null"
-                        >
-                          <span class="text-text-disabled">·</span>
-                          <span
-                            >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
-                          >
-                          <span class="text-text-disabled">·</span>
-                          <span
-                            >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
-                          >
-                        </template>
-                      </template>
-                    </div>
                   </div>
 
                   <!-- 右侧操作区 -->
@@ -641,6 +598,49 @@
                     >
                       <MoreVertical class="w-4 h-4" />
                     </button>
+                  </div>
+                  <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
+                  <div
+                    v-if="song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
+                    class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
+                  >
+                    <template v-if="song.requester">
+                      <span class="truncate max-w-[120px]">{{ song.requester }}</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                        class="text-text-disabled shrink-0"
+                      >|</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                        class="shrink-0"
+                      >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
+                    </template>
+                    <template v-if="auth?.isAdmin">
+                      <span
+                        v-if="song.requester && song.musicPlatform"
+                        class="text-text-disabled shrink-0"
+                      >·</span>
+                      <span
+                        v-if="song.musicPlatform"
+                        class="platform-tag px-1 whitespace-nowrap"
+                        :class="'platform-' + platformTagClass(song.musicPlatform)"
+                        :title="callLocale('platformSource', '投稿平台')"
+                      >
+                        {{ platformLabel(song.musicPlatform) }}
+                      </span>
+                      <template
+                        v-if="song.submissionCount != null && song.playCount != null"
+                      >
+                        <span class="text-text-disabled">·</span>
+                        <span
+                          >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
+                        >
+                        <span class="text-text-disabled">·</span>
+                        <span
+                          >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
+                        >
+                      </template>
+                    </template>
                   </div>
                 </div>
               </div>
