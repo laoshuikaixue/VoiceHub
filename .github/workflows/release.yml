@@ -1,8 +1,9 @@
 # .github/workflows/release.yml
 # 发布入口：
 #   1) 手动运行并填版本号 —— 由本工作流提交 Bump Version、打 tag 并发布 Release
+#      （版本号留空则沿用 package.json 当前版本，不产生 Bump 提交）
 #   2) 推送版本号 tag —— 直接在该 tag 上发布 Release
-# 产物：.output 纯净包（含 docker-compose 与 .env.example）+ 飞牛 FPK
+# 产物：运行包（.output + 迁移与管理脚本，文件集对齐 Dockerfile 运行阶段）+ 飞牛 FPK
 
 name: Release
 
@@ -13,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '发布版本号（如 1.6.0.4）；留空则沿用当前 package.json 版本且不产生 Bump 提交'
+        description: '发布版本号'
         required: false
         type: string
 
@@ -59,12 +60,12 @@ jobs:
           fi
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            if git rev-parse -q --verify "refs/tags/$VER" > /dev/null; then
-              echo "❌ tag $VER 已存在，无法重复发布"
-              exit 1
-            fi
-
             if [ "$VER" != "$PKG_VER" ]; then
+              if git rev-parse -q --verify "refs/tags/$VER" > /dev/null; then
+                echo "❌ tag $VER 已存在，无法把 $PKG_VER 再发布为 $VER"
+                exit 1
+              fi
+
               node -e '
                 const fs = require("fs");
                 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -83,9 +84,20 @@ jobs:
               echo "✅ 已提交 Bump Version: $PKG_VER -> $VER"
             fi
 
-            git tag "$VER"
-            git push origin "refs/tags/$VER"
-            COMMIT=$(git rev-parse HEAD)
+            HEAD_SHA=$(git rev-parse HEAD)
+            TAG_SHA=$(git rev-parse -q --verify "refs/tags/$VER^{commit}" || true)
+            if [ -z "$TAG_SHA" ]; then
+              git tag "$VER"
+              git push origin "refs/tags/$VER"
+              COMMIT="$HEAD_SHA"
+            elif [ "$TAG_SHA" = "$HEAD_SHA" ]; then
+              # 上一次运行可能已在 prepare 阶段打过 tag 但后续失败，此处复用以便重跑
+              echo "♻️ tag $VER 已指向当前提交，复用"
+              COMMIT="$TAG_SHA"
+            else
+              echo "❌ tag $VER 指向 ${TAG_SHA:0:8}，与当前提交 ${HEAD_SHA:0:8} 不一致"
+              exit 1
+            fi
           else
             COMMIT="${GITHUB_SHA}"
           fi
@@ -103,15 +115,18 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.commit }}
 
-      - name: 安装 Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
+      # setup-node v5 会按 packageManager 自动探测并调用包管理器做依赖缓存，
+      # 因此 pnpm 必须先于 Node 安装
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: 安装 Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
       - name: 安装依赖并构建
         run: |
