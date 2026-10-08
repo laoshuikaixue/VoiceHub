@@ -1,0 +1,112 @@
+# .github/workflows/release.yml
+# 推送版本 tag（如 1.6.0.4）或手动指定 tag 时，自动构建 pnpm 产物与 FPK 并发布 GitHub Release
+
+name: Release
+
+on:
+  push:
+    tags:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布使用的 tag（须已存在）'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  build-app:
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: 解析版本号
+        id: version
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          if [ -n "$TAG_INPUT" ]; then
+            VER="$TAG_INPUT"
+          else
+            VER="${GITHUB_REF_NAME}"
+          fi
+          if [[ "$VER" != +([0-9]).+([0-9]).+([0-9]) ]] && [[ "$VER" != +([0-9]).+([0-9]).+([0-9]).+([0-9]) ]]; then
+            echo "❌ tag 不是版本号格式: $VER"
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "📦 发布版本: $VER"
+
+      - name: 安装 Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+
+      - name: 安装依赖并构建
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: 打包 .output 产物
+        run: |
+          test -d .output/server || { echo "❌ 构建产物缺失"; exit 1; }
+          tar -czf "voicehub-${{ steps.version.outputs.version }}-linux-x64.tar.gz" .output docker-compose .env.example
+          ls -lh voicehub-*.tar.gz
+
+      - name: 上传 Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-bundle
+          path: voicehub-*.tar.gz
+          retention-days: 30
+
+  build-fpk:
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/build-fpk.yml
+    with:
+      version: ${{ inputs.tag }}
+
+  release:
+    if: github.repository == 'laoshuikaixue/VoiceHub' && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch')
+    needs: [build-app, build-fpk]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 解析版本号
+        id: version
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          if [ -n "$TAG_INPUT" ]; then
+            echo "version=$TAG_INPUT" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 下载全部 Artifact
+        uses: actions/download-artifact@v5
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: 发布 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          files: |
+            assets/voicehub-*.tar.gz
+            assets/*.fpk
+          generate_release_notes: true
+          make_latest: 'false'
