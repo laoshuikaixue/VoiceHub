@@ -86,17 +86,16 @@ jobs:
 
             HEAD_SHA=$(git rev-parse HEAD)
             TAG_SHA=$(git rev-parse -q --verify "refs/tags/$VER^{commit}" || true)
-            if [ -z "$TAG_SHA" ]; then
+            if [ -n "$TAG_SHA" ]; then
+              # 上次运行可能在 prepare 之后中断；tag 内容即发布内容，按其指向的提交重跑
+              if [ "$TAG_SHA" != "$HEAD_SHA" ]; then
+                echo "⚠️ tag $VER 指向 ${TAG_SHA:0:8}，与当前提交 ${HEAD_SHA:0:8} 不同，按 tag 内容发布"
+              fi
+              COMMIT="$TAG_SHA"
+            else
               git tag "$VER"
               git push origin "refs/tags/$VER"
               COMMIT="$HEAD_SHA"
-            elif [ "$TAG_SHA" = "$HEAD_SHA" ]; then
-              # 上一次运行可能已在 prepare 阶段打过 tag 但后续失败，此处复用以便重跑
-              echo "♻️ tag $VER 已指向当前提交，复用"
-              COMMIT="$TAG_SHA"
-            else
-              echo "❌ tag $VER 指向 ${TAG_SHA:0:8}，与当前提交 ${HEAD_SHA:0:8} 不一致"
-              exit 1
             fi
           else
             COMMIT="${GITHUB_SHA}"
