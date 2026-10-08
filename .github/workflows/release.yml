@@ -118,12 +118,36 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm run build
 
-      - name: 打包 .output 产物
+      - name: 打包发布产物
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
+          set -euo pipefail
           test -d .output/server || { echo "❌ 构建产物缺失"; exit 1; }
-          tar -czf "voicehub-${VERSION}-linux-x64.tar.gz" .output docker-compose .env.example
+
+          # 文件集对齐 Dockerfile 运行阶段：除 .output 外，迁移与管理脚本仍需源文件
+          STAGE="staging/voicehub"
+          mkdir -p "$STAGE/app"
+          cp -r .output "$STAGE/.output"
+          cp -r app/drizzle "$STAGE/app/drizzle"
+          cp -r scripts "$STAGE/scripts"
+          cp -r docker-compose "$STAGE/docker-compose"
+          cp drizzle.config.ts package.json pnpm-lock.yaml pnpm-workspace.yaml .env.example "$STAGE/"
+
+          # 与 Dockerfile CMD 一致：先同步数据库再启动，PREBUILT 跳过安装与构建
+          cat > "$STAGE/start.sh" <<'EOS'
+          #!/bin/sh
+          # 首次使用请先安装生产依赖: pnpm install --prod --frozen-lockfile
+          set -e
+          export PREBUILT=true
+          node scripts/deploy.js
+          exec node .output/server/index.mjs
+          EOS
+          chmod +x "$STAGE/start.sh"
+
+          # 不含 node_modules，架构无关，故文件名不带平台标识
+          tar -czf "voicehub-${VERSION}.tar.gz" -C staging voicehub
+          rm -rf staging
           ls -lh voicehub-*.tar.gz
 
       - name: 上传 Artifact
