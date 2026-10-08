@@ -22,8 +22,8 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '10.29.3'
+  # 与 Dockerfile 的 node:24-alpine 保持一致
+  NODE_VERSION: '24'
 
 jobs:
   prepare:
@@ -115,11 +115,9 @@ jobs:
           ref: ${{ needs.prepare.outputs.commit }}
 
       # setup-node v5 会按 packageManager 自动探测并调用包管理器做依赖缓存，
-      # 因此 pnpm 必须先于 Node 安装
+      # 因此 pnpm 必须先于 Node 安装；版本沿用 package.json 的 packageManager
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: 安装 Node
         uses: actions/setup-node@v5
