@@ -1,5 +1,8 @@
 # .github/workflows/release.yml
-# 推送版本 tag（如 1.6.0.4）或手动指定 tag 时，自动构建 pnpm 产物与 FPK 并发布 GitHub Release
+# 发布入口：
+#   1) 手动运行并填版本号 —— 由本工作流提交 Bump Version、打 tag 并发布 Release
+#   2) 推送版本号 tag —— 直接在该 tag 上发布 Release
+# 产物：.output 纯净包（含 docker-compose 与 .env.example）+ 飞牛 FPK
 
 name: Release
 
@@ -9,9 +12,9 @@ on:
       - '**'
   workflow_dispatch:
     inputs:
-      tag:
-        description: '发布使用的 tag（须已存在）'
-        required: true
+      version:
+        description: '发布版本号（如 1.6.0.4）；留空则沿用当前 package.json 版本且不产生 Bump 提交'
+        required: false
         type: string
 
 permissions:
@@ -19,31 +22,86 @@ permissions:
 
 env:
   NODE_VERSION: '22'
+  PNPM_VERSION: '10.29.3'
 
 jobs:
+  prepare:
+    # 允许在 fork 上手动 dispatch 验证；tag 推送仅在主仓库生效，
+    # github.actor 守卫跳过本工作流自己推送的 tag，避免重复发布
+    if: github.event_name == 'workflow_dispatch' || (github.repository == 'laoshuikaixue/VoiceHub' && github.actor != 'github-actions[bot]')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      commit: ${{ steps.resolve.outputs.commit }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 解析版本号、提交 Bump 并打 tag
+        id: resolve
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          PKG_VER=$(node -p "require('./package.json').version")
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VER="${VERSION_INPUT:-$PKG_VER}"
+          else
+            VER="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ ! "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "❌ 版本号格式不合法: $VER（应为 x.y.z 或 x.y.z.w）"
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if git rev-parse -q --verify "refs/tags/$VER" > /dev/null; then
+              echo "❌ tag $VER 已存在，无法重复发布"
+              exit 1
+            fi
+
+            if [ "$VER" != "$PKG_VER" ]; then
+              node -e '
+                const fs = require("fs");
+                const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+                pkg.version = process.argv[1];
+                fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+              ' "$VER"
+
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add package.json
+              git commit -m "Bump Version"
+              if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                echo "❌ 推送 Bump Version 失败，${GITHUB_REF_NAME} 分支可能有新提交"
+                exit 1
+              fi
+              echo "✅ 已提交 Bump Version: $PKG_VER -> $VER"
+            fi
+
+            git tag "$VER"
+            git push origin "refs/tags/$VER"
+            COMMIT=$(git rev-parse HEAD)
+          else
+            COMMIT="${GITHUB_SHA}"
+          fi
+
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "📦 发布版本: $VER @ ${COMMIT:0:8}"
+
   build-app:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: 解析版本号
-        id: version
-        env:
-          TAG_INPUT: ${{ inputs.tag }}
-        run: |
-          if [ -n "$TAG_INPUT" ]; then
-            VER="$TAG_INPUT"
-          else
-            VER="${GITHUB_REF_NAME}"
-          fi
-          if [[ "$VER" != +([0-9]).+([0-9]).+([0-9]) ]] && [[ "$VER" != +([0-9]).+([0-9]).+([0-9]).+([0-9]) ]]; then
-            echo "❌ tag 不是版本号格式: $VER"
-            exit 1
-          fi
-          echo "version=$VER" >> "$GITHUB_OUTPUT"
-          echo "📦 发布版本: $VER"
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
 
       - name: 安装 Node
         uses: actions/setup-node@v5
@@ -53,7 +111,7 @@ jobs:
       - name: 安装 pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.29.3
+          version: ${{ env.PNPM_VERSION }}
 
       - name: 安装依赖并构建
         run: |
@@ -61,9 +119,11 @@ jobs:
           pnpm run build
 
       - name: 打包 .output 产物
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           test -d .output/server || { echo "❌ 构建产物缺失"; exit 1; }
-          tar -czf "voicehub-${{ steps.version.outputs.version }}-linux-x64.tar.gz" .output docker-compose .env.example
+          tar -czf "voicehub-${VERSION}-linux-x64.tar.gz" .output docker-compose .env.example
           ls -lh voicehub-*.tar.gz
 
       - name: 上传 Artifact
@@ -74,26 +134,19 @@ jobs:
           retention-days: 30
 
   build-fpk:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    needs: prepare
     uses: ./.github/workflows/build-fpk.yml
     with:
-      version: ${{ inputs.tag }}
+      version: ${{ needs.prepare.outputs.version }}
 
   release:
-    if: github.repository == 'laoshuikaixue/VoiceHub' && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch')
-    needs: [build-app, build-fpk]
+    needs: [prepare, build-app, build-fpk]
     runs-on: ubuntu-latest
     steps:
-      - name: 解析版本号
-        id: version
-        env:
-          TAG_INPUT: ${{ inputs.tag }}
-        run: |
-          if [ -n "$TAG_INPUT" ]; then
-            echo "version=$TAG_INPUT" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
 
       - name: 下载全部 Artifact
         uses: actions/download-artifact@v5
@@ -104,7 +157,8 @@ jobs:
       - name: 发布 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ needs.prepare.outputs.version }}
+          target_commitish: ${{ needs.prepare.outputs.commit }}
           files: |
             assets/voicehub-*.tar.gz
             assets/*.fpk
