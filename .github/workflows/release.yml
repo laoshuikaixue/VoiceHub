@@ -61,27 +61,38 @@ jobs:
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$VER" != "$PKG_VER" ]; then
-              if git rev-parse -q --verify "refs/tags/$VER" > /dev/null; then
-                echo "❌ tag $VER 已存在，无法把 $PKG_VER 再发布为 $VER"
-                exit 1
-              fi
+              TAG_SHA=$(git rev-parse -q --verify "refs/tags/$VER^{commit}" || true)
+              if [ -n "$TAG_SHA" ]; then
+                # tag 已存在：指向当前提交的后代即为上次运行所建，跳过 Bump 按 tag 续跑；
+                # 与当前提交无关或 tag 内版本不符则视为重复发布既有版本
+                if ! git merge-base --is-ancestor HEAD "$TAG_SHA"; then
+                  echo "❌ tag $VER 已存在（${TAG_SHA:0:8}）且与当前提交无关，$PKG_VER 无法再发布为 $VER"
+                  exit 1
+                fi
+                TAG_VER=$(git show "$TAG_SHA:package.json" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).version' || true)
+                if [ "$TAG_VER" != "$VER" ]; then
+                  echo "❌ tag $VER 已存在（${TAG_SHA:0:8}）但其提交内版本为 ${TAG_VER:-未知}，拒绝复用"
+                  exit 1
+                fi
+                echo "⚠️ tag $VER 已由上次运行创建（${TAG_SHA:0:8}），跳过 Bump 按 tag 内容重跑"
+              else
+                node -e '
+                  const fs = require("fs");
+                  const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+                  pkg.version = process.argv[1];
+                  fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+                ' "$VER"
 
-              node -e '
-                const fs = require("fs");
-                const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-                pkg.version = process.argv[1];
-                fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
-              ' "$VER"
-
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git add package.json
-              git commit -m "Bump Version"
-              if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
-                echo "❌ 推送 Bump Version 失败，${GITHUB_REF_NAME} 分支可能有新提交"
-                exit 1
+                git config user.name "github-actions[bot]"
+                git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                git add package.json
+                git commit -m "Bump Version"
+                if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                  echo "❌ 推送 Bump Version 失败，${GITHUB_REF_NAME} 分支可能有新提交"
+                  exit 1
+                fi
+                echo "✅ 已提交 Bump Version: $PKG_VER -> $VER"
               fi
-              echo "✅ 已提交 Bump Version: $PKG_VER -> $VER"
             fi
 
             HEAD_SHA=$(git rev-parse HEAD)
@@ -230,4 +241,18 @@ jobs:
           body_path: assets/release-body.md
           generate_release_notes: true
           overwrite_files: true
-          make_latest: 'false'
+
+  # 发布完成后显式触发 Docker 镜像构建：Bump 提交由 GITHUB_TOKEN 推送，
+  # 不会触发 push 类工作流（workflow_dispatch 是例外），需主动调度；
+  # 仅主仓库执行（fork 手动测试按设计跳过），调度失败可仅重跑本 job
+  trigger-docker:
+    needs: [prepare, release]
+    if: github.repository == 'laoshuikaixue/VoiceHub'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: 触发 Docker 镜像构建
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docker-build.yml --ref "${{ github.event.repository.default_branch }}" --repo "$GITHUB_REPOSITORY"

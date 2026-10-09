@@ -720,7 +720,7 @@ VoiceHub/
 ├── .github/                   # GitHub 配置目录
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
-│       ├── release.yml        # 填版本号触发，自动 Bump + 打 tag + 发布 Release（.output 产物包 + FPK）
+│       ├── release.yml        # Release 发布流程
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
 │       └── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
