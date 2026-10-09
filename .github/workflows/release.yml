@@ -157,8 +157,8 @@ jobs:
           EOS
           chmod +x "$STAGE/start.sh"
 
-          # 不含 node_modules，架构无关，故文件名不带平台标识
-          tar -czf "voicehub-${VERSION}.tar.gz" -C staging voicehub
+          # 运行包内容与 CPU 架构无关（.output 内无原生二进制），后缀仅标识构建平台
+          tar -czf "voicehub-${VERSION}-amd64.tar.gz" -C staging voicehub
           rm -rf staging
           ls -lh voicehub-*.tar.gz
 
@@ -190,6 +190,34 @@ jobs:
           path: assets
           merge-multiple: true
 
+      - name: 生成校验和与发布说明
+        run: |
+          set -euo pipefail
+          cd assets
+          sha256sum voicehub-*.tar.gz *.fpk > checksums.txt
+          cat checksums.txt
+
+          {
+            echo '## 附件 SHA-256'
+            echo
+            echo '```text'
+            cat checksums.txt
+            echo '```'
+            echo
+            echo '运行包解压后是 `voicehub/` 目录，含 `.output`、`app/drizzle`、`scripts`、`docker-compose`、`.env.example` 与 `start.sh`。部署：'
+            echo
+            echo '```bash'
+            echo 'cp .env.example .env   # 填写 DATABASE_URL'
+            echo 'pnpm install --prod --frozen-lockfile'
+            echo './start.sh'
+            echo '```'
+            echo
+            echo '需 Node >= 22.11 与 PostgreSQL。`start.sh` 先同步数据库再启动服务，等价于容器 CMD；`voicehub.fpk` 供飞牛 fnOS 应用中心导入。'
+            echo
+            echo '> [!WARNING]'
+            echo '> 升级前请先备份数据库。'
+          } > release-body.md
+
       - name: 发布 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -198,5 +226,8 @@ jobs:
           files: |
             assets/voicehub-*.tar.gz
             assets/*.fpk
+            assets/checksums.txt
+          body_path: assets/release-body.md
           generate_release_notes: true
+          overwrite_files: true
           make_latest: 'false'
