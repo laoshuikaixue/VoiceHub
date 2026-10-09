@@ -1,0 +1,4429 @@
+<template>
+  <div class="operations-dashboard space-y-5" :data-health="overallStatus">
+    <header class="ops-status-spine">
+      <div class="ops-status-spine__summary">
+        <span class="ops-status-spine__dot" :class="`ops-status-spine__dot--${overallStatus}`" />
+        <div>
+          <p class="ops-status-spine__eyebrow">{{ locale.title }}</p>
+          <h2 :class="`ops-status-spine__headline ops-tone--${overallStatus}`">{{ overallStatusText }}</h2>
+          <p class="ops-status-spine__meta">运行 {{ formatDuration(systemSnapshot?.uptime) }} · {{ operationsData.status?.instance?.instanceId || '实例标识未提供' }} · {{ lastUpdatedRelative }}</p>
+        </div>
+      </div>
+      <div class="ops-status-spine__metrics">
+        <div class="ops-status-count ops-status-count--error"><span>异常模块</span><strong>{{ abnormalModuleCount }}</strong></div>
+        <div class="ops-status-count ops-status-count--warning"><span>警告模块</span><strong>{{ warningModuleCount }}</strong></div>
+        <div class="ops-status-count"><span>上次更新</span><strong>{{ formattedLastUpdated }}</strong></div>
+      </div>
+      <div class="ops-status-spine__actions">
+        <button type="button" class="auto-refresh-toggle" :aria-pressed="autoRefreshEnabled" @click="toggleAutoRefresh">
+          <span :class="{ 'is-enabled': autoRefreshEnabled }" />自动刷新{{ autoRefreshEnabled ? '已开启' : '已暂停' }}
+        </button>
+        <button type="button" class="refresh-button" :disabled="operationsLoading" @click="loadOperationsData()">
+          <Icon name="refresh" :size="14" :class="{ 'icon-spin': operationsLoading }" />{{ operationsLoading ? '正在刷新' : locale.actions.refresh }}
+        </button>
+      </div>
+      <i class="ops-status-spine__countdown" :style="{ width: `${refreshProgress}%` }" />
+    </header>
+
+    <section class="ops-key-metrics" aria-label="关键运行指标">
+      <div v-for="item in keyMetricSummaries" :key="item.label" class="ops-key-metric" :class="`ops-key-metric--${item.status}`">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}<small v-if="item.unit">{{ item.unit }}</small></strong>
+        <p>{{ item.detail }}</p>
+        <i v-if="item.ratio != null" class="ops-key-metric__meter"><b :style="{ width: `${Math.min(100, Math.max(0, item.ratio * 100))}%` }" /></i>
+      </div>
+    </section>
+
+    <section class="ops-module-summary" aria-label="模块健康摘要">
+      <OpsPanel
+        v-for="item in moduleSummaries"
+        :key="item.key"
+        :title="item.title"
+        :subtitle="item.subtitle"
+        :status="item.status"
+        :updated-at="lastUpdatedRelative"
+        :pending="initialOperationsLoading"
+        :error="item.error"
+        :empty="item.empty"
+        :stale="item.error && !!item.value"
+        @refresh="loadOperationsData"
+      >
+        <div class="ops-module-summary__value" :class="`ops-tone--${item.status}`">{{ item.value }}</div>
+        <p>{{ item.detail }}</p>
+      </OpsPanel>
+    </section>
+
+    <div class="ops-toolbar">
+      <form class="request-id-shortcut" @submit.prevent="openRequestDiagnosis()">
+        <Icon name="search" :size="14" />
+        <input v-model.trim="globalRequestId" type="text" :aria-label="locale.requestIdQuick" :placeholder="locale.requestIdQuickPlaceholder">
+        <button type="submit" :disabled="!globalRequestId">{{ locale.goToDiagnosis }}</button>
+      </form>
+      <span class="ops-toolbar__hint">{{ autoRefreshEnabled ? `下次自动刷新 ${refreshCountdownText}` : '自动刷新已暂停' }}</span>
+    </div>
+
+    <div v-if="initialOperationsLoading" class="operations-loading-state" role="status" aria-live="polite">
+      <span class="operations-loading-state__spinner"><Icon name="refresh" :size="16" /></span>
+      <div><strong>正在读取运维数据</strong><p>正在连接监控接口，页面数据加载完成后会自动显示。</p></div>
+    </div>
+
+    <nav class="group-navigation" :aria-label="locale.title">
+      <div class="group-navigation__scroll">
+        <div v-for="section in monitorSections" :key="section.label" class="group-navigation__section">
+          <span class="group-navigation__label"><Icon :name="section.icon" :size="13" />{{ section.label }}</span>
+          <div class="group-tabs">
+            <button
+              v-for="group in section.items"
+              :key="group.value"
+              type="button"
+              class="group-tab"
+              :class="{ 'group-tab--active': activeGroup === group.value }"
+              :aria-selected="activeGroup === group.value"
+              @click="activeGroup = group.value"
+            >
+              <Icon :name="group.icon" :size="14" />
+              <span>{{ group.label }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <template v-if="activeGroup === 'overview'">
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="sloAvailabilityStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+          <div class="slo-health" :class="`slo-health--${sloAvailabilityStatus}`">
+            <div class="slo-health__main">
+              <aside class="slo-health__summary">
+                <div class="slo-health__score" :style="{ '--slo-score': `${sloHealthProgress * 3.6}deg` }">
+                  <div><strong>{{ sloHealthStatusLabel }}</strong><span>{{ sloHealthScoreDisplay === '--' ? '--' : `${sloHealthScoreDisplay} ${locale.overview.sloScoreUnit}` }}</span></div>
+                </div>
+                <p><span>{{ locale.overview.sloHealthState }}</span><strong>{{ sloHealthStatusLabel }}</strong></p>
+                <small>{{ sloHealthCoverage }}</small>
+              </aside>
+
+              <div class="slo-health__realtime">
+                <div class="slo-health__heading"><i /><strong>{{ locale.overview.sloRealtimeMetrics }}</strong><span :title="locale.overview.sloScoringHint"><Icon name="info" :size="13" /></span></div>
+                <div class="slo-health__metrics">
+                  <div v-for="item in sloHealthMetrics" :key="item.key" class="slo-health-metric" :class="`slo-health-metric--${item.status}`">
+                    <div><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div>
+                    <div class="slo-health-metric__track"><i :style="{ width: `${item.score ?? 0}%` }" /></div>
+                    <small>{{ item.score == null ? locale.overview.sloNotScored : `${locale.overview.sloMetricScore} ${Math.round(item.score)}` }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slo-health__advice">
+              <span><Icon name="info" :size="15" /></span>
+              <div><strong>{{ locale.overview.sloRecommendations }}</strong><p v-for="item in sloHealthRecommendations" :key="item">{{ item }}</p></div>
+            </div>
+          </div>
+          <p class="metric-formula">{{ locale.overview.sloFormula }}</p>
+        </OpsPanel>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-7 xl:grid-cols-3">
+          <div v-for="item in overviewSignals" :key="item.label" class="ops-metric-item ops-metric-item--overview">
+            <div class="ops-metric-item__head"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="ops-metric-item__label">{{ item.label }}</span></div>
+            <strong class="ops-metric-item__value" :class="{ 'metric-value--compact': item.compact }">{{ item.value }}</strong>
+            <p class="ops-metric-item__detail">{{ item.detail }}</p>
+          </div>
+        </div>
+      </section>
+
+      <OpsPanel :title="locale.overview.deploymentMode" :subtitle="locale.overview.deploymentModeDetail" :status="systemModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system" :empty="!systemSnapshot && !initialOperationsLoading" :refreshable="false">
+        <div class="deployment-mode-grid">
+          <div v-for="item in deploymentModeRows" :key="item.label" class="deployment-mode-card">
+            <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
+            <strong>{{ item.value }}</strong>
+            <p>{{ item.detail }}</p>
+          </div>
+        </div>
+      </OpsPanel>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.overview.backupStatus }}</h3><p class="panel-description">{{ locale.overview.backupStatusDetail }}</p></div>
+          <span class="status-badge">{{ locale.overview.referenceOnly }}</span>
+        </div>
+        <dl class="detail-grid">
+          <div v-for="item in backupStatusFields" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+        </dl>
+        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-4">
+          <div v-for="target in backupTargetPanels" :key="target.title" class="deployment-mode-card">
+            <div class="metric-card__top"><span class="metric-icon"><Icon name="database" :size="14" /></span><span class="metric-label">{{ target.title }}</span></div>
+            <strong>{{ target.value }}</strong>
+            <p>{{ target.detail }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <OpsPanel :title="locale.overview.sourceStatus" :subtitle="locale.overview.sourceStatusDetail" :status="dependenciesModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!musicSourceStatuses.some((item) => item.status !== 'unknown') && !initialOperationsLoading" :refreshable="false">
+          <div class="service-list">
+            <div v-for="item in overviewDependencyPreview" :key="item.label" class="service-row">
+              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
+                <p class="mt-1 text-xs text-zinc-600">{{ item.preview }}</p>
+              </div>
+              <span class="status-badge">{{ item.value }}</span>
+            </div>
+          </div>
+        </OpsPanel>
+
+        <OpsPanel :title="locale.overview.serviceDependencies" :subtitle="locale.overview.serviceDependenciesDetail" :status="overviewServiceStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!operationsData.status && !runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+          <div class="service-list">
+            <div v-for="item in dependencyRows" :key="item.label" class="service-row">
+              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
+                <p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p>
+              </div>
+              <span class="text-xs font-semibold text-zinc-600">{{ item.value }}</span>
+            </div>
+          </div>
+        </OpsPanel>
+      </section>
+
+      <OpsPanel :title="locale.overview.alertRules" :subtitle="locale.overview.alertRulesDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
+
+      <OpsPanel :title="locale.overview.warningEvents" :subtitle="locale.overview.warningEventsDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
+
+      <OpsPanel :title="locale.overview.recentErrorLogs" :subtitle="locale.overview.recentErrorLogsDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorRequests.length && !initialOperationsLoading" :refreshable="false">
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[860px]">
+            <thead>
+              <tr>
+                <th>{{ locale.logs.time }}</th>
+                <th>{{ locale.logs.scope }}</th>
+                <th>{{ locale.logs.message }}</th>
+                <th>{{ locale.overview.logRequestId }}</th>
+                <th>{{ locale.debug.drilldown }}</th>
+              </tr>
+            </thead>
+            <tbody><tr v-for="item in recentErrorRequests.slice(0, 10)" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ formatTimestamp(item.at) }}</td><td>HTTP</td><td>{{ item.status >= 500 ? 'HTTP 服务端错误' : 'HTTP 客户端错误' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr></tbody>
+          </table>
+        </div>
+      </OpsPanel>
+
+    </template>
+
+    <template v-else-if="activeGroup === 'performance'">
+      <OpsPanel title="应用实时指标" subtitle="近 5 分钟 · 请求、运行时与实时连接" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false">
+      <section class="ops-metric-grid">
+        <div v-for="item in applicationMetrics" :key="item.label" class="ops-metric-item">
+          <div class="ops-metric-item__head"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="ops-metric-item__label">{{ item.label }}</span></div>
+          <strong class="ops-metric-item__value">{{ item.value || '--' }}</strong>
+          <p class="ops-metric-item__detail">{{ item.detail }}</p>
+        </div>
+      </section>
+      </OpsPanel>
+
+      <section>
+        <OpsPanel :title="locale.application.routePerformance" :subtitle="locale.application.routePerformanceDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!routePerformanceRows.length && !initialOperationsLoading" :refreshable="false">
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[1080px]">
+              <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>403</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in routePerformanceRows" :key="item.route"><td>{{ item.method }}</td><td>{{ item.route }}</td><td>{{ item.qps }}</td><td>{{ item.p50 }}</td><td>{{ item.p95 }}</td><td>{{ item.p99 }}</td><td>{{ item.clientErrors }}</td><td>{{ item.status401 }}</td><td>{{ item.status403 }}</td><td>{{ item.status429 }}</td><td>{{ item.serverErrors }}</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </OpsPanel>
+
+        <OpsPanel class="xl:col-span-4" :title="locale.application.latencyDistribution" :subtitle="locale.application.latencyDistributionDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false">
+          <dl class="detail-grid detail-grid--compact">
+            <div v-for="item in applicationLatencyDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </OpsPanel>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <OpsPanel :title="locale.application.latencyBreakdown" :subtitle="locale.application.latencyBreakdownDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+        <OpsPanel :title="locale.application.musicApiPerformance" :subtitle="locale.application.musicApiPerformanceDetail" :status="dependenciesModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!musicApiRows.some((item) => item.status !== '未探测') && !initialOperationsLoading" :refreshable="false">
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[720px]">
+              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>自动探测</th><th>{{ locale.application.averageDuration || '平均耗时' }}</th><th>{{ locale.application.httpSuccessRate || 'HTTP 成功率' }}</th><th>{{ locale.application.semanticSuccessRate || '解析成功率' }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in musicApiRows" :key="item.source"><td>/api/music/*</td><td>{{ item.source }}</td><td>{{ item.status }}</td><td>{{ item.averageDuration }}</td><td>{{ item.httpSuccessRate }}</td><td>{{ item.semanticSuccessRate }}</td><td>{{ item.timeouts }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </OpsPanel>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <OpsPanel v-for="panel in applicationDetailPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item.label || item"><dt>{{ item.label || item }}</dt><dd>{{ item.value || '--' }}</dd></div>
+          </dl>
+        </OpsPanel>
+      </section>
+
+    </template>
+
+    <template v-else-if="activeGroup === 'infra'">
+      <section class="server-summary-strip">
+        <div v-for="item in serverSummaryDetails" :key="item.label"><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div>
+      </section>
+
+      <section class="metric-grid">
+        <article v-for="item in serverMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="metric-label">{{ item.label }}</span>
+          </div>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && runtimeTimeline.length ? `${trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field)} ${panel.unit}` : '暂无数据' }}</span></div>
+          <div class="analysis-chart-placeholder"><span class="chart-axis-label chart-axis-label--top">高</span><span class="chart-axis-label chart-axis-label--bottom">低</span><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="panel.available && runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :data-tooltip="trendTooltip(point, panel)" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field)}%` }" /></div><span v-else>尚未采集 {{ panel.title }} 历史数据</span><div class="chart-time-labels"><span>近 5 分钟</span><span>现在</span></div></div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel xl:col-span-5">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.healthScore }}</h3>
+              <p class="panel-description">{{ locale.server.healthScoreDetail }}</p>
+            </div>
+            <span class="status-badge">{{ locale.health.waiting }}</span>
+          </div>
+          <div class="server-health-layout">
+            <div class="health-score-ring" :class="`health-score-ring--${healthScoreTone}`"><strong>{{ healthScore }}</strong><span>{{ locale.overview.healthScore }}</span></div>
+            <dl class="server-health-details">
+              <div v-for="item in serverHealthDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+            </dl>
+          </div>
+        </article>
+
+        <article class="panel xl:col-span-7">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.runtime }}</h3>
+              <p class="panel-description">{{ locale.server.runtimeEnvironmentDetail }}</p>
+            </div>
+          </div>
+          <dl class="detail-grid">
+            <div v-for="item in serverRuntimeDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="server-resource-grid">
+        <article v-for="panel in serverResourcePanels" :key="panel.title" class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ panel.title }}</h3>
+              <p class="panel-description">{{ panel.detail }}</p>
+            </div>
+            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
+          </div>
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ resourceValue(item) }}</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="server-resource-grid">
+        <article v-for="panel in runtimeGuardPanels" :key="panel.title" class="panel">
+          <div class="panel-header">
+            <div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div>
+            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
+          </div>
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.server.restartEvents }}</h3><p class="panel-description">{{ locale.server.restartEventsDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[820px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.server.restartReason }}</th><th>{{ locale.server.exitCode }}</th><th>{{ locale.server.oomKilled }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </template>
+
+    <template v-else-if="activeGroup === 'database'">
+      <section class="subsection-heading">
+        <div><h3>{{ locale.database.postgresql }}</h3><p>{{ locale.database.postgresqlDetail }}</p></div>
+        <Icon name="database" :size="16" />
+      </section>
+
+      <section class="metric-grid">
+        <article v-for="item in databaseMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="metric-label">{{ item.label }}</span>
+          </div>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><h3 class="panel-title">{{ locale.server.database }}</h3></div>
+          <dl class="detail-grid">
+            <div v-for="item in databaseDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </article>
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.databasePerformance }}</h3>
+              <p class="panel-description">{{ locale.server.databasePerformanceDetail }}</p>
+            </div>
+          </div>
+          <dl class="detail-grid">
+            <div v-for="item in databasePerformanceDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.queryTrend }}</h3><p class="panel-description">{{ locale.database.queryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.connectionTrend }}</h3><p class="panel-description">{{ locale.database.connectionTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>尚未采集慢 SQL 历史数据</span></div>
+        </article>
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div><h3 class="panel-title">{{ locale.database.slowQueries }}</h3><p class="panel-description">{{ locale.database.slowQueriesDetail }}</p></div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[1040px]">
+              <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.activeQueries }}</h3><p class="panel-description">{{ locale.database.activeQueriesDetail }}</p></div><span class="risk-badge">{{ locale.database.liveSnapshot }}</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[1080px]">
+            <thead><tr><th>{{ locale.database.pid }}</th><th>{{ locale.database.query }}</th><th>{{ locale.database.duration }}</th><th>{{ locale.database.waitEvent }}</th><th>{{ locale.database.blockedBy }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+            <tbody>
+              <tr v-for="item in activeDatabaseQueries" :key="item.pid">
+                <td class="font-mono">{{ item.pid }}</td><td class="max-w-[380px] truncate font-mono">{{ item.query }}</td><td>{{ item.duration }}</td><td>{{ item.waitEvent }}</td><td>{{ item.blockedBy }}</td><td>N/A</td><td>N/A</td><td>N/A</td>
+              </tr>
+              <tr v-if="!activeDatabaseQueries.length"><td colspan="8" class="empty-cell">{{ databaseDiagnostics?.activity?.available === false ? 'N/A' : locale.noData }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.database.tableHealth }} · 容量与活跃度</h3>
+              <p class="panel-description">使用 pg_class 估算行数，避免对业务表执行高频 COUNT(*)。</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[680px]">
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ item.dead_row_ratio != null ? `${item.dead_row_ratio}%` : 'N/A' }}</td><td>N/A</td></tr>
+                <tr v-if="!databaseTableRows.length"><td colspan="5" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.database.tableScale }}</h3>
+              <p class="panel-description">{{ locale.database.tableScaleDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[680px]">
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }}</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio }}%</td><td>N/A</td></tr>
+                <tr v-if="!databaseTableRows.length"><td colspan="6" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.database.redis }}</h3><p>{{ locale.database.redisDetail }}</p></div>
+        <Icon name="server" :size="16" />
+      </section>
+
+      <section class="metric-grid">
+        <article v-for="item in cacheMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="metric-label">{{ item.label }}</span>
+          </div>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><h3 class="panel-title">{{ locale.cache.connection }}</h3></div>
+          <dl class="detail-grid">
+            <div v-for="item in cacheDetails" :key="item"><dt>{{ item }}</dt><dd>{{ cacheDetailValue(item) }}</dd></div>
+          </dl>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><h3 class="panel-title">{{ locale.cache.note }}</h3></div>
+          <p class="panel-copy">{{ locale.cache.description || 'Redis 用于验证码、限流和短期状态缓存；当前页面展示连接状态、命中率、内存和淘汰等可采集指标。未配置 Redis 时不会视为系统故障。' }}</p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><h3 class="panel-title">{{ locale.cache.usageScope }}</h3></div>
+        <div class="scope-grid">
+          <div v-for="item in cacheUsageScopes" :key="item.label" class="scope-row">
+            <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
+            <div>
+              <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
+              <p class="mt-1 text-xs leading-5 text-zinc-600">{{ item.detail }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.cache.commandMetrics }}</h3><p class="panel-description">{{ locale.cache.commandMetricsDetail }}</p></div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[680px]">
+            <thead><tr><th>{{ locale.cache.command }}</th><th>{{ locale.cache.calls }}</th><th>P50</th><th>P99</th><th>{{ locale.cache.commandErrors }}</th></tr></thead>
+            <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </template>
+
+    <template v-else-if="activeGroup === 'business'">
+      <OpsPanel title="业务黄金指标" subtitle="近 5 分钟 · 点歌与排期业务采样" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeBusinessMetrics || !Object.values(runtimeBusinessMetrics).some((item) => item?.calls) && !initialOperationsLoading" :refreshable="false">
+      <section class="ops-metric-grid">
+        <div v-for="item in businessGoldenMetrics" :key="item.label" class="ops-metric-item">
+          <div class="ops-metric-item__head"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="ops-metric-item__label">{{ item.label }}</span></div>
+          <strong class="ops-metric-item__value">{{ item.value || '--' }}</strong>
+          <p class="ops-metric-item__detail">{{ item.detail }}</p>
+        </div>
+      </section>
+      </OpsPanel>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <OpsPanel class="xl:col-span-4" :title="locale.business.queueHealth" :subtitle="locale.business.queueHealthDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!businessQueueSnapshot && !initialOperationsLoading" :refreshable="false">
+          <dl class="detail-grid">
+            <div v-for="item in businessQueueMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value || '--' }}</dd></div>
+          </dl>
+          <p class="ops-unknown-note">未提供阈值，仅展示当前值。</p>
+        </OpsPanel>
+
+        <OpsPanel class="xl:col-span-8" :title="locale.business.requestRateTrend" subtitle="近 5 分钟请求样本" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
+        </OpsPanel>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <OpsPanel class="xl:col-span-7" :title="locale.business.scheduleRateTrend" :subtitle="locale.business.scheduleRateTrendDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+
+        <OpsPanel class="xl:col-span-5" :title="locale.business.capacityPlanning" :subtitle="locale.business.capacityPlanningDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
+          <dl class="detail-grid">
+            <div v-for="item in businessCapacityMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+          <p class="ops-unknown-note">未提供阈值，仅展示当前值。</p>
+        </OpsPanel>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <OpsPanel class="xl:col-span-8" :title="locale.business.operationOutcomes" :subtitle="locale.business.operationOutcomesDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.business.goldMetrics }}</h3><p>{{ locale.business.goldMetricsDetail }}</p></div>
+        <Icon name="music" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <OpsPanel v-for="panel in businessMetricGroups" :key="panel.title" :title="panel.title" :subtitle="panel.detail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ businessGroupValue(item) }}</dd></div>
+          </dl>
+          <p class="ops-unknown-note">未提供阈值，仅展示当前值。</p>
+        </OpsPanel>
+      </section>
+    </template>
+
+    <template v-else-if="activeGroup === 'security'">
+      <section class="metric-grid">
+        <article v-for="item in auditMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="metric-label">{{ item.label }}</span>
+          </div>
+          <strong class="metric-value">{{ item.value || 'N/A' }}</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel xl:col-span-7">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">当前活跃风险</h3>
+              <p class="panel-description">只展示需要立即关注的认证、验证码和限流信号。</p>
+            </div>
+            <span class="risk-badge">当前生效</span>
+          </div>
+          <div class="risk-distribution">
+            <div class="risk-total">
+              <span class="risk-total__icon"><Icon name="warning" :size="18" /></span>
+              <strong>{{ activeRiskCount }}</strong>
+              <p>当前活跃风险</p>
+            </div>
+            <div class="risk-levels">
+              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--critical" />5xx 服务错误</span><strong>{{ runtimeHttpMetrics?.recent5xx || 0 }}</strong></div>
+              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--high" />429 限流触发</span><strong>{{ runtimeHttpMetrics?.status429 || 0 }}</strong></div>
+              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--medium" />验证码拦截</span><strong>{{ turnstileMetrics?.upstreamFailures || 0 }}</strong></div>
+            </div>
+          </div>
+          <p class="panel-copy mt-4">风险计数来自当前 5 分钟采集窗口，不进行复杂风险评分。</p>
+        </article>
+
+        <article class="panel overflow-hidden xl:col-span-5">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">异常行为账户</h3>
+              <p class="panel-description">按用户维度识别短时刷歌、刷票和投稿限额触发。</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[620px]">
+              <thead><tr><th>{{ locale.audit.relatedUser }}</th><th>限额触发</th><th>点歌/投票请求</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.audit.securitySignals }}</h3><p>{{ locale.audit.securitySignalsDetail }}</p></div>
+        <Icon name="warning" :size="16" />
+      </section>
+
+      <section class="metric-grid">
+        <article v-for="item in securitySignalMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
+          <strong class="metric-value">{{ securityMetricValue(item.label) }}</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.audit.signalRate }}</h3><p class="panel-description">{{ locale.audit.signalRateDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
+        <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 10" :key="index" /></div><span>{{ locale.noData }}</span></div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">{{ locale.audit.recentHighRiskEvents }}</h3>
+            <p class="panel-description">{{ locale.audit.recentHighRiskEventsDetail }}</p>
+          </div>
+          <span class="risk-badge">{{ locale.audit.highRisk }}</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[880px]">
+            <thead><tr><th>{{ locale.audit.eventTitle }}</th><th>{{ locale.audit.riskLevel }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+            <tbody><tr><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel audit-events overflow-hidden">
+        <div class="panel-header audit-events__header">
+          <div>
+            <h3 class="panel-title">{{ locale.audit.eventList }}</h3>
+            <p class="panel-description">{{ locale.audit.eventListDetail }}</p>
+          </div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="audit-filters">
+          <label class="filter-field filter-field--wide">
+            <Icon name="search" :size="13" />
+            <input type="text" :placeholder="locale.audit.keywordFilter" disabled>
+          </label>
+          <button type="button" class="filter-field" disabled><span>{{ locale.audit.allRiskLevels }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.audit.allHandlingStatuses }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-action" disabled><Icon name="search" :size="13" />{{ locale.audit.query }}</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[1120px]">
+            <thead>
+              <tr>
+                <th>{{ locale.audit.eventId }}</th>
+                <th>{{ locale.audit.eventTitle }}</th>
+                <th>{{ locale.audit.riskLevel }}</th>
+                <th>{{ locale.audit.handlingStatus }}</th>
+                <th>{{ locale.audit.riskScore }}</th>
+                <th>{{ locale.audit.relatedUser }}</th>
+                <th>{{ locale.audit.sourceIp }}</th>
+                <th>{{ locale.audit.triggerCount }}</th>
+                <th>{{ locale.audit.lastTriggered }}</th>
+                <th>{{ locale.audit.securityAction }}</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="10" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.audit.ipBehaviorTimeline }}</h3><p class="panel-description">{{ locale.audit.ipBehaviorTimelineDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[920px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.matchedRule }}</th><th>{{ locale.audit.relatedUser }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </template>
+
+    <template v-else-if="activeGroup === 'debug'">
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">{{ locale.debug.requestSearch }}</h3>
+            <p class="panel-description">{{ locale.debug.requestSearchDetail }}</p>
+          </div>
+          <span class="status-badge">{{ locale.debug.allPanelsLinked }}</span>
+        </div>
+        <form class="diagnostic-search-grid" @submit.prevent="openRequestDiagnosis(debugRequestId)">
+          <label class="filter-field filter-field--wide">
+            <Icon name="search" :size="13" />
+            <input v-model.trim="debugRequestId" type="text" :placeholder="locale.debug.requestIdPlaceholder">
+          </label>
+          <button type="button" class="filter-field" disabled><span>{{ locale.debug.allUsers }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.debug.allRoutes }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.debug.serverErrors }}</span><Icon name="chevron-down" :size="13" /></button>
+          <label class="filter-field"><span>{{ locale.debug.minimumDuration }}</span><strong>--</strong></label>
+          <button type="button" class="filter-field" disabled><span>{{ locale.filters.lastHour }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="submit" class="filter-action" :disabled="!debugRequestId"><Icon name="search" :size="13" />{{ locale.debug.diagnose }}</button>
+        </form>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.debug.singleRequestTrace }}</h3><p>{{ locale.debug.singleRequestTraceDetail }}</p></div>
+        <Icon name="layers" :size="16" />
+      </section>
+
+      <section class="diagnostic-summary-grid">
+        <article v-for="item in requestSummaryItems" :key="item.label" class="metric-card diagnostic-summary-card">
+          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
+          <strong class="metric-value">{{ item.value || 'N/A' }}</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <div class="diagnosis-result diagnosis-result--banner">
+        <span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span><strong>{{ selectedDebugRequest ? `${selectedDebugRequest.status} ${selectedDebugRequest.durationMs} ms` : 'N/A' }}</strong>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.debug.traceWaterfall }}</h3><p class="panel-description">{{ locale.debug.traceWaterfallDetail }}</p></div>
+          <span class="status-badge">{{ locale.debug.traceWaterfallMode }}</span>
+        </div>
+        <div v-if="traceSpans.length" class="trace-waterfall">
+          <div v-for="span in traceSpans" :key="span.id" class="trace-waterfall__row" :style="{ paddingLeft: `${span.depth * 14}px` }">
+            <span class="trace-waterfall__label">{{ span.module }}</span>
+            <div class="trace-waterfall__track">
+              <div class="trace-waterfall__bar" :class="`trace-waterfall__bar--${span.status}`" :style="waterfallBarStyle(span)">
+                <span>{{ span.durationMs }}ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="trace-waterfall__empty">
+          <Icon name="activity" :size="16" />
+          <p>{{ debugRequestId ? locale.debug.traceNotCollected : locale.debug.traceEnterRequestId }}</p>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.debug.requestLogChain }}</h3><p class="panel-description">{{ locale.debug.requestLogChainDetail }}</p></div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[960px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.debug.elapsed }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.debug.eventName }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.debug.structuredFields }}</th></tr></thead>
+            <tbody>
+              <tr v-for="item in diagnosticLogEntries" :key="`${item.at}-${item.requestId}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.durationMs }} ms</td><td>{{ item.level }}</td><td>{{ item.route }}</td><td>server</td><td>status={{ item.status }} requestId={{ item.requestId || 'N/A' }}</td></tr>
+              <tr v-if="!diagnosticLogEntries.length"><td colspan="6" class="empty-cell">{{ locale.debug.enterRequestId }} <DrilldownLink :label="locale.debug.openLogCenter" @activate="activeGroup = 'logs'" /></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.debug.errorAggregation }}</h3><p>{{ locale.debug.errorAggregationDetail }}</p></div>
+        <Icon name="warning" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel overflow-hidden">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.topErrors }}</h3><p class="panel-description">{{ locale.debug.topErrorsDetail }}</p></div><span class="item-count">Top 10</span></div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[640px]">
+              <thead><tr><th>{{ locale.debug.errorMessage }}</th><th>{{ locale.debug.occurrences }}</th><th>{{ locale.debug.affectedUsers }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.lastOccurred }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in recentErrorRequests" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }}</td><td>1</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>{{ formatTimestamp(item.at) }}</td></tr>
+                <tr v-for="item in sentryIssues" :key="`sentry-${item.id}`"><td>{{ item.title }}</td><td>{{ item.count }}</td><td>N/A</td><td class="font-mono">Sentry #{{ item.id }}</td><td>{{ formatTimestamp(item.lastSeen) }}</td></tr>
+                <tr v-if="!recentErrorRequests.length && !sentryIssues.length"><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.errorTrend }}</h3><p class="panel-description">{{ locale.debug.errorTrendDetail }}</p></div></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.debug.slowRequestDiagnosis }}</h3><p>{{ locale.debug.slowRequestDiagnosisDetail }}</p></div>
+        <Icon name="clock" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel overflow-hidden">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.topSlowRequests }}</h3><p class="panel-description">基于当前已采集的异常与持久化请求样本，不伪造历史趋势。</p></div><span class="item-count">Top {{ recentDiagnosticRequests.length }}</span></div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[760px]">
+              <thead><tr><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.duration }}</th><th>{{ locale.logs.time }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in recentDiagnosticRequests" :key="`${item.at}-${item.requestId || item.route}`" :class="{ 'request-row--error': item.status >= 500 }"><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route || '未知路由' }}</td><td>{{ item.status ?? '—' }}</td><td><span class="duration-value" :class="durationTone(item.durationMs)">{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无耗时' }}</span></td><td>{{ formatTimestamp(item.at) }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
+                <tr v-if="!recentDiagnosticRequests.length"><td colspan="7" class="empty-cell">暂无异常或慢请求样本</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.durationDistribution }}</h3><p class="panel-description">{{ locale.debug.durationDistributionDetail }}</p></div></div>
+          <div class="diagnostic-duration-summary"><strong>{{ runtimeHttpMetrics?.p95Ms != null ? `${runtimeHttpMetrics.p95Ms} ms` : '暂无 P95 数据' }}</strong><span>近 5 分钟 P95 响应时间</span><p>当前数据源未提供完整耗时分桶，页面不绘制伪造直方图。</p></div>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.debug.userPerspective }}</h3><p>{{ locale.debug.userPerspectiveDetail }}</p></div>
+        <Icon name="user" :size="16" />
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.userRequestTimeline }}</h3><p class="panel-description">{{ locale.debug.userRequestTimelineDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[820px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.duration }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.eventName }}</th></tr></thead>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.debug.selectUser }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </template>
+
+    <template v-else-if="activeGroup === 'logs'">
+      <section class="metric-grid">
+        <article v-for="item in logCenterMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
+          <strong class="metric-value">{{ item.value || 'N/A' }}</strong><p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.structuredQuery }}</h3><p class="panel-description">{{ locale.logCenter.structuredQueryDetail }}</p></div><span class="status-badge">{{ locale.logCenter.fullTextSearch }}</span></div>
+        <div class="log-search-grid">
+          <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input v-model.trim="logKeyword" type="text" :placeholder="locale.logCenter.keywordPlaceholder"></label>
+          <label class="filter-field filter-field--wide"><Icon name="layers" :size="13" /><input v-model.trim="logRequestId" type="text" :placeholder="locale.logCenter.requestIdPlaceholder"></label>
+          <button type="button" class="filter-field" disabled><span>{{ locale.logCenter.allUsers }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.logCenter.allRoutes }}</span><Icon name="chevron-down" :size="13" /></button>
+          <div class="log-level-filter" aria-label="日志级别筛选">
+            <button v-for="level in logLevelOptions" :key="level.value" type="button" :class="{ 'is-active': logLevelFilter === level.value, [`is-${level.value}`]: level.value !== 'all' }" @click="logLevelFilter = level.value">{{ level.label }}</button>
+          </div>
+          <button type="button" class="filter-field" disabled><span>{{ locale.filters.allScopes }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.logCenter.allStatusCodes }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.filters.lastHour }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-action" @click="loadOperationsData()"><Icon name="search" :size="13" />{{ locale.logCenter.query }}</button>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logResults }}</h3><p class="panel-description">{{ locale.logCenter.logResultsDetail }}</p></div><span class="item-count">{{ locale.logCount }} {{ logEntries.length }}</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[1260px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>耗时</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.logs.message }}</th></tr></thead>
+          <tbody>
+            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`" class="log-result-row" @click="toggleLogDetails(item)"><td>{{ formatTimestamp(item.at) }}</td><td><span class="log-level" :class="`log-level--${item.level}`">{{ item.level === 'error' ? '错误' : item.level === 'warn' ? '警告' : '信息' }}</span></td><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无数据' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td>{{ redactSensitiveText(item.message) }}</td></tr>
+            <template v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}-details`"><tr v-if="isLogExpanded(item)" class="log-detail-row"><td colspan="8"><div class="log-detail-grid"><div><strong>结构化字段</strong><dl><dt>时间</dt><dd>{{ formatTimestamp(item.at) }}</dd><dt>路由</dt><dd>{{ item.route }}</dd><dt>状态码</dt><dd>{{ item.status }}</dd><dt>耗时</dt><dd>{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无数据' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ item.requestId || '暂无' }}</dd></dl></div><pre>{{ formatLogDetails(item) }}</pre></div></td></tr></template>
+            <tr v-if="!logEntries.length"><td colspan="8" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr>
+          </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logContext }}</h3><p class="panel-description">{{ locale.logCenter.logContextDetail }}</p></div></div>
+          <dl class="detail-grid">
+            <div v-for="item in logContextFields" :key="item"><dt>{{ item }}</dt><dd>{{ logContextValue(item) }}</dd></div>
+          </dl>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.archiveSettings }}</h3><p class="panel-description">{{ locale.logCenter.archiveSettingsDetail }}</p></div></div>
+          <dl class="detail-grid">
+            <div v-for="item in logArchiveFields" :key="item"><dt>{{ item }}</dt><dd>{{ logArchiveValue(item) }}</dd></div>
+          </dl>
+        </article>
+      </section>
+    </template>
+
+    <template v-else-if="activeGroup === 'dependencies'">
+      <section class="subsection-heading">
+        <div><h3>{{ locale.dependencies.healthMatrix }}</h3><p>{{ locale.dependencies.healthMatrixDetail }}</p></div>
+        <Icon name="layers" :size="16" />
+      </section>
+
+      <section class="dependency-matrix">
+        <article v-for="item in dependencyHealthCards" :key="item.label" class="dependency-card" :class="`dependency-card--${dependencyCardStatus(item.label)}`">
+          <div class="dependency-card__header"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span>{{ item.label }}</span></div>
+          <div class="dependency-card__status"><i class="dependency-status-dot" :class="`dependency-status-dot--${dependencyCardStatus(item.label)}`" /><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
+          <p v-if="dependencySourceForLabel(item.label)" class="dependency-card__observed">最近观测：{{ lastUpdatedRelative }}</p>
+          <p v-if="dependencyFailureReason(item.label)" class="dependency-card__failure">最近失败：{{ dependencyFailureReason(item.label) }}</p>
+          <dl><div v-for="detail in item.details" :key="detail"><dt>{{ detail }}</dt><dd>{{ dependencyMetricValue(item.label, detail) }}</dd></div></dl>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.dependencies.semanticHealth }}</h3><p>{{ locale.dependencies.semanticHealthDetail }}</p></div>
+        <Icon name="music" :size="16" />
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.semanticFailureTrend }}</h3><p class="panel-description">{{ locale.dependencies.semanticFailureTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
+        <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.dependencies.latencyAndErrors }}</h3><p>{{ locale.dependencies.latencyAndErrorsDetail }}</p></div>
+        <Icon name="activity" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.p95Latency }}</h3><p class="panel-description">{{ locale.dependencies.p95LatencyDetail }}</p></div><span class="risk-badge">{{ locale.dependencies.latencyThreshold }}</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.platformErrorRate }}</h3><p class="panel-description">{{ locale.dependencies.platformErrorRateDetail }}</p></div></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.callVolumeTrend }}</h3><p class="panel-description">{{ locale.dependencies.callVolumeTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">当前调用健康度</h3><p class="panel-description">仅表示本实例当前采集周期的被动调用结果，不代表 24 小时可用性。</p></div><span class="status-badge">当前周期</span></div>
+          <div class="dependency-uptime-list">
+            <div v-for="row in dependencyUptimeRows" :key="row.source" class="dependency-uptime-row">
+              <span class="dependency-uptime-row__label">{{ row.label }}</span>
+              <div class="uptime-strip"><i v-for="(slot, index) in row.slots" :key="`${row.source}-${index}`" :class="`uptime-strip__slot uptime-strip__slot--${slot}`" /></div>
+            </div>
+          </div>
+          <div class="uptime-strip__legend"><span>未采集调用时显示灰色</span><span>非长期可用性数据</span></div>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.dependencies.errorCodeDrilldown }}</h3><p>{{ locale.dependencies.errorCodeDrilldownDetail }}</p></div>
+        <Icon name="warning" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article v-for="panel in dependencyErrorPanels" :key="panel.title" class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div></div>
+          <div class="error-code-layout">
+            <div class="error-code-chart"><span>{{ locale.noData }}</span></div>
+            <dl class="error-code-legend"><div v-for="item in dependencyErrorCodes" :key="item"><dt>{{ item }}</dt><dd>--</dd></div></dl>
+          </div>
+        </article>
+      </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.dependencies.fallbackAndCache }}</h3><p>{{ locale.dependencies.fallbackAndCacheDetail }}</p></div>
+        <Icon name="database" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article v-for="panel in dependencyProtectionPanels" :key="panel.title" class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span></div>
+          <dl class="server-resource-list"><div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ dependencyProtectionValue(panel.title, item) }}</dd></div></dl>
+        </article>
+      </section>
+    </template>
+
+    <section v-if="monitoringReferenceRows.length" class="panel overflow-hidden">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">{{ locale.references.title }}</h3>
+          <p class="panel-description">{{ locale.references.detail }}</p>
+        </div>
+        <span class="status-badge">{{ locale.references.referenceOnly }}</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table min-w-[980px]">
+          <thead>
+            <tr>
+              <th>{{ locale.references.metric }}</th>
+              <th>{{ locale.references.threshold }}</th>
+              <th>{{ locale.references.collection }}</th>
+              <th>{{ locale.references.description }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in monitoringReferenceRows" :key="item.metric">
+              <td>{{ item.metric }}</td>
+              <td>{{ item.threshold }}</td>
+              <td>{{ item.collection }}</td>
+              <td>{{ item.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup>
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
+import DrilldownLink from '~/components/Admin/DrilldownLink.vue'
+import OpsPanel from '~/components/Admin/Ops/OpsPanel.vue'
+import { useLocale } from '~/utils/locale'
+
+const { admin } = useLocale()
+const locale = computed(() => admin.value?.operations || {})
+const publicRuntimeConfig = useRuntimeConfig().public || {}
+const activeGroup = ref('overview')
+const globalRequestId = ref('')
+const debugRequestId = ref('')
+const diagnosticLoading = ref(false)
+const logKeyword = ref('')
+const logRequestId = ref('')
+const logLevelFilter = ref('all')
+const expandedLogKey = ref('')
+const traceSpans = computed(() => {
+  const requestId = debugRequestId.value
+  const samples = operationsData.value?.metrics?.diagnostic?.entries || operationsData.value?.metrics?.metrics?.recentErrors || []
+  const request = samples.find((item) => item.requestId === requestId)
+  if (!request) return []
+  return [{ id: request.requestId, module: request.route, depth: 0, offsetMs: 0, durationMs: request.durationMs, status: request.status >= 500 ? 'error' : request.status >= 400 ? 'slow' : 'ok' }]
+})
+const operationsLoading = ref(true)
+const initialOperationsLoading = ref(true)
+const operationsError = ref(false)
+const operationsLastUpdated = ref(null)
+const runtimeNow = ref(Date.now())
+const operationsData = ref({ status: null, pool: null, performance: null, backups: [], metrics: null })
+const autoRefreshEnabled = ref(true)
+const moduleFetchErrors = ref({ system: false, pool: false, performance: false, backups: false, metrics: false })
+
+const loadOperationsData = async () => {
+  operationsLoading.value = true
+  operationsError.value = false
+
+  const [statusResult, poolResult, performanceResult, backupResult, metricsResult] = await Promise.allSettled([
+    $fetch('/api/system/status'),
+    $fetch('/api/admin/database/pool-status'),
+    $fetch('/api/admin/database/performance'),
+    $fetch('/api/admin/backup/history'),
+    $fetch('/api/admin/operations/metrics')
+  ])
+
+  if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
+  if (poolResult.status === 'fulfilled') operationsData.value.pool = poolResult.value
+  if (performanceResult.status === 'fulfilled') operationsData.value.performance = performanceResult.value
+  if (backupResult.status === 'fulfilled') operationsData.value.backups = backupResult.value?.data || []
+  if (metricsResult.status === 'fulfilled') {
+    const metrics = metricsResult.value?.data || {}
+    operationsData.value.metrics = metrics
+    if (metrics.database?.pool) operationsData.value.pool = metrics.database.pool
+    if (metrics.database?.performance) operationsData.value.performance = metrics.database.performance
+  }
+
+  moduleFetchErrors.value = {
+    system: statusResult.status === 'rejected',
+    pool: poolResult.status === 'rejected',
+    performance: performanceResult.status === 'rejected',
+    backups: backupResult.status === 'rejected',
+    metrics: metricsResult.status === 'rejected'
+  }
+
+  operationsError.value = statusResult.status === 'rejected'
+  operationsLastUpdated.value = new Date()
+  operationsLoading.value = false
+  initialOperationsLoading.value = false
+}
+
+let operationsRefreshTimer = null
+let runtimeClockTimer = null
+const startAutoRefresh = () => {
+  if (operationsRefreshTimer || !autoRefreshEnabled.value) return
+  operationsRefreshTimer = window.setInterval(loadOperationsData, 30000)
+}
+const stopAutoRefresh = () => {
+  if (!operationsRefreshTimer) return
+  window.clearInterval(operationsRefreshTimer)
+  operationsRefreshTimer = null
+}
+const toggleAutoRefresh = () => {
+  autoRefreshEnabled.value = !autoRefreshEnabled.value
+  if (autoRefreshEnabled.value) startAutoRefresh()
+  else stopAutoRefresh()
+}
+onMounted(() => {
+  loadOperationsData()
+  startAutoRefresh()
+  runtimeClockTimer = window.setInterval(() => { runtimeNow.value = Date.now() }, 1000)
+})
+
+onBeforeUnmount(() => {
+  stopAutoRefresh()
+  if (runtimeClockTimer) window.clearInterval(runtimeClockTimer)
+})
+
+const systemSnapshot = computed(() => operationsData.value.status?.system || null)
+const databaseSnapshot = computed(() => operationsData.value.status?.database || null)
+const latestBackup = computed(() => operationsData.value.backups?.[0] || null)
+const runtimeMetrics = computed(() => operationsData.value.metrics?.metrics || null)
+const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
+const runtimeTimeline = computed(() => runtimeDatabaseMetrics.value?.timeline?.length ? runtimeDatabaseMetrics.value.timeline : (runtimeMetrics.value?.timeline || []))
+const recentErrorRequests = computed(() => {
+  const errors = [
+    ...(operationsData.value.metrics?.diagnostic?.entries || []),
+    ...(runtimeMetrics.value?.recentErrors || []),
+    ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
+  ]
+  if (!debugRequestId.value) return errors
+  return errors.filter((item) => item.requestId === debugRequestId.value)
+})
+const recentDiagnosticRequests = computed(() => {
+  const seen = new Set()
+  return [...(runtimeDatabaseMetrics.value?.persistedRequests || []), ...(runtimeDatabaseMetrics.value?.recentLogs || []), ...(runtimeMetrics.value?.recentErrors || [])]
+    .filter((item) => item && (item.durationMs != null || item.status >= 400))
+    .filter((item) => {
+      const key = `${item.at}-${item.requestId || item.route}-${item.durationMs || ''}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .sort((a, b) => Number(b.durationMs || 0) - Number(a.durationMs || 0))
+    .slice(0, 20)
+})
+const selectedDebugRequest = computed(() => {
+  if (!debugRequestId.value) return null
+  return recentErrorRequests.value.find((item) => item.requestId === debugRequestId.value) || null
+})
+const diagnosticLogEntries = computed(() => {
+  const entries = operationsData.value.metrics?.diagnostic?.entries || []
+  if (entries.length) return entries.map((item) => ({ ...item, level: Number(item.status) >= 500 ? 'error' : 'warn' }))
+  return selectedDebugRequest.value ? [selectedDebugRequest.value] : []
+})
+const logEntries = computed(() => {
+  const keyword = logKeyword.value.toLowerCase()
+  const requestId = logRequestId.value.toLowerCase()
+  return [...(runtimeDatabaseMetrics.value?.recentLogs || []), ...(runtimeMetrics.value?.recentErrors || []), ...(runtimeDatabaseMetrics.value?.persistedRequests || [])]
+    .filter((item) => !requestId || String(item.requestId || '').toLowerCase().includes(requestId))
+    .filter((item) => !keyword || `${item.route} ${item.status} ${item.requestId}`.toLowerCase().includes(keyword))
+    .map((item) => ({
+      ...item,
+      level: item.status >= 500 ? 'error' : item.status >= 400 ? 'warn' : 'info',
+      message: item.errorMessage || (item.status >= 500 ? 'HTTP 服务端错误' : item.status >= 400 ? 'HTTP 客户端错误' : '请求完成')
+    }))
+    .filter((item) => logLevelFilter.value === 'all' || item.level === logLevelFilter.value)
+    .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
+    .slice(0, 50)
+})
+const logLevelOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'error', label: '错误' },
+  { value: 'warn', label: '警告' },
+  { value: 'info', label: '信息' }
+]
+const logKey = (item) => `${item.at}-${item.requestId || item.route}`
+const toggleLogDetails = (item) => {
+  const key = logKey(item)
+  expandedLogKey.value = expandedLogKey.value === key ? '' : key
+}
+const isLogExpanded = (item) => expandedLogKey.value === logKey(item)
+const redactSensitiveText = (value) => String(value)
+  .replace(/((?:token|password|secret|authorization|cookie|api[_-]?key)"?\s*[:=]\s*"?)[^",\s}&]+/gi, '$1***')
+  .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer ***')
+const formatLogDetails = (item) => redactSensitiveText(JSON.stringify(item, null, 2))
+const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
+const runtimeBarHeight = (value, field = 'requests') => {
+  const max = Math.max(...runtimeTimeline.value.map((point) => Number(point[field] || 0)), 1)
+  return Math.max(8, Math.round((Number(value || 0) / max) * 100))
+}
+const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
+const trendTooltip = (point, panel) => `${formatTimestamp(point?.at)}\n${panel.title}：${trendValue(point, panel.field)} ${panel.unit}`
+const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
+const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
+const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
+const runtimeBusinessMetrics = computed(() => runtimeMetrics.value?.business || {})
+const runtimeOAuthMetrics = computed(() => runtimeMetrics.value?.oauth || null)
+const runtimeSseMetrics = computed(() => operationsData.value.metrics?.sse || null)
+const runtimeRedisMetrics = computed(() => operationsData.value.metrics?.redis || null)
+const runtimeDatabaseMetrics = computed(() => operationsData.value.metrics?.database || null)
+const statusRank = { unknown: 0, ok: 1, warning: 2, error: 3 }
+const maxStatus = (...statuses) => statuses.reduce((current, status) => (statusRank[status] > statusRank[current] ? status : current), 'unknown')
+const isNumber = (value) => Number.isFinite(Number(value))
+const httpErrorRate = computed(() => {
+  const http = runtimeHttpMetrics.value
+  if (!http || !Number(http.recentRequests)) return null
+  return Number(http.recent5xx || 0) / Number(http.recentRequests)
+})
+const systemModuleStatus = computed(() => {
+  if (initialOperationsLoading.value || !operationsData.value.status) return 'unknown'
+  return operationsData.value.status.status === 'ok' ? 'ok' : 'error'
+})
+const performanceModuleStatus = computed(() => {
+  const http = runtimeHttpMetrics.value
+  if (!http) return 'unknown'
+  if ((httpErrorRate.value ?? 0) >= 0.05 || Number(http.p95Ms || 0) >= 1500) return 'error'
+  if ((httpErrorRate.value ?? 0) >= 0.01 || Number(http.p95Ms || 0) >= 500 || Number(http.status429 || 0) > 0) return 'warning'
+  return 'ok'
+})
+const databaseModuleStatus = computed(() => {
+  if (!databaseSnapshot.value || !operationsData.value.pool) return 'unknown'
+  if (!databaseSnapshot.value.connected) return 'error'
+  const utilization = Number(operationsData.value.pool.utilization || 0) / 100
+  const latency = Number(operationsData.value.performance?.responseTime || 0)
+  if (utilization >= 0.95 || latency >= 1500) return 'error'
+  if (utilization >= 0.8 || latency >= 500 || Number(databaseDiagnostics.value?.locks?.data?.length || 0) > 0) return 'warning'
+  return 'ok'
+})
+const musicSourceStatuses = computed(() => ['netease', 'tencent', 'bilibili', 'migu'].map((source) => {
+  const metric = dependencyMetrics.value[source]
+  if (!metric || !Number(metric.calls)) return { source, status: 'unknown', metric: null }
+  if (Number(metric.successRate) === 0 || metric.lastError) return { source, status: 'error', metric }
+  if (Number(metric.successRate) < 95 || Number(metric.averageDurationMs || 0) >= 1500) return { source, status: 'warning', metric }
+  return { source, status: 'ok', metric }
+}))
+const dependenciesModuleStatus = computed(() => {
+  const known = musicSourceStatuses.value.filter((item) => item.status !== 'unknown')
+  if (!known.length) return 'unknown'
+  if (known.some((item) => item.status === 'error')) return 'error'
+  if (known.some((item) => item.status === 'warning')) return 'warning'
+  return 'ok'
+})
+const overviewServiceStatus = computed(() => {
+  const statuses = [systemModuleStatus.value]
+  if (databaseSnapshot.value) statuses.push(databaseSnapshot.value.connected ? 'ok' : 'error')
+  if (runtimeRedisMetrics.value?.configured) statuses.push(runtimeRedisMetrics.value.connected ? 'ok' : 'error')
+  if (musicSourceStatuses.value.some((item) => item.status !== 'unknown')) statuses.push(dependenciesModuleStatus.value)
+  return maxStatus(statuses)
+})
+const securityModuleStatus = computed(() => {
+  const http = runtimeHttpMetrics.value
+  if (!http) return 'unknown'
+  if (Number(http.recent5xx || 0) > 0 || Number(turnstileMetrics.value?.upstreamFailures || 0) > 0) return 'error'
+  if (Number(http.status401 || 0) > 0 || Number(http.status403 || 0) > 0 || Number(http.status429 || 0) > 0) return 'warning'
+  return 'ok'
+})
+const overallStatus = computed(() => {
+  if (initialOperationsLoading.value || !runtimeMetrics.value || !operationsData.value.status) return 'unknown'
+  const required = [systemModuleStatus.value, performanceModuleStatus.value, databaseModuleStatus.value]
+  if (required.includes('unknown')) return 'unknown'
+  return maxStatus(systemModuleStatus.value, performanceModuleStatus.value, databaseModuleStatus.value, dependenciesModuleStatus.value, securityModuleStatus.value)
+})
+const overallStatusText = computed(() => ({ ok: '系统正常', warning: '系统警告', error: '系统异常', unknown: '状态未知' }[overallStatus.value]))
+const abnormalModuleCount = computed(() => [systemModuleStatus.value, performanceModuleStatus.value, databaseModuleStatus.value, dependenciesModuleStatus.value, securityModuleStatus.value].filter((status) => status === 'error').length)
+const warningModuleCount = computed(() => [systemModuleStatus.value, performanceModuleStatus.value, databaseModuleStatus.value, dependenciesModuleStatus.value, securityModuleStatus.value].filter((status) => status === 'warning').length)
+const lastUpdatedRelative = computed(() => {
+  if (!operationsLastUpdated.value) return '尚未完成首次采集'
+  const seconds = Math.max(0, Math.floor((runtimeNow.value - operationsLastUpdated.value.getTime()) / 1000))
+  return seconds < 2 ? '刚刚更新' : `${seconds} 秒前更新`
+})
+const refreshProgress = computed(() => {
+  if (!autoRefreshEnabled.value || !operationsLastUpdated.value) return 0
+  return Math.max(0, 100 - ((runtimeNow.value - operationsLastUpdated.value.getTime()) / 30000 * 100))
+})
+const refreshCountdownText = computed(() => `${Math.max(0, Math.ceil(refreshProgress.value / 100 * 30))} 秒后`)
+const keyMetricSummaries = computed(() => {
+  const items = []
+  const memory = systemSnapshot.value?.memory
+  if (memory && isNumber(memory.used) && isNumber(memory.total) && Number(memory.total) > 0) {
+    const ratio = Number(memory.used) / Number(memory.total)
+    items.push({ label: '进程内存', value: Number(memory.used), unit: 'MB', ratio, status: ratio >= .92 ? 'error' : ratio >= .8 ? 'warning' : 'ok', detail: `总计 ${memory.total} MB` })
+  }
+  const dbLatency = operationsData.value.performance?.responseTime
+  if (isNumber(dbLatency)) items.push({ label: '数据库探测延迟', value: Number(dbLatency), unit: 'ms', status: Number(dbLatency) >= 1500 ? 'error' : Number(dbLatency) >= 500 ? 'warning' : 'ok', detail: 'SELECT 1 探测' })
+  if (httpErrorRate.value != null) items.push({ label: '5xx 错误率', value: Number((httpErrorRate.value * 100).toFixed(2)), unit: '%', status: httpErrorRate.value >= .05 ? 'error' : httpErrorRate.value >= .01 ? 'warning' : 'ok', detail: `近 5 分钟 ${runtimeHttpMetrics.value.recent5xx || 0} 次` })
+  const knownSources = musicSourceStatuses.value.filter((item) => item.status !== 'unknown')
+  if (knownSources.length) items.push({ label: '音乐源健康', value: knownSources.filter((item) => item.status === 'ok').length, unit: `/${knownSources.length}`, status: dependenciesModuleStatus.value, detail: '已有调用观测' })
+  if (businessQueueSnapshot.value?.pendingCount != null) items.push({ label: '待处理队列', value: Number(businessQueueSnapshot.value.pendingCount), unit: '项', status: Number(businessQueueSnapshot.value.pendingCount) === 0 ? 'ok' : 'unknown', detail: businessQueueSnapshot.value.oldestCreatedAt ? `最早 ${formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt)} · 未提供积压阈值` : '暂无积压' })
+  return items
+})
+const moduleSummaries = computed(() => [
+  { key: 'system', title: '运行状态', subtitle: '运行环境与实例', status: systemModuleStatus.value, value: systemModuleStatus.value === 'ok' ? '服务正常' : systemModuleStatus.value === 'error' ? '服务异常' : '等待数据', detail: `${systemSnapshot.value?.nodeVersion || 'Node 版本未提供'} · ${formatDuration(systemSnapshot.value?.uptime)}`, error: moduleFetchErrors.value.system, empty: !operationsData.value.status && !initialOperationsLoading.value },
+  { key: 'performance', title: '应用性能', subtitle: '近 5 分钟请求观测', status: performanceModuleStatus.value, value: runtimeHttpMetrics.value?.p95Ms != null ? `${runtimeHttpMetrics.value.p95Ms} ms` : '暂无延迟数据', detail: runtimeHttpMetrics.value?.recentRequests != null ? `${runtimeHttpMetrics.value.recentRequests} 次请求 · 5xx ${runtimeHttpMetrics.value.recent5xx || 0} 次` : '等待请求采样', error: moduleFetchErrors.value.metrics, empty: !runtimeHttpMetrics.value && !initialOperationsLoading.value },
+  { key: 'database', title: '数据库', subtitle: '连接与探测状态', status: databaseModuleStatus.value, value: databaseSnapshot.value?.connected ? '已连接' : databaseSnapshot.value ? '不可用' : '等待数据', detail: operationsData.value.pool ? `连接池 ${operationsData.value.pool.totalConnections}/${operationsData.value.pool.maxConnections} · 探测 ${operationsData.value.performance?.responseTime ?? '—'} ms` : '连接池数据未返回', error: moduleFetchErrors.value.pool || moduleFetchErrors.value.performance, empty: !databaseSnapshot.value && !initialOperationsLoading.value },
+  { key: 'dependencies', title: '外部音乐源', subtitle: '被动调用观测', status: dependenciesModuleStatus.value, value: musicSourceStatuses.value.some((item) => item.status !== 'unknown') ? `${musicSourceStatuses.value.filter((item) => item.status === 'ok').length}/${musicSourceStatuses.value.filter((item) => item.status !== 'unknown').length} 正常` : '尚未观测', detail: dependenciesModuleStatus.value === 'unknown' ? '尚无真实调用样本' : '查看依赖页了解单源状态', error: moduleFetchErrors.value.metrics, empty: !musicSourceStatuses.value.some((item) => item.status !== 'unknown') && !initialOperationsLoading.value },
+  { key: 'security', title: '访问与风控', subtitle: '认证、限流与验证', status: securityModuleStatus.value, value: securityModuleStatus.value === 'ok' ? '未发现风险' : securityModuleStatus.value === 'warning' ? '存在需关注事件' : securityModuleStatus.value === 'error' ? '存在异常请求' : '等待数据', detail: runtimeHttpMetrics.value ? `401 ${runtimeHttpMetrics.value.status401 || 0} · 403 ${runtimeHttpMetrics.value.status403 || 0} · 429 ${runtimeHttpMetrics.value.status429 || 0}` : '等待安全采样', error: moduleFetchErrors.value.metrics, empty: !runtimeHttpMetrics.value && !initialOperationsLoading.value }
+])
+const databaseDiagnostics = computed(() => runtimeDatabaseMetrics.value?.diagnostics || null)
+const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.businessQueue || null)
+const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
+const backupSnapshot = computed(() => runtimeMetrics.value?.backupSnapshot || null)
+const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
+const routePerformanceRows = computed(() => {
+  const samples = [
+    ...(runtimeMetrics.value?.recentErrors || []),
+    ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
+  ].filter((item) => item && item.route)
+  const grouped = new Map()
+  for (const sample of samples) {
+    const route = String(sample.route)
+    const bucket = grouped.get(route) || { route, method: String(sample.method || 'HTTP'), samples: [], requestId: null }
+    bucket.samples.push(sample)
+    if (!bucket.requestId && sample.requestId) bucket.requestId = sample.requestId
+    grouped.set(route, bucket)
+  }
+  const percentileValue = (values, ratio) => {
+    const sorted = values.filter(Number.isFinite).sort((a, b) => a - b)
+    return sorted.length ? `${Math.round(sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * ratio) - 1)])} ms` : 'N/A'
+  }
+  return [...grouped.values()].map((bucket) => {
+    const statuses = bucket.samples.map((item) => Number(item.status))
+    const durations = bucket.samples.map((item) => Number(item.durationMs))
+    const clientErrors = statuses.filter((status) => status >= 400 && status < 500).length
+    return {
+      method: bucket.method,
+      route: bucket.route,
+      qps: 'N/A',
+      p50: percentileValue(durations, 0.5),
+      p95: percentileValue(durations, 0.95),
+      p99: percentileValue(durations, 0.99),
+      clientErrors,
+      status401: statuses.filter((status) => status === 401).length,
+      status403: statuses.filter((status) => status === 403).length,
+      status429: statuses.filter((status) => status === 429).length,
+      serverErrors: statuses.filter((status) => status >= 500).length,
+      requestId: bucket.requestId
+    }
+  }).sort((a, b) => (b.serverErrors + b.clientErrors) - (a.serverErrors + a.clientErrors))
+})
+const musicApiRows = computed(() => [
+  { key: 'netease', source: locale.value.overview?.neteaseSource },
+  { key: 'tencent', source: locale.value.overview?.tencentSource },
+  { key: 'bilibili', source: locale.value.overview?.bilibiliSource },
+  { key: 'migu', source: locale.value.overview?.miguSource }
+].map(({ key, source }) => {
+  const metric = dependencyMetrics.value?.[key]
+  return {
+    source: source || key,
+    status: metric?.calls == null || metric.calls === 0 ? '未探测' : metric.successRate >= 95 ? '已连接' : metric.successRate > 0 ? '部分异常' : '不可用',
+    averageDuration: metric?.averageDurationMs != null ? `${metric.averageDurationMs} ms` : '未采集调用',
+    httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
+    semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(2)}%` : 'N/A',
+    timeouts: 'N/A'
+  }
+}))
+const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
+const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
+const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : '采集正常')
+const clampScore = (value) => Math.min(100, Math.max(0, value))
+const scoreLowerIsBetter = (value, good, warning, critical) => {
+  if (value <= good) return 100
+  if (value <= warning) return 100 - ((value - good) / (warning - good)) * 25
+  if (value <= critical) return 75 - ((value - warning) / (critical - warning)) * 35
+  return clampScore(40 - ((value - critical) / critical) * 40)
+}
+const sloMetricStatus = (score) => score == null ? 'unknown' : score >= 90 ? 'ok' : score >= 70 ? 'warning' : 'error'
+const sloDependencySuccessRate = computed(() => {
+  const samples = enabledMusicSourceKeys.value
+    .map((source) => dependencyMetrics.value?.[source])
+    .filter((metric) => Number(metric?.calls) > 0 && Number.isFinite(Number(metric?.successRate)))
+  const calls = samples.reduce((total, metric) => total + Number(metric.calls), 0)
+  if (!calls) return null
+  return samples.reduce((total, metric) => total + Number(metric.successRate) * Number(metric.calls), 0) / calls
+})
+const sloHealthMetrics = computed(() => {
+  const total = Number(runtimeHttpMetrics.value?.recentRequests)
+  const errors = Number(runtimeHttpMetrics.value?.recent5xx)
+  const availability = Number.isFinite(total) && total > 0 && Number.isFinite(errors)
+    ? Math.max(0, (1 - errors / total) * 100)
+    : null
+  const p95Value = runtimeHttpMetrics.value?.p95Ms
+  const p95 = p95Value != null && Number.isFinite(Number(p95Value)) ? Number(p95Value) : null
+  const eventLoopValue = runtimeEventLoopMetrics.value?.p99Ms
+  const eventLoopP99 = eventLoopValue != null && Number.isFinite(Number(eventLoopValue)) ? Number(eventLoopValue) : null
+  const dependencyRate = sloDependencySuccessRate.value
+  const availabilityScore = availability == null ? null : clampScore(100 - (100 - availability) * 20)
+  const latencyScore = p95 == null ? null : scoreLowerIsBetter(p95, 300, 800, 1500)
+  const eventLoopScore = eventLoopP99 == null ? null : scoreLowerIsBetter(eventLoopP99, 50, 200, 500)
+  const dependencyScore = dependencyRate == null ? null : clampScore(dependencyRate >= 95
+    ? 75 + ((dependencyRate - 95) / 5) * 25
+    : (dependencyRate / 95) * 75)
+
+  return [
+    { key: 'availability', label: locale.value.overview?.availabilitySli, value: availability == null ? '--' : `${availability.toFixed(2)}%`, score: availabilityScore, weight: 45 },
+    { key: 'latency', label: locale.value.overview?.sloP95Latency, value: p95 == null ? '--' : formatMilliseconds(p95), score: latencyScore, weight: 25 },
+    { key: 'eventLoop', label: locale.value.overview?.sloEventLoopP99, value: eventLoopP99 == null ? '--' : formatMilliseconds(eventLoopP99), score: eventLoopScore, weight: 15 },
+    { key: 'dependencies', label: locale.value.overview?.sloDependencySuccess, value: dependencyRate == null ? '--' : `${dependencyRate.toFixed(1)}%`, score: dependencyScore, weight: 15 }
+  ].map((item) => ({ ...item, status: sloMetricStatus(item.score) }))
+})
+const sloHealthScore = computed(() => {
+  const known = sloHealthMetrics.value.filter((item) => item.score != null)
+  const totalWeight = known.reduce((total, item) => total + item.weight, 0)
+  if (!totalWeight) return null
+  return known.reduce((total, item) => total + item.score * item.weight, 0) / totalWeight
+})
+const sloHealthProgress = computed(() => sloHealthScore.value == null ? 0 : clampScore(sloHealthScore.value))
+const sloHealthScoreDisplay = computed(() => sloHealthScore.value == null ? '--' : Math.round(sloHealthScore.value))
+const sloAvailabilityStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (initialOperationsLoading.value || sloHealthScore.value == null) return 'unknown'
+  return sloHealthScore.value >= 90 ? 'ok' : sloHealthScore.value >= 70 ? 'warning' : 'error'
+})
+const sloHealthStatusLabel = computed(() => ({
+  ok: locale.value.overview?.sloHealthy,
+  warning: locale.value.overview?.sloAttention,
+  error: locale.value.overview?.sloRisk,
+  unknown: locale.value.overview?.sloPending
+}[sloAvailabilityStatus.value] || locale.value.overview?.sloPending))
+const sloHealthCoverage = computed(() => {
+  const known = sloHealthMetrics.value.filter((item) => item.score != null).length
+  return `${locale.value.overview?.sloCoverage} ${known}/${sloHealthMetrics.value.length}`
+})
+const sloHealthRecommendations = computed(() => {
+  const messages = locale.value.overview || {}
+  const recommendations = []
+  for (const metric of sloHealthMetrics.value) {
+    if (metric.status === 'unknown') continue
+    if (metric.key === 'availability' && metric.status !== 'ok') recommendations.push(messages.sloAdviceAvailability)
+    if (metric.key === 'latency' && metric.status !== 'ok') recommendations.push(messages.sloAdviceLatency)
+    if (metric.key === 'eventLoop' && metric.status !== 'ok') recommendations.push(messages.sloAdviceEventLoop)
+    if (metric.key === 'dependencies' && metric.status !== 'ok') recommendations.push(messages.sloAdviceDependencies)
+  }
+  if (sloHealthMetrics.value.some((item) => item.status === 'unknown')) recommendations.push(messages.sloAdviceCoverage)
+  if (!recommendations.length) recommendations.push(messages.sloAdviceHealthy)
+  return [...new Set(recommendations.filter(Boolean))].slice(0, 3)
+})
+const formatBytes = (value) => {
+  const bytes = Number(value)
+  if (!Number.isFinite(bytes) || bytes < 0) return '--'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+const formatTimestamp = (value) => value ? new Date(value).toLocaleString() : '--'
+const formatDuration = (seconds) => {
+  if (!Number.isFinite(seconds)) return '--'
+  const total = Math.max(0, Math.floor(seconds))
+  const days = Math.floor(total / 86400)
+  const hours = Math.floor((total % 86400) / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  return days ? `${days}天 ${hours}小时 ${minutes}分 ${secs}秒` : `${hours}小时 ${minutes}分 ${secs}秒`
+}
+const formatRequestRate = (count) => {
+  const total = Number(runtimeHttpMetrics.value?.recentRequests)
+  if (!Number.isFinite(total) || total <= 0 || count == null) return '暂无数据'
+  return `${(Number(count) / total * 100).toFixed(2)}%`
+}
+const durationTone = (duration) => {
+  const value = Number(duration || 0)
+  if (value >= 1500) return 'duration-value--error'
+  if (value >= 500) return 'duration-value--warning'
+  return 'duration-value--ok'
+}
+const dependencySourceForLabel = (label) => {
+  const labels = {
+    [locale.value.overview?.neteaseSource]: 'netease',
+    [locale.value.overview?.tencentSource]: 'tencent',
+    [locale.value.overview?.bilibiliSource]: 'bilibili',
+    [locale.value.overview?.miguSource]: 'migu'
+  }
+  return labels[label]
+}
+const dependencyStatusValue = (label) => {
+  const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
+  if (!metric) return '--'
+  return metric.successRate === 100 ? '已连接' : metric.successRate === 0 ? '不可用' : '部分异常'
+}
+const dependencyCardStatus = (label) => {
+  const source = dependencySourceForLabel(label)
+  if (source) return musicSourceStatuses.value.find((item) => item.source === source)?.status || 'unknown'
+  if (label === locale.value.dependencies?.neonPostgresql) return databaseModuleStatus.value
+  if (label === locale.value.services?.redis) return runtimeRedisMetrics.value?.configured ? (runtimeRedisMetrics.value.connected ? 'ok' : 'error') : 'unknown'
+  if (label === locale.value.dependencies?.oauth) return runtimeOAuthMetrics.value?.successRate == null ? 'unknown' : runtimeOAuthMetrics.value.successRate < 90 ? 'warning' : 'ok'
+  return 'unknown'
+}
+const dependencyFailureReason = (label) => {
+  const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
+  if (!metric?.lastError) return ''
+  return redactSensitiveText(metric.lastError).slice(0, 120)
+}
+const dependencyMetricValue = (label, detail) => {
+  if (label === locale.value.dependencies?.neonPostgresql && detail === locale.value.dependencies?.coldStartP95) {
+    const connectionInfo = databaseSnapshot.value?.connectionInfo
+    return connectionInfo?.serverlessMode ? 'N/A · auto-suspend enabled' : 'N/A'
+  }
+  const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
+  if (!metric) return dependencySourceForLabel(label) ? '未采集调用' : '--'
+  if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : `${metric.successRate}%`
+  if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : `${metric.emptyResultRate}%`
+  if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : `${metric.semanticFailureRate}%`
+  if (detail === locale.value.dependencies?.p95LatencyShort) return metric.averageDurationMs == null ? '--' : `${metric.averageDurationMs} ms`
+  return '--'
+}
+const securityMetricValue = (label) => {
+  if (label === locale.value.audit?.invalidTokenRequests) return runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : 'N/A'
+  if (label === locale.value.audit?.rateLimitTriggers) return runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : 'N/A'
+  if (label === locale.value.audit?.strongAuthFailures) return runtimeOAuthMetrics.value?.successRate != null ? `${(100 - runtimeOAuthMetrics.value.successRate).toFixed(2)}%` : 'N/A'
+  if (!turnstileMetrics.value) return '--'
+  if (label === locale.value.audit?.turnstileValidationRequests) return String(turnstileMetrics.value.calls)
+  if (label === locale.value.audit?.turnstileValidationSuccessRate) return turnstileMetrics.value.calls ? `${(turnstileMetrics.value.successes / turnstileMetrics.value.calls * 100).toFixed(1)}%` : '--'
+  if (label === locale.value.audit?.turnstileUpstreamFailures) return String(turnstileMetrics.value.upstreamFailures)
+  if (label === locale.value.audit?.turnstileConfiguration) return '--'
+  return '--'
+}
+const dependencyProtectionValue = (title, item) => {
+  const notifications = runtimeMetrics.value?.notifications
+  const cache = runtimeMetrics.value?.cache
+  if (title === locale.value.dependencies?.searchCacheHitRate && cache) {
+    if (item === locale.value.dependencies?.cacheHits) return String(cache.hits)
+    if (item === locale.value.dependencies?.cacheMisses) return String(cache.misses)
+    if (item === locale.value.dependencies?.cacheEvictions) return String(cache.evictions)
+    if (item === locale.value.dependencies?.cacheResponseP95) {
+      const durations = Object.values(dependencyMetrics.value).map((metric) => Number(metric?.averageDurationMs || 0)).filter(Boolean)
+      return durations.length ? `${Math.max(...durations)} ms` : 'N/A'
+    }
+    if (item === locale.value.dependencies?.cacheHitRate) {
+      const total = cache.hits + cache.misses
+      return total ? `${(cache.hits / total * 100).toFixed(1)}%` : 'N/A'
+    }
+  }
+  if (title === locale.value.dependencies?.fallbackHits) {
+    if (item === locale.value.dependencies?.providerFallbacks) return 'N/A'
+    if (item === locale.value.dependencies?.retryAttempts) return 'N/A'
+    if (item === locale.value.dependencies?.circuitBreakerOpens) return 'N/A'
+    if (item === locale.value.dependencies?.cachedResponseFallbacks) return cache ? String(cache.misses) : '--'
+    if ([locale.value.overview?.neteaseSource, locale.value.overview?.tencentSource, locale.value.overview?.bilibiliSource, locale.value.overview?.miguSource].includes(item)) {
+      return dependencyMetricValue(item, locale.value.dependencies?.semanticFailureRate)
+    }
+  }
+  if (title !== locale.value.dependencies?.notificationDelivery || !notifications) return '--'
+  if (item === locale.value.dependencies?.smtpAcceptedRate) return String(notifications.smtpAccepted)
+  if (item === locale.value.dependencies?.meowEligibleTargets) return String(notifications.meowEligible)
+  if (item === locale.value.dependencies?.meowSkippedTargets) return String(notifications.meowSkipped)
+  if (item === locale.value.dependencies?.meowTransportFailureRate) {
+    return notifications.meowEligible ? `${(notifications.meowTransportFailures / notifications.meowEligible * 100).toFixed(1)}%` : '--'
+  }
+  return '--'
+}
+
+const waterfallBarStyle = (span) => {
+  const totalDuration = traceSpans.value.reduce((total, item) => Math.max(total, item.offsetMs + item.durationMs), 0)
+  if (!totalDuration) return {}
+  return {
+    left: `${(span.offsetMs / totalDuration) * 100}%`,
+    width: `${Math.max((span.durationMs / totalDuration) * 100, 0.6)}%`
+  }
+}
+
+const openRequestDiagnosis = async (requestId = globalRequestId.value) => {
+  const normalizedRequestId = String(requestId || '').trim()
+  if (!normalizedRequestId) return
+  globalRequestId.value = normalizedRequestId
+  debugRequestId.value = normalizedRequestId
+  activeGroup.value = 'debug'
+  diagnosticLoading.value = true
+  try {
+    const response = await $fetch('/api/admin/operations/metrics', { query: { requestId: normalizedRequestId } })
+    const metrics = response?.data || {}
+    operationsData.value.metrics = { ...operationsData.value.metrics, diagnostic: metrics.diagnostic }
+  } catch {
+    operationsError.value = true
+  } finally {
+    diagnosticLoading.value = false
+  }
+}
+
+const monitorSections = computed(() => [
+  {
+    icon: 'monitoring',
+    label: locale.value.groups?.monitoring,
+    items: [
+      { icon: 'monitoring', label: locale.value.groups?.overview, value: 'overview' },
+      { icon: 'activity', label: locale.value.groups?.performance, value: 'performance' },
+      { icon: 'music', label: locale.value.groups?.business, value: 'business' },
+      { icon: 'database', label: locale.value.groups?.database, value: 'database' },
+      { icon: 'server', label: locale.value.groups?.infra, value: 'infra' },
+      { icon: 'warning', label: locale.value.groups?.security, value: 'security' }
+    ]
+  },
+  {
+    icon: 'terminal',
+    label: locale.value.groups?.debugTools,
+    items: [
+      { icon: 'search', label: locale.value.groups?.debug, value: 'debug' },
+      { icon: 'terminal', label: locale.value.groups?.logs, value: 'logs' },
+      { icon: 'layers', label: locale.value.groups?.dependencies, value: 'dependencies' }
+    ]
+  }
+])
+
+const monitoringReferenceRows = computed(() => locale.value.references?.[activeGroup.value] || [])
+
+const overviewSignals = computed(() => [
+  {
+    icon: 'activity',
+    label: locale.value.overview?.cpuStatus,
+    detail: locale.value.overview?.cpuStatusDetail, value: '--'
+  },
+  {
+    icon: 'monitoring',
+    label: locale.value.overview?.memoryStatus,
+    detail: locale.value.overview?.memoryStatusDetail, compact: true,
+    value: runtimeMetrics.value?.process?.memory
+      ? `常驻内存 ${formatBytes(runtimeMetrics.value.process.memory.rss)} · 已用堆 ${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / 堆总量 ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)} · 外部内存 ${formatBytes(runtimeMetrics.value.process.memory.external)}`
+      : systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
+  },
+  {
+    icon: 'database',
+    label: locale.value.overview?.databaseStatus,
+    detail: locale.value.overview?.databaseStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--'
+  },
+  {
+    icon: 'server',
+    label: locale.value.overview?.redisStatus,
+    detail: locale.value.overview?.redisStatusDetail, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? '已连接' : '不可用') : '--'
+  },
+  {
+    icon: 'settings',
+    label: locale.value.overview?.eventLoopStatus,
+    detail: locale.value.overview?.eventLoopStatusDetail, value: '--'
+  },
+  {
+    icon: 'clock',
+    label: locale.value.overview?.backgroundTaskStatus,
+    detail: locale.value.overview?.backgroundTaskStatusDetail, value: '--'
+  }
+].filter((item) => !isServerlessRuntime.value || ![locale.value.overview?.cpuStatus, locale.value.overview?.memoryStatus].includes(item.label)))
+
+const isServerlessRuntime = computed(() => {
+  const mode = String(runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || '').toLowerCase()
+  if (publicRuntimeConfig.isNetlify) return true
+  return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
+})
+const deploymentModeLabel = computed(() => isServerlessRuntime.value ? '无服务器部署' : systemSnapshot.value?.platform ? 'Node 服务部署' : locale.value.overview?.detectionPending)
+
+const healthLiveDetails = computed(() => [
+  { label: locale.value.overview?.sloBudget, value: '--' },
+  { label: locale.value.overview?.errorBudgetBurn, value: '--' },
+  { label: locale.value.overview?.collectionStatus, value: collectionStatusText.value }
+])
+
+const backupStatusFields = computed(() => [
+  { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
+  { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? '成功' : '失败') : '--' },
+  { label: locale.value.overview?.lastBackupSize, value: formatBytes(latestBackup.value?.backupSize) },
+  { label: locale.value.overview?.backupStorageUsage, value: 'N/A' },
+  { label: locale.value.overview?.backupExportedTables, value: backupSnapshot.value?.exportedTables != null ? String(backupSnapshot.value.exportedTables) : '--' },
+  { label: locale.value.overview?.backupSkippedTables, value: backupSnapshot.value?.skippedTables != null ? String(backupSnapshot.value.skippedTables) : '--' },
+  { label: locale.value.overview?.backupIntegrityCheck, value: backupSnapshot.value?.checksum ? `SHA-256 ${backupSnapshot.value.checksum.slice(0, 12)}...` : '--' },
+  { label: locale.value.overview?.lastRestoreDrill, value: 'N/A' },
+  { label: locale.value.overview?.lastBackupScheduleAt, value: latestBackup.value ? formatTimestamp(latestBackup.value.createdAt) : '--' },
+  { label: locale.value.overview?.expectedBackupInterval, value: 'N/A' },
+  { label: locale.value.overview?.backupScheduleMisses, value: 'N/A' }
+])
+
+const backupTargetPanels = computed(() => [
+  { title: locale.value.overview?.backupTargetS3, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('S3') },
+  { title: locale.value.overview?.backupTargetWebdav, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('WebDAV') },
+  { title: locale.value.overview?.backupTargetTelegram, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('Telegram') },
+  { title: locale.value.overview?.backupTargetEmail, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('Email') }
+])
+
+const backupTargetValue = (target) => {
+  const method = latestBackup.value?.methods?.find(item => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
+  return method ? (method.success ? '成功' : '失败') : '未启用'
+}
+
+const deploymentModeRows = computed(() => [
+  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? '已检测到' : locale.value.overview?.detectionPending },
+  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? '已检测到' : '不适用' }
+])
+
+const dependencyRows = computed(() => [
+  {
+    icon: 'monitoring',
+    label: locale.value.services?.application,
+    detail: locale.value.overview?.applicationDetail, value: '正常'
+  },
+  {
+    icon: 'database',
+    label: locale.value.services?.postgresql,
+    detail: locale.value.overview?.databaseDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--'
+  },
+  {
+    icon: 'server',
+    label: locale.value.services?.redis,
+    detail: locale.value.overview?.redisDetail, value: '--'
+  },
+  {
+    icon: 'activity',
+    label: locale.value.server?.collectionReporting,
+    detail: locale.value.overview?.collectionReportingDetail, value: collectionStatusText.value
+  },
+  {
+    icon: 'users',
+    label: locale.value.application?.sseActiveConnections || '实时连接',
+    detail: locale.value.application?.sseActiveConnectionsDetail || '音乐状态 SSE 当前活跃连接数',
+    value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--'
+  }
+])
+
+const alertRules = computed(() => [
+  { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleApiAvailability, detail: locale.value.overview?.ruleApiAvailabilityDetail },
+  { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleDatabaseConnections, detail: locale.value.overview?.ruleDatabaseConnectionsDetail },
+  { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleSongSuccess, detail: locale.value.overview?.ruleSongSuccessDetail },
+  { priority: 'P1', tone: 'alert-priority--high', label: locale.value.overview?.ruleResponseP95, detail: locale.value.overview?.ruleResponseP95Detail },
+  { priority: 'P1', tone: 'alert-priority--high', label: locale.value.overview?.ruleColdStarts, detail: locale.value.overview?.ruleColdStartsDetail },
+  { priority: 'P2', tone: 'alert-priority--medium', label: locale.value.overview?.ruleNodeMemory, detail: locale.value.overview?.ruleNodeMemoryDetail },
+  { priority: 'P2', tone: 'alert-priority--medium', label: locale.value.overview?.ruleMusicSources, detail: locale.value.overview?.ruleMusicSourcesDetail }
+])
+
+const applicationMetrics = computed(() => [
+  { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail, value: runtimeHttpMetrics.value?.requestsPerSecond != null ? String(runtimeHttpMetrics.value.requestsPerSecond) : '--' },
+  { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail, value: formatRequestRate(runtimeHttpMetrics.value?.recent4xx) },
+  { icon: 'warning', label: locale.value.application?.unauthorized401, detail: 'JWT 校验失败请求数', value: runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : '--' },
+  { icon: 'warning', label: locale.value.application?.forbidden403, detail: '权限拒绝请求数', value: runtimeHttpMetrics.value?.status403 != null ? String(runtimeHttpMetrics.value.status403) : '--' },
+  { icon: 'activity', label: locale.value.application?.rateLimited429, detail: '限流触发次数，不计入 5xx 告警', value: runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : '--' },
+  { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: formatRequestRate(runtimeHttpMetrics.value?.recent5xx) },
+  { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
+  { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' },
+  { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail, value: runtimeMetrics.value?.process?.activeHandles != null ? String(runtimeMetrics.value.process.activeHandles) : '--' },
+  { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail, value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--' },
+  { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
+  { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : '--' },
+  { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail },
+  { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
+  { icon: 'settings', label: locale.value.application?.apiKeyUsage, detail: locale.value.application?.apiKeyUsageDetail, value: apiKeyUsageSnapshot.value?.calls != null ? String(apiKeyUsageSnapshot.value.calls) : '--' },
+  { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail, value: apiKeyUsageSnapshot.value?.failureRate != null ? `${apiKeyUsageSnapshot.value.failureRate}%` : '--' }
+])
+
+const applicationLatencyBreakdown = computed(() => [
+  { label: locale.value.application?.middlewareDuration, value: 'N/A' },
+  { label: locale.value.application?.drizzleDuration, value: 'N/A' },
+  { label: locale.value.application?.externalApiDuration, value: 'N/A' },
+  { label: locale.value.application?.businessDuration, value: 'N/A' }
+])
+
+const applicationLatencyDetails = computed(() => [
+  { label: locale.value.application?.responseP50, value: runtimeHttpMetrics.value?.p50Ms != null ? `${runtimeHttpMetrics.value.p50Ms} ms` : '--' },
+  { label: locale.value.application?.responseP95, value: runtimeHttpMetrics.value?.p95Ms != null ? `${runtimeHttpMetrics.value.p95Ms} ms` : '--' },
+  { label: locale.value.application?.responseP99, value: runtimeHttpMetrics.value?.p99Ms != null ? `${runtimeHttpMetrics.value.p99Ms} ms` : '--' },
+  { label: locale.value.application?.responseMax, value: runtimeTimeline.value.length ? `${Math.max(...runtimeTimeline.value.map((item) => Number(item.max_duration_ms || item.p95Ms || 0)))} ms` : '--' }
+])
+
+const applicationDetailPanels = computed(() => [
+  {
+    icon: 'success',
+    title: locale.value.application?.authentication,
+    detail: locale.value.application?.authenticationDetail,
+    items: [
+      locale.value.application?.jwtIssued,
+      locale.value.application?.jwtVerified,
+      locale.value.application?.invalidTokens,
+      { label: locale.value.application?.oauthSuccessRate, value: runtimeOAuthMetrics.value?.successRate != null ? `${runtimeOAuthMetrics.value.successRate}%` : '--' }
+    ]
+  },
+  {
+    icon: 'music',
+    title: locale.value.application?.musicSyncReliability,
+    detail: locale.value.application?.musicSyncReliabilityDetail,
+    items: [
+      { label: locale.value.application?.musicSyncReconnects, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
+      { label: locale.value.application?.musicSyncLatency, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : 'N/A' },
+      { label: locale.value.application?.musicSyncHeartbeatTimeouts, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
+      { label: locale.value.application?.musicSyncDeliveryFailures, value: 'N/A' }
+    ]
+  },
+  {
+    icon: 'monitoring',
+    title: locale.value.application?.requestLifecycle,
+    detail: locale.value.application?.requestLifecycleDetail,
+    items: [
+      locale.value.application?.requestTotal,
+      locale.value.application?.clientErrorCount,
+      locale.value.application?.serverErrorCount,
+      locale.value.application?.ssrRenderCount,
+      locale.value.application?.gcCount
+    ]
+  },
+  {
+    icon: 'activity',
+    title: locale.value.application?.adminProgressSse,
+    detail: locale.value.application?.adminProgressSseDetail,
+    items: [
+      { label: locale.value.application?.adminProgressSseActiveConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' },
+      { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: runtimeSseMetrics.value?.progress?.heartbeatFailures != null ? String(runtimeSseMetrics.value.progress.heartbeatFailures) : '--' },
+      { label: locale.value.application?.adminProgressSseAverageLifetime, value: runtimeSseMetrics.value?.progress?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.progress.averageLifetimeMs} ms` : '--' },
+      { label: locale.value.application?.adminProgressSseUnclosedConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' }
+    ]
+  }
+])
+
+const serverSummaryDetails = computed(() => [
+  { label: locale.value.runtime?.hostname, value: import.meta.client ? window.location.hostname : 'N/A' },
+  { label: locale.value.runtime?.platform, value: systemSnapshot.value?.platform || '--' },
+  { label: locale.value.runtime?.systemUptime, value: systemSnapshot.value?.uptime ? formatDuration(Math.max(0, Number(systemSnapshot.value.uptime) + (runtimeNow.value - Date.parse(systemSnapshot.value.timestamp || '')) / 1000)) : '--' },
+  { label: locale.value.runtime?.processPid, value: 'N/A' }
+])
+
+const serverMetrics = computed(() => (isServerlessRuntime.value ? [
+  { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : 'N/A' },
+  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: runtimeMetrics.value?.http?.p95Ms != null ? `${runtimeMetrics.value.http.p95Ms} ms` : 'N/A' },
+  { icon: 'refresh', label: '冷启动次数', detail: '当前实例可见的冷启动次数', value: 'N/A' },
+  { icon: 'warning', label: '内存超限错误', detail: '函数因内存限制终止的次数', value: 'N/A' }
+] : [
+  {
+    icon: 'activity',
+    label: locale.value.metrics?.cpuUsage,
+    detail: locale.value.server?.cpuUsageDetail,
+    value: '--'
+  },
+  {
+    icon: 'monitoring',
+    label: locale.value.metrics?.systemMemory,
+    detail: locale.value.server?.systemMemoryDetail,
+    value: runtimeMetrics.value?.process?.memory?.rss ? `${Math.round(runtimeMetrics.value.process.memory.rss / 1024 / 1024)} MB 常驻内存` : '--'
+  },
+  {
+    icon: 'database',
+    label: locale.value.metrics?.diskUsage,
+    detail: locale.value.server?.diskUsageDetail
+  },
+  {
+    icon: 'activity',
+    label: locale.value.server?.networkIngress,
+    detail: locale.value.server?.networkIngressDetail
+  },
+  {
+    icon: 'activity',
+    label: locale.value.server?.networkEgress,
+    detail: locale.value.server?.networkEgressDetail
+  },
+  {
+    icon: 'database',
+    label: locale.value.server?.diskIo,
+    detail: locale.value.server?.diskIoDetail
+  },
+  {
+    icon: 'refresh',
+    label: locale.value.server?.containerRestarts,
+    detail: locale.value.server?.containerRestartsDetail,
+    value: '--'
+  }
+]))
+
+const serverHealthDetails = computed(() => [
+  { label: locale.value.server?.healthLevel, value: healthScore.value === 'N/A' ? 'N/A' : healthScore.value },
+  { label: locale.value.server?.alertCount, value: runtimeHttpMetrics.value ? String(runtimeHttpMetrics.value.recent5xx || 0) : '--' },
+  { label: locale.value.server?.collectedAt, value: formattedLastUpdated.value }
+])
+
+const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
+  { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
+  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: '毫秒', field: 'p95Ms', available: true }
+] : [
+  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '百分比', available: false },
+  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', available: false },
+  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail, unit: 'MB/秒', available: false },
+  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail, unit: 'MB/秒', available: false }
+]))
+
+const serverRuntimeDetails = computed(() => [
+  { label: '部署运行模式', value: runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || (publicRuntimeConfig.isNetlify ? '无服务器（Netlify）' : 'Node 服务') },
+  { label: locale.value.server?.platformRelease, value: systemSnapshot.value?.platform || '--' },
+  { label: locale.value.runtime?.architecture, value: systemSnapshot.value?.arch || '--' },
+  { label: locale.value.runtime?.nodeVersion, value: systemSnapshot.value?.nodeVersion || '--' },
+  { label: locale.value.runtime?.processUptime, value: systemSnapshot.value?.uptime ? `${Math.round(systemSnapshot.value.uptime)}s` : '--' },
+  { label: locale.value.runtime?.instanceId, value: operationsData.value.status?.instance?.instanceId || '--' },
+  { label: locale.value.server?.appVersion, value: '--' },
+  { label: locale.value.server?.commitSha, value: runtimeMetrics.value?.runtime?.commitSha || runtimeMetrics.value?.commitSha || publicRuntimeConfig.sentry?.release || 'N/A' },
+  { label: locale.value.server?.deployedAt, value: '--' },
+  { label: locale.value.server?.collectionReporting, value: collectionStatusText.value }
+])
+
+const serverResourcePanels = computed(() => [
+  {
+    icon: 'activity',
+    title: locale.value.server?.cpuDetails,
+    detail: locale.value.server?.cpuDetailsDetail,
+    items: [
+      locale.value.server?.cpuModel,
+      locale.value.server?.cpuCores,
+      locale.value.server?.loadAverage1,
+      locale.value.server?.loadAverage5,
+      locale.value.server?.loadAverage15
+    ]
+  },
+  {
+    icon: 'monitoring',
+    title: locale.value.server?.systemMemoryDetails,
+    detail: locale.value.server?.systemMemoryDetailsDetail,
+    items: [
+      locale.value.server?.systemMemoryTotal,
+      locale.value.server?.systemMemoryUsed,
+      locale.value.server?.systemMemoryAvailable
+    ]
+  },
+  {
+    icon: 'database',
+    title: locale.value.server?.diskDetails,
+    detail: locale.value.server?.diskDetailsDetail,
+    items: [
+      locale.value.server?.diskTotal,
+      locale.value.server?.diskAvailable,
+      locale.value.server?.partitionCount
+    ]
+  },
+  {
+    icon: 'server',
+    title: locale.value.server?.nodeProcessDetails,
+    detail: locale.value.server?.nodeProcessDetailsDetail,
+    items: [
+      locale.value.server?.rssMemory,
+      locale.value.server?.nodeHeapUtilization,
+      locale.value.server?.heapUsed,
+      locale.value.server?.heapTotal,
+      locale.value.server?.externalMemory,
+      locale.value.server?.gcCount,
+      locale.value.server?.gcPause,
+      locale.value.server?.eventLoopP99Lag
+    ]
+  }
+])
+
+const resourceValue = (label) => {
+  const memory = runtimeMetrics.value?.process?.memory
+  const systemMemory = systemSnapshot.value?.memory
+  const values = new Map([
+    [locale.value.server?.rssMemory, memory?.rss != null ? formatBytes(memory.rss) : '--'],
+    [locale.value.server?.heapUsed, memory?.heapUsed != null ? formatBytes(memory.heapUsed) : '--'],
+    [locale.value.server?.heapTotal, memory?.heapTotal != null ? formatBytes(memory.heapTotal) : '--'],
+    [locale.value.server?.externalMemory, memory?.external != null ? formatBytes(memory.external) : '--'],
+    [locale.value.server?.gcCount, runtimeGcMetrics.value?.count != null ? String(runtimeGcMetrics.value.count) : '--'],
+    [locale.value.server?.gcPause, runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--'],
+    [locale.value.server?.eventLoopP99Lag, runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--'],
+    [locale.value.server?.systemMemoryTotal, systemMemory?.total != null ? `${systemMemory.total} MB` : 'N/A'],
+    [locale.value.server?.systemMemoryUsed, systemMemory?.used != null ? `${systemMemory.used} MB` : 'N/A'],
+    [locale.value.server?.systemMemoryAvailable, systemMemory?.total != null && systemMemory?.used != null ? `${Math.max(0, systemMemory.total - systemMemory.used)} MB` : 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
+const runtimeGuardPanels = computed(() => [
+  {
+    icon: 'database',
+    title: locale.value.server?.redisRuntimeGuard,
+    detail: locale.value.server?.redisRuntimeGuardDetail,
+    items: [
+      { label: locale.value.server?.redisConfigured, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.configured ? '已配置' : '未配置') : '--' },
+      { label: locale.value.server?.redisConnected, value: !runtimeRedisMetrics.value ? '--' : !runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? '已连接' : '不可用' },
+      { label: locale.value.server?.redisFallbackMode, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured || !runtimeRedisMetrics.value.connected ? '已启用降级' : '未启用降级') : '--' },
+      { label: locale.value.server?.redisLastError, value: runtimeRedisMetrics.value?.lastError || '--' }
+    ]
+  },
+  {
+    icon: 'activity',
+    title: locale.value.server?.ssrWarmup,
+    detail: locale.value.server?.ssrWarmupDetail,
+    items: [
+      { label: locale.value.server?.ssrWarmupLastResult, value: runtimeSsrPrewarm.value?.lastResult || '--' },
+      { label: locale.value.server?.ssrWarmupDuration, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
+      { label: locale.value.server?.ssrWarmupFailures, value: runtimeSsrPrewarm.value?.failures != null ? String(runtimeSsrPrewarm.value.failures) : '--' }
+    ]
+  },
+  {
+    icon: 'monitoring',
+    title: locale.value.server?.egressLocation,
+    detail: locale.value.server?.egressLocationDetail,
+    items: [
+      { label: locale.value.server?.egressLastLocation, value: '--' },
+      { label: locale.value.server?.egressCacheAge, value: '--' },
+      { label: locale.value.server?.egressLookupFailures, value: '--' }
+    ]
+  }
+])
+
+const databaseMetrics = computed(() => [
+  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--' },
+  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: operationsData.value.pool?.utilization ? `${operationsData.value.pool.utilization}%` : '--' },
+  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: runtimeTimeline.value.length ? String(runtimeTimeline.value[runtimeTimeline.value.length - 1].requests || 0) : '--' },
+  { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail, value: databaseDiagnostics.value?.activity?.data ? String(databaseDiagnostics.value.activity.data.filter((item) => Number(item.duration) > 100).length) : '--' },
+  { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail, value: operationsData.value.performance?.transactionsRolledBack != null ? String(operationsData.value.performance.transactionsRolledBack) : '--' },
+  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
+  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: databaseDiagnostics.value?.size?.available ? databaseDiagnostics.value.size.data?.[0]?.database_size || '--' : 'N/A' },
+  { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail, value: 'N/A' },
+  { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
+  { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail, value: 'N/A' }
+])
+
+const databaseDetails = computed(() => [
+  { label: locale.value.server?.poolMax, value: operationsData.value.pool?.maxConnections ?? '--' },
+  { label: locale.value.server?.poolActive, value: operationsData.value.pool?.activeConnections ?? '--' },
+  { label: locale.value.server?.poolTotal, value: operationsData.value.pool?.totalConnections ?? '--' },
+  { label: locale.value.server?.poolAvailable, value: operationsData.value.pool ? Math.max(0, Number(operationsData.value.pool.maxConnections || 0) - Number(operationsData.value.pool.totalConnections || 0)) : '--' },
+  { label: locale.value.server?.probe, value: databaseSnapshot.value?.connected ? '已连接' : '--' },
+  { label: locale.value.database?.poolerWaitQueue, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
+  { label: locale.value.database?.neonColdStart, value: 'N/A' }
+])
+
+const databasePerformanceDetails = computed(() => [
+  { label: locale.value.server?.responseTime, value: operationsData.value.performance?.responseTime != null ? `${operationsData.value.performance.responseTime} ms` : '--' },
+  { label: locale.value.server?.transactionsCommitted, value: operationsData.value.performance?.transactionsCommitted ?? '--' },
+  { label: locale.value.server?.transactionsRolledBack, value: operationsData.value.performance?.transactionsRolledBack ?? '--' },
+  { label: locale.value.database?.indexHitRatio, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
+  { label: locale.value.database?.tableBloat, value: databaseTableRows.value.length ? `${Math.max(...databaseTableRows.value.map((item) => Number(item.dead_row_ratio || 0)))}%` : '--' },
+  { label: locale.value.database?.poolWaitTime, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
+  { label: locale.value.database?.databaseGrowthRate, value: 'N/A' }
+])
+
+const schemaHealthTables = computed(() => [
+  { name: 'user', label: locale.value.server?.usersTable },
+  { name: 'song', label: locale.value.server?.songsTable },
+  { name: 'vote', label: locale.value.server?.votesTable },
+  { name: 'schedule', label: locale.value.server?.scheduleTable },
+  { name: 'notification', label: locale.value.server?.notificationsTable }
+])
+
+const schemaScaleTables = computed(() => [
+  locale.value.server?.usersTable,
+  locale.value.server?.songsTable,
+  locale.value.server?.votesTable,
+  locale.value.server?.scheduleTable,
+  locale.value.server?.notificationsTable
+])
+
+const databaseTableRows = computed(() => databaseDiagnostics.value?.tables?.data || [])
+const databaseTableNames = computed(() => new Set(databaseTableRows.value.map((item) => item.table_name)))
+const activeDatabaseQueries = computed(() => {
+  const lockByBlockedPid = new Map((databaseDiagnostics.value?.locks?.data || []).map((item) => [String(item.blocked_pid), item.blocking_pid]))
+  return (databaseDiagnostics.value?.activity?.data || []).map((item) => ({
+    ...item,
+    duration: item.duration == null ? '--' : String(item.duration),
+    waitEvent: [item.wait_event_type, item.wait_event].filter(Boolean).join(': ') || '--',
+    blockedBy: lockByBlockedPid.get(String(item.pid)) || '--'
+  }))
+})
+
+const cacheMetrics = computed(() => [
+  {
+    icon: 'success',
+    label: locale.value.cache?.ready,
+    detail: locale.value.cache?.readyDetail,
+    value: redisStatusValue.value
+  },
+  {
+    icon: 'activity',
+    label: locale.value.cache?.hitRatio,
+    detail: locale.value.cache?.hitRatioDetail,
+    value: '--'
+  },
+  { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail, value: '--' },
+  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail, value: runtimeRedisMetrics.value?.configured ? (runtimeRedisMetrics.value.connected ? '1' : '0') : 'N/A' },
+  { icon: 'clock', label: locale.value.cache?.commandP99, detail: locale.value.cache?.commandP99Detail },
+  { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail },
+  { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail },
+  { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail, value: runtimeRedisMetrics.value?.lastError ? '连接错误' : '--' },
+  { icon: 'activity', label: locale.value.cache?.memoryFragmentation, detail: locale.value.cache?.memoryFragmentationDetail }
+])
+
+const redisStatusValue = computed(() => {
+  if (!runtimeRedisMetrics.value) return '--'
+  if (!runtimeRedisMetrics.value.configured) return '未启用'
+  return runtimeRedisMetrics.value.connected ? '已连接' : '不可用'
+})
+
+const cacheDetails = computed(() => [
+  locale.value.cache?.configured,
+  locale.value.cache?.keyPrefix,
+  locale.value.cache?.lastConnected,
+  locale.value.cache?.evictionPolicy,
+  locale.value.cache?.memoryFragmentation
+])
+
+const cacheDetailValue = (label) => {
+  const redis = runtimeRedisMetrics.value
+  if (!redis) return '--'
+  const values = new Map([
+    [locale.value.cache?.configured, redis.configured ? '已配置' : '未配置'],
+    [locale.value.cache?.keyPrefix, redis.keyPrefix || 'N/A'],
+    [locale.value.cache?.lastConnected, redis.lastConnectedAt ? formatTimestamp(redis.lastConnectedAt) : 'N/A'],
+    [locale.value.cache?.evictionPolicy, 'N/A'],
+    [locale.value.cache?.memoryFragmentation, 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
+const cacheUsageScopes = computed(() => [
+  {
+    icon: 'activity',
+    label: locale.value.cache?.shortState,
+    detail: locale.value.cache?.shortStateDetail
+  },
+  {
+    icon: 'warning',
+    label: locale.value.cache?.rateLimit,
+    detail: locale.value.cache?.rateLimitDetail
+  },
+  { icon: 'check', label: locale.value.cache?.captcha, detail: locale.value.cache?.captchaDetail },
+  {
+    icon: 'database',
+    label: locale.value.cache?.managerCache,
+    detail: locale.value.cache?.managerCacheDetail
+  }
+])
+
+const businessGoldenMetrics = computed(() => [
+  { icon: 'music', label: locale.value.business?.songRequestSuccessRate, detail: locale.value.business?.songRequestSuccessRateDetail, value: runtimeBusinessMetrics.value.song_request?.successRate != null ? `${runtimeBusinessMetrics.value.song_request.successRate}%` : '--' },
+  { icon: 'calendar', label: locale.value.business?.scheduleSaveSuccessRate, detail: locale.value.business?.scheduleSaveSuccessRateDetail, value: runtimeBusinessMetrics.value.schedule_save?.successRate != null ? `${runtimeBusinessMetrics.value.schedule_save.successRate}%` : '--' },
+  { icon: 'activity', label: locale.value.business?.songRequestQps, detail: locale.value.business?.songRequestQpsDetail, value: runtimeBusinessMetrics.value.song_request?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.song_request.requestsPerSecond) : '--' },
+  { icon: 'calendar', label: locale.value.business?.scheduleOperationQps, detail: locale.value.business?.scheduleOperationQpsDetail, value: runtimeBusinessMetrics.value.schedule_save?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.schedule_save.requestsPerSecond) : '--' }
+])
+
+const businessQueueMetrics = computed(() => [
+  { label: locale.value.business?.pendingQueueLength, value: businessQueueSnapshot.value?.pendingCount != null ? String(businessQueueSnapshot.value.pendingCount) : '--' },
+  { label: locale.value.business?.queueProcessingRate, value: 'N/A' },
+  { label: locale.value.business?.queueOldestAge, value: businessQueueSnapshot.value?.oldestCreatedAt ? formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt) : '--' },
+  { label: locale.value.business?.queueBacklogGrowth, value: 'N/A' }
+])
+
+const businessCapacityMetrics = computed(() => [
+  { label: locale.value.business?.peakRequestQps, value: runtimeTimeline.value.length ? String(Math.max(...runtimeTimeline.value.map((item) => Number(item.requests || 0)))) : '--' },
+  { label: locale.value.business?.peakScheduleQps, value: runtimeBusinessMetrics.value.schedule_save?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.schedule_save.requestsPerSecond) : '--' },
+  { label: locale.value.business?.dbPoolHeadroom, value: operationsData.value.pool?.utilization != null ? `${Math.max(0, 100 - Number(operationsData.value.pool.utilization)).toFixed(1)}%` : '--' },
+  { label: locale.value.business?.serverlessConcurrencyHeadroom, value: 'N/A' }
+])
+
+const businessMetricGroups = computed(() => [
+  {
+    icon: 'music',
+    title: locale.value.business?.requestWorkflow,
+    detail: locale.value.business?.requestWorkflowDetail,
+    items: [
+      locale.value.business?.songAndVoteRequests,
+      locale.value.business?.requestSuccessRate,
+      locale.value.business?.scheduleOperations,
+      locale.value.business?.quotaTriggers,
+      locale.value.business?.dedupHits,
+      locale.value.business?.replayRequests
+    ]
+  },
+  {
+    icon: 'activity',
+    title: locale.value.business?.mediaPipeline,
+    detail: locale.value.business?.mediaPipelineDetail,
+    items: [
+      locale.value.business?.musicSearchApiAvailability,
+      locale.value.business?.playUrlFailures,
+      locale.value.business?.qualitySwitches,
+      locale.value.business?.downloadCountAndBytes
+    ]
+  },
+  {
+    icon: 'bell',
+    title: locale.value.business?.growthAndDelivery,
+    detail: locale.value.business?.growthAndDeliveryDetail,
+    items: [
+      locale.value.business?.notificationPushes,
+      locale.value.business?.notificationDeliveryRate,
+      locale.value.business?.dailyActiveUsers,
+      locale.value.business?.newUsers
+    ]
+  }
+])
+
+const businessGroupValue = (label) => {
+  const request = runtimeBusinessMetrics.value.song_request
+  const schedule = runtimeBusinessMetrics.value.schedule_save
+  const values = new Map([
+    [locale.value.business?.requestSuccessRate, request?.successRate != null ? `${request.successRate}%` : '--'],
+    [locale.value.business?.songAndVoteRequests, request?.calls != null ? String(request.calls) : '--'],
+    [locale.value.business?.scheduleOperations, schedule?.calls != null ? String(schedule.calls) : '--'],
+    [locale.value.business?.musicSearchApiAvailability, dependencyMetrics.value ? `${Object.values(dependencyMetrics.value).filter((item) => item?.successRate != null && item.successRate >= 95).length}` : '--']
+  ])
+  return values.get(label) || 'N/A'
+}
+
+const auditMetrics = computed(() => [
+  {
+    icon: 'warning',
+    label: locale.value.audit?.unresolvedEvents,
+    detail: locale.value.audit?.unresolvedEventsDetail
+  },
+  {
+    icon: 'warning',
+    label: locale.value.audit?.criticalPending,
+    detail: locale.value.audit?.criticalPendingDetail
+  },
+  {
+    icon: 'clock',
+    label: locale.value.audit?.newToday,
+    detail: locale.value.audit?.newTodayDetail
+  },
+  {
+    icon: 'success',
+    label: locale.value.audit?.resolvedToday,
+    detail: locale.value.audit?.resolvedTodayDetail
+  }
+])
+
+const activeRiskCount = computed(() => Number(runtimeHttpMetrics.value?.recent5xx || 0) + Number(runtimeHttpMetrics.value?.status429 || 0) + Number(turnstileMetrics.value?.upstreamFailures || 0))
+
+const securitySignalMetrics = computed(() => [
+  { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: 'JWT 校验失败与过期 Token 请求数' },
+  { icon: 'warning', label: locale.value.audit?.strongAuthFailures, detail: 'OAuth 回调失败率；仅在配置 OAuth 时有数据' },
+  { icon: 'activity', label: locale.value.audit?.rateLimitTriggers, detail: '429 限流触发次数，不计入 5xx 故障' },
+  { icon: 'success', label: locale.value.audit?.turnstileValidationRequests, detail: locale.value.audit?.turnstileValidationRequestsDetail },
+  { icon: 'success', label: locale.value.audit?.turnstileValidationSuccessRate, detail: locale.value.audit?.turnstileValidationSuccessRateDetail },
+  { icon: 'warning', label: locale.value.audit?.turnstileUpstreamFailures, detail: locale.value.audit?.turnstileUpstreamFailuresDetail }
+])
+
+const requestSummaryItems = computed(() => [
+  { icon: 'warning', label: locale.value.debug?.statusCode, detail: locale.value.debug?.statusCodeDetail, value: selectedDebugRequest.value?.status ?? 'N/A' },
+  { icon: 'clock', label: locale.value.debug?.duration, detail: locale.value.debug?.durationDetail, value: selectedDebugRequest.value ? `${selectedDebugRequest.value.durationMs} ms` : 'N/A' },
+  { icon: 'user', label: locale.value.debug?.user, detail: locale.value.debug?.userDetail, value: 'N/A' },
+  { icon: 'layers', label: locale.value.application?.route, detail: locale.value.debug?.routeDetail, value: selectedDebugRequest.value?.route || 'N/A' },
+  { icon: 'clock', label: locale.value.debug?.occurredAt, detail: locale.value.debug?.occurredAtDetail, value: selectedDebugRequest.value ? formatTimestamp(selectedDebugRequest.value.at) : 'N/A' },
+  { icon: 'external-link', label: locale.value.debug?.relatedLinks, detail: locale.value.debug?.relatedLinksDetail, value: selectedDebugRequest.value?.requestId || 'N/A' }
+])
+
+const logCenterMetrics = computed(() => [
+  { icon: 'terminal', label: locale.value.logCenter?.totalLogs, detail: locale.value.logCenter?.totalLogsDetail, value: String(logEntries.value.length) },
+  { icon: 'warning', label: locale.value.logCenter?.errorLogs, detail: locale.value.logCenter?.errorLogsDetail, value: String(logEntries.value.filter((item) => item.status >= 500).length) },
+  { icon: 'warning', label: locale.value.logCenter?.warningLogs, detail: locale.value.logCenter?.warningLogsDetail, value: String(logEntries.value.filter((item) => item.status >= 400 && item.status < 500).length) },
+  { icon: 'layers', label: locale.value.logCenter?.requestTraces, detail: locale.value.logCenter?.requestTracesDetail, value: String(new Set(logEntries.value.map((item) => item.requestId).filter(Boolean)).size) }
+])
+
+const logContextFields = computed(() => [
+  locale.value.overview?.logRequestId,
+  locale.value.logCenter?.traceId,
+  locale.value.logCenter?.instanceId,
+  locale.value.overview?.logHost,
+  locale.value.application?.route,
+  locale.value.debug?.user,
+  locale.value.debug?.statusCode,
+  locale.value.logCenter?.sourceIp
+])
+
+const logArchiveFields = computed(() => [
+  locale.value.overview?.logLevel,
+  locale.value.overview?.logScope,
+  locale.value.overview?.logSampleRate,
+  locale.value.overview?.logRetentionDays,
+  locale.value.logCenter?.archiveSize,
+  locale.value.logCenter?.lastArchivedAt
+])
+
+const logContextValue = (label) => {
+  const item = selectedDebugRequest.value
+  if (!item) return 'N/A'
+  const values = new Map([
+    [locale.value.overview?.logRequestId, item.requestId || 'N/A'],
+    [locale.value.application?.route, item.route || 'N/A'],
+    [locale.value.debug?.statusCode, item.status ?? 'N/A'],
+    [locale.value.overview?.logHost, 'N/A'],
+    [locale.value.debug?.user, 'N/A'],
+    [locale.value.logCenter?.sourceIp, 'N/A'],
+    [locale.value.logCenter?.traceId, 'N/A'],
+    [locale.value.logCenter?.instanceId, operationsData.value.status?.instance?.instanceId || 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
+const logArchiveValue = (label) => {
+  const values = new Map([
+    [locale.value.overview?.logSampleRate, '错误/慢请求 100%'],
+    [locale.value.overview?.logRetentionDays, '由 api_logs 保留策略决定'],
+    [locale.value.logCenter?.lastArchivedAt, 'N/A'],
+    [locale.value.logCenter?.archiveSize, 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
+const dependencyHealthCards = computed(() => [
+  {
+    icon: 'music',
+    label: locale.value.overview?.neteaseSource,
+    details: musicSourceHealthDetails.value
+  },
+  {
+    icon: 'music',
+    label: locale.value.overview?.tencentSource,
+    details: musicSourceHealthDetails.value
+  },
+  {
+    icon: 'music',
+    label: locale.value.overview?.bilibiliSource,
+    details: musicSourceHealthDetails.value
+  },
+  {
+    icon: 'music',
+    label: locale.value.overview?.miguSource,
+    details: musicSourceHealthDetails.value
+  },
+  {
+    icon: 'success',
+    label: locale.value.dependencies?.oauth,
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.loginSuccessRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+  },
+  {
+    icon: 'database',
+    label: locale.value.dependencies?.neonPostgresql,
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.connectionUsage, locale.value.dependencies?.coldStartP95, locale.value.dependencies?.lastSuccess]
+  },
+  {
+    icon: 'server',
+    label: locale.value.services?.redis,
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.cacheHitRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+  },
+  {
+    icon: 'bell',
+    label: locale.value.dependencies?.smtp,
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.smtpFailureRate, locale.value.dependencies?.p95LatencyShort, locale.value.dependencies?.lastSuccess]
+  },
+  {
+    icon: 'bell-ring',
+    label: locale.value.dependencies?.notificationService,
+    details: [locale.value.dependencies?.availability, locale.value.dependencies?.notificationSuccessRate, locale.value.dependencies?.notificationQueue, locale.value.dependencies?.lastSuccess]
+  }
+])
+
+const musicSourceHealthDetails = computed(() => [
+  locale.value.dependencies?.availability,
+  locale.value.dependencies?.p95LatencyShort,
+  locale.value.dependencies?.errorRate,
+  locale.value.dependencies?.parseSuccessRate,
+  locale.value.dependencies?.emptyResultRate,
+  locale.value.dependencies?.semanticFailureRate,
+  locale.value.dependencies?.circuitBreakerState,
+  locale.value.dependencies?.lastSuccess
+])
+
+const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map(item => ({
+  ...item,
+  preview: item.details.slice(0, 3).map(detail => `${detail} ${dependencyMetricValue(item.label, detail)}`).join(' · ')
+})))
+
+const dependencyErrorPanels = computed(() => [
+  {
+    title: locale.value.dependencies?.neteaseErrorCodes,
+    detail: locale.value.dependencies?.errorCodePanelDetail
+  },
+  {
+    title: locale.value.dependencies?.tencentErrorCodes,
+    detail: locale.value.dependencies?.errorCodePanelDetail
+  },
+  {
+    title: locale.value.dependencies?.bilibiliErrorCodes,
+    detail: locale.value.dependencies?.errorCodePanelDetail
+  },
+  {
+    title: locale.value.dependencies?.miguErrorCodes,
+    detail: locale.value.dependencies?.errorCodePanelDetail
+  }
+])
+
+const dependencyUptimeRows = computed(() => [
+  { source: 'netease', label: locale.value.overview?.neteaseSource || '网易云音乐' },
+  { source: 'tencent', label: locale.value.overview?.tencentSource || 'QQ 音乐' },
+  { source: 'bilibili', label: locale.value.overview?.bilibiliSource || 'Bilibili' },
+  { source: 'migu', label: locale.value.overview?.miguSource || '咪咕音乐' }
+].map((item) => {
+  const metric = dependencyMetrics.value[item.source]
+  const current = !metric || metric.calls === 0
+    ? 'unknown'
+    : metric.successRate >= 95 ? 'up' : metric.successRate > 0 ? 'degraded' : 'down'
+  const slots = [current]
+  return { ...item, slots }
+}))
+
+const dependencyErrorCodes = computed(() => [
+  locale.value.dependencies?.rateLimited,
+  locale.value.dependencies?.notFound,
+  locale.value.dependencies?.upstreamErrors,
+  locale.value.dependencies?.timeoutErrors
+])
+
+const dependencyProtectionPanels = computed(() => [
+  {
+    icon: 'layers',
+    title: locale.value.dependencies?.fallbackHits,
+    detail: locale.value.dependencies?.fallbackHitsDetail,
+    items: [
+      locale.value.dependencies?.providerFallbacks,
+      locale.value.dependencies?.retryAttempts,
+      locale.value.dependencies?.circuitBreakerOpens,
+      locale.value.dependencies?.cachedResponseFallbacks,
+      locale.value.overview?.neteaseSource,
+      locale.value.overview?.tencentSource,
+      locale.value.overview?.bilibiliSource,
+      locale.value.overview?.miguSource
+    ]
+  },
+  {
+    icon: 'database',
+    title: locale.value.dependencies?.searchCacheHitRate,
+    detail: locale.value.dependencies?.searchCacheHitRateDetail,
+    items: [
+      locale.value.dependencies?.cacheHits,
+      locale.value.dependencies?.cacheMisses,
+      locale.value.dependencies?.cacheEvictions,
+      locale.value.dependencies?.cacheResponseP95,
+      locale.value.dependencies?.cacheHitRate
+    ]
+  },
+  {
+    icon: 'bell',
+    title: locale.value.dependencies?.notificationDelivery,
+    detail: locale.value.dependencies?.notificationDeliveryDetail,
+    items: [
+      locale.value.dependencies?.smtpAcceptedRate,
+      locale.value.dependencies?.meowEligibleTargets,
+      locale.value.dependencies?.meowSkippedTargets,
+      locale.value.dependencies?.meowTransportFailureRate,
+      locale.value.dependencies?.notificationQueue
+    ]
+  }
+])
+
+const riskLevels = computed(() => [
+  { label: locale.value.audit?.critical, tone: 'risk-tone--critical' },
+  { label: locale.value.audit?.high, tone: 'risk-tone--high' },
+  { label: locale.value.audit?.medium, tone: 'risk-tone--medium' },
+  { label: locale.value.audit?.low, tone: 'risk-tone--low' }
+])
+</script>
+
+<style scoped>
+.operations-dashboard {
+  --ops-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  width: 100%;
+  letter-spacing: 0;
+}
+
+.operations-loading-state {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 4.5rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgb(59 130 246 / 0.28);
+  border-radius: 0.45rem;
+  background: rgb(30 41 59 / 0.42);
+  color: rgb(191 219 254);
+}
+.operations-loading-state strong { font-size: 0.8rem; font-weight: 650; }
+.operations-loading-state p { margin-top: 0.2rem; color: rgb(148 163 184); font-size: 0.7rem; }
+.operations-loading-state__spinner { display: inline-flex; color: #60a5fa; animation: icon-spin 0.9s linear infinite; }
+.icon-spin { animation: icon-spin 0.9s linear infinite; }
+@keyframes icon-spin { to { transform: rotate(360deg); } }
+
+.title-icon,
+.metric-icon,
+.service-row__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: rgb(96 165 250);
+  background: rgb(59 130 246 / 0.1);
+}
+
+.title-icon {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgb(59 130 246 / 0.2);
+  border-radius: 7px;
+}
+
+.refresh-button {
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(39 39 42);
+  border-radius: 6px;
+  padding: 0 0.75rem;
+  color: rgb(113 113 122);
+  background: rgb(24 24 27 / 0.55);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.request-id-shortcut {
+  display: flex;
+  min-width: 0;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(63 63 70);
+  border-radius: 6px;
+  padding-left: 0.65rem;
+  color: rgb(96 165 250);
+  background: rgb(9 9 11 / 0.55);
+}
+
+.request-id-shortcut input {
+  min-width: 10rem;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: rgb(228 228 231);
+  background: transparent;
+  font-size: 0.75rem;
+}
+
+.request-id-shortcut input::placeholder {
+  color: rgb(82 82 91);
+}
+
+.request-id-shortcut button {
+  height: 100%;
+  border-left: 1px solid rgb(63 63 70);
+  padding: 0 0.7rem;
+  color: rgb(147 197 253);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.request-id-shortcut button:disabled {
+  cursor: not-allowed;
+  color: rgb(82 82 91);
+}
+
+.panel-link {
+  flex: 0 0 auto;
+  color: rgb(96 165 250);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.panel-link:hover {
+  color: rgb(147 197 253);
+}
+
+.group-navigation {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid rgb(39 39 42);
+  border-radius: 8px;
+  background: rgb(24 24 27 / 0.3);
+}
+
+.group-navigation__scroll {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+}
+
+.group-navigation__section {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+}
+
+.group-navigation__section + .group-navigation__section {
+  border-left: 1px solid rgb(63 63 70);
+}
+
+.group-navigation__label {
+  display: flex;
+  width: 5.5rem;
+  min-height: 2.9rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  border-right: 1px solid rgb(39 39 42);
+  padding: 0 0.8rem;
+  color: rgb(82 82 91);
+  background: rgb(9 9 11 / 0.45);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.group-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+}
+
+.group-tab {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.8rem;
+  color: rgb(113 113 122);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 150ms ease;
+}
+
+.group-tab::after {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -1px;
+  left: 0.75rem;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+  content: '';
+}
+
+.group-tab:hover {
+  color: rgb(212 212 216);
+}
+
+.group-tab--active {
+  color: rgb(96 165 250);
+}
+
+.group-tab--active::after {
+  background: rgb(59 130 246);
+}
+
+.panel,
+.deployment-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.panel {
+  overflow: hidden;
+  border: 1px solid rgb(39 39 42);
+  border-radius: 8px;
+  background: rgb(24 24 27 / 0.44);
+}
+
+.deployment-mode-card {
+  min-width: 0;
+  border: 1px solid rgb(39 39 42 / 0.8);
+  border-radius: 6px;
+  padding: 0.85rem;
+  background: rgb(24 24 27 / 0.38);
+}
+
+.deployment-mode-card strong {
+  display: block;
+  margin-top: 0.8rem;
+  color: rgb(212 212 216);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.deployment-mode-card p {
+  margin-top: 0.35rem;
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  line-height: 1.55;
+}
+
+.source-inline-metrics {
+  display: none;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.75rem;
+  color: rgb(113 113 122);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.source-inline-metrics span {
+  white-space: nowrap;
+}
+
+.source-inline-metrics strong {
+  color: rgb(161 161 170);
+  font-weight: 700;
+}
+
+.signal-card,
+.metric-card,
+.server-summary-strip {
+  border: 1px solid rgb(39 39 42);
+  border-radius: 8px;
+  background: rgb(24 24 27 / 0.44);
+}
+
+.panel,
+.signal-card,
+.metric-card,
+.server-summary-strip {
+  min-width: 0;
+}
+
+.server-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.server-summary-strip > div {
+  min-width: 0;
+  min-height: 5rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-summary-strip > div:nth-child(odd) {
+  border-right: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-summary-strip > div:nth-child(n + 3) {
+  border-bottom: 0;
+}
+
+.server-summary-strip span,
+.server-summary-strip strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-summary-strip span {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.server-summary-strip strong {
+  margin-top: 0.75rem;
+  color: rgb(228 228 231);
+  font-size: 0.875rem;
+}
+
+.panel-header {
+  display: flex;
+  min-height: 4rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+}
+
+.panel-title {
+  color: rgb(228 228 231);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.panel-description {
+  margin-top: 0.35rem;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.subsection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 0.25rem 0 0.85rem;
+  color: rgb(96 165 250);
+}
+
+.subsection-heading h3 {
+  color: rgb(228 228 231);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.subsection-heading p {
+  margin-top: 0.3rem;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
+}
+
+.status-badge {
+  flex: 0 0 auto;
+  border: 1px solid rgb(63 63 70);
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  color: rgb(113 113 122);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.slo-health {
+  --slo-accent: var(--ops-unknown);
+  padding: 1.1rem;
+}
+
+.slo-health--ok { --slo-accent: var(--ops-ok); }
+.slo-health--warning { --slo-accent: var(--ops-warning); }
+.slo-health--error { --slo-accent: var(--ops-error); }
+
+.slo-health__main {
+  display: grid;
+  min-width: 0;
+  gap: 1.2rem;
+}
+
+.slo-health__summary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.slo-health__score {
+  display: grid;
+  width: 7.5rem;
+  height: 7.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--slo-accent) var(--slo-score), var(--ops-line) 0);
+}
+
+.slo-health__score::before {
+  grid-area: 1 / 1;
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: 50%;
+  background: var(--ops-panel);
+  content: '';
+}
+
+.slo-health__score > div {
+  z-index: 1;
+  grid-area: 1 / 1;
+  text-align: center;
+}
+
+.slo-health__score strong,
+.slo-health__score span {
+  display: block;
+}
+
+.slo-health__score strong {
+  max-width: 5rem;
+  color: var(--ops-text-1);
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.slo-health__score span {
+  margin-top: 0.4rem;
+  color: var(--ops-text-2);
+  font-family: var(--ops-mono);
+  font-size: 0.65rem;
+}
+
+.slo-health__summary > p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.slo-health__summary > p strong { color: var(--slo-accent); }
+.slo-health__summary > small { margin-top: 0.25rem; color: var(--ops-text-2); font-size: 0.625rem; }
+
+.slo-health__realtime {
+  min-width: 0;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 1rem;
+}
+
+.slo-health__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.slo-health__heading > i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--slo-accent);
+}
+
+.slo-health__heading > span { display: inline-flex; color: var(--ops-text-2); }
+
+.slo-health__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 0.85rem;
+  margin-top: 1rem;
+}
+
+.slo-health-metric { min-width: 0; }
+.slo-health-metric > div:first-child { display: grid; min-height: 2.45rem; align-content: space-between; gap: 0.25rem; }
+.slo-health-metric span { overflow: hidden; color: var(--ops-text-2); font-size: 0.625rem; text-overflow: ellipsis; white-space: nowrap; }
+.slo-health-metric strong { color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 0.9rem; }
+.slo-health-metric small { display: block; margin-top: 0.3rem; color: var(--ops-text-2); font-size: 0.5625rem; }
+
+.slo-health-metric__track {
+  height: 0.25rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ops-line);
+}
+
+.slo-health-metric__track i { display: block; height: 100%; background: var(--ops-unknown); transition: width 0.35s ease; }
+.slo-health-metric--ok .slo-health-metric__track i { background: var(--ops-ok); }
+.slo-health-metric--warning .slo-health-metric__track i { background: var(--ops-warning); }
+.slo-health-metric--error .slo-health-metric__track i { background: var(--ops-error); }
+
+.slo-health__advice {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: 0.65rem;
+  margin-top: 1.1rem;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 0.9rem;
+}
+
+.slo-health__advice > span {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--slo-accent);
+  background: color-mix(in srgb, var(--slo-accent) 10%, transparent);
+}
+
+.slo-health__advice strong { color: var(--ops-text-1); font-size: 0.6875rem; }
+.slo-health__advice p { margin: 0.35rem 0 0; color: var(--ops-text-2); font-size: 0.625rem; line-height: 1.5; }
+
+@media (min-width: 640px) {
+  .slo-health__main { grid-template-columns: 8.5rem minmax(0, 1fr); align-items: center; }
+  .slo-health__realtime { border-top: 0; border-left: 1px solid var(--ops-line); padding: 0 0 0 1.15rem; }
+}
+
+.health-layout {
+  display: flex;
+  min-height: 15.5rem;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+
+.metric-formula {
+  border-top: 1px solid rgb(39 39 42 / 0.75);
+  padding: 0.75rem 1rem;
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.health-score-wrap {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.health-score-wrap > p {
+  margin-top: 0.75rem;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
+}
+
+.health-score-ring {
+  display: flex;
+  width: 7.75rem;
+  height: 7.75rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 10px solid rgb(39 39 42);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(9 9 11 / 0.7);
+}
+
+.health-score-ring--good { border-color: #34d399; box-shadow: 0 0 24px rgb(52 211 153 / 0.22), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
+.health-score-ring--warn { border-color: #fbbf24; box-shadow: 0 0 24px rgb(251 191 36 / 0.2), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
+.health-score-ring--critical { border-color: #f87171; box-shadow: 0 0 24px rgb(248 113 113 / 0.24), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
+.health-score-ring--unknown { border-color: rgb(82 82 91); }
+
+.health-score-ring strong {
+  color: rgb(244 244 245);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.health-score-ring span {
+  margin-top: 0.45rem;
+  color: rgb(113 113 122);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.health-live-details {
+  min-width: 0;
+  width: 100%;
+  flex: 1;
+  align-self: stretch;
+  border-top: 1px solid rgb(39 39 42);
+}
+
+.health-live-details__title {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.health-live-row {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.health-live-row span {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+}
+
+.health-live-row strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
+.signal-card,
+.metric-card {
+  display: flex;
+  min-height: 8.75rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.metric-card:nth-child(4n + 1) { --metric-accent: #60a5fa; }
+.metric-card:nth-child(4n + 2) { --metric-accent: #34d399; }
+.metric-card:nth-child(4n + 3) { --metric-accent: #fbbf24; }
+.metric-card:nth-child(4n) { --metric-accent: #c084fc; }
+.metric-card .metric-icon { color: var(--metric-accent, #60a5fa); background: color-mix(in srgb, var(--metric-accent, #60a5fa) 12%, transparent); border-color: color-mix(in srgb, var(--metric-accent, #60a5fa) 28%, transparent); }
+.metric-card .metric-value { color: color-mix(in srgb, var(--metric-accent, #60a5fa) 72%, white); }
+.metric-value--compact { max-width: 100%; font-size: 0.78rem; line-height: 1.65; white-space: normal; word-break: break-word; }
+.metric-card, .signal-card, .deployment-mode-card, .service-row { transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease; }
+.metric-card:hover, .signal-card:hover, .deployment-mode-card:hover, .service-row:hover { border-color: rgb(96 165 250 / 0.65); background-color: rgb(39 39 42 / 0.72); box-shadow: 0 5px 16px rgb(0 0 0 / 0.16); transform: translateY(-1px); }
+.metric-card:hover .metric-icon, .signal-card:hover .metric-icon { color: rgb(191 219 254); border-color: rgb(96 165 250 / 0.7); }
+
+.signal-card__header,
+.metric-card__top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.metric-icon,
+.service-row__icon {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 6px;
+}
+
+.metric-label {
+  min-width: 0;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.metric-value {
+  margin-top: 1rem;
+  color: rgb(244 244 245);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.metric-detail {
+  margin-top: auto;
+  padding-top: 0.9rem;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.server-health-layout {
+  display: flex;
+  min-height: 15rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+
+.server-health-details {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.server-health-details > div {
+  min-width: 0;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-health-details dt {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.server-health-details dd {
+  margin-top: 0.45rem;
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.server-resource-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.server-resource-list {
+  padding: 0 1rem;
+}
+
+.server-resource-list > div {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-resource-list > div:last-child {
+  border-bottom: 0;
+}
+
+.server-resource-list dt {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.server-resource-list dd {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.service-list {
+  padding: 0 1rem;
+}
+
+.alert-rule-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.alert-rule-list > div {
+  display: flex;
+  min-width: 0;
+  min-height: 4.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.alert-rule-list p {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.alert-rule-list small {
+  display: block;
+  margin-top: 0.3rem;
+  color: rgb(82 82 91);
+  font-size: 0.625rem;
+}
+
+.alert-rule-list strong {
+  flex: 0 0 auto;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
+}
+
+.alert-priority {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  border-radius: 5px;
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+
+.alert-priority--critical {
+  color: rgb(248 113 113);
+  border-color: rgb(239 68 68 / 0.24);
+  background: rgb(239 68 68 / 0.08);
+}
+
+.alert-priority--high {
+  color: rgb(251 146 60);
+  border-color: rgb(249 115 22 / 0.24);
+  background: rgb(249 115 22 / 0.08);
+}
+
+.alert-priority--medium {
+  color: rgb(250 204 21);
+  border-color: rgb(234 179 8 / 0.24);
+  background: rgb(234 179 8 / 0.08);
+}
+
+.alert-priority--low {
+  color: rgb(52 211 153);
+  border-color: rgb(16 185 129 / 0.24);
+  background: rgb(16 185 129 / 0.08);
+}
+
+.service-row {
+  display: flex;
+  min-height: 4.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.service-row:last-child {
+  border-bottom: 0;
+}
+
+.detail-grid,
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-grid > div,
+.summary-grid > div {
+  min-width: 0;
+  min-height: 5rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.detail-grid > div:nth-child(odd),
+.summary-grid > div:nth-child(odd) {
+  border-right: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.detail-grid dt,
+.summary-grid dt {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.detail-grid dd,
+.summary-grid dd {
+  margin-top: 0.7rem;
+  overflow: hidden;
+  color: rgb(212 212 216);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.summary-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.status-list {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.1rem;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+}
+
+.status-list strong {
+  color: rgb(212 212 216);
+}
+
+.empty-progress {
+  height: 3px;
+  margin-top: 0.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(39 39 42);
+}
+
+.empty-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: rgb(59 130 246);
+}
+
+.panel-copy {
+  padding: 1.25rem;
+  color: rgb(113 113 122);
+  font-size: 0.75rem;
+  line-height: 1.75;
+}
+
+.scope-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.scope-row {
+  display: flex;
+  min-width: 0;
+  min-height: 5.5rem;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.analysis-donut-wrap {
+  display: flex;
+  min-height: 14rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.analysis-donut {
+  display: flex;
+  width: 9.5rem;
+  height: 9.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1.1rem solid rgb(39 39 42);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(9 9 11 / 0.7);
+}
+
+.analysis-donut strong {
+  color: rgb(244 244 245);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.analysis-donut span {
+  margin-top: 0.5rem;
+  color: rgb(113 113 122);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.analysis-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid rgb(39 39 42);
+}
+
+.analysis-legend > div {
+  display: flex;
+  min-width: 0;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.analysis-legend span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+}
+
+.analysis-legend i {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.analysis-legend strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
+.analysis-tone--active {
+  background: rgb(59 130 246);
+}
+
+.analysis-tone--recent {
+  background: rgb(16 185 129);
+}
+
+.analysis-tone--inactive {
+  background: rgb(113 113 122);
+}
+
+.analysis-chart-placeholder {
+  position: relative;
+  display: flex;
+  min-height: 18rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgb(24 24 27 / 0.55), rgb(9 9 11 / 0.2));
+}
+
+.chart-axis-label { position: absolute; left: 0.55rem; z-index: 2; color: rgb(113 113 122); font-size: 0.58rem; }
+.chart-axis-label--top { top: 1.45rem; }
+.chart-axis-label--bottom { bottom: 1.1rem; }
+.chart-time-labels { position: absolute; right: 1rem; bottom: 0.28rem; left: 1.7rem; z-index: 2; display: flex; justify-content: space-between; color: rgb(113 113 122); font-size: 0.58rem; }
+
+.analysis-chart-placeholder > span {
+  position: relative;
+  z-index: 1;
+  color: rgb(82 82 91);
+  font-size: 0.75rem;
+}
+
+.runtime-bars {
+  position: absolute;
+  inset: 1rem 1rem 1.2rem;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.runtime-bars i {
+  position: relative;
+  flex: 1;
+  min-height: 0.35rem;
+  border-radius: 2px 2px 0 0;
+  background: var(--ops-info);
+  opacity: 0.8;
+  transition: height 0.45s ease, opacity 0.2s ease;
+}
+
+.runtime-bars i::after {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  z-index: 4;
+  width: max-content;
+  max-width: 15rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgb(82 82 91);
+  border-radius: 0.35rem;
+  background: rgb(24 24 27 / 0.96);
+  color: rgb(228 228 231);
+  content: attr(data-tooltip);
+  font-size: 0.66rem;
+  line-height: 1.45;
+  white-space: pre-line;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0.25rem);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.runtime-bars i:hover::after { opacity: 1; transform: translate(-50%, 0); }
+
+
+.runtime-bars--error i { background: #f87171; }
+.log-result-row { cursor: pointer; transition: background 0.16s ease; }
+.log-result-row:hover { background: rgb(39 39 42 / 0.55); }
+.log-level { display: inline-flex; min-width: 2.6rem; justify-content: center; border-radius: 0.2rem; padding: 0.15rem 0.35rem; font-size: 0.65rem; font-weight: 650; }
+.log-level--error { background: rgb(248 113 113 / 0.14); color: #fca5a5; }
+.log-level--warn { background: rgb(251 191 36 / 0.14); color: #fcd34d; }
+.log-level--info { background: rgb(96 165 250 / 0.14); color: #93c5fd; }
+.log-detail-row td { padding: 0.85rem 1rem; background: rgb(24 24 27 / 0.72); }
+.log-detail-grid { display: grid; grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1.2fr); gap: 1rem; }
+.log-detail-grid strong { color: rgb(212 212 216); font-size: 0.72rem; }
+.log-detail-grid dl { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 0.35rem 0.6rem; margin-top: 0.55rem; font-size: 0.68rem; }
+.log-detail-grid dt { color: rgb(113 113 122); }
+.log-detail-grid dd { min-width: 0; overflow-wrap: anywhere; color: rgb(212 212 216); }
+.log-detail-grid pre { max-height: 12rem; overflow: auto; margin: 0; padding: 0.75rem; border: 1px solid rgb(63 63 70); border-radius: 0.3rem; background: rgb(9 9 11 / 0.8); color: rgb(161 161 170); font: 0.67rem/1.55 ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+
+.dependency-uptime-list { display: grid; gap: 0.7rem; width: 100%; }
+.dependency-uptime-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr); align-items: center; gap: 0.75rem; }
+.dependency-uptime-row__label { color: rgb(161 161 170); font-size: 0.72rem; font-weight: 600; }
+
+.analysis-chart-grid {
+  position: absolute;
+  inset: 1.5rem;
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+}
+
+.analysis-chart-grid i {
+  border-bottom: 1px dashed rgb(39 39 42 / 0.8);
+}
+
+.peak-list {
+  padding: 0 1rem;
+}
+
+.peak-list > div {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.peak-list > div:last-child {
+  border-bottom: 0;
+}
+
+.peak-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.peak-list strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
+.item-count {
+  flex: 0 0 auto;
+  color: rgb(82 82 91);
+  font-size: 0.625rem;
+}
+
+.risk-badge {
+  flex: 0 0 auto;
+  border: 1px solid rgb(239 68 68 / 0.24);
+  border-radius: 5px;
+  padding: 0.25rem 0.5rem;
+  color: rgb(248 113 113);
+  background: rgb(239 68 68 / 0.08);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.risk-distribution {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.risk-total {
+  display: flex;
+  min-height: 11rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.risk-total__icon {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: rgb(248 113 113);
+  background: rgb(239 68 68 / 0.1);
+}
+
+.risk-total strong {
+  margin-top: 1rem;
+  color: rgb(244 244 245);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.risk-total p {
+  margin-top: 0.65rem;
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+}
+
+.risk-levels {
+  padding: 0 1rem;
+}
+
+.risk-level-row {
+  display: flex;
+  min-height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.risk-level-row:last-child {
+  border-bottom: 0;
+}
+
+.risk-level-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.risk-level-name i {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+}
+
+.risk-level-row strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
+.risk-tone--critical {
+  background: rgb(239 68 68);
+}
+
+.risk-tone--high {
+  background: rgb(249 115 22);
+}
+
+.risk-tone--medium {
+  background: rgb(234 179 8);
+}
+
+.risk-tone--low {
+  background: rgb(16 185 129);
+}
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.overview-event-filters,
+.overview-log-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.log-config {
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.log-config__title {
+  margin-bottom: 0.75rem;
+  color: rgb(161 161 170);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.log-config__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.filter-field,
+.filter-action {
+  display: flex;
+  min-width: 0;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(39 39 42);
+  border-radius: 6px;
+  padding: 0 0.75rem;
+  color: rgb(113 113 122);
+  background: rgb(24 24 27 / 0.6);
+  font-size: 0.6875rem;
+}
+
+.filter-field {
+  justify-content: space-between;
+}
+
+.filter-field--wide {
+  justify-content: flex-start;
+}
+
+.filter-field input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: rgb(161 161 170);
+  background: transparent;
+  font: inherit;
+}
+
+.filter-field input::placeholder {
+  color: rgb(113 113 122);
+  opacity: 1;
+}
+
+.filter-field:disabled,
+.filter-field input:disabled {
+  cursor: not-allowed;
+}
+
+.filter-action {
+  justify-content: center;
+  color: rgb(96 165 250);
+  border-color: rgb(59 130 246 / 0.24);
+  background: rgb(59 130 246 / 0.08);
+  font-weight: 700;
+}
+
+.filter-action:disabled {
+  cursor: not-allowed;
+}
+
+.data-table {
+  width: 100%;
+  table-layout: fixed;
+  text-align: left;
+  font-family: inherit;
+}
+
+.data-table thead {
+  color: rgb(82 82 91);
+  background: rgb(9 9 11 / 0.38);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.data-table th {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgb(39 39 42);
+}
+
+.data-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.7);
+  color: rgb(161 161 170);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.diagnostic-search-grid,
+.log-search-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.diagnostic-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.dependency-matrix {
+  display: grid;
+  grid-auto-columns: minmax(10rem, 1fr);
+  grid-auto-flow: column;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.diagnostic-summary-card {
+  min-height: 9.5rem;
+}
+
+.trace-waterfall {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.trace-waterfall__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.trace-waterfall__label {
+  overflow: hidden;
+  color: rgb(161 161 170);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-waterfall__track {
+  position: relative;
+  height: 1.5rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, rgb(39 39 42 / 0.5) 0, rgb(39 39 42 / 0.5) 1px, transparent 1px, transparent 20%);
+}
+
+.trace-waterfall__bar {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  display: flex;
+  min-width: 1.5rem;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 3px;
+  padding: 0 0.35rem;
+  color: rgb(255 255 255 / 0.92);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.trace-waterfall__bar--ok { background: rgb(16 185 129 / 0.72); }
+.trace-waterfall__bar--slow { background: rgb(234 179 8 / 0.78); }
+.trace-waterfall__bar--error { background: rgb(239 68 68 / 0.78); }
+
+.trace-waterfall__empty {
+  display: flex;
+  min-height: 10rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: rgb(82 82 91);
+  text-align: center;
+}
+
+.trace-waterfall__empty p {
+  max-width: 30rem;
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+
+.diagnosis-result {
+  display: flex;
+  min-height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgb(39 39 42);
+  padding: 0.85rem 1rem;
+  background: rgb(59 130 246 / 0.04);
+}
+
+.diagnosis-result--banner {
+  margin-bottom: 1rem;
+  border: 1px solid rgb(59 130 246 / 0.18);
+  border-radius: 6px;
+}
+
+.diagnosis-result span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgb(96 165 250);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.diagnosis-result strong {
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+}
+
+.histogram-placeholder {
+  position: relative;
+  display: flex;
+  min-height: 18rem;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.45rem;
+  overflow: hidden;
+  padding: 3rem 1.5rem 1.5rem;
+}
+
+.histogram-placeholder i {
+  width: min(1.5rem, 6%);
+  min-height: 1rem;
+  border: 1px solid rgb(59 130 246 / 0.18);
+  border-radius: 3px 3px 0 0;
+  background: rgb(59 130 246 / 0.08);
+}
+
+.histogram-placeholder span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(82 82 91);
+  font-size: 0.75rem;
+}
+
+.dependency-card {
+  display: flex;
+  min-width: 0;
+  min-height: 12rem;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgb(39 39 42);
+  border-radius: 8px;
+  background: rgb(24 24 27 / 0.44);
+}
+
+.dependency-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1rem 0;
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dependency-card__status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 1rem;
+}
+
+.dependency-card__status strong {
+  color: rgb(244 244 245);
+  font-size: 1.5rem;
+}
+
+.dependency-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: rgb(82 82 91);
+  box-shadow: 0 0 0 3px rgb(82 82 91 / 0.1);
+}
+
+.dependency-card dl {
+  margin-top: auto;
+  border-top: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.dependency-card dl > div {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.55);
+}
+
+.dependency-card dl > div:last-child {
+  border-bottom: 0;
+}
+
+.dependency-card dt,
+.dependency-card dd {
+  color: rgb(113 113 122);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.dependency-card dd {
+  color: rgb(161 161 170);
+}
+
+.error-code-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.uptime-strip {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 0.2rem;
+  padding: 2rem 1rem 0.75rem;
+}
+
+.uptime-strip__slot {
+  height: 2rem;
+  border-radius: 2px;
+  background: rgb(63 63 70);
+}
+
+.uptime-strip__slot--up { background: rgb(16 185 129 / 0.72); }
+.uptime-strip__slot--degraded { background: rgb(234 179 8 / 0.72); }
+.uptime-strip__slot--down { background: rgb(239 68 68 / 0.72); }
+.uptime-strip__slot--unknown { background: rgb(63 63 70 / 0.72); }
+
+.uptime-strip__legend {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1rem 1rem;
+  color: rgb(82 82 91);
+  font-size: 0.625rem;
+}
+
+/* 运维看板统一状态令牌与顶部状态脊。 */
+.operations-dashboard {
+  --ops-ok: #34d399;
+  --ops-warning: #fbbf24;
+  --ops-error: #f87171;
+  --ops-unknown: #71717a;
+  --ops-info: #38bdf8;
+  --ops-text-1: #e2e8f0;
+  --ops-text-2: #94a3b8;
+  --ops-text-3: #64748b;
+  --ops-panel: #101a2c;
+  --ops-line: rgba(148, 163, 184, .13);
+  --ops-line-strong: rgba(148, 163, 184, .28);
+  position: relative;
+  color: var(--ops-text-1);
+}
+
+.ops-status-spine {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--ops-line-strong);
+  border-radius: 6px;
+  background: var(--ops-panel);
+  padding: 1rem;
+}
+
+.ops-status-spine__summary { display: flex; min-width: 0; align-items: flex-start; gap: .8rem; }
+.ops-status-spine__dot { width: .65rem; height: .65rem; flex: 0 0 auto; margin-top: .55rem; border-radius: 50%; background: var(--ops-unknown); }
+.ops-status-spine__dot--ok { background: var(--ops-ok); }
+.ops-status-spine__dot--warning { background: var(--ops-warning); }
+.ops-status-spine__dot--error { background: var(--ops-error); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ops-error) 12%, transparent); }
+.ops-status-spine__eyebrow { margin: 0 0 .25rem; color: var(--ops-text-3); font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ops-status-spine__headline { margin: 0; font-family: var(--ops-mono); font-size: clamp(1.65rem, 3vw, 2.35rem); font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.ops-status-spine__meta { margin: .55rem 0 0; overflow: hidden; color: var(--ops-text-2); font-family: var(--ops-mono); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.ops-status-spine__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--ops-line); border-radius: 4px; }
+.ops-status-count { min-width: 0; padding: .6rem .7rem; border-right: 1px solid var(--ops-line); }
+.ops-status-count:last-child { border-right: 0; }
+.ops-status-count span { display: block; overflow: hidden; color: var(--ops-text-3); font-size: .62rem; text-overflow: ellipsis; white-space: nowrap; }
+.ops-status-count strong { display: block; margin-top: .28rem; color: var(--ops-text-1); font-family: var(--ops-mono); font-size: .95rem; font-weight: 650; }
+.ops-status-count--error strong { color: var(--ops-error); }.ops-status-count--warning strong { color: var(--ops-warning); }
+.ops-status-spine__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.auto-refresh-toggle { display: inline-flex; height: 2.25rem; align-items: center; gap: .45rem; border: 1px solid var(--ops-line); border-radius: 4px; padding: 0 .65rem; color: var(--ops-text-2); background: transparent; font-size: .7rem; cursor: pointer; }
+.auto-refresh-toggle > span { width: .45rem; height: .45rem; border-radius: 50%; background: var(--ops-unknown); }.auto-refresh-toggle > span.is-enabled { background: var(--ops-info); }
+.ops-status-spine__countdown { position: absolute; right: auto; bottom: 0; left: 0; height: 2px; background: var(--ops-info); transition: width .95s linear; }
+.ops-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.ops-toolbar__hint { color: var(--ops-text-3); font-family: var(--ops-mono); font-size: .67rem; }
+
+.ops-key-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .6rem; }
+.ops-key-metric { position: relative; min-height: 6.15rem; overflow: hidden; border: 1px solid var(--ops-line); border-left: 3px solid var(--ops-unknown); border-radius: 5px; background: var(--ops-panel); padding: .8rem; }
+.ops-key-metric--ok { border-left-color: var(--ops-ok); }.ops-key-metric--warning { border-left-color: var(--ops-warning); }.ops-key-metric--error { border-left-color: var(--ops-error); }
+.ops-key-metric > span { display: block; color: var(--ops-text-3); font-size: .63rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.ops-key-metric strong { display: block; margin-top: .45rem; color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 1.4rem; font-weight: 650; line-height: 1; }
+.ops-key-metric--ok strong { color: var(--ops-ok); }.ops-key-metric--warning strong { color: var(--ops-warning); }.ops-key-metric--error strong { color: var(--ops-error); }
+.ops-key-metric small { margin-left: .2rem; color: var(--ops-text-3); font-size: .62em; font-weight: 500; }
+.ops-key-metric p { margin: .5rem 0 0; overflow: hidden; color: var(--ops-text-3); font-size: .64rem; text-overflow: ellipsis; white-space: nowrap; }
+.ops-key-metric__meter { position: absolute; right: .8rem; bottom: .65rem; left: .8rem; height: 4px; overflow: hidden; border-radius: 2px; background: rgba(148, 163, 184, .13); }.ops-key-metric__meter b { display: block; height: 100%; background: currentColor; transition: width .35s ease; }.ops-key-metric--ok .ops-key-metric__meter { color: var(--ops-ok); }.ops-key-metric--warning .ops-key-metric__meter { color: var(--ops-warning); }.ops-key-metric--error .ops-key-metric__meter { color: var(--ops-error); }
+
+.ops-module-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; }.ops-module-summary__value { font-family: var(--ops-mono); font-size: 1.3rem; font-weight: 650; line-height: 1.1; }.ops-module-summary p { margin: .6rem 0 0; color: var(--ops-text-3); font-size: .67rem; line-height: 1.5; }
+.ops-tone--ok { color: var(--ops-ok); }.ops-tone--warning { color: var(--ops-warning); }.ops-tone--error { color: var(--ops-error); }.ops-tone--unknown { color: var(--ops-text-2); }
+.ops-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .65rem; }
+.ops-metric-item { display: flex; min-height: 6.2rem; flex-direction: column; gap: .45rem; border: 1px solid var(--ops-line); border-radius: 4px; padding: .8rem; background: rgba(11, 18, 32, .34); }
+.ops-metric-item--overview { min-height: 5.7rem; }
+.ops-metric-item__head { display: flex; align-items: center; gap: .5rem; }
+.ops-metric-item__label { color: var(--ops-text-3); font-size: .66rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.ops-metric-item__value { color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 1.15rem; font-weight: 650; line-height: 1.15; }
+.ops-metric-item__detail { margin: 0; color: var(--ops-text-3); font-size: .66rem; line-height: 1.55; }
+.ops-unknown-note { margin: .8rem 0 0; color: var(--ops-text-3); font-size: .65rem; line-height: 1.45; }
+
+/* 保留既有结构，统一其视觉外壳，避免各分区各自定义卡片。 */
+.panel, .signal-card, .metric-card, .deployment-mode-card, .dependency-card, .server-summary-strip { border-color: var(--ops-line); border-radius: 6px; background: var(--ops-panel); box-shadow: none; }
+.panel:hover, .signal-card:hover, .metric-card:hover, .deployment-mode-card:hover, .service-row:hover { border-color: var(--ops-line-strong); background: var(--ops-panel); box-shadow: none; transform: none; }
+.metric-icon, .service-row__icon, .title-icon { color: var(--ops-text-3); border-color: var(--ops-line); background: transparent; }
+.metric-card:nth-child(n) { --metric-accent: var(--ops-text-2); }.metric-card .metric-icon { color: var(--ops-text-3); border-color: var(--ops-line); background: transparent; }.metric-card .metric-value { color: var(--ops-text-1); }
+.panel-title { color: var(--ops-text-1); }.panel-description, .metric-detail, .metric-label { color: var(--ops-text-3); }
+.status-badge { border-color: var(--ops-line); color: var(--ops-text-2); background: transparent; }
+.log-level-filter { display: inline-flex; height: 2.25rem; overflow: hidden; border: 1px solid var(--ops-line); border-radius: 4px; }.log-level-filter button { border: 0; border-right: 1px solid var(--ops-line); padding: 0 .5rem; color: var(--ops-text-3); background: transparent; font-size: .65rem; cursor: pointer; }.log-level-filter button:last-child { border-right: 0; }.log-level-filter button.is-active { color: var(--ops-text-1); background: rgba(148, 163, 184, .08); }.log-level-filter button.is-error.is-active { color: var(--ops-error); }.log-level-filter button.is-warn.is-active { color: var(--ops-warning); }
+.log-result-row { max-height: 2.85rem; }.log-result-row td:last-child { max-width: 25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.log-result-row:has(.log-level--error) { background: color-mix(in srgb, var(--ops-error) 5%, transparent); }
+.log-level--info { color: var(--ops-text-2); background: rgba(148, 163, 184, .12); }
+.duration-value { display: inline-flex; border-radius: 3px; padding: .17rem .36rem; font-family: var(--ops-mono); font-size: .67rem; }.duration-value--ok { color: var(--ops-ok); background: color-mix(in srgb, var(--ops-ok) 10%, transparent); }.duration-value--warning { color: var(--ops-warning); background: color-mix(in srgb, var(--ops-warning) 10%, transparent); }.duration-value--error { color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 10%, transparent); }.request-row--error { background: color-mix(in srgb, var(--ops-error) 5%, transparent); }
+.diagnostic-duration-summary { display: flex; min-height: 10rem; flex-direction: column; justify-content: center; padding: 1.25rem; }.diagnostic-duration-summary strong { color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 1.7rem; }.diagnostic-duration-summary span { margin-top: .5rem; color: var(--ops-text-2); font-size: .72rem; }.diagnostic-duration-summary p { margin: 1rem 0 0; color: var(--ops-text-3); font-size: .67rem; line-height: 1.6; }
+.dependency-card--ok { border-left: 3px solid var(--ops-ok); }.dependency-card--warning { border-left: 3px solid var(--ops-warning); }.dependency-card--error { border-left: 3px solid var(--ops-error); }.dependency-card--unknown { border-left: 3px solid var(--ops-unknown); }.dependency-status-dot--ok { background: var(--ops-ok); }.dependency-status-dot--warning { background: var(--ops-warning); }.dependency-status-dot--error { background: var(--ops-error); }.dependency-card__observed, .dependency-card__failure { margin: 0; padding: 0 .95rem .65rem; color: var(--ops-text-3); font-size: .62rem; }.dependency-card__failure { color: var(--ops-error); overflow-wrap: anywhere; }
+
+@media (min-width: 1024px) { .ops-status-spine { grid-template-columns: minmax(18rem, 1.3fr) minmax(19rem, 1fr) auto; align-items: center; }.ops-status-spine__metrics { align-self: stretch; }.ops-status-spine__actions { justify-content: flex-end; } }
+@media (prefers-reduced-motion: reduce) { .operations-dashboard *, .operations-dashboard *::before, .operations-dashboard *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+.error-code-chart {
+  position: relative;
+  display: flex;
+  min-height: 12rem;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+  color: rgb(82 82 91);
+  font-size: 0.75rem;
+}
+
+.error-code-chart::before {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  height: 55%;
+  border-bottom: 2px solid rgb(59 130 246 / 0.12);
+  background: repeating-linear-gradient(to right, rgb(59 130 246 / 0.08) 0 12%, transparent 12% 18%);
+  content: '';
+}
+
+.error-code-chart span {
+  position: relative;
+  z-index: 1;
+}
+
+.error-code-legend {
+  padding: 0 1rem;
+}
+
+.error-code-legend > div {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.65);
+}
+
+.error-code-legend > div:last-child {
+  border-bottom: 0;
+}
+
+.error-code-legend dt,
+.error-code-legend dd {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.error-code-legend dd {
+  color: rgb(161 161 170);
+}
+
+.empty-cell {
+  height: 9rem;
+  padding: 0 1rem;
+  color: rgb(82 82 91);
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .health-layout {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .health-score-wrap {
+    width: 10rem;
+  }
+
+  .health-live-details {
+    border-top: 0;
+    border-left: 1px solid rgb(39 39 42);
+    padding-left: 1.25rem;
+  }
+
+  .server-health-layout {
+    flex-direction: row;
+  }
+
+  .server-health-details {
+    flex: 1;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .deployment-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .source-inline-metrics {
+    display: flex;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .summary-grid > div:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .summary-grid > div:not(:last-child) {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+  }
+
+  .alert-rule-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .alert-rule-list > div:nth-child(odd) {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+  }
+
+  .scope-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scope-row:nth-child(odd) {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+  }
+
+  .analysis-legend {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analysis-legend > div {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+    border-bottom: 0;
+  }
+
+  .analysis-legend > div:last-child {
+    border-right: 0;
+  }
+
+  .server-resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .risk-distribution {
+    grid-template-columns: 11rem minmax(0, 1fr);
+  }
+
+  .risk-total {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+    border-bottom: 0;
+  }
+
+  .audit-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-event-filters,
+  .overview-log-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .log-config__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .diagnostic-search-grid,
+  .log-search-grid,
+  .diagnostic-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .error-code-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(12rem, 0.85fr);
+  }
+
+  .error-code-chart {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+    border-bottom: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  .header-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .server-summary-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .server-summary-strip > div {
+    border-bottom: 0;
+  }
+
+  .server-summary-strip > div:not(:last-child) {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .server-resource-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .audit-filters {
+    grid-template-columns: minmax(15rem, 2fr) minmax(10rem, 1fr) minmax(10rem, 1fr) auto;
+  }
+
+  .overview-event-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .overview-log-filters {
+    grid-template-columns: minmax(15rem, 2fr) repeat(3, minmax(10rem, 1fr)) auto;
+  }
+
+  .log-config__fields {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  }
+
+  .diagnostic-search-grid {
+    grid-template-columns: minmax(14rem, 2fr) repeat(5, minmax(8rem, 1fr)) auto;
+  }
+
+  .log-search-grid {
+    grid-template-columns: repeat(4, minmax(10rem, 1fr)) auto;
+  }
+
+  .diagnostic-summary-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .dependency-matrix {
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+}
+</style>

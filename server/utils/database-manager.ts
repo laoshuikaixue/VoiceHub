@@ -2,7 +2,8 @@ import { db, getConnectionStatus } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 import {
   getConnectionPoolStatus,
-  getDatabaseMetrics
+  getDatabaseMetrics,
+  getDatabaseDiagnostics
 } from './database-health'
 import { getServerTimestamp } from './serverTime'
 
@@ -195,14 +196,111 @@ export class DatabaseManager {
     return await getDatabaseMetrics()
   }
 
+  async getDiagnostics() {
+    return await getDatabaseDiagnostics()
+  }
+
+  async getBusinessQueueStats() {
+    const result = await db.execute(sql`
+      SELECT count(*)::int AS pending_count, min("createdAt") AS oldest_created_at
+      FROM "Song"
+      WHERE played = false
+    `)
+    const row = result[0] as { pending_count?: number | string; oldest_created_at?: Date | string | null } | undefined
+    return {
+      pendingCount: Number(row?.pending_count || 0),
+      oldestCreatedAt: row?.oldest_created_at || null
+    }
+  }
+
+  async getApiKeyUsageStats() {
+    const result = await db.execute(sql`
+      SELECT count(*)::int AS calls,
+        count(*) FILTER (WHERE "status_code" >= 400)::int AS failures
+      FROM api_logs
+      WHERE "created_at" >= now() - interval '5 minutes' AND "api_key_id" IS NOT NULL
+    `)
+    const row = result[0] as { calls?: number | string; failures?: number | string } | undefined
+    const calls = Number(row?.calls || 0)
+    const failures = Number(row?.failures || 0)
+    return {
+      calls,
+      failureRate: calls ? Number((failures / calls * 100).toFixed(2)) : null
+    }
+  }
+
+  async getPersistedRequestSamples() {
+    const result = await db.execute(sql`
+      SELECT "created_at" AS at, "endpoint" AS route, "status_code" AS status,
+        "response_time_ms" AS "durationMs",
+        substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
+      FROM api_logs
+      WHERE "api_key_id" IS NULL
+        AND "error_message" LIKE '%requestId=%'
+      ORDER BY "created_at" DESC
+      LIMIT 50
+    `)
+    return result
+  }
+
+  async getRecentApiLogs() {
+    return await db.execute(sql`
+      SELECT "id", "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
+        "response_time_ms" AS "durationMs",
+        left(CASE
+          WHEN nullif("error_message", '') IS NOT NULL THEN "error_message"
+          WHEN nullif("response_body", '') IS NOT NULL THEN "response_body"
+          ELSE concat("method", ' ', "endpoint", ' -> ', "status_code")
+        END, 4000) AS message,
+        substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
+      FROM api_logs
+      ORDER BY "created_at" DESC
+      LIMIT 100
+    `)
+  }
+
+  async getRequestDiagnostics(requestId: string) {
+    const normalized = String(requestId || '').trim()
+    if (!normalized) return []
+    return await db.execute(sql`
+      SELECT "id", "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
+        "response_time_ms" AS "durationMs",
+        left(CASE
+          WHEN nullif("error_message", '') IS NOT NULL THEN "error_message"
+          WHEN nullif("response_body", '') IS NOT NULL THEN "response_body"
+          ELSE concat("method", ' ', "endpoint", ' -> ', "status_code")
+        END, 4000) AS message,
+        substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
+      FROM api_logs
+      WHERE "error_message" LIKE ${`%requestId=${normalized}%`}
+      ORDER BY "created_at" ASC
+      LIMIT 100
+    `)
+  }
+
+  async getOperationsMetricTimeline() {
+    return await db.execute(sql`
+      SELECT bucket_start AS at,
+        sum(request_count)::int AS requests,
+        sum(server_error_count)::int AS errors,
+        round(sum(total_duration_ms)::numeric / nullif(sum(request_count), 0), 2) AS average_duration_ms,
+        max(max_duration_ms)::int AS max_duration_ms
+      FROM operations_metric_buckets
+      WHERE bucket_start >= now() - interval '60 minutes'
+      GROUP BY bucket_start
+      ORDER BY bucket_start ASC
+    `)
+  }
+
   /**
    * 批量清理过期会话
    */
   async cleanupExpiredSessions(): Promise<number> {
     try {
       const result = await db.execute(sql`
-        DELETE FROM session 
+        DELETE FROM user_sessions
         WHERE expires_at < NOW()
+          OR revoked_at < NOW() - interval '30 days'
       `)
 
       // postgres-js returns count in the result array object properties

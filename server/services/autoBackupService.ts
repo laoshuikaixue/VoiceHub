@@ -29,6 +29,8 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
+import { recordBackupSnapshot, recordBackupTarget } from '~~/server/utils/operations-metrics'
+import { createHash } from 'node:crypto'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 
@@ -109,7 +111,7 @@ export async function isAutoBackupEnabled(): Promise<boolean> {
 }
 
 /** 导出数据库备份数据 */
-export async function exportBackupData(): Promise<{ json: string; filename: string; metadata: { totalRecords: number } }> {
+export async function exportBackupData(): Promise<{ json: string; filename: string; metadata: { totalRecords: number; tables: Array<{ name: string; description: string; recordCount: number }> } }> {
   const backupData = {
     metadata: {
       version: '1.0',
@@ -183,7 +185,13 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   const filename = `auto-backup-${timestamp}.json`
 
-  return { json: JSON.stringify(backupData, null, 2), filename, metadata: backupData.metadata }
+  const json = JSON.stringify(backupData, null, 2)
+  recordBackupSnapshot({
+    exportedTables: backupData.metadata.tables.filter((table) => !table.description.includes('跳过')).length,
+    skippedTables: backupData.metadata.tables.filter((table) => table.description.includes('跳过')).length,
+    checksum: createHash('sha256').update(json).digest('hex')
+  })
+  return { json, filename, metadata: backupData.metadata }
 }
 
 /** 上传到 S3 */
@@ -420,11 +428,14 @@ export async function executeUploads(prepared: {
 
   // 并行上传，每个完成后立即更新对应方法的结果
   const tasks = enabledMethods.map(async ({ name, fn }, index) => {
+    const startedAt = Date.now()
     try {
       await fn()
+      recordBackupTarget(name, true, Date.now() - startedAt)
       await updateMethodResult(index, { method: name, success: true })
       return { method: name, success: true }
     } catch (error: any) {
+      recordBackupTarget(name, false, Date.now() - startedAt)
       console.error(`${name} 备份失败:`, error)
       const errMsg = error.message || String(error) || 'Unknown error'
       await updateMethodResult(index, { method: name, success: false, error: errMsg })

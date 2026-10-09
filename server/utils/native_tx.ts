@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { recordCacheAccess, recordCacheEviction } from '~~/server/utils/operations-metrics'
 
 export const txHeaders = {
   'User-Agent': 'QQMusic 14090508(android 12)'
@@ -164,13 +165,18 @@ export const createTxSongDetailBody = (musicId: TxNormalizedMusicId) => {
 
 const getCachedTxSongDetail = (key: string) => {
   const cached = txSongDetailCache.get(key)
-  if (!cached) return null
-
-  if (cached.expiresAt <= Date.now()) {
-    txSongDetailCache.delete(key)
+  if (!cached) {
+    recordCacheAccess(false)
     return null
   }
 
+  if (cached.expiresAt <= Date.now()) {
+    txSongDetailCache.delete(key)
+    recordCacheAccess(false)
+    return null
+  }
+
+  recordCacheAccess(true)
   return cached.value
 }
 
@@ -179,6 +185,7 @@ const setCachedTxSongDetail = (key: string, value: TxSongPlayableInfo) => {
     const firstKey = txSongDetailCache.keys().next().value
     if (firstKey !== undefined) {
       txSongDetailCache.delete(firstKey)
+      recordCacheEviction()
     }
   }
   txSongDetailCache.set(key, {

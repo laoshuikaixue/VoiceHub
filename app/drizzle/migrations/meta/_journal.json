@@ -285,89 +285,96 @@
     {
       "idx": 40,
       "version": "7",
+      "when": 1786943194265,
+      "tag": "20260817050634_operations-monitoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
       "when": 1787483779816,
       "tag": "20260823000000_theme-settings",
       "breakpoints": true
     },
     {
-      "idx": 41,
+      "idx": 42,
       "version": "7",
       "when": 1787497559680,
       "tag": "20260823230554_add_auth_sessions",
       "breakpoints": true
     },
     {
-      "idx": 42,
+      "idx": 43,
       "version": "7",
       "when": 1787587786102,
       "tag": "20260824160946_add_schedule_visibility_range",
       "breakpoints": true
     },
     {
-      "idx": 43,
+      "idx": 44,
       "version": "7",
       "when": 1787653675610,
       "tag": "20260825102755_add-oauth-avatar",
       "breakpoints": true
     },
     {
-      "idx": 44,
+      "idx": 45,
       "version": "7",
       "when": 1787655239368,
       "tag": "20260825105359_drop_aggregate_oauth_endpoint_default",
       "breakpoints": true
     },
     {
-      "idx": 45,
+      "idx": 46,
       "version": "7",
       "when": 1787715174545,
       "tag": "20260826033254_add_registration_review_grade_class_and_note_review",
       "breakpoints": true
     },
     {
-      "idx": 46,
+      "idx": 47,
       "version": "7",
       "when": 1787825301370,
       "tag": "20260827100821_add_register_requires_grade_class",
       "breakpoints": true
     },
     {
-      "idx": 47,
+      "idx": 48,
       "version": "7",
       "when": 1787880865098,
       "tag": "20260828013425_add_song_type_blacklist",
       "breakpoints": true
     },
     {
-      "idx": 48,
+      "idx": 49,
       "version": "7",
       "when": 1787902641410,
       "tag": "20260828073721_add_statistics_code",
       "breakpoints": true
     },
     {
-      "idx": 49,
+      "idx": 50,
       "version": "7",
       "when": 1789659572062,
       "tag": "20260917153932_music_source_plugins",
       "breakpoints": true
     },
     {
-      "idx": 50,
+      "idx": 51,
       "version": "7",
       "when": 1790315264789,
       "tag": "20260925054744_legal_consent",
       "breakpoints": true
     },
     {
-      "idx": 51,
+      "idx": 52,
       "version": "7",
       "when": 1790340222774,
       "tag": "20260925124342_add_aliyun_esa_captcha",
       "breakpoints": true
     },
     {
-      "idx": 52,
+      "idx": 53,
       "version": "7",
       "when": 1790488086779,
       "tag": "20260927054806_add_astrbot_notification",

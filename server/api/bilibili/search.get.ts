@@ -1,5 +1,6 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { searchBilibiliVideos } from '~~/server/utils/native_bilibili'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 /**
  * Bilibili 搜索接口
@@ -14,8 +15,12 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    return await searchBilibiliVideos(keyword)
+    const startedAt = Date.now()
+    const results = await searchBilibiliVideos(keyword)
+    recordDependencyCall('bilibili', { success: results.length > 0, emptyResult: results.length === 0, durationMs: Date.now() - startedAt })
+    return results
   } catch (error: any) {
+    recordDependencyCall('bilibili', { success: false, semanticFailure: true, durationMs: 0, error: error.message || String(error) })
     console.error('Bilibili search error:', error)
     throw createError({
       statusCode: 500,

@@ -251,7 +251,11 @@ async function checkSchemaConsistency(sql) {
     'PasswordAuditLog',
     'PasswordRateLimit',
     'GradeClass',
-    'auth_sessions'
+    'auth_sessions',
+    'admin_operation_logs',
+    'user_sessions',
+    'operations_metric_buckets',
+    'operations_dependency_buckets'
   ]
   // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
   const requiredIndexes = [['User', 'User_username_unique']]
@@ -359,6 +363,13 @@ async function checkSchemaConsistency(sql) {
     PasswordRateLimit: ['key', 'count', 'resetAt']
   }
 
+  Object.assign(requiredColumns, {
+    admin_operation_logs: ['created_at', 'actor_id', 'action', 'target_type', 'result', 'summary', 'ip_address'],
+    user_sessions: ['id', 'user_id', 'token_version', 'ip_address', 'user_agent', 'browser', 'device_type', 'last_path', 'started_at', 'last_active_at', 'expires_at'],
+    operations_metric_buckets: ['bucket_start', 'instance_id', 'request_count', 'server_error_count'],
+    operations_dependency_buckets: ['bucket_start', 'instance_id', 'source', 'call_count', 'success_count']
+  })
+
   const missing = []
 
   for (const [enumName, enumValues] of requiredEnums) {
@@ -425,7 +436,6 @@ async function repairSchemaWithPush(sql) {
   ok('强制同步完成，迁移记录已补齐')
   return true
 }
-
 async function main() {
   log('🔄 数据库同步', 'cyan')
 
@@ -462,18 +472,22 @@ async function main() {
           env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
         })
 
-        const schemaConsistent = migrateSuccess && (await checkSchemaConsistency(sql))
+        // 迁移失败时仍校验最终结构：历史版本可能已经手动同步过 schema，只有迁移记录未对齐。
+        // 结构完整时补齐基线即可；结构不完整仍然终止，禁止用 push --force 掩盖问题。
+        const schemaConsistent = await checkSchemaConsistency(sql)
         if (migrateSuccess && schemaConsistent) {
           ok('migrate 同步成功')
         } else {
           if (migrateSuccess) {
             warn('migrate 已执行，但数据库schema仍不完整。')
+          } else if (schemaConsistent) {
+            warn('migrate 未完成，但数据库schema已完整，按现有结构补齐迁移基线。')
+            await seedMissingMigrationRecords(sql)
           } else {
             warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
           }
-          log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
-          if (!(await repairSchemaWithPush(sql))) {
-            err('数据库同步完全失败。请检查数据库连接或迁移文件。')
+          if (!schemaConsistent) {
+            err('部署期间禁止自动执行 push --force。请检查数据库连接、迁移记录和迁移文件。')
             process.exit(1)
           }
         }
@@ -482,10 +496,8 @@ async function main() {
         const schemaConsistent = await checkSchemaConsistency(sql)
 
         if (!schemaConsistent) {
-          log('🔄 legacy schema不完整，尝试使用 push --force 进行同步...', 'cyan')
-          if (!(await repairSchemaWithPush(sql))) {
-            process.exit(1)
-          }
+          err('部署期间禁止自动执行 push --force。请先在维护窗口修复 legacy 数据库结构。')
+          process.exit(1)
         } else {
           await seedMissingMigrationRecords(sql)
         }

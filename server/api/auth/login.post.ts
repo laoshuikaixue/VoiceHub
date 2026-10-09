@@ -27,6 +27,7 @@ import { ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
+import { recordTurnstileValidation } from '~~/server/utils/operations-metrics'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -77,6 +78,7 @@ export default defineEventHandler(async (event) => {
         const turnstileToken = body.turnstileToken
 
         if (!captchaSettings.turnstileSecretKey) {
+          recordTurnstileValidation('upstream_failure')
           console.error('Turnstile is enabled but secret key is missing!')
           throw createApiError(500, 'AUTH_CODE_SERVICE_CONFIG_ERROR', '验证码服务配置错误，请联系管理员')
         }
@@ -99,11 +101,14 @@ export default defineEventHandler(async (event) => {
           })
 
           if (!result.success) {
+            recordTurnstileValidation('validation_failure')
             console.error('Turnstile verification failed:', result['error-codes'])
             throw createApiError(400, 'AUTH_CAPTCHA_FAILED_OR_EXPIRED', '人机验证失败或已过期，请重试', { captchaRequired: true, captchaProvider: 'turnstile' })
           }
+          recordTurnstileValidation('success')
         } catch (err: any) {
           if (err.statusCode === 400) throw err
+          recordTurnstileValidation('upstream_failure')
           console.error('Turnstile verification error:', err)
           throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
         }
