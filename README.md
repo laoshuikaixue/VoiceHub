@@ -1013,6 +1013,7 @@ VoiceHub/
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
+│       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
 │       ├── timeUtils.ts       # 时间工具
 │       ├── user-archive.ts    # 账号归档判定与筛选参数解析
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具

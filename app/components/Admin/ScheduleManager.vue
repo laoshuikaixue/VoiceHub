@@ -1974,6 +1974,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
 import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
+import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
@@ -5388,9 +5389,22 @@ const refreshDrafts = async () => {
   updateLocalScheduledSongs() // 更新播放顺序列表
 }
 
-// 保存草稿（无需确认）
+// 当前日期下仍绑定具体播出时段的排期数量（已发布 + 草稿）
+const getUnspecifiedPlayTimeWarningCount = () => {
+  if (!playTimeEnabled.value || selectedPlayTime.value) return 0
+
+  const targetDate = selectedDate.value
+  const dateSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
+    if (!schedule?.playDate) return false
+    return getScheduleDateValue(schedule.playDate) === targetDate
+  })
+
+  return countSchedulesWithPlayTime(dateSchedules)
+}
+
+// 保存草稿（有丢失播出时段风险时需要二次确认）
 // songs 数组顺序即播放顺序，服务端在同一事务内完成旧排期删除与草稿写入
-const saveDraft = async () => {
+const saveDraftConfirmed = async () => {
   loading.value = true
 
   try {
@@ -5434,9 +5448,40 @@ const saveDraft = async () => {
   }
 }
 
+// 保存草稿入口：未选播出时段且当天已有带时段排期时先弹危险确认
+const saveDraft = async () => {
+  const warningCount = getUnspecifiedPlayTimeWarningCount()
+  if (localScheduledSongs.value.length > 0 && warningCount > 0) {
+    confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
+    confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimeDraftWarning(warningCount)
+    confirmDialogType.value = 'danger'
+    confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimeDraftConfirm
+    confirmAction.value = async () => {
+      await saveDraftConfirmed()
+    }
+    showConfirmDialog.value = true
+    return
+  }
+
+  await saveDraftConfirmed()
+}
+
 // 发布排期（需要确认）
 const publishSchedule = async () => {
   try {
+    const warningCount = getUnspecifiedPlayTimeWarningCount()
+    if (localScheduledSongs.value.length > 0 && warningCount > 0) {
+      confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
+      confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount)
+      confirmDialogType.value = 'danger'
+      confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimePublishConfirm
+      confirmAction.value = async () => {
+        await publishScheduleConfirmed()
+      }
+      showConfirmDialog.value = true
+      return
+    }
+
     // 如果列表为空，提示删除排期
     if (localScheduledSongs.value.length === 0) {
       confirmDialogTitle.value = locale.value.confirmations.deleteScheduleTitle
