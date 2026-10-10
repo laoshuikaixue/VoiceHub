@@ -44,7 +44,8 @@ async function fetchSongRaw(platform: AstrbotSongSource, songId: string): Promis
   if (platform === 'netease') {
     const { wyEapiRequest } = await import('~~/server/utils/native_wy')
     const result: any = await wyEapiRequest('/api/v3/song/detail', {
-      c: JSON.stringify({ ids: `[${songId}]` }),
+      // v3 song/detail 的 c 必须是对象数组 JSON：[{"id":123}]，传 {"ids":"[123]"} 会被上游 400 拒绝
+      c: JSON.stringify([{ id: Number(songId) }]),
       ids: `[${songId}]`
     })
     if (!result || result.code !== 200) return []
