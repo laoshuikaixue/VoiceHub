@@ -142,8 +142,11 @@ test('投稿端点：请求映射（券码/留言/时段/错误透传）与成�
   assert.match(songRequest, /throw createApiError\(error\.statusCode, code, error\.message \|\| '点歌失败', data\)/)
   assert.match(songRequest, /error\.data\?\.code/)
   assert.match(songRequest, /SERVER_ERROR_CODES\.COMMON_INVALID_PARAMS/)
-  assert.match(songRequest, /title: song\?\.title \?\? candidate\.title/)
-  assert.match(songRequest, /artist: song\?\.artist \?\? candidate\.artist/)
+  assert.match(songRequest, /const title = song\?\.title \?\? fallbackTitle/)
+  assert.match(songRequest, /const artist = song\?\.artist \?\? fallbackArtist/)
+  // 手动投稿分支：manual 分支不带票据与 musicId
+  assert.match(songRequest, /const isManual = manual !== null && typeof manual === 'object'/)
+  assert.match(songRequest, /手动投稿需要歌名与歌手/)
   assert.match(songRequest, /message: `点歌成功：\$\{title\} - \$\{artist\}`/)
   assert.match(songRequest, /songId: song\?\.id \?\? null/)
 })

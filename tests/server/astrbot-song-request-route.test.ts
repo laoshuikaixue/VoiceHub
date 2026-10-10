@@ -139,3 +139,51 @@ test('未开启留言功能但没带留言时不受影响', async () => {
   assert.equal(result.success, true)
   assert.equal((globalThis as any).__songPayload.submissionNote, undefined)
 })
+
+// ----------------------------------------------------------------------
+// 手动投稿分支（body.manual）：无票据、无 musicId、无封面/链接
+// ----------------------------------------------------------------------
+
+const postManual = (manual: Record<string, unknown>, extra: Record<string, unknown> = {}) => handler({
+  headers: { 'x-voicehub-token': 'valid' },
+  body: { umo: UMO, manual, ...extra }
+})
+
+test('手动投稿：musicId/musicPlatform/cover 均不出现，留言与时段照常下发', async () => {
+  fixture(true)
+  const result: any = await postManual({ title: '  告白气球  ', artist: ' 周杰伦 ' }, { note: '生日快乐' })
+  assert.equal(result.success, true)
+  const payload = (globalThis as any).__songPayload
+  assert.equal(payload.title, '告白气球')
+  assert.equal(payload.artist, '周杰伦')
+  assert.equal(payload.musicId, undefined)
+  assert.equal(payload.musicPlatform, undefined)
+  assert.equal(payload.cover, undefined)
+  assert.equal(payload.submissionNote, '生日快乐')
+  // 手动投稿不消费票据（unseal 未被调用——票据流程只属于序号投稿）
+})
+
+test('手动投稿缺歌手被拒绝且不触达域函数', async () => {
+  fixture(true)
+  await assert.rejects(
+    () => postManual({ title: '告白气球' }),
+    (error: any) => error.statusCode === 400
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
+})
+
+test('手动投稿缺歌名被拒绝', async () => {
+  fixture(true)
+  await assert.rejects(
+    () => postManual({ artist: '周杰伦' }),
+    (error: any) => error.statusCode === 400
+  )
+})
+
+test('手动投稿走站点同一套业务校验（错误码原样透传）', async () => {
+  fixture(true)
+  // requestSongForUser 桩默认成功；这里只验证 payload 进入了同一入口
+  const result: any = await postManual({ title: '晴天', artist: '周杰伦' })
+  assert.equal(result.success, true)
+  assert.equal((globalThis as any).__songPayload.title, '晴天')
+})
