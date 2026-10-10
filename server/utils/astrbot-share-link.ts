@@ -38,9 +38,9 @@ export function extractNeteaseSongId(url: string): string | null {
   return byPath ? byPath[1] : null
 }
 
-/** 从 QQ 音乐链接提取歌曲标识（songDetail/<mid> 或 songid=）。 */
+/** 从 QQ 音乐链接提取歌曲标识（songDetail/<mid>、songid= 或 songmid=）。 */
 export function extractTencentSongId(url: string): string | null {
-  const byQuery = url.match(/[?&]songid=([\w-]+)/i) ?? url.match(/[?&]songId=([\w-]+)/)
+  const byQuery = url.match(/[?&]song(?:id|mid)=([\w-]+)/i)
   if (byQuery) return byQuery[1]
   const byPath = url.match(/\/songDetail\/([\w-]+)/i) ?? url.match(/\/song\/([\w-]+)/i)
   return byPath ? byPath[1] : null
