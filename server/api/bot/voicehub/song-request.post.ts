@@ -18,6 +18,7 @@ import {
   isAstrbotSongTicket
 } from '~~/server/utils/astrbot-song-search'
 import { unseal } from '~~/server/utils/music-source-plugins/tickets'
+import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 import { requestSongForUser } from '~~/server/services/songRequestService'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
@@ -77,6 +78,11 @@ export default defineEventHandler(async (event) => {
 
     if (!isAstrbotSongTicket(ticket, umo)) {
       throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
+    }
+
+    // 票据签发后管理员可能已停用该平台：投稿前复查启用状态（与 song-search 同口径）
+    if (!(await enabledCatalog(ticket.platform))) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用')
     }
 
     // 序号校验（1-based）

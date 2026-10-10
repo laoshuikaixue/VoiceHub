@@ -75,6 +75,7 @@ const modules: Record<string, string> = {
     }`,
   '~~/server/utils/astrbot-share-link': `void 0;`,
   '~~/server/utils/music-source-plugins/tickets': `export const seal = value => 'sealed:' + JSON.stringify(value).length;`,
+  '~~/server/utils/music-source-plugins/resolver': `export const enabledCatalog = async catalog => globalThis.__enabledCatalogs.includes(catalog);`,
   '~~/server/utils/native_wy': `export const wyEapiRequest = async (url, data) => {
     detailCalls.push(url + ':' + data.ids);
     if (globalThis.__wyDetailThrows) throw new Error('upstream boom');
@@ -93,7 +94,8 @@ modules['~~/server/utils/astrbot-share-link'] = shareLinkSource
 Object.assign(globalThis as any, {
   __resolveDb: {},
   __wyDetail: { code: 200, songs: rawNeteaseDetail.songs },
-  __wyDetailThrows: false
+  __wyDetailThrows: false,
+  __enabledCatalogs: ['netease', 'tencent', 'bilibili', 'migu']
 })
 
 const compiled = await build({
@@ -113,7 +115,7 @@ const { default: handler } = await import(
 const UMO = 'bot:FriendMessage:2'
 
 /** 装配一次调用。settings 令牌恒为 valid；header 由 headerToken 控制。 */
-function fixture(headerToken = 'valid', enabled = true, bound = true) {
+function fixture(headerToken = 'valid', enabled = true, bound = true, enabledCatalogs: string[] = ['netease', 'tencent', 'bilibili', 'migu']) {
   const settings = { token: 'valid', enabled, platforms: { qq: true } }
   const bindings = bound ? [{ userId: 7, platform: 'qq', adapter: 'aiocqhttp' }] : []
   const chain = (rows: unknown[]) => ({
@@ -134,6 +136,7 @@ function fixture(headerToken = 'valid', enabled = true, bound = true) {
   const target = globalThis as any
   // 原地刷新 db 属性：bundle 已捕获 globalThis.__resolveDb 引用，不能整体重新赋值
   Object.assign(target.__resolveDb, db)
+  Object.assign(target, { __enabledCatalogs: enabledCatalogs })
   return { headers: { 'x-voicehub-token': headerToken }, body: {} as any } as any
 }
 
@@ -320,4 +323,16 @@ test('详情上游抛错时降级为关键词兜底搜索，而不是 500', asyn
   const result = await handler(event)
   assert.equal(result.items[0].title, '晴天（兜底）')
   assert.equal(searchCalls.length, 1)
+})
+
+test('站点停用平台后，其分享链接被拒绝（400 且零上游请求）', async () => {
+  resetUpstream()
+  const event = fixture('valid', true, true, ['tencent', 'bilibili', 'migu'])
+  event.body = { umo: UMO, text: '分享《晴天》 https://music.163.com/song?id=186016 快听' }
+  await assert.rejects(() => handler(event), (error: any) => {
+    assert.equal(error.statusCode, 400)
+    return true
+  })
+  assert.equal(detailCalls.length, 0)
+  assert.equal(searchCalls.length, 0)
 })

@@ -32,6 +32,7 @@ import {
   isTrustedShareHost
 } from '~~/server/utils/astrbot-share-link'
 import { seal } from '~~/server/utils/music-source-plugins/tickets'
+import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 
 /** 短链跟随跳转的最大次数（163cn.tv、b23.tv 都是一次跳转）。 */
 const SHORT_LINK_MAX_REDIRECTS = 3
@@ -176,6 +177,11 @@ export default defineEventHandler(async (event) => {
   const platform = detectSharePlatform(text)
   if (!platform) {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '无法识别的分享链接，支持网易云音乐、QQ音乐、哔哩哔哩')
+  }
+
+  // 站点平台管理停用的音源不接受分享解析（与 song-search 同口径）
+  if (!(await enabledCatalog(platform))) {
+    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用')
   }
 
   const url = extractShareUrl(text) ?? ''
