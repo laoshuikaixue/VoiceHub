@@ -578,7 +578,7 @@
                     class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
                   >
                     <template v-if="song.requester">
-                      <span class="truncate max-w-[120px]">{{ song.requester }}</span>
+                      <span class="truncate max-w-[120px]">{{ stripDisambiguationSuffix(song.requester) }}</span>
                       <span
                         v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
                         class="text-text-disabled shrink-0"
@@ -995,7 +995,7 @@
                             : ''
                         }}
                       </span>
-                      <span v-else>{{ schedule.song.requester }}</span>
+                      <span v-else>{{ stripDisambiguationSuffix(schedule.song.requester) }}</span>
                       <span
                         v-if="schedule.song.requesterGrade || schedule.song.grade"
                         class="text-text-disabled"
@@ -2837,6 +2837,9 @@ const pageSize = ref(10)
 const { currentLocale } = useLocale()
 const platformTagClass = (platform) => BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin'
 const platformLabel = (platform) => getPlatformDisplayName(platform, null, currentLocale.value)
+
+// 卡片已在姓名后单独展示年级/班级，去掉重名消歧的括号后缀避免重复
+const stripDisambiguationSuffix = (name) => (name || '').replace(/（[^（）]*）$/, '')
 
 // 服务
 let songsService = null
