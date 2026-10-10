@@ -1307,6 +1307,7 @@ export const pages = {
     originalLinkOpened: 'The original link was opened',
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
+    networkOffline: 'Network disconnected. Check your connection and try again.',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
     pluginExcluded: 'Source plugin is excluded',
     pluginInvalidUrl: 'Source plugin returned an invalid playback link',
@@ -2775,7 +2776,14 @@ export const admin = {
       publishScheduleTitle: 'Publish Schedule',
       publishScheduleMessage: 'Publish the current schedule? It will be visible immediately and notifications will be sent.',
       publishDraftTitle: 'Publish Draft',
-      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`
+      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`,
+      unspecifiedPlayTimeTitle: 'No Play Time Selected',
+      unspecifiedPlayTimePublishWarning: (count: number) =>
+        `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will merge all schedules for the day into an all-day schedule and discard their play time info. To keep it, cancel and select a play time first.`,
+      unspecifiedPlayTimeDraftWarning: (count: number) =>
+        `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will save all schedules for the day (including published ones) as all-day drafts, remove published schedules from the public schedule, and discard their play time info. To keep it, cancel and select a play time first.`,
+      unspecifiedPlayTimePublishConfirm: 'Publish Anyway',
+      unspecifiedPlayTimeDraftConfirm: 'Save Anyway'
     },
     messages: {
       remarkVisibilityUpdated: 'Remark visibility updated',

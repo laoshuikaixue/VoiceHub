@@ -1318,6 +1318,7 @@ export const pages = {
     originalLinkOpened: '已为你打开原始链接',
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
+    networkOffline: '网络连接已断开，请检查网络后重试',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
     pluginExcluded: '插件音源已排除',
     pluginInvalidUrl: '插件音源返回的播放链接无效',
@@ -2784,7 +2785,14 @@ export const admin = {
       publishScheduleTitle: '发布排期',
       publishScheduleMessage: '确定要发布当前排期吗？发布后将立即公示并发送通知。',
       publishDraftTitle: '发布草稿',
-      publishDraftMessage: (title: string) => `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`
+      publishDraftMessage: (title: string) => `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
+      unspecifiedPlayTimeTitle: '未选择播出时段',
+      unspecifiedPlayTimePublishWarning: (count: number) =>
+        `当前未选择播出时段，当天已有 ${count} 条排期设置了播出时段。继续发布会将当天所有排期合并为全天排期，原有播出时段信息将丢失。如需保留，请先取消并选择对应播出时段。`,
+      unspecifiedPlayTimeDraftWarning: (count: number) =>
+        `当前未选择播出时段，当天已有 ${count} 条排期设置了播出时段。继续保存草稿会将当天所有排期（含已发布排期）转为全天草稿，已发布排期会从公开排期移除，原有播出时段信息将丢失。如需保留，请先取消并选择对应播出时段。`,
+      unspecifiedPlayTimePublishConfirm: '仍要发布',
+      unspecifiedPlayTimeDraftConfirm: '仍要保存'
     },
     messages: {
       remarkVisibilityUpdated: '备注留言可见性已更新',
