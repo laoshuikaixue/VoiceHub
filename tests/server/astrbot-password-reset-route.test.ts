@@ -11,10 +11,13 @@ import { fileURLToPath } from 'node:url'
 
 const source = fileURLToPath(new URL('../../server/api/bot/voicehub/password-reset.post.ts', import.meta.url))
 
+// pending 模块用真实现：seal/unseal 依赖 JWT_SECRET
+process.env.JWT_SECRET = 'test-secret-for-astrbot-password-reset'
+
 const modules: Record<string, string> = {
-  h3: `export const defineEventHandler = fn => fn; export const getHeader = (event, name) => event.headers[name]; export const readBody = async event => event.body;`,
+  h3: `export const defineEventHandler = fn => fn; export const getHeader = (event, name) => event.headers[name]; export const readBody = async event => event.body; export const createError = opts => Object.assign(new Error(opts.message), opts);`,
   '~/drizzle/db': `export const db = globalThis.__prDb;`,
-  '~/drizzle/schema': `export const systemSettings = { __table: 'settings' }; export const astrbotBindings = { __table: 'bindings' };`,
+  '~/drizzle/schema': `export const systemSettings = { __table: 'settings' }; export const astrbotBindings = { __table: 'bindings' }; export const users = { __table: 'users' };`,
   '~~/server/utils/apiError': `export const createApiError = (statusCode, code, message) => Object.assign(new Error(message), { statusCode, code });`,
   '~~/server/config/constants': `export const SERVER_ERROR_CODES = { NOTIFICATION_AUTH_REQUIRED: 'auth_required', ASTRBOT_UMO_INVALID: 'umo_invalid', ASTRBOT_UMO_UNBOUND: 'unbound', COMMON_INVALID_PARAMS: 'params', AUTH_RATE_LIMITED_MINUTES: 'rate_limited' };`,
   '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token';
@@ -28,6 +31,7 @@ const modules: Record<string, string> = {
     return 1;
   };`,
   '~~/server/services/userService': `export const updateUserPassword = async (userId, newPassword, options) => {
+    if (globalThis.__prUpdateThrows) throw globalThis.__prUpdateThrows;
     globalThis.__prUpdates.push({ userId, newPassword, options });
     return { passwordChangedAt: new Date('2026-10-09T00:00:00Z'), tokenVersion: 2 };
   };`,
@@ -82,31 +86,32 @@ const { default: handler } = await import(
 const UMO = 'aiocqhttp:FriendMessage:10086'
 
 /** 装配一次调用：settings 令牌恒 valid；binding 与平台开关由参数控制。 */
-function fixture({ headerToken = 'valid', binding = { userId: 7, platform: 'qq', adapter: 'aiocqhttp' }, platforms = { qq: true }, ip = '203.0.113.7', body }: {
+function fixture({ headerToken = 'valid', binding = { userId: 7, platform: 'qq', adapter: 'aiocqhttp' }, platforms = { qq: true }, user = { id: 7, status: 'active' }, ip = '203.0.113.7', body }: {
   headerToken?: string
   binding?: { userId: number; platform: string; adapter: string } | null
   platforms?: Record<string, boolean>
+  user?: { id: number; status: string } | null
   ip?: string
   body: Record<string, unknown>
 }) {
   const settingsRows = [{ token: 'valid', enabled: true, platforms }]
   const bindingRows = binding ? [binding] : []
+  const userRows = user ? [user] : []
+  const rowsFor = (table: string) => (table === 'settings' ? settingsRows : table === 'users' ? userRows : bindingRows)
   const db = {
     select() {
       const state = { table: '' }
       const chain: any = {
         from(table: any) {
-          state.table = table?.__table === 'settings' ? 'settings' : 'bindings'
+          state.table = table?.__table === 'settings' || table?.__table === 'users' ? table.__table : 'bindings'
           return chain
         },
         where: () => chain,
         limit: () => chain
       }
-      // settings 查询被直接 await（thenable）；binding 查询链上取 rows 属性
-      chain.then = (resolve: (rows: unknown[]) => void) => resolve(
-        state.table === 'settings' ? settingsRows : bindingRows
-      )
-      Object.defineProperty(chain, 'rows', { get: () => (state.table === 'settings' ? settingsRows : bindingRows) })
+      // settings/users 查询被直接 await（thenable）；binding 查询链上取 rows 属性
+      chain.then = (resolve: (rows: unknown[]) => void) => resolve(rowsFor(state.table))
+      Object.defineProperty(chain, 'rows', { get: () => rowsFor(state.table) })
       return chain
     }
   }
@@ -123,6 +128,7 @@ function reset() {
   target.__prAudit = []
   target.__prRateCalls = []
   target.__prRateLimited = false
+  target.__prUpdateThrows = null
 }
 
 test('init：校验通过后返回 pendingToken（5 分钟）且不改密码', async () => {
@@ -253,6 +259,39 @@ test('频控实参：IP 维度使用真实客户端 IP，而非 purpose 常量',
   const calls = (globalThis as any).__prRateCalls
   assert.equal(calls.length, 1)
   assert.deepEqual(calls[0], [7, '203.0.113.7', 'RESET_PASSWORD', 10])
+})
+
+test('绑定账号被封禁时拒绝（403）且不进频控', async () => {
+  reset()
+  await assert.rejects(
+    () => handler(fixture({
+      user: { id: 7, status: 'banned' },
+      body: { umo: UMO, step: 'init', password: 'N3w-Passw0rd!' }
+    })),
+    (error: any) => error.statusCode === 403 && /账号不可用/.test(error.message)
+  )
+  assert.equal((globalThis as any).__prRateCalls.length, 0)
+  const audits = (globalThis as any).__prAudit
+  assert.equal(audits.length, 1)
+  assert.equal(audits[0][3], false)
+  assert.equal(audits[0][4], '绑定账号不可用')
+})
+
+test('confirm：updateUserPassword 失败时写 success=false 审计并向上抛出', async () => {
+  reset()
+  const init: any = await handler(fixture({
+    body: { umo: UMO, step: 'init', password: 'N3w-Passw0rd!' }
+  }))
+  ;(globalThis as any).__prUpdateThrows = new Error('db write failed')
+  await assert.rejects(
+    () => handler(fixture({
+      body: { umo: UMO, step: 'confirm', pendingToken: init.pendingToken, password: 'N3w-Passw0rd!' }
+    })),
+    (error: any) => error.message === 'db write failed'
+  )
+  const audits = (globalThis as any).__prAudit
+  assert.ok(audits.some((a: any[]) => a[3] === false && a[4] === '密码写入失败'))
+  assert.equal((globalThis as any).__prNotifications.length, 0)
 })
 
 test('令牌错误时端点拒绝（401）', async () => {

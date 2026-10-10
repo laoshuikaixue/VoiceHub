@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
  * 真正运行 song-resolve.post.ts：证明链接解析端点
  * - 令牌/绑定校验与搜索端点同口径（401/403）；
  * - 网易云分享文本解析出单曲并密封同形票据（sessionToken + 单条 items）；
- * - 未知域名 400；无法识别歌曲时兜底搜索；空结果 404。
+ * - 未知域名 400；无法识别歌曲时兜底搜索；解析失败 400（专属错误码）。
  */
 
 const source = fileURLToPath(new URL('../../server/api/bot/voicehub/song-resolve.post.ts', import.meta.url))
@@ -44,7 +44,7 @@ const modules: Record<string, string> = {
   '~~/server/utils/apiError': `export const createApiError = (statusCode, code, message) => Object.assign(new Error(message), { statusCode, code });`,
   '~~/server/config/constants': `export const SERVER_ERROR_CODES = {
     NOTIFICATION_AUTH_REQUIRED: 'auth', ASTRBOT_UMO_INVALID: 'umo', ASTRBOT_UMO_UNBOUND: 'unbound',
-    ASTRBOT_SONG_KEYWORD_INVALID: 'keyword', ASTRBOT_SONG_PLATFORM_INVALID: 'platform', ASTRBOT_SONG_INDEX_INVALID: 'index'
+    ASTRBOT_SONG_KEYWORD_INVALID: 'keyword', ASTRBOT_SONG_PLATFORM_INVALID: 'platform', ASTRBOT_SONG_INDEX_INVALID: 'index', ASTRBOT_SONG_RESOLVE_FAILED: 'resolve'
   };`,
   '~~/server/utils/serverTime': `export const getServerTimestamp = () => 1700000000000;`,
   '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token';
@@ -198,7 +198,7 @@ test('详情接口拿不到时兜底按文本关键词搜索', async () => {
   assert.deepEqual(searchCalls, [{ platform: 'netease', keyword: '分享《晴天》  快听' }])
 })
 
-test('兜底搜索也为空时 404', async () => {
+test('兜底搜索也为空时解析失败 400（专属错误码）', async () => {
   resetUpstream()
   ;(globalThis as any).__wyDetail = { code: 200, songs: [] }
   searchResults = []
@@ -206,7 +206,8 @@ test('兜底搜索也为空时 404', async () => {
   const event = fixture()
   event.body = { umo: UMO, text: '分享《晴天》 https://music.163.com/song?id=186016 快听' }
   await assert.rejects(() => handler(event), (error: any) => {
-    assert.equal(error.statusCode, 404)
+    assert.equal(error.statusCode, 400)
+    assert.equal(error.code, 'resolve')
     return true
   })
 })
@@ -305,6 +306,28 @@ test('路径伪造短链的内网地址不会被请求（400 且零网络调用�
       return true
     })
     assert.equal(fetchCalls.length, 0)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('短链跳转网络失败不回 500：按已得 URL 继续并走关键词兜底', async () => {
+  resetUpstream()
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = (async () => { throw new Error('getaddrinfo ENOTFOUND 163cn.tv') }) as typeof fetch
+  searchResults = [{
+    platform: 'netease', musicId: '999', title: '晴天（兜底）', artist: '周杰伦',
+    cover: null, durationSeconds: 269
+  }]
+  syncGlobals()
+  try {
+    const event = fixture()
+    event.body = { umo: UMO, text: '分享单曲《晴天》 http://163cn.tv/abcdef (@网易云音乐)' }
+    const result = await handler(event)
+    assert.equal(result.items[0].title, '晴天（兜底）')
+    // 跳转失败后 URL 提不出 ID，直接进关键词兜底，不触达详情接口
+    assert.equal(detailCalls.length, 0)
+    assert.equal(searchCalls.length, 1)
   } finally {
     globalThis.fetch = originalFetch
   }

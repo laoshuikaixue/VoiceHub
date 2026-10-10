@@ -35,7 +35,7 @@ const modules: Record<string, string> = {
     export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && /^bot:FriendMessage:[^:]+$/.test(umo);`,
   '~~/server/utils/astrbot-song-search': `export const ASTRBOT_SONG_TICKET_PURPOSE = 'song';
     export const isAstrbotSongTicket = () => true;`,
-  '~~/server/utils/music-source-plugins/tickets': `export const unseal = () => ({ platform: 'netease', candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'netease', musicId: '1' }] });`,
+  '~~/server/utils/music-source-plugins/tickets': `export const unseal = () => globalThis.__songTicket || { platform: 'netease', candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'netease', musicId: '1' }] };`,
   '~~/server/utils/music-source-plugins/resolver': `export const enabledCatalog = async catalog => globalThis.__enabledCatalogs.includes(catalog);`,
   '~~/server/services/songRequestService': `export const requestSongForUser = async (event, actor, payload) => { globalThis.__songPayload = payload; return { id: 1, title: '告白气球', artist: '周杰伦' }; };`,
   '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached = async () => globalThis.__songSettings;`
@@ -87,6 +87,7 @@ function fixture(enableSubmissionRemarks: boolean, userStatus = 'active', enable
   Object.assign(globalThis as any, {
     __songSettings: { enableSubmissionRemarks, enablePlayTimeSelection: false },
     __songPayload: undefined,
+    __songTicket: undefined,
     __enabledCatalogs: enabledCatalogs
   })
   Object.assign((globalThis as any).__songDb, db)
@@ -208,4 +209,34 @@ test('手动投稿不涉及平台：平台全停用时仍可投稿', async () =>
   fixture(true, 'active', [])
   const result: any = await postManual({ title: '晴天', artist: '周杰伦' })
   assert.equal(result.success, true)
+})
+
+test('手动投稿非字符串字段被拒绝，不强转写入投稿数据', async () => {
+  fixture(true)
+  await assert.rejects(
+    () => postManual({ title: ['a', 'b'], artist: '周杰伦' }),
+    (error: any) => {
+      assert.equal(error.statusCode, 400)
+      assert.equal(error.code, 'params')
+      return true
+    }
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
+})
+
+test('候选平台与票据平台不一致时拒绝（防混合平台候选绕过停用复查）', async () => {
+  fixture(true)
+  ;(globalThis as any).__songTicket = {
+    platform: 'netease',
+    candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'tencent', musicId: '1' }]
+  }
+  await assert.rejects(
+    () => post({}),
+    (error: any) => {
+      assert.equal(error.statusCode, 400)
+      assert.equal(error.code, 'session')
+      return true
+    }
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
 })

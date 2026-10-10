@@ -118,8 +118,16 @@ function formatBilibiliDuration(seconds: unknown): string {
 async function followShortLink(url: string): Promise<string> {
   let current = url
   for (let hop = 0; hop < SHORT_LINK_MAX_REDIRECTS && isShortLink(current); hop += 1) {
-    const response = await fetch(current, { redirect: 'manual', signal: AbortSignal.timeout(8000) })
+    let response: Response
+    try {
+      response = await fetch(current, { redirect: 'manual', signal: AbortSignal.timeout(8000) })
+    } catch {
+      // DNS 失败/超时/连接重置：按已得到的 URL 继续，交给 ID 提取与关键词兜底
+      break
+    }
     const location = response.headers.get('location')
+    // 3xx 响应体不会被消费，取消以释放连接资源
+    void response.body?.cancel().catch(() => {})
     if (!location) break
     let next: string
     try {
@@ -213,11 +221,20 @@ export default defineEventHandler(async (event) => {
   if (!candidates.length) {
     const keyword = text.replace(/https?:\/\/\S+/gi, '').trim()
     if (!keyword) {
-      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '无法从分享链接中识别歌曲')
+      // 链接能到达但提不出 ID、也无关键词可兜底：归为解析失败，而非参数或平台配置错误
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.ASTRBOT_SONG_RESOLVE_FAILED,
+        '分享链接未能识别出歌曲',
+      )
     }
     candidates = await searchSongs(platform, keyword.slice(0, 100), 1)
     if (!candidates.length) {
-      throw createApiError(404, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '分享链接未能识别出歌曲，试试 /广播 点歌 关键词 搜索')
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.ASTRBOT_SONG_RESOLVE_FAILED,
+        '分享链接未能识别出歌曲，试试 /广播 点歌 关键词 搜索'
+      )
     }
   }
 
