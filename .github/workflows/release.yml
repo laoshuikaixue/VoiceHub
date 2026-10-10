@@ -1,0 +1,258 @@
+# .github/workflows/release.yml
+# 发布入口：
+#   1) 手动运行并填版本号 —— 由本工作流提交 Bump Version、打 tag 并发布 Release
+#      （版本号留空则沿用 package.json 当前版本，不产生 Bump 提交）
+#   2) 推送版本号 tag —— 直接在该 tag 上发布 Release
+# 产物：运行包（.output + 迁移与管理脚本，文件集对齐 Dockerfile 运行阶段）+ 飞牛 FPK
+
+name: Release
+
+on:
+  push:
+    tags:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  # 与 Dockerfile 的 node:24-alpine 保持一致
+  NODE_VERSION: '24'
+
+jobs:
+  prepare:
+    # 允许在 fork 上手动 dispatch 验证；tag 推送仅在主仓库生效，
+    # github.actor 守卫跳过本工作流自己推送的 tag，避免重复发布
+    if: github.event_name == 'workflow_dispatch' || (github.repository == 'laoshuikaixue/VoiceHub' && github.actor != 'github-actions[bot]')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      commit: ${{ steps.resolve.outputs.commit }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 解析版本号、提交 Bump 并打 tag
+        id: resolve
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          PKG_VER=$(node -p "require('./package.json').version")
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VER="${VERSION_INPUT:-$PKG_VER}"
+          else
+            VER="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ ! "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "❌ 版本号格式不合法: $VER（应为 x.y.z 或 x.y.z.w）"
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$VER" != "$PKG_VER" ]; then
+              TAG_SHA=$(git rev-parse -q --verify "refs/tags/$VER^{commit}" || true)
+              if [ -n "$TAG_SHA" ]; then
+                # tag 已存在：指向当前提交的后代即为上次运行所建，跳过 Bump 按 tag 续跑；
+                # 与当前提交无关或 tag 内版本不符则视为重复发布既有版本
+                if ! git merge-base --is-ancestor HEAD "$TAG_SHA"; then
+                  echo "❌ tag $VER 已存在（${TAG_SHA:0:8}）且与当前提交无关，$PKG_VER 无法再发布为 $VER"
+                  exit 1
+                fi
+                TAG_VER=$(git show "$TAG_SHA:package.json" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).version' || true)
+                if [ "$TAG_VER" != "$VER" ]; then
+                  echo "❌ tag $VER 已存在（${TAG_SHA:0:8}）但其提交内版本为 ${TAG_VER:-未知}，拒绝复用"
+                  exit 1
+                fi
+                echo "⚠️ tag $VER 已由上次运行创建（${TAG_SHA:0:8}），跳过 Bump 按 tag 内容重跑"
+              else
+                node -e '
+                  const fs = require("fs");
+                  const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+                  pkg.version = process.argv[1];
+                  fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+                ' "$VER"
+
+                git config user.name "github-actions[bot]"
+                git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                git add package.json
+                git commit -m "Bump Version"
+                if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                  echo "❌ 推送 Bump Version 失败，${GITHUB_REF_NAME} 分支可能有新提交"
+                  exit 1
+                fi
+                echo "✅ 已提交 Bump Version: $PKG_VER -> $VER"
+              fi
+            fi
+
+            HEAD_SHA=$(git rev-parse HEAD)
+            TAG_SHA=$(git rev-parse -q --verify "refs/tags/$VER^{commit}" || true)
+            if [ -n "$TAG_SHA" ]; then
+              # 上次运行可能在 prepare 之后中断；tag 内容即发布内容，按其指向的提交重跑
+              if [ "$TAG_SHA" != "$HEAD_SHA" ]; then
+                echo "⚠️ tag $VER 指向 ${TAG_SHA:0:8}，与当前提交 ${HEAD_SHA:0:8} 不同，按 tag 内容发布"
+              fi
+              COMMIT="$TAG_SHA"
+            else
+              git tag "$VER"
+              git push origin "refs/tags/$VER"
+              COMMIT="$HEAD_SHA"
+            fi
+          else
+            COMMIT="${GITHUB_SHA}"
+          fi
+
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "📦 发布版本: $VER @ ${COMMIT:0:8}"
+
+  build-app:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+
+      # setup-node v5 会按 packageManager 自动探测并调用包管理器做依赖缓存，
+      # 因此 pnpm 必须先于 Node 安装；版本沿用 package.json 的 packageManager
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: 安装依赖并构建
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: 打包发布产物
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          test -d .output/server || { echo "❌ 构建产物缺失"; exit 1; }
+
+          # 文件集对齐 Dockerfile 运行阶段：除 .output 外，迁移与管理脚本仍需源文件
+          STAGE="staging/voicehub"
+          mkdir -p "$STAGE/app"
+          cp -r .output "$STAGE/.output"
+          cp -r app/drizzle "$STAGE/app/drizzle"
+          cp -r scripts "$STAGE/scripts"
+          cp -r docker-compose "$STAGE/docker-compose"
+          cp drizzle.config.ts package.json pnpm-lock.yaml pnpm-workspace.yaml .env.example "$STAGE/"
+
+          # 与 Dockerfile CMD 一致：先同步数据库再启动，PREBUILT 跳过安装与构建
+          cat > "$STAGE/start.sh" <<'EOS'
+          #!/bin/sh
+          # 首次使用请先安装生产依赖: pnpm install --prod --frozen-lockfile
+          set -e
+          export PREBUILT=true
+          node scripts/deploy.js
+          exec node .output/server/index.mjs
+          EOS
+          chmod +x "$STAGE/start.sh"
+
+          # 运行包内容与 CPU 架构无关（.output 内无原生二进制），后缀仅标识构建平台
+          tar -czf "voicehub-${VERSION}-amd64.tar.gz" -C staging voicehub
+          rm -rf staging
+          ls -lh voicehub-*.tar.gz
+
+      - name: 上传 Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-bundle
+          path: voicehub-*.tar.gz
+          retention-days: 30
+
+  build-fpk:
+    needs: prepare
+    uses: ./.github/workflows/build-fpk.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+
+  release:
+    needs: [prepare, build-app, build-fpk]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+
+      - name: 下载全部 Artifact
+        uses: actions/download-artifact@v5
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: 生成校验和与发布说明
+        run: |
+          set -euo pipefail
+          cd assets
+          sha256sum voicehub-*.tar.gz *.fpk > checksums.txt
+          cat checksums.txt
+
+          {
+            echo '## 附件 SHA-256'
+            echo
+            echo '```text'
+            cat checksums.txt
+            echo '```'
+            echo
+            echo '运行包解压后是 `voicehub/` 目录，含 `.output`、`app/drizzle`、`scripts`、`docker-compose`、`.env.example` 与 `start.sh`。部署：'
+            echo
+            echo '```bash'
+            echo 'cp .env.example .env   # 填写 DATABASE_URL'
+            echo 'pnpm install --prod --frozen-lockfile'
+            echo './start.sh'
+            echo '```'
+            echo
+            echo '需 Node >= 22.11 与 PostgreSQL。`start.sh` 先同步数据库再启动服务，等价于容器 CMD；`voicehub.fpk` 供飞牛 fnOS 应用中心导入。'
+            echo
+            echo '> [!WARNING]'
+            echo '> 升级前请先备份数据库。'
+          } > release-body.md
+
+      - name: 发布 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.version }}
+          target_commitish: ${{ needs.prepare.outputs.commit }}
+          files: |
+            assets/voicehub-*.tar.gz
+            assets/*.fpk
+            assets/checksums.txt
+          body_path: assets/release-body.md
+          generate_release_notes: true
+          overwrite_files: true
+
+  # 发布完成后显式触发 Docker 镜像构建：Bump 提交由 GITHUB_TOKEN 推送，
+  # 不会触发 push 类工作流（workflow_dispatch 是例外），需主动调度；
+  # 仅主仓库执行（fork 手动测试按设计跳过），调度失败可仅重跑本 job
+  trigger-docker:
+    needs: [prepare, release]
+    if: github.repository == 'laoshuikaixue/VoiceHub'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: 触发 Docker 镜像构建
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docker-build.yml --ref "${{ github.event.repository.default_branch }}" --repo "$GITHUB_REPOSITORY"
