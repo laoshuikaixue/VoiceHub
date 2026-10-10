@@ -1,18 +1,20 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { build } from 'esbuild'
+import { fileURLToPath } from 'node:url'
 
 /**
  * 真正运行 server/utils/astrbot-password-reset.ts 的 pending 缓存逻辑。
  * esbuild bundle 后以全局计数数组挂 globalThis 的方式（与既有路由测试一致）
- * 不适用——这里模块无外部依赖，直接 bundle 后调用导出函数即可。
+ * 不适用——这里模块依赖仅为仓库内相对模块，直接 bundle 后调用导出函数即可。
  */
+const modulePath = fileURLToPath(new URL('../../server/utils/astrbot-password-reset.ts', import.meta.url))
+const resolveDir = fileURLToPath(new URL('../../', import.meta.url))
+
 const mod = await build({
   stdin: {
-    contents: `
-      export * from '/opt/data/workspace/voicehub/server/utils/astrbot-password-reset.ts'
-    `,
-    resolveDir: '/opt/data/workspace/voicehub',
+    contents: `export * from ${JSON.stringify(modulePath)}`,
+    resolveDir,
     loader: 'ts'
   },
   bundle: true,
@@ -24,6 +26,7 @@ const mod = await build({
 const {
   createPendingPasswordReset,
   consumePendingPasswordReset,
+  pendingPasswordResetCount,
   PASSWORD_RESET_PENDING_TTL_SECONDS
 } = await import(
   'data:text/javascript;base64,' + Buffer.from(mod.outputFiles[0].text).toString('base64')
@@ -70,4 +73,13 @@ test('并发不串号：两个 pending 互不影响', () => {
   assert.equal(first?.userId, 2)
   const second = consumePendingPasswordReset(a.jti)
   assert.equal(second?.userId, 1)
+})
+
+test('create 惰性清扫过期条目：未消费的过期 pending 不驻留', () => {
+  const base = pendingPasswordResetCount()
+  createPendingPasswordReset({ umo: 'u:stale', userId: 1, password: 'x' }, { ttlSeconds: -1 })
+  assert.equal(pendingPasswordResetCount(), base + 1)
+  // 下一次 create 触发清扫：已过期的上一条被移除，总量不增长
+  createPendingPasswordReset({ umo: 'u:fresh', userId: 2, password: 'y' }, { ttlSeconds: -1 })
+  assert.equal(pendingPasswordResetCount(), base + 1)
 })

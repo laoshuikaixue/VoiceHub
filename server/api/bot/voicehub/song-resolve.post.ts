@@ -17,7 +17,6 @@ import {
 import {
   ASTRBOT_SONG_TICKET_PURPOSE,
   ASTRBOT_SONG_TICKET_TTL_MS,
-  isAstrbotSongTicket,
   normalizeAstrbotSongCandidates,
   searchSongs,
   type AstrbotSongSource,
@@ -29,7 +28,8 @@ import {
   extractNeteaseSongId,
   extractShareUrl,
   extractTencentSongId,
-  isShortLink
+  isShortLink,
+  isTrustedShareHost
 } from '~~/server/utils/astrbot-share-link'
 import { seal } from '~~/server/utils/music-source-plugins/tickets'
 
@@ -113,13 +113,21 @@ function formatBilibiliDuration(seconds: unknown): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
 
-/** 跟随短链跳转拿到最终 URL（禁跨协议、限次数）。 */
+/** 跟随短链跳转拿到最终 URL（手动逐跳，只允许跳往已知音源域名，防 SSRF）。 */
 async function followShortLink(url: string): Promise<string> {
   let current = url
   for (let hop = 0; hop < SHORT_LINK_MAX_REDIRECTS && isShortLink(current); hop += 1) {
-    const response = await fetch(current, { redirect: 'follow', signal: AbortSignal.timeout(8000) })
-    current = response.url || current
-    if (!current || current === url) break
+    const response = await fetch(current, { redirect: 'manual', signal: AbortSignal.timeout(8000) })
+    const location = response.headers.get('location')
+    if (!location) break
+    let next: string
+    try {
+      next = new URL(location, current).toString()
+    } catch {
+      break
+    }
+    if (!isTrustedShareHost(next) || next === current) break
+    current = next
   }
   return current
 }
@@ -171,22 +179,28 @@ export default defineEventHandler(async (event) => {
   }
 
   const url = extractShareUrl(text) ?? ''
-  let songId: string | null = null
+
+  // 短链入口（163cn.tv/b23.tv/c6.y.qq.com）先跟随跳转拿到可解析的最终 URL
+  const finalUrl = isShortLink(url) ? await followShortLink(url) : url
+  let songId: string | null
 
   if (platform === 'netease') {
-    songId = extractNeteaseSongId(url)
+    songId = extractNeteaseSongId(finalUrl)
   } else if (platform === 'tencent') {
-    songId = extractTencentSongId(url)
+    songId = extractTencentSongId(finalUrl)
   } else {
-    // B站短链先跟随跳转拿 BV 号；长链直接取
-    const finalUrl = isShortLink(url) ? await followShortLink(url) : url
     songId = extractBilibiliBvid(finalUrl)
   }
 
   let candidates: SongCandidate[] = []
   if (songId) {
-    const raw = await fetchSongRaw(platform, songId)
-    candidates = normalizeAstrbotSongCandidates(platform, raw)
+    try {
+      const raw = await fetchSongRaw(platform, songId)
+      candidates = normalizeAstrbotSongCandidates(platform, raw)
+    } catch (error) {
+      // 上游失败降级到关键词兜底，第三方抖动不应让机器人回复 500
+      console.warn('[astrbot-song-resolve] 详情获取失败，走关键词兜底:', error instanceof Error ? error.message : error)
+    }
   }
 
   // ID 解析失败或详情接口拿不到时兜底：把整段文本（去链接）当关键词搜索
@@ -226,6 +240,3 @@ export default defineEventHandler(async (event) => {
     }]
   }
 })
-
-// 供测试注入校验票据形状（与 song-search 的封票口径一致）
-export { isAstrbotSongTicket }

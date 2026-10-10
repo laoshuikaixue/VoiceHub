@@ -14,12 +14,15 @@ const source = fileURLToPath(new URL('../../server/api/bot/voicehub/password-res
 const modules: Record<string, string> = {
   h3: `export const defineEventHandler = fn => fn; export const getHeader = (event, name) => event.headers[name]; export const readBody = async event => event.body;`,
   '~/drizzle/db': `export const db = globalThis.__prDb;`,
-  '~/drizzle/schema': `export const systemSettings = { __table: 'settings' }; export const astrbotBindings = { __table: 'bindings' }; export const users = {};`,
+  '~/drizzle/schema': `export const systemSettings = { __table: 'settings' }; export const astrbotBindings = { __table: 'bindings' };`,
   '~~/server/utils/apiError': `export const createApiError = (statusCode, code, message) => Object.assign(new Error(message), { statusCode, code });`,
-  '~~/server/config/constants': `export const SERVER_ERROR_CODES = { NOTIFICATION_AUTH_REQUIRED: 'auth_required', ASTRBOT_UMO_UNBOUND: 'unbound', COMMON_INVALID_PARAMS: 'params' };`,
+  '~~/server/config/constants': `export const SERVER_ERROR_CODES = { NOTIFICATION_AUTH_REQUIRED: 'auth_required', ASTRBOT_UMO_INVALID: 'umo_invalid', ASTRBOT_UMO_UNBOUND: 'unbound', COMMON_INVALID_PARAMS: 'params', AUTH_RATE_LIMITED_MINUTES: 'rate_limited' };`,
   '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token';
     export const equalAstrbotToken = (a, b) => a === b && !!a;`,
-  '~~/server/utils/astrbot-platforms': `export default {};`,
+  '~~/server/utils/ip-utils': `export const getClientIP = event => event.headers['x-forwarded-for'] || '127.0.0.1';`,
+  '~~/server/utils/astrbot-platforms': `export const adapterToAstrbotPlatform = adapter => adapter === 'aiocqhttp' ? 'qq' : null;
+    export const isAstrbotPlatformEnabled = (settings, platform) => settings?.[platform] === true;
+    export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && umo.split(':').length === 3 && umo.split(':')[1] === 'FriendMessage';`,
   '~~/server/services/astrbotOutboxService': `export const enqueueAstrbotNotifications = async (userIds, title, content, platform) => {
     globalThis.__prNotifications.push({ userIds, title, content, platform });
     return 1;
@@ -33,9 +36,12 @@ const modules: Record<string, string> = {
     return null;
   };`,
   '~~/server/services/passwordSecurityService': `export const PASSWORD_AUDIT_ACTIONS = { RESET_PASSWORD: 'RESET_PASSWORD' };
-    export const consumePasswordRateLimit = async () => (globalThis.__prRateLimited
-      ? { allowed: false, retryAfterSeconds: 600 }
-      : { allowed: true, retryAfterSeconds: 0 });
+    export const consumePasswordRateLimit = async (...args) => {
+      globalThis.__prRateCalls.push(args);
+      return globalThis.__prRateLimited
+        ? { allowed: false, retryAfterSeconds: 600 }
+        : { allowed: true, retryAfterSeconds: 0 };
+    };
     export const getPasswordAuditContext = () => ({});
     export const recordPasswordAudit = async (...args) => { globalThis.__prAudit.push(args); };`
 }
@@ -65,6 +71,7 @@ Object.assign(globalThis as any, {
   __prNotifications: [],
   __prUpdates: [],
   __prAudit: [],
+  __prRateCalls: [],
   __prRateLimited: false
 })
 
@@ -74,13 +81,15 @@ const { default: handler } = await import(
 
 const UMO = 'aiocqhttp:FriendMessage:10086'
 
-/** 装配一次调用：settings 令牌恒 valid；binding 行由参数控制。 */
-function fixture({ headerToken = 'valid', binding = { userId: 7, platform: 'qq' }, body }: {
+/** 装配一次调用：settings 令牌恒 valid；binding 与平台开关由参数控制。 */
+function fixture({ headerToken = 'valid', binding = { userId: 7, platform: 'qq', adapter: 'aiocqhttp' }, platforms = { qq: true }, ip = '203.0.113.7', body }: {
   headerToken?: string
-  binding?: { userId: number; platform: string } | null
+  binding?: { userId: number; platform: string; adapter: string } | null
+  platforms?: Record<string, boolean>
+  ip?: string
   body: Record<string, unknown>
 }) {
-  const settingsRows = [{ token: 'valid', enabled: true }]
+  const settingsRows = [{ token: 'valid', enabled: true, platforms }]
   const bindingRows = binding ? [binding] : []
   const db = {
     select() {
@@ -102,9 +111,9 @@ function fixture({ headerToken = 'valid', binding = { userId: 7, platform: 'qq' 
     }
   }
   const target = globalThis as any
-  for (const key of Object.keys(target.__prDb)) delete target.__prDb[key]
+  // 原地刷新 db 属性：bundle 已捕获 globalThis.__prDb 引用，不能整体重新赋值
   Object.assign(target.__prDb, db)
-  return { headers: { 'x-voicehub-token': headerToken }, body } as any
+  return { headers: { 'x-voicehub-token': headerToken, 'x-forwarded-for': ip }, body } as any
 }
 
 function reset() {
@@ -112,6 +121,7 @@ function reset() {
   target.__prNotifications = []
   target.__prUpdates = []
   target.__prAudit = []
+  target.__prRateCalls = []
   target.__prRateLimited = false
 }
 
@@ -196,6 +206,53 @@ test('未绑定会话被拒绝（403）且不进频控', async () => {
     () => handler(fixture({ binding: null, body: { umo: UMO, step: 'init', password: 'N3w-Passw0rd!' } })),
     (error: any) => error.statusCode === 403
   )
+  assert.equal((globalThis as any).__prRateCalls.length, 0)
+})
+
+test('非私聊 UMO 形态被拒绝（400）', async () => {
+  reset()
+  await assert.rejects(
+    () => handler(fixture({ body: { umo: 'aiocqhttp:GroupMessage:10086', step: 'init', password: 'N3w-Passw0rd!' } })),
+    (error: any) => error.statusCode === 400
+  )
+})
+
+test('绑定平台被站点停用后拒绝（403）', async () => {
+  reset()
+  await assert.rejects(
+    () => handler(fixture({ platforms: { qq: false }, body: { umo: UMO, step: 'init', password: 'N3w-Passw0rd!' } })),
+    (error: any) => error.statusCode === 403
+  )
+})
+
+test('适配器与绑定平台归类不一致时拒绝（403）', async () => {
+  reset()
+  await assert.rejects(
+    () => handler(fixture({
+      binding: { userId: 7, platform: 'qq', adapter: 'unknown-adapter' },
+      body: { umo: UMO, step: 'init', password: 'N3w-Passw0rd!' }
+    })),
+    (error: any) => error.statusCode === 403
+  )
+})
+
+test('confirm：未 init 直接确认（伪造令牌）被拒绝，防跳过第一步', async () => {
+  reset()
+  await assert.rejects(
+    () => handler(fixture({
+      body: { umo: UMO, step: 'confirm', pendingToken: 'forged-token', password: 'N3w-Passw0rd!' }
+    })),
+    (error: any) => error.statusCode === 400
+  )
+  assert.equal((globalThis as any).__prUpdates.length, 0)
+})
+
+test('频控实参：IP 维度使用真实客户端 IP，而非 purpose 常量', async () => {
+  reset()
+  await handler(fixture({ body: { umo: UMO, step: 'init', password: 'N3w-Passw0rd!' } }))
+  const calls = (globalThis as any).__prRateCalls
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0], [7, '203.0.113.7', 'RESET_PASSWORD', 10])
 })
 
 test('令牌错误时端点拒绝（401）', async () => {

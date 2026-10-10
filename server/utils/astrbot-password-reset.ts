@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import { getServerTimestamp } from './serverTime'
 
 /**
  * 机器人重置密码的两步确认缓存（模块级内存态）。
@@ -29,15 +30,25 @@ function isExpired(entry: PendingPasswordReset, now: number, ttlSeconds: number)
   return now - entry.createdAt > ttlSeconds * 1000
 }
 
+/** 惰性清扫过期条目，避免 init 后未 confirm 的条目（含密码原文）长期驻留内存。 */
+function sweepExpired(now: number, ttlSeconds: number): void {
+  for (const [key, entry] of pending) {
+    if (isExpired(entry, now, ttlSeconds)) pending.delete(key)
+  }
+}
+
 export function createPendingPasswordReset(
   value: { umo: string; userId: number; password: string },
   options: { ttlSeconds?: number } = {}
 ): CreatedPendingPasswordReset {
+  const ttl = options.ttlSeconds ?? PASSWORD_RESET_PENDING_TTL_SECONDS
+  const now = getServerTimestamp()
+  sweepExpired(now, ttl)
   const jti = randomBytes(24).toString('base64url')
-  pending.set(jti, { ...value, createdAt: Date.now() })
+  pending.set(jti, { ...value, createdAt: now })
   return {
     jti,
-    expiresInSeconds: options.ttlSeconds ?? PASSWORD_RESET_PENDING_TTL_SECONDS
+    expiresInSeconds: ttl
   }
 }
 
@@ -50,6 +61,11 @@ export function consumePendingPasswordReset(
   if (!entry) return null
   pending.delete(jti)
   const ttl = options.ttlSeconds ?? PASSWORD_RESET_PENDING_TTL_SECONDS
-  if (isExpired(entry, Date.now(), ttl)) return null
+  if (isExpired(entry, getServerTimestamp(), ttl)) return null
   return entry
+}
+
+/** 当前 pending 条目数（供测试观察惰性清扫行为）。 */
+export function pendingPasswordResetCount(): number {
+  return pending.size
 }

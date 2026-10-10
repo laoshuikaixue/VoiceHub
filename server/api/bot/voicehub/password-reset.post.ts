@@ -1,6 +1,6 @@
 import { defineEventHandler, getHeader, readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { astrbotBindings, systemSettings, users } from '~/drizzle/schema'
+import { astrbotBindings, systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -8,6 +8,12 @@ import {
   ASTRBOT_TOKEN_HEADER,
   equalAstrbotToken
 } from '~~/server/utils/astrbot-notification'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import {
+  adapterToAstrbotPlatform,
+  isAstrbotPlatformEnabled,
+  isAstrbotPrivateUmoShape
+} from '~~/server/utils/astrbot-platforms'
 import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { enqueueAstrbotNotifications } from '~~/server/services/astrbotOutboxService'
 import { updateUserPassword } from '~~/server/services/userService'
@@ -40,8 +46,6 @@ import {
  * 错误文案永不回显密码。
  */
 
-const ASTRBOT_PASSWORD_RESET_PURPOSE = 'astrbot-password-reset'
-
 function readPassword(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
@@ -50,7 +54,8 @@ export default defineEventHandler(async (event) => {
   const [settings] = await db
     .select({
       token: systemSettings.astrbotToken,
-      enabled: systemSettings.astrbotEnabled
+      enabled: systemSettings.astrbotEnabled,
+      platforms: systemSettings.astrbotPlatforms
     })
     .from(systemSettings)
     .limit(1)
@@ -61,6 +66,11 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<Record<string, unknown> | null>(event)
   const umo: unknown = body?.umo
+
+  if (!isAstrbotPrivateUmoShape(umo)) {
+    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '私聊会话无效')
+  }
+
   const step = body?.step === 'confirm' ? 'confirm' : 'init'
 
   const pendingToken = readPassword(body?.pendingToken)
@@ -69,23 +79,25 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请提供 128 字符以内的新密码')
   }
 
+  // 校验绑定状态：总开关 + 平台开关 + 适配器归类（与其余 bot 端点同口径）
   const [binding] = await db
-    .select({ userId: astrbotBindings.userId, platform: astrbotBindings.platform })
+    .select({ userId: astrbotBindings.userId, platform: astrbotBindings.platform, adapter: astrbotBindings.adapter })
     .from(astrbotBindings)
-    .where(eq(astrbotBindings.umo, String(umo ?? '')))
+    .where(eq(astrbotBindings.umo, umo))
     .limit(1)
-  if (!binding) {
+  if (!binding || !isAstrbotPlatformEnabled(settings.platforms, binding.platform) ||
+    adapterToAstrbotPlatform(binding.adapter) !== binding.platform) {
     throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_UNBOUND, '该会话未绑定 VoiceHub 账号')
   }
 
   const auditAction = PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD
-  const rateLimit = await consumePasswordRateLimit(binding.userId, ASTRBOT_PASSWORD_RESET_PURPOSE, auditAction, 10)
+  const rateLimit = await consumePasswordRateLimit(binding.userId, getClientIP(event), auditAction, 10)
   if (!rateLimit.allowed) {
     await recordPasswordAudit(event, binding.userId, auditAction, false, '操作频率超过限制')
     const retryAfterMinutes = Math.max(1, Math.ceil(rateLimit.retryAfterSeconds / 60))
     throw createApiError(
       429,
-      'AUTH_RATE_LIMITED_MINUTES',
+      SERVER_ERROR_CODES.AUTH_RATE_LIMITED_MINUTES,
       `重置密码尝试过于频繁，请 ${retryAfterMinutes} 分钟后再试`,
       { params: [retryAfterMinutes] }
     )
@@ -99,7 +111,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (step === 'init') {
-    const pending = createPendingPasswordReset({ umo: String(umo), userId: binding.userId, password })
+    const pending = createPendingPasswordReset({ umo, userId: binding.userId, password })
     return {
       success: true,
       step: 'init',
@@ -111,7 +123,7 @@ export default defineEventHandler(async (event) => {
 
   // confirm：pendingToken 必须存在且未被消费（一次性），密码须与第一步一致
   const consumed = consumePendingPasswordReset(pendingToken)
-  if (!consumed || consumed.userId !== binding.userId || consumed.umo !== String(umo)) {
+  if (!consumed || consumed.userId !== binding.userId || consumed.umo !== umo) {
     await recordPasswordAudit(event, binding.userId, auditAction, false, '确认令牌无效或已过期')
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '确认已过期或不正确，请重新发起：/广播 重置密码 <新密码>')
   }
