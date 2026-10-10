@@ -47,7 +47,10 @@ export const BOT_ROUTES = new Set([
   'POST /api/bot/voicehub/ack',
   'POST /api/bot/voicehub/song-search',
   'POST /api/bot/voicehub/song-request',
-  'GET /api/bot/voicehub/weekly-schedule'
+  'POST /api/bot/voicehub/song-resolve',
+  'POST /api/bot/voicehub/password-reset',
+  'GET /api/bot/voicehub/weekly-schedule',
+  'GET /api/bot/voicehub/song-sources'
 ])
 
 // API 错误码常量
@@ -348,6 +351,7 @@ export const SERVER_ERROR_CODES = {
   ASTRBOT_SONG_PLATFORM_INVALID: 'ASTRBOT_SONG_PLATFORM_INVALID',
   ASTRBOT_SONG_SESSION_INVALID: 'ASTRBOT_SONG_SESSION_INVALID',
   ASTRBOT_SONG_INDEX_INVALID: 'ASTRBOT_SONG_INDEX_INVALID',
+  ASTRBOT_SONG_RESOLVE_FAILED: 'ASTRBOT_SONG_RESOLVE_FAILED',
   ASTRBOT_SONG_NOTE_DISABLED: 'ASTRBOT_SONG_NOTE_DISABLED',
   NOTIFICATION_ADMIN_REQUIRED: 'NOTIFICATION_ADMIN_REQUIRED',
   NOTIFICATION_IMPORTANT_INVALID: 'NOTIFICATION_IMPORTANT_INVALID',

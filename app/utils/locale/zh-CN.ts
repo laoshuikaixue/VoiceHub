@@ -4844,6 +4844,8 @@ export const serverErrors = {
   ASTRBOT_SONG_PLATFORM_INVALID: '点歌平台无效',
   ASTRBOT_SONG_SESSION_INVALID: '点歌会话无效或已过期',
   ASTRBOT_SONG_INDEX_INVALID: '点歌序号无效',
+  ASTRBOT_SONG_RESOLVE_FAILED: '分享链接未能识别出歌曲',
+  ASTRBOT_SONG_NOTE_DISABLED: '本站未开启留言功能，无法提交留言',
   ASTRBOT_UMO_BOUND: '此会话已绑定其他账号',
   ASTRBOT_BIND_FAILED: '机器人绑定失败',
   ASTRBOT_UNBIND_FAILED: '机器人解绑失败',

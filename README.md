@@ -1283,7 +1283,10 @@ VoiceHub/
 │   │   │   │   ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）
 │   │   │   │   ├── ack.post.ts      # 回执投递结果（claimToken 原样带回）
 │   │   │   │   ├── song-search.post.ts # 机器人侧点歌搜索
+│   │   │   │   ├── song-sources.get.ts # 机器人侧可用音源平台列表
+│   │   │   │   ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
 │   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
+│   │   │   │   ├── password-reset.post.ts # 机器人侧两步确认重置密码
 │   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
@@ -1406,6 +1409,13 @@ VoiceHub/
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
 │   │   ├── astrbot-adapters.js # 适配器平台映射（绑定鉴权与恢复共用）
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
+│   │   ├── astrbot-group.ts # 群广播目标与群事件配置规范化
+│   │   ├── astrbot-payload.ts # 推送请求体预算与分块
+│   │   ├── astrbot-pull.ts # pull 模式判定、取件序列化与回执校验
+│   │   ├── astrbot-share-link.ts # 点歌分享链接识别与 ID 提取
+│   │   ├── astrbot-song-search.ts # 机器人点歌统一音源搜索与候选归一化
+│   │   ├── astrbot-song-sources.ts # 机器人音源列表与排序（平台启用过滤）
+│   │   ├── astrbot-password-reset.ts # 机器人重置密码两步确认密封令牌
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
 │   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复

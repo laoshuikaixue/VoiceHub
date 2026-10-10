@@ -59,16 +59,19 @@ export async function fetchAstrbotSongSource(
         const sdkResult: any = await searchQqMusic({ key: keyword, page, limit: PAGE_LIMIT })
         const sdkList = sdkResult?.song?.list || sdkResult?.data?.song?.list || []
         if (sdkList.length) return sdkList.map((item: any) => ({
-          singer: Array.isArray(item.singer) ? item.singer.map((s: any) => s.name).join('、') : '',
-          name: item.name || item.title || '',
-          albumName: item.album?.name || '',
-          albumId: item.album?.mid || '',
+          singer: Array.isArray(item.singer) ? item.singer.map((s: any) => s.name).filter(Boolean).join('、') : '',
+          // SDK 走老接口字段（songname/songmid/albumname），取值口径与 native tx.get.ts 保持一致
+          name: item.songname || item.name || item.title || '',
+          albumName: item.albumname || item.albumName || item.album?.name || '',
+          albumId: item.albummid || item.albumMid || item.album?.mid || '',
           source: 'tx',
           duration: Number(item.interval || item.duration || 0),
-          songmid: item.mid || item.id,
-          songId: item.id,
-          strMediaMid: item.file?.media_mid || item.mid,
-          img: item.album?.mid ? `https://y.gtimg.cn/music/photo_new/T002R300x300M000${item.album.mid}.jpg` : ''
+          songmid: item.songmid || item.mid || item.id,
+          songId: item.songid || item.songId || item.id,
+          strMediaMid: item.strMediaMid || item.media_mid || item.file?.media_mid || item.songmid || item.mid,
+          img: (item.albummid || item.album?.mid)
+            ? `https://y.gtimg.cn/music/photo_new/T002R300x300M000${item.albummid || item.album?.mid}.jpg`
+            : ''
         }))
       } catch {
         // SDK 失败，降级到 tx 直连

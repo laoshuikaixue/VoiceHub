@@ -18,6 +18,7 @@ import {
   isAstrbotSongTicket
 } from '~~/server/utils/astrbot-song-search'
 import { unseal } from '~~/server/utils/music-source-plugins/tickets'
+import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 import { requestSongForUser } from '~~/server/services/songRequestService'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
@@ -60,27 +61,45 @@ export default defineEventHandler(async (event) => {
     throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_UNBOUND, '该会话未绑定 VoiceHub 账号')
   }
 
-  // 解封票据：过期或 UMO 不一致统一视为会话无效
-  let ticket: unknown
-  try {
-    ticket = unseal(body?.sessionToken, ASTRBOT_SONG_TICKET_PURPOSE)
-  } catch {
-    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
-  }
+  // 手动投稿分支：body.manual = { title, artist }，无票据无 musicId
+  // （对应站点表单「没有我想要的歌曲，手动输入提交」，复用同一投稿规则）
+  const manual = body?.manual
+  const isManual = manual !== null && typeof manual === 'object'
+  let candidate: { title: string; artist: string; cover: string | null; platform: string; musicId: string } | undefined
 
-  if (!isAstrbotSongTicket(ticket, umo)) {
-    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
-  }
+  if (!isManual) {
+    // 解封票据：过期或 UMO 不一致统一视为会话无效
+    let ticket: unknown
+    try {
+      ticket = unseal(body?.sessionToken, ASTRBOT_SONG_TICKET_PURPOSE)
+    } catch {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
+    }
 
-  // 序号校验（1-based）
-  const index = Number(body?.index)
-  if (!Number.isInteger(index) || index < 1 || index > ticket.candidates.length) {
-    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '序号超出可点歌曲范围')
-  }
+    if (!isAstrbotSongTicket(ticket, umo)) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
+    }
 
-  const candidate = ticket.candidates[index - 1]!
-  if (!candidate) {
-    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '序号超出可点歌曲范围')
+    // 票据签发后管理员可能已停用该平台：投稿前复查启用状态（与 song-search 同口径）
+    if (!(await enabledCatalog(ticket.platform))) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用')
+    }
+
+    // 序号校验（1-based）
+    const index = Number(body?.index)
+    if (!Number.isInteger(index) || index < 1 || index > ticket.candidates.length) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '序号超出可点歌曲范围')
+    }
+
+    candidate = ticket.candidates[index - 1]!
+    if (!candidate) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '序号超出可点歌曲范围')
+    }
+
+    // 候选平台必须与票据平台一致：防混合平台候选绕过上方停用复查
+    if (candidate.platform !== ticket.platform) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
+    }
   }
 
   // 取绑定账号的真实 role（绝不硬编码管理员，避免豁免限额/时段规则）
@@ -129,17 +148,33 @@ export default defineEventHandler(async (event) => {
     ? rawPlayTime
     : undefined
 
-  const payload = {
-    title: candidate.title,
-    artist: candidate.artist,
-    cover: candidate.cover ?? undefined,
-    musicPlatform: candidate.platform,
-    musicId: candidate.musicId,
-    submissionNote: note,
-    cardCode,
-    preferredPlayTimeId: playTimeId
-    // 候选已由本接口的密封票据保护，不叠加站点选择票据
+  const payload = isManual
+    ? {
+        // 手动投稿：无平台标识、无 musicId，标题/歌手来自用户输入；非字符串拒绝，避免强转污染投稿数据
+        title: typeof manual.title === 'string' ? manual.title.trim() : '',
+        artist: typeof manual.artist === 'string' ? manual.artist.trim() : '',
+        submissionNote: note,
+        cardCode,
+        preferredPlayTimeId: playTimeId
+      }
+    : {
+        title: candidate!.title,
+        artist: candidate!.artist,
+        cover: candidate!.cover ?? undefined,
+        musicPlatform: candidate!.platform,
+        musicId: candidate!.musicId,
+        submissionNote: note,
+        cardCode,
+        preferredPlayTimeId: playTimeId
+        // 候选已由本接口的密封票据保护，不叠加站点选择票据
+      }
+
+  if (isManual && (!payload.title || !payload.artist)) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '手动投稿需要歌名与歌手')
   }
+
+  const fallbackTitle = isManual ? payload.title : candidate!.title
+  const fallbackArtist = isManual ? payload.artist : candidate!.artist
 
   let song: any
   try {
@@ -159,14 +194,14 @@ export default defineEventHandler(async (event) => {
     throw error
   }
 
-  const title = song?.title ?? candidate.title
-  const artist = song?.artist ?? candidate.artist
+  const title = song?.title ?? fallbackTitle
+  const artist = song?.artist ?? fallbackArtist
 
   return {
     success: true,
     message: `点歌成功：${title} - ${artist}`,
     songId: song?.id ?? null,
-    title: song?.title ?? candidate.title,
-    artist: song?.artist ?? candidate.artist
+    title,
+    artist
   }
 })
