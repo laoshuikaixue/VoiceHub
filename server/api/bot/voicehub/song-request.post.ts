@@ -18,6 +18,7 @@ import {
   isAstrbotSongTicket
 } from '~~/server/utils/astrbot-song-search'
 import { unseal } from '~~/server/utils/music-source-plugins/tickets'
+import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 import { requestSongForUser } from '~~/server/services/songRequestService'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
@@ -79,6 +80,11 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
     }
 
+    // 票据签发后管理员可能已停用该平台：投稿前复查启用状态（与 song-search 同口径）
+    if (!(await enabledCatalog(ticket.platform))) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用')
+    }
+
     // 序号校验（1-based）
     const index = Number(body?.index)
     if (!Number.isInteger(index) || index < 1 || index > ticket.candidates.length) {
@@ -88,6 +94,11 @@ export default defineEventHandler(async (event) => {
     candidate = ticket.candidates[index - 1]!
     if (!candidate) {
       throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '序号超出可点歌曲范围')
+    }
+
+    // 候选平台必须与票据平台一致：防混合平台候选绕过上方停用复查
+    if (candidate.platform !== ticket.platform) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_SESSION_INVALID, '点歌会话已过期或无效，请重新搜索')
     }
   }
 
@@ -139,9 +150,9 @@ export default defineEventHandler(async (event) => {
 
   const payload = isManual
     ? {
-        // 手动投稿：无平台标识、无 musicId，标题/歌手来自用户输入
-        title: String(manual.title ?? '').trim(),
-        artist: String(manual.artist ?? '').trim(),
+        // 手动投稿：无平台标识、无 musicId，标题/歌手来自用户输入；非字符串拒绝，避免强转污染投稿数据
+        title: typeof manual.title === 'string' ? manual.title.trim() : '',
+        artist: typeof manual.artist === 'string' ? manual.artist.trim() : '',
         submissionNote: note,
         cardCode,
         preferredPlayTimeId: playTimeId

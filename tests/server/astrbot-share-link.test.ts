@@ -7,7 +7,8 @@ import {
   extractNeteaseSongId,
   extractShareUrl,
   extractTencentSongId,
-  isShortLink
+  isShortLink,
+  isTrustedShareHost
 } from '../../server/utils/astrbot-share-link.ts'
 
 test('网易云分享文本：域名识别 + song?id 提取', () => {
@@ -62,4 +63,28 @@ test('普通文本与未知域名返回 null', () => {
 test('分享文本含干扰字符时 URL 提取在中文标点处截断', () => {
   const text = 'https://music.163.com/song?id=186016，很好听'
   assert.equal(extractShareUrl(text), 'https://music.163.com/song?id=186016')
+})
+
+test('短链与域名判定基于 hostname：路径伪造/内网地址不再命中', () => {
+  // 路径里嵌 //b23.tv/ 的内网地址：detect 与 isShortLink 都必须拒绝
+  assert.equal(isShortLink('http://10.0.0.1:8080//b23.tv/abc'), false)
+  assert.equal(detectSharePlatform('http://10.0.0.1:8080//b23.tv/abc'), null)
+  // 非官方子域不算短链
+  assert.equal(isShortLink('http://163.163cn.tv/abc'), false)
+  // 非 http(s) 协议不算短链
+  assert.equal(isShortLink('ftp://163cn.tv/abc'), false)
+})
+
+test('c6.y.qq.com 视为需跟随的入口域名', () => {
+  assert.equal(detectSharePlatform('https://c6.y.qq.com/base/fcgi-bin/u?__=abc'), 'tencent')
+  assert.ok(isShortLink('https://c6.y.qq.com/base/fcgi-bin/u?__=abc'))
+})
+
+test('isTrustedShareHost：只放行已知音源域名', () => {
+  assert.ok(isTrustedShareHost('https://music.163.com/song?id=1'))
+  assert.ok(isTrustedShareHost('https://www.bilibili.com/video/BV1xx411c7mD'))
+  assert.ok(isTrustedShareHost('https://y.qq.com/n/ryqq/songDetail/x'))
+  assert.equal(isTrustedShareHost('http://10.0.0.1/x'), false)
+  assert.equal(isTrustedShareHost('https://example.com/'), false)
+  assert.equal(isTrustedShareHost('file:///etc/passwd'), false)
 })

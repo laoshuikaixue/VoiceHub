@@ -17,7 +17,6 @@ import {
 import {
   ASTRBOT_SONG_TICKET_PURPOSE,
   ASTRBOT_SONG_TICKET_TTL_MS,
-  isAstrbotSongTicket,
   normalizeAstrbotSongCandidates,
   searchSongs,
   type AstrbotSongSource,
@@ -29,9 +28,11 @@ import {
   extractNeteaseSongId,
   extractShareUrl,
   extractTencentSongId,
-  isShortLink
+  isShortLink,
+  isTrustedShareHost
 } from '~~/server/utils/astrbot-share-link'
 import { seal } from '~~/server/utils/music-source-plugins/tickets'
+import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 
 /** 短链跟随跳转的最大次数（163cn.tv、b23.tv 都是一次跳转）。 */
 const SHORT_LINK_MAX_REDIRECTS = 3
@@ -113,13 +114,29 @@ function formatBilibiliDuration(seconds: unknown): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
 
-/** 跟随短链跳转拿到最终 URL（禁跨协议、限次数）。 */
+/** 跟随短链跳转拿到最终 URL（手动逐跳，只允许跳往已知音源域名，防 SSRF）。 */
 async function followShortLink(url: string): Promise<string> {
   let current = url
   for (let hop = 0; hop < SHORT_LINK_MAX_REDIRECTS && isShortLink(current); hop += 1) {
-    const response = await fetch(current, { redirect: 'follow', signal: AbortSignal.timeout(8000) })
-    current = response.url || current
-    if (!current || current === url) break
+    let response: Response
+    try {
+      response = await fetch(current, { redirect: 'manual', signal: AbortSignal.timeout(8000) })
+    } catch {
+      // DNS 失败/超时/连接重置：按已得到的 URL 继续，交给 ID 提取与关键词兜底
+      break
+    }
+    const location = response.headers.get('location')
+    // 3xx 响应体不会被消费，取消以释放连接资源
+    void response.body?.cancel().catch(() => {})
+    if (!location) break
+    let next: string
+    try {
+      next = new URL(location, current).toString()
+    } catch {
+      break
+    }
+    if (!isTrustedShareHost(next) || next === current) break
+    current = next
   }
   return current
 }
@@ -170,34 +187,54 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '无法识别的分享链接，支持网易云音乐、QQ音乐、哔哩哔哩')
   }
 
+  // 站点平台管理停用的音源不接受分享解析（与 song-search 同口径）
+  if (!(await enabledCatalog(platform))) {
+    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '该音源已被站点停用')
+  }
+
   const url = extractShareUrl(text) ?? ''
-  let songId: string | null = null
+
+  // 短链入口（163cn.tv/b23.tv/c6.y.qq.com）先跟随跳转拿到可解析的最终 URL
+  const finalUrl = isShortLink(url) ? await followShortLink(url) : url
+  let songId: string | null
 
   if (platform === 'netease') {
-    songId = extractNeteaseSongId(url)
+    songId = extractNeteaseSongId(finalUrl)
   } else if (platform === 'tencent') {
-    songId = extractTencentSongId(url)
+    songId = extractTencentSongId(finalUrl)
   } else {
-    // B站短链先跟随跳转拿 BV 号；长链直接取
-    const finalUrl = isShortLink(url) ? await followShortLink(url) : url
     songId = extractBilibiliBvid(finalUrl)
   }
 
   let candidates: SongCandidate[] = []
   if (songId) {
-    const raw = await fetchSongRaw(platform, songId)
-    candidates = normalizeAstrbotSongCandidates(platform, raw)
+    try {
+      const raw = await fetchSongRaw(platform, songId)
+      candidates = normalizeAstrbotSongCandidates(platform, raw)
+    } catch (error) {
+      // 上游失败降级到关键词兜底，第三方抖动不应让机器人回复 500
+      console.warn('[astrbot-song-resolve] 详情获取失败，走关键词兜底:', error instanceof Error ? error.message : error)
+    }
   }
 
   // ID 解析失败或详情接口拿不到时兜底：把整段文本（去链接）当关键词搜索
   if (!candidates.length) {
     const keyword = text.replace(/https?:\/\/\S+/gi, '').trim()
     if (!keyword) {
-      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '无法从分享链接中识别歌曲')
+      // 链接能到达但提不出 ID、也无关键词可兜底：归为解析失败，而非参数或平台配置错误
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.ASTRBOT_SONG_RESOLVE_FAILED,
+        '分享链接未能识别出歌曲',
+      )
     }
     candidates = await searchSongs(platform, keyword.slice(0, 100), 1)
     if (!candidates.length) {
-      throw createApiError(404, SERVER_ERROR_CODES.ASTRBOT_SONG_INDEX_INVALID, '分享链接未能识别出歌曲，试试 /广播 点歌 关键词 搜索')
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.ASTRBOT_SONG_RESOLVE_FAILED,
+        '分享链接未能识别出歌曲，试试 /广播 点歌 关键词 搜索'
+      )
     }
   }
 
@@ -226,6 +263,3 @@ export default defineEventHandler(async (event) => {
     }]
   }
 })
-
-// 供测试注入校验票据形状（与 song-search 的封票口径一致）
-export { isAstrbotSongTicket }
