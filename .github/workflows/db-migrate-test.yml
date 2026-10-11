@@ -5,6 +5,13 @@
 name: DB Migration Test
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/drizzle/migrations/**'
+      - 'app/drizzle/schema.ts'
+      - '.github/workflows/db-migrate-test.yml'
   pull_request:
     paths:
       - 'app/drizzle/migrations/**'
