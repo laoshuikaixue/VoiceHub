@@ -18,7 +18,9 @@
     :class="[
       'lyric',
       'normal',
-      `align-${settings.lyricAlignment.value}`
+      {
+        'align-right': settings.lyricAlignRight.value
+      }
     ]"
     @mouseleave="lrcAllLeave"
   >
@@ -742,9 +744,6 @@ onBeforeUnmount(() => {
       }
     }
   }
-  &.align-left {
-    /* 默认左对齐，无需覆盖 */
-  }
   &.flex-end,
   &.align-right {
     span {
@@ -775,7 +774,6 @@ onBeforeUnmount(() => {
       }
     }
   }
-  &.align-center,
   &.center,
   &.pure {
     span {

@@ -21,25 +21,12 @@ export const useLyricSettings = () => {
   const lyricFontSizeMode = useState('lyric-font-size-mode', () => 'auto') // auto | custom
   const useAMLyrics = useState('lyric-use-am-style', () => true)
   const useAMSpring = useState('lyric-use-spring', () => true)
+  const lyricAlignRight = useState('lyric-align-right', () => false)
   const showTranslation = useState('lyric-show-translation', () => true)
   const showRoma = useState('lyric-show-roma', () => true)
   const showWordsRoma = useState('lyric-show-words-roma', () => true) // 逐字罗马音
   const swapTranRoma = useState('lyric-swap-tran-roma', () => false)
   const lyricOffset = useState('lyric-offset', () => 0)
-  const lyricAlignment = useState<'left' | 'center' | 'right'>('lyric-alignment', () => {
-    // 兼容旧版 lyric-align-right 开关
-    if (!import.meta.client) return 'left'
-    try {
-      const legacy = localStorage.getItem('lyric-align-right')
-      if (legacy === 'true') {
-        localStorage.removeItem('lyric-align-right')
-        return 'right'
-      }
-    } catch {
-      // 隐私模式忽略
-    }
-    return 'left'
-  })
 
   // 括号替换设置
   const replaceLyricBrackets = useState('lyric-replace-brackets', () => true)
@@ -125,7 +112,7 @@ export const useLyricSettings = () => {
     lyricFontSizeMode,
     useAMLyrics,
     useAMSpring,
-    lyricAlignment,
+    lyricAlignRight,
     showTranslation,
     showRoma,
     showWordsRoma,
