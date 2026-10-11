@@ -3,46 +3,15 @@ import { lookup } from 'node:dns/promises'
 import { lookup as dnsLookup } from 'node:dns'
 import http from 'node:http'
 import https from 'node:https'
+import { publicAddress } from '~~/server/utils/music-source-plugins/network'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const MAX_CONCURRENT_IMAGE_FETCHES = 30
 const MAX_REDIRECTS = 5
 let activeImageFetches = 0
 
-const isBlockedIPv4 = (address) => {
-  const parts = address.split('.').map(Number)
-  if (parts.length !== 4 || parts.some((p) => Number.isNaN(p))) return true
-  const [first, second] = parts
-  return (
-    first === 0 || first === 10 || first === 127 ||
-    (first === 169 && second === 254) ||
-    (first === 172 && second >= 16 && second <= 31) ||
-    (first === 192 && (second === 0 || second === 168)) ||
-    (first === 100 && second >= 64 && second <= 127) ||
-    (first === 203 && second === 0) ||
-    first >= 224
-  )
-}
-
-const isBlockedIPv6 = (address) => {
-  const n = address.toLowerCase()
-  // IPv4-mapped IPv6
-  if (n.startsWith('::ffff:')) return isBlockedIPv4(n.replace('::ffff:', ''))
-  // ::1 (loopback)
-  if (n === '::1') return true
-  // fe80::/10 (link-local)
-  if (n.startsWith('fe8') || n.startsWith('fe9') || n.startsWith('fea') || n.startsWith('feb')) return true
-  // fc00::/7 (unique local)
-  if (n.startsWith('fc') || n.startsWith('fd')) return true
-  return false
-}
-
-const isBlockedAddress = (address) => {
-  const ver = isIP(address)
-  if (ver === 4) return isBlockedIPv4(address)
-  if (ver === 6) return isBlockedIPv6(address)
-  return true
-}
+// 内网/保留地址判定复用插件网络层的 ipaddr.js unicast 实现（同一份 IP 名单）
+const isBlockedAddress = (address) => !publicAddress(address)
 
 const validateUrl = async (url) => {
   if (url.username || url.password) {
