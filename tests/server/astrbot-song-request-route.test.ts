@@ -25,6 +25,7 @@ const modules: Record<string, string> = {
     export const SERVER_ERROR_CODES = {
       NOTIFICATION_AUTH_REQUIRED: 'auth', ASTRBOT_UMO_INVALID: 'umo', ASTRBOT_UMO_UNBOUND: 'unbound',
       ASTRBOT_SONG_SESSION_INVALID: 'session', ASTRBOT_SONG_INDEX_INVALID: 'index',
+      ASTRBOT_SONG_PLATFORM_INVALID: 'platform',
       ASTRBOT_SONG_NOTE_DISABLED: 'note_disabled', COMMON_INVALID_PARAMS: 'params'
     };`,
   '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token';
@@ -34,7 +35,8 @@ const modules: Record<string, string> = {
     export const isAstrbotPrivateUmoShape = umo => typeof umo === 'string' && /^bot:FriendMessage:[^:]+$/.test(umo);`,
   '~~/server/utils/astrbot-song-search': `export const ASTRBOT_SONG_TICKET_PURPOSE = 'song';
     export const isAstrbotSongTicket = () => true;`,
-  '~~/server/utils/music-source-plugins/tickets': `export const unseal = () => ({ candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'netease', musicId: '1' }] });`,
+  '~~/server/utils/music-source-plugins/tickets': `export const unseal = () => globalThis.__songTicket || { platform: 'netease', candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'netease', musicId: '1' }] };`,
+  '~~/server/utils/music-source-plugins/resolver': `export const enabledCatalog = async catalog => globalThis.__enabledCatalogs.includes(catalog);`,
   '~~/server/services/songRequestService': `export const requestSongForUser = async (event, actor, payload) => { globalThis.__songPayload = payload; return { id: 1, title: '告白气球', artist: '周杰伦' }; };`,
   '~~/server/utils/system-settings-helper': `export const getSystemSettingsCached = async () => globalThis.__songSettings;`
 }
@@ -58,7 +60,7 @@ const { default: handler } = await import(
 const UMO = 'bot:FriendMessage:2'
 
 /** 装配一次调用：站点留言开关 + 用户状态 + 绑定行。 */
-function fixture(enableSubmissionRemarks: boolean, userStatus = 'active') {
+function fixture(enableSubmissionRemarks: boolean, userStatus = 'active', enabledCatalogs: string[] = ['netease', 'tencent', 'bilibili', 'migu']) {
   const settings = { token: 'valid', enabled: true, platforms: { qq: true } }
   const bindings = [{ userId: 7, platform: 'qq', adapter: 'aiocqhttp' }]
   const userRows = [{ id: 7, role: 'user', status: userStatus }]
@@ -84,7 +86,9 @@ function fixture(enableSubmissionRemarks: boolean, userStatus = 'active') {
   }
   Object.assign(globalThis as any, {
     __songSettings: { enableSubmissionRemarks, enablePlayTimeSelection: false },
-    __songPayload: undefined
+    __songPayload: undefined,
+    __songTicket: undefined,
+    __enabledCatalogs: enabledCatalogs
   })
   Object.assign((globalThis as any).__songDb, db)
 }
@@ -138,4 +142,101 @@ test('未开启留言功能但没带留言时不受影响', async () => {
   const result: any = await post({})
   assert.equal(result.success, true)
   assert.equal((globalThis as any).__songPayload.submissionNote, undefined)
+})
+
+// ----------------------------------------------------------------------
+// 手动投稿分支（body.manual）：无票据、无 musicId、无封面/链接
+// ----------------------------------------------------------------------
+
+const postManual = (manual: Record<string, unknown>, extra: Record<string, unknown> = {}) => handler({
+  headers: { 'x-voicehub-token': 'valid' },
+  body: { umo: UMO, manual, ...extra }
+})
+
+test('手动投稿：musicId/musicPlatform/cover 均不出现，留言与时段照常下发', async () => {
+  fixture(true)
+  const result: any = await postManual({ title: '  告白气球  ', artist: ' 周杰伦 ' }, { note: '生日快乐' })
+  assert.equal(result.success, true)
+  const payload = (globalThis as any).__songPayload
+  assert.equal(payload.title, '告白气球')
+  assert.equal(payload.artist, '周杰伦')
+  assert.equal(payload.musicId, undefined)
+  assert.equal(payload.musicPlatform, undefined)
+  assert.equal(payload.cover, undefined)
+  assert.equal(payload.submissionNote, '生日快乐')
+  // 手动投稿不消费票据（unseal 未被调用——票据流程只属于序号投稿）
+})
+
+test('手动投稿缺歌手被拒绝且不触达域函数', async () => {
+  fixture(true)
+  await assert.rejects(
+    () => postManual({ title: '告白气球' }),
+    (error: any) => error.statusCode === 400
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
+})
+
+test('手动投稿缺歌名被拒绝', async () => {
+  fixture(true)
+  await assert.rejects(
+    () => postManual({ artist: '周杰伦' }),
+    (error: any) => error.statusCode === 400
+  )
+})
+
+test('手动投稿走站点同一套业务校验（错误码原样透传）', async () => {
+  fixture(true)
+  // requestSongForUser 桩默认成功；这里只验证 payload 进入了同一入口
+  const result: any = await postManual({ title: '晴天', artist: '周杰伦' })
+  assert.equal(result.success, true)
+  assert.equal((globalThis as any).__songPayload.title, '晴天')
+})
+
+test('票据平台被站点停用后投稿被拒绝，不触达域函数', async () => {
+  fixture(true, 'active', ['tencent', 'bilibili', 'migu'])
+  await assert.rejects(
+    () => post({}),
+    (error: any) => {
+      assert.equal(error.statusCode, 400)
+      assert.equal(error.code, 'platform')
+      return true
+    }
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
+})
+
+test('手动投稿不涉及平台：平台全停用时仍可投稿', async () => {
+  fixture(true, 'active', [])
+  const result: any = await postManual({ title: '晴天', artist: '周杰伦' })
+  assert.equal(result.success, true)
+})
+
+test('手动投稿非字符串字段被拒绝，不强转写入投稿数据', async () => {
+  fixture(true)
+  await assert.rejects(
+    () => postManual({ title: ['a', 'b'], artist: '周杰伦' }),
+    (error: any) => {
+      assert.equal(error.statusCode, 400)
+      assert.equal(error.code, 'params')
+      return true
+    }
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
+})
+
+test('候选平台与票据平台不一致时拒绝（防混合平台候选绕过停用复查）', async () => {
+  fixture(true)
+  ;(globalThis as any).__songTicket = {
+    platform: 'netease',
+    candidates: [{ title: '告白气球', artist: '周杰伦', platform: 'tencent', musicId: '1' }]
+  }
+  await assert.rejects(
+    () => post({}),
+    (error: any) => {
+      assert.equal(error.statusCode, 400)
+      assert.equal(error.code, 'session')
+      return true
+    }
+  )
+  assert.equal((globalThis as any).__songPayload, undefined)
 })

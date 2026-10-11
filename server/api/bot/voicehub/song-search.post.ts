@@ -19,9 +19,10 @@ import {
   ASTRBOT_SONG_KEYWORD_MAX_LENGTH,
   ASTRBOT_SONG_TICKET_PURPOSE,
   ASTRBOT_SONG_TICKET_TTL_MS,
-  DEFAULT_ASTRBOT_SONG_SOURCE,
+  parseAstrbotPlatformOrder,
   parseAstrbotSongSource,
-  searchSongs
+  searchSongs,
+  type AstrbotSongSource
 } from '~~/server/utils/astrbot-song-search'
 import { seal } from '~~/server/utils/music-source-plugins/tickets'
 import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
@@ -36,7 +37,8 @@ export default defineEventHandler(async (event) => {
     .select({
       token: systemSettings.astrbotToken,
       enabled: systemSettings.astrbotEnabled,
-      platforms: systemSettings.astrbotPlatforms
+      platforms: systemSettings.astrbotPlatforms,
+      platformOrder: systemSettings.platformOrder
     })
     .from(systemSettings)
     .limit(1)
@@ -69,9 +71,26 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_KEYWORD_INVALID, '点歌关键词无效')
   }
 
-  const platform = parseAstrbotSongSource(body?.platform ?? DEFAULT_ASTRBOT_SONG_SOURCE)
-  if (!platform) {
-    throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '不支持的音源平台')
+  // 音源解析：显式传入照旧校验；缺省时与 song-sources 同口径，
+  // 取站点排序（platformOrder）后第一个启用音源，避免与音源列表下发值不一致
+  const requestedPlatform = body?.platform
+  let platform: AstrbotSongSource | null
+  if (requestedPlatform === undefined || requestedPlatform === null) {
+    platform = null
+    for (const key of parseAstrbotPlatformOrder(settings.platformOrder)) {
+      if (await enabledCatalog(key)) {
+        platform = key
+        break
+      }
+    }
+    if (!platform) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '站点当前未启用任何音源')
+    }
+  } else {
+    platform = parseAstrbotSongSource(requestedPlatform)
+    if (!platform) {
+      throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_SONG_PLATFORM_INVALID, '不支持的音源平台')
+    }
   }
 
   // 站点平台管理停用的音源不下发候选：与播放解析共用 enabledCatalog 判定，

@@ -4835,6 +4835,8 @@ export const serverErrors = {
   ASTRBOT_SONG_PLATFORM_INVALID: 'Invalid song platform',
   ASTRBOT_SONG_SESSION_INVALID: 'Song request session is invalid or expired',
   ASTRBOT_SONG_INDEX_INVALID: 'Invalid song selection number',
+  ASTRBOT_SONG_RESOLVE_FAILED: 'Could not identify a song from the shared link',
+  ASTRBOT_SONG_NOTE_DISABLED: 'Remarks are not enabled on this site',
   ASTRBOT_UMO_BOUND: 'This chat is already linked to another account',
   ASTRBOT_BIND_FAILED: 'Could not link this chat',
   ASTRBOT_UNBIND_FAILED: 'Could not unlink this chat',
