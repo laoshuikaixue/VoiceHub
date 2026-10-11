@@ -114,7 +114,8 @@ export default defineEventHandler(async (event) => {
       'location-info': '',
     }, baseUrl = 'http://c.musicapp.migu.cn', strategyU = '/listen-url/h5',
     // 匿名请求上游仅提供基础音质，固定以 PQ 取链后再本地升级路径
-    params = `contentId=${contentId}&copyrightId=&resourceType=2&netType=01&toneFlag=PQ&scene=&lowerQualityContentId=${contentId}`;
+    encodedContentId = encodeURIComponent(contentId),
+    params = `contentId=${encodedContentId}&copyrightId=&resourceType=2&netType=01&toneFlag=PQ&scene=&lowerQualityContentId=${encodedContentId}`;
     const res = await fetch(
       `${baseUrl}/strategy${strategyU}/v2.4?${params}`
       ,{headers}
