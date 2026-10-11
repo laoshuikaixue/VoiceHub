@@ -110,12 +110,12 @@ async function resetAutoIncrementSequences() {
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
+    // 验证管理员权限：重置数据库仅限超级管理员
     const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       throw createError({
         statusCode: 403,
-        message: '权限不足'
+        message: '只有超级管理员可以重置数据库'
       })
     }
 
