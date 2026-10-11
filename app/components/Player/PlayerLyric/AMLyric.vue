@@ -1,19 +1,19 @@
 <template>
   <div
     class="lyric-am"
-    :class="{
-      'align-right': settings.lyricAlignRight.value
-    }"
+    :class="[`align-${settings.lyricAlignment.value}`]"
     :style="{
       '--amll-lp-color':
         'rgb(var(--main-cover-lyric-color, var(--main-cover-color, 239 239 239)))',
       '--amll-lp-hover-bg-color': 'var(--lyrics-modal-surface, rgba(255, 255, 255, 0.1))',
-      '--amll-lyric-left-padding': settings.lyricAlignRight.value
-        ? ''
-        : `${settings.lyricHorizontalOffset.value}px`,
-      '--amll-lyric-right-padding': settings.lyricAlignRight.value
-        ? `${settings.lyricHorizontalOffset.value}px`
-        : ''
+      '--amll-lyric-left-padding':
+        settings.lyricAlignment.value === 'right'
+          ? ''
+          : `${settings.lyricHorizontalOffset.value}px`,
+      '--amll-lyric-right-padding':
+        settings.lyricAlignment.value === 'right'
+          ? `${settings.lyricHorizontalOffset.value}px`
+          : ''
     }"
   >
     <Transition name="fade" mode="out-in">
@@ -173,11 +173,39 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   padding-right: var(--amll-lyric-right-padding, 10px);
 }
 
+.lyric-am.align-center .am-lyric {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
 @media (max-width: 990px) {
   .lyric-am.align-right .am-lyric {
     padding: 0;
     margin-right: -20px;
   }
+
+  .lyric-am.align-center .am-lyric {
+    padding: 0;
+  }
+}
+
+/* 覆盖 AMLL 内部歌词行水平对齐 */
+.lyric-am.align-center :deep(.FmKaba_lyricMainLine),
+.lyric-am.align-center :deep(.FmKaba_lyricMainLine span) {
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+.lyric-am.align-right :deep(.FmKaba_lyricMainLine),
+.lyric-am.align-right :deep(.FmKaba_lyricMainLine span) {
+  text-align: right !important;
+  justify-content: flex-end !important;
+}
+
+.lyric-am.align-left :deep(.FmKaba_lyricMainLine),
+.lyric-am.align-left :deep(.FmKaba_lyricMainLine span) {
+  text-align: left !important;
+  justify-content: flex-start !important;
 }
 
 /* 高亮效果 */

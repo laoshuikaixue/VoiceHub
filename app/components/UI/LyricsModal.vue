@@ -236,6 +236,29 @@
                         </div>
                       </div>
                       <div class="setting-item">
+                        <span class="label">{{ locale.lyricAlignment }}</span>
+                        <div class="control alignment-control">
+                          <button
+                            :class="{ active: lyricSettings.lyricAlignment.value === 'left' }"
+                            @click="lyricSettings.lyricAlignment.value = 'left'"
+                          >
+                            {{ locale.lyricAlignmentLeft }}
+                          </button>
+                          <button
+                            :class="{ active: lyricSettings.lyricAlignment.value === 'center' }"
+                            @click="lyricSettings.lyricAlignment.value = 'center'"
+                          >
+                            {{ locale.lyricAlignmentCenter }}
+                          </button>
+                          <button
+                            :class="{ active: lyricSettings.lyricAlignment.value === 'right' }"
+                            @click="lyricSettings.lyricAlignment.value = 'right'"
+                          >
+                            {{ locale.lyricAlignmentRight }}
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-item">
                         <span class="label">{{ locale.lyricOffset }}</span>
                         <div class="control">
                           <button @click="lyricSettings.lyricOffset.value -= 100">-</button>
@@ -1988,6 +2011,21 @@ onUnmounted(() => {
 .setting-item button:hover {
   background: var(--text-primary-10);
   border-radius: 4px;
+}
+
+.alignment-control {
+  gap: 2px;
+}
+
+.alignment-control button {
+  width: 28px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.alignment-control button.active {
+  background: var(--text-primary-20);
 }
 
 .setting-item input[type='checkbox'] {
