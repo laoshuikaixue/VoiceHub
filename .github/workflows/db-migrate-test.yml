@@ -5,6 +5,7 @@
 name: DB Migration Test
 
 on:
+  # main 上仅作合入后的兜底：只在迁移/schema 变化时跑
   push:
     branches:
       - main
@@ -12,11 +13,9 @@ on:
       - 'app/drizzle/migrations/**'
       - 'app/drizzle/schema.ts'
       - '.github/workflows/db-migrate-test.yml'
+  # PR 不带 paths 过滤：每个 PR 都要产出这一项检查，
+  # 否则在分支保护里设为必需状态检查时，未改动迁移的 PR 会因检查缺席而卡住
   pull_request:
-    paths:
-      - 'app/drizzle/migrations/**'
-      - 'app/drizzle/schema.ts'
-      - '.github/workflows/db-migrate-test.yml'
   workflow_dispatch:
 
 permissions:
