@@ -55,7 +55,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Icon from '../Icon.vue'
-import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import {
+  useAudioPlayerControl,
+  volumeGainToPosition,
+  volumePositionToGain
+} from '~/composables/useAudioPlayerControl'
 
 const control = useAudioPlayerControl()
 
@@ -66,7 +70,7 @@ const isDragging = ref(false)
 const hideTimer = ref<number | null>(null)
 
 const volumePercentage = computed(() => {
-  return (control.volume.value || 0) * 100
+  return volumeGainToPosition(control.volume.value || 0) * 100
 })
 
 const isMuted = computed(() => {
@@ -123,22 +127,24 @@ const toggleMuteOrShowSlider = (e: Event) => {
   }
 }
 
-// 滚轮控制音量
+// 滚轮控制音量（按感知位置步进）
+const VOLUME_STEP = 0.05
 const handleWheel = (e: WheelEvent) => {
   if (!showSlider.value && !isMobile.value) return
   // 向上滚增加音量，向下滚减小音量
-  const delta = e.deltaY > 0 ? -0.05 : 0.05
-  control.setVolume(control.volume.value + delta)
+  const delta = e.deltaY > 0 ? -VOLUME_STEP : VOLUME_STEP
+  const currentPosition = volumeGainToPosition(control.volume.value)
+  control.setVolume(volumePositionToGain(currentPosition + delta))
 }
 
-// 拖拽控制
+// 拖拽控制（ slider 显示的是感知位置，落盘时转回线性增益 ）
 const updateVolumeFromEvent = (clientY: number) => {
   if (!sliderRef.value) return
   const rect = sliderRef.value.getBoundingClientRect()
   // 计算相对于底部的百分比
   const y = Math.max(0, Math.min(rect.height, rect.bottom - clientY))
-  const percentage = y / rect.height
-  control.setVolume(percentage)
+  const position = y / rect.height
+  control.setVolume(volumePositionToGain(position))
 }
 
 const handleSliderClick = (e: MouseEvent) => {
