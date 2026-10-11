@@ -3,9 +3,7 @@ import { getRequestHeader } from 'h3'
 import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
-  getAccountLockRemainingTime,
   getIPBlockRemainingTime,
-  isAccountLocked,
   isIPBlocked,
   recordLoginFailure,
   recordLoginSuccess,
@@ -59,12 +57,6 @@ export default defineEventHandler(async (event) => {
     if (await isIPBlocked(clientIp)) {
       const remainingTime = await getIPBlockRemainingTime(clientIp)
       throw createApiError(423, 'AUTH_IP_BLOCKED_RETRY_MINUTES', `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
-    }
-
-    // 检查账户是否被锁定
-    if (await isAccountLocked(body.username)) {
-      const remainingTime = await getAccountLockRemainingTime(body.username)
-      throw createApiError(423, 'AUTH_ACCOUNT_LOCKED_MINUTES', `账户已被锁定，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
     }
 
     // 读取验证码配置并判断是否需要验证码（阈值 0 = 每次必验；用户名/IP 任一维度达标即要求）
