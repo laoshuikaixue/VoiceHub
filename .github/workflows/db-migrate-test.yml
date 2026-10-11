@@ -23,8 +23,9 @@ permissions:
 
 env:
   NODE_VERSION: '24'
-  # 一次性 CI 库，口令非生产凭据
-  DATABASE_URL: 'postgresql://voicehub:***@localhost:5432/voicehub_test'
+  # 主机写死 127.0.0.1，避免 service 容器只映射 IPv4 时 localhost 解析到 ::1 连不上；
+  # 配合下方 trust 认证，URL 不含任何凭据
+  DATABASE_URL: 'postgresql://voicehub@127.0.0.1:5432/voicehub_test'
 
 jobs:
   migrate-fresh-db:
@@ -38,8 +39,9 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_USER: voicehub
-          POSTGRES_PASSWORD: testpassword
           POSTGRES_DB: voicehub_test
+          # 一次性 CI 库，用 trust 免口令，凭据不会在 URL 与容器间写歪
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -67,11 +69,30 @@ jobs:
           CI: 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: 数据库连通性预检
+        run: |
+          set -e
+          node -e "
+            const net = require('net');
+            const s = net.connect(5432, '127.0.0.1', () => { console.log('✅ TCP 127.0.0.1:5432 可连'); s.end(); });
+            s.on('error', (e) => { console.error('❌ TCP 连接失败:', e.message); process.exit(1); });
+          "
+          psql "$DATABASE_URL" -tA -c \
+            "SELECT '✅ 服务端 '||current_setting('server_version')||' / 登录用户 '||current_user||' 超级用户='||usesuper FROM pg_user WHERE usename=current_user"
+
       - name: 校验迁移链完整性
         run: pnpm exec drizzle-kit check
 
       - name: 空库全量迁移
-        run: pnpm run db:migrate
+        # 转圈动画用 \r 覆盖同一行，失败时错误信息会被冲掉，故先落盘再按换行展开
+        run: |
+          set -e
+          if ! pnpm run db:migrate 2>&1 | tee /tmp/migrate.raw >/dev/null; then
+            echo "❌ 迁移失败，完整输出："
+            tr '\r' '\n' < /tmp/migrate.raw | grep -vE '^\s*$'
+            exit 1
+          fi
+          tr '\r' '\n' < /tmp/migrate.raw | grep -vE '^\s*$' | tail -5
 
       - name: 重复执行验证幂等
         run: |
