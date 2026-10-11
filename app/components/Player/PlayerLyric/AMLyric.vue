@@ -189,21 +189,27 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   }
 }
 
-/* 覆盖 AMLL 内部歌词行水平对齐 */
+/* 覆盖 AMLL 内部歌词行水平对齐（主行 + 翻译/音译副行） */
 .lyric-am.align-center :deep(.FmKaba_lyricMainLine),
-.lyric-am.align-center :deep(.FmKaba_lyricMainLine span) {
+.lyric-am.align-center :deep(.FmKaba_lyricMainLine span),
+.lyric-am.align-center :deep(.FmKaba_lyricSubLine),
+.lyric-am.align-center :deep(.FmKaba_lyricSubLine span) {
   text-align: center !important;
   justify-content: center !important;
 }
 
 .lyric-am.align-right :deep(.FmKaba_lyricMainLine),
-.lyric-am.align-right :deep(.FmKaba_lyricMainLine span) {
+.lyric-am.align-right :deep(.FmKaba_lyricMainLine span),
+.lyric-am.align-right :deep(.FmKaba_lyricSubLine),
+.lyric-am.align-right :deep(.FmKaba_lyricSubLine span) {
   text-align: right !important;
   justify-content: flex-end !important;
 }
 
 .lyric-am.align-left :deep(.FmKaba_lyricMainLine),
-.lyric-am.align-left :deep(.FmKaba_lyricMainLine span) {
+.lyric-am.align-left :deep(.FmKaba_lyricMainLine span),
+.lyric-am.align-left :deep(.FmKaba_lyricSubLine),
+.lyric-am.align-left :deep(.FmKaba_lyricSubLine span) {
   text-align: left !important;
   justify-content: flex-start !important;
 }
