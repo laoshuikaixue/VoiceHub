@@ -194,6 +194,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.commit }}
+          # 需要完整历史与 tag 才能对比上一版本判断是否含数据库变更
+          fetch-depth: 0
 
       - name: 下载全部 Artifact
         uses: actions/download-artifact@v5
@@ -202,31 +204,49 @@ jobs:
           merge-multiple: true
 
       - name: 生成校验和与发布说明
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          COMMIT: ${{ needs.prepare.outputs.commit }}
         run: |
           set -euo pipefail
           cd assets
           sha256sum voicehub-*.tar.gz *.fpk > checksums.txt
           cat checksums.txt
 
+          # 变更说明沿用 GitHub 原生生成结果（内容等价 generate_release_notes）。
+          # 自行拼接是因为 GitHub 会把原生说明追加在 body 之后，无法把附件校验和真正放到末尾
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="$VERSION" \
+            -f target_commitish="$COMMIT" \
+            --jq '.body' > generated-notes.md
+
+          # 迁移文件或 schema 有变更才改动线上库结构，此时才提示备份
+          DB_CHANGED=false
+          PREV_TAG=$(git -C "$GITHUB_WORKSPACE" describe --tags --abbrev=0 "${COMMIT}^" 2>/dev/null || true)
+          if [ -n "$PREV_TAG" ]; then
+            DB_DIFF=$(git -C "$GITHUB_WORKSPACE" diff --name-only "$PREV_TAG" "$COMMIT" -- app/drizzle/migrations app/drizzle/schema.ts || true)
+            if [ -n "$DB_DIFF" ]; then
+              DB_CHANGED=true
+            fi
+          fi
+          echo "数据库变更: $DB_CHANGED（对比 ${PREV_TAG:-无}）"
+
           {
+            cat generated-notes.md
+            echo
+            if [ "$DB_CHANGED" = true ]; then
+              echo '> [!WARNING]  '
+              echo '> 本版本涉及数据库更新，请务必提前备份数据。'
+              echo
+            fi
+            echo '---'
+            echo
             echo '## 附件 SHA-256'
             echo
             echo '```text'
             cat checksums.txt
             echo '```'
-            echo
-            echo '运行包解压后是 `voicehub/` 目录，含 `.output`、`app/drizzle`、`scripts`、`docker-compose`、`.env.example` 与 `start.sh`。部署：'
-            echo
-            echo '```bash'
-            echo 'cp .env.example .env   # 填写 DATABASE_URL'
-            echo 'pnpm install --prod --frozen-lockfile'
-            echo './start.sh'
-            echo '```'
-            echo
-            echo '需 Node >= 22.11 与 PostgreSQL。`start.sh` 先同步数据库再启动服务，等价于容器 CMD；`voicehub.fpk` 供飞牛 fnOS 应用中心导入。'
-            echo
-            echo '> [!WARNING]'
-            echo '> 升级前请先备份数据库。'
           } > release-body.md
 
       - name: 发布 GitHub Release
@@ -239,7 +259,8 @@ jobs:
             assets/*.fpk
             assets/checksums.txt
           body_path: assets/release-body.md
-          generate_release_notes: true
+          # 变更说明已在上一步生成并拼进 body，避免 GitHub 再次追加导致顺序错乱
+          generate_release_notes: false
           overwrite_files: true
 
   # 发布完成后显式触发 Docker 镜像构建：Bump 提交由 GITHUB_TOKEN 推送，
