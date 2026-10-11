@@ -28,6 +28,9 @@ env:
 
 jobs:
   migrate-fresh-db:
+    # pull_request 事件的 github.repository 是 base 仓库，因此外部 fork 提来的 PR 照常跑；
+    # 本仓库的同步推送、以及 fork 上的非 PR 事件只在手动触发时才跑
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     services:
       postgres:
