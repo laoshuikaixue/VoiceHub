@@ -1,0 +1,89 @@
+# 数据库迁移测试：在空库上按顺序执行 app/drizzle/migrations 全量迁移，
+# 并校验迁移记录数与 SQL 文件数一致，保证「全新的数据库迁移」可用。
+# 只执行迁移，禁止 db:generate / db:push，不改动任何迁移文件。
+
+name: DB Migration Test
+
+on:
+  pull_request:
+    paths:
+      - 'app/drizzle/migrations/**'
+      - 'app/drizzle/schema.ts'
+      - '.github/workflows/db-migrate-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  # 一次性 CI 库，口令非生产凭据
+  DATABASE_URL: 'postgresql://voicehub:***@localhost:5432/voicehub_test'
+
+jobs:
+  migrate-fresh-db:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # 与 Dockerfile-postgres 的 postgres:15-alpine 保持一致
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: voicehub
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: voicehub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U voicehub -d voicehub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # setup-node v5 会按 packageManager 自动探测并调用包管理器做依赖缓存，
+      # 因此 pnpm 必须先于 Node 安装；版本沿用 package.json 的 packageManager
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: 安装依赖
+        env:
+          CI: 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: 校验迁移链完整性
+        run: pnpm exec drizzle-kit check
+
+      - name: 空库全量迁移
+        run: pnpm run db:migrate
+
+      - name: 重复执行验证幂等
+        run: |
+          set -e
+          OUTPUT=$(pnpm run db:migrate 2>&1) || { echo "$OUTPUT"; exit 1; }
+          echo "$OUTPUT" | tail -5
+
+      - name: 校验迁移记录数
+        run: |
+          set -e
+          TABLE=$(psql "$DATABASE_URL" -tA -c \
+            "SELECT table_schema || '.' || quote_ident(table_name) FROM information_schema.tables \
+             WHERE table_name LIKE '%drizzle_migrations%' LIMIT 1")
+          if [ -z "$TABLE" ]; then
+            echo "❌ 未找到迁移记录表"
+            exit 1
+          fi
+          APPLIED=$(psql "$DATABASE_URL" -tA -c "SELECT count(*) FROM ${TABLE}")
+          FILES=$(ls app/drizzle/migrations/*.sql | wc -l)
+          echo "✅ 迁移表 $TABLE 已应用: $APPLIED / SQL 文件: $FILES"
+          if [ "$APPLIED" != "$FILES" ]; then
+            echo "❌ 迁移记录数与文件数不一致"
+            exit 1
+          fi
