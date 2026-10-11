@@ -83,10 +83,41 @@ jobs:
       - name: 校验迁移链完整性
         run: pnpm exec drizzle-kit check
 
-      - name: 空库全量迁移
-        # 转圈动画用 \r 覆盖同一行，失败时错误信息会被冲掉，故先落盘再按换行展开
+      # drizzle-kit check 只比对已生成的迁移之间的一致性，不会拿 schema.ts 和最后一个
+      # snapshot 比；只改 schema 漏生成迁移的 PR 会一路全绿，新库建出来缺列。
+      # 这里把迁移目录复制到临时位置再 generate，有差异即说明 schema 未被迁移覆盖。
+      - name: 校验 schema 已生成对应迁移
         run: |
-          set -e
+          set -eo pipefail
+          # drizzle-kit 把 config 里的 out 当作相对 CWD 的路径，绝对路径会被拼成 ".//xxx" 而 ENOENT，
+          # 因此临时目录必须放在工作区内
+          DRIFT=.schema-drift
+          rm -rf "$DRIFT"
+          trap 'rm -rf "$DRIFT"' EXIT
+          mkdir -p "$DRIFT"
+          cp -r app/drizzle/migrations "$DRIFT/migrations"
+          cat > "$DRIFT/drizzle.config.ts" <<EOF
+          export default {
+            dialect: 'postgresql',
+            schema: './app/drizzle/schema.ts',
+            out: '$DRIFT/migrations',
+            migrations: { prefix: 'timestamp', table: '__drizzle_migrations__', schema: 'public' }
+          }
+          EOF
+          pnpm exec drizzle-kit generate --config="$DRIFT/drizzle.config.ts" </dev/null | tail -3
+          if ! diff -rq "$DRIFT/migrations" app/drizzle/migrations > "$DRIFT/diff.txt"; then
+            echo "❌ schema.ts 与迁移文件不一致，说明有 schema 变更尚未生成迁移"
+            echo "   本地运行 pnpm db:generate 生成迁移后一并提交"
+            sed -n 1,40p "$DRIFT/diff.txt"
+            exit 1
+          fi
+          echo "✅ schema.ts 与迁移文件一致，无未生成的变更"
+
+      - name: 空库全量迁移
+        # 未指定 shell 时 runner 用 bash -e {0}，不带 pipefail；不加 pipefail 的话
+        # 管道返回值取 tee 的状态，迁移失败会被当成成功
+        run: |
+          set -eo pipefail
           if ! pnpm run db:migrate 2>&1 | tee /tmp/migrate.raw >/dev/null; then
             echo "❌ 迁移失败，完整输出："
             tr '\r' '\n' < /tmp/migrate.raw | grep -vE '^\s*$'
@@ -96,13 +127,13 @@ jobs:
 
       - name: 重复执行验证幂等
         run: |
-          set -e
+          set -eo pipefail
           OUTPUT=$(pnpm run db:migrate 2>&1) || { echo "$OUTPUT"; exit 1; }
           echo "$OUTPUT" | tail -5
 
       - name: 校验迁移记录数
         run: |
-          set -e
+          set -eo pipefail
           TABLE=$(psql "$DATABASE_URL" -tA -c \
             "SELECT table_schema || '.' || quote_ident(table_name) FROM information_schema.tables \
              WHERE table_name LIKE '%drizzle_migrations%' LIMIT 1")
