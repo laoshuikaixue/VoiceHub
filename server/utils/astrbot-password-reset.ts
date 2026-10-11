@@ -7,7 +7,8 @@ import { getServerTimestamp } from './serverTime'
  *
  * 第一步 `/广播 重置密码 <新密码>` 签发 pendingToken；第二步
  * `/广播 重置密码 确认 <新密码>` 原样回传令牌消费。令牌用 JWT_SECRET 密封并内嵌
- * 过期时间，可跨请求、跨实例、Serverless 验证，明文密码只在服务端内存短暂驻留。
+ * 过期时间，可跨请求、跨实例、Serverless 验证；新密码以密文随令牌携带，
+ * 服务端不落库、不缓存明文。
  * 消费按 jti 记录为一次性，防「确认」步骤被重放；多副本部署下 TTL 内的重放至多
  * 再次写入同一新密码，无额外效果。最终写入仍走 updateUserPassword 的完整审计链。
  */

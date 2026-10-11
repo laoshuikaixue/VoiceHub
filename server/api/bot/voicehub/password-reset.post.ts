@@ -37,8 +37,9 @@ import {
  *   不改密码、不发通知。
  *
  * 第二步 POST { umo, step: 'confirm', pendingToken, password }：
- *   必须携带同一密码（两次输入一致）与未过期的 pendingToken（一次性消费，
- *   由服务端缓存而非插件持有，防伪造）。执行 updateUserPassword（踢旧会话、
+ *   必须携带同一密码（两次输入一致）与未过期的 pendingToken（由服务端用
+ *   JWT_SECRET 密封签发、插件原样回传，插件无法伪造；服务端按 jti 记录
+ *   一次性消费，防「跳过确认」与重放）。执行 updateUserPassword（踢旧会话、
  *   bump tokenVersion）、记录 bot 渠道审计，并把成功通知入队到发起 umo
  *   所在渠道（enqueueAstrbotNotifications 按 binding.platform 过滤）。
  *

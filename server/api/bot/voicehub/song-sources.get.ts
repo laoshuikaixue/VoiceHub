@@ -7,9 +7,7 @@ import {
   ASTRBOT_TOKEN_HEADER,
   equalAstrbotToken
 } from '~~/server/utils/astrbot-notification'
-import {
-  ASTRBOT_SONG_SOURCES
-} from '~~/server/utils/astrbot-song-search'
+import { parseAstrbotPlatformOrder } from '~~/server/utils/astrbot-song-search'
 import { enabledCatalog } from '~~/server/utils/music-source-plugins/resolver'
 
 /** 各音源的用户可见名称：与站点前端 locale 的平台名保持一致。 */
@@ -18,27 +16,6 @@ const SOURCE_DISPLAY_NAMES: Record<string, string> = {
   tencent: 'QQ音乐',
   migu: '咪咕音乐',
   bilibili: '哔哩哔哩'
-}
-
-/**
- * 容错解析站点 platformOrder：非法 JSON/空数组回退白名单全量，
- * 再补齐白名单缺失项（与 platform-config 公开接口同口径）。
- */
-function parsePlatformOrder(value: unknown): string[] {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(typeof value === 'string' ? value : '[]')
-  } catch {
-    parsed = null
-  }
-  const valid = (Array.isArray(parsed) ? parsed : [])
-    .filter((p) => (ASTRBOT_SONG_SOURCES as readonly string[]).includes(p as string)) as string[]
-  if (valid.length === 0) return [...ASTRBOT_SONG_SOURCES]
-  const merged = [...valid]
-  for (const p of ASTRBOT_SONG_SOURCES) {
-    if (!merged.includes(p)) merged.push(p)
-  }
-  return merged
 }
 
 /**
@@ -61,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
   const sources: { index: number; key: string; name: string }[] = []
   let index = 0
-  for (const key of parsePlatformOrder(settings.platformOrder)) {
+  for (const key of parseAstrbotPlatformOrder(settings.platformOrder)) {
     if (!(await enabledCatalog(key))) continue
     index += 1
     sources.push({ index, key, name: SOURCE_DISPLAY_NAMES[key] ?? key })

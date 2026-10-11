@@ -1414,7 +1414,7 @@ VoiceHub/
 │   │   ├── astrbot-pull.ts # pull 模式判定、取件序列化与回执校验
 │   │   ├── astrbot-share-link.ts # 点歌分享链接识别与 ID 提取
 │   │   ├── astrbot-song-search.ts # 机器人点歌统一音源搜索与候选归一化
-│   │   ├── astrbot-song-sources.ts # 机器人音源列表与排序（平台启用过滤）
+│   │   ├── astrbot-song-sources.ts # 机器人点歌各音源原始搜索取数
 │   │   ├── astrbot-password-reset.ts # 机器人重置密码两步确认密封令牌
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
 │   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长

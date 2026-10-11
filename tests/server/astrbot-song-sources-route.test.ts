@@ -20,8 +20,16 @@ const modules: Record<string, string> = {
   '~~/server/config/constants': `export const SERVER_ERROR_CODES = { NOTIFICATION_AUTH_REQUIRED: 'auth' };`,
   '~~/server/utils/astrbot-notification': `export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token';
     export const equalAstrbotToken = (a, b) => a === b && !!a;`,
-  '~~/server/utils/astrbot-song-search': `export const ASTRBOT_SONG_SOURCES = ['netease', 'tencent', 'bilibili', 'migu'];
-    export const DEFAULT_ASTRBOT_SONG_SOURCE = 'netease';`,
+  '~~/server/utils/astrbot-song-search': `export const parseAstrbotPlatformOrder = value => {
+    const sources = ['netease', 'tencent', 'bilibili', 'migu'];
+    let parsed;
+    try { parsed = JSON.parse(typeof value === 'string' ? value : '[]'); } catch { parsed = null; }
+    const valid = (Array.isArray(parsed) ? parsed : []).filter(p => sources.includes(p));
+    if (valid.length === 0) return [...sources];
+    const merged = [...valid];
+    for (const p of sources) if (!merged.includes(p)) merged.push(p);
+    return merged;
+  };`,
   '~~/server/utils/music-source-plugins/resolver': `export const enabledCatalog = async catalog => globalThis.__enabledSet.includes(catalog);`
 }
 

@@ -15,6 +15,7 @@ import {
   mapBilibiliSongCandidate,
   mapNativeSongCandidate,
   normalizeAstrbotSongCandidates,
+  parseAstrbotPlatformOrder,
   parseAstrbotSongSource,
   searchSongs,
   type SongCandidate
@@ -70,14 +71,15 @@ test('平台启用四项条件服务端强制：绑定行 + 总开关 + 平台�
   }
 })
 
-test('搜索端点：关键词与音源校验、候选默认网易云、非法音源 400', () => {
+test('搜索端点：关键词与音源校验、缺省音源跟随站点排序、非法音源 400', () => {
   assert.match(songSearch, /SERVER_ERROR_CODES\.ASTRBOT_SONG_KEYWORD_INVALID, '点歌关键词无效'/)
   assert.match(songSearch, /keyword\.length > ASTRBOT_SONG_KEYWORD_MAX_LENGTH/)
   assert.match(songSearch, /SERVER_ERROR_CODES\.ASTRBOT_SONG_PLATFORM_INVALID, '不支持的音源平台'/)
-  assert.match(
-    songSearch,
-    /parseAstrbotSongSource\(body\?\.platform \?\? DEFAULT_ASTRBOT_SONG_SOURCE\)/
-  )
+  assert.match(songSearch, /SERVER_ERROR_CODES\.ASTRBOT_SONG_PLATFORM_INVALID, '站点当前未启用任何音源'/)
+  // 缺省音源与 song-sources 同口径：取 platformOrder 中第一个启用音源，不再固定网易云
+  assert.match(songSearch, /parseAstrbotPlatformOrder\(settings\.platformOrder\)/)
+  assert.match(songSearch, /parseAstrbotSongSource\(requestedPlatform\)/)
+  assert.doesNotMatch(songSearch, /DEFAULT_ASTRBOT_SONG_SOURCE/)
 })
 
 test('搜索端点：seal 把候选与序号绑定，10 分钟有效，items 不回 musicId/cover', () => {
@@ -249,6 +251,16 @@ test('统一候选结构：netease/tencent/migu 共用 native 映射，字段齐
     assert.equal(item?.artist, '周杰伦')
     assert.equal(item?.cover, null)
     assert.equal(item?.durationSeconds, 215)
+  }
+})
+
+test('platformOrder 容错解析：非法/空回退白名单全量，缺失项补末尾', () => {
+  assert.deepEqual(
+    parseAstrbotPlatformOrder(JSON.stringify(['bilibili', 'netease'])),
+    ['bilibili', 'netease', 'tencent', 'migu']
+  )
+  for (const invalid of ['not-json', '[]', undefined, JSON.stringify(['qq']), 42]) {
+    assert.deepEqual(parseAstrbotPlatformOrder(invalid), [...ASTRBOT_SONG_SOURCES])
   }
 })
 
