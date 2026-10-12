@@ -134,6 +134,23 @@
                 </div>
               </div>
 
+              <!-- 投稿统计 -->
+              <div
+                v-if="activeTab === 'submitted'"
+                class="flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-3 border-b border-border-secondary bg-bg-tertiary-20"
+              >
+                <div class="flex items-center gap-2 text-sm">
+                  <Icon name="music" :size="14" class="text-text-tertiary" />
+                  <span class="text-text-tertiary">{{ locale.stats.totalSubmitted }}</span>
+                  <span class="font-semibold text-text-primary">{{ submittedStats.total }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <Icon name="play" :size="14" class="text-text-tertiary" />
+                  <span class="text-text-tertiary">{{ locale.stats.played }}</span>
+                  <span class="font-semibold text-success">{{ submittedStats.played }}</span>
+                </div>
+              </div>
+
               <!-- 歌曲列表 -->
               <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 custom-scrollbar">
                 <div
@@ -268,7 +285,8 @@ const locale = computed(() => {
   return {
     ...base,
     tabs: { ...(base.tabs || {}) },
-    statuses: { ...(base.statuses || {}) }
+    statuses: { ...(base.statuses || {}) },
+    stats: { ...(base.stats || {}) }
   }
 })
 
@@ -321,6 +339,15 @@ const filteredSongs = computed(() => {
   }
 
   return songs
+})
+
+// 投稿统计：与列表同源，跟随学期过滤（统计栏仅在投稿标签页渲染）
+const submittedStats = computed(() => {
+  const songs = filteredSongs.value
+  return {
+    total: songs.length,
+    played: songs.filter((song) => song.played).length
+  }
 })
 
 // Methods

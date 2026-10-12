@@ -329,6 +329,10 @@ export const common = {
     votes: (count: number) => `${count} votes`,
     requests: (count: number) => `${count} requests`,
     requester: 'Requester:',
+    stats: {
+      totalSubmitted: 'Submissions',
+      played: 'Played'
+    },
     tabs: {
       submitted: 'Submitted Songs',
       voted: 'Voted Songs',

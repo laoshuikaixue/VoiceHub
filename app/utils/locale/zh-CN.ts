@@ -340,6 +340,10 @@ export const common = {
     votes: (count: number) => `${count} 票`,
     requests: (count: number) => `${count} 人申请`,
     requester: '投稿人:',
+    stats: {
+      totalSubmitted: '总投稿数',
+      played: '已播放数'
+    },
     tabs: {
       submitted: '投稿歌曲',
       voted: '投票歌曲',
