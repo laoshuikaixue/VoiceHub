@@ -2133,7 +2133,9 @@ export const admin = {
       markUnplayed: '标记为未播放',
       reject: '驳回歌曲',
       deleteSong: '删除歌曲',
-      batchReject: '驳回'
+      batchReject: '驳回',
+      addToPool: '加入备选池',
+      removeFromPool: '移出备选池'
     },
     filters: {
       semester: '学期',
@@ -2142,6 +2144,8 @@ export const admin = {
       selectPlayTime: '选择时段',
       status: '状态',
       selectStatus: '选择状态',
+      pool: '备选池',
+      selectPool: '选择备选池状态',
       sort: '排序',
       selectSort: '选择排序'
     },
@@ -2151,6 +2155,9 @@ export const admin = {
       scheduled: '已排期',
       played: '已播放',
       hasNote: '有备注',
+      allPool: '全部',
+      inPool: '已在池',
+      notInPool: '未入池',
       newest: '最新投稿',
       oldest: '最早投稿',
       hotDesc: '热度最高',
@@ -2385,7 +2392,10 @@ export const admin = {
       updateSuccess: '歌曲信息更新成功',
       addSuccess: '歌曲添加成功',
       durationRefreshed: '时长获取成功，已自动填入',
-      coverRefreshed: '封面获取成功，已自动填入'
+      coverRefreshed: '封面获取成功，已自动填入',
+      addToPoolSuccess: '已加入备选池',
+      addToPoolSkipped: '该歌曲已在备选池中',
+      removeFromPoolSuccess: '已移出备选池'
     },
     errors: {
       remarkVisibilityUpdateFailed: '更新备注可见性失败',
@@ -2409,7 +2419,9 @@ export const admin = {
       durationInvalidRange: '时长需在 30–3600 秒之间',
       durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长',
       coverRefreshFailed: (message: string) => `封面刷新失败: ${message || '未知错误'}`,
-      coverPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新封面'
+      coverPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新封面',
+      addToPoolFailed: (message: string) => `加入备选池失败: ${message}`,
+      removeFromPoolFailed: (message: string) => `移出备选池失败: ${message}`
     }
   },
   dataAnalysis: {
