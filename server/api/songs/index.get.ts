@@ -52,6 +52,7 @@ interface SongResponse extends MaskableSong {
   replayRequestId?: number | null
   submissionCount?: number
   playCount?: number
+  inPool?: boolean
 }
 
 const calculateReplayCooldown = (status?: string | null, updatedAt?: Date | string | null) => {
@@ -170,9 +171,15 @@ export default defineEventHandler(async (event) => {
         ? `${orderColumn} ${sortOrder}, s.\"createdAt\" ASC`
         : `${orderColumn} ${sortOrder}`
 
+    // 备选池状态只供管理员使用，非管理员不查询也不下发
+    const poolCte = isAdmin ? `song_pool AS (SELECT DISTINCT "songId" FROM "ScheduleSongPool"),` : ''
+    const poolSelect = isAdmin ? '(sp."songId" IS NOT NULL) AS "inPool",' : ''
+    const poolJoin = isAdmin ? 'LEFT JOIN song_pool sp ON sp."songId" = s.id' : ''
+
     const baseQuery = `
       WITH
       ${NAME_DISAMBIGUATION_CTES},
+      ${poolCte}
       vote_counts AS (
         SELECT "songId", COUNT(*)::int AS vote_count
         FROM "Vote"
@@ -301,6 +308,7 @@ export default defineEventHandler(async (event) => {
         ps."playDate" AS "scheduleDate",
         ps.played AS "schedulePlayed",
         (ps."songId" IS NOT NULL) AS scheduled,
+        ${poolSelect}
         COALESCE(rc.replay_count, 0) AS "replayRequestCount",
         cur.status AS "replayRequestStatus",
         cur.updated_at AS "replayRequestUpdatedAt",
@@ -322,6 +330,7 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN vote_counts vc ON vc."songId" = s.id
       LEFT JOIN current_user_votes cuv ON cuv."songId" = s.id
       LEFT JOIN published_schedule ps ON ps."songId" = s.id
+      ${poolJoin}
       LEFT JOIN replay_counts rc ON rc.song_id = s.id
       LEFT JOIN current_user_replay cur ON cur.song_id = s.id
       LEFT JOIN latest_replay lr ON lr.song_id = s.id
@@ -439,6 +448,7 @@ export default defineEventHandler(async (event) => {
         updatedAt: row.updatedAt,
         requestedAt: formatDateTime(row.createdAt),
         scheduled: row.scheduled === true,
+        ...(isAdmin ? { inPool: row.inPool === true } : {}),
         cover: row.cover || null,
         musicPlatform: row.musicPlatform || null,
         musicId: row.musicId || null,

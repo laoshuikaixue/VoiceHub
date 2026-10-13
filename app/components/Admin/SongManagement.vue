@@ -131,11 +131,19 @@
             class-name="w-full lg:w-32"
           />
           <CustomSelect
+            v-if="isAdmin"
+            v-model="poolFilter"
+            :label="locale.filters.pool"
+            :options="poolOptions"
+            :placeholder="locale.filters.selectPool"
+            class-name="w-full lg:w-32"
+          />
+          <CustomSelect
             v-model="sortOption"
             :label="locale.filters.sort"
             :options="sortOptions"
             :placeholder="locale.filters.selectSort"
-            class-name="w-full lg:w-36 col-span-2 md:col-span-1"
+            class-name="w-full lg:w-36 col-span-2 md:col-span-4 lg:col-span-1"
           />
         </div>
       </div>
@@ -392,6 +400,24 @@
                 @click="markAsUnplayed(song.id)"
               >
                 <RotateCcw :size="14" />
+              </button>
+
+              <button
+                v-if="isAdmin"
+                :disabled="poolPendingIds.has(song.id)"
+                :class="[
+                  'flex items-center justify-center p-2 rounded-xl transition-all border',
+                  song.inPool
+                    ? 'bg-error-10 text-error border-error-20 hover:bg-error hover:text-text-primary'
+                    : 'bg-bg-tertiary-50 text-info border-border-tertiary-30 hover:bg-info hover:text-text-primary',
+                  poolPendingIds.has(song.id) ? 'opacity-50 cursor-wait' : ''
+                ]"
+                :title="song.inPool ? locale.actions.removeFromPool : locale.actions.addToPool"
+                @click="toggleSongPool(song)"
+              >
+                <Loader2 v-if="poolPendingIds.has(song.id)" :size="14" class="animate-spin" />
+                <FolderMinus v-else-if="song.inPool" :size="14" />
+                <FolderPlus v-else :size="14" />
               </button>
 
               <button
@@ -1190,7 +1216,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  FolderPlus,
+  FolderMinus,
+  Loader2
 } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
@@ -1244,8 +1273,10 @@ const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
+const poolFilter = ref('all')
 const sortOption = ref('time-desc')
 const selectedSongs = ref([])
+const poolPendingIds = ref(new Set())
 const currentPage = ref(1)
 const pageSize = ref(20)
 
@@ -1272,6 +1303,16 @@ const statusOptions = computed(() => [
   { label: getNestedMessage('options', 'played'), value: 'played' },
   { label: getNestedMessage('options', 'hasNote'), value: 'has-note' }
 ])
+
+const poolOptions = computed(() => [
+  { label: getNestedMessage('options', 'allPool'), value: 'all' },
+  { label: getNestedMessage('options', 'inPool'), value: 'in-pool' },
+  { label: getNestedMessage('options', 'notInPool'), value: 'not-in-pool' }
+])
+
+// 备选池为管理员操作，普通用户不下发 inPool 也不展示入口
+const auth = useAuth()
+const { isAdmin } = auth
 
 const sortOptions = computed(() => [
   { label: getNestedMessage('options', 'newest'), value: 'time-desc' },
@@ -1402,7 +1443,6 @@ const songs = ref([])
 // 服务
 let songsService = null
 let adminService = null
-let auth = null
 let formatPlayTimeDisplay = (pt) => pt?.name || ''
 
 // 计算属性
@@ -1462,6 +1502,13 @@ const filteredSongs = computed(() => {
           return true
       }
     })
+  }
+
+  // 备选池过滤
+  if (poolFilter.value !== 'all') {
+    filtered = filtered.filter((song) =>
+      poolFilter.value === 'in-pool' ? song.inPool === true : song.inPool !== true
+    )
   }
 
   // 排序
@@ -1800,6 +1847,54 @@ const markAsUnplayed = async (songId) => {
       console.error('标记未播放失败:', error)
       showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
     }
+}
+
+// 加入 / 移出备选池
+const toggleSongPool = async (song) => {
+  if (poolPendingIds.value.has(song.id)) return
+
+  poolPendingIds.value = new Set([...poolPendingIds.value, song.id])
+  const willAdd = !song.inPool
+  try {
+    if (willAdd) {
+      const result = await $fetch('/api/admin/schedule/song-pool', {
+        method: 'POST',
+        ...auth.getAuthConfig(),
+        body: { songIds: [song.id] }
+      })
+      const skipped = result?.skipped || []
+      showNotification(
+        skipped.length > 0
+          ? getNestedMessage('messages', 'addToPoolSkipped')
+          : getNestedMessage('messages', 'addToPoolSuccess'),
+        skipped.length > 0 ? 'warning' : 'success'
+      )
+    } else {
+      await $fetch('/api/admin/schedule/song-pool', {
+        method: 'DELETE',
+        ...auth.getAuthConfig(),
+        query: { songIds: song.id }
+      })
+      showNotification(getNestedMessage('messages', 'removeFromPoolSuccess'), 'success')
+    }
+
+    // 备选池每首歌最多一条记录，结果确定，就地更新可避免整表刷新清掉批量勾选
+    song.inPool = willAdd
+  } catch (error) {
+    console.error('备选池操作失败:', error)
+    showNotification(
+      getNestedMessage(
+        'errors',
+        willAdd ? 'addToPoolFailed' : 'removeFromPoolFailed',
+        localizeServerError(error) || getLocaleMessage('unknownError')
+      ),
+      'error'
+    )
+  } finally {
+    const next = new Set(poolPendingIds.value)
+    next.delete(song.id)
+    poolPendingIds.value = next
+  }
 }
 
 const deleteSong = async (songId) => {
@@ -2555,7 +2650,7 @@ const handleClickOutside = (event) => {
 }
 
 // 监听器
-watch([searchQuery, statusFilter, sortOption, selectedSemester, selectedPlayTime], () => {
+watch([searchQuery, statusFilter, poolFilter, sortOption, selectedSemester, selectedPlayTime], () => {
   currentPage.value = 1
 })
 
@@ -2570,7 +2665,6 @@ watch(semesterUpdateEvent, async () => {
 onMounted(async () => {
   songsService = useSongs()
   adminService = useAdmin()
-  auth = useAuth()
 
   const { fetchCurrentSemester, currentSemester } = useSemesters()
   await fetchSemesters()

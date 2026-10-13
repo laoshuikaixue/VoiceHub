@@ -2124,7 +2124,9 @@ export const admin = {
       markUnplayed: 'Mark as Unplayed',
       reject: 'Reject Song',
       deleteSong: 'Delete Song',
-      batchReject: 'Reject'
+      batchReject: 'Reject',
+      addToPool: 'Add to Pool',
+      removeFromPool: 'Remove from Pool'
     },
     filters: {
       semester: 'Semester',
@@ -2133,6 +2135,8 @@ export const admin = {
       selectPlayTime: 'Select Time',
       status: 'Status',
       selectStatus: 'Select Status',
+      pool: 'Pool',
+      selectPool: 'Select Pool',
       sort: 'Sort',
       selectSort: 'Select Sort'
     },
@@ -2142,6 +2146,9 @@ export const admin = {
       scheduled: 'Scheduled',
       played: 'Played',
       hasNote: 'Has Remark',
+      allPool: 'All',
+      inPool: 'In Pool',
+      notInPool: 'Not in Pool',
       newest: 'Newest',
       oldest: 'Oldest',
       hotDesc: 'Most Popular',
@@ -2376,7 +2383,10 @@ export const admin = {
       updateSuccess: 'Song updated',
       addSuccess: 'Song added',
       durationRefreshed: 'Duration fetched and filled in',
-      coverRefreshed: 'Cover fetched and filled in'
+      coverRefreshed: 'Cover fetched and filled in',
+      addToPoolSuccess: 'Added to backup pool',
+      addToPoolSkipped: 'This song is already in the backup pool',
+      removeFromPoolSuccess: 'Removed from backup pool'
     },
     errors: {
       remarkVisibilityUpdateFailed: 'Failed to update remark visibility',
@@ -2400,7 +2410,9 @@ export const admin = {
       durationInvalidRange: 'Duration must be between 30 and 3600 seconds',
       durationPlatformRequired: 'Fill in music platform and ID first to refresh duration',
       coverRefreshFailed: (message: string) => `Failed to refresh cover: ${message || 'unknown error'}`,
-      coverPlatformRequired: 'Fill in music platform and ID first to refresh cover'
+      coverPlatformRequired: 'Fill in music platform and ID first to refresh cover',
+      addToPoolFailed: (message: string) => `Add to pool failed: ${message}`,
+      removeFromPoolFailed: (message: string) => `Remove from pool failed: ${message}`
     }
   },
   dataAnalysis: {
