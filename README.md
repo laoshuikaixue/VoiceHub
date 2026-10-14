@@ -362,6 +362,7 @@ NUXT_PUBLIC_HOST=https://voicehub.example.com
 推荐使用 [sops-nix](https://github.com/Mic92/sops-nix) 管理 secrets，避免明文存储在 Nix store 中。
 
 模块会自动设置 `DynamicUser`、`ProtectSystem=strict`、`NoNewPrivileges` 等安全加固。
+运行时可写数据（音源插件产物 `.data`、备份 `backups`、文件日志 `logs`）存放在 `/var/lib/voicehub`（systemd `StateDirectory`，`DynamicUser` 自动管理权限），升级重建不会丢失；只读产物仍来自 `/nix/store`。
 防火墙默认不开放端口，在配置中启用以允许外部访问：
 
 ```nix
