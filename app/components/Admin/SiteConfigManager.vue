@@ -1308,12 +1308,13 @@ const globalLimitPeriods = [
   { key: 'globalMonthlySubmissionLimit', labelKey: 'monthlyLimit' }
 ]
 
-// 留空表示该周期不限制，其余值取非负整数
+// 留空表示该周期不限制；非法值原样提交交服务端校验，前端取整会把 0.5 变成 0（该周期停止投稿）
 const normalizeGlobalSubmissionLimit = (value) => {
-  if (value === '' || value === null || value === undefined || Number.isNaN(Number(value))) {
+  if (value === '' || value === null || value === undefined) {
     return null
   }
-  return Math.max(0, Math.floor(Number(value)))
+  const num = Number(value)
+  return Number.isNaN(num) ? null : num
 }
 
 // 加载配置

@@ -4222,6 +4222,14 @@ const checkSubmissionLimit = () => {
     }
   }
 
+  // 全站投稿总量已满
+  if (submissionStatus.value.globalLimitReached) {
+    return {
+      canSubmit: false,
+      message: locale.value.globalLimitReached
+    }
+  }
+
   // 检查投稿时段名额限制
   if (submissionStatus.value.timeLimitationEnabled && submissionStatus.value.currentTimePeriod) {
     const { expected, accepted } = submissionStatus.value.currentTimePeriod
