@@ -134,6 +134,7 @@
               submissionStatus &&
               (submissionStatus.limitEnabled ||
                 submissionStatus.timeLimitationEnabled ||
+                submissionStatus.globalLimitReached ||
                 submissionStatus.submissionClosed)
             "
             class="submission-status-horizontal"
@@ -157,6 +158,11 @@
                     : locale.submissionClosed
                 }}
               </span>
+            </div>
+
+            <!-- 全站投稿总量已满提示 -->
+            <div v-else-if="submissionStatus.globalLimitReached" class="submission-closed-notice">
+              <span class="closed-text">{{ locale.globalLimitReached }}</span>
             </div>
 
             <!-- 投稿状态内容 -->

@@ -314,6 +314,11 @@ export const systemSettings = pgTable('SystemSettings', {
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   monthlySubmissionLimit: integer('monthlySubmissionLimit'),
+  // 全站投稿总量上限（按北京时间周期统计所有用户），三个周期可同时生效
+  enableGlobalSubmissionLimit: boolean('enableGlobalSubmissionLimit').default(false).notNull(),
+  globalDailySubmissionLimit: integer('globalDailySubmissionLimit'),
+  globalWeeklySubmissionLimit: integer('globalWeeklySubmissionLimit'),
+  globalMonthlySubmissionLimit: integer('globalMonthlySubmissionLimit'),
   // 用户可见播出排期范围
   scheduleDaysBeforeEnabled: boolean('scheduleDaysBeforeEnabled').default(false).notNull(),
   scheduleDaysBefore: integer('scheduleDaysBefore').default(1).notNull(),

@@ -420,6 +420,47 @@
               </div>
             </div>
           </div>
+
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.enableGlobalLimit }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">
+                  {{ locale.enableGlobalLimitDesc }}
+                </p>
+              </div>
+              <input
+                v-model="formData.enableGlobalSubmissionLimit"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+
+            <div
+              v-if="formData.enableGlobalSubmissionLimit"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-3"
+            >
+              <div v-for="period in globalLimitPeriods" :key="period.key">
+                <label :class="labelClass">{{ locale[period.labelKey] }}</label>
+                <div class="relative">
+                  <input
+                    v-model.number="formData[period.key]"
+                    type="number"
+                    min="0"
+                    :placeholder="locale.globalLimitUnlimited"
+                    :class="[inputClass, 'placeholder:text-text-disabled']"
+                  />
+                  <span
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+                    >{{ locale.globalLimitUnit }}</span
+                  >
+                </div>
+              </div>
+              <p class="text-[10px] text-text-tertiary leading-relaxed">
+                {{ locale.globalLimitHint }}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1153,6 +1194,10 @@ const formData = ref({
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
+  enableGlobalSubmissionLimit: false,
+  globalDailySubmissionLimit: null,
+  globalWeeklySubmissionLimit: null,
+  globalMonthlySubmissionLimit: null,
   scheduleDaysBeforeEnabled: false,
   scheduleDaysBefore: 1,
   scheduleDaysAfterEnabled: false,
@@ -1256,6 +1301,21 @@ const currentLimitLabel = computed(() => {
   return `${locale.value?.limitLabelPrefix || '当前启用：'}${limitTypeLabel || '未设置限额'}${locale.value?.limitLabelSuffix || '投稿限制'}`
 })
 
+// 全站投稿总量限额的三个周期，相互独立、可叠加生效
+const globalLimitPeriods = [
+  { key: 'globalDailySubmissionLimit', labelKey: 'dailyLimit' },
+  { key: 'globalWeeklySubmissionLimit', labelKey: 'weeklyLimit' },
+  { key: 'globalMonthlySubmissionLimit', labelKey: 'monthlyLimit' }
+]
+
+// 留空表示该周期不限制，其余值取非负整数
+const normalizeGlobalSubmissionLimit = (value) => {
+  if (value === '' || value === null || value === undefined || Number.isNaN(Number(value))) {
+    return null
+  }
+  return Math.max(0, Math.floor(Number(value)))
+}
+
 // 加载配置
 const loadConfig = async () => {
   try {
@@ -1300,6 +1360,10 @@ const loadConfig = async () => {
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
+      enableGlobalSubmissionLimit: !!data.enableGlobalSubmissionLimit,
+      globalDailySubmissionLimit: data.globalDailySubmissionLimit ?? null,
+      globalWeeklySubmissionLimit: data.globalWeeklySubmissionLimit ?? null,
+      globalMonthlySubmissionLimit: data.globalMonthlySubmissionLimit ?? null,
       scheduleDaysBeforeEnabled: data.scheduleDaysBeforeEnabled === true,
       scheduleDaysBefore: data.scheduleDaysBefore ?? 1,
       scheduleDaysAfterEnabled: data.scheduleDaysAfterEnabled === true,
@@ -1404,6 +1468,17 @@ const saveConfig = async () => {
         activeLimitTab.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
       monthlySubmissionLimit:
         activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null,
+      // 全站总量限额按周期独立提交，留空提交 null
+      enableGlobalSubmissionLimit: !!formData.value.enableGlobalSubmissionLimit,
+      globalDailySubmissionLimit: normalizeGlobalSubmissionLimit(
+        formData.value.globalDailySubmissionLimit
+      ),
+      globalWeeklySubmissionLimit: normalizeGlobalSubmissionLimit(
+        formData.value.globalWeeklySubmissionLimit
+      ),
+      globalMonthlySubmissionLimit: normalizeGlobalSubmissionLimit(
+        formData.value.globalMonthlySubmissionLimit
+      ),
       ...(isSuperAdmin.value
         ? {
             defaultTheme: formData.value.defaultTheme,
