@@ -725,7 +725,8 @@ VoiceHub/
 │       ├── release.yml        # Release 发布流程
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
-│       └── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
+│       ├── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
+│       └── nix-flake-update.yml # Nix flake inputs 月度更新
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
@@ -1502,6 +1503,7 @@ VoiceHub/
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
+│   ├── ci-update-pnpm-hash.py # Nix CI 读写 pnpmDeps 哈希
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
 │   ├── db-sync.js         # 数据库同步
