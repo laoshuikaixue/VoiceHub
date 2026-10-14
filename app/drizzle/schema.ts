@@ -119,6 +119,8 @@ export const songs = pgTable('Song', {
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
+  // 全站投稿总量限额只按 createdAt 窗口计数，缺少以 createdAt 为前导列的索引会退化成全表扫
+  index('song_created_at_idx').on(table.createdAt),
   index('song_requester_id_idx').on(table.requesterId)
 ]);
 

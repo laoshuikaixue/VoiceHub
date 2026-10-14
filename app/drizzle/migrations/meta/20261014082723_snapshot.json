@@ -1,5 +1,5 @@
 {
-  "id": "178ee77e-65e4-4c30-9d76-5666859ec3f1",
+  "id": "afad38c6-848e-40c1-9524-df5219739737",
   "prevId": "8469d503-4369-4013-807c-7671a16e4d00",
   "version": "7",
   "dialect": "postgresql",
@@ -2614,6 +2614,21 @@
               "asc": true,
               "nulls": "last"
             },
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "song_created_at_idx": {
+          "name": "song_created_at_idx",
+          "columns": [
             {
               "expression": "createdAt",
               "isExpression": false,
