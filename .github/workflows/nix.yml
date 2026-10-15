@@ -11,11 +11,6 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      reason:
-        description: 'Reason for manual trigger'
-        required: false
-        default: 'Manual trigger'
 
 concurrency:
   group: nix-${{ github.ref }}
@@ -173,13 +168,15 @@ jobs:
           mod.config.content.systemd.services.voicehub
           EOF
 
-          [ "$(nix eval --impure --file "$expr_file" serviceConfig.WorkingDirectory --raw)" = "/var/lib/voicehub" ] \
-            || { echo "::error::WorkingDirectory 不是 /var/lib/voicehub"; exit 1; }
+          [ "$(nix eval --impure --file "$expr_file" serviceConfig.WorkingDirectory --raw)" = "-/var/lib/voicehub" ] \
+            || { echo "::error::WorkingDirectory 不是 -/var/lib/voicehub"; exit 1; }
           [ "$(nix eval --impure --file "$expr_file" serviceConfig.StateDirectory --raw)" = "voicehub" ] \
             || { echo "::error::StateDirectory 不是 voicehub"; exit 1; }
 
           script="$(nix build --impure --file "$expr_file" serviceConfig.ExecStart --print-out-paths --no-link | tail -n 1)"
-          for keyword in 'ln -sfn' 'STATE_DIRECTORY' 'PGHOST' 'node scripts/deploy.js'; do
+          for keyword in 'ln -sfT' 'STATE_DIRECTORY' 'PGHOST' 'node scripts/deploy.js'; do
             grep -qF "$keyword" "$script" || { echo "::error::启动脚本缺关键字: $keyword"; exit 1; }
           done
+          # pnpm run 依赖 PATH 中的 sh，bash 被移出 makeBinPath 时启动脚本会以 exit -2 静默死亡
+          grep -qE 'export PATH="[^"]*bash' "$script" || { echo "::error::启动脚本 PATH 缺少 bash"; exit 1; }
           echo "✅ NixOS 模块冒烟检查通过"

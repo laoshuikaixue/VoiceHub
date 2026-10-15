@@ -45,7 +45,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          BRANCH="ci/nix-flake-update-$(date +%Y%m%d)"
+          # 附加 run id：同日重跑（schedule + dispatch）不会撞上已存在的分支/PR
+          BRANCH="ci/nix-flake-update-$(date +%Y%m%d)-${GITHUB_RUN_ID}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"

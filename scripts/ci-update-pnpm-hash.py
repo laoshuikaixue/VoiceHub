@@ -5,7 +5,8 @@ import argparse
 import sys
 from pathlib import Path
 
-FLAKE = Path("flake.nix")
+# 锚定仓库根目录，避免依赖调用方 CWD
+FLAKE = Path(__file__).resolve().parent.parent / "flake.nix"
 MARKER = "pnpmDeps = pkgs.fetchPnpmDeps {"
 
 

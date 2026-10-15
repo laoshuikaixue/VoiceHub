@@ -330,10 +330,10 @@
                       # pnpm run 需从 PATH 解析 sh（缺失时报 exit code -2 即 ENOENT 静默死亡），禁止移除 bash
                       # 运行期可写目录（插件产物 .data、备份 backups、文件日志 logs）必须落在
                       # StateDirectory：/nix/store 只读且 ProtectSystem=strict 下无法写入；
-                      # 只读产物以软链引入，升级时 -f 覆盖即可
+                      # 只读产物以软链引入，升级时 -f 覆盖即可；-T 防止目标误为真实目录时嵌套
                       mkdir -p "$STATE/.data/music-source-plugins" "$STATE/backups" "$STATE/logs/archive"
                       for f in .output node_modules package.json pnpm-workspace.yaml pnpm-lock.yaml drizzle.config.ts app scripts; do
-                        ln -sfn "$PKG/$f" "$STATE/$f"
+                        ln -sfT "$PKG/$f" "$STATE/$f"
                       done
                       ${lib.optionalString cfg.database.createLocally ''
                         # postgres.js 不消费 DATABASE_URL 中的 ?host= 参数做 Unix 套接字选路，
@@ -354,7 +354,8 @@
                   "${startScript}";
                 Restart = "always";
                 RestartSec = "5s";
-                WorkingDirectory = "/var/lib/voicehub";
+                # "-" 前缀：目录不存在时不致命，实际工作目录由启动脚本自行切换
+                WorkingDirectory = "-/var/lib/voicehub";
 
                 DynamicUser = true;
                 StateDirectory = "voicehub";
