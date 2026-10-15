@@ -340,6 +340,10 @@ export const common = {
     votes: (count: number) => `${count} 票`,
     requests: (count: number) => `${count} 人申请`,
     requester: '投稿人:',
+    stats: {
+      totalSubmitted: '总投稿数',
+      played: '已播放数'
+    },
     tabs: {
       submitted: '投稿歌曲',
       voted: '投票歌曲',
@@ -1318,6 +1322,7 @@ export const pages = {
     originalLinkOpened: '已为你打开原始链接',
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
+    networkOffline: '网络连接已断开，请检查网络后重试',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
     pluginExcluded: '插件音源已排除',
     pluginInvalidUrl: '插件音源返回的播放链接无效',
@@ -2128,7 +2133,9 @@ export const admin = {
       markUnplayed: '标记为未播放',
       reject: '驳回歌曲',
       deleteSong: '删除歌曲',
-      batchReject: '驳回'
+      batchReject: '驳回',
+      addToPool: '加入备选池',
+      removeFromPool: '移出备选池'
     },
     filters: {
       semester: '学期',
@@ -2137,6 +2144,8 @@ export const admin = {
       selectPlayTime: '选择时段',
       status: '状态',
       selectStatus: '选择状态',
+      pool: '备选池',
+      selectPool: '选择备选池状态',
       sort: '排序',
       selectSort: '选择排序'
     },
@@ -2146,6 +2155,9 @@ export const admin = {
       scheduled: '已排期',
       played: '已播放',
       hasNote: '有备注',
+      allPool: '全部',
+      inPool: '已在池',
+      notInPool: '未入池',
       newest: '最新投稿',
       oldest: '最早投稿',
       hotDesc: '热度最高',
@@ -2380,7 +2392,10 @@ export const admin = {
       updateSuccess: '歌曲信息更新成功',
       addSuccess: '歌曲添加成功',
       durationRefreshed: '时长获取成功，已自动填入',
-      coverRefreshed: '封面获取成功，已自动填入'
+      coverRefreshed: '封面获取成功，已自动填入',
+      addToPoolSuccess: '已加入备选池',
+      addToPoolSkipped: '该歌曲已在备选池中',
+      removeFromPoolSuccess: '已移出备选池'
     },
     errors: {
       remarkVisibilityUpdateFailed: '更新备注可见性失败',
@@ -2404,7 +2419,9 @@ export const admin = {
       durationInvalidRange: '时长需在 30–3600 秒之间',
       durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长',
       coverRefreshFailed: (message: string) => `封面刷新失败: ${message || '未知错误'}`,
-      coverPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新封面'
+      coverPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新封面',
+      addToPoolFailed: (message: string) => `加入备选池失败: ${message}`,
+      removeFromPoolFailed: (message: string) => `移出备选池失败: ${message}`
     }
   },
   dataAnalysis: {
@@ -2584,6 +2601,8 @@ export const admin = {
     loadingTitle: '正在加载排期数据',
     loadingMessage: '请稍候...',
     pendingSongs: '待排歌曲',
+    platformSource: '投稿平台',
+    requesterStats: '投稿 {0} 次 · 播出 {1} 次',
     poolList: '备选列表',
     poolItemName: '备选歌曲',
     addAllPending: '将全部待排歌曲移入备选池',
@@ -2782,7 +2801,14 @@ export const admin = {
       publishScheduleTitle: '发布排期',
       publishScheduleMessage: '确定要发布当前排期吗？发布后将立即公示并发送通知。',
       publishDraftTitle: '发布草稿',
-      publishDraftMessage: (title: string) => `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`
+      publishDraftMessage: (title: string) => `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
+      unspecifiedPlayTimeTitle: '未选择播出时段',
+      unspecifiedPlayTimePublishWarning: (count: number) =>
+        `当前未选择播出时段，当天已有 ${count} 条排期设置了播出时段。继续发布会将当天所有排期合并为全天排期，原有播出时段信息将丢失。如需保留，请先取消并选择对应播出时段。`,
+      unspecifiedPlayTimeDraftWarning: (count: number) =>
+        `当前未选择播出时段，当天已有 ${count} 条排期设置了播出时段。继续保存草稿会将当天所有排期（含已发布排期）转为全天草稿，已发布排期会从公开排期移除，原有播出时段信息将丢失。如需保留，请先取消并选择对应播出时段。`,
+      unspecifiedPlayTimePublishConfirm: '仍要发布',
+      unspecifiedPlayTimeDraftConfirm: '仍要保存'
     },
     messages: {
       remarkVisibilityUpdated: '备注留言可见性已更新',
@@ -4834,6 +4860,8 @@ export const serverErrors = {
   ASTRBOT_SONG_PLATFORM_INVALID: '点歌平台无效',
   ASTRBOT_SONG_SESSION_INVALID: '点歌会话无效或已过期',
   ASTRBOT_SONG_INDEX_INVALID: '点歌序号无效',
+  ASTRBOT_SONG_RESOLVE_FAILED: '分享链接未能识别出歌曲',
+  ASTRBOT_SONG_NOTE_DISABLED: '本站未开启留言功能，无法提交留言',
   ASTRBOT_UMO_BOUND: '此会话已绑定其他账号',
   ASTRBOT_BIND_FAILED: '机器人绑定失败',
   ASTRBOT_UNBIND_FAILED: '机器人解绑失败',

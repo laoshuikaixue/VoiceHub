@@ -1039,6 +1039,18 @@ const handleError = async (error) => {
   // 如果正在处理 fallback，直接返回，不走重试逻辑
   if (isFallbackHandling.value) return
 
+  // 网络断开时停留当前歌曲：不登记坏链、不换源、不计连续失败，等待网络恢复后重试
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    control.hasError.value = true
+    control.isPlaying.value = false
+    control.isLoadingTrack.value = false
+    sync.syncPlayStateToGlobal(false, props.song)
+    if (window.$showNotification) {
+      window.$showNotification(audioPlayerLocale.value.networkOffline, 'error')
+    }
+    return
+  }
+
   // 解码失败/来源不支持说明地址本身失效（如网易外链对无版权歌曲返回 403），
   // 登记后换源重试时解析链路会跳过它，避免反复拿到同一条坏链
   const failedSrc = audioEl.currentSrc || audioEl.src

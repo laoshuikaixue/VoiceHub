@@ -2,6 +2,7 @@ import { computed, readonly, ref } from 'vue'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useLyricSettings } from '~/composables/useLyricSettings'
+import { useLocale } from '~/utils/locale'
 import type { MusicTrackMeta } from '~/utils/musicUrl'
 
 export interface PlayableSong {
@@ -37,6 +38,8 @@ const duration = ref(0) // 歌曲总时长（秒）
 let pendingCoverImage: HTMLImageElement | null = null
 
 export function useAudioPlayer() {
+  const { audioPlayer: audioPlayerLocale } = useLocale()
+
   // 播放歌曲
   const playSong = (song: PlayableSong, playlist?: PlayableSong[], playlistIndex?: number) => {
     // 允许没有 musicUrl 但有 musicPlatform+musicId 的歌曲通过（由 loadSong 动态解析）
@@ -122,6 +125,14 @@ export function useAudioPlayer() {
 
       // 如果没有播放URL，尝试动态获取
       if (nextSong.musicPlatform && nextSong.musicId) {
+        // 网络断开时停留当前歌曲，不再继续消耗歌单
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          if (window.$showNotification) {
+            window.$showNotification(audioPlayerLocale.value.networkOffline, 'error')
+          }
+          return false
+        }
+
         try {
           const { getMusicUrl } = await import('~/utils/musicUrl')
 

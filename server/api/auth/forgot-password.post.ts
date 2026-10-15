@@ -1,3 +1,5 @@
+import { isIP } from 'node:net'
+import type { H3Event } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -7,6 +9,47 @@ import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
+import { publicAddress } from '~~/server/utils/music-source-plugins/network'
+
+// 未配置 NUXT_PUBLIC_HOST 时可安全使用请求 Host 的部署特征：
+// 云平台按域名路由，伪造 Host 的请求到不了应用；局域网/回环地址的链接点击外部攻击者收不到
+const PLATFORM_ROUTED_ENV_KEYS = ['VERCEL', 'NETLIFY', 'CF_PAGES']
+
+const isLocalOrPrivateHostname = (hostname: string) => {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '')
+  if (!normalized) return false
+  if (normalized === 'localhost') return true
+  return isIP(normalized) !== 0 && !publicAddress(normalized)
+}
+
+// 重置链接的站点域名：显式配置优先，未配置时自动识别请求 Host
+const resolveSiteOrigin = (event: H3Event): string => {
+  const config = useRuntimeConfig()
+  if (config.public.host) {
+    const protocol = config.public.host.startsWith('http')
+      ? ''
+      : process.env.NODE_ENV === 'production'
+        ? 'https://'
+        : 'http://'
+    return `${protocol}${config.public.host}`
+  }
+
+  const host = getRequestHost(event)
+  const hostname = (() => {
+    try {
+      return new URL(`${getRequestProtocol(event)}://${host}`).hostname
+    } catch {
+      return ''
+    }
+  })()
+  const platformRouted = PLATFORM_ROUTED_ENV_KEYS.some((key) => Boolean(process.env[key]))
+  if (!platformRouted && !isLocalOrPrivateHostname(hostname)) {
+    console.warn(
+      `[forgot-password] NUXT_PUBLIC_HOST 未配置，重置链接将使用请求 Host（${host}）；直连源站或反向代理透传客户端 Host 的部署下该值可被伪造，建议配置 NUXT_PUBLIC_HOST`
+    )
+  }
+  return `${getRequestProtocol(event)}://${host}`
+}
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)
@@ -70,24 +113,7 @@ export default defineEventHandler(async (event) => {
       }
       const token = JWTEnhanced.sign(payload, { expiresIn: '15m' })
 
-      // 修复 Host Header Injection 风险，优先使用环境变量中配置的主机名
-      const config = useRuntimeConfig()
-      let resetLink = ''
-
-      if (config.public.host) {
-        // 如果配置了主机名，则直接使用
-        const protocol = config.public.host.startsWith('http')
-          ? ''
-          : process.env.NODE_ENV === 'production'
-            ? 'https://'
-            : 'http://'
-        resetLink = `${protocol}${config.public.host}/reset-password?token=${token}`
-      } else {
-        // 降级回退：使用安全的请求头获取方式
-        const host = getRequestHost(event)
-        const finalProtocol = getRequestProtocol(event)
-        resetLink = `${finalProtocol}://${host}/reset-password?token=${token}`
-      }
+      const resetLink = `${resolveSiteOrigin(event)}/reset-password?token=${token}`
 
       const smtp = SmtpService.getInstance()
 

@@ -269,7 +269,8 @@ Podman 默认以当前用户身份运行，无需 `sudo`，安全性更高。但
 
 VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
 
-- 从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
+- 从 [GitHub Releases](https://github.com/laoshuikaixue/VoiceHub/releases) 获取最新版本（`.fpk` 随 Release 附带）
+- 或从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
 
 ### Nix / NixOS
 
@@ -719,6 +720,8 @@ VoiceHub/
 ├── .github/                   # GitHub 配置目录
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
+│       ├── db-migrate-test.yml # 空库全量数据库迁移校验
+│       ├── release.yml        # Release 发布流程
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
 │       └── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
@@ -1013,6 +1016,7 @@ VoiceHub/
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
+│       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
 │       ├── timeUtils.ts       # 时间工具
 │       ├── user-archive.ts    # 账号归档判定与筛选参数解析
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
@@ -1280,7 +1284,10 @@ VoiceHub/
 │   │   │   │   ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）
 │   │   │   │   ├── ack.post.ts      # 回执投递结果（claimToken 原样带回）
 │   │   │   │   ├── song-search.post.ts # 机器人侧点歌搜索
+│   │   │   │   ├── song-sources.get.ts # 机器人侧可用音源平台列表
+│   │   │   │   ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
 │   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
+│   │   │   │   ├── password-reset.post.ts # 机器人侧两步确认重置密码
 │   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
@@ -1403,6 +1410,13 @@ VoiceHub/
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
 │   │   ├── astrbot-adapters.js # 适配器平台映射（绑定鉴权与恢复共用）
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
+│   │   ├── astrbot-group.ts # 群广播目标与群事件配置规范化
+│   │   ├── astrbot-payload.ts # 推送请求体预算与分块
+│   │   ├── astrbot-pull.ts # pull 模式判定、取件序列化与回执校验
+│   │   ├── astrbot-share-link.ts # 点歌分享链接识别与 ID 提取
+│   │   ├── astrbot-song-search.ts # 机器人点歌统一音源搜索与候选归一化
+│   │   ├── astrbot-song-sources.ts # 机器人点歌各音源原始搜索取数
+│   │   ├── astrbot-password-reset.ts # 机器人重置密码两步确认密封令牌
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
 │   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复

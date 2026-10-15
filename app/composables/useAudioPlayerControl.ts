@@ -13,6 +13,14 @@ const VOLUME_STORAGE_KEY = 'voicehub_player_volume'
 
 const clampVolume = (value: number): number => Math.max(0, Math.min(1, value))
 
+/** 将感知音量位置转换为线性增益 */
+export const volumePositionToGain = (position: number): number =>
+  Math.max(0, Math.min(1, position)) ** 3
+
+/** 将线性增益转换为感知音量位置，保留已有存档的实际响度 */
+export const volumeGainToPosition = (gain: number): number =>
+  Math.cbrt(Math.max(0, Math.min(1, gain)))
+
 const readStoredVolume = (): number => {
   if (!import.meta.client) return 1
   try {

@@ -329,6 +329,10 @@ export const common = {
     votes: (count: number) => `${count} votes`,
     requests: (count: number) => `${count} requests`,
     requester: 'Requester:',
+    stats: {
+      totalSubmitted: 'Submissions',
+      played: 'Played'
+    },
     tabs: {
       submitted: 'Submitted Songs',
       voted: 'Voted Songs',
@@ -1307,6 +1311,7 @@ export const pages = {
     originalLinkOpened: 'The original link was opened',
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
+    networkOffline: 'Network disconnected. Check your connection and try again.',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
     pluginExcluded: 'Source plugin is excluded',
     pluginInvalidUrl: 'Source plugin returned an invalid playback link',
@@ -2119,7 +2124,9 @@ export const admin = {
       markUnplayed: 'Mark as Unplayed',
       reject: 'Reject Song',
       deleteSong: 'Delete Song',
-      batchReject: 'Reject'
+      batchReject: 'Reject',
+      addToPool: 'Add to Pool',
+      removeFromPool: 'Remove from Pool'
     },
     filters: {
       semester: 'Semester',
@@ -2128,6 +2135,8 @@ export const admin = {
       selectPlayTime: 'Select Time',
       status: 'Status',
       selectStatus: 'Select Status',
+      pool: 'Pool',
+      selectPool: 'Select Pool',
       sort: 'Sort',
       selectSort: 'Select Sort'
     },
@@ -2137,6 +2146,9 @@ export const admin = {
       scheduled: 'Scheduled',
       played: 'Played',
       hasNote: 'Has Remark',
+      allPool: 'All',
+      inPool: 'In Pool',
+      notInPool: 'Not in Pool',
       newest: 'Newest',
       oldest: 'Oldest',
       hotDesc: 'Most Popular',
@@ -2371,7 +2383,10 @@ export const admin = {
       updateSuccess: 'Song updated',
       addSuccess: 'Song added',
       durationRefreshed: 'Duration fetched and filled in',
-      coverRefreshed: 'Cover fetched and filled in'
+      coverRefreshed: 'Cover fetched and filled in',
+      addToPoolSuccess: 'Added to backup pool',
+      addToPoolSkipped: 'This song is already in the backup pool',
+      removeFromPoolSuccess: 'Removed from backup pool'
     },
     errors: {
       remarkVisibilityUpdateFailed: 'Failed to update remark visibility',
@@ -2395,7 +2410,9 @@ export const admin = {
       durationInvalidRange: 'Duration must be between 30 and 3600 seconds',
       durationPlatformRequired: 'Fill in music platform and ID first to refresh duration',
       coverRefreshFailed: (message: string) => `Failed to refresh cover: ${message || 'unknown error'}`,
-      coverPlatformRequired: 'Fill in music platform and ID first to refresh cover'
+      coverPlatformRequired: 'Fill in music platform and ID first to refresh cover',
+      addToPoolFailed: (message: string) => `Add to pool failed: ${message}`,
+      removeFromPoolFailed: (message: string) => `Remove from pool failed: ${message}`
     }
   },
   dataAnalysis: {
@@ -2575,6 +2592,8 @@ export const admin = {
     loadingTitle: 'Loading schedule data',
     loadingMessage: 'Please wait...',
     pendingSongs: 'Pending Songs',
+    platformSource: 'Source platform',
+    requesterStats: '{0} submitted · {1} played',
     poolList: 'Backup List',
     poolItemName: 'backup songs',
     addAllPending: 'Move all pending songs to backup pool',
@@ -2773,7 +2792,14 @@ export const admin = {
       publishScheduleTitle: 'Publish Schedule',
       publishScheduleMessage: 'Publish the current schedule? It will be visible immediately and notifications will be sent.',
       publishDraftTitle: 'Publish Draft',
-      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`
+      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`,
+      unspecifiedPlayTimeTitle: 'No Play Time Selected',
+      unspecifiedPlayTimePublishWarning: (count: number) =>
+        `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will merge all schedules for the day into an all-day schedule and discard their play time info. To keep it, cancel and select a play time first.`,
+      unspecifiedPlayTimeDraftWarning: (count: number) =>
+        `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will save all schedules for the day (including published ones) as all-day drafts, remove published schedules from the public schedule, and discard their play time info. To keep it, cancel and select a play time first.`,
+      unspecifiedPlayTimePublishConfirm: 'Publish Anyway',
+      unspecifiedPlayTimeDraftConfirm: 'Save Anyway'
     },
     messages: {
       remarkVisibilityUpdated: 'Remark visibility updated',
@@ -4825,6 +4851,8 @@ export const serverErrors = {
   ASTRBOT_SONG_PLATFORM_INVALID: 'Invalid song platform',
   ASTRBOT_SONG_SESSION_INVALID: 'Song request session is invalid or expired',
   ASTRBOT_SONG_INDEX_INVALID: 'Invalid song selection number',
+  ASTRBOT_SONG_RESOLVE_FAILED: 'Could not identify a song from the shared link',
+  ASTRBOT_SONG_NOTE_DISABLED: 'Remarks are not enabled on this site',
   ASTRBOT_UMO_BOUND: 'This chat is already linked to another account',
   ASTRBOT_BIND_FAILED: 'Could not link this chat',
   ASTRBOT_UNBIND_FAILED: 'Could not unlink this chat',

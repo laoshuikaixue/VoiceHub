@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, eq, gt, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 import { db } from '~/drizzle/db'
 import { astrbotOutbox, astrbotBindings, notificationSettings } from '~/drizzle/schema'
@@ -72,7 +72,7 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
     await tx.update(astrbotOutbox).set({ failedAt: now, leasedUntil: null, claimToken: null,
       lastError: '投递超过重试上限' }).where(and(
       isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt),
-      sql`${astrbotOutbox.attempts} >= ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
+      gte(astrbotOutbox.attempts, ASTRBOT_OUTBOX_MAX_ATTEMPTS),
       or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now))
     ))
     const claimable = await tx.select({ id: astrbotOutbox.id }).from(astrbotOutbox)
@@ -81,7 +81,7 @@ export async function claimAstrbotOutbox(limit = ASTRBOT_OUTBOX_MAX_CLAIM) {
         isNull(astrbotOutbox.failedAt),
         // 关闭群广播时只领取私聊行，群事件保留至重新启用。
         settings.astrbotBroadcastEnabled ? undefined : eq(astrbotOutbox.broadcast, false),
-        sql`${astrbotOutbox.attempts} < ${ASTRBOT_OUTBOX_MAX_ATTEMPTS}`,
+        lt(astrbotOutbox.attempts, ASTRBOT_OUTBOX_MAX_ATTEMPTS),
         or(isNull(astrbotOutbox.leasedUntil), lt(astrbotOutbox.leasedUntil, now)),
         // 冷却未过的群条目留在队列里等合并，不得提前投递。
         or(isNull(astrbotOutbox.notifyAfter), lt(astrbotOutbox.notifyAfter, now))
@@ -143,7 +143,7 @@ export async function completeAstrbotOutbox(id: number, claimToken: string) {
   const updated = await db.update(astrbotOutbox)
     .set({ deliveredAt: now, leasedUntil: null, claimToken: null, lastError: null })
     .where(and(eq(astrbotOutbox.id, id), eq(astrbotOutbox.claimToken, claimToken),
-      sql`${astrbotOutbox.leasedUntil} > ${now}`, isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
+      gt(astrbotOutbox.leasedUntil, now), isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
     .returning({ id: astrbotOutbox.id })
   return updated.length === 1
 }
@@ -160,7 +160,7 @@ export async function failAstrbotOutbox(id: number, claimToken: string, reason: 
     const [row] = await tx.select({ umos: astrbotOutbox.umos, broadcast: astrbotOutbox.broadcast, attempts: astrbotOutbox.attempts })
       .from(astrbotOutbox)
       .where(and(eq(astrbotOutbox.id, id), eq(astrbotOutbox.claimToken, claimToken),
-        sql`${astrbotOutbox.leasedUntil} > ${now}`, isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
+        gt(astrbotOutbox.leasedUntil, now), isNull(astrbotOutbox.deliveredAt), isNull(astrbotOutbox.failedAt)))
       .for('update')
     if (!row) return false
     if (failedUmos && (!Array.isArray(row.umos) ||

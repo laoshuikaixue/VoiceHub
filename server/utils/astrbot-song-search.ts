@@ -15,9 +15,6 @@ export const ASTRBOT_SONG_SOURCES = MUSIC_SOURCE_PLATFORMS
 
 export type AstrbotSongSource = typeof ASTRBOT_SONG_SOURCES[number]
 
-/** 默认音源：缺省与站点搜索默认值保持一致（网易云音乐）。 */
-export const DEFAULT_ASTRBOT_SONG_SOURCE: AstrbotSongSource = 'netease'
-
 /** 关键词长度上限（trim 后）。 */
 export const ASTRBOT_SONG_KEYWORD_MAX_LENGTH = 100
 
@@ -60,6 +57,27 @@ export function parseAstrbotSongSource(value: unknown): AstrbotSongSource | null
   return typeof value === 'string' && (ASTRBOT_SONG_SOURCES as readonly string[]).includes(value)
     ? value as AstrbotSongSource
     : null
+}
+
+/**
+ * 容错解析站点 platformOrder：非法 JSON/空数组回退白名单全量，
+ * 再补齐白名单缺失项（与 platform-config 公开接口同口径）。
+ */
+export function parseAstrbotPlatformOrder(value: unknown): AstrbotSongSource[] {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(typeof value === 'string' ? value : '[]')
+  } catch {
+    parsed = null
+  }
+  const valid = (Array.isArray(parsed) ? parsed : [])
+    .filter((p) => (ASTRBOT_SONG_SOURCES as readonly string[]).includes(p as string)) as AstrbotSongSource[]
+  if (valid.length === 0) return [...ASTRBOT_SONG_SOURCES]
+  const merged = [...valid]
+  for (const p of ASTRBOT_SONG_SOURCES) {
+    if (!merged.includes(p)) merged.push(p)
+  }
+  return merged
 }
 
 function toText(value: unknown) {

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 // 将服务依赖替换为最小桩，直接运行真实领取与入队逻辑，而非检查源码字符串。
 const source = fileURLToPath(new URL('../../server/services/astrbotOutboxService.ts', import.meta.url))
 const modules: Record<string, string> = {
-  'drizzle-orm': `export const and=(...args)=>args, asc=x=>x, eq=(a,b)=>[a,b], inArray=(a,b)=>[a,b], isNull=x=>x, lt=(a,b)=>[a,b], or=(...args)=>args, sql=(strings,...values)=>strings;`,
+  'drizzle-orm': `export const and=(...args)=>args, asc=x=>x, eq=(a,b)=>[a,b], gt=(a,b)=>[a,b], gte=(a,b)=>[a,b], inArray=(a,b)=>[a,b], isNull=x=>x, lt=(a,b)=>[a,b], or=(...args)=>args, sql=(strings,...values)=>strings;`,
   '~/drizzle/schema': `export const astrbotOutbox={id:'id',broadcast:'broadcast',attempts:'attempts',deliveredAt:'deliveredAt',failedAt:'failedAt',leasedUntil:'leasedUntil'}; export const astrbotBindings={umo:'umo',userId:'userId',boundAt:'boundAt',adapter:'adapter',platform:'platform'}; export const notificationSettings={userId:'userId',enabled:'enabled'};`,
   '~/drizzle/db': `export const db=globalThis.__outboxDb;`,
   '~~/server/utils/serverTime': `export const getServerDate=()=>new Date('2026-09-25T00:00:00Z');`,
