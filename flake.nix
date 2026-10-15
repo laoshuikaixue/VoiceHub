@@ -326,7 +326,8 @@
                       PKG="${cfg.package}/lib/voicehub"
                       STATE="''${STATE_DIRECTORY:-/var/lib/voicehub}"
                       cd "$STATE"
-                      export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm ]}:$PATH"
+                      export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm pkgs.bash ]}:$PATH"
+                      # pnpm run 需从 PATH 解析 sh（缺失时报 exit code -2 即 ENOENT 静默死亡），禁止移除 bash
                       # 运行期可写目录（插件产物 .data、备份 backups、文件日志 logs）必须落在
                       # StateDirectory：/nix/store 只读且 ProtectSystem=strict 下无法写入；
                       # 只读产物以软链引入，升级时 -f 覆盖即可
