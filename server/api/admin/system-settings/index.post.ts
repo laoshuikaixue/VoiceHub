@@ -366,6 +366,16 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
     }
 
+    if (body.enableGlobalSubmissionLimit !== undefined) {
+      if (typeof body.enableGlobalSubmissionLimit !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableGlobalSubmissionLimit 必须是布尔值'
+        })
+      }
+      updateData.enableGlobalSubmissionLimit = body.enableGlobalSubmissionLimit
+    }
+
     // 点歌券点歌相关设置
     if (body.enableCardCodeRequests !== undefined) {
       if (typeof body.enableCardCodeRequests !== 'boolean') {
@@ -485,6 +495,22 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
+    }
+
+    // 全站总量限额的三个周期可叠加生效，各自独立校验
+    for (const field of [
+      'globalDailySubmissionLimit',
+      'globalWeeklySubmissionLimit',
+      'globalMonthlySubmissionLimit'
+    ] as const) {
+      if (body[field] === undefined) continue
+      if (body[field] !== null && (!Number.isInteger(body[field]) || body[field] < 0)) {
+        throw createError({
+          statusCode: 400,
+          message: `${field} 必须是非负整数或null`
+        })
+      }
+      updateData[field] = body[field]
     }
 
     if (body.scheduleDaysBeforeEnabled !== undefined) {

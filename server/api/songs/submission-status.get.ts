@@ -2,7 +2,11 @@ import { db } from '~/drizzle/db'
 import { requestTimes } from '~/drizzle/schema'
 import { and, eq, gt, lte } from 'drizzle-orm'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
-import { getSubmissionCount, isCardCodeLimitBypassActive } from '~~/server/utils/submissionLimit'
+import {
+  findReachedGlobalSubmissionLimit,
+  getSubmissionCount,
+  isCardCodeLimitBypassActive
+} from '~~/server/utils/submissionLimit'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -35,6 +39,7 @@ export default defineEventHandler(async (event) => {
       weeklyRemaining: null,
       monthlyRemaining: null,
       submissionClosed: !!(systemSettingsData?.forceBlockAllRequests && !isAdmin),
+      globalLimitReached: false,
       timeLimitationEnabled: systemSettingsData?.enableRequestTimeLimitation || false,
       currentTimePeriod: null
     }
@@ -61,6 +66,12 @@ export default defineEventHandler(async (event) => {
         // 如果没有活跃时段且不是管理员，则视为投稿已关闭
         status.submissionClosed = true
       }
+    }
+
+    // 全站总量限额独立于按用户的投稿限额，必须在 limitEnabled 提前返回之前计算
+    if (!isAdmin) {
+      const reachedGlobalLimit = await findReachedGlobalSubmissionLimit(db, systemSettingsData)
+      status.globalLimitReached = !!reachedGlobalLimit
     }
 
     if (!status.limitEnabled) {
