@@ -17,8 +17,11 @@ import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
+  findReachedGlobalSubmissionLimit,
+  getActiveGlobalSubmissionLimits,
   isCardCodeLimitBypassActive,
-  isLimitReached
+  isLimitReached,
+  type LimitType
 } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
@@ -429,6 +432,33 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
             statusCode: 400,
             message: `${labelMap[limitType]}投稿限额为${effectiveLimit}首，您${timeMap[limitType]}已达到限额`
           })
+        }
+      }
+
+      // 全站投稿总量限额：对所有用户合计计数，管理员豁免
+      // 先解析生效周期，三值全空（无周期可拦）时跳过，避免零收益的全站串行加锁
+      if (!isAdmin && getActiveGlobalSubmissionLimits(systemSettingsData).length > 0) {
+        // 全局计数必须串行，否则并发请求会读到相同计数并同时越过上限
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('global_submission_limit'))`)
+
+        const reachedLimit = await findReachedGlobalSubmissionLimit(
+          tx as any,
+          systemSettingsData
+        )
+
+        if (reachedLimit) {
+          const codeMap: Record<LimitType, string> = {
+            daily: SERVER_ERROR_CODES.SONG_GLOBAL_DAILY_LIMIT_REACHED,
+            weekly: SERVER_ERROR_CODES.SONG_GLOBAL_WEEKLY_LIMIT_REACHED,
+            monthly: SERVER_ERROR_CODES.SONG_GLOBAL_MONTHLY_LIMIT_REACHED
+          }
+
+          throw createApiError(
+            403,
+            codeMap[reachedLimit.type],
+            `全站投稿总量已达上限（${reachedLimit.limit} 首）`,
+            { params: [reachedLimit.limit] }
+          )
         }
       }
 

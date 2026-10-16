@@ -1,0 +1,58 @@
+# Nix flake inputs 月度更新：nix flake update 后构建验证，通过则开 PR，人工合并。
+# 只开 PR 不直接推送，避免无人值守改动线上构建。
+
+name: Nix Flake Update
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: 安装 Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: 更新 flake inputs 并构建验证
+        id: update
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix flake update
+          if git diff --quiet -- flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "flake inputs 无变化，无需开 PR。"
+            exit 0
+          fi
+          nix build .#voicehub --no-link --print-build-logs
+          nix flake check
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: 开更新 PR
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # 附加 run id：同日重跑（schedule + dispatch）不会撞上已存在的分支/PR
+          BRANCH="ci/nix-flake-update-$(date +%Y%m%d)-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add flake.lock
+          git commit -m "chore(nix): 更新 flake inputs"
+          git push origin "$BRANCH"
+          gh pr create --title "chore(nix): 更新 flake inputs" \
+            --body "月度自动更新，已通过 nix build 与 nix flake check，请人工确认后合并。" \
+            --base main --head "$BRANCH"
