@@ -1555,13 +1555,21 @@ onMounted(async () => {
     activeTab.value = tabFromQuery
   }
 
-  // 遮罩淡出：首访走最短停留，非首访直接放行
+  // 遮罩淡出：SSR 快开不做人工停留，直接靠淡出收场；否则首访走最短停留，非首访直接放行
   const dismissOverlay = async () => {
+    if (bootSlowTimer) {
+      clearTimeout(bootSlowTimer)
+      bootSlowTimer = null
+    }
+
+    // SSR 已灌入首屏数据：内容即时可见，仅保留一次淡出过渡，不再硬等最短时间
+    if (ssrPrimed.value) {
+      setBootState({ progress: BOOT_PROGRESS.COMPLETE, message: locale.value.bootMessages.COMPLETE })
+      showBootLoading.value = false
+      return
+    }
+
     if (isFirstVisit) {
-      if (bootSlowTimer) {
-        clearTimeout(bootSlowTimer)
-        bootSlowTimer = null
-      }
       await finishBootLoading(bootStartedAt)
     } else {
       showBootLoading.value = false
@@ -1993,8 +2001,8 @@ if (
 <style scoped>
 .home-boot-loader-leave-active {
   transition:
-    opacity 420ms ease,
-    filter 420ms ease;
+    opacity 240ms ease,
+    filter 240ms ease;
 }
 
 .home-boot-loader-leave-to {
