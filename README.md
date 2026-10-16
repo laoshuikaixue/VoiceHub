@@ -362,6 +362,7 @@ NUXT_PUBLIC_HOST=https://voicehub.example.com
 推荐使用 [sops-nix](https://github.com/Mic92/sops-nix) 管理 secrets，避免明文存储在 Nix store 中。
 
 模块会自动设置 `DynamicUser`、`ProtectSystem=strict`、`NoNewPrivileges` 等安全加固。
+运行时可写数据（音源插件产物 `.data`、备份 `backups`、文件日志 `logs`）存放在 `/var/lib/voicehub`（systemd `StateDirectory`，`DynamicUser` 自动管理权限），升级重建不会丢失；只读产物仍来自 `/nix/store`。包内 `scripts/` 仅包含运行时脚本（deploy、db-sync、create-admin、build 等）；`pnpm run clear-db`、`pnpm run safe-migrate`、`pnpm run db:generate` 等维护命令需在源码仓库中执行。
 防火墙默认不开放端口，在配置中启用以允许外部访问：
 
 ```nix
@@ -724,7 +725,8 @@ VoiceHub/
 │       ├── release.yml        # Release 发布流程
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
-│       └── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
+│       ├── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
+│       └── nix-flake-update.yml # Nix flake inputs 月度更新
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
@@ -1501,6 +1503,7 @@ VoiceHub/
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
+│   ├── ci-update-pnpm-hash.py # Nix CI 读写 pnpmDeps 哈希
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
 │   ├── db-sync.js         # 数据库同步

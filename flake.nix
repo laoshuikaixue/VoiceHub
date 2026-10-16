@@ -67,24 +67,31 @@
             installPhase = ''
               runHook preInstall
 
-              mkdir -p "$out/lib/voicehub" "$out/bin"
+              # 运行时只需要生产依赖，devDependencies（typescript/eslint/vue-tsc 等）留在构建期
+              pnpm prune --prod
+
+              mkdir -p "$out/lib/voicehub" "$out/bin" "$out/lib/voicehub/scripts"
 
               cp -r .output            "$out/lib/voicehub/"
               cp -r node_modules       "$out/lib/voicehub/"
-              cp package.json          "$out/lib/voicehub/"
-              cp drizzle.config.ts     "$out/lib/voicehub/"
+              cp package.json pnpm-workspace.yaml pnpm-lock.yaml drizzle.config.ts "$out/lib/voicehub/"
 
               mkdir -p "$out/lib/voicehub/app/drizzle"
               cp -r app/drizzle/.      "$out/lib/voicehub/app/drizzle/"
 
-              cp -r scripts            "$out/lib/voicehub/"
+              # Nix 运行时只走 deploy.js → db-sync.js/create-admin.js（以及手动构建时的 build.js）；
+              # netlify-build/safe-migrate/redis-scan 等平台脚本不在此拷贝
+              cp scripts/deploy.js scripts/db-sync.js scripts/create-admin.js \
+                scripts/build.js scripts/build-music-source-plugins.ts \
+                scripts/postinstall.js scripts/package.json \
+                "$out/lib/voicehub/scripts/"
 
+              # wrapper 只启动 .output/server，不经过 deploy.js：
+              # PREBUILT/SKIP_* 由 NixOS 模块的 systemd 环境设置，此处仅保留 NODE_ENV
               makeWrapper ${pkgs.nodejs_24}/bin/node "$out/bin/voicehub" \
                 --add-flags ".output/server/index.mjs" \
                 --chdir "$out/lib/voicehub" \
-                --set PREBUILT true \
-                --set NODE_ENV production \
-                --prefix PATH : ${pnpm}/bin
+                --set NODE_ENV production
 
               runHook postInstall
             '';
@@ -137,7 +144,9 @@
               program = "${voicehub}/bin/voicehub";
             };
 
-            # Impure build helper — use this to compute the pnpmDeps hash
+            # Impure build helper — use this to compute the pnpmDeps hash.
+            # 默认 node-server/hot 预设无需 DATABASE_URL；若改用 vercel/netlify 等
+            # snapshot 预设构建插件快照，需先 export DATABASE_URL 再执行
             build = {
               type = "app";
               program =
@@ -156,6 +165,8 @@
                       echo "正在构建 VoiceHub v${version} ..."
 
                       export HOME="''${HOME:-/tmp}"
+                      export CI=true
+                      export NUXT_TELEMETRY_DISABLED=1
                       export NODE_OPTIONS="--max-old-space-size=6144"
                       export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
 
@@ -285,6 +296,7 @@
               documentation = [ "https://github.com/laoshuikaixue/VoiceHub" ];
 
               unitConfig = {
+                # 防 Restart=always 在部署失败时无限热循环刷日志（历史原因为防 script 挂死，现为通用熔断）
                 StartLimitIntervalSec = 600;
                 StartLimitBurst = 3;
               };
@@ -311,28 +323,43 @@
                   let
                     startScript = pkgs.writeShellScript "voicehub-start" ''
                       set -e
-                      cd "${cfg.package}/lib/voicehub"
-                      export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm pkgs.util-linux pkgs.bash ]}:$PATH"
-                      export SHELL="$(command -v bash)"
+                      PKG="${cfg.package}/lib/voicehub"
+                      STATE="''${STATE_DIRECTORY:-/var/lib/voicehub}"
+                      cd "$STATE"
+                      export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm pkgs.bash ]}:$PATH"
+                      # pnpm run 需从 PATH 解析 sh（缺失时报 exit code -2 即 ENOENT 静默死亡），禁止移除 bash
+                      # 运行期可写目录（插件产物 .data、备份 backups、文件日志 logs）必须落在
+                      # StateDirectory：/nix/store 只读且 ProtectSystem=strict 下无法写入；
+                      # 只读产物以软链引入，升级时 -f 覆盖即可；-T 防止目标误为真实目录时嵌套
+                      mkdir -p "$STATE/.data/music-source-plugins" "$STATE/backups" "$STATE/logs/archive"
+                      for f in .output node_modules package.json pnpm-workspace.yaml pnpm-lock.yaml drizzle.config.ts app scripts; do
+                        ln -sfT "$PKG/$f" "$STATE/$f"
+                      done
                       ${lib.optionalString cfg.database.createLocally ''
+                        # postgres.js 不消费 DATABASE_URL 中的 ?host= 参数做 Unix 套接字选路，
+                        # 空主机 + PGHOST 才会走 /run/postgresql/.s.PGSQL.5432，两者缺一不可
                         export DATABASE_URL="postgresql:///${cfg.database.name}"
                         export PGHOST="${cfg.database.host}"
                       ''}
                       ${lib.optionalString cfg.runDeployScript ''
-                        script -q -c "node scripts/deploy.js" /dev/null || {
+                        # deploy.js/db-sync.js 自带 DRIZZLE_KIT_FORCE + CI 非交互，无需 script(1) 包裹 pty
+                        node scripts/deploy.js || {
                           echo "❌ 部署脚本执行失败"
                           exit 1
                         }
                       ''}
-                      exec ${cfg.package}/bin/voicehub
+                      exec ${nodejs}/bin/node "$PKG/.output/server/index.mjs"
                     '';
                   in
                   "${startScript}";
                 Restart = "always";
                 RestartSec = "5s";
-                WorkingDirectory = "${cfg.package}/lib/voicehub";
+                # "-" 前缀：目录不存在时不致命，实际工作目录由启动脚本自行切换
+                WorkingDirectory = "-/var/lib/voicehub";
 
                 DynamicUser = true;
+                StateDirectory = "voicehub";
+                StateDirectoryMode = "0700";
 
                 EnvironmentFile = lib.mkIf (cfg.environmentFile != null) [ cfg.environmentFile ];
 
