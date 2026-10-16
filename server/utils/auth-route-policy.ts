@@ -35,6 +35,8 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/auth/forgot-password', methods: ['POST'] },
   { path: '/api/auth/reset-password', methods: ['POST'] },
   { path: '/api/auth/captcha', methods: GET_METHODS },
+  // ESA 人机验证公共验证接口（登录/注册前置流程匿名签发凭证）
+  { path: '/api/captcha/verify', methods: ['POST'] },
   { path: '/api/semesters/current', methods: GET_METHODS },
   { path: '/api/play-times', methods: GET_METHODS },
   { path: '/api/schedules/public', methods: GET_METHODS },

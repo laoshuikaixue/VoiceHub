@@ -240,7 +240,7 @@ export const useSiteConfig = () => {
     return Number.isInteger(value) && value >= 0 ? value : 3
   })
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
-  // ESA 场景 ID 规则列表（接口 + 域名），非法存储值回退空数组
+  // ESA 场景 ID 规则列表（域名→场景，统一验证接口），旧版按接口存储的条目会被过滤作废
   const esaCaptchaScenes = computed(() => parseEsaCaptchaScenes(siteConfig.value.esaCaptchaScenes))
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({

@@ -679,8 +679,7 @@
                       </button>
                     </div>
                     <div class="space-y-2">
-                      <div class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
-                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaEndpoint }}</span>
+                      <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
                         <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaHost }}</span>
                         <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaSceneId }}</span>
                         <span aria-hidden="true" />
@@ -688,17 +687,8 @@
                       <div
                         v-for="(scene, index) in formData.esaCaptchaScenes"
                         :key="index"
-                        class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
+                        class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
                       >
-                        <div class="min-w-0">
-                          <CustomSelect
-                            v-model="scene.endpoint"
-                            :options="esaEndpointOptions"
-                            :disabled="!formData.captchaEnabled"
-                          />
-                          <!-- 该行路径可直接粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
-                          <code class="block mt-1 truncate text-[10px] text-text-tertiary">{{ esaEndpointPath(scene.endpoint) }}</code>
-                        </div>
                         <input
                           v-model="scene.host"
                           type="text"
@@ -723,8 +713,13 @@
                         </button>
                       </div>
                     </div>
+                    <!-- 域名路径供管理员粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
                     <p class="text-[10px] text-text-tertiary leading-relaxed mt-2">
                       {{ locale.esaCaptchaScenesDesc }}
+                    </p>
+                    <code class="block mt-1 text-[10px] text-text-tertiary">{{ ESA_CAPTCHA_VERIFY_PATH }}</code>
+                    <p v-if="esaCaptchaStaleDetected" class="text-[10px] text-warning leading-relaxed mt-2">
+                      {{ locale.esaCaptchaStaleNotice }}
                     </p>
                   </div>
                   <div>
@@ -1012,7 +1007,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
-import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_ENDPOINT_PATHS, ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
+import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_VERIFY_PATH, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
@@ -1131,30 +1126,33 @@ const parseLegalDocuments = (value) => {
   }
 }
 
-// ESA 场景 ID 规则：一条 ESA 规则只覆盖一个接口 + 一个域名，登录与注册需分别登记
-const createEsaCaptchaScene = (endpoint = 'login') => ({
+// ESA 场景统一绑定公共验证接口 /api/captcha/verify，按域名成组配置（endpoint 固定 common）
+const createEsaCaptchaScene = (endpoint = 'common') => ({
   endpoint,
   host: ESA_CAPTCHA_ANY_HOST,
   sceneId: ''
 })
+// 旧版按接口（login/register）存储的场景在新口径下已失效，需提示管理员重建
+const esaCaptchaStaleDetected = ref(false)
 const parseEsaScenes = (value) => {
-  const scenes = parseEsaCaptchaScenes(value)
+  let rawArr = []
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    if (Array.isArray(parsed)) rawArr = parsed
+  } catch {
+    rawArr = []
+  }
+  const scenes = parseEsaCaptchaScenes(value).map((scene) => ({ ...scene, endpoint: 'common' }))
+  esaCaptchaStaleDetected.value = rawArr.some(
+    (item) => item && item.endpoint && item.endpoint !== 'common' && item.sceneId
+  )
   return scenes.length > 0 ? scenes : [createEsaCaptchaScene()]
 }
-const esaEndpointOptions = computed(() => {
-  const labels = {
-    login: locale.value?.esaCaptchaEndpointLogin,
-    register: locale.value?.esaCaptchaEndpointRegister
-  }
-  return ESA_CAPTCHA_ENDPOINTS.map((endpoint) => ({ value: endpoint, label: labels[endpoint] || endpoint }))
-})
 const esaSceneInputClass =
   'w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50'
-// 接口对应的服务端路径，与 ESA 控制台「需验签的接口」逐字对应
-const esaEndpointPath = (endpoint) => ESA_CAPTCHA_ENDPOINT_PATHS[endpoint] || ''
 
 const addEsaCaptchaScene = () => {
-  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene('register'))
+  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene())
 }
 
 const removeEsaCaptchaScene = (index) => {

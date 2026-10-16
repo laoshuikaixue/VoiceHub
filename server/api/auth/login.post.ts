@@ -16,10 +16,8 @@ import {
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
-import { getRequestHostname } from '~~/server/utils/request-utils'
-import { resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
+import { verifyEsaCaptchaPass } from '~~/server/utils/esa-captcha-pass'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
-import { ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
@@ -100,13 +98,9 @@ export default defineEventHandler(async (event) => {
           throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
         }
       } else if (captchaSettings.provider === 'esa') {
-        // ESA 验签在边缘完成，源站无服务端验签接口，只能判断验签参数是否随请求到达
-        // 前提：源站必须只接受 ESA 回源流量，否则直连源站即可附带任意请求头绕过验证
-        // 当前接口+域名未配置可用场景 ID 时，边缘不会拦截该请求，视为未开启人机验证，不拦截登录
-        const esaSceneId = resolveEsaCaptchaSceneId(captchaSettings.esaScenes, 'login', getRequestHostname(event))
-        if (esaSceneId && !getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
-          throw createApiError(400, 'AUTH_CAPTCHA_REQUIRED', '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
-        }
+        // ESA 验签在边缘对公共验证接口 /api/captcha/verify 完成，通过后源站签发短期凭证；
+        // 此处校验凭证（绑定用途与签发域名）。当前域名无可用场景 ID 时视为未开启人机验证，不拦截登录
+        verifyEsaCaptchaPass(event, captchaSettings.esaScenes, 'login')
       } else {
         captchaId = body.captchaId
         captchaInput = body.captchaInput
