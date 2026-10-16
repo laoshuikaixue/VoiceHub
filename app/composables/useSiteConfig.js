@@ -94,6 +94,13 @@ const getImageDisplayUrl = (url) => {
   return normalizedUrl
 }
 
+// 供 SSR 预取灌入站点配置（主题应用受 applyThemeConfig 的 import.meta.server 守卫，须在客户端单独触发）
+export const setSiteConfigData = (data) => {
+  if (!data || typeof data !== 'object') return
+  siteConfig.value = { ...siteConfig.value, ...data }
+  isLoaded.value = true
+}
+
 export const useSiteConfig = () => {
   const { isDark } = useTheme()
   // 获取站点配置

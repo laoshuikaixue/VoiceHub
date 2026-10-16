@@ -891,6 +891,7 @@ VoiceHub/
 │   │   ├── useBilibiliPreview.ts # Bilibili视频预览hooks
 │   │   ├── useChkszSource.ts   # ChKSz音源hooks
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
+│   │   ├── useHomeBootstrap.ts # 首页首屏数据 SSR 预取hooks
 │   │   ├── useImportantNotification.ts # 重要通知全局状态与已读处理
 │   │   ├── useLegalConsentPrompt.js # 全局登录条款确认弹窗状态hooks
 │   │   ├── useLocaleText.ts   # i18n 文案访问与服务端错误码本地化hooks
