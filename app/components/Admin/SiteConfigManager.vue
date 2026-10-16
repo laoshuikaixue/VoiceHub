@@ -770,6 +770,7 @@
                         id="esa-test-button"
                         type="button"
                         class="mt-2 inline-flex items-center gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary transition-all hover:border-primary"
+                        @click="onEsaTestButtonClick"
                       >
                         <Shield :size="14" /> {{ locale.esaCaptchaTestButton }}
                       </button>
@@ -790,7 +791,7 @@
                       class="mt-2 flex items-start gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2"
                       :class="esaTestStateClass"
                     >
-                      <AppSpinner v-if="esaTestState === 'testing'" :size="14" class="mt-0.5 shrink-0" />
+                      <AppSpinner v-if="esaTestState === 'waiting' || esaTestState === 'testing'" :size="14" class="mt-0.5 shrink-0" />
                       <CircleCheck v-else-if="esaTestState === 'success'" :size="14" class="mt-0.5 shrink-0" />
                       <AlertCircle v-else :size="14" class="mt-0.5 shrink-0" />
                       <span class="text-[10px] leading-relaxed">{{ esaTestDetail }}</span>
@@ -1027,7 +1028,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   Globe,
   ImageIcon,
@@ -1253,6 +1254,7 @@ const esaTestStateClass = computed(
       {
         success: 'text-success',
         failed: 'text-error',
+        waiting: 'text-text-tertiary',
         testing: 'text-text-tertiary',
         notRequired: 'text-text-tertiary'
       }
@@ -1265,16 +1267,38 @@ const resetEsaTest = () => {
   esaTestVerifyParam.value = ''
 }
 
+// 同一次测试尝试内一旦 SDK 报错即置位，阻止随后可能到来的 verified 把失败翻转为通过
+let esaTestFailedThisAttempt = false
+
+// 点击测试按钮进入等待态：必须先在弹窗中真正完成人机验证，验证成功回调后才判定通过
+const onEsaTestButtonClick = () => {
+  if (!esaTestReady.value) return
+  esaTestFailedThisAttempt = false
+  esaTestState.value = 'waiting'
+  esaTestDetail.value =
+    locale.value?.esaCaptchaTestWaiting || '请在弹出的人机验证中完成验证，成功后才会判定通过…'
+}
+
 const runEsaCaptchaTest = async (param) => {
-  if (esaTestState.value === 'testing') return
+  // 只接受「点击后等待验证」状态下 SDK 回调；未经点击或本次尝试已报错时忽略，杜绝无交互即判通过
+  if (esaTestState.value !== 'waiting' || esaTestFailedThisAttempt) return
+  // 必须拿到 SDK 产出的一次性验签参数，空参数说明验证并未真正完成
+  if (!param) {
+    esaTestState.value = 'failed'
+    esaTestDetail.value =
+      locale.value?.esaCaptchaTestNoParam || '未获取到验签参数，人机验证并未真正完成，请重试'
+    return
+  }
   esaTestState.value = 'testing'
-  esaTestDetail.value = locale.value?.esaCaptchaTestTesting || '测试中…'
+  esaTestDetail.value = locale.value?.esaCaptchaTestTesting || '验证中，正在签发凭证…'
   try {
     const res = await $fetch('/api/captcha/verify', {
       method: 'POST',
       headers: { [ESA_CAPTCHA_VERIFY_HEADER]: param },
       body: { purpose: 'login' }
     })
+    // 本次尝试已被 SDK 报错中断时不写回成功，保持失败结论
+    if (esaTestFailedThisAttempt) return
     if (res?.required && res?.passToken) {
       esaTestState.value = 'success'
       esaTestDetail.value =
@@ -1286,6 +1310,7 @@ const runEsaCaptchaTest = async (param) => {
         '当前配置未触发人机验证（未启用、非 ESA，或本域名无匹配场景）'
     }
   } catch (err) {
+    if (esaTestFailedThisAttempt) return
     // 被 ESA 边缘拦截时按响应头原因码提示，否则本地化服务端错误
     const code = getEsaCaptchaRejectCode(err)
     esaTestState.value = 'failed'
@@ -1298,15 +1323,27 @@ const runEsaCaptchaTest = async (param) => {
 }
 
 const handleEsaTestFailed = () => {
+  // 已得出成功/结论后忽略迟到的失败回调，避免闪烁；等待或验证进行中立即判失败
+  if (esaTestState.value === 'success' || esaTestState.value === 'notRequired') return
+  esaTestFailedThisAttempt = true
   esaTestState.value = 'failed'
   esaTestDetail.value = locale.value?.esaCaptchaTestVerifyFailed || '人机验证未通过，请重新完成验证'
 }
 
 const handleEsaTestLoadError = () => {
+  if (esaTestState.value === 'success' || esaTestState.value === 'notRequired') return
+  esaTestFailedThisAttempt = true
   esaTestState.value = 'failed'
   esaTestDetail.value =
     locale.value?.esaCaptchaTestLoadFailed || '人机验证组件加载失败，请检查身份标与区域后刷新重试'
 }
+
+// 场景或可用性变化时清空上一次结论，避免残留的「通过」误导
+watch([esaTestSceneId, esaTestReady], () => {
+  esaTestState.value = 'idle'
+  esaTestDetail.value = ''
+  esaTestFailedThisAttempt = false
+})
 
 const formData = ref({
   siteTitle: '',
