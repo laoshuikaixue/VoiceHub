@@ -1225,6 +1225,8 @@ VoiceHub/
 │   │   │   └── check.post.ts        # 检查黑名单
 │   │   ├── card-codes/     # 点歌券API
 │   │   │   └── validate.post.ts     # 验证点歌券可用性
+│   │   ├── captcha/        # 人机验证API
+│   │   │   └── verify.post.ts       # ESA 公共验证接口（边缘验签后签发短期凭证）
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号

@@ -578,8 +578,15 @@ export type CaptchaProvider = (typeof CAPTCHA_PROVIDERS)[number]
 export const ALIYUN_ESA_CAPTCHA_REGIONS = ['cn', 'sgp'] as const
 export type AliyunEsaCaptchaRegion = (typeof ALIYUN_ESA_CAPTCHA_REGIONS)[number]
 
-// ESA 边缘按此请求头读取验签参数（captchaVerifyParam）
+// ESA 边缘按此请求头读取验签参数（captchaVerifyParam），仅公共验证接口 /api/captcha/verify 消费
 export const ALIYUN_ESA_CAPTCHA_VERIFY_HEADER = 'captcha-verify-param'
+
+// 源站签发的人机验证通过凭证请求头，login/register 据此校验
+export const ALIYUN_ESA_CAPTCHA_PASS_HEADER = 'captcha-pass'
+
+// 验证通过凭证的密封令牌用途与 TTL（毫秒）
+export const ESA_CAPTCHA_PASS_TICKET_PURPOSE = 'esa-captcha-pass'
+export const ESA_CAPTCHA_PASS_TICKET_TTL = 60_000
 
 // 投稿公开留言审核状态（Song.submissionNotePublicStatus / song_replay_requests.submission_note_public_status）
 export const SUBMISSION_NOTE_STATUS = {
