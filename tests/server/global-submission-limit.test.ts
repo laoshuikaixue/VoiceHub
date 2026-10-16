@@ -55,6 +55,7 @@ const limitModule = await import(
 )
 const {
   findReachedGlobalSubmissionLimit,
+  findExceededGlobalSubmissionLimit,
   getActiveGlobalSubmissionLimits,
   getGlobalSubmissionCount
 } = limitModule
@@ -175,4 +176,33 @@ test('按周期取全站投稿总量', async () => {
 
   fixture({ [DAILY_START]: 2 })
   assert.equal(await getGlobalSubmissionCount((globalThis as any).__limitDb, 'daily'), 2)
+})
+
+test('批量预留：单首可过但整批会突破时返回被突破的限额', async () => {
+  const settings = {
+    enableGlobalSubmissionLimit: true,
+    globalDailySubmissionLimit: 5,
+    globalWeeklySubmissionLimit: 10,
+    globalMonthlySubmissionLimit: null
+  }
+
+  // 逐首（addCount=1）：日 4+1<=5、周 8+1<=10，均可过
+  fixture({ [DAILY_START]: 4, [WEEKLY_START]: 8, [MONTHLY_START]: 10 })
+  assert.equal(
+    await findExceededGlobalSubmissionLimit((globalThis as any).__limitDb, settings, 1),
+    null
+  )
+
+  // 一次导入 2 首：日 4+2>5，先命中日限额
+  assert.deepEqual(
+    await findExceededGlobalSubmissionLimit((globalThis as any).__limitDb, settings, 2),
+    { type: 'daily', limit: 5 }
+  )
+
+  // 一次导入 3 首：日 1+3<=5 未突破，周 8+3>10 命中周限额
+  fixture({ [DAILY_START]: 1, [WEEKLY_START]: 8, [MONTHLY_START]: 10 })
+  assert.deepEqual(
+    await findExceededGlobalSubmissionLimit((globalThis as any).__limitDb, settings, 3),
+    { type: 'weekly', limit: 10 }
+  )
 })

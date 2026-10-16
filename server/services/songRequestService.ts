@@ -18,6 +18,7 @@ import { createCollaborationInvitationNotification } from '~~/server/services/no
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
   findReachedGlobalSubmissionLimit,
+  getActiveGlobalSubmissionLimits,
   isCardCodeLimitBypassActive,
   isLimitReached,
   type LimitType
@@ -435,7 +436,8 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
 
       // 全站投稿总量限额：对所有用户合计计数，管理员豁免
-      if (systemSettingsData?.enableGlobalSubmissionLimit && !isAdmin) {
+      // 先解析生效周期，三值全空（无周期可拦）时跳过，避免零收益的全站串行加锁
+      if (!isAdmin && getActiveGlobalSubmissionLimits(systemSettingsData).length > 0) {
         // 全局计数必须串行，否则并发请求会读到相同计数并同时越过上限
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('global_submission_limit'))`)
 
