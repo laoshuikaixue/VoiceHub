@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
         role: users.role,
         grade: users.grade,
         class: users.class,
-        lastLoginAt: users.lastLoginAt,
+        lastLoginAt: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt
       })
