@@ -4,7 +4,7 @@
     <div
       v-if="data.firstSong.cover"
       class="bg-blur"
-      :style="{ backgroundImage: `url(${data.firstSong.cover})` }"
+      :style="{ backgroundImage: `url(${getCoverThumbUrl(data.firstSong.cover)})` }"
     />
 
     <Transition name="entry" appear>
@@ -17,7 +17,7 @@
           <div class="vinyl-record">
             <img
               v-if="data.firstSong.cover"
-              :src="data.firstSong.cover"
+              :src="getCoverLargeUrl(data.firstSong.cover)"
               alt="Cover"
               class="cover-img"
             >
@@ -54,6 +54,7 @@
 
 <script setup>
 import { useLocale } from '~/utils/locale'
+import { getCoverLargeUrl, getCoverThumbUrl } from '~/utils/url'
 
 defineProps({
   data: Object,

@@ -45,7 +45,7 @@
           >
             <template v-if="activeSong && activeSong.cover && !coverError">
               <img
-                :src="convertToHttps(activeSong.cover)"
+                :src="getCoverThumbUrl(activeSong.cover)"
                 alt="封面"
                 class="player-cover"
                 referrerpolicy="no-referrer"
@@ -321,7 +321,7 @@ import {
   PLAYER_LAYOUT_MARGIN_MOBILE,
   clampPlayerPosition
 } from '~/utils/playerLayout'
-import { getBilibiliUrl } from '~/utils/url'
+import { getBilibiliUrl, getCoverThumbUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
@@ -2143,12 +2143,6 @@ const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-// 转换为 HTTPS
-const convertToHttps = (url) => {
-  if (!url) return ''
-  return url.replace(/^http:/, 'https:')
 }
 
 // 处理图片错误

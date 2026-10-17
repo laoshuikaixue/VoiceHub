@@ -3,7 +3,7 @@
     <div class="cover-container" :title="locale.openLyrics" @click="openLyrics">
       <template v-if="song.cover && !coverError">
         <img
-          :src="convertToHttps(song.cover)"
+          :src="getCoverThumbUrl(song.cover)"
           :alt="locale.coverAlt"
           class="player-cover"
           referrerpolicy="no-referrer"
@@ -42,7 +42,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
