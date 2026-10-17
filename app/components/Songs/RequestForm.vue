@@ -496,6 +496,20 @@
                           </svg>
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
+                        </label>
+                        <label class="custom-checkbox-wrapper">
+                          <input
+                            v-model="submissionAnonymous"
+                            type="checkbox"
+                            class="custom-checkbox-input"
+                            :disabled="!siteConfigLoaded"
+                          />
+                          <span class="custom-checkbox-box">
+                            <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                          </span>
+                          <span class="custom-checkbox-text">匿名投稿</span>
                       </label>
                     </div>
                   </div>
@@ -1548,6 +1562,7 @@ const platformTouched = ref(false) // 用户是否手动切换过平台，切换
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
+const submissionAnonymous = ref(false)
 const cardCode = ref('')
 const cardCodeDraft = ref('')
 const showCardCodeModal = ref(false)
@@ -2732,6 +2747,7 @@ watch(enableSubmissionRemarks, (enabled) => {
   if (!enabled) {
     submissionNote.value = ''
     submissionNotePublic.value = true
+    submissionAnonymous.value = false
   }
 })
 
@@ -3581,7 +3597,8 @@ const submitSong = async (result, options = {}) => {
       const replayResult = await songService.requestReplay(replayTargetSong.id, {
         preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
         submissionNote: submissionNote.value.trim() || null,
-        submissionNotePublic: submissionNotePublic.value
+        submissionNotePublic: submissionNotePublic.value,
+        submissionAnonymous: submissionAnonymous.value,
       })
 
       if (!replayResult) return false
@@ -3693,6 +3710,7 @@ const submitSong = async (result, options = {}) => {
       durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
+      submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id),
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
@@ -3751,6 +3769,7 @@ const handleSubmit = async () => {
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
+      submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id)
     }
     if (cardCode.value && cardCode.value.trim()) {
@@ -4141,7 +4160,8 @@ const handleManualSubmit = async () => {
       musicPlatform: hasManualPlayUrl ? null : platform.value,
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
-      submissionNotePublic: submissionNotePublic.value
+      submissionNotePublic: submissionNotePublic.value,
+      submissionAnonymous: submissionAnonymous.value,
     }
 
     if (cardCode.value && cardCode.value.trim()) {
@@ -4181,6 +4201,7 @@ const resetForm = () => {
   collaborators.value = []
   submissionNote.value = ''
   submissionNotePublic.value = true
+  submissionAnonymous.value = false
   cardCode.value = ''
   cardCodeDraft.value = ''
   showCardCodeModal.value = false

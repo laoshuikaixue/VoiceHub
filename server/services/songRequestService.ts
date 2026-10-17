@@ -60,6 +60,7 @@ const songRequestBodySchema = z.object({
   // 保持「站点表单 / 机器人 / zod」三处同一个数值
   submissionNote: z.string().trim().max(SUBMISSION_NOTE_MAX_LENGTH, `备注留言不能超过${SUBMISSION_NOTE_MAX_LENGTH}个字符`).optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
+  submissionAnonymous: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
     z.number().int().positive('播出时段 ID 无效').nullable()
@@ -527,6 +528,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
+          submissionAnonymous: requestBody.submissionAnonymous === true,
           submissionNotePublicStatus,
           hitRequestId: hitRequestTime?.id || null
         })
@@ -648,7 +650,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     try {
       const [requester] = await db.select({ name: users.name, username: users.username })
         .from(users).where(eq(users.id, user.id)).limit(1)
-      const displayName = requester?.name || requester?.username || `用户 ${user.id}`
+      // 匿名投稿不在群聊推送里暴露真实姓名
+      const displayName =
+        song.submissionAnonymous === true
+          ? '匿名同学'
+          : (requester?.name || requester?.username || `用户 ${user.id}`)
       await enqueueAstrbotGroupEvent(
         'songRequest',
         '新的点歌投稿',

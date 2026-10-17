@@ -4,6 +4,7 @@ import { formatDateTime, getBeijingTimeISOString } from '~/utils/timeUtils'
 import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { maskPublicScheduleData,
   stripAnonymousSongIdentifiersFromSchedules,
+  applySubmissionAnonymityToSchedules,
   type PublicScheduleItem
 } from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
@@ -100,6 +101,7 @@ const loadBasicSchedules = async (client: any, semester: string, user: any, isAd
       hasSubmissionNote: false,
       submissionNote: null,
       submissionNotePublic: false,
+      submissionAnonymous: false,
       preferredPlayTimeId: null,
       requesterId: row.requesterId ? Number(row.requesterId) : null,
       replayRequestCount: 0,
@@ -268,6 +270,7 @@ export default defineEventHandler(async (event) => {
         s."createdAt",
         s."submissionNote",
         s."submissionNotePublic",
+        s."submissionAnonymous",
         s."submissionNotePublicStatus" AS "songSubmissionNotePublicStatus",
         CASE WHEN rm.id IS NOT NULL THEN rm.submission_note ELSE s."submissionNote" END AS "effectiveSubmissionNote",
         CASE WHEN rm.id IS NOT NULL THEN COALESCE(rm.submission_note_public, false) ELSE s."submissionNotePublic" END AS "effectiveSubmissionNotePublic",
@@ -432,6 +435,8 @@ export default defineEventHandler(async (event) => {
     if (shouldHideStudentInfo && !isAdmin) {
       maskPublicScheduleData(formattedSchedules)
     }
+    // 逐条匿名：匿名投稿对所有非管理员统一显示「匿名」
+    applySubmissionAnonymityToSchedules(formattedSchedules, { id: user?.id ?? null, isAdmin })
     if (!user) {
       stripAnonymousSongIdentifiersFromSchedules(formattedSchedules)
     }

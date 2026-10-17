@@ -379,6 +379,13 @@
       "when": 1791966443301,
       "tag": "20261014082723_global_submission_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1792311000000,
+      "tag": "20261018090000_add_submission_anonymous",
+      "breakpoints": true
     }
   ]
 }
