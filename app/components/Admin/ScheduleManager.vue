@@ -1632,6 +1632,24 @@
           </div>
 
           <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
+              热度权重 · {{ autoScheduleHeatWeight }}%
+            </label>
+            <input
+              v-model.number="autoScheduleHeatWeight"
+              class="w-full accent-[var(--primary)]"
+              max="100"
+              min="0"
+              step="5"
+              type="range"
+            >
+            <p class="mt-1.5 text-[10px] text-text-tertiary leading-relaxed">
+              热度加权随机：{{ autoScheduleHeatWeight }}% 看热度（票高的更容易排前面）、{{ 100 - autoScheduleHeatWeight }}% 随机，
+              所以不会变成死板的按票数排序。0% = 纯随机，100% ≈ 完全按热度。
+            </p>
+          </div>
+
+          <div>
             <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.scheduleAlgorithm }}</label>
             <div class="flex gap-2">
               <button
@@ -2412,6 +2430,14 @@ const autoScheduleTargetMinutes = ref(null)
 const autoScheduleTargetSongCount = ref(null)
 const autoScheduleTargetRequesterCount = ref(null)
 const autoScheduleDirection = ref('under')
+/** 热度加权随机的热度权重（%）：80 = 80% 看热度、20% 随机（默认值，可在界面随时调） */
+const autoScheduleHeatWeight = ref(80)
+/** 转成 0~1，并夹在合理范围内 */
+const heatWeightRatio = () => {
+  const value = Number(autoScheduleHeatWeight.value)
+  if (!Number.isFinite(value)) return 0.8
+  return Math.min(1, Math.max(0, value / 100))
+}
 const autoScheduleFixExisting = ref(false)
 const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
 const autoSchedulePlans = ref([])
@@ -4253,7 +4279,7 @@ const runAutoSchedule = () => {
   const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
     ? Math.floor(autoScheduleTargetRequesterCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount)
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount, heatWeightRatio())
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
@@ -4285,7 +4311,7 @@ const generateMorePlans = async () => {
   const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
     ? Math.floor(autoScheduleTargetRequesterCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount)
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount, heatWeightRatio())
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
   let addedCount = 0
