@@ -2228,7 +2228,12 @@ export const admin = {
     sourceRuntime: 'In-process',
     sourceApiError: 'API error',
     sourcePasswordAudit: 'Password audit',
-    passwordAuditPrefix: 'User',
+    passwordAuditUser: 'User #{0}: {1}',
+    passwordAuditActions: {
+      INITIAL_PASSWORD: 'set initial password',
+      CHANGE_PASSWORD: 'changed password',
+      RESET_PASSWORD: 'reset password'
+    },
     bufferCleared: (count: number) => `Buffer cleared (${count} entries removed)`,
     serverStarted: 'Server started, global error handler ready',
     dbHealthRecovered: 'Database health check recovered'

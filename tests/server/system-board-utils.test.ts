@@ -1,20 +1,31 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { execSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
+import { rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 /**
- * Pure-function tests for system-board utils.
- * Run via npx tsx in a subprocess to avoid Node 24 type-stripping issues with ~~/* aliases.
+ * 系统看板工具纯函数测试。
+ * Node 24 类型剥离无法解析 ~~/* 别名，统一通过子进程 npx tsx 执行 TS 脚本；
+ * 脚本以临时文件形式放在仓库根目录执行，保证 './server/…' 相对导入可解析，
+ * 命令行不传递多行代码（Windows cmd 下引号内换行会截断命令）。
  */
 
 function runTsx(code: string): string {
-  const raw = execSync(`npx tsx -e "${code.replace(/"/g, '\\"')}"`, {
-    cwd: process.cwd(),
-    encoding: 'utf-8',
-    stdio: ['pipe', 'pipe', 'pipe']
-  })
-  // Strip emoji/log lines, keep only the last numeric/string result line
-  return raw.split('\n').filter(l => l.trim() && !l.startsWith('◇') && !l.startsWith('🔄') && !l.startsWith('✅')).pop()?.trim() || ''
+  const file = join(process.cwd(), `.system-board-test-${randomUUID()}.ts`)
+  writeFileSync(file, code, 'utf-8')
+  try {
+    const raw = execSync(`npx tsx "${file}"`, {
+      cwd: process.cwd(),
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
+    // 剔除工具日志行，只保留最后一行结果
+    return raw.split('\n').filter(l => l.trim() && !l.startsWith('◇') && !l.startsWith('🔄') && !l.startsWith('✅')).pop()?.trim() || ''
+  } finally {
+    rmSync(file, { force: true })
+  }
 }
 
 test('resolveBoardEventsQuery returns defaults for empty input', () => {

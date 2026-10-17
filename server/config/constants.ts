@@ -601,9 +601,7 @@ export const SYSTEM_BOARD_CONSTANTS = {
   // 环形缓冲最多保留的事件条数，超出后丢弃最旧一条
   BUFFER_SIZE: 300,
   DEFAULT_EVENT_LIMIT: 100,
-  MAX_EVENT_LIMIT: 500,
-  // 单条事件消息截断长度，防止超长堆栈占满缓冲
-  MAX_MESSAGE_LENGTH: 500
+  MAX_EVENT_LIMIT: 500
 } as const
 
 // 系统看板事件级别与来源（内存缓冲 runtime / API 错误 apiError / 口令审计 passwordAudit）

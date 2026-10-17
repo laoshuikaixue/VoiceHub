@@ -252,7 +252,7 @@
               <span class="text-[10px] font-black uppercase tracking-wider text-text-tertiary">
                 {{ sourceLabel(item) }}
               </span>
-              <span class="text-xs text-text-primary break-all leading-relaxed">{{ localizeEventMessage(item.message) }}</span>
+              <span class="text-xs text-text-primary break-all leading-relaxed">{{ localizeEventMessage(item) }}</span>
             </div>
             <p v-if="item.detail" class="mt-1 text-[11px] text-text-tertiary break-all leading-relaxed">
               {{ item.detail }}
@@ -470,15 +470,26 @@ const sourceLabel = (item) => {
     passwordAudit: locale.value.sourcePasswordAudit
   }
   const base = map[item.source] || item.source
+  // 口令审计的动作已在消息内本地化展示，标签不再拼接原始动作标识
+  if (item.source === 'passwordAudit') return base
   return item.sourceLabel ? `${base} · ${item.sourceLabel}` : base
 }
 
 // 服务端事件消息可能是 code + params，这里做本地化映射
-const localizeEventMessage = (message: string): string => {
-  // passwordAudit.<action> → "用户 #<userId> <action>"
+const localizeEventMessage = (item) => {
+  const message = item.message
+  // passwordAudit.<action> → "用户 #<userId>：<动作描述>"，userId 从 detail JSON 解析
   if (message.startsWith('passwordAudit.')) {
-    const action = message.replace('passwordAudit.', '')
-    return `${locale.value.passwordAuditPrefix} ${action}`
+    const action = message.slice('passwordAudit.'.length)
+    const actions = locale.value.passwordAuditActions || {}
+    const label = String(actions[action] || action)
+    let userId = ''
+    try {
+      userId = JSON.parse(item.detail || '{}').userId ?? ''
+    } catch {
+      // detail 非法时退化为不带用户编号
+    }
+    return userId ? String(locale.value.passwordAuditUser(userId, label)) : label
   }
   // JSON payload from recordRuntimeEvent
   try {

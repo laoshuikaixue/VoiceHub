@@ -2174,7 +2174,12 @@ export const admin = {
     sourceRuntime: '进程内',
     sourceApiError: 'API 错误',
     sourcePasswordAudit: '口令审计',
-    passwordAuditPrefix: '用户',
+    passwordAuditUser: '用户 #{0}：{1}',
+    passwordAuditActions: {
+      INITIAL_PASSWORD: '设置初始密码',
+      CHANGE_PASSWORD: '修改密码',
+      RESET_PASSWORD: '重置密码'
+    },
     bufferCleared: (count: number) => `运行事件缓冲已清空（${count} 条）`,
     serverStarted: '服务进程已启动，全局错误处理器就绪',
     dbHealthRecovered: '数据库健康检查恢复'

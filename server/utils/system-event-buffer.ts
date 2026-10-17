@@ -19,11 +19,6 @@ export interface SystemRuntimeEvent {
 let seq = 0
 let events: SystemRuntimeEvent[] = []
 
-const truncate = (text: string) =>
-  text.length > SYSTEM_BOARD_CONSTANTS.MAX_MESSAGE_LENGTH
-    ? `${text.slice(0, SYSTEM_BOARD_CONSTANTS.MAX_MESSAGE_LENGTH)}…`
-    : text
-
 /**
  * 记录一条进程内运行事件。
  * 只保留最近 BUFFER_SIZE 条，不写库、不落盘；进程重启即清空。
@@ -36,7 +31,7 @@ export function recordRuntimeEvent(
   detail?: string
 ): void {
   try {
-    const text = truncate(sanitizeAstrbotErrorDetail(message))
+    const text = sanitizeAstrbotErrorDetail(message)
     if (!text) return
 
     events.push({
@@ -44,7 +39,7 @@ export function recordRuntimeEvent(
       level,
       source,
       message: text,
-      detail: detail ? truncate(sanitizeAstrbotErrorDetail(detail)) : undefined,
+      detail: detail ? sanitizeAstrbotErrorDetail(detail) : undefined,
       timestamp: getServerTimestamp()
     })
 
