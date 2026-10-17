@@ -60,9 +60,23 @@ const fetchImageBlob = async (url: string, useProxy: boolean): Promise<Blob> => 
   const targetUrl = useProxy ? `/api/proxy/image?url=${encodeURIComponent(url)}` : url
   const response = await fetch(targetUrl)
   if (!response.ok) {
-    throw new Error(useProxy ? '图片代理下载失败' : '图片直连下载失败')
+    const error = new Error(useProxy ? '图片代理下载失败' : '图片直连下载失败') as Error & { status?: number }
+    error.status = response.status
+    throw error
   }
   return response.blob()
+}
+
+// 代理并发超限会立即 429，退避重试后再决定是否降级直连
+const fetchImageViaProxy = async (url: string): Promise<Blob> => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchImageBlob(url, true)
+    } catch (error) {
+      if ((error as { status?: number })?.status !== 429 || attempt >= 2) throw error
+      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)))
+    }
+  }
 }
 
 const blobToDataUrl = (blob: Blob): Promise<string> =>
@@ -78,7 +92,7 @@ const fetchAsDataUrl = async (url: string): Promise<string | null> => {
     const directFirst = shouldFetchImageDirectly(url)
     let blob: Blob
     try {
-      blob = await fetchImageBlob(url, !directFirst)
+      blob = directFirst ? await fetchImageBlob(url, false) : await fetchImageViaProxy(url)
     } catch (error) {
       if (directFirst) throw error
       // 代理拒绝内网解析时，交给浏览器按用户网络环境直连

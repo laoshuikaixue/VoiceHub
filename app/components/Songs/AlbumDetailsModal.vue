@@ -25,7 +25,7 @@
               <div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-bg-tertiary shadow-lg">
                 <img
                   v-if="albumInfo && albumInfo.cover"
-                  :src="convertToHttps(albumInfo.cover)"
+                  :src="getCoverThumbUrl(albumInfo.cover)"
                   :alt="albumInfo && albumInfo.name ? albumInfo.name : locale.albumFallback"
                   class="w-full h-full object-cover"
                   referrerpolicy="no-referrer"
@@ -138,7 +138,7 @@
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden flex-shrink-0 mr-3 bg-bg-tertiary">
                   <img
                     v-if="song.img"
-                    :src="convertToHttps(song.img)"
+                    :src="getCoverThumbUrl(song.img)"
                     :alt="song.name"
                     class="w-full h-full object-cover"
                     referrerpolicy="no-referrer"
@@ -295,7 +295,7 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { normalizeForMatch as normalizeStr } from '~/utils/song-name-normalize'
 

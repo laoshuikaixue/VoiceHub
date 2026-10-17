@@ -21,8 +21,8 @@
             <div v-if="getSchedule(date, pt.key, rowIndex - 1)" class="song-item">
               <img
                 v-if="settings.showCover && getSchedule(date, pt.key, rowIndex - 1).song.cover"
-                :src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
-                :data-original-src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
+                :src="getCoverThumbUrl(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
+                :data-original-src="getCoverThumbUrl(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
                 class="song-cover"
                 @error="handleImageError"
               >
@@ -60,8 +60,8 @@
             <div v-if="getScheduleAll(date, rowIndex - 1)" class="song-item">
               <img
                 v-if="settings.showCover && getScheduleAll(date, rowIndex - 1).song.cover"
-                :src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
-                :data-original-src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
+                :src="getCoverThumbUrl(getScheduleAll(date, rowIndex - 1).song.cover)"
+                :data-original-src="getCoverThumbUrl(getScheduleAll(date, rowIndex - 1).song.cover)"
                 class="song-cover"
                 @error="handleImageError"
               >
@@ -96,7 +96,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 const { admin } = useLocale()
 const locale = computed(() => admin.value.schedulePrinter)

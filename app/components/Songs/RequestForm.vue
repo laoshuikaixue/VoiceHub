@@ -634,7 +634,7 @@
                       @click.stop="isBilibiliMultiP(result) ? submitSong(result) : playSong(result)"
                     >
                       <img
-                        :src="convertToHttps(result.cover)"
+                        :src="getCoverThumbUrl(result.cover)"
                         :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
@@ -1478,7 +1478,7 @@ import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
-import { convertToHttps, validateUrl } from '~/utils/url'
+import { convertToHttps, getCoverThumbUrl, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'

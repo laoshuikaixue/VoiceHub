@@ -37,6 +37,13 @@ export async function zzcSign(text: string) {
   return `zzc${part1}${b64Part}${part2}`.toLowerCase()
 }
 
+// QQ 音乐接口耗时上限：外部接口挂起会长期占住函数实例
+const TX_TIMEOUT_MS = 10000
+
+// ofetch 在传入 signal 时不使用 timeout 选项，两者合并才能让既有取消语义与超时同时生效
+const withTxTimeout = (signal?: AbortSignal): AbortSignal =>
+  signal ? AbortSignal.any([signal, AbortSignal.timeout(TX_TIMEOUT_MS)]) : AbortSignal.timeout(TX_TIMEOUT_MS)
+
 /**
  * 使用签名请求 QQ 音乐 API
  * 相比普通 musicu.fcg，musics.fcg?sign=... 的签名请求更稳定
@@ -49,7 +56,7 @@ export const txSignedRequest = async (body: any, options: { signal?: AbortSignal
       headers: txHeaders,
       body,
       responseType: 'json',
-      signal: options.signal
+      signal: withTxTimeout(options.signal)
     })
     return response
   } catch (error) {
@@ -257,7 +264,7 @@ export const txRequest = async (
       headers: txHeaders,
       body,
       responseType: 'json',
-      signal: options.signal
+      signal: withTxTimeout(options.signal)
     })
     return response
   } catch (error) {

@@ -4,11 +4,29 @@ import { lookup as dnsLookup } from 'node:dns'
 import http from 'node:http'
 import https from 'node:https'
 import { publicAddress } from '~~/server/utils/music-source-plugins/network'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
-const MAX_CONCURRENT_IMAGE_FETCHES = 30
+// 并发上限是进程内计数，多实例之间不共享：Serverless 下压到 4，超载立即 429 而不是各占一个实例直到平台超时
+const IS_SERVERLESS = isServerlessRuntime()
+const MAX_CONCURRENT_IMAGE_FETCHES = IS_SERVERLESS ? 4 : 30
 const MAX_REDIRECTS = 5
+const REQUEST_TIMEOUT_MS = 15000
+// Serverless 下单次代理的整体截止时间，跨重定向、重试与响应体读取共享；自建部署不设截止（大封面合法地需要上百秒）
+const IMAGE_FETCH_DEADLINE_MS = 8000
+const PROXY_DEADLINE_UNLIMITED = Number.POSITIVE_INFINITY
+// 剩余预算低于一次握手的耗时就不再重试
+const RETRY_MIN_BUDGET_MS = 1500
 let activeImageFetches = 0
+
+// 超时单独成类：重试策略按类型判断，不依赖用户可见文案
+class ImageFetchTimeoutError extends Error {
+  constructor() {
+    super('图片请求超时')
+    this.name = 'ImageFetchTimeoutError'
+  }
+}
 
 // 内网/保留地址判定复用插件网络层的 ipaddr.js unicast 实现（同一份 IP 名单）
 const isBlockedAddress = (address) => !publicAddress(address)
@@ -90,16 +108,20 @@ const requestOnce = (targetUrl, headers, timeoutMs) => {
     )
     req.on('error', reject)
     req.setTimeout(timeoutMs, () => {
-      req.destroy(new Error('图片请求超时'))
+      req.destroy(new ImageFetchTimeoutError())
     })
     req.end()
   })
 }
 
-const fetchImage = async (imageUrl) => {
+const fetchImage = async (imageUrl, deadlineAt) => {
   let currentUrl = imageUrl
 
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect++) {
+    const remainingMs = deadlineAt - getServerTimestamp()
+    if (remainingMs <= 0) {
+      throw new ImageFetchTimeoutError()
+    }
     const url = new URL(currentUrl)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       throw new Error('不支持的协议')
@@ -114,7 +136,7 @@ const fetchImage = async (imageUrl) => {
       Referer: getReferer(url.hostname) || url.origin
     }
 
-    const res = await requestOnce(currentUrl, headers, 15000)
+    const res = await requestOnce(currentUrl, headers, Math.min(REQUEST_TIMEOUT_MS, remainingMs))
     const status = res.statusCode || 0
 
     // 手动处理重定向：下一跳目标会在循环顶部重新校验，避免自动跟随造成的 SSRF
@@ -144,16 +166,25 @@ const fetchImage = async (imageUrl) => {
       throw createError({ statusCode: 413, message: '图片文件过大' })
     }
 
+    // socket 超时只管空闲状态，上游缓慢吐字节挡不住，响应体读取同样按剩余预算兜底
+    const expireTimer = Number.isFinite(deadlineAt)
+      ? setTimeout(() => res.destroy(new ImageFetchTimeoutError()), Math.max(1, deadlineAt - getServerTimestamp()))
+      : undefined
+
     // 流式读取，防止恶意服务器通过缺失或伪造 content-length 导致内存耗尽
     let loaded = 0
     const chunks = []
-    for await (const chunk of res) {
-      loaded += chunk.length
-      if (loaded > MAX_IMAGE_BYTES) {
-        res.destroy()
-        throw createError({ statusCode: 413, message: '图片文件过大' })
+    try {
+      for await (const chunk of res) {
+        loaded += chunk.length
+        if (loaded > MAX_IMAGE_BYTES) {
+          res.destroy()
+          throw createError({ statusCode: 413, message: '图片文件过大' })
+        }
+        chunks.push(chunk)
       }
-      chunks.push(chunk)
+    } finally {
+      if (expireTimer) clearTimeout(expireTimer)
     }
     const buffer = Buffer.concat(chunks)
 
@@ -163,11 +194,12 @@ const fetchImage = async (imageUrl) => {
   throw new Error('重定向次数过多')
 }
 
-const retryFetchImage = async (imageUrl, maxRetries = 2) => {
+const retryFetchImage = async (imageUrl, deadlineAt, maxRetries = 2) => {
+  const hasDeadline = Number.isFinite(deadlineAt)
   let lastError
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      return await fetchImage(imageUrl)
+      return await fetchImage(imageUrl, deadlineAt)
     } catch (err) {
       lastError = err
       // 校验层面错误（400/403）重试无意义，直接中断
@@ -179,8 +211,22 @@ const retryFetchImage = async (imageUrl, maxRetries = 2) => {
       ) {
         throw err
       }
+      // 有截止时间时：超时重试只会把实例占用翻倍，剩余预算不够一次握手也不再重试
+      if (
+        hasDeadline &&
+        (err instanceof ImageFetchTimeoutError ||
+          deadlineAt - getServerTimestamp() < RETRY_MIN_BUDGET_MS)
+      ) {
+        throw err
+      }
       if (i < maxRetries) {
-        await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
+        const delay = 1000 * (i + 1)
+        await new Promise((r) =>
+          setTimeout(
+            r,
+            hasDeadline ? Math.min(delay, Math.max(0, deadlineAt - getServerTimestamp() - 500)) : delay
+          )
+        )
       }
     }
   }
@@ -199,7 +245,10 @@ export default defineEventHandler(async (event) => {
   activeImageFetches++
 
   try {
-    const { contentType, buffer } = await retryFetchImage(imageUrl)
+    const deadlineAt = IS_SERVERLESS
+      ? getServerTimestamp() + IMAGE_FETCH_DEADLINE_MS
+      : PROXY_DEADLINE_UNLIMITED
+    const { contentType, buffer } = await retryFetchImage(imageUrl, deadlineAt)
 
     setHeader(event, 'Content-Type', contentType)
     setHeader(event, 'Cache-Control', 'public, max-age=3600')

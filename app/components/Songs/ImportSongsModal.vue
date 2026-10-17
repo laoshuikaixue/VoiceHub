@@ -226,7 +226,7 @@
                     class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary flex-shrink-0 shadow-md"
                   >
                     <img
-                      :src="convertToHttps(song.cover)"
+                      :src="getCoverThumbUrl(song.cover)"
                       alt="cover"
                       class="w-full h-full object-cover"
                       loading="lazy"
@@ -304,7 +304,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'

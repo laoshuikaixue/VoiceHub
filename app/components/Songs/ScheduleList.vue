@@ -157,7 +157,7 @@
                         <template v-if="schedule.song.cover && !failedCovers[schedule.song.cover]">
                           <img
                             :alt="schedule.song.title"
-                            :src="convertToHttps(schedule.song.cover)"
+                            :src="getCoverThumbUrl(schedule.song.cover)"
                             class="cover-image"
                             referrerpolicy="no-referrer"
                             @error="handleImageError(schedule.song)"
@@ -653,7 +653,7 @@ import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { useLocale } from '~/utils/locale'

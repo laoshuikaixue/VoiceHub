@@ -1,4 +1,4 @@
-import { upgradeTxAudioUrl } from '~~/server/utils/native_tx'
+import { getTxSongPlayableInfo, upgradeTxAudioUrl } from '~~/server/utils/native_tx'
 import {
   getQqCookieDiagnostic,
   normalizeQqCookie,
@@ -71,25 +71,39 @@ export default defineEventHandler(async (event) => {
 
   const normalizedMusicId = String(musicId || '').trim()
 
+  // 官方与第三方取链均要求字母 songmid；历史数字 songId 先解析为 MID，避免原样透传导致取链失败
+  let resolvedMusicId = normalizedMusicId
+  let resolvedMediaId = String(body?.mediaId || '').trim() || undefined
+  if (/^\d+$/.test(normalizedMusicId)) {
+    try {
+      const playable = await getTxSongPlayableInfo(normalizedMusicId)
+      resolvedMusicId = playable.songmid
+      if (!resolvedMediaId && playable.strMediaMid) resolvedMediaId = playable.strMediaMid
+    } catch (error: any) {
+      console.warn('[music/resolve-url] QQ 数字 songId 解析 MID 失败:', error?.message || error)
+      throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
+    }
+  }
+
   // 官方 Cookie 链路：带用户登录态走 CgiGetVkey，可获取 VIP/高音质直链
   if (strategy === 'official-first') {
     if (excludedSources.has('qq-official')) {
       throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
     }
 
-    const mediaId = String(body?.mediaId || '').trim() || undefined
+    const mediaId = resolvedMediaId
 
     // SDK 与原生直连互为校验：SDK 依赖上游文件名策略，原生链路可诊断拒绝原因
     const attemptOfficial = async (activeCookie?: string): Promise<string> => {
       try {
-        return await resolveQqSdkPlayUrl(normalizedMusicId, body?.quality, activeCookie, mediaId)
+        return await resolveQqSdkPlayUrl(resolvedMusicId, body?.quality, activeCookie, mediaId)
       } catch (error: any) {
         const sdkError = error?.message || String(error)
         console.warn('[music/resolve-url] QQ 官方 SDK 解析失败，尝试原生直连:', sdkError)
 
         try {
           return await resolveQqOfficialPlayUrl({
-            songmid: normalizedMusicId,
+            songmid: resolvedMusicId,
             quality: body?.quality,
             cookie: activeCookie,
             mediaId
@@ -112,7 +126,7 @@ export default defineEventHandler(async (event) => {
         success: true,
         url,
         source: 'qq-official',
-        normalizedMusicId,
+        normalizedMusicId: resolvedMusicId,
         idType: 'songmid',
         authUsed: Boolean(activeCookie),
         authDiagnostic: getQqCookieDiagnostic(activeCookie)
@@ -129,7 +143,7 @@ export default defineEventHandler(async (event) => {
         success: true,
         url,
         source: 'qq-official',
-        normalizedMusicId,
+        normalizedMusicId: resolvedMusicId,
         idType: 'songmid',
         authUsed: true,
         authDiagnostic: getQqCookieDiagnostic(activeCookie),
@@ -143,12 +157,12 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const url = await resolveTxWithHyw(normalizedMusicId, body?.quality)
+    const url = await resolveTxWithHyw(resolvedMusicId, body?.quality)
     return {
       success: true,
       url,
       source: 'hyw-tx',
-      normalizedMusicId,
+      normalizedMusicId: resolvedMusicId,
       idType: 'songmid',
       authUsed: Boolean(cookie),
       authDiagnostic: getQqCookieDiagnostic(cookie)
