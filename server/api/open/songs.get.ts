@@ -7,6 +7,7 @@ import {
   buildNameToUsersMap,
   formatDisambiguatedNameFromMap
 } from '~~/server/utils/userDisplayName'
+import { applySubmissionAnonymity, type MaskableSong } from '~~/server/utils/studentMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -44,6 +45,8 @@ export default defineEventHandler(async (event) => {
 
     if (grade) {
       conditions.push(eq(users.grade, grade))
+      // 开放 API 无投稿人视角：按年级筛选时排除匿名投稿，避免反推年级
+      conditions.push(eq(songs.submissionAnonymous, false))
     }
 
     if (played === 'true') {
@@ -82,6 +85,7 @@ export default defineEventHandler(async (event) => {
         musicId: songs.musicId,
         durationSeconds: songs.durationSeconds,
         preferredPlayTimeId: songs.preferredPlayTimeId,
+        submissionAnonymous: songs.submissionAnonymous,
         requester: {
           id: users.id,
           name: users.name,
@@ -189,7 +193,8 @@ export default defineEventHandler(async (event) => {
         musicId: song.musicId || null,
         durationSeconds: song.durationSeconds || null,
         playUrl: song.playUrl || null,
-        preferredPlayTimeId: song.preferredPlayTimeId
+        preferredPlayTimeId: song.preferredPlayTimeId,
+        submissionAnonymous: song.submissionAnonymous === true
       }
 
       // 添加期望播放时段相关字段
@@ -208,6 +213,9 @@ export default defineEventHandler(async (event) => {
 
       return songObject
     })
+
+    // 匿名投稿：开放 API 与站点对外展示保持一致，不返回真实投稿人
+    applySubmissionAnonymity(formattedSongs as MaskableSong[], null)
 
     // 如果需要按排期状态筛选
     if (scheduled === 'true') {

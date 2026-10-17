@@ -157,7 +157,13 @@ export default defineEventHandler(async (event) => {
       conditions.push(`(s.title ILIKE ${searchParam} OR s.artist ILIKE ${searchParam})`)
     }
     if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
-    if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
+    if (grade) {
+      conditions.push(`u.grade = ${addParam(grade)}`)
+      // 非管理员按年级筛选时排除匿名投稿，避免借筛选结果反推投稿人年级
+      if (!isAdmin) {
+        conditions.push(`(s."submissionAnonymous" = false OR s."requesterId" = $1)`)
+      }
+    }
     if (scope === 'mine' && user) conditions.push(`s.\"requesterId\" = $1`)
 
     const orderColumn =
