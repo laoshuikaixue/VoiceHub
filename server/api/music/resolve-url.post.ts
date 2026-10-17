@@ -9,6 +9,30 @@ import {
 
 const HYW_TX_URL = 'http://103.79.184.97/api/music/url'
 const HYW_CARD_KEY = 'PYPW-QFRL-3DBF-95O6'
+const YUAFENG_TX_URL = 'https://api-v2.yuafeng.cn/API/qqmusic.php'
+const YUAFENG_TX_APIKEY = '3ff23523e47465224a3f48579acf41f241540ce04b6cc0b94164f37a5b6299d5'
+const HELLOWORLD_TX_URL = 'https://a.aa.cab/qq.music'
+// QQ 已知无效占位音频，命中说明源返回的是错误录音
+const INVALID_QQ_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
+
+// 从任意 JSON/文本响应中防御式提取 QQ 音频直链
+const extractTxAudioUrl = (payload: unknown): string => {
+  let found = ''
+  const visit = (node: any) => {
+    if (found || !node) return
+    if (typeof node === 'string') {
+      if (/^https?:\/\//i.test(node) && (/vkey=/i.test(node) || /\.(mp3|flac|m4a|ape|wav)(\?|$)/i.test(node))) {
+        found = node.trim()
+      }
+      return
+    }
+    if (typeof node === 'object') Object.values(node).forEach(visit)
+  }
+  visit(payload)
+  return found
+}
+
+const isValidTxAudioUrl = (url: string) => /^https?:\/\//i.test(url) && !url.includes(INVALID_QQ_AUDIO_URL_SUFFIX)
 
 const resolveTxWithHyw = async (songmid: string, quality: unknown) => {
   const qualityMap: Record<string, string> = {
@@ -39,14 +63,54 @@ const resolveTxWithHyw = async (songmid: string, quality: unknown) => {
   return upgradeTxAudioUrl(url)
 }
 
+const resolveTxWithYuafeng = async (songmid: string, quality: unknown) => {
+  const typeMap: Record<string, string> = {
+    '4': '标准',
+    '8': '高品质',
+    '10': '无损',
+    '11': '无损',
+    '14': '无损'
+  }
+  const url = `${YUAFENG_TX_URL}?type=${encodeURIComponent(typeMap[String(quality)] || '标准')}&mid=${encodeURIComponent(songmid)}&apikey=${YUAFENG_TX_APIKEY}`
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
+    headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' }
+  })
+  if (!response.ok) throw new Error(`玉宁熙返回 ${response.status}`)
+  const text = await response.text()
+  let payload: any = text
+  try { payload = JSON.parse(text) } catch { /* 非 JSON 响应，按原始文本提取 */ }
+  const playUrl = extractTxAudioUrl(payload)
+  if (!isValidTxAudioUrl(playUrl)) throw new Error('玉宁熙未返回播放链接')
+  return upgradeTxAudioUrl(playUrl)
+}
+
+const resolveTxWithHelloWorld = async (name: string) => {
+  if (!name) throw new Error('HelloWorld 缺少歌曲名')
+  const url = `${HELLOWORLD_TX_URL}?msg=${encodeURIComponent(name)}&n=1&type=0`
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  })
+  if (!response.ok) throw new Error(`HelloWorld 返回 ${response.status}`)
+  const text = await response.text()
+  let payload: any = text
+  try { payload = JSON.parse(text) } catch { /* 非 JSON 响应，按原始文本提取 */ }
+  const playUrl = extractTxAudioUrl(payload)
+  if (!isValidTxAudioUrl(playUrl)) throw new Error('HelloWorld 未返回播放链接')
+  return upgradeTxAudioUrl(playUrl)
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const platform = String(body?.platform || '').trim()
   const musicId = body?.musicId
   const playUrl = String(body?.playUrl || '').trim()
   const cookie = normalizeQqCookie(String(body?.cookie || '').trim())
-  // official-first：QQ 官方 Cookie 链路；fallback：第三方兜底链路
-  const strategy = body?.strategy === 'official-first' ? 'official-first' : 'fallback'
+  // official-first：QQ 官方 Cookie 链路；aggregator：内置聚合源兜底链；fallback：第三方兜底链路
+  const rawStrategy = String(body?.strategy || '')
+  const strategy =
+    rawStrategy === 'official-first' ? 'official-first' : rawStrategy === 'aggregator' ? 'aggregator' : 'fallback'
   const excludedSources = new Set(
     Array.isArray(body?.excludeSources)
       ? body.excludeSources.map((item: unknown) => String(item || '').trim()).filter(Boolean)
@@ -83,6 +147,41 @@ export default defineEventHandler(async (event) => {
       console.warn('[music/resolve-url] QQ 数字 songId 解析 MID 失败:', error?.message || error)
       throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
     }
+  }
+
+  // 聚合源兜底链：玉宁熙（按 mid）→ HelloWorld（按歌名），统一走后端以规避前端 CORS
+  if (strategy === 'aggregator') {
+    const aggregatorName = String(body?.name || '').trim()
+    const attempts: Array<{ id: string; run: () => Promise<string> }> = []
+    if (!excludedSources.has('yuafeng-tx')) {
+      attempts.push({ id: 'yuafeng-tx', run: () => resolveTxWithYuafeng(resolvedMusicId, body?.quality) })
+    }
+    if (!excludedSources.has('helloworld-tx') && aggregatorName) {
+      attempts.push({ id: 'helloworld-tx', run: () => resolveTxWithHelloWorld(aggregatorName) })
+    }
+
+    let lastError = ''
+    for (const attempt of attempts) {
+      try {
+        const url = await attempt.run()
+        return {
+          success: true,
+          url,
+          source: attempt.id,
+          normalizedMusicId: resolvedMusicId,
+          idType: 'songmid',
+          authUsed: false,
+          authDiagnostic: getQqCookieDiagnostic(cookie)
+        }
+      } catch (error: any) {
+        lastError = error?.message || String(error)
+        console.warn(`[music/resolve-url] ${attempt.id} 解析失败:`, lastError)
+      }
+    }
+    throw createError({
+      statusCode: 502,
+      message: lastError ? `QQ 聚合源解析失败：${lastError}` : 'QQ 聚合源解析失败'
+    })
   }
 
   // 官方 Cookie 链路：带用户登录态走 CgiGetVkey，可获取 VIP/高音质直链
