@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
   apiKeys,
@@ -564,10 +565,8 @@ export default defineEventHandler(async (event) => {
     console.log(`✅ 备份完成: ${filename}`)
     console.log(`📊 总计备份 ${totalRecords} 条记录`)
 
-    // 检测运行环境
-    const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
-    const isNetlify = process.env.NETLIFY
-    const isServerless = isVercel || isNetlify
+    // 检测运行环境（与连接池等处共用一份判定）
+    const isServerless = isServerlessRuntime()
 
     if (isServerless) {
       // 在无服务器环境中，直接返回备份数据供前端下载
