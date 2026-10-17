@@ -52,7 +52,7 @@
                   <div class="w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary-50 border border-border-tertiary-50 flex-shrink-0 relative">
                     <img 
                       v-if="playlist.coverImgUrl" 
-                      :src="getCoverThumbUrl(playlist.coverImgUrl)" 
+                      :src="getCoverThumbUrl(playlist.coverImgUrl)"
                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       referrerpolicy="no-referrer"
                       alt="" 
