@@ -342,8 +342,8 @@ export async function getBoardEvents(
           level: row.success ? 'info' : 'warn',
           source: 'passwordAudit',
           sourceLabel: row.action,
-          message: `用户 ${row.userId} ${row.action}`,
-          detail: [row.failureReason, row.ipAddress].filter(Boolean).join(' · ') || undefined,
+          message: `passwordAudit.${row.action}`,
+          detail: JSON.stringify({ userId: row.userId, failureReason: row.failureReason, ipAddress: row.ipAddress }),
           timestamp: row.createdAt.getTime(),
           at: formatDateTime(row.createdAt)
         })

@@ -29,7 +29,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     recordRuntimeEvent('error', 'request', summary || `HTTP ${statusCode}`)
   })
 
-  recordRuntimeEvent('info', 'boot', '服务进程已启动，全局错误处理器就绪')
+  recordRuntimeEvent('info', 'boot', JSON.stringify({ code: 'serverStarted' }))
 
   // 全局未处理的Promise拒绝处理器
   process.on('unhandledRejection', async (reason, promise) => {
@@ -110,7 +110,7 @@ export default defineNitroPlugin(async (nitroApp) => {
       await db.execute(sql`SELECT 1 as health_check`)
       if (!dbHealthy) {
         dbHealthy = true
-        recordRuntimeEvent('info', 'healthcheck', '数据库健康检查恢复')
+        recordRuntimeEvent('info', 'healthcheck', JSON.stringify({ code: 'dbHealthRecovered' }))
       }
     } catch (error) {
       console.error('Health check failed:', error)

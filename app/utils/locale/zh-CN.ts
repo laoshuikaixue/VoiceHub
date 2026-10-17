@@ -2173,7 +2173,11 @@ export const admin = {
     sourceAll: '全部来源',
     sourceRuntime: '进程内',
     sourceApiError: 'API 错误',
-    sourcePasswordAudit: '口令审计'
+    sourcePasswordAudit: '口令审计',
+    passwordAuditPrefix: '用户',
+    bufferCleared: (count: number) => `运行事件缓冲已清空（${count} 条）`,
+    serverStarted: '服务进程已启动，全局错误处理器就绪',
+    dbHealthRecovered: '数据库健康检查恢复'
   },
   overview: {
     recentActivities: '最近活动',

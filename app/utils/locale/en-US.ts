@@ -2227,7 +2227,11 @@ export const admin = {
     sourceAll: 'All sources',
     sourceRuntime: 'In-process',
     sourceApiError: 'API error',
-    sourcePasswordAudit: 'Password audit'
+    sourcePasswordAudit: 'Password audit',
+    passwordAuditPrefix: 'User',
+    bufferCleared: (count: number) => `Buffer cleared (${count} entries removed)`,
+    serverStarted: 'Server started, global error handler ready',
+    dbHealthRecovered: 'Database health check recovered'
   },
   overview: {
     recentActivities: 'Recent Activities',

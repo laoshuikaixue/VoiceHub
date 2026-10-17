@@ -252,7 +252,7 @@
               <span class="text-[10px] font-black uppercase tracking-wider text-text-tertiary">
                 {{ sourceLabel(item) }}
               </span>
-              <span class="text-xs text-text-primary break-all leading-relaxed">{{ item.message }}</span>
+              <span class="text-xs text-text-primary break-all leading-relaxed">{{ localizeEventMessage(item.message) }}</span>
             </div>
             <p v-if="item.detail" class="mt-1 text-[11px] text-text-tertiary break-all leading-relaxed">
               {{ item.detail }}
@@ -368,7 +368,8 @@ const connectionStatusText = computed(() => {
   const map = {
     connected: locale.value.connected,
     disconnected: locale.value.disconnected,
-    cached: locale.value.statusCached
+    cached: locale.value.statusCached,
+    error: locale.value.disconnected
   }
   return map[database.value?.statusLabel] || '-'
 })
@@ -472,6 +473,31 @@ const sourceLabel = (item) => {
   return item.sourceLabel ? `${base} · ${item.sourceLabel}` : base
 }
 
+// 服务端事件消息可能是 code + params，这里做本地化映射
+const localizeEventMessage = (message: string): string => {
+  // passwordAudit.<action> → "用户 #<userId> <action>"
+  if (message.startsWith('passwordAudit.')) {
+    const action = message.replace('passwordAudit.', '')
+    return `${locale.value.passwordAuditPrefix} ${action}`
+  }
+  // JSON payload from recordRuntimeEvent
+  try {
+    const parsed = JSON.parse(message)
+    if (parsed.code === 'bufferCleared') {
+      return locale.value.bufferCleared(parsed.count ?? 0)
+    }
+    if (parsed.code === 'serverStarted') {
+      return locale.value.serverStarted
+    }
+    if (parsed.code === 'dbHealthRecovered') {
+      return locale.value.dbHealthRecovered
+    }
+  } catch {
+    // not JSON, fall through to raw message
+  }
+  return message
+}
+
 const eventQuery = computed(() => {
   const query = { limit: 200 }
   if (eventLevel.value !== 'all') query.level = eventLevel.value
@@ -558,6 +584,8 @@ watch(autoRefresh, (enabled) => {
   stopAutoRefresh()
   if (enabled) {
     timer = setInterval(() => {
+      // 页面不可见时跳过本轮轮询，避免后台标签页持续查库
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
       loadSnapshot({ silent: true })
       loadEvents()
     }, REFRESH_INTERVAL_MS)
