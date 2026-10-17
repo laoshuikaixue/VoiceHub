@@ -100,7 +100,7 @@ export const songs = pgTable('Song', {
   title: text('title').notNull(),
   artist: text('artist').notNull(),
   requesterId: integer('requesterId').notNull(),
-  // 逐条投稿的匿名标记：true = 对其他同学显示「匿名」（管理员与投稿人本人仍可见真实姓名）
+  // 逐条投稿的匿名标记：true = 对其他同学显示「匿名投稿」（管理员与投稿人本人仍可见真实姓名）
   submissionAnonymous: boolean('submissionAnonymous').default(false).notNull(),
   played: boolean('played').default(false).notNull(),
   playedAt: timestamp('playedAt').defaultNow(),

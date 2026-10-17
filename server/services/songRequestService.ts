@@ -666,7 +666,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       // 匿名投稿不在群聊推送里暴露真实姓名
       const displayName =
         song.submissionAnonymous === true
-          ? '匿名同学'
+          ? '匿名投稿'
           : (requester?.name || requester?.username || `用户 ${user.id}`)
       await enqueueAstrbotGroupEvent(
         'songRequest',

@@ -440,7 +440,7 @@
                       class="text-[12px] font-bold text-text-secondary"
                       >{{ locale.submissionNote }}</label
                     >
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                       <button
                         v-if="cardCodeEnabled"
                         :class="[
@@ -496,7 +496,35 @@
                           </svg>
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
-                        </label>
+                      </label>
+                      <label
+                        v-if="allowAnonymousSubmission && user"
+                        class="custom-checkbox-wrapper"
+                      >
+                        <input
+                          v-model="submissionAnonymous"
+                          type="checkbox"
+                          class="custom-checkbox-input"
+                          :disabled="!siteConfigLoaded"
+                        />
+                        <span class="custom-checkbox-box">
+                          <svg
+                            class="custom-checkbox-icon"
+                            viewBox="0 0 12 10"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M1 5L4.5 8.5L11 1.5"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                        <span class="custom-checkbox-text">{{ locale.anonymousSubmission }}</span>
+                      </label>
                     </div>
                   </div>
                   <textarea
@@ -614,8 +642,11 @@
               </div>
             </div>
 
-            <!-- 匿名投稿：独立于提交备注，由站点开关 allowAnonymousSubmission 控制 -->
-            <div v-if="allowAnonymousSubmission && user" class="form-row anonymous-submission-row">
+            <!-- 匿名投稿：备注功能未开启时独立成行，由站点开关 allowAnonymousSubmission 控制 -->
+            <div
+              v-if="allowAnonymousSubmission && user && !enableSubmissionRemarks"
+              class="form-row anonymous-submission-row"
+            >
               <label class="custom-checkbox-wrapper">
                 <input
                   v-model="submissionAnonymous"

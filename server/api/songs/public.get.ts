@@ -436,7 +436,7 @@ export default defineEventHandler(async (event) => {
     if (shouldHideStudentInfo && !isAdmin) {
       maskPublicScheduleData(formattedSchedules)
     }
-    // 逐条匿名：匿名投稿对所有非管理员统一显示「匿名」
+    // 逐条匿名：匿名投稿对所有非管理员统一显示「匿名投稿」
     applySubmissionAnonymityToSchedules(formattedSchedules, { id: user?.id ?? null, isAdmin })
     if (!user) {
       stripAnonymousSongIdentifiersFromSchedules(formattedSchedules)
