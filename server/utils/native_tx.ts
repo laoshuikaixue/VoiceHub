@@ -49,6 +49,8 @@ export const txSignedRequest = async (body: any, options: { signal?: AbortSignal
       headers: txHeaders,
       body,
       responseType: 'json',
+      // 未传 signal 时也必须有时限，否则外部接口挂起会长期占住云函数实例
+      timeout: 10000,
       signal: options.signal
     })
     return response

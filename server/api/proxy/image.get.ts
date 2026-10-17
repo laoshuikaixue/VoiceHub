@@ -4,10 +4,17 @@ import { lookup as dnsLookup } from 'node:dns'
 import http from 'node:http'
 import https from 'node:https'
 import { publicAddress } from '~~/server/utils/music-source-plugins/network'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
-const MAX_CONCURRENT_IMAGE_FETCHES = 30
+// 并发上限是进程内计数，云函数多实例之间不共享：Serverless 下压到 4 让超载快速 429，而不是各占一个实例直到平台超时
+const MAX_CONCURRENT_IMAGE_FETCHES = isServerlessRuntime() ? 4 : 30
 const MAX_REDIRECTS = 5
+// Serverless 下单次代理的整体截止时间（跨 6 跳与 3 次重试共享）。缺它时最坏 3 次重试 × 6 跳 × 15s ≈ 4.5 分钟，会长期占住函数实例
+// 自建部署保持原行为（不设截止）：实测单张封面正常要 11–39 秒，2.8MB 的要 296 秒，加截止会把可用请求判成失败
+const IMAGE_FETCH_DEADLINE_MS = 8000
+const PROXY_DEADLINE_UNLIMITED = Number.POSITIVE_INFINITY
 let activeImageFetches = 0
 
 // 内网/保留地址判定复用插件网络层的 ipaddr.js unicast 实现（同一份 IP 名单）
@@ -96,10 +103,14 @@ const requestOnce = (targetUrl, headers, timeoutMs) => {
   })
 }
 
-const fetchImage = async (imageUrl) => {
+const fetchImage = async (imageUrl, deadlineAt) => {
   let currentUrl = imageUrl
 
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect++) {
+    const remainingMs = deadlineAt - getServerTimestamp()
+    if (remainingMs <= 0) {
+      throw new Error('图片请求超时')
+    }
     const url = new URL(currentUrl)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       throw new Error('不支持的协议')
@@ -114,7 +125,7 @@ const fetchImage = async (imageUrl) => {
       Referer: getReferer(url.hostname) || url.origin
     }
 
-    const res = await requestOnce(currentUrl, headers, 15000)
+    const res = await requestOnce(currentUrl, headers, Math.min(15000, remainingMs))
     const status = res.statusCode || 0
 
     // 手动处理重定向：下一跳目标会在循环顶部重新校验，避免自动跟随造成的 SSRF
@@ -163,11 +174,11 @@ const fetchImage = async (imageUrl) => {
   throw new Error('重定向次数过多')
 }
 
-const retryFetchImage = async (imageUrl, maxRetries = 2) => {
+const retryFetchImage = async (imageUrl, deadlineAt, maxRetries = 2) => {
   let lastError
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      return await fetchImage(imageUrl)
+      return await fetchImage(imageUrl, deadlineAt)
     } catch (err) {
       lastError = err
       // 校验层面错误（400/403）重试无意义，直接中断
@@ -177,6 +188,11 @@ const retryFetchImage = async (imageUrl, maxRetries = 2) => {
         'statusCode' in err &&
         (err.statusCode === 400 || err.statusCode === 403)
       ) {
+        throw err
+      }
+      // 超时说明外部已在占住这个实例，重试只会把占用时长翻倍；剩余预算不够一次握手时也不再重试
+      const timedOut = err instanceof Error && err.message === '图片请求超时'
+      if (timedOut || deadlineAt - getServerTimestamp() < 1500) {
         throw err
       }
       if (i < maxRetries) {
@@ -199,7 +215,7 @@ export default defineEventHandler(async (event) => {
   activeImageFetches++
 
   try {
-    const { contentType, buffer } = await retryFetchImage(imageUrl)
+    const { contentType, buffer } = await retryFetchImage(imageUrl, isServerlessRuntime() ? getServerTimestamp() + IMAGE_FETCH_DEADLINE_MS : PROXY_DEADLINE_UNLIMITED)
 
     setHeader(event, 'Content-Type', contentType)
     setHeader(event, 'Cache-Control', 'public, max-age=3600')

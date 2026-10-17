@@ -44,6 +44,12 @@ const isNeonDatabase =
 // 判定与备份导出、群事件投递器共用一份，此前这里漏掉了 VERCEL_ENV 与 NITRO_PRESET
 const isServerlessDatabase = isServerlessRuntime();
 
+// 连接池上限：DB_POOL_MAX 优先，便于按部署环境实测调参（非法值忽略，回落到自动判定）
+const parsePoolMax = (value: string | undefined): number | null => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 20 ? parsed : null;
+};
+
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {
   if (isNeonDatabase) {
@@ -71,10 +77,10 @@ const getDatabaseConfig = () => {
     // 标准 PostgreSQL 数据库配置
     return {
       // Serverless 下单实例池压到 2：1 vCPU 数据库同时只能执行一条查询，大池只会耗尽 max_connections
-      max: isServerlessDatabase ? 2 : process.env.NODE_ENV === 'production' ? 10 : 5,
+      max: parsePoolMax(process.env.DB_POOL_MAX) ?? (isServerlessDatabase ? 2 : process.env.NODE_ENV === 'production' ? 10 : 5),
       idle_timeout: 20, // 增加空闲超时时间
-      // 连接失败快速抛出，避免 30 秒挂起拖垮函数实例并引发重试风暴
-      connect_timeout: isServerlessDatabase ? 10 : 30,
+      // Serverless 下连接阶段压到 8s，与 statement_timeout 10s 一起留在平台 30s 量级的硬超时之内
+      connect_timeout: isServerlessDatabase ? 8 : 30,
       max_lifetime: 3600, // 连接最大生命周期（1小时）
       ssl: connectionString.includes('sslmode=require') || connectionString.includes('ssl=true') ? 'require' : false,
       prepare: false, // 禁用预处理语句以提高兼容性
@@ -84,7 +90,10 @@ const getDatabaseConfig = () => {
       connection: {
         application_name: 'voicehub-app',
         // 强制会话时区为 UTC，同 Neon 分支说明
-        timezone: 'UTC'
+        timezone: 'UTC',
+        // Serverless 下给单条语句设上界，让它先于函数平台的硬超时失败；自建库不限制，备份/恢复是长查询。
+        // postgres-js 3.x 顶层 timeout 已废弃（被当作 idle_timeout），不能当查询超时用
+        ...(isServerlessDatabase ? { statement_timeout: '10s' } : {})
       },
       onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
       debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
