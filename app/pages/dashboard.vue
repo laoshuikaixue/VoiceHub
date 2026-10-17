@@ -197,6 +197,14 @@
             >
               <LazyAdminCardCodesManager />
             </div>
+
+            <!-- 系统看板 -->
+            <div
+              v-if="activeTab === 'system-board' && permissions.canAccessPage('system-board')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSystemBoard />
+            </div>
           </div>
         </main>
       </div>
