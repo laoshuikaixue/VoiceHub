@@ -217,6 +217,9 @@ export const siteConfig = {
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc:
     'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
+  allowAnonymousSubmission: 'Allow Anonymous Submissions',
+  allowAnonymousSubmissionDesc:
+    'When on, users may choose "Anonymous" per submission; others see only "Anonymous" while admins and the submitter still see the real name. Anonymous submissions cannot have co-requesters.',
   telemetryEnabled: 'Enable Error Tracking',
   telemetryEnabledDesc:
     'Enabled by default. When on, the system sends frontend/backend error events and instance-online events to Sentry for instance statistics and deployment diagnostics.',
@@ -1618,6 +1621,7 @@ export const pages = {
       requester: 'Requester: ',
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
+      anonymousRequester: 'Anonymous',
       collaboratorsTitle: 'Collaborators: ',
       unknown: 'Unknown',
       replay: 'Replay',
@@ -1700,6 +1704,7 @@ export const pages = {
       viewSubmissionNote: 'View Note',
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
+      anonymousRequester: 'Anonymous',
       collaboratorsTitle: 'Collaborators: ',
       replayRequest: (count: number) => `Replay request (${count}): `,
       requester: 'Requester: ',
@@ -1895,6 +1900,7 @@ export const pages = {
           `Monthly submission limit reached (${used}/${limit})`
       },
       publicToUsers: 'Public to signed-in users',
+      anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',

@@ -330,6 +330,8 @@ export const systemSettings = pgTable('SystemSettings', {
   scheduleDaysAfter: integer('scheduleDaysAfter').default(1).notNull(),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
+  // 是否允许投稿人逐条选择匿名投稿（默认关闭）
+  allowAnonymousSubmission: boolean('allowAnonymousSubmission').default(false).notNull(),
   // SMTP 邮件配置
   smtpEnabled: boolean('smtpEnabled').default(false).notNull(),
   smtpHost: text('smtpHost'),

@@ -93,7 +93,7 @@
           </div>
 
           <!-- 联合投稿人区域 -->
-          <div v-if="user && enableCollaborativeSubmission" class="collaborators-section">
+          <div v-if="user && enableCollaborativeSubmission && !submissionAnonymous" class="collaborators-section">
             <div class="section-label">{{ locale.collaborators }}</div>
             <div class="collaborators-list">
               <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
@@ -497,20 +497,6 @@
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                         </label>
-                        <label class="custom-checkbox-wrapper">
-                          <input
-                            v-model="submissionAnonymous"
-                            type="checkbox"
-                            class="custom-checkbox-input"
-                            :disabled="!siteConfigLoaded"
-                          />
-                          <span class="custom-checkbox-box">
-                            <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                          </span>
-                          <span class="custom-checkbox-text">匿名投稿</span>
-                      </label>
                     </div>
                   </div>
                   <textarea
@@ -626,6 +612,35 @@
                   <Icon :size="13" name="chevron-right" />
                 </button>
               </div>
+            </div>
+
+            <!-- 匿名投稿：独立于提交备注，由站点开关 allowAnonymousSubmission 控制 -->
+            <div v-if="allowAnonymousSubmission && user" class="form-row anonymous-submission-row">
+              <label class="custom-checkbox-wrapper">
+                <input
+                  v-model="submissionAnonymous"
+                  type="checkbox"
+                  class="custom-checkbox-input"
+                  :disabled="!siteConfigLoaded"
+                />
+                <span class="custom-checkbox-box">
+                  <svg
+                    class="custom-checkbox-icon"
+                    viewBox="0 0 12 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1 5L4.5 8.5L11 1.5"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span class="custom-checkbox-text">{{ locale.anonymousSubmission }}</span>
+              </label>
             </div>
 
             <!-- 加载状态 -->
@@ -1003,7 +1018,7 @@
 
     <!-- 用户搜索弹窗 -->
     <UserSearchModal
-      v-if="enableCollaborativeSubmission"
+      v-if="enableCollaborativeSubmission && !submissionAnonymous"
       v-model:show="showUserSearchModal"
       :exclude-ids="[user?.id, ...collaborators.map((u) => u.id)]"
       :multiple="true"
@@ -1533,6 +1548,7 @@ const {
   enableSubmissionRestriction,
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
+  allowAnonymousSubmission,
   enableSubmissionLimit,
   enableCardCodeRequests,
   requireCardCodeForRequests,
@@ -2747,7 +2763,20 @@ watch(enableSubmissionRemarks, (enabled) => {
   if (!enabled) {
     submissionNote.value = ''
     submissionNotePublic.value = true
+  }
+})
+
+watch(allowAnonymousSubmission, (enabled) => {
+  if (!enabled) {
     submissionAnonymous.value = false
+  }
+})
+
+// 匿名投稿不允许联合投稿：勾选即清空并隐藏协作者选择
+watch(submissionAnonymous, (anonymous) => {
+  if (anonymous) {
+    collaborators.value = []
+    showUserSearchModal.value = false
   }
 })
 

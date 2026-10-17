@@ -237,6 +237,16 @@ export default defineEventHandler(async (event) => {
       updateData.hideStudentInfo = body.hideStudentInfo
     }
 
+    if (body.allowAnonymousSubmission !== undefined) {
+      if (typeof body.allowAnonymousSubmission !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowAnonymousSubmission 必须是布尔值'
+        })
+      }
+      updateData.allowAnonymousSubmission = body.allowAnonymousSubmission
+    }
+
     if (body.enablePlayTimeSelection !== undefined) {
       if (typeof body.enablePlayTimeSelection !== 'boolean') {
         throw createError({

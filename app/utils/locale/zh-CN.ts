@@ -207,6 +207,9 @@ export const siteConfig = {
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc:
     '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
+  allowAnonymousSubmission: '允许匿名投稿',
+  allowAnonymousSubmissionDesc:
+    '开启后，投稿人可在投稿时逐条选择“匿名投稿”，对外仅显示“匿名”；管理员与投稿人本人仍可见真实姓名。匿名投稿不支持联合投稿。',
   telemetryEnabled: '启用错误追踪与遥测',
   telemetryEnabledDesc:
     '默认开启。开启后，系统会向 Sentry 发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。',
@@ -1576,6 +1579,7 @@ export const pages = {
       requester: '投稿人：',
       mainRequesterTitle: '主投稿人: ',
       requesterTitle: '投稿人: ',
+      anonymousRequester: '匿名',
       collaboratorsTitle: '联合投稿: ',
       unknown: '未知',
       replay: '重播',
@@ -1654,6 +1658,7 @@ export const pages = {
       viewSubmissionNote: '查看备注留言',
       mainRequesterTitle: '主投稿人: ',
       requesterTitle: '投稿人: ',
+      anonymousRequester: '匿名',
       collaboratorsTitle: '联合投稿: ',
       replayRequest: (count: number) => `重播申请 (${count})：`,
       requester: '投稿人：',
@@ -1841,6 +1846,7 @@ export const pages = {
         monthlyLimitReached: (used: number, limit: number) => `本月投稿已达上限 (${used}/${limit})`
       },
       publicToUsers: '公开给已登录用户',
+      anonymousSubmission: '匿名投稿',
       submissionNoteApprovalHint: '公开留言需管理员审核通过后展示',
       coverAlt: '封面',
       albumDetailsTitle: '点击查看专辑详情',

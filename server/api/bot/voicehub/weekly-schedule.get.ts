@@ -6,7 +6,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot-notification'
 import { normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
-import { maskScheduleItemsInfo, applySubmissionAnonymity } from '~~/server/utils/studentMask'
+import { maskScheduleItemsInfo } from '~~/server/utils/studentMask'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { formatDateTime, getBeijingStartOfWeek, getBeijingEndOfWeek, getBeijingWeekdayLabel } from '~/utils/timeUtils'
 
@@ -166,6 +166,7 @@ export default defineEventHandler(async (event) => {
       artist: row.artist,
       cover: row.cover ?? '',
       requester: requesterDisplay,
+      submissionAnonymous: row.submissionAnonymous === true,
       voteCount: voteCountMap.get(row.songId) ?? 0,
       played: row.played,
     }
@@ -174,7 +175,13 @@ export default defineEventHandler(async (event) => {
   // 与公开排期端点同策略：机器人响应会离开服务端边界，投稿人姓名在
   // hideStudentInfo（默认开启）时同样脱敏，年级/班级一律不返回。
   if (settings.hideStudentInfo !== false) maskScheduleItemsInfo(scheduleItems)
-  applySubmissionAnonymity(scheduleItems, { isAdmin: false })
+  // 机器人周排期为中文场景：匿名投稿统一显示「匿名同学」，不泄露真实姓名
+  for (const item of scheduleItems) {
+    if (item.submissionAnonymous === true) {
+      item.requester = '匿名同学'
+    }
+    delete item.submissionAnonymous
+  }
 
   const displayConfig = normalizeAstrbotWeeklyConfig(settings.weeklyConfig)
   const siteTitle = settings.siteTitle ?? 'VoiceHub'

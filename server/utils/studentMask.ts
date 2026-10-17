@@ -18,6 +18,8 @@ export interface MaskableUser {
 export interface MaskableSong {
   /** 逐条投稿的匿名标记（Song.submissionAnonymous） */
   submissionAnonymous?: boolean
+  /** 当前查看者是否应看到「匿名」（服务端标志驱动，由前端本地化展示文案） */
+  isAnonymous?: boolean
   requester?: string
   requesterGrade?: string | null
   requesterClass?: string | null
@@ -115,9 +117,6 @@ export function stripAnonymousSongIdentifiersFromSchedules(data: PublicScheduleI
   })
 }
 
-/** 匿名投稿对外展示的投稿人名称 */
-export const ANONYMOUS_REQUESTER_DISPLAY = '匿名'
-
 export interface AnonymityViewer {
   id?: number | null
   /** 管理员视角：不做匿名处理（后台始终可以看到真实投稿人） */
@@ -130,10 +129,11 @@ export interface AnonymityViewer {
  * 只有 submissionAnonymous === true 的投稿会被处理：
  *   - 管理员：完全跳过（后台始终能看到真实投稿人，便于管理追溯）
  *   - 投稿人本人：跳过（自己的投稿自己可见，便于在列表里辨认）
- *   - 其他登录用户 / 游客：投稿人显示为「匿名」，并移除年级班级、联合投稿人
- *     以及 requesterId / cardCodeId 等可被交叉关联的内部标识
+ *   - 其他登录用户 / 游客：置 isAnonymous=true 且清空 requester，并移除年级班级、
+ *     联合投稿人以及 requesterId / cardCodeId 等可被交叉关联的内部标识；
+ *     「匿名」文案由前端按 locale 渲染，避免中文串泄漏到英文界面
  *
- * 注意：本函数必须在 maskSongsInfo 之后调用，否则「匿名」会被姓名脱敏规则覆盖。
+ * 注意：本函数必须在 maskSongsInfo 之后调用，否则匿名效果会被姓名脱敏规则覆盖。
  */
 export function applySubmissionAnonymity(songs: MaskableSong[], viewer?: AnonymityViewer | null) {
   if (viewer?.isAdmin) return
@@ -147,7 +147,8 @@ export function applySubmissionAnonymity(songs: MaskableSong[], viewer?: Anonymi
       return
     }
 
-    song.requester = ANONYMOUS_REQUESTER_DISPLAY
+    song.isAnonymous = true
+    song.requester = null
     song.requesterGrade = null
     song.requesterClass = null
     // 联合投稿人一旦公开，等价于泄露匿名投稿的圈子

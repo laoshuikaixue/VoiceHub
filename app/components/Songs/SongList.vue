@@ -365,19 +365,21 @@
                 <div class="song-meta">
                   <span
                     :title="
-                      (song.collaborators && song.collaborators.length
-                        ? locale.mainRequesterTitle
-                        : locale.requesterTitle) +
-                      song.requester +
-                      (song.collaborators && song.collaborators.length
-                        ? '\n' + locale.collaboratorsTitle +
-                          song.collaborators.map((c) => c.displayName || c.name).join(', ')
-                        : '')
+                      song.isAnonymous
+                        ? locale.requesterTitle + locale.anonymousRequester
+                        : (song.collaborators && song.collaborators.length
+                            ? locale.mainRequesterTitle
+                            : locale.requesterTitle) +
+                          song.requester +
+                          (song.collaborators && song.collaborators.length
+                            ? '\n' + locale.collaboratorsTitle +
+                              song.collaborators.map((c) => c.displayName || c.name).join(', ')
+                            : '')
                     "
                     class="requester"
                   >
-                    {{ locale.requester }}{{ song.requester }}
-                    <span v-if="song.collaborators && song.collaborators.length > 0">
+                    {{ locale.requester }}{{ song.isAnonymous ? locale.anonymousRequester : song.requester }}
+                    <span v-if="!song.isAnonymous && song.collaborators && song.collaborators.length > 0">
                       & {{ song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
                     </span>
                   </span>

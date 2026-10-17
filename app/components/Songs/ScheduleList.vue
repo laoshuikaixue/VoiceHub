@@ -253,22 +253,25 @@
                           <span
                             v-else
                             :title="
-                              (schedule.song.collaborators && schedule.song.collaborators.length > 0
-                                ? locale.mainRequesterTitle
-                                : locale.requesterTitle) +
-                              schedule.song.requester +
-                              (schedule.song.collaborators && schedule.song.collaborators.length
-                                ? '\n' + locale.collaboratorsTitle +
-                                  schedule.song.collaborators
-                                    .map((c) => c.displayName || c.name)
-                                    .join(', ')
-                                : '')
+                              schedule.song.isAnonymous
+                                ? locale.requesterTitle + locale.anonymousRequester
+                                : (schedule.song.collaborators && schedule.song.collaborators.length > 0
+                                    ? locale.mainRequesterTitle
+                                    : locale.requesterTitle) +
+                                  schedule.song.requester +
+                                  (schedule.song.collaborators && schedule.song.collaborators.length
+                                    ? '\n' + locale.collaboratorsTitle +
+                                      schedule.song.collaborators
+                                        .map((c) => c.displayName || c.name)
+                                        .join(', ')
+                                    : '')
                             "
                             class="requester"
                           >
-                            {{ locale.requester }}{{ schedule.song.requester }}
+                            {{ locale.requester }}{{ schedule.song.isAnonymous ? locale.anonymousRequester : schedule.song.requester }}
                             <span
                               v-if="
+                                !schedule.song.isAnonymous &&
                                 schedule.song.collaborators &&
                                 schedule.song.collaborators.length > 0
                               "

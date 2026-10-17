@@ -865,6 +865,7 @@ export default defineEventHandler(async (event) => {
               'scheduleDaysAfter',
               'showBlacklistKeywords',
               'hideStudentInfo',
+              'allowAnonymousSubmission',
               'enableReplayRequests',
               'enableCollaborativeSubmission',
               'enableSubmissionRemarks',
