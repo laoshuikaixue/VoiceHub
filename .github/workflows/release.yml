@@ -150,12 +150,14 @@ jobs:
 
           # 文件集对齐 Dockerfile 运行阶段：除 .output 外，迁移与管理脚本仍需源文件
           STAGE="staging/voicehub"
-          mkdir -p "$STAGE/app"
+          mkdir -p "$STAGE/app" "$STAGE/server/utils"
           cp -r .output "$STAGE/.output"
           cp -r app/drizzle "$STAGE/app/drizzle"
           cp -r scripts "$STAGE/scripts"
           cp -r docker-compose "$STAGE/docker-compose"
           cp drizzle.config.ts package.json pnpm-lock.yaml pnpm-workspace.yaml .env.example "$STAGE/"
+          # db.ts 运行时依赖该模块（tsx 直跑源码），缺失时 deploy 阶段的 create-admin 报 ERR_MODULE_NOT_FOUND
+          cp server/utils/serverless-runtime.ts "$STAGE/server/utils/"
 
           # 与 Dockerfile CMD 一致：先同步数据库再启动，PREBUILT 跳过安装与构建
           cat > "$STAGE/start.sh" <<'EOS'
