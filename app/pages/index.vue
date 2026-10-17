@@ -222,7 +222,7 @@
               <div class="full-width">
                 <SongsScheduleList
                   :error="error"
-                  :loading="loading"
+                  :loading="scheduleLoading"
                   :schedules="publicSchedules"
                   @semester-change="handleSemesterChange"
                 />
@@ -1489,11 +1489,11 @@ const setupRefreshInterval = () => {
 }
 
 // 将 SSR 预取数据灌入各组合式状态；配置缺失视为预取失败，交由客户端回退补拉
-let homeDataApplied = false
+const homeDataApplied = ref(false)
 const applyHomeData = () => {
   const d = homeData.value
-  if (!d || !d.config || homeDataApplied) return
-  homeDataApplied = true
+  if (!d || !d.config || homeDataApplied.value) return
+  homeDataApplied.value = true
 
   setSiteConfigData(d.config)
   if (import.meta.client) {
@@ -1672,6 +1672,12 @@ const filteredSongs = computed(() => {
 })
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
+// 排期列表加载态：客户端回首页时 useHomeBootstrap 正在拉取且尚无排期，先展示骨架屏而非空状态
+const scheduleLoading = computed(
+  () =>
+    loading.value ||
+    (publicSchedules.value.length === 0 && (homeDataPending.value || !homeDataApplied.value))
+)
 
 // 处理投稿请求
 const handleRequest = async (songData) => {

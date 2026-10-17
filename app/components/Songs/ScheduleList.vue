@@ -97,9 +97,18 @@
 
         <!-- 使用Transition组件包裹内容 -->
         <Transition mode="out-in" name="schedule-fade">
-          <div v-if="loading" key="loading" class="loading">
-            <AppSpinner :size="40" />
-            {{ locale.loading }}
+          <div v-if="loading" key="loading" class="schedule-loading">
+            <div class="schedule-loading-skeleton" aria-hidden="true">
+              <div v-for="n in 6" :key="n" class="skeleton-card">
+                <div class="skeleton-card-main">
+                  <div class="skeleton-cover shimmer-block" />
+                  <div class="skeleton-lines">
+                    <div class="skeleton-line shimmer-block" />
+                    <div class="skeleton-line skeleton-line-short shimmer-block" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-else-if="error" key="error" class="error">
@@ -650,7 +659,6 @@ import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import Icon from '~/components/UI/Icon.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { getCoverThumbUrl } from '~/utils/url'
@@ -1917,19 +1925,131 @@ const vRipple = {
   margin: 0;
 }
 
-/* 加载和错误状态 */
-.loading {
-  padding: 3rem;
-  text-align: center;
-  border-radius: 10px;
+/* 加载骨架屏（光扫过动画） */
+.schedule-loading {
+  padding: 1rem 0;
+}
+
+.schedule-loading-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.skeleton-card {
+  width: 320px;
+  max-width: 100%;
+  flex-shrink: 0;
   background: var(--panel-bg);
-  margin: 1rem 0;
-  color: var(--overlay-60);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0px 4px 4px var(--mask-25);
+}
+
+.skeleton-card-main {
+  height: 90px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.skeleton-cover {
+  width: 55px;
+  height: 55px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
+  gap: 10px;
+}
+
+.skeleton-line {
+  width: 60%;
+  height: 16px;
+  border-radius: 6px;
+}
+
+.skeleton-line-short {
+  width: 40%;
+  height: 12px;
+}
+
+.shimmer-block {
+  position: relative;
+  overflow: hidden;
+  background: var(--overlay-10);
+}
+
+.shimmer-block::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--shimmer-overlay), transparent);
+  animation: schedule-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes schedule-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-block::after {
+    animation: none;
+  }
+}
+
+/* 移动端骨架屏：与移动端真实排期卡片一致（通栏、圆角、边框、48px 封面） */
+@media (max-width: 768px) {
+  .schedule-loading-skeleton {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .skeleton-card {
+    width: 100%;
+    background: var(--overlay-12);
+    border: 1px solid var(--overlay-20);
+    border-radius: 18px;
+    box-shadow: 0 4px 15px var(--mask-20);
+  }
+
+  .skeleton-card-main {
+    height: auto;
+    min-height: 72px;
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .skeleton-cover {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+  }
+
+  .skeleton-lines {
+    gap: 8px;
+  }
+
+  .skeleton-line {
+    height: 15px;
+  }
+
+  .skeleton-line-short {
+    height: 12px;
+  }
 }
 
 @keyframes spin {
