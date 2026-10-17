@@ -112,8 +112,9 @@ export async function searchBilibiliVideos(keyword: string, page = 1, pageSize =
       com2co: true
     },
     headers: BILIBILI_HEADERS,
-    // 无超时的外部调用会在云函数里长期占住实例，高峰期直接放大成整站超时
-    timeout: 8000
+    // 无超时的外部调用会在云函数里长期占住实例；ofetch 对 GET 默认自动重试一次，会让标称超时翻倍，这里只发一次
+    timeout: 8000,
+    retry: false
   })
 
   if (!resp.data?.result) return []
@@ -125,7 +126,8 @@ export async function searchBilibiliVideos(keyword: string, page = 1, pageSize =
           method: 'GET',
           params: { bvid: song.bvid },
           headers: BILIBILI_HEADERS,
-          timeout: 5000
+          timeout: 5000,
+          retry: false
         })
 
         const pages = videoInfoResp.data?.pages || []

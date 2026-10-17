@@ -44,12 +44,6 @@ const isNeonDatabase =
 // 判定与备份导出、群事件投递器共用一份，此前这里漏掉了 VERCEL_ENV 与 NITRO_PRESET
 const isServerlessDatabase = isServerlessRuntime();
 
-// 连接池上限：DB_POOL_MAX 优先，便于按部署环境实测调参（非法值忽略，回落到自动判定）
-const parsePoolMax = (value: string | undefined): number | null => {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 && parsed <= 20 ? parsed : null;
-};
-
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {
   if (isNeonDatabase) {
@@ -77,7 +71,7 @@ const getDatabaseConfig = () => {
     // 标准 PostgreSQL 数据库配置
     return {
       // Serverless 下单实例池压到 2：1 vCPU 数据库同时只能执行一条查询，大池只会耗尽 max_connections
-      max: parsePoolMax(process.env.DB_POOL_MAX) ?? (isServerlessDatabase ? 2 : process.env.NODE_ENV === 'production' ? 10 : 5),
+      max: isServerlessDatabase ? 2 : process.env.NODE_ENV === 'production' ? 10 : 5,
       idle_timeout: 20, // 增加空闲超时时间
       // Serverless 下连接阶段压到 8s，与 statement_timeout 10s 一起留在平台 30s 量级的硬超时之内
       connect_timeout: isServerlessDatabase ? 8 : 30,

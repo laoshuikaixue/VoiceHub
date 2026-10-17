@@ -8,6 +8,8 @@ const neteaseEnhancedApiPromise = import('@neteasecloudmusicapienhanced/api').th
 
 // 上游 SDK 自身不设超时，一次挂起会长期占住云函数实例（Pages 上会放大成整站 504），故加整体截止时间
 const NETEASE_CALL_TIMEOUT_MS = 12000
+// xeapi 公钥预热同样可能挂起，且模块级 promise 被所有请求共用，必须单独封顶
+const NETEASE_CONFIG_TIMEOUT_MS = 5000
 
 async function withDeadline<T>(task: Promise<T>, ms: number, endpoint: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -156,8 +158,10 @@ export default defineEventHandler(async (event) => {
 
   const params = { ...queryParams, ...bodyParams }
 
-  // 等待 xeapi 公钥等配置就绪
-  await ensureNcmConfig()
+  // 等待 xeapi 公钥等配置就绪：超时或失败都继续，让上游错误以有界的失败返回，而不是无限等待
+  await withDeadline(ensureNcmConfig(), NETEASE_CONFIG_TIMEOUT_MS, 'generateConfig').catch((error: unknown) => {
+    console.warn(`[Netease] xeapi 配置初始化超时: ${error instanceof Error ? error.message : String(error)}`)
+  })
 
   try {
     const result = await withDeadline(handler(params), NETEASE_CALL_TIMEOUT_MS, endpointPath)
