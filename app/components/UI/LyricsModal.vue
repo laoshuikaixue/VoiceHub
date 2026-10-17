@@ -57,7 +57,7 @@
           >
             <img
               v-if="currentSong.cover"
-              :src="convertToHttps(currentSong.cover)"
+              :src="getCoverLargeUrl(currentSong.cover)"
               class="cover-image"
               referrerpolicy="no-referrer"
             />
@@ -88,7 +88,7 @@
                     <img
                       v-if="currentSong?.cover"
                       :alt="currentSong.title"
-                      :src="convertToHttps(currentSong.cover)"
+                      :src="getCoverLargeUrl(currentSong.cover)"
                       class="cover-image"
                       referrerpolicy="no-referrer"
                       @error="handleCoverError"
@@ -417,7 +417,7 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
-import { convertToHttps, getSizedCoverUrl } from '~/utils/url'
+import { convertToHttps, getCoverLargeUrl, getSizedCoverUrl } from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'

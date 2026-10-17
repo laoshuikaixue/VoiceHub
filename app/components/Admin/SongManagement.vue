@@ -264,7 +264,7 @@
             >
               <img
                 v-if="song.cover"
-                :src="convertToHttps(song.cover)"
+                :src="getCoverThumbUrl(song.cover)"
                 class="w-full h-full object-cover"
                 referrerpolicy="no-referrer"
               />
@@ -1231,7 +1231,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
-import { validateUrl, convertToHttps } from '~/utils/url'
+import { validateUrl, getCoverThumbUrl } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'

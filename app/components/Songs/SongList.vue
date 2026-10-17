@@ -293,7 +293,7 @@
                 <template v-if="song.cover && !failedCovers[song.cover]">
                   <img
                     :alt="song.title"
-                    :src="convertToHttps(song.cover)"
+                    :src="getCoverThumbUrl(song.cover)"
                     class="cover-image"
                     decoding="async"
                     loading="lazy"
@@ -507,7 +507,7 @@ import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { useLocale } from '~/utils/locale'

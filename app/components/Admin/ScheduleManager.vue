@@ -367,7 +367,7 @@
                   >
                     <img
                       v-if="song.cover"
-                      :src="convertToHttps(song.cover)"
+                      :src="getCoverThumbUrl(song.cover)"
                       class="w-full h-full object-cover"
                       referrerpolicy="no-referrer"
                       loading="lazy"
@@ -885,7 +885,7 @@
                   >
                     <img
                       v-if="schedule.song.cover"
-                      :src="convertToHttps(schedule.song.cover)"
+                      :src="getCoverThumbUrl(schedule.song.cover)"
                       class="w-full h-full object-cover"
                       referrerpolicy="no-referrer"
                       loading="lazy"
@@ -1735,7 +1735,7 @@
               >
                 <img
                   v-if="song.cover"
-                  :src="convertToHttps(song.cover)"
+                  :src="getCoverThumbUrl(song.cover)"
                   class="w-full h-full object-cover"
                   referrerpolicy="no-referrer"
                   loading="lazy"
@@ -1968,7 +1968,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { convertToHttps, getNeteaseCookie } from '~/utils/url'
+import { convertToHttps, getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'

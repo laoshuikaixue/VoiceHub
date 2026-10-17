@@ -95,7 +95,7 @@
                 <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-tertiary mr-4 flex-shrink-0">
                   <img
                     v-if="playlist.coverImgUrl"
-                    :src="convertToHttps(playlist.coverImgUrl)"
+                    :src="getCoverThumbUrl(playlist.coverImgUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -159,7 +159,7 @@
                   @click="playSong(song)"
                 >
                   <img
-                    :src="convertToHttps(song.al?.picUrl)"
+                    :src="getCoverThumbUrl(song.al?.picUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -284,7 +284,7 @@ import {
   getQqUserPlaylists,
   QQ_FAV_PLAYLIST_ID
 } from '~/utils/qqUserLibrary'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import Icon from '../UI/Icon.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
