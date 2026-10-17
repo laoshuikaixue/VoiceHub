@@ -781,6 +781,7 @@ VoiceHub/
 │   │   │   ├── Sidebar.vue            # 管理后台侧边栏
 │   │   │   ├── SiteConfigManager.vue  # 站点配置管理
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
+│   │   │   ├── SystemBoard.vue        # 系统看板（进程/数据库/表规模/生效配置/运行事件）
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   │   ├── SongManagement.vue     # 歌曲管理
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
@@ -1163,6 +1164,10 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 更新系统设置
 │   │   │   │   ├── index.ts         # 获取系统设置
 │   │   │   │   └── secretMask.ts    # 密钥脱敏工具
+│   │   │   ├── system-board/        # 系统看板API
+│   │   │   │   ├── events.get.ts    # 运行事件流（内存缓冲 + API错误 + 口令审计）
+│   │   │   │   ├── index.get.ts     # 看板快照（进程/数据库/表规模/生效配置）
+│   │   │   │   └── runtime-clear.post.ts # 清空运行事件缓冲
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
 │   │   │       │   ├── reset-password.post.ts # 重置用户密码
@@ -1407,6 +1412,7 @@ VoiceHub/
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
+│   │   ├── systemBoardService.ts # 系统看板数据聚合服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
@@ -1492,6 +1498,7 @@ VoiceHub/
 │   │   ├── submission-restriction-policy.ts # 重复投稿限制模式判定
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
+│   │   ├── system-event-buffer.ts # 系统看板进程内运行事件环形缓冲
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
 │   │   ├── userDisplayName.ts # 同名用户消歧统一口径（仅在读用户参与统计）
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具

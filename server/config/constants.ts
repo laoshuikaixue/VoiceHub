@@ -379,7 +379,8 @@ export const SERVER_ERROR_CODES = {
   NOTIFICATION_HISTORY_FILTER_INVALID: 'NOTIFICATION_HISTORY_FILTER_INVALID',
   NOTIFICATION_HISTORY_FETCH_FAILED: 'NOTIFICATION_HISTORY_FETCH_FAILED',
   NOTIFICATION_HISTORY_UPDATE_FAILED: 'NOTIFICATION_HISTORY_UPDATE_FAILED',
-  NOTIFICATION_HISTORY_DELETE_FAILED: 'NOTIFICATION_HISTORY_DELETE_FAILED'
+  NOTIFICATION_HISTORY_DELETE_FAILED: 'NOTIFICATION_HISTORY_DELETE_FAILED',
+  SYSTEM_BOARD_FAILED: 'SYSTEM_BOARD_FAILED'
   // 认证（AUTH_*）、歌曲（SONG_*）、用户（USER_*）等分组在 B2 转换时逐步补充
 } as const
 
@@ -594,3 +595,19 @@ export const SUBMISSION_NOTE_STATUS = {
   APPROVED: 'approved',
   REJECTED: 'rejected'
 } as const
+
+// 系统看板：进程内运行事件缓冲
+export const SYSTEM_BOARD_CONSTANTS = {
+  // 环形缓冲最多保留的事件条数，超出后丢弃最旧一条
+  BUFFER_SIZE: 300,
+  DEFAULT_EVENT_LIMIT: 100,
+  MAX_EVENT_LIMIT: 500,
+  // 单条事件消息截断长度，防止超长堆栈占满缓冲
+  MAX_MESSAGE_LENGTH: 500
+} as const
+
+// 系统看板事件级别与来源（内存缓冲 runtime / API 错误 apiError / 口令审计 passwordAudit）
+export const SYSTEM_BOARD_EVENT_LEVELS = ['error', 'warn', 'info'] as const
+export type SystemBoardEventLevel = (typeof SYSTEM_BOARD_EVENT_LEVELS)[number]
+export const SYSTEM_BOARD_EVENT_SOURCES = ['runtime', 'apiError', 'passwordAudit'] as const
+export type SystemBoardEventSource = (typeof SYSTEM_BOARD_EVENT_SOURCES)[number]
