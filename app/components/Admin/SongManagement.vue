@@ -943,6 +943,22 @@
                   </p>
                 </div>
               </label>
+              <label class="flex items-center gap-3 px-1 cursor-pointer group">
+                <input
+                  v-model="editForm.submissionAnonymous"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-primary"
+                />
+                <div>
+                  <span
+                    class="text-xs font-bold text-text-secondary group-hover:text-primary"
+                    >{{ locale.editModal.anonymousSubmission }}</span
+                  >
+                  <p class="text-[10px] text-text-disabled font-medium">
+                    {{ locale.editModal.anonymousSubmissionHint }}
+                  </p>
+                </div>
+              </label>
               <div
                 v-if="submissionNoteClearRequested"
                 class="space-y-3 rounded-xl border border-warning-20 bg-warning-5 p-4"
@@ -1381,6 +1397,7 @@ const editForm = ref({
   preferredPlayTimeId: 'none',
   submissionNote: '',
   submissionNotePublic: false,
+  submissionAnonymous: false,
   musicPlatform: '',
   musicId: '',
   cover: '',
@@ -2122,6 +2139,7 @@ const editSong = (song) => {
     preferredPlayTimeId: song.preferredPlayTimeId || 'none',
     submissionNote: song.submissionNote || '',
     submissionNotePublic: song.submissionNotePublic === true,
+    submissionAnonymous: song.submissionAnonymous === true,
     musicPlatform: song.musicPlatform || '',
     musicId: song.musicId || '',
     cover: song.cover || '',
@@ -2207,6 +2225,7 @@ const saveEditSong = async () => {
       submissionNotePublic: submissionNoteClearRequested.value
         ? false
         : editForm.value.submissionNotePublic,
+      submissionAnonymous: editForm.value.submissionAnonymous === true,
       clearSubmissionNote: submissionNoteClearRequested.value,
       submissionNoteClearReason: submissionNoteClearReason.value.trim(),
       notifyOnSubmissionNoteClear:

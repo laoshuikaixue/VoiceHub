@@ -207,6 +207,9 @@ export const siteConfig = {
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc:
     '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
+  allowAnonymousSubmission: '允许匿名投稿',
+  allowAnonymousSubmissionDesc:
+    '开启后，投稿人可在投稿时逐条选择“匿名投稿”，对外仅显示“匿名投稿”；管理员与投稿人本人仍可见真实姓名。匿名投稿不支持联合投稿。',
   telemetryEnabled: '启用错误追踪与遥测',
   telemetryEnabledDesc:
     '默认开启。开启后，系统会向 Sentry 发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。',
@@ -1577,6 +1580,7 @@ export const pages = {
       requester: '投稿人：',
       mainRequesterTitle: '主投稿人: ',
       requesterTitle: '投稿人: ',
+      anonymousRequester: '匿名投稿',
       collaboratorsTitle: '联合投稿: ',
       unknown: '未知',
       replay: '重播',
@@ -1655,6 +1659,9 @@ export const pages = {
       viewSubmissionNote: '查看备注留言',
       mainRequesterTitle: '主投稿人: ',
       requesterTitle: '投稿人: ',
+      anonymousRequester: '匿名投稿',
+      anonymousTag: '匿名投稿',
+      anonymousTagHint: '该投稿已匿名，其他用户看到的投稿人为“匿名投稿”，你仍可正常管理自己的投稿',
       collaboratorsTitle: '联合投稿: ',
       replayRequest: (count: number) => `重播申请 (${count})：`,
       requester: '投稿人：',
@@ -1841,7 +1848,8 @@ export const pages = {
         weeklyLimitReached: (used: number, limit: number) => `本周投稿已达上限 (${used}/${limit})`,
         monthlyLimitReached: (used: number, limit: number) => `本月投稿已达上限 (${used}/${limit})`
       },
-      publicToUsers: '公开给已登录用户',
+      publicToUsers: '备注留言公开给已登录用户',
+      anonymousSubmission: '匿名投稿',
       submissionNoteApprovalHint: '公开留言需管理员审核通过后展示',
       coverAlt: '封面',
       albumDetailsTitle: '点击查看专辑详情',
@@ -2444,6 +2452,9 @@ export const admin = {
       submissionNotePlaceholder: '填写歌曲备注',
       publicNote: '公开备注留言',
       publicNoteHint: '公开后其他用户可以看到此备注留言',
+      anonymousSubmission: '匿名投稿',
+      anonymousSubmissionHint:
+        '开启后其他用户看到的投稿人为“匿名投稿”，管理员仍可见真实姓名',
       clearNoteHint: '保存后将清空当前备注，可填写理由并发送通知',
       clearNoteReasonPlaceholder: '可选：请输入清空备注的理由，例如：备注内容违规',
       notifyAfterClear: '清空后发送通知',

@@ -85,7 +85,8 @@ export default defineEventHandler(async (event) => {
           played: songs.played,
           playedAt: songs.playedAt,
           createdAt: songs.createdAt,
-          semester: songs.semester
+          semester: songs.semester,
+          submissionAnonymous: songs.submissionAnonymous
         },
         requester: {
           id: users.id,
@@ -166,7 +167,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 格式化数据
-    const formattedSchedules = schedulesData.map((schedule) => {
+    const formattedSchedules: Record<string, any>[] = schedulesData.map((schedule) => {
       const collaborators = collaboratorsMap.get(schedule.song.id) || []
 
       return {
@@ -185,6 +186,7 @@ export default defineEventHandler(async (event) => {
           played: schedule.song.played,
           playedAt: schedule.song.playedAt,
           requestedAt: formatDateTime(schedule.song.createdAt),
+          submissionAnonymous: schedule.song.submissionAnonymous === true,
           collaborators: collaborators.map((c: any) => ({
             id: c.id,
             name: c.name,
@@ -212,6 +214,14 @@ export default defineEventHandler(async (event) => {
         createdAt: schedule.createdAt,
         updatedAt: schedule.updatedAt
       }
+    })
+
+    // 匿名投稿：开放 API 与站点对外展示保持一致，不返回真实投稿人
+    formattedSchedules.forEach((schedule) => {
+      if (schedule.song.submissionAnonymous !== true) return
+      schedule.song.isAnonymous = true
+      schedule.song.collaborators = []
+      schedule.requester = null
     })
 
     const result = {

@@ -910,6 +910,19 @@
 
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.allowAnonymousSubmission }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowAnonymousSubmissionDesc }}</p>
+            </div>
+            <input
+              id="allow-anonymous-submission"
+              v-model="formData.allowAnonymousSubmission"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.telemetryEnabled }}</p>
               <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
                 {{ locale.telemetryEnabledDesc }} <strong class="text-text-tertiary">{{ locale.telemetryPrivacy }}</strong>
@@ -1384,6 +1397,7 @@ const formData = ref({
   scheduleDaysAfter: 1,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  allowAnonymousSubmission: false,
   forcePasswordChangeOnFirstLogin: false,
   telemetryEnabled: true,
   captchaEnabled: false,
@@ -1551,6 +1565,7 @@ const loadConfig = async () => {
       scheduleDaysAfter: data.scheduleDaysAfter ?? 1,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      allowAnonymousSubmission: data.allowAnonymousSubmission === true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
       telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,

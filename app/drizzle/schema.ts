@@ -100,6 +100,8 @@ export const songs = pgTable('Song', {
   title: text('title').notNull(),
   artist: text('artist').notNull(),
   requesterId: integer('requesterId').notNull(),
+  // 逐条投稿的匿名标记：true = 对其他同学显示「匿名投稿」（管理员与投稿人本人仍可见真实姓名）
+  submissionAnonymous: boolean('submissionAnonymous').default(false).notNull(),
   played: boolean('played').default(false).notNull(),
   playedAt: timestamp('playedAt').defaultNow(),
   semester: text('semester'),
@@ -328,6 +330,8 @@ export const systemSettings = pgTable('SystemSettings', {
   scheduleDaysAfter: integer('scheduleDaysAfter').default(1).notNull(),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
+  // 是否允许投稿人逐条选择匿名投稿（默认关闭）
+  allowAnonymousSubmission: boolean('allowAnonymousSubmission').default(false).notNull(),
   // SMTP 邮件配置
   smtpEnabled: boolean('smtpEnabled').default(false).notNull(),
   smtpHost: text('smtpHost'),

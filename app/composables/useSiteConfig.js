@@ -143,6 +143,7 @@ export const useSiteConfig = () => {
         enableSubmissionRestriction: false,
         enableCollaborativeSubmission: true,
         enableSubmissionRemarks: false,
+        allowAnonymousSubmission: false,
         allowOAuthRegistration: false,
         captchaEnabled: false,
         captchaProvider: 'graphic',
@@ -201,6 +202,7 @@ export const useSiteConfig = () => {
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
+  const allowAnonymousSubmission = computed(() => siteConfig.value.allowAnonymousSubmission === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
   const requireCardCodeForRequests = computed(
@@ -316,6 +318,7 @@ export const useSiteConfig = () => {
     enableSubmissionRestriction,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
+    allowAnonymousSubmission,
     enableSubmissionLimit,
     enableCardCodeRequests,
     requireCardCodeForRequests,

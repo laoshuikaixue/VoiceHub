@@ -6,6 +6,7 @@ import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import {
   maskSongsInfo,
   stripAnonymousSongIdentifiers,
+  applySubmissionAnonymity,
   type MaskableSong
 } from '~~/server/utils/studentMask'
 import { formatDisambiguatedName, NAME_DISAMBIGUATION_CTES } from '~~/server/utils/userDisplayName'
@@ -48,6 +49,7 @@ interface SongResponse extends MaskableSong {
   hasSubmissionNote?: boolean
   submissionNote?: string | null
   submissionNotePublic?: boolean
+  submissionAnonymous?: boolean
   submissionNotePublicStatus?: string | null
   replayRequestId?: number | null
   submissionCount?: number
@@ -123,6 +125,7 @@ const loadBasicSongs = async (
     durationSeconds: null, playUrl: null,
     replayRequested: false, replayRequestCount: 0, isReplay: false, replayRequesters: [],
     hasSubmissionNote: false, submissionNote: null, submissionNotePublic: false,
+    submissionAnonymous: false,
     preferredPlayTimeId: null,
   })) as SongResponse[]
   if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
@@ -154,7 +157,13 @@ export default defineEventHandler(async (event) => {
       conditions.push(`(s.title ILIKE ${searchParam} OR s.artist ILIKE ${searchParam})`)
     }
     if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
-    if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
+    if (grade) {
+      conditions.push(`u.grade = ${addParam(grade)}`)
+      // 非管理员按年级筛选时排除匿名投稿，避免借筛选结果反推投稿人年级
+      if (!isAdmin) {
+        conditions.push(`(s."submissionAnonymous" = false OR s."requesterId" = $1)`)
+      }
+    }
     if (scope === 'mine' && user) conditions.push(`s.\"requesterId\" = $1`)
 
     const orderColumn =
@@ -290,6 +299,7 @@ export default defineEventHandler(async (event) => {
         s."playUrl",
         s."submissionNote",
         s."submissionNotePublic",
+        s."submissionAnonymous",
         s."submissionNotePublicStatus",
         s."preferredPlayTimeId",
         u.id AS "requesterId",
@@ -462,6 +472,7 @@ export default defineEventHandler(async (event) => {
         hasSubmissionNote: canViewSubmissionNote,
         submissionNote: canViewSubmissionNote ? row.submissionNote : null,
         submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
+        submissionAnonymous: row.submissionAnonymous === true,
         submissionNotePublicStatus: canViewSubmissionNote ? (row.submissionNotePublicStatus || null) : null,
         replayRequestId: row.replayRequestId ? Number(row.replayRequestId) : null,
         preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null,
@@ -504,6 +515,8 @@ export default defineEventHandler(async (event) => {
     if (shouldHideStudentInfo && !isAdmin) {
       maskSongsInfo(formattedSongs)
     }
+    // 逐条匿名：与「隐藏学生信息」开关相互独立，管理员与投稿人本人不受影响
+    applySubmissionAnonymity(formattedSongs, { id: user?.id ?? null, isAdmin })
     if (!user) {
       formattedSongs.forEach(stripAnonymousSongIdentifiers)
     }

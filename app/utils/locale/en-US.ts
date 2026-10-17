@@ -217,6 +217,9 @@ export const siteConfig = {
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc:
     'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
+  allowAnonymousSubmission: 'Allow Anonymous Submissions',
+  allowAnonymousSubmissionDesc:
+    'When on, users may choose "Anonymous" per submission; others see only "Anonymous" while admins and the submitter still see the real name. Anonymous submissions cannot have co-requesters.',
   telemetryEnabled: 'Enable Error Tracking',
   telemetryEnabledDesc:
     'Enabled by default. When on, the system sends frontend/backend error events and instance-online events to Sentry for instance statistics and deployment diagnostics.',
@@ -1619,6 +1622,7 @@ export const pages = {
       requester: 'Requester: ',
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
+      anonymousRequester: 'Anonymous',
       collaboratorsTitle: 'Collaborators: ',
       unknown: 'Unknown',
       replay: 'Replay',
@@ -1701,6 +1705,10 @@ export const pages = {
       viewSubmissionNote: 'View Note',
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
+      anonymousRequester: 'Anonymous',
+      anonymousTag: 'Anonymous',
+      anonymousTagHint:
+        'This submission is anonymous; other users see "Anonymous" as the requester. You can still manage it as your own.',
       collaboratorsTitle: 'Collaborators: ',
       replayRequest: (count: number) => `Replay request (${count}): `,
       requester: 'Requester: ',
@@ -1895,7 +1903,8 @@ export const pages = {
         monthlyLimitReached: (used: number, limit: number) =>
           `Monthly submission limit reached (${used}/${limit})`
       },
-      publicToUsers: 'Public to signed-in users',
+      publicToUsers: 'Remark visible to signed-in users',
+      anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',
@@ -2507,6 +2516,9 @@ export const admin = {
       submissionNotePlaceholder: 'Enter song remark',
       publicNote: 'Public Remark',
       publicNoteHint: 'Other users can view this remark when public',
+      anonymousSubmission: 'Anonymous submission',
+      anonymousSubmissionHint:
+        'Other users will see the requester as Anonymous; admins still see the real name',
       clearNoteHint:
         'The current remark will be cleared after saving. You can add a reason and send a notification',
       clearNoteReasonPlaceholder: 'Optional: enter a reason, e.g. inappropriate remark content',

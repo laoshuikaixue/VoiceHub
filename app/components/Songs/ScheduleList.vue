@@ -237,15 +237,21 @@
                             :title="
                               (locale.replayApplicants || '重播申请人：') +
                               (schedule.song.replayRequesters || [])
-                                .map((r) => r.displayName || r.name)
+                                .map((r) =>
+                                  r.isAnonymous
+                                    ? locale.anonymousRequester
+                                    : (r.displayName || r.name)
+                                )
                                 .join('、')
                             "
                             class="requester replay-requester"
                           >
                             {{ locale.applicant }}{{
                               (schedule.song.replayRequesters || [])[0]
-                                ? (schedule.song.replayRequesters[0].displayName ||
-                                    schedule.song.replayRequesters[0].name) +
+                                ? (schedule.song.replayRequesters[0].isAnonymous
+                                    ? locale.anonymousRequester
+                                    : (schedule.song.replayRequesters[0].displayName ||
+                                        schedule.song.replayRequesters[0].name)) +
                                   (schedule.song.replayRequestCount > 1 ? '...' : '')
                                 : locale.unknown
                             }}
@@ -253,22 +259,25 @@
                           <span
                             v-else
                             :title="
-                              (schedule.song.collaborators && schedule.song.collaborators.length > 0
-                                ? locale.mainRequesterTitle
-                                : locale.requesterTitle) +
-                              schedule.song.requester +
-                              (schedule.song.collaborators && schedule.song.collaborators.length
-                                ? '\n' + locale.collaboratorsTitle +
-                                  schedule.song.collaborators
-                                    .map((c) => c.displayName || c.name)
-                                    .join(', ')
-                                : '')
+                              schedule.song.isAnonymous
+                                ? locale.requesterTitle + locale.anonymousRequester
+                                : (schedule.song.collaborators && schedule.song.collaborators.length > 0
+                                    ? locale.mainRequesterTitle
+                                    : locale.requesterTitle) +
+                                  schedule.song.requester +
+                                  (schedule.song.collaborators && schedule.song.collaborators.length
+                                    ? '\n' + locale.collaboratorsTitle +
+                                      schedule.song.collaborators
+                                        .map((c) => c.displayName || c.name)
+                                        .join(', ')
+                                    : '')
                             "
                             class="requester"
                           >
-                            {{ locale.requester }}{{ schedule.song.requester }}
+                            {{ locale.requester }}{{ schedule.song.isAnonymous ? locale.anonymousRequester : schedule.song.requester }}
                             <span
                               v-if="
+                                !schedule.song.isAnonymous &&
                                 schedule.song.collaborators &&
                                 schedule.song.collaborators.length > 0
                               "
