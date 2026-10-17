@@ -356,7 +356,7 @@ export default defineEventHandler(async (event) => {
 
             while (retryCount <= maxRetries) {
               try {
-                await db.$transaction(
+                await db.transaction(
                   async (tx) => {
                     const stats = {
                       created: 0,
