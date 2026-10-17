@@ -1,5 +1,6 @@
 import { flushAstrbotGroupOutbox } from '~~/server/services/astrbotGroupService'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 
 /**
  * push 模式下的群事件投递器。
@@ -10,20 +11,6 @@ import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
  * pull 模式不启动本任务：通知由插件主动领取，投递时机由插件的轮询决定。
  */
 const FLUSH_INTERVAL_MS = 15_000
-const SERVERLESS_PRESETS = new Set([
-  'vercel',
-  'netlify',
-  'aws-lambda',
-  'cloudflare-pages',
-  'cloudflare-module',
-  'deno-deploy'
-])
-
-function isServerlessRuntime() {
-  const preset = String(process.env.NITRO_PRESET || '').toLowerCase()
-  return Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NETLIFY ||
-    SERVERLESS_PRESETS.has(preset))
-}
 
 export default defineNitroPlugin((nitroApp) => {
   // 无服务器实例没有稳定的常驻生命周期，群消息由 pull 模式或外部调度负责领取。

@@ -5,6 +5,7 @@ import * as schema from './schema.ts';
 import {config} from 'dotenv';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import {isServerlessRuntime} from '../../server/utils/serverless-runtime';
 
 // 加载环境变量（优先使用工作目录的 .env，确保构建后运行时能正确加载）
 config({ path: path.resolve(process.cwd(), '.env') });
@@ -40,7 +41,8 @@ const isNeonDatabase =
   isDomainOrSubdomain(databaseHostname, 'neon.database.com');
 
 // Serverless 部署（每个函数实例独立建池，必须压低单实例连接数，防止实例数×池大小超过数据库 max_connections）
-const isServerlessDatabase = !!process.env.VERCEL || !!process.env.NETLIFY;
+// 判定与备份导出、群事件投递器共用一份，此前这里漏掉了 VERCEL_ENV 与 NITRO_PRESET
+const isServerlessDatabase = isServerlessRuntime();
 
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {
