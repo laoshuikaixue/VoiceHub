@@ -11,10 +11,17 @@ const SERVERLESS_PRESETS = new Set([
   'deno-deploy'
 ])
 
+// IS_SERVERLESS 是面向用户的手动开关：环境变量恒为字符串，非空即为真，
+// 需排除 "false"/"0" 这类显式关闭值，否则 IS_SERVERLESS=false 会被反判为启用
+function isEnvEnabled(value?: string): boolean {
+  const v = String(value || '').trim().toLowerCase()
+  return v !== '' && v !== 'false' && v !== '0'
+}
+
 export function isServerlessRuntime(): boolean {
   const preset = String(process.env.NITRO_PRESET || '').toLowerCase()
   return Boolean(
     process.env.VERCEL || process.env.VERCEL_ENV || process.env.NETLIFY ||
-    process.env.IS_SERVERLESS || SERVERLESS_PRESETS.has(preset)
+    isEnvEnabled(process.env.IS_SERVERLESS) || SERVERLESS_PRESETS.has(preset)
   )
 }
