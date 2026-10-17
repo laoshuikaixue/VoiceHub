@@ -315,6 +315,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { usePlayerLayout } from '~/composables/usePlayerLayout'
 import { useMediaSession } from '~/composables/useMediaSession'
+import { useWakeLock } from '~/composables/useWakeLock'
 import {
   PLAYER_LAYOUT_MARGIN,
   PLAYER_LAYOUT_MARGIN_MOBILE,
@@ -365,6 +366,7 @@ const sync = useAudioPlayerSync()
 const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
+const wakeLock = useWakeLock()
 // 播放器布局：固定底部 / 自由拖拽（偏好存本浏览器）
 const {
   position: layoutPosition,
@@ -910,6 +912,15 @@ const handlePause = () => {
     playlistIndex: sync.globalAudioPlayer.getCurrentPlaylistIndex().value
   })
 }
+
+// 播放时申请屏幕常亮，暂停/停止/切歌结束时释放
+watch(
+  () => control.isPlaying.value,
+  (playing) => {
+    if (playing) void wakeLock.requestLock()
+    else void wakeLock.releaseLock()
+  }
+)
 
 const handleDurationChange = async () => {
   if (!audioPlayer.value || isFallbackHandling.value) return
