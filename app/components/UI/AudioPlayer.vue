@@ -664,9 +664,14 @@ const trySwitchPlaybackSource = async () => {
       const element = audioPlayer.value
       // 起播前清掉上一轮的错误态：control.play() 见到 hasError 会直接返回 false，表现为换源成功却停在暂停
       control.hasError.value = false
-      element.addEventListener('loadedmetadata', () => {
-        if (Number.isFinite(element.duration) && resumePosition < element.duration) element.currentTime = resumePosition
-      }, { once: true })
+      element.addEventListener(
+        'loadedmetadata',
+        () => {
+          if (Number.isFinite(element.duration) && resumePosition < element.duration)
+            element.currentTime = resumePosition
+        },
+        { once: true }
+      )
       // 不调用 load()：song.musicUrl 变化会通过 :src 绑定自动走加载算法，
       // 额外一次 load() 会多排一轮 pause/emptied 事件，可能把刚起的播放又改回暂停
       started = await control.play()
@@ -1066,7 +1071,10 @@ const handleError = async (error) => {
   // 登记后换源重试时解析链路会跳过它，避免反复拿到同一条坏链
   const failedSrc = audioEl.currentSrc || audioEl.src
   const mediaErrorCode = audioEl.error?.code
-  if (mediaErrorCode === MediaError.MEDIA_ERR_DECODE || mediaErrorCode === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+  if (
+    mediaErrorCode === MediaError.MEDIA_ERR_DECODE ||
+    mediaErrorCode === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+  ) {
     markPlaybackUrlInvalid(failedSrc)
   }
 
