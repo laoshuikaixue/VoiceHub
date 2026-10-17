@@ -240,7 +240,6 @@ export function autoSchedule(
     : Math.max(0, normalizedTargetSongCount - preSelected.length)
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
-  const songMap = new Map(availableCandidates.map((s) => [s.id, s]))
 
   const runGreedy = (sorted: AutoScheduleCandidate[], dir: 'under' | 'over') => {
     const result: AutoScheduleCandidate[] = []
@@ -422,7 +421,11 @@ export function autoScheduleExhaustive(
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
   const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
   const heatMap = buildHeatMap(availableCandidates)
-  void heatWeight
+  // 热度权重：0 时穷举完全不参考热度（与滑杆 0% = 不看热度 一致）；>0 时热度仅作同分方案的末位比较
+  const normalizedHeatWeight = Math.min(1, Math.max(0, Number.isFinite(heatWeight) ? heatWeight : DEFAULT_HEAT_WEIGHT))
+  const heatEnabled = normalizedHeatWeight > 0
+  const heatTiebreak = (a: AutoScheduleResult, b: AutoScheduleResult): number =>
+    heatEnabled ? planHeatScore(b.songs, heatMap) - planHeatScore(a.songs, heatMap) : 0
   const compareCtx: ResultCompareContext = {
     targetSongCount: normalizedTargetSongCount,
     fixedCount: preSelected.length,
@@ -434,10 +437,12 @@ export function autoScheduleExhaustive(
   type DurationCandidate = Omit<AutoScheduleCandidate, 'durationSeconds'> & { durationSeconds: number }
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
-  // 按时长降序排列，大歌曲优先，利于剪枝；同长度时热度高者在前；设置投稿人目标时分散排序
+  // 按时长降序排列，大歌曲优先，利于剪枝；启用热度时同长度热度高者在前；设置投稿人目标时分散排序
   const sorted = diversifyOrder(
     [...(availableCandidates as DurationCandidate[])].sort(
-      (a, b) => b.durationSeconds - a.durationSeconds || (b.voteCount || 0) - (a.voteCount || 0)
+      (a, b) =>
+        b.durationSeconds - a.durationSeconds ||
+        (heatEnabled ? (b.voteCount || 0) - (a.voteCount || 0) : 0)
     ),
     normalizedTargetRequesterCount
   )
@@ -473,8 +478,7 @@ export function autoScheduleExhaustive(
     solutions.push({ songs: [...currentSongs], totalDuration: total, diff, absDiff })
     solutions.sort((a, b) => {
       const base = compareResults(a, b, compareCtx)
-      if (base !== 0) return base
-      return planHeatScore(b.songs, heatMap) - planHeatScore(a.songs, heatMap)
+      return base !== 0 ? base : heatTiebreak(a, b)
     })
     if (solutions.length > maxSolutions) {
       solutions.splice(maxSolutions)
@@ -539,7 +543,10 @@ export function autoScheduleExhaustive(
 
   dfs(0, 0)
 
-  solutions.sort((a, b) => compareResults(a, b, compareCtx))
+  solutions.sort((a, b) => {
+    const base = compareResults(a, b, compareCtx)
+    return base !== 0 ? base : heatTiebreak(a, b)
+  })
 
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
   const finalPlans = solutions.slice(0, plansCount).map((p) => ({

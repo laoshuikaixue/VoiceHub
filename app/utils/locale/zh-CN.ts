@@ -2823,6 +2823,8 @@ export const admin = {
     directionUnder: '不超过目标',
     directionMiddle: '相差最小',
     directionOver: '不低于目标',
+    heatWeightLabel: '热度权重',
+    heatWeightDesc: (weight: number) => `热度加权随机：${weight}% 依据热度（票数越高越靠前）、${100 - weight}% 随机。0% = 纯随机，100% ≈ 完全按热度排序。`,
     availableCount: (count) => `当前筛选下共 ${count} 首候选歌曲`,
     autoScheduleRun: '开始排期',
     resultTitle: '推荐结果',

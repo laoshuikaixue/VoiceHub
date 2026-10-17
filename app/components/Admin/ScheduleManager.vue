@@ -1633,7 +1633,7 @@
 
           <div>
             <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
-              热度权重 · {{ autoScheduleHeatWeight }}%
+              {{ locale.heatWeightLabel }} · {{ autoScheduleHeatWeight }}%
             </label>
             <input
               v-model.number="autoScheduleHeatWeight"
@@ -1644,8 +1644,7 @@
               type="range"
             >
             <p class="mt-1.5 text-[10px] text-text-tertiary leading-relaxed">
-              热度加权随机：{{ autoScheduleHeatWeight }}% 看热度（票高的更容易排前面）、{{ 100 - autoScheduleHeatWeight }}% 随机，
-              所以不会变成死板的按票数排序。0% = 纯随机，100% ≈ 完全按热度。
+              {{ locale.heatWeightDesc(autoScheduleHeatWeight) }}
             </p>
           </div>
 
