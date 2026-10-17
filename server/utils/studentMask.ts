@@ -9,6 +9,8 @@ export interface MaskableUser {
   displayName?: string
   grade?: string | null
   class?: string | null
+  /** 重播申请人本人即匿名投稿人时置 true，由前端本地化展示 */
+  isAnonymous?: boolean
   [key: string]: any
 }
 
@@ -151,6 +153,16 @@ export function applySubmissionAnonymity(songs: MaskableSong[], viewer?: Anonymi
     song.requester = undefined
     song.requesterGrade = null
     song.requesterClass = null
+    // 投稿人自己申请的重播也会出现在重播申请人里，同样以匿名展示，避免自曝
+    if (requesterId !== null && song.replayRequesters?.length) {
+      for (const replayRequester of song.replayRequesters) {
+        if (replayRequester.id != null && Number(replayRequester.id) === Number(requesterId)) {
+          replayRequester.isAnonymous = true
+          delete replayRequester.name
+          delete replayRequester.displayName
+        }
+      }
+    }
     // 联合投稿人一旦公开，等价于泄露匿名投稿的圈子
     if (song.collaborators) song.collaborators = []
     // 复用既有的标识剥离逻辑，避免通过内部 ID 交叉关联

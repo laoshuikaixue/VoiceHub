@@ -1659,6 +1659,8 @@ export const pages = {
       mainRequesterTitle: '主投稿人: ',
       requesterTitle: '投稿人: ',
       anonymousRequester: '匿名投稿',
+      anonymousTag: '匿名投稿',
+      anonymousTagHint: '该投稿已匿名，其他用户看到的投稿人为“匿名投稿”，你仍可正常管理自己的投稿',
       collaboratorsTitle: '联合投稿: ',
       replayRequest: (count: number) => `重播申请 (${count})：`,
       requester: '投稿人：',

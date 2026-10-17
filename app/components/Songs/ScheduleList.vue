@@ -237,15 +237,21 @@
                             :title="
                               (locale.replayApplicants || '重播申请人：') +
                               (schedule.song.replayRequesters || [])
-                                .map((r) => r.displayName || r.name)
+                                .map((r) =>
+                                  r.isAnonymous
+                                    ? locale.anonymousRequester
+                                    : (r.displayName || r.name)
+                                )
                                 .join('、')
                             "
                             class="requester replay-requester"
                           >
                             {{ locale.applicant }}{{
                               (schedule.song.replayRequesters || [])[0]
-                                ? (schedule.song.replayRequesters[0].displayName ||
-                                    schedule.song.replayRequesters[0].name) +
+                                ? (schedule.song.replayRequesters[0].isAnonymous
+                                    ? locale.anonymousRequester
+                                    : (schedule.song.replayRequesters[0].displayName ||
+                                        schedule.song.replayRequesters[0].name)) +
                                   (schedule.song.replayRequestCount > 1 ? '...' : '')
                                 : locale.unknown
                             }}

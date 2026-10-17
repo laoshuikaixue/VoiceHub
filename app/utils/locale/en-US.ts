@@ -1705,6 +1705,9 @@ export const pages = {
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
       anonymousRequester: 'Anonymous',
+      anonymousTag: 'Anonymous',
+      anonymousTagHint:
+        'This submission is anonymous; other users see "Anonymous" as the requester. You can still manage it as your own.',
       collaboratorsTitle: 'Collaborators: ',
       replayRequest: (count: number) => `Replay request (${count}): `,
       requester: 'Requester: ',
