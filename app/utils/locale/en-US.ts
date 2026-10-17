@@ -2897,6 +2897,8 @@ export const admin = {
     directionUnder: 'Under Target',
     directionMiddle: 'Closest',
     directionOver: 'Over Target',
+    heatWeightLabel: 'Heat Weight',
+    heatWeightDesc: (weight: number) => `Heat-weighted shuffle: ${weight}% by heat (higher votes rank first), ${100 - weight}% random. 0% = fully random, 100% ≈ strictly by heat.`,
     availableCount: (count) => `${count} candidate song(s) under current filters`,
     autoScheduleRun: 'Schedule',
     resultTitle: 'Suggested Result',
