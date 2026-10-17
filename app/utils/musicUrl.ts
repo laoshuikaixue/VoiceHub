@@ -5,7 +5,7 @@ import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
-import { persistQqMusicCookie } from '~/utils/qqCookie'
+import { persistQqMusicCookie, clearQqMusicLoginState, QQ_MUSIC_COOKIE_KEY } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
 import { useServerErrors } from '~/composables/useLocaleText'
 
@@ -233,6 +233,38 @@ export const getCachedMusicUrlSource = (url: string | null | undefined) => {
   return musicUrlSourceCache.get(normalizeCacheUrl(url)) || null
 }
 
+// 官方链路失败后的登录态复验 in-flight 去重，避免连续切歌重复发校验请求
+let qqLoginRecheckPromise: Promise<void> | null = null
+
+/**
+ * 官方链路解析失败后用后端复验 QQ 登录态（含续期）：
+ * 续期成功回传的新 Cookie 落盘复用；确认失效则清除本地登录态并广播登出
+ */
+const revalidateQqLoginAfterFailure = (): Promise<void> => {
+  if (qqLoginRecheckPromise) return qqLoginRecheckPromise
+
+  qqLoginRecheckPromise = (async () => {
+    try {
+      const cookie =
+        typeof window !== 'undefined' ? localStorage.getItem(QQ_MUSIC_COOKIE_KEY) : null
+      if (!cookie) return
+      const res: any = await $fetch('/api/native-api/qq/check-cookie', {
+        method: 'POST',
+        body: { cookie }
+      })
+      const data = res?.data || {}
+      if (data.cookie) persistQqMusicCookie(data.cookie)
+      if (data.valid === false) clearQqMusicLoginState()
+    } catch {
+      // 网络异常不属于登录失效，保留本地状态
+    } finally {
+      qqLoginRecheckPromise = null
+    }
+  })()
+
+  return qqLoginRecheckPromise
+}
+
 export async function getMusicUrlResult(
   platform: string,
   musicId: string | number,
@@ -353,6 +385,8 @@ export async function getMusicUrlResult(
         return await requestBackendResolve('official-first')
       } catch (error: any) {
         console.warn('[musicUrl] QQ 官方登录态解析失败，降级第三方音源:', error?.message || error)
+        // 登录态过期是官方链路失败的常见原因，复验确认失效时直接清除本地登录态
+        await revalidateQqLoginAfterFailure()
       }
     }
 

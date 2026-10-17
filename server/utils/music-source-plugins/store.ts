@@ -236,7 +236,9 @@ export async function pluginAdminView() {
     let variablesInvalid = false
     // 参数解密失败只说明 JWT_SECRET 变过，不代表产物加载失败，单独标记避免误报为更新失败
     if (desired) { try { unseal(desired.variables, 'variables') } catch { variablesInvalid = true } }
-    data.push({ id: row.id, name: row.name, enabled: row.enabled, priority: row.priority, desiredRevision: row.desiredRevision, activeRevision: artifact?.revision || null, lastError: desired ? row.lastError : (row.lastError || 'PLUGIN_UNAVAILABLE'), variablesInvalid, legacyPlatformKey: row.legacyPlatformKey, protocol: desired?.protocol || null, catalog: desired?.catalog || null, scriptUrl: desired?.scriptUrl || '', capability: artifact?.capability || null })
+    // 快照模式的部署真相是构建产物（有无 artifact、版本是否达期望），lastError 仅为热更新运行期标记；
+    // 快照部署不会写库清除它，残留的旧标记会误报为更新失败，快照模式下不予展示
+    data.push({ id: row.id, name: row.name, enabled: row.enabled, priority: row.priority, desiredRevision: row.desiredRevision, activeRevision: artifact?.revision || null, lastError: snapshotMode() ? null : (desired ? row.lastError : (row.lastError || 'PLUGIN_UNAVAILABLE')), variablesInvalid, legacyPlatformKey: row.legacyPlatformKey, protocol: desired?.protocol || null, catalog: desired?.catalog || null, scriptUrl: desired?.scriptUrl || '', capability: artifact?.capability || null })
   }
   return { data, revision: await configRevision(), mode: snapshotMode() ? 'snapshot' : 'hot', buildId: pluginManifest.buildId }
 }

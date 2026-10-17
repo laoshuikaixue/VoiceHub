@@ -19,6 +19,9 @@ export const useLyricSettings = () => {
   const lyricTranFontSize = useState('lyric-tran-font-size', getDefaultTranFontSize)
   const lyricRomaFontSize = useState('lyric-roma-font-size', getDefaultRomaFontSize)
   const lyricFontSizeMode = useState('lyric-font-size-mode', () => 'auto') // auto | custom
+  // AMLL 副行（翻译/音译）字号：跟随主行时取主行一半，否则用独立像素值
+  const amllSubFontSizeFollow = useState('lyric-amll-sub-font-size-follow', () => true)
+  const amllSubFontSize = useState('lyric-amll-sub-font-size', () => 24)
   const useAMLyrics = useState('lyric-use-am-style', () => true)
   const useAMSpring = useState('lyric-use-spring', () => true)
   const lyricAlignRight = useState('lyric-align-right', () => false)
@@ -110,6 +113,8 @@ export const useLyricSettings = () => {
     lyricTranFontSize,
     lyricRomaFontSize,
     lyricFontSizeMode,
+    amllSubFontSizeFollow,
+    amllSubFontSize,
     useAMLyrics,
     useAMSpring,
     lyricAlignRight,

@@ -922,6 +922,7 @@ VoiceHub/
 │   │   ├── useTheme.ts         # 主题管理
 │   │   ├── useThemeImage.ts    # 主题图片获取
 │   │   ├── useToast.ts         # Toast提示hooks
+│   │   ├── useWakeLock.ts      # 播放屏幕常亮(Wake Lock)hooks
 │   │   ├── useUserFilters.ts  # 用户过滤器hooks
 │   │   └── useZIndex.ts        # 浮层动态层级hooks
 │   ├── drizzle/               # 数据库相关
