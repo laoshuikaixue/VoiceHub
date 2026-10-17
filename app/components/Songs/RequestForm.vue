@@ -1482,7 +1482,7 @@ import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
-import { onQqMusicCookieUpdated, persistQqMusicCookie } from '~/utils/qqCookie'
+import { onQqMusicCookieUpdated, onQqMusicLoginInvalidated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 import { getPluginId, isPluginPlatform } from '~/utils/pluginPlatform'
@@ -1608,8 +1608,9 @@ const isQQMusicLoggedIn = ref(false)
 const qqMusicUser = ref(null)
 const qqMusicCookie = ref('')
 const checkingQQLogin = ref(false)
-// QQ Cookie 续期广播的取消订阅函数
+// QQ Cookie 续期/失效广播的取消订阅函数
 let unsubscribeQqCookie = null
+let unsubscribeQqInvalidated = null
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -2233,6 +2234,10 @@ onBeforeUnmount(() => {
     unsubscribeQqCookie()
     unsubscribeQqCookie = null
   }
+  if (unsubscribeQqInvalidated) {
+    unsubscribeQqInvalidated()
+    unsubscribeQqInvalidated = null
+  }
 })
 
 const handleImportSuccess = async () => {
@@ -2632,6 +2637,14 @@ onMounted(async () => {
   // 播放链路触发续期后同步内存登录态，避免歌单等后续请求仍用旧凭据
   unsubscribeQqCookie = onQqMusicCookieUpdated((cookie) => {
     qqMusicCookie.value = cookie
+  })
+  // 播放链路复验确认登录态失效后同步登出并提示重新登录
+  unsubscribeQqInvalidated = onQqMusicLoginInvalidated(() => {
+    if (!isQQMusicLoggedIn.value) return
+    handleLogoutQQMusic()
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.qqLoginExpired, 'warning')
+    }
   })
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
