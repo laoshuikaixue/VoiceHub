@@ -405,6 +405,7 @@ export default defineEventHandler(async (event) => {
           ),
           requesterGrade: row.requesterGrade || null,
           requesterClass: row.requesterClass || null,
+          submissionAnonymous: row.submissionAnonymous === true,
           collaborators,
           voteCount: Number(row.voteCount || 0),
           played: row.songPlayed === true,

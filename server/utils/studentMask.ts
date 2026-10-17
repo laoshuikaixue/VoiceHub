@@ -148,7 +148,7 @@ export function applySubmissionAnonymity(songs: MaskableSong[], viewer?: Anonymi
     }
 
     song.isAnonymous = true
-    song.requester = null
+    song.requester = undefined
     song.requesterGrade = null
     song.requesterClass = null
     // 联合投稿人一旦公开，等价于泄露匿名投稿的圈子

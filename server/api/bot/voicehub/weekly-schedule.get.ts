@@ -166,7 +166,6 @@ export default defineEventHandler(async (event) => {
       artist: row.artist,
       cover: row.cover ?? '',
       requester: requesterDisplay,
-      submissionAnonymous: row.submissionAnonymous === true,
       voteCount: voteCountMap.get(row.songId) ?? 0,
       played: row.played,
     }
@@ -176,12 +175,12 @@ export default defineEventHandler(async (event) => {
   // hideStudentInfo（默认开启）时同样脱敏，年级/班级一律不返回。
   if (settings.hideStudentInfo !== false) maskScheduleItemsInfo(scheduleItems)
   // 机器人周排期为中文场景：匿名投稿统一显示「匿名同学」，不泄露真实姓名
-  for (const item of scheduleItems) {
-    if (item.submissionAnonymous === true) {
+  // scheduleItems 与 rows 一一对应（本函数未做过滤），按下标取匿名标记
+  scheduleItems.forEach((item, index) => {
+    if (rows[index]?.submissionAnonymous === true) {
       item.requester = '匿名同学'
     }
-    delete item.submissionAnonymous
-  }
+  })
 
   const displayConfig = normalizeAstrbotWeeklyConfig(settings.weeklyConfig)
   const siteTitle = settings.siteTitle ?? 'VoiceHub'
