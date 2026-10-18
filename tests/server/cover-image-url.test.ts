@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getSizedCoverUrl } from '../../app/utils/url.ts'
+import { getCoverLargeUrl, getCoverThumbUrl, getSizedCoverUrl } from '../../app/utils/url.ts'
 
 const QQ_MID = '000Fby4A0T9Vgt'
 
@@ -110,4 +110,32 @@ test('裸域名与子域名均命中', () => {
     getSizedCoverUrl('https://p9.music.126.net/1.jpg'),
     'https://p9.music.126.net/1.jpg?param=300y300'
   )
+})
+
+test('缩略图封面升 https 并收敛到 300', () => {
+  assert.equal(
+    getCoverThumbUrl('http://p1.music.126.net/abc==/1.jpg'),
+    'https://p1.music.126.net/abc==/1.jpg?param=300y300'
+  )
+  assert.equal(
+    getCoverThumbUrl(`https://y.gtimg.cn/music/photo_new/T002R800x800M000${QQ_MID}.jpg`),
+    `https://y.gtimg.cn/music/photo_new/T002R300x300M000${QQ_MID}.jpg`
+  )
+})
+
+test('大图封面收敛到 700 且不重复追加参数', () => {
+  assert.equal(
+    getCoverLargeUrl(`https://y.gtimg.cn/music/photo_new/T002R1000x1000M000${QQ_MID}.jpg`),
+    `https://y.gtimg.cn/music/photo_new/T002R700x700M000${QQ_MID}.jpg`
+  )
+  assert.equal(
+    getCoverLargeUrl('https://p1.music.126.net/abc==/1.jpg?param=300y300'),
+    'https://p1.music.126.net/abc==/1.jpg?param=300y300'
+  )
+})
+
+test('封面地址空值不抛错', () => {
+  assert.equal(getCoverThumbUrl(''), '')
+  assert.equal(getCoverThumbUrl(null), '')
+  assert.equal(getCoverLargeUrl(undefined), '')
 })

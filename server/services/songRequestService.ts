@@ -60,6 +60,7 @@ const songRequestBodySchema = z.object({
   // 保持「站点表单 / 机器人 / zod」三处同一个数值
   submissionNote: z.string().trim().max(SUBMISSION_NOTE_MAX_LENGTH, `备注留言不能超过${SUBMISSION_NOTE_MAX_LENGTH}个字符`).optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
+  submissionAnonymous: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
     z.number().int().positive('播出时段 ID 无效').nullable()
@@ -366,6 +367,19 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         ? SUBMISSION_NOTE_STATUS.PENDING
         : null
 
+    // 匿名投稿：站点未开启总开关时强制视为实名（防绕过）；开启时按用户勾选。
+    // 匿名投稿不允许联合投稿。
+    const submissionAnonymous =
+      systemSettingsData?.allowAnonymousSubmission === true &&
+      requestBody.submissionAnonymous === true
+    if (submissionAnonymous && requestBody.collaborators?.length) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '匿名投稿不支持联合投稿'
+      )
+    }
+
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     const song = await db.transaction(async (tx) => {
@@ -527,6 +541,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
+          submissionAnonymous,
           submissionNotePublicStatus,
           hitRequestId: hitRequestTime?.id || null
         })
@@ -648,7 +663,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     try {
       const [requester] = await db.select({ name: users.name, username: users.username })
         .from(users).where(eq(users.id, user.id)).limit(1)
-      const displayName = requester?.name || requester?.username || `用户 ${user.id}`
+      // 匿名投稿不在群聊推送里暴露真实姓名
+      const displayName =
+        song.submissionAnonymous === true
+          ? '匿名投稿'
+          : (requester?.name || requester?.username || `用户 ${user.id}`)
       await enqueueAstrbotGroupEvent(
         'songRequest',
         '新的点歌投稿',

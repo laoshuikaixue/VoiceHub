@@ -1240,6 +1240,7 @@ export default defineEventHandler(async (event) => {
                           'sameSongRestrictionHours',
                           'sameArtistRestrictionHours',
                           'hideStudentInfo',
+                          'allowAnonymousSubmission',
                           'smtpEnabled',
                           'smtpHost',
                           'smtpPort',

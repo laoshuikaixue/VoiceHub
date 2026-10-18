@@ -6,6 +6,28 @@ const neteaseEnhancedApiPromise = import('@neteasecloudmusicapienhanced/api').th
   return (mod.default || {}) as Record<string, (params: Record<string, any>) => Promise<any>>
 })
 
+// 上游 SDK 自身不设超时，一次挂起会长期占住云函数实例（Pages 上会放大成整站 504），故加整体截止时间
+const NETEASE_CALL_TIMEOUT_MS = 12000
+// xeapi 公钥预热同样可能挂起，且模块级 promise 被所有请求共用，必须单独封顶
+const NETEASE_CONFIG_TIMEOUT_MS = 5000
+
+async function withDeadline<T>(task: Promise<T>, ms: number, endpoint: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      task,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(createError({
+          statusCode: 504,
+          message: `网易云接口 ${endpoint} 调用超时`
+        })), ms)
+      })
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
 // 网易云接口白名单：只放行应用实际调用的端点（端点路径 → 允许的 HTTP 方法）
 // 未列入的接口一律 403；新增或变更调用端点时必须同步此表（见 AGENTS.md 4.9）
 const allowedEndpoints = new Map<string, Set<string>>([
@@ -136,11 +158,13 @@ export default defineEventHandler(async (event) => {
 
   const params = { ...queryParams, ...bodyParams }
 
-  // 等待 xeapi 公钥等配置就绪
-  await ensureNcmConfig()
+  // 等待 xeapi 公钥等配置就绪：超时或失败都继续，让上游错误以有界的失败返回，而不是无限等待
+  await withDeadline(ensureNcmConfig(), NETEASE_CONFIG_TIMEOUT_MS, 'generateConfig').catch((error: unknown) => {
+    console.warn(`[Netease] xeapi 配置初始化超时: ${error instanceof Error ? error.message : String(error)}`)
+  })
 
   try {
-    const result = await handler(params)
+    const result = await withDeadline(handler(params), NETEASE_CALL_TIMEOUT_MS, endpointPath)
     if (Array.isArray(result?.cookie) && result.cookie.length > 0) {
       setHeader(event, 'set-cookie', result.cookie)
     }

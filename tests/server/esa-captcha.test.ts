@@ -6,9 +6,11 @@ import {
   ESA_CAPTCHA_ENDPOINTS,
   ESA_CAPTCHA_ENDPOINT_PATHS,
   ESA_CAPTCHA_PASS_CODES,
+  ESA_CAPTCHA_PASS_HEADER,
   ESA_CAPTCHA_REGIONS,
   ESA_CAPTCHA_VERIFY_CODE_HEADER,
   ESA_CAPTCHA_VERIFY_HEADER,
+  ESA_CAPTCHA_VERIFY_PATH,
   getEsaCaptchaRejectCode,
   getEsaCaptchaServers,
   matchEsaCaptchaHost,
@@ -45,22 +47,21 @@ test('每个区域都至少配置一个服务端域名', () => {
   }
 })
 
-test('验签参数请求头名称固定为 captcha-verify-param', () => {
+test('验签参数与通过凭证请求头名称固定', () => {
   assert.equal(ESA_CAPTCHA_VERIFY_HEADER, 'captcha-verify-param')
+  assert.equal(ESA_CAPTCHA_PASS_HEADER, 'captcha-pass')
 })
 
-test('受保护接口枚举包含登录与注册', () => {
-  assert.deepEqual([...ESA_CAPTCHA_ENDPOINTS], ['login', 'register'])
+test('场景枚举仅含统一验证接口', () => {
+  assert.deepEqual([...ESA_CAPTCHA_ENDPOINTS], ['common'])
   assert.equal(ESA_CAPTCHA_ANY_HOST, '*')
 })
 
-test('每个受保护接口都登记了可供填写的路径', () => {
+test('统一验证接口登记的路径为 /api/captcha/verify', () => {
   // 路径会直接展示在后台供管理员粘到 ESA 控制台，漏配会显示为空白
   assert.deepEqual(Object.keys(ESA_CAPTCHA_ENDPOINT_PATHS).sort(), [...ESA_CAPTCHA_ENDPOINTS].sort())
-  for (const endpoint of ESA_CAPTCHA_ENDPOINTS) {
-    const path = ESA_CAPTCHA_ENDPOINT_PATHS[endpoint]
-    assert.match(path, /^\/api\/auth\/[a-z-]+$/, `${endpoint} 的路径应为 /api/auth/ 下的接口`)
-  }
+  assert.equal(ESA_CAPTCHA_VERIFY_PATH, '/api/captcha/verify')
+  assert.equal(ESA_CAPTCHA_ENDPOINT_PATHS['common'], ESA_CAPTCHA_VERIFY_PATH)
 })
 
 test('非法的场景 ID 存储值回退空数组', () => {
@@ -68,25 +69,26 @@ test('非法的场景 ID 存储值回退空数组', () => {
   assert.deepEqual(parseEsaCaptchaScenes(null), [])
   assert.deepEqual(parseEsaCaptchaScenes(undefined), [])
   assert.deepEqual(parseEsaCaptchaScenes('"Aaaaa1"'), [])
-  assert.deepEqual(parseEsaCaptchaScenes({ endpoint: 'login' }), [])
+  assert.deepEqual(parseEsaCaptchaScenes({ endpoint: 'common' }), [])
 })
 
 test('缺少必填项或接口非法的规则项被丢弃', () => {
   const raw = JSON.stringify([
-    { endpoint: 'login', host: '*', sceneId: 'Aaaaa1' },
-    { endpoint: 'login', host: '*', sceneId: '   ' },
-    { endpoint: 'login', host: '  ', sceneId: 'Bbbbb2' },
-    { endpoint: 'unbind', host: '*', sceneId: 'Ccccc3' },
+    { endpoint: 'common', host: '*', sceneId: 'Aaaaa1' },
+    { endpoint: 'common', host: '*', sceneId: '   ' },
+    { endpoint: 'common', host: '  ', sceneId: 'Bbbbb2' },
+    { endpoint: 'login', host: '*', sceneId: 'Ccccc3' },
     { endpoint: 'register', sceneId: 'Dddd4' },
     null
   ])
-  assert.deepEqual(parseEsaCaptchaScenes(raw), [{ endpoint: 'login', host: '*', sceneId: 'Aaaaa1' }])
+  // 旧版 login/register 条目不在枚举内，连同缺项一起被丢弃，仅保留合法的 common 项
+  assert.deepEqual(parseEsaCaptchaScenes(raw), [{ endpoint: 'common', host: '*', sceneId: 'Aaaaa1' }])
 })
 
 test('域名归一化大小写与首尾空白', () => {
   assert.deepEqual(
-    parseEsaCaptchaScenes([{ endpoint: 'login', host: ' Hub.Example.COM ', sceneId: ' Aaaaa1 ' }]),
-    [{ endpoint: 'login', host: 'hub.example.com', sceneId: 'Aaaaa1' }]
+    parseEsaCaptchaScenes([{ endpoint: 'common', host: ' Hub.Example.COM ', sceneId: ' Aaaaa1 ' }]),
+    [{ endpoint: 'common', host: 'hub.example.com', sceneId: 'Aaaaa1' }]
   )
 })
 
@@ -108,45 +110,47 @@ test('任意域名匹配任何主机，精确域名需全等', () => {
 
 test('场景 ID 解析优先级为精确域名高于通配子域高于任意域名', () => {
   const raw = [
-    { endpoint: 'login', host: '*', sceneId: 'AnyL1' },
-    { endpoint: 'login', host: '*.example.com', sceneId: 'SubL2' },
-    { endpoint: 'login', host: 'hub.example.com', sceneId: 'ExactL3' }
+    { endpoint: 'common', host: '*', sceneId: 'Any' },
+    { endpoint: 'common', host: '*.example.com', sceneId: 'Sub' },
+    { endpoint: 'common', host: 'hub.example.com', sceneId: 'Exact' }
   ]
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'login', 'hub.example.com'), 'ExactL3')
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'login', 'a.example.com'), 'SubL2')
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'login', 'other.test'), 'AnyL1')
+  assert.equal(resolveEsaCaptchaSceneId(raw, 'common', 'hub.example.com'), 'Exact')
+  assert.equal(resolveEsaCaptchaSceneId(raw, 'common', 'a.example.com'), 'Sub')
+  assert.equal(resolveEsaCaptchaSceneId(raw, 'common', 'other.test'), 'Any')
 })
 
-test('场景 ID 按接口隔离', () => {
-  const raw = [{ endpoint: 'register', host: '*', sceneId: 'OnlyR' }]
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'login', 'hub.example.com'), '')
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'register', 'hub.example.com'), 'OnlyR')
+test('旧版按接口存储的场景被过滤后解析为空', () => {
+  // 统一验证接口改造后，login/register 条目不再是合法 endpoint
+  const raw = [
+    { endpoint: 'login', host: '*', sceneId: 'OnlyLogin' },
+    { endpoint: 'register', host: '*', sceneId: 'OnlyRegister' }
+  ]
+  assert.equal(resolveEsaCaptchaSceneId(raw, 'common', 'hub.example.com'), '')
 })
 
 test('SSR 无域名时只命中任意域名规则，无匹配返回空字符串', () => {
   const raw = [
-    { endpoint: 'login', host: 'hub.example.com', sceneId: 'ExactL' },
-    { endpoint: 'login', host: '*', sceneId: 'AnyL' },
-    { endpoint: 'register', host: 'hub.example.com', sceneId: 'ExactR' }
+    { endpoint: 'common', host: 'hub.example.com', sceneId: 'Exact' },
+    { endpoint: 'common', host: '*', sceneId: 'Any' }
   ]
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'login', ''), 'AnyL')
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'register', ''), '')
-  assert.equal(resolveEsaCaptchaSceneId(raw, 'login', 'unknown.test'), 'AnyL')
+  assert.equal(resolveEsaCaptchaSceneId(raw, 'common', ''), 'Any')
+  assert.equal(resolveEsaCaptchaSceneId(raw, 'common', 'unknown.test'), 'Any')
+  assert.equal(resolveEsaCaptchaSceneId([{ endpoint: 'common', host: 'hub.example.com', sceneId: 'Exact' }], 'common', ''), '')
 })
 
 test('场景 ID 存储值异常时解析结果为空', () => {
-  assert.equal(resolveEsaCaptchaSceneId('{ broken', 'login', 'hub.example.com'), '')
-  assert.equal(resolveEsaCaptchaSceneId(null, 'login', 'hub.example.com'), '')
+  assert.equal(resolveEsaCaptchaSceneId('{ broken', 'common', 'hub.example.com'), '')
+  assert.equal(resolveEsaCaptchaSceneId(null, 'common', 'hub.example.com'), '')
 })
 
 test('未启用 ESA 时后台提交的未填完占位行被丢弃而不报错', () => {
   // 保存接口在非 ESA 服务商下走此容错路径，保证默认一行空场景不阻断整页设置保存
   const raw = JSON.stringify([
-    { endpoint: 'login', host: ESA_CAPTCHA_ANY_HOST, sceneId: '' },
-    { endpoint: 'register', host: 'hub.example.com', sceneId: 'ValidR' }
+    { endpoint: 'common', host: ESA_CAPTCHA_ANY_HOST, sceneId: '' },
+    { endpoint: 'common', host: 'hub.example.com', sceneId: 'Valid' }
   ])
   assert.deepEqual(parseEsaCaptchaScenes(raw), [
-    { endpoint: 'register', host: 'hub.example.com', sceneId: 'ValidR' }
+    { endpoint: 'common', host: 'hub.example.com', sceneId: 'Valid' }
   ])
 })
 

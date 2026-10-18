@@ -5,8 +5,7 @@
       'align-right': settings.lyricAlignRight.value
     }"
     :style="{
-      '--amll-lp-color':
-        'rgb(var(--main-cover-lyric-color, var(--main-cover-color, 239 239 239)))',
+      '--amll-lp-color': 'rgb(var(--main-cover-lyric-color, var(--main-cover-color, 239 239 239)))',
       '--amll-lp-hover-bg-color': 'var(--lyrics-modal-surface, rgba(255, 255, 255, 0.1))',
       '--amll-lyric-left-padding': settings.lyricAlignRight.value
         ? ''
@@ -46,6 +45,7 @@
         :style="{
           '--display-count-down-show': settings.countDownShow.value ? 'flex' : 'none',
           '--amll-lp-font-size': `${settings.lyricFontSize.value}px`,
+          '--amll-sub-font-size': subFontSize,
           'font-weight': settings.lyricFontWeight.value,
           'font-family': settings.LyricFont.value !== 'follow' ? settings.LyricFont.value : ''
         }"
@@ -123,6 +123,11 @@ const optimizeOptions = computed(() => ({
   cleanUnintentionalOverlaps: settings.amllCleanOverlaps.value,
   tryAdvanceStartTime: settings.amllTryAdvanceStart.value
 }))
+
+// AMLL 副行字号：跟随主行时为主行一半（相对父行 em），否则固定像素
+const subFontSize = computed(() =>
+  settings.amllSubFontSizeFollow.value ? 'max(0.5em, 12px)' : `${settings.amllSubFontSize.value}px`
+)
 
 // 进度跳转
 const jumpSeek = (line: LyricLineMouseEvent) => {
@@ -207,6 +212,10 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
 
 :deep(.am-lyric div[class*='lyricMainLine'] span) {
   text-align: start;
+}
+
+:deep(.am-lyric [class*='lyricSubLine']) {
+  font-size: var(--amll-sub-font-size, max(0.5em, 12px));
 }
 
 .lyric-message-container {

@@ -25,7 +25,11 @@ export default defineEventHandler(async (event) => {
   event.node.res.once('close', cancel)
   try {
   const response = await openNetwork(ticket.url, { headers: { ...ticket.headers, ...(range ? { range } : {}) }, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30 * 60 * 1000)]) })
-  if (![200, 206, 416].includes(response.statusCode || 0)) { response.destroy(); throw pluginError('PLUGIN_RESOLVE_FAILED') }
+  if (![200, 206, 416].includes(response.statusCode || 0)) {
+    // 记录上游真实状态码与主机，区分机房 IP 被拒 / 直链过期 / 重定向丢头，否则只能看到笼统的 502
+    console.warn(`[plugin-media] 回源失败 ${response.statusCode || 0}: ${(() => { try { return new URL(ticket.url).hostname } catch { return 'unknown' } })()}`)
+    response.destroy(); throw pluginError('PLUGIN_RESOLVE_FAILED')
+  }
   setResponseStatus(event, response.statusCode!)
   for (const name of ['content-type', 'content-length', 'content-range', 'accept-ranges']) {
     const value = response.headers[name]

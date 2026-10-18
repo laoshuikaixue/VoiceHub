@@ -19,12 +19,43 @@ export const siteConfig = {
   siteDescription: 'Site Description',
   siteDescriptionPlaceholder: 'Enter the site description',
   statisticsCode: 'Site Statistics Code',
-  legalConsentTitle: 'Login Terms Confirmation', legalConsentDesc: 'Require users to read and agree to terms before login.', legalConsentDisplayMode: 'Display mode', legalConsentModal: 'Modal', legalConsentCheckbox: 'Checkbox', legalConsentModalHint: 'Shown after login when the account has not confirmed the current terms; accepting enters the system.', legalConsentCheckboxHint: 'The checkbox appears below the login button; every login method stays disabled until it is checked.', legalConsentUpdatedDate: 'Terms update date', legalConsentDocuments: 'Legal documents', legalConsentAdd: 'Add document', legalConsentDocument: 'Document', legalConsentName: 'Document name', legalConsentSlug: 'Route slug', legalConsentContent: 'Markdown content', legalConsentKeepOne: 'Keep at least one legal document', delete: 'Delete',
-  legalConsentPrefix: 'I have read and agree to ', legalConsentSeparator: ', ', legalConsentBlocked: 'Please read and accept the latest terms before logging in.', legalConsentDisplayModeHint: 'The checkbox appears below the login button; all login methods stay disabled until it is checked.', legalConsentUpdatedDateHint: 'Users must agree again when this date or the document content changes.', legalConsentDocumentsDesc: 'Customize names and save content as Markdown. Examples: terms of service, usage policy, supported countries, and service-specific terms.', legalConsentUntitled: 'Untitled document', legalConsentNamePlaceholder: 'e.g. Terms of Service', legalConsentSlugPlaceholder: 'e.g. terms', legalConsentContentPlaceholder: 'Write the official Markdown terms here.',
+  legalConsentTitle: 'Login Terms Confirmation',
+  legalConsentDesc: 'Require users to read and agree to terms before login.',
+  legalConsentDisplayMode: 'Display mode',
+  legalConsentModal: 'Modal',
+  legalConsentCheckbox: 'Checkbox',
+  legalConsentModalHint:
+    'Shown after login when the account has not confirmed the current terms; accepting enters the system.',
+  legalConsentCheckboxHint:
+    'The checkbox appears below the login button; every login method stays disabled until it is checked.',
+  legalConsentUpdatedDate: 'Terms update date',
+  legalConsentDocuments: 'Legal documents',
+  legalConsentAdd: 'Add document',
+  legalConsentDocument: 'Document',
+  legalConsentName: 'Document name',
+  legalConsentSlug: 'Route slug',
+  legalConsentContent: 'Markdown content',
+  legalConsentKeepOne: 'Keep at least one legal document',
+  delete: 'Delete',
+  legalConsentPrefix: 'I have read and agree to ',
+  legalConsentSeparator: ', ',
+  legalConsentBlocked: 'Please read and accept the latest terms before logging in.',
+  legalConsentDisplayModeHint:
+    'The checkbox appears below the login button; all login methods stay disabled until it is checked.',
+  legalConsentUpdatedDateHint:
+    'Users must agree again when this date or the document content changes.',
+  legalConsentDocumentsDesc:
+    'Customize names and save content as Markdown. Examples: terms of service, usage policy, supported countries, and service-specific terms.',
+  legalConsentUntitled: 'Untitled document',
+  legalConsentNamePlaceholder: 'e.g. Terms of Service',
+  legalConsentSlugPlaceholder: 'e.g. terms',
+  legalConsentContentPlaceholder: 'Write the official Markdown terms here.',
   statisticsCodeEnabled: 'Enable Site Statistics Code',
   statisticsCodeEnabledDesc: 'Only injects the snippet below into pages when enabled',
-  statisticsCodePlaceholder: 'Paste your statistics snippet (e.g. Baidu Analytics, 51.la, Clarity, Google Analytics)',
-  statisticsCodeHint: 'Injected into the <head> of every page. Supports any HTML/JS statistics code. Takes effect within about 1 minute after saving.',
+  statisticsCodePlaceholder:
+    'Paste your statistics snippet (e.g. Baidu Analytics, 51.la, Clarity, Google Analytics)',
+  statisticsCodeHint:
+    'Injected into the <head> of every page. Supports any HTML/JS statistics code. Takes effect within about 1 minute after saving.',
 
   themeSettings: 'Theme Settings',
   themeSettingsDesc: 'Control each theme separately and use the star to choose the default theme.',
@@ -32,13 +63,15 @@ export const siteConfig = {
   enableTheme: 'Enable theme',
   disableTheme: 'Disable theme',
   systemThemeHint: 'Requires both Classic Dark and Classic Light to be enabled',
-  systemThemeAutoEnabled: 'Follow System requires both classic themes; they have been enabled automatically.',
+  systemThemeAutoEnabled:
+    'Follow System requires both classic themes; they have been enabled automatically.',
   defaultTheme: 'Default Theme',
   defaultThemeDesc: 'Used when a user has not selected a theme; user preferences take priority.',
   enabledThemes: 'Enabled Themes',
   enabledThemesDesc: 'Disabled themes cannot be selected by users; keep at least one enabled.',
   defaultThemeMustBeEnabled: 'The default theme must be enabled',
-  systemThemeRequiresBothClassic: 'Classic Dark and Classic Light must both be enabled when Follow System is enabled',
+  systemThemeRequiresBothClassic:
+    'Classic Dark and Classic Light must both be enabled when Follow System is enabled',
 
   visualIdentity: 'Visual Identity',
   siteLogoUrl: 'Site Logo URL',
@@ -56,13 +89,16 @@ export const siteConfig = {
   enableRemarks: 'Enable Request Remarks',
   enableRemarksDesc: 'Allow users to add public or admin-only notes when submitting requests',
   submissionNoteRequiresApproval: 'Require Approval for Public Notes',
-  submissionNoteRequiresApprovalDesc: 'When enabled, public notes submitted with song requests must be approved in Song Management before being shown to other users',
+  submissionNoteRequiresApprovalDesc:
+    'When enabled, public notes submitted with song requests must be approved in Song Management before being shown to other users',
   enableCardCodeRequests: 'Enable Request Cards',
   enableCardCodeLimitBypass: 'Request cards bypass limits',
-  enableCardCodeLimitBypassDesc: 'Valid request-card submissions do not use regular quota and remain available after daily, weekly, or monthly limits are reached.',
+  enableCardCodeLimitBypassDesc:
+    'Valid request-card submissions do not use regular quota and remain available after daily, weekly, or monthly limits are reached.',
   enableCardCodeRequestsDesc: 'Allow users to use request cards when submitting song requests',
   requireCardCodeForRequests: 'Require Request Cards',
-  requireCardCodeForRequestsDesc: 'When enabled, all users must provide a valid request card before submitting.',
+  requireCardCodeForRequestsDesc:
+    'When enabled, all users must provide a valid request card before submitting.',
   enableReplay: 'Enable Replay Requests',
   enableReplayDesc: 'Allow users to request songs that have already been played this semester',
   enableLimit: 'Enable Request Limits',
@@ -77,18 +113,23 @@ export const siteConfig = {
   limitLabelPrefix: 'Active: ',
   limitLabelSuffix: ' Request Limit',
   enableGlobalLimit: 'Enable Site-wide Quota',
-  enableGlobalLimitDesc: 'Cap total submissions from all users to prevent flooding. Admins are exempt.',
+  enableGlobalLimitDesc:
+    'Cap total submissions from all users to prevent flooding. Admins are exempt.',
   globalLimitUnlimited: 'Empty = unlimited',
   globalLimitUnit: 'songs',
-  globalLimitHint: 'Periods are independent and can combine. 0 stops submissions for that period. Separate from the per-user limit above.',
+  globalLimitHint:
+    'Periods are independent and can combine. 0 stops submissions for that period. Separate from the per-user limit above.',
 
   // Schedule visibility range
   scheduleVisibility: 'Schedule Visibility',
-  scheduleVisibilityDesc: 'Controls the broadcast schedule range visible to regular users on the frontend. Administrators are not affected.',
+  scheduleVisibilityDesc:
+    'Controls the broadcast schedule range visible to regular users on the frontend. Administrators are not affected.',
   daysBeforeEnabled: 'Enable Past Schedule Limit',
-  daysBeforeEnabledDesc: 'When enabled, users can only view schedules within the configured past days.',
+  daysBeforeEnabledDesc:
+    'When enabled, users can only view schedules within the configured past days.',
   daysAfterEnabled: 'Enable Future Schedule Limit',
-  daysAfterEnabledDesc: 'When enabled, users can only view schedules within the configured future days.',
+  daysAfterEnabledDesc:
+    'When enabled, users can only view schedules within the configured future days.',
   daysBefore: 'Visible Past Days',
   daysAfter: 'Visible Future Days',
   daysUnit: 'days',
@@ -102,50 +143,90 @@ export const siteConfig = {
   captchaEsa: 'Alibaba Cloud ESA AI CAPTCHA',
   captchaMaxFailures: 'Failure Threshold',
   captchaMaxFailuresPlaceholder: 'e.g. 3',
-  captchaMaxFailuresDesc: 'Require CAPTCHA after this many consecutive password failures. Set to 0 to require CAPTCHA on every login. Recommended: 3-5.',
+  captchaMaxFailuresDesc:
+    'Require CAPTCHA after this many consecutive password failures. Set to 0 to require CAPTCHA on every login. Recommended: 3-5.',
   turnstileSiteKey: 'Site Key',
   turnstileSiteKeyPlaceholder: 'Enter the Turnstile Site Key',
   turnstileSecretKey: 'Secret Key',
   turnstileSecretKeyPlaceholder: 'Enter the Turnstile Secret Key (leave blank to keep unchanged)',
-  turnstileSecretKeyDesc: 'When Turnstile is enabled, all users must pass verification on each login.',
+  turnstileSecretKeyDesc:
+    'When Turnstile is enabled, all users must pass verification on each login.',
   esaCaptchaPrefix: 'Identity',
-  esaCaptchaPrefixPlaceholder: 'Enter the Identity shown at the top right of the ESA AI CAPTCHA configuration page',
+  esaCaptchaPrefixPlaceholder:
+    'Enter the Identity shown at the top right of the ESA AI CAPTCHA configuration page',
   esaCaptchaSceneId: 'Scene ID',
   esaCaptchaScenes: 'Scene ID Rules',
-  esaCaptchaScenesDesc: 'Each row maps to one CAPTCHA rule in the ESA console. The "API to be verified" field takes a path only, without the protocol or the domain (the path of each endpoint is shown under the Endpoint column, e.g. /api/auth/login), and one rule covers only one path, so create a separate rule for the login and registration endpoints on every public domain, then copy their Scene IDs into the table below. The Domain column tells rules apart in multi-domain deployments, where an exact domain wins over *.domain, which wins over *.',
+  esaCaptchaScenesDesc:
+    'Each row maps to one CAPTCHA rule in the ESA console, all bound to the shared verify endpoint /api/captcha/verify (path shown below). The "API to be verified" field takes that path only, without the protocol or the domain. Once verification passes the site issues a token shared by login and registration, so one rule per public domain is enough. The Domain column tells rules apart in multi-domain deployments, where an exact domain wins over *.domain, which wins over *.',
   esaCaptchaAddScene: 'Add Rule',
-  esaCaptchaEndpoint: 'Endpoint',
-  esaCaptchaEndpointLogin: 'Login',
-  esaCaptchaEndpointRegister: 'Register',
   esaCaptchaHost: 'Domain',
   esaCaptchaHostPlaceholder: '* or hub.example.com or *.example.com',
   esaCaptchaKeepOne: 'Keep at least one Scene ID rule',
+  esaCaptchaStaleNotice:
+    'Legacy per-endpoint (login/register) scenes were found and are no longer valid after the unified verify endpoint. Recreate a rule in the ESA console for the path above, enter the new Scene IDs below, then save.',
   esaCaptchaRegion: 'Region',
   esaCaptchaRegionCn: 'Chinese mainland',
   esaCaptchaRegionSgp: 'Singapore',
-  esaCaptchaDesc: 'When enabled, all users must pass the ESA AI CAPTCHA on every login and registration. One ESA rule covers exactly one endpoint plus one domain, so add a rule in the ESA console for the login endpoint, the registration endpoint, and each public domain, then record their Scene IDs in the table below. The CAPTCHA type (traceless / click-and-pass / slider / puzzle) is decided by the rule the Scene ID belongs to and is delivered by ESA when the page initializes; after switching rules or changing the type, update the matching Scene ID and reload the page. Verification happens at the ESA edge while the origin only checks that the verification request header is present, so before enabling it make sure the origin accepts traffic exclusively from ESA (allow only the ESA back-to-origin ranges in your firewall or security group and block direct public access to the origin port), otherwise the CAPTCHA can be bypassed.',
+  esaCaptchaDesc:
+    'When enabled, all users pass the ESA AI CAPTCHA once before logging in or registering. The CAPTCHA type (traceless / click-and-pass / slider / puzzle) is decided by the rule the Scene ID belongs to and is delivered by ESA when the page initializes; after switching rules or changing the type, update the matching Scene ID and reload the page. Verification runs at the ESA edge on the shared verify endpoint /api/captcha/verify; once it passes, the origin issues a short-lived token that login/registration then check. Before enabling it, make sure the origin accepts traffic exclusively from ESA (allow only the ESA back-to-origin ranges in your firewall or security group and block direct public access to the origin port), otherwise the endpoint could be called directly to obtain a token and bypass the CAPTCHA.',
+  esaCaptchaTest: 'Connectivity Test',
+  esaCaptchaTestDesc:
+    'Click the button below to complete one real CAPTCHA challenge and confirm that the active ESA configuration, the shared verify endpoint, and token issuance all work.',
+  esaCaptchaTestButton: 'Run Test',
+  esaCaptchaTestUnsaved:
+    'ESA settings were changed but not saved yet. The test runs against the last saved configuration, so please save first.',
+  esaCaptchaTestNotReady:
+    'Testing requires a saved ESA setup: CAPTCHA enabled, provider set to ESA AI CAPTCHA, and a Scene ID that resolves for the domain you are on. Save the config and confirm this domain is covered by a scene rule.',
+  esaCaptchaTestTesting: 'Verification passed, issuing the token…',
+  esaCaptchaTestWaiting:
+    'Complete the challenge in the CAPTCHA popup; it counts as passed only after a real success. If no slider appears, this Scene ID is a traceless / click-and-pass type — switch it to a slider / puzzle scene in the ESA console to see a popup.',
+  esaCaptchaTestNoParam:
+    'No verification parameter was returned, so the CAPTCHA was not genuinely completed (or the popup failed due to a config error). Fix the configuration and retry.',
+  esaCaptchaTestSuccess:
+    'CAPTCHA passed. The shared verify endpoint is reachable and tokens issue normally.',
+  esaCaptchaTestNotRequired:
+    'The current configuration does not trigger the CAPTCHA (disabled, provider is not ESA, or no scene matches this domain), so there is nothing to test.',
+  esaCaptchaTestRejected: 'The request was blocked at the ESA edge, reason code: ',
+  esaCaptchaTestVerifyFailed: 'The CAPTCHA was not passed. Complete the challenge again and retry.',
+  esaCaptchaTestLoadFailed:
+    'Failed to load the CAPTCHA widget. Check the identity and region, then reload the page.',
+  esaCaptchaTestFailed: 'The test failed. Review the configuration and retry.',
   allowRegister: 'Allow User Registration',
-  allowRegisterDesc: 'When enabled, a registration entry appears on the login page so users can sign up with a username and password.',
+  allowRegisterDesc:
+    'When enabled, a registration entry appears on the login page so users can sign up with a username and password.',
   registerRequiresApproval: 'Require Admin Approval for Registration',
-  registerRequiresApprovalDesc: 'When enabled, new registrations must be approved by an admin before they can sign in.',
+  registerRequiresApprovalDesc:
+    'When enabled, new registrations must be approved by an admin before they can sign in.',
   oauthRegisterRequiresApproval: 'Require Admin Approval for Third-party Registration',
-  oauthRegisterRequiresApprovalDesc: 'When enabled, accounts created via third-party login (GitHub, aggregate login, etc.) also require admin approval before sign-in.',
+  oauthRegisterRequiresApprovalDesc:
+    'When enabled, accounts created via third-party login (GitHub, aggregate login, etc.) also require admin approval before sign-in.',
   registerEmailRequired: 'Require Email on Registration',
-  registerEmailRequiredDesc: 'When enabled, the registration form requires an email address verified by a code. SMTP must be configured first; the toggle is disabled otherwise.',
-  registerEmailSmtpRequired: 'Configure the SMTP service in Email Notification settings before enabling this option',
+  registerEmailRequiredDesc:
+    'When enabled, the registration form requires an email address verified by a code. SMTP must be configured first; the toggle is disabled otherwise.',
+  registerEmailSmtpRequired:
+    'Configure the SMTP service in Email Notification settings before enabling this option',
   registerRequiresGradeClass: 'Require Grade and Class on Registration',
-  registerRequiresGradeClassDesc: 'When enabled, the registration form (including third-party account creation) requires selecting an existing grade and class. Maintain options in Grade/Class management first.',
+  registerRequiresGradeClassDesc:
+    'When enabled, the registration form (including third-party account creation) requires selecting an existing grade and class. Maintain options in Grade/Class management first.',
   showBlacklistKeywords: 'Show Exact Keyword',
-  showBlacklistKeywordsDesc: 'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
+  showBlacklistKeywordsDesc:
+    'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
   forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
   forcePasswordChangeOnFirstLoginDesc:
     'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
   hideStudentInfo: 'Hide Student Details',
-  hideStudentInfoDesc: 'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
+  hideStudentInfoDesc:
+    'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
+  allowAnonymousSubmission: 'Allow Anonymous Submissions',
+  allowAnonymousSubmissionDesc:
+    'When on, users may choose "Anonymous" per submission; others see only "Anonymous" while admins and the submitter still see the real name. Anonymous submissions cannot have co-requesters.',
   telemetryEnabled: 'Enable Error Tracking',
-  telemetryEnabledDesc: 'Enabled by default. When on, the system sends frontend/backend error events and instance-online events to Sentry for instance statistics and deployment diagnostics.',
-  telemetryPrivacy: 'No personal identity information, user data, or business content is collected.',
-  configWarning: 'Site configuration takes effect immediately after saving. Review the impact before changing key business rules such as request limits.',
+  telemetryEnabledDesc:
+    'Enabled by default. When on, the system sends frontend/backend error events and instance-online events to Sentry for instance statistics and deployment diagnostics.',
+  telemetryPrivacy:
+    'No personal identity information, user data, or business content is collected.',
+  configWarning:
+    'Site configuration takes effect immediately after saving. Review the impact before changing key business rules such as request limits.',
 
   submissionGuidelines: 'Submission Guidelines',
   guidelinesPlaceholder: 'Enter submission guidelines (Markdown supported)',
@@ -183,17 +264,22 @@ export const siteConfig = {
   platformDisabled: 'Disabled',
 
   serverMessages: {
-    oauthRedirectCallbackInvalid: 'oauthRedirectUri must be a callback URL, for example https://yourdomain.com/api/auth/[provider]/callback',
-    oauthRedirectUrlInvalid: 'oauthRedirectUri is not a valid URL, for example https://yourdomain.com/api/auth/[provider]/callback',
+    oauthRedirectCallbackInvalid:
+      'oauthRedirectUri must be a callback URL, for example https://yourdomain.com/api/auth/[provider]/callback',
+    oauthRedirectUrlInvalid:
+      'oauthRedirectUri is not a valid URL, for example https://yourdomain.com/api/auth/[provider]/callback',
     raw: {
-      oauthRedirectCallbackInvalid: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback',
-      oauthRedirectUrlInvalid: 'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/api/auth/[provider]/callback',
+      oauthRedirectCallbackInvalid:
+        'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback',
+      oauthRedirectUrlInvalid:
+        'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/api/auth/[provider]/callback',
       unauthorized: '未授权访问',
       adminOnly: '只有管理员才能更新系统设置',
       captchaProviderInvalid: 'captchaProvider 必须是 graphic 或 turnstile',
       turnstileRequired: '启用 Turnstile 验证前，请先配置 Site Key 和 Secret Key',
       smtpPortInvalid: 'smtpPort 必须是1-65535之间的整数',
-      oauthBaseRequired: '启用 OAuth 登录方式前，请先在管理员后台配置 OAuth 重定向 URI 和 OAuth State 密钥',
+      oauthBaseRequired:
+        '启用 OAuth 登录方式前，请先在管理员后台配置 OAuth 重定向 URI 和 OAuth State 密钥',
       githubClientIdRequired: '启用 GitHub 登录时必须提供 Client ID',
       githubClientSecretRequired: '启用 GitHub 登录时必须提供 Client Secret',
       casdoorServerUrlRequired: '启用 Casdoor 登录时必须提供服务器 URL',
@@ -220,11 +306,14 @@ export const siteConfig = {
     adminOnly: 'Only administrators can update system settings',
     mustBeBoolean: (field: string) => `${field} must be a boolean`,
     mustBePositiveInteger: (field: string) => `${field} must be a positive integer`,
-    mustBeNonNegativeIntegerOrNull: (field: string) => `${field} must be a non-negative integer or null`,
+    mustBeNonNegativeIntegerOrNull: (field: string) =>
+      `${field} must be a non-negative integer or null`,
     captchaProviderInvalid: 'captchaProvider must be graphic or turnstile',
-    turnstileRequired: 'Configure the Site Key and Secret Key before enabling Turnstile verification',
+    turnstileRequired:
+      'Configure the Site Key and Secret Key before enabling Turnstile verification',
     smtpPortInvalid: 'smtpPort must be an integer between 1 and 65535',
-    oauthBaseRequired: 'Configure the OAuth redirect URI and OAuth state secret in the admin panel before enabling OAuth login',
+    oauthBaseRequired:
+      'Configure the OAuth redirect URI and OAuth state secret in the admin panel before enabling OAuth login',
     githubClientIdRequired: 'Client ID is required when enabling GitHub login',
     githubClientSecretRequired: 'Client Secret is required when enabling GitHub login',
     casdoorServerUrlRequired: 'Server URL is required when enabling Casdoor login',
@@ -233,9 +322,11 @@ export const siteConfig = {
     casdoorOrganizationRequired: 'Organization name is required when enabling Casdoor login',
     googleClientIdRequired: 'Client ID is required when enabling Google login',
     googleClientSecretRequired: 'Client Secret is required when enabling Google login',
-    customOAuthFieldRequired: (field: string) => `${field} is required when enabling custom OAuth2 login`,
+    customOAuthFieldRequired: (field: string) =>
+      `${field} is required when enabling custom OAuth2 login`,
     invalidUrl: (field: string) => `${field} is not a valid URL`,
-    onlyOneLimit: 'Only one of daily, weekly, and monthly limits can be selected; the others must be empty',
+    onlyOneLimit:
+      'Only one of daily, weekly, and monthly limits can be selected; the others must be empty',
     updateFailed: 'Failed to update system settings',
     fields: {
       customOAuthAuthorizeUrl: 'Authorization Endpoint URL',
@@ -370,7 +461,8 @@ export const pages = {
     retryLogin: 'Try Again',
     backHome: 'Back to Home',
     contactAdmin: 'If you believe this is an error, please contact the system administrator',
-    defaultMessage: 'An unknown error occurred while signing in with a third-party account. Please try again.',
+    defaultMessage:
+      'An unknown error occurred while signing in with a third-party account. Please try again.',
     aggregateUnavailableTitle: 'This sign-in method is currently unavailable',
     aggregateUnavailableAction: 'Choose Another Method'
   },
@@ -418,15 +510,19 @@ export const pages = {
         userNotFound: '找不到该账号名，请检查是否拼写错误',
         emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
         emailRequiredFull: '请输入完整的邮箱地址以验证身份',
-        mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
+        mailSentFull:
+          '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
         systemError: '系统错误，请稍后重试'
       },
-      rateLimited: (minutes: string | number) => `Too many requests. Please wait ${minutes} minute(s) and try again.`,
+      rateLimited: (minutes: string | number) =>
+        `Too many requests. Please wait ${minutes} minute(s) and try again.`,
       usernameMissing: 'Please provide your username',
       userNotFound: 'No account was found for that username. Please check the spelling.',
-      emailNotBound: 'This account has no security email bound, so password recovery is unavailable. Please contact an administrator.',
+      emailNotBound:
+        'This account has no security email bound, so password recovery is unavailable. Please contact an administrator.',
       emailRequiredFull: 'Please enter the full email address to verify your identity',
-      mailSentFull: 'If the username and email match, a password reset link has been sent to your inbox. Please follow the email instructions to reset your password.',
+      mailSentFull:
+        'If the username and email match, a password reset link has been sent to your inbox. Please follow the email instructions to reset your password.',
       systemError: 'System error. Please try again later.'
     }
   },
@@ -454,7 +550,13 @@ export const pages = {
       logoutOthersSuccess: 'Other sessions signed out',
       logoutFailed: 'Failed to sign out session',
       loadFailed: 'Failed to load sessions',
-      methods: { password: 'Password', twoFactor: '2FA', oauth: 'OAuth', webauthn: 'Passkey', legacy: 'Legacy' }
+      methods: {
+        password: 'Password',
+        twoFactor: '2FA',
+        oauth: 'OAuth',
+        webauthn: 'Passkey',
+        legacy: 'Legacy'
+      }
     },
     social: {
       title: 'Social Account Binding',
@@ -468,7 +570,8 @@ export const pages = {
       emailPlaceholder: 'Enter email address',
       pleaseWait: 'Please wait...',
       bindNow: 'Bind Now',
-      emailCodeSentTip: 'A verification code has been sent to your email. Complete verification within 5 minutes. Check spam if you did not receive it.',
+      emailCodeSentTip:
+        'A verification code has been sent to your email. Complete verification within 5 minutes. Check spam if you did not receive it.',
       emailCodePlaceholder: 'Enter 6-digit code',
       verifying: 'Verifying...',
       confirmVerify: 'Verify',
@@ -481,7 +584,8 @@ export const pages = {
       meowPushTitle: 'MeoW App Push',
       currentBoundId: 'Current Bound ID',
       connected: 'Connected',
-      meowDesc: 'Receive faster system notifications and song status updates through the MeoW client.',
+      meowDesc:
+        'Receive faster system notifications and song status updates through the MeoW client.',
       meowIdPlaceholder: 'Enter MeoW User ID',
       sendCode: 'Send Code',
       meowCodeSentPrefix: 'Verification code sent to MeoW ID:',
@@ -499,7 +603,8 @@ export const pages = {
       meowBindSuccess: 'MeoW account bound successfully.',
       verifyFailed: 'Verification failed',
       unbindMeowTitle: 'Unbind MeoW Account',
-      unbindMeowMessage: 'Are you sure you want to unbind your MeoW account? You will no longer receive push notifications.',
+      unbindMeowMessage:
+        'Are you sure you want to unbind your MeoW account? You will no longer receive push notifications.',
       meowUnbound: 'MeoW account unbound',
       unbindFailed: 'Failed to unbind',
       emailRequired: 'Please enter an email address',
@@ -508,12 +613,14 @@ export const pages = {
       bindFailed: 'Binding failed',
       emailVerifySuccess: 'Email verified successfully',
       changeEmailTitle: 'Change Email',
-      changeEmailMessage: 'Changing email will clear the currently bound email and require verification again. Continue?',
+      changeEmailMessage:
+        'Changing email will clear the currently bound email and require verification again. Continue?',
       emailCleared: 'Email information cleared',
       emailCodeResent: 'Verification code resent',
       sendFailed: 'Failed to send',
       unbindEmailTitle: 'Confirm Email Unbind',
-      unbindEmailMessage: 'You will no longer receive email notifications after unbinding. Continue?',
+      unbindEmailMessage:
+        'You will no longer receive email notifications after unbinding. Continue?',
       emailUnbound: 'Email unbound',
       astrbot: {
         platforms: { qq: 'QQ', wecom: 'WeCom', dingtalk: 'DingTalk', lark: 'Lark' },
@@ -524,11 +631,13 @@ export const pages = {
         boundAt: 'Linked at:',
         generate: 'Get Bind Code',
         instruction: 'Send this code privately to the bot on this platform, not in a group chat.',
-        expires: 'Code expires in {0} seconds. Each platform keeps its own code; regenerating replaces that platform\'s previous code.',
+        expires:
+          "Code expires in {0} seconds. Each platform keeps its own code; regenerating replaces that platform's previous code.",
         refresh: 'Sent it? Refresh status',
         test: 'Send test notification',
         testSuccess: 'Test notification sent',
-        testQueued: 'Test notification queued for the bot to collect; delivery is not yet confirmed.',
+        testQueued:
+          'Test notification queued for the bot to collect; delivery is not yet confirmed.',
         testFailed: 'Failed to send test notification',
         unbind: 'Unlink',
         unbindTitle: 'Unlink Platform',
@@ -558,10 +667,12 @@ export const pages = {
       neverExpires: 'Never expires',
       deleteTitle: 'Delete Personal API Key',
       deleteMessageDefault: 'Delete this personal API key? Related integrations will stop working.',
-      deleteMessage: (name: string) => `Delete personal API key "${name}"? Related integrations will stop working.`,
+      deleteMessage: (name: string) =>
+        `Delete personal API key "${name}"? Related integrations will stop working.`,
       createdTitle: 'API Key Created',
       createdDesc: 'The full key is shown only once',
-      copyWarning: 'Copy and save it now. VoiceHub will not show the full key again after this window is closed.',
+      copyWarning:
+        'Copy and save it now. VoiceHub will not show the full key again after this window is closed.',
       fullKey: 'Full Key',
       closeSaved: 'Saved, close',
       logsTitle: 'Call Logs',
@@ -643,7 +754,8 @@ export const pages = {
       'music-source': 'Music Source Control',
       database: 'Database Operations',
       'api-keys': 'API Key Management',
-      'card-codes': 'Card Codes'
+      'card-codes': 'Card Codes',
+      'system-board': 'System Board'
     },
     roles: {
       USER: 'User',
@@ -737,7 +849,8 @@ export const pages = {
     acceptInvite: 'Accept Invite',
     reject: 'Reject',
     delete: 'Delete',
-    paginationInfo: (total: number, current: number, pages: number) => `${total} notifications, page ${current} / ${pages}`,
+    paginationInfo: (total: number, current: number, pages: number) =>
+      `${total} notifications, page ${current} / ${pages}`,
     pageSize: 'Per page:',
     previousPage: 'Previous Page',
     nextPage: 'Next Page',
@@ -795,14 +908,16 @@ export const pages = {
       hoursAgo: (hours: number) => `${hours} hr ago`,
       daysAgo: (days: number) => `${days} days ago`,
       weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      dateFormat: (year: number, month: number, date: number, weekday: string) => `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${weekday}`,
+      dateFormat: (year: number, month: number, date: number, weekday: string) =>
+        `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')} ${weekday}`,
       seconds: (seconds: number) => `${seconds}s`,
       minutes: (minutes: number) => `${minutes}m`,
       minutesSeconds: (minutes: number, seconds: number) => `${minutes}m ${seconds}s`
     },
     messages: {
       requestLogin: 'Please log in to request songs',
-      requestSuccess: (title: string, artist: string) => `"${title} - ${artist}" submitted successfully.`,
+      requestSuccess: (title: string, artist: string) =>
+        `"${title} - ${artist}" submitted successfully.`,
       requestFailed: 'Song request failed',
       voteLogin: 'Please log in before voting',
       cancelReplayLogin: 'Please log in to cancel replay requests',
@@ -812,7 +927,8 @@ export const pages = {
       inviteRejected: 'Collaboration invite rejected',
       operationFailed: 'Operation failed',
       notificationLogin: 'Please log in to view notifications',
-      changePasswordTip: 'For account security, please change your password. You can use the change-password entry in the top-right menu.'
+      changePasswordTip:
+        'For account security, please change your password. You can use the change-password entry in the top-right menu.'
     },
     titleHome: 'Home',
     titleLoading: 'Loading'
@@ -869,7 +985,8 @@ export const pages = {
     loginForm: {
       bindExisting: 'Bind Account',
       createAccount: 'Create New Account',
-      bindProvider: (providerName: string, providerUsername: string) => `Binding ${providerName} account: ${providerUsername}`,
+      bindProvider: (providerName: string, providerUsername: string) =>
+        `Binding ${providerName} account: ${providerUsername}`,
       createWithProvider: (providerName: string) => `Create a new account with ${providerName}`,
       loginSubtitle: 'Sign in to your VoiceHub account',
       setUsername: 'Set Username',
@@ -888,7 +1005,8 @@ export const pages = {
       classHint: 'Optional. Only existing grades and classes can be selected',
       noClassHint: 'No grade/class options yet. You can skip this.',
       classHintRequired: 'Required. Only existing grades and classes can be selected',
-      noClassHintRequired: 'No grade/class options yet. Ask an admin to configure them before registering',
+      noClassHintRequired:
+        'No grade/class options yet. Ask an admin to configure them before registering',
       setPassword: 'Set Password',
       password: 'Password',
       forgotPassword: 'Forgot password?',
@@ -935,10 +1053,13 @@ export const pages = {
       loginFailed: 'Login failed. Please check your username and password.',
       registerFailed: 'Registration failed. Please try again later.',
       passkeyFailed: 'Passkey login failed',
-      esaCaptchaSceneMissing: 'No ESA CAPTCHA Scene ID is configured for this endpoint. Please contact the administrator.',
+      esaCaptchaSceneMissing:
+        'No ESA CAPTCHA Scene ID is configured for this endpoint. Please contact the administrator.',
       esaCaptchaLoadFailed: 'The CAPTCHA component failed to load. Refresh the page and try again.',
-      esaVerifyFailed: 'CAPTCHA verification failed (code {0}). Try again or contact the administrator.',
-      esaVerifyFailedWithReason: 'CAPTCHA verification failed: {0} (code {1}). Try again or contact the administrator.',
+      esaVerifyFailed:
+        'CAPTCHA verification failed (code {0}). Try again or contact the administrator.',
+      esaVerifyFailedWithReason:
+        'CAPTCHA verification failed: {0} (code {1}). Try again or contact the administrator.',
       // ESA edge verification result codes; unmapped codes are shown as the code only
       esaVerifyCodes: {
         F001: 'Suspected attack request, blocked by the risk policy',
@@ -963,11 +1084,15 @@ export const pages = {
       passkeyLoginUnsupported: 'This browser does not support Passkey sign-in',
       passkeyAuthenticationIncomplete: 'Passkey authentication was not completed',
       passkeySecurityInvalid: 'The Passkey domain or secure-context configuration is invalid',
-      passkeyOperationUnavailable: 'The Passkey operation was cancelled, timed out, or no usable credential was available',
-      passkeyCleanupNotified: 'This Passkey is no longer valid. The system has been notified; please add it again.',
-      passkeyCleanupRequired: 'This Passkey was removed from VoiceHub. Remove it from your device password manager before adding it again.',
+      passkeyOperationUnavailable:
+        'The Passkey operation was cancelled, timed out, or no usable credential was available',
+      passkeyCleanupNotified:
+        'This Passkey is no longer valid. The system has been notified; please add it again.',
+      passkeyCleanupRequired:
+        'This Passkey was removed from VoiceHub. Remove it from your device password manager before adding it again.',
       usernameLengthInvalid: 'Username must be 3-30 characters long',
-      usernamePatternInvalid: 'Username may only contain letters, numbers, underscores, and hyphens',
+      usernamePatternInvalid:
+        'Username may only contain letters, numbers, underscores, and hyphens',
       registerPasswordTooShort: 'Password must be at least 6 characters',
       registerPasswordMismatch: 'The two passwords do not match',
       confirmBind: 'Confirm Bind',
@@ -1074,17 +1199,22 @@ export const pages = {
       cancel: 'Cancel',
       remove: 'Remove',
       unbindTitle: 'Unbind Account',
-      unbindMessage: (providerName: string) => `Are you sure you want to unbind ${providerName}? You will no longer be able to sign in with this account.`,
+      unbindMessage: (providerName: string) =>
+        `Are you sure you want to unbind ${providerName}? You will no longer be able to sign in with this account.`,
       removePasskeyTitle: 'Remove Passkey',
-      removePasskeyMessage: (deviceName: string) => `Are you sure you want to remove "${deviceName}"? VoiceHub will try to notify this device to remove it as well. If unsupported, you must remove it manually from your password manager.`,
+      removePasskeyMessage: (deviceName: string) =>
+        `Are you sure you want to remove "${deviceName}"? VoiceHub will try to notify this device to remove it as well. If unsupported, you must remove it manually from your password manager.`,
       unbindSuccess: 'Unbound successfully',
       unbindFailed: 'Failed to unbind',
-      passkeyCleanupRequired: 'Removed from VoiceHub. Also remove the corresponding Passkey from your device password manager.',
+      passkeyCleanupRequired:
+        'Removed from VoiceHub. Also remove the corresponding Passkey from your device password manager.',
       browserNotSupported: 'Your browser does not support Windows Hello / Passkey',
       userCancelled: 'The operation was cancelled',
-      passkeyOperationUnavailable: 'The Passkey operation was cancelled, timed out, or no usable credential was available',
+      passkeyOperationUnavailable:
+        'The Passkey operation was cancelled, timed out, or no usable credential was available',
       passkeyAlreadyRegistered: 'This Passkey is already registered to the current account',
-      passkeyAlgorithmUnsupported: 'This device does not support the Passkey algorithm provided by the server',
+      passkeyAlgorithmUnsupported:
+        'This device does not support the Passkey algorithm provided by the server',
       passkeySecurityInvalid: 'The Passkey domain or secure-context configuration is invalid',
       passkeyRegistrationUnsupported: 'This browser does not support creating Passkeys',
       passkeyCreationIncomplete: 'Passkey creation was not completed',
@@ -1128,7 +1258,8 @@ export const pages = {
       codePlaceholder: 'Enter 6-digit code',
       verifyAndEnable: 'Verify and Enable',
       disableTitle: 'Disable Two-Factor Authentication',
-      disableContent: 'After disabling, your account will no longer be protected by two-factor authentication. Enter your login password to confirm.',
+      disableContent:
+        'After disabling, your account will no longer be protected by two-factor authentication. Enter your login password to confirm.',
       verifyAndDisable: 'Verify and Disable',
       passwordPlaceholder: 'Enter current login password',
       fetchFailed: 'Failed to fetch verification code',
@@ -1202,6 +1333,8 @@ export const pages = {
       showWordsRoma: 'Word romaji',
       swapTranRoma: 'Roma before trans',
       showYrc: 'Word-by-word lyrics (YRC)',
+      amllSubFontSizeFollow: 'Sub follows main size',
+      amllSubFontSize: 'Sub-line size',
       amllNormalizeSpaces: 'Normalize spaces',
       amllResetLineTimestamps: 'Reset line times',
       amllConvertBgLines: 'Merge bg vocals',
@@ -1237,7 +1370,10 @@ export const pages = {
         bilibiliDefault: { label: 'Default', description: 'Default quality' },
         miguHq: { label: 'HQ High', description: 'High-quality music experience' },
         miguSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
-        miguZq24: { label: 'ZQ24 Lossless', description: 'High-resolution quality, larger files, more data' },
+        miguZq24: {
+          label: 'ZQ24 Lossless',
+          description: 'High-resolution quality, larger files, more data'
+        },
         pluginStandard: { label: 'Standard', description: 'Standard quality' },
         pluginHigh: { label: 'High', description: 'High quality' },
         pluginSuper: { label: 'Super', description: 'Highest quality' }
@@ -1291,18 +1427,38 @@ export const pages = {
     loginRequired: (action: string) => `Please log in to ${action}`,
     failed: (action: string) => `Failed to ${action}`,
     actions: {
-      createSchedule: 'create schedules', removeSchedule: 'remove schedules', updateScheduleSequence: 'update schedule order',
-      markPlayed: 'mark songs as played', sendNotification: 'send system notifications', getSystemSettings: 'get system settings',
-      updateSystemSettings: 'update system settings', getPlayTimes: 'get play times', createPlayTime: 'create play times',
-      updatePlayTime: 'update play times', deletePlayTime: 'delete play times', deleteSong: 'delete songs',
-      updateSong: 'update songs', addSong: 'add songs', updateNotificationSettings: 'update notification settings',
-      markNotification: 'mark notifications', markAllNotifications: 'mark all notifications', deleteNotification: 'delete notifications',
-      clearNotifications: 'clear notifications', getSemesters: 'get the semester list', getCurrentSemester: 'get the current semester', createSemester: 'create semesters',
-      setActiveSemester: 'set the active semester', updateSemester: 'update semesters', deleteSemester: 'delete semesters',
+      createSchedule: 'create schedules',
+      removeSchedule: 'remove schedules',
+      updateScheduleSequence: 'update schedule order',
+      markPlayed: 'mark songs as played',
+      sendNotification: 'send system notifications',
+      getSystemSettings: 'get system settings',
+      updateSystemSettings: 'update system settings',
+      getPlayTimes: 'get play times',
+      createPlayTime: 'create play times',
+      updatePlayTime: 'update play times',
+      deletePlayTime: 'delete play times',
+      deleteSong: 'delete songs',
+      updateSong: 'update songs',
+      addSong: 'add songs',
+      updateNotificationSettings: 'update notification settings',
+      markNotification: 'mark notifications',
+      markAllNotifications: 'mark all notifications',
+      deleteNotification: 'delete notifications',
+      clearNotifications: 'clear notifications',
+      getSemesters: 'get the semester list',
+      getCurrentSemester: 'get the current semester',
+      createSemester: 'create semesters',
+      setActiveSemester: 'set the active semester',
+      updateSemester: 'update semesters',
+      deleteSemester: 'delete semesters',
       getSemesterOptions: 'get semester options'
     },
     lyrics: {
-      missingParams: 'Required parameters are missing', notFound: 'No lyrics were found', unavailable: 'No lyrics available', fetchFailed: 'Failed to load lyrics'
+      missingParams: 'Required parameters are missing',
+      notFound: 'No lyrics were found',
+      unavailable: 'No lyrics available',
+      fetchFailed: 'Failed to load lyrics'
     }
   },
   audioPlayer: {
@@ -1394,13 +1550,15 @@ export const pages = {
       scanSuccess: 'Scanned successfully. Confirm on your phone',
       neteaseSuccess: 'Login successful. Redirecting...',
       qqSuccess: 'Login successful. Closing...',
-      neteaseTip: 'Note: Login state is saved in your browser for podcast search and related features.',
+      neteaseTip:
+        'Note: Login state is saved in your browser for podcast search and related features.',
       qqTip: 'Login state is saved only in this browser for QQ Music playback and lyric parsing.',
       channelQq: 'QQ Scan',
       channelWx: 'WeChat Scan',
       wxWaiting: 'Scan the QR code with WeChat',
       wxScanned: 'Scanned. Confirm on your phone',
-      wxTip: 'Scan with the WeChat app to sign in. The login state is also kept only in this browser.',
+      wxTip:
+        'Scan with the WeChat app to sign in. The login state is also kept only in this browser.',
       retry: 'Retry',
       qqAccount: 'QQ Music Account',
       qqQrIncomplete: 'QQ login QR response is incomplete',
@@ -1464,6 +1622,7 @@ export const pages = {
       requester: 'Requester: ',
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
+      anonymousRequester: 'Anonymous',
       collaboratorsTitle: 'Collaborators: ',
       unknown: 'Unknown',
       replay: 'Replay',
@@ -1498,13 +1657,16 @@ export const pages = {
       playlistDeleteFailedWithMessage: (message: string) => `Failed to delete playlist: ${message}`,
       playlistAddSuccess: (count: number) => `Added ${count} songs to playlist`,
       playlistAddFailed: 'Failed to add songs to playlist',
-      playlistAddFailedWithMessage: (message: string) => `Failed to add songs to playlist: ${message}`,
+      playlistAddFailedWithMessage: (message: string) =>
+        `Failed to add songs to playlist: ${message}`,
       musicUrlUnavailable: 'Unable to get music playback URL. Please try again later',
       musicUrlFailed: 'Failed to get music playback URL',
       invalidDateFormat: 'Invalid date format',
       invalidDate: 'Invalid date',
-      missingMusicInfo: 'The song is missing music platform or music ID information, so the playback URL cannot be fetched',
-      mobileDate: (_month: number, _day: number, weekday: string, formatted: string) => `${formatted} ${weekday}`,
+      missingMusicInfo:
+        'The song is missing music platform or music ID information, so the playback URL cannot be fetched',
+      mobileDate: (_month: number, _day: number, weekday: string, formatted: string) =>
+        `${formatted} ${weekday}`,
       fullDate: (_year: number, _month: number, _day: number, formatted: string) => formatted,
       playTimeStart: (time: string) => `Starts at ${time}`,
       playTimeEnd: (time: string) => `Ends at ${time}`,
@@ -1543,6 +1705,10 @@ export const pages = {
       viewSubmissionNote: 'View Note',
       mainRequesterTitle: 'Main requester: ',
       requesterTitle: 'Requester: ',
+      anonymousRequester: 'Anonymous',
+      anonymousTag: 'Anonymous',
+      anonymousTagHint:
+        'This submission is anonymous; other users see "Anonymous" as the requester. You can still manage it as your own.',
       collaboratorsTitle: 'Collaborators: ',
       replayRequest: (count: number) => `Replay request (${count}): `,
       requester: 'Requester: ',
@@ -1572,7 +1738,8 @@ export const pages = {
       unlike: 'Click to unlike',
       loginBeforeLike: 'Please sign in before liking',
       withdrawTitle: 'Withdraw Request',
-      withdrawMessage: (title: string) => `Withdraw your request for "${title}"? This also removes all collaborators.`,
+      withdrawMessage: (title: string) =>
+        `Withdraw your request for "${title}"? This also removes all collaborators.`,
       leaveTitle: 'Leave Collaboration',
       leaveMessage: (title: string) => `Leave the collaboration for "${title}"?`,
       cancelReplayConfirmTitle: 'Cancel Replay Request',
@@ -1585,7 +1752,8 @@ export const pages = {
       replayRejectedCooldown: (hours: number) => `Rejected (${hours}h before retry)`,
       replayed: 'Replayed',
       onlyCurrentSemesterReplay: 'Only current-semester songs can be replayed',
-      replayRejectedTooltip: (hours: number) => `Rejected. Wait ${hours} hours before requesting again`,
+      replayRejectedTooltip: (hours: number) =>
+        `Rejected. Wait ${hours} hours before requesting again`,
       alreadyReplayed: 'This song has been replayed',
       alreadyRequestedReplay: 'Replay already requested',
       musicUrlFailed: 'Failed to get music playback URL',
@@ -1669,10 +1837,13 @@ export const pages = {
       save: 'Save',
       validatingCardCode: 'Validating request card...',
       validatingShort: 'Validating',
-      cardCodeRequiredHelper: 'A valid request card is required when mandatory request cards are enabled.',
+      cardCodeRequiredHelper:
+        'A valid request card is required when mandatory request cards are enabled.',
       cardCodeOptionalHelper: 'Add a request card to redeem it with this submission.',
-      cardCodeRequiredBypassHelper: 'A valid request card is required; request-card submissions do not use regular quota.',
-      cardCodeOptionalBypassHelper: 'A valid request card can bypass your personal submission limit without using regular quota.',
+      cardCodeRequiredBypassHelper:
+        'A valid request card is required; request-card submissions do not use regular quota.',
+      cardCodeOptionalBypassHelper:
+        'A valid request card can bypass your personal submission limit without using regular quota.',
       cardCodeAvailableBypass: 'Request card accepted; regular quota will not be used',
       cardCodePlaceholder: 'Enter request card code',
       cardCodeWillValidate: 'Request card entered; it will be validated before submission',
@@ -1694,8 +1865,10 @@ export const pages = {
       cardCodeTooLong: 'Request card code cannot exceed 100 characters',
       notifications: {
         restrictionSameSong: 'This song is in a submission cooldown period. Please try again later',
-        restrictionSameArtist: 'This artist is in a submission cooldown period. Please try again later',
-        restrictionGeneric: 'This song or artist is in a submission cooldown period. Please try again later',
+        restrictionSameArtist:
+          'This artist is in a submission cooldown period. Please try again later',
+        restrictionGeneric:
+          'This song or artist is in a submission cooldown period. Please try again later',
         exportSuccess: 'Export successful',
         validatingCookie: 'Validating cookie...',
         importSuccess: 'Import successful',
@@ -1721,12 +1894,17 @@ export const pages = {
         replayRequestSuccess: 'Replay request submitted',
         replayRequestFailed: (message: string) => `Replay request failed: ${message}`,
         replayOriginalNotFound: 'Original song for the replay request was not found',
-        periodQuotaFull: (accepted: number, expected: number) => `Current period quota is full (${accepted}/${expected})`,
-        dailyLimitReached: (used: number, limit: number) => `Daily submission limit reached (${used}/${limit})`,
-        weeklyLimitReached: (used: number, limit: number) => `Weekly submission limit reached (${used}/${limit})`,
-        monthlyLimitReached: (used: number, limit: number) => `Monthly submission limit reached (${used}/${limit})`
+        periodQuotaFull: (accepted: number, expected: number) =>
+          `Current period quota is full (${accepted}/${expected})`,
+        dailyLimitReached: (used: number, limit: number) =>
+          `Daily submission limit reached (${used}/${limit})`,
+        weeklyLimitReached: (used: number, limit: number) =>
+          `Weekly submission limit reached (${used}/${limit})`,
+        monthlyLimitReached: (used: number, limit: number) =>
+          `Monthly submission limit reached (${used}/${limit})`
       },
-      publicToUsers: 'Public to signed-in users',
+      publicToUsers: 'Remark visible to signed-in users',
+      anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',
@@ -1849,7 +2027,8 @@ export const pages = {
         tokenFailed: (message: string | number) => `Failed to get token: ${message}`,
         nosFailed: (status: number | string) => `NOS upload failed: ${status}`,
         nosNetworkError: 'NOS network error',
-        saveMaybeFailed: (code: string | number) => `Cloud drive info may not have been saved (error code: ${code}). Check whether the song was uploaded successfully.`,
+        saveMaybeFailed: (code: string | number) =>
+          `Cloud drive info may not have been saved (error code: ${code}). Check whether the song was uploaded successfully.`,
         publishFailed: (message: string | number) => `Publish failed: ${message}`
       },
       playlistModal: {
@@ -1879,7 +2058,8 @@ export const pages = {
       audioMatchFailed: 'Song recognition failed. Please try again later',
       microphoneRequesting: 'Requesting microphone permission...',
       microphoneUnsupported: 'Microphone access is not supported. Use HTTPS or localhost',
-      audioMatchRecordingProgress: (current: string, total: number) => `Recording ${current}s / ${total}s`,
+      audioMatchRecordingProgress: (current: string, total: number) =>
+        `Recording ${current}s / ${total}s`,
       microphoneTimeout: 'Microphone permission timed out. Check system permissions',
       microphoneReady: 'Microphone connected. Click to start recognition',
       audioMatchInitFailed: 'Cannot initialize recognition. Check microphone permission',
@@ -1962,6 +2142,7 @@ export const admin = {
       musicSource: 'Music Source',
       siteConfig: 'Site Config',
       database: 'Database',
+      systemBoard: 'System Board',
       password: 'Change Password'
     },
     roles: {
@@ -1970,6 +2151,101 @@ export const admin = {
       ADMIN: 'Admin',
       SUPER_ADMIN: 'Super Admin'
     }
+  },
+  systemBoard: {
+    title: 'System Board',
+    desc: 'Process, database, table sizes, effective settings and runtime events for debugging',
+    refresh: 'Refresh',
+    autoRefresh: 'Auto',
+    lastUpdated: 'Last refresh {0}',
+    running: 'Running',
+    loadingLabel: 'Loading',
+    unavailable: 'Unavailable',
+    on: 'On',
+    off: 'Off',
+    processTitle: 'Process',
+    uptime: 'Uptime',
+    startedAt: 'Started at',
+    nodeVersion: 'Node ver.',
+    platform: 'Platform / Arch',
+    appVersion: 'App ver.',
+    pid: 'PID',
+    env: 'Env',
+    telemetry: 'Telemetry',
+    serverTime: 'Server time',
+    instanceId: 'Instance ID',
+    uptimeDHM: '{0}d {1}h {2}m',
+    uptimeHM: '{0}h {1}m',
+    uptimeM: '{0}m',
+    memRss: 'RSS',
+    memHeapUsed: 'Heap used',
+    memHeapTotal: 'Heap total',
+    memExternal: 'External',
+    databaseTitle: 'Database',
+    connected: 'Connected',
+    disconnected: 'Disconnected',
+    latency: 'Query latency',
+    dbStatus: 'Conn. status',
+    statusCached: 'Cached',
+    dbSize: 'DB size',
+    poolActive: 'Active conns',
+    poolUsage: 'Pool usage',
+    poolValue: '{0} / {1}',
+    countPair: '{0} / {1}',
+    tablesTitle: 'Table sizes',
+    tablesTotal: '{0} tables · ~{1} rows',
+    tablesSearch: 'Search table',
+    tablesEmpty: 'No matching table',
+    tablesHint: 'Rows come from pg_stat_user_tables estimates and may drift without ANALYZE',
+    settingsTitle: 'Effective settings',
+    settingsReadAt: 'Read at {0}',
+    settingsEmpty: 'No settings row found',
+    semesterLabel: 'Current semester',
+    siteTitleLabel: 'Site title',
+    platformsLabel: 'Enabled sources',
+    themeLabel: 'Default theme',
+    playTimesLabel: 'Play times (on/total)',
+    requestTimesLabel: 'Request times (on/total)',
+    userLimitLabel: 'Per-user quota (D/W/M)',
+    globalLimitLabel: 'Global quota (D/W/M)',
+    allowRegisterLabel: 'Allow signup',
+    registerApprovalLabel: 'Signup review',
+    captchaLabel: 'Captcha',
+    smtpLabel: 'SMTP push',
+    astrbotLabel: 'AstrBot push mode',
+    autoBackupLabel: 'Auto backup',
+    blockAllRequestsLabel: 'Block all requests',
+    requestTimeLimitLabel: 'Request time limit',
+    replayLabel: 'Replay requests',
+    collaborationLabel: 'Collab submit',
+    cardCodeLabel: 'Card-code request',
+    cardCodeRequiredLabel: 'Card code required',
+    hideStudentInfoLabel: 'Hide student info',
+    eventsTitle: 'Runtime events',
+    eventsHint: 'In-process errors and 5xx are kept in memory only; API errors and password audit come from DB logs; with multiple instances, only the process serving this request is shown',
+    eventsEmpty: 'No events yet',
+    eventsTruncated: 'Showing the latest {0} events only',
+    eventsClear: 'Clear buffer',
+    eventsClearing: 'Clearing',
+    eventsCleared: 'Runtime event buffer cleared',
+    bufferUsage: 'Buffer {0}/{1}',
+    levelAll: 'All levels',
+    levelError: 'Error',
+    levelWarn: 'Warn',
+    levelInfo: 'Info',
+    sourceAll: 'All sources',
+    sourceRuntime: 'In-process',
+    sourceApiError: 'API error',
+    sourcePasswordAudit: 'Password audit',
+    passwordAuditUser: 'User #{0}: {1}',
+    passwordAuditActions: {
+      INITIAL_PASSWORD: 'set initial password',
+      CHANGE_PASSWORD: 'changed password',
+      RESET_PASSWORD: 'reset password'
+    },
+    bufferCleared: (count: number) => `Buffer cleared (${count} entries removed)`,
+    serverStarted: 'Server started, global error handler ready',
+    dbHealthRecovered: 'Database health check recovered'
   },
   overview: {
     recentActivities: 'Recent Activities',
@@ -2032,8 +2308,10 @@ export const admin = {
     keywordLabel: 'Keyword',
     languageLabel: 'Language',
     genreLabel: 'Genre',
-    languageHint: 'NetEase/QQ sources only. "Other" matches songs whose language is determined but outside the listed ones. Undetermined or manual submissions are not blocked.',
-    genreHint: 'NetEase/QQ sources: QQ genres come from official category names; genres outside the listed ones fall into "Other". Undetermined songs are not blocked.',
+    languageHint:
+      'NetEase/QQ sources only. "Other" matches songs whose language is determined but outside the listed ones. Undetermined or manual submissions are not blocked.',
+    genreHint:
+      'NetEase/QQ sources: QQ genres come from official category names; genres outside the listed ones fall into "Other". Undetermined songs are not blocked.',
     songPlaceholder: 'e.g. Song Title - Artist',
     keywordPlaceholder: 'e.g. sensitive word, specific style',
     reason: 'Reason (optional)',
@@ -2053,7 +2331,8 @@ export const admin = {
     emptyDesc: 'Try changing filters or adding a new item',
     pagination: (page: number, pages: number) => `Page ${page} / ${pages}`,
     removeTitle: 'Remove from Blacklist',
-    removeMessage: (value: string) => `Remove "${value}" from the blacklist? It will become available again.`,
+    removeMessage: (value: string) =>
+      `Remove "${value}" from the blacklist? It will become available again.`,
     cancel: 'Cancel',
     deleting: 'Deleting...',
     confirmRemove: 'Confirm Remove',
@@ -2077,22 +2356,29 @@ export const admin = {
     deleteButton: 'Delete',
     batchTitle: 'Batch Generate',
     batchGradePlaceholder: 'Separate grades with commas, e.g. Senior 1,Senior 2,Senior 3',
-    batchClassPlaceholder: 'Separate classes with commas; number ranges supported, e.g. Class 1,Class 2 or 1-10',
+    batchClassPlaceholder:
+      'Separate classes with commas; number ranges supported, e.g. Class 1,Class 2 or 1-10',
     batchButton: 'Generate',
-    batchResult: (added: number, skipped: number) => `Added ${added} item(s)${skipped > 0 ? `, skipped ${skipped} existing` : ''}`,
+    batchResult: (added: number, skipped: number) =>
+      `Added ${added} item(s)${skipped > 0 ? `, skipped ${skipped} existing` : ''}`,
     batchInvalid: 'Enter at least one grade and one class',
     batchLimit: 'Batch size is limited to 500 items. Please reduce the grade or class range.',
     initTitle: 'Initialize from Existing Users',
-    initDesc: 'Extract grade/class combinations from all active users and add them to the config; existing combinations are skipped automatically.',
+    initDesc:
+      'Extract grade/class combinations from all active users and add them to the config; existing combinations are skipped automatically.',
     initButton: 'Extract from Users',
-    initResult: (added: number, skipped: number) => `Extracted ${added} item(s)${skipped > 0 ? `, skipped ${skipped} existing` : ''}`,
+    initResult: (added: number, skipped: number) =>
+      `Extracted ${added} item(s)${skipped > 0 ? `, skipped ${skipped} existing` : ''}`,
     initFailed: 'Initialization failed',
     batchFailed: 'Batch generation failed',
     guideTitle: 'How to use',
     guideSingle: 'Single add: enter one grade and one class on the left, then click Add',
-    guideBatchLine1: 'Batch: separate multiple grades with commas, e.g. "Senior 1,Senior 2,Senior 3"',
-    guideBatchLine2: 'Classes support commas and number ranges, e.g. "1-10" generates Class 1 through Class 10',
-    guideDedup: 'Duplicate combinations are skipped automatically; deleting a config does not affect existing users',
+    guideBatchLine1:
+      'Batch: separate multiple grades with commas, e.g. "Senior 1,Senior 2,Senior 3"',
+    guideBatchLine2:
+      'Classes support commas and number ranges, e.g. "1-10" generates Class 1 through Class 10',
+    guideDedup:
+      'Duplicate combinations are skipped automatically; deleting a config does not affect existing users',
     classCount: (count: number) => `${count} class(es)`,
     personCount: (count: number) => `${count} users`,
     deleteGradeButton: 'Delete Grade',
@@ -2176,8 +2462,10 @@ export const admin = {
     },
     duplicateModal: {
       title: 'Duplicate Check',
-      subtitle: (groups: number, songs: number) => `${groups} dup group(s), ${songs} songs in current filter`,
-      matchHint: 'Matched by title and artist, ignoring case, spaces, punctuation, Chinese character variants and feat. tags',
+      subtitle: (groups: number, songs: number) =>
+        `${groups} dup group(s), ${songs} songs in current filter`,
+      matchHint:
+        'Matched by title and artist, ignoring case, spaces, punctuation, Chinese character variants and feat. tags',
       empty: 'No duplicate songs in the current filter',
       dupCount: (count: number) => `${count} dup`,
       sameSource: 'Same source',
@@ -2189,7 +2477,8 @@ export const admin = {
       deleteSongTitle: 'Delete Song',
       deleteSongMessage: (title: string) => `Delete song "${title}"? This action cannot be undone.`,
       batchDeleteTitle: 'Batch Delete Songs',
-      batchDeleteMessage: (count: number) => `Delete the selected ${count} songs? This action cannot be undone.`
+      batchDeleteMessage: (count: number) =>
+        `Delete the selected ${count} songs? This action cannot be undone.`
     },
     rejectDialog: {
       title: 'Reject Song',
@@ -2198,7 +2487,8 @@ export const admin = {
       batchInfo: (count: number) => `Reject the selected ${count} songs`,
       batchHint: 'Each requester will be notified after rejection',
       reason: 'Reject Reason',
-      reasonPlaceholder: 'Enter the reason. It will be sent to the requester as a system notification...',
+      reasonPlaceholder:
+        'Enter the reason. It will be sent to the requester as a system notification...',
       addToBlacklist: 'Also add this song to the blacklist',
       batchAddToBlacklist: 'Also add the selected songs to the blacklist',
       blacklistHint: 'After blacklisting, this song cannot be requested again',
@@ -2226,7 +2516,11 @@ export const admin = {
       submissionNotePlaceholder: 'Enter song remark',
       publicNote: 'Public Remark',
       publicNoteHint: 'Other users can view this remark when public',
-      clearNoteHint: 'The current remark will be cleared after saving. You can add a reason and send a notification',
+      anonymousSubmission: 'Anonymous submission',
+      anonymousSubmissionHint:
+        'Other users will see the requester as Anonymous; admins still see the real name',
+      clearNoteHint:
+        'The current remark will be cleared after saving. You can add a reason and send a notification',
       clearNoteReasonPlaceholder: 'Optional: enter a reason, e.g. inappropriate remark content',
       notifyAfterClear: 'Notify after clearing',
       notifyAfterClearHint: 'Notify the main requester and current collaborators',
@@ -2316,10 +2610,12 @@ export const admin = {
       mergeFailed: 'Merge failed',
       musicUrlMissing: 'Unable to get music playback URL',
       musicUrlFailed: (message: string) => `Failed to get music playback URL: ${message}`,
-      downloadingProgress: (title: string, percent: number) => `Downloading: ${title} (${percent}%)`,
+      downloadingProgress: (title: string, percent: number) =>
+        `Downloading: ${title} (${percent}%)`,
       usingPreloadCache: (title: string) => `Using preload cache: ${title}`,
       downloadingTitle: (title: string) => `Downloading: ${title}`,
-      mergedFilename: (date: string, count: number, ext: string) => `schedule_merge_${date}_${count}_songs.${ext}`,
+      mergedFilename: (date: string, count: number, ext: string) =>
+        `schedule_merge_${date}_${count}_songs.${ext}`,
       preprocessingAudio: (value: number | string) => `Preprocessing audio: ${value}%`,
       mergingAudio: (value: number | string) => `Merging audio: ${value}%`,
       encodingAudio: (format: string, value: number | string) => `Encoding ${format}: ${value}%`,
@@ -2342,11 +2638,13 @@ export const admin = {
       compatibleMerge: 'Merging with compatibility mode...',
       fastMerge: 'Merging with fast mode...',
       fastMergeMemoryFallback: 'Fast merge ran out of memory; switched to compatibility mode',
-      activeWorkers: (title: string, active: number, concurrency: number) => `${title} (${active}/${concurrency} active)`,
+      activeWorkers: (title: string, active: number, concurrency: number) =>
+        `${title} (${active}/${concurrency} active)`,
       remainingSongs: (count: number) => `${count} remaining`,
       processComplete: 'Processing complete',
       downloadSuccess: (count: number) => `${count} songs downloaded`,
-      downloadCompleteWithCount: (success: number, failed: number) => `Download complete: ${success} succeeded, ${failed} failed`
+      downloadCompleteWithCount: (success: number, failed: number) =>
+        `Download complete: ${success} succeeded, ${failed} failed`
     },
     searchPlaceholder: 'Search song title, artist, or requester...',
     loading: 'Loading...',
@@ -2381,7 +2679,10 @@ export const admin = {
       remarkRejected: 'Remark rejected',
       deleteSuccess: 'Song deleted',
       batchDeleteSuccess: 'Songs deleted',
-      batchRejectSuccess: (rejected: number, missing: number) => missing > 0 ? `Batch reject completed: ${rejected} succeeded, ${missing} not found` : `Batch rejected ${rejected} songs, requesters notified`,
+      batchRejectSuccess: (rejected: number, missing: number) =>
+        missing > 0
+          ? `Batch reject completed: ${rejected} succeeded, ${missing} not found`
+          : `Batch rejected ${rejected} songs, requesters notified`,
       rejectSuccess: 'Song rejected and requester notified',
       validatingUrl: 'Validating URL, please wait...',
       validatingCoverUrl: 'Validating cover URL, please wait...',
@@ -2412,10 +2713,12 @@ export const admin = {
       coverUrlInvalid: 'Invalid cover URL. Please check and try again',
       playUrlInvalid: 'Invalid play URL. Please check and try again',
       addFailed: 'Add failed',
-      durationRefreshFailed: (message: string) => `Failed to refresh duration: ${message || 'unknown error'}`,
+      durationRefreshFailed: (message: string) =>
+        `Failed to refresh duration: ${message || 'unknown error'}`,
       durationInvalidRange: 'Duration must be between 30 and 3600 seconds',
       durationPlatformRequired: 'Fill in music platform and ID first to refresh duration',
-      coverRefreshFailed: (message: string) => `Failed to refresh cover: ${message || 'unknown error'}`,
+      coverRefreshFailed: (message: string) =>
+        `Failed to refresh cover: ${message || 'unknown error'}`,
       coverPlatformRequired: 'Fill in music platform and ID first to refresh cover',
       addToPoolFailed: (message: string) => `Add to pool failed: ${message}`,
       removeFromPoolFailed: (message: string) => `Remove from pool failed: ${message}`
@@ -2459,10 +2762,16 @@ export const admin = {
     noOnlineUsers: 'No online users',
     syncingRealtime: 'Syncing realtime data',
     countSongs: (count: number) => `${count} songs`,
-    userActivity: (contributions: number, likes: number) => `${contributions} submissions · ${likes} likes`,
+    userActivity: (contributions: number, likes: number) =>
+      `${contributions} submissions · ${likes} likes`,
     onlineCount: (count: number) => `${count} online`,
     andMoreUsers: (count: number) => `and ${count} more users`,
-    loadingSteps: ['Fetching semesters', 'Loading statistics', 'Fetching chart data', 'Loading realtime data'],
+    loadingSteps: [
+      'Fetching semesters',
+      'Loading statistics',
+      'Fetching chart data',
+      'Loading realtime data'
+    ],
     kpi: {
       totalUsers: 'Registered Users',
       activeSongs: 'Active Song Library',
@@ -2490,7 +2799,8 @@ export const admin = {
     title: 'Print Schedule',
     desc: 'Customize print settings, preview, and export schedule sheets',
     noPermissionTitle: 'Permission Denied',
-    noPermissionDesc: 'You do not have permission to print schedules. Contact an administrator for access.',
+    noPermissionDesc:
+      'You do not have permission to print schedules. Contact an administrator for access.',
     settingsTitle: 'Print Settings',
     paperSize: 'Paper Size',
     selectPaperSize: 'Select Paper Size',
@@ -2520,7 +2830,8 @@ export const admin = {
     printTitle: 'Broadcast Schedule',
     emptyTitle: 'No Schedule Data',
     emptyNoSchedules: 'Add schedules in Schedule Management before printing.',
-    emptyFiltered: 'No schedules in the selected date range. Adjust the date range or schedule settings.',
+    emptyFiltered:
+      'No schedules in the selected date range. Adjust the date range or schedule settings.',
     footer: 'Generated by VoiceHub | Broadcast Management System',
     songCount: (count: number) => `${count} songs`,
     countOnly: (count: number) => `${count} songs`,
@@ -2617,7 +2928,8 @@ export const admin = {
     addAllPendingConfirmTitle: 'Move All to Pool',
     addAllPendingConfirmMessage: (count) => `Move all ${count} pending songs to the song pool?`,
     addCurrentPageConfirmTitle: 'Move This Page to Pool',
-    addCurrentPageConfirmMessage: (count, page) => `Move ${count} song(s) from page ${page} to the backup pool?`,
+    addCurrentPageConfirmMessage: (count, page) =>
+      `Move ${count} song(s) from page ${page} to the backup pool?`,
     addCurrentPageSuccess: (count) => `Moved ${count} song(s) from this page to the backup pool`,
     addSingleToPoolSuccess: 'Added to backup pool',
     addSingleToPoolSkipped: 'Failed to add to backup pool',
@@ -2694,6 +3006,8 @@ export const admin = {
     directionUnder: 'Under Target',
     directionMiddle: 'Closest',
     directionOver: 'Over Target',
+    heatWeightLabel: 'Heat Weight',
+    heatWeightDesc: (weight: number) => `Heat-weighted shuffle: ${weight}% by heat (higher votes rank first), ${100 - weight}% random. 0% = fully random, 100% ≈ strictly by heat.`,
     availableCount: (count) => `${count} candidate song(s) under current filters`,
     autoScheduleRun: 'Schedule',
     resultTitle: 'Suggested Result',
@@ -2712,7 +3026,8 @@ export const admin = {
     newPlan: 'New Plan',
     fixExistingSelected: 'Fix Selected Songs',
     fixExistingCount: (n) => `${n} fixed`,
-    fixExistingDuration: (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
+    fixExistingDuration: (sec) =>
+      `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`,
     fixExistingRemaining: (totalMin, fixedSec) => {
       const sec = Math.max(0, Math.floor(totalMin * 60 - fixedSec))
       return `${Math.floor(sec / 60)}m ${String(Math.floor(sec % 60)).padStart(2, '0')}s left`
@@ -2770,10 +3085,14 @@ export const admin = {
     },
     confirmations: {
       leaveUnsaved: 'You have unsaved schedule changes. Leave anyway?',
-      switchDateUnsaved: 'You have unsaved schedule changes. Switching dates will discard them. Continue?',
-      switchPlayTimeUnsaved: 'You have unsaved schedule changes. Switching play times will discard them. Continue?',
-      switchSemesterUnsaved: 'You have unsaved schedule changes. Switching semesters will discard them. Continue?',
-      switchPageUnsaved: 'You have unsaved schedule changes. Switching pages will discard them. Continue?',
+      switchDateUnsaved:
+        'You have unsaved schedule changes. Switching dates will discard them. Continue?',
+      switchPlayTimeUnsaved:
+        'You have unsaved schedule changes. Switching play times will discard them. Continue?',
+      switchSemesterUnsaved:
+        'You have unsaved schedule changes. Switching semesters will discard them. Continue?',
+      switchPageUnsaved:
+        'You have unsaved schedule changes. Switching pages will discard them. Continue?',
       rejectReplayTitle: 'Reject Replay Request',
       rejectReplayMessage: 'Reject this replay request?',
       markAllPlayedTitle: 'Mark All Played',
@@ -2782,23 +3101,52 @@ export const admin = {
       clearListTitle: 'Clear Playlist',
       clearListMessage: 'Clear the current play order? Unsaved changes will be lost.',
       clearListConfirm: 'Clear',
-      moveDateMessage: (sourceDate: string, count: number, targetDate: string, sourcePlayTime: string, targetPlayTime: string) => `Move ${count} song(s) from ${sourceDate} (${sourcePlayTime}) to ${targetDate} (${targetPlayTime})? Order and content will be preserved.`,
+      moveDateMessage: (
+        sourceDate: string,
+        count: number,
+        targetDate: string,
+        sourcePlayTime: string,
+        targetPlayTime: string
+      ) =>
+        `Move ${count} song(s) from ${sourceDate} (${sourcePlayTime}) to ${targetDate} (${targetPlayTime})? Order and content will be preserved.`,
       moveDateConfirm: 'Move',
-      moveDateAppendMessage: (targetDate: string, targetPlayTime: string) => `${targetDate} (${targetPlayTime}) already has a schedule. Moved songs will be appended after the existing ones. Continue?`,
+      moveDateAppendMessage: (targetDate: string, targetPlayTime: string) =>
+        `${targetDate} (${targetPlayTime}) already has a schedule. Moved songs will be appended after the existing ones. Continue?`,
       moveDateAppendConfirm: 'Append',
-      copyDateMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number) => `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Source will cycle to fill.`,
-      copyDateOverwriteMessage: (fromStart: string, fromEnd: string, sourceDays: number, toStart: string, toEnd: string, targetDays: number, draftDays: number) => `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Drafts on ${draftDays} target date(s) will be overwritten. Source will cycle to fill.`,
+      copyDateMessage: (
+        fromStart: string,
+        fromEnd: string,
+        sourceDays: number,
+        toStart: string,
+        toEnd: string,
+        targetDays: number
+      ) =>
+        `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Source will cycle to fill.`,
+      copyDateOverwriteMessage: (
+        fromStart: string,
+        fromEnd: string,
+        sourceDays: number,
+        toStart: string,
+        toEnd: string,
+        targetDays: number,
+        draftDays: number
+      ) =>
+        `Copy ${sourceDays} days from ${fromStart} to ${fromEnd} into ${targetDays} days from ${toStart} to ${toEnd}? Drafts on ${draftDays} target date(s) will be overwritten. Source will cycle to fill.`,
       copyDateConfirm: 'Copy',
-      copyDateSingleMessage: (sourceDate: string, targetDate: string) => `Copy the schedule from ${sourceDate} to ${targetDate}?`,
+      copyDateSingleMessage: (sourceDate: string, targetDate: string) =>
+        `Copy the schedule from ${sourceDate} to ${targetDate}?`,
       copyDateSingleConfirm: 'Copy',
-      copyDateOverwriteDraftConfirm: (draftCount: number) => `${draftCount} draft(s) on target date will be overwritten. Continue?`,
+      copyDateOverwriteDraftConfirm: (draftCount: number) =>
+        `${draftCount} draft(s) on target date will be overwritten. Continue?`,
       deleteScheduleTitle: 'Delete Schedule',
       deleteScheduleMessage: 'Delete all schedules for this day? This cannot be recovered.',
       deleteScheduleConfirm: 'Delete',
       publishScheduleTitle: 'Publish Schedule',
-      publishScheduleMessage: 'Publish the current schedule? It will be visible immediately and notifications will be sent.',
+      publishScheduleMessage:
+        'Publish the current schedule? It will be visible immediately and notifications will be sent.',
       publishDraftTitle: 'Publish Draft',
-      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`,
+      publishDraftMessage: (title: string) =>
+        `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`,
       unspecifiedPlayTimeTitle: 'No Play Time Selected',
       unspecifiedPlayTimePublishWarning: (count: number) =>
         `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will merge all schedules for the day into an all-day schedule and discard their play time info. To keep it, cancel and select a play time first.`,
@@ -2817,7 +3165,8 @@ export const admin = {
       moveDateSuccess: (count: number, date: string) => `Moved ${count} songs to ${date}`,
       moveDateSkipped: (count: number) => `skipped ${count} duplicate(s)`,
       moveDateAllSkipped: (count: number) => `All songs already exist at target, skipped ${count}`,
-      copyDateSuccess: (count: number, toStart: string, toEnd: string) => `Copied ${count} songs to ${toStart} ~ ${toEnd}`,
+      copyDateSuccess: (count: number, toStart: string, toEnd: string) =>
+        `Copied ${count} songs to ${toStart} ~ ${toEnd}`,
       draftSaved: 'Schedule draft saved!',
       allDraftsDeleted: 'All drafts deleted!',
       scheduleDeleted: 'Schedule deleted!',
@@ -2830,15 +3179,19 @@ export const admin = {
       durationInputPlaceholder: 'M:SS',
       editDuration: 'Click to edit duration',
       allDurationsUpdated: (count: number) => `${count} song(s) duration refreshed`,
-      allDurationsPartial: (ok: number, fail: number) => `Refresh done: ${ok} succeeded, ${fail} failed`,
+      allDurationsPartial: (ok: number, fail: number) =>
+        `Refresh done: ${ok} succeeded, ${fail} failed`,
       allDurationsFailed: 'Bulk duration refresh failed',
       allDurationsSkipped: 'No songs need duration refresh',
       allDurationsCapped: 'Too many candidates, refreshing the first 100 only',
-      candidateDurationsUpdated: (count: number) => `Refreshed duration for ${count} candidate song(s)`,
-      candidateDurationsPartial: (ok: number, fail: number) => `Refresh done: ${ok} succeeded, ${fail} failed`,
+      candidateDurationsUpdated: (count: number) =>
+        `Refreshed duration for ${count} candidate song(s)`,
+      candidateDurationsPartial: (ok: number, fail: number) =>
+        `Refresh done: ${ok} succeeded, ${fail} failed`,
       candidateDurationsFailed: 'Candidate duration refresh failed',
       candidateDurationsSkipped: 'No candidate songs need duration refresh',
-      confirmAutoScheduleApplied: (count, duration) => `Auto-scheduled ${count} song(s), total ${duration}`,
+      confirmAutoScheduleApplied: (count, duration) =>
+        `Auto-scheduled ${count} song(s), total ${duration}`,
       allDurationsProgressTotal: '{0} song(s)',
       allDurationsProgressWithCount: '{0}/{1} ({2} ok, {3} fail)',
       candidateDurationsProgressTotal: '{0} song(s)',
@@ -2875,7 +3228,8 @@ export const admin = {
       groupRequest: 'Request',
       noteOptionsTitle: 'Note Options',
       includeUnapprovedNotes: 'Include Unapproved Notes',
-      includeUnapprovedNotesHint: 'When off, only notes approved for public display are kept; others stay empty',
+      includeUnapprovedNotesHint:
+        'When off, only notes approved for public display are kept; others stay empty',
       resetDefault: 'Reset',
       cancel: 'Cancel',
       exportButton: 'Export CSV',
@@ -2966,9 +3320,11 @@ export const admin = {
     confirmClear: 'I confirm clearing data',
     confirmClearDesc: 'This action cannot be undone. Proceed carefully.',
     overwriteSuperAdmin: 'Overwrite super admin from backup',
-    overwriteSuperAdminDesc: 'When disabled, the current super admin, third-party bindings, and 2FA data are preserved',
+    overwriteSuperAdminDesc:
+      'When disabled, the current super admin, third-party bindings, and 2FA data are preserved',
     warningTitle: 'Warning',
-    warningDesc: 'Importing a backup affects existing data. Make sure you understand the consequences.',
+    warningDesc:
+      'Importing a backup affects existing data. Make sure you understand the consequences.',
     startImport: 'Start Import',
     downloaded: (filename: string, size: string) => `Backup file downloaded: ${filename}${size}`,
     fileDownloadFailed: (message: string) => `File download failed: ${message}`,
@@ -2976,27 +3332,33 @@ export const admin = {
     serverResponseInvalid: 'Backup creation failed: invalid server response format',
     createFailed: (message: string) => `Failed to create backup: ${message}`,
     parseFailed: 'Unable to parse backup file. Please check the file format.',
-    restoreSuccess: (tables: number, records: number) => `Backup restored successfully. Processed ${tables} tables and restored ${records} records.`,
+    restoreSuccess: (tables: number, records: number) =>
+      `Backup restored successfully. Processed ${tables} tables and restored ${records} records.`,
     restoreWarning: (count: number) => `${count} errors occurred during restore`,
-    restoreCompleteRedirect: 'Database restore completed. Returning home to sign in again in 3 seconds.',
+    restoreCompleteRedirect:
+      'Database restore completed. Returning home to sign in again in 3 seconds.',
     importFailed: (message: string) => `Backup import failed: ${message}`,
     unknownError: 'Unknown error'
   },
   oauthConfig: {
     title: 'OAuth Third-Party Login Configuration',
-    runtimeConfigNotice: 'OAuth runtime configuration is managed in the admin panel. Environment variables are retained only for legacy deployments and one-click import; imported values must still be saved here.',
+    runtimeConfigNotice:
+      'OAuth runtime configuration is managed in the admin panel. Environment variables are retained only for legacy deployments and one-click import; imported values must still be saved here.',
     baseSettings: 'Basic Settings',
     importEnv: 'Import Env Config',
     allowRegistration: 'Allow Third-Party Registration',
-    allowRegistrationDesc: 'When enabled, users can create new accounts through OAuth. When disabled, OAuth can only bind existing accounts.',
+    allowRegistrationDesc:
+      'When enabled, users can create new accounts through OAuth. When disabled, OAuth can only bind existing accounts.',
     oauthRegisterRequiresApproval: 'Require Admin Approval for Third-party Registration',
-    oauthRegisterRequiresApprovalDesc: 'When enabled, accounts created through third-party login require approval before sign-in.',
+    oauthRegisterRequiresApprovalDesc:
+      'When enabled, accounts created through third-party login require approval before sign-in.',
     allowed: 'Allowed',
     notAllowed: 'Not Allowed',
     redirectUri: 'OAuth Redirect URI',
     redirectExample: 'Example:',
     stateSecret: 'OAuth State Secret',
-    stateSecretDesc: 'Used to encrypt/decrypt OAuth state parameters. A strong random string is recommended.',
+    stateSecretDesc:
+      'Used to encrypt/decrypt OAuth state parameters. A strong random string is recommended.',
     stateSecretPlaceholder: 'Enter a strong random string',
     show: 'Show',
     hide: 'Hide',
@@ -3032,9 +3394,11 @@ export const admin = {
     aggregateTitle: 'Aggregate OAuth',
     aggregateLoginTypeLabel: 'Login Methods',
     aggregateLoginTypePlaceholder: 'Select at least one login method',
-    aggregateLoginTypeDesc: 'Select only the login methods that your aggregate login service has enabled. Enabling a platform the provider does not support will cause authorization failures. Each login method keeps its own account binding.',
+    aggregateLoginTypeDesc:
+      'Select only the login methods that your aggregate login service has enabled. Enabling a platform the provider does not support will cause authorization failures. Each login method keeps its own account binding.',
     aggregateEndpointLabel: 'Endpoint URL',
-    aggregateEndpointDesc: 'The connect.php endpoint for a compatible aggregate OAuth service. Use HTTPS on public networks; HTTP is acceptable only on trusted private networks.',
+    aggregateEndpointDesc:
+      'The connect.php endpoint for a compatible aggregate OAuth service. Use HTTPS on public networks; HTTP is acceptable only on trusted private networks.',
     aggregateClientIdPlaceholder: 'Enter aggregate OAuth AppID',
     aggregateClientSecretPlaceholder: 'Enter aggregate OAuth AppKey',
     aggregateDocLabel: 'View aggregate OAuth documentation',
@@ -3053,10 +3417,12 @@ export const admin = {
       kuaishou: 'Kuaishou'
     },
     clearBindingsTitle: 'Clear All Aggregate Bindings',
-    clearBindingsDesc: 'Use when changing provider. Clears all aggregate login bindings and requires users to rebind.',
+    clearBindingsDesc:
+      'Use when changing provider. Clears all aggregate login bindings and requires users to rebind.',
     clearBindingsBtn: 'Clear Bindings',
     clearBindingsConfirmTitle: 'Clear all aggregate OAuth bindings?',
-    clearBindingsConfirmMessage: 'This will permanently remove all aggregate OAuth bindings for all users.\nIf the provider has changed, old data is invalid and users will need to rebind before using aggregate login.\nThis action cannot be undone. Continue?',
+    clearBindingsConfirmMessage:
+      'This will permanently remove all aggregate OAuth bindings for all users.\nIf the provider has changed, old data is invalid and users will need to rebind before using aggregate login.\nThis action cannot be undone. Continue?',
     clearBindingsSuccess: 'Cleared {0} aggregate bindings ({1} users affected)',
     clearBindingsFailed: 'Failed to clear aggregate OAuth bindings',
     userIdField: 'User ID Field',
@@ -3064,8 +3430,10 @@ export const admin = {
     nameField: 'Name Field',
     emailField: 'Email Field',
     avatarField: 'Avatar Field',
-    brokerHintPrefix: 'When deploying multiple environments on platforms such as Vercel, providers like GitHub OAuth App usually support only one callback URL. To solve this, the project can use',
-    brokerHintSuffix: 'as a unified callback entry. The broker can dynamically forward callback requests to the correct deployment environment according to the state parameter, allowing one OAuth App to support unlimited preview and production environments. See the project documentation for details.',
+    brokerHintPrefix:
+      'When deploying multiple environments on platforms such as Vercel, providers like GitHub OAuth App usually support only one callback URL. To solve this, the project can use',
+    brokerHintSuffix:
+      'as a unified callback entry. The broker can dynamically forward callback requests to the correct deployment environment according to the state parameter, allowing one OAuth App to support unlimited preview and production environments. See the project documentation for details.',
     importFailed: 'Failed to import environment configuration',
     logs: {
       fetchEnvFailed: 'Failed to fetch environment variables:',
@@ -3073,9 +3441,9 @@ export const admin = {
     }
   },
   musicSourceController: {
-    
     title: 'Music Source Control',
-    description: 'Manage music platform switches and search order. Changes take effect immediately.',
+    description:
+      'Manage music platform switches and search order. Changes take effect immediately.',
     saveConfig: 'Save Config',
     saving: 'Saving...',
     saved: 'Saved',
@@ -3095,8 +3463,10 @@ export const admin = {
     test: 'Test init',
     testPassed: 'Plugin initialization passed',
     title: 'Source plugins',
-    hotHint: 'Add an LX Music or MusicFree JS URL. Save to validate and load. Drag to change resolver priority.',
-    snapshotHint: 'Script and variable changes require redeployment. Toggles and order apply immediately to deployed sources.',
+    hotHint:
+      'Add an LX Music or MusicFree JS URL. Save to validate and load. Drag to change resolver priority.',
+    snapshotHint:
+      'Script and variable changes require redeployment. Toggles and order apply immediately to deployed sources.',
     add: 'Add source',
     empty: 'No source plugins configured',
     loading: 'Loading sources',
@@ -3118,7 +3488,8 @@ export const admin = {
     catalog: 'Music catalog',
     catalogHint: 'Select an official catalog only if the plugin uses the same track IDs.',
     variables: 'Plugin variables (JSON)',
-    variablesHint: 'Use string keys and values. Leave blank to keep current values; enter {} to clear.',
+    variablesHint:
+      'Use string keys and values. Leave blank to keep current values; enter {} to clear.',
     legacy: 'Legacy plugin ID (migration)',
     cancel: 'Cancel',
     saveDeploy: 'Save',
@@ -3132,7 +3503,7 @@ export const admin = {
     canSearch: 'Search',
     resolveOnly: 'Resolve only',
     pending: 'Pending load / deploy',
-    invalidJson: 'Enter valid JSON variables',
+    invalidJson: 'Enter valid JSON variables'
   },
   playTimeManager: {
     title: 'Play Time Management',
@@ -3140,7 +3511,8 @@ export const admin = {
     enableSelection: 'Enable Time Selection',
     add: 'Add Play Time',
     aboutTitle: 'About Time Limits',
-    aboutDesc: 'When global play time selection is enabled, requests are only open during configured periods. Empty start or end times are treated as unlimited boundaries.',
+    aboutDesc:
+      'When global play time selection is enabled, requests are only open during configured periods. Empty start or end times are treated as unlimited boundaries.',
     loading: 'Loading...',
     fetchFailed: 'Failed to fetch data',
     emptyTitle: 'No Play Times',
@@ -3168,7 +3540,8 @@ export const admin = {
     deleting: 'Deleting...',
     confirmDelete: 'Confirm Delete',
     deleteConfirmTitle: (name: string) => `Delete play time "${name}"?`,
-    deleteConfirmDesc: 'This cannot be undone. Related song request and schedule play-time settings may be affected or cleared.',
+    deleteConfirmDesc:
+      'This cannot be undone. Related song request and schedule play-time settings may be affected or cleared.',
     messages: {
       systemSettingsUpdated: 'System settings updated',
       playTimeEnabled: 'Play time enabled',
@@ -3229,34 +3602,42 @@ export const admin = {
     deleting: 'Deleting...',
     confirmDelete: 'Confirm Delete',
     deleteConfirmTitle: (name: string) => `Remove "${name}" permanently?`,
-    deleteConfirmPrefix: 'Deleting this window may invalidate request associations from this period. Consider',
+    deleteConfirmPrefix:
+      'Deleting this window may invalidate request associations from this period. Consider',
     deleteConfirmSuffix: 'this window first.',
     priorityTitle: 'Logic Priority',
     globalSwitch: 'Global Switch',
     priorityGlobal: 'has the highest priority. When off, all requests are unavailable.',
     timeLimit: 'time limits',
     priorityTimeLimitPrefix: 'When',
-    priorityTimeLimitMiddle: 'are enabled, the system checks whether the current time is within any',
+    priorityTimeLimitMiddle:
+      'are enabled, the system checks whether the current time is within any',
     priorityTimeLimitAnd: 'window that has not reached its',
     priorityTimeLimitSuffix: '.',
-    priorityNoLimit: 'If time limits are off, requests are open all day as long as the global switch is on.',
+    priorityNoLimit:
+      'If time limits are off, requests are open all day as long as the global switch is on.',
     noticeTitle: 'Notes',
     noticeOverlap: 'Overlapping windows are merged by the system.',
     noticeUnlimited: 'When planned request count is 0, the quantity limit is ignored.',
-    noticeExpired: 'Expired windows are shown as “Expired” automatically and cannot be edited or re-enabled.',
+    noticeExpired:
+      'Expired windows are shown as “Expired” automatically and cannot be edited or re-enabled.',
     enableRestriction: 'Enable Duplicate Restriction',
     restrictionScope: 'Scope',
     restrictionScopeSelf: 'Self',
     restrictionScopeAll: 'Everyone',
-    restrictionScopeDesc: 'Which users\' scheduled records are compared against',
+    restrictionScopeDesc: "Which users' scheduled records are compared against",
     sameSongRestrictionHours: 'Same Song Window',
-    sameSongRestrictionHoursDesc: 'Window during which the same song cannot be resubmitted after entering the schedule. Empty means no cooldown window. Max 720h (30 days)',
+    sameSongRestrictionHoursDesc:
+      'Window during which the same song cannot be resubmitted after entering the schedule. Empty means no cooldown window. Max 720h (30 days)',
     sameArtistRestrictionHours: 'Same Artist Window',
-    sameArtistRestrictionHoursDesc: 'Window during which the same artist cannot be resubmitted after entering the schedule. Empty means no cooldown window. Max 720h (30 days)',
+    sameArtistRestrictionHoursDesc:
+      'Window during which the same artist cannot be resubmitted after entering the schedule. Empty means no cooldown window. Max 720h (30 days)',
     restrictionUnit: 'h',
     restrictionPanelTitle: 'Duplicate Restriction',
-    restrictionPanelDesc: 'Set a cooldown window for songs or artists that have entered the schedule',
-    restrictionPanelHint: 'Off removes all duplicate-submission limits, so users may resubmit scheduled or played songs. On: scope applies to both checks, and leaving both windows empty keeps the current-semester no-duplicate-song rule',
+    restrictionPanelDesc:
+      'Set a cooldown window for songs or artists that have entered the schedule',
+    restrictionPanelHint:
+      'Off removes all duplicate-submission limits, so users may resubmit scheduled or played songs. On: scope applies to both checks, and leaving both windows empty keeps the current-semester no-duplicate-song rule',
     restrictionSaveSuccess: 'Restriction settings saved',
     restrictionSaveFailed: 'Failed to save restriction settings',
     stats: {
@@ -3270,16 +3651,19 @@ export const admin = {
       fetchFailed: 'Failed to fetch request windows',
       fetchFailedWithStatus: (status: number) => `Failed to fetch request windows: ${status}`,
       updateSystemSettingsFailed: 'Failed to update system settings',
-      updateSystemSettingsFailedWithStatus: (status: number) => `Failed to update system settings: ${status}`,
+      updateSystemSettingsFailedWithStatus: (status: number) =>
+        `Failed to update system settings: ${status}`,
       updateStatusFailed: 'Failed to update request window status',
-      updateStatusFailedWithStatus: (status: number) => `Failed to update request window status: ${status}`,
+      updateStatusFailedWithStatus: (status: number) =>
+        `Failed to update request window status: ${status}`,
       deleteFailed: 'Failed to delete request window',
       deleteFailedWithStatus: (status: number) => `Failed to delete request window: ${status}`,
       startBeforeEnd: 'Start time must be earlier than end time',
       nameRequired: 'Window name is required',
       nameExists: 'A request window with this name already exists',
       saveFailed: 'Failed to save request window',
-      saveFailedWithStatus: (isUpdate: boolean, status: number) => `${isUpdate ? 'Update' : 'Create'} request window failed: ${status}`
+      saveFailedWithStatus: (isUpdate: boolean, status: number) =>
+        `${isUpdate ? 'Update' : 'Create'} request window failed: ${status}`
     }
   },
   semesterManager: {
@@ -3292,7 +3676,8 @@ export const admin = {
     noCurrent: 'No active semester set',
     createNow: 'Create Now',
     switchTitle: 'Semester Switching Notes',
-    switchDesc: 'After switching semesters, the public request page clears old schedules. Historical data is archived under each semester and remains visible in the data center.',
+    switchDesc:
+      'After switching semesters, the public request page clears old schedules. Historical data is archived under each semester and remains visible in the data center.',
     historyTitle: 'Semester History',
     historyCount: (count: number) => `${count} records`,
     loading: 'Loading...',
@@ -3304,8 +3689,10 @@ export const admin = {
     semesterName: 'Semester Name',
     namePlaceholder: 'e.g. 2025 Academic Year First Semester',
     setAsActive: 'Set as current active semester',
-    setAsActiveHint: 'This semester becomes active immediately after creation, and the previous semester becomes historical.',
-    namingTip: 'Tip: Use a consistent semester naming convention to make archived data easier to search and analyze.',
+    setAsActiveHint:
+      'This semester becomes active immediately after creation, and the previous semester becomes historical.',
+    namingTip:
+      'Tip: Use a consistent semester naming convention to make archived data easier to search and analyze.',
     cancel: 'Cancel',
     saving: 'Saving...',
     creating: 'Creating...',
@@ -3313,12 +3700,14 @@ export const admin = {
     createSemester: 'Create Semester',
     confirmDelete: 'Confirm Delete',
     deleteDialogTitle: 'Confirm Semester Deletion',
-    deleteMessage: (name: string) => `Delete "${name}" permanently? This also removes all song requests, schedules, and statistics under this semester. Deleted data cannot be recovered.`,
+    deleteMessage: (name: string) =>
+      `Delete "${name}" permanently? This also removes all song requests, schedules, and statistics under this semester. Deleted data cannot be recovered.`,
     terms: {
       first: 'First Semester',
       second: 'Second Semester'
     },
-    recommendedName: (academicYear: number, term: string) => `${academicYear} Academic Year ${term}`,
+    recommendedName: (academicYear: number, term: string) =>
+      `${academicYear} Academic Year ${term}`,
     messages: {
       activeSet: 'Active semester set successfully.',
       deleted: 'Semester deleted successfully.',
@@ -3377,11 +3766,23 @@ export const admin = {
     serverMessages: {
       methodNotAllowed: { raw: '方法不被允许', text: 'Method not allowed' },
       unauthorized: { raw: '未授权访问', text: 'Unauthorized access' },
-      adminReloadOnly: { raw: '只有管理员才能重载SMTP配置', text: 'Only administrators can reload SMTP configuration' },
-      adminTestConnectionOnly: { raw: '只有管理员才能测试SMTP连接', text: 'Only administrators can test SMTP connections' },
-      adminTestEmailOnly: { raw: '只有管理员才能发送测试邮件', text: 'Only administrators can send test emails' },
+      adminReloadOnly: {
+        raw: '只有管理员才能重载SMTP配置',
+        text: 'Only administrators can reload SMTP configuration'
+      },
+      adminTestConnectionOnly: {
+        raw: '只有管理员才能测试SMTP连接',
+        text: 'Only administrators can test SMTP connections'
+      },
+      adminTestEmailOnly: {
+        raw: '只有管理员才能发送测试邮件',
+        text: 'Only administrators can send test emails'
+      },
       smtpDisabled: { raw: 'SMTP服务未启用', text: 'SMTP service is disabled' },
-      incompleteConfig: { raw: '请填写完整的SMTP配置信息', text: 'Please complete the SMTP configuration' },
+      incompleteConfig: {
+        raw: '请填写完整的SMTP配置信息',
+        text: 'Please complete the SMTP configuration'
+      },
       testEmailRequired: { raw: '请输入测试邮箱地址', text: 'Please enter a test email address' },
       reloadSuccess: { raw: 'SMTP配置已重载', text: 'SMTP configuration reloaded' },
       reloadCleared: {
@@ -3389,8 +3790,14 @@ export const admin = {
         text: 'SMTP is disabled or incomplete; the current SMTP instance has been cleared'
       },
       reloadFailed: { raw: 'SMTP配置重载失败', text: 'Failed to reload SMTP configuration' },
-      invalidOrDisabled: { raw: 'SMTP配置无效或未启用', text: 'SMTP configuration is invalid or disabled' },
-      initializeFailed: { raw: '初始化SMTP配置失败', text: 'Failed to initialize SMTP configuration' },
+      invalidOrDisabled: {
+        raw: 'SMTP配置无效或未启用',
+        text: 'SMTP configuration is invalid or disabled'
+      },
+      initializeFailed: {
+        raw: '初始化SMTP配置失败',
+        text: 'Failed to initialize SMTP configuration'
+      },
       connectionSuccess: { raw: 'SMTP连接测试成功', text: 'SMTP connection test succeeded' },
       connectionFailed: { raw: 'SMTP连接测试失败', text: 'SMTP connection test failed' },
       testConnectionFailed: { raw: '测试连接失败', text: 'Connection test failed' },
@@ -3404,31 +3811,52 @@ export const admin = {
     desc: 'Configure account notifications for QQ, WeCom, DingTalk and Lark. Notifications only go to linked, enabled private chats.',
     enabled: 'Enable bot notifications',
     platformHint: 'Enabled platforms appear on the user account binding page.',
-    platforms: { qq: 'Enable QQ', wecom: 'Enable WeCom', dingtalk: 'Enable DingTalk', lark: 'Enable Lark' },
+    platforms: {
+      qq: 'Enable QQ',
+      wecom: 'Enable WeCom',
+      dingtalk: 'Enable DingTalk',
+      lark: 'Enable Lark'
+    },
     baseUrl: 'AstrBot Service URL',
     baseUrlPlaceholder: 'https://bot.example.com',
     token: 'Access Token',
     tokenPlaceholder: 'Enter access token',
     tokenUnchanged: 'Configured; leave blank to keep',
-    tokenHint: 'The token only changes when you enter a new value; the saved value is never displayed.',
+    tokenHint:
+      'The token only changes when you enter a new value; the saved value is never displayed.',
     pushMode: 'Delivery direction',
     pushModePush: 'push (VoiceHub sends)',
     pushModePull: 'pull (plugin fetches)',
-    pushModeHint: 'push needs VoiceHub to reach the plugin port; choose pull when the plugin sits behind NAT, then set the pull interval on the plugin side.',
+    pushModeHint:
+      'push needs VoiceHub to reach the plugin port; choose pull when the plugin sits behind NAT, then set the pull interval on the plugin side.',
     weeklyTitle: 'Weekly playlist display fields',
-    weeklyHint: 'Applies to /广播 本周歌单 image and text output; independent of print presets saved in this browser.',
+    weeklyHint:
+      'Applies to /广播 本周歌单 image and text output; independent of print presets saved in this browser.',
     weeklyLayout: 'Image layout',
     weeklyLayoutClassic: 'Classic list',
     weeklyLayoutTable: 'Table layout',
     weeklyListColumns: 'List columns',
     weeklyOneColumn: 'One column',
     weeklyTwoColumns: 'Two columns',
-    weeklyFields: { showLogo: 'Show site logo', showSchoolLogo: 'Show school logo', showCover: 'Show cover', showTitle: 'Show title', showArtist: 'Show artist', showSequence: 'Show sequence', showRequester: 'Show requester', showVotes: 'Show popularity', showPlayTime: 'Show play time', showDate: 'Show date' },
+    weeklyFields: {
+      showLogo: 'Show site logo',
+      showSchoolLogo: 'Show school logo',
+      showCover: 'Show cover',
+      showTitle: 'Show title',
+      showArtist: 'Show artist',
+      showSequence: 'Show sequence',
+      showRequester: 'Show requester',
+      showVotes: 'Show popularity',
+      showPlayTime: 'Show play time',
+      showDate: 'Show date'
+    },
     groupTitle: 'Group push',
-    groupHint: 'Push song requests, pending registrations, backup failures and system errors to selected groups. Each group target must name its platform: the session string prefix is an AstrBot platform instance ID and cannot be mapped to an adapter automatically.',
+    groupHint:
+      'Push song requests, pending registrations, backup failures and system errors to selected groups. Each group target must name its platform: the session string prefix is an AstrBot platform instance ID and cannot be mapped to an adapter automatically.',
     groupEnabled: 'Enable group push',
     groupTargetsTitle: 'Group target allowlist',
-    groupTargetsHint: 'Get the session string by sending /广播 状态 in the group, e.g. default:GroupMessage:123456. Groups not listed here are never pushed to.',
+    groupTargetsHint:
+      'Get the session string by sending /广播 状态 in the group, e.g. default:GroupMessage:123456. Groups not listed here are never pushed to.',
     groupTargetPlaceholder: 'default:GroupMessage:123456',
     groupLabelPlaceholder: 'Note (optional)',
     groupAdd: 'Add group target',
@@ -3445,7 +3873,8 @@ export const admin = {
     },
     groupMergeWindow: 'Merge window (seconds)',
     groupMinInterval: 'Min interval per group and event (seconds)',
-    groupThrottleHint: 'High-frequency events within the window are merged into one message to avoid flooding; leave blank or 0 to send immediately without merging.',
+    groupThrottleHint:
+      'High-frequency events within the window are merged into one message to avoid flooding; leave blank or 0 to send immediately without merging.',
     save: 'Save Config',
     saving: 'Saving...',
     saved: 'AstrBot settings saved',
@@ -3498,7 +3927,8 @@ export const admin = {
     importantToggleTitle: 'Important Pop-up',
     importantToggleDescription: 'Shown in a pop-up after sign-in and marked as read when closed',
     groupForwardToggleTitle: 'Also forward to groups',
-    groupForwardToggleDescription: 'Push this notice to the groups in the target allowlist under Bot Notification Config → Group Push.',
+    groupForwardToggleDescription:
+      'Push this notice to the groups in the target allowlist under Bot Notification Config → Group Push.',
     scope: 'Notification Scope',
     allUsersHint: 'This notification will be sent to all active registered users.',
     selectGrade: 'Select Grade',
@@ -3523,7 +3953,8 @@ export const admin = {
     previewTitlePlaceholder: 'Notification title',
     previewContentPlaceholder: 'Notification content preview will appear here...',
     previewScope: (scope: string) => `Scope: ${scope}`,
-    previewHint: 'The preview is for layout reference only. Actual rendering may vary by device language and screen size.',
+    previewHint:
+      'The preview is for layout reference only. Actual rendering may vary by device language and screen size.',
     roles: {
       admin: 'Admin',
       teacher: 'Teacher',
@@ -3597,13 +4028,15 @@ export const admin = {
       editContent: 'Notification Content',
       editContentPlaceholder: 'Enter Markdown notification content',
       editImportant: 'Important Notification Pop-up',
-      editImportantDescription: 'Saving creates a new batch: all recipients (including those who read or deleted it) are reset to unread and see the pop-up again',
+      editImportantDescription:
+        'Saving creates a new batch: all recipients (including those who read or deleted it) are reset to unread and see the pop-up again',
       preview: 'Markdown Preview',
       cancel: 'Cancel',
       save: 'Save Changes',
       saving: 'Saving...',
       deleteNotification: 'Delete Notification',
-      deleteConfirmation: (title: string) => `Delete “${title}”? The notification will be removed for every recipient and cannot be recovered.`,
+      deleteConfirmation: (title: string) =>
+        `Delete “${title}”? The notification will be removed for every recipient and cannot be recovered.`,
       confirmDelete: 'Delete',
       titleContentRequired: 'Notification title and content are required',
       titleTooLong: (max: number) => `Notification title cannot exceed ${max} characters`,
@@ -3674,7 +4107,8 @@ export const admin = {
     createDesc: 'Paste separated codes manually or generate request cards automatically',
     manualImport: 'Manual Import',
     autoGenerate: 'Auto Generate',
-    manualPlaceholder: 'Enter one request card, or separate multiple cards with commas, newlines, or spaces',
+    manualPlaceholder:
+      'Enter one request card, or separate multiple cards with commas, newlines, or spaces',
     generateCount: 'Count',
     prefix: 'Prefix',
     prefixPlaceholder: 'e.g. VH-',
@@ -3685,7 +4119,8 @@ export const admin = {
     fillDemo: 'Fill Demo',
     demoNote: 'Demo request cards',
     lastGeneratedTitle: (count: number) => `${count} request cards generated this time`,
-    lastGeneratedDesc: 'Only the latest auto-generated result is kept so you can copy it before distribution.',
+    lastGeneratedDesc:
+      'Only the latest auto-generated result is kept so you can copy it before distribution.',
     copyAll: 'Copy All',
     quickTipsTitle: 'Quick Tips',
     quickTips: [
@@ -3695,7 +4130,8 @@ export const admin = {
       'Export generates a complete CSV from current filters; selected cards are exported first.'
     ],
     redeemLogsTitle: 'Redeem Logs',
-    redeemLogsDesc: 'Track which account redeemed each request card, when, from where, and related songs',
+    redeemLogsDesc:
+      'Track which account redeemed each request card, when, from where, and related songs',
     refreshLogs: 'Refresh Logs',
     keyword: 'Keyword',
     logSearchPlaceholder: 'Request card / account / song / source',
@@ -3737,7 +4173,8 @@ export const admin = {
       saveNoteFailed: 'Failed to save note',
       inputRequired: 'Please enter request cards first',
       createSuccess: (count: number) => `Created ${count} request cards`,
-      createDone: (inserted: number, skipped: number) => `Created ${inserted}; skipped ${skipped} duplicates`,
+      createDone: (inserted: number, skipped: number) =>
+        `Created ${inserted}; skipped ${skipped} duplicates`,
       createFailed: 'Failed to create request cards',
       noGeneratedToCopy: 'No generated request cards to copy',
       copiedGenerated: (count: number) => `Copied ${count} request cards`
@@ -3759,7 +4196,8 @@ export const admin = {
     highRisk: 'High Risk',
     executing: 'Running...',
     maintenanceTitle: 'Database Maintenance Advice',
-    maintenanceDesc: 'Create a full backup weekly. Before restoring a backup or resetting the database, create a fresh backup to avoid irreversible data loss.',
+    maintenanceDesc:
+      'Create a full backup weekly. Before restoring a backup or resetting the database, create a fresh backup to avoid irreversible data loss.',
     backupTitle: 'Create Database Backup',
     restoreTitle: 'Restore Database Backup',
     selectContent: 'Select Content',
@@ -3775,34 +4213,67 @@ export const admin = {
       replace: { title: 'Replace Mode', desc: 'Clear existing tables before full restore' }
     },
     overwriteSuperAdmin: 'Overwrite super admin from backup',
-    overwriteSuperAdminDesc: 'When disabled, the current super admin account plus third-party bindings and 2FA data are kept.',
-    replaceWarning: 'Warning: replace mode permanently clears matching tables in the current database. Existing sessions will be interrupted.',
+    overwriteSuperAdminDesc:
+      'When disabled, the current super admin account plus third-party bindings and 2FA data are kept.',
+    replaceWarning:
+      'Warning: replace mode permanently clears matching tables in the current database. Existing sessions will be interrupted.',
     restoring: 'Restoring...',
     confirmRestore: 'Confirm & Restore',
     resetSequenceTitle: 'Reset Table Sequences',
     selectTargetTable: 'Select Target Table',
     sequenceHelpTitle: 'What is sequence reset?',
-    sequenceHelpDesc: 'If table IDs have gaps or stop auto-incrementing after manual database operations, resetting sequences updates the database counters to current max ID + 1. This resolves write failures caused by ID conflicts without modifying existing data.',
+    sequenceHelpDesc:
+      'If table IDs have gaps or stop auto-incrementing after manual database operations, resetting sequences updates the database counters to current max ID + 1. This resolves write failures caused by ID conflicts without modifying existing data.',
     resetting: 'Resetting...',
     executeReset: 'Run Reset',
     dangerResetTitle: 'Dangerous Operation: Reset Database',
     dangerResetHeading: 'You are performing an extremely dangerous operation!',
     dangerResetPrefix: 'The reset permanently deletes all',
-    dangerResetScope: 'songs, submissions, schedules, notifications, logs, and user accounts except yours',
+    dangerResetScope:
+      'songs, submissions, schedules, notifications, logs, and user accounts except yours',
     confirmCodeLabel: 'Enter the following code to confirm',
     confirmCodePlaceholder: 'Enter the code above...',
     confirmResetDatabase: 'Confirm Reset',
     cards: {
-      backup: { title: 'Create Backup', desc: 'Export all current database data to a file for backup or migration.', button: 'Create Backup File' },
-      restore: { title: 'Restore Backup', desc: 'Restore system data from a previously exported backup file.', button: 'Select Backup File' },
-      resetSeq: { title: 'Reset Sequences', desc: 'Fix table auto-increment ID sequences so new records start from the correct values.', button: 'Start Sequence Reset' },
-      resetDb: { title: 'Reset Database', desc: 'Clear all system data except administrator accounts. This cannot be undone.', button: 'Reset Database Now' },
-      autoBackup: { title: 'Auto Backup', desc: 'Configure multiple backup methods, triggered externally for scheduled auto backup', button: 'Configure Auto Backup' }
+      backup: {
+        title: 'Create Backup',
+        desc: 'Export all current database data to a file for backup or migration.',
+        button: 'Create Backup File'
+      },
+      restore: {
+        title: 'Restore Backup',
+        desc: 'Restore system data from a previously exported backup file.',
+        button: 'Select Backup File'
+      },
+      resetSeq: {
+        title: 'Reset Sequences',
+        desc: 'Fix table auto-increment ID sequences so new records start from the correct values.',
+        button: 'Start Sequence Reset'
+      },
+      resetDb: {
+        title: 'Reset Database',
+        desc: 'Clear all system data except administrator accounts. This cannot be undone.',
+        button: 'Reset Database Now'
+      },
+      autoBackup: {
+        title: 'Auto Backup',
+        desc: 'Configure multiple backup methods, triggered externally for scheduled auto backup',
+        button: 'Configure Auto Backup'
+      }
     },
     backupOptions: {
-      songs: { label: 'Songs & Schedules', desc: 'Includes song library, user submissions, and historical broadcast schedules' },
-      system: { label: 'System Configuration', desc: 'Includes site settings, blacklist, play times, and global parameters' },
-      users: { label: 'User Accounts', desc: 'Includes registered user permissions and preferences, excluding sensitive admin data' }
+      songs: {
+        label: 'Songs & Schedules',
+        desc: 'Includes song library, user submissions, and historical broadcast schedules'
+      },
+      system: {
+        label: 'System Configuration',
+        desc: 'Includes site settings, blacklist, play times, and global parameters'
+      },
+      users: {
+        label: 'User Accounts',
+        desc: 'Includes registered user permissions and preferences, excluding sensitive admin data'
+      }
     },
     tableOptions: [
       { label: 'Reset All Tables (All)', value: 'all' },
@@ -3813,7 +4284,10 @@ export const admin = {
       { label: 'Vote Table (Vote)', value: 'Vote' },
       { label: 'Schedule Table (Schedule)', value: 'Schedule' },
       { label: 'Notification Table (Notification)', value: 'Notification' },
-      { label: 'Notification Settings Table (NotificationSettings)', value: 'NotificationSettings' },
+      {
+        label: 'Notification Settings Table (NotificationSettings)',
+        value: 'NotificationSettings'
+      },
       { label: 'Play Time Table (PlayTime)', value: 'PlayTime' },
       { label: 'Semester Table (Semester)', value: 'Semester' },
       { label: 'System Settings Table (SystemSettings)', value: 'SystemSettings' },
@@ -3872,7 +4346,7 @@ export const admin = {
 
       masterSwitch: {
         label: 'Enable Auto Backup',
-        desc: 'When API is triggered, no backup runs if master switch is off; only enabled methods run when master switch is on',
+        desc: 'When API is triggered, no backup runs if master switch is off; only enabled methods run when master switch is on'
       },
 
       methods: {
@@ -3892,7 +4366,7 @@ export const admin = {
           accessKeyPlaceholder: 'Enter Access Key ID',
           secretKey: 'Secret Access Key',
           secretKeyPlaceholder: 'Enter Secret Access Key',
-          testConnection: 'Test Connection',
+          testConnection: 'Test Connection'
         },
         webdav: {
           name: 'WebDAV',
@@ -3905,7 +4379,7 @@ export const admin = {
           passwordPlaceholder: 'Enter password',
           path: 'Upload Path',
           pathPlaceholder: 'voicehub-backups/',
-          testConnection: 'Test Connection',
+          testConnection: 'Test Connection'
         },
         telegram: {
           name: 'Telegram Bot',
@@ -3914,7 +4388,7 @@ export const admin = {
           botTokenPlaceholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
           chatId: 'Chat ID',
           chatIdPlaceholder: '123456789',
-          testSend: 'Test Send',
+          testSend: 'Test Send'
         },
         email: {
           name: 'Email Attachment',
@@ -3922,8 +4396,9 @@ export const admin = {
           recipient: 'Recipient Email',
           recipientPlaceholder: 'admin@example.com',
           testSend: 'Test Send',
-          smtpHint: 'Uses the site\'s configured email service. Only the recipient email is required.',
-        },
+          smtpHint:
+            "Uses the site's configured email service. Only the recipient email is required."
+        }
       },
 
       endpoint: {
@@ -3937,15 +4412,17 @@ export const admin = {
         cronTab: 'Linux Cron',
         curlHint: 'Replace YOUR_API_KEY with your API key and run in terminal to trigger a backup.',
         cronjobLink: 'Visit cron-job.org to create a free scheduled task',
-        githubHint: 'Configure BACKUP_URL and API_KEY in GitHub repo Settings → Secrets, then save the above as .github/workflows/backup.yml.',
-        cronHint: 'Replace YOUR_API_KEY with your API key, run crontab -e on your server, and add the above line.',
+        githubHint:
+          'Configure BACKUP_URL and API_KEY in GitHub repo Settings → Secrets, then save the above as .github/workflows/backup.yml.',
+        cronHint:
+          'Replace YOUR_API_KEY with your API key, run crontab -e on your server, and add the above line.'
       },
 
       history: {
         title: 'Backup History',
         empty: 'No backup records yet',
         emptyHint: 'Records will appear here after triggering a backup',
-        clear: 'Clear History',
+        clear: 'Clear History'
       },
 
       messages: {
@@ -3953,13 +4430,14 @@ export const admin = {
         copyFailed: 'Copy failed',
         testConnection: 'Testing connection...',
         testSend: 'Testing send...',
-        allSaved: 'All settings saved',
+        allSaved: 'All settings saved'
       }
     }
   },
   userManager: {
     title: 'User Management',
-    subtitle: (total: number) => `${total} members in the system · Permissions and account management`,
+    subtitle: (total: number) =>
+      `${total} members in the system · Permissions and account management`,
     add: 'Add',
     import: 'Import',
     update: 'Update',
@@ -4022,7 +4500,7 @@ export const admin = {
       pending: 'Pending Approval',
       activeAccess: 'Active Access',
       withdrawnAccess: 'Restricted (Withdrawn)',
-      graduateAccess: 'Restricted (Graduate)',
+      graduateAccess: 'Restricted (Graduate)'
     },
     actions: {
       edit: 'Edit',
@@ -4105,7 +4583,8 @@ export const admin = {
       desc: 'Upload an .xlsx file according to the template requirements',
       instructionsTitle: 'Import Instructions',
       instructionsLine1: 'Upload an Excel file (.xlsx); the system will parse it automatically.',
-      instructionsLine2: 'Note: the first row may be a header row and will be skipped automatically. Role values must match system roles.',
+      instructionsLine2:
+        'Note: the first row may be a header row and will be skipped automatically. Role values must match system roles.',
       sampleHeaders: {
         name: 'Name',
         username: 'Username',
@@ -4120,7 +4599,8 @@ export const admin = {
       templateSheetName: 'User Import Template',
       templateFileName: 'user-import-template.xlsx',
       supportedRoles: 'Supported roles:',
-      supportedRolesFull: 'USER (User), ADMIN (Admin), SONG_ADMIN (Song Admin), SUPER_ADMIN (Super Admin)',
+      supportedRolesFull:
+        'USER (User), ADMIN (Admin), SONG_ADMIN (Song Admin), SUPER_ADMIN (Super Admin)',
       supportedRolesLimited: 'USER (User), SONG_ADMIN (Song Admin)',
       downloadTemplate: 'Download Template',
       chooseFile: 'Choose Data File',
@@ -4298,22 +4778,26 @@ export const admin = {
         byUsername: 'Match by Username',
         byName: 'Match by Name',
         usernamePrefix: 'Use ',
-        usernameSuffix: ' to precisely locate existing accounts. Best for regular updates where student IDs do not change.',
+        usernameSuffix:
+          ' to precisely locate existing accounts. Best for regular updates where student IDs do not change.',
         namePrefix: 'Use ',
         nameMiddle: ' to locate existing accounts. The ',
-        nameSuffix: ' column will be treated as the new student ID, suitable for ID shifts after roster changes.'
+        nameSuffix:
+          ' column will be treated as the new student ID, suitable for ID shifts after roster changes.'
       },
       fileSpec: {
         title: 'File Format',
         headerLine: 'First row headers: Username, Name, Grade, Class, New Username',
         usernameColumn: ' column is used to precisely match existing accounts',
         nameColumn: ' column is used to precisely match existing accounts',
-        blankKeepsOriginal: 'Blank fields keep original values and will not overwrite existing data',
+        blankKeepsOriginal:
+          'Blank fields keep original values and will not overwrite existing data',
         downloadTemplate: 'Get Template File'
       },
       preview: {
         blockersTitle: (count: number) => `Users Requiring Action (${count})`,
-        blockersDesc: 'These users are not in the current update list, but occupy target usernames. Mark them as withdrawn or disabled before updating.',
+        blockersDesc:
+          'These users are not in the current update list, but occupy target usernames. Mark them as withdrawn or disabled before updating.',
         dataPreview: (visible: number, total: number) => `Data Preview (${visible}/${total})`,
         pending: (count: number) => `Pending (${count})`,
         noChangeCount: (count: number) => `No Change (${count})`,
@@ -4348,18 +4832,25 @@ export const admin = {
         fileName: 'student-info-batch-update-template.xlsx'
       },
       progress: {
-        processing: (current: number, total: number) => `Updating: processing batch ${current} / ${total}...`,
-        completed: (success: number, failed: number) => `Update complete: ${success} succeeded, ${failed} failed`
+        processing: (current: number, total: number) =>
+          `Updating: processing batch ${current} / ${total}...`,
+        completed: (success: number, failed: number) =>
+          `Update complete: ${success} succeeded, ${failed} failed`
       },
       messages: {
-        partialGradeSuccess: (failed: number) => `Partially updated. ${failed} users were skipped due to permissions or status.`,
+        partialGradeSuccess: (failed: number) =>
+          `Partially updated. ${failed} users were skipped due to permissions or status.`,
         gradeSuccess: (count: number) => `Successfully updated grades for ${count} users`,
-        partialExcelSuccess: (success: number, failed: number) => `Partially updated: ${success} succeeded, ${failed} failed. Please check and retry.`,
-        excelFailed: (failed: number) => `Batch update failed: ${failed} users could not be updated. Please check and retry.`,
-        partialStatusSuccess: (failed: number) => `Partially updated. ${failed} users were skipped due to permissions or status.`,
+        partialExcelSuccess: (success: number, failed: number) =>
+          `Partially updated: ${success} succeeded, ${failed} failed. Please check and retry.`,
+        excelFailed: (failed: number) =>
+          `Batch update failed: ${failed} users could not be updated. Please check and retry.`,
+        partialStatusSuccess: (failed: number) =>
+          `Partially updated. ${failed} users were skipped due to permissions or status.`,
         statusSuccess: 'Batch status update succeeded',
         songAdminSuccess: (count: number) => `Successfully updated ${count} Song Admins`,
-        partialSongAdminSuccess: (failed: number) => `Partially updated. ${failed} admins were skipped due to permissions or status.`,
+        partialSongAdminSuccess: (failed: number) =>
+          `Partially updated. ${failed} admins were skipped due to permissions or status.`,
         songAdminNoChanges: 'No changes needed for the selected Song Admins'
       },
       errors: {
@@ -4370,9 +4861,12 @@ export const admin = {
         fieldRequired: (field: string) => `${field} is required`,
         duplicateNames: 'Multiple users have the same name. Please switch to username matching.',
         userNotFound: 'User not found',
-        duplicateTarget: (username: string) => `Duplicate update target: multiple rows try to update to username ${username}`,
-        usernameOccupied: (username: string, name: string) => `Username ${username} is occupied. Please handle ${name}’s account first.`,
-        loadXlsxFailed: 'Failed to load Excel processing library. Please check your network connection.',
+        duplicateTarget: (username: string) =>
+          `Duplicate update target: multiple rows try to update to username ${username}`,
+        usernameOccupied: (username: string, name: string) =>
+          `Username ${username} is occupied. Please handle ${name}’s account first.`,
+        loadXlsxFailed:
+          'Failed to load Excel processing library. Please check your network connection.',
         loadXlsxRetry: 'Failed to load Excel processing library. Please refresh and try again.',
         batchUpdateFailed: (message: string) => `Batch update failed: ${message}`,
         unknownError: 'Unknown error',
@@ -4387,7 +4881,8 @@ export const admin = {
     },
     deleteDialog: {
       title: 'Confirm User Deletion',
-      message: (name: string) => `Delete user "${name}"? This account will be permanently removed and cannot be restored.`,
+      message: (name: string) =>
+        `Delete user "${name}"? This account will be permanently removed and cannot be restored.`,
       confirm: 'Delete'
     },
     detail: {
@@ -4468,7 +4963,8 @@ export const admin = {
       resetSuccess: 'Password reset successfully',
       detailLoadFailed: (message: string) => `Failed to load user details: ${message}`,
       loadFailed: (message: string) => `Failed to load users: ${message}`,
-      excelLoadFailed: 'Failed to load the Excel processing library. Refresh the page and try again.'
+      excelLoadFailed:
+        'Failed to load the Excel processing library. Refresh the page and try again.'
     },
     errors: {
       requiredInfo: 'Please complete the required information',
@@ -4483,15 +4979,20 @@ export const admin = {
       readFileFailed: 'Failed to read file',
       processExcelFailed: (message: string) => `Failed to process Excel file: ${message}`,
       partialImportFailed: (errors: string) => `Some rows failed to import:\n${errors}`,
-      importFailedWithReasons: (errors: string) => `Import failed. Check the data format and try again.\nReasons:\n${errors}`,
-      importRuntimeFailed: (count: number, message: string) => `An error occurred during import (${count} imported successfully): ${message}`,
+      importFailedWithReasons: (errors: string) =>
+        `Import failed. Check the data format and try again.\nReasons:\n${errors}`,
+      importRuntimeFailed: (count: number, message: string) =>
+        `An error occurred during import (${count} imported successfully): ${message}`,
       statusLogsFailed: 'Failed to load status logs'
     },
     importProgress: {
-      processingBatch: (current: number, total: number) => `Importing: processing batch ${current} / ${total}...`,
-      complete: (created: number, failed: number) => `Import complete: ${created} imported, ${failed} failed`,
+      processingBatch: (current: number, total: number) =>
+        `Importing: processing batch ${current} / ${total}...`,
+      complete: (created: number, failed: number) =>
+        `Import complete: ${created} imported, ${failed} failed`,
       batchFailed: (batch: number, message: string) => `Batch ${batch} request failed: ${message}`,
-      rowError: (row: string | number, name: string, reason: string) => `Row ${row}${name}: ${reason}`
+      rowError: (row: string | number, name: string, reason: string) =>
+        `Row ${row}${name}: ${reason}`
     }
   },
   apiKeys: {
@@ -4507,7 +5008,8 @@ export const admin = {
     creatorPlaceholder: 'Creator username',
     loading: 'Loading...',
     emptyTitle: 'No API Keys',
-    emptyDesc: 'You have not created any access keys yet. Create one to safely integrate VoiceHub with third-party apps.',
+    emptyDesc:
+      'You have not created any access keys yet. Create one to safely integrate VoiceHub with third-party apps.',
     createFirst: 'Create your first key',
     noDescription: 'No description',
     unknown: 'Unknown',
@@ -4540,7 +5042,8 @@ export const admin = {
     createSuccessHeading: 'API key created successfully!',
     createSuccessDesc: 'Store this API key safely. It will only be shown once.',
     fullKey: 'Full API Key',
-    copyWarning: 'Copy and save this API key now. It cannot be viewed again after closing this window.',
+    copyWarning:
+      'Copy and save this API key now. It cannot be viewed again after closing this window.',
     closeSaved: 'Saved, Close',
     details: 'API Key Details',
     basicInfo: 'Basic Info',
@@ -4563,10 +5066,19 @@ export const admin = {
     permissionOptions: {
       scheduleRead: { label: 'Schedule Read', description: 'View schedule list and details' },
       songsRead: { label: 'Song Read', description: 'View song list and details' },
-      songsRequest: { label: 'Song Request', description: 'Submit song requests as the API key owner' },
+      songsRequest: {
+        label: 'Song Request',
+        description: 'Submit song requests as the API key owner'
+      },
       songsWrite: { label: 'Song Management', description: 'Update song status' },
-      cardCodesRead: { label: 'Request Card Read', description: 'View request card list and statistics' },
-      cardCodesWrite: { label: 'Request Card Management', description: 'Create and update request cards' },
+      cardCodesRead: {
+        label: 'Request Card Read',
+        description: 'View request card list and statistics'
+      },
+      cardCodesWrite: {
+        label: 'Request Card Management',
+        description: 'Create and update request cards'
+      },
       cardCodesDelete: { label: 'Request Card Delete', description: 'Delete request cards' },
       backupExecute: { label: 'Auto Backup', description: 'Trigger automatic backup tasks' }
     },
@@ -4605,7 +5117,8 @@ export const serverErrors = {
   CARD_CODE_LOCKED_OR_UNAVAILABLE: 'This request card is locked or unavailable',
   CARD_CODE_REQUIRED_FOR_SITE: 'This site requires a valid request card to submit songs',
   CARD_CODE_TOO_LONG: 'Request card code cannot exceed 100 characters',
-  AUTH_CSRF_COOKIE_MISSING: 'CSRF validation failed: the cookie is missing. Please restart from the login page.',
+  AUTH_CSRF_COOKIE_MISSING:
+    'CSRF validation failed: the cookie is missing. Please restart from the login page.',
   AUTH_CHALLENGE_EXPIRED: 'Challenge has expired',
   AUTH_CHALLENGE_INVALID: 'Challenge has expired or does not match',
   AUTH_STATE_INVALID: 'Invalid or expired state',
@@ -4613,8 +5126,10 @@ export const serverErrors = {
   AUTH_MISSING_PROVIDER: 'Missing provider',
   AUTH_OAUTH_PROVIDER_DISABLED: 'OAuth provider is disabled',
   AUTH_OAUTH_PROVIDER_STATE_MISMATCH: 'OAuth provider does not match state',
-  AUTH_OAUTH_REDIRECT_ORIGIN_MISMATCH: 'The OAuth callback URL does not match the current request origin. Please set the OAuth redirect URI to the current site domain in the admin console.',
-  AUTH_OAUTH_REDIRECT_INVALID: 'Invalid OAuth redirect URI configuration. Please check the settings in the admin console.',
+  AUTH_OAUTH_REDIRECT_ORIGIN_MISMATCH:
+    'The OAuth callback URL does not match the current request origin. Please set the OAuth redirect URI to the current site domain in the admin console.',
+  AUTH_OAUTH_REDIRECT_INVALID:
+    'Invalid OAuth redirect URI configuration. Please check the settings in the admin console.',
   AUTH_WEBAUTHN_RP_ID_INVALID: 'Invalid WebAuthn RP ID configuration',
   AUTH_UNSUPPORTED_VERIFICATION_TYPE: 'Unsupported verification type',
   AUTH_CAPTCHA_FAILED_OR_EXPIRED: 'Human verification failed or expired. Please try again.',
@@ -4624,53 +5139,72 @@ export const serverErrors = {
   AUTH_CREDENTIAL_MISSING: 'Credential data is missing',
   AUTH_CREDENTIAL_MISSING_PUBLICKEY: 'Credential data is missing publicKey',
   AUTH_TOTP_CODE_INVALID: 'Invalid authenticator code',
-  AUTH_TOTP_TOO_MANY_ATTEMPTS: 'Too many incorrect authenticator codes. Please try again in 5 minutes.',
+  AUTH_TOTP_TOO_MANY_ATTEMPTS:
+    'Too many incorrect authenticator codes. Please try again in 5 minutes.',
   AUTH_INCOMPLETE_PARAMS: 'Incomplete parameters',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
   COMMON_RATE_LIMITED_SECONDS: 'Too many requests. Try again in {0} seconds.',
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',
-  SETTINGS_GRADE_CLASS_OPTIONS_MISSING: 'Configure grade and class options before enabling this setting',
-  SETTINGS_CAPTCHA_PROVIDER_INVALID: 'CAPTCHA type must be Image CAPTCHA, Cloudflare Turnstile, or Alibaba Cloud ESA AI CAPTCHA',
-  SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING: 'Configure the Identity before switching to Alibaba Cloud ESA AI CAPTCHA',
-  SETTINGS_ESA_CAPTCHA_SCENE_INVALID: 'Invalid Scene ID rules: each rule needs an endpoint, a domain and a Scene ID, and domains must be unique within the same endpoint',
-  SETTINGS_ESA_CAPTCHA_SCENE_MISSING: 'Configure a Scene ID for the login endpoint; when registration is open, a Scene ID for the registration endpoint is also required, or close the registration entry first',
-  SETTINGS_LEGAL_CONSENT_DATE_MISSING: 'A terms update date is required when consent confirmation is enabled',
+  SETTINGS_GRADE_CLASS_OPTIONS_MISSING:
+    'Configure grade and class options before enabling this setting',
+  SETTINGS_CAPTCHA_PROVIDER_INVALID:
+    'CAPTCHA type must be Image CAPTCHA, Cloudflare Turnstile, or Alibaba Cloud ESA AI CAPTCHA',
+  SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING:
+    'Configure the Identity before switching to Alibaba Cloud ESA AI CAPTCHA',
+  SETTINGS_ESA_CAPTCHA_SCENE_INVALID:
+    'Invalid Scene ID rules: each rule needs an endpoint, a domain and a Scene ID, and domains must be unique within the same endpoint',
+  SETTINGS_ESA_CAPTCHA_SCENE_MISSING:
+    'Configure a Scene ID for the login endpoint; when registration is open, a Scene ID for the registration endpoint is also required, or close the registration entry first',
+  SETTINGS_LEGAL_CONSENT_DATE_MISSING:
+    'A terms update date is required when consent confirmation is enabled',
   SETTINGS_LEGAL_CONSENT_DOC_INVALID: 'Invalid legal document configuration',
-  SETTINGS_LEGAL_CONSENT_DOC_EMPTY: 'At least one legal document is required when consent confirmation is enabled',
+  SETTINGS_LEGAL_CONSENT_DOC_EMPTY:
+    'At least one legal document is required when consent confirmation is enabled',
   SETTINGS_LEGAL_CONSENT_DOC_NAME_MISSING: 'Legal document name cannot be empty',
   SETTINGS_LEGAL_CONSENT_DOC_CONTENT_MISSING: 'Content of legal document “{0}” cannot be empty',
-  SETTINGS_LEGAL_CONSENT_DOC_SLUG_INVALID: 'Identifier of legal document “{0}” may only contain letters, numbers, underscores and hyphens',
+  SETTINGS_LEGAL_CONSENT_DOC_SLUG_INVALID:
+    'Identifier of legal document “{0}” may only contain letters, numbers, underscores and hyphens',
   SETTINGS_LEGAL_CONSENT_DOC_SLUG_DUPLICATE: 'Legal document identifiers must be unique',
   BILIBILI_PLAYURL_FAILED: 'Failed to fetch Bilibili audio link',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
   AUTH_USERNAME_LENGTH_INVALID: 'Username must be between 3 and 30 characters',
-  AUTH_USERNAME_PATTERN_INVALID: 'Username may only contain letters, numbers, underscores, and hyphens',
+  AUTH_USERNAME_PATTERN_INVALID:
+    'Username may only contain letters, numbers, underscores, and hyphens',
   AUTH_PASSWORD_TOO_SHORT: 'Password must be at least 6 characters',
   AUTH_PASSWORD_TOO_LONG: 'Password cannot exceed 128 characters',
   AUTH_PASSWORD_TOO_MANY_BYTES: 'Password cannot exceed 72 bytes',
   AUTH_PASSWORD_TOO_COMMON: 'This password is too common. Choose a more secure password.',
-  AUTH_PASSWORD_COMPLEXITY_REQUIRED: 'Password must include at least three of: uppercase letters, lowercase letters, numbers, and special characters',
-  AUTH_INITIAL_PASSWORD_COMPLEXITY_REQUIRED: 'Password must include at least two of: uppercase letters, lowercase letters, numbers, and special characters',
-  AUTH_PASSWORD_NOT_SET: 'This account does not have a password yet. Use the initial password setup flow.',
-  AUTH_INITIAL_PASSWORD_NOT_REQUIRED: 'This account does not need initial password setup. Use the change-password flow.',
+  AUTH_PASSWORD_COMPLEXITY_REQUIRED:
+    'Password must include at least three of: uppercase letters, lowercase letters, numbers, and special characters',
+  AUTH_INITIAL_PASSWORD_COMPLEXITY_REQUIRED:
+    'Password must include at least two of: uppercase letters, lowercase letters, numbers, and special characters',
+  AUTH_PASSWORD_NOT_SET:
+    'This account does not have a password yet. Use the initial password setup flow.',
+  AUTH_INITIAL_PASSWORD_NOT_REQUIRED:
+    'This account does not need initial password setup. Use the change-password flow.',
   AUTH_PASSWORD_CHANGE_REQUIRED: 'Change your password before continuing',
   AUTH_PASSWORD_STATE_CHANGED: 'The password state changed. Verify again and retry.',
   AUTH_GRADE_CLASS_TOGETHER: 'Grade and class must be selected together, or both left empty',
   AUTH_GRADE_CLASS_REQUIRED: 'Grade and class are required to register',
-  AUTH_UNSUPPORTED_OAUTH_PROVIDER: 'Only GitHub / Casdoor / Google / aggregated login / third-party OAuth2 are currently supported',
+  AUTH_UNSUPPORTED_OAUTH_PROVIDER:
+    'Only GitHub / Casdoor / Google / aggregated login / third-party OAuth2 are currently supported',
   AUTH_CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
-  AUTH_CURRENT_AND_NEW_PASSWORD_REQUIRED: 'Both the current password and the new password are required',
-  AUTH_PASSWORD_ALREADY_SET: 'You have already set a password. Please use the change-password feature.',
+  AUTH_CURRENT_AND_NEW_PASSWORD_REQUIRED:
+    'Both the current password and the new password are required',
+  AUTH_PASSWORD_ALREADY_SET:
+    'You have already set a password. Please use the change-password feature.',
   AUTH_IP_BLOCKED_RETRY_MINUTES: 'Your IP address is restricted. Please try again in {0} minutes.',
   AUTH_ACCOUNT_NAME_NOT_FOUND: 'Account name not found. Please check for typos.',
   AUTH_RATE_LIMITED_MINUTES: 'Too many requests. Please wait {0} minutes and try again.',
   AUTH_RATE_LIMITED_SECONDS: 'Too many requests. Please wait {0} seconds and try again.',
   AUTH_EMAIL_CODE_INVALID: 'Invalid or expired email verification code. Please request a new one.',
-  AUTH_EMAIL_CODE_COOLDOWN: 'Verification code sent too frequently. Please wait 1 minute and try again.',
+  AUTH_EMAIL_CODE_COOLDOWN:
+    'Verification code sent too frequently. Please wait 1 minute and try again.',
   AUTH_EMAIL_CODE_DAILY_LIMIT: 'Daily verification code limit reached. Please try again tomorrow.',
-  AUTH_EMAIL_SERVICE_UNAVAILABLE: 'Email service is not configured or unavailable. Please contact the administrator.',
+  AUTH_EMAIL_SERVICE_UNAVAILABLE:
+    'Email service is not configured or unavailable. Please contact the administrator.',
   AUTH_DATABASE_UNAVAILABLE: 'The database service is temporarily unavailable',
   AUTH_NEW_PASSWORD_SAME_AS_CURRENT: 'The new password cannot be the same as the current password',
   AUTH_NEW_PASSWORD_REQUIRED: 'The new password cannot be empty',
@@ -4687,8 +5221,10 @@ export const serverErrors = {
   AUTH_UNAUTHORIZED: 'Unauthorized',
   AUTH_UNAUTHORIZED_ACCESS: 'Unauthorized access',
   AUTH_TOKEN_MISSING: 'No authentication token was provided',
-  AUTH_MULTI_IP_PROTECTION: 'Multiple IP logins were detected for this account in a short period. This IP is restricted for {0} minutes and the account is protected for {1} minutes.',
-  AUTH_REGISTER_SESSION_EXPIRED: 'The registration session has expired. Please restart via third-party login.',
+  AUTH_MULTI_IP_PROTECTION:
+    'Multiple IP logins were detected for this account in a short period. This IP is restricted for {0} minutes and the account is protected for {1} minutes.',
+  AUTH_REGISTER_SESSION_EXPIRED:
+    'The registration session has expired. Please restart via third-party login.',
   USER_NOT_FOUND: 'User not found',
   AUTH_USER_NOT_FOUND_OR_NO_EMAIL: 'The user does not exist or has no bound email',
   AUTH_USERNAME_PASSWORD_REQUIRED: 'Username and password are required',
@@ -4696,41 +5232,48 @@ export const serverErrors = {
   AUTH_INVALID_CREDENTIALS: 'Incorrect username or password',
   AUTH_LOGIN_UNKNOWN_ERROR: 'An unknown error occurred during login',
   AUTH_OAUTH_REGISTER_DISABLED: 'Third-party account registration is disabled',
-  AUTH_OAUTH_REGISTER_DISABLED_BIND: 'Third-party account registration is disabled. Please sign in to an existing account to bind.',
+  AUTH_OAUTH_REGISTER_DISABLED_BIND:
+    'Third-party account registration is disabled. Please sign in to an existing account to bind.',
   AUTH_REGISTER_DISABLED: 'Registration is not open',
   AUTH_LEGAL_CONSENT_REQUIRED: 'Please read and accept the latest terms before registering.',
   AUTH_USER_PENDING_APPROVAL: 'Your account is pending admin approval. Please wait.',
   AUTH_SYSTEM_ERROR: 'System error. Please try again later.',
   AUTH_BINDING_SESSION_INVALID: 'The binding session is invalid. Please restart binding.',
-  AUTH_BINDING_SESSION_EXPIRED: 'The binding session has expired. Please restart via third-party login.',
+  AUTH_BINDING_SESSION_EXPIRED:
+    'The binding session has expired. Please restart via third-party login.',
   AUTH_MISSING_CREDENTIAL_ID: 'Missing credential ID',
   AUTH_MISSING_REQUIRED_PARAMS: 'Missing required parameters',
   AUTH_MISSING_PROVIDER_PARAM: 'Missing provider parameter',
   AUTH_MISSING_PRE_TOKEN: 'Missing pre-authentication token',
   AUTH_MISSING_PRE_TOKEN_RELOGIN: 'Missing pre-authentication token. Please sign in again.',
-  AUTH_AGGREGATED_CALLBACK_STATE_MISMATCH: 'The aggregated login callback type does not match state',
+  AUTH_AGGREGATED_CALLBACK_STATE_MISMATCH:
+    'The aggregated login callback type does not match state',
   AUTH_AGGREGATED_METHOD_CHANGED: 'The aggregated login method is disabled or has changed',
   AUTH_AGGREGATED_STATE_INVALID: 'The aggregated login state is invalid or expired',
   AUTH_DEVICE_NAME_TOO_LONG: 'The device name is too long',
   AUTH_OAUTH_BOUND_OTHER_USER: 'This third-party account is already bound to another user',
-  AUTH_OAUTH_ALREADY_BOUND: 'This third-party account is already bound. Please sign in directly or bind it to an existing account.',
+  AUTH_OAUTH_ALREADY_BOUND:
+    'This third-party account is already bound. Please sign in directly or bind it to an existing account.',
   AUTH_ACCOUNT_UNAVAILABLE_OR_RESTRICTED: 'This account is unavailable or access is restricted',
   AUTH_ACCOUNT_GRADUATED: 'This account has graduated; access is restricted',
   AUTH_ACCOUNT_BANNED: 'This account has been banned',
   AUTH_ACCOUNT_WITHDRAWN: 'This account has withdrawn; access is restricted',
   AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE: 'This account is currently unavailable',
-  AUTH_NO_SECURITY_EMAIL: 'This account has no security email bound and cannot recover the password this way. Please contact an administrator.',
+  AUTH_NO_SECURITY_EMAIL:
+    'This account has no security email bound and cannot recover the password this way. Please contact an administrator.',
   AUTH_RESET_LINK_INVALIDATED: 'This reset link is no longer valid (the password has been changed)',
   AUTH_CAPTCHA_REQUIRED: 'Please complete the human verification',
   AUTH_IMAGE_CAPTCHA_REQUIRED: 'Please complete the image captcha',
   AUTH_ACCOUNT_NAME_REQUIRED: 'Please provide an account name',
   AUTH_GRADE_CLASS_MUST_EXIST: 'Please select a grade and class that already exist in the system',
   AUTH_ACCOUNT_DISABLED_OR_RESTRICTED: 'This account is disabled or access is restricted',
-  AUTH_ACCOUNT_RISK_CONTROL: 'This account is in a risk-control period. Please try again in {0} minutes.',
+  AUTH_ACCOUNT_RISK_CONTROL:
+    'This account is in a risk-control period. Please try again in {0} minutes.',
   AUTH_ACCOUNT_LOCKED_MINUTES: 'This account is locked. Please try again in {0} minutes.',
   AUTH_ACCOUNT_LOCKED: 'This account is locked. Please try again later.',
   AUTH_EMAIL_MISMATCH: 'The email address does not match',
-  AUTH_RESET_PASSWORD_TOO_MANY: 'Too many password reset attempts. Please wait {0} minutes and try again.',
+  AUTH_RESET_PASSWORD_TOO_MANY:
+    'Too many password reset attempts. Please wait {0} minutes and try again.',
   AUTH_RESET_LINK_EXPIRED: 'The reset link has expired. Please request a new one.',
   AUTH_USER_ID_MISMATCH: 'Illegal operation: user ID does not match',
   AUTH_VERIFICATION_FAILED: 'Verification failed',
@@ -4739,8 +5282,10 @@ export const serverErrors = {
   AUTH_CODE_ALREADY_USED: 'This verification code has been used. Please request a new one.',
   AUTH_CODE_EXPIRED: 'The verification code has expired',
   AUTH_CODE_EXPIRED_OR_MISSING: 'The verification code has expired or does not exist',
-  AUTH_CODE_SERVICE_CONFIG_ERROR: 'The verification code service is misconfigured. Please contact an administrator.',
-  AUTH_CODE_INVALID_OR_EXPIRED: 'The verification code is incorrect or expired. Please re-enter it.',
+  AUTH_CODE_SERVICE_CONFIG_ERROR:
+    'The verification code service is misconfigured. Please contact an administrator.',
+  AUTH_CODE_INVALID_OR_EXPIRED:
+    'The verification code is incorrect or expired. Please re-enter it.',
   AUTH_CODE_WRONG_ATTEMPTS_LEFT: 'Incorrect verification code. Attempts remaining: {0}',
   SONG_INVALID_ID: 'Invalid song ID',
   HTTP_METHOD_NOT_ALLOWED: 'Method Not Allowed',
@@ -4752,13 +5297,16 @@ export const serverErrors = {
   SONG_REPLAY_CANCEL_FAILED: 'Failed to cancel the replay request. Please try again later.',
   SONG_VOTERS_ADMIN_ONLY: 'Only administrators can view the voter list',
   SONG_WITHDRAW_OWN_ONLY: 'You can only withdraw your own submission or leave a co-submission',
-  SONG_REPLAY_CURRENT_SEMESTER_ONLY: 'You can only request a replay for songs from the current semester',
+  SONG_REPLAY_CURRENT_SEMESTER_ONLY:
+    'You can only request a replay for songs from the current semester',
   SONG_INVITATION_FAILED: 'Failed to process the invitation',
   SONG_SCHEDULED_CANNOT_WITHDRAW: 'Scheduled songs cannot be withdrawn',
   SONG_PLAYED_CANNOT_WITHDRAW: 'Played songs cannot be withdrawn',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: 'There is no active semester, so a replay cannot be requested',
-  SONG_RESTRICTION_SAME_SONG: 'The song "{1}" cannot be resubmitted within {0} hour(s) after entering the schedule',
-  SONG_RESTRICTION_SAME_ARTIST: 'Songs by "{1}" cannot be resubmitted within {0} hour(s) after entering the schedule',
+  SONG_RESTRICTION_SAME_SONG:
+    'The song "{1}" cannot be resubmitted within {0} hour(s) after entering the schedule',
+  SONG_RESTRICTION_SAME_ARTIST:
+    'Songs by "{1}" cannot be resubmitted within {0} hour(s) after entering the schedule',
   SONG_REPLAY_ALREADY_REQUESTED: 'You have already requested a replay for this song',
   SONG_REPLAY_COOLDOWN: 'Replay request is cooling down; please wait {0} more hour(s)',
   SONG_REPLAY_INVALID_REQUEST: 'The replay request is invalid or has already been processed',
@@ -4779,16 +5327,19 @@ export const serverErrors = {
   SONG_COVER_PLATFORM_REQUIRED: 'Song missing platform or music ID, cannot retrieve cover',
   SONG_CARD_RELEASE_FAILED: 'Failed to release the request card; the withdrawal was aborted',
   SONG_CARD_RESTORE_FAILED: 'Failed to restore the request card; the draft save was aborted',
-  SONG_NO_ACTIVE_SEMESTER_IMPORT: 'No active semester is set, so songs cannot be imported. Please ask an administrator to set an active semester first.',
+  SONG_NO_ACTIVE_SEMESTER_IMPORT:
+    'No active semester is set, so songs cannot be imported. Please ask an administrator to set an active semester first.',
   SONG_FETCH_VOTERS_FAILED: 'Failed to fetch the voter list',
   SONG_FETCH_STATUS_FAILED: 'Failed to fetch the submission status',
   SONG_FETCH_COUNT_FAILED: 'Failed to fetch the song count',
-  SONG_TEMP_PROTECTED_SECONDS: 'This song is in a temporary protection period; {0} seconds remaining',
+  SONG_TEMP_PROTECTED_SECONDS:
+    'This song is in a temporary protection period; {0} seconds remaining',
   SONG_NOT_PLAYED_NO_REPLAY: 'This song has not been played yet, so a replay cannot be requested',
   SONG_SCHEDULED_NO_VOTE: 'This song is scheduled, so voting is unavailable',
   SONG_PLAYED_NO_VOTE: 'This song has been played, so voting is unavailable',
   SONG_SELECT_TO_IMPORT: 'Please select the songs to import',
-  SONG_REPLAY_NOT_FOUND_OR_FORBIDDEN: 'The replay request does not exist or you are not allowed to cancel it',
+  SONG_REPLAY_NOT_FOUND_OR_FORBIDDEN:
+    'The replay request does not exist or you are not allowed to cancel it',
   SONG_REPLAY_DISABLED: 'The replay request feature is not enabled',
   SONG_LOGIN_REQUIRED_CANCEL_REPLAY: 'You must sign in to cancel a replay request',
   SONG_LOGIN_REQUIRED_VOTE: 'You must sign in to vote',
@@ -4801,9 +5352,12 @@ export const serverErrors = {
   SONG_BATCH_REJECT_IDS_REQUIRED: 'Select songs to reject first',
   SONG_BATCH_REJECT_LIMIT_EXCEEDED: 'Up to {0} songs can be rejected at once',
   SONG_BATCH_REJECT_REASON_REQUIRED: 'A rejection reason is required',
-  SONG_GLOBAL_DAILY_LIMIT_REACHED: 'The site-wide daily submission cap ({0}) has been reached, try again later',
-  SONG_GLOBAL_WEEKLY_LIMIT_REACHED: 'The site-wide weekly submission cap ({0}) has been reached, try again later',
-  SONG_GLOBAL_MONTHLY_LIMIT_REACHED: 'The site-wide monthly submission cap ({0}) has been reached, try again later',
+  SONG_GLOBAL_DAILY_LIMIT_REACHED:
+    'The site-wide daily submission cap ({0}) has been reached, try again later',
+  SONG_GLOBAL_WEEKLY_LIMIT_REACHED:
+    'The site-wide weekly submission cap ({0}) has been reached, try again later',
+  SONG_GLOBAL_MONTHLY_LIMIT_REACHED:
+    'The site-wide monthly submission cap ({0}) has been reached, try again later',
   USER_API_KEY_NOT_FOUND: 'Personal integration token not found',
   USER_API_KEY_ID_REQUIRED: 'Token ID is required',
   USER_API_KEY_ID_INVALID: 'Invalid token ID',
@@ -4890,4 +5444,5 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_FETCH_FAILED: 'Failed to fetch notification history',
   NOTIFICATION_HISTORY_UPDATE_FAILED: 'Failed to update notification',
   NOTIFICATION_HISTORY_DELETE_FAILED: 'Failed to delete notification',
+  SYSTEM_BOARD_FAILED: 'System board data is unavailable. Please retry later.'
 } as const

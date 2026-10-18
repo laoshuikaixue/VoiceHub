@@ -52,7 +52,7 @@
               <img
                 v-if="song.cover"
                 :alt="song.title"
-                :src="convertToHttps(song.cover)"
+                :src="getCoverThumbUrl(song.cover)"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 referrerpolicy="no-referrer"
                 @error="handleImageError"
@@ -121,7 +121,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import type { Song } from '~/types'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 

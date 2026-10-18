@@ -293,7 +293,7 @@
                 <template v-if="song.cover && !failedCovers[song.cover]">
                   <img
                     :alt="song.title"
-                    :src="convertToHttps(song.cover)"
+                    :src="getCoverThumbUrl(song.cover)"
                     class="cover-image"
                     decoding="async"
                     loading="lazy"
@@ -353,6 +353,14 @@
                   >
                     {{ locale.cardCodeUsed }}
                   </span>
+                  <!-- 匿名投稿角标：仅投稿人本人可见（其他人看到的投稿人已是“匿名投稿”） -->
+                  <span
+                    v-if="isMySong(song) && song.submissionAnonymous === true"
+                    class="anonymous-tag"
+                    :title="locale.anonymousTagHint"
+                  >
+                    {{ locale.anonymousTag }}
+                  </span>
                   <button
                     v-if="song.hasSubmissionNote && song.submissionNote"
                     class="submission-note-trigger"
@@ -365,19 +373,21 @@
                 <div class="song-meta">
                   <span
                     :title="
-                      (song.collaborators && song.collaborators.length
-                        ? locale.mainRequesterTitle
-                        : locale.requesterTitle) +
-                      song.requester +
-                      (song.collaborators && song.collaborators.length
-                        ? '\n' + locale.collaboratorsTitle +
-                          song.collaborators.map((c) => c.displayName || c.name).join(', ')
-                        : '')
+                      song.isAnonymous
+                        ? locale.requesterTitle + locale.anonymousRequester
+                        : (song.collaborators && song.collaborators.length
+                            ? locale.mainRequesterTitle
+                            : locale.requesterTitle) +
+                          song.requester +
+                          (song.collaborators && song.collaborators.length
+                            ? '\n' + locale.collaboratorsTitle +
+                              song.collaborators.map((c) => c.displayName || c.name).join(', ')
+                            : '')
                     "
                     class="requester"
                   >
-                    {{ locale.requester }}{{ song.requester }}
-                    <span v-if="song.collaborators && song.collaborators.length > 0">
+                    {{ locale.requester }}{{ song.isAnonymous ? locale.anonymousRequester : song.requester }}
+                    <span v-if="!song.isAnonymous && song.collaborators && song.collaborators.length > 0">
                       & {{ song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
                     </span>
                   </span>
@@ -507,7 +517,7 @@ import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { useLocale } from '~/utils/locale'
@@ -2367,6 +2377,21 @@ const vRipple = {
   border-radius: 4px;
   font-size: 0.7rem;
   color: var(--card-code-text);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* 匿名投稿角标（仅投稿人本人可见） */
+.anonymous-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  background: var(--warning-15);
+  border: 1px solid var(--warning-20);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: var(--color-warning-light);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;

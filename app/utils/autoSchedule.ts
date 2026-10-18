@@ -26,6 +26,8 @@ export interface AutoScheduleCandidate {
   requester?: string | null
   cover?: string | null
   createdAt?: string | null
+  /** 热度（点赞/投票数），用于「热度加权随机」排期 */
+  voteCount?: number | null
   // UI 标记：是否为固定歌曲
   isFixed?: boolean
 }
@@ -140,6 +142,76 @@ function prepareScheduleInput(
   return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult }
 }
 
+/** 默认热度权重：0.8 = 排序权重里 80% 来自热度、20% 来自随机（站长实测对比后定稿：80% 偏向明显又不失随机） */
+export const DEFAULT_HEAT_WEIGHT = 0.8
+
+/**
+ * 热度加权随机排序。
+ *
+ * 做法：把票数做**秩归一化**（最低票=0，最高票=1，同票同权），再对每首歌取
+ *   score = 热度权重 × 热度 + (1 - 热度权重) × 随机数
+ * 按 score 降序排列。这样高热度歌曲**更容易排在前面**，但相邻名次之间会经常互换，
+ * 不会退化成"严格按热度排序"；权重调低则更随机，调高则更贴近票数排序。
+ */
+export function heatWeightedOrder<T extends AutoScheduleCandidate>(
+  list: T[],
+  heatWeight: number = DEFAULT_HEAT_WEIGHT
+): T[] {
+  const n = list.length
+  if (n <= 1) return [...list]
+
+  const weight = Math.min(1, Math.max(0, Number.isFinite(heatWeight) ? heatWeight : DEFAULT_HEAT_WEIGHT))
+
+  const heat = buildHeatMap(list)
+
+  return [...list]
+    .map((item) => ({
+      item,
+      score: weight * (heat.get(item.id) ?? 0.5) + (1 - weight) * Math.random()
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.item)
+}
+
+/** 秩归一化热度表：最低票=0，最高票=1，同票同权（避免个别超高票通吃） */
+export function buildHeatMap(list: AutoScheduleCandidate[]): Map<number, number> {
+  const map = new Map<number, number>()
+  const n = list.length
+  if (n === 0) return map
+  if (n === 1) {
+    map.set(list[0].id, 0.5)
+    return map
+  }
+  const sorted = [...list].sort(
+    (a, b) => (Number(a.voteCount) || 0) - (Number(b.voteCount) || 0)
+  )
+  let i = 0
+  while (i < n) {
+    const votes = Number(sorted[i].voteCount) || 0
+    let j = i
+    while (j + 1 < n && (Number(sorted[j + 1].voteCount) || 0) === votes) j++
+    const value = ((i + j) / 2) / (n - 1)
+    for (let k = i; k <= j; k++) map.set(sorted[k].id, value)
+    i = j + 1
+  }
+  return map
+}
+
+/** 普通随机打乱（作为兜底方案，保证方案之间有差异） */
+function shuffleList<T>(list: T[]): T[] {
+  const arr = [...list]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+/** 方案热度分：选中歌曲热度之和（用于同样优秀方案之间"更热"的优先） */
+function planHeatScore(songs: AutoScheduleCandidate[], heatMap: Map<number, number>): number {
+  return songs.reduce((sum, song) => sum + (heatMap.get(song.id) ?? 0), 0)
+}
+
 export function autoSchedule(
   direction: AutoScheduleDirection,
   targetMinutes: number,
@@ -147,11 +219,14 @@ export function autoSchedule(
   preSelected: AutoScheduleCandidate[] = [],
   plansCount: number = 1,
   targetSongCount?: number | null,
-  targetRequesterCount?: number | null
+  targetRequesterCount?: number | null,
+  heatWeight: number = DEFAULT_HEAT_WEIGHT
 ): AutoScheduleResult | AutoScheduleResult[] {
   const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
   if (input.earlyReturn !== undefined) return input.earlyReturn
   const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
+  // 热度秩归一化表（用于生成顺序与方案比较）
+  const heatMap = buildHeatMap(availableCandidates)
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
   const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
   const compareCtx: ResultCompareContext = {
@@ -165,7 +240,6 @@ export function autoSchedule(
     : Math.max(0, normalizedTargetSongCount - preSelected.length)
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
-  const songMap = new Map(availableCandidates.map((s) => [s.id, s]))
 
   const runGreedy = (sorted: AutoScheduleCandidate[], dir: 'under' | 'over') => {
     const result: AutoScheduleCandidate[] = []
@@ -289,22 +363,26 @@ export function autoSchedule(
     addUnique(runGreedy(sortedByDuration, direction))
   }
 
-  // 随机路径：多次 shuffle 生成不同方案
+  // 随机路径：每次用「热度加权随机」生成不同方案
+  //   score = 热度权重 × 热度 + (1-热度权重) × 随机 → 高热度更容易靠前，但相邻名次经常互换
   // 生成比 plansCount 多一些以保留筛选空间
   const maxIter = Math.max(50, plansCount * 5)
   for (let i = 0; i < maxIter && plans.length < plansCount * 3; i++) {
-    const shuffled = availableCandidates.map((s) => s.id)
-    for (let j = shuffled.length - 1; j > 0; j--) {
-      const k = Math.floor(Math.random() * (j + 1))
-      ;[shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]]
-    }
-    const shuffledSorted = shuffled.map((id) => songMap.get(id)).filter(Boolean)
+    // 第一个随机方案用纯随机兜底，保证方案之间有足够差异；其余按热度加权
+    const ordered =
+      i === 0
+        ? shuffleList(availableCandidates)
+        : heatWeightedOrder(availableCandidates, heatWeight)
     const dir = direction === 'middle' ? (i % 2 === 0 ? 'under' : 'over') : direction
-    addUnique(runGreedy(diversifyOrder(shuffledSorted, normalizedTargetRequesterCount), dir))
+    addUnique(runGreedy(diversifyOrder(ordered, normalizedTargetRequesterCount), dir))
   }
 
-  // 按质量排序：设置期望首数时先比较首数偏差，再比较时长偏差
-  plans.sort((a, b) => compareResults(a, b, compareCtx))
+  // 按质量排序：首数偏差 → 投稿人偏差 → 时长偏差 → 歌曲数 → 热度（同等优秀时更热的优先）
+  plans.sort((a, b) => {
+    const base = compareResults(a, b, compareCtx)
+    if (base !== 0) return base
+    return planHeatScore(b.songs, heatMap) - planHeatScore(a.songs, heatMap)
+  })
 
   // 合并固定歌曲并截取
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
@@ -334,13 +412,20 @@ export function autoScheduleExhaustive(
   preSelected: AutoScheduleCandidate[] = [],
   plansCount: number = 1,
   targetSongCount?: number | null,
-  targetRequesterCount?: number | null
+  targetRequesterCount?: number | null,
+  heatWeight: number = DEFAULT_HEAT_WEIGHT
 ): AutoScheduleResult | AutoScheduleResult[] {
   const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
   if (input.earlyReturn !== undefined) return input.earlyReturn
   const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
   const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
+  const heatMap = buildHeatMap(availableCandidates)
+  // 热度权重：0 时穷举完全不参考热度（与滑杆 0% = 不看热度 一致）；>0 时热度仅作同分方案的末位比较
+  const normalizedHeatWeight = Math.min(1, Math.max(0, Number.isFinite(heatWeight) ? heatWeight : DEFAULT_HEAT_WEIGHT))
+  const heatEnabled = normalizedHeatWeight > 0
+  const heatTiebreak = (a: AutoScheduleResult, b: AutoScheduleResult): number =>
+    heatEnabled ? planHeatScore(b.songs, heatMap) - planHeatScore(a.songs, heatMap) : 0
   const compareCtx: ResultCompareContext = {
     targetSongCount: normalizedTargetSongCount,
     fixedCount: preSelected.length,
@@ -352,9 +437,13 @@ export function autoScheduleExhaustive(
   type DurationCandidate = Omit<AutoScheduleCandidate, 'durationSeconds'> & { durationSeconds: number }
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
-  // 按时长降序排列，大歌曲优先，利于剪枝；设置投稿人目标时分散排序
+  // 按时长降序排列，大歌曲优先，利于剪枝；启用热度时同长度热度高者在前；设置投稿人目标时分散排序
   const sorted = diversifyOrder(
-    [...(availableCandidates as DurationCandidate[])].sort((a, b) => b.durationSeconds - a.durationSeconds),
+    [...(availableCandidates as DurationCandidate[])].sort(
+      (a, b) =>
+        b.durationSeconds - a.durationSeconds ||
+        (heatEnabled ? (b.voteCount || 0) - (a.voteCount || 0) : 0)
+    ),
     normalizedTargetRequesterCount
   )
   const n = sorted.length
@@ -387,7 +476,10 @@ export function autoScheduleExhaustive(
     if (seenKeys.has(key)) return
     seenKeys.add(key)
     solutions.push({ songs: [...currentSongs], totalDuration: total, diff, absDiff })
-    solutions.sort((a, b) => compareResults(a, b, compareCtx))
+    solutions.sort((a, b) => {
+      const base = compareResults(a, b, compareCtx)
+      return base !== 0 ? base : heatTiebreak(a, b)
+    })
     if (solutions.length > maxSolutions) {
       solutions.splice(maxSolutions)
       worstAbs = solutions[solutions.length - 1].absDiff
@@ -451,7 +543,10 @@ export function autoScheduleExhaustive(
 
   dfs(0, 0)
 
-  solutions.sort((a, b) => compareResults(a, b, compareCtx))
+  solutions.sort((a, b) => {
+    const base = compareResults(a, b, compareCtx)
+    return base !== 0 ? base : heatTiebreak(a, b)
+  })
 
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
   const finalPlans = solutions.slice(0, plansCount).map((p) => ({
@@ -477,6 +572,8 @@ export function poolCandidateFromItem(item: any): AutoScheduleCandidate {
     musicPlatform: item.musicPlatform,
     requester: item.requester,
     cover: item.cover,
-    createdAt: item.createdAt
+    createdAt: item.createdAt,
+    // 热度：备选池条目带 voteCount；缺失按 0 处理
+    voteCount: Number.isFinite(Number(item.voteCount)) ? Number(item.voteCount) : 0
   }
 }

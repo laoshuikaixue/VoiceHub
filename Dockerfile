@@ -64,6 +64,8 @@ RUN set -eux; \
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/app/drizzle ./app/drizzle
+# db.ts 运行时依赖该模块（tsx 直跑源码），缺失会导致 migrate/create-admin 报 ERR_MODULE_NOT_FOUND
+COPY --from=builder /app/server/utils/serverless-runtime.ts ./server/utils/
 COPY --from=builder /app/scripts ./scripts
 
 # 环境变量配置

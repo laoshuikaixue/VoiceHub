@@ -45,7 +45,7 @@
           >
             <template v-if="activeSong && activeSong.cover && !coverError">
               <img
-                :src="convertToHttps(activeSong.cover)"
+                :src="getCoverThumbUrl(activeSong.cover)"
                 alt="封面"
                 class="player-cover"
                 referrerpolicy="no-referrer"
@@ -315,12 +315,13 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { usePlayerLayout } from '~/composables/usePlayerLayout'
 import { useMediaSession } from '~/composables/useMediaSession'
+import { useWakeLock } from '~/composables/useWakeLock'
 import {
   PLAYER_LAYOUT_MARGIN,
   PLAYER_LAYOUT_MARGIN_MOBILE,
   clampPlayerPosition
 } from '~/utils/playerLayout'
-import { getBilibiliUrl } from '~/utils/url'
+import { getBilibiliUrl, getCoverThumbUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
@@ -365,6 +366,7 @@ const sync = useAudioPlayerSync()
 const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
+const wakeLock = useWakeLock()
 // 播放器布局：固定底部 / 自由拖拽（偏好存本浏览器）
 const {
   position: layoutPosition,
@@ -662,9 +664,14 @@ const trySwitchPlaybackSource = async () => {
       const element = audioPlayer.value
       // 起播前清掉上一轮的错误态：control.play() 见到 hasError 会直接返回 false，表现为换源成功却停在暂停
       control.hasError.value = false
-      element.addEventListener('loadedmetadata', () => {
-        if (Number.isFinite(element.duration) && resumePosition < element.duration) element.currentTime = resumePosition
-      }, { once: true })
+      element.addEventListener(
+        'loadedmetadata',
+        () => {
+          if (Number.isFinite(element.duration) && resumePosition < element.duration)
+            element.currentTime = resumePosition
+        },
+        { once: true }
+      )
       // 不调用 load()：song.musicUrl 变化会通过 :src 绑定自动走加载算法，
       // 额外一次 load() 会多排一轮 pause/emptied 事件，可能把刚起的播放又改回暂停
       started = await control.play()
@@ -911,6 +918,15 @@ const handlePause = () => {
   })
 }
 
+// 播放时申请屏幕常亮，暂停/停止/切歌结束时释放
+watch(
+  () => control.isPlaying.value,
+  (playing) => {
+    if (playing) void wakeLock.requestLock()
+    else void wakeLock.releaseLock()
+  }
+)
+
 const handleDurationChange = async () => {
   if (!audioPlayer.value || isFallbackHandling.value) return
 
@@ -1055,7 +1071,10 @@ const handleError = async (error) => {
   // 登记后换源重试时解析链路会跳过它，避免反复拿到同一条坏链
   const failedSrc = audioEl.currentSrc || audioEl.src
   const mediaErrorCode = audioEl.error?.code
-  if (mediaErrorCode === MediaError.MEDIA_ERR_DECODE || mediaErrorCode === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+  if (
+    mediaErrorCode === MediaError.MEDIA_ERR_DECODE ||
+    mediaErrorCode === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+  ) {
     markPlaybackUrlInvalid(failedSrc)
   }
 
@@ -2124,12 +2143,6 @@ const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-// 转换为 HTTPS
-const convertToHttps = (url) => {
-  if (!url) return ''
-  return url.replace(/^http:/, 'https:')
 }
 
 // 处理图片错误

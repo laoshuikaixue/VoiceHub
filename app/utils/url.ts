@@ -15,6 +15,9 @@ export const convertToHttps = (url: string | null | undefined): string => {
 // 与 QQ 音乐封面缩略图（T002R300x300M000）取同一口径
 const COVER_SIZE = 300
 
+// 歌词页/年度回顾大图：渲染最大 380px，按 2x 屏留余量
+const LARGE_COVER_SIZE = 700
+
 // 网易云图片 CDN：param=边长y边长 做正方形裁切缩放
 const NETEASE_IMAGE_HOSTS = ['music.126.net']
 
@@ -62,6 +65,21 @@ export const getSizedCoverUrl = (url: string | null | undefined, size = COVER_SI
     return url
   }
 }
+
+/**
+ * 缩略图/打印用封面地址：升 https 后按小尺寸收敛
+ *
+ * 列表封面最大渲染 60px，打印封面 40px（约 125px@300dpi），300px 源图足够清晰。
+ * 不支持尺寸参数的来源原样返回。
+ */
+export const getCoverThumbUrl = (url: string | null | undefined): string =>
+  getSizedCoverUrl(convertToHttps(url), COVER_SIZE)
+
+/**
+ * 大图展示用封面地址（歌词页、年度回顾）
+ */
+export const getCoverLargeUrl = (url: string | null | undefined): string =>
+  getSizedCoverUrl(convertToHttps(url), LARGE_COVER_SIZE)
 
 /**
  * 验证URL格式是否有效

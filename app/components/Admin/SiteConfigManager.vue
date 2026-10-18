@@ -679,8 +679,7 @@
                       </button>
                     </div>
                     <div class="space-y-2">
-                      <div class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
-                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaEndpoint }}</span>
+                      <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
                         <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaHost }}</span>
                         <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaSceneId }}</span>
                         <span aria-hidden="true" />
@@ -688,17 +687,8 @@
                       <div
                         v-for="(scene, index) in formData.esaCaptchaScenes"
                         :key="index"
-                        class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
+                        class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
                       >
-                        <div class="min-w-0">
-                          <CustomSelect
-                            v-model="scene.endpoint"
-                            :options="esaEndpointOptions"
-                            :disabled="!formData.captchaEnabled"
-                          />
-                          <!-- 该行路径可直接粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
-                          <code class="block mt-1 truncate text-[10px] text-text-tertiary">{{ esaEndpointPath(scene.endpoint) }}</code>
-                        </div>
                         <input
                           v-model="scene.host"
                           type="text"
@@ -723,8 +713,13 @@
                         </button>
                       </div>
                     </div>
+                    <!-- 域名路径供管理员粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
                     <p class="text-[10px] text-text-tertiary leading-relaxed mt-2">
                       {{ locale.esaCaptchaScenesDesc }}
+                    </p>
+                    <code class="block mt-1 text-[10px] text-text-tertiary">{{ ESA_CAPTCHA_VERIFY_PATH }}</code>
+                    <p v-if="esaCaptchaStaleDetected" class="text-[10px] text-warning leading-relaxed mt-2">
+                      {{ locale.esaCaptchaStaleNotice }}
                     </p>
                   </div>
                   <div>
@@ -755,6 +750,53 @@
                   <p class="text-[10px] text-text-tertiary leading-relaxed">
                     {{ locale.esaCaptchaDesc }}
                   </p>
+
+                  <!-- ESA 连通性测试：走一次真实人机验证，确认规则、公共接口与凭证签发是否可用 -->
+                  <div class="pt-1">
+                    <label class="block text-xs font-bold text-text-tertiary">{{ locale.esaCaptchaTest }}</label>
+                    <p class="text-[10px] text-text-tertiary leading-relaxed mt-1">{{ locale.esaCaptchaTestDesc }}</p>
+                    <p v-if="esaTestUnsaved" class="text-[10px] text-warning leading-relaxed mt-1">{{ locale.esaCaptchaTestUnsaved }}</p>
+
+                    <div
+                      v-if="!esaTestReady"
+                      class="mt-2 flex items-start gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2"
+                    >
+                      <AlertCircle :size="14" class="mt-0.5 shrink-0 text-text-tertiary" />
+                      <span class="text-[10px] text-text-tertiary leading-relaxed">{{ locale.esaCaptchaTestNotReady }}</span>
+                    </div>
+
+                    <template v-else>
+                      <button
+                        id="esa-test-button"
+                        type="button"
+                        class="mt-2 inline-flex items-center gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary transition-all hover:border-primary"
+                        @click="onEsaTestButtonClick"
+                      >
+                        <Shield :size="14" /> {{ locale.esaCaptchaTestButton }}
+                      </button>
+                      <EsaCaptchaWidget
+                        :key="esaTestSceneId"
+                        ref="esaTestRef"
+                        v-model="esaTestVerifyParam"
+                        :scene-id="esaTestSceneId"
+                        button-selector="#esa-test-button"
+                        @verified="runEsaCaptchaTest"
+                        @failed="handleEsaTestFailed"
+                        @load-error="handleEsaTestLoadError"
+                      />
+                    </template>
+
+                    <div
+                      v-if="esaTestState !== 'idle'"
+                      class="mt-2 flex items-start gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2"
+                      :class="esaTestStateClass"
+                    >
+                      <AppSpinner v-if="esaTestState === 'waiting' || esaTestState === 'testing'" :size="14" class="mt-0.5 shrink-0" />
+                      <CircleCheck v-else-if="esaTestState === 'success'" :size="14" class="mt-0.5 shrink-0" />
+                      <AlertCircle v-else :size="14" class="mt-0.5 shrink-0" />
+                      <span class="text-[10px] leading-relaxed">{{ esaTestDetail }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -861,6 +903,19 @@
             <input
               id="hide-students"
               v-model="formData.hideStudentInfo"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.allowAnonymousSubmission }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowAnonymousSubmissionDesc }}</p>
+            </div>
+            <input
+              id="allow-anonymous-submission"
+              v-model="formData.allowAnonymousSubmission"
               type="checkbox"
               class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
@@ -986,7 +1041,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   Globe,
   ImageIcon,
@@ -1006,19 +1061,27 @@ import {
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import EsaCaptchaWidget from '~/components/Auth/EsaCaptchaWidget.vue'
 import { useToast } from '~/composables/useToast'
 import { joinThemeLogoUrl, splitThemeLogoUrl, useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
-import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_ENDPOINT_PATHS, ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
+import {
+  ESA_CAPTCHA_ANY_HOST,
+  ESA_CAPTCHA_VERIFY_PATH,
+  ESA_CAPTCHA_VERIFY_HEADER,
+  getEsaCaptchaRejectCode,
+  parseEsaCaptchaScenes,
+  resolveEsaCaptchaSceneId
+} from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
-const { refreshSiteConfig } = useSiteConfig()
+const { refreshSiteConfig, captchaEnabled, captchaProvider, esaCaptchaScenes } = useSiteConfig()
 const { siteConfig: locale, theme: themeLocale } = useLocale()
 const { isSuperAdmin } = usePermissions()
 const { localize: localizeServerError } = useServerErrors()
@@ -1131,30 +1194,33 @@ const parseLegalDocuments = (value) => {
   }
 }
 
-// ESA 场景 ID 规则：一条 ESA 规则只覆盖一个接口 + 一个域名，登录与注册需分别登记
-const createEsaCaptchaScene = (endpoint = 'login') => ({
+// ESA 场景统一绑定公共验证接口 /api/captcha/verify，按域名成组配置（endpoint 固定 common）
+const createEsaCaptchaScene = (endpoint = 'common') => ({
   endpoint,
   host: ESA_CAPTCHA_ANY_HOST,
   sceneId: ''
 })
+// 旧版按接口（login/register）存储的场景在新口径下已失效，需提示管理员重建
+const esaCaptchaStaleDetected = ref(false)
 const parseEsaScenes = (value) => {
-  const scenes = parseEsaCaptchaScenes(value)
+  let rawArr = []
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    if (Array.isArray(parsed)) rawArr = parsed
+  } catch {
+    rawArr = []
+  }
+  const scenes = parseEsaCaptchaScenes(value).map((scene) => ({ ...scene, endpoint: 'common' }))
+  esaCaptchaStaleDetected.value = rawArr.some(
+    (item) => item && item.endpoint && item.endpoint !== 'common' && item.sceneId
+  )
   return scenes.length > 0 ? scenes : [createEsaCaptchaScene()]
 }
-const esaEndpointOptions = computed(() => {
-  const labels = {
-    login: locale.value?.esaCaptchaEndpointLogin,
-    register: locale.value?.esaCaptchaEndpointRegister
-  }
-  return ESA_CAPTCHA_ENDPOINTS.map((endpoint) => ({ value: endpoint, label: labels[endpoint] || endpoint }))
-})
 const esaSceneInputClass =
   'w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50'
-// 接口对应的服务端路径，与 ESA 控制台「需验签的接口」逐字对应
-const esaEndpointPath = (endpoint) => ESA_CAPTCHA_ENDPOINT_PATHS[endpoint] || ''
 
 const addEsaCaptchaScene = () => {
-  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene('register'))
+  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene())
 }
 
 const removeEsaCaptchaScene = (index) => {
@@ -1164,6 +1230,133 @@ const removeEsaCaptchaScene = (index) => {
   }
   formData.value.esaCaptchaScenes.splice(index, 1)
 }
+
+// ESA 连通性测试：复用登录页的验证码组件走一次真实人机验证，再调用公共接口换取凭证，
+// 以此确认「已保存并生效」的 ESA 配置、公共验证接口与凭证签发链路是否可用（测试值来自全局配置而非表单草稿）
+const esaTestRef = ref(null)
+const esaTestVerifyParam = ref('')
+const esaTestState = ref('idle')
+const esaTestDetail = ref('')
+
+// 场景按当前访问域名从已保存配置解析，与登录页判据完全一致
+const esaTestSceneId = computed(() =>
+  resolveEsaCaptchaSceneId(
+    esaCaptchaScenes.value,
+    'common',
+    import.meta.client ? window.location.hostname : ''
+  )
+)
+const esaTestReady = computed(
+  () => captchaEnabled.value && captchaProvider.value === 'esa' && !!esaTestSceneId.value
+)
+// 表单里改了 ESA 相关项但尚未保存时提示：此刻点按钮测试的仍是上一次保存的配置
+const esaTestUnsaved = computed(() => {
+  const saved = originalData.value
+  if (!saved || !saved.esaCaptchaScenes) return false
+  return (
+    saved.captchaEnabled !== formData.value.captchaEnabled ||
+    saved.captchaProvider !== formData.value.captchaProvider ||
+    saved.esaCaptchaPrefix !== formData.value.esaCaptchaPrefix ||
+    saved.esaCaptchaRegion !== formData.value.esaCaptchaRegion ||
+    JSON.stringify(saved.esaCaptchaScenes) !== JSON.stringify(formData.value.esaCaptchaScenes)
+  )
+})
+const esaTestStateClass = computed(
+  () =>
+    (
+      {
+        success: 'text-success',
+        failed: 'text-error',
+        waiting: 'text-text-tertiary',
+        testing: 'text-text-tertiary',
+        notRequired: 'text-text-tertiary'
+      }
+    )[esaTestState.value] || 'text-text-tertiary'
+)
+
+// 验签参数一次性有效，测试结束后作废，便于再次测试
+const resetEsaTest = () => {
+  esaTestRef.value?.reset?.()
+  esaTestVerifyParam.value = ''
+}
+
+// 同一次测试尝试内一旦 SDK 报错即置位，阻止随后可能到来的 verified 把失败翻转为通过
+let esaTestFailedThisAttempt = false
+
+// 点击测试按钮进入等待态：必须先在弹窗中真正完成人机验证，验证成功回调后才判定通过
+const onEsaTestButtonClick = () => {
+  if (!esaTestReady.value) return
+  esaTestFailedThisAttempt = false
+  esaTestState.value = 'waiting'
+  esaTestDetail.value =
+    locale.value?.esaCaptchaTestWaiting || '请在弹出的人机验证中完成验证，成功后才会判定通过…'
+}
+
+const runEsaCaptchaTest = async (param) => {
+  // 只接受「点击后等待验证」状态下 SDK 回调；未经点击或本次尝试已报错时忽略，杜绝无交互即判通过
+  if (esaTestState.value !== 'waiting' || esaTestFailedThisAttempt) return
+  // 必须拿到 SDK 产出的一次性验签参数，空参数说明验证并未真正完成
+  if (!param) {
+    esaTestState.value = 'failed'
+    esaTestDetail.value =
+      locale.value?.esaCaptchaTestNoParam || '未获取到验签参数，人机验证并未真正完成，请重试'
+    return
+  }
+  esaTestState.value = 'testing'
+  esaTestDetail.value = locale.value?.esaCaptchaTestTesting || '验证中，正在签发凭证…'
+  try {
+    const res = await $fetch('/api/captcha/verify', {
+      method: 'POST',
+      headers: { [ESA_CAPTCHA_VERIFY_HEADER]: param },
+      body: { purpose: 'login' }
+    })
+    // 本次尝试已被 SDK 报错中断时不写回成功，保持失败结论
+    if (esaTestFailedThisAttempt) return
+    if (res?.required && res?.passToken) {
+      esaTestState.value = 'success'
+      esaTestDetail.value =
+        locale.value?.esaCaptchaTestSuccess || '人机验证通过，公共验证接口可用，凭证签发正常'
+    } else {
+      esaTestState.value = 'notRequired'
+      esaTestDetail.value =
+        locale.value?.esaCaptchaTestNotRequired ||
+        '当前配置未触发人机验证（未启用、非 ESA，或本域名无匹配场景）'
+    }
+  } catch (err) {
+    if (esaTestFailedThisAttempt) return
+    // 被 ESA 边缘拦截时按响应头原因码提示，否则本地化服务端错误
+    const code = getEsaCaptchaRejectCode(err)
+    esaTestState.value = 'failed'
+    esaTestDetail.value = code
+      ? `${locale.value?.esaCaptchaTestRejected || '请求被 ESA 边缘拦截，原因码：'}${code}`
+      : localizeServerError(err, locale.value?.esaCaptchaTestFailed || '测试未通过，请检查配置后重试')
+  } finally {
+    resetEsaTest()
+  }
+}
+
+const handleEsaTestFailed = () => {
+  // 已得出成功/结论后忽略迟到的失败回调，避免闪烁；等待或验证进行中立即判失败
+  if (esaTestState.value === 'success' || esaTestState.value === 'notRequired') return
+  esaTestFailedThisAttempt = true
+  esaTestState.value = 'failed'
+  esaTestDetail.value = locale.value?.esaCaptchaTestVerifyFailed || '人机验证未通过，请重新完成验证'
+}
+
+const handleEsaTestLoadError = () => {
+  if (esaTestState.value === 'success' || esaTestState.value === 'notRequired') return
+  esaTestFailedThisAttempt = true
+  esaTestState.value = 'failed'
+  esaTestDetail.value =
+    locale.value?.esaCaptchaTestLoadFailed || '人机验证组件加载失败，请检查身份标与区域后刷新重试'
+}
+
+// 场景或可用性变化时清空上一次结论，避免残留的「通过」误导
+watch([esaTestSceneId, esaTestReady], () => {
+  esaTestState.value = 'idle'
+  esaTestDetail.value = ''
+  esaTestFailedThisAttempt = false
+})
 
 const formData = ref({
   siteTitle: '',
@@ -1204,6 +1397,7 @@ const formData = ref({
   scheduleDaysAfter: 1,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  allowAnonymousSubmission: false,
   forcePasswordChangeOnFirstLogin: false,
   telemetryEnabled: true,
   captchaEnabled: false,
@@ -1371,6 +1565,7 @@ const loadConfig = async () => {
       scheduleDaysAfter: data.scheduleDaysAfter ?? 1,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      allowAnonymousSubmission: data.allowAnonymousSubmission === true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
       telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,

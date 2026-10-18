@@ -1,12 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition :name="isMobile ? 'mobile-flow' : 'modal-animation'">
-      <div
-        v-if="isVisible"
-        class="lyrics-modal-overlay"
-        tabindex="-1"
-        @click="handleOverlayClick"
-      >
+      <div v-if="isVisible" class="lyrics-modal-overlay" tabindex="-1" @click="handleOverlayClick">
         <div
           ref="fullscreenContainer"
           :class="{ leaving: isExiting }"
@@ -62,7 +57,7 @@
           >
             <img
               v-if="currentSong.cover"
-              :src="convertToHttps(currentSong.cover)"
+              :src="getCoverLargeUrl(currentSong.cover)"
               class="cover-image"
               referrerpolicy="no-referrer"
             />
@@ -93,7 +88,7 @@
                     <img
                       v-if="currentSong?.cover"
                       :alt="currentSong.title"
-                      :src="convertToHttps(currentSong.cover)"
+                      :src="getCoverLargeUrl(currentSong.cover)"
                       class="cover-image"
                       referrerpolicy="no-referrer"
                       @error="handleCoverError"
@@ -191,7 +186,9 @@
                   @click="activePanel = 'comments'"
                 >
                   <Icon name="message-circle" size="16" />
-                  <span>{{ locale.comments }} ({{ formatCompactCommentCount(commentsCount) }})</span>
+                  <span
+                    >{{ locale.comments }} ({{ formatCompactCommentCount(commentsCount) }})</span
+                  >
                 </button>
               </div>
 
@@ -206,11 +203,7 @@
               </div>
 
               <div v-show="activePanel === 'comments'" class="comments-display-area">
-                <SongComments
-                  ref="commentsRef"
-                  :song="currentSong"
-                  :visible="isVisible"
-                />
+                <SongComments ref="commentsRef" :song="currentSong" :visible="isVisible" />
               </div>
 
               <!-- 歌词设置工具栏 -->
@@ -265,6 +258,39 @@
                       </div>
                       <template v-if="lyricSettings.useAMLyrics.value">
                         <div class="setting-divider" />
+                        <div class="setting-item switch">
+                          <span class="label">{{ locale.amllSubFontSizeFollow }}</span>
+                          <input
+                            v-model="lyricSettings.amllSubFontSizeFollow.value"
+                            type="checkbox"
+                          />
+                        </div>
+                        <div v-if="!lyricSettings.amllSubFontSizeFollow.value" class="setting-item">
+                          <span class="label">{{ locale.amllSubFontSize }}</span>
+                          <div class="control">
+                            <button
+                              @click="
+                                lyricSettings.amllSubFontSize.value = Math.max(
+                                  12,
+                                  lyricSettings.amllSubFontSize.value - 2
+                                )
+                              "
+                            >
+                              -
+                            </button>
+                            <span>{{ lyricSettings.amllSubFontSize.value }}</span>
+                            <button
+                              @click="
+                                lyricSettings.amllSubFontSize.value = Math.min(
+                                  48,
+                                  lyricSettings.amllSubFontSize.value + 2
+                                )
+                              "
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                         <div class="setting-item switch">
                           <span class="label">{{ locale.amllNormalizeSpaces }}</span>
                           <input
@@ -391,7 +417,7 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
-import { convertToHttps, getSizedCoverUrl } from '~/utils/url'
+import { convertToHttps, getCoverLargeUrl, getSizedCoverUrl } from '~/utils/url'
 import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'
@@ -967,7 +993,8 @@ const cyclePlayMode = () => {
   const current = audioPlayerControl.playMode.value
   if (current === 'order') {
     audioPlayerControl.setPlayMode('loopOne')
-    if (window.$showNotification) window.$showNotification(locale.value.notifications.loopOne, 'info')
+    if (window.$showNotification)
+      window.$showNotification(locale.value.notifications.loopOne, 'info')
   } else if (current === 'loopOne') {
     audioPlayerControl.setPlayMode('off')
     if (window.$showNotification) window.$showNotification(locale.value.notifications.off, 'info')
@@ -1420,7 +1447,11 @@ onUnmounted(() => {
   background:
     radial-gradient(circle at 30% 30%, var(--lyrics-modal-bg-accent-blue), transparent 34%),
     radial-gradient(circle at 70% 40%, var(--lyrics-modal-bg-accent-pink), transparent 32%),
-    linear-gradient(135deg, var(--lyrics-modal-bg-base-start) 0%, var(--lyrics-modal-bg-base-end) 100%);
+    linear-gradient(
+      135deg,
+      var(--lyrics-modal-bg-base-start) 0%,
+      var(--lyrics-modal-bg-base-end) 100%
+    );
   background-size: 180% 180%;
   transition: opacity 0.5s ease;
 }

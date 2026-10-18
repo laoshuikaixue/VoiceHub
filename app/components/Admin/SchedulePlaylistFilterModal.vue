@@ -52,7 +52,7 @@
                   <div class="w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary-50 border border-border-tertiary-50 flex-shrink-0 relative">
                     <img 
                       v-if="playlist.coverImgUrl" 
-                      :src="convertToHttps(playlist.coverImgUrl)" 
+                      :src="getCoverThumbUrl(playlist.coverImgUrl)"
                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       referrerpolicy="no-referrer"
                       alt="" 
@@ -94,7 +94,7 @@
                     <div class="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded overflow-hidden bg-bg-tertiary border border-border-tertiary-50 flex items-center justify-center flex-shrink-0">
                       <img 
                         v-if="item.coverImgUrl" 
-                        :src="convertToHttps(item.coverImgUrl)" 
+                        :src="getCoverThumbUrl(item.coverImgUrl)"
                         class="w-full h-full object-cover"
                         referrerpolicy="no-referrer"
                         alt="" 
@@ -164,7 +164,7 @@
 import { computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from '@lucide/vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
-import { convertToHttps, getNeteaseCookie } from '~/utils/url'
+import { getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps<{

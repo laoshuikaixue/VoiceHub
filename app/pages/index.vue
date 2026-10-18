@@ -222,7 +222,7 @@
               <div class="full-width">
                 <SongsScheduleList
                   :error="error"
-                  :loading="loading"
+                  :loading="scheduleLoading"
                   :schedules="publicSchedules"
                   @semester-change="handleSemesterChange"
                 />
@@ -845,12 +845,13 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
-import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useSiteConfig, setSiteConfigData } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
 import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
-import { useTheme } from '~/composables/useTheme'
+import { applyThemeConfig, useTheme } from '~/composables/useTheme'
+import { useHomeBootstrap } from '~/composables/useHomeBootstrap'
 import { useThemeImage } from '~/composables/useThemeImage'
 import { useScrollMemory } from '~/composables/useScrollMemory'
 
@@ -871,8 +872,7 @@ const {
   description: siteDescription,
   guidelines: submissionGuidelines,
   icp: icpNumber,
-  schoolLogoHomeDisplayUrl,
-  initSiteConfig
+  schoolLogoHomeDisplayUrl
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
@@ -898,6 +898,10 @@ const userClassInfo = computed(() => {
 })
 
 const songs = useSongs()
+
+// 首页首屏数据 SSR 预取（站点配置/登录态/公共排期/歌曲总数），客户端仅后台刷新
+const { data: homeData, pending: homeDataPending, refresh: refreshHomeData } = useHomeBootstrap()
+const ssrPrimed = ref(false)
 // 立即初始化通知服务，避免时序问题
 const notificationsService = useNotifications()
 const unreadNotificationCount = ref(0)
@@ -926,8 +930,8 @@ const BOOT_PROGRESS = {
   FINALIZING: 88,
   COMPLETE: 100
 }
-const MIN_BOOT_TIME_MS = 720
-const BOOT_EXIT_DELAY_MS = 180
+const MIN_BOOT_TIME_MS = 300
+const BOOT_EXIT_DELAY_MS = 120
 const BOOT_SLOW_THRESHOLD_MS = 8000
 const showBootLoading = ref(true)
 const bootProgress = ref(BOOT_PROGRESS.INITIAL)
@@ -1458,6 +1462,68 @@ const updateSongCounts = async (semester = null) => {
   }
 }
 
+// 智能刷新定时器：依据通知设置的刷新间隔周期性静默刷新
+const setupRefreshInterval = () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
+
+  const intervalSeconds = notificationSettings.value.refreshInterval || 60
+  const intervalMs = intervalSeconds * 1000
+
+  console.log(`设置智能刷新间隔: ${intervalSeconds}秒`)
+
+  refreshInterval = setInterval(async () => {
+    try {
+      if (isClientAuthenticated.value) {
+        await Promise.allSettled([songs.fetchSongs(true), songs.fetchPublicSchedules(true), loadNotifications()])
+      } else {
+        await Promise.allSettled([songs.fetchPublicSchedules(true), songs.fetchSongCount()])
+      }
+
+      await updateSongCounts()
+    } catch (error) {
+      console.error('定时刷新失败:', error)
+    }
+  }, intervalMs)
+}
+
+// 将 SSR 预取数据灌入各组合式状态；配置缺失视为预取失败，交由客户端回退补拉
+const homeDataApplied = ref(false)
+const applyHomeData = () => {
+  const d = homeData.value
+  if (!d || !d.config || homeDataApplied.value) return
+  homeDataApplied.value = true
+
+  setSiteConfigData(d.config)
+  if (import.meta.client) {
+    try {
+      applyThemeConfig(
+        d.config.defaultTheme,
+        typeof d.config.enabledThemes === 'string' ? JSON.parse(d.config.enabledThemes) : d.config.enabledThemes
+      )
+    } catch {
+      applyThemeConfig('System', null)
+    }
+  }
+
+  if (d.user) {
+    auth.setAuthState(d.user)
+  }
+
+  const schedules = Array.isArray(d.schedules) ? d.schedules : []
+  songs.publicSchedules.value = schedules
+  songs.publicSongs.value = songs.extractSongsFromSchedules(schedules)
+  songs.songCount.value = d.count || 0
+  if (isClientAuthenticated.value) {
+    hasInitializedAuthData.value = true
+  }
+  updateSongCounts()
+  ssrPrimed.value = true
+}
+
+watch(homeData, applyHomeData, { immediate: true })
+
 // 首页标题：根据加载阶段动态切换
 // 配置加载完成前使用环境配置的站点标题兜底，保证 SSR 输出真实站点名（SEO / 链接预览），
 // 并与 og:title 保持一致；加载完成后切换为数据库配置的站点标题
@@ -1479,7 +1545,7 @@ if (import.meta.client) {
   hasShownBootLoading.value = true
 }
 
-// 在组件挂载后初始化认证和歌曲（只会在客户端执行）
+// 在组件挂载后完成首屏与后台数据加载（只会在客户端执行）
 onMounted(async () => {
   const bootStartedAt = Date.now()
 
@@ -1487,6 +1553,48 @@ onMounted(async () => {
   const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
   if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
     activeTab.value = tabFromQuery
+  }
+
+  // 遮罩淡出：SSR 快开不做人工停留，直接靠淡出收场；否则首访走最短停留，非首访直接放行
+  const dismissOverlay = async () => {
+    if (bootSlowTimer) {
+      clearTimeout(bootSlowTimer)
+      bootSlowTimer = null
+    }
+
+    // SSR 已灌入首屏数据：内容即时可见，仅保留一次淡出过渡，不再硬等最短时间
+    if (ssrPrimed.value) {
+      setBootState({ progress: BOOT_PROGRESS.COMPLETE, message: locale.value.bootMessages.COMPLETE })
+      showBootLoading.value = false
+      return
+    }
+
+    if (isFirstVisit) {
+      await finishBootLoading(bootStartedAt)
+    } else {
+      showBootLoading.value = false
+    }
+  }
+
+  // 次要数据：个人歌曲、通知、通知设置、定时刷新，均在首屏淡出后后台执行
+  const loadSecondaryData = () => {
+    if (isClientAuthenticated.value) {
+      songs.fetchSongs(true).then(() => updateSongCounts())
+      loadNotifications()
+      fetchNotificationSettings()
+        .then(() => setupRefreshInterval())
+        .catch(() => setupRefreshInterval())
+    } else {
+      setupRefreshInterval()
+    }
+
+    if (songs.notification) {
+      watch(songs.notification, (newVal) => {
+        if (newVal.show) {
+          showNotification(newVal.message, newVal.type)
+        }
+      })
+    }
   }
 
   try {
@@ -1504,87 +1612,33 @@ onMounted(async () => {
       await waitForFirstPaint()
     }
 
-    setBootState({ progress: BOOT_PROGRESS.CONFIG, message: locale.value.bootMessages.CONFIG })
-    await initSiteConfig()
-
-    setBootState({ progress: BOOT_PROGRESS.AUTH, message: locale.value.bootMessages.AUTH })
-    const currentUser = await auth.initAuth()
-
-    setBootState({ progress: BOOT_PROGRESS.CONTENT, message: locale.value.bootMessages.CONTENT })
-    if (isClientAuthenticated.value) {
-      hasInitializedAuthData.value = true
-      // 歌曲列表后台预取，避免阻塞首页首屏
-      songs.fetchSongs(true).then(() => updateSongCounts())
-      await Promise.allSettled([
-        songs.fetchSongCount(),
-        songs.fetchPublicSchedules(),
-        loadNotifications(),
-        fetchNotificationSettings()
-      ])
-      await checkPasswordChangeRequired(currentUser)
-    } else {
-      hasInitializedAuthData.value = false
-      await Promise.allSettled([songs.fetchSongCount(), songs.fetchPublicSchedules()])
+    // 首屏数据：SSR 命中则直接使用；纯客户端导航等待初始请求完成；SSR 失败则并行补拉
+    if (!ssrPrimed.value) {
+      setBootState({ progress: BOOT_PROGRESS.CONTENT, message: locale.value.bootMessages.CONTENT })
+      if (homeDataPending.value) {
+        await until(homeDataPending).toBe(false)
+        applyHomeData()
+      }
+      if (!ssrPrimed.value) {
+        await refreshHomeData()
+        applyHomeData()
+      }
     }
 
     setBootState({ progress: BOOT_PROGRESS.FINALIZING, message: locale.value.bootMessages.FINALIZING })
     await updateSongCounts()
-
-    const setupRefreshInterval = () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval)
-      }
-
-      const intervalSeconds = notificationSettings.value.refreshInterval || 60
-      const intervalMs = intervalSeconds * 1000
-
-      console.log(`设置智能刷新间隔: ${intervalSeconds}秒`)
-
-      refreshInterval = setInterval(async () => {
-        try {
-          if (isClientAuthenticated.value) {
-            await Promise.allSettled([
-              songs.fetchSongs(true),
-              songs.fetchPublicSchedules(true),
-              loadNotifications()
-            ])
-          } else {
-            await Promise.allSettled([songs.fetchPublicSchedules(true), songs.fetchSongCount()])
-          }
-
-          await updateSongCounts()
-        } catch (error) {
-          console.error('??????:', error)
-        }
-      }, intervalMs)
-    }
-
-    setupRefreshInterval()
-
-    if (songs.notification) {
-      watch(songs.notification, (newVal) => {
-        if (newVal.show) {
-          showNotification(newVal.message, newVal.type)
-        }
-      })
-    }
   } catch (error) {
-    console.error('???????', error)
+    console.error('首页首屏数据加载失败:', error)
     if (isFirstVisit) {
       setBootState({ progress: BOOT_PROGRESS.FALLBACK, message: locale.value.bootMessages.FALLBACK })
     }
-    await Promise.allSettled([songs.fetchPublicSchedules(), songs.fetchSongCount()])
-    await updateSongCounts()
   } finally {
-    if (isFirstVisit) {
-      if (bootSlowTimer) {
-        clearTimeout(bootSlowTimer)
-        bootSlowTimer = null
-      }
-
-      await finishBootLoading(bootStartedAt)
-    }
+    await dismissOverlay()
   }
+
+  // 遮罩淡出后再拉取次要数据，避免拖慢首屏
+  checkPasswordChangeRequired(auth.user.value)
+  loadSecondaryData()
 })
 
 // 组件卸载时清除定时器
@@ -1618,6 +1672,12 @@ const filteredSongs = computed(() => {
 })
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
+// 排期列表加载态：客户端回首页时 useHomeBootstrap 正在拉取且尚无排期，先展示骨架屏而非空状态
+const scheduleLoading = computed(
+  () =>
+    loading.value ||
+    (publicSchedules.value.length === 0 && (homeDataPending.value || !homeDataApplied.value))
+)
 
 // 处理投稿请求
 const handleRequest = async (songData) => {
@@ -1947,8 +2007,8 @@ if (
 <style scoped>
 .home-boot-loader-leave-active {
   transition:
-    opacity 420ms ease,
-    filter 420ms ease;
+    opacity 240ms ease,
+    filter 240ms ease;
 }
 
 .home-boot-loader-leave-to {

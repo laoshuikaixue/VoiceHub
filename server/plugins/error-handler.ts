@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import { sanitizeAstrbotErrorDetail } from '~~/server/utils/astrbot-error-telemetry'
+import { recordRuntimeEvent } from '~~/server/utils/system-event-buffer'
 
 /**
  * 上报系统异常到已配置的群聊。
@@ -19,10 +20,21 @@ async function reportSystemError(source: string, detail: string) {
 }
 
 export default defineNitroPlugin(async (nitroApp) => {
+  // 请求处理链路上的 5xx 记入运行事件缓冲，供后台系统看板排查
+  nitroApp.hooks.hook('error', (error) => {
+    const detail = error as { statusCode?: number; statusMessage?: string; message?: string }
+    const statusCode = Number(detail?.statusCode) || 500
+    if (statusCode < 500) return
+    const summary = [detail?.statusMessage, detail?.message].filter(Boolean).join(': ')
+    recordRuntimeEvent('error', 'request', summary || `HTTP ${statusCode}`)
+  })
+
+  recordRuntimeEvent('info', 'boot', JSON.stringify({ code: 'serverStarted' }))
 
   // 全局未处理的Promise拒绝处理器
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+    recordRuntimeEvent('error', 'unhandledRejection', reason)
 
     // 拒绝值可以是任意原始值（如 Promise.reject('...')）：先规范化为字符串并无条件上报，
     // 再做数据库连接判断；只在 Error 分支上报会让原始值拒绝静默漏报。
@@ -73,6 +85,7 @@ export default defineNitroPlugin(async (nitroApp) => {
   // 全局未捕获异常处理器
   process.on('uncaughtException', async (error) => {
     console.error('Uncaught Exception:', error)
+    recordRuntimeEvent('error', 'uncaughtException', error)
     // 异常消息可能夹带连接串/令牌，入队前统一脱敏并限长。
     await reportSystemError('未捕获异常', sanitizeAstrbotErrorDetail(error))
 
@@ -91,11 +104,20 @@ export default defineNitroPlugin(async (nitroApp) => {
   })
 
   // 定期健康检查
+  let dbHealthy = true
   const healthCheckInterval = setInterval(async () => {
     try {
       await db.execute(sql`SELECT 1 as health_check`)
+      if (!dbHealthy) {
+        dbHealthy = true
+        recordRuntimeEvent('info', 'healthcheck', JSON.stringify({ code: 'dbHealthRecovered' }))
+      }
     } catch (error) {
       console.error('Health check failed:', error)
+      if (dbHealthy) {
+        dbHealthy = false
+        recordRuntimeEvent('error', 'healthcheck', error)
+      }
 
       // 尝试重新连接
       try {

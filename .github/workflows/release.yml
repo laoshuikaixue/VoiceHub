@@ -232,14 +232,26 @@ jobs:
           fi
           echo "数据库变更: $DB_CHANGED（对比 ${PREV_TAG:-无}）"
 
+          # 备份提示需紧跟 “What's Changed” 列表、位于 New Contributors / Full Changelog 之前，
+          # 故在生成的说明里定位首个后续小节，在其前插入 warning
+          INSERT_LINE=$(grep -n -m1 -E '^(## New Contributors|\*\*Full Changelog)' generated-notes.md | cut -d: -f1 || true)
+          if [ -n "$INSERT_LINE" ]; then
+            head -n $((INSERT_LINE - 1)) generated-notes.md > notes-prefix.md
+            tail -n +"$INSERT_LINE" generated-notes.md > notes-suffix.md
+          else
+            cp generated-notes.md notes-prefix.md
+            : > notes-suffix.md
+          fi
+
           {
-            cat generated-notes.md
-            echo
+            cat notes-prefix.md
             if [ "$DB_CHANGED" = true ]; then
               echo '> [!WARNING]  '
               echo '> 本版本涉及数据库更新，请务必提前备份数据。'
               echo
             fi
+            cat notes-suffix.md
+            echo
             echo '---'
             echo
             echo '## 附件 SHA-256'

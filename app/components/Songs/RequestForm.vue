@@ -93,7 +93,7 @@
           </div>
 
           <!-- 联合投稿人区域 -->
-          <div v-if="user && enableCollaborativeSubmission" class="collaborators-section">
+          <div v-if="user && enableCollaborativeSubmission && !submissionAnonymous" class="collaborators-section">
             <div class="section-label">{{ locale.collaborators }}</div>
             <div class="collaborators-list">
               <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
@@ -440,7 +440,7 @@
                       class="text-[12px] font-bold text-text-secondary"
                       >{{ locale.submissionNote }}</label
                     >
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                       <button
                         v-if="cardCodeEnabled"
                         :class="[
@@ -496,6 +496,34 @@
                           </svg>
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
+                      </label>
+                      <label
+                        v-if="allowAnonymousSubmission && user"
+                        class="custom-checkbox-wrapper"
+                      >
+                        <input
+                          v-model="submissionAnonymous"
+                          type="checkbox"
+                          class="custom-checkbox-input"
+                          :disabled="!siteConfigLoaded"
+                        />
+                        <span class="custom-checkbox-box">
+                          <svg
+                            class="custom-checkbox-icon"
+                            viewBox="0 0 12 10"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M1 5L4.5 8.5L11 1.5"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                        <span class="custom-checkbox-text">{{ locale.anonymousSubmission }}</span>
                       </label>
                     </div>
                   </div>
@@ -614,6 +642,38 @@
               </div>
             </div>
 
+            <!-- 匿名投稿：备注功能未开启时独立成行，由站点开关 allowAnonymousSubmission 控制 -->
+            <div
+              v-if="allowAnonymousSubmission && user && !enableSubmissionRemarks"
+              class="form-row anonymous-submission-row"
+            >
+              <label class="custom-checkbox-wrapper">
+                <input
+                  v-model="submissionAnonymous"
+                  type="checkbox"
+                  class="custom-checkbox-input"
+                  :disabled="!siteConfigLoaded"
+                />
+                <span class="custom-checkbox-box">
+                  <svg
+                    class="custom-checkbox-icon"
+                    viewBox="0 0 12 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1 5L4.5 8.5L11 1.5"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span class="custom-checkbox-text">{{ locale.anonymousSubmission }}</span>
+              </label>
+            </div>
+
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <AppSpinner :size="40" />
@@ -634,7 +694,7 @@
                       @click.stop="isBilibiliMultiP(result) ? submitSong(result) : playSong(result)"
                     >
                       <img
-                        :src="convertToHttps(result.cover)"
+                        :src="getCoverThumbUrl(result.cover)"
                         :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
@@ -989,7 +1049,7 @@
 
     <!-- 用户搜索弹窗 -->
     <UserSearchModal
-      v-if="enableCollaborativeSubmission"
+      v-if="enableCollaborativeSubmission && !submissionAnonymous"
       v-model:show="showUserSearchModal"
       :exclude-ids="[user?.id, ...collaborators.map((u) => u.id)]"
       :multiple="true"
@@ -1478,11 +1538,11 @@ import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
-import { convertToHttps, validateUrl } from '~/utils/url'
+import { convertToHttps, getCoverThumbUrl, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
-import { onQqMusicCookieUpdated, persistQqMusicCookie } from '~/utils/qqCookie'
+import { onQqMusicCookieUpdated, onQqMusicLoginInvalidated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 import { getPluginId, isPluginPlatform } from '~/utils/pluginPlatform'
@@ -1519,6 +1579,7 @@ const {
   enableSubmissionRestriction,
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
+  allowAnonymousSubmission,
   enableSubmissionLimit,
   enableCardCodeRequests,
   requireCardCodeForRequests,
@@ -1548,6 +1609,7 @@ const platformTouched = ref(false) // 用户是否手动切换过平台，切换
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
+const submissionAnonymous = ref(false)
 const cardCode = ref('')
 const cardCodeDraft = ref('')
 const showCardCodeModal = ref(false)
@@ -1608,8 +1670,9 @@ const isQQMusicLoggedIn = ref(false)
 const qqMusicUser = ref(null)
 const qqMusicCookie = ref('')
 const checkingQQLogin = ref(false)
-// QQ Cookie 续期广播的取消订阅函数
+// QQ Cookie 续期/失效广播的取消订阅函数
 let unsubscribeQqCookie = null
+let unsubscribeQqInvalidated = null
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -2233,6 +2296,10 @@ onBeforeUnmount(() => {
     unsubscribeQqCookie()
     unsubscribeQqCookie = null
   }
+  if (unsubscribeQqInvalidated) {
+    unsubscribeQqInvalidated()
+    unsubscribeQqInvalidated = null
+  }
 })
 
 const handleImportSuccess = async () => {
@@ -2633,6 +2700,14 @@ onMounted(async () => {
   unsubscribeQqCookie = onQqMusicCookieUpdated((cookie) => {
     qqMusicCookie.value = cookie
   })
+  // 播放链路复验确认登录态失效后同步登出并提示重新登录
+  unsubscribeQqInvalidated = onQqMusicLoginInvalidated(() => {
+    if (!isQQMusicLoggedIn.value) return
+    handleLogoutQQMusic()
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.qqLoginExpired, 'warning')
+    }
+  })
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()
@@ -2719,6 +2794,20 @@ watch(enableSubmissionRemarks, (enabled) => {
   if (!enabled) {
     submissionNote.value = ''
     submissionNotePublic.value = true
+  }
+})
+
+watch(allowAnonymousSubmission, (enabled) => {
+  if (!enabled) {
+    submissionAnonymous.value = false
+  }
+})
+
+// 匿名投稿不允许联合投稿：勾选即清空并隐藏协作者选择
+watch(submissionAnonymous, (anonymous) => {
+  if (anonymous) {
+    collaborators.value = []
+    showUserSearchModal.value = false
   }
 })
 
@@ -3568,7 +3657,8 @@ const submitSong = async (result, options = {}) => {
       const replayResult = await songService.requestReplay(replayTargetSong.id, {
         preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
         submissionNote: submissionNote.value.trim() || null,
-        submissionNotePublic: submissionNotePublic.value
+        submissionNotePublic: submissionNotePublic.value,
+        submissionAnonymous: submissionAnonymous.value,
       })
 
       if (!replayResult) return false
@@ -3680,6 +3770,7 @@ const submitSong = async (result, options = {}) => {
       durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
+      submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id),
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
@@ -3738,6 +3829,7 @@ const handleSubmit = async () => {
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
+      submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id)
     }
     if (cardCode.value && cardCode.value.trim()) {
@@ -4128,7 +4220,8 @@ const handleManualSubmit = async () => {
       musicPlatform: hasManualPlayUrl ? null : platform.value,
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
-      submissionNotePublic: submissionNotePublic.value
+      submissionNotePublic: submissionNotePublic.value,
+      submissionAnonymous: submissionAnonymous.value,
     }
 
     if (cardCode.value && cardCode.value.trim()) {
@@ -4168,6 +4261,7 @@ const resetForm = () => {
   collaborators.value = []
   submissionNote.value = ''
   submissionNotePublic.value = true
+  submissionAnonymous.value = false
   cardCode.value = ''
   cardCodeDraft.value = ''
   showCardCodeModal.value = false
