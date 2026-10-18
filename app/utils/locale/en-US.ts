@@ -5256,7 +5256,6 @@ export const serverErrors = {
     'This third-party account is already bound. Please sign in directly or bind it to an existing account.',
   AUTH_ACCOUNT_UNAVAILABLE_OR_RESTRICTED: 'This account is unavailable or access is restricted',
   AUTH_ACCOUNT_GRADUATED: 'This account has graduated; access is restricted',
-  AUTH_ACCOUNT_BANNED: 'This account has been banned',
   AUTH_ACCOUNT_WITHDRAWN: 'This account has withdrawn; access is restricted',
   AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE: 'This account is currently unavailable',
   AUTH_NO_SECURITY_EMAIL:

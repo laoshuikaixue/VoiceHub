@@ -79,26 +79,29 @@ async function fixTableSequence(table: string, dbTableName: string): Promise<Seq
     }
 
     const currentSeqResult = await db.execute(
-      sql`SELECT last_value FROM ${toQualifiedIdentifier(sequenceName)}`
+      sql`SELECT last_value, is_called FROM ${toQualifiedIdentifier(sequenceName)}`
     )
-    const currentSeqValue = Number(
-      getFirstRow<{ last_value: number | string }>(currentSeqResult)?.last_value || 0
+    const currentSeqRow = getFirstRow<{ last_value: number | string; is_called: boolean | string }>(
+      currentSeqResult
     )
+    const currentSeqValue = Number(currentSeqRow?.last_value || 0)
+    const isCalled = currentSeqRow?.is_called === true || currentSeqRow?.is_called === 't'
     const newSequenceValue = maxId
     await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
 
     return {
       success: true,
-      table: table,
+      table,
       message: `表 ${table} 的序列已成功重置 (${currentSeqValue} → ${newSequenceValue})`,
       data: {
-        table: table,
-        maxId: maxId,
+        table,
+        maxId,
         oldSequenceValue: currentSeqValue,
-        newSequenceValue: newSequenceValue,
-        sequenceName: sequenceName,
-        // 序列已等于最大 ID，setval 无实际效果
-        skipped: currentSeqValue === newSequenceValue
+        newSequenceValue,
+        sequenceName,
+        // 已取过值且不小于最大 ID 时，下一个 nextval 本就是 maxId+1，setval 无实际效果；
+        // is_called 为 false 时即便数值相同也会重复发放 ID，仍需修复
+        skipped: isCalled && currentSeqValue >= newSequenceValue
       }
     }
   } catch (error) {

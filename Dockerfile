@@ -32,6 +32,10 @@ COPY . .
 # 构建应用
 RUN pnpm run build
 
+# server 目录不在任何 tsconfig include 中，引用不存在的字段/方法（db.$transaction、
+# users.lastLoginAt 这类）只有运行时才暴露；构建后按白名单闸门检查，新增即让镜像构建失败
+RUN node scripts/typecheck-server.js
+
 # ==========================================
 # 第二阶段：运行阶段
 # ==========================================

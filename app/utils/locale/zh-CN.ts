@@ -5075,7 +5075,6 @@ export const serverErrors = {
   AUTH_OAUTH_ALREADY_BOUND: '该第三方账号已被绑定，请直接登录或绑定到现有账户',
   AUTH_ACCOUNT_UNAVAILABLE_OR_RESTRICTED: '该账号不可用或已限制访问',
   AUTH_ACCOUNT_GRADUATED: '该账号已毕业，限制访问',
-  AUTH_ACCOUNT_BANNED: '该账号已被封禁',
   AUTH_ACCOUNT_WITHDRAWN: '该账号已退学，限制访问',
   AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE: '该账号当前不可用',
   AUTH_NO_SECURITY_EMAIL: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',

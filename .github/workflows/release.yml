@@ -170,7 +170,11 @@ jobs:
           EOS
           chmod +x "$STAGE/start.sh"
 
-          # 运行包内容与 CPU 架构无关（.output 内无原生二进制），后缀仅标识构建平台
+          # 剔除构建平台（amd64）的 esbuild 二进制副本：与 Dockerfile 运行阶段一致，
+          # 删除后按目标平台安装的生产依赖 node_modules/esbuild 生效
+          rm -rf "$STAGE/.output/server/node_modules/esbuild" "$STAGE/.output/server/node_modules/@esbuild"
+
+          # 产物按 amd64 平台构建（.output 内其余文件为 JS/资源，跨架构通用），文件名保留架构后缀
           tar -czf "voicehub-${VERSION}-amd64.tar.gz" -C staging voicehub
           rm -rf staging
           ls -lh voicehub-*.tar.gz
