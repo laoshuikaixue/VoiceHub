@@ -68,6 +68,10 @@ COPY --from=builder /app/app/drizzle ./app/drizzle
 COPY --from=builder /app/server/utils/serverless-runtime.ts ./server/utils/
 COPY --from=builder /app/scripts ./scripts
 
+# .output 内的 esbuild 打包副本是构建平台（amd64）二进制，非 amd64 镜像里目标平台包缺失会导致
+# 运行时生成插件 prelude 失败；运行阶段已按目标架构安装 esbuild，删除副本让其回落到 /app/node_modules
+RUN rm -rf .output/server/node_modules/esbuild .output/server/node_modules/@esbuild
+
 # 环境变量配置
 ENV NODE_ENV=production \
     PORT=3000 \
