@@ -16,9 +16,7 @@ const TSC = resolve('node_modules/typescript/bin/tsc')
 const GATED_CODES = new Set(['2551', '2561', '2554', '2305', '2307'])
 
 // 已知且暂无法在仓库内消除的条目（文件 + 错误码 + 出现次数），新增或超出即失败。
-// users/index.ts 一条由上游 PR #628 修复，合并后删除对应条目
 const BASELINE = {
-  'server/api/admin/users/index.ts|TS2551': 1,
   'server/api/notifications/settings.post.ts|TS2307': 1,
   'server/utils/music-source-plugins/network.ts|TS2554': 1,
   'server/utils/qq_music_sdk.ts|TS2554': 1

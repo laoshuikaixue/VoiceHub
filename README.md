@@ -1187,7 +1187,6 @@ VoiceHub/
 │   │   │       ├── export.get.ts    # 导出用户列表
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
-│   │   │       ├── index.ts         # 用户管理
 │   │   │       ├── options.ts       # 用户管理选项
 │   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── api-enhanced/          # 网易云音乐API
