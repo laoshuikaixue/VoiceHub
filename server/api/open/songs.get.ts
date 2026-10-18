@@ -1,13 +1,13 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songs, users, votes } from '~/drizzle/schema'
+import { playTimes, schedules, songs, systemSettings, users, votes } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, inArray, like, or } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
 import {
   buildNameToUsersMap,
   formatDisambiguatedNameFromMap
 } from '~~/server/utils/userDisplayName'
-import { applySubmissionAnonymity, type MaskableSong } from '~~/server/utils/studentMask'
+import { applySubmissionAnonymity, maskSongInfo, type MaskableSong } from '~~/server/utils/studentMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -215,6 +215,14 @@ export default defineEventHandler(async (event) => {
     })
 
     // 匿名投稿：开放 API 与站点对外展示保持一致，不返回真实投稿人
+    const [settings] = await db
+      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
+      .from(systemSettings)
+      .limit(1)
+    if (settings?.hideStudentInfo !== false) {
+      formattedSongs.forEach((song) => maskSongInfo(song))
+    }
+
     applySubmissionAnonymity(formattedSongs as MaskableSong[], null)
 
     // 如果需要按排期状态筛选

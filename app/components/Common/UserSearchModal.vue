@@ -113,7 +113,6 @@
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
                       {{ user.class }}
                     </span>
-                    <span class="truncate">@{{ user.username }}</span>
                   </div>
                 </div>
 

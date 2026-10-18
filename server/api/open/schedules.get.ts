@@ -1,8 +1,9 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songCollaborators, songs, users } from '~/drizzle/schema'
+import { playTimes, schedules, songCollaborators, songs, systemSettings, users } from '~/drizzle/schema'
 import { and, asc, desc, eq, gte, inArray, like, lt, or, sql } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
+import { maskUserInfo } from '~~/server/utils/studentMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -217,6 +218,17 @@ export default defineEventHandler(async (event) => {
     })
 
     // 匿名投稿：开放 API 与站点对外展示保持一致，不返回真实投稿人
+    const [settings] = await db
+      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
+      .from(systemSettings)
+      .limit(1)
+    if (settings?.hideStudentInfo !== false) {
+      formattedSchedules.forEach((schedule) => {
+        if (schedule.requester) maskUserInfo(schedule.requester)
+        schedule.song.collaborators.forEach(maskUserInfo)
+      })
+    }
+
     formattedSchedules.forEach((schedule) => {
       if (schedule.song.submissionAnonymous !== true) return
       schedule.song.isAnonymous = true

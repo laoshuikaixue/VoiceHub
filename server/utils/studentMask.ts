@@ -31,6 +31,15 @@ export interface MaskableSong {
 }
 
 /**
+ * 候选人选择场景的姓名脱敏：保留首字，其余字符以星号代替。
+ * 用于联合投稿邀请等必须区分同名候选人的接口，不能返回完整姓名。
+ */
+export function maskStudentNameForPicker(name: string): string {
+  if (!name) return name
+  return name.length <= 1 ? name : name[0] + '*'.repeat(name.length - 1)
+}
+
+/**
  * 对单个参与者（联合投稿人、重播申请人）进行脱敏
  * @param user 参与者对象
  */
