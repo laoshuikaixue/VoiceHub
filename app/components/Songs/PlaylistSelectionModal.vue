@@ -519,7 +519,7 @@ watch(
         songsLoadingForSimilar.value = true
         const currentSemesterName = currentSemester.value?.name
         songService
-          .fetchSongs(true, currentSemesterName)
+          .fetchSongs({ silent: true, semester: currentSemesterName })
           .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })

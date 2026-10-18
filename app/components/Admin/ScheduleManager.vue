@@ -3674,7 +3674,7 @@ const loadData = async () => {
     // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
     // 并行加载数据
     await Promise.all([
-      songsService.fetchSongs(false, semester, true),
+      songsService.fetchSongs({ semester, forceRefresh: true }),
       songsService.fetchPublicSchedules(false, undefined, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表

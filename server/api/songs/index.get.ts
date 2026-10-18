@@ -77,7 +77,7 @@ const loadBasicSongs = async (
   search: string,
   user: any,
   isAdmin: boolean,
-  options: { scope?: string; sortBy?: string; sortOrder?: string } = {}
+  options: { scope?: string; sortBy?: string; sortOrder?: string; page?: number; pageSize?: number } = {}
 ) => {
   const conditions: string[] = []
   const params: any[] = []
@@ -85,9 +85,11 @@ const loadBasicSongs = async (
     params.push(value)
     return `$${params.length}`
   }
+  const pageSize = Number(options.pageSize) > 0 ? Math.min(Number(options.pageSize), 100) : 0
+  const page = Number(options.page) > 0 ? Number(options.page) : 1
   if (search) {
     const value = addParam(`%${search}%`)
-    conditions.push(`(s.title ILIKE ${value} OR s.artist ILIKE ${value})`)
+    conditions.push(`(s.title ILIKE ${value} OR s.artist ILIKE ${value} OR u.name ILIKE ${value})`)
   }
   if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
   if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
@@ -99,6 +101,8 @@ const loadBasicSongs = async (
         ? 's.artist'
         : 's."createdAt"'
   const orderDirection = options.sortOrder === 'asc' ? 'ASC' : 'DESC'
+  const paginationSql =
+    pageSize > 0 ? `LIMIT ${addParam(pageSize)} OFFSET ${addParam((page - 1) * pageSize)}` : ''
   // 兜底查询只依赖初始版本就存在的 Song/User 字段。
   // 可选迁移（排期、卡密、重播等）缺失时，歌曲列表仍应可用。
   const rows = await client.unsafe(`
@@ -110,6 +114,7 @@ const loadBasicSongs = async (
     LEFT JOIN "User" u ON u.id = s."requesterId"
     ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
     ORDER BY ${orderColumn} ${orderDirection}
+    ${paginationSql}
   `, params)
   const hideStudentInfo = true
   const songs = rows.map((row: any) => ({
@@ -130,7 +135,29 @@ const loadBasicSongs = async (
   })) as SongResponse[]
   if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
   if (!user) songs.forEach(stripAnonymousSongIdentifiers)
-  return { success: true, data: { songs, total: Number(rows[0]?.total || 0) } }
+  const total = Number(rows[0]?.total || 0)
+  let availableSemesters: string[] = []
+  if (pageSize > 0) {
+    const semesterRows = await client.unsafe(
+      `SELECT DISTINCT semester FROM "Song" WHERE semester IS NOT NULL AND semester <> '' ORDER BY semester DESC`
+    )
+    availableSemesters = semesterRows.map((row: any) => String(row.semester)).filter(Boolean)
+  }
+  return {
+    success: true,
+    data: {
+      songs,
+      total,
+      ...(pageSize > 0
+        ? {
+            page,
+            pageSize,
+            totalPages: Math.max(1, Math.ceil(total / pageSize)),
+            semesters: availableSemesters
+          }
+        : {})
+    }
+  }
 }
 
 export default defineEventHandler(async (event) => {
@@ -142,29 +169,51 @@ export default defineEventHandler(async (event) => {
     const scope = String(query.scope || '').trim()
     const sortBy = String(query.sortBy || 'createdAt')
     const sortOrder = String(query.sortOrder || 'desc') === 'asc' ? 'asc' : 'desc'
+    // 只有显式传入 pageSize 才分页；未传时保持返回完整列表（后台管理、相似歌曲检查依赖全量数据）
+    const requestedPageSize = parseInt(String(query.pageSize || ''), 10)
+    const pageSize =
+      Number.isFinite(requestedPageSize) && requestedPageSize > 0
+        ? Math.min(requestedPageSize, 100)
+        : 0
+    const paginated = pageSize > 0
+    const requestedPage = parseInt(String(query.page || ''), 10)
+    const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
     const user = event.context.user || null
     const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
 
     const params: any[] = [user?.id ?? null]
-    const conditions: string[] = []
     const addParam = (value: any) => {
       params.push(value)
       return `$${params.length}`
     }
 
-    if (search) {
-      const searchParam = addParam(`%${search}%`)
-      conditions.push(`(s.title ILIKE ${searchParam} OR s.artist ILIKE ${searchParam})`)
-    }
-    if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
-    if (grade) {
-      conditions.push(`u.grade = ${addParam(grade)}`)
-      // 非管理员按年级筛选时排除匿名投稿，避免借筛选结果反推投稿人年级
-      if (!isAdmin) {
-        conditions.push(`(s."submissionAnonymous" = false OR s."requesterId" = $1)`)
+    // 条件同时用于分页计数查询，统一通过 bind 生成占位符
+    const buildConditions = (bind: (value: any) => string) => {
+      const list: string[] = []
+      if (search) {
+        const searchParam = bind(`%${search}%`)
+        list.push(
+          `(s.title ILIKE ${searchParam} OR s.artist ILIKE ${searchParam} OR u.name ILIKE ${searchParam})`
+        )
       }
+      if (semester) list.push(`s.semester = ${bind(semester)}`)
+      if (grade) {
+        list.push(`u.grade = ${bind(grade)}`)
+        // 非管理员按年级筛选时排除匿名投稿，避免借筛选结果反推投稿人年级
+        if (!isAdmin) {
+          list.push(`(s."submissionAnonymous" = false OR s."requesterId" = ${bind(user?.id ?? null)})`)
+        }
+      }
+      if (scope === 'mine' && user) list.push(`s."requesterId" = ${bind(user.id)}`)
+      // 我的重播申请：与列表 replayRequested 字段同口径，当前用户提交过申请即命中
+      if (scope === 'replays' && user) {
+        list.push(
+          `EXISTS (SELECT 1 FROM song_replay_requests rrp WHERE rrp.song_id = s.id AND rrp.user_id = ${bind(user.id)})`
+        )
+      }
+      return list
     }
-    if (scope === 'mine' && user) conditions.push(`s.\"requesterId\" = $1`)
+    const conditions = buildConditions(addParam)
 
     const orderColumn =
       sortBy === 'title'
@@ -175,10 +224,20 @@ export default defineEventHandler(async (event) => {
             ? '\"voteCount\"'
             : 's.\"createdAt\"'
     const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const orderSql =
-      sortBy === 'votes'
-        ? `${orderColumn} ${sortOrder}, s.\"createdAt\" ASC`
-        : `${orderColumn} ${sortOrder}`
+    // 分页时与前端展示顺序保持一致：未排期 → 已排期 → 已播放，组内再按指定字段排序
+    const orderTerms: string[] = []
+    if (paginated) {
+      orderTerms.push(
+        `CASE WHEN s.played THEN 2 WHEN ps."songId" IS NOT NULL THEN 1 ELSE 0 END ASC`
+      )
+    }
+    orderTerms.push(`${orderColumn} ${sortOrder}`)
+    if (sortBy === 'votes') orderTerms.push(`s."createdAt" ASC`)
+    if (paginated) orderTerms.push('s.id ASC')
+    const orderSql = orderTerms.join(', ')
+    const paginationSql = paginated
+      ? `LIMIT ${addParam(pageSize)} OFFSET ${addParam((page - 1) * pageSize)}`
+      : ''
 
     // 备选池状态只供管理员使用，非管理员不查询也不下发
     const poolCte = isAdmin ? `song_pool AS (SELECT DISTINCT "songId" FROM "ScheduleSongPool"),` : ''
@@ -329,8 +388,8 @@ export default defineEventHandler(async (event) => {
         COALESCE(
           (SELECT "hideStudentInfo" FROM "SystemSettings" LIMIT 1),
           true
-        ) AS "hideStudentInfo",
-        COUNT(*) OVER()::int AS total
+        ) AS "hideStudentInfo"
+        ${paginated ? '' : ', COUNT(*) OVER()::int AS total'}
       FROM "Song" s
       LEFT JOIN "User" u ON u.id = s."requesterId"
       LEFT JOIN user_name_counts unc ON unc.name = u.name
@@ -348,10 +407,38 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN replay_requesters rr ON rr.song_id = s.id
       ${whereSql}
       ORDER BY ${orderSql}
+      ${paginationSql}
     `
 
     const baseRows = await client.unsafe(baseQuery, params)
     const shouldHideStudentInfo = baseRows[0]?.hideStudentInfo ?? true
+
+    let total = baseRows.length > 0 ? Number(baseRows[0]?.total || 0) : 0
+    let availableSemesters: string[] = []
+    if (paginated) {
+      // 空页时窗口计数不可用，计数查询复用同一套筛选条件
+      const countParams: any[] = []
+      const countConditions = buildConditions((value) => {
+        countParams.push(value)
+        return `$${countParams.length}`
+      })
+      const countRows = await client.unsafe(
+        `
+        SELECT COUNT(*)::int AS total
+        FROM "Song" s
+        LEFT JOIN "User" u ON u.id = s."requesterId"
+        ${countConditions.length > 0 ? `WHERE ${countConditions.join(' AND ')}` : ''}
+      `,
+        countParams
+      )
+      total = Number(countRows[0]?.total || 0)
+
+      // 学期选项由服务端下发，避免分页后只统计到当前页的学期
+      const semesterRows = await client.unsafe(
+        `SELECT DISTINCT semester FROM "Song" WHERE semester IS NOT NULL AND semester <> '' ORDER BY semester DESC`
+      )
+      availableSemesters = semesterRows.map((row: any) => String(row.semester)).filter(Boolean)
+    }
 
     // 管理员扩展信息：统计每位投稿人的投稿次数与播出次数（按已播出的排期条目计）
     const requesterStatsMap = new Map<number, { submissionCount: number; playCount: number }>()
@@ -525,7 +612,15 @@ export default defineEventHandler(async (event) => {
       success: true,
       data: {
         songs: formattedSongs,
-        total: baseRows.length > 0 ? Number(baseRows[0]?.total || 0) : 0
+        total,
+        ...(paginated
+          ? {
+              page,
+              pageSize,
+              totalPages: Math.max(1, Math.ceil(total / pageSize)),
+              semesters: availableSemesters
+            }
+          : {})
       }
     }
   } catch (error: any) {
@@ -541,12 +636,19 @@ export default defineEventHandler(async (event) => {
         const fallbackScope = String(fallbackQuery.scope || '').trim()
         const fallbackSortBy = String(fallbackQuery.sortBy || 'createdAt')
         const fallbackSortOrder = String(fallbackQuery.sortOrder || 'desc')
+        const fallbackPageSize = Math.min(
+          Math.max(parseInt(String(fallbackQuery.pageSize || ''), 10) || 0, 0),
+          100
+        )
+        const fallbackPage = Math.max(parseInt(String(fallbackQuery.page || ''), 10) || 1, 1)
         const fallbackUser = event.context.user || null
         const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
         return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin, {
           scope: fallbackScope,
           sortBy: fallbackSortBy,
-          sortOrder: fallbackSortOrder
+          sortOrder: fallbackSortOrder,
+          page: fallbackPage,
+          pageSize: fallbackPageSize
         })
       } catch (fallbackError) {
         console.error('[Songs API] 基础歌曲查询也失败:', fallbackError)
