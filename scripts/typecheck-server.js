@@ -5,7 +5,7 @@
 // 用法：pnpm typecheck:server（需先有 .nuxt/tsconfig.server.json，由 nuxt prepare 生成）
 
 import { spawnSync } from 'child_process'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { resolve } from 'path'
 
 const TSCONFIG = '.nuxt/tsconfig.server.json'
@@ -26,7 +26,13 @@ const BASELINE = {
 }
 
 if (!existsSync(TSCONFIG)) {
-  console.error(`❌ 缺少 ${TSCONFIG}，请先执行 pnpm typecheck:server（脚本会自动 nuxt prepare）`)
+  console.error(`❌ 缺少 ${TSCONFIG}，请用 pnpm typecheck:server 执行（会先 nuxt prepare）`)
+  process.exit(1)
+}
+
+// include 必须覆盖 server 目录，否则 tsc 查的是空项目，闸门形同虚设
+if (!readFileSync(TSCONFIG, 'utf8').includes('../server/')) {
+  console.error(`❌ ${TSCONFIG} 的 include 未覆盖 server 目录，请重新 nuxt prepare`)
   process.exit(1)
 }
 
@@ -34,6 +40,11 @@ const tsc = spawnSync(process.execPath, [TSC, '-p', TSCONFIG, '--noEmit'], {
   encoding: 'utf8',
   maxBuffer: 64 * 1024 * 1024
 })
+
+if (tsc.error || tsc.signal) {
+  console.error('❌ tsc 进程未能正常结束：', tsc.error?.message ?? `signal=${tsc.signal}`)
+  process.exit(1)
+}
 
 const output = `${tsc.stdout ?? ''}${tsc.stderr ?? ''}`
 const counts = new Map()
@@ -47,6 +58,14 @@ for (const line of output.split('\n')) {
   if (!GATED_CODES.has(code)) continue
   const key = `${file}|TS${code}`
   counts.set(key, (counts.get(key) ?? 0) + 1)
+}
+
+// 退出码随 tsc 版本/配置含义不一（本项目当前有诊断为 2），一律以能否解析出错误为准；
+// 报错了却解析不出任何条目，说明输出格式与正则不符或 tsc 提前中止，放行等于闸门失效
+if (total === 0 && (tsc.status !== 0 || output.includes('error TS'))) {
+  console.error('❌ tsc 未正常产出可解析的错误列表（status=' + tsc.status + '），请检查下方输出')
+  console.error(output.trim().slice(0, 4000) || '(空输出)')
+  process.exit(1)
 }
 
 const failures = []
