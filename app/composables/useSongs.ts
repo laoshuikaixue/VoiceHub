@@ -15,6 +15,7 @@ export interface FetchSongsOptions {
   search?: string
   sortBy?: string
   sortOrder?: string
+  compact?: boolean
 }
 
 interface SongsQuery {
@@ -25,9 +26,10 @@ interface SongsQuery {
   search: string
   sortBy: string
   sortOrder: string
+  compact: boolean
 }
 
-export const useSongs = (options: { pageSize?: number } = {}) => {
+export const useSongs = (options: { pageSize?: number; compact?: boolean } = {}) => {
   const { isAuthenticated, user, getAuthConfig } = useAuth()
   const { songs: songsLocale } = useLocale()
   const { localize: localizeServerError } = useServerErrors()
@@ -35,6 +37,8 @@ export const useSongs = (options: { pageSize?: number } = {}) => {
 
   // pageSize 为 0 表示不分页，后台管理与相似歌曲检查依赖完整列表
   const defaultPageSize = Number(options.pageSize) > 0 ? Math.floor(Number(options.pageSize)) : 0
+  // 轻量模式：只返回匹配与状态字段，供投稿页的相似歌曲检查使用
+  const defaultCompact = options.compact === true
 
   const songs = ref<Song[]>([])
   const publicSchedules = ref<Schedule[]>([])
@@ -60,7 +64,8 @@ export const useSongs = (options: { pageSize?: number } = {}) => {
     scope: '',
     search: '',
     sortBy: '',
-    sortOrder: ''
+    sortOrder: '',
+    compact: defaultCompact
   }
 
   let songsRequestVersion = 0
@@ -131,7 +136,8 @@ export const useSongs = (options: { pageSize?: number } = {}) => {
       scope: options.scope !== undefined ? options.scope : songsQuery.scope,
       search: options.search !== undefined ? options.search : songsQuery.search,
       sortBy: options.sortBy !== undefined ? options.sortBy : songsQuery.sortBy,
-      sortOrder: options.sortOrder !== undefined ? options.sortOrder : songsQuery.sortOrder
+      sortOrder: options.sortOrder !== undefined ? options.sortOrder : songsQuery.sortOrder,
+      compact: options.compact !== undefined ? options.compact : songsQuery.compact
     }
     songsQuery = query
 
@@ -161,6 +167,7 @@ export const useSongs = (options: { pageSize?: number } = {}) => {
         if (query.search) params.append('search', query.search)
         if (query.sortBy) params.append('sortBy', query.sortBy)
         if (query.sortOrder) params.append('sortOrder', query.sortOrder)
+        if (query.compact) params.append('compact', '1')
         const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
         // API请求
@@ -168,7 +175,7 @@ export const useSongs = (options: { pageSize?: number } = {}) => {
           ...getAuthConfig()
         })
       }
-      const response = options.forceRefresh
+      const response: any = options.forceRefresh
         ? await request()
         : await dedup.dedupedRequest('songs', request, requestParams)
 
@@ -778,7 +785,8 @@ export const useSongs = (options: { pageSize?: number } = {}) => {
       scope: '',
       search: '',
       sortBy: '',
-      sortOrder: ''
+      sortOrder: '',
+      compact: defaultCompact
     }
   }
 

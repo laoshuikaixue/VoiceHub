@@ -240,7 +240,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit', 'play'])
 
 const musicSources = useMusicSources()
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 const { currentSemester, fetchCurrentSemester } = useSemesters()

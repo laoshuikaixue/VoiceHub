@@ -254,7 +254,7 @@ const error = ref('')
 const submitting = ref(false)
 const selectedSongId = ref(null)
 
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')

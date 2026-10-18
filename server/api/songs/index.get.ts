@@ -87,13 +87,91 @@ const loadBasicSongs = async (
   }
   const pageSize = Number(options.pageSize) > 0 ? Math.min(Number(options.pageSize), 100) : 0
   const page = Number(options.page) > 0 ? Number(options.page) : 1
+
+  // 探测可选表：缺失时继续降级为仅依赖 Song/User 字段
+  const tableRows = await client.unsafe(`
+    SELECT
+      to_regclass('public."Schedule"') IS NOT NULL AS has_schedule,
+      to_regclass('public."Vote"') IS NOT NULL AS has_vote,
+      to_regclass('public.song_replay_requests') IS NOT NULL AS has_replay,
+      EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'Song' AND column_name = 'submissionAnonymous'
+      ) AS has_submission_anonymous
+  `)
+  const tableInfo = tableRows[0] || {}
+  const hasSchedule = tableInfo.has_schedule === true
+  const hasVote = tableInfo.has_vote === true
+  const hasReplay = tableInfo.has_replay === true
+  const hasSubmissionAnonymous = tableInfo.has_submission_anonymous === true
+
   if (search) {
     const value = addParam(`%${search}%`)
-    conditions.push(`(s.title ILIKE ${value} OR s.artist ILIKE ${value} OR u.name ILIKE ${value})`)
+    if (hasSubmissionAnonymous) {
+      // 匿名投稿不能按真实姓名命中，仅管理员与投稿人本人可按姓名检索
+      const requesterNameMatch = isAdmin
+        ? `u.name ILIKE ${value}`
+        : `((s."submissionAnonymous" = false OR s."requesterId" = ${addParam(
+            user?.id ?? null
+          )}) AND u.name ILIKE ${value})`
+      conditions.push(
+        `(s.title ILIKE ${value} OR s.artist ILIKE ${value} OR ${requesterNameMatch})`
+      )
+    } else {
+      conditions.push(`(s.title ILIKE ${value} OR s.artist ILIKE ${value} OR u.name ILIKE ${value})`)
+    }
   }
   if (semester) conditions.push(`s.semester = ${addParam(semester)}`)
   if (grade) conditions.push(`u.grade = ${addParam(grade)}`)
   if (options.scope === 'mine' && user) conditions.push(`s."requesterId" = ${addParam(user.id)}`)
+  if (options.scope === 'replays' && user && hasReplay) {
+    conditions.push(
+      `EXISTS (SELECT 1 FROM song_replay_requests rrp WHERE rrp.song_id = s.id AND rrp.user_id = ${addParam(user.id)})`
+    )
+  }
+
+  let userIdParam: string | null = null
+  if (user && hasVote) userIdParam = addParam(user.id)
+  let userReplayParam: string | null = null
+  if (user && hasReplay) userReplayParam = userIdParam || addParam(user.id)
+
+  const ctes: string[] = []
+  if (hasVote) {
+    ctes.push(`
+      vote_counts AS (
+        SELECT "songId", COUNT(*)::int AS vote_count
+        FROM "Vote"
+        GROUP BY "songId"
+      )`)
+  }
+  if (userIdParam) {
+    ctes.push(`
+      current_user_votes AS (
+        SELECT "songId"
+        FROM "Vote"
+        WHERE "userId" = ${userIdParam}
+        GROUP BY "songId"
+      )`)
+  }
+  if (hasSchedule) {
+    ctes.push(`
+      published_schedule AS (
+        SELECT DISTINCT ON ("songId") "songId"
+        FROM "Schedule"
+        WHERE "isDraft" = false
+        ORDER BY "songId", "playDate" DESC
+      )`)
+  }
+  if (userReplayParam) {
+    ctes.push(`
+      current_user_replay AS (
+        SELECT DISTINCT ON (song_id) song_id, status
+        FROM song_replay_requests
+        WHERE user_id = ${userReplayParam}
+        ORDER BY song_id, created_at DESC
+      )`)
+  }
+
   const orderColumn =
     options.sortBy === 'title'
       ? 's.title'
@@ -101,19 +179,45 @@ const loadBasicSongs = async (
         ? 's.artist'
         : 's."createdAt"'
   const orderDirection = options.sortOrder === 'asc' ? 'ASC' : 'DESC'
+  const orderTerms: string[] = []
+  // 分页时与主查询保持同样的分组顺序：未排期 → 已排期 → 已播放
+  if (pageSize > 0) {
+    orderTerms.push(
+      hasSchedule
+        ? `CASE WHEN s.played THEN 2 WHEN ps."songId" IS NOT NULL THEN 1 ELSE 0 END ASC`
+        : `CASE WHEN s.played THEN 2 ELSE 0 END ASC`
+    )
+  }
+  if (options.sortBy === 'votes' && hasVote) {
+    orderTerms.push(`COALESCE(vc.vote_count, 0) ${orderDirection}`, `s."createdAt" ASC`)
+  } else {
+    orderTerms.push(`${orderColumn} ${orderDirection}`)
+  }
+  if (pageSize > 0) orderTerms.push('s.id ASC')
+
   const paginationSql =
     pageSize > 0 ? `LIMIT ${addParam(pageSize)} OFFSET ${addParam((page - 1) * pageSize)}` : ''
-  // 兜底查询只依赖初始版本就存在的 Song/User 字段。
-  // 可选迁移（排期、卡密、重播等）缺失时，歌曲列表仍应可用。
+  // 兜底查询只依赖初始版本就存在的 Song/User 字段，存在可选表时补上投票与排期状态。
   const rows = await client.unsafe(`
+    ${ctes.length ? `WITH ${ctes.join(',')}` : ''}
     SELECT s.id, s.title, s.artist, s.played, s."playedAt", s.semester,
       s."createdAt", s."updatedAt", s.cover, s."musicPlatform", s."musicId",
+      ${hasSubmissionAnonymous ? 's."submissionAnonymous"' : 'false'} AS "submissionAnonymous",
       u.id AS "requesterId", u.name AS "requesterName", u.grade AS "requesterGrade", u.class AS "requesterClass",
+      ${hasVote ? 'COALESCE(vc.vote_count, 0)' : '0'} AS "voteCount",
+      ${userIdParam ? '(cuv."songId" IS NOT NULL)' : 'false'} AS voted,
+      ${hasSchedule ? '(ps."songId" IS NOT NULL)' : 'false'} AS scheduled,
+      ${userReplayParam ? '(cur.song_id IS NOT NULL)' : 'false'} AS "replayRequested",
+      ${userReplayParam ? 'cur.status' : 'NULL'} AS "replayRequestStatus",
       COUNT(*) OVER()::int AS total
     FROM "Song" s
     LEFT JOIN "User" u ON u.id = s."requesterId"
+    ${hasVote ? 'LEFT JOIN vote_counts vc ON vc."songId" = s.id' : ''}
+    ${userIdParam ? 'LEFT JOIN current_user_votes cuv ON cuv."songId" = s.id' : ''}
+    ${hasSchedule ? 'LEFT JOIN published_schedule ps ON ps."songId" = s.id' : ''}
+    ${userReplayParam ? 'LEFT JOIN current_user_replay cur ON cur.song_id = s.id' : ''}
     ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
-    ORDER BY ${orderColumn} ${orderDirection}
+    ORDER BY ${orderTerms.join(', ')}
     ${paginationSql}
   `, params)
   const hideStudentInfo = true
@@ -122,18 +226,28 @@ const loadBasicSongs = async (
     requester: formatDisambiguatedName({ name: row.requesterName, grade: row.requesterGrade, class: row.requesterClass }),
     requesterId: row.requesterId ? Number(row.requesterId) : undefined,
     requesterGrade: row.requesterGrade || null, requesterClass: row.requesterClass || null,
-    collaborators: [], voteCount: 0, played: row.played === true, playedAt: row.playedAt || null,
+    collaborators: [], voteCount: Number(row.voteCount || 0), played: row.played === true, playedAt: row.playedAt || null,
     semester: row.semester || null, createdAt: row.createdAt, updatedAt: row.updatedAt,
-    requestedAt: formatDateTime(row.createdAt), scheduled: false,
+    requestedAt: formatDateTime(row.createdAt), scheduled: row.scheduled === true,
     cover: row.cover || null, musicPlatform: row.musicPlatform || null, musicId: row.musicId || null,
     cardCodeId: null,
     durationSeconds: null, playUrl: null,
-    replayRequested: false, replayRequestCount: 0, isReplay: false, replayRequesters: [],
+    replayRequested: row.replayRequested === true, replayRequestCount: row.replayRequested === true ? 1 : 0,
+    isReplay: row.replayRequested === true, replayRequesters: [],
     hasSubmissionNote: false, submissionNote: null, submissionNotePublic: false,
-    submissionAnonymous: false,
+    submissionAnonymous: row.submissionAnonymous === true,
     preferredPlayTimeId: null,
+    ...(user
+      ? {
+          voted: row.voted === true,
+          replayRequestStatus: row.replayRequestStatus || undefined
+        }
+      : {})
   })) as SongResponse[]
   if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
+  if (hasSubmissionAnonymous) {
+    applySubmissionAnonymity(songs, { id: user?.id ?? null, isAdmin })
+  }
   if (!user) songs.forEach(stripAnonymousSongIdentifiers)
   const total = Number(rows[0]?.total || 0)
   let availableSemesters: string[] = []
@@ -167,6 +281,8 @@ export default defineEventHandler(async (event) => {
     const semester = String(query.semester || '').trim()
     const grade = String(query.grade || '').trim()
     const scope = String(query.scope || '').trim()
+    // 投稿页/相似歌曲检查只需要匹配与状态字段，不拉取完整歌曲详情
+    const compact = ['1', 'true'].includes(String(query.compact || '').toLowerCase())
     const sortBy = String(query.sortBy || 'createdAt')
     const sortOrder = String(query.sortOrder || 'desc') === 'asc' ? 'asc' : 'desc'
     // 只有显式传入 pageSize 才分页；未传时保持返回完整列表（后台管理、相似歌曲检查依赖全量数据）
@@ -192,8 +308,14 @@ export default defineEventHandler(async (event) => {
       const list: string[] = []
       if (search) {
         const searchParam = bind(`%${search}%`)
+        // 匿名投稿不能按真实姓名命中，仅管理员与投稿人本人可按姓名检索
+        const requesterNameMatch = isAdmin
+          ? `u.name ILIKE ${searchParam}`
+          : `((s."submissionAnonymous" = false OR s."requesterId" = ${bind(
+              user?.id ?? null
+            )}) AND u.name ILIKE ${searchParam})`
         list.push(
-          `(s.title ILIKE ${searchParam} OR s.artist ILIKE ${searchParam} OR u.name ILIKE ${searchParam})`
+          `(s.title ILIKE ${searchParam} OR s.artist ILIKE ${searchParam} OR ${requesterNameMatch})`
         )
       }
       if (semester) list.push(`s.semester = ${bind(semester)}`)
@@ -238,6 +360,114 @@ export default defineEventHandler(async (event) => {
     const paginationSql = paginated
       ? `LIMIT ${addParam(pageSize)} OFFSET ${addParam((page - 1) * pageSize)}`
       : ''
+
+    if (compact) {
+      const compactQuery = `
+        WITH
+        vote_counts AS (
+          SELECT "songId", COUNT(*)::int AS vote_count
+          FROM "Vote"
+          GROUP BY "songId"
+        ),
+        current_user_votes AS (
+          SELECT "songId"
+          FROM "Vote"
+          WHERE $1::int IS NOT NULL AND "userId" = $1
+          GROUP BY "songId"
+        ),
+        published_schedule AS (
+          SELECT DISTINCT ON ("songId") "songId"
+          FROM "Schedule"
+          WHERE "isDraft" = false
+          ORDER BY "songId", "playDate" DESC
+        ),
+        current_user_replay AS (
+          SELECT DISTINCT ON (song_id) song_id, status
+          FROM song_replay_requests
+          WHERE $1::int IS NOT NULL AND user_id = $1
+          ORDER BY song_id, created_at DESC
+        )
+        SELECT
+          s.id, s.title, s.artist, s.played, s.semester, s."createdAt",
+          s."musicPlatform", s."musicId", s."submissionAnonymous",
+          u.id AS "requesterId", u.name AS "requesterName",
+          u.grade AS "requesterGrade", u.class AS "requesterClass",
+          COALESCE(vc.vote_count, 0) AS "voteCount",
+          (cuv."songId" IS NOT NULL) AS voted,
+          (ps."songId" IS NOT NULL) AS scheduled,
+          (cur.song_id IS NOT NULL) AS "replayRequested",
+          cur.status AS "replayRequestStatus",
+          COALESCE(
+            (SELECT "hideStudentInfo" FROM "SystemSettings" LIMIT 1),
+            true
+          ) AS "hideStudentInfo",
+          COUNT(*) OVER()::int AS total
+        FROM "Song" s
+        LEFT JOIN "User" u ON u.id = s."requesterId"
+        LEFT JOIN vote_counts vc ON vc."songId" = s.id
+        LEFT JOIN current_user_votes cuv ON cuv."songId" = s.id
+        LEFT JOIN published_schedule ps ON ps."songId" = s.id
+        LEFT JOIN current_user_replay cur ON cur.song_id = s.id
+        ${whereSql}
+        ORDER BY ${orderSql}
+        ${paginationSql}
+      `
+      const compactRows = await client.unsafe(compactQuery, params)
+      const compactSongs = compactRows.map((row: any) => ({
+        id: Number(row.id),
+        title: row.title,
+        artist: row.artist,
+        requester: row.requesterName || '',
+        requesterId: row.requesterId ? Number(row.requesterId) : undefined,
+        requesterGrade: row.requesterGrade || null,
+        requesterClass: row.requesterClass || null,
+        collaborators: [],
+        voteCount: Number(row.voteCount || 0),
+        played: row.played === true,
+        playedAt: null,
+        semester: row.semester || null,
+        createdAt: row.createdAt,
+        updatedAt: row.createdAt,
+        requestedAt: formatDateTime(row.createdAt),
+        scheduled: row.scheduled === true,
+        cover: null,
+        musicPlatform: row.musicPlatform || null,
+        musicId: row.musicId || null,
+        cardCodeId: null,
+        durationSeconds: null,
+        playUrl: null,
+        replayRequested: row.replayRequested === true,
+        replayRequestCount: row.replayRequested === true ? 1 : 0,
+        isReplay: row.replayRequested === true,
+        replayRequesters: [],
+        hasSubmissionNote: false,
+        submissionNote: null,
+        submissionNotePublic: false,
+        submissionAnonymous: row.submissionAnonymous === true,
+        submissionNotePublicStatus: null,
+        replayRequestId: null,
+        preferredPlayTimeId: null,
+        ...(user
+          ? {
+              voted: row.voted === true,
+              replayRequestStatus: row.replayRequestStatus || undefined
+            }
+          : {})
+      })) as SongResponse[]
+
+      const hideStudentInfo = compactRows[0]?.hideStudentInfo ?? true
+      if (hideStudentInfo && !isAdmin) maskSongsInfo(compactSongs)
+      applySubmissionAnonymity(compactSongs, { id: user?.id ?? null, isAdmin })
+      if (!user) compactSongs.forEach(stripAnonymousSongIdentifiers)
+
+      return {
+        success: true,
+        data: {
+          songs: compactSongs,
+          total: compactRows.length > 0 ? Number(compactRows[0]?.total || 0) : 0
+        }
+      }
+    }
 
     // 备选池状态只供管理员使用，非管理员不查询也不下发
     const poolCte = isAdmin ? `song_pool AS (SELECT DISTINCT "songId" FROM "ScheduleSongPool"),` : ''

@@ -1693,7 +1693,7 @@ const openPlaylistModal = (platform) => {
 const showUserSearchModal = ref(false)
 const collaborators = ref([])
 
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
