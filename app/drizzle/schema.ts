@@ -92,6 +92,26 @@ export const gradeClass = pgTable(
   (table) => [unique('GradeClass_grade_class_unique').on(table.grade, table.class)],
 );
 
+// 班级变更历史：学生自助改班与管理员改班均记录，用于展示追溯与按学期统计自助改班次数
+export const gradeClassChangeLogs = pgTable('grade_class_change_logs', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  // 变更时的学期名（无活跃学期时为 null），每学期自助改班次数以此为准
+  semester: text('semester'),
+  oldGrade: text('old_grade'),
+  oldClass: text('old_class'),
+  newGrade: text('new_grade'),
+  newClass: text('new_class'),
+  // student = 用户自助修改，admin = 管理员在用户管理中修改
+  source: varchar('source', { length: 16 }).default('student').notNull(),
+  // source 为 admin 时记录操作管理员，自助修改与本人相同
+  operatorId: integer('operator_id').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('grade_class_change_logs_user_created_idx').on(table.userId, table.createdAt),
+  index('grade_class_change_logs_user_semester_idx').on(table.userId, table.semester),
+]);
+
 // 歌曲表
 export const songs = pgTable('Song', {
   id: serial('id').primaryKey(),
@@ -405,6 +425,13 @@ export const systemSettings = pgTable('SystemSettings', {
   registerEmailRequired: boolean('registerEmailRequired').default(false).notNull(),
   // 注册时必须选择年级班级（本地注册与第三方创建账户均强制）
   registerRequiresGradeClass: boolean('registerRequiresGradeClass').default(false).notNull(),
+  // 学生自助修改年级班级（默认关闭）；三项限制留空均为不限制
+  allowStudentGradeClassUpdate: boolean('allowStudentGradeClassUpdate').default(false).notNull(),
+  gradeClassChangeMinIntervalDays: integer('gradeClassChangeMinIntervalDays'),
+  gradeClassChangePerSemesterLimit: integer('gradeClassChangePerSemesterLimit'),
+  // 允许自助修改的日期窗口（北京时间，格式 YYYY-MM-DD），任一端留空表示该侧不设限
+  gradeClassChangeWindowStart: text('gradeClassChangeWindowStart'),
+  gradeClassChangeWindowEnd: text('gradeClassChangeWindowEnd'),
   // 投稿公开留言审核
   submissionNoteRequiresApproval: boolean('submissionNoteRequiresApproval').default(false).notNull(),
 

@@ -882,6 +882,83 @@
             </div>
           </div>
 
+          <!-- 学生自助改班 -->
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.allowStudentGradeClassUpdate }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowStudentGradeClassUpdateDesc }}</p>
+              </div>
+              <input
+                id="allow-student-grade-class-update"
+                v-model="formData.allowStudentGradeClassUpdate"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+
+            <div
+              v-if="formData.allowStudentGradeClassUpdate"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-3"
+            >
+              <div>
+                <label :class="labelClass">{{ locale.gradeClassChangeMinIntervalDays }}</label>
+                <div class="relative">
+                  <input
+                    v-model="formData.gradeClassChangeMinIntervalDays"
+                    type="number"
+                    min="1"
+                    max="3650"
+                    :placeholder="locale.gradeClassChangeUnlimited"
+                    :class="[inputClass, 'placeholder:text-text-disabled']"
+                  />
+                  <span
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+                    >{{ locale.gradeClassChangeDayUnit }}</span
+                  >
+                </div>
+              </div>
+
+              <div>
+                <label :class="labelClass">{{ locale.gradeClassChangePerSemesterLimit }}</label>
+                <div class="relative">
+                  <input
+                    v-model="formData.gradeClassChangePerSemesterLimit"
+                    type="number"
+                    min="1"
+                    max="100"
+                    :placeholder="locale.gradeClassChangeUnlimited"
+                    :class="[inputClass, 'placeholder:text-text-disabled']"
+                  />
+                  <span
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+                    >{{ locale.gradeClassChangeTimeUnit }}</span
+                  >
+                </div>
+              </div>
+
+              <div>
+                <label :class="labelClass">{{ locale.gradeClassChangeWindow }}</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <input
+                    v-model="formData.gradeClassChangeWindowStart"
+                    type="date"
+                    :class="inputClass"
+                  />
+                  <input
+                    v-model="formData.gradeClassChangeWindowEnd"
+                    type="date"
+                    :class="inputClass"
+                  />
+                </div>
+              </div>
+
+              <p class="text-[10px] text-text-tertiary leading-relaxed">
+                {{ locale.gradeClassChangeHint }}
+              </p>
+            </div>
+          </div>
+
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.showBlacklistKeywords }}</p>
@@ -1413,6 +1490,11 @@ const formData = ref({
   oauthRegisterRequiresApproval: true,
   registerEmailRequired: false,
   registerRequiresGradeClass: false,
+  allowStudentGradeClassUpdate: false,
+  gradeClassChangeMinIntervalDays: null,
+  gradeClassChangePerSemesterLimit: null,
+  gradeClassChangeWindowStart: '',
+  gradeClassChangeWindowEnd: '',
   smtpEnabled: false,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
@@ -1511,6 +1593,15 @@ const normalizeGlobalSubmissionLimit = (value) => {
   return Number.isNaN(num) ? null : num
 }
 
+// 留空表示不限制；非法值原样提交交服务端校验
+const normalizeOptionalPositiveInt = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null
+  }
+  const num = Number(value)
+  return Number.isNaN(num) ? value : num
+}
+
 // 加载配置
 const loadConfig = async () => {
   try {
@@ -1582,6 +1673,11 @@ const loadConfig = async () => {
       oauthRegisterRequiresApproval: data.oauthRegisterRequiresApproval !== false,
       registerEmailRequired: data.registerEmailRequired === true,
       registerRequiresGradeClass: data.registerRequiresGradeClass === true,
+      allowStudentGradeClassUpdate: data.allowStudentGradeClassUpdate === true,
+      gradeClassChangeMinIntervalDays: data.gradeClassChangeMinIntervalDays ?? null,
+      gradeClassChangePerSemesterLimit: data.gradeClassChangePerSemesterLimit ?? null,
+      gradeClassChangeWindowStart: data.gradeClassChangeWindowStart || '',
+      gradeClassChangeWindowEnd: data.gradeClassChangeWindowEnd || '',
       smtpEnabled: !!data.smtpEnabled,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
@@ -1674,6 +1770,13 @@ const saveConfig = async () => {
       ),
       globalMonthlySubmissionLimit: normalizeGlobalSubmissionLimit(
         formData.value.globalMonthlySubmissionLimit
+      ),
+      allowStudentGradeClassUpdate: !!formData.value.allowStudentGradeClassUpdate,
+      gradeClassChangeMinIntervalDays: normalizeOptionalPositiveInt(
+        formData.value.gradeClassChangeMinIntervalDays
+      ),
+      gradeClassChangePerSemesterLimit: normalizeOptionalPositiveInt(
+        formData.value.gradeClassChangePerSemesterLimit
       ),
       ...(isSuperAdmin.value
         ? {

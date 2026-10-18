@@ -93,6 +93,11 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   oauthRegisterRequiresApproval: true,
   registerEmailRequired: false,
   registerRequiresGradeClass: false,
+  allowStudentGradeClassUpdate: false,
+  gradeClassChangeMinIntervalDays: null,
+  gradeClassChangePerSemesterLimit: null,
+  gradeClassChangeWindowStart: null,
+  gradeClassChangeWindowEnd: null,
   submissionNoteRequiresApproval: false,
   captchaEnabled: false, // 默认关闭图形验证码
   captchaMaxFailures: 3, //触发阈值

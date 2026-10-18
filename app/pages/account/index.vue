@@ -94,6 +94,108 @@
           <!-- 社交账号绑定 -->
           <AccountSocialBindings />
 
+          <!-- 班级信息 -->
+          <section v-if="gradeClassEnabled && locale.gradeClass" :class="sectionClass">
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-primary-10 rounded-xl flex items-center justify-center">
+                <School :size="20" class="text-primary" />
+              </div>
+              <div>
+                <h2 class="text-base font-black text-text-primary">{{ locale.gradeClass.title }}</h2>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.gradeClass.desc }}</p>
+              </div>
+            </div>
+
+            <div v-if="gradeClassLoading" class="flex items-center justify-center py-8">
+              <AppSpinner :size="28" :label="locale.gradeClass.loading" />
+            </div>
+
+            <div v-else class="space-y-6">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs text-text-tertiary">{{ locale.gradeClass.current }}</span>
+                <span
+                  class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-[10px] font-black uppercase tracking-wider rounded-full"
+                >
+                  {{ gradeClassInfo.current.grade || locale.gradeClass.notSet }}
+                </span>
+                <span
+                  class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-[10px] font-black uppercase tracking-wider rounded-full"
+                >
+                  {{ gradeClassInfo.current.class || locale.gradeClass.notSet }}
+                </span>
+              </div>
+
+              <p
+                v-if="!gradeClassInfo.canChange"
+                class="flex items-start gap-2 rounded-2xl border border-warning-20 bg-warning-10 px-4 py-3 text-xs font-bold text-warning leading-relaxed"
+              >
+                <AlertTriangle :size="14" class="mt-0.5 shrink-0" />
+                <span>{{ gradeClassDeniedText }}</span>
+              </p>
+
+              <div class="max-w-xl space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <CustomSelect
+                    v-model="gradeClassForm.grade"
+                    :label="locale.gradeClass.grade"
+                    :options="gradeClassGradeOptions"
+                    :placeholder="locale.gradeClass.selectGrade"
+                    :disabled="!gradeClassInfo.canChange"
+                    @update:model-value="gradeClassForm.class = ''"
+                  />
+                  <CustomSelect
+                    v-model="gradeClassForm.class"
+                    :label="locale.gradeClass.class"
+                    :options="gradeClassClassOptions"
+                    :placeholder="locale.gradeClass.selectClass"
+                    :disabled="!gradeClassInfo.canChange || !gradeClassForm.grade"
+                  />
+                </div>
+
+                <div class="flex flex-wrap items-center gap-4">
+                  <button
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                    :disabled="!gradeClassInfo.canChange || gradeClassSubmitting || !gradeClassForm.grade || !gradeClassForm.class || gradeClassUnchanged"
+                    @click="submitGradeClass"
+                  >
+                    <RefreshCw v-if="gradeClassSubmitting" :size="14" class="animate-spin" />
+                    <Check v-else :size="14" />
+                    {{ locale.gradeClass.save }}
+                  </button>
+                  <p class="text-[10px] text-text-tertiary leading-relaxed">
+                    {{ gradeClassLimitsText }}
+                  </p>
+                </div>
+              </div>
+
+              <div v-if="gradeClassInfo.history.length > 0">
+                <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest mb-3">
+                  {{ locale.gradeClass.history }}
+                </p>
+                <div class="space-y-2">
+                  <div
+                    v-for="record in gradeClassInfo.history"
+                    :key="record.id"
+                    class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border-secondary-70 bg-bg-primary-45 px-4 py-2.5 text-xs"
+                  >
+                    <span class="text-text-tertiary">{{ record.changedAt }}</span>
+                    <span class="font-bold text-text-primary">
+                      {{ formatGradeClass(record.oldGrade, record.oldClass) }}
+                      <ArrowRight :size="11" class="inline-block mx-1" />
+                      {{ formatGradeClass(record.newGrade, record.newClass) }}
+                    </span>
+                    <span class="text-[10px] text-text-disabled">
+                      {{ record.source === 'student' ? locale.gradeClass.sourceStudent : locale.gradeClass.sourceAdmin }}
+                      <template v-if="record.source !== 'student' && record.operatorName">
+                        · {{ record.operatorName }}
+                      </template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- 个人 API Key -->
           <section :class="sectionClass">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary-50 pb-5 mb-6">
@@ -512,6 +614,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Check,
   Copy,
   Eye,
@@ -525,11 +628,14 @@ import {
   Play,
   Plus,
   RefreshCw,
+  School,
   Trash2,
   User,
   X
 } from '@lucide/vue'
 import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useChkszSource } from '~/composables/useChkszSource'
 import { useToast } from '~/composables/useToast'
@@ -631,6 +737,112 @@ const testChkszKey = async () => {
   }
 }
 
+// 自助修改班级
+const gradeClassLoaded = ref(false)
+const gradeClassLoading = ref(false)
+const gradeClassSubmitting = ref(false)
+const gradeClassInfo = ref({
+  enabled: false,
+  canChange: false,
+  deniedReason: null,
+  current: { grade: '', class: '' },
+  limits: { minIntervalDays: null, perSemesterLimit: null, windowStart: null, windowEnd: null },
+  remainingThisSemester: null,
+  options: [],
+  history: []
+})
+const gradeClassForm = ref({ grade: '', class: '' })
+
+const gradeClassEnabled = computed(() => gradeClassLoaded.value && gradeClassInfo.value.enabled)
+
+const gradeClassGradeOptions = computed(() => {
+  const grades = [...new Set(gradeClassInfo.value.options.map((item) => item.grade))]
+  return grades.map((item) => ({ label: item, value: item }))
+})
+
+const gradeClassClassOptions = computed(() => {
+  if (!gradeClassForm.value.grade) return []
+  return gradeClassInfo.value.options
+    .filter((item) => item.grade === gradeClassForm.value.grade)
+    .map((item) => ({ label: item.class, value: item.class }))
+})
+
+const gradeClassUnchanged = computed(() => {
+  const { grade, class: studentClass } = gradeClassForm.value
+  return grade === (gradeClassInfo.value.current.grade || '') && studentClass === (gradeClassInfo.value.current.class || '')
+})
+
+const gradeClassDeniedText = computed(() => {
+  const reason = gradeClassInfo.value.deniedReason
+  if (!reason) return ''
+  const texts = locale.value.gradeClass?.deniedReasons || {}
+  return texts[reason] || texts.default || ''
+})
+
+const gradeClassLimitsText = computed(() => {
+  const texts = locale.value.gradeClass?.limits || {}
+  const limits = gradeClassInfo.value.limits
+  const parts = []
+  if (limits.windowStart || limits.windowEnd) {
+    parts.push(formatLocaleValue(texts.window, limits.windowStart || '-', limits.windowEnd || '-'))
+  }
+  if (limits.minIntervalDays) {
+    parts.push(formatLocaleValue(texts.interval, limits.minIntervalDays))
+  }
+  if (gradeClassInfo.value.remainingThisSemester !== null) {
+    parts.push(formatLocaleValue(texts.remaining, gradeClassInfo.value.remainingThisSemester))
+  }
+  return parts.join(' · ')
+})
+
+const formatGradeClass = (grade, studentClass) => {
+  if (!grade && !studentClass) return locale.value.gradeClass?.notSet || '-'
+  return [grade, studentClass].filter(Boolean).join(' ')
+}
+
+const loadGradeClassState = async () => {
+  gradeClassLoading.value = true
+  try {
+    const response = await $fetch('/api/user/grade-class')
+    const data = response.data || {}
+    gradeClassInfo.value = {
+      enabled: !!data.enabled,
+      canChange: !!data.canChange,
+      deniedReason: data.deniedReason || null,
+      current: { grade: data.current?.grade || '', class: data.current?.class || '' },
+      limits: data.limits || gradeClassInfo.value.limits,
+      remainingThisSemester: data.remainingThisSemester ?? null,
+      options: data.options || [],
+      history: data.history || []
+    }
+    gradeClassForm.value = {
+      grade: data.current?.grade || '',
+      class: data.current?.class || ''
+    }
+    gradeClassLoaded.value = true
+  } catch (error) {
+    console.error('获取班级信息失败:', error)
+  } finally {
+    gradeClassLoading.value = false
+  }
+}
+
+const submitGradeClass = async () => {
+  gradeClassSubmitting.value = true
+  try {
+    await $fetch('/api/user/grade-class', {
+      method: 'POST',
+      body: { grade: gradeClassForm.value.grade, class: gradeClassForm.value.class }
+    })
+    showToast(locale.value.gradeClass.success, 'success')
+    await Promise.all([loadGradeClassState(), auth.refreshUser()])
+  } catch (error) {
+    showToast(localizeServerError(error, locale.value.gradeClass.failed), 'error')
+  } finally {
+    gradeClassSubmitting.value = false
+  }
+}
+
 // 监听用户头像变化，重置错误状态
 watch(
   () => auth.user.value?.avatar,
@@ -644,6 +856,7 @@ onMounted(() => {
   refreshSiteConfig()
   loadPersonalApiKeys()
   loadSessions()
+  loadGradeClassState()
   chkszKeyInput.value = chkszApiKey.value || ''
 
   if (route.query.message) {

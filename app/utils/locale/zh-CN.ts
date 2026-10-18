@@ -198,6 +198,16 @@ export const siteConfig = {
   registerRequiresGradeClass: '注册时必须选择年级班级',
   registerRequiresGradeClassDesc:
     '开启后，注册表单（含第三方创建账户）必须选择系统内已有的年级和班级；选项需在年级班级管理中预先维护。',
+  allowStudentGradeClassUpdate: '允许学生自助修改班级',
+  allowStudentGradeClassUpdateDesc:
+    '开启后，学生可在账号管理页修改本人的年级班级，可选范围仍由年级班级管理决定；管理员代改不受限制。',
+  gradeClassChangeMinIntervalDays: '两次修改最小间隔',
+  gradeClassChangePerSemesterLimit: '每学期修改次数上限',
+  gradeClassChangeWindow: '允许修改的日期范围',
+  gradeClassChangeUnlimited: '留空不限制',
+  gradeClassChangeDayUnit: '天',
+  gradeClassChangeTimeUnit: '次',
+  gradeClassChangeHint: '仅统计学生自助修改次数，管理员代改不计入。',
   showBlacklistKeywords: '显示黑名单具体关键词',
   showBlacklistKeywordsDesc:
     '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
@@ -517,6 +527,34 @@ export const pages = {
     oauthBindingDesc: '绑定社交账号以便更快捷地登录系统',
     changePassword: '修改密码',
     changePasswordDesc: '为了您的账号安全，建议定期更换高强度密码',
+    gradeClass: {
+      title: '班级信息',
+      desc: '分班或选课后如有变动可自行更新，可选范围由管理员配置',
+      loading: '正在加载班级信息...',
+      current: '当前班级',
+      notSet: '未设置',
+      grade: '年级',
+      class: '班级',
+      selectGrade: '选择年级',
+      selectClass: '选择班级',
+      save: '保存修改',
+      success: '班级已更新',
+      failed: '班级修改失败',
+      history: '变更记录',
+      sourceStudent: '本人修改',
+      sourceAdmin: '管理员修改',
+      deniedReasons: {
+        window_closed: '当前不在允许修改班级的时间范围内',
+        interval_pending: '距离上次修改间隔不足，请稍后再试',
+        semester_limit_reached: '本学期修改次数已用完，请联系管理员',
+        default: '当前不满足自助修改班级的条件'
+      },
+      limits: {
+        window: '可修改时段：{0} 至 {1}',
+        interval: '间隔 {0} 天',
+        remaining: '本学期剩余 {0} 次'
+      }
+    },
     sessions: {
       title: '登录会话',
       desc: '查看并退出当前正在使用你账号的设备。',
@@ -4418,6 +4456,9 @@ export const admin = {
       gradePlaceholder: '例如: 2024',
       class: '班级',
       classPlaceholder: '例如: 1班',
+      gradeClassHistory: '班级变更记录',
+      gradeClassHistoryStudent: '学生自助',
+      gradeClassHistoryAdmin: '管理员修改',
       cancel: '取消操作',
       saving: '正在保存...',
       update: '更新用户信息',
@@ -5131,6 +5172,11 @@ export const serverErrors = {
   COMMON_TARGET_NOT_FOUND: '目标不存在',
   USER_NOT_PENDING: '仅待审核用户可执行审核操作',
   GRADE_CLASS_DUPLICATE: '该年级班级组合已存在',
+  GRADE_CLASS_SELF_UPDATE_DISABLED: '未开放自助修改班级',
+  GRADE_CLASS_WINDOW_CLOSED: '当前不在允许修改班级的时间范围内',
+  GRADE_CLASS_INTERVAL_PENDING: '距离上次修改间隔不足，请稍后再试',
+  GRADE_CLASS_SEMESTER_LIMIT_REACHED: '本学期修改次数已用完，请联系管理员',
+  GRADE_CLASS_UNCHANGED: '所选年级班级与当前一致',
   SONG_ID_REQUIRED: '歌曲ID不能为空',
   SONG_NOT_FOUND: '歌曲不存在',
   SONG_DURATION_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取时长',

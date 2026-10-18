@@ -1172,6 +1172,7 @@ VoiceHub/
 │   │   │   │   └── runtime-clear.post.ts # 清空运行事件缓冲
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
+│   │   │       │   ├── grade-class-logs.get.ts # 获取用户年级班级变更记录
 │   │   │       │   ├── reset-password.post.ts # 重置用户密码
 │   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
 │   │   │       │   ├── status-logs.get.ts # 获取用户状态变更日志
@@ -1375,6 +1376,8 @@ VoiceHub/
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
 │   │   │   ├── avatar.post.ts      # 设置 OAuth 头像来源
+│   │   │   ├── grade-class.get.ts # 获取本人年级班级与变更记录
+│   │   │   ├── grade-class.post.ts # 学生自助修改年级班级
 │   │   │   ├── sessions.delete.ts    # 撤销登录会话
 │   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
@@ -1442,6 +1445,8 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
+│   │   ├── grade-class-change.ts # 年级班级变更留痕与历史查询
+│   │   ├── grade-class-change-policy.ts # 学生自助改班限制策略纯函数
 │   │   ├── grade-class-core.ts # 年级班级选项纯函数
 │   │   ├── grade-class-options.ts # 年级班级选项提取工具
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略

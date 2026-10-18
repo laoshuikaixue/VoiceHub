@@ -27,6 +27,7 @@ import {
   userIdentities,
   userStatusLogs,
   gradeClass,
+  gradeClassChangeLogs,
   votes
 } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
@@ -303,6 +304,10 @@ export default defineEventHandler(async (event) => {
         query: () => db.select().from(gradeClass),
         description: '年级班级配置'
       },
+      gradeClassChangeLogs: {
+        query: () => db.select().from(gradeClassChangeLogs),
+        description: '班级变更历史'
+      },
       userIdentities: {
         query: async () => {
           const identitiesData = await db.select().from(userIdentities)
@@ -457,7 +462,7 @@ export default defineEventHandler(async (event) => {
       tablesToProcess = Object.keys(tablesToBackup)
     } else if (tables === 'users') {
       // 仅备份用户相关数据
-      tablesToProcess = ['users', 'notificationSettings', 'userStatusLogs', 'userIdentities']
+      tablesToProcess = ['users', 'notificationSettings', 'userStatusLogs', 'gradeClassChangeLogs', 'userIdentities']
     } else if (Array.isArray(tables)) {
       tablesToProcess = tables
     } else {

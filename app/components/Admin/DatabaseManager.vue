@@ -780,6 +780,7 @@ const restoreBackup = async () => {
       'notifications',
       'songBlacklist',
       'userStatusLogs',
+      'gradeClassChangeLogs',
       'apiKeys',
       'apiKeyPermissions',
       'apiLogs'

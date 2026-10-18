@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
+import { getCurrentSemesterName, recordGradeClassChange } from '~~/server/utils/grade-class-change'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({
@@ -62,7 +63,9 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         username: users.username,
         role: users.role,
-        status: users.status
+        status: users.status,
+        grade: users.grade,
+        class: users.class
       })
       .from(users)
       .where(inArray(users.id, userIds))
@@ -82,6 +85,7 @@ export default defineEventHandler(async (event) => {
     const updateResults = []
     const errors = []
     const userMap = new Map(existingUsers.map((u) => [u.id, u]))
+    const semester = await getCurrentSemesterName()
 
     for (const update of updates) {
       try {
@@ -196,6 +200,20 @@ export default defineEventHandler(async (event) => {
         })
 
         updateResults.push(updatedUser)
+
+        if (updateData.grade !== undefined || updateData.class !== undefined) {
+          await recordGradeClassChange({
+            userId: targetUser.id,
+            operatorId: currentUser.id,
+            source: 'admin',
+            previous: { grade: targetUser.grade, class: targetUser.class },
+            next: {
+              grade: updateData.grade ?? targetUser.grade,
+              class: updateData.class ?? targetUser.class
+            },
+            semester
+          })
+        }
       } catch (error) {
         console.error(`处理用户 ${update.userId} 更新时出错:`, error)
         errors.push({

@@ -9,6 +9,7 @@ import {
   collaborationLogs,
   emailTemplates,
   gradeClass,
+  gradeClassChangeLogs,
   notifications,
   notificationSettings,
   playTimes,
@@ -81,6 +82,9 @@ export default defineEventHandler(async (event) => {
       await db.delete(notificationSettings).where(eq(notificationSettings.userId, currentUserId))
       await db.delete(cardCodeRedeemLogs).where(eq(cardCodeRedeemLogs.redeemedBy, currentUserId))
       await db.delete(userStatusLogs).where(eq(userStatusLogs.userId, currentUserId))
+      await db
+        .delete(gradeClassChangeLogs)
+        .where(eq(gradeClassChangeLogs.userId, currentUserId))
       await db.delete(userIdentities).where(eq(userIdentities.userId, currentUserId))
       await db.delete(users).where(eq(users.id, currentUserId))
 
@@ -124,6 +128,7 @@ export default defineEventHandler(async (event) => {
       await db.delete(schedules)
       await db.delete(votes)
       await db.delete(userStatusLogs)
+      await db.delete(gradeClassChangeLogs)
       await db.delete(emailTemplates)
       await db.delete(songBlacklists)
       await db.delete(userIdentities)
@@ -172,6 +177,9 @@ export default defineEventHandler(async (event) => {
       await db
         .delete(userStatusLogs)
         .where(notInArray(userStatusLogs.userId, preservedSuperAdminIds))
+      await db
+        .delete(gradeClassChangeLogs)
+        .where(notInArray(gradeClassChangeLogs.userId, preservedSuperAdminIds))
       await db.delete(emailTemplates)
       await db.delete(songBlacklists)
       await db

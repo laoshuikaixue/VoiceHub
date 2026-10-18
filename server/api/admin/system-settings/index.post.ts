@@ -1009,6 +1009,53 @@ export default defineEventHandler(async (event) => {
       updateData.registerRequiresGradeClass = nextGradeClassRequired
     }
 
+    // 学生自助修改年级班级：总开关 + 三项可选限制（留空均表示不限制）
+    if (body.allowStudentGradeClassUpdate !== undefined) {
+      if (typeof body.allowStudentGradeClassUpdate !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'allowStudentGradeClassUpdate 必须是布尔值')
+      }
+      // 开启时系统内必须已有可选年级班级组合，否则学生无项可选、提交全部被拒
+      if (body.allowStudentGradeClassUpdate && (await fetchGradeClassOptions()).length === 0) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_GRADE_CLASS_OPTIONS_MISSING,
+          '请先在年级班级管理中配置年级班级，再允许学生自助修改班级'
+        )
+      }
+      updateData.allowStudentGradeClassUpdate = body.allowStudentGradeClassUpdate
+    }
+
+    for (const [field, max] of [
+      ['gradeClassChangeMinIntervalDays', 3650],
+      ['gradeClassChangePerSemesterLimit', 100]
+    ] as const) {
+      if (body[field] === undefined) continue
+      if (body[field] !== null && (!Number.isInteger(body[field]) || body[field] < 1 || body[field] > max)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${field} 必须是 1-${max} 的正整数或 null`)
+      }
+      updateData[field] = body[field] ?? null
+    }
+
+    for (const field of ['gradeClassChangeWindowStart', 'gradeClassChangeWindowEnd'] as const) {
+      if (body[field] === undefined) continue
+      const date = typeof body[field] === 'string' ? body[field].trim() : body[field]
+      if (date !== null && date !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${field} 日期格式无效，应为 YYYY-MM-DD`)
+      }
+      updateData[field] = date || null
+    }
+
+    // 窗口起止顺序：本次提交与已持久化值合并后校验，避免只改一端时写入逆序区间
+    const nextWindowStart = updateData.gradeClassChangeWindowStart !== undefined
+      ? updateData.gradeClassChangeWindowStart
+      : settings?.gradeClassChangeWindowStart ?? null
+    const nextWindowEnd = updateData.gradeClassChangeWindowEnd !== undefined
+      ? updateData.gradeClassChangeWindowEnd
+      : settings?.gradeClassChangeWindowEnd ?? null
+    if (nextWindowStart && nextWindowEnd && nextWindowStart > nextWindowEnd) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '允许修改班级的起始日期不得晚于结束日期')
+    }
+
     if (body.oauthRedirectUri !== undefined) {
       const normalizedOauthRedirectUri =
         typeof body.oauthRedirectUri === 'string'

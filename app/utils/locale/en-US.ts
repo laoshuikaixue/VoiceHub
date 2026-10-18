@@ -208,6 +208,16 @@ export const siteConfig = {
   registerRequiresGradeClass: 'Require Grade and Class on Registration',
   registerRequiresGradeClassDesc:
     'When enabled, the registration form (including third-party account creation) requires selecting an existing grade and class. Maintain options in Grade/Class management first.',
+  allowStudentGradeClassUpdate: 'Allow Student Class Self-update',
+  allowStudentGradeClassUpdateDesc:
+    'When enabled, students can change their own grade and class on the account page. Choices stay limited to configured options; admin edits are unrestricted.',
+  gradeClassChangeMinIntervalDays: 'Minimum Interval',
+  gradeClassChangePerSemesterLimit: 'Per-semester Limit',
+  gradeClassChangeWindow: 'Allowed Date Range',
+  gradeClassChangeUnlimited: 'Empty = unlimited',
+  gradeClassChangeDayUnit: 'days',
+  gradeClassChangeTimeUnit: 'times',
+  gradeClassChangeHint: 'Only student self-updates count toward the limit; admin edits are excluded.',
   showBlacklistKeywords: 'Show Exact Keyword',
   showBlacklistKeywordsDesc:
     'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
@@ -533,6 +543,34 @@ export const pages = {
     oauthBindingDesc: 'Bind social accounts for faster sign-in',
     changePassword: 'Change Password',
     changePasswordDesc: 'For account security, update your password regularly with a strong one',
+    gradeClass: {
+      title: 'Class Info',
+      desc: 'Update your own grade and class after reassignment; choices come from admin settings',
+      loading: 'Loading class info...',
+      current: 'Current class',
+      notSet: 'Not set',
+      grade: 'Grade',
+      class: 'Class',
+      selectGrade: 'Select grade',
+      selectClass: 'Select class',
+      save: 'Save',
+      success: 'Class updated',
+      failed: 'Failed to update class',
+      history: 'Change History',
+      sourceStudent: 'Self',
+      sourceAdmin: 'By admin',
+      deniedReasons: {
+        window_closed: 'Class changes are closed for now',
+        interval_pending: 'Too soon since your last change, try again later',
+        semester_limit_reached: 'Semester limit reached, contact an admin',
+        default: 'Class change is not allowed right now'
+      },
+      limits: {
+        window: 'Open: {0} to {1}',
+        interval: '{0}-day interval',
+        remaining: '{0} left this semester'
+      }
+    },
     sessions: {
       title: 'Login Sessions',
       desc: 'View and sign out devices currently using your account.',
@@ -4561,6 +4599,9 @@ export const admin = {
       gradePlaceholder: 'e.g. 2024',
       class: 'Class',
       classPlaceholder: 'e.g. Class 1',
+      gradeClassHistory: 'Class Change History',
+      gradeClassHistoryStudent: 'By student',
+      gradeClassHistoryAdmin: 'By admin',
       cancel: 'Cancel',
       saving: 'Saving...',
       update: 'Update User',
@@ -5320,6 +5361,11 @@ export const serverErrors = {
   COMMON_TARGET_NOT_FOUND: 'Target not found',
   USER_NOT_PENDING: 'Only users pending approval can be reviewed',
   GRADE_CLASS_DUPLICATE: 'This grade/class combination already exists',
+  GRADE_CLASS_SELF_UPDATE_DISABLED: 'Student class self-update is not enabled',
+  GRADE_CLASS_WINDOW_CLOSED: 'Class changes are closed for now',
+  GRADE_CLASS_INTERVAL_PENDING: 'Too soon since your last change, try again later',
+  GRADE_CLASS_SEMESTER_LIMIT_REACHED: 'Semester limit reached, contact an admin',
+  GRADE_CLASS_UNCHANGED: 'Selected grade and class match the current ones',
   SONG_ID_REQUIRED: 'Song ID is required',
   SONG_NOT_FOUND: 'Song not found',
   SONG_DURATION_PLATFORM_REQUIRED: 'Song missing platform or music ID, cannot retrieve duration',

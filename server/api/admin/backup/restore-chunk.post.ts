@@ -10,6 +10,7 @@ import {
   collaborationLogs,
   emailTemplates,
   gradeClass,
+  gradeClassChangeLogs,
   notificationSettings,
   notifications,
   playTimes,
@@ -427,6 +428,65 @@ export default defineEventHandler(async (event) => {
                 await tx.insert(userStatusLogs).values(userStatusLogData)
                 stats.created++
               }
+            }
+            break
+          }
+
+          case 'gradeClassChangeLogs': {
+            let validGradeClassLogUserId = record.userId
+            if (record.userId) {
+              const mappedUserId = userIdMapping.get(record.userId)
+              if (mappedUserId) {
+                validGradeClassLogUserId = mappedUserId
+              } else {
+                const logUserExists = await tx.query.users.findFirst({
+                  where: eq(users.id, record.userId)
+                })
+                if (!logUserExists) {
+                  console.warn(`班级变更日志的用户ID ${record.userId} 不存在，跳过`)
+                  return
+                }
+              }
+            } else {
+              return
+            }
+
+            const gradeClassChangeLogData = {
+              userId: validGradeClassLogUserId,
+              semester: record.semester || null,
+              oldGrade: record.oldGrade ?? null,
+              oldClass: record.oldClass ?? null,
+              newGrade: record.newGrade ?? null,
+              newClass: record.newClass ?? null,
+              source: record.source === 'admin' ? 'admin' : 'student',
+              operatorId: record.operatorId || validGradeClassLogUserId,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (mode === 'merge') {
+              await tx.insert(gradeClassChangeLogs).values(gradeClassChangeLogData)
+              stats.created++
+            } else if (record.id) {
+              const existingLog = await tx.query.gradeClassChangeLogs.findFirst({
+                where: eq(gradeClassChangeLogs.id, record.id)
+              })
+
+              if (existingLog) {
+                await tx
+                  .update(gradeClassChangeLogs)
+                  .set(gradeClassChangeLogData)
+                  .where(eq(gradeClassChangeLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(gradeClassChangeLogs).values({
+                  ...gradeClassChangeLogData,
+                  id: record.id
+                })
+                stats.created++
+              }
+            } else {
+              await tx.insert(gradeClassChangeLogs).values(gradeClassChangeLogData)
+              stats.created++
             }
             break
           }
@@ -902,6 +962,11 @@ export default defineEventHandler(async (event) => {
               'registerRequiresApproval',
                 'registerEmailRequired',
               'registerRequiresGradeClass',
+              'allowStudentGradeClassUpdate',
+              'gradeClassChangeMinIntervalDays',
+              'gradeClassChangePerSemesterLimit',
+              'gradeClassChangeWindowStart',
+              'gradeClassChangeWindowEnd',
               'oauthRegisterRequiresApproval',
               'submissionNoteRequiresApproval',
               'oauthRedirectUri',

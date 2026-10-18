@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
+import { getCurrentSemesterName, recordGradeClassChange } from '~~/server/utils/grade-class-change'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -154,13 +155,26 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 记录操作日志（可选，如果需要的话）
-    try {
-      // 这里可以添加操作日志记录
-      // 由于不修改数据库结构，暂时跳过日志记录
-    } catch (logError) {
-      console.error('记录操作日志失败:', logError)
-      // 日志记录失败不影响主要操作
+    // 记录班级变更历史：学期名只解析一次，逐条对比原值，未变化不写入
+    if (updated > 0) {
+      try {
+        const semester = await getCurrentSemesterName()
+        const updatedUserIds = new Set(validExistingUserIds)
+        for (const target of existingUsers) {
+          if (!updatedUserIds.has(target.id)) continue
+          await recordGradeClassChange({
+            userId: target.id,
+            operatorId: currentUser.id,
+            source: 'admin',
+            previous: { grade: target.grade, class: target.class },
+            next: { grade: targetGrade, class: target.class },
+            semester
+          })
+        }
+      } catch (logError) {
+        console.error('记录班级变更历史失败:', logError)
+        // 历史写入失败不影响已完成的批量更新
+      }
     }
 
     return {

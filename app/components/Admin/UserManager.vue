@@ -752,6 +752,31 @@
                 </div>
               </div>
 
+              <div v-if="editingUser && gradeClassHistory.length">
+                <p class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1 mb-2">
+                  {{ locale.form.gradeClassHistory }}
+                </p>
+                <div
+                  class="max-h-40 space-y-2 overflow-y-auto rounded-2xl border border-border-secondary bg-bg-primary p-3"
+                >
+                  <div
+                    v-for="record in gradeClassHistory"
+                    :key="record.id"
+                    class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
+                  >
+                    <span class="text-text-tertiary">{{ record.changedAt }}</span>
+                    <span class="font-bold text-text-primary">
+                      {{ formatGradeClass(record.oldGrade, record.oldClass) }} →
+                      {{ formatGradeClass(record.newGrade, record.newClass) }}
+                    </span>
+                    <span class="text-[10px] text-text-disabled">
+                      {{ record.source === 'student' ? locale.form.gradeClassHistoryStudent : locale.form.gradeClassHistoryAdmin }}
+                      <template v-if="record.operator?.name"> · {{ record.operator.name }}</template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div
                 v-if="formError"
                 class="p-4 bg-error-10 border border-error-20 rounded-2xl flex items-center gap-3 text-error text-xs"
@@ -1775,6 +1800,22 @@ const showAddModal = ref(false)
 const editingUser = ref(null)
 const saving = ref(false)
 const formError = ref('')
+const gradeClassHistory = ref([])
+
+const formatGradeClass = (grade, studentClass) => {
+  if (!grade && !studentClass) return '-'
+  return [grade, studentClass].filter(Boolean).join(' ')
+}
+
+const loadGradeClassHistory = async (userId) => {
+  gradeClassHistory.value = []
+  try {
+    const response = await $fetch(`/api/admin/users/${userId}/grade-class-logs`, { params: { limit: 20 } })
+    gradeClassHistory.value = response.logs || []
+  } catch (error) {
+    console.error('获取班级变更历史失败:', error)
+  }
+}
 
 // 重置密码状态
 const resetPasswordUser = ref(null)
@@ -2171,6 +2212,7 @@ const editUser = (user) => {
     grade: user.grade || '',
     class: user.class || ''
   }
+  loadGradeClassHistory(user.id)
 }
 
 const openApproval = (user) => {
@@ -2308,6 +2350,7 @@ const closeModal = () => {
     grade: '',
     class: ''
   }
+  gradeClassHistory.value = []
 }
 
 const closeResetPassword = () => {

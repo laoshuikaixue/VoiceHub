@@ -10,6 +10,7 @@ import {
   collaborationLogs,
   emailTemplates,
   gradeClass,
+  gradeClassChangeLogs,
   notificationSettings,
   notifications,
   playTimes,
@@ -203,6 +204,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(cardCodes)
           await db.delete(songBlacklists)
           await db.delete(userStatusLogs)
+          await db.delete(gradeClassChangeLogs)
           await db.delete(emailTemplates)
           await db.delete(userIdentities)
           await db.delete(users)
@@ -255,6 +257,9 @@ export default defineEventHandler(async (event) => {
               .delete(userStatusLogs)
               .where(notInArray(userStatusLogs.userId, preservedUserIdList))
             await db
+              .delete(gradeClassChangeLogs)
+              .where(notInArray(gradeClassChangeLogs.userId, preservedUserIdList))
+            await db
               .delete(userIdentities)
               .where(notInArray(userIdentities.userId, preservedUserIdList))
             await db.delete(users).where(notInArray(users.id, preservedUserIdList))
@@ -264,6 +269,7 @@ export default defineEventHandler(async (event) => {
             await db.delete(notifications)
             await db.delete(notificationSettings)
             await db.delete(userStatusLogs)
+            await db.delete(gradeClassChangeLogs)
             await db.delete(userIdentities)
             await db.delete(users)
           }
@@ -311,6 +317,7 @@ export default defineEventHandler(async (event) => {
       'userIdentities',
       'emailTemplates',
       'userStatusLogs',
+      'gradeClassChangeLogs',
       'songBlacklist',
       'cardCodes',
       'songs',
@@ -732,6 +739,66 @@ export default defineEventHandler(async (event) => {
                           }
                         }
                         break
+
+                      case 'gradeClassChangeLogs': {
+                        let validGradeClassLogUserId = record.userId
+                        if (record.userId) {
+                          const mappedUserId = userIdMapping.get(record.userId)
+                          if (mappedUserId) {
+                            validGradeClassLogUserId = mappedUserId
+                          } else {
+                            const logUserExists = await tx
+                              .select()
+                              .from(users)
+                              .where(eq(users.id, record.userId))
+                              .limit(1)
+                            if (logUserExists.length === 0) {
+                              console.warn(`班级变更日志的用户ID ${record.userId} 不存在，跳过此记录`)
+                              return
+                            }
+                          }
+                        } else {
+                          console.warn('班级变更日志缺少userId，跳过此记录')
+                          return
+                        }
+
+                        const gradeClassChangeLogData = {
+                          userId: validGradeClassLogUserId,
+                          semester: record.semester || null,
+                          oldGrade: record.oldGrade ?? null,
+                          oldClass: record.oldClass ?? null,
+                          newGrade: record.newGrade ?? null,
+                          newClass: record.newClass ?? null,
+                          source: record.source === 'admin' ? 'admin' : 'student',
+                          operatorId: record.operatorId || validGradeClassLogUserId,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                        }
+
+                        if (mode === 'merge') {
+                          await tx.insert(gradeClassChangeLogs).values(gradeClassChangeLogData)
+                        } else if (record.id) {
+                          const existingGradeClassLog = await tx
+                            .select()
+                            .from(gradeClassChangeLogs)
+                            .where(eq(gradeClassChangeLogs.id, record.id))
+                            .limit(1)
+
+                          if (existingGradeClassLog.length > 0) {
+                            await tx
+                              .update(gradeClassChangeLogs)
+                              .set(gradeClassChangeLogData)
+                              .where(eq(gradeClassChangeLogs.id, record.id))
+                          } else {
+                            await tx.insert(gradeClassChangeLogs).values({
+                              ...gradeClassChangeLogData,
+                              id: record.id
+                            })
+                          }
+                        } else {
+                          await tx.insert(gradeClassChangeLogs).values(gradeClassChangeLogData)
+                        }
+                        break
+                      }
 
                       case 'cardCodes': {
                         const cardCodeData: any = {}
@@ -1264,6 +1331,11 @@ export default defineEventHandler(async (event) => {
                           'registerRequiresApproval',
                           'registerEmailRequired',
                           'registerRequiresGradeClass',
+                          'allowStudentGradeClassUpdate',
+                          'gradeClassChangeMinIntervalDays',
+                          'gradeClassChangePerSemesterLimit',
+                          'gradeClassChangeWindowStart',
+                          'gradeClassChangeWindowEnd',
                           'oauthRegisterRequiresApproval',
                           'submissionNoteRequiresApproval',
                           'oauthRedirectUri',

@@ -11,6 +11,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordGradeClassChange } from '~~/server/utils/grade-class-change'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -228,6 +229,15 @@ export default defineEventHandler(async (event) => {
         operatorId: user.id
       })
     }
+
+    // 年级班级变更留痕（值未变化时内部跳过）
+    await recordGradeClassChange({
+      userId: targetUser.id,
+      operatorId: user.id,
+      source: 'admin',
+      previous: { grade: targetUser.grade, class: targetUser.class },
+      next: { grade: updateData.grade, class: updateData.class }
+    })
 
     if (validRole !== targetUser.role) {
       const oldRoleName = roleNames[targetUser.role] || targetUser.role
