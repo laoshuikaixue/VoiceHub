@@ -1,6 +1,8 @@
 import { createError, defineEventHandler, getCookie, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -88,10 +90,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户信息验证权限
-    const user = await db.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, role: true }
-    })
+    const userRows = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .limit(1)
+    const user = userRows[0]
 
     if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({

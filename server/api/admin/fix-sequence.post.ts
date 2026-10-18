@@ -25,7 +25,22 @@ function toRegclass(value: string) {
 }
 
 // 修复单个表的序列
-async function fixTableSequence(table: string, dbTableName: string) {
+type SequenceFixResult = {
+  success: boolean
+  table: string
+  message?: string
+  error?: string
+  data?: {
+    table: string
+    maxId: number
+    oldSequenceValue?: number
+    newSequenceValue: number
+    sequenceName: string
+    skipped: boolean
+  }
+}
+
+async function fixTableSequence(table: string, dbTableName: string): Promise<SequenceFixResult> {
   try {
     // 获取表的最大ID
     const maxIdResult = await db.execute(
@@ -57,7 +72,8 @@ async function fixTableSequence(table: string, dbTableName: string) {
           table: table,
           maxId: 0,
           newSequenceValue: 1,
-          sequenceName: sequenceName
+          sequenceName: sequenceName,
+          skipped: false
         }
       }
     }
@@ -80,7 +96,9 @@ async function fixTableSequence(table: string, dbTableName: string) {
         maxId: maxId,
         oldSequenceValue: currentSeqValue,
         newSequenceValue: newSequenceValue,
-        sequenceName: sequenceName
+        sequenceName: sequenceName,
+        // 序列已等于最大 ID，setval 无实际效果
+        skipped: currentSeqValue === newSequenceValue
       }
     }
   } catch (error) {
@@ -158,7 +176,7 @@ export default defineEventHandler(async (event) => {
           results.push(result)
 
           if (result.success) {
-            if (result.data?.skipped || result.data?.alreadyCorrect) {
+            if (result.data?.skipped) {
               skippedCount++
             } else {
               fixedCount++

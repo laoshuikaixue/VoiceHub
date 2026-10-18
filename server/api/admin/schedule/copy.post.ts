@@ -151,8 +151,6 @@ export default defineEventHandler(async (event) => {
     toDate,
     copiedCount: copyResult.copiedCount ?? 0,
     createdScheduleIds: copyResult.createdScheduleIds ?? [],
-    replacedDrafts: copyResult.replacedDrafts ?? [],
-    draftCount: copyResult.draftCount,
-    overwriteDrafts: copyResult.overwriteDrafts
+    replacedDrafts: copyResult.replacedDrafts ?? []
   }
 })
