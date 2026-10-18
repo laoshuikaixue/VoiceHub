@@ -13,6 +13,7 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
+    "typecheck:server": "nuxt prepare && node scripts/typecheck-server.js",
     "db:migrate": "pnpm exec drizzle-kit migrate",
     "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
     "db:generate:name": "pnpm exec drizzle-kit generate --name",

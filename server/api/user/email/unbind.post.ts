@@ -22,8 +22,7 @@ export default defineEventHandler(async (event) => {
       .update(users)
       .set({
         email: null,
-        emailVerified: false,
-        emailVerifiedAt: null
+        emailVerified: false
       })
       .where(eq(users.id, user.id))
 
