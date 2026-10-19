@@ -1,4 +1,5 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
+import type { H3Event } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
@@ -77,7 +78,14 @@ const loadBasicSongs = async (
   search: string,
   user: any,
   isAdmin: boolean,
-  options: { scope?: string; sortBy?: string; sortOrder?: string; page?: number; pageSize?: number } = {}
+  options: {
+    scope?: string
+    sortBy?: string
+    sortOrder?: string
+    page?: number
+    pageSize?: number
+    event?: H3Event | null
+  } = {}
 ) => {
   const conditions: string[] = []
   const params: any[] = []
@@ -246,7 +254,7 @@ const loadBasicSongs = async (
   })) as SongResponse[]
   if (hideStudentInfo && !isAdmin) maskSongsInfo(songs)
   if (hasSubmissionAnonymous) {
-    applySubmissionAnonymity(songs, { id: user?.id ?? null, isAdmin })
+    applySubmissionAnonymity(songs, { id: user?.id ?? null, isAdmin, event: options.event })
   }
   if (!user) songs.forEach(stripAnonymousSongIdentifiers)
   const total = Number(rows[0]?.total || 0)
@@ -457,7 +465,7 @@ export default defineEventHandler(async (event) => {
 
       const hideStudentInfo = compactRows[0]?.hideStudentInfo ?? true
       if (hideStudentInfo && !isAdmin) maskSongsInfo(compactSongs)
-      applySubmissionAnonymity(compactSongs, { id: user?.id ?? null, isAdmin })
+      applySubmissionAnonymity(compactSongs, { id: user?.id ?? null, isAdmin, event })
       if (!user) compactSongs.forEach(stripAnonymousSongIdentifiers)
 
       return {
@@ -833,7 +841,7 @@ export default defineEventHandler(async (event) => {
       maskSongsInfo(formattedSongs)
     }
     // 逐条匿名：与「隐藏学生信息」开关相互独立，管理员与投稿人本人不受影响
-    applySubmissionAnonymity(formattedSongs, { id: user?.id ?? null, isAdmin })
+    applySubmissionAnonymity(formattedSongs, { id: user?.id ?? null, isAdmin, event })
     if (!user) {
       formattedSongs.forEach(stripAnonymousSongIdentifiers)
     }
@@ -878,7 +886,8 @@ export default defineEventHandler(async (event) => {
           sortBy: fallbackSortBy,
           sortOrder: fallbackSortOrder,
           page: fallbackPage,
-          pageSize: fallbackPageSize
+          pageSize: fallbackPageSize,
+          event
         })
       } catch (fallbackError) {
         console.error('[Songs API] 基础歌曲查询也失败:', fallbackError)
