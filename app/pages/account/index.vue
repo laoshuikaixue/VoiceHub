@@ -180,9 +180,9 @@
                   >
                     <span class="text-text-tertiary">{{ record.changedAt }}</span>
                     <span class="font-bold text-text-primary">
-                      {{ formatGradeClass(record.oldGrade, record.oldClass) }}
+                      {{ formatGradeClassText(record.oldGrade, record.oldClass) }}
                       <ArrowRight :size="11" class="inline-block mx-1" />
-                      {{ formatGradeClass(record.newGrade, record.newClass) }}
+                      {{ formatGradeClassText(record.newGrade, record.newClass) }}
                     </span>
                     <span class="text-[10px] text-text-disabled">
                       {{ record.source === 'student' ? locale.gradeClass.sourceStudent : locale.gradeClass.sourceAdmin }}
@@ -643,6 +643,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { getProviderDisplayName } from '~/utils/oauth'
+import { formatGradeClass } from '~/utils/grade-class-display'
 import { useScrollMemory } from '~/composables/useScrollMemory'
 
 const auth = useAuth()
@@ -795,10 +796,8 @@ const gradeClassLimitsText = computed(() => {
   return parts.join(' · ')
 })
 
-const formatGradeClass = (grade, studentClass) => {
-  if (!grade && !studentClass) return locale.value.gradeClass?.notSet || '-'
-  return [grade, studentClass].filter(Boolean).join(' ')
-}
+const formatGradeClassText = (grade, studentClass) =>
+  formatGradeClass(grade, studentClass, locale.value.gradeClass?.notSet || '-')
 
 const loadGradeClassState = async () => {
   gradeClassLoading.value = true

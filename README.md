@@ -999,6 +999,7 @@ VoiceHub/
 │       ├── cover-theme.ts    # 封面取色与歌词主题色（AMLL 调色板）
 │       ├── debounce.ts       # 防抖工具
 │       ├── esaCaptcha.ts     # 阿里云 ESA AI验证码区域与服务端节点共享常量
+│       ├── grade-class-display.ts # 年级班级展示串（账号页与用户管理共用）
 │       ├── grade-class-input.ts # 年级班级批量输入解析
 │       ├── gradeClassWeights.js # 年级排序权重
 │       ├── invalidPlaybackUrls.ts # 播放端确认无效的地址登记（换源时跳过坏链）

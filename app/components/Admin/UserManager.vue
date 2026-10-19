@@ -1692,6 +1692,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
+import { formatGradeClass } from '~/utils/grade-class-display'
 import { isArchivedStatus } from '~/utils/user-archive'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 
@@ -1801,11 +1802,6 @@ const editingUser = ref(null)
 const saving = ref(false)
 const formError = ref('')
 const gradeClassHistory = ref([])
-
-const formatGradeClass = (grade, studentClass) => {
-  if (!grade && !studentClass) return '-'
-  return [grade, studentClass].filter(Boolean).join(' ')
-}
 
 // 请求序号：弹窗切换用户后，先前在途的响应不得再写入历史，避免显示他人记录
 let gradeClassHistorySeq = 0
