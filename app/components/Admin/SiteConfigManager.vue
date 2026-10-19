@@ -1778,6 +1778,9 @@ const saveConfig = async () => {
       gradeClassChangePerSemesterLimit: normalizeOptionalPositiveInt(
         formData.value.gradeClassChangePerSemesterLimit
       ),
+      // 留空提交 null 表示不限制日期窗口
+      gradeClassChangeWindowStart: formData.value.gradeClassChangeWindowStart?.trim() || null,
+      gradeClassChangeWindowEnd: formData.value.gradeClassChangeWindowEnd?.trim() || null,
       ...(isSuperAdmin.value
         ? {
             defaultTheme: formData.value.defaultTheme,
