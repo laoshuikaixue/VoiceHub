@@ -142,7 +142,7 @@ export async function listGradeClassChanges(
 
 /**
  * 汇总自助修改开关、限制与实际改动情况，给出本次是否允许改班的判定。
- * 间隔判定在数据库侧用 now() 做减法，避免宿主时区与库内 UTC 墙钟混算产生偏移。
+ * 间隔判定在数据库侧用 UTC 墙钟做减法（timezone('UTC', now())），避免会话时区非 UTC 时把无时区列解释出错位时刻。
  */
 export async function getGradeClassSelfUpdateState(
   userId: number
@@ -172,7 +172,7 @@ export async function getGradeClassSelfUpdateState(
         and(
           eq(gradeClassChangeLogs.userId, userId),
           eq(gradeClassChangeLogs.source, 'student'),
-          sql`${gradeClassChangeLogs.createdAt} > now() - make_interval(days => ${limits.minIntervalDays}::int)`
+          sql`${gradeClassChangeLogs.createdAt} > timezone('UTC', now()) - make_interval(days => ${limits.minIntervalDays}::int)`
         )
       )
       .limit(1)

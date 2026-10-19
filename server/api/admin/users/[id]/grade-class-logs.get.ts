@@ -54,8 +54,9 @@ export default defineEventHandler(async (event) => {
         source: log.source,
         changedAt: log.changedAt,
         operator: {
-          name: log.operator.name || log.operator.username || '未知操作员',
-          username: log.operator.username || 'unknown'
+          // 操作员已被删除时留空，由前端按"管理员修改"标签展示，禁止在此硬编码中文占位
+          name: log.operator.name || log.operator.username,
+          username: log.operator.username
         }
       }))
     }

@@ -1807,12 +1807,18 @@ const formatGradeClass = (grade, studentClass) => {
   return [grade, studentClass].filter(Boolean).join(' ')
 }
 
+// 请求序号：弹窗切换用户后，先前在途的响应不得再写入历史，避免显示他人记录
+let gradeClassHistorySeq = 0
+
 const loadGradeClassHistory = async (userId) => {
+  const seq = ++gradeClassHistorySeq
   gradeClassHistory.value = []
   try {
-    const response = await $fetch(`/api/admin/users/${userId}/grade-class-logs`, { params: { limit: 20 } })
+    const response = await $fetch(`/api/admin/users/${userId}/grade-class-logs`, { query: { limit: 20 } })
+    if (seq !== gradeClassHistorySeq) return
     gradeClassHistory.value = response.logs || []
   } catch (error) {
+    if (seq !== gradeClassHistorySeq) return
     console.error('获取班级变更历史失败:', error)
   }
 }
@@ -2350,6 +2356,7 @@ const closeModal = () => {
     grade: '',
     class: ''
   }
+  gradeClassHistorySeq++
   gradeClassHistory.value = []
 }
 

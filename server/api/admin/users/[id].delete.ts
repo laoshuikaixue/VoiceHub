@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
+import { gradeClassChangeLogs, users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -57,8 +57,12 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 删除用户
-    await db.delete(users).where(eq(users.id, parseInt(userId)))
+    // 删除用户：班级变更历史无外键约束，须在此显式清理，否则残留记录会被复用 ID 的新用户继承
+    const userIdNum = parseInt(userId)
+    await db.transaction(async (tx) => {
+      await tx.delete(gradeClassChangeLogs).where(eq(gradeClassChangeLogs.userId, userIdNum))
+      await tx.delete(users).where(eq(users.id, userIdNum))
+    })
 
     return {
       success: true,
