@@ -120,6 +120,8 @@ export default defineEventHandler(async (event) => {
         }
         // 构建更新数据
         const updateData: any = {}
+        // 变更基线须在写入前取，写入后立即刷新快照
+        const previousGradeClass = { grade: targetUser.grade, class: targetUser.class }
 
         if (update.grade !== undefined && update.grade.trim()) {
           updateData.grade = update.grade.trim()
@@ -201,12 +203,15 @@ export default defineEventHandler(async (event) => {
 
         updateResults.push(updatedUser)
 
+        // 同一 userId 在一次批量中重复出现时，后续迭代须以最新值为基线，否则历史链断裂
+        if (updatedUser) Object.assign(targetUser, updatedUser)
+
         if (updateData.grade !== undefined || updateData.class !== undefined) {
           await recordGradeClassChange({
             userId: targetUser.id,
             operatorId: currentUser.id,
             source: 'admin',
-            previous: { grade: targetUser.grade, class: targetUser.class },
+            previous: previousGradeClass,
             next: {
               grade: updateData.grade ?? targetUser.grade,
               class: updateData.class ?? targetUser.class

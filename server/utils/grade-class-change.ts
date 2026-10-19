@@ -54,6 +54,7 @@ export async function getCurrentSemesterName(): Promise<string | null> {
  * 记录一次年级班级变更；值未变化时不写入。
  * 学生自助与管理员代改共用，便于历史与次数统计口径一致。
  * 批量改动可由调用方传入已解析的学期名，避免逐条查库。
+ * 调用方在事务内改动用户信息时须传入 tx，使更新与日志原子写入。
  */
 export async function recordGradeClassChange(input: {
   userId: number
@@ -62,11 +63,13 @@ export async function recordGradeClassChange(input: {
   previous: GradeClassValue
   next: GradeClassValue
   semester?: string | null
+  tx?: any
 }): Promise<boolean> {
   if (hasSameGradeClass(input.previous, input.next)) return false
 
   const semester = input.semester !== undefined ? input.semester : await getCurrentSemesterName()
-  await db.insert(gradeClassChangeLogs).values({
+  const executor = input.tx ?? db
+  await executor.insert(gradeClassChangeLogs).values({
     userId: input.userId,
     operatorId: input.operatorId,
     source: input.source,

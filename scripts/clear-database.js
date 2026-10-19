@@ -12,6 +12,7 @@ import {
   collaborationLogs,
   db,
   emailTemplates,
+  gradeClassChangeLogs,
   notifications,
   notificationSettings,
   passwordAuditLogs,
@@ -81,7 +82,8 @@ async function resetAutoIncrementSequences() {
     'PasswordAuditLog',
     'PasswordRateLimit',
     'EmailTemplate',
-    'user_status_logs'
+    'user_status_logs',
+    'grade_class_change_logs'
   ]
 
   console.log('重置自增序列...')
@@ -143,6 +145,7 @@ async function main() {
     await db.delete(apiKeyPermissions)
     await db.delete(apiKeys)
     await db.delete(userStatusLogs)
+    await db.delete(gradeClassChangeLogs)
     await db.delete(emailTemplates)
     await db.delete(users)
 

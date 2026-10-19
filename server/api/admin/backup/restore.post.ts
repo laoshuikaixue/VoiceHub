@@ -770,7 +770,11 @@ export default defineEventHandler(async (event) => {
                           newGrade: record.newGrade ?? null,
                           newClass: record.newClass ?? null,
                           source: record.source === 'admin' ? 'admin' : 'student',
-                          operatorId: record.operatorId || validGradeClassLogUserId,
+                          // 操作员与用户同源映射，避免恢复后把改动归属到恰好占用该 ID 的无关用户
+                          operatorId:
+                            userIdMapping.get(record.operatorId) ||
+                            record.operatorId ||
+                            validGradeClassLogUserId,
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
                         }
 

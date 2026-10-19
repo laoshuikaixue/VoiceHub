@@ -55,45 +55,51 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const [current] = await db
-    .select({ grade: users.grade, class: users.class })
-    .from(users)
-    .where(eq(users.id, user.id))
-    .limit(1)
+  // 用户行锁串行化同一用户的并发请求：判定、更新、写日志须在同一事务内完成，
+  // 否则并行请求会读到同一份改动前历史并同时通过间隔/学期上限校验
+  await db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ grade: users.grade, class: users.class })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1)
+      .for('update')
 
-  if (!current) {
-    throw createApiError(404, SERVER_ERROR_CODES.USER_NOT_FOUND, '用户不存在')
-  }
+    if (!current) {
+      throw createApiError(404, SERVER_ERROR_CODES.USER_NOT_FOUND, '用户不存在')
+    }
 
-  const state = await getGradeClassSelfUpdateState(user.id)
-  if (!state.enabled) {
-    throw createApiError(403, SERVER_ERROR_CODES.GRADE_CLASS_SELF_UPDATE_DISABLED, '未开放自助修改班级')
-  }
-  if (!state.decision.allowed) {
-    const code = deniedReasonCodes[state.decision.reason]
-    throw createApiError(403, code, '当前不满足自助修改班级的条件')
-  }
+    const state = await getGradeClassSelfUpdateState(user.id)
+    if (!state.enabled) {
+      throw createApiError(403, SERVER_ERROR_CODES.GRADE_CLASS_SELF_UPDATE_DISABLED, '未开放自助修改班级')
+    }
+    if (!state.decision.allowed) {
+      const code = deniedReasonCodes[state.decision.reason]
+      throw createApiError(403, code, '当前不满足自助修改班级的条件')
+    }
 
-  // 与注册表单同源：只接受管理员配置的年级班级组合，学生无法自造班级
-  if (!(await isGradeClassValid(grade, studentClass))) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
-  }
+    // 与注册表单同源：只接受管理员配置的年级班级组合，学生无法自造班级
+    if (!(await isGradeClassValid(grade, studentClass))) {
+      throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
+    }
 
-  if (grade === (current.grade || '') && studentClass === (current.class || '')) {
-    throw createApiError(400, SERVER_ERROR_CODES.GRADE_CLASS_UNCHANGED, '所选年级班级与当前一致')
-  }
+    if (grade === (current.grade || '') && studentClass === (current.class || '')) {
+      throw createApiError(400, SERVER_ERROR_CODES.GRADE_CLASS_UNCHANGED, '所选年级班级与当前一致')
+    }
 
-  await db
-    .update(users)
-    .set({ grade, class: studentClass })
-    .where(eq(users.id, user.id))
+    await tx
+      .update(users)
+      .set({ grade, class: studentClass })
+      .where(eq(users.id, user.id))
 
-  await recordGradeClassChange({
-    userId: user.id,
-    operatorId: user.id,
-    source: 'student',
-    previous: { grade: current.grade, class: current.class },
-    next: { grade, class: studentClass }
+    await recordGradeClassChange({
+      userId: user.id,
+      operatorId: user.id,
+      source: 'student',
+      previous: { grade: current.grade, class: current.class },
+      next: { grade, class: studentClass },
+      tx
+    })
   })
 
   const nextState = await getGradeClassSelfUpdateState(user.id)

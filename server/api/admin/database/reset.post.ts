@@ -6,6 +6,7 @@ import {
   apiLogs,
   collaborationLogs,
   emailTemplates,
+  gradeClassChangeLogs,
   notificationSettings,
   notifications,
   playTimes,
@@ -61,6 +62,7 @@ async function resetAutoIncrementSequences() {
     { name: 'systemSettings', dbName: 'SystemSettings' },
     { name: 'songBlacklists', dbName: 'SongBlacklist' },
     { name: 'userStatusLogs', dbName: 'user_status_logs' },
+    { name: 'gradeClassChangeLogs', dbName: 'grade_class_change_logs' },
     { name: 'userIdentities', dbName: 'UserIdentity' },
     { name: 'requestTimes', dbName: 'RequestTime' },
     { name: 'songReplayRequests', dbName: 'song_replay_requests' },
@@ -213,6 +215,13 @@ export default defineEventHandler(async (event) => {
           .delete(userStatusLogs)
           .returning({ id: userStatusLogs.id })
         resetResults.details.recordsDeleted += deletedStatusLogs.length
+        resetResults.details.tablesCleared++
+
+        // 11.1 班级变更历史 (依赖于用户)
+        const deletedGradeClassLogs = await tx
+          .delete(gradeClassChangeLogs)
+          .returning({ id: gradeClassChangeLogs.id })
+        resetResults.details.recordsDeleted += deletedGradeClassLogs.length
         resetResults.details.tablesCleared++
 
         // 12. 第三方身份关联 (依赖于用户)
