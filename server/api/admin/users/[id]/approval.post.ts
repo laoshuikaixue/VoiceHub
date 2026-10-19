@@ -7,6 +7,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
+import { recordGradeClassChange } from '~~/server/utils/grade-class-change'
 import { SmtpService } from '~~/server/services/smtpService'
 
 // 审核结果仅保留原有申请人邮件，机器人待审通知只发给管理员。
@@ -67,7 +68,9 @@ export default defineEventHandler(async (event) => {
       username: users.username,
       name: users.name,
       status: users.status,
-      email: users.email
+      email: users.email,
+      grade: users.grade,
+      class: users.class
     })
     .from(users)
     .where(eq(users.id, userIdNumber))
@@ -118,11 +121,13 @@ export default defineEventHandler(async (event) => {
       }
       updateData.name = trimmedName
     }
-    if (typeof body.grade === 'string') {
-      updateData.grade = body.grade.trim() || null
-    }
-    if (typeof body.class === 'string') {
-      updateData.class = body.class.trim() || null
+    const nextGrade =
+      typeof body.grade === 'string' ? body.grade.trim() || null : targetUser.grade
+    const nextClass =
+      typeof body.class === 'string' ? body.class.trim() || null : targetUser.class
+    if (nextGrade !== targetUser.grade || nextClass !== targetUser.class) {
+      updateData.grade = nextGrade
+      updateData.class = nextClass
     }
     if (typeof body.remark === 'string') {
       updateData.remark = body.remark.trim() || null
@@ -147,6 +152,15 @@ export default defineEventHandler(async (event) => {
         reason: typeof reason === 'string' && reason.trim() ? reason.trim() : '注册审核通过',
         operatorId: operator.id,
         createdAt: currentTime
+      })
+      // 审核时可同时纠正年级班级，与用户更新同事务留痕，避免改了班没有历史
+      await recordGradeClassChange({
+        userId: userIdNumber,
+        operatorId: operator.id,
+        source: 'admin',
+        previous: { grade: targetUser.grade, class: targetUser.class },
+        next: { grade: nextGrade, class: nextClass },
+        tx
       })
     })
 
