@@ -988,29 +988,35 @@
                 </label>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-border-secondary-50">
+            <div class="flex items-center justify-between gap-3 pt-4 border-t border-border-secondary-50">
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+                {{ locale.sourceReplace.sectionTitle }}
+              </span>
+              <button
+                v-if="showEditModal"
+                type="button"
+                class="flex items-center gap-2 px-4 py-2 bg-primary-10 hover:bg-primary-20 text-primary text-[11px] font-black rounded-lg border border-primary-20 transition-all active:scale-95"
+                @click="openSourceReplaceModal"
+              >
+                <ArrowLeftRight :size="14" />
+                {{ locale.sourceReplace.button }}
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
-                  >{{ locale.editModal.musicPlatform }}</label
-                >
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+                  {{ locale.editModal.musicPlatform }}
+                </label>
                 <CustomSelect
                   v-if="showEditModal"
                   v-model="editForm.musicPlatform"
-                  :options="[
-                    { label: locale.platforms.netease, value: 'netease' },
-                    { label: locale.platforms.tencent, value: 'tencent' },
-                    { label: locale.platforms.bilibili, value: 'bilibili' }
-                  ]"
+                  :options="musicPlatformOptions"
                   :placeholder="locale.editModal.selectPlatform"
                 />
                 <CustomSelect
                   v-else
                   v-model="addForm.musicPlatform"
-                  :options="[
-                    { label: locale.platforms.netease, value: 'netease' },
-                    { label: locale.platforms.tencent, value: 'tencent' },
-                    { label: locale.platforms.bilibili, value: 'bilibili' }
-                  ]"
+                  :options="musicPlatformOptions"
                   :placeholder="locale.editModal.selectPlatform"
                 />
               </div>
@@ -1201,6 +1207,13 @@
         </div>
       </div>
     </Transition>
+
+    <SongSourceReplaceModal
+      :show="showSourceReplaceModal"
+      :song="sourceReplaceSong"
+      @close="showSourceReplaceModal = false"
+      @apply="applySourceReplacement"
+    />
   </div>
 </template>
 
@@ -1210,6 +1223,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
 import DuplicateSongsModal from '~/components/Admin/DuplicateSongsModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
+import SongSourceReplaceModal from '~/components/Admin/SongSourceReplaceModal.vue'
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -1219,6 +1233,7 @@ import {
   Plus,
   Copy,
   RotateCcw,
+  ArrowLeftRight,
   Edit2,
   Check,
   X,
@@ -1245,6 +1260,8 @@ import { useSemesters } from '~/composables/useSemesters'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { usePlatformConfig } from '~/composables/usePlatformConfig'
+import { getPlatformDisplayName } from '~/utils/platforms'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl, getCoverThumbUrl } from '~/utils/url'
@@ -1257,7 +1274,7 @@ dayjs.extend(customParseFormat)
 // 响应式数据
 const { showToast: showNotification } = useToast()
 const { localize: localizeServerError } = useServerErrors()
-const { admin } = useLocale()
+const { admin, siteConfig, currentLocale } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.songManagement || {}
   const emptyText = () => ''
@@ -1404,6 +1421,18 @@ const editForm = ref({
   playUrl: '',
   durationSeconds: ''
 })
+const showSourceReplaceModal = ref(false)
+// 换源选中的结果：仅在平台与音乐 ID 未被手动改动时随保存提交 selectionToken
+const editSourceSelection = ref(null)
+const originalEditMusicSource = ref({ platform: '', musicId: '' })
+const sourceReplaceSong = computed(() => ({
+  title: editForm.value.title,
+  artist: editForm.value.artist,
+  musicPlatform: editForm.value.musicPlatform,
+  musicId: editForm.value.musicId,
+  cover: editForm.value.cover,
+  durationSeconds: editForm.value.durationSeconds
+}))
 const originalEditSubmissionNote = ref('')
 const submissionNoteClearRequested = ref(false)
 const submissionNoteClearReason = ref('')
@@ -1424,6 +1453,21 @@ const addForm = ref({
   cover: '',
   playUrl: '',
   durationSeconds: ''
+})
+
+// 平台选项：内置平台按后台排序，插件音源使用插件显示名
+const { getAvailablePlatforms, loadPlatformConfig, pluginPlatforms } = usePlatformConfig()
+const platformLabel = (platform) => {
+  if (!platform) return ''
+  const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
+  return plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
+}
+const musicPlatformOptions = computed(() => {
+  const list = [...getAvailablePlatforms()]
+  for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {
+    if (value && !list.includes(value)) list.push(value)
+  }
+  return list.map((platform) => ({ label: platformLabel(platform), value: platform }))
 })
 
 // URL验证状态
@@ -2146,6 +2190,12 @@ const editSong = (song) => {
     playUrl: song.playUrl || '',
     durationSeconds: song.durationSeconds || ''
   }
+  editSourceSelection.value = null
+  originalEditMusicSource.value = {
+    platform: song.musicPlatform || '',
+    musicId: song.musicId || ''
+  }
+  showSourceReplaceModal.value = false
   originalEditSubmissionNote.value = song.submissionNote || ''
   submissionNoteClearRequested.value = false
   submissionNoteClearReason.value = ''
@@ -2175,6 +2225,29 @@ const editSong = (song) => {
 const editFromDuplicate = (song) => {
   showDuplicateModal.value = false
   editSong(song)
+}
+
+const openSourceReplaceModal = () => {
+  showSourceReplaceModal.value = true
+}
+
+// 换源结果只填入编辑表单，真正生效仍需保存歌曲
+const applySourceReplacement = (payload) => {
+  editForm.value.musicPlatform = payload.musicPlatform || ''
+  editForm.value.musicId = payload.musicId || ''
+  if (payload.cover) editForm.value.cover = payload.cover
+  if (payload.durationSeconds != null) editForm.value.durationSeconds = payload.durationSeconds
+  // 旧播放地址指向原音源，换源后必须清空避免继续使用旧链接
+  editForm.value.playUrl = ''
+  editSourceSelection.value = payload.selectionToken
+    ? {
+        musicPlatform: editForm.value.musicPlatform,
+        musicId: editForm.value.musicId,
+        selectionToken: payload.selectionToken
+      }
+    : null
+  showSourceReplaceModal.value = false
+  showNotification(getNestedMessage('sourceReplace', 'applied'), 'success')
 }
 
 const saveEditSong = async () => {
@@ -2208,6 +2281,15 @@ const saveEditSong = async () => {
     }
   }
 
+  // 换源票据仅在平台与音乐 ID 未被手动改动时有效，避免服务端校验失败
+  const sourceSelection = editSourceSelection.value
+  const selectionToken =
+    sourceSelection &&
+    sourceSelection.musicPlatform === editForm.value.musicPlatform &&
+    sourceSelection.musicId === editForm.value.musicId
+      ? sourceSelection.selectionToken
+      : undefined
+
   editLoading.value = true
   try {
     const { updateSong } = adminService
@@ -2237,7 +2319,8 @@ const saveEditSong = async () => {
       durationSeconds:
         editForm.value.durationSeconds === '' || editForm.value.durationSeconds == null
           ? null
-          : Number(editForm.value.durationSeconds)
+          : Number(editForm.value.durationSeconds),
+      selectionToken
     })
 
     await refreshSongs()
@@ -2254,7 +2337,7 @@ const saveEditSong = async () => {
   }
 }
 
-// 弹窗内刷新歌曲时长（编辑模式按 songId，新增模式按平台+音乐ID）
+// 弹窗内刷新歌曲时长：换源后按新平台+音乐ID，否则编辑模式按 songId
 const refreshDurationInModal = async () => {
   const isEdit = showEditModal.value
   const form = isEdit ? editForm.value : addForm.value
@@ -2263,11 +2346,17 @@ const refreshDurationInModal = async () => {
     return
   }
 
+  const sourceChanged =
+    isEdit &&
+    (editForm.value.musicPlatform !== originalEditMusicSource.value.platform ||
+      editForm.value.musicId !== originalEditMusicSource.value.musicId)
+
   refreshDurationLoading.value = true
   try {
-    const body = isEdit
-      ? { songId: editForm.value.id }
-      : { platform: addForm.value.musicPlatform, musicId: addForm.value.musicId }
+    const body =
+      isEdit && !sourceChanged
+        ? { songId: editForm.value.id }
+        : { platform: form.musicPlatform, musicId: form.musicId }
     const result = await $fetch('/api/admin/songs/duration', {
       method: 'POST',
       body
@@ -2290,7 +2379,7 @@ const refreshDurationInModal = async () => {
   }
 }
 
-// 弹窗内刷新歌曲封面（编辑模式按 songId，新增模式按平台+音乐ID），仅填入表单随弹窗保存
+// 弹窗内刷新歌曲封面：换源后按新平台+音乐ID，仅填入表单随弹窗保存
 const refreshCoverInModal = async () => {
   const isEdit = showEditModal.value
   const form = isEdit ? editForm.value : addForm.value
@@ -2299,11 +2388,17 @@ const refreshCoverInModal = async () => {
     return
   }
 
+  const sourceChanged =
+    isEdit &&
+    (editForm.value.musicPlatform !== originalEditMusicSource.value.platform ||
+      editForm.value.musicId !== originalEditMusicSource.value.musicId)
+
   refreshCoverLoading.value = true
   try {
-    const body = isEdit
-      ? { songId: editForm.value.id }
-      : { platform: addForm.value.musicPlatform, musicId: addForm.value.musicId }
+    const body =
+      isEdit && !sourceChanged
+        ? { songId: editForm.value.id }
+        : { platform: form.musicPlatform, musicId: form.musicId }
     const result = await $fetch('/api/admin/songs/cover', {
       method: 'POST',
       body
@@ -2328,6 +2423,8 @@ const refreshCoverInModal = async () => {
 
 const cancelEditSong = () => {
   showEditModal.value = false
+  showSourceReplaceModal.value = false
+  editSourceSelection.value = null
   editForm.value = {
     id: null,
     title: '',
@@ -2704,6 +2801,7 @@ onMounted(async () => {
 
   document.addEventListener('click', handleClickOutside)
 
+  await loadPlatformConfig()
   await refreshSongs()
 })
 
