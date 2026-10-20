@@ -1439,6 +1439,7 @@ export const pages = {
     resolveTimeout: '获取播放链接超时，请重试',
     catalog: '曲库',
     qualityUnknown: '音质未知',
+    qualitySwitched: '已切换到{0}',
     autoplayBlocked: '浏览器限制了自动播放，请点击播放器中的播放按钮继续播放',
     noPrevious: '没有上一首歌曲',
     previousFailed: '播放上一首歌曲失败',

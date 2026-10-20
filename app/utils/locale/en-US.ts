@@ -1477,6 +1477,7 @@ export const pages = {
     resolveTimeout: 'Playback link request timed out. Please retry.',
     catalog: 'Catalog',
     qualityUnknown: 'Unknown quality',
+    qualitySwitched: 'Switched to {0}',
     autoplayBlocked: 'Autoplay was blocked by your browser. Use the play button to continue.',
     noPrevious: 'No previous song',
     previousFailed: 'Failed to play the previous song',

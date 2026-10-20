@@ -4,9 +4,75 @@ import { build } from 'esbuild'
 import { createRequire } from 'node:module'
 import vm from 'node:vm'
 import path from 'node:path'
+import { readFileSync } from 'node:fs'
 
 const root = path.resolve(import.meta.dirname, '../..')
 const require = createRequire(import.meta.url)
+
+function qualityNotificationHarness() {
+  const { parse, compileScript } = require('vue/compiler-sfc')
+  const { descriptor } = parse(readFileSync(path.join(root, 'app/components/UI/AudioPlayer.vue'), 'utf8'))
+  const script = compileScript(descriptor, { id: 'quality-notification' })
+  const declaration = script.scriptSetupAst.flatMap(node => node.declarations || [])
+    .find(node => node.id.name === 'reloadNeteaseVersion')
+  const notifications: unknown[][] = []
+  const props = { song: { id: 'A' } }
+  const state = { generation: 0, success: true, finish: null as null | (() => void), deferred: false }
+  const control = {
+    loadSong: async () => {
+      state.generation++
+      if (state.deferred) await new Promise<void>(resolve => { state.finish = resolve })
+      return state.success
+    },
+    getLoadGeneration: () => state.generation,
+    isPlaying: { value: true }, hasError: { value: false },
+    lastLoadError: { value: null as null | { name: string } }
+  }
+  const isCloudPlayback = { value: false }
+  const currentQualityText = { value: 'HQ极高' }
+  const context = vm.createContext({
+    props, control, isCloudPlayback, currentQualityText,
+    isFallbackHandling: { value: false }, closeQualitySettings: () => {},
+    sync: { syncPlayStateToGlobal: () => {} }, handleError: async () => {},
+    t: (key: string, _fallback = '', label = '') => key === 'qualitySwitched' ? `已切换到${label}` : '云盘原文件',
+    window: { $showNotification: (...args: unknown[]) => notifications.push(args) }
+  })
+  const reload = new vm.Script(`(${descriptor.scriptSetup.content.slice(declaration.init.start, declaration.init.end)})`)
+    .runInContext(context) as (options: object) => Promise<void>
+  return { reload, state, props, control, notifications, isCloudPlayback, currentQualityText }
+}
+
+test('音质提示：成功后使用实际音质，切回云盘显示原文件', async () => {
+  const harness = qualityNotificationHarness()
+  await harness.reload({ neteaseMode: 'catalog', quality: 2 })
+  assert.deepEqual(harness.notifications, [['已切换到HQ极高', 'success', true, 3000]])
+  harness.isCloudPlayback.value = true
+  await harness.reload({ neteaseMode: 'cloud' })
+  assert.equal(harness.notifications[1][0], '已切换到云盘原文件')
+})
+
+test('音质提示：失败或取消不显示成功提示', async () => {
+  for (const error of [null, { name: 'AbortError' }]) {
+    const harness = qualityNotificationHarness()
+    harness.state.success = false
+    harness.control.lastLoadError.value = error
+    await harness.reload({ neteaseMode: 'catalog', quality: 5 })
+    assert.equal(harness.notifications.length, 0)
+  }
+})
+
+test('音质提示：快速切换或切歌后旧请求完成不显示提示', async () => {
+  for (const changeSong of [false, true]) {
+    const harness = qualityNotificationHarness()
+    harness.state.deferred = true
+    const loading = harness.reload({ neteaseMode: 'catalog', quality: 2 })
+    if (changeSong) harness.props.song = { id: 'B' }
+    else harness.state.generation++
+    harness.state.finish?.()
+    await loading
+    assert.equal(harness.notifications.length, 0)
+  }
+})
 async function load(entry: string, mocks: Record<string, string>, state: any) {
   const output = await build({
     entryPoints: [path.join(root, entry)], bundle: true, write: false, platform: 'node', format: 'cjs',

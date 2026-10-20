@@ -1393,6 +1393,10 @@ const reloadNeteaseVersion = async (options) => {
   if (generation !== control.getLoadGeneration() || props.song?.id !== song.id) return
   if (success) {
     sync.syncPlayStateToGlobal(control.isPlaying.value, song)
+    window.$showNotification?.(
+      t('qualitySwitched', '', isCloudPlayback.value ? t('cloudOriginal') : currentQualityText.value),
+      'success', true, 3000
+    )
   } else if (control.hasError.value && control.lastLoadError.value?.name !== 'AbortError' &&
       control.lastLoadError.value?.data?.code !== 'MUSIC_CATALOG_QUALITY_UNAVAILABLE') {
     await handleError(control.lastLoadError.value)
