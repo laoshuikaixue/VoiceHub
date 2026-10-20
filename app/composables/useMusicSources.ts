@@ -19,6 +19,7 @@ import {
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
 import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
+import { getNeteaseCatalogUrl } from '~/utils/neteaseCatalog'
 import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
@@ -2128,9 +2129,7 @@ export const useMusicSources = () => {
               timeout: source.timeout || 8000
             })
 
-            if (response?.code === 200 && Array.isArray(response.data) && response.data[0]?.url) {
-              url = response.data[0].url as string
-            }
+            url = getNeteaseCatalogUrl(response, level, idParam)
           }
 
           if (url) {
