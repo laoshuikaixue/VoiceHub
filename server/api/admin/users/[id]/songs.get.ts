@@ -4,10 +4,8 @@ import { and, count, desc, eq, inArray } from 'drizzle-orm'
 import { requireAdminAccess } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
+  requireAdminAccess(event)
   try {
-    // 检查是否为管理员、歌曲管理员或超级管理员
-    requireAdminAccess(event)
-
     // 获取用户 ID
     const userId = parseInt(getRouterParam(event, 'id') as string)
     if (!userId || isNaN(userId)) {

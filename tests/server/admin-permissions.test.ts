@@ -1,5 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   ADMIN_PERMISSION_CODES,
   ROLE_PERMISSION_CODES,
@@ -8,6 +11,8 @@ import {
   normalizePermissionCodes,
   resolveEffectivePermissions
 } from '../../app/utils/adminPermissions.ts'
+
+const REPO_ROOT = join(fileURLToPath(new URL(import.meta.url)), '../../..')
 
 test('歌曲管理员默认权限包含本职项且不含时段与排期写权限', () => {
   const codes = resolveEffectivePermissions({ role: 'SONG_ADMIN', permissions: [] })
@@ -71,4 +76,40 @@ test('权限码被三类档位完整覆盖，新增权限码不会漏归属', ()
     ...SYSTEM_ADMIN_PERMISSION_CODES
   ])
   assert.deepEqual(ADMIN_PERMISSION_CODES.filter((code) => !covered.has(code)), [])
+})
+
+test('权限守卫不得写在会把错误压成 5xx 的 try 内', () => {
+  const files: string[] = []
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      if (statSync(p).isDirectory()) walk(p)
+      else if (p.endsWith('.ts')) files.push(p)
+    }
+  }
+  walk(join(REPO_ROOT, 'server/api'))
+  assert.ok(files.length > 50, `接口文件扫描异常，仅找到 ${files.length} 个文件`)
+
+  const GUARD = /^\s*require(AdminPermission|AdminAccess|SystemAdmin|SuperAdmin)\(/
+  // catch 里透传已有状态码的写法可安全承载守卫
+  const PRESERVES_STATUS = /if\s*\(\s*error\??\.statusCode|statusCode:\s*error\??\.statusCode/
+  const offenders: string[] = []
+  for (const file of files) {
+    const lines = readFileSync(file, 'utf8').split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      if (!GUARD.test(lines[i])) continue
+      let inTry = false
+      for (let j = i - 1; j >= 0; j--) {
+        if (/^\s*try\s*\{\s*$/.test(lines[j])) {
+          inTry = true
+          break
+        }
+        if (/defineEventHandler\(/.test(lines[j])) break
+      }
+      if (inTry && !PRESERVES_STATUS.test(lines.join('\n'))) {
+        offenders.push(`${file.slice(REPO_ROOT.length + 1)}:${i + 1}`)
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], '守卫应写在 try 之外，否则 401/403 会被 catch 改写为 500 并泄漏内部错误文本')
 })

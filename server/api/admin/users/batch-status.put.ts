@@ -9,9 +9,8 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
+  requireAdminPermission(event, 'user:manage')
   try {
-    // 检查认证和权限
-    requireAdminPermission(event, 'user:manage')
     const user = event.context.user
 
     const body = await readBody(event)

@@ -21,8 +21,8 @@ const batchUpdateSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  requireAdminPermission(event, 'user:manage')
   try {
-    requireAdminPermission(event, 'user:manage')
     // 使用认证中间件提供的用户信息
     const currentUser = event.context.user
 

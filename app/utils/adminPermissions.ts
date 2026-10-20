@@ -46,10 +46,6 @@ export function isConfigurablePermissionRole(role: unknown): boolean {
   return (ROLE_CONFIGURABLE_PERMISSION_ROLES as readonly unknown[]).includes(role)
 }
 
-export function isAdminPermissionCode(value: unknown): value is AdminPermissionCode {
-  return typeof value === 'string' && (ADMIN_PERMISSION_CODES as readonly string[]).includes(value)
-}
-
 export function isGrantablePermissionCode(
   value: unknown
 ): value is (typeof SONG_ADMIN_GRANTABLE_PERMISSION_CODES)[number] {

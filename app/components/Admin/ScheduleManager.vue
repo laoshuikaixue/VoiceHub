@@ -351,7 +351,7 @@
                     ? 'bg-warning-5 border border-warning-30'
                     : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
                 ]"
-                :draggable="true"
+                :draggable="canEditSchedule"
                 @dragend="dragEnd"
                 @dragstart="dragStart($event, song)"
                 @touchend="handleTouchEnd"
@@ -861,7 +861,7 @@
                     : ''
                 ]"
                 :data-schedule-id="schedule.id"
-                :draggable="true"
+                :draggable="canEditSchedule"
                 @dragend="dragEnd"
                 @dragleave="handleDragLeave"
                 @dragstart="dragScheduleStart($event, schedule)"
@@ -5655,6 +5655,7 @@ const publishSingleDraftConfirmed = async (draft) => {
 
 // 触摸拖拽方法
 const handleTouchStart = (event, item, type) => {
+  if (!canEditSchedule.value) return
   // 在移动端，如果是待排歌曲列表（type='song'），禁用拖拽逻辑，只允许通过加号按钮添加
   if (window.innerWidth < 1024 && type === 'song') {
     return

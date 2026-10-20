@@ -1884,9 +1884,9 @@ const isAdmin = computed(() => {
   return auth.user.value?.role === 'ADMIN'
 })
 
-// 歌曲管理员额外授权编辑器
+// 歌曲管理员额外授权编辑器：仅编辑态可用，新建用户须先创建再授权
 const canEditPermissions = computed(
-  () => isSuperAdmin.value && userForm.value.role === 'SONG_ADMIN'
+  () => Boolean(editingUser.value) && isSuperAdmin.value && userForm.value.role === 'SONG_ADMIN'
 )
 const permissionOptions = computed(() =>
   SONG_ADMIN_GRANTABLE_PERMISSION_CODES.map((code) => ({
@@ -2501,9 +2501,7 @@ const saveUser = async () => {
       username: userForm.value.username,
       role: userForm.value.role,
       status: userForm.value.status,
-      ...(editingUser.value && canEditPermissions.value
-        ? { permissions: userForm.value.permissions || [] }
-        : {}),
+      ...(canEditPermissions.value ? { permissions: userForm.value.permissions || [] } : {}),
       grade: userForm.value.grade,
       class: userForm.value.class
     }

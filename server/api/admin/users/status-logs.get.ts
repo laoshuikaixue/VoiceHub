@@ -6,10 +6,8 @@ import { getStatusText } from '~~/server/utils/user'
 import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
+  requireAdminPermission(event, 'user:manage')
   try {
-    // 检查认证和权限
-    requireAdminPermission(event, 'user:manage')
-
     const query = getQuery(event)
     const { page = '1', limit = '50', search, status, operatorId } = query
 

@@ -4,6 +4,7 @@ import { inArray } from 'drizzle-orm'
 import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
+  requireAdminPermission(event, 'user:manage')
   try {
     // 验证请求方法
     if (event.node.req.method !== 'POST') {
@@ -55,7 +56,6 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    requireAdminPermission(event, 'user:manage')
     // 使用认证中间件提供的用户信息
     const currentUser = event.context.user
 

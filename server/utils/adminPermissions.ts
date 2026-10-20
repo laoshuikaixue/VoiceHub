@@ -3,7 +3,6 @@ export {
   ADMIN_ACCESS_ROLES,
   SUPER_ADMIN_ROLES,
   SYSTEM_ADMIN_ROLES,
-  isAdminPermissionCode,
   isConfigurablePermissionRole,
   normalizePermissionCodes,
   resolveEffectivePermissions

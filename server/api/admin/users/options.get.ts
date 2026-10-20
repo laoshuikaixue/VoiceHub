@@ -7,10 +7,8 @@ import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/u
 import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
+  requireAdminPermission(event, 'user:manage')
   try {
-    // 检查用户是否为管理员
-    requireAdminPermission(event, 'user:manage')
-
     // 归档筛选：archived=1 仅查已归档（graduate/withdrawn）；archived=0 排除已归档；缺省不限制
     const query = getQuery(event)
     const archivedFilter = resolveArchivedFilter(query.archived)

@@ -7,10 +7,8 @@ import { buildUserFilterConditions } from '~~/server/utils/user-filter'
 import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
+  requireAdminPermission(event, 'user:manage')
   try {
-    // 检查用户是否为管理员
-    requireAdminPermission(event, 'user:manage')
-
     const query = getQuery(event)
     const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
 

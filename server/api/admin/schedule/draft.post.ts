@@ -53,9 +53,8 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const clientIP = getClientIP(event)
 
+  requireAdminPermission(event, 'songs:pool')
   try {
-    // 检查用户认证和权限
-    requireAdminPermission(event, 'songs:pool')
     const user = event.context.user
 
     const body = await readBody(event)
