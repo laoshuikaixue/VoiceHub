@@ -2,13 +2,13 @@ import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules } from '~/drizzle/schema'
 import { and, eq, inArray, isNull } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // 回滚辅助接口：仅删除指定批次创建的排期，并可恢复被覆盖的草稿
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  requireAdminPermission(event, 'schedule:write')
 
   const body = await readBody(event)
   const scheduleIds = Array.isArray(body?.scheduleIds)

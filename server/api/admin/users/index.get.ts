@@ -4,18 +4,12 @@ import { users } from '~/drizzle/schema'
 import { asc, desc, count, sql } from 'drizzle-orm'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 import { buildUserFilterConditions } from '~~/server/utils/user-filter'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
   try {
     // 检查用户是否为管理员
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以访问用户列表'
-      })
-    }
+    requireAdminPermission(event, 'user:manage')
 
     const query = getQuery(event)
     const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
@@ -62,6 +56,7 @@ export default defineEventHandler(async (event) => {
         name: true,
         username: true,
         role: true,
+        permissions: true,
         grade: true,
         class: true,
         status: true,

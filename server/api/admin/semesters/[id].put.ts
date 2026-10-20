@@ -1,24 +1,10 @@
 import { db } from '~/drizzle/db'
 import { semesters, songs } from '~/drizzle/schema'
 import { eq, and, ne } from 'drizzle-orm'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能管理学期'
-    })
-  }
+  requireAdminPermission(event, 'semester:write')
 
   const semesterId = parseInt(event.context.params?.id || '0')
 

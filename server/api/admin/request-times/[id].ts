@@ -1,22 +1,12 @@
 import { db } from '~/drizzle/db'
 import { requestTimes } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
+import { requireAdminAccess, requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能访问投稿开放时段'
-    })
+  requireAdminAccess(event)
+  if (event.method !== 'GET') {
+    requireAdminPermission(event, 'request-times:write')
   }
 
   const id = parseInt(event.context.params?.id || '0')

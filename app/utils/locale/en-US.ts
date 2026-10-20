@@ -4555,6 +4555,15 @@ export const admin = {
       passwordPlaceholder: 'Set a secure password',
       role: 'Role',
       rolePlaceholder: 'Select role',
+      permissions: 'Extra Grants',
+      permissionsPlaceholder: 'No extra grants',
+      permissionsDesc: 'Super admin only. Song admins have no time-slot or schedule write access by default',
+      permissionLabels: {
+        'schedule:write': 'Edit Schedule',
+        'play-times:write': 'Edit Play Slots',
+        'request-times:write': 'Edit Request Slots',
+        'semester:write': 'Manage Semesters'
+      },
       status: 'Account Status',
       statusPlaceholder: 'Select status',
       grade: 'Grade',

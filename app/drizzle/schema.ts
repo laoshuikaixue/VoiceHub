@@ -23,6 +23,8 @@ export const users = pgTable('User', {
   grade: text('grade'),
   class: text('class'),
   role: text('role').default('USER').notNull(),
+  // 歌曲管理员的额外授权档位，其余角色恒为空数组
+  permissions: jsonb('permissions').default([]).notNull(),
   password: text('password').notNull(),
   email: text('email'),
   emailVerified: boolean('emailVerified').default(false),

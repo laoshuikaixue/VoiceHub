@@ -4,19 +4,13 @@ import { users } from '~/drizzle/schema'
 import { asc } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
 import { buildUserFilterConditions } from '~~/server/utils/user-filter'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 // 用户导出：按当前筛选条件返回全量用户（不分页），时间字段统一格式化为北京时间字符串，
 // role/status 保留原始枚举值交由前端按界面语言本地化，实际生成 .xlsx 由前端完成。
 export default defineEventHandler(async (event) => {
   try {
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以导出用户列表'
-      })
-    }
+    requireAdminPermission(event, 'user:manage')
 
     const query = getQuery(event)
     const whereClause = buildUserFilterConditions(query)

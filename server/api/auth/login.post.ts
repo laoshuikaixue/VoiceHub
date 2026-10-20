@@ -18,6 +18,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { verifyEsaCaptchaPass } from '~~/server/utils/esa-captcha-pass'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { resolveEffectivePermissions } from '~~/server/utils/adminPermissions'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
@@ -123,6 +124,7 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         grade: users.grade,
         class: users.class,
+        permissions: users.permissions,
         password: users.password,
         role: users.role,
         lastLogin: users.lastLogin,
@@ -256,6 +258,7 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
+        permissions: resolveEffectivePermissions(user),
         email: user.email,
         emailVerified: user.emailVerified,
         forcePasswordChange: user.forcePasswordChange,

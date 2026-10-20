@@ -1,14 +1,8 @@
 import { db, eq, semesters, songs } from '~/drizzle/db'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  requireAdminPermission(event, 'semester:write')
 
   // 获取学期 ID
   const semesterId = parseInt(getRouterParam(event, 'id') || '0')

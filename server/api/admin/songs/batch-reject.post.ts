@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
@@ -10,7 +10,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 const MAX_BATCH_REJECT_COUNT = 1000
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  requireAdminPermission(event, 'songs:review')
 
   const user = event.context.user
 

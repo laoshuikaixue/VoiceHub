@@ -3,15 +3,10 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  requireAdminPermission(event, 'user:manage')
 
   const userId = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(userId) || userId <= 0) {
@@ -28,6 +23,7 @@ export default defineEventHandler(async (event) => {
       name: true,
       username: true,
       role: true,
+      permissions: true,
       grade: true,
       class: true,
       status: true,

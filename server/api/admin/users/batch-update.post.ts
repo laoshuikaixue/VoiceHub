@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 // 请求体验证模式
 const batchUpdateSchema = z.object({
@@ -21,23 +22,9 @@ const batchUpdateSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
+    requireAdminPermission(event, 'user:manage')
     // 使用认证中间件提供的用户信息
     const currentUser = event.context.user
-
-    if (!currentUser) {
-      throw createError({
-        statusCode: 401,
-        message: 'Authentication required'
-      })
-    }
-
-    // 检查权限 - 只有管理员和超级管理员可以执行批量更新
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      throw createError({
-        statusCode: 403,
-        message: 'Insufficient permissions'
-      })
-    }
 
     // 验证请求体
     const body = await readBody(event)

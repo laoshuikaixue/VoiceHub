@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { songs, semesters, songBlacklists } from '~/drizzle/schema'
 import { eq, inArray, and, asc, sql } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { backfillMissingSongDurations } from '~~/server/services/durationValidationService'
 import { normalizeStoredDuration } from '~~/server/utils/song-duration-policy'
@@ -175,7 +176,7 @@ export default defineEventHandler(async (event) => {
   // 批量插入
   if (songsToInsert.length > 0) {
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    const isAdmin = ADMIN_ACCESS_ROLES.includes(user.role)
     const activeGlobalLimits = isAdmin
       ? []
       : getActiveGlobalSubmissionLimits(systemSettingsData)

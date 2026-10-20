@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -104,7 +105,7 @@ export default defineEventHandler(async (event) => {
     .limit(1)
   const user = userRows[0]
 
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (!user || !ADMIN_ACCESS_ROLES.includes(user.role)) {
     throw createError({
       statusCode: 403,
       message: '需要管理员权限'

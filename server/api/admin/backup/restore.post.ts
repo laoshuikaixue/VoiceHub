@@ -38,6 +38,7 @@ import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
+import { isAdminPermissionCode } from '~~/server/utils/adminPermissions'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -379,6 +380,7 @@ export default defineEventHandler(async (event) => {
                             'grade',
                             'class',
                             'role',
+                            'permissions',
                             'email',
                             'emailVerified',
                             'lastLoginIp',
@@ -417,6 +419,10 @@ export default defineEventHandler(async (event) => {
                                 } else {
                                   userData[field] = record[field]
                                 }
+                              } else if (field === 'permissions') {
+                                userData[field] = Array.isArray(record[field])
+                                  ? record[field].filter(isAdminPermissionCode)
+                                  : []
                               } else {
                                 userData[field] = record[field]
                               }

@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 import { createApiError } from '~~/server/utils/apiError'
 
 // 输入验证函数
@@ -54,21 +55,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 检查用户认证和权限
+    requireAdminPermission(event, 'songs:pool')
     const user = event.context.user
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权访问'
-      })
-    }
-
-    if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
-    }
 
     const body = await readBody(event)
 

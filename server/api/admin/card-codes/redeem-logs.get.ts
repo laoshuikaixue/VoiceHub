@@ -1,15 +1,10 @@
 import { db } from '~/drizzle/db'
 import { cardCodeRedeemLogs, cardCodes, songs, users } from '~/drizzle/schema'
 import { and, desc, eq, gte, ilike, lte, or } from 'drizzle-orm'
+import { requireAdminAccess } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  requireAdminAccess(event)
 
   try {
     const query = getQuery(event)

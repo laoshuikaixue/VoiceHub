@@ -2,7 +2,7 @@ import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
@@ -57,7 +57,7 @@ function parseScheduleItems(value: unknown): ScheduleItem[] {
 }
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  requireAdminPermission(event, 'songs:pool')
   const user = event.context.user
 
   const body = await readBody(event)

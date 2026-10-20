@@ -10,6 +10,7 @@
       </div>
       <div class="flex items-center gap-3">
         <div
+          v-if="canManageGlobalSwitch"
           class="bg-bg-secondary-40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
         >
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
@@ -31,6 +32,7 @@
           </button>
         </div>
         <button
+          v-if="canEditPlayTimes"
           class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           @click="openAddForm"
         >
@@ -143,7 +145,10 @@
             </p>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-border-secondary-50 flex items-center justify-between">
+          <div
+            v-if="canEditPlayTimes"
+            class="mt-8 pt-6 border-t border-border-secondary-50 flex items-center justify-between"
+          >
             <div class="flex gap-2">
               <button
                 class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
@@ -369,7 +374,11 @@ import {
   AlignLeft
 } from '@lucide/vue'
 
-const { getAuthConfig, isAdmin } = useAuth()
+const { getAuthConfig } = useAuth()
+const { canEdit, canAccessAdmin, isAdminOrAbove } = usePermissions()
+const canEditPlayTimes = computed(() => canEdit('playtimes'))
+// 全局开关写入 SystemSettings，服务端只接受管理员及以上
+const canManageGlobalSwitch = computed(() => isAdminOrAbove.value)
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => {
@@ -419,7 +428,7 @@ onMounted(async () => {
 
 // 获取播出时段列表
 const fetchPlayTimes = async () => {
-  if (!isAdmin.value) {
+  if (!canAccessAdmin.value) {
     error.value = locale.value.errors.adminOnly
     return
   }
@@ -471,7 +480,7 @@ const fetchPlayTimes = async () => {
 
 // 获取系统设置
 const fetchSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!canManageGlobalSwitch.value) return
 
   try {
     const authConfig = getAuthConfig()
@@ -492,7 +501,7 @@ const toggleGlobalEnabled = async () => {
 
 // 更新系统设置
 const updateSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!canManageGlobalSwitch.value) return
 
   try {
     const authConfig = getAuthConfig()
@@ -541,7 +550,7 @@ const editPlayTime = (playTime: PlayTime) => {
 
 // 切换播出时段状态
 const togglePlayTimeStatus = async (playTime: PlayTime) => {
-  if (!isAdmin.value) return
+  if (!canEditPlayTimes.value) return
 
   try {
     const authConfig = getAuthConfig()
@@ -575,7 +584,7 @@ const confirmDelete = (playTime: PlayTime) => {
 
 // 删除播出时段
 const deletePlayTime = async () => {
-  if (!playTimeToDelete.value || !isAdmin.value) return
+  if (!playTimeToDelete.value || !canEditPlayTimes.value) return
 
   deleteInProgress.value = true
 

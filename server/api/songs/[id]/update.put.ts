@@ -9,6 +9,7 @@ import {
 import { eq, or, and } from 'drizzle-orm'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 import { SERVER_ERROR_CODES, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { getClientIP } from '~~/server/utils/ip-utils'
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查权限
-    if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!ADMIN_ACCESS_ROLES.includes(user.role)) {
       throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
     }
 

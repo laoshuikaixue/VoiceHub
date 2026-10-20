@@ -14,6 +14,7 @@ import { and, eq, gte, gt, inArray, lt, lte, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import { reconcileSongDurationOnSubmit } from '~~/server/services/durationValidationService'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
@@ -99,7 +100,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const currentSemester = await getCurrentSemesterName()
 
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    const isAdmin = ADMIN_ACCESS_ROLES.includes(user.role)
     const restrictionPolicy = resolveSubmissionRestrictionPolicy(systemSettingsData)
     const semesterRestrictionOn = restrictionPolicy.mode === 'semester' && !isAdmin
 

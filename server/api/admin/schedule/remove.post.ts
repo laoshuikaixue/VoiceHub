@@ -2,16 +2,11 @@ import { db, eq, ne, schedules, songs, and } from '~/drizzle/db'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
+  requireAdminPermission(event, 'songs:pool')
   const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
 
   try {
     const body = await readBody(event)

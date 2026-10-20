@@ -9,6 +9,7 @@ import { maskPublicScheduleData,
 } from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
 import { formatDisambiguatedName, NAME_DISAMBIGUATION_CTES } from '~~/server/utils/userDisplayName'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 
 const isSchemaCompatibilityError = (error: unknown) => {
   const value = error as { code?: string; cause?: { code?: string } } | null
@@ -125,7 +126,7 @@ export default defineEventHandler(async (event) => {
       ? { success: false, user: null }
       : await verifyUserAuth(event)
     const user = authResult.success ? authResult.user : null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = Boolean(user && ADMIN_ACCESS_ROLES.includes(user.role))
     authenticatedUser = user
     authenticatedIsAdmin = isAdmin
 

@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { songs, users, votes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查管理员权限
-    if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!ADMIN_ACCESS_ROLES.includes(user.role)) {
       throw createApiError(403, 'SONG_VOTERS_ADMIN_ONLY', '只有管理员才能查看投票人员列表')
     }
 

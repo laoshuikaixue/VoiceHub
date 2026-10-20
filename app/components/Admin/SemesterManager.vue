@@ -9,6 +9,7 @@
         </p>
       </div>
       <button
+        v-if="canEditSemesters"
         class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
         @click="openModal"
       >
@@ -153,7 +154,7 @@
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           <p class="text-sm font-bold text-text-disabled">{{ locale.noCurrent }}</p>
-          <button class="text-xs text-primary font-black hover:underline" @click="openModal">
+          <button v-if="canEditSemesters" class="text-xs text-primary font-black hover:underline" @click="openModal">
             {{ locale.createNow }}
           </button>
         </div>
@@ -291,7 +292,7 @@
                 <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.currentSemester }}</span>
               </div>
               <button
-                v-else
+                v-else-if="canEditSemesters"
                 :disabled="loading"
                 class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black rounded-xl border border-border-tertiary transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="setActive(sem.id)"
@@ -314,6 +315,7 @@
               </button>
 
               <button
+                v-if="canEditSemesters"
                 :disabled="loading"
                 class="p-2.5 text-text-secondary hover:text-primary hover:bg-primary-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.editSemester"
@@ -335,7 +337,7 @@
               </button>
 
               <button
-                v-if="!sem.isActive"
+                v-if="canEditSemesters && !sem.isActive"
                 :disabled="loading"
                 class="p-2.5 text-text-secondary hover:text-error hover:bg-error-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.deleteSemester"
@@ -499,9 +501,12 @@
 import { onMounted, ref, computed } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
+import { usePermissions } from '~/composables/usePermissions'
 import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
+const { canEdit } = usePermissions()
+const canEditSemesters = computed(() => canEdit('semesters'))
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.semesterManager || {})
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)

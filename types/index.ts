@@ -5,6 +5,8 @@ export interface User {
   grade?: string | null
   class?: string | null
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'SONG_ADMIN'
+  // 服务端下发的生效权限码（角色默认权限 + 用户额外授权）
+  permissions?: string[]
   lastLoginAt?: Date | null
   lastLoginIp?: string | null
   forcePasswordChange?: boolean

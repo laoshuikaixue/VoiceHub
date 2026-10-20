@@ -4412,6 +4412,15 @@ export const admin = {
       passwordPlaceholder: '设置安全访问密码',
       role: '角色权限',
       rolePlaceholder: '请选择角色',
+      permissions: '额外授权',
+      permissionsPlaceholder: '未授予额外权限',
+      permissionsDesc: '仅超级管理员可调整，歌曲管理员默认不含时段与排期写权限',
+      permissionLabels: {
+        'schedule:write': '排期编辑',
+        'play-times:write': '播出时段编辑',
+        'request-times:write': '投稿时段编辑',
+        'semester:write': '学期管理'
+      },
       status: '账户状态',
       statusPlaceholder: '请选择状态',
       grade: '年级',

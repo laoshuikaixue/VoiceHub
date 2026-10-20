@@ -386,6 +386,13 @@
       "when": 1792242270895,
       "tag": "20261017130430_add_submission_anonymous",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792469717209,
+      "tag": "20261020041517_add_user_permissions",
+      "breakpoints": true
     }
   ]
 }

@@ -24,7 +24,7 @@
           </span>
         </div>
 
-        <div class="flex items-center gap-3 px-2">
+        <div v-if="canManageGlobalSwitch" class="flex items-center gap-3 px-2">
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableRequest }}</span
           >
@@ -44,7 +44,10 @@
           </button>
         </div>
 
-        <div class="flex items-center gap-3 px-2 border-l border-border-secondary-50">
+        <div
+          v-if="canManageGlobalSwitch"
+          class="flex items-center gap-3 px-2 border-l border-border-secondary-50"
+        >
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableTimeLimit }}</span
           >
@@ -63,7 +66,10 @@
             />
           </button>
         </div>
-        <div class="flex items-center gap-3 px-2 border-l border-border-secondary-50">
+        <div
+          v-if="canManageGlobalSwitch"
+          class="flex items-center gap-3 px-2 border-l border-border-secondary-50"
+        >
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableRestriction }}</span
           >
@@ -100,6 +106,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- 添加时段按钮卡片 -->
       <button
+        v-if="canEditRequestTimes"
         class="group relative h-full min-h-[220px] bg-bg-secondary-20 border-2 border-dashed border-border-secondary rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-primary-hover-5 hover:border-primary-40 transition-all active:scale-95"
         @click="showAddForm = true"
       >
@@ -226,7 +233,10 @@
             </div>
           </div>
 
-          <div class="pt-6 border-t border-border-secondary-50 flex items-center justify-between">
+          <div
+            v-if="canEditRequestTimes"
+            class="pt-6 border-t border-border-secondary-50 flex items-center justify-between"
+          >
             <div class="flex gap-2">
               <button
                 v-show="!slot.past"
@@ -290,7 +300,7 @@
 
     <!-- 重复投稿限制面板 -->
     <div
-      v-if="isAdmin"
+      v-if="canManageGlobalSwitch"
       class="bg-bg-secondary-20 border border-border-secondary rounded-3xl p-8 space-y-6"
     >
       <div class="flex items-center justify-between border-b border-border-secondary-50 pb-4">
@@ -668,7 +678,11 @@ import {
   Filter
 } from '@lucide/vue'
 
-const { getAuthConfig, isAdmin } = useAuth()
+const { getAuthConfig } = useAuth()
+const { canEdit, canAccessAdmin, isAdminOrAbove } = usePermissions()
+const canEditRequestTimes = computed(() => canEdit('request-times'))
+// 全局开关与投稿限制写入 SystemSettings，服务端只接受管理员及以上
+const canManageGlobalSwitch = computed(() => isAdminOrAbove.value)
 const toast = useToast()
 const { admin } = useLocale()
 const locale = computed(() => {
@@ -779,7 +793,7 @@ onUnmounted(() => {
 })
 
 const fetchRequestTimes = async () => {
-  if (!isAdmin.value) {
+  if (!canAccessAdmin.value) {
     error.value = locale.value.errors.adminOnly
     return
   }
@@ -824,7 +838,7 @@ const fetchRequestTimes = async () => {
 }
 
 const fetchSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!canManageGlobalSwitch.value) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
@@ -845,7 +859,7 @@ const fetchSystemSettings = async () => {
 }
 
 const fetchRequestTimeHit = async () => {
-  if (!isAdmin.value) return
+  if (!canAccessAdmin.value) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/request-times', {
@@ -873,7 +887,7 @@ const toggleTimeLimitation = async () => {
 }
 
 const updateSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!canManageGlobalSwitch.value) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
@@ -933,7 +947,7 @@ const saveRestrictionSettings = async () => {
 }
 
 const submitRestrictionSettings = async (body: any) => {
-  if (!isAdmin.value) return
+  if (!canManageGlobalSwitch.value) return
   restrictionSaving.value = true
   try {
     const authConfig = getAuthConfig()
@@ -974,7 +988,7 @@ const editRequestTime = (RequestTime: RequestTime) => {
 }
 
 const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
-  if (!isAdmin.value) return
+  if (!canEditRequestTimes.value) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/request-times/${RequestTime.id}`, {
@@ -1000,7 +1014,7 @@ const confirmDelete = (RequestTime: RequestTime) => {
 }
 
 const deleteRequestTime = async () => {
-  if (!RequestTimeToDelete.value || !isAdmin.value) return
+  if (!RequestTimeToDelete.value || !canEditRequestTimes.value) return
   deleteInProgress.value = true
   try {
     const authConfig = getAuthConfig()

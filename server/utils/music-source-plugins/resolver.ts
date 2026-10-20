@@ -5,6 +5,7 @@ import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { getSystemSettingsCached } from '../system-settings-helper'
 import { MUSIC_PLUGIN_LIMITS as limits, MUSIC_PLUGIN_LX_SOURCES, MUSIC_SOURCE_PLATFORMS } from '../../config/constants'
 import { getServerTimestamp } from '../serverTime'
+import { ADMIN_ACCESS_ROLES } from '../adminPermissions'
 import { availablePlugins, listPluginRows, pluginRevision, prelude } from './store'
 import { runPlugin } from './runtime'
 import { seal, unseal } from './tickets'
@@ -46,7 +47,7 @@ export function readSelection(token: string, userId: number, platform?: string, 
 
 // 无选择票据时按歌曲 ID 解析，可见性与播放列表保持一致：已正式发布排期、本人投稿/协作者、或歌曲管理角色
 async function resolvableBySongId(songId: number, user: { id: number; role: string }) {
-  if (['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) return true
+  if (ADMIN_ACCESS_ROLES.includes(user.role)) return true
   const [own] = await db.select({ id: songs.id }).from(songs).where(and(eq(songs.id, songId), eq(songs.requesterId, user.id))).limit(1)
   if (own) return true
   const [collab] = await db.select({ id: songCollaborators.id }).from(songCollaborators).where(and(eq(songCollaborators.songId, songId), eq(songCollaborators.userId, user.id))).limit(1)

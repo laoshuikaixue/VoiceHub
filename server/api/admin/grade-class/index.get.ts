@@ -3,15 +3,11 @@ import { and, eq, isNotNull, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { gradeClass, users } from '~/drizzle/schema'
 import { smartSort } from '~~/server/utils/grade-class-core'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { requireSystemAdmin } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
+  requireSystemAdmin(event)
 
   const [rows, counts] = await Promise.all([
     db.select().from(gradeClass),

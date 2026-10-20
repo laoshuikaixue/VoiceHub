@@ -574,7 +574,7 @@
                   </div>
                   <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
                   <div
-                    v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
+                    v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (canViewUserDetail && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
                     class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
                   >
                     <template v-if="song.requester">
@@ -588,7 +588,7 @@
                         class="shrink-0"
                       >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
                     </template>
-                    <template v-if="auth?.isAdmin">
+                    <template v-if="canViewUserDetail">
                       <span
                         v-if="song.requester && song.musicPlatform"
                         class="text-text-disabled shrink-0"
@@ -616,7 +616,7 @@
                     </template>
                     <!-- 时长显示 / 行内编辑（放在行末） -->
                     <span
-                      v-if="(song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))) && (song.durationSeconds || editingDuration[song.id])"
+                      v-if="(song.requester || (canViewUserDetail && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))) && (song.durationSeconds || editingDuration[song.id])"
                       class="text-text-disabled shrink-0"
                     >·</span>
                     <span
@@ -776,6 +776,7 @@
                   >
                 </button>
                 <button
+                  v-if="canEditSchedule"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative"
                   @click="openMoveDateDialog"
                 >
@@ -786,6 +787,7 @@
                   >
                 </button>
                 <button
+                  v-if="canEditSchedule"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative"
                   @click="openCopyDateDialog"
                 >
@@ -807,8 +809,9 @@
                   >
                 </button>
               </div>
-              <div class="h-6 w-[1px] bg-bg-tertiary mx-1" />
+              <div v-if="canEditSchedule" class="h-6 w-[1px] bg-bg-tertiary mx-1" />
               <button
+                v-if="canEditSchedule"
                 :disabled="!canPublish"
                 class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-[10px] font-black rounded-xl border border-success-20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="publishSchedule"
@@ -816,6 +819,7 @@
                 <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
               </button>
               <button
+                v-if="canEditSchedule"
                 :disabled="!hasChanges"
                 class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
@@ -1016,7 +1020,7 @@
 
                   <div class="flex items-center gap-2">
                     <button
-                      v-if="schedule.isDraft"
+                      v-if="schedule.isDraft && canEditSchedule"
                       class="flex items-center justify-center p-1.5 rounded-lg bg-success-10 hover:bg-success-20 text-success border border-success-20 transition-colors"
                       :title="locale.publishThisDraft"
                       @click="publishSingleDraft(schedule)"
@@ -1102,6 +1106,7 @@
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.markAllPlayedShort }}</span>
         </button>
         <button
+          v-if="canEditSchedule"
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all"
           :title="locale.moveDate"
           @click="openMoveDateDialog"
@@ -1110,6 +1115,7 @@
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.moveDateShort }}</span>
         </button>
         <button
+          v-if="canEditSchedule"
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
           :title="locale.copyDate"
           @click="openCopyDateDialog"
@@ -1137,6 +1143,7 @@
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.addCurrentPageShort }}</span>
         </button>
         <button
+          v-if="canEditSchedule"
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!canPublish"
           :title="locale.publishOnly"
@@ -1167,6 +1174,7 @@
 
     <!-- 主要操作 -->
     <button
+      v-if="canEditSchedule"
       :disabled="!hasChanges"
       class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
       @click="saveSequence"
@@ -1922,7 +1930,7 @@
           <span>{{ locale.removeFromSchedule }}</span>
         </button>
         <button
-          v-if="contextMenuSong.isDraft"
+          v-if="contextMenuSong.isDraft && canEditSchedule"
           class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-success hover:bg-success-10 transition-colors"
           @click="publishSingleDraft(contextMenuSong); contextMenuOpen = false"
         >
@@ -1999,6 +2007,9 @@ import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
+const { hasPermission, canEdit } = usePermissions()
+const canViewUserDetail = computed(() => hasPermission('user:manage'))
+const canEditSchedule = computed(() => canEdit('schedule'))
 const locale = computed(() => {
   const base = admin.value?.scheduleManager || {}
   return useSafeLocale({

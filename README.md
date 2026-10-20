@@ -635,33 +635,44 @@ VoiceHub 提供了完整的站点配置管理功能，支持通过管理后台�
 
 ### 权限与角色管理
 
-VoiceHub 实现了细粒度的权限控制系统：
+VoiceHub 采用「角色默认权限 + 按用户授权」的权限模型，权威定义集中在 `app/utils/adminPermissions.ts`（服务端经 `server/utils/adminPermissions.ts` 转发导入），前后端共用同一份权限码。
 
 #### 角色类型
 
-- **超级管理员 (SUPER_ADMIN)**：拥有所有系统权限，包括用户管理、系统配置、数据库管理等
-- **管理员 (ADMIN)**：拥有日常管理权限，如用户管理、排期管理、歌曲管理、系统配置等
-- **歌曲管理员 (SONG_ADMIN)**：专门负责歌曲相关管理，包括排期管理、歌曲管理、打印排期等
+- **超级管理员 (SUPER_ADMIN)**：全部权限码，并可调整系统配置、数据库、API Key、用户额外权限授权
+- **管理员 (ADMIN)**：全部权限码，不含系统级独占页面
+- **歌曲管理员 (SONG_ADMIN)**：歌曲审核相关权限码，其余写权限由超级管理员按需单独授予
 - **普通用户 (USER)**：基本的点歌、投票和查看权限
 
-#### 权限分类
+#### 权限码
 
-- **内容管理权限**：排期管理、歌曲管理、打印排期等
-- **用户管理权限**：创建、编辑、删除用户账户
-- **系统管理权限**：通知管理、播放时间管理、学期管理、黑名单管理、站点配置、数据库管理等
+| 权限码 | 含义 |
+| --- | --- |
+| `songs:read` | 查看投稿与审核列表 |
+| `songs:review` | 通过/驳回/标记已播/删除投稿 |
+| `songs:pool` | 维护排期备选池、草稿与移除排期歌曲 |
+| `songs:meta` | 修改封面与时长 |
+| `schedule:write` | 排期结构写操作（发布、批量发布、复制、移动日期、序号、清空当日） |
+| `play-times:write` | 播放时段增删改 |
+| `request-times:write` | 点歌时段增删改 |
+| `semester:write` | 学期增删改与切换当前学期 |
+| `card-codes:write` | 点歌券生成、修改、删除与导出 |
+| `user:manage` | 用户账号、状态、密码与年级班级之外的资料管理 |
 
-#### 权限继承与分配
+#### 授权与合并规则
 
-- **SUPER_ADMIN**：拥有所有权限
-- **ADMIN**：拥有除数据库管理外的所有权限
-- **SONG_ADMIN**：拥有内容管理相关权限（排期、歌曲、打印）
-- **USER**：仅拥有基本的点歌和查看权限
+- 有效权限 = 角色默认权限（`ROLE_PERMISSION_CODES`）∪ 该用户在 `users.permissions` 中的额外授权
+- 仅 `SONG_ADMIN` 支持额外授权，可授予档位见 `SONG_ADMIN_GRANTABLE_PERMISSION_CODES`；其余角色该字段恒为空数组，读取时也会被丢弃
+- `user:manage` 属于管理员及以上档位（`SYSTEM_ADMIN_PERMISSION_CODES`），不可下放
+- 播出/投稿时段页的全局开关与投稿限制写入 `SystemSettings`，服务端仍要求管理员及以上，不随 `play-times:write` / `request-times:write` 授权下放
+- 只有超级管理员能修改其他账号的额外授权；目标角色变更时授权自动裁剪或清空
+- 备份恢复按 `isAdminPermissionCode` 过滤非法权限码，避免越权授权回流
 
-#### 权限验证
+#### 权限校验
 
-- 前端基于角色动态显示界面元素和菜单
-- 后端API进行严格的权限验证
-- 支持页面级和功能级的权限控制
+- 服务端：`requireAdminAccess`（准入）与 `requireAdminPermission(code)`（细粒度），系统级页面用 `requireSystemAdmin` / `requireSuperAdmin`
+- 前端：`usePermissions()` 提供 `canAccessPage(page)` 控制菜单与页面可见性、`canEdit(page)` 控制写操作入口、`hasPermission(code)` 做单点判断
+- 未登录态或旧缓存登录态缺少 `permissions` 时，前端回退角色默认权限
 
 ## 环境变量说明
 
@@ -995,6 +1006,7 @@ VoiceHub/
 │       │   ├── lyricStripper.ts # 歌词清理
 │       │   ├── parseLrc.ts    # LRC格式解析
 │       │   └── qrc-parser.ts  # QRC格式解析
+│       ├── adminPermissions.ts # 管理端权限码唯一权威（权限码清单、角色默认权限、可授予档位、有效权限合并）
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── cover-theme.ts    # 封面取色与歌词主题色（AMLL 调色板）
 │       ├── debounce.ts       # 防抖工具
@@ -1418,6 +1430,7 @@ VoiceHub/
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
+│   │   ├── adminPermissions.ts # 管理端权限模块转发（权威实现在 app/utils/adminPermissions.ts）
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
@@ -1473,7 +1486,6 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
-│   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
@@ -1482,7 +1494,7 @@ VoiceHub/
 │   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
-│   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
+│   │   ├── requireAdminPermission.ts # 管理端角色档位与权限码校验（requireAdminAccess / requireAdminPermission / requireSystemAdmin / requireSuperAdmin）
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
 │   │   ├── song-type-resolver.ts # 歌曲类型（语种/曲风）解析工具

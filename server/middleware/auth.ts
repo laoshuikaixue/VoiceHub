@@ -14,6 +14,7 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
+import { ADMIN_ACCESS_ROLES, resolveEffectivePermissions } from '../utils/adminPermissions'
 import { BOT_ROUTES, SERVER_ERROR_CODES } from '../config/constants'
 import {
   ensureAuthSession,
@@ -144,6 +145,7 @@ export default defineEventHandler(async (event) => {
         grade: users.grade,
         class: users.class,
         role: users.role,
+        permissions: users.permissions,
         status: users.status,
         password: users.password,
         passwordChangedAt: users.passwordChangedAt,
@@ -296,6 +298,7 @@ export default defineEventHandler(async (event) => {
       grade: user.grade,
       class: user.class,
       role: user.role,
+      permissions: resolveEffectivePermissions(user),
       status: user.status,
       passwordChangedAt: user.passwordChangedAt,
       forcePasswordChange: user.forcePasswordChange,
@@ -321,7 +324,7 @@ export default defineEventHandler(async (event) => {
     // 检查管理员专用路由
     if (
       pathname.startsWith('/api/admin') &&
-      !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
+      !ADMIN_ACCESS_ROLES.includes(user.role)
     ) {
       return sendError(
         event,

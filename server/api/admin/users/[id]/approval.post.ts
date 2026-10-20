@@ -8,6 +8,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { validateGradeClassPair } from '~~/server/utils/register-validation'
 import { isGradeClassValid } from '~~/server/utils/grade-class-options'
 import { SmtpService } from '~~/server/services/smtpService'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 // 审核结果仅保留原有申请人邮件，机器人待审通知只发给管理员。
 async function notifyApproved(name: string | null, email: string | null) {
@@ -42,10 +43,8 @@ async function notifyRejected(name: string | null, email: string | null, reason:
 // 注册审核：approve 通过（可修改注册信息），reject 拒绝（删除账户并记录理由与用户快照）
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
+  requireAdminPermission(event, 'user:manage')
   const operator = event.context.user
-  if (!operator || !['ADMIN', 'SUPER_ADMIN'].includes(operator.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
 
   const userId = getRouterParam(event, 'id')
   const body = await readBody(event)

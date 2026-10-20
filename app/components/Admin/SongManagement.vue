@@ -131,7 +131,7 @@
             class-name="w-full lg:w-32"
           />
           <CustomSelect
-            v-if="isAdmin"
+            v-if="canManagePool"
             v-model="poolFilter"
             :label="locale.filters.pool"
             :options="poolOptions"
@@ -403,7 +403,7 @@
               </button>
 
               <button
-                v-if="isAdmin"
+                v-if="canManagePool"
                 :disabled="poolPendingIds.has(song.id)"
                 :class="[
                   'flex items-center justify-center p-2 rounded-xl transition-all border',
@@ -1328,7 +1328,8 @@ const poolOptions = computed(() => [
 
 // 备选池为管理员操作，普通用户不下发 inPool 也不展示入口
 const auth = useAuth()
-const { isAdmin } = auth
+const { hasPermission } = usePermissions()
+const canManagePool = computed(() => hasPermission('songs:pool'))
 
 const sortOptions = computed(() => [
   { label: getNestedMessage('options', 'newest'), value: 'time-desc' },

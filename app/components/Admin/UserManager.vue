@@ -713,6 +713,19 @@
                 </div>
               </div>
 
+              <div v-if="canEditPermissions" class="space-y-2">
+                <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  >{{ locale.form.permissions }}</label
+                >
+                <CustomSelect
+                  v-model="userForm.permissions"
+                  :options="permissionOptions"
+                  multiple
+                  :placeholder="locale.form.permissionsPlaceholder"
+                />
+                <p class="text-[10px] text-text-disabled ml-1">{{ locale.form.permissionsDesc }}</p>
+              </div>
+
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
@@ -1668,6 +1681,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
+import { SONG_ADMIN_GRANTABLE_PERMISSION_CODES } from '~/utils/adminPermissions'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 
 const { admin, currentLocale } = useLocale()
@@ -1841,6 +1855,7 @@ const userForm = ref({
   password: '',
   role: 'USER',
   status: 'active',
+  permissions: [],
   grade: '',
   class: ''
 })
@@ -1868,6 +1883,17 @@ const isSuperAdmin = computed(() => {
 const isAdmin = computed(() => {
   return auth.user.value?.role === 'ADMIN'
 })
+
+// 歌曲管理员额外授权编辑器
+const canEditPermissions = computed(
+  () => isSuperAdmin.value && userForm.value.role === 'SONG_ADMIN'
+)
+const permissionOptions = computed(() =>
+  SONG_ADMIN_GRANTABLE_PERMISSION_CODES.map((code) => ({
+    value: code,
+    label: locale.value.form?.permissionLabels?.[code] || code
+  }))
+)
 
 // 是否允许对目标用户执行管理操作（编辑/重置密码/删除），与后端越级保护一致
 const canManageUser = (user) => {
@@ -2168,6 +2194,7 @@ const editUser = (user) => {
     password: '',
     role: user.role,
     status: user.status || 'active',
+    permissions: Array.isArray(user.permissions) ? [...user.permissions] : [],
     grade: user.grade || '',
     class: user.class || ''
   }
@@ -2305,6 +2332,7 @@ const closeModal = () => {
     password: '',
     role: 'USER',
     status: 'active',
+    permissions: [],
     grade: '',
     class: ''
   }
@@ -2473,6 +2501,9 @@ const saveUser = async () => {
       username: userForm.value.username,
       role: userForm.value.role,
       status: userForm.value.status,
+      ...(editingUser.value && canEditPermissions.value
+        ? { permissions: userForm.value.permissions || [] }
+        : {}),
       grade: userForm.value.grade,
       class: userForm.value.class
     }

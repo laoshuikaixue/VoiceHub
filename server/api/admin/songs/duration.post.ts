@@ -2,7 +2,7 @@ import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
@@ -13,7 +13,7 @@ import {
 import { fetchSongDuration } from '~~/server/utils/songDurationFetcher'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  requireAdminPermission(event, 'songs:meta')
 
   const body = await readBody(event)
 

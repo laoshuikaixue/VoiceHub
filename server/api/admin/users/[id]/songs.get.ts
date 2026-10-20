@@ -1,26 +1,12 @@
 import { db } from '~/drizzle/db'
 import { schedules, songReplayRequests, songs, users, votes } from '~/drizzle/schema'
 import { and, count, desc, eq, inArray } from 'drizzle-orm'
+import { requireAdminAccess } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 使用认证中间件提供的用户信息
-    const currentUser = event.context.user
-    if (!currentUser) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权访问'
-      })
-    }
-
     // 检查是否为管理员、歌曲管理员或超级管理员
-    const allowedRoles = ['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
-    if (!allowedRoles.includes(currentUser.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
-    }
+    requireAdminAccess(event)
 
     // 获取用户 ID
     const userId = parseInt(getRouterParam(event, 'id') as string)

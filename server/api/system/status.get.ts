@@ -2,12 +2,13 @@ import { createError, defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { isTelemetryEnabled } from '~~/server/utils/telemetry'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.user
   if (
     !currentUser ||
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)
+    !ADMIN_ACCESS_ROLES.includes(currentUser.role)
   ) {
     throw createError({
       statusCode: 403,

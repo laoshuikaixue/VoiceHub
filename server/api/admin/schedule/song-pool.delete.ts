@@ -4,11 +4,11 @@ import { scheduleSongPool } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 import { fetchPoolCount } from '~~/server/utils/scheduleSongPool'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  requireAdminPermission(event, 'songs:pool')
 
   const query = getQuery(event)
   const songIdsRaw = query.songIds

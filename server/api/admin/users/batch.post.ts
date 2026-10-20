@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 interface UserData {
   name: string
@@ -26,13 +27,8 @@ const normalizeOptionalText = (value: unknown) => {
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
+  requireAdminPermission(event, 'user:manage')
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
 
   const body = await readBody(event)
 

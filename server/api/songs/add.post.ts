@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { songs, users } from '~/drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查权限
-    if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!ADMIN_ACCESS_ROLES.includes(user.role)) {
       throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
     }
 

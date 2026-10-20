@@ -9,6 +9,7 @@ import {
 } from '~~/server/utils/submissionLimit'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const systemSettingsData = await getSystemSettingsCached()
 
     // 超级管理员、管理员、歌曲管理员不受投稿限制
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    const isAdmin = ADMIN_ACCESS_ROLES.includes(user.role)
 
     // 基础返回结构
     const status: any = {

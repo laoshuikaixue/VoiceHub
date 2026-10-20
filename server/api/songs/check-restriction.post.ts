@@ -1,6 +1,7 @@
 import { db, schedules, semesters, songs } from '~/drizzle/db'
 import { and, eq, gte, gt, lte, or } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { ADMIN_ACCESS_ROLES } from '~~/server/utils/adminPermissions'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
     return respond(allowedChecks)
   }
 
-  const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+  const isAdmin = ADMIN_ACCESS_ROLES.includes(user.role)
 
   const settings = await getSystemSettingsCached()
   const restrictionPolicy = resolveSubmissionRestrictionPolicy(settings)

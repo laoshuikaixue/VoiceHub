@@ -16,24 +16,11 @@ import {
   restoreReplayRequestsToPending
 } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
+  requireAdminPermission(event, 'schedule:write')
   const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有歌曲管理员及以上权限才能发布排期'
-    })
-  }
 
   const body = await readBody(event)
 

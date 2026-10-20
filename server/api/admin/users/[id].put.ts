@@ -11,6 +11,11 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { requireAdminPermission, requireSuperAdmin } from '~~/server/utils/requireAdminPermission'
+import {
+  isConfigurablePermissionRole,
+  normalizePermissionCodes
+} from '~~/server/utils/adminPermissions'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -28,13 +33,8 @@ const roleNames: Record<string, string> = {
 export default defineEventHandler(async (event) => {
   try {
     // 检查认证和权限
+    requireAdminPermission(event, 'user:manage')
     const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
 
     const userId = getRouterParam(event, 'id')
     const userIdNum = Number.parseInt(String(userId), 10)
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const { name, username, password, role, grade, class: userClass, status } = body || {}
+    const { name, username, password, role, permissions, grade, class: userClass, status } = body || {}
     const normalizedName = normalizeRequiredText(name)
     const normalizedUsername = normalizeRequiredText(username)
 
@@ -161,6 +161,20 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
     }
 
+    // 额外授权仅超级管理员可写，且只对可配置角色生效；角色变更后自动裁剪到该角色可授予档位
+    let permissionsUpdate
+    if (permissions !== undefined) {
+      requireSuperAdmin(event)
+      if (!isConfigurablePermissionRole(validRole)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '该角色不支持额外权限授权')
+      }
+      permissionsUpdate = normalizePermissionCodes(permissions, { role: validRole })
+    } else if (validRole !== targetUser.role && isConfigurablePermissionRole(validRole)) {
+      permissionsUpdate = normalizePermissionCodes(targetUser.permissions, { role: validRole })
+    } else if (!isConfigurablePermissionRole(validRole)) {
+      permissionsUpdate = []
+    }
+
     // 准备更新数据
     const updateData = {
       name: normalizedName,
@@ -168,6 +182,7 @@ export default defineEventHandler(async (event) => {
       role: validRole,
       grade: normalizeOptionalText(grade),
       class: normalizeOptionalText(userClass),
+      ...(permissionsUpdate !== undefined ? { permissions: permissionsUpdate } : {}),
       ...(status && status !== targetUser.status
         ? {
             status,
@@ -206,6 +221,7 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         username: users.username,
         role: users.role,
+        permissions: users.permissions,
         grade: users.grade,
         class: users.class,
         status: users.status,
