@@ -8,6 +8,11 @@ import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { persistQqMusicCookie, clearQqMusicLoginState, QQ_MUSIC_COOKIE_KEY } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { useNeteaseCloudPlayback } from '~/composables/useNeteaseCloudPlayback'
+import type { CloudPlaybackOptions } from '~/composables/useNeteaseCloudPlayback'
+import type { NeteaseCloudFile } from '~/utils/neteaseCloud'
+import { createPlaybackRequest, withPlaybackSignal } from '~/utils/playbackRequest'
+import { catalogQualityError } from '~/utils/neteaseCatalog'
 
 /**
  * 动态获取音乐播放URL
@@ -17,7 +22,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
  * @param options 额外选项，例如 { unblock: boolean, quality: number }
  * @returns Promise<string | null> 返回播放URL或null
  */
-export type MusicUrlResolveOptions = {
+export type MusicUrlResolveOptions = CloudPlaybackOptions & {
   unblock?: boolean
   quality?: number | string
   mediaId?: string
@@ -44,6 +49,9 @@ export type MusicUrlResolveResult = {
   source?: string
   normalizedMusicId?: string
   idType?: string
+  actualQuality?: string | number
+  cloudFile?: NeteaseCloudFile
+  cloudFiles?: NeteaseCloudFile[]
 }
 
 // QQ 数字 songId → 字母 songmid 的前端解析缓存与并发去重，供水端直连第三方音源（ygking 等）复用
@@ -296,12 +304,29 @@ const revalidateQqLoginAfterFailure = (): Promise<void> => {
   return qqLoginRecheckPromise
 }
 
-export async function getMusicUrlResult(
+async function resolveMusicUrlResult(
   platform: string,
   musicId: string | number,
   playUrl?: string,
   options?: MusicUrlResolveOptions
 ): Promise<MusicUrlResolveResult> {
+  if (platform === 'netease' && options?.neteaseMode === 'catalog') {
+    const quality = options.quality ?? useAudioQuality().getQuality(platform)
+    const result = await useMusicSources().getSongUrl(musicId, Number(quality), platform, undefined, {
+      ...options, skipCloudProbe: true
+    })
+    if (!result.success || !result.url) throw catalogQualityError()
+    rememberMusicUrlSource(result.url, result.source || 'music-source')
+    return { url: result.url, source: result.source, actualQuality: result.actualQuality }
+  }
+  if (platform === 'netease') {
+    const cloud = await useNeteaseCloudPlayback().resolve(musicId, options)
+    if (cloud) {
+      if (cloud.url) rememberMusicUrlSource(cloud.url, cloud.source)
+      return cloud
+    }
+    options = { ...options, skipCloudProbe: true }
+  }
   // 如果用户提供了播放链接，优先使用
   if (!options?.ignoreProvidedUrl && playUrl && playUrl.trim()) {
     return {
@@ -331,6 +356,7 @@ export async function getMusicUrlResult(
   // ChKSz 音源（用户自配 apikey）：非 VIP 登录态下最优先，VIP 登录态下官方链路之后的次优先
   const isExcluded = (source: string) => (options?.excludeSources || []).includes(source)
   const tryChksz = async (chkszQuality: number | string): Promise<MusicUrlResolveResult | null> => {
+    options?.signal?.throwIfAborted()
     if (!hasChkszKey() || isExcluded('chksz')) {
       return null
     }
@@ -356,6 +382,7 @@ export async function getMusicUrlResult(
   }
 
   const tryPlugins = async () => {
+    options?.signal?.throwIfAborted()
     try {
       const result = await resolvePluginUrl(platform, musicId, quality, options)
       if (result?.url) return acceptResult(result.url, result.source)
@@ -600,9 +627,10 @@ export async function getMusicUrlResult(
 
   // 先使用统一组件的音源选择逻辑
   const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
+  options?.signal?.throwIfAborted()
   if (backupResult.success && backupResult.url) {
     const accepted = acceptResult(backupResult.url, backupResult.source || 'music-source')
-    if (accepted) return accepted
+    if (accepted) return { ...accepted, actualQuality: backupResult.actualQuality }
   }
 
   if (neteaseOfficialFirst) {
@@ -731,6 +759,25 @@ export async function getMusicUrlResult(
 
   // vkeys API返回了响应但没有有效的播放链接
   throw new Error('vkeys API返回的播放链接无效')
+}
+
+export async function getMusicUrlResult(
+  platform: string,
+  musicId: string | number,
+  playUrl?: string,
+  options?: MusicUrlResolveOptions
+): Promise<MusicUrlResolveResult> {
+  const request = options?.signal ? null : createPlaybackRequest()
+  const signal = options?.signal || request!.signal
+  try {
+    return await withPlaybackSignal(resolveMusicUrlResult(platform, musicId, playUrl, {
+      ...options, signal,
+      onWaitingForSelection(waiting) {
+        if (request) { if (waiting) request.pause(); else request.resume() }
+        options?.onWaitingForSelection?.(waiting)
+      }
+    }), signal)
+  } finally { request?.dispose() }
 }
 
 export async function getMusicUrl(

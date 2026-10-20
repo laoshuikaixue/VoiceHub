@@ -17,6 +17,7 @@ export interface PlayableSong {
   musicId?: string
   playUrl?: string | null
   sourceInfo?: Record<string, any>
+  pc?: Record<string, unknown>
 }
 
 interface PlaylistItem {
@@ -113,8 +114,8 @@ export function useAudioPlayer() {
     while (nextIndex < currentPlaylist.value.length && attempts < maxAttempts) {
       const nextSong = currentPlaylist.value[nextIndex].song
 
-      // 如果已经有播放URL，直接使用
-      if (nextSong.musicUrl) {
+      // 网易云由播放器按当前账号解析，包括已有 URL 的歌曲。
+      if (nextSong.musicPlatform === 'netease' || nextSong.musicUrl) {
         currentPlaylistIndex.value = nextIndex
         currentSong.value = nextSong
         currentPosition.value = 0
@@ -212,8 +213,8 @@ export function useAudioPlayer() {
     while (prevIndex >= 0 && attempts < maxAttempts) {
       const prevSong = currentPlaylist.value[prevIndex].song
 
-      // 如果已经有播放URL，直接使用
-      if (prevSong.musicUrl) {
+      // 网易云由播放器按当前账号解析，包括已有 URL 的歌曲。
+      if (prevSong.musicPlatform === 'netease' || prevSong.musicUrl) {
         currentPlaylistIndex.value = prevIndex
         currentSong.value = prevSong
         currentPosition.value = 0
@@ -374,9 +375,10 @@ export function useAudioPlayer() {
         nextSong.sourceInfo?.type === 'voice' ||
         (nextSong.sourceInfo?.source === 'netease-backup' &&
           nextSong.sourceInfo?.type === 'voice')
-      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta; preload?: boolean } = isPodcast
         ? { unblock: false }
         : {}
+      options.preload = true
       options.musicInfo = {
         name: nextSong.title,
         artist: nextSong.artist,

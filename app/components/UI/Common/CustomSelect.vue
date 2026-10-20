@@ -1,8 +1,9 @@
 <template>
   <div ref="containerRef" class="relative" :class="className">
     <div
-      class="flex items-center gap-2 px-3 py-2 bg-bg-primary border rounded-lg transition-all select-none"
+      class="flex items-center gap-2 px-3 py-2 border rounded-lg transition-all select-none"
       :class="[
+        appearance !== 'default' ? 'glass-select-trigger' : 'bg-bg-primary',
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         isOpen
           ? 'border-primary-50 bg-primary-hover-5 shadow-lg'
@@ -18,7 +19,7 @@
         >
           {{ label }}
         </span>
-        <span class="text-[11px] font-bold text-text-secondary truncate">{{ displayLabel }}</span>
+        <span class="text-[11px] font-bold text-text-secondary truncate" :title="displayText ? displayLabel : undefined">{{ displayText || displayLabel }}</span>
       </div>
       <div class="transition-transform duration-200" :class="{ 'rotate-180': isOpen }">
         <ChevronDown :size="12" :class="isOpen ? 'text-primary' : 'text-text-secondary'" />
@@ -38,13 +39,15 @@
           v-if="isOpen"
           ref="dropdownRef"
           :style="[dropdownStyle, { zIndex }]"
-          class="fixed p-1 bg-bg-primary border border-border-secondary rounded-lg shadow-2xl backdrop-blur-xl"
+          class="fixed p-1 border rounded-lg shadow-2xl backdrop-blur-xl"
+          :class="appearance === 'default' ? 'bg-bg-primary border-border-secondary' : ['glass-select-menu', { 'lyrics-select-menu': appearance === 'lyrics' }]"
         >
           <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
             <button
               v-for="option in normalizedOptions"
               :key="option.value"
               type="button"
+              :aria-pressed="isSelected(option)"
               class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="[
                 isSelected(option)
@@ -65,6 +68,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { ChevronDown } from '@lucide/vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 import { usePopupZIndex } from '~/composables/useZIndex'
@@ -78,6 +82,15 @@ const props = defineProps({
     required: true
   },
   className: String,
+  displayText: {
+    type: String,
+    default: ''
+  },
+  appearance: {
+    type: String,
+    default: 'default',
+    validator: (value) => ['default', 'glass', 'lyrics'].includes(value)
+  },
   labelKey: {
     type: String,
     default: 'label'
@@ -183,6 +196,11 @@ const updatePosition = () => {
     minWidth: '120px',
     transformOrigin
   }
+  if (props.appearance !== 'default') {
+    const width = Math.min(Math.max(rect.width, 280), window.innerWidth - 24)
+    dropdownStyle.value.width = `${width}px`
+    dropdownStyle.value.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))}px`
+  }
 }
 
 const toggleDropdown = async () => {
@@ -261,6 +279,61 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.glass-select-trigger {
+  gap: 4px;
+  padding: 8px 6px;
+  background: transparent;
+  border-color: transparent;
+}
+.glass-select-trigger:hover {
+  background: var(--custom-select-glass-hover, var(--overlay-15));
+  border-color: transparent;
+}
+.glass-select-trigger span,
+.glass-select-trigger svg {
+  color: var(--custom-select-glass-text, var(--overlay-90));
+}
+.glass-select-trigger span {
+  font-size: var(--custom-select-glass-font-size, 12px);
+  font-weight: inherit;
+}
+.glass-select-menu {
+  background:
+    linear-gradient(135deg, var(--overlay-25), var(--overlay-15)),
+    var(--audio-player-dropdown-bg-fallback);
+  border-color: var(--overlay-40);
+  backdrop-filter: blur(60px) saturate(2) brightness(1.1);
+  -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
+}
+.glass-select-menu button {
+  color: var(--overlay-90);
+}
+.glass-select-menu button:hover {
+  background: var(--overlay-15);
+}
+.glass-select-menu button span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.lyrics-select-menu {
+  background: var(--lyrics-modal-badge-menu-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.lyrics-select-menu button {
+  color: var(--lyrics-modal-badge-menu-text);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.lyrics-select-menu button:hover {
+  background: var(--mask-5);
+}
+.lyrics-select-menu button[aria-pressed='true'] {
+  background: var(--lyrics-modal-badge-menu-active-bg);
+  color: var(--color-accent);
+  font-weight: 600;
+}
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }

@@ -1,6 +1,13 @@
 import { computed, ref } from 'vue'
 import { useAudioQuality } from './useAudioQuality'
-import type { MusicTrackMeta } from '~/utils/musicUrl'
+import type { MusicUrlResolveOptions, MusicUrlResolveResult } from '~/utils/musicUrl'
+
+type PlaybackAttempt = Partial<MusicUrlResolveResult> & {
+  success: boolean
+  error?: string
+  quality?: number
+  qualityLabel?: string
+}
 
 export const useAudioPlayerEnhanced = () => {
   const { getQuality, getQualityOptions, saveQuality } = useAudioQuality()
@@ -40,24 +47,24 @@ export const useAudioPlayerEnhanced = () => {
     platform,
     musicId,
     qualityOrPlayUrl,
-    options?: { unblock?: boolean; quality?: number; musicInfo?: MusicTrackMeta }
-  ) => {
+    options?: MusicUrlResolveOptions
+  ): Promise<PlaybackAttempt> => {
     try {
       const requestOptions =
         typeof qualityOrPlayUrl === 'number'
           ? { ...options, quality: qualityOrPlayUrl }
           : options
 
-      const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
-      const url = await coreGetMusicUrl(
+      const { getMusicUrlResult: coreGetMusicUrl } = await import('~/utils/musicUrl')
+      const result = await coreGetMusicUrl(
         platform,
         musicId,
         typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined,
         requestOptions
       )
 
-      if (url) {
-        return { success: true, url }
+      if (result.url) {
+        return { ...result, success: true }
       }
       return { success: false, error: '未获取到播放链接' }
     } catch (error) {
@@ -67,7 +74,11 @@ export const useAudioPlayerEnhanced = () => {
   }
 
   // 尝试切换音质
-  const tryQualitySwitch = async (song) => {
+  const tryQualitySwitch = async (song): Promise<PlaybackAttempt> => {
+    if (song?.musicPlatform === 'netease' &&
+        ['cloud', 'catalog'].includes(song.sourceInfo?.playbackSelection?.neteaseMode)) {
+      return { success: false, error: '保留当前文件与音质选择' }
+    }
     if (!song?.musicPlatform || !song?.musicId || qualitySwitchAttempted.value) {
       return { success: false, error: '无法切换音质' }
     }
@@ -89,9 +100,10 @@ export const useAudioPlayerEnhanced = () => {
         song.musicPlatform === 'netease-podcast' ||
         song.sourceInfo?.type === 'voice' ||
         (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
-        ? { unblock: false }
-        : {}
+      const options: MusicUrlResolveOptions = {
+        ...song.sourceInfo?.playbackSelection,
+        ...(isPodcast ? { unblock: false } : {})
+      }
       options.musicInfo = {
         name: song.title,
         artist: song.artist,
@@ -102,7 +114,7 @@ export const useAudioPlayerEnhanced = () => {
       const result = await getMusicUrl(platform, song.musicId, newQuality, options)
       if (result.success) {
         // 保存新音质设置
-        saveQuality(platform, newQuality)
+        if (platform !== 'netease') saveQuality(platform, newQuality)
         qualitySwitchAttempted.value = true
 
         addNotification({
@@ -112,6 +124,7 @@ export const useAudioPlayerEnhanced = () => {
         })
 
         return {
+          ...result,
           success: true,
           url: result.url,
           quality: newQuality,
@@ -130,9 +143,10 @@ export const useAudioPlayerEnhanced = () => {
         song.musicPlatform === 'netease-podcast' ||
         song.sourceInfo?.type === 'voice' ||
         (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
-        ? { unblock: false }
-        : {}
+      const options: MusicUrlResolveOptions = {
+        ...song.sourceInfo?.playbackSelection,
+        ...(isPodcast ? { unblock: false } : {})
+      }
       options.musicInfo = {
         name: song.title,
         artist: song.artist,
@@ -143,7 +157,7 @@ export const useAudioPlayerEnhanced = () => {
       const result = await getMusicUrl(platform, song.musicId, newQuality, options)
       if (result.success) {
         // 保存新音质设置
-        saveQuality(platform, newQuality)
+        if (platform !== 'netease') saveQuality(platform, newQuality)
         qualitySwitchAttempted.value = true
 
         addNotification({
@@ -153,6 +167,7 @@ export const useAudioPlayerEnhanced = () => {
         })
 
         return {
+          ...result,
           success: true,
           url: result.url,
           quality: newQuality,

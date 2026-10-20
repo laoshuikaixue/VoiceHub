@@ -10,6 +10,7 @@
     >
       <div
         v-if="show"
+        :style="dynamicZIndex ? { zIndex } : undefined"
         class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
         @click="handleOverlayClick"
       >
@@ -76,8 +77,10 @@
 import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 import { useLocale } from '~/utils/locale'
+import { usePopupZIndex } from '~/composables/useZIndex'
 
 const props = defineProps({
+  dynamicZIndex: Boolean,
   show: {
     type: Boolean,
     default: false
@@ -124,6 +127,9 @@ const props = defineProps({
     default: ''
   }
 })
+
+const { zIndex, onOpenChange } = usePopupZIndex()
+watch(() => props.show && props.dynamicZIndex, onOpenChange, { immediate: true })
 
 const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 

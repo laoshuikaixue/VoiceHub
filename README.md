@@ -857,6 +857,7 @@ VoiceHub/
 │   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   │   └── StatCard.vue       # 统计卡片组件
 │   │   │   ├── AppleMusicLyrics.vue   # 类Apple Music风格歌词显示组件
+│   │   │   ├── AudioPlayer/CloudFileDialog.vue # 云盘多文件选择弹窗
 │   │   │   ├── AudioPlayer.vue        # 主音频播放器组件
 │   │   │   ├── BilibiliIframeModal.vue # Bilibili视频预览弹窗
 │   │   │   ├── ConfirmDialog.vue      # 确认对话框
@@ -902,6 +903,7 @@ VoiceHub/
 │   │   ├── useLyrics.ts        # 歌词功能hooks
 │   │   ├── useLyricSettings.ts # 歌词设置hooks
 │   │   ├── useMediaSession.ts  # 媒体会话API hooks
+│   │   ├── useNeteaseCloudPlayback.ts # 网易云云盘索引、文件选择与播放解析
 │   │   ├── useMusicSources.ts    # 音乐源管理hooks
 │   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
 │   │   ├── useNotifications.ts # 通知功能hooks
@@ -1013,6 +1015,9 @@ VoiceHub/
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
+│       ├── neteaseCloud.ts    # 云盘文件身份映射与分页缓存
+│       ├── neteaseCatalog.ts  # 公开曲库音质核验与云盘覆盖隔离
+│       ├── playbackRequest.ts # 播放请求取消与可暂停截止时间
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── qqCookie.ts        # QQ音乐登录Cookie存取与续期广播
 │       ├── qqUserLibrary.ts   # QQ音乐用户资料库（歌单/最近播放）
@@ -1527,6 +1532,10 @@ VoiceHub/
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
 │   └── safe-migrate.js    # 安全迁移（带备份）
+├── tests/                 # 自动化测试
+│   └── frontend/          # 前端播放与交互测试（节选）
+│       ├── cloud-playback-integration.test.ts # 云盘解析与播放器集成回归
+│       └── netease-cloud.test.ts # 云盘文件身份、缓存与取消测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义

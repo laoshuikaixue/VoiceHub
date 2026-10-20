@@ -36,6 +36,8 @@ const allowedEndpoints = new Map<string, Set<string>>([
   ['search', new Set(['GET'])],
   ['song/detail', new Set(['GET'])],
   ['song/url/v1', new Set(['GET'])],
+  ['user/cloud', new Set(['GET'])],
+  ['song/cloud/download', new Set(['GET'])],
   ['album', new Set(['GET'])],
   ['lyric', new Set(['GET'])],
   ['lyric/new', new Set(['GET'])],

@@ -40,7 +40,7 @@ export const useSongPlayer = () => {
 
       // 如果是当前歌曲但暂停了，则恢复播放
       const currentGlobalSong = audioPlayer.getCurrentSong().value
-      if (currentGlobalSong && (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))) {
+      if (currentGlobalSong && (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'netease' || isBilibiliSong(currentGlobalSong))) {
         // 恢复播放时同步刷新播放队列
         const { queue, index } = buildQueue(currentGlobalSong, queueSource)
         audioPlayer.playSong(currentGlobalSong, queue, index)
@@ -52,7 +52,10 @@ export const useSongPlayer = () => {
       let url = null
 
       // 如果有手动填入的 playUrl，优先使用它（统一处理所有平台）
-      if (song.playUrl && song.playUrl.trim()) {
+      if (song.musicPlatform === 'netease') {
+        // 文件选择由已挂载的播放器处理。
+        url = null
+      } else if (song.playUrl && song.playUrl.trim()) {
         url = song.playUrl.trim()
       } else if (!isBilibiliSong(song)) {
         // 如果不是哔哩哔哩歌曲且没有手动 playUrl，通过 API 获取 URL

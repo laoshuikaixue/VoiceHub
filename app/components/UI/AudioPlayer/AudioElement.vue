@@ -69,7 +69,7 @@ const ERROR_MESSAGES = {
 watch(
   () => props.song,
   (newSong, oldSong) => {
-    if (newSong && !newSong.musicUrl) {
+    if (newSong && !newSong.musicUrl && newSong.musicPlatform === 'bilibili') {
       // 使用 nextTick 确保 DOM 已更新
       nextTick(() => {
         // 创建一个自定义错误对象

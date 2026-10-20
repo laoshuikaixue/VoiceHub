@@ -378,6 +378,7 @@ const handleLike = async (song) => {
 const playSong = (songData) => {
   emit('play', {
     id: songData.id,
+    pc: songData.pc,
     title: songData.name,
     artist: songData.ar?.map((a) => a.name).join('/'),
     cover: songData.al?.picUrl,
@@ -397,6 +398,7 @@ const selectSong = (songData) => {
 
   const song = {
     id: songData.id,
+    pc: songData.pc,
     title: songData.name,
     artist: songData.ar?.map((a) => a.name).join('/'),
     cover: songData.al?.picUrl,

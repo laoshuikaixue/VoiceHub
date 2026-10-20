@@ -1021,6 +1021,7 @@
     <NeteaseUploadDialog
       :show="showUploadDialog"
       :song="selectedUploadSong"
+      @upload-success="invalidateNeteaseCloud"
       @close="showUploadDialog = false"
       @show-login="handleShowLogin"
     />
@@ -1542,6 +1543,7 @@ import { convertToHttps, getCoverThumbUrl, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import { invalidateNeteaseCloud } from '~/composables/useNeteaseCloudPlayback'
 import { onQqMusicCookieUpdated, onQqMusicLoginInvalidated, persistQqMusicCookie } from '~/utils/qqCookie'
 import { renderMarkdown } from '~/utils/markdown'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
@@ -2464,6 +2466,7 @@ const handleLoginSuccess = (data) => {
   isNeteaseLoggedIn.value = true
 
   if (import.meta.client) {
+    invalidateNeteaseCloud()
     localStorage.setItem('netease_cookie', data.cookie)
     localStorage.setItem('netease_user', JSON.stringify(data.user))
     persistNeteaseVipFlag(data.user)
@@ -2472,6 +2475,7 @@ const handleLoginSuccess = (data) => {
 }
 
 const handleLogoutNetease = () => {
+  invalidateNeteaseCloud()
   neteaseCookie.value = ''
   neteaseUser.value = null
   isNeteaseLoggedIn.value = false
@@ -3078,6 +3082,13 @@ const getAudioUrl = async (result) => {
   if (result.hasUrl || result.url) return result
 
   try {
+    // 投稿补全只读取曲库信息；云盘版本在当前播放账号中解析。
+    if ((result.musicPlatform || platform.value) === 'netease' && result.sourceInfo?.type !== 'voice') {
+      const url = await resolveMusicUrl('netease', result.musicId || result.id, result.playUrl, {
+        neteaseMode: 'catalog', musicInfo: { rawItem: result, name: result.title, artist: result.artist }
+      })
+      return { ...result, url, hasUrl: !!url }
+    }
     // 根据搜索结果的sourceInfo.source字段判断音源类型
     const sourceType = result.sourceInfo?.source || result.actualSource || ''
 
@@ -3313,13 +3324,14 @@ const getAudioUrl = async (result) => {
 
 // 播放歌曲
 const playSong = async (result, playlist, playlistIndex) => {
-  // 如果还没有获取URL，先获取
-  if (!result.hasUrl && !result.url) {
+  const deferredNetease = (result.musicPlatform || platform.value) === 'netease' && result.sourceInfo?.type !== 'voice'
+  // 网易云文件版本由播放器统一解析。
+  if (!deferredNetease && !result.hasUrl && !result.url) {
     result = await getAudioUrl(result)
   }
 
   // 对于非哔哩哔哩平台，如果没有URL则提示错误
-  if (!result.url && !isBilibiliSong(result)) {
+  if (!deferredNetease && !result.url && !isBilibiliSong(result)) {
     error.value = locale.value.notifications.songUnavailable
     if (window.$showNotification) {
       window.$showNotification(locale.value.notifications.songUnavailable, 'error')
@@ -3350,6 +3362,7 @@ const playSong = async (result, playlist, playlistIndex) => {
     musicId: finalMusicId,
     albumId: result.albumId,
     sourceInfo: result.sourceInfo,
+    pc: result.pc,
     selectionToken: result.selectionToken,
     bilibiliCid: result.bilibiliCid // 确保传递 cid
   }

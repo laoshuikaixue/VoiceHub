@@ -713,6 +713,7 @@ const getDownloadResolveOptions = (song, quality, excludeSources = [], ignorePro
     (song?.sourceInfo?.source === 'netease-backup' && song?.sourceInfo?.type === 'voice')
 
   return {
+    skipCloudProbe: true,
     unblock: isPodcast ? false : undefined,
     // 下载要在浏览器里 fetch 文件体，插件直链多为跨域 CDN，强制走服务端媒体代理
     preferProxy: true,

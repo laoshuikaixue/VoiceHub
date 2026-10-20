@@ -23,6 +23,12 @@ import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
 import { useLocale } from '~/utils/locale'
+import { useNeteaseCloudPlayback } from './useNeteaseCloudPlayback'
+import type { CloudPlaybackOptions } from './useNeteaseCloudPlayback'
+import { getNeteaseQualityLevel } from './useAudioQuality'
+import { resolveNeteaseCatalogUrl, catalogQualityError } from '~/utils/neteaseCatalog'
+import { playbackAbortError } from '~/utils/playbackRequest'
+import type { NeteaseCloudFile } from '~/utils/neteaseCloud'
 import { getPlatformDisplayName } from '~/utils/platforms'
 import { getPluginId, getPluginQuality, isPluginPlatform } from '~/utils/pluginPlatform'
 
@@ -1782,25 +1788,7 @@ export const useMusicSources = () => {
   /**
    * 将VoiceHub音质数值映射到网易云API的level参数
    */
-  const mapQualityToLevel = (quality: number): string => {
-    // 根据网易云API文档映射音质等级
-    switch (quality) {
-      case 2:
-        return 'standard' // 标准 (128k)
-      case 3:
-        return 'higher' // 较高 (192k)
-      case 4:
-        return 'exhigh' // HQ极高 (320k)
-      case 5:
-        return 'lossless' // SQ无损
-      case 6:
-        return 'hires' // Hi-Res
-      case 9:
-        return 'jymaster' // 超清母带
-      default:
-        return 'exhigh' // 默认极高音质
-    }
-  }
+  const mapQualityToLevel = getNeteaseQualityLevel
 
   /**
    * 获取歌曲播放URL
@@ -1811,7 +1799,7 @@ export const useMusicSources = () => {
     quality?: number,
     platform?: string,
     cookie?: string,
-    options?: {
+    options?: CloudPlaybackOptions & {
       unblock?: boolean
       bilibiliCid?: string
       excludeSources?: string[]
@@ -1819,10 +1807,32 @@ export const useMusicSources = () => {
     }
   ): Promise<{
     success: boolean
-    url?: string
+    url?: string | null
     source?: string
     error?: string
+    actualQuality?: string | number
+    cloudFile?: NeteaseCloudFile
+    cloudFiles?: NeteaseCloudFile[]
   }> => {
+    if (platform === 'netease' && !options?.skipCloudProbe) {
+      const cloud = await useNeteaseCloudPlayback().resolve(id, options, cookie)
+      if (cloud) return { ...cloud, success: !!cloud.url }
+    }
+    if (platform === 'netease' && options?.neteaseMode === 'catalog') {
+      const source = getEnabledSources().find(source => source.id.includes('netease-backup'))
+      if (!source || options.excludeSources?.includes(source.id)) throw catalogQualityError()
+      const requestCookie = cookie || (import.meta.client ? localStorage.getItem('netease_cookie') || undefined : undefined)
+      const result = await resolveNeteaseCatalogUrl({
+        fetcher: $fetch<unknown, string>, baseUrl: source.baseUrl, id: String(id),
+        level: getNeteaseQualityLevel(Number(quality)),
+        cookie: requestCookie,
+        cloudFiles: options.catalogCloudFiles, signal: options.signal, timeout: source.timeout
+      })
+      if (import.meta.client && !cookie && (localStorage.getItem('netease_cookie') || undefined) !== requestCookie) {
+        throw playbackAbortError()
+      }
+      return { success: true, source: source.id, ...result }
+    }
     // 特殊处理 netease-podcast 平台：使用网易云逻辑但禁用 unblock
     if (platform === 'netease-podcast') {
       platform = 'netease'
@@ -1962,6 +1972,7 @@ export const useMusicSources = () => {
 
         try {
           let url: string | null = null
+          let actualQuality: string | undefined
 
           if (source.id === 'bilibili') {
             const result = await getBilibiliTrackUrl(idParam, options?.bilibiliCid)
@@ -2123,13 +2134,13 @@ export const useMusicSources = () => {
               params.cookie = cookie
             }
 
-            const response = await $fetch(`${source.baseUrl}/song/url/v1`, {
+            const response = await $fetch<{ code?: number; data?: { url?: string; level?: string }[] }, string>(`${source.baseUrl}/song/url/v1`, {
               params,
               timeout: source.timeout || 8000
             })
-
             if (response?.code === 200 && Array.isArray(response.data) && response.data[0]?.url) {
               url = response.data[0].url as string
+              actualQuality = response.data[0].level
             }
           }
 
@@ -2147,7 +2158,7 @@ export const useMusicSources = () => {
               const validation = await validatePlayUrl(url)
 
               if (validation.valid) {
-                return { success: true, url, source: source.id }
+                return { success: true, url, source: source.id, actualQuality }
               } else {
                 // 继续尝试下一个音源
               }
@@ -2496,6 +2507,7 @@ export const useMusicSources = () => {
 
           const transformedSong = {
             id: id,
+            pc: item.pc || detailMap.get(item.id)?.pc,
             title: title,
             artist,
             cover,
@@ -2537,6 +2549,7 @@ export const useMusicSources = () => {
   const transformNeteaseDetailResponse = (response: any): any[] => {
     return response.songs.map((song: any) => ({
       id: song.id,
+      pc: song.pc,
       title: song.name,
       artist: song.ar?.map((artist: any) => artist.name).join('/') || '未知艺术家',
       cover: song.al?.picUrl,

@@ -1450,7 +1450,7 @@ const togglePlaySong = async (song) => {
     const currentGlobalSong = audioPlayer.getCurrentSong().value
     if (
       currentGlobalSong &&
-      (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))
+      (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'netease' || isBilibiliSong(currentGlobalSong))
     ) {
       // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
@@ -1459,7 +1459,7 @@ const togglePlaySong = async (song) => {
       if ((song.musicPlatform && song.musicId) || song.playUrl) {
         try {
           const url = await getMusicUrl(song)
-          if (url || isBilibiliSong(song)) {
+          if (url || song.musicPlatform === 'netease' || isBilibiliSong(song)) {
             const playableSong = {
               ...song,
               musicUrl: url || null
@@ -1496,6 +1496,7 @@ const togglePlaySong = async (song) => {
           musicUrl: s.musicUrl || null,
           musicPlatform: s.musicPlatform,
           musicId: s.musicId,
+          pc: s.pc,
           playUrl: s.playUrl || null,
           sourceInfo: s.sourceInfo
         }))
@@ -1507,7 +1508,7 @@ const togglePlaySong = async (song) => {
 
     try {
       const url = await getMusicUrl(song)
-      if (url || isBilibiliSong(song)) {
+      if (url || song.musicPlatform === 'netease' || isBilibiliSong(song)) {
         const { playlist, songIndex } = buildPlaylistForSong(song)
 
         const playableSong = {
@@ -1523,6 +1524,7 @@ const togglePlaySong = async (song) => {
         ;(async () => {
           for (let i = songIndex + 1; i < playlist.length; i++) {
             const s = playlist[i]
+            if (s.musicPlatform === 'netease') continue
             if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
               try {
                 s.musicUrl = await getMusicUrl(s)
@@ -1569,6 +1571,7 @@ const getCurrentTimeSlot = (song) => {
 
 // 动态获取音乐URL
 const getMusicUrl = async (song) => {
+  if (song.musicPlatform === 'netease') return null
   const { musicPlatform: platform, musicId, playUrl, sourceInfo } = song
 
   // 如果有自定义播放链接，优先使用

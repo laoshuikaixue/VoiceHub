@@ -117,7 +117,18 @@
                       {{ currentQualityText }}
 
                       <!-- 音质切换菜单 -->
-                      <div v-if="showQualitySettings" class="badge-quality-menu" @click.stop>
+                      <div v-if="showQualitySettings" class="badge-quality-menu" :class="{ 'has-cloud-file': cloudFileOptions.length }" @click.stop>
+                        <CustomSelect
+                          v-if="cloudFileOptions.length"
+                          appearance="lyrics"
+                          class-name="cloud-quality-select"
+                          :class="{ active: isCloudPlayback }"
+                          :display-text="cloudText('cloudOriginal')"
+                          :model-value="selectedCloudFileKey"
+                          :options="cloudFileOptions"
+                          :placeholder="cloudText('cloudSelectPlaceholder')"
+                          @change="selectCloudFile"
+                        />
                         <div
                           v-for="option in currentPlatformOptions"
                           :key="option.value"
@@ -424,6 +435,9 @@ import Popover from '~/components/UI/Common/Popover.vue'
 import VolumeControl from '~/components/UI/AudioPlayer/VolumeControl.vue'
 import SongComments from '~/components/UI/SongComments.vue'
 import { useLocale } from '~/utils/locale'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { cloudFileLabel } from '~/utils/neteaseCloud'
+import { useLocaleText } from '~/composables/useLocaleText'
 
 const props = defineProps({
   isVisible: {
@@ -432,11 +446,17 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'select-quality', 'select-cloud-file'])
 
 // 音频播放器状态
 const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
+const { audioPlayer: cloudLocale } = useLocale()
+const { t: cloudText } = useLocaleText(cloudLocale)
+const isCloudPlayback = computed(() => audioPlayerControl.playbackInfo.value?.source === 'netease-cloud')
+const cloudFileOptions = computed(() => (audioPlayerControl.playbackInfo.value?.cloudFiles || []).map(file => ({value: file.key, label: cloudFileLabel(file)})))
+const selectedCloudFileKey = computed(() => isCloudPlayback.value ? audioPlayerControl.playbackInfo.value?.cloudFile?.key : '')
+const selectCloudFile = key => { showQualitySettings.value = false; emit('select-cloud-file', key) }
 const lyricSettings = useLyricSettings()
 const { ui } = useLocale()
 const locale = computed(() => ui.value?.lyricsModal || {})
@@ -516,7 +536,11 @@ const canShowComments = computed(() => {
 })
 
 const currentQualityText = computed(() => {
+  if (isCloudPlayback.value) return cloudText('cloud')
   const platform = currentSong.value?.musicPlatform
+  if (platform === 'netease') {
+    return getQualityOptions(platform).find(option => option.level === audioPlayerControl.playbackInfo.value?.actualQuality)?.label || cloudText('catalog')
+  }
   if (!platform) return locale.value.quality
   const quality = getQuality(platform)
   const label = getQualityLabel(platform, quality)
@@ -543,13 +567,20 @@ const currentPlatformOptions = computed(() => {
 })
 
 const isCurrentQuality = (qualityValue) => {
+  if (isCloudPlayback.value) return false
   const platform = currentSong.value?.musicPlatform
+  if (platform === 'netease') return getQualityOptions(platform).find(option => option.level === audioPlayerControl.playbackInfo.value?.actualQuality)?.value === qualityValue
   if (!platform) return false
   return getQuality(platform) === qualityValue
 }
 
 const selectQuality = async (qualityValue) => {
   if (!currentSong.value || !currentSong.value.musicPlatform) return
+  if (currentSong.value.musicPlatform === 'netease') {
+    showQualitySettings.value = false
+    emit('select-quality', qualityValue)
+    return
+  }
   if (isCurrentQuality(qualityValue)) {
     showQualitySettings.value = false
     return
@@ -2058,6 +2089,27 @@ onUnmounted(() => {
   animation: menu-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   max-height: 240px;
   overflow-y: auto;
+}
+
+.cloud-quality-select {
+  width: 100px;
+  border-radius: 8px;
+  font-weight: 500;
+  --custom-select-glass-text: var(--lyrics-modal-badge-menu-text);
+  --custom-select-glass-font-size: 0.85rem;
+  --custom-select-glass-hover: var(--mask-5);
+}
+.badge-quality-menu.has-cloud-file {
+  scrollbar-width: none;
+}
+.badge-quality-menu.has-cloud-file::-webkit-scrollbar {
+  display: none;
+}
+.cloud-quality-select.active {
+  background: var(--lyrics-modal-badge-menu-active-bg);
+  box-shadow: 0 2px 8px var(--mask-8);
+  font-weight: 600;
+  --custom-select-glass-text: var(--color-accent);
 }
 
 @keyframes menu-pop-in {

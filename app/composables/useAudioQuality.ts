@@ -3,14 +3,17 @@ import { useLocale } from '~/utils/locale'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX } from '~/utils/pluginPlatform'
 
+export const getNeteaseQualityLevel = (quality: number) =>
+  quality === 3 ? 'higher' : QUALITY_OPTIONS.netease.find(option => option.value === quality)?.level || 'exhigh'
+
 // 音质配置
 export const QUALITY_OPTIONS = {
   netease: [
-    { value: 2, key: 'standard' },
-    { value: 4, key: 'neteaseHq' },
-    { value: 5, key: 'neteaseSq' },
-    { value: 6, key: 'neteaseHiRes' },
-    { value: 9, key: 'neteaseMaster' }
+    { value: 2, key: 'standard', level: 'standard' },
+    { value: 4, key: 'neteaseHq', level: 'exhigh' },
+    { value: 5, key: 'neteaseSq', level: 'lossless' },
+    { value: 6, key: 'neteaseHiRes', level: 'hires' },
+    { value: 9, key: 'neteaseMaster', level: 'jymaster' }
   ],
   tencent: [
     { value: 4, key: 'standard' },

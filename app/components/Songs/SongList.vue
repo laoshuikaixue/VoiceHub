@@ -1183,12 +1183,13 @@ const playSongWithUrlFetching = async (song) => {
   const currentIndex = playlist.findIndex((item) => item.id === song.id)
   audioPlayer.playSong(playableSong, playlist, currentIndex)
 
-  if (!url && !isBilibiliSong(song)) return
+  if (!url && song.musicPlatform !== 'netease' && !isBilibiliSong(song)) return
 
   // 后台预取后续歌曲的播放链接（不阻塞当前播放）
   ;(async () => {
     for (let i = currentIndex + 1; i < playlist.length; i++) {
       const s = playlist[i]
+      if (s.musicPlatform === 'netease') continue
       if (!s.musicUrl && ((s.musicPlatform && s.musicId) || s.playUrl)) {
         try {
           s.musicUrl = await getMusicUrl(s)
@@ -1216,7 +1217,7 @@ const togglePlaySong = async (song) => {
     const currentGlobalSong = audioPlayer.getCurrentSong().value
     if (
       currentGlobalSong &&
-      (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))
+      (currentGlobalSong.musicUrl || currentGlobalSong.musicPlatform === 'netease' || isBilibiliSong(currentGlobalSong))
     ) {
       // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
@@ -1251,6 +1252,7 @@ const buildPlayablePlaylist = async (currentSong) => {
 
 // 动态获取音乐URL
 const getMusicUrl = async (song) => {
+  if (song.musicPlatform === 'netease') return null
   const { musicPlatform: platform, musicId, playUrl, sourceInfo } = song
 
   // 如果有自定义播放链接，优先使用

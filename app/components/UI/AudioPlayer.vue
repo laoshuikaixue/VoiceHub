@@ -142,7 +142,7 @@
             <!-- 时间和音质显示 -->
             <div class="time-details-and-audio-q">
               <span class="current-time">{{ formatTime(control.currentTime.value) }}</span>
-              <div class="audio-quality" title="音质设置" @click="toggleQualitySettings">
+              <div class="audio-quality" :title="currentFileDescription" @click="toggleQualitySettings">
                 <span>{{ currentQualityText }}</span>
               </div>
               <span
@@ -214,7 +214,19 @@
 
         <!-- 音质选择下拉菜单 -->
         <Transition name="quality-dropdown">
-          <div v-if="showQualitySettings" class="quality-dropdown" data-player-no-drag>
+          <div v-if="showQualitySettings && !isMobile" class="quality-dropdown" data-player-no-drag @click.stop>
+            <p v-if="control.hasError.value" class="quality-section-title">{{ t('playbackFailed') }}</p>
+            <CustomSelect
+              v-if="cloudFileOptions.length"
+              appearance="glass"
+              class-name="cloud-quality-select"
+              :class="{ active: isCloudPlayback }"
+              :display-text="t('cloudOriginal')"
+              :model-value="selectedCloudFileKey"
+              :options="cloudFileOptions"
+              :placeholder="t('cloudSelectPlaceholder')"
+              @change="selectCloudFile"
+            />
             <div
               v-for="option in currentPlatformOptions"
               :key="option.value"
@@ -271,7 +283,7 @@
 
     <!-- 全屏歌词模态（仅客户端渲染） -->
     <ClientOnly>
-      <LyricsModal :is-visible="showFullscreenLyrics" @close="showFullscreenLyrics = false" />
+      <LyricsModal :is-visible="showFullscreenLyrics" @close="showFullscreenLyrics = false" @select-quality="selectQuality" @select-cloud-file="selectCloudFile" />
     </ClientOnly>
 
     <!-- 哔哩哔哩 iframe 预览模态 -->
@@ -284,6 +296,17 @@
       />
     </ClientOnly>
 
+    <CloudFileDialog />
+    <ConfirmDialog
+      :show="pendingCatalogQuality !== null"
+      dynamic-z-index
+      :title="t('cloudSwitchTitle')"
+      :message="t('cloudSwitchMessage')"
+      :confirm-text="t('catalogQuality')"
+      :cancel-text="t('cloudCancel')"
+      @confirm="confirmCatalogSwitch"
+      @cancel="pendingCatalogQuality = null"
+    />
     <ConfirmDialog
       :show="showFallbackOpenDialog"
       title="打开投稿链接"
@@ -297,7 +320,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Move, Pin } from '@lucide/vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
@@ -309,6 +332,11 @@ import Icon from './Icon.vue'
 import MarqueeText from './MarqueeText.vue'
 import AppSpinner from './Common/AppSpinner.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
+import CloudFileDialog from './AudioPlayer/CloudFileDialog.vue'
+import CustomSelect from './Common/CustomSelect.vue'
+import { cloudFileLabel } from '~/utils/neteaseCloud'
+import { useServerErrors, useLocaleText } from '~/composables/useLocaleText'
+import { isCloudPlaybackError } from '~/composables/useNeteaseCloudPlayback'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
 import { useAudioQuality } from '~/composables/useAudioQuality'
@@ -336,6 +364,8 @@ import {
 // 添加 router 导入
 const router = useRouter()
 const { audioPlayer: audioPlayerLocale } = useLocale()
+const { t } = useLocaleText(audioPlayerLocale)
+const { localize } = useServerErrors()
 
 // 歌词非活跃行颜色 — 随主题切换
 const theme = useTheme()
@@ -364,6 +394,8 @@ const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
 const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+const catalogSwitchConfirmed = ref(false)
+const pendingCatalogQuality = ref(null)
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
 const wakeLock = useWakeLock()
@@ -398,7 +430,7 @@ const timeDisplayMode = ref('remaining')
 // 同步标记，避免双向触发
 const isSyncingFromGlobal = ref(false)
 const isMounted = ref(false)
-const lastOpenedFallbackSongId = ref<string | number | null>(null)
+const lastOpenedFallbackSongId = ref(null)
 const showFallbackOpenDialog = ref(false)
 const fallbackOpenDialogUrl = ref('')
 const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否在新标签页打开原始链接？')
@@ -409,9 +441,9 @@ const MIN_VALID_QQ_AUDIO_DURATION = 10
 const NETEASE_SCROBBLE_MIN_SECONDS = 30
 const NETEASE_SCROBBLE_SHORT_AUDIO_RATIO = 0.8
 const MAX_NETEASE_SCROBBLE_RETRIES = 3
-const failedPlaybackSources = ref<string[]>([])
-const neteaseScrobbleReportedKey = ref<string | null>(null)
-const neteaseScrobblePendingKey = ref<string | null>(null)
+const failedPlaybackSources = ref([])
+const neteaseScrobbleReportedKey = ref(null)
+const neteaseScrobblePendingKey = ref(null)
 const neteaseScrobbleRetryCount = ref(0)
 const neteaseScrobbleWasPastThreshold = ref(false)
 const neteaseScrobblePlayEpoch = ref(0)
@@ -460,7 +492,7 @@ const activeSong = computed(() => props.song ?? lastSong.value)
 // 控制可见性：父级仍传入歌曲且未处于关闭或已关闭状态
 const visible = computed(() => !!props.song && !isClosing.value && !isClosed.value)
 
-const normalizeHttpUrl = (url: string | null | undefined) => {
+const normalizeHttpUrl = (url) => {
   if (!url || typeof url !== 'string') return null
   const trimmed = url.trim()
   if (!trimmed) return null
@@ -493,7 +525,7 @@ const resolveFallbackUrl = () => {
   return null
 }
 
-const openFallbackLinkForFailedSong = (): 'none' | 'dialog' | 'opened' => {
+const openFallbackLinkForFailedSong = () => {
   const song = activeSong.value
   if (!song?.id) return 'none'
   if (lastOpenedFallbackSongId.value === song.id) return 'none'
@@ -565,6 +597,8 @@ watch(
       failedPlaybackSources.value = []
       resetNeteaseScrobbleState()
       enhanced.resetRetryState()
+      catalogSwitchConfirmed.value = false
+      pendingCatalogQuality.value = null
     }
   }
 )
@@ -582,8 +616,9 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
     (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
 
   return {
+    ...control.getPlaybackOptions(),
     unblock: isPodcast ? false : undefined,
-    quality: getQuality(song.musicPlatform),
+    quality: control.getPlaybackOptions().quality ?? getQuality(song.musicPlatform),
     mediaId: song.sourceInfo?.strMediaMid || song.sourceInfo?.mediaId || song.sourceInfo?.mediaMid,
     excludeSources,
     ignoreProvidedUrl: true,
@@ -597,6 +632,8 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
 }
 
 const trySwitchPlaybackSource = async () => {
+  if (isCloudPlayback.value || isCloudPlaybackError(control.lastLoadError.value) ||
+      control.getPlaybackOptions().neteaseMode === 'catalog') return false
   const song = activeSong.value
   if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song)) {
     return false
@@ -619,6 +656,9 @@ const trySwitchPlaybackSource = async () => {
   isFallbackHandling.value = true
   control.isLoadingTrack.value = true
   const playbackKey = `${song.id}:${song.musicPlatform}:${song.musicId}`
+  const generation = control.getLoadGeneration()
+  const isCurrentRequest = () => generation === control.getLoadGeneration() &&
+    `${activeSong.value?.id}:${activeSong.value?.musicPlatform}:${activeSong.value?.musicId}` === playbackKey
   const resumePosition = audioPlayer.value?.currentTime || 0
 
   try {
@@ -629,8 +669,7 @@ const trySwitchPlaybackSource = async () => {
       buildFallbackResolveOptions(song, excludeSources)
     )
 
-    const current = activeSong.value
-    if (`${current?.id}:${current?.musicPlatform}:${current?.musicId}` !== playbackKey) return false
+    if (!isCurrentRequest()) return false
 
     if (!result.url) {
       return false
@@ -642,6 +681,7 @@ const trySwitchPlaybackSource = async () => {
     }
 
     failedPlaybackSources.value = excludeSources
+    control.playbackInfo.value = { ...result, cloudFiles: result.cloudFiles || control.playbackInfo.value?.cloudFiles }
     const updatedSong = {
       ...song,
       musicUrl: result.url,
@@ -667,7 +707,7 @@ const trySwitchPlaybackSource = async () => {
       element.addEventListener(
         'loadedmetadata',
         () => {
-          if (Number.isFinite(element.duration) && resumePosition < element.duration)
+          if (isCurrentRequest() && Number.isFinite(element.duration) && resumePosition < element.duration)
             element.currentTime = resumePosition
         },
         { once: true }
@@ -675,6 +715,7 @@ const trySwitchPlaybackSource = async () => {
       // 不调用 load()：song.musicUrl 变化会通过 :src 绑定自动走加载算法，
       // 额外一次 load() 会多排一轮 pause/emptied 事件，可能把刚起的播放又改回暂停
       started = await control.play()
+      if (!isCurrentRequest()) return false
       // 以元素真实状态为准纠正播放标记，避免排队的 pause 事件把界面留在暂停态
       if (started && !element.paused) {
         control.isPlaying.value = true
@@ -689,12 +730,15 @@ const trySwitchPlaybackSource = async () => {
 
     return true
   } catch (sourceError) {
+    if (!isCurrentRequest()) return false
     console.warn('[AudioPlayer] 切换备用音源失败:', sourceError)
     failedPlaybackSources.value = excludeSources
     return false
   } finally {
-    isFallbackHandling.value = false
-    control.isLoadingTrack.value = false
+    if (isCurrentRequest()) {
+      isFallbackHandling.value = false
+      control.isLoadingTrack.value = false
+    }
   }
 }
 
@@ -929,6 +973,7 @@ watch(
 
 const handleDurationChange = async () => {
   if (!audioPlayer.value || isFallbackHandling.value) return
+  const generation = control.getLoadGeneration()
 
   if (
     isInvalidTencentAudio(
@@ -937,12 +982,14 @@ const handleDurationChange = async () => {
     )
   ) {
     const switchedSource = await trySwitchPlaybackSource()
+    if (generation !== control.getLoadGeneration()) return
     if (switchedSource) return
   }
 }
 
 const handleLoaded = async () => {
   if (!audioPlayer.value) return
+  const generation = control.getLoadGeneration()
 
   if (
     !isFallbackHandling.value &&
@@ -952,6 +999,7 @@ const handleLoaded = async () => {
     )
   ) {
     const switchedSource = await trySwitchPlaybackSource()
+    if (generation !== control.getLoadGeneration()) return
     if (switchedSource) {
       return
     }
@@ -1043,11 +1091,12 @@ const handleLoaded = async () => {
 const handleError = async (error) => {
   // 忽略主动清空 src 或关闭播放器导致的错误
   const audioEl = audioPlayer.value
+  if (control.isLoadingNewSong.value || control.lastLoadError.value?.name === 'AbortError') return
   if (
     !audioEl ||
-    !audioEl.src ||
+    (!control.hasError.value && (!audioEl.src ||
     audioEl.src === window.location.href ||
-    audioEl.src === window.location.origin + '/'
+    audioEl.src === window.location.origin + '/'))
   ) {
     return
   }
@@ -1078,7 +1127,9 @@ const handleError = async (error) => {
     markPlaybackUrlInvalid(failedSrc)
   }
 
+  const generation = control.getLoadGeneration()
   const switchedSource = await trySwitchPlaybackSource()
+  if (generation !== control.getLoadGeneration()) return
   if (switchedSource) {
     return
   }
@@ -1094,6 +1145,18 @@ const handleError = async (error) => {
       stopPlaying()
       return
     }
+  }
+
+  if (isCloudPlayback.value || isCloudPlaybackError(control.lastLoadError.value) ||
+      control.getPlaybackOptions().neteaseMode === 'catalog') {
+    control.isLoadingTrack.value = false
+    control.isLoadingNewSong.value = false
+    control.hasError.value = true
+    sync.syncPlayStateToGlobal(false, props.song)
+    if (!control.lastLoadError.value) window.$showNotification?.(isCloudPlayback.value
+      ? localize({ data: { code: 'MUSIC_CLOUD_PLAYBACK_FAILED' } }) : t('playbackFailed'), 'error')
+    if (props.isPlaylistMode && control.playMode.value !== 'off') await handleNext()
+    return
   }
 
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
@@ -1145,7 +1208,7 @@ const handleError = async (error) => {
   // 使用增强的错误处理逻辑
   const result = await enhanced.handlePlaybackError(
     error,
-    props.song,
+    { ...props.song, sourceInfo: { ...props.song?.sourceInfo, playbackSelection: control.getPlaybackOptions() } },
     (newSong) => emit('songChange', newSong),
     handleNext,
     () => emit('close'),
@@ -1300,28 +1363,47 @@ const handleSeekToPosition = (event) => {
   control.seekToPosition(event)
 }
 
-// 获取当前歌曲平台的音质文本
+const isCloudPlayback = computed(() => control.playbackInfo.value?.source === 'netease-cloud')
+const cloudFileOptions = computed(() => (control.playbackInfo.value?.cloudFiles || []).map(file => ({ value: file.key, label: cloudFileLabel(file) })))
+const selectedCloudFileKey = computed(() => isCloudPlayback.value ? control.playbackInfo.value?.cloudFile?.key : '')
+const currentFileDescription = computed(() => control.playbackInfo.value?.cloudFile
+  ? cloudFileLabel(control.playbackInfo.value.cloudFile) : currentQualityText.value)
+const currentPlatformOptions = computed(() => props.song?.musicPlatform ? getQualityOptions(props.song.musicPlatform) : [])
+const actualNeteaseOption = computed(() => currentPlatformOptions.value.find(option => option.level === control.playbackInfo.value?.actualQuality))
 const currentQualityText = computed(() => {
-  if (!props.song || !props.song.musicPlatform) return '音质'
-
-  const platform = props.song.musicPlatform
-  const quality = getQuality(platform)
-  const label = getQualityLabel(platform, quality)
-
-  // 简化显示文本
-  return label.replace(/音质|音乐/, '').trim() || '音质'
+  if (isCloudPlayback.value) return t('cloud')
+  if (props.song?.musicPlatform === 'netease') return actualNeteaseOption.value?.label || t('catalog')
+  if (!props.song?.musicPlatform) return t('qualityUnknown')
+  return getQualityLabel(props.song.musicPlatform, getQuality(props.song.musicPlatform))
 })
-
-// 获取当前平台的音质选项
-const currentPlatformOptions = computed(() => {
-  if (!props.song || !props.song.musicPlatform) return []
-  return getQualityOptions(props.song.musicPlatform)
-})
-
-// 检查是否是当前音质
 const isCurrentQuality = (qualityValue) => {
-  if (!props.song || !props.song.musicPlatform) return false
-  return getQuality(props.song.musicPlatform) === qualityValue
+  if (isCloudPlayback.value) return false
+  if (props.song?.musicPlatform === 'netease') return actualNeteaseOption.value?.value === qualityValue
+  return getQuality(props.song?.musicPlatform) === qualityValue
+}
+
+const reloadNeteaseVersion = async (options) => {
+  const song = props.song
+  if (!song) return
+  isFallbackHandling.value = false
+  closeQualitySettings()
+  const loading = control.loadSong(song, options)
+  const generation = control.getLoadGeneration()
+  const success = await loading
+  if (generation !== control.getLoadGeneration() || props.song?.id !== song.id) return
+  if (success) {
+    sync.syncPlayStateToGlobal(control.isPlaying.value, song)
+  } else if (control.hasError.value && control.lastLoadError.value?.name !== 'AbortError' &&
+      control.lastLoadError.value?.data?.code !== 'MUSIC_CATALOG_QUALITY_UNAVAILABLE') {
+    await handleError(control.lastLoadError.value)
+  }
+}
+const selectCloudFile = (key) => reloadNeteaseVersion({ neteaseMode: 'cloud', cloudFileKey: key })
+const confirmCatalogSwitch = () => {
+  const quality = pendingCatalogQuality.value
+  pendingCatalogQuality.value = null
+  catalogSwitchConfirmed.value = true
+  if (quality !== null) void reloadNeteaseVersion({ neteaseMode: 'catalog', quality })
 }
 
 // 切换时长显示模式
@@ -1415,7 +1497,17 @@ const selectQuality = async (qualityValue) => {
   if (!props.song || !props.song.musicPlatform) return
 
   // 如果选择的是当前音质，直接返回
-  if (isCurrentQuality(qualityValue)) {
+  if (isCurrentQuality(qualityValue) && !control.isLoadingTrack.value) {
+    return
+  }
+
+  if (props.song.musicPlatform === 'netease') {
+    if (isCloudPlayback.value && !catalogSwitchConfirmed.value) {
+      pendingCatalogQuality.value = qualityValue
+      closeQualitySettings()
+      return
+    }
+    await reloadNeteaseVersion({ neteaseMode: 'catalog', quality: qualityValue })
     return
   }
 
@@ -1553,12 +1645,15 @@ watch(
 
     // 如果是新歌曲，加载并播放
     if (!oldSong || newSong.id !== oldSong.id) {
-      const loadSuccess = await control.loadSong(newSong)
+      const loading = control.loadSong(newSong)
+      const generation = control.getLoadGeneration()
+      const loadSuccess = await loading
+      if (generation !== control.getLoadGeneration()) return
       if (loadSuccess) {
         sync.setGlobalPlaylist(newSong, props.playlist)
         await control.play()
-      } else {
-        handleError(new Error('加载歌曲失败'))
+      } else if (props.song?.id === newSong.id && control.lastLoadError.value?.name !== 'AbortError') {
+        handleError(control.lastLoadError.value || new Error('加载歌曲失败'))
       }
     }
   },
@@ -1580,11 +1675,13 @@ watch(
 
       // 如果当前处于错误状态，尝试重新加载
       if (control.hasError.value && props.song) {
-        control.loadSong(props.song).then((success) => {
-          if (success) {
+        const loading = control.loadSong(props.song)
+        const generation = control.getLoadGeneration()
+        loading.then((success) => {
+          if (success && generation === control.getLoadGeneration()) {
             control.play()
-          } else {
-            handleError(new Error('加载歌曲失败'))
+          } else if (generation === control.getLoadGeneration() && control.hasError.value && control.lastLoadError.value?.name !== 'AbortError') {
+            handleError(control.lastLoadError.value)
           }
           nextTick(() => {
             isSyncingFromGlobal.value = false
@@ -1605,11 +1702,14 @@ watch(
       const currentGlobalSong = sync.globalAudioPlayer.getCurrentSong().value
       if (currentGlobalSong && props.song && currentGlobalSong.id === props.song.id) {
         if (control.hasError.value) {
-          control.loadSong(props.song).then((success) => {
+          const loading = control.loadSong(props.song)
+          const generation = control.getLoadGeneration()
+          loading.then((success) => {
+            if (generation !== control.getLoadGeneration()) return
             if (success) {
               control.play()
-            } else {
-              handleError(new Error('加载歌曲失败'))
+            } else if (control.hasError.value && control.lastLoadError.value?.name !== 'AbortError') {
+              handleError(control.lastLoadError.value)
             }
           })
         } else {
@@ -2047,8 +2147,10 @@ onMounted(async () => {
 
   // 处理初始歌曲的播放
   if (props.song) {
-    const loadSuccess = await control.loadSong(props.song)
-    if (loadSuccess) {
+    const loading = control.loadSong(props.song)
+    const generation = control.getLoadGeneration()
+    const loadSuccess = await loading
+    if (loadSuccess && generation === control.getLoadGeneration()) {
       sync.setGlobalPlaylist(props.song, props.playlist)
 
       // 传递加载状态到鸿蒙侧
@@ -2091,6 +2193,8 @@ onMounted(async () => {
         document.addEventListener('touchstart', handleUserInteraction, { once: true })
         document.addEventListener('keydown', handleUserInteraction, { once: true })
       }
+    } else if (generation === control.getLoadGeneration() && control.lastLoadError.value?.name !== 'AbortError') {
+      void handleError(control.lastLoadError.value)
     }
   }
 
@@ -3184,6 +3288,17 @@ const getFirstChar = (text) => {
     inset 0 -1px 0 var(--mask-10),
     0 0 0 1px var(--overlay-10),
     0 0 30px var(--overlay-10);
+}
+
+.quality-section-title { padding: 8px 12px; font-size: 12px; color: var(--text-secondary); }
+.cloud-quality-select {
+  margin: 2px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.cloud-quality-select.active {
+  background: var(--overlay-15);
+  --custom-select-glass-text: var(--color-accent);
 }
 
 .quality-option {

@@ -3769,6 +3769,7 @@ const resolveClientAudioDuration = async (song, signal) => {
         song.playUrl,
         {
           unblock: isPodcast ? false : undefined,
+          skipCloudProbe: true,
           mediaId,
           ignoreProvidedUrl,
           excludeSources,

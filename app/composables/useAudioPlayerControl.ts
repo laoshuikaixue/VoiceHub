@@ -3,7 +3,11 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useLyrics } from '~/composables/useLyrics'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
-import type { MusicTrackMeta } from '~/utils/musicUrl'
+import { getMusicUrlResult } from '~/utils/musicUrl'
+import type { MusicTrackMeta, MusicUrlResolveResult, MusicUrlResolveOptions } from '~/utils/musicUrl'
+import { createPlaybackRequest, withPlaybackSignal, playbackAbortError } from '~/utils/playbackRequest'
+import { useServerErrors, useLocaleText } from '~/composables/useLocaleText'
+import type { PlaybackNotificationWindow } from '~/composables/useNeteaseCloudPlayback'
 
 /**
  * 音量持久化：仅记录最后一次非 0 音量，静音属于瞬时状态不落盘，
@@ -67,6 +71,12 @@ const dragProgress = ref(0)
 const isSyncingFromGlobal = ref(false)
 const isLoadingNewSong = ref(false)
 const isLoadingTrack = ref(false)
+const playbackInfo = ref<MusicUrlResolveResult | null>(null)
+const lastLoadError = ref<any>(null)
+let loadGeneration = 0
+let activeRequest: ReturnType<typeof createPlaybackRequest> | null = null
+let playbackIdentity = ''
+let playbackOptions: MusicUrlResolveOptions = {}
 const progressBarRef = ref<HTMLElement | null>(null)
 const hasUserInteracted = ref(false)
 
@@ -78,6 +88,8 @@ const lyrics = useLyrics()
 
 export const useAudioPlayerControl = () => {
   const { audioPlayer: audioPlayerLocale } = useLocale()
+  const { localize } = useServerErrors()
+  const { t } = useLocaleText(audioPlayerLocale)
   // 音质 (Composable 使用应在 setup/function 内部)
   const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
 
@@ -86,6 +98,7 @@ export const useAudioPlayerControl = () => {
 
   // 基本播放控制
   const play = async (): Promise<boolean> => {
+    const generation = loadGeneration
     // 等待音频播放器引用设置完成
     let retryCount = 0
     const maxRetries = 20
@@ -96,7 +109,13 @@ export const useAudioPlayerControl = () => {
     }
 
     if (!audioPlayer.value || hasError.value) {
+      isLoadingTrack.value = false
       return false
+    }
+
+    if (!audioPlayer.value.getAttribute('src') && !isLoadingNewSong.value) {
+      const song = globalAudioPlayer.getCurrentSong().value
+      if (song?.musicPlatform === 'netease') return loadSong(song)
     }
 
     try {
@@ -105,6 +124,7 @@ export const useAudioPlayerControl = () => {
         await waitForCanPlay(audioPlayer.value)
       }
 
+      if (generation !== loadGeneration) return false
       // 设置音频属性以支持自动播放
       audioPlayer.value.autoplay = true
       audioPlayer.value.preload = 'auto'
@@ -117,6 +137,10 @@ export const useAudioPlayerControl = () => {
       }
       return true
     } catch (error) {
+      if (generation !== loadGeneration) return false
+      isLoadingTrack.value = false
+      isLoadingNewSong.value = false
+      isPlaying.value = false
       // 检查是否是自动播放被阻止的错误
       if (error.name === 'NotAllowedError') {
         console.warn('[AudioPlayerControl] ⚠️ 自动播放被浏览器阻止，需要用户交互')
@@ -149,6 +173,11 @@ export const useAudioPlayerControl = () => {
   }
 
   const stop = (): boolean => {
+    loadGeneration++
+    activeRequest?.cancel()
+    activeRequest = null
+    isLoadingNewSong.value = false
+    isLoadingTrack.value = false
     if (!audioPlayer.value) return false
 
     try {
@@ -211,178 +240,127 @@ export const useAudioPlayerControl = () => {
     }
   }
 
-  // 等待音频可以播放
-  const waitForCanPlay = (audio: HTMLAudioElement): Promise<void> => {
+  // 媒体事件监听必须随请求取消清理，不能让旧 canplay 影响新歌曲。
+  const waitForCanPlay = (audio: HTMLAudioElement, signal = activeRequest?.signal): Promise<void> => {
+    if (signal?.aborted) return Promise.reject(signal.reason || playbackAbortError())
+    if (audio.readyState >= 3) return Promise.resolve()
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        audio.removeEventListener('canplay', onCanPlay)
-        audio.removeEventListener('error', onError)
-        reject(new Error('音频加载超时'))
-      }, 10000) // 10秒超时
-
-      const onCanPlay = () => {
-        clearTimeout(timeout)
-        audio.removeEventListener('canplay', onCanPlay)
-        audio.removeEventListener('error', onError)
-        resolve()
+      const cleanup = () => {
+        clearTimeout(timer)
+        audio.removeEventListener('canplay', ready)
+        audio.removeEventListener('error', failed)
+        signal?.removeEventListener('abort', aborted)
       }
-
-      const onError = (error: Event) => {
-        clearTimeout(timeout)
-        audio.removeEventListener('canplay', onCanPlay)
-        audio.removeEventListener('error', onError)
-        
-        if (!audio.src || audio.src === window.location.href || audio.src === window.location.origin + '/') {
-          reject(new Error('AbortError'))
-        } else {
-          reject(error)
-        }
-      }
-
-      audio.addEventListener('canplay', onCanPlay)
-      audio.addEventListener('error', onError)
+      const ready = () => { cleanup(); resolve() }
+      const failed = () => { cleanup(); reject(new Error('音频加载失败')) }
+      const aborted = () => { cleanup(); reject(signal?.reason || playbackAbortError()) }
+      const timer = setTimeout(() => { cleanup(); reject(new DOMException('音频加载超时', 'TimeoutError')) }, 10000)
+      audio.addEventListener('canplay', ready)
+      audio.addEventListener('error', failed)
+      signal?.addEventListener('abort', aborted, { once: true })
     })
   }
 
-  // 加载新歌曲
-  const loadSong = async (
-    songUrlOrSong: string | any,
-    retryCount: number = 0
-  ): Promise<boolean> => {
+  const loadSong = async (song: string | any, override?: MusicUrlResolveOptions): Promise<boolean> => {
     if (!audioPlayer.value) return false
-
-    stop()
+    const identity = typeof song === 'object' ? `${song.musicPlatform}:${song.musicId}:${song.id}` : song
+    const switching = identity === playbackIdentity && !!override && !!audioPlayer.value.src && !hasError.value
+    if (identity !== playbackIdentity) {
+      playbackOptions = {}
+      playbackInfo.value = null
+    }
+    playbackIdentity = identity
+    const nextOptions = { ...playbackOptions, ...override }
+    if (switching) {
+      loadGeneration++
+      activeRequest?.cancel()
+    } else stop()
+    const generation = loadGeneration
+    const request = createPlaybackRequest()
+    activeRequest = request
     isLoadingNewSong.value = true
-    isLoadingTrack.value = true // 开始加载时设置加载状态
+    isLoadingTrack.value = true
     hasError.value = false
-
-    // 立即清空之前的歌词，避免显示上一首歌的歌词
-    lyrics.clearLyrics()
-
+    lastLoadError.value = null
+    if (!switching) lyrics.clearLyrics()
+    let committed = false
     try {
-      let songUrl: string
-      let songInfo: any = null
-      const lyricsPromise: Promise<void> | null = null
-
-      // 如果传入的是歌曲对象，检查是否有音乐平台信息
-      if (typeof songUrlOrSong === 'object' && songUrlOrSong !== null) {
-        songInfo = songUrlOrSong
-
-        // 优先检查是否已有直接的播放URL
-        if (songUrlOrSong.musicUrl) {
-          songUrl = songUrlOrSong.musicUrl
-
-          // 清理URL中的反引号和空格（特别是网易云备用源）
-          songUrl = songUrl.trim().replace(/`/g, '')
-          console.log('使用已有的播放URL:', songUrl)
-
-          // 如果有音乐平台信息，加载歌词
-          if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
-            // lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-            // 迁移到 useLyricManager 统一管理，避免重复请求
+      let result: MusicUrlResolveResult
+      if (typeof song === 'string') result = { url: song }
+      else if (song.musicPlatform && song.musicId && (song.musicPlatform === 'netease' || !song.musicUrl)) {
+        result = await getMusicUrlResult(song.musicPlatform, song.musicId, song.playUrl, {
+          ...nextOptions,
+          catalogCloudFiles: playbackInfo.value?.cloudFiles,
+          signal: request.signal,
+          musicInfo: { name: song.title, artist: song.artist, album: song.album, rawItem: song },
+          onWaitingForSelection(waiting) {
+            if (generation !== loadGeneration) return
+            isLoadingTrack.value = !waiting
+            if (waiting) request.pause(); else request.resume()
           }
-        } else if (songUrlOrSong.musicPlatform && songUrlOrSong.musicId) {
-          // 检查是否是网易云备用源，如果是则不应该调用getMusicUrl
-          if (songUrlOrSong.sourceInfo?.source === 'netease-backup') {
-            throw new Error('网易云备用源歌曲缺少播放URL，请重新获取')
-          }
-
-          console.log('正在获取歌曲URL:', songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-
-          // 检查是否为播客内容
-          const isPodcast =
-            songUrlOrSong.musicPlatform === 'netease-podcast' ||
-            songUrlOrSong.sourceInfo?.type === 'voice' ||
-            (songUrlOrSong.sourceInfo?.source === 'netease-backup' &&
-              songUrlOrSong.sourceInfo?.type === 'voice')
-          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
-            ? { unblock: false }
-            : {}
-          options.musicInfo = {
-            name: songUrlOrSong.title,
-            artist: songUrlOrSong.artist,
-            album: songUrlOrSong.album || undefined
-          }
-
-          songUrl = await getMusicUrl(
-            songUrlOrSong.musicPlatform,
-            songUrlOrSong.musicId,
-            songUrlOrSong.playUrl,
-            { ...options, musicInfo: { ...(options?.musicInfo || {}), rawItem: songUrlOrSong } }
-          )
-          if (!songUrl) {
-            throw new Error('无法获取歌曲URL')
-          }
-
-          // 并行加载歌词（不阻塞音频加载）
-          // lyricsPromise = lyrics.fetchLyrics(songUrlOrSong.musicPlatform, songUrlOrSong.musicId)
-          // 迁移到 useLyricManager 统一管理，避免重复请求
-        } else {
-          throw new Error('歌曲缺少播放信息（音乐平台ID或直接URL）')
-        }
-      } else if (typeof songUrlOrSong === 'string') {
-        songUrl = songUrlOrSong
-      } else {
-        throw new Error('无效的歌曲参数')
+        })
+      } else result = { url: song.musicUrl || song.playUrl }
+      if (generation !== loadGeneration) return false
+      if (!result.url) throw new Error('未获取到播放链接')
+      if (nextOptions.neteaseMode === 'catalog' && !result.cloudFiles) {
+        result.cloudFiles = playbackInfo.value?.cloudFiles
       }
-
-      console.log('设置音频源:', songUrl)
-      audioPlayer.value.src = songUrl
-      audioPlayer.value.load()
-
-      // 等待音频可以播放
-      await waitForCanPlay(audioPlayer.value)
-
-      // 等待歌词加载完成（如果有的话）
-      if (lyricsPromise) {
-        try {
-          await lyricsPromise
-          // 歌词加载完成
-        } catch (lyricsError) {
-          console.warn('歌词加载失败，但继续播放音频:', lyricsError)
-        }
+      playbackInfo.value = result
+      playbackOptions = nextOptions
+      committed = true
+      if (switching) lyrics.clearLyrics()
+      request.dispose()
+      const element = audioPlayer.value
+      const resumePosition = switching ? element.currentTime : 0
+      const resumePlaying = !element.paused
+      element.autoplay = !switching || resumePlaying
+      element.src = result.url.trim().replace(/`/g, '')
+      element.load()
+      await waitForCanPlay(element, request.signal)
+      if (generation !== loadGeneration) return false
+      if (switching) await seek(resumePosition)
+      if (!switching || resumePlaying) {
+        await withPlaybackSignal(play(), AbortSignal.any([request.signal, AbortSignal.timeout(10000)]))
       }
-
-      console.log('歌曲加载成功:', songInfo?.title || songUrl)
-      isLoadingNewSong.value = false
-
-      // 自动开始播放
-      console.log('尝试自动播放音乐')
-      const playResult = await play()
-
-      if (!playResult) {
-        console.log('自动播放失败，可能被浏览器阻止，等待用户交互')
-      } else {
-        console.log('自动播放成功')
-      }
-
-      return true
+      return !hasError.value
     } catch (error: any) {
-      if (error?.message === 'AbortError') {
-        console.log('音频加载被主动中止')
+      if (generation !== loadGeneration) return false
+      lastLoadError.value = error
+      if (switching && !committed) {
+        if (error?.name !== 'AbortError') {
+          (window as PlaybackNotificationWindow).$showNotification?.(error?.name === 'TimeoutError'
+            ? t('resolveTimeout') : localize(error?.data?.code ? error : { data: { code: 'SONG_OPERATION_FAILED' } }), 'error')
+        }
         return false
       }
-
-      // 重试逻辑（针对网络抖动等临时错误）
-      if (
-        retryCount < 2 &&
-        !hasError.value &&
-        typeof songUrlOrSong === 'object' &&
-        songUrlOrSong?.musicPlatform
-      ) {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        if (hasError.value) return false
-        return await loadSong(songUrlOrSong, retryCount + 1)
+      audioPlayer.value?.pause()
+      if (error?.name === 'AbortError') {
+        globalAudioPlayer.pauseSong()
+        return false
       }
-
       hasError.value = true
-      isLoadingNewSong.value = false
+      isPlaying.value = false
+      if (error?.data?.code === 'MUSIC_CLOUD_PLAYBACK_FAILED') {
+        playbackInfo.value = { url: null, source: 'netease-cloud', cloudFiles: error.cloudFiles, cloudFile: error.cloudFile }
+      }
+      (window as PlaybackNotificationWindow).$showNotification?.(error?.name === 'TimeoutError'
+        ? t('resolveTimeout') : localize(error?.data?.code ? error : { data: { code: 'SONG_OPERATION_FAILED' } }), 'error')
       return false
+    } finally {
+      request.dispose()
+      if (generation === loadGeneration) {
+        isLoadingNewSong.value = false
+        isLoadingTrack.value = false
+      }
     }
   }
 
   // 切换播放/暂停
   const togglePlay = async (): Promise<boolean> => {
+    if (hasError.value) {
+      const song = globalAudioPlayer.getCurrentSong().value
+      if (song) return loadSong(song)
+    }
     // 标记用户已交互
     hasUserInteracted.value = true
 
@@ -493,9 +471,9 @@ export const useAudioPlayerControl = () => {
     } catch (error) {
       console.error('获取音乐URL错误:', error)
       if (error instanceof TypeError && (error as any).message?.includes('fetch')) {
-        throw new Error('网络连接失败，请检查网络连接')
+        throw new Error('网络连接失败，请检查网络连接', { cause: error })
       } else if ((error as any).name === 'AbortError') {
-        throw new Error('请求超时，请稍后重试')
+        throw new Error('请求超时，请稍后重试', { cause: error })
       }
       throw error
     }
@@ -691,7 +669,7 @@ export const useAudioPlayerControl = () => {
     console.error('音频播放错误:', error)
 
     // 获取更详细的错误信息
-    let errorMessage = '音频播放失败'
+    let errorMessage: string
     if (audioPlayer.value && audioPlayer.value.error) {
       const mediaError = audioPlayer.value.error
       switch (mediaError.code) {
@@ -719,10 +697,12 @@ export const useAudioPlayerControl = () => {
 
     hasError.value = true
     isPlaying.value = false
+    isLoadingTrack.value = false
+    isLoadingNewSong.value = false
 
     // 显示用户友好的错误提示
     if (window.$showNotification) {
-      window.$showNotification(errorMessage, 'error')
+      window.$showNotification(t('playbackFailed'), 'error')
     }
   }
 
@@ -795,6 +775,12 @@ export const useAudioPlayerControl = () => {
 
   // 清理资源
   const cleanup = () => {
+    loadGeneration++
+    activeRequest?.cancel()
+    activeRequest = null
+    playbackIdentity = ''
+    playbackOptions = {}
+    playbackInfo.value = null
     if (audioPlayer.value) {
       // 先暂停播放
       audioPlayer.value.pause()
@@ -921,6 +907,8 @@ export const useAudioPlayerControl = () => {
     isSyncingFromGlobal,
     isLoadingNewSong,
     isLoadingTrack,
+    playbackInfo,
+    lastLoadError,
     progressBarRef,
     hasUserInteracted,
     playMode, // 暴露播放模式
@@ -934,6 +922,8 @@ export const useAudioPlayerControl = () => {
     seekAndPlay, // 新增
     togglePlay,
     loadSong,
+    getLoadGeneration: () => loadGeneration,
+    getPlaybackOptions: () => ({ ...playbackOptions }),
     forceUpdatePosition,
     setVolume,
     toggleMute,
