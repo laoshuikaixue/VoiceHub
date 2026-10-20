@@ -1693,7 +1693,7 @@ const openPlaylistModal = (platform) => {
 const showUserSearchModal = ref(false)
 const collaborators = ref([])
 
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
@@ -2307,7 +2307,7 @@ const handleImportSuccess = async () => {
   // showImportSongsModal.value = false
   // 刷新歌曲列表以便检查相似歌曲
   try {
-    await songService.fetchSongs(true, currentSemester.value?.name, true)
+    await songService.fetchSongs({ silent: true, semester: currentSemester.value?.name, forceRefresh: true })
   } catch (error) {
     console.error('刷新歌曲列表失败:', error)
   }
@@ -2719,7 +2719,7 @@ onMounted(async () => {
   if (auth.isAuthenticated.value) {
     try {
       const currentSemesterName = currentSemester.value?.name
-      await songService.fetchSongs(false, currentSemesterName)
+      await songService.fetchSongs({ semester: currentSemesterName })
     } catch (error) {
       console.error('加载歌曲列表失败:', error)
     }

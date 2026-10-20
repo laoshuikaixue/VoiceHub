@@ -1837,7 +1837,7 @@ const toggleSelectSong = (songId) => {
 const refreshSongs = async (forceRefresh = false) => {
   loading.value = true
   try {
-    await songsService.fetchSongs(false, undefined, forceRefresh)
+    await songsService.fetchSongs({ forceRefresh })
     songs.value = songsService.songs.value || []
     selectedSongs.value = []
   } catch (error) {

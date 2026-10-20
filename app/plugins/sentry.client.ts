@@ -10,6 +10,13 @@ let sentryClientInitializing = false
 let instanceId = ''
 const TELEMETRY_STORAGE_KEY = 'voicehub.telemetryEnabled'
 
+// 微信内置 WebView 注入的全局消息桥对象（weixinPostMessageHandlers / weixinDispatchMessage）
+// 在 handler 未就绪或已销毁时抛出的 TypeError，经 auto.browser.global_handlers.onerror 误伤捕获，非本项目代码缺陷
+const WEIXIN_BRIDGE_ERROR_KEYWORDS = [
+  'weixinpostmessagehandlers',
+  'weixindispatchmessage'
+]
+
 const isTelemetryDisabledLocally = (): boolean => {
   try {
     return typeof localStorage !== 'undefined' &&
@@ -58,6 +65,19 @@ const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
     const filename = frame.filename || ''
     return filename.startsWith('chrome-extension://') || filename.startsWith('moz-extension://')
   })) {
+    return true
+  }
+
+  // 微信注入桥对象误伤的 TypeError：异常 type/value 或堆栈命中关键字即丢弃
+  const weixinBridgeText = [
+    getSentryEventSearchText(event, hint),
+    frames
+      .map(frame => `${frame.filename || ''} ${frame.function || ''} ${frame.module || ''}`)
+      .join('\n')
+  ]
+    .join('\n')
+    .toLowerCase()
+  if (WEIXIN_BRIDGE_ERROR_KEYWORDS.some(keyword => weixinBridgeText.includes(keyword))) {
     return true
   }
 

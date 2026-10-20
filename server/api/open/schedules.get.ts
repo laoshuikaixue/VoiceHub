@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songCollaborators, songs, systemSettings, users } from '~/drizzle/schema'
 import { and, asc, desc, eq, gte, inArray, like, lt, or, sql } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
-import { maskUserInfo } from '~~/server/utils/studentMask'
+import { maskUserInfo, resolveAnonymousRequesterLabel } from '~~/server/utils/studentMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -229,11 +229,18 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const anonymousRequesterLabel = resolveAnonymousRequesterLabel(event)
     formattedSchedules.forEach((schedule) => {
       if (schedule.song.submissionAnonymous !== true) return
       schedule.song.isAnonymous = true
       schedule.song.collaborators = []
-      schedule.requester = null
+      // 开放 API 的消费方直接渲染投稿人，不能返回空值
+      schedule.requester = {
+        id: null,
+        name: anonymousRequesterLabel,
+        grade: null,
+        class: null
+      }
     })
 
     const result = {

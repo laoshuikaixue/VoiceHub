@@ -240,7 +240,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit', 'play'])
 
 const musicSources = useMusicSources()
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 const { currentSemester, fetchCurrentSemester } = useSemesters()
@@ -412,7 +412,7 @@ watch(
         const currentSemesterName = currentSemester.value?.name
         songsLoadingForSimilar.value = true
         songService
-          .fetchSongs(true, currentSemesterName)
+          .fetchSongs({ silent: true, semester: currentSemesterName })
           .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })

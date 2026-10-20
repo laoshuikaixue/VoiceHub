@@ -223,7 +223,8 @@ export default defineEventHandler(async (event) => {
       formattedSongs.forEach((song) => maskSongInfo(song))
     }
 
-    applySubmissionAnonymity(formattedSongs as MaskableSong[], null)
+    // 匿名投稿不把投稿人置空，由 studentMask 回填「匿名投稿」文案
+    applySubmissionAnonymity(formattedSongs as MaskableSong[], { event })
 
     // 如果需要按排期状态筛选
     if (scheduled === 'true') {

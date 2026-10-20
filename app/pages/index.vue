@@ -237,6 +237,10 @@
                   :is-admin="isAdmin"
                   :loading="loading"
                   :songs="filteredSongs"
+                  :total="songListTotal"
+                  :total-pages="songListTotalPages"
+                  :semesters="songListSemesters"
+                  @list-query-change="handleSongListQueryChange"
                   @refresh="refreshSongs"
                   @vote="handleVote"
                   @withdraw="handleWithdraw"
@@ -897,7 +901,7 @@ const userClassInfo = computed(() => {
   return locale.value.classFallback
 })
 
-const songs = useSongs()
+const songs = useSongs({ pageSize: 12 })
 
 // 首页首屏数据 SSR 预取（站点配置/登录态/公共排期/歌曲总数），客户端仅后台刷新
 const { data: homeData, pending: homeDataPending, refresh: refreshHomeData } = useHomeBootstrap()
@@ -1398,7 +1402,7 @@ watch(
       songs.clearPrivateSongs()
       songs.clearPublicSongs()
       // 歌曲列表后台预取，避免阻塞首页首屏
-      songs.fetchSongs(true).then(() => updateSongCounts())
+      songs.fetchSongs({ silent: true }).then(() => updateSongCounts())
       await Promise.allSettled([
         loadNotifications(),
         fetchNotificationSettings(),
@@ -1450,11 +1454,11 @@ const updateSongCounts = async (semester = null) => {
     scheduleCount.value = schedules.length
 
     // 更新总歌曲数量
-    if (isClientAuthenticated.value && songs?.songs?.value?.length) {
-      // 已登录用户且歌曲列表已加载：使用完整歌曲列表
-      songCount.value = songs.songs.value.length
+    if (isClientAuthenticated.value) {
+      // 已登录用户：使用分页接口返回的筛选后总数
+      songCount.value = songs?.songsTotal?.value || 0
     } else {
-      // 列表未加载完成或未登录：使用总数接口缓存
+      // 未登录：使用总数接口缓存
       songCount.value = songs?.songCount?.value || 0
     }
   } catch (e) {
@@ -1476,7 +1480,7 @@ const setupRefreshInterval = () => {
   refreshInterval = setInterval(async () => {
     try {
       if (isClientAuthenticated.value) {
-        await Promise.allSettled([songs.fetchSongs(true), songs.fetchPublicSchedules(true), loadNotifications()])
+        await Promise.allSettled([songs.fetchSongs({ silent: true }), songs.fetchPublicSchedules(true), loadNotifications()])
       } else {
         await Promise.allSettled([songs.fetchPublicSchedules(true), songs.fetchSongCount()])
       }
@@ -1579,7 +1583,7 @@ onMounted(async () => {
   // 次要数据：个人歌曲、通知、通知设置、定时刷新，均在首屏淡出后后台执行
   const loadSecondaryData = () => {
     if (isClientAuthenticated.value) {
-      songs.fetchSongs(true).then(() => updateSongCounts())
+      songs.fetchSongs({ silent: true }).then(() => updateSongCounts())
       loadNotifications()
       fetchNotificationSettings()
         .then(() => setupRefreshInterval())
@@ -1655,20 +1659,21 @@ onUnmounted(() => {
 
 // 实时计算歌曲总数
 const realSongCount = computed(() => {
+  if (isClientAuthenticated.value) return songs?.songsTotal?.value || 0
   return songs?.visibleSongs?.value?.length || 0
 })
+
+// 歌曲列表分页状态（服务端分页）
+const songListTotal = computed(() => songs?.songsTotal?.value || 0)
+const songListTotalPages = computed(() => songs?.songsTotalPages?.value || 1)
+const songListSemesters = computed(() => songs?.songSemesters?.value || [])
 
 // 使用计算属性安全地访问数据
 const publicSchedules = computed(() => songs?.publicSchedules?.value || [])
 const allSongs = computed(() => songs?.visibleSongs?.value || [])
 const filteredSongs = computed(() => {
-  // 返回所有歌曲，但将已播放的歌曲排在最前
-  if (allSongs.value && allSongs.value.length > 0) {
-    const unplayedSongs = allSongs.value.filter((song) => !song.played)
-    const playedSongs = allSongs.value.filter((song) => song.played)
-    return [...unplayedSongs, ...playedSongs]
-  }
-  return []
+  // 服务端已按未排期 → 已排期 → 已播放分组排序，这里不再重排
+  return allSongs.value
 })
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
@@ -1800,14 +1805,35 @@ const handleWithdraw = async (song) => {
 const refreshSongs = async () => {
   try {
     if (isClientAuthenticated.value) {
-      await songs.fetchSongs(false, undefined, true) // forceRefresh=true
+      // 沿用当前分页与筛选条件强制刷新
+      await songs.fetchSongs({ forceRefresh: true })
     } else {
       await songs.fetchPublicSchedules(false, undefined, true) // forceRefresh=true
     }
 
     updateSongCounts()
   } catch (err) {
-    console.error('????????', err)
+    console.error('刷新歌曲列表失败', err)
+  }
+}
+
+// 歌曲列表的分页/筛选/搜索条件变化时向服务端重新请求
+const handleSongListQueryChange = async (query) => {
+  if (!isClientAuthenticated.value) return
+
+  try {
+    await songs.fetchSongs({
+      page: query.page,
+      pageSize: query.pageSize,
+      semester: query.semester || '',
+      scope: query.scope || '',
+      search: query.search || '',
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder
+    })
+    updateSongCounts()
+  } catch (err) {
+    console.error('加载歌曲列表失败:', err)
   }
 }
 

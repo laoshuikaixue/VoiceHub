@@ -324,7 +324,7 @@ const offset = ref(0)
 const hasMore = ref(true)
 const moreLoading = ref(false)
 
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
@@ -519,7 +519,7 @@ watch(
         songsLoadingForSimilar.value = true
         const currentSemesterName = currentSemester.value?.name
         songService
-          .fetchSongs(true, currentSemesterName)
+          .fetchSongs({ silent: true, semester: currentSemesterName })
           .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })
