@@ -2193,7 +2193,7 @@ const playSong = (songOrSchedule) => {
   // 兼容右键菜单传入的排期项（含 .song 字段）
   const song = songOrSchedule && songOrSchedule.song ? songOrSchedule.song : songOrSchedule
   if (!song) return
-  // 仅实际排期条目使用排期播放来源。
+  // 仅实际排期条目使用排期播放来源
   const index = songOrSchedule?.song
     ? localScheduledSongs.value.findIndex((item) => item === songOrSchedule)
     : -1

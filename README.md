@@ -1535,12 +1535,6 @@ VoiceHub/
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
-├── tests/                 # 自动化测试
-│   ├── frontend/          # 前端行为测试
-│   │   ├── schedule-player-state.test.ts # 播放器排期同步、暂停与结束事件
-│   │   └── schedule-playlist.test.ts # 队列匹配、按需串行刷新与失败处理
-│   └── server/            # 服务端测试
-│       └── schedule-playlist-query.test.ts # 排期日期过滤、权限与响应兼容
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件
