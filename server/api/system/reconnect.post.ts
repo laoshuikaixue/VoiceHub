@@ -1,14 +1,10 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
+import { canReadSystemSettings } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  // 权限：system_settings.read（ADMIN 及以上）
+  await canReadSystemSettings(event)
 
   try {
     console.log('[Reconnect API] 收到强制重连请求')

@@ -1,19 +1,12 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { isTelemetryEnabled } from '~~/server/utils/telemetry'
+import { canReadStats } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (
-    !currentUser ||
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)
-  ) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  // 权限：stats.read（SONG_ADMIN 及以上，与旧内联数组 ['SONG_ADMIN','ADMIN','SUPER_ADMIN'] 等价）
+  await canReadStats(event)
 
   try {
     const instanceId = await getInstanceId()
