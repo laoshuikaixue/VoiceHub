@@ -329,6 +329,7 @@ import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
+  getCachedMusicUrlQuality,
   getMusicUrlResult,
   isKnownInvalidQqAudioUrl
 } from '~/utils/musicUrl'
@@ -363,7 +364,7 @@ const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 // 使用 composables
 const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
-const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+const { getQualityLabel, getQuality, getQualityOptions, saveQuality, getNeteaseQualityLabel } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
 const wakeLock = useWakeLock()
@@ -1301,12 +1302,18 @@ const handleSeekToPosition = (event) => {
 }
 
 // 获取当前歌曲平台的音质文本
+const reportedQuality = computed(() => control.isLoadingTrack.value ? undefined
+  : getCachedMusicUrlQuality(props.song?.musicUrl || audioPlayer.value?.currentSrc || audioPlayer.value?.src))
+// 返回音质仅在接口 level 可识别时覆盖显示；未知音质（含未登录走解锁链路）沿用请求音质
+const actualQualityLabel = computed(() =>
+  ['netease', 'netease-podcast'].includes(props.song?.musicPlatform)
+    ? getNeteaseQualityLabel(reportedQuality.value) : null)
 const currentQualityText = computed(() => {
   if (!props.song || !props.song.musicPlatform) return '音质'
 
   const platform = props.song.musicPlatform
   const quality = getQuality(platform)
-  const label = getQualityLabel(platform, quality)
+  const label = actualQualityLabel.value || getQualityLabel(platform, quality)
 
   // 简化显示文本
   return label.replace(/音质|音乐/, '').trim() || '音质'
@@ -1321,6 +1328,10 @@ const currentPlatformOptions = computed(() => {
 // 检查是否是当前音质
 const isCurrentQuality = (qualityValue) => {
   if (!props.song || !props.song.musicPlatform) return false
+  if (actualQualityLabel.value) {
+    const matched = currentPlatformOptions.value.find(option => option.level === reportedQuality.value)?.value
+    if (matched !== undefined) return matched === qualityValue
+  }
   return getQuality(props.song.musicPlatform) === qualityValue
 }
 

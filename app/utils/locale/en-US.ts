@@ -1356,7 +1356,19 @@ export const pages = {
       }
     },
     audioQuality: {
+      actualQualityNotice: 'Requested {0}; current quality: {1}',
       unknown: 'Unknown quality',
+      levels: {
+        standard: 'Standard',
+        higher: 'Higher',
+        exhigh: 'HQ High',
+        lossless: 'SQ Lossless',
+        hires: 'Hi-Res',
+        jyeffect: 'HD Effect',
+        vivid: 'Vivid',
+        sky: 'Immersive',
+        jymaster: 'Master'
+      },
       options: {
         standard: { label: 'Standard', description: 'Suitable when data is limited' },
         neteaseHq: { label: 'HQ High', description: 'High-quality music experience' },
