@@ -919,6 +919,7 @@ VoiceHub/
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
+│   │   ├── useSchedulePlaylistSync.ts # 本标签页排期保存后的队列刷新与生命周期
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
 │   │   ├── useTheme.ts         # 主题管理
@@ -1024,6 +1025,8 @@ VoiceHub/
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
 │       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
+│       ├── schedulePlaylist.ts # 排期队列身份匹配与续播位置
+│       ├── schedulePlaylistRefresh.ts # 排期队列按需串行刷新与旧结果丢弃
 │       ├── timeUtils.ts       # 时间工具
 │       ├── user-archive.ts    # 账号归档判定与筛选参数解析
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
@@ -1492,6 +1495,7 @@ VoiceHub/
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
+│   │   ├── schedule-date-query.ts # 排期日期查询校验与 UTC 边界
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具
@@ -1531,6 +1535,12 @@ VoiceHub/
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
+├── tests/                 # 自动化测试
+│   ├── frontend/          # 前端行为测试
+│   │   ├── schedule-player-state.test.ts # 播放器排期同步、暂停与结束事件
+│   │   └── schedule-playlist.test.ts # 队列匹配、按需串行刷新与失败处理
+│   └── server/            # 服务端测试
+│       └── schedule-playlist-query.test.ts # 排期日期过滤、权限与响应兼容
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件

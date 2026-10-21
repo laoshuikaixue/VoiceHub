@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { useAuth } from './useAuth'
 import { useServerErrors } from './useLocaleText'
 import { useLocale } from '~/utils/locale'
+import { formatDateTime } from '~/utils/timeUtils'
+import { notifySchedulePlaylistChanged } from './useSchedulePlaylistSync'
 import type { PlayTime, SystemSettings } from '~/types'
 
 export const useAdmin = () => {
@@ -42,6 +44,7 @@ export const useAdmin = () => {
         ...authConfig
       })
 
+      notifySchedulePlaylistChanged({ dates: [formatDateTime(playDate, 'YYYY-MM-DD')] })
       return data
     } catch (err: any) {
       error.value = err.message || failed('createSchedule')
@@ -80,6 +83,10 @@ export const useAdmin = () => {
         return { success: false, message: error.value } as const
       }
 
+      const playDate = response.schedule?.playDate
+      notifySchedulePlaylistChanged(
+        typeof playDate === 'string' ? { dates: [playDate.slice(0, 10)] } : {}
+      )
       return response
     } catch (err: any) {
       const errorMessage = err.data?.message || err.message || failed('removeSchedule')
@@ -110,6 +117,7 @@ export const useAdmin = () => {
         ...authConfig
       })
 
+      notifySchedulePlaylistChanged({})
       return data
     } catch (err: any) {
       error.value = err.message || failed('updateScheduleSequence')
