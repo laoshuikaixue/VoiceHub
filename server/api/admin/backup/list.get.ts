@@ -2,17 +2,13 @@ import { createError, defineEventHandler } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
+import { canExecuteBackup } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
+  // 权限：backup.execute（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canExecuteBackup(event)
+
   try {
-    // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以查看备份文件'
-      })
-    }
 
     // 检测运行环境（与连接池等处共用一份判定）
     const isServerless = isServerlessRuntime()

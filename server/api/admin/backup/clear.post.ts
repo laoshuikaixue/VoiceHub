@@ -27,16 +27,11 @@ import {
 } from '~/drizzle/schema'
 import { and, eq, inArray, isNull, ne, notInArray, or } from 'drizzle-orm'
 import { pluginClearOrder } from '~~/server/utils/music-source-plugins/backup'
+import { canExecuteBackup } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以清空数据库'
-    })
-  }
+  // 权限：backup.execute（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canExecuteBackup(event)
 
   try {
     const body = await readBody(event)

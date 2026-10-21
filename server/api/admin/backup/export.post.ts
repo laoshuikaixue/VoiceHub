@@ -32,17 +32,13 @@ import {
 import { inArray } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { canExportBackup } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
+  // 权限：backup.export（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canExportBackup(event)
+
   try {
-    // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以导出备份'
-      })
-    }
 
     const body = await readBody(event)
     const { tables = 'all' } = body
