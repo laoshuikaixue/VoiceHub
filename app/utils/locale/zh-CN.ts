@@ -1321,6 +1321,7 @@ export const pages = {
       }
     },
     audioQuality: {
+      actualQualityNotice: '请求{0}，当前音质：{1}',
       unknown: '未知音质',
       options: {
         standard: { label: '标准', description: '适合流量有限的情况' },
