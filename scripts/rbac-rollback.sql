@@ -1,9 +1,9 @@
 -- ============================================================================
 -- VoiceHub RBAC + API Key 增强 数据层回滚（S1-8 · D1 / R-36）
 -- ============================================================================
--- 正向迁移 : app/drizzle/migrations/20260927090250_auto-migration.sql
--- Journal  : idx 52 / tag 20260927090250_auto-migration / when 1790499770823
--- SHA-256  : 4abe5a3b5299086f422b21105093860f8ac4d92b488215396ec640f7a413f1a2
+-- 正向迁移 : app/drizzle/migrations/20261021133651_rbac_permissions.sql
+-- Journal  : idx 55 / tag 20261021133651_rbac_permissions / when 1792589811025
+-- SHA-256  : a1e81fa8679b9fde29acda91c79233fd6deb4d1edb5f4de8fa961fdb58ecc17d
 -- 目标库   : PostgreSQL >= 13
 --
 -- 用途
@@ -78,9 +78,9 @@ DO $rbac_rollback$
 DECLARE
   v_removed integer := 0;
   v_total integer := 0;
-  v_hash text := '4abe5a3b5299086f422b21105093860f8ac4d92b488215396ec640f7a413f1a2';
-  v_legacy_hash text := 'legacy:20260927090250_auto-migration';
-  v_when bigint := 1790499770823;
+  v_hash text := 'a1e81fa8679b9fde29acda91c79233fd6deb4d1edb5f4de8fa961fdb58ecc17d';
+  v_legacy_hash text := 'legacy:20261021133651_rbac_permissions';
+  v_when bigint := 1792589811025;
 BEGIN
   IF to_regclass('public.__drizzle_migrations__') IS NULL THEN
     RAISE NOTICE 'rbac-rollback: public.__drizzle_migrations__ 不存在，跳过迁移记录清理';

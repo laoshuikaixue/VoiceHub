@@ -15,7 +15,7 @@
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "gate": "node scripts/gate.mjs",
     "contract:check": "node scripts/check-permission-contract.mjs",
-    "lint:baseline": "node scripts/eslint-baseline.mjs",
+    "lint:baseline": "node scripts/eslint-baseline.mjs --check",
     "db:seed": "node scripts/seed-permissions.js",
     "rbac:rollback": "node scripts/rbac-rollback.js",
     "typecheck:server": "nuxt prepare && node scripts/typecheck-server.js",

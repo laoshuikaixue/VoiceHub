@@ -127,6 +127,14 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   // ── 数据库 / 序列修复（统一 SUPER_ADMIN；reset 属收紧，见文件头第 3 条）──
   { method: 'ANY', pattern: /^\/api\/admin\/(database|fix-sequence)(\/.*)?$/, key: PERMISSIONS.DATABASE_RESET },
 
+  // ── 系统看板（上游新增；运维排障端点，复用 database.reset 保持与现状「仅超管」逐条等价）──
+  // 现状：三个端点各自在文件内 verifyAdminAuth + role !== 'SUPER_ADMIN' 判 403，无独立权限 key。
+  // 翻转条件：若后续要独立权限 system_board.manage，需改 catalog（新增 key + minRole）并同步冻结矩阵
+  // 数字（tests/contract/permission-catalog.test.ts），属契约变更，本轮不做。
+  { method: 'GET', pattern: /^\/api\/admin\/system-board\/events$/, key: PERMISSIONS.DATABASE_RESET, note: '系统看板运行事件（上游新增；超管专用运维端点，暂复用 database.reset 保持等价）' },
+  { method: 'POST', pattern: /^\/api\/admin\/system-board\/runtime-clear$/, key: PERMISSIONS.DATABASE_RESET, note: '系统看板清空运行事件（上游新增；超管专用运维端点，暂复用 database.reset 保持等价）' },
+  { method: 'GET', pattern: /^\/api\/admin\/system-board$/, key: PERMISSIONS.DATABASE_RESET, note: '系统看板快照（上游新增；超管专用运维端点，暂复用 database.reset 保持等价）' },
+
   // ── 用户域中**确有权限门槛**的少数路由（其余 `/api/**` 均为「仅需登录」）──
   // 这些是旧实现就带角色判断的端点；登记进表后，路由文件与映射表可互相校验（见 B3 单测）。
   { method: 'PUT', pattern: /^\/api\/songs\/[^/]+\/update$/, key: PERMISSIONS.SONG_WRITE, note: '歌曲编辑（SONG_ADMIN 及以上）' },

@@ -16,10 +16,12 @@ function runTsx(code: string): string {
   const file = join(process.cwd(), `.system-board-test-${randomUUID()}.ts`)
   writeFileSync(file, code, 'utf-8')
   try {
+    // 被测函数为纯函数，注入占位连接串只为通过 app/drizzle/db 的模块级校验（不覆盖真实值）
     const raw = execSync(`npx tsx "${file}"`, {
       cwd: process.cwd(),
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL || 'postgres://localhost:5432/voicehub' }
     })
     // 剔除工具日志行，只保留最后一行结果
     return raw.split('\n').filter(l => l.trim() && !l.startsWith('◇') && !l.startsWith('🔄') && !l.startsWith('✅')).pop()?.trim() || ''

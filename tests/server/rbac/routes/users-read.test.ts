@@ -1,8 +1,8 @@
 /**
- * S3-B2-1 验收测试：users 域**读**端点接线（8 文件）。
+ * S3-B2-1 验收测试：users 域**读**端点接线（7 文件）。
  *
  * 三层断言：
- *   1. **路由 → 权限**：8 个读端点在 routePermissionMap 里的登记值（7 个 user.read、1 个 song.read）；
+ *   1. **路由 → 权限**：7 个读端点在 routePermissionMap 里的登记值（6 个 user.read、1 个 song.read）；
  *   2. **4 角色拒绝矩阵**：用 catalog 派生的权限集驱动 `requirePermission`（等价于 seed 后的
  *      `role_permissions`），逐条断言 USER / SONG_ADMIN / ADMIN / SUPER_ADMIN 的放行与拒绝；
  *   3. **静态接线 + 护栏**：路由文件里不得再出现内联角色数组 / 裸 `.role`；带 try/catch 的文件
@@ -20,7 +20,7 @@ import { resolveRoutePermission } from '../../../../server/utils/rbac/routePermi
 
 const ROOT = process.cwd()
 
-/** 本批 8 个读端点 → 期望权限（song.read 那条见下方说明） */
+/** 本批 7 个读端点 → 期望权限（song.read 那条见下方说明） */
 const READ_ROUTES: Array<{
   file: string
   method: string
@@ -31,7 +31,6 @@ const READ_ROUTES: Array<{
   guardInsideTry: boolean
 }> = [
   { file: 'server/api/admin/users/index.get.ts', method: 'GET', route: '/api/admin/users', permission: 'user.read', policy: 'canReadUsers', guardInsideTry: true },
-  { file: 'server/api/admin/users/index.ts', method: 'GET', route: '/api/admin/users', permission: 'user.read', policy: 'canReadUsers', guardInsideTry: false },
   { file: 'server/api/admin/users/options.get.ts', method: 'GET', route: '/api/admin/users/options', permission: 'user.read', policy: 'canReadUsers', guardInsideTry: true },
   { file: 'server/api/admin/users/export.get.ts', method: 'GET', route: '/api/admin/users/export', permission: 'user.read', policy: 'canReadUsers', guardInsideTry: true },
   { file: 'server/api/admin/users/status-logs.get.ts', method: 'GET', route: '/api/admin/users/status-logs', permission: 'user.read', policy: 'canReadUsers', guardInsideTry: true },
@@ -62,7 +61,7 @@ async function allowedForRole(role: string, permission: PermissionKey): Promise<
   }
 }
 
-test('S3-B2-1 路由 → 权限：8 个读端点的登记值与具名策略一致', () => {
+test('S3-B2-1 路由 → 权限：7 个读端点的登记值与具名策略一致', () => {
   for (const item of READ_ROUTES) {
     assert.equal(resolveRoutePermission(item.method, item.route), item.permission, `${item.method} ${item.route}`)
     const text = fs.readFileSync(path.join(ROOT, item.file), 'utf8')
@@ -106,7 +105,7 @@ test('S3-B2-1 未登录 401 / 账号异常 403（三态收敛到 guard）', asyn
   )
 })
 
-test('S3-B2-1 静态接线：8 个文件已无角色比较 / 内联角色数组 / 直读 context.user', () => {
+test('S3-B2-1 静态接线：7 个文件已无角色比较 / 内联角色数组 / 直读 context.user', () => {
   // 说明（与 TASKS.md 验收命令的偏差）：规划的 grep `\.role\b` 会把 **DB 列引用**也算进去
   // （如 `role: users.role`、`role: row.role`），那不是权限判断。这里断言真正要清零的三类：
   //   ① `.role ===` / `.role !==` 比较 ② `includes(...role)` 内联数组 ③ `event.context.user` 直读

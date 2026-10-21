@@ -132,7 +132,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 内核契约由 `scripts/contract-checks/kernel-isolation.mjs` 把关：`server/api/**` 零引用 `utils/rbac`、权限解析只有 `resolvePermissions.ts` 一处权威实现（除内核外不得直查 `role_permissions` / `user_permissions`）、内核零 key 字面量、legacy 路径必须由 catalog 派生
 - 新增/改动路由必须在 `server/utils/rbac/routePermissionMap.ts` 登记：**未登记 = 拒绝**（`server/api/admin/**` 与 `server/api/open/**` 没有「仅登录」兜底）；`scripts/contract-checks/route-coverage.mjs` 会断言 `server/api/**` 每条路由都被显式分类，并把放错位置的辅助模块（无 `defineEventHandler`）拦下
 
-### 4.9. 网易云接口白名单同步
+### 4.10. 网易云接口白名单同步
 `server/api/api-enhanced/netease/[...path].ts` 的 `allowedEndpoints`（端点路径 → 允许的 HTTP 方法）是该代理的唯一放行名单，未列入的接口一律 403。该路由匿名可达且能触达上游全部接口（含发短信、注册、账号绑定等有外部副作用的接口），白名单是唯一的闸门。
 - 新增或变更网易云调用端点时，必须同步更新 `allowedEndpoints`，禁止只改调用方。调用点分散：前端音源适配器 `useMusicSources`（搜索/歌词）、封面/时长/详情、听歌识曲、评论、扫码登录、歌单、播放记录/听歌上报、云盘上传（`NeteaseUploadDialog`）、服务端 `songCoverFetcher`/`songDurationFetcher` 等，逐一确认
 - 只放行实际使用的端点与真实使用的方法（如 `/audio/match`、`/cloud/upload/*` 为 POST，其余多为 GET）；禁止图省事整段放行、加通配前缀或改成默认放行
