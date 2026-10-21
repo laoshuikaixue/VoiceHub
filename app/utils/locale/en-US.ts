@@ -2541,6 +2541,39 @@ export const admin = {
       adding: 'Adding...',
       addSong: 'Add Song'
     },
+    sourceReplace: {
+      sectionTitle: 'Source Info',
+      button: 'Replace Source',
+      title: 'Replace Song Source',
+      subtitle:
+        'Search other platforms and replace the platform, music ID, cover and duration with a matched track',
+      currentSource: 'Current Source',
+      current: 'Current',
+      searchPlaceholder: 'Enter title, optionally with artist',
+      search: 'Search',
+      searching: 'Searching...',
+      all: 'All',
+      autoSearchHint:
+        'Searched other sources by title automatically. Edit keywords to search manually.',
+      keywordsRequired: 'Enter search keywords',
+      empty: 'No matching tracks found',
+      emptyHint: 'Try different keywords, or switch platform and search again',
+      searchFailed: 'Search failed',
+      platformFailed: (platform: string) => `${platform} search failed`,
+      matchHigh: 'High match',
+      matchMedium: 'Possible match',
+      matchLow: 'Low match',
+      durationUnknown: 'Unknown duration',
+      selectPage: 'Select part',
+      pageLabel: (page: number) => `P${page}`,
+      selectedHint:
+        'Platform, music ID and cover will be replaced; duration updates when available, play URL is cleared',
+      selectHint: 'Select a search result',
+      apply: 'Apply',
+      applying: 'Fetching info...',
+      applied: 'New source filled in. Save the song to apply it.',
+      cancel: 'Cancel'
+    },
     songDownloadDialog: {
       title: 'Download Songs',
       quality: 'Select Quality',
