@@ -91,8 +91,18 @@ test('权限守卫不得写在会把错误压成 5xx 的 try 内', () => {
   assert.ok(files.length > 50, `接口文件扫描异常，仅找到 ${files.length} 个文件`)
 
   const GUARD = /^\s*require(AdminPermission|AdminAccess|SystemAdmin|SuperAdmin)\(/
-  // catch 里透传已有状态码的写法可安全承载守卫
+  const CATCH = /^\s*\}\s*catch\b|^\s*catch\b/
+  // 就近 catch 里透传已有状态码的写法可安全承载守卫
   const PRESERVES_STATUS = /if\s*\(\s*error\??\.statusCode|statusCode:\s*error\??\.statusCode/
+
+  const catchPreservesStatus = (lines: string[], from: number): boolean => {
+    for (let k = from + 1; k < lines.length; k++) {
+      if (!CATCH.test(lines[k])) continue
+      return PRESERVES_STATUS.test(lines.slice(k, k + 20).join('\n'))
+    }
+    return false
+  }
+
   const offenders: string[] = []
   for (const file of files) {
     const lines = readFileSync(file, 'utf8').split('\n')
@@ -106,10 +116,58 @@ test('权限守卫不得写在会把错误压成 5xx 的 try 内', () => {
         }
         if (/defineEventHandler\(/.test(lines[j])) break
       }
-      if (inTry && !PRESERVES_STATUS.test(lines.join('\n'))) {
+      if (inTry && !catchPreservesStatus(lines, i)) {
         offenders.push(`${file.slice(REPO_ROOT.length + 1)}:${i + 1}`)
       }
     }
   }
   assert.deepEqual(offenders, [], '守卫应写在 try 之外，否则 401/403 会被 catch 改写为 500 并泄漏内部错误文本')
+})
+
+test('排期表写入端点要求 schedule:write，备选池保持 songs:pool', () => {
+  const files: string[] = []
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      if (statSync(p).isDirectory()) walk(p)
+      else if (p.endsWith('.ts')) files.push(p)
+    }
+  }
+  walk(join(REPO_ROOT, 'server/api/admin'))
+
+  const domain = files.filter(
+    (p) => /\/admin\/schedule\.post\.ts$/.test(p) || /\/admin\/schedule\//.test(p)
+  )
+  assert.ok(domain.length >= 13, `排期域扫描异常，仅找到 ${domain.length} 个文件`)
+
+  const guardCodes = (src: string): string[] =>
+    [...src.matchAll(/requireAdminPermission\(event,\s*'([a-z:-]+)'\)/g)].map((m) => m[1])
+  const writer = (table: string) =>
+    new RegExp(`\\b(?:insert|update|delete)\\((?:tx\\.)?${table}\\)`)
+
+  const scheduleOffenders: string[] = []
+  const poolOffenders: string[] = []
+  for (const p of domain) {
+    const src = readFileSync(p, 'utf8')
+    const rel = p.slice(REPO_ROOT.length + 1)
+    if (writer('schedules').test(src) && !guardCodes(src).includes('schedule:write'))
+      scheduleOffenders.push(rel)
+    if (writer('scheduleSongPool').test(src) && !guardCodes(src).includes('songs:pool'))
+      poolOffenders.push(rel)
+  }
+  assert.deepEqual(
+    scheduleOffenders,
+    [],
+    '写入 schedules 表的端点必须要求 schedule:write，否则未获授权的歌曲管理员可改写整日排期'
+  )
+  assert.deepEqual(poolOffenders, [], '备选池写入属歌曲管理员本职，不应升级为 schedule:write')
+})
+
+test('可授予档位在 zh/en 词典都有标签', () => {
+  for (const lang of ['zh-CN', 'en-US']) {
+    const src = readFileSync(join(REPO_ROOT, 'app/utils/locale', `${lang}.ts`), 'utf8')
+    for (const code of SONG_ADMIN_GRANTABLE_PERMISSION_CODES) {
+      assert.ok(src.includes(`'${code}':`), `${lang} 缺少 ${code} 的 permissionLabels 标签`)
+    }
+  }
 })

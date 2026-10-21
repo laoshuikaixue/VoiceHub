@@ -2,6 +2,7 @@ import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { ADMIN_ACCESS_ROLES } from '~/utils/adminPermissions'
 
 interface LoginResponse {
   success: boolean
@@ -39,7 +40,7 @@ export const useAuth = () => {
     token.value = 'cookie-based'
     user.value = loggedInUser
     isAuthenticated.value = true
-    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
+    isAdmin.value = ADMIN_ACCESS_ROLES.includes(loggedInUser.role)
     lastAuthVerifiedAt.value = Date.now()
   }
 

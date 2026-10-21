@@ -57,7 +57,7 @@ function parseScheduleItems(value: unknown): ScheduleItem[] {
 }
 
 export default defineEventHandler(async (event) => {
-  requireAdminPermission(event, 'songs:pool')
+  requireAdminPermission(event, 'schedule:write')
   const user = event.context.user
 
   const body = await readBody(event)

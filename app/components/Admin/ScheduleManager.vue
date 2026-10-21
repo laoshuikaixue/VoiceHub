@@ -701,6 +701,7 @@
             >
               <div class="flex gap-1">
                 <button
+                  v-if="canEditSchedule"
                   :disabled="
                     !hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts
                   "
@@ -1090,6 +1091,7 @@
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.exportPlaylistShort }}</span>
         </button>
         <button
+          v-if="canEditSchedule"
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
           :title="locale.saveDraft"
           @click="saveDraft"

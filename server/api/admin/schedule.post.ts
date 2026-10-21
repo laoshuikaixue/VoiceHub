@@ -8,7 +8,7 @@ import { getServerDate } from '~~/server/utils/serverTime'
 import { requireAdminPermission } from '~~/server/utils/requireAdminPermission'
 
 export default defineEventHandler(async (event) => {
-  requireAdminPermission(event, 'songs:pool')
+  requireAdminPermission(event, 'schedule:write')
   const user = event.context.user
 
   const body = await readBody(event)

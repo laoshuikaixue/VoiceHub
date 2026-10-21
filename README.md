@@ -650,9 +650,9 @@ VoiceHub 采用「角色默认权限 + 按用户授权」的权限模型，权�
 | --- | --- |
 | `songs:read` | 查看投稿与审核列表 |
 | `songs:review` | 通过/驳回/标记已播/删除投稿 |
-| `songs:pool` | 维护排期备选池、草稿与移除排期歌曲 |
+| `songs:pool` | 维护排期备选池（加入、移出、清空备选池） |
 | `songs:meta` | 修改封面与时长 |
-| `schedule:write` | 排期结构写操作（发布、批量发布、复制、移动日期、序号、清空当日） |
+| `schedule:write` | 排期表写操作（加入与移除排期、保存草稿、发布、批量发布、复制、移动日期、序号、清空当日） |
 | `play-times:write` | 播放时段增删改 |
 | `request-times:write` | 点歌时段增删改 |
 | `semester:write` | 学期增删改与切换当前学期 |
