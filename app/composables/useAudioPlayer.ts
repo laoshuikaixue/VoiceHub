@@ -4,6 +4,11 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useLocale } from '~/utils/locale'
 import type { MusicTrackMeta } from '~/utils/musicUrl'
+import {
+  createSchedulePlaybackState, findScheduleItem, reconcileSchedulePlayback,
+  samePlaybackSource, sameScheduleSource, scheduleNeighborIndex, selectScheduleItem,
+  type SchedulePlaybackState, type SchedulePlaylistItem, type SchedulePlaylistSource
+} from '~/utils/schedulePlaylist'
 
 export interface PlayableSong {
   id: number | string
@@ -17,13 +22,15 @@ export interface PlayableSong {
   musicId?: string
   playUrl?: string | null
   sourceInfo?: Record<string, any>
+  schedulePlaybackKey?: number
 }
 
 interface PlaylistItem {
-  id: number | string
+  id?: number | string
   song: PlayableSong
   playDate?: string
-  playTimeId?: number
+  playTimeId?: number | null
+  replayRequestId?: number | null
 }
 
 // 创建一个单例实例
@@ -33,6 +40,17 @@ const currentPlaylist = ref<PlaylistItem[]>([])
 const currentPlaylistIndex = ref(-1)
 const currentPosition = ref(0) // 当前播放位置（秒）
 const duration = ref(0) // 歌曲总时长（秒）
+const schedulePlayback = ref<SchedulePlaybackState | null>(null)
+let playbackRequest = 0
+let schedulePlaybackKey = 0
+let pendingScheduleNavigation: {
+  request: number
+  state: SchedulePlaybackState
+  item: SchedulePlaylistItem
+  direction: 1 | -1
+  explicit: boolean
+  promise: Promise<boolean>
+} | null = null
 
 // 预载中的封面图引用，防止加载完成前被回收
 let pendingCoverImage: HTMLImageElement | null = null
@@ -47,6 +65,9 @@ export function useAudioPlayer() {
       console.error('歌曲没有可播放的URL')
       return false
     }
+
+    playbackRequest++
+    schedulePlayback.value = null
 
     // 如果提供了播放列表，更新播放列表
     if (playlist && playlist.length > 0) {
@@ -86,12 +107,214 @@ export function useAudioPlayer() {
   }
 
   // 暂停播放
-  const pauseSong = () => {
+  const pauseSong = (userInitiated = true) => {
+    if (userInitiated) {
+      playbackRequest++
+      if (schedulePlayback.value) {
+        schedulePlayback.value.autoContinue = false
+        schedulePlayback.value.waiting = false
+      }
+    }
     isPlaying.value = false
+  }
+
+  const setPlaybackStatus = (playing: boolean) => {
+    isPlaying.value = playing
+    if (playing && schedulePlayback.value) schedulePlayback.value.autoContinue = true
+  }
+
+  const neighborIndex = (direction: 1 | -1) => {
+    const state = schedulePlayback.value
+    if (state) return scheduleNeighborIndex(state, currentPlaylist.value, direction)
+    const index = currentPlaylistIndex.value + direction
+    return currentPlaylistIndex.value >= 0 && index >= 0 && index < currentPlaylist.value.length ? index : -1
+  }
+
+  const playScheduleAt = (index: number, direction: 1 | -1 = 1, explicit = false): Promise<boolean> => {
+    const state = schedulePlayback.value
+    const item = currentPlaylist.value[index]
+    if (!state || !item) return Promise.resolve(false)
+    const pending = pendingScheduleNavigation
+    if (pending && pending.request === playbackRequest && pending.state === state &&
+      pending.direction === direction && pending.explicit === explicit &&
+      findScheduleItem(pending.item, currentPlaylist.value) === index && samePlaybackSource(pending.item.song, item.song)) {
+      return pending.promise
+    }
+    const request = ++playbackRequest
+    const promise = resolveScheduleAt(index, direction, explicit, request).finally(() => {
+      if (pendingScheduleNavigation?.request === request) pendingScheduleNavigation = null
+    })
+    pendingScheduleNavigation = { request, state, item, direction, explicit, promise }
+    return promise
+  }
+
+  const resolveScheduleAt = async (index: number, direction: 1 | -1, explicit: boolean, request: number): Promise<boolean> => {
+    const state = schedulePlayback.value
+    if (!state || index < 0) return false
+    const initialItem = currentPlaylist.value[index]
+    const failedItems: SchedulePlaylistItem[] = []
+    const latestTarget = () => {
+      const explicitIndex = explicit ? findScheduleItem(initialItem, currentPlaylist.value) : -1
+      let target = explicitIndex >= 0 ? explicitIndex : neighborIndex(direction)
+      while (target >= 0 && target < currentPlaylist.value.length) {
+        const item = currentPlaylist.value[target]
+        const failed = failedItems.some((previous) =>
+          findScheduleItem(previous, currentPlaylist.value) === target && samePlaybackSource(previous.song, item.song))
+        if (!failed) return target
+        target += direction
+      }
+      return -1
+    }
+
+    while (failedItems.length < 3) {
+      const target = latestTarget()
+      if (target < 0) {
+        if (state.finished) {
+          state.waiting = state.autoContinue && currentPlaylist.value.length === 0
+          if (!state.waiting) state.autoContinue = false
+        }
+        if (!failedItems.length || !currentPlaylist.value.length) return false
+        break
+      }
+      const item = currentPlaylist.value[target]
+      const song = item.song
+      let url = song.musicUrl || song.playUrl || null
+      let resolutionError: unknown
+      try {
+        if (!url && !isBilibiliSong(song) && song.musicPlatform && song.musicId) {
+          const { getMusicUrl } = await import('~/utils/musicUrl')
+          url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, {
+            musicInfo: { name: song.title, artist: song.artist, album: song.album || undefined, rawItem: song }
+          })
+        }
+      } catch (error) {
+        resolutionError = error
+      }
+      // 每个候选都验证最新顺序；失败跳过不重试相同音源，也不重启导航请求。
+      if (request !== playbackRequest || schedulePlayback.value !== state) return false
+      const retainedIndex = currentPlaylist.value.indexOf(item)
+      const latestIndex = retainedIndex >= 0 ? retainedIndex : findScheduleItem(item, currentPlaylist.value)
+      if (latestIndex < 0 || !samePlaybackSource(song, currentPlaylist.value[latestIndex].song) || latestIndex !== latestTarget()) continue
+      if (resolutionError) console.warn('[AudioPlayer] 排期歌曲解析失败:', resolutionError)
+      if (!url && !isBilibiliSong(song)) {
+        failedItems.push(item)
+        continue
+      }
+      const nextSong = { ...currentPlaylist.value[latestIndex].song, musicUrl: url, schedulePlaybackKey: ++schedulePlaybackKey }
+      currentPlaylist.value[latestIndex].song = nextSong
+      selectScheduleItem(state, currentPlaylist.value, latestIndex)
+      currentPlaylistIndex.value = latestIndex
+      currentSong.value = nextSong
+      currentPosition.value = 0
+      duration.value = 0
+      isPlaying.value = true
+      return true
+    }
+    if (request === playbackRequest) {
+      pauseSong()
+      if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.consecutiveFailures, 'error')
+    }
+    return false
+  }
+
+  const resumeSong = () => {
+    const state = schedulePlayback.value
+    if (state) {
+      state.autoContinue = true
+      if (state.finished) {
+        let index = neighborIndex(1)
+        state.waiting = currentPlaylist.value.length === 0
+        let explicit = false
+        if (index < 0 && currentPlaylist.value.length) {
+          // 手动恢复已结束的队列：仍在列表中则重播当前项，否则从新列表头开始。
+          index = currentPlaylistIndex.value >= 0 ? currentPlaylistIndex.value : 0
+          explicit = true
+        }
+        if (index >= 0) void playScheduleAt(index, 1, explicit)
+        return true
+      }
+    }
+    if (!currentSong.value) return false
+    isPlaying.value = true
+    return true
+  }
+
+  const playScheduleSong = (
+    song: PlayableSong, items: SchedulePlaylistItem[], source: SchedulePlaylistSource, index: number
+  ) => {
+    song = { ...song, schedulePlaybackKey: ++schedulePlaybackKey }
+    if (!items[index] || !playSong(song, items.map((item) => item.song), index)) return false
+    currentPosition.value = 0
+    duration.value = 0
+    currentPlaylist.value = items.map((item, cursor) => ({ ...item, song: cursor === index ? song : item.song }))
+    schedulePlayback.value = createSchedulePlaybackState(source, currentPlaylist.value, index)
+    return true
+  }
+
+  const isCurrentScheduleItem = (item: SchedulePlaylistItem, source: SchedulePlaylistSource) => {
+    const state = schedulePlayback.value
+    return Boolean(state && sameScheduleSource(state.source, source) && !state.refill &&
+      (state.current.id != null && item.id != null
+        ? String(state.current.id) === String(item.id)
+        : findScheduleItem(state.current, [item]) === 0))
+  }
+
+  const syncSchedulePlaylist = (items: SchedulePlaylistItem[]) => {
+    const state = schedulePlayback.value
+    if (!state || state.source.pending) return
+    const nextItems = items.map((item) => {
+      const match = findScheduleItem(item, currentPlaylist.value)
+      const previous = currentPlaylist.value[match]
+      return previous && samePlaybackSource(previous.song, item.song)
+        ? { ...item, song: { ...item.song, musicUrl: previous.song.musicUrl, sourceInfo: previous.song.sourceInfo } }
+        : { ...item, song: { ...item.song } }
+    })
+    const index = reconcileSchedulePlayback(state, nextItems)
+    if (index >= 0 && currentSong.value) nextItems[index].song = currentSong.value
+    const unchanged = nextItems.length === currentPlaylist.value.length && nextItems.every((item, cursor) => {
+      const old = currentPlaylist.value[cursor]
+      return String(item.id) === String(old.id) && item.playTimeId === old.playTimeId &&
+        item.replayRequestId === old.replayRequestId && samePlaybackSource(item.song, old.song)
+    })
+    if (!unchanged) currentPlaylist.value = nextItems
+    currentPlaylistIndex.value = index
+    if (state.waiting && state.autoContinue && nextItems.length) {
+      state.waiting = false
+      void playScheduleAt(neighborIndex(1))
+    }
+  }
+
+  const activateScheduleBinding = () => {
+    if (schedulePlayback.value?.source.pending) {
+      schedulePlayback.value.source = { ...schedulePlayback.value.source, pending: false }
+    }
+  }
+
+  const clearScheduleBinding = () => {
+    playbackRequest++
+    schedulePlayback.value = null
+    currentPlaylist.value = []
+    currentPlaylistIndex.value = -1
+  }
+
+  const handleScheduleEnded = (mode: 'order' | 'off' | 'loopOne') => {
+    const state = schedulePlayback.value
+    if (!state) return false
+    if (mode === 'loopOne' && !state.refill && currentPlaylistIndex.value >= 0) return false
+    state.finished = true
+    isPlaying.value = false
+    const index = neighborIndex(1)
+    if (mode !== 'off' && state.autoContinue && index >= 0) void playScheduleAt(index)
+    else {
+      state.waiting = mode !== 'off' && state.autoContinue && currentPlaylist.value.length === 0
+      if (!state.waiting) state.autoContinue = false
+    }
+    return true
   }
 
   // 停止播放
   const stopSong = () => {
+    clearScheduleBinding()
     isPlaying.value = false
     currentSong.value = null
     currentPosition.value = 0
@@ -100,6 +323,8 @@ export function useAudioPlayer() {
 
   // 播放下一首歌曲
   const playNext = async () => {
+    if (schedulePlayback.value) return playScheduleAt(neighborIndex(1))
+    const request = ++playbackRequest
     if (currentPlaylist.value.length === 0 || currentPlaylistIndex.value === -1) {
       console.log('没有播放列表或当前歌曲不在播放列表中')
       return false
@@ -158,6 +383,7 @@ export function useAudioPlayer() {
             nextSong.playUrl,
             options
           )
+          if (request !== playbackRequest) return false
           if (url) {
             nextSong.musicUrl = url
             currentPlaylistIndex.value = nextIndex
@@ -199,6 +425,8 @@ export function useAudioPlayer() {
 
   // 播放上一首歌曲
   const playPrevious = async () => {
+    if (schedulePlayback.value) return playScheduleAt(neighborIndex(-1), -1)
+    const request = ++playbackRequest
     if (currentPlaylist.value.length === 0 || currentPlaylistIndex.value === -1) {
       console.log('没有播放列表或当前歌曲不在播放列表中')
       return false
@@ -249,6 +477,7 @@ export function useAudioPlayer() {
             prevSong.playUrl,
             options
           )
+          if (request !== playbackRequest) return false
           if (url) {
             prevSong.musicUrl = url
             currentPlaylistIndex.value = prevIndex
@@ -303,16 +532,12 @@ export function useAudioPlayer() {
 
   // 检查是否有下一首歌曲
   const hasNext = computed(() => {
-    return (
-      currentPlaylist.value.length > 0 &&
-      currentPlaylistIndex.value >= 0 &&
-      currentPlaylistIndex.value < currentPlaylist.value.length - 1
-    )
+    return neighborIndex(1) >= 0
   })
 
   // 检查是否有上一首歌曲
   const hasPrevious = computed(() => {
-    return currentPlaylist.value.length > 0 && currentPlaylistIndex.value > 0
+    return neighborIndex(-1) >= 0
   })
 
   // 预载下一首歌曲的封面与歌词（切歌时直接命中缓存，减少等待）
@@ -353,8 +578,9 @@ export function useAudioPlayer() {
   const prefetchNextSong = async () => {
     if (isPrefetching || !hasNext.value) return false
     
-    const nextIndex = currentPlaylistIndex.value + 1
+    const nextIndex = neighborIndex(1)
     const nextSong = currentPlaylist.value[nextIndex]?.song
+    const request = playbackRequest
 
     if (!nextSong) return false
 
@@ -391,7 +617,7 @@ export function useAudioPlayer() {
         options
       )
       
-      if (url) {
+      if (url && request === playbackRequest && currentPlaylist.value[neighborIndex(1)]?.song === nextSong) {
         nextSong.musicUrl = url
         console.log(`成功预加载下一首歌曲: ${nextSong.title}`)
       }
@@ -455,6 +681,20 @@ export function useAudioPlayer() {
 
   return {
     playSong,
+    beginPlaybackRequest: () => ++playbackRequest,
+    getPlaybackRequest: () => playbackRequest,
+    isPlaybackRequestCurrent: (request: number) => request === playbackRequest,
+    playScheduleSong,
+    isCurrentScheduleItem,
+    resumeSong,
+    setPlaybackStatus,
+    syncSchedulePlaylist,
+    activateScheduleBinding,
+    clearScheduleBinding,
+    handleScheduleEnded,
+    scheduleSource: computed(() => schedulePlayback.value?.source || null),
+    scheduleFinished: computed(() => schedulePlayback.value?.finished === true),
+    scheduleWaiting: computed(() => schedulePlayback.value?.waiting === true),
     pauseSong,
     stopSong,
     playNext,

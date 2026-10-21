@@ -255,7 +255,10 @@ export const useAudioPlayerSync = () => {
         }
       }
 
-      const success = await globalAudioPlayer.playPrevious()
+      const navigation = globalAudioPlayer.playPrevious()
+      const request = globalAudioPlayer.getPlaybackRequest()
+      const success = await navigation
+      if (!globalAudioPlayer.isPlaybackRequestCurrent(request)) return { success: false, newSong: null }
 
       if (success) {
         const newSong = globalAudioPlayer.getCurrentSong().value
@@ -382,7 +385,10 @@ export const useAudioPlayerSync = () => {
         }
       }
 
-      const success = await globalAudioPlayer.playNext()
+      const navigation = globalAudioPlayer.playNext()
+      const request = globalAudioPlayer.getPlaybackRequest()
+      const success = await navigation
+      if (!globalAudioPlayer.isPlaybackRequestCurrent(request)) return { success: false, newSong: null }
 
       if (success) {
         const newSong = globalAudioPlayer.getCurrentSong().value
@@ -448,9 +454,9 @@ export const useAudioPlayerSync = () => {
   // 同步播放状态到全局
   const syncPlayStateToGlobal = (isPlaying: boolean, song?: any) => {
     if (isPlaying && song) {
-      globalAudioPlayer.playSong(song)
+      globalAudioPlayer.setPlaybackStatus(true)
     } else {
-      globalAudioPlayer.pauseSong()
+      globalAudioPlayer.pauseSong(false)
     }
   }
 
@@ -469,6 +475,7 @@ export const useAudioPlayerSync = () => {
 
   // 设置全局播放列表
   const setGlobalPlaylist = (song: any, playlist: any[]) => {
+    if (globalAudioPlayer.scheduleSource.value) return
     if (song && playlist && playlist.length > 0) {
       globalAudioPlayer.playSong(song, playlist)
     }
