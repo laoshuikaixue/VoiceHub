@@ -1323,6 +1323,17 @@ export const pages = {
     audioQuality: {
       actualQualityNotice: '请求{0}，当前音质：{1}',
       unknown: '未知音质',
+      levels: {
+        standard: '标准',
+        higher: '较高',
+        exhigh: 'HQ极高',
+        lossless: 'SQ无损',
+        hires: 'Hi-Res',
+        jyeffect: '高清臻音',
+        vivid: '臻音全景声',
+        sky: '沉浸环绕声',
+        jymaster: '超清母带'
+      },
       options: {
         standard: { label: '标准', description: '适合流量有限的情况' },
         neteaseHq: { label: 'HQ极高', description: '高品质音乐体验' },

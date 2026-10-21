@@ -6,14 +6,19 @@ type PlaybackAttempt = Partial<MusicUrlResolveResult> & { success: boolean; erro
 
 export const useAudioPlayerEnhanced = () => {
   const { getQuality, getQualityOptions, saveQuality, getNeteaseQualityLabel, getNeteaseQualityNotice } = useAudioQuality()
+  // 返回音质仅在接口 level 可识别时覆盖显示；未知音质（含未登录走解锁链路）沿用请求音质
+  const resolveResultQuality = (platform: string, result: PlaybackAttempt) => {
+    const level = ['netease', 'netease-podcast'].includes(platform) ? result.actualQuality || null : null
+    return { level, label: level ? getNeteaseQualityLabel(level) : null }
+  }
   const resultQualityLabel = (platform: string, result: PlaybackAttempt, fallback: string | number) =>
-    ['netease', 'netease-podcast'].includes(platform) && result.actualQuality !== undefined
-      ? getNeteaseQualityLabel(result.actualQuality) : fallback
-  const resultQualityMessage = (platform: string, result: PlaybackAttempt, requested: number, fallback: string | number) =>
-    ['netease', 'netease-podcast'].includes(platform) && result.actualQuality !== undefined &&
-      result.actualQuality !== getNeteaseQualityLevel(requested)
-      ? getNeteaseQualityNotice(requested, result.actualQuality)
-      : `已切换到${resultQualityLabel(platform, result, fallback)}`
+    resolveResultQuality(platform, result).label || fallback
+  const resultQualityMessage = (platform: string, result: PlaybackAttempt, requested: number, fallback: string | number) => {
+    const { level, label } = resolveResultQuality(platform, result)
+    return level && label && level !== getNeteaseQualityLevel(requested)
+      ? getNeteaseQualityNotice(requested, level)
+      : `已切换到${label || fallback}`
+  }
 
   // 使用全局通知函数
   const addNotification = (options) => {

@@ -32,15 +32,34 @@ for (const level of ['standard', 'lossless', 'hires', undefined]) {
   })
 }
 
-for (const freeTrialInfo of [{ start: 0, end: 30 }, {}, '{"start":0,"end":30}', false]) {
-  test(`试听或异常试听标记 ${JSON.stringify(freeTrialInfo)} 不作为完整播放响应`, () => {
+for (const level of ['standard', 'lossless', 'hires', undefined, '']) {
+  test(`保留完整文件，实际音质 ${String(level)} 单独返回`, () => {
+    const result = getNeteaseCatalogResult(response({ level }), 10001)
+    assert.equal(result?.url, track().url)
+    assert.equal(result?.actualQuality, ['standard', 'lossless', 'hires'].includes(level) ? level : null)
+  })
+}
+
+for (const freeTrialInfo of [{ start: 0, end: 30 }, {}, '{"start":0,"end":30}']) {
+  test(`试听标记 ${JSON.stringify(freeTrialInfo)} 不作为完整播放响应`, () => {
     assert.equal(getUrl(response({ freeTrialInfo })), null)
   })
 }
 
-test('曲库未返回目标歌曲时拒绝其他歌曲及缺省 ID', () => {
+for (const freeTrialInfo of [null, undefined, false, 0, '']) {
+  test(`试听标记 ${JSON.stringify(freeTrialInfo)} 视为无试听，保留 URL`, () => {
+    assert.equal(getUrl(response({ freeTrialInfo })), track().url)
+  })
+}
+
+test('曲库未返回目标歌曲时拒绝其他歌曲', () => {
   assert.equal(getUrl(response({ id: 10002 })), null)
-  assert.equal(getUrl(response({ id: undefined })), null)
+  assert.equal(getUrl({ code: 200, data: [track({ id: 10002 }), track({ id: 10003 })] }, '10001'), null)
+})
+
+test('单项响应缺省 ID 不错配，解锁链路的批量 ID 保留首曲', () => {
+  assert.equal(getUrl(response({ id: undefined })), track().url)
+  assert.equal(getUrl(response({ id: null }), '10001,10002'), track().url)
 })
 
 test('失败及畸形响应不抛错、不返回 URL', () => {
@@ -76,7 +95,7 @@ async function bundleModule<T>(entry: string, fetcher: (request: Request) => unk
     './useLyricSettings': 'export const useLyricSettings=()=>({})',
     './usePlatformConfig': 'export const usePlatformConfig=()=>({enabledPlatforms:{value:["netease","tencent","bilibili"]}})',
     './useLocaleText': 'export const useServerErrors=()=>({localize:()=>"错误"});export const useLocaleText=()=>({t:(key,fallback,requested,actual)=>`请求${requested}，当前音质：${actual}`})',
-    '~/utils/locale': 'export const useLocale=()=>({audioPlayer:{value:{}},ui:{value:{audioQuality:{unknown:"音质未知",options:{standard:{label:"标准"},neteaseHq:{label:"HQ极高"},neteaseHiRes:{label:"Hi-Res"}}}}}})',
+    '~/utils/locale': 'export const useLocale=()=>({audioPlayer:{value:{}},ui:{value:{audioQuality:{unknown:"音质未知",levels:{standard:"标准",higher:"较高",exhigh:"HQ极高",hires:"Hi-Res"},options:{standard:{label:"标准"},neteaseHq:{label:"HQ极高"},neteaseHiRes:{label:"Hi-Res"}}}}}})',
     '~/utils/platforms': 'export const getPlatformDisplayName=()=>"网易云"',
     '~/utils/pluginPlatform': 'export const getPluginId=()=>{};export const getPluginQuality=x=>x;export const isPluginPlatform=()=>false;export const LEGACY_PLUGIN_PLATFORM_PREFIX="musicfree:";export const PLUGIN_PLATFORM_PREFIX="plugin:"',
     '~/utils/neteaseApi': 'export const getLoginStatus=async()=>({})',
@@ -194,8 +213,14 @@ test('统一解析保留真实音质，按 URL 缓存，预加载其他歌曲不
   assert.equal(core.getCachedMusicUrlQuality('https://audio.example/own.wav'), undefined)
 })
 
-test('切换成功提示使用返回音质，未知音质不冒充请求的 HQ', async () => {
-  for (const [actualQuality, label] of [['hires', 'Hi-Res'], [null, '音质未知'], ['exhigh', 'HQ极高'], [undefined, 'HQ极高']] as const) {
+test('切换提示仅在返回音质可识别时改用实际音质，未知音质回落请求音质', async () => {
+  for (const [actualQuality, label, message] of [
+    ['hires', 'Hi-Res', '请求HQ极高，当前音质：Hi-Res'],
+    ['exhigh', 'HQ极高', '已切换到HQ极高'],
+    [null, 'HQ极高', '已切换到HQ极高'],
+    [undefined, 'HQ极高', '已切换到HQ极高'],
+    ['vivid', 'HQ极高', '已切换到HQ极高']
+  ] as const) {
     const state = { actualQuality, notifications: [] as unknown[][] }
     const module = await bundleModule<{ useAudioPlayerEnhanced: () => { enhancedQualitySwitch: (song: object, quality: number) => Promise<{ success: boolean; qualityLabel: string }> } }>(
       'app/composables/useAudioPlayerEnhanced.ts', () => null, {
@@ -204,12 +229,11 @@ test('切换成功提示使用返回音质，未知音质不冒充请求的 HQ',
     const result = await module.useAudioPlayerEnhanced().enhancedQualitySwitch({ musicPlatform: 'netease', musicId: '10001' }, 4)
     assert.equal(result.success, true)
     assert.equal(result.qualityLabel, label)
-    assert.equal(state.notifications[0][0], actualQuality === 'hires' || actualQuality === null
-      ? `请求HQ极高，当前音质：${label}` : `已切换到${label}`)
+    assert.equal(state.notifications[0][0], message)
   }
 })
 
-test('播放器与全屏歌词沿用原徽章，显示返回音质与选中态，不改平台偏好', () => {
+test('播放器与全屏歌词沿用原徽章，仅在返回音质可识别时显示实际音质，不改平台偏好', () => {
   const { parse, compileScript } = require('vue/compiler-sfc')
   for (const file of ['AudioPlayer.vue', 'LyricsModal.vue']) {
     const { descriptor } = parse(readFileSync(path.join(root, 'app/components/UI', file), 'utf8'))
@@ -222,10 +246,10 @@ test('播放器与全屏歌词沿用原徽章，显示返回音质与选中态�
       currentSong, control, audioPlayerControl: control, audioPlayer: control.audioPlayer,
       locale: ref({ quality: '音质' }), getQuality: () => 4, getQualityLabel: () => 'HQ极高',
       getCachedMusicUrlQuality: (url: string) => url === 'https://audio.example/new.mp3' ? 'standard' : actual.value,
-      getNeteaseQualityLabel: (level: string | null) => level === 'hires' ? 'Hi-Res' : level === 'standard' ? '标准' : '音质未知',
+      getNeteaseQualityLabel: (level: string | null) => ({ hires: 'Hi-Res', standard: '标准', higher: '较高' })[level as string] || null,
       getQualityOptions: () => [{ value: 2, level: 'standard' }, { value: 4, level: 'exhigh' }, { value: 6, level: 'hires' }]
     })
-    for (const name of ['reportedQuality', 'currentPlatformOptions', 'currentQualityText', 'isCurrentQuality']) {
+    for (const name of ['reportedQuality', 'actualQualityLabel', 'currentPlatformOptions', 'currentQualityText', 'isCurrentQuality']) {
       const node = declarations.find(item => item.id.name === name).init
       new vm.Script(`var ${name} = (${descriptor.scriptSetup.content.slice(node.start, node.end)})`).runInContext(context)
     }
@@ -233,8 +257,11 @@ test('播放器与全屏歌词沿用原徽章，显示返回音质与选中态�
     assert.equal(vm.runInContext('isCurrentQuality(6)', context), true)
     assert.equal(vm.runInContext('isCurrentQuality(4)', context), false)
     actual.value = null
-    assert.equal(vm.runInContext('currentQualityText.value', context), '未知')
-    assert.equal(vm.runInContext('isCurrentQuality(4)', context), false)
+    assert.equal(vm.runInContext('currentQualityText.value', context), 'HQ极高')
+    assert.equal(vm.runInContext('isCurrentQuality(4)', context), true)
+    actual.value = 'higher'
+    assert.equal(vm.runInContext('currentQualityText.value', context), '较高')
+    assert.equal(vm.runInContext('isCurrentQuality(4)', context), true)
     actual.value = undefined
     assert.equal(vm.runInContext('currentQualityText.value', context), 'HQ极高')
     assert.equal(vm.runInContext('getQuality("netease")', context), 4)

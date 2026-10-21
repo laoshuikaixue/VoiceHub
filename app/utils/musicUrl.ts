@@ -258,7 +258,9 @@ const rememberMusicUrlSource = (url: string | null | undefined, source?: string,
   if (import.meta.client) musicUrlQualityCache.set(normalizeCacheUrl(url), actualQuality)
   // 插件代理模式下缓存的是相对地址，而 <audio>.currentSrc 是绝对地址，两者都登记失败回退才找得到来源
   if (import.meta.client && url.startsWith('/')) {
-    musicUrlSourceCache.set(normalizeCacheUrl(new URL(url, window.location.origin).href), source)
+    const absoluteKey = normalizeCacheUrl(new URL(url, window.location.origin).href)
+    musicUrlSourceCache.set(absoluteKey, source)
+    musicUrlQualityCache.set(absoluteKey, actualQuality)
   }
   while (musicUrlSourceCache.size > MUSIC_URL_SOURCE_CACHE_SIZE) {
     const oldest = musicUrlSourceCache.keys().next().value!

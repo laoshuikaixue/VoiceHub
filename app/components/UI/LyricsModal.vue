@@ -518,12 +518,15 @@ const canShowComments = computed(() => {
 
 const reportedQuality = computed(() => audioPlayerControl.isLoadingTrack.value ? undefined
   : getCachedMusicUrlQuality(currentSong.value?.musicUrl || audioPlayerControl.audioPlayer.value?.currentSrc || audioPlayerControl.audioPlayer.value?.src))
+// 返回音质仅在接口 level 可识别时覆盖显示；未知音质（含未登录走解锁链路）沿用请求音质
+const actualQualityLabel = computed(() =>
+  ['netease', 'netease-podcast'].includes(currentSong.value?.musicPlatform)
+    ? getNeteaseQualityLabel(reportedQuality.value) : null)
 const currentQualityText = computed(() => {
   const platform = currentSong.value?.musicPlatform
   if (!platform) return locale.value.quality
   const quality = getQuality(platform)
-  const label = ['netease', 'netease-podcast'].includes(platform) && reportedQuality.value !== undefined
-    ? getNeteaseQualityLabel(reportedQuality.value) : getQualityLabel(platform, quality)
+  const label = actualQualityLabel.value || getQualityLabel(platform, quality)
   return label.replace(/音质|音乐|quality|music/gi, '').trim() || locale.value.quality
 })
 
@@ -547,8 +550,9 @@ const currentPlatformOptions = computed(() => {
 })
 
 const isCurrentQuality = (qualityValue) => {
-  if (['netease', 'netease-podcast'].includes(currentSong.value?.musicPlatform) && reportedQuality.value !== undefined) {
-    return currentPlatformOptions.value.find(option => option.value === qualityValue)?.level === reportedQuality.value
+  if (actualQualityLabel.value) {
+    const matched = currentPlatformOptions.value.find(option => option.level === reportedQuality.value)?.value
+    if (matched !== undefined) return matched === qualityValue
   }
   const platform = currentSong.value?.musicPlatform
   if (!platform) return false

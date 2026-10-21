@@ -4,8 +4,10 @@ import { getLoginStatus } from '~/utils/neteaseApi'
 import { useLocaleText } from './useLocaleText'
 import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX } from '~/utils/pluginPlatform'
 
-export const getNeteaseQualityLevel = (quality: number) =>
-  quality === 3 ? 'higher' : QUALITY_OPTIONS.netease.find(option => option.value === quality)?.level || 'exhigh'
+export const getNeteaseQualityLevel = (quality: number) => {
+  const value = Number(quality)
+  return value === 3 ? 'higher' : QUALITY_OPTIONS.netease.find(option => option.value === value)?.level || 'exhigh'
+}
 
 // 音质配置
 export const QUALITY_OPTIONS = {
@@ -219,10 +221,13 @@ export function useAudioQuality() {
     return option ? option.label : locale.value.unknown
   }
 
-  const getNeteaseQualityLabel = (level: string | null) =>
-    getQualityOptions('netease').find(option => option.level === level)?.label || locale.value.unknown
-  const getNeteaseQualityNotice = (requestedQuality: number, level: string | null) =>
-    t('actualQualityNotice', '', getQualityLabel('netease', requestedQuality), getNeteaseQualityLabel(level))
+  // 返回音质与请求音质是两套取值：level 标签只描述接口实测，无法识别时返回 null 交由调用方回落
+  const getNeteaseQualityLabel = (level: string | null | undefined) => {
+    const levels: Record<string, string | undefined> = locale.value?.levels || {}
+    return (level && levels[level]) || null
+  }
+  const getNeteaseQualityNotice = (requestedQuality: number, level: string) =>
+    t('actualQualityNotice', '', getQualityLabel('netease', Number(requestedQuality)), getNeteaseQualityLabel(level))
 
   // 获取音质描述
   const getQualityDescription = (platform: string, quality: number) => {
