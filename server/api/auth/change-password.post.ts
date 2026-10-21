@@ -9,6 +9,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { getPasswordPolicyViolation } from '~/utils/password-policy'
+import { getUserRole } from '~~/server/utils/rbac'
 import {
   PASSWORD_AUDIT_ACTIONS,
   consumePasswordRateLimit,
@@ -109,7 +110,7 @@ export default defineEventHandler(async (event) => {
     passwordUpdated = true
 
     // 密码变更会让旧令牌失效，因此为当前已验证会话立即换发令牌。
-    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion, event.context.authSessionId)
+    const newToken = JWTEnhanced.generateToken(user.id, getUserRole(user) as string, tokenVersion, event.context.authSessionId)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),
