@@ -2,16 +2,11 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, songs, users } from '~/drizzle/schema'
 import { desc, eq } from 'drizzle-orm'
+import { canReadStats } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  // 权限：stats.read（SONG_ADMIN 及以上）
+  await canReadStats(event)
 
   const query = getQuery(event)
   const limit = parseInt(query.limit as string) || 10

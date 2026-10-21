@@ -2,7 +2,7 @@ import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { canWriteSchedule } from '~~/server/utils/rbac'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
@@ -57,8 +57,8 @@ function parseScheduleItems(value: unknown): ScheduleItem[] {
 }
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-  const user = event.context.user
+  // 权限：schedule.write（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canWriteSchedule(event)
 
   const body = await readBody(event)
   const inputDateStr = parsePlayDate(body?.playDate)

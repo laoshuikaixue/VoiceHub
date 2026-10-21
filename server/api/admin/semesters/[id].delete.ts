@@ -1,14 +1,9 @@
 import { db, eq, semesters, songs } from '~/drizzle/db'
+import { canManageSemesters } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
+  // 权限：semester.manage（SONG_ADMIN 及以上）
+  await canManageSemesters(event)
 
   // 获取学期 ID
   const semesterId = parseInt(getRouterParam(event, 'id') || '0')

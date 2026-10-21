@@ -1,21 +1,9 @@
 import { SmtpService } from '~~/server/services/smtpService'
+import { canManageSmtp } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能重载SMTP配置'
-    })
-  }
+  // 权限：smtp.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canManageSmtp(event)
 
   try {
     const smtpService = SmtpService.getInstance()

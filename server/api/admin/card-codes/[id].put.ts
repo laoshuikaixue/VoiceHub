@@ -3,15 +3,11 @@ import { db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
+import { canWriteCardCodes } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  // 权限：card_codes.write（SONG_ADMIN 及以上）
+  const user = await canWriteCardCodes(event)
 
   const id = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(id) || id <= 0) {

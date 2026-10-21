@@ -14,6 +14,7 @@ import {
 } from '~~/server/utils/submissionLimit'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { isSongAdminRole } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -175,8 +176,8 @@ export default defineEventHandler(async (event) => {
   // 批量插入
   if (songsToInsert.length > 0) {
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
-    const activeGlobalLimits = isAdmin
+    const isSongAdmin = isSongAdminRole(user)
+    const activeGlobalLimits = isSongAdmin
       ? []
       : getActiveGlobalSubmissionLimits(systemSettingsData)
 

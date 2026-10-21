@@ -5,11 +5,12 @@ import { createApiError } from '../apiError'
 import { SERVER_ERROR_CODES } from '../../config/constants'
 import { checkDistributedRateLimit } from '../rateLimiter'
 import { getClientIP } from '../ip-utils'
+import { isSuperAdmin } from '../rbac/guards'
 
 export async function pluginAccess(event: H3Event, admin = false) {
   const user = event.context.user
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '请先登录')
-  if (admin && user.role !== 'SUPER_ADMIN') throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '需要超级管理员权限')
+  if (admin && !isSuperAdmin(user)) throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '需要超级管理员权限')
   if (admin && !['GET', 'HEAD'].includes(event.method)) {
     const origin = getRequestHeader(event, 'origin')
     // 与 api-cors 中间件保持一致：反代可能改写 Host，此时以 x-forwarded-host 为准

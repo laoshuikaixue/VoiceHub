@@ -23,6 +23,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
+import { canResetDatabase } from '~~/server/utils/rbac'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -109,16 +110,10 @@ async function resetAutoIncrementSequences() {
 }
 
 export default defineEventHandler(async (event) => {
-  try {
-    // 验证管理员权限：重置数据库仅限超级管理员
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以重置数据库'
-      })
-    }
+  // 验证管理员权限：重置数据库仅限超级管理员（守卫在 try 外：401/403 原样抛出，不被 catch 改写）
+  const user = await canResetDatabase(event)
 
+  try {
     const resetResults = {
       success: true,
       message: '数据库重置完成',

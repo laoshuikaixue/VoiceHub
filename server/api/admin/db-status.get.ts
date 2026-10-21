@@ -2,15 +2,10 @@ import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { count, sql } from 'drizzle-orm'
+import { canReadSystemSettings } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  await canReadSystemSettings(event)
 
   try {
     const status = {

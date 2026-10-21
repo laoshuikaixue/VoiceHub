@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
+import { canWriteCardCodes } from '~~/server/utils/rbac'
 
 const parseIds = (body: any): number[] => {
   const rawIds = Array.isArray(body?.ids) ? body.ids : body?.id !== undefined ? [body.id] : []
@@ -12,13 +13,8 @@ const parseIds = (body: any): number[] => {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  // 权限：card_codes.write（SONG_ADMIN 及以上）
+  const user = await canWriteCardCodes(event)
 
   const body = await readBody(event).catch(() => ({})) ?? {}
   const ids = parseIds(body)

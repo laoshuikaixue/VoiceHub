@@ -1,24 +1,11 @@
 import { db } from '~/drizzle/db'
 import { semesters, songs } from '~/drizzle/schema'
 import { eq, and, ne } from 'drizzle-orm'
+import { canManageSemesters } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能管理学期'
-    })
-  }
+  // 权限：semester.manage（SONG_ADMIN 及以上）
+  await canManageSemesters(event)
 
   const semesterId = parseInt(event.context.params?.id || '0')
 
