@@ -162,7 +162,7 @@ function checkRuleOrdering() {
     ['POST', '/api/admin/users/123/approval', 'user.status'],
     ['POST', '/api/admin/users/123/reset-password', 'user.manage'],
     ['GET', '/api/admin/users/123', 'user.read'],
-    ['POST', '/api/admin/card-codes/delete', 'card_codes.delete'],
+    ['POST', '/api/admin/card-codes/delete', 'card_codes.write'],
     ['GET', '/api/admin/card-codes/export', 'card_codes.read'],
     ['POST', '/api/admin/backup/restore', 'backup.restore'],
     ['POST', '/api/admin/backup/restore-chunk', 'backup.restore'],
@@ -175,7 +175,12 @@ function checkRuleOrdering() {
     ['POST', '/api/admin/songs/delete', 'song.write'],
     ['GET', '/api/admin/db-status', 'system_settings.read'],
     ['POST', '/api/admin/fix-sequence', 'database.reset'],
-    ['POST', '/api/admin/database/reset', 'database.reset']
+    ['POST', '/api/admin/database/reset', 'database.reset'],
+    ['GET', '/api/admin/database/status', 'system_settings.read'],
+    ['GET', '/api/admin/database/pool-status', 'system_settings.read'],
+    ['GET', '/api/admin/database/performance', 'system_settings.read'],
+    ['GET', '/api/admin/system-settings', 'system_settings.read'],
+    ['POST', '/api/admin/system-settings', 'system_settings.write']
   ]
 
   const wrong = []

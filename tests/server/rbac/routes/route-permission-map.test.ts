@@ -61,9 +61,9 @@ test('S3-B1 方法敏感：同一路径不同方法的权限不同', () => {
   assert.equal(resolveRoutePermission('PATCH', '/api/admin/blacklist/3'), 'blacklist.manage')
 })
 
-test('S3-B1 顺序敏感：精确规则先于宽前缀命中（34 条抽查）', () => {
+test('S3-B1 顺序敏感：精确规则先于宽前缀命中（42 条抽查）', () => {
   const samples = [
-    ['POST', '/api/admin/card-codes/delete', 'card_codes.delete'],
+    ['POST', '/api/admin/card-codes/delete', 'card_codes.write'],
     ['POST', '/api/admin/card-codes/create', 'card_codes.write'],
     ['GET', '/api/admin/card-codes/redeem-logs', 'card_codes.read'],
     ['POST', '/api/admin/backup/restore', 'backup.restore'],
@@ -86,7 +86,15 @@ test('S3-B1 顺序敏感：精确规则先于宽前缀命中（34 条抽查）',
     ['GET', '/api/admin/api-keys/logs', 'api_keys.read'],
     ['POST', '/api/admin/fix-sequence', 'database.reset'],
     ['POST', '/api/admin/database/cleanup', 'database.reset'],
-    ['GET', '/api/admin/database/status', 'database.reset'],
+    ['GET', '/api/admin/database/status', 'system_settings.read'],
+    ['GET', '/api/admin/database/pool-status', 'system_settings.read'],
+    ['GET', '/api/admin/database/performance', 'system_settings.read'],
+    ['POST', '/api/admin/database/reset', 'database.reset'],
+    ['GET', '/api/admin/system-settings', 'system_settings.read'],
+    ['POST', '/api/admin/system-settings', 'system_settings.write'],
+    ['PUT', '/api/admin/system-settings', 'system_settings.write'],
+    ['PATCH', '/api/admin/system-settings', 'system_settings.write'],
+    ['DELETE', '/api/admin/system-settings', 'system_settings.write'],
     ['GET', '/api/admin/music-source-plugins', 'system_settings.read'],
     ['PUT', '/api/admin/music-source-plugins/order', 'system_settings.write'],
     ['GET', '/api/admin/notifications/history', 'notification.send'],
@@ -101,6 +109,18 @@ test('S3-B1 顺序敏感：精确规则先于宽前缀命中（34 条抽查）',
 
   for (const [method, pathname, expected] of samples) {
     assert.equal(resolveRoutePermission(method, pathname), expected, `${method} ${pathname}`)
+  }
+})
+
+test('R1-2b system-settings：GET 命中 read，写方法命中 write（顺序敏感）', () => {
+  // GET 必须先命中 :103 的精确规则，不得落到 :104 的 ANY 写规则
+  assert.equal(resolveRoutePermission('GET', '/api/admin/system-settings'), 'system_settings.read')
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    assert.equal(
+      resolveRoutePermission(method, '/api/admin/system-settings'),
+      'system_settings.write',
+      `${method} /api/admin/system-settings`
+    )
   }
 })
 

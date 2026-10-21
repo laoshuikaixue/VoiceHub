@@ -28,7 +28,7 @@ import { PERMISSION_LIST, ROLE_ORDER, ROLE_PERMISSIONS } from '../shared/rbac/pe
 config({ path: path.resolve(process.cwd(), '.env') })
 
 /** S1 冻结基线（改动即有意契约变更，须同步 tests/contract/permission-catalog.test.ts 与规划文档） */
-const FROZEN_MATRIX_COUNTS = '0/12/25/35'
+const FROZEN_MATRIX_COUNTS = '0/12/22/35'
 
 const log = (message) => console.log(`[seed-permissions] ${message}`)
 

@@ -100,7 +100,7 @@ test('S5-4 拒绝矩阵：USER / SONG_ADMIN / ADMIN / SUPER_ADMIN 四档', async
   // 四档角色集合确实互不相同（否则上面的矩阵是自证）
   assert.deepEqual(
     ROLE_TIERS.map((role) => ROLE_PERMISSIONS[role].length),
-    [0, 12, 25, 35]
+    [0, 12, 22, 35]
   )
 })
 

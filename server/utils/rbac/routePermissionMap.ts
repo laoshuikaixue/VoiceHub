@@ -13,13 +13,16 @@
  *
  * 与现状的差异（B1 阶段本表**不接线**，故无运行时行为变化；下列差异由各自的 S3 批次在等价性
  * 测试里显式登记为「有意行为变更」后才会生效）：
- *   1. api-keys 域：现状 7 个端点全 SUPER_ADMIN → 本表按 catalog 取 `api_keys.read/write/delete`
- *      （ADMIN 起）＝放宽，归 S5-5（其验收已明示）。
- *   2. backup 域：现状全 SUPER_ADMIN → 本表拆成 `backup.restore` / `backup.export` / `backup.execute`
- *      （execute 起 ADMIN）＝部分放宽，归 S3-B4-3 登记。
- *   3. database 域：现状 `reset` 允许 ADMIN、其余 4 个读取端点**无守卫** → 统一 `database.reset`
- *      （SUPER_ADMIN）＝收紧（与 catalog 一致，S3-B4-4 验收明示）。
- *   4. card-codes 删除：现状 SONG_ADMIN 可删 → `card_codes.delete`（SUPER_ADMIN）＝收紧。
+ *   1. api-keys 域：现状全 SUPER_ADMIN → catalog 已把 `api_keys.read/write/delete` 的 minRole 提为
+ *      SUPER_ADMIN（Q-D 裁决），本表与现状逐条等价（原「ADMIN 起」的放宽项不再存在）。
+ *   2. backup 域：现状全 SUPER_ADMIN → 本表拆成 `backup.restore` / `backup.export` / `backup.execute`，
+ *      三者 minRole 均为 SUPER_ADMIN（`backup.execute` 已随 Q-D 裁决提级），与现状等价。
+ *   3. database 域：现状三个只读诊断（status / pool-status / performance）走 `verifyAdminAuth`（ADMIN），
+ *      `reset` 为 SUPER_ADMIN → 前者映射 `system_settings.read`（minRole = ADMIN）、后者映射
+ *      `database.reset`（SUPER_ADMIN），与现状等价；`cleanup` 与 `fix-sequence` 现状同样只要求
+ *      ADMIN，映射 `database.reset` ＝收紧（按 R1-2b 裁决 Q-A 保留：两者都是写操作）。
+ *   4. card-codes 删除：现状 SONG_ADMIN / ADMIN / SUPER_ADMIN 均可删 → `card_codes.write`
+ *      （minRole = SONG_ADMIN），语义等价（不再收紧到 `card_codes.delete`）。
  *   5. system-settings 写入类（如 `env-oauth-import`）：现状 ADMIN → `system_settings.write`
  *      （SUPER_ADMIN）＝收紧，归 S3-B4-1 登记。
  *   6. 现状**无守卫**的端点（music-source-plugins 8 个、notifications 5 个、`users/[id]/songs` 等）：
@@ -91,8 +94,9 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   // ── 统计 / 概览 ──
   { method: 'GET', pattern: /^\/api\/admin\/(stats|activities)(\/.*)?$/, key: PERMISSIONS.STATS_READ },
 
-  // ── 卡密域（删除单独收紧）──
-  { method: 'POST', pattern: /^\/api\/admin\/card-codes\/delete$/, key: PERMISSIONS.CARD_CODES_DELETE },
+  // ── 卡密域 ──
+  // 删除：现状 server/api/admin/card-codes/delete.post.ts:19 放行 SONG_ADMIN/ADMIN/SUPER_ADMIN
+  { method: 'POST', pattern: /^\/api\/admin\/card-codes\/delete$/, key: PERMISSIONS.CARD_CODES_WRITE, note: '删除卡密（现状 SONG_ADMIN 及以上，与 card_codes.write 等价）' },
   { method: 'GET', pattern: /^\/api\/admin\/card-codes(\/.*)?$/, key: PERMISSIONS.CARD_CODES_READ },
   { method: 'ANY', pattern: /^\/api\/admin\/card-codes(\/.*)?$/, key: PERMISSIONS.CARD_CODES_WRITE },
 
@@ -112,7 +116,7 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   // ── 通知 ──
   { method: 'ANY', pattern: /^\/api\/admin\/notifications(\/.*)?$/, key: PERMISSIONS.NOTIFICATION_SEND },
 
-  // ── API Key 管理（catalog 语义；现状 SUPER_ADMIN-only，放宽归 S5-5）──
+  // ── API Key 管理（catalog minRole 已提为 SUPER_ADMIN，与现状 SUPER_ADMIN-only 等价）──
   { method: 'GET', pattern: /^\/api\/admin\/api-keys(\/.*)?$/, key: PERMISSIONS.API_KEYS_READ },
   { method: 'POST', pattern: /^\/api\/admin\/api-keys(\/.*)?$/, key: PERMISSIONS.API_KEYS_WRITE },
   { method: 'PUT', pattern: /^\/api\/admin\/api-keys(\/.*)?$/, key: PERMISSIONS.API_KEYS_WRITE },
@@ -124,8 +128,10 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   { method: 'GET', pattern: /^\/api\/admin\/backup\/download(\/.*)?$/, key: PERMISSIONS.BACKUP_EXPORT },
   { method: 'ANY', pattern: /^\/api\/admin\/backup(\/.*)?$/, key: PERMISSIONS.BACKUP_EXECUTE },
 
-  // ── 数据库 / 序列修复（统一 SUPER_ADMIN；reset 属收紧，见文件头第 3 条）──
-  { method: 'ANY', pattern: /^\/api\/admin\/(database|fix-sequence)(\/.*)?$/, key: PERMISSIONS.DATABASE_RESET },
+  // ── 数据库 / 序列修复（只读诊断 ADMIN，写操作 SUPER_ADMIN；见文件头第 3 条）──
+  // 只读诊断必须先于下面的宽前缀命中：现状三个端点各自 verifyAdminAuth（ADMIN），不构成破坏面
+  { method: 'GET', pattern: /^\/api\/admin\/database\/(status|pool-status|performance)$/, key: PERMISSIONS.SYSTEM_SETTINGS_READ, note: '数据库只读诊断（现状 verifyAdminAuth = ADMIN，不随 database.reset 收紧）' },
+  { method: 'ANY', pattern: /^\/api\/admin\/(database|fix-sequence)(\/.*)?$/, key: PERMISSIONS.DATABASE_RESET, note: '数据库写操作 / 序列修复（reset 现状 SUPER_ADMIN；cleanup 与 fix-sequence 现状仅 ADMIN，此处收紧）' },
 
   // ── 系统看板（上游新增；运维排障端点，复用 database.reset 保持与现状「仅超管」逐条等价）──
   // 现状：三个端点各自在文件内 verifyAdminAuth + role !== 'SUPER_ADMIN' 判 403，无独立权限 key。

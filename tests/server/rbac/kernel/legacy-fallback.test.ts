@@ -49,7 +49,7 @@ test('S2-2 legacy 覆盖矩阵：全 35 key × 4 角色的判定可枚举且稳�
   assert.deepEqual(snapshot, [
     ['USER', 0],
     ['SONG_ADMIN', 12],
-    ['ADMIN', 25],
+    ['ADMIN', 22],
     ['SUPER_ADMIN', 35]
   ])
 })

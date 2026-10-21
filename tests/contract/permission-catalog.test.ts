@@ -3,7 +3,7 @@
  *
  * 与 `scripts/contract-checks/*.mjs` 的分工：
  *   - 契约检查（pnpm contract:check）= 结构 / 派生一致性，允许 catalog 有意演进；
- *   - 本测试 = **冻结数字**（35 项 / 矩阵 0/12/25/35 / legacy 8 条）与逐条硬编码期望，
+ *   - 本测试 = **冻结数字**（35 项 / 矩阵 0/12/22/35 / legacy 8 条）与逐条硬编码期望，
  *     防止「catalog 整体漂移但自洽」的假绿。
  *
  * 若确需改变权限数量或矩阵，属于**有意契约变更**：必须同步本文件、seed 的冻结基线、
@@ -30,11 +30,11 @@ test('S1-1 冻结基线：catalog = 35 项，key 唯一且命名合规', () => {
   assert.equal(PERMISSION_LIST.every((definition) => Boolean(definition.minRole)), true)
 })
 
-test('S1-1 冻结基线：角色矩阵计数 = USER 0 / SONG_ADMIN 12 / ADMIN 25 / SUPER_ADMIN 35', () => {
+test('S1-1 冻结基线：角色矩阵计数 = USER 0 / SONG_ADMIN 12 / ADMIN 22 / SUPER_ADMIN 35', () => {
   assert.deepEqual(ROLE_ORDER, [ROLES.USER, ROLES.SONG_ADMIN, ROLES.ADMIN, ROLES.SUPER_ADMIN])
   assert.deepEqual(
     ROLE_ORDER.map((role) => ROLE_PERMISSIONS[role].length),
-    [0, 12, 25, 35]
+    [0, 12, 22, 35]
   )
 })
 

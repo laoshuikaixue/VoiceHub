@@ -5,7 +5,7 @@
  * 模块契约：`export const checks = [{ name, run }]`，run 抛错即失败。
  *
  * 只做结构 / 派生校验——允许 catalog 有意新增权限，但不允许任何自相矛盾。
- * 冻结数字（35 项 / 0/12/25/35）由 `tests/contract/permission-catalog.test.ts` 断言。
+ * 冻结数字（35 项 / 0/12/22/35）由 `tests/contract/permission-catalog.test.ts` 断言。
  */
 
 import assert from 'node:assert/strict'

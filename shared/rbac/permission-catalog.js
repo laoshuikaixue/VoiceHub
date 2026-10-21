@@ -252,7 +252,8 @@ export const PERMISSION_LIST = Object.freeze([
     zh: '执行备份',
     en: 'Execute backup',
     isApiPermission: true,
-    minRole: ROLES.ADMIN
+    // Q-D 裁决：现状 server/api/admin/backup/* 守卫均为 role !== 'SUPER_ADMIN'，提级＝零行为变更
+    minRole: ROLES.SUPER_ADMIN
   },
   {
     key: 'notification.send',
@@ -269,7 +270,8 @@ export const PERMISSION_LIST = Object.freeze([
     zh: '查看 API Key',
     en: 'View API keys',
     isApiPermission: false,
-    minRole: ROLES.ADMIN
+    // Q-D 裁决：现状 server/api/admin/api-keys/* 守卫均为 role !== 'SUPER_ADMIN'，提级＝零行为变更
+    minRole: ROLES.SUPER_ADMIN
   },
   {
     key: 'api_keys.write',
@@ -277,7 +279,8 @@ export const PERMISSION_LIST = Object.freeze([
     zh: '创建 / 修改 API Key',
     en: 'Create / modify API keys',
     isApiPermission: false,
-    minRole: ROLES.ADMIN
+    // Q-D 裁决：同上（现状守卫 role !== 'SUPER_ADMIN'）
+    minRole: ROLES.SUPER_ADMIN
   },
   {
     key: 'api_keys.manage',
