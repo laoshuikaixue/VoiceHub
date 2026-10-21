@@ -110,9 +110,7 @@ export const useSongPlayer = () => {
     } catch (error: any) {
       if (!audioPlayer.isPlaybackRequestCurrent(request)) return
       console.error('播放失败:', error)
-      const errorMessage = context
-        ? localize(error)
-        : error instanceof Error ? error.message : String(error)
+      const errorMessage = localize(error)
       showToast(audioPlayerLocale.value.playFailed(errorMessage), 'error')
 
       // 即使获取 URL 失败，也应该调用 playSong 以触发播放器的错误处理和弹窗逻辑
