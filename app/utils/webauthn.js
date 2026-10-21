@@ -1,7 +1,8 @@
 import {
   base64URLStringToBuffer,
   bufferToBase64URLString,
-  startAuthentication
+  startAuthentication,
+  WebAuthnAbortService
 } from '@simplewebauthn/browser'
 
 const toCredentialDescriptor = ({ id, type }) => ({
@@ -121,6 +122,10 @@ export const startWebAuthnAuthentication = async (optionsJSON, useBrowserAutofil
     publicKey.allowCredentials = allowCredentials.map(toCredentialDescriptor)
   }
 
+  // 浏览器同一时间只允许一个 WebAuthn 请求，先取消可能挂起的自动填充认证仪式，
+  // 否则显式 get() 会因 "A request is already pending" 被拒绝。
+  WebAuthnAbortService.cancelCeremony()
+
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，登录按钮本身已阻止重复提交。
   let credential
   try {
@@ -192,6 +197,9 @@ export const startWebAuthnRegistration = async (optionsJSON) => {
   if (hints?.length) {
     publicKey.hints = hints
   }
+
+  // 浏览器同一时间只允许一个 WebAuthn 请求，发起注册前先取消可能挂起的认证仪式。
+  WebAuthnAbortService.cancelCeremony()
 
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，绑定按钮本身已阻止重复提交。
   let credential

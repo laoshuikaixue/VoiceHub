@@ -346,7 +346,7 @@
                 v-for="song in filteredUnscheduledSongs"
                 :key="song.id"
                 :class="[
-                  'draggable-song relative group rounded-xl p-3 transition-all select-none',
+                  'draggable-song relative group rounded-xl p-2.5 transition-all select-none',
                   song.cardCodeId
                     ? 'bg-warning-5 border border-warning-30'
                     : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
@@ -359,15 +359,15 @@
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
                 <!-- 歌曲卡片内容 -->
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2.5">
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer hover:opacity-80 transition-opacity"
+                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer group-hover:opacity-90 transition-opacity"
                     @click.stop="playSong(song)"
                   >
                     <img
                       v-if="song.cover"
-                      :src="convertToHttps(song.cover)"
+                      :src="getCoverThumbUrl(song.cover)"
                       class="w-full h-full object-cover"
                       referrerpolicy="no-referrer"
                       loading="lazy"
@@ -377,14 +377,20 @@
                       v-else
                       class="w-full h-full flex items-center justify-center text-text-disabled"
                     >
-                      <Music2 class="w-6 h-6 opacity-50" />
+                      <Music2 class="w-5 h-5 opacity-50" />
+                    </div>
+                    <div
+                      class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Play class="w-3 h-3 text-white fill-white" />
                     </div>
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div class="flex items-center gap-2 min-w-0">
+                    <!-- 第一行：歌名 + 时长 -->
+                    <div class="flex items-center gap-1.5 min-w-0">
                       <h4
-                        class="font-bold text-text-primary text-sm truncate flex items-center gap-2 min-w-0"
+                        class="font-bold text-text-primary text-xs truncate flex items-center gap-2 min-w-0 flex-1"
                       >
                         <span
                           v-if="isBilibiliSong(song)"
@@ -437,62 +443,30 @@
                         }}
                       </span>
                     </div>
-                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
-                      <span>{{ song.artist }}</span>
-                      <!-- 时长显示 / 行内编辑 -->
-                      <span
-                        v-if="song.durationSeconds && !editingDuration[song.id]"
-                        :class="[
-                          'shrink-0 px-1 rounded transition-colors cursor-pointer',
-                          durationRefreshStatus[song.id] === 'success'
-                            ? 'text-success bg-success-10'
-                            : durationRefreshStatus[song.id] === 'error'
-                              ? 'text-error bg-error-10'
-                              : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
-                        ]"
-                        :title="locale.messages?.editDuration || '点击编辑时长'"
-                        @click.stop="startEditDuration(song)"
-                      >{{ formatDuration(song.durationSeconds) }}</span>
-                      <input
-                        v-else-if="editingDuration[song.id]"
-                        ref="editingDurationInput"
-                        v-model="editingDurationValue"
-                        type="text"
-                        inputmode="text"
-                        pattern="[0-9:]*"
-                        class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                        :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                        @focusout="saveDurationEdit(song)"
-                        @keydown="handleDurationKeydown($event, song)"
-                      >
-                    </div>
-                    <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
-                      <span>{{ song.requester }}</span>
-                      <span v-if="song.requesterGrade || song.grade" class="text-text-disabled">|</span>
-                      <span v-if="song.requesterGrade || song.grade">
-                        {{ song.requesterGrade || song.grade }}
-                        {{ song.requesterClass || song.class }}
-                      </span>
+                    <!-- 第二行：歌手 · 期望时段 -->
+                    <div class="text-[11px] text-text-tertiary truncate flex items-center gap-1">
+                      <span class="truncate max-w-[120px]">{{ song.artist }}</span>
                       <span
                         v-if="song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap"
+                        class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap shrink-0"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                       <span
                         v-if="activeTab === 'pool' && song.addedByName"
-                        class="ml-1 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap"
+                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap shrink-0"
                       >
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2">
+                  <!-- 右侧操作区 -->
+                  <div class="flex items-center gap-1.5 shrink-0">
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"
-                      class="flex items-center gap-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 px-2 py-1 rounded-md border border-border-secondary-50"
+                      class="flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 rounded-md border border-border-secondary-50"
                     >
                       <Heart class="w-3 h-3 text-error-50" />
                       {{ song.voteCount || 0 }}
@@ -597,6 +571,79 @@
                     >
                       <MoreVertical class="w-4 h-4" />
                     </button>
+                  </div>
+                  <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
+                  <div
+                    v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
+                    class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
+                  >
+                    <template v-if="song.requester">
+                      <span class="truncate max-w-[120px]">{{ stripDisambiguationSuffix(song.requester) }}</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                        class="text-text-disabled shrink-0"
+                      >|</span>
+                      <span
+                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
+                        class="shrink-0"
+                      >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
+                    </template>
+                    <template v-if="auth?.isAdmin">
+                      <span
+                        v-if="song.requester && song.musicPlatform"
+                        class="text-text-disabled shrink-0"
+                      >·</span>
+                      <span
+                        v-if="song.musicPlatform"
+                        class="platform-tag px-1 whitespace-nowrap"
+                        :class="'platform-' + platformTagClass(song.musicPlatform)"
+                        :title="callLocale('platformSource', '投稿平台')"
+                      >
+                        {{ platformLabel(song.musicPlatform) }}
+                      </span>
+                      <template
+                        v-if="song.submissionCount != null && song.playCount != null"
+                      >
+                        <span class="text-text-disabled">·</span>
+                        <span
+                          >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
+                        >
+                        <span class="text-text-disabled">·</span>
+                        <span
+                          >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
+                        >
+                      </template>
+                    </template>
+                    <!-- 时长显示 / 行内编辑（放在行末） -->
+                    <span
+                      v-if="(song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))) && (song.durationSeconds || editingDuration[song.id])"
+                      class="text-text-disabled shrink-0"
+                    >·</span>
+                    <span
+                      v-if="song.durationSeconds && !editingDuration[song.id]"
+                      :class="[
+                        'shrink-0 px-1 rounded transition-colors cursor-pointer font-mono tabular-nums',
+                        durationRefreshStatus[song.id] === 'success'
+                          ? 'text-success bg-success-10'
+                          : durationRefreshStatus[song.id] === 'error'
+                            ? 'text-error bg-error-10'
+                            : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
+                      ]"
+                      :title="locale.messages?.editDuration || '点击编辑时长'"
+                      @click.stop="startEditDuration(song)"
+                    >{{ formatDuration(song.durationSeconds) }}</span>
+                    <input
+                      v-else-if="editingDuration[song.id]"
+                      ref="editingDurationInput"
+                      v-model="editingDurationValue"
+                      type="text"
+                      inputmode="text"
+                      pattern="[0-9:]*"
+                      class="w-16 text-[10px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                      :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
+                      @focusout="saveDurationEdit(song)"
+                      @keydown="handleDurationKeydown($event, song)"
+                    >
                   </div>
                 </div>
               </div>
@@ -838,7 +885,7 @@
                   >
                     <img
                       v-if="schedule.song.cover"
-                      :src="convertToHttps(schedule.song.cover)"
+                      :src="getCoverThumbUrl(schedule.song.cover)"
                       class="w-full h-full object-cover"
                       referrerpolicy="no-referrer"
                       loading="lazy"
@@ -948,7 +995,7 @@
                             : ''
                         }}
                       </span>
-                      <span v-else>{{ schedule.song.requester }}</span>
+                      <span v-else>{{ stripDisambiguationSuffix(schedule.song.requester) }}</span>
                       <span
                         v-if="schedule.song.requesterGrade || schedule.song.grade"
                         class="text-text-disabled"
@@ -1012,103 +1059,121 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- 移动端底部操作栏 -->
-      <div
-        class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-bg-primary-90 backdrop-blur-xl border-t border-border-secondary flex items-center gap-3 pb-6"
-      >
-        <div class="w-[148px] overflow-x-auto scrollbar-hide">
-          <div class="flex items-center gap-2 w-max">
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              @click="openDownloadDialog"
-            >
-              <Download class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="localScheduledSongs.length === 0"
-              :title="locale.exportPlaylist"
-              @click="openPlaylistExportDialog"
-            >
-              <FileSpreadsheet class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              @click="saveDraft"
-            >
-              <Save class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-success rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              @click="markAllAsPlayed"
-            >
-              <CheckCircle2 class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-info rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              @click="openMoveDateDialog"
-            >
-              <ArrowRight class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              @click="openCopyDateDialog"
-            >
-              <Copy class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-error rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="localScheduledSongs.length === 0"
-              @click="clearScheduleList"
-            >
-              <Trash2 class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-info rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-              :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
-              :title="locale.addCurrentPage"
-              @click="moveAllToPool"
-            >
-              <FolderPlus class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!canPublish"
-              :title="locale.publishOnly"
-              @click="publishSchedule"
-            >
-              <Send class="w-5 h-5" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="refreshingAllDurations.running"
-              :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
-              @click="refreshAllDurations"
-            >
-              <RefreshCcw class="w-5 h-5" :class="{ 'animate-spin': refreshingAllDurations.running }" />
-            </button>
-            <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              :title="locale.autoSchedule"
-              @click="openAutoScheduleDialog"
-            >
-              <Sparkles class="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <!-- 主要操作 -->
+  <!-- 移动端底部操作栏 -->
+  <div
+    class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-2 bg-bg-primary-90 backdrop-blur-xl border-t border-border-secondary flex items-center gap-2 pb-6"
+  >
+    <div class="flex-1 overflow-x-auto scrollbar-hide">
+      <div class="flex items-center gap-1.5 w-max">
         <button
-          :disabled="!hasChanges"
-          class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          @click="saveSequence"
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
+          :title="locale.downloadSongs"
+          @click="openDownloadDialog"
         >
-          <FileBadge class="w-4 h-4" /> {{ locale.saveAndPublish }}
+          <Download class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.downloadSongsShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="localScheduledSongs.length === 0"
+          :title="locale.exportPlaylist"
+          @click="openPlaylistExportDialog"
+        >
+          <FileSpreadsheet class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.exportPlaylistShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
+          :title="locale.saveDraft"
+          @click="saveDraft"
+        >
+          <Save class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveDraftShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-success rounded-lg active:scale-95 transition-all"
+          :title="locale.markAllPlayed"
+          @click="markAllAsPlayed"
+        >
+          <CheckCircle2 class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.markAllPlayedShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all"
+          :title="locale.moveDate"
+          @click="openMoveDateDialog"
+        >
+          <ArrowRight class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.moveDateShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
+          :title="locale.copyDate"
+          @click="openCopyDateDialog"
+        >
+          <Copy class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.copyDateShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-error rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="localScheduledSongs.length === 0"
+          :title="locale.clearList"
+          @click="clearScheduleList"
+        >
+          <Trash2 class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.clearListShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+          :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+          :title="locale.addCurrentPage"
+          @click="moveAllToPool"
+        >
+          <FolderPlus class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.addCurrentPageShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!canPublish"
+          :title="locale.publishOnly"
+          @click="publishSchedule"
+        >
+          <Send class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.publishScheduleShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="refreshingAllDurations.running"
+          :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
+          @click="refreshAllDurations"
+        >
+          <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': refreshingAllDurations.running }" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.refreshPageDurationsShort }}</span>
+        </button>
+        <button
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
+          :title="locale.autoSchedule"
+          @click="openAutoScheduleDialog"
+        >
+          <Sparkles class="w-4 h-4" />
+          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.autoScheduleShort }}</span>
         </button>
       </div>
     </div>
+
+    <!-- 主要操作 -->
+    <button
+      :disabled="!hasChanges"
+      class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+      @click="saveSequence"
+    >
+      <FileBadge class="w-4 h-4" />
+      <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveAndPublishShort }}</span>
+    </button>
   </div>
 
   <!-- 确认对话框 -->
@@ -1165,6 +1230,20 @@
           class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-info transition-colors"
           type="date"
         />
+        <template v-if="playTimeEnabled">
+          <CustomSelect
+            v-model="moveSourcePlayTime"
+            :label="locale.moveSourcePlayTime"
+            :options="moveSourcePlayTimeOptions"
+            class-name="w-full"
+          />
+          <CustomSelect
+            v-model="moveTargetPlayTime"
+            :label="locale.moveTargetPlayTime"
+            :options="moveTargetPlayTimeOptions"
+            class-name="w-full"
+          />
+        </template>
         <div class="flex gap-3">
           <button
             class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
@@ -1553,6 +1632,23 @@
           </div>
 
           <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
+              {{ locale.heatWeightLabel }} · {{ autoScheduleHeatWeight }}%
+            </label>
+            <input
+              v-model.number="autoScheduleHeatWeight"
+              class="w-full accent-[var(--primary)]"
+              max="100"
+              min="0"
+              step="5"
+              type="range"
+            >
+            <p class="mt-1.5 text-[10px] text-text-tertiary leading-relaxed">
+              {{ locale.heatWeightDesc(autoScheduleHeatWeight) }}
+            </p>
+          </div>
+
+          <div>
             <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.scheduleAlgorithm }}</label>
             <div class="flex gap-2">
               <button
@@ -1656,7 +1752,7 @@
               >
                 <img
                   v-if="song.cover"
-                  :src="convertToHttps(song.cover)"
+                  :src="getCoverThumbUrl(song.cover)"
                   class="w-full h-full object-cover"
                   referrerpolicy="no-referrer"
                   loading="lazy"
@@ -1889,11 +1985,13 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { convertToHttps, getNeteaseCookie } from '~/utils/url'
+import { convertToHttps, getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
+import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
@@ -1918,8 +2016,11 @@ const locale = computed(() => {
       ...(base.errors || {})
     },
     confirmations: {
-      moveDateMessage: (sourceDate, count, targetDate) =>
-        `确定将 ${sourceDate} 的所有 ${count} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
+      moveDateMessage: (sourceDate, count, targetDate, sourcePlayTimeLabel, targetPlayTimeLabel) =>
+        `确定将 ${sourceDate}（${sourcePlayTimeLabel || '全部时段'}）的所有 ${count} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel || '保持原时段'}）吗？歌曲顺序与内容将保持不变。`,
+      moveDateAppendMessage: (targetDate, targetPlayTimeLabel) =>
+        `目标日期 ${targetDate}（${targetPlayTimeLabel || '保持原时段'}）已存在排期，迁移的歌曲将追加在已有歌曲之后。是否继续？`,
+      moveDateAppendConfirm: '继续追加',
       publishDraftMessage: (title) =>
         `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
       ...(base.confirmations || {})
@@ -2328,6 +2429,14 @@ const autoScheduleTargetMinutes = ref(null)
 const autoScheduleTargetSongCount = ref(null)
 const autoScheduleTargetRequesterCount = ref(null)
 const autoScheduleDirection = ref('under')
+/** 热度加权随机的热度权重（%）：80 = 80% 看热度、20% 随机（默认值，可在界面随时调） */
+const autoScheduleHeatWeight = ref(80)
+/** 转成 0~1，并夹在合理范围内 */
+const heatWeightRatio = () => {
+  const value = Number(autoScheduleHeatWeight.value)
+  if (!Number.isFinite(value)) return 0.8
+  return Math.min(1, Math.max(0, value / 100))
+}
 const autoScheduleFixExisting = ref(false)
 const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
 const autoSchedulePlans = ref([])
@@ -2403,6 +2512,8 @@ const filteredPoolSongs = computed(() => {
 })
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
+const moveSourcePlayTime = ref('')
+const moveTargetPlayTime = ref('')
 const showCopyDateDialog = ref(false)
 const copyMode = ref('single')
 const copyFromStart = ref('')
@@ -2677,6 +2788,36 @@ const playTimeOptions = computed(() => {
   return options
 })
 
+// 迁移弹窗：源时段选项（全部时段 / 指定时段）
+const moveSourcePlayTimeOptions = computed(() => {
+  const options = [{ label: locale.value.allPlayTimes || '全部时段', value: '' }]
+  if (playTimes.value) {
+    playTimes.value.forEach((pt) => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
+
+// 迁移弹窗：目标时段选项（保持不变 / 指定时段）
+const moveTargetPlayTimeOptions = computed(() => {
+  const options = [{ label: locale.value.keepOriginalPlayTime || '保持原时段', value: '' }]
+  if (playTimes.value) {
+    playTimes.value.forEach((pt) => {
+      let label = pt.name
+      if (pt.startTime || pt.endTime) {
+        label += ` (${formatPlayTimeRange(pt)})`
+      }
+      options.push({ label, value: pt.id })
+    })
+  }
+  return options
+})
+
 // 排序选项
 const sortOptions = computed(() => [
   { label: locale.value?.sortOptions?.newest || 'Newest', value: 'time-desc' },
@@ -2716,6 +2857,14 @@ const currentPage = computed({
   }
 })
 const pageSize = ref(10)
+
+// 管理员扩展信息：仅管理员在待排歌曲列表显示投稿平台与投稿统计
+const { currentLocale } = useLocale()
+const platformTagClass = (platform) => BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin'
+const platformLabel = (platform) => getPlatformDisplayName(platform, null, currentLocale.value)
+
+// 卡片已在姓名后单独展示年级/班级，去掉重名消歧的括号后缀避免重复
+const stripDisambiguationSuffix = (name) => (name || '').replace(/（[^（）]*）$/, '')
 
 // 服务
 let songsService = null
@@ -3066,7 +3215,9 @@ const updateScrollButtonState = () => {
 // 确认对话框处理
 const handleConfirm = async () => {
   if (confirmAction.value) {
-    await confirmAction.value()
+    // action 返回 'keepOpen' 表示已在内部重新配置对话框（二级确认），保持打开且不清空 action
+    const result = await confirmAction.value()
+    if (result === 'keepOpen') return
   }
   showConfirmDialog.value = false
   confirmAction.value = null
@@ -3523,7 +3674,7 @@ const loadData = async () => {
     // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
     // 并行加载数据
     await Promise.all([
-      songsService.fetchSongs(false, semester, true),
+      songsService.fetchSongs({ semester, forceRefresh: true }),
       songsService.fetchPublicSchedules(false, undefined, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表
@@ -4127,7 +4278,7 @@ const runAutoSchedule = () => {
   const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
     ? Math.floor(autoScheduleTargetRequesterCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount)
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount, heatWeightRatio())
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
@@ -4159,7 +4310,7 @@ const generateMorePlans = async () => {
   const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
     ? Math.floor(autoScheduleTargetRequesterCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount)
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount, heatWeightRatio())
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
   let addedCount = 0
@@ -4767,6 +4918,8 @@ const openMoveDateDialog = () => {
   }
 
   moveTargetDate.value = selectedDate.value
+  moveSourcePlayTime.value = selectedPlayTime.value || ''
+  moveTargetPlayTime.value = ''
   showMoveDateDialog.value = true
 }
 
@@ -4795,6 +4948,8 @@ const switchCopyMode = (mode) => {
 
 const confirmMoveDate = async () => {
   const targetDate = moveTargetDate.value.trim()
+  const sourcePlayTimeId = moveSourcePlayTime.value || ''
+  const targetPlayTimeId = moveTargetPlayTime.value || ''
 
   if (!parseDateValue(targetDate)) {
     if (window.$showNotification) {
@@ -4806,17 +4961,26 @@ const confirmMoveDate = async () => {
     return
   }
 
-  if (targetDate === selectedDate.value) {
+  const sourceDate = selectedDate.value
+  const changingDate = targetDate !== sourceDate
+  // 目标时段需与源时段实质不同才算变更：同日且目标时段等于源时段（或源为全部时段时目标未指定）是无效操作
+  const changingPlayTime = targetPlayTimeId !== '' && targetPlayTimeId !== sourcePlayTimeId
+
+  if (!changingDate && !changingPlayTime) {
     if (window.$showNotification) {
       window.$showNotification(locale.value.errors.sameTargetDate, 'warning')
     }
     return
   }
 
-  const sourceDate = selectedDate.value
+  // 源排期：按日期 + 源时段过滤
   const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
     if (!schedule.playDate) return false
-    return getScheduleDateValue(schedule.playDate) === sourceDate
+    if (getScheduleDateValue(schedule.playDate) !== sourceDate) return false
+    if (sourcePlayTimeId) {
+      return String(schedule.playTimeId) === String(sourcePlayTimeId)
+    }
+    return true
   })
 
   if (sourceSchedules.length === 0) {
@@ -4826,27 +4990,41 @@ const confirmMoveDate = async () => {
     return
   }
 
-  confirmDialogTitle.value = locale.value.moveDateTitle
-  confirmDialogMessage.value = callLocale(
-    'confirmations.moveDateMessage',
-    `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
-    sourceDate,
-    sourceSchedules.length,
-    targetDate
-  )
-  confirmDialogType.value = 'warning'
-  confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
-  showMoveDateDialog.value = false
+  // 构建确认文案
+  const sourcePlayTimeLabel = sourcePlayTimeId
+    ? getPlayTimeName(Number(sourcePlayTimeId))
+    : (locale.value.allPlayTimes || '全部时段')
+  const targetPlayTimeLabel = targetPlayTimeId
+    ? getPlayTimeName(Number(targetPlayTimeId))
+    : (locale.value.keepOriginalPlayTime || '保持原时段')
 
-  confirmAction.value = async () => {
+  // 目标日期/时段是否已有排期：迁移歌曲将被追加到末尾，需要二级确认
+  const movedScheduleIds = new Set(sourceSchedules.map((s) => s.id))
+  const landingSlots = new Set(
+    targetPlayTimeId
+      ? [String(targetPlayTimeId)]
+      : sourceSchedules.map((s) => String(s.playTimeId ?? ''))
+  )
+  const targetOccupied = [...publicSchedules.value, ...drafts.value].some((schedule) => {
+    if (!schedule.playDate) return false
+    if (movedScheduleIds.has(schedule.id)) return false
+    if (getScheduleDateValue(schedule.playDate) !== targetDate) return false
+    return landingSlots.has(String(schedule.playTimeId ?? ''))
+  })
+
+  const executeMove = async () => {
     loading.value = true
     try {
+      const body = {
+        fromDate: sourceDate,
+        toDate: targetDate
+      }
+      if (sourcePlayTimeId) body.fromPlayTimeId = Number(sourcePlayTimeId)
+      if (targetPlayTimeId) body.toPlayTimeId = Number(targetPlayTimeId)
+
       const result = await $fetch('/api/admin/schedule/move-date', {
         method: 'POST',
-        body: {
-          fromDate: sourceDate,
-          toDate: targetDate
-        },
+        body,
         ...auth.getAuthConfig()
       })
 
@@ -4854,17 +5032,27 @@ const confirmMoveDate = async () => {
       updateLocalScheduledSongs()
 
       if (window.$showNotification) {
-        window.$showNotification(
-          result?.movedCount > 0
-            ? callLocale(
-                'messages.moveDateSuccess',
-                `已迁移 ${result.movedCount} 首歌曲到 ${targetDate}`,
-                result.movedCount,
-                targetDate
-              )
-            : locale.value.errors.noMovableSongs,
-          result?.movedCount > 0 ? 'success' : 'warning'
-        )
+        const moved = result?.movedCount || 0
+        const skipped = result?.skippedCount || 0
+        if (moved > 0) {
+          const base = callLocale(
+            'messages.moveDateSuccess',
+            `已迁移 ${moved} 首歌曲到 ${targetDate}`,
+            moved,
+            targetDate
+          )
+          const msg = skipped > 0
+            ? `${base}（${callLocale('messages.moveDateSkipped', `跳过 ${skipped} 首重复歌曲`, skipped)}）`
+            : base
+          window.$showNotification(msg, 'success')
+        } else if (skipped > 0) {
+          window.$showNotification(
+            callLocale('messages.moveDateAllSkipped', `目标位置已存在这些歌曲，全部跳过（${skipped} 首）`, skipped),
+            'warning'
+          )
+        } else {
+          window.$showNotification(locale.value.errors.noMovableSongs, 'warning')
+        }
       }
     } catch (error) {
       console.error('迁移排期日期失败:', error)
@@ -4879,6 +5067,38 @@ const confirmMoveDate = async () => {
     } finally {
       loading.value = false
     }
+  }
+
+  confirmDialogTitle.value = locale.value.moveDateTitle
+  confirmDialogMessage.value = callLocale(
+    'confirmations.moveDateMessage',
+    `确定将 ${sourceDate}（${sourcePlayTimeLabel}）的 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate}（${targetPlayTimeLabel}）吗？歌曲顺序与内容将保持不变。`,
+    sourceDate,
+    sourceSchedules.length,
+    targetDate,
+    sourcePlayTimeLabel,
+    targetPlayTimeLabel
+  )
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
+  showMoveDateDialog.value = false
+
+  confirmAction.value = async () => {
+    // 目标已有排期时先做二级确认：询问是否追加到已有歌曲之后
+    if (targetOccupied) {
+      confirmDialogTitle.value = locale.value.moveDateTitle
+      confirmDialogMessage.value = callLocale(
+        'confirmations.moveDateAppendMessage',
+        `目标日期 ${targetDate}（${targetPlayTimeLabel}）已存在排期，迁移的歌曲将追加在已有歌曲之后。是否继续？`,
+        targetDate,
+        targetPlayTimeLabel
+      )
+      confirmDialogType.value = 'warning'
+      confirmDialogConfirmText.value = locale.value.confirmations.moveDateAppendConfirm
+      confirmAction.value = executeMove
+      return 'keepOpen'
+    }
+    await executeMove()
   }
 
   showConfirmDialog.value = true
@@ -5197,9 +5417,22 @@ const refreshDrafts = async () => {
   updateLocalScheduledSongs() // 更新播放顺序列表
 }
 
-// 保存草稿（无需确认）
+// 当前日期下仍绑定具体播出时段的排期数量（已发布 + 草稿）
+const getUnspecifiedPlayTimeWarningCount = () => {
+  if (!playTimeEnabled.value || selectedPlayTime.value) return 0
+
+  const targetDate = selectedDate.value
+  const dateSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
+    if (!schedule?.playDate) return false
+    return getScheduleDateValue(schedule.playDate) === targetDate
+  })
+
+  return countSchedulesWithPlayTime(dateSchedules)
+}
+
+// 保存草稿（有丢失播出时段风险时需要二次确认）
 // songs 数组顺序即播放顺序，服务端在同一事务内完成旧排期删除与草稿写入
-const saveDraft = async () => {
+const saveDraftConfirmed = async () => {
   loading.value = true
 
   try {
@@ -5243,9 +5476,40 @@ const saveDraft = async () => {
   }
 }
 
+// 保存草稿入口：未选播出时段且当天已有带时段排期时先弹危险确认
+const saveDraft = async () => {
+  const warningCount = getUnspecifiedPlayTimeWarningCount()
+  if (localScheduledSongs.value.length > 0 && warningCount > 0) {
+    confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
+    confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimeDraftWarning(warningCount)
+    confirmDialogType.value = 'danger'
+    confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimeDraftConfirm
+    confirmAction.value = async () => {
+      await saveDraftConfirmed()
+    }
+    showConfirmDialog.value = true
+    return
+  }
+
+  await saveDraftConfirmed()
+}
+
 // 发布排期（需要确认）
 const publishSchedule = async () => {
   try {
+    const warningCount = getUnspecifiedPlayTimeWarningCount()
+    if (localScheduledSongs.value.length > 0 && warningCount > 0) {
+      confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
+      confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount)
+      confirmDialogType.value = 'danger'
+      confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimePublishConfirm
+      confirmAction.value = async () => {
+        await publishScheduleConfirmed()
+      }
+      showConfirmDialog.value = true
+      return
+    }
+
     // 如果列表为空，提示删除排期
     if (localScheduledSongs.value.length === 0) {
       confirmDialogTitle.value = locale.value.confirmations.deleteScheduleTitle
@@ -5702,4 +5966,15 @@ const handleTouchReturnToDraggable = async () => {
   position: absolute;
   width: 100%;
 }
+
+/* 管理员扩展信息：投稿平台标签 */
+.platform-tag {
+  font-size: 9px;
+  font-weight: 500;
+}
+.platform-netease { color: #c3484d; }
+.platform-tencent { color: #2f9e63; }
+.platform-bilibili { color: #d96f9b; }
+.platform-migu { color: #d97a2f; }
+.platform-plugin { color: var(--overlay-40); }
 </style>

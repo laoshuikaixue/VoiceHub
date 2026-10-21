@@ -4,7 +4,8 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { createAuthSession } from '~~/server/utils/auth-session'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import {
-  isAccountLocked,
+  getIPBlockRemainingTime,
+  isIPBlocked,
   isUserBlocked,
   getUserBlockRemainingTime,
   recordLoginFailure,
@@ -46,9 +47,10 @@ export default defineEventHandler(async (event) => {
 
   const clientIp = getClientIP(event)
 
-  // 验证用户凭据
-  if (await isAccountLocked(username)) {
-    throw createApiError(423, 'AUTH_ACCOUNT_LOCKED', '账户已被锁定，请稍后重试')
+  // 验证用户凭据：与登录同口径，来源 IP 被封锁时拒绝
+  if (await isIPBlocked(clientIp)) {
+    const remainingTime = await getIPBlockRemainingTime(clientIp)
+    throw createApiError(423, 'AUTH_IP_BLOCKED_RETRY_MINUTES', `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
   }
 
   const user = await db.query.users.findFirst({

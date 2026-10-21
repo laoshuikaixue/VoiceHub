@@ -1,6 +1,7 @@
 # .github/workflows/build-fpk.yml
 # VoiceHub 飞牛 fnOS FPK 安装包自动构建
-# 手动触发，版本号自动从 package.json 读取
+# push main / 手动触发，版本号自动从 package.json 读取；
+# 同时作为可复用工作流被 release.yml 调用（workflow_call，可传入版本号覆盖）
 
 name: Build VoiceHub FPK
 
@@ -9,22 +10,34 @@ on:
     branches:
       - main
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: 'FPK 版本号（不传则读取 package.json）'
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   build-fpk:
-    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: 读取版本号 & 安装 fnpack
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
-          # 读取原始版本号
-          ORIGINAL_VER=$(node -p "require('./package.json').version")
+          # 优先使用传入版本号，否则读取 package.json
+          if [ -n "$VERSION_INPUT" ]; then
+            ORIGINAL_VER="$VERSION_INPUT"
+          else
+            ORIGINAL_VER=$(node -p "require('./package.json').version")
+          fi
           echo "📦 原始版本: $ORIGINAL_VER"
           
           # 转换为三段式版本号 (x.y.zw 格式，将第四段拼接到第三段)

@@ -511,7 +511,7 @@ import AuthOAuthQuickLogin from './OAuthQuickLogin.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
-import { ESA_CAPTCHA_VERIFY_HEADER, getEsaCaptchaRejectCode, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
+import { ESA_CAPTCHA_VERIFY_HEADER, ESA_CAPTCHA_PASS_HEADER, getEsaCaptchaRejectCode, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 
 const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
@@ -537,23 +537,25 @@ const captchaInput = ref('')
 const captchaRef = ref(null)
 const turnstileToken = ref('')
 const turnstileRef = ref(null)
-// 阿里云 ESA AI 验证码：验签参数由前端 SDK 产出，随请求头交给 ESA 边缘验签
+// ESA AI 验证码：验签参数由前端 SDK 产出，先提交公共验证接口换取短期通过凭证，凭证再随业务请求提交
 const esaVerifyParam = ref('')
+const esaPassToken = ref('')
 const esaCaptchaRef = ref(null)
 const esaButtonSelector = '#auth-submit-button'
-// 一条 ESA 规则只覆盖一个接口，登录与注册需按当前模式各自的场景 ID 初始化
+// 验证码统一走公共验证接口，场景按当前域名解析（不再区分登录/注册）
 // SSR 阶段无域名，仅能命中「任意域名」规则
 const esaSceneId = computed(() =>
   resolveEsaCaptchaSceneId(
     esaCaptchaScenes.value,
-    showRegisterMode.value ? 'register' : 'login',
+    'common',
     import.meta.client ? window.location.hostname : ''
   )
 )
 
-// 验签参数一次性有效且与场景绑定，切换登录/注册时丢弃旧参数
+// 验签参数一次性有效、凭证绑定登录/注册用途，切换模式时一并丢弃
 watch(showRegisterMode, () => {
   esaVerifyParam.value = ''
+  esaPassToken.value = ''
 })
 
 const showCaptcha = computed(() => {
@@ -845,6 +847,29 @@ const ensureEsaCaptchaVerified = () => {
   return !!esaVerifyParam.value
 }
 
+// 用一次性验签参数向公共验证接口 /api/captcha/verify 换取短期通过凭证，再随 login/register 提交
+// 未开启人机验证时接口返回 required:false，无需凭证直接放行；被边缘拦截或验证失败则刷新验证码重来
+const ensureEsaPassToken = async (purpose) => {
+  if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  if (esaPassToken.value) return true
+  try {
+    const res = await $fetch('/api/captcha/verify', {
+      method: 'POST',
+      headers: { [ESA_CAPTCHA_VERIFY_HEADER]: esaVerifyParam.value },
+      body: { purpose }
+    })
+    if (res?.required && res?.passToken) esaPassToken.value = res.passToken
+    return true
+  } catch (err) {
+    // 被 ESA 边缘拦截时按原因码提示，否则本地化服务端错误
+    if (!applyEsaCaptchaRejectError(err)) {
+      error.value = localizeServerError(err, locale.value.loginFailed)
+    }
+    esaCaptchaRef.value?.reset?.()
+    return false
+  }
+}
+
 const handleLogin = async () => {
   if (requireLegalConsent()) return
   if (!username.value || !password.value) {
@@ -891,6 +916,11 @@ const handleLogin = async () => {
 
   if (!ensureEsaCaptchaVerified()) return
 
+  // ESA 真实登录先换取凭证（bind 接口不校验人机验证，不走此路径）
+  if (!isBindMode.value && captchaProvider.value === 'esa' && showCaptcha.value) {
+    if (!(await ensureEsaPassToken('login'))) return
+  }
+
   await performLogin()
 }
 
@@ -909,13 +939,13 @@ const performLogin = async () => {
     username: username.value,
     password: password.value
   }
-  // 图形验证码与 Turnstile 走请求体；ESA 验签参数走请求头，供 ESA 边缘读取
+  // 图形验证码与 Turnstile 走请求体；ESA 走换取到的短期通过凭证请求头
   const requestHeaders = {}
   if (showCaptcha.value) {
     if (captchaProvider.value === 'turnstile') {
       requestBody.turnstileToken = turnstileToken.value
     } else if (captchaProvider.value === 'esa') {
-      requestHeaders[ESA_CAPTCHA_VERIFY_HEADER] = esaVerifyParam.value
+      if (esaPassToken.value) requestHeaders[ESA_CAPTCHA_PASS_HEADER] = esaPassToken.value
     } else {
       requestBody.captchaId = captchaId.value
       requestBody.captchaInput = captchaInput.value.trim()
@@ -973,6 +1003,7 @@ const performLogin = async () => {
       if (captchaProvider.value === 'turnstile') {
         turnstileRef.value?.reset?.()
       } else if (captchaProvider.value === 'esa') {
+        esaPassToken.value = ''
         esaCaptchaRef.value?.reset?.()
       } else {
         captchaRef.value?.refreshCaptcha?.()
@@ -1167,13 +1198,19 @@ const handleRegister = async () => {
       requestBody.legalConsentAccepted = legalConsentDisplayMode.value === 'modal' || loginTermsAccepted.value === true
       requestBody.legalConsentVersion = legalConsentVersion.value
     }
-    // 图形验证码与 Turnstile 走请求体；ESA 验签参数走请求头，供 ESA 边缘读取
+
+    // ESA 注册先换取短期通过凭证（与登录不同用途，不可复用）
+    if (captchaProvider.value === 'esa' && showCaptcha.value) {
+      if (!(await ensureEsaPassToken('register'))) return
+    }
+
+    // 图形验证码与 Turnstile 走请求体；ESA 走换取到的短期通过凭证请求头
     const requestHeaders = {}
     if (showCaptcha.value) {
       if (captchaProvider.value === 'turnstile') {
         requestBody.turnstileToken = turnstileToken.value
       } else if (captchaProvider.value === 'esa') {
-        requestHeaders[ESA_CAPTCHA_VERIFY_HEADER] = esaVerifyParam.value
+        if (esaPassToken.value) requestHeaders[ESA_CAPTCHA_PASS_HEADER] = esaPassToken.value
       } else {
         requestBody.captchaId = captchaId.value
         requestBody.captchaInput = captchaInput.value.trim()
@@ -1215,6 +1252,7 @@ const handleRegister = async () => {
       if (captchaProvider.value === 'turnstile') {
         turnstileRef.value?.reset?.()
       } else if (captchaProvider.value === 'esa') {
+        esaPassToken.value = ''
         esaCaptchaRef.value?.reset?.()
       } else {
         captchaRef.value?.refreshCaptcha?.()

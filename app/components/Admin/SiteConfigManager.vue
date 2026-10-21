@@ -420,6 +420,47 @@
               </div>
             </div>
           </div>
+
+          <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+            <div class="flex items-center justify-between p-3">
+              <div class="pr-4">
+                <p class="text-xs font-bold text-text-primary">{{ locale.enableGlobalLimit }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">
+                  {{ locale.enableGlobalLimitDesc }}
+                </p>
+              </div>
+              <input
+                v-model="formData.enableGlobalSubmissionLimit"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+
+            <div
+              v-if="formData.enableGlobalSubmissionLimit"
+              class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-3"
+            >
+              <div v-for="period in globalLimitPeriods" :key="period.key">
+                <label :class="labelClass">{{ locale[period.labelKey] }}</label>
+                <div class="relative">
+                  <input
+                    v-model.number="formData[period.key]"
+                    type="number"
+                    min="0"
+                    :placeholder="locale.globalLimitUnlimited"
+                    :class="[inputClass, 'placeholder:text-text-disabled']"
+                  />
+                  <span
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+                    >{{ locale.globalLimitUnit }}</span
+                  >
+                </div>
+              </div>
+              <p class="text-[10px] text-text-tertiary leading-relaxed">
+                {{ locale.globalLimitHint }}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -638,8 +679,7 @@
                       </button>
                     </div>
                     <div class="space-y-2">
-                      <div class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
-                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaEndpoint }}</span>
+                      <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
                         <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaHost }}</span>
                         <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaSceneId }}</span>
                         <span aria-hidden="true" />
@@ -647,17 +687,8 @@
                       <div
                         v-for="(scene, index) in formData.esaCaptchaScenes"
                         :key="index"
-                        class="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
+                        class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
                       >
-                        <div class="min-w-0">
-                          <CustomSelect
-                            v-model="scene.endpoint"
-                            :options="esaEndpointOptions"
-                            :disabled="!formData.captchaEnabled"
-                          />
-                          <!-- 该行路径可直接粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
-                          <code class="block mt-1 truncate text-[10px] text-text-tertiary">{{ esaEndpointPath(scene.endpoint) }}</code>
-                        </div>
                         <input
                           v-model="scene.host"
                           type="text"
@@ -682,8 +713,13 @@
                         </button>
                       </div>
                     </div>
+                    <!-- 域名路径供管理员粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
                     <p class="text-[10px] text-text-tertiary leading-relaxed mt-2">
                       {{ locale.esaCaptchaScenesDesc }}
+                    </p>
+                    <code class="block mt-1 text-[10px] text-text-tertiary">{{ ESA_CAPTCHA_VERIFY_PATH }}</code>
+                    <p v-if="esaCaptchaStaleDetected" class="text-[10px] text-warning leading-relaxed mt-2">
+                      {{ locale.esaCaptchaStaleNotice }}
                     </p>
                   </div>
                   <div>
@@ -714,6 +750,53 @@
                   <p class="text-[10px] text-text-tertiary leading-relaxed">
                     {{ locale.esaCaptchaDesc }}
                   </p>
+
+                  <!-- ESA 连通性测试：走一次真实人机验证，确认规则、公共接口与凭证签发是否可用 -->
+                  <div class="pt-1">
+                    <label class="block text-xs font-bold text-text-tertiary">{{ locale.esaCaptchaTest }}</label>
+                    <p class="text-[10px] text-text-tertiary leading-relaxed mt-1">{{ locale.esaCaptchaTestDesc }}</p>
+                    <p v-if="esaTestUnsaved" class="text-[10px] text-warning leading-relaxed mt-1">{{ locale.esaCaptchaTestUnsaved }}</p>
+
+                    <div
+                      v-if="!esaTestReady"
+                      class="mt-2 flex items-start gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2"
+                    >
+                      <AlertCircle :size="14" class="mt-0.5 shrink-0 text-text-tertiary" />
+                      <span class="text-[10px] text-text-tertiary leading-relaxed">{{ locale.esaCaptchaTestNotReady }}</span>
+                    </div>
+
+                    <template v-else>
+                      <button
+                        id="esa-test-button"
+                        type="button"
+                        class="mt-2 inline-flex items-center gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary transition-all hover:border-primary"
+                        @click="onEsaTestButtonClick"
+                      >
+                        <Shield :size="14" /> {{ locale.esaCaptchaTestButton }}
+                      </button>
+                      <EsaCaptchaWidget
+                        :key="esaTestSceneId"
+                        ref="esaTestRef"
+                        v-model="esaTestVerifyParam"
+                        :scene-id="esaTestSceneId"
+                        button-selector="#esa-test-button"
+                        @verified="runEsaCaptchaTest"
+                        @failed="handleEsaTestFailed"
+                        @load-error="handleEsaTestLoadError"
+                      />
+                    </template>
+
+                    <div
+                      v-if="esaTestState !== 'idle'"
+                      class="mt-2 flex items-start gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2"
+                      :class="esaTestStateClass"
+                    >
+                      <AppSpinner v-if="esaTestState === 'waiting' || esaTestState === 'testing'" :size="14" class="mt-0.5 shrink-0" />
+                      <CircleCheck v-else-if="esaTestState === 'success'" :size="14" class="mt-0.5 shrink-0" />
+                      <AlertCircle v-else :size="14" class="mt-0.5 shrink-0" />
+                      <span class="text-[10px] leading-relaxed">{{ esaTestDetail }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -827,6 +910,19 @@
 
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.allowAnonymousSubmission }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowAnonymousSubmissionDesc }}</p>
+            </div>
+            <input
+              id="allow-anonymous-submission"
+              v-model="formData.allowAnonymousSubmission"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.telemetryEnabled }}</p>
               <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
                 {{ locale.telemetryEnabledDesc }} <strong class="text-text-tertiary">{{ locale.telemetryPrivacy }}</strong>
@@ -918,7 +1014,13 @@
             </div>
             <p class="legal-setting-hint">{{ formData.legalConsentDisplayMode === 'modal' ? locale.legalConsentModalHint : locale.legalConsentCheckboxHint }}</p>
           </div>
-          <div class="legal-date-field"><label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label><input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" class="mt-2"><p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p></div>
+          <div class="legal-date-field">
+            <label :class="labelClass">{{ locale.legalConsentUpdatedDate }}</label>
+            <div class="legal-date-input-wrap mt-2">
+              <input v-model="formData.legalConsentUpdatedDate" type="date" :class="inputClass" />
+            </div>
+            <p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p>
+          </div>
         </div>
         <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
@@ -939,7 +1041,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   Globe,
   ImageIcon,
@@ -959,19 +1061,27 @@ import {
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import EsaCaptchaWidget from '~/components/Auth/EsaCaptchaWidget.vue'
 import { useToast } from '~/composables/useToast'
 import { joinThemeLogoUrl, splitThemeLogoUrl, useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
-import { ESA_CAPTCHA_ANY_HOST, ESA_CAPTCHA_ENDPOINT_PATHS, ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
+import {
+  ESA_CAPTCHA_ANY_HOST,
+  ESA_CAPTCHA_VERIFY_PATH,
+  ESA_CAPTCHA_VERIFY_HEADER,
+  getEsaCaptchaRejectCode,
+  parseEsaCaptchaScenes,
+  resolveEsaCaptchaSceneId
+} from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
-const { refreshSiteConfig } = useSiteConfig()
+const { refreshSiteConfig, captchaEnabled, captchaProvider, esaCaptchaScenes } = useSiteConfig()
 const { siteConfig: locale, theme: themeLocale } = useLocale()
 const { isSuperAdmin } = usePermissions()
 const { localize: localizeServerError } = useServerErrors()
@@ -1084,30 +1194,33 @@ const parseLegalDocuments = (value) => {
   }
 }
 
-// ESA 场景 ID 规则：一条 ESA 规则只覆盖一个接口 + 一个域名，登录与注册需分别登记
-const createEsaCaptchaScene = (endpoint = 'login') => ({
+// ESA 场景统一绑定公共验证接口 /api/captcha/verify，按域名成组配置（endpoint 固定 common）
+const createEsaCaptchaScene = (endpoint = 'common') => ({
   endpoint,
   host: ESA_CAPTCHA_ANY_HOST,
   sceneId: ''
 })
+// 旧版按接口（login/register）存储的场景在新口径下已失效，需提示管理员重建
+const esaCaptchaStaleDetected = ref(false)
 const parseEsaScenes = (value) => {
-  const scenes = parseEsaCaptchaScenes(value)
+  let rawArr = []
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    if (Array.isArray(parsed)) rawArr = parsed
+  } catch {
+    rawArr = []
+  }
+  const scenes = parseEsaCaptchaScenes(value).map((scene) => ({ ...scene, endpoint: 'common' }))
+  esaCaptchaStaleDetected.value = rawArr.some(
+    (item) => item && item.endpoint && item.endpoint !== 'common' && item.sceneId
+  )
   return scenes.length > 0 ? scenes : [createEsaCaptchaScene()]
 }
-const esaEndpointOptions = computed(() => {
-  const labels = {
-    login: locale.value?.esaCaptchaEndpointLogin,
-    register: locale.value?.esaCaptchaEndpointRegister
-  }
-  return ESA_CAPTCHA_ENDPOINTS.map((endpoint) => ({ value: endpoint, label: labels[endpoint] || endpoint }))
-})
 const esaSceneInputClass =
   'w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50'
-// 接口对应的服务端路径，与 ESA 控制台「需验签的接口」逐字对应
-const esaEndpointPath = (endpoint) => ESA_CAPTCHA_ENDPOINT_PATHS[endpoint] || ''
 
 const addEsaCaptchaScene = () => {
-  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene('register'))
+  formData.value.esaCaptchaScenes.push(createEsaCaptchaScene())
 }
 
 const removeEsaCaptchaScene = (index) => {
@@ -1117,6 +1230,133 @@ const removeEsaCaptchaScene = (index) => {
   }
   formData.value.esaCaptchaScenes.splice(index, 1)
 }
+
+// ESA 连通性测试：复用登录页的验证码组件走一次真实人机验证，再调用公共接口换取凭证，
+// 以此确认「已保存并生效」的 ESA 配置、公共验证接口与凭证签发链路是否可用（测试值来自全局配置而非表单草稿）
+const esaTestRef = ref(null)
+const esaTestVerifyParam = ref('')
+const esaTestState = ref('idle')
+const esaTestDetail = ref('')
+
+// 场景按当前访问域名从已保存配置解析，与登录页判据完全一致
+const esaTestSceneId = computed(() =>
+  resolveEsaCaptchaSceneId(
+    esaCaptchaScenes.value,
+    'common',
+    import.meta.client ? window.location.hostname : ''
+  )
+)
+const esaTestReady = computed(
+  () => captchaEnabled.value && captchaProvider.value === 'esa' && !!esaTestSceneId.value
+)
+// 表单里改了 ESA 相关项但尚未保存时提示：此刻点按钮测试的仍是上一次保存的配置
+const esaTestUnsaved = computed(() => {
+  const saved = originalData.value
+  if (!saved || !saved.esaCaptchaScenes) return false
+  return (
+    saved.captchaEnabled !== formData.value.captchaEnabled ||
+    saved.captchaProvider !== formData.value.captchaProvider ||
+    saved.esaCaptchaPrefix !== formData.value.esaCaptchaPrefix ||
+    saved.esaCaptchaRegion !== formData.value.esaCaptchaRegion ||
+    JSON.stringify(saved.esaCaptchaScenes) !== JSON.stringify(formData.value.esaCaptchaScenes)
+  )
+})
+const esaTestStateClass = computed(
+  () =>
+    (
+      {
+        success: 'text-success',
+        failed: 'text-error',
+        waiting: 'text-text-tertiary',
+        testing: 'text-text-tertiary',
+        notRequired: 'text-text-tertiary'
+      }
+    )[esaTestState.value] || 'text-text-tertiary'
+)
+
+// 验签参数一次性有效，测试结束后作废，便于再次测试
+const resetEsaTest = () => {
+  esaTestRef.value?.reset?.()
+  esaTestVerifyParam.value = ''
+}
+
+// 同一次测试尝试内一旦 SDK 报错即置位，阻止随后可能到来的 verified 把失败翻转为通过
+let esaTestFailedThisAttempt = false
+
+// 点击测试按钮进入等待态：必须先在弹窗中真正完成人机验证，验证成功回调后才判定通过
+const onEsaTestButtonClick = () => {
+  if (!esaTestReady.value) return
+  esaTestFailedThisAttempt = false
+  esaTestState.value = 'waiting'
+  esaTestDetail.value =
+    locale.value?.esaCaptchaTestWaiting || '请在弹出的人机验证中完成验证，成功后才会判定通过…'
+}
+
+const runEsaCaptchaTest = async (param) => {
+  // 只接受「点击后等待验证」状态下 SDK 回调；未经点击或本次尝试已报错时忽略，杜绝无交互即判通过
+  if (esaTestState.value !== 'waiting' || esaTestFailedThisAttempt) return
+  // 必须拿到 SDK 产出的一次性验签参数，空参数说明验证并未真正完成
+  if (!param) {
+    esaTestState.value = 'failed'
+    esaTestDetail.value =
+      locale.value?.esaCaptchaTestNoParam || '未获取到验签参数，人机验证并未真正完成，请重试'
+    return
+  }
+  esaTestState.value = 'testing'
+  esaTestDetail.value = locale.value?.esaCaptchaTestTesting || '验证中，正在签发凭证…'
+  try {
+    const res = await $fetch('/api/captcha/verify', {
+      method: 'POST',
+      headers: { [ESA_CAPTCHA_VERIFY_HEADER]: param },
+      body: { purpose: 'login' }
+    })
+    // 本次尝试已被 SDK 报错中断时不写回成功，保持失败结论
+    if (esaTestFailedThisAttempt) return
+    if (res?.required && res?.passToken) {
+      esaTestState.value = 'success'
+      esaTestDetail.value =
+        locale.value?.esaCaptchaTestSuccess || '人机验证通过，公共验证接口可用，凭证签发正常'
+    } else {
+      esaTestState.value = 'notRequired'
+      esaTestDetail.value =
+        locale.value?.esaCaptchaTestNotRequired ||
+        '当前配置未触发人机验证（未启用、非 ESA，或本域名无匹配场景）'
+    }
+  } catch (err) {
+    if (esaTestFailedThisAttempt) return
+    // 被 ESA 边缘拦截时按响应头原因码提示，否则本地化服务端错误
+    const code = getEsaCaptchaRejectCode(err)
+    esaTestState.value = 'failed'
+    esaTestDetail.value = code
+      ? `${locale.value?.esaCaptchaTestRejected || '请求被 ESA 边缘拦截，原因码：'}${code}`
+      : localizeServerError(err, locale.value?.esaCaptchaTestFailed || '测试未通过，请检查配置后重试')
+  } finally {
+    resetEsaTest()
+  }
+}
+
+const handleEsaTestFailed = () => {
+  // 已得出成功/结论后忽略迟到的失败回调，避免闪烁；等待或验证进行中立即判失败
+  if (esaTestState.value === 'success' || esaTestState.value === 'notRequired') return
+  esaTestFailedThisAttempt = true
+  esaTestState.value = 'failed'
+  esaTestDetail.value = locale.value?.esaCaptchaTestVerifyFailed || '人机验证未通过，请重新完成验证'
+}
+
+const handleEsaTestLoadError = () => {
+  if (esaTestState.value === 'success' || esaTestState.value === 'notRequired') return
+  esaTestFailedThisAttempt = true
+  esaTestState.value = 'failed'
+  esaTestDetail.value =
+    locale.value?.esaCaptchaTestLoadFailed || '人机验证组件加载失败，请检查身份标与区域后刷新重试'
+}
+
+// 场景或可用性变化时清空上一次结论，避免残留的「通过」误导
+watch([esaTestSceneId, esaTestReady], () => {
+  esaTestState.value = 'idle'
+  esaTestDetail.value = ''
+  esaTestFailedThisAttempt = false
+})
 
 const formData = ref({
   siteTitle: '',
@@ -1147,12 +1387,17 @@ const formData = ref({
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
+  enableGlobalSubmissionLimit: false,
+  globalDailySubmissionLimit: null,
+  globalWeeklySubmissionLimit: null,
+  globalMonthlySubmissionLimit: null,
   scheduleDaysBeforeEnabled: false,
   scheduleDaysBefore: 1,
   scheduleDaysAfterEnabled: false,
   scheduleDaysAfter: 1,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  allowAnonymousSubmission: false,
   forcePasswordChangeOnFirstLogin: false,
   telemetryEnabled: true,
   captchaEnabled: false,
@@ -1250,6 +1495,22 @@ const currentLimitLabel = computed(() => {
   return `${locale.value?.limitLabelPrefix || '当前启用：'}${limitTypeLabel || '未设置限额'}${locale.value?.limitLabelSuffix || '投稿限制'}`
 })
 
+// 全站投稿总量限额的三个周期，相互独立、可叠加生效
+const globalLimitPeriods = [
+  { key: 'globalDailySubmissionLimit', labelKey: 'dailyLimit' },
+  { key: 'globalWeeklySubmissionLimit', labelKey: 'weeklyLimit' },
+  { key: 'globalMonthlySubmissionLimit', labelKey: 'monthlyLimit' }
+]
+
+// 留空表示该周期不限制；非法值原样提交交服务端校验，前端取整会把 0.5 变成 0（该周期停止投稿）
+const normalizeGlobalSubmissionLimit = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null
+  }
+  const num = Number(value)
+  return Number.isNaN(num) ? null : num
+}
+
 // 加载配置
 const loadConfig = async () => {
   try {
@@ -1294,12 +1555,17 @@ const loadConfig = async () => {
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
+      enableGlobalSubmissionLimit: !!data.enableGlobalSubmissionLimit,
+      globalDailySubmissionLimit: data.globalDailySubmissionLimit ?? null,
+      globalWeeklySubmissionLimit: data.globalWeeklySubmissionLimit ?? null,
+      globalMonthlySubmissionLimit: data.globalMonthlySubmissionLimit ?? null,
       scheduleDaysBeforeEnabled: data.scheduleDaysBeforeEnabled === true,
       scheduleDaysBefore: data.scheduleDaysBefore ?? 1,
       scheduleDaysAfterEnabled: data.scheduleDaysAfterEnabled === true,
       scheduleDaysAfter: data.scheduleDaysAfter ?? 1,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      allowAnonymousSubmission: data.allowAnonymousSubmission === true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
       telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,
@@ -1398,6 +1664,17 @@ const saveConfig = async () => {
         activeLimitTab.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
       monthlySubmissionLimit:
         activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null,
+      // 全站总量限额按周期独立提交，留空提交 null
+      enableGlobalSubmissionLimit: !!formData.value.enableGlobalSubmissionLimit,
+      globalDailySubmissionLimit: normalizeGlobalSubmissionLimit(
+        formData.value.globalDailySubmissionLimit
+      ),
+      globalWeeklySubmissionLimit: normalizeGlobalSubmissionLimit(
+        formData.value.globalWeeklySubmissionLimit
+      ),
+      globalMonthlySubmissionLimit: normalizeGlobalSubmissionLimit(
+        formData.value.globalMonthlySubmissionLimit
+      ),
       ...(isSuperAdmin.value
         ? {
             defaultTheme: formData.value.defaultTheme,
@@ -1424,7 +1701,7 @@ const saveConfig = async () => {
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
-
+        // 统一走 localize：按错误码查词典得到当前语言的具体文案，避免英文界面泄漏中文
         message = localizeServerError(errorData, locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
@@ -1433,10 +1710,21 @@ const saveConfig = async () => {
     }
 
     saveSuccess.value = true
+    // 读取后端返回的权威设置（含自动补全的北京时间条款日期），避免前端自行按本地时区补日期
+    let savedSettings = null
+    try {
+      savedSettings = await response.json()
+    } catch {
+      savedSettings = null
+    }
     formData.value = {
       ...formData.value,
       siteTitle: configToSave.siteTitle,
-      siteLogoUrl: configToSave.siteLogoUrl
+      siteLogoUrl: configToSave.siteLogoUrl,
+      legalConsentUpdatedDate:
+        savedSettings && typeof savedSettings.legalConsentUpdatedDate === 'string'
+          ? savedSettings.legalConsentUpdatedDate
+          : formData.value.legalConsentUpdatedDate
     }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
@@ -1545,5 +1833,30 @@ input[type='number'] {
 .legal-mode-option { min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12px; line-height:1; }
 .legal-mode-option svg { width:14px; height:14px; flex:0 0 14px; }
 .legal-setting-hint { margin-top:10px; font-size:11px; line-height:1.6; }
-.legal-date-field { min-width:0; } .legal-date-field input { width:100%; } .legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; } @media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
+.legal-date-field { min-width:0; }
+.legal-date-input-wrap { position: relative; width: 100%; }
+.legal-date-input-wrap :deep(input[type="date"]) {
+  width: 100%;
+  color: var(--text-primary);
+}
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-fields-wrapper),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-text),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-month-field),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-day-field),
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-datetime-edit-year-field) {
+  color: var(--text-primary);
+}
+/* 日历图标：深色主题下 UA 默认黑色图标在深色背景不可见，仅此时刷白；浅色主题保留默认黑色 */
+.legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator) {
+  cursor: pointer;
+  opacity: 1;
+}
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator),
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]::-webkit-calendar-picker-indicator:hover),
+:root[data-theme='ClassicDark'] .legal-date-input-wrap :deep(input[type="date"]:focus::-webkit-calendar-picker-indicator) {
+  filter: brightness(0) invert(1);
+}
+.legal-consent-panel > .grid { grid-template-columns:minmax(0,1fr) 240px; }
+@media (max-width:640px){.legal-consent-panel > .grid{grid-template-columns:1fr}}
 </style>

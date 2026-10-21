@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
   apiKeys,
@@ -22,6 +23,7 @@ import {
   songs,
   systemSettings,
   users,
+  astrbotBindings,
   userIdentities,
   userStatusLogs,
   gradeClass,
@@ -69,10 +71,12 @@ export default defineEventHandler(async (event) => {
         query: async () => {
           const usersData = await db.select().from(users)
           const settingsData = await db.select().from(notificationSettings)
+          const bindingData = await db.select().from(astrbotBindings)
 
           // 手动关联通知设置
           return usersData.map((user) => ({
             ...user,
+            astrbotBindings: bindingData.filter((binding) => binding.userId === user.id),
             notificationSettings: settingsData.filter((setting) => setting.userId === user.id)
           }))
         },
@@ -561,10 +565,8 @@ export default defineEventHandler(async (event) => {
     console.log(`✅ 备份完成: ${filename}`)
     console.log(`📊 总计备份 ${totalRecords} 条记录`)
 
-    // 检测运行环境
-    const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
-    const isNetlify = process.env.NETLIFY
-    const isServerless = isVercel || isNetlify
+    // 检测运行环境（与连接池等处共用一份判定）
+    const isServerless = isServerlessRuntime()
 
     if (isServerless) {
       // 在无服务器环境中，直接返回备份数据供前端下载

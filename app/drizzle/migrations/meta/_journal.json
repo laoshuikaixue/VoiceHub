@@ -369,8 +369,29 @@
     {
       "idx": 52,
       "version": "7",
+      "when": 1790488086779,
+      "tag": "20260927054806_add_astrbot_notification",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
       "when": 1790499770823,
       "tag": "20260927090250_auto-migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791966443301,
+      "tag": "20261014082723_global_submission_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792242270895,
+      "tag": "20261017130430_add_submission_anonymous",
       "breakpoints": true
     }
   ]

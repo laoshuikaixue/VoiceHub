@@ -95,7 +95,7 @@
                 <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-tertiary mr-4 flex-shrink-0">
                   <img
                     v-if="playlist.coverImgUrl"
-                    :src="convertToHttps(playlist.coverImgUrl)"
+                    :src="getCoverThumbUrl(playlist.coverImgUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -159,7 +159,7 @@
                   @click="playSong(song)"
                 >
                   <img
-                    :src="convertToHttps(song.al?.picUrl)"
+                    :src="getCoverThumbUrl(song.al?.picUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -284,7 +284,7 @@ import {
   getQqUserPlaylists,
   QQ_FAV_PLAYLIST_ID
 } from '~/utils/qqUserLibrary'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import Icon from '../UI/Icon.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
@@ -324,7 +324,7 @@ const offset = ref(0)
 const hasMore = ref(true)
 const moreLoading = ref(false)
 
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
@@ -519,7 +519,7 @@ watch(
         songsLoadingForSimilar.value = true
         const currentSemesterName = currentSemester.value?.name
         songService
-          .fetchSongs(true, currentSemesterName)
+          .fetchSongs({ silent: true, semester: currentSemesterName })
           .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })

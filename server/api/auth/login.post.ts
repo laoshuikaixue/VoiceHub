@@ -3,9 +3,7 @@ import { getRequestHeader } from 'h3'
 import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
-  getAccountLockRemainingTime,
   getIPBlockRemainingTime,
-  isAccountLocked,
   isIPBlocked,
   recordLoginFailure,
   recordLoginSuccess,
@@ -18,10 +16,8 @@ import {
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
-import { getRequestHostname } from '~~/server/utils/request-utils'
-import { resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
+import { verifyEsaCaptchaPass } from '~~/server/utils/esa-captcha-pass'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
-import { ALIYUN_ESA_CAPTCHA_VERIFY_HEADER } from '~~/server/config/constants'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
@@ -59,12 +55,6 @@ export default defineEventHandler(async (event) => {
     if (await isIPBlocked(clientIp)) {
       const remainingTime = await getIPBlockRemainingTime(clientIp)
       throw createApiError(423, 'AUTH_IP_BLOCKED_RETRY_MINUTES', `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
-    }
-
-    // 检查账户是否被锁定
-    if (await isAccountLocked(body.username)) {
-      const remainingTime = await getAccountLockRemainingTime(body.username)
-      throw createApiError(423, 'AUTH_ACCOUNT_LOCKED_MINUTES', `账户已被锁定，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
     }
 
     // 读取验证码配置并判断是否需要验证码（阈值 0 = 每次必验；用户名/IP 任一维度达标即要求）
@@ -108,13 +98,9 @@ export default defineEventHandler(async (event) => {
           throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
         }
       } else if (captchaSettings.provider === 'esa') {
-        // ESA 验签在边缘完成，源站无服务端验签接口，只能判断验签参数是否随请求到达
-        // 前提：源站必须只接受 ESA 回源流量，否则直连源站即可附带任意请求头绕过验证
-        // 当前接口+域名未配置可用场景 ID 时，边缘不会拦截该请求，视为未开启人机验证，不拦截登录
-        const esaSceneId = resolveEsaCaptchaSceneId(captchaSettings.esaScenes, 'login', getRequestHostname(event))
-        if (esaSceneId && !getRequestHeader(event, ALIYUN_ESA_CAPTCHA_VERIFY_HEADER)) {
-          throw createApiError(400, 'AUTH_CAPTCHA_REQUIRED', '请完成人机验证', { captchaRequired: true, captchaProvider: 'esa' })
-        }
+        // ESA 验签在边缘对公共验证接口 /api/captcha/verify 完成，通过后源站签发短期凭证；
+        // 此处校验凭证（绑定用途与签发域名）。当前域名无可用场景 ID 时视为未开启人机验证，不拦截登录
+        verifyEsaCaptchaPass(event, captchaSettings.esaScenes, 'login')
       } else {
         captchaId = body.captchaId
         captchaInput = body.captchaInput
@@ -173,8 +159,6 @@ export default defineEventHandler(async (event) => {
       throw createApiError(403, 'AUTH_ACCOUNT_WITHDRAWN', '该账号已退学，限制访问')
     } else if (user.status === 'graduate') {
       throw createApiError(403, 'AUTH_ACCOUNT_GRADUATED', '该账号已毕业，限制访问')
-    } else if (user.status === 'banned') {
-      throw createApiError(403, 'AUTH_ACCOUNT_BANNED', '该账号已被封禁')
     } else if (user.status === 'pending') {
       throw createApiError(403, 'AUTH_USER_PENDING_APPROVAL', '账号待管理员审核，请耐心等待')
     } else if (user.status === 'rejected') {

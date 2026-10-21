@@ -2,8 +2,11 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
+import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
 import { parseLegalConsentDocuments } from '~~/server/utils/legal-consent'
+import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
@@ -19,6 +22,14 @@ import {
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
+import { normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
+import {
+  ASTRBOT_GROUP_EVENT_KEYS,
+  normalizeAstrbotGroupEvents,
+  normalizeAstrbotGroupTargets,
+  normalizeAstrbotGroupThrottle
+} from '~~/server/utils/astrbot-group'
+import { ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 import { ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 
 /**
@@ -226,6 +237,16 @@ export default defineEventHandler(async (event) => {
       updateData.hideStudentInfo = body.hideStudentInfo
     }
 
+    if (body.allowAnonymousSubmission !== undefined) {
+      if (typeof body.allowAnonymousSubmission !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowAnonymousSubmission 必须是布尔值'
+        })
+      }
+      updateData.allowAnonymousSubmission = body.allowAnonymousSubmission
+    }
+
     if (body.enablePlayTimeSelection !== undefined) {
       if (typeof body.enablePlayTimeSelection !== 'boolean') {
         throw createError({
@@ -288,28 +309,44 @@ export default defineEventHandler(async (event) => {
       if (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款更新日期格式无效')
       updateData.legalConsentUpdatedDate = date
     }
+    // 协议文档：提交时先做结构校验（非法 JSON / 非数组拒绝），再序列化落库
+    let normalizedLegalConsentDocuments: unknown
+    if (body.legalConsentDocuments !== undefined) {
+      let docs
+      try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }
+      if (!Array.isArray(docs)) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_INVALID, '协议文档配置无效')
+      normalizedLegalConsentDocuments = docs
+      updateData.legalConsentDocuments = JSON.stringify(docs)
+    }
+
     // 交叉校验：启用条款确认时（合并提交值与持久化值后）必须存在更新日期与合法的协议文档
     const legalConsentEffectiveEnabled =
       body.legalConsentEnabled !== undefined ? body.legalConsentEnabled === true : settings?.legalConsentEnabled === true
     if (legalConsentEffectiveEnabled) {
       const finalUpdatedDate =
         body.legalConsentUpdatedDate !== undefined ? updateData.legalConsentUpdatedDate : settings?.legalConsentUpdatedDate
-      if (!finalUpdatedDate) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须填写条款更新日期')
-      const finalDocsRaw =
-        body.legalConsentDocuments !== undefined ? updateData.legalConsentDocuments : settings?.legalConsentDocuments
-      const finalDocs = parseLegalConsentDocuments(finalDocsRaw)
-      const docsInvalid =
-        !finalDocs.length ||
-        finalDocs.some((d) => !d?.name?.trim() || !d?.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d?.slug || '')) ||
-        new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length
-      if (docsInvalid) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用条款确认时必须配置合法的协议文档')
-    }
-    if (body.legalConsentDocuments !== undefined) {
-      let docs
-      try { docs = typeof body.legalConsentDocuments === 'string' ? JSON.parse(body.legalConsentDocuments) : body.legalConsentDocuments } catch { docs = null }
-      const effectiveEnabled = body.legalConsentEnabled !== undefined ? body.legalConsentEnabled : settings?.legalConsentEnabled === true
-      if (!Array.isArray(docs) || (effectiveEnabled && (!docs.length || docs.some((d) => !d || !d.name?.trim() || !d.content?.trim() || !/^[A-Za-z0-9_-]+$/.test(d.slug || '')) || new Set(docs.map((d) => d.slug)).size !== docs.length))) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '协议文档配置无效')
-      updateData.legalConsentDocuments = JSON.stringify(docs)
+      if (!finalUpdatedDate) {
+        // 仅在本次请求显式操作条款字段时才自动补当天（北京时间），避免无关的部分保存静默改写条款版本
+        const explicitLegalConsentSubmit = body.legalConsentEnabled === true || body.legalConsentUpdatedDate !== undefined
+        if (!explicitLegalConsentSubmit) {
+          throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DATE_MISSING, '启用条款确认时必须填写条款更新日期')
+        }
+        updateData.legalConsentUpdatedDate = formatDateTime(getBeijingTime(), 'YYYY-MM-DD')
+      }
+      const finalDocs = parseLegalConsentDocuments(
+        normalizedLegalConsentDocuments !== undefined ? normalizedLegalConsentDocuments : settings?.legalConsentDocuments
+      )
+      const truncateName = (name: unknown): string => {
+        const s = typeof name === 'string' ? name.trim() : ''
+        return s.length > 30 ? `${s.slice(0, 30)}…` : s
+      }
+      if (!finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_EMPTY, '启用条款确认时至少需要配置一份协议文档')
+      for (const doc of finalDocs) {
+        if (!doc?.name?.trim()) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_NAME_MISSING, '协议文档名称不能为空')
+        if (!doc?.content?.trim()) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_CONTENT_MISSING, `协议文档「${truncateName(doc.name)}」的内容不能为空`, { params: [truncateName(doc.name)] })
+        if (!/^[A-Za-z0-9_-]+$/.test(doc?.slug || '')) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_SLUG_INVALID, `协议文档「${truncateName(doc.name)}」的标识只能包含字母、数字、下划线和连字符`, { params: [truncateName(doc.name)] })
+      }
+      if (new Set(finalDocs.map((d) => d.slug)).size !== finalDocs.length) throw createApiError(400, SERVER_ERROR_CODES.SETTINGS_LEGAL_CONSENT_DOC_SLUG_DUPLICATE, '协议文档标识不能重复')
     }
 
     if (body.statisticsCodeEnabled !== undefined) {
@@ -337,6 +374,16 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
+    }
+
+    if (body.enableGlobalSubmissionLimit !== undefined) {
+      if (typeof body.enableGlobalSubmissionLimit !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableGlobalSubmissionLimit 必须是布尔值'
+        })
+      }
+      updateData.enableGlobalSubmissionLimit = body.enableGlobalSubmissionLimit
     }
 
     // 点歌券点歌相关设置
@@ -458,6 +505,22 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
+    }
+
+    // 全站总量限额的三个周期可叠加生效，各自独立校验
+    for (const field of [
+      'globalDailySubmissionLimit',
+      'globalWeeklySubmissionLimit',
+      'globalMonthlySubmissionLimit'
+    ] as const) {
+      if (body[field] === undefined) continue
+      if (body[field] !== null && (!Number.isInteger(body[field]) || body[field] < 0)) {
+        throw createError({
+          statusCode: 400,
+          message: `${field} 必须是非负整数或null`
+        })
+      }
+      updateData[field] = body[field]
     }
 
     if (body.scheduleDaysBeforeEnabled !== undefined) {
@@ -615,26 +678,12 @@ export default defineEventHandler(async (event) => {
         )
       }
 
-      // 一条 ESA 规则只覆盖一个接口，登录接口无场景 ID 时登录页无法初始化验证码
-      if (!nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'login')) {
+      // 验证码统一走公共验证接口 /api/captcha/verify，无任何场景 ID 时前端无法初始化验证码
+      if (nextEsaCaptchaScenes.length === 0) {
         throw createApiError(
           400,
           SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
-          '启用阿里云 ESA AI 验证码前，请先为登录接口配置场景 ID'
-        )
-      }
-
-      // 注册入口开启时，注册接口需有自己独立的 ESA 规则与场景 ID
-      const nextAllowRegister =
-        body.allowRegister !== undefined ? body.allowRegister : settings?.allowRegister
-      if (
-        nextAllowRegister === true &&
-        !nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'register')
-      ) {
-        throw createApiError(
-          400,
-          SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
-          '开放用户注册时，请为注册接口配置场景 ID，或先关闭注册入口'
+          '启用阿里云 ESA AI 验证码前，请先为公共验证接口配置至少一个场景 ID'
         )
       }
     }
@@ -774,6 +823,100 @@ export default defineEventHandler(async (event) => {
 
     if (body.smtpFromName !== undefined) {
       updateData.smtpFromName = body.smtpFromName
+    }
+
+    // AstrBot 推送通道配置；密钥从不回显明文。
+    if (body.astrbotEnabled !== undefined) {
+      if (typeof body.astrbotEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'astrbotEnabled 必须是布尔值')
+      }
+      updateData.astrbotEnabled = body.astrbotEnabled
+    }
+    if (body.astrbotPlatforms !== undefined) {
+      const platforms = body.astrbotPlatforms
+      const keys = ASTRBOT_PLATFORMS
+      if (!platforms || typeof platforms !== 'object' || Array.isArray(platforms) ||
+        Object.keys(platforms).length !== keys.length ||
+        !keys.every((key) => typeof platforms[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人平台开关格式无效')
+      }
+      updateData.astrbotPlatforms = Object.fromEntries(keys.map((key) => [key, platforms[key]]))
+    }
+    if (body.astrbotBroadcastEnabled !== undefined) {
+      if (typeof body.astrbotBroadcastEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊推送开关必须是布尔值')
+      }
+      updateData.astrbotBroadcastEnabled = body.astrbotBroadcastEnabled
+    }
+    // 群目标白名单：每条显式标注平台归属，逐项规范化后保存（非法项丢弃而非整批拒绝，
+    // 管理员录入的一处笔误不应让整份配置无法保存）。
+    if (body.astrbotGroupTargets !== undefined) {
+      const targets = normalizeAstrbotGroupTargets(body.astrbotGroupTargets)
+      if (!targets) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊推送目标必须是数组')
+      }
+      const dropped = body.astrbotGroupTargets.length - targets.length
+      if (dropped > 0) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          `有 ${dropped} 条群聊目标格式无效（需为「平台实例:GroupMessage:群号」，且平台受支持、不重复）`)
+      }
+      updateData.astrbotGroupTargets = targets
+    }
+    if (body.astrbotGroupEvents !== undefined) {
+      const events = body.astrbotGroupEvents
+      if (!events || typeof events !== 'object' || Array.isArray(events) ||
+        !ASTRBOT_GROUP_EVENT_KEYS.every((key) => typeof (events as Record<string, unknown>)[key] === 'boolean')) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊事件开关格式无效')
+      }
+      updateData.astrbotGroupEvents = normalizeAstrbotGroupEvents(events)
+    }
+    if (body.astrbotGroupThrottle !== undefined) {
+      const throttle = body.astrbotGroupThrottle
+      if (!throttle || typeof throttle !== 'object' || Array.isArray(throttle) ||
+        typeof (throttle as Record<string, unknown>).mergeWindowSeconds !== 'number' ||
+        typeof (throttle as Record<string, unknown>).minIntervalSeconds !== 'number') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '群聊节流参数格式无效')
+      }
+      updateData.astrbotGroupThrottle = normalizeAstrbotGroupThrottle(throttle)
+    }
+    if (body.astrbotPushMode !== undefined) {
+      if (!['push', 'pull'].includes(body.astrbotPushMode)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '推送方向只能是 push 或 pull')
+      }
+      updateData.astrbotPushMode = body.astrbotPushMode
+    }
+    if (body.astrbotWeeklyConfig !== undefined) {
+      const config = body.astrbotWeeklyConfig
+      if (!isValidAstrbotWeeklyConfigInput(config)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '本周歌单显示项格式无效')
+      }
+      updateData.astrbotWeeklyConfig = normalizeAstrbotWeeklyConfig(config)
+    }
+    if (body.astrbotBaseUrl !== undefined) {
+      if (typeof body.astrbotBaseUrl !== 'string' || body.astrbotBaseUrl.length > 2048) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址无效')
+      }
+      const value = body.astrbotBaseUrl.trim() ? normalizeAstrbotBaseUrl(body.astrbotBaseUrl) : null
+      if (body.astrbotBaseUrl.trim() && !value) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人地址必须为无凭证的 HTTP(S) 根地址')
+      }
+      updateData.astrbotBaseUrl = value || null
+    }
+    if (body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK) {
+      if (typeof body.astrbotToken !== 'string' || body.astrbotToken.length > 512) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '机器人令牌无效')
+      }
+      updateData.astrbotToken = body.astrbotToken.trim() || null
+    }
+    if (body.astrbotEnabled ?? settings?.astrbotEnabled) {
+      const token = body.astrbotToken !== undefined && body.astrbotToken !== SECRET_FIELD_MASK
+        ? updateData.astrbotToken : settings?.astrbotToken
+      const baseUrl = body.astrbotBaseUrl !== undefined ? updateData.astrbotBaseUrl : settings?.astrbotBaseUrl
+      const mode = body.astrbotPushMode ?? settings?.astrbotPushMode
+      if (!token || (!isAstrbotPullMode(mode) && !baseUrl)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          isAstrbotPullMode(mode) ? '请先配置机器人令牌' : '请先配置机器人服务地址和令牌')
+      }
     }
 
     // OAuth 配置字段

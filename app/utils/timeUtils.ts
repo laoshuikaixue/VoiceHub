@@ -133,6 +133,12 @@ export function getBeijingEndOfWeek(date?: Date): Date {
   return startOfWeek.add(6, 'day').endOf('day').toDate()
 }
 
+/** 北京时间星期标签，供排期展示统一使用。 */
+export function getBeijingWeekdayLabel(date: Date): string {
+  const labels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return labels[dayjs(date).tz(BEIJING_TIMEZONE).day()] ?? ''
+}
+
 /**
  * 获取"北京时间本月开始"对应的真实 UTC 时间
  */

@@ -32,6 +32,10 @@ COPY . .
 # 构建应用
 RUN pnpm run build
 
+# server 目录不在任何 tsconfig include 中，引用不存在的字段/方法（db.$transaction、
+# users.lastLoginAt 这类）只有运行时才暴露；构建后按白名单闸门检查，新增即让镜像构建失败
+RUN node scripts/typecheck-server.js
+
 # ==========================================
 # 第二阶段：运行阶段
 # ==========================================
@@ -64,7 +68,13 @@ RUN set -eux; \
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/app/drizzle ./app/drizzle
+# db.ts 运行时依赖该模块（tsx 直跑源码），缺失会导致 migrate/create-admin 报 ERR_MODULE_NOT_FOUND
+COPY --from=builder /app/server/utils/serverless-runtime.ts ./server/utils/
 COPY --from=builder /app/scripts ./scripts
+
+# .output 内的 esbuild 打包副本是构建平台（amd64）二进制，非 amd64 镜像里目标平台包缺失会导致
+# 运行时生成插件 prelude 失败；运行阶段已按目标架构安装 esbuild，删除副本让其回落到 /app/node_modules
+RUN rm -rf .output/server/node_modules/esbuild .output/server/node_modules/@esbuild
 
 # 环境变量配置
 ENV NODE_ENV=production \

@@ -135,7 +135,8 @@ import {
   Database,
   Lock,
   Ticket,
-  GraduationCap
+  GraduationCap,
+  Activity
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
@@ -200,7 +201,7 @@ const menuGroups = computed(() => [
     section: locale.value.sections?.system || '系统设置',
     items: [
       { icon: Bell, label: locale.value.menu?.notifications || '通知管理', id: 'notifications' },
-      { icon: Mail, label: locale.value.menu?.smtpConfig || 'SMTP 配置', id: 'smtp-config' },
+      { icon: Mail, label: locale.value.menu?.smtpConfig || '推送配置', id: 'smtp-config' },
       { icon: Clock, label: locale.value.menu?.playtimes || '播放时段', id: 'playtimes' },
       { icon: FileEdit, label: locale.value.menu?.requestTimes || '点歌时段', id: 'request-times' },
       { icon: BookOpen, label: locale.value.menu?.semesters || '学期管理', id: 'semesters' },
@@ -208,7 +209,8 @@ const menuGroups = computed(() => [
       { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
       { icon: ListMusic, label: locale.value.menu?.musicSource || '音源控制', id: 'music-source' },
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
-      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' }
+      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' },
+      { icon: Activity, label: locale.value.menu?.systemBoard || '系统看板', id: 'system-board' }
     ]
   },
   {

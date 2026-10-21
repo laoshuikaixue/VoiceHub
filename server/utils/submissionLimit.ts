@@ -108,3 +108,92 @@ export async function isLimitReached(
 ): Promise<boolean> {
   return (await getSubmissionCount(dbOrTx, userId, type, options)) >= limit
 }
+
+export type GlobalSubmissionLimit = {
+  type: LimitType
+  limit: number
+}
+
+type GlobalSubmissionLimitSettings = {
+  enableGlobalSubmissionLimit?: boolean | null
+  globalDailySubmissionLimit?: number | null
+  globalWeeklySubmissionLimit?: number | null
+  globalMonthlySubmissionLimit?: number | null
+}
+
+/**
+ * 解析生效的全站投稿总量限额。三个周期相互独立、可叠加生效，
+ * 值为 null 表示该周期不限制。
+ */
+export function getActiveGlobalSubmissionLimits(
+  settings: GlobalSubmissionLimitSettings | null | undefined
+): GlobalSubmissionLimit[] {
+  if (!settings?.enableGlobalSubmissionLimit) {
+    return []
+  }
+
+  const candidates: Array<[LimitType, number | null | undefined]> = [
+    ['daily', settings.globalDailySubmissionLimit],
+    ['weekly', settings.globalWeeklySubmissionLimit],
+    ['monthly', settings.globalMonthlySubmissionLimit]
+  ]
+
+  return candidates
+    .filter(([, limit]) => limit !== null && limit !== undefined)
+    .map(([type, limit]) => ({ type, limit: limit as number }))
+}
+
+/**
+ * 获取全站（不区分用户）在指定周期内的投稿总量
+ */
+export async function getGlobalSubmissionCount(
+  dbOrTx: typeof db,
+  type: LimitType
+): Promise<number> {
+  const { start, end } = getTimeRange(type)
+
+  const [result] = await dbOrTx
+    .select({ count: count() })
+    .from(songs)
+    .where(and(gte(songs.createdAt, start), lte(songs.createdAt, end)))
+
+  return result?.count || 0
+}
+
+/**
+ * 查找首个已达成的全站限额（含限额为 0 的完全关闭情形）
+ * @returns 已达成的限额；全部未达上限时返回 null
+ */
+export async function findReachedGlobalSubmissionLimit(
+  dbOrTx: typeof db,
+  settings: GlobalSubmissionLimitSettings | null | undefined
+): Promise<GlobalSubmissionLimit | null> {
+  for (const activeLimit of getActiveGlobalSubmissionLimits(settings)) {
+    if ((await getGlobalSubmissionCount(dbOrTx, activeLimit.type)) >= activeLimit.limit) {
+      return activeLimit
+    }
+  }
+
+  return null
+}
+
+/**
+ * 在已持有全局锁的事务内，判断再写入 addCount 首是否会突破任一生效的全站限额。
+ * 用于批量写入（如往期导入）预留名额，防止一次插入多首绕过上限。
+ * addCount 为 1 时等价于 findReachedGlobalSubmissionLimit 的判定。
+ * @returns 会被突破的限额；均不突破时返回 null
+ */
+export async function findExceededGlobalSubmissionLimit(
+  dbOrTx: typeof db,
+  settings: GlobalSubmissionLimitSettings | null | undefined,
+  addCount: number
+): Promise<GlobalSubmissionLimit | null> {
+  for (const activeLimit of getActiveGlobalSubmissionLimits(settings)) {
+    const currentCount = await getGlobalSubmissionCount(dbOrTx, activeLimit.type)
+    if (currentCount + addCount > activeLimit.limit) {
+      return activeLimit
+    }
+  }
+
+  return null
+}

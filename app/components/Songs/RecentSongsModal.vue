@@ -85,7 +85,7 @@
                   class="relative w-14 h-14 rounded-xl overflow-hidden bg-bg-tertiary flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300"
                 >
                   <img
-                    :src="convertToHttps(item.data?.al?.picUrl)"
+                    :src="getCoverThumbUrl(item.data?.al?.picUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -220,7 +220,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { getRecentSongs } from '~/utils/neteaseApi'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
@@ -254,7 +254,7 @@ const error = ref('')
 const submitting = ref(false)
 const selectedSongId = ref(null)
 
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
@@ -337,7 +337,7 @@ watch(
         songsLoadingForSimilar.value = true
         const currentSemesterName = currentSemester.value?.name
         songService
-          .fetchSongs(true, currentSemesterName)
+          .fetchSongs({ silent: true, semester: currentSemesterName })
           .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })

@@ -1,10 +1,15 @@
 name: Nix CI
 
 on:
+  # push 仅在非文档变更时跑，纯文档提交跳过以节省 CI 分钟数；
+  # pull_request 不过滤，保证分支保护的必需检查每次都存在
   push:
-    branches: [main, master]
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
   pull_request:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -15,6 +20,7 @@ jobs:
   nix-check:
     name: 构建校验与 pnpmDeps 哈希同步
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: write
 
@@ -28,15 +34,16 @@ jobs:
 
     steps:
       - name: 检出触发代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.CHECKOUT_REF }}
+          fetch-depth: 0
 
       - name: 安装 Nix
         uses: DeterminateSystems/determinate-nix-action@v3
 
       - name: 配置 Cachix 二进制缓存
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: voicehub
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -69,18 +76,7 @@ jobs:
           echo "::notice::检测到 pnpmDeps 哈希过期，正在计算新哈希"
 
           # 置空哈希后重建，从 Nix 的哈希不匹配报错中取真实哈希
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("flake.nix")
-          text = path.read_text(encoding="utf-8")
-          marker = "pnpmDeps = pkgs.fetchPnpmDeps {"
-          start = text.index(marker)
-          key = 'hash = "'
-          hash_start = text.index(key, start) + len(key)
-          hash_end = text.index('"', hash_start)
-          path.write_text(text[:hash_start] + text[hash_end:], encoding="utf-8")
-          PY
+          python3 scripts/ci-update-pnpm-hash.py --empty
 
           if nix build .#voicehub --no-link --print-build-logs 2>&1 | tee "$hash_log"; then
             echo "::error::空哈希下构建意外成功，无法提取新的 pnpmDeps 哈希。"
@@ -94,20 +90,7 @@ jobs:
             exit 1
           fi
 
-          HASH="$new_hash" python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          new_hash = os.environ["HASH"]
-          path = Path("flake.nix")
-          text = path.read_text(encoding="utf-8")
-          marker = "pnpmDeps = pkgs.fetchPnpmDeps {"
-          start = text.index(marker)
-          key = 'hash = "'
-          hash_start = text.index(key, start) + len(key)
-          hash_end = text.index('"', hash_start)
-          path.write_text(text[:hash_start] + new_hash + text[hash_end:], encoding="utf-8")
-          PY
+          python3 scripts/ci-update-pnpm-hash.py --set "$new_hash"
 
           if git diff --quiet -- flake.nix; then
             echo "::error::计算出的哈希与现有值相同，构建失败与哈希无关。"
@@ -155,3 +138,45 @@ jobs:
 
       - name: 运行 nix flake check
         run: nix flake check
+
+      - name: 求值 NixOS 模块冒烟检查
+        # flake check 不实例化 systemd.services，模块字段拼写与脚本转义错误要到真机才暴露；
+        # 这里求值关键字段并构建启动脚本做关键字断言（秒级，不构建完整包）
+        shell: bash
+        run: |
+          set -euo pipefail
+          export FLAKE_REF="git+file://${GITHUB_WORKSPACE}"
+          expr_file="${RUNNER_TEMP}/nixos-module-smoke.nix"
+          cat > "$expr_file" <<'EOF'
+          let
+            f = builtins.getFlake (builtins.getEnv "FLAKE_REF");
+            pkgs = import f.inputs.nixpkgs { system = "x86_64-linux"; };
+            pkg = f.outputs.packages.x86_64-linux.default;
+            cfg = {
+              enable = true;
+              port = 3000;
+              host = "0.0.0.0";
+              package = pkg;
+              database = { createLocally = true; name = "voicehub"; user = "voicehub"; host = "/run/postgresql"; };
+              environmentFile = null;
+              extraEnvironment = { };
+              runDeployScript = true;
+              openFirewall = false;
+            };
+            mod = f.outputs.nixosModules.default { config = { services.voicehub = cfg; }; lib = pkgs.lib; pkgs = pkgs; };
+          in
+          mod.config.content.systemd.services.voicehub
+          EOF
+
+          [ "$(nix eval --impure --file "$expr_file" serviceConfig.WorkingDirectory --raw)" = "-/var/lib/voicehub" ] \
+            || { echo "::error::WorkingDirectory 不是 -/var/lib/voicehub"; exit 1; }
+          [ "$(nix eval --impure --file "$expr_file" serviceConfig.StateDirectory --raw)" = "voicehub" ] \
+            || { echo "::error::StateDirectory 不是 voicehub"; exit 1; }
+
+          script="$(nix build --impure --file "$expr_file" serviceConfig.ExecStart --print-out-paths --no-link | tail -n 1)"
+          for keyword in 'ln -sfT' 'STATE_DIRECTORY' 'PGHOST' 'node scripts/deploy.js'; do
+            grep -qF "$keyword" "$script" || { echo "::error::启动脚本缺关键字: $keyword"; exit 1; }
+          done
+          # pnpm run 依赖 PATH 中的 sh，bash 被移出 makeBinPath 时启动脚本会以 exit -2 静默死亡
+          grep -qE 'export PATH="[^"]*bash' "$script" || { echo "::error::启动脚本 PATH 缺少 bash"; exit 1; }
+          echo "✅ NixOS 模块冒烟检查通过"

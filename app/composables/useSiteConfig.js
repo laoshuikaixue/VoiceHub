@@ -94,6 +94,13 @@ const getImageDisplayUrl = (url) => {
   return normalizedUrl
 }
 
+// 供 SSR 预取灌入站点配置（主题应用受 applyThemeConfig 的 import.meta.server 守卫，须在客户端单独触发）
+export const setSiteConfigData = (data) => {
+  if (!data || typeof data !== 'object') return
+  siteConfig.value = { ...siteConfig.value, ...data }
+  isLoaded.value = true
+}
+
 export const useSiteConfig = () => {
   const { isDark } = useTheme()
   // 获取站点配置
@@ -136,6 +143,7 @@ export const useSiteConfig = () => {
         enableSubmissionRestriction: false,
         enableCollaborativeSubmission: true,
         enableSubmissionRemarks: false,
+        allowAnonymousSubmission: false,
         allowOAuthRegistration: false,
         captchaEnabled: false,
         captchaProvider: 'graphic',
@@ -194,6 +202,7 @@ export const useSiteConfig = () => {
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
+  const allowAnonymousSubmission = computed(() => siteConfig.value.allowAnonymousSubmission === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
   const requireCardCodeForRequests = computed(
@@ -233,7 +242,7 @@ export const useSiteConfig = () => {
     return Number.isInteger(value) && value >= 0 ? value : 3
   })
   const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
-  // ESA 场景 ID 规则列表（接口 + 域名），非法存储值回退空数组
+  // ESA 场景 ID 规则列表（域名→场景，统一验证接口），旧版按接口存储的条目会被过滤作废
   const esaCaptchaScenes = computed(() => parseEsaCaptchaScenes(siteConfig.value.esaCaptchaScenes))
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({
@@ -309,6 +318,7 @@ export const useSiteConfig = () => {
     enableSubmissionRestriction,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
+    allowAnonymousSubmission,
     enableSubmissionLimit,
     enableCardCodeRequests,
     requireCardCodeForRequests,

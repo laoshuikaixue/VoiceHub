@@ -5,11 +5,40 @@ import { getGlobalDedup } from './useRequestDedup'
 import { useLocale } from '~/utils/locale'
 import type { PlayTime, Schedule, Song } from '~/types'
 
-export const useSongs = () => {
+export interface FetchSongsOptions {
+  silent?: boolean
+  semester?: string
+  forceRefresh?: boolean
+  page?: number
+  pageSize?: number
+  scope?: string
+  search?: string
+  sortBy?: string
+  sortOrder?: string
+  compact?: boolean
+}
+
+interface SongsQuery {
+  page: number
+  pageSize: number
+  semester: string
+  scope: string
+  search: string
+  sortBy: string
+  sortOrder: string
+  compact: boolean
+}
+
+export const useSongs = (options: { pageSize?: number; compact?: boolean } = {}) => {
   const { isAuthenticated, user, getAuthConfig } = useAuth()
   const { songs: songsLocale } = useLocale()
   const { localize: localizeServerError } = useServerErrors()
   const dedup = getGlobalDedup()
+
+  // pageSize 为 0 表示不分页，后台管理与相似歌曲检查依赖完整列表
+  const defaultPageSize = Number(options.pageSize) > 0 ? Math.floor(Number(options.pageSize)) : 0
+  // 轻量模式：只返回匹配与状态字段，供投稿页的相似歌曲检查使用
+  const defaultCompact = options.compact === true
 
   const songs = ref<Song[]>([])
   const publicSchedules = ref<Schedule[]>([])
@@ -20,8 +49,24 @@ export const useSongs = () => {
   const playTimes = ref<PlayTime[]>([])
   const playTimeEnabled = ref(false)
   const songCount = ref(0)
+  const songsTotal = ref(0)
+  const songsPage = ref(1)
+  const songsTotalPages = ref(1)
+  const songSemesters = ref<string[]>([])
   const requestFormLocale = computed(() => songsLocale.value?.requestForm)
   const actionLocale = computed(() => songsLocale.value.actions)
+
+  // 记录最近一次歌曲列表查询，动作类接口刷新时沿用当前分页与筛选条件
+  let songsQuery: SongsQuery = {
+    page: 1,
+    pageSize: defaultPageSize,
+    semester: '',
+    scope: '',
+    search: '',
+    sortBy: '',
+    sortOrder: '',
+    compact: defaultCompact
+  }
 
   let songsRequestVersion = 0
   let publicSchedulesRequestVersion = 0
@@ -79,9 +124,24 @@ export const useSongs = () => {
   }
 
   // 获取歌曲列表
-  const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
+  const fetchSongs = async (options: FetchSongsOptions = {}) => {
     const requestVersion = ++songsRequestVersion
-    if (!silent) {
+    const query: SongsQuery = {
+      page: options.page && options.page > 0 ? Math.floor(options.page) : songsQuery.page,
+      pageSize:
+        options.pageSize !== undefined
+          ? Math.max(0, Math.floor(options.pageSize))
+          : songsQuery.pageSize,
+      semester: options.semester !== undefined ? options.semester : songsQuery.semester,
+      scope: options.scope !== undefined ? options.scope : songsQuery.scope,
+      search: options.search !== undefined ? options.search : songsQuery.search,
+      sortBy: options.sortBy !== undefined ? options.sortBy : songsQuery.sortBy,
+      sortOrder: options.sortOrder !== undefined ? options.sortOrder : songsQuery.sortOrder,
+      compact: options.compact !== undefined ? options.compact : songsQuery.compact
+    }
+    songsQuery = query
+
+    if (!options.silent) {
       loading.value = true
     }
     error.value = ''
@@ -89,16 +149,25 @@ export const useSongs = () => {
     try {
       const requestUserId = user.value?.id ?? null
       const requestParams = {
-        semester: semester || '',
+        ...query,
         audience: requestUserId ? `user:${requestUserId}` : 'guest',
         role: user.value?.role || ''
       }
       const request = async () => {
         // 构建URL参数
         const params = new URLSearchParams()
-        if (semester) {
-          params.append('semester', semester)
+        if (query.semester) {
+          params.append('semester', query.semester)
         }
+        if (query.pageSize > 0) {
+          params.append('page', String(query.page))
+          params.append('pageSize', String(query.pageSize))
+        }
+        if (query.scope) params.append('scope', query.scope)
+        if (query.search) params.append('search', query.search)
+        if (query.sortBy) params.append('sortBy', query.sortBy)
+        if (query.sortOrder) params.append('sortOrder', query.sortOrder)
+        if (query.compact) params.append('compact', '1')
         const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
         // API请求
@@ -106,7 +175,7 @@ export const useSongs = () => {
           ...getAuthConfig()
         })
       }
-      const response = forceRefresh
+      const response: any = options.forceRefresh
         ? await request()
         : await dedup.dedupedRequest('songs', request, requestParams)
 
@@ -120,8 +189,18 @@ export const useSongs = () => {
       // 正确解析API返回的数据结构
       if (response && response.success && response.data && Array.isArray(response.data.songs)) {
         songs.value = response.data.songs as Song[]
+        songsTotal.value = Number(response.data.total || 0)
+        songsPage.value = Number(response.data.page || 1)
+        songsTotalPages.value = Math.max(1, Number(response.data.totalPages || 1))
+        if (Array.isArray(response.data.semesters)) {
+          songSemesters.value = response.data.semesters
+            .map((item: any) => String(item))
+            .filter(Boolean)
+        }
       } else {
         songs.value = []
+        songsTotal.value = 0
+        songsTotalPages.value = 1
         console.warn('API返回的数据格式不正确:', response)
       }
     } catch (err: any) {
@@ -129,15 +208,20 @@ export const useSongs = () => {
         error.value = err.message || '获取歌曲列表失败'
       }
     } finally {
-      if (!silent && requestVersion === songsRequestVersion) {
+      if (!options.silent && requestVersion === songsRequestVersion) {
         loading.value = false
       }
     }
   }
 
+  // 沿用当前查询条件刷新列表
+  const refreshSongsWithQuery = async () => {
+    return fetchSongs({ silent: true, forceRefresh: true })
+  }
+
   // 静默刷新歌曲列表 - 不显示加载状态
   const refreshSongsSilent = async () => {
-    return fetchSongs(true)
+    return fetchSongs({ silent: true })
   }
 
   // 从排期数据中提取歌曲信息
@@ -294,7 +378,7 @@ export const useSongs = () => {
       })
 
       // 绕过去重，从数据库重新校准写入后的列表
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       return data
     } catch (err: any) {
@@ -364,7 +448,7 @@ export const useSongs = () => {
           }
         }
 
-        await fetchSongs(true, undefined, true)
+        await refreshSongsWithQuery()
 
         return data
       } catch (fetchErr: any) {
@@ -421,7 +505,7 @@ export const useSongs = () => {
       })
 
       // 绕过去重，从数据库重新校准写入后的列表
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       // 显示成功通知
       let message = ''
@@ -475,7 +559,7 @@ export const useSongs = () => {
       })
 
       // 绕过去重，从数据库重新校准写入后的列表
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       showNotification(actionLocale.value.deleteSucceeded, 'success')
       return data
@@ -510,7 +594,7 @@ export const useSongs = () => {
       })
 
       // 绕过去重，从数据库重新校准写入后的列表
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       showNotification(actionLocale.value.markPlayedSucceeded, 'success')
       return data
@@ -545,7 +629,7 @@ export const useSongs = () => {
       })
 
       // 绕过去重，从数据库重新校准写入后的列表
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       showNotification(actionLocale.value.unmarkPlayedSucceeded, 'success')
       return data
@@ -590,7 +674,7 @@ export const useSongs = () => {
         songs.value[songIndex].replayRequested = true
       }
 
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       showNotification(actionLocale.value.replaySucceeded, 'success')
       return data
@@ -635,7 +719,7 @@ export const useSongs = () => {
         songs.value[songIndex].replayRequested = false
       }
 
-      await fetchSongs(true, undefined, true)
+      await refreshSongsWithQuery()
 
       showNotification(actionLocale.value.replayCancelled, 'success')
       return data
@@ -689,6 +773,21 @@ export const useSongs = () => {
   const clearPrivateSongs = () => {
     songsRequestVersion++
     songs.value = []
+    songsTotal.value = 0
+    songsPage.value = 1
+    songsTotalPages.value = 1
+    songSemesters.value = []
+    // 切换用户后不沿用上一位用户的筛选条件
+    songsQuery = {
+      page: 1,
+      pageSize: defaultPageSize,
+      semester: '',
+      scope: '',
+      search: '',
+      sortBy: '',
+      sortOrder: '',
+      compact: defaultCompact
+    }
   }
 
   const clearPublicSongs = () => {
@@ -781,6 +880,10 @@ export const useSongs = () => {
     publicSchedules,
     visibleSongs,
     songCount,
+    songsTotal,
+    songsPage,
+    songsTotalPages,
+    songSemesters,
     loading,
     error,
     notification,

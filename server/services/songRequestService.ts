@@ -15,15 +15,19 @@ import { createError } from 'h3'
 import { reconcileSongDurationOnSubmit } from '~~/server/services/durationValidationService'
 import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
+  findReachedGlobalSubmissionLimit,
+  getActiveGlobalSubmissionLimits,
   isCardCodeLimitBypassActive,
-  isLimitReached
+  isLimitReached,
+  type LimitType
 } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
-import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECONDS, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECONDS, SUBMISSION_NOTE_MAX_LENGTH, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
 import { z } from 'zod'
@@ -52,8 +56,11 @@ const songRequestBodySchema = z.object({
   bilibiliPage: z.union([z.string(), z.number()]).optional().nullable(),
   playUrl: z.string().trim().max(2000, '播放链接不能超过2000个字符').optional().nullable(),
   durationSeconds: z.number().int().min(SONG_DURATION_MIN_SECONDS, '时长不能为负数').max(SONG_DURATION_MAX_SECONDS, '时长不能超过2小时').optional().nullable(),
-  submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
+  // 留言长度上限：与 RequestForm.vue 的 maxlength 同源，导出供机器人端点前置校验，
+  // 保持「站点表单 / 机器人 / zod」三处同一个数值
+  submissionNote: z.string().trim().max(SUBMISSION_NOTE_MAX_LENGTH, `备注留言不能超过${SUBMISSION_NOTE_MAX_LENGTH}个字符`).optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
+  submissionAnonymous: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
     z.number().int().positive('播出时段 ID 无效').nullable()
@@ -360,6 +367,19 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         ? SUBMISSION_NOTE_STATUS.PENDING
         : null
 
+    // 匿名投稿：站点未开启总开关时强制视为实名（防绕过）；开启时按用户勾选。
+    // 匿名投稿不允许联合投稿。
+    const submissionAnonymous =
+      systemSettingsData?.allowAnonymousSubmission === true &&
+      requestBody.submissionAnonymous === true
+    if (submissionAnonymous && requestBody.collaborators?.length) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '匿名投稿不支持联合投稿'
+      )
+    }
+
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     const song = await db.transaction(async (tx) => {
@@ -429,6 +449,33 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         }
       }
 
+      // 全站投稿总量限额：对所有用户合计计数，管理员豁免
+      // 先解析生效周期，三值全空（无周期可拦）时跳过，避免零收益的全站串行加锁
+      if (!isAdmin && getActiveGlobalSubmissionLimits(systemSettingsData).length > 0) {
+        // 全局计数必须串行，否则并发请求会读到相同计数并同时越过上限
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('global_submission_limit'))`)
+
+        const reachedLimit = await findReachedGlobalSubmissionLimit(
+          tx as any,
+          systemSettingsData
+        )
+
+        if (reachedLimit) {
+          const codeMap: Record<LimitType, string> = {
+            daily: SERVER_ERROR_CODES.SONG_GLOBAL_DAILY_LIMIT_REACHED,
+            weekly: SERVER_ERROR_CODES.SONG_GLOBAL_WEEKLY_LIMIT_REACHED,
+            monthly: SERVER_ERROR_CODES.SONG_GLOBAL_MONTHLY_LIMIT_REACHED
+          }
+
+          throw createApiError(
+            403,
+            codeMap[reachedLimit.type],
+            `全站投稿总量已达上限（${reachedLimit.limit} 首）`,
+            { params: [reachedLimit.limit] }
+          )
+        }
+      }
+
       if (hitRequestTime) {
         const latestRequestTimeResult = await tx
           .select()
@@ -494,6 +541,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
+          submissionAnonymous,
           submissionNotePublicStatus,
           hitRequestId: hitRequestTime?.id || null
         })
@@ -608,6 +656,25 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       } catch (error) {
         console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
       }
+    }
+
+    // 群聊推送：谁点了什么歌。后台事件开关关闭或无群目标时该调用直接返回 0；
+    // 通知失败不得影响投稿结果。
+    try {
+      const [requester] = await db.select({ name: users.name, username: users.username })
+        .from(users).where(eq(users.id, user.id)).limit(1)
+      // 匿名投稿不在群聊推送里暴露真实姓名
+      const displayName =
+        song.submissionAnonymous === true
+          ? '匿名投稿'
+          : (requester?.name || requester?.username || `用户 ${user.id}`)
+      await enqueueAstrbotGroupEvent(
+        'songRequest',
+        '新的点歌投稿',
+        `${displayName} 点了《${song.title}》- ${song.artist}`
+      )
+    } catch (error) {
+      console.error('发送群聊点歌通知失败:', error)
     }
 
     return song

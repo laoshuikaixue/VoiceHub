@@ -74,7 +74,38 @@
               </span>
             </label>
 
-            <!-- 范围选择 -->
+            <!-- 群聊转发：勾选后除站内通知外，再推送到后台配置的群目标白名单。 -->
+            <label
+              class="mt-3 flex cursor-pointer items-start gap-4 rounded-2xl border p-4 shadow-sm transition-colors"
+              :class="
+                form.broadcast
+                  ? 'border-primary-300 bg-primary-10'
+                  : 'border-border-tertiary bg-bg-primary hover:border-border-quaternary hover:bg-bg-secondary'
+              "
+            >
+              <span class="relative mt-0.5 inline-block h-6 w-11 shrink-0">
+                <input v-model="form.broadcast" type="checkbox" class="peer sr-only">
+                <span
+                  class="absolute inset-0 rounded-full bg-border-tertiary transition-colors peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300"
+                />
+                <span
+                  class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"
+                />
+              </span>
+              <span class="min-w-0">
+                <span class="flex items-center gap-2 text-sm font-black text-text-primary">
+                  <Megaphone
+                    :size="16"
+                    :class="form.broadcast ? 'text-primary' : 'text-text-tertiary'"
+                  />
+                  {{ locale.groupForwardToggleTitle }}
+                </span>
+                <span class="mt-1 block text-xs leading-relaxed text-text-secondary">
+                  {{ locale.groupForwardToggleDescription }}
+                </span>
+              </span>
+            </label>
+
             <div class="space-y-3 pt-4 border-t border-border-secondary-50">
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.scope }}</label
@@ -504,6 +535,7 @@ import {
   AlertTriangle,
   Eye,
   MessageSquare,
+  Megaphone,
   Loader2
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -541,6 +573,7 @@ const form = ref({
   title: '',
   content: '',
   important: false,
+  broadcast: false,
   scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'
   grade: '',
   classGrade: '',
@@ -784,6 +817,7 @@ const sendNotification = async () => {
       title: form.value.title,
       content: form.value.content,
       important: form.value.important,
+      broadcast: form.value.broadcast,
       scope: form.value.scope,
       filter: {}
     }
@@ -817,6 +851,7 @@ const sendNotification = async () => {
         title: '',
         content: '',
         important: false,
+        broadcast: false,
         scope: 'ALL',
         grade: '',
         classGrade: '',

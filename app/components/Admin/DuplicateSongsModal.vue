@@ -97,7 +97,7 @@
                     >
                       <img
                         v-if="song.cover"
-                        :src="convertToHttps(song.cover)"
+                        :src="getCoverThumbUrl(song.cover)"
                         class="w-full h-full object-cover"
                         referrerpolicy="no-referrer"
                       />
@@ -184,7 +184,7 @@ import { Copy, X, Music, Heart, Edit2, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'
 import { getPlatformDisplayName } from '~/utils/platforms'
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
 
 const props = defineProps({

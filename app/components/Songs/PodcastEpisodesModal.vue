@@ -91,7 +91,7 @@
                   @click.stop="playProgram(program)"
                 >
                   <img
-                    :src="convertToHttps(program.coverUrl || program.mainSong?.album?.picUrl)"
+                    :src="getCoverThumbUrl(program.coverUrl || program.mainSong?.album?.picUrl)"
                     alt="cover"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -226,7 +226,7 @@ import { useSemesters } from '~/composables/useSemesters'
 import { useLocale } from '~/utils/locale'
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.mediaModals || {})
-import { convertToHttps } from '~/utils/url'
+import { getCoverThumbUrl } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 
@@ -240,7 +240,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit', 'play'])
 
 const musicSources = useMusicSources()
-const songService = useSongs()
+const songService = useSongs({ compact: true })
 const auth = useAuth()
 const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 const { currentSemester, fetchCurrentSemester } = useSemesters()
@@ -412,7 +412,7 @@ watch(
         const currentSemesterName = currentSemester.value?.name
         songsLoadingForSimilar.value = true
         songService
-          .fetchSongs(true, currentSemesterName)
+          .fetchSongs({ silent: true, semester: currentSemesterName })
           .catch((err) => {
             console.error('加载歌曲列表失败:', err)
           })

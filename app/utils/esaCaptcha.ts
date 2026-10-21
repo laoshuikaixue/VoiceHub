@@ -3,7 +3,8 @@
  *
  * 区域取值与 server/config/constants.ts 的 ALIYUN_ESA_CAPTCHA_REGIONS 保持一致；
  * 服务端域名来自官方文档（region 为 cn 与 sgp 时使用不同的 ESA 服务端节点）。
- * ESA 的一条验证码规则只覆盖一个 URI（域名 + 接口路径），故场景 ID 按「接口 + 域名」成组配置。
+ * ESA 验证码统一走公共验证接口（ESA 规则路径 /api/captcha/verify），
+ * 场景 ID 按「域名」成组配置，验证通过后由源站签发短期凭证供各业务接口复用。
  */
 
 export const ESA_CAPTCHA_REGIONS = [
@@ -21,8 +22,11 @@ export const ESA_CAPTCHA_REGIONS = [
 
 export const ESA_CAPTCHA_DEFAULT_REGION = 'cn'
 
-// ESA 边缘按此请求头读取验签参数（captchaVerifyParam）
+// ESA 边缘按此请求头读取验签参数（captchaVerifyParam），仅公共验证接口使用
 export const ESA_CAPTCHA_VERIFY_HEADER = 'captcha-verify-param'
+
+// 源站签发的人机验证通过凭证请求头，业务接口据此校验（非 ESA 边缘使用）
+export const ESA_CAPTCHA_PASS_HEADER = 'captcha-pass'
 
 // ESA 边缘在响应头回传验签原因码，源站不参与验签，只有客户端能读到
 export const ESA_CAPTCHA_VERIFY_CODE_HEADER = 'x-captcha-verify-code'
@@ -45,13 +49,16 @@ export const getEsaCaptchaRejectCode = (err: unknown): string => {
   return (ESA_CAPTCHA_PASS_CODES as readonly string[]).includes(code) ? '' : code
 }
 
-// 需要 ESA 验签的业务接口（唯一权威定义），与 ESA 控制台「需验签的接口」一一对应
-export const ESA_CAPTCHA_ENDPOINTS = ['login', 'register'] as const
+// 公共验证接口在 ESA 控制台的规则路径（不含协议与域名），也是场景唯一覆盖的接口
+export const ESA_CAPTCHA_VERIFY_PATH = '/api/captcha/verify'
+
+// 场景配置的接口枚举（唯一权威定义）：仅公共验证接口；
+// 旧版按业务接口（login/register）存储的条目不在枚举内，会被 parseEsaCaptchaScenes 过滤作废
+export const ESA_CAPTCHA_ENDPOINTS = ['common'] as const
 
 // 各接口对应的服务端路径，即 ESA 控制台「需验签的接口」直接填写此路径（不含协议与域名）
 export const ESA_CAPTCHA_ENDPOINT_PATHS: Record<string, string> = {
-  login: '/api/auth/login',
-  register: '/api/auth/register'
+  common: ESA_CAPTCHA_VERIFY_PATH
 }
 
 // 域名列填此值表示匹配任意域名

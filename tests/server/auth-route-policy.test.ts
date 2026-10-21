@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readdirSync } from 'node:fs'
+import { BOT_ROUTES } from '../../server/config/constants.ts'
 import {
   canBindOAuthIdentity,
   isAllowedDuringPasswordChange,
@@ -68,4 +70,15 @@ test('强制改密门控放行公共 API，但阻止业务写入和 OAuth provid
 test('强制改密状态禁止持久化 OAuth 身份绑定', () => {
   assert.equal(canBindOAuthIdentity(true), false)
   assert.equal(canBindOAuthIdentity(false), true)
+})
+
+test('机器人免 Cookie 路由与实际端点文件逐项一致', () => {
+  const dir = new URL('../../server/api/bot/voicehub/', import.meta.url)
+  const expected = readdirSync(dir).filter(name => /\.(get|post)\.ts$/.test(name))
+    .map(name => {
+      const [, route, method] = name.match(/^(.+)\.(get|post)\.ts$/)!
+      return `${method.toUpperCase()} /api/bot/voicehub/${route}`
+    })
+  assert.deepEqual([...BOT_ROUTES].sort(), expected.sort())
+  assert.equal(BOT_ROUTES.has('POST /api/bot/voicehub/weekly-schedule'), false)
 })

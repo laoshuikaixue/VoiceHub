@@ -1,7 +1,15 @@
-import { defineEventHandler } from 'h3'
+import { createError, defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
 
 export default defineEventHandler(async (event) => {
+  const currentUser = event.context.user
+  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
+    throw createError({
+      statusCode: 403,
+      message: '没有权限访问'
+    })
+  }
+
   try {
     console.log('[Reconnect API] 收到强制重连请求')
 

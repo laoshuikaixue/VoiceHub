@@ -5,7 +5,7 @@ import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
-import { persistQqMusicCookie } from '~/utils/qqCookie'
+import { persistQqMusicCookie, clearQqMusicLoginState, QQ_MUSIC_COOKIE_KEY } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
 import { useServerErrors } from '~/composables/useLocaleText'
 
@@ -44,6 +44,37 @@ export type MusicUrlResolveResult = {
   source?: string
   normalizedMusicId?: string
   idType?: string
+}
+
+// QQ 数字 songId → 字母 songmid 的前端解析缓存与并发去重，供水端直连第三方音源（ygking 等）复用
+const txMidResolveCache = new Map<string, string>()
+const txMidResolveInflight = new Map<string, Promise<string>>()
+const resolveTencentMid = async (musicId: string | number): Promise<string> => {
+  const raw = String(musicId ?? '').trim()
+  // 已是字母 mid 直接返回，无需请求后端
+  if (!/^\d+$/.test(raw)) return raw
+  const cached = txMidResolveCache.get(raw)
+  if (cached) return cached
+  const inflight = txMidResolveInflight.get(raw)
+  if (inflight) return inflight
+
+  const promise = (async () => {
+    try {
+      const res: any = await $fetch('/api/native-api/qq/resolve-mid', { params: { musicId: raw } })
+      const mid = typeof res?.musicId === 'string' ? res.musicId.trim() : ''
+      if (res?.success && mid && mid !== raw) {
+        txMidResolveCache.set(raw, mid)
+        return mid
+      }
+    } catch (error) {
+      console.warn('[musicUrl] QQ songId 解析 MID 失败，按原始 ID 继续:', error)
+    }
+    return raw
+  })()
+
+  txMidResolveInflight.set(raw, promise)
+  promise.finally(() => txMidResolveInflight.delete(raw))
+  return promise
 }
 
 export const INVALID_QQ_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
@@ -233,6 +264,38 @@ export const getCachedMusicUrlSource = (url: string | null | undefined) => {
   return musicUrlSourceCache.get(normalizeCacheUrl(url)) || null
 }
 
+// 官方链路失败后的登录态复验 in-flight 去重，避免连续切歌重复发校验请求
+let qqLoginRecheckPromise: Promise<void> | null = null
+
+/**
+ * 官方链路解析失败后用后端复验 QQ 登录态（含续期）：
+ * 续期成功回传的新 Cookie 落盘复用；确认失效则清除本地登录态并广播登出
+ */
+const revalidateQqLoginAfterFailure = (): Promise<void> => {
+  if (qqLoginRecheckPromise) return qqLoginRecheckPromise
+
+  qqLoginRecheckPromise = (async () => {
+    try {
+      const cookie =
+        typeof window !== 'undefined' ? localStorage.getItem(QQ_MUSIC_COOKIE_KEY) : null
+      if (!cookie) return
+      const res: any = await $fetch('/api/native-api/qq/check-cookie', {
+        method: 'POST',
+        body: { cookie }
+      })
+      const data = res?.data || {}
+      if (data.cookie) persistQqMusicCookie(data.cookie)
+      if (data.valid === false) clearQqMusicLoginState()
+    } catch {
+      // 网络异常不属于登录失效，保留本地状态
+    } finally {
+      qqLoginRecheckPromise = null
+    }
+  })()
+
+  return qqLoginRecheckPromise
+}
+
 export async function getMusicUrlResult(
   platform: string,
   musicId: string | number,
@@ -312,7 +375,7 @@ export async function getMusicUrlResult(
     const isQqVip =
       typeof window !== 'undefined' && window.localStorage.getItem('qq_music_vip') === '1'
     const requestBackendResolve = async (
-      strategy: 'official-first' | 'fallback' = 'fallback'
+      strategy: 'official-first' | 'fallback' | 'aggregator' = 'fallback'
     ) => {
       const response: any = await $fetch('/api/music/resolve-url', {
         method: 'POST',
@@ -321,6 +384,8 @@ export async function getMusicUrlResult(
           musicId: String(musicId),
           quality,
           mediaId: options?.mediaId,
+          name: options?.musicInfo?.name,
+          artist: options?.musicInfo?.artist,
           playUrl: options?.ignoreProvidedUrl ? undefined : playUrl,
           cookie: qqMusicCookie,
           excludeSources: [...excludedSources],
@@ -353,6 +418,8 @@ export async function getMusicUrlResult(
         return await requestBackendResolve('official-first')
       } catch (error: any) {
         console.warn('[musicUrl] QQ 官方登录态解析失败，降级第三方音源:', error?.message || error)
+        // 登录态过期是官方链路失败的常见原因，复验确认失效时直接清除本地登录态
+        await revalidateQqLoginAfterFailure()
       }
     }
 
@@ -361,9 +428,6 @@ export async function getMusicUrlResult(
     if (chkszResult) {
       return chkszResult
     }
-
-    const pluginResult = await tryPlugins()
-    if (pluginResult) return pluginResult
 
     // K×H 音源提取的 QQ 直连接口支持浏览器跨域，优先于 vkeys 使用。
     if (!excludedSources.has('ygking-qq')) {
@@ -375,13 +439,15 @@ export async function getMusicUrlResult(
         14: 'master'
       }
       const qualityKey = ygkingQuality[qualityCandidates[0]] || '320'
+      // ygking 只接受字母 songmid，历史数字 songId 需先解析为 mid 再请求
+      const ygkingMid = await resolveTencentMid(musicId)
       try {
         const data: any = await fetch(
-          `https://api.ygking.top/api/song/url?mid=${encodeURIComponent(String(musicId))}&quality=${encodeURIComponent(qualityKey)}`,
+          `https://api.ygking.top/api/song/url?mid=${encodeURIComponent(ygkingMid)}&quality=${encodeURIComponent(qualityKey)}`,
           { signal: AbortSignal.timeout(5000) }
         ).then((result) => (result.ok ? result.json() : null))
         const url =
-          data?.data?.[String(musicId)] || (data?.data && data.data[Object.keys(data.data)[0]])
+          data?.data?.[ygkingMid] || (data?.data && data.data[Object.keys(data.data)[0]])
         if (data?.code === 0 && url && !isKnownInvalidQqAudioUrl(String(url))) {
           rememberMusicUrlSource(String(url), 'ygking-qq')
           return { url: String(url), source: 'ygking-qq' }
@@ -476,6 +542,17 @@ export async function getMusicUrlResult(
         console.warn('[musicUrl] QQ 官方链路兜底失败:', error?.message || error)
       }
     }
+
+    // 内置聚合源兜底链（玉宁熙→HelloWorld），仍属内置，先于导入插件
+    try {
+      return await requestBackendResolve('aggregator')
+    } catch (error: any) {
+      console.warn('[musicUrl] 内置聚合源解析失败，回退导入插件:', error?.message || error)
+    }
+
+    // 所有内置源失败后，才回退到导入的第三方插件源
+    const pluginResult = await tryPlugins()
+    if (pluginResult) return pluginResult
 
     throw new Error('QQ音乐播放链接解析失败')
   }

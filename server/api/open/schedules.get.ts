@@ -1,8 +1,9 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songCollaborators, songs, users } from '~/drizzle/schema'
+import { playTimes, schedules, songCollaborators, songs, systemSettings, users } from '~/drizzle/schema'
 import { and, asc, desc, eq, gte, inArray, like, lt, or, sql } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
+import { maskUserInfo, resolveAnonymousRequesterLabel } from '~~/server/utils/studentMask'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -85,7 +86,8 @@ export default defineEventHandler(async (event) => {
           played: songs.played,
           playedAt: songs.playedAt,
           createdAt: songs.createdAt,
-          semester: songs.semester
+          semester: songs.semester,
+          submissionAnonymous: songs.submissionAnonymous
         },
         requester: {
           id: users.id,
@@ -166,7 +168,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 格式化数据
-    const formattedSchedules = schedulesData.map((schedule) => {
+    const formattedSchedules: Record<string, any>[] = schedulesData.map((schedule) => {
       const collaborators = collaboratorsMap.get(schedule.song.id) || []
 
       return {
@@ -185,6 +187,7 @@ export default defineEventHandler(async (event) => {
           played: schedule.song.played,
           playedAt: schedule.song.playedAt,
           requestedAt: formatDateTime(schedule.song.createdAt),
+          submissionAnonymous: schedule.song.submissionAnonymous === true,
           collaborators: collaborators.map((c: any) => ({
             id: c.id,
             name: c.name,
@@ -211,6 +214,32 @@ export default defineEventHandler(async (event) => {
           : null,
         createdAt: schedule.createdAt,
         updatedAt: schedule.updatedAt
+      }
+    })
+
+    // 匿名投稿：开放 API 与站点对外展示保持一致，不返回真实投稿人
+    const [settings] = await db
+      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
+      .from(systemSettings)
+      .limit(1)
+    if (settings?.hideStudentInfo !== false) {
+      formattedSchedules.forEach((schedule) => {
+        if (schedule.requester) maskUserInfo(schedule.requester)
+        schedule.song.collaborators.forEach(maskUserInfo)
+      })
+    }
+
+    const anonymousRequesterLabel = resolveAnonymousRequesterLabel(event)
+    formattedSchedules.forEach((schedule) => {
+      if (schedule.song.submissionAnonymous !== true) return
+      schedule.song.isAnonymous = true
+      schedule.song.collaborators = []
+      // 开放 API 的消费方直接渲染投稿人，不能返回空值
+      schedule.requester = {
+        id: null,
+        name: anonymousRequesterLabel,
+        grade: null,
+        class: null
       }
     })
 

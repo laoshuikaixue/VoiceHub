@@ -39,7 +39,7 @@
       <p class="text-xs text-text-tertiary">{{ t.empty }}</p>
     </div>
 
-    <div v-else class="max-h-[60vh] overflow-y-auto pr-1">
+    <div v-else ref="listRef" class="max-h-[60vh] overflow-y-auto pr-1" @dragover.prevent="handleListDragOver">
       <TransitionGroup name="plugin-source" tag="div" class="relative space-y-2">
         <div
           v-for="(item, index) in items"
@@ -172,7 +172,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { AlertCircle, ArrowDown, ArrowUp, FlaskConical, GripVertical, ListMusic, Pencil, Plus, RefreshCw, Trash2, X } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
@@ -213,6 +213,38 @@ const removing = ref(false)
 const removeTarget = ref(null)
 const dragOverIndex = ref(-1)
 let draggedIndex = -1
+// 拖拽排序时，指针靠近滚动容器上下边缘自动滚动，保证长列表可拖到任意位置
+const listRef = ref(null)
+const AUTO_SCROLL_EDGE = 64
+const AUTO_SCROLL_MAX_SPEED = 14
+let autoScrollFrame = null
+let lastPointerY = 0
+
+function stepAutoScroll() {
+  const el = listRef.value
+  if (el) {
+    const rect = el.getBoundingClientRect()
+    if (lastPointerY < rect.top + AUTO_SCROLL_EDGE) {
+      el.scrollTop -= Math.min(AUTO_SCROLL_MAX_SPEED, rect.top + AUTO_SCROLL_EDGE - lastPointerY)
+    } else if (lastPointerY > rect.bottom - AUTO_SCROLL_EDGE) {
+      el.scrollTop += Math.min(AUTO_SCROLL_MAX_SPEED, lastPointerY - (rect.bottom - AUTO_SCROLL_EDGE))
+    }
+  }
+  autoScrollFrame = requestAnimationFrame(stepAutoScroll)
+}
+function startAutoScroll() {
+  stopAutoScroll()
+  autoScrollFrame = requestAnimationFrame(stepAutoScroll)
+}
+function stopAutoScroll() {
+  if (autoScrollFrame) {
+    cancelAnimationFrame(autoScrollFrame)
+    autoScrollFrame = null
+  }
+}
+function handleListDragOver(event) {
+  lastPointerY = event.clientY
+}
 
 const protocolOptions = computed(() => [{ value: 'auto', label: t.value.auto }, { value: 'lx', label: 'LX Music' }, { value: 'musicfree', label: 'MusicFree' }])
 const catalogOptions = computed(() => [{ value: '', label: t.value.privateCatalog }, ...['netease', 'tencent', 'migu', 'kugou', 'kuwo'].map((value) => ({ value, label: value }))])
@@ -317,6 +349,8 @@ const resetDrag = () => { draggedIndex = -1; dragOverIndex.value = -1 }
 function handleDragStart(event, index) {
   if (busy.value) return
   draggedIndex = index
+  lastPointerY = event.clientY
+  startAutoScroll()
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/plain', String(index))
   setTimeout(() => event.target.classList.add('opacity-50'), 0)
@@ -330,6 +364,7 @@ function handleDragEnter(index) {
 }
 function handleDragEnd(event) {
   event.target.classList.remove('opacity-50')
+  stopAutoScroll()
   resetDrag()
 }
 function handleDrop(event, index) {
@@ -358,6 +393,7 @@ async function confirmRemove() {
   }
 }
 onMounted(() => { if (user.value?.role === 'SUPER_ADMIN') load(); else loading.value = false })
+onBeforeUnmount(stopAutoScroll)
 </script>
 
 <style scoped>

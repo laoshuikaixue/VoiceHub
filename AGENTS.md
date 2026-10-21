@@ -14,6 +14,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 
 ### 2.1. 语言
 注释、文档、Git 信息均用简体中文。注释中禁止写思考过程等无用内容，只需关键部分。
+- 界面文案（locale 描述、提示语等）与代码注释一律用简洁陈述句，禁止过长、口语化、带语气词/反问/比喻的啰嗦表述（如“所以不会变成死板的按票数排序”“这样高热度歌曲更容易排在前面，但相邻名次之间会经常互换”）；只保留必要信息，能一句话说清就不写第二句
 - CSS 注释只保留关键信息（变量用途、值来源、防误删警告），禁止写设计意图、过程或对比说明（如“取值与现状一致”“视觉零变化”“浅色模式下需清晰可见”“对齐某分支观感”等）
 
 ### 2.2. Vue 组件
@@ -88,6 +89,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 迁移文件（SQL + snapshot + journal 条目）必须且只能通过 `pnpm db:generate` 自动生成，禁止手工编写 SQL、手工创建 snapshot、手工编辑 `_journal.json`；手工迁移会导致 snapshot 格式与 drizzle-kit 版本不兼容，后续 `db:generate`/`db:check`/`db:migrate` 均会失败
 - 迁移时间戳使用真实生成时刻，禁止随意编造
 - 迁移文件命名保持 drizzle-kit 自动生成的时间戳格式，禁止手动改名（改名会导致数据库中已执行的迁移记录无法匹配，产生重复迁移）
+- 迁移文件要求使用语义化名称，使用 `pnpm db:generate:name <name>` 由 drizzle-kit 生成，禁止生成后手动改名
 
 ### 4.3. 新增 SystemSettings 字段同步清单
 新增字段必须全部同步，遗漏会导致备份能进不能出、初始化缺字段：
@@ -130,6 +132,12 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 内核契约由 `scripts/contract-checks/kernel-isolation.mjs` 把关：`server/api/**` 零引用 `utils/rbac`、权限解析只有 `resolvePermissions.ts` 一处权威实现（除内核外不得直查 `role_permissions` / `user_permissions`）、内核零 key 字面量、legacy 路径必须由 catalog 派生
 - 新增/改动路由必须在 `server/utils/rbac/routePermissionMap.ts` 登记：**未登记 = 拒绝**（`server/api/admin/**` 与 `server/api/open/**` 没有「仅登录」兜底）；`scripts/contract-checks/route-coverage.mjs` 会断言 `server/api/**` 每条路由都被显式分类，并把放错位置的辅助模块（无 `defineEventHandler`）拦下
 
+### 4.9. 网易云接口白名单同步
+`server/api/api-enhanced/netease/[...path].ts` 的 `allowedEndpoints`（端点路径 → 允许的 HTTP 方法）是该代理的唯一放行名单，未列入的接口一律 403。该路由匿名可达且能触达上游全部接口（含发短信、注册、账号绑定等有外部副作用的接口），白名单是唯一的闸门。
+- 新增或变更网易云调用端点时，必须同步更新 `allowedEndpoints`，禁止只改调用方。调用点分散：前端音源适配器 `useMusicSources`（搜索/歌词）、封面/时长/详情、听歌识曲、评论、扫码登录、歌单、播放记录/听歌上报、云盘上传（`NeteaseUploadDialog`）、服务端 `songCoverFetcher`/`songDurationFetcher` 等，逐一确认
+- 只放行实际使用的端点与真实使用的方法（如 `/audio/match`、`/cloud/upload/*` 为 POST，其余多为 GET）；禁止图省事整段放行、加通配前缀或改成默认放行
+- 端点写错或方法不符时功能会直接 403，服务端会打 `[Netease] 拦截未放行的接口` 日志，按日志补齐
+
 ## 5. 文件变更提醒
 
-**每次完成任务后，如果新增或删除了文件/目录，必须同步更新 `README.md` 的"项目结构"部分，保持与实际文件系统一致。（注意：数据库迁移文件除外）**
+**每次完成任务后，如果新增或删除了文件/目录，必须同步更新 `README.md` 的"项目结构"部分，保持与实际文件系统一致。（注意：数据库迁移文件和测试文件除外，不需要改动）**

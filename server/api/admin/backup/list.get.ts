@@ -1,6 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -13,10 +14,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检测运行环境
-    const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
-    const isNetlify = process.env.NETLIFY
-    const isServerless = isVercel || isNetlify
+    // 检测运行环境（与连接池等处共用一份判定）
+    const isServerless = isServerlessRuntime()
 
     if (isServerless) {
       // 在无服务器环境中，无法持久化存储文件，返回空列表

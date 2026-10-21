@@ -1,6 +1,8 @@
 import { createError, defineEventHandler, getCookie, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { eq } from 'drizzle-orm'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -76,36 +78,36 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 验证token
+  // 验证token：仅此处的失败判定为 401，后续查询异常不得伪装成认证错误
+  let decoded: { userId: number; role: string }
   try {
     if (!process.env.JWT_SECRET) {
       throw new Error('服务器配置错误：缺少JWT_SECRET')
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: number
       role: string
     }
-
-    // 获取用户信息验证权限
-    const user = await db.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, role: true }
-    })
-
-    if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '需要管理员权限'
-      })
-    }
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error
-    }
+  } catch {
     throw createError({
       statusCode: 401,
       message: '无效的认证token'
+    })
+  }
+
+  // 获取用户信息验证权限
+  const userRows = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(eq(users.id, decoded.userId))
+    .limit(1)
+  const user = userRows[0]
+
+  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    throw createError({
+      statusCode: 403,
+      message: '需要管理员权限'
     })
   }
 

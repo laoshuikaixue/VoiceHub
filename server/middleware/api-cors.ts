@@ -72,8 +72,9 @@ export default defineEventHandler((event) => {
       const matchesConfiguredOrigin = isTrustedOrigin(sourceOrigin, trustedOrigin)
       const requestHost = getHeader(event, 'x-forwarded-host') || getHeader(event, 'host')
       const requestProto = getHeader(event, 'x-forwarded-proto')?.split(',')[0]?.trim() || requestUrl.protocol.replace(':', '')
-      const hostOrigin = requestHost
-        ? normalizeOrigin(`${requestProto}://${requestHost.split(',')[0].trim()}`, requestUrl.protocol)
+      const firstHost = requestHost?.split(',')[0]?.trim()
+      const hostOrigin = firstHost
+        ? normalizeOrigin(`${requestProto}://${firstHost}`, requestUrl.protocol)
         : null
       const matchesRequestHost = hostOrigin && isTrustedOrigin(sourceOrigin, hostOrigin)
 

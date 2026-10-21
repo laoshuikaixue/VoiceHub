@@ -1,10 +1,11 @@
 import { db } from '~/drizzle/db'
-import { createSongPlayedNotification } from '~~/server/services/notificationService'
+import { createSongPlayedNotifications } from '~~/server/services/notificationService'
 import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import { z } from 'zod'
 import { canWriteSongs } from '~~/server/utils/rbac'
 
@@ -101,17 +102,26 @@ export default defineEventHandler(async (event) => {
     return { updatedSongsResult, updatedSongIds }
   })
 
-  // 异步发送通知
+  // 异步发送通知（同一用户多首歌曲合并为一条）
   if (!isUnmark && updatedSongIds.length > 0) {
     event.waitUntil(
-      Promise.allSettled(
-        updatedSongIds.map((songId) =>
-          createSongPlayedNotification(songId).catch((err) => {
-            console.error(`发送歌曲(${songId})已播放通知失败:`, err)
-          })
-        )
-      )
+      createSongPlayedNotifications(updatedSongIds).catch((err) => {
+        console.error('发送歌曲已播放通知失败:', err)
+      })
     )
+    // 群聊推送：歌曲已播放（默认关闭，噪音较大，按需在后台开启）。
+    // 批量标播放时逐首发一条，但同群同事件的合并窗口会把它们并成一条消息。
+    event.waitUntil((async () => {
+      try {
+        const played = await db.select({ title: songs.title, artist: songs.artist })
+          .from(songs).where(inArray(songs.id, updatedSongIds))
+        for (const song of played) {
+          await enqueueAstrbotGroupEvent('songPlayed', '歌曲已播放', `《${song.title}》- ${song.artist} 已播放`)
+        }
+      } catch (err) {
+        console.error('发送群聊已播放通知失败:', err)
+      }
+    })())
   }
 
   return {

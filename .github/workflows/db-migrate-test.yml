@@ -1,0 +1,150 @@
+# 数据库迁移测试：在空库上按顺序执行 app/drizzle/migrations 全量迁移，
+# 并校验迁移记录数与 SQL 文件数一致，保证「全新的数据库迁移」可用。
+# 只执行迁移，禁止 db:generate / db:push，不改动任何迁移文件。
+
+name: DB Migration Test
+
+on:
+  # main 上仅作合入后的兜底：只在迁移/schema 变化时跑
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/drizzle/migrations/**'
+      - 'app/drizzle/schema.ts'
+      - '.github/workflows/db-migrate-test.yml'
+  # PR 不带 paths 过滤：每个 PR 都要产出这一项检查，
+  # 否则在分支保护里设为必需状态检查时，未改动迁移的 PR 会因检查缺席而卡住
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  # 主机写死 127.0.0.1，避免 service 容器只映射 IPv4 时 localhost 解析到 ::1 连不上；
+  # 配合下方 trust 认证，URL 不含任何凭据
+  DATABASE_URL: 'postgresql://voicehub@127.0.0.1:5432/voicehub_test'
+
+jobs:
+  migrate-fresh-db:
+    # pull_request 事件的 github.repository 是 base 仓库，因此外部 fork 提来的 PR 照常跑；
+    # 本仓库的同步推送、以及 fork 上的非 PR 事件只在手动触发时才跑
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # 与 Dockerfile-postgres 的 postgres:15-alpine 保持一致
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: voicehub
+          POSTGRES_DB: voicehub_test
+          # 一次性 CI 库，用 trust 免口令，凭据不会在 URL 与容器间写歪
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U voicehub -d voicehub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # setup-node v5 会按 packageManager 自动探测并调用包管理器做依赖缓存，
+      # 因此 pnpm 必须先于 Node 安装；版本沿用 package.json 的 packageManager
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: 安装依赖
+        env:
+          CI: 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: 数据库连通性预检
+        run: |
+          set -e
+          node -e "
+            const net = require('net');
+            const s = net.connect(5432, '127.0.0.1', () => { console.log('✅ TCP 127.0.0.1:5432 可连'); s.end(); });
+            s.on('error', (e) => { console.error('❌ TCP 连接失败:', e.message); process.exit(1); });
+          "
+          psql "$DATABASE_URL" -tA -c \
+            "SELECT '✅ 服务端 '||current_setting('server_version')||' / 登录用户 '||current_user||' 超级用户='||usesuper FROM pg_user WHERE usename=current_user"
+
+      - name: 校验迁移链完整性
+        run: pnpm exec drizzle-kit check
+
+      # drizzle-kit check 只比对已生成的迁移之间的一致性，不会拿 schema.ts 和最后一个
+      # snapshot 比；只改 schema 漏生成迁移的 PR 会一路全绿，新库建出来缺列。
+      # 这里把迁移目录复制到临时位置再 generate，有差异即说明 schema 未被迁移覆盖。
+      - name: 校验 schema 已生成对应迁移
+        run: |
+          set -eo pipefail
+          # drizzle-kit 把 config 里的 out 当作相对 CWD 的路径，绝对路径会被拼成 ".//xxx" 而 ENOENT，
+          # 因此临时目录必须放在工作区内
+          DRIFT=.schema-drift
+          rm -rf "$DRIFT"
+          trap 'rm -rf "$DRIFT"' EXIT
+          mkdir -p "$DRIFT"
+          cp -r app/drizzle/migrations "$DRIFT/migrations"
+          cat > "$DRIFT/drizzle.config.ts" <<EOF
+          export default {
+            dialect: 'postgresql',
+            schema: './app/drizzle/schema.ts',
+            out: '$DRIFT/migrations',
+            migrations: { prefix: 'timestamp', table: '__drizzle_migrations__', schema: 'public' }
+          }
+          EOF
+          pnpm exec drizzle-kit generate --config="$DRIFT/drizzle.config.ts" </dev/null | tail -3
+          if ! diff -rq "$DRIFT/migrations" app/drizzle/migrations > "$DRIFT/diff.txt"; then
+            echo "❌ schema.ts 与迁移文件不一致，说明有 schema 变更尚未生成迁移"
+            echo "   本地运行 pnpm db:generate 生成迁移后一并提交"
+            sed -n 1,40p "$DRIFT/diff.txt"
+            exit 1
+          fi
+          echo "✅ schema.ts 与迁移文件一致，无未生成的变更"
+
+      - name: 空库全量迁移
+        # 未指定 shell 时 runner 用 bash -e {0}，不带 pipefail；不加 pipefail 的话
+        # 管道返回值取 tee 的状态，迁移失败会被当成成功
+        run: |
+          set -eo pipefail
+          if ! pnpm run db:migrate 2>&1 | tee /tmp/migrate.raw >/dev/null; then
+            echo "❌ 迁移失败，完整输出："
+            tr '\r' '\n' < /tmp/migrate.raw | grep -vE '^\s*$'
+            exit 1
+          fi
+          tr '\r' '\n' < /tmp/migrate.raw | grep -vE '^\s*$' | tail -5
+
+      - name: 重复执行验证幂等
+        run: |
+          set -eo pipefail
+          OUTPUT=$(pnpm run db:migrate 2>&1) || { echo "$OUTPUT"; exit 1; }
+          echo "$OUTPUT" | tail -5
+
+      - name: 校验迁移记录数
+        run: |
+          set -eo pipefail
+          TABLE=$(psql "$DATABASE_URL" -tA -c \
+            "SELECT table_schema || '.' || quote_ident(table_name) FROM information_schema.tables \
+             WHERE table_name LIKE '%drizzle_migrations%' LIMIT 1")
+          if [ -z "$TABLE" ]; then
+            echo "❌ 未找到迁移记录表"
+            exit 1
+          fi
+          APPLIED=$(psql "$DATABASE_URL" -tA -c "SELECT count(*) FROM ${TABLE}")
+          FILES=$(ls app/drizzle/migrations/*.sql | wc -l)
+          echo "✅ 迁移表 $TABLE 已应用: $APPLIED / SQL 文件: $FILES"
+          if [ "$APPLIED" != "$FILES" ]; then
+            echo "❌ 迁移记录数与文件数不一致"
+            exit 1
+          fi
