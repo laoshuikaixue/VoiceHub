@@ -23,6 +23,7 @@ import {
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
+import { getUserRole } from '~~/server/utils/rbac'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
@@ -277,7 +278,7 @@ export default defineEventHandler(async (event) => {
       name: user.name,
       grade: user.grade,
       class: user.class,
-      role: user.role,
+      role: getUserRole(user),
       email: user.email,
       emailVerified: user.emailVerified,
       forcePasswordChange: user.forcePasswordChange,

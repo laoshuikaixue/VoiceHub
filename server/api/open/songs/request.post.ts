@@ -28,16 +28,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const userResult = await db
-    .select({
-      id: users.id,
-      role: users.role,
-      status: users.status
-    })
-    .from(users)
-    .where(eq(users.id, apiKey.createdByUserId))
-    .limit(1)
-  const user = userResult[0]
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, apiKey.createdByUserId),
+    columns: { id: true, role: true, status: true }
+  })
 
   if (!user || user.status !== 'active') {
     throw createError({

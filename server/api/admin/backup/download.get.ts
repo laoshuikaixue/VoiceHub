@@ -1,17 +1,13 @@
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { canExportBackup } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
+  // 权限：backup.export（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canExportBackup(event)
+
   try {
-    // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以下载备份文件'
-      })
-    }
 
     const query = getQuery(event)
     const { filename } = query

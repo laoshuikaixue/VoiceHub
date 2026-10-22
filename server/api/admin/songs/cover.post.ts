@@ -2,14 +2,15 @@ import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { canWriteSongs } from '~~/server/utils/rbac'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { fetchSongCover } from '~~/server/utils/songCoverFetcher'
 
 // 获取歌曲封面 URL（仅返回，不写库，由前端填入表单随弹窗保存）
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  // 权限：song.write（SONG_ADMIN 及以上）
+  await canWriteSongs(event)
 
   const body = await readBody(event)
   let platform: string | null

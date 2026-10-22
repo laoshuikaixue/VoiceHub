@@ -1,24 +1,11 @@
 import { db } from '~/drizzle/db'
 import { playTimes } from '~/drizzle/schema'
 import { ilike } from 'drizzle-orm'
+import { canManagePlayTimes } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能添加播出时段'
-    })
-  }
+  // 权限：playtimes.manage（SONG_ADMIN 及以上）
+  await canManagePlayTimes(event)
 
   // 获取请求体
   const body = await readBody(event)

@@ -3,20 +3,14 @@ import { db } from '~/drizzle/db'
 import { songs, users, votes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { canReadSongs } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查用户认证
-    const user = event.context.user
-
-    if (!user) {
-      throw createApiError(401, 'SONG_LOGIN_REQUIRED_VIEW_VOTERS', '需要登录才能查看投票人员')
-    }
-
-    // 检查管理员权限
-    if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createApiError(403, 'SONG_VOTERS_ADMIN_ONLY', '只有管理员才能查看投票人员列表')
-    }
+    // 权限：song.read（SONG_ADMIN 及以上）。
+    // 说明：旧实现对 401/403 返回 SONG_* 专属错误码；收敛到内核三态后改用
+    // COMMON_INSUFFICIENT_PERMISSION / AUTH_UNAUTHORIZED（客户端按 code 本地化，属有意变更）。
+    await canReadSongs(event)
 
     // 获取歌曲ID
     const songId = parseInt(getRouterParam(event, 'id') || '0')

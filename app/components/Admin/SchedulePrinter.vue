@@ -9,7 +9,7 @@
 
     <!-- 权限检查 -->
     <div
-      v-if="!canPrintSchedule"
+      v-if="!canAccessPage('print')"
       class="flex flex-col items-center justify-center py-20 bg-bg-secondary-50 rounded-xl border border-border-secondary"
     >
       <div
@@ -533,7 +533,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRuntimeConfig } from '#app'
-import { usePermissions } from '~/composables/usePermissions'
+import { useRbac } from '~/composables/useRbac'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import { downloadImageAsBase64, warmupPrintImages } from '~/utils/print-image-cache'
@@ -576,7 +576,7 @@ const remarkText = computed(() => {
 })
 
 // 权限检查
-const { canPrintSchedule } = usePermissions()
+const { canAccessPage } = useRbac()
 
 // 认证信息
 const { getAuthConfig } = useAuth()

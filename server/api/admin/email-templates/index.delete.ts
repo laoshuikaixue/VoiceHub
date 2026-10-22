@@ -1,16 +1,14 @@
 import { db } from '~/drizzle/db'
 import { emailTemplates } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { canManageEmailTemplates } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'DELETE') {
     throw createError({ statusCode: 405, message: '方法不被允许' })
   }
-  const user = event.context.user
-  if (!user) throw createError({ statusCode: 401, message: '未授权访问' })
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '需要管理员权限' })
-  }
+  // 权限：email_templates.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canManageEmailTemplates(event)
 
   const query = getQuery(event)
   const key = (query.key || '').toString()

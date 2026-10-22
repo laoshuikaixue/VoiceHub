@@ -3,15 +3,11 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { canReadUsers } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  // 权限：user.read（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canReadUsers(event)
 
   const userId = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(userId) || userId <= 0) {

@@ -1,19 +1,14 @@
 import { apiKeyPermissions, apiKeys, db, users } from '~/drizzle/db'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
+import { canReadApiKeys } from '~~/server/utils/rbac'
 
 /**
  * 获取API Key列表
  * GET /api/admin/api-keys
  */
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以管理 API Key
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以管理 API Key'
-    })
-  }
+  // 权限：api_keys.read（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canReadApiKeys(event)
 
   const query = getQuery(event)
   const page = parseInt(query.page as string) || 1

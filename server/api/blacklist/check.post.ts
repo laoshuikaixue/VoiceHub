@@ -4,6 +4,7 @@ import { songBlacklists } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { matchBlacklistGenre, matchBlacklistLanguage, resolveSongTypes } from '~~/server/utils/song-type-resolver'
+import { isSongAdminRole } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -16,9 +17,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 管理员不受黑名单限制
+  // 管理员不受黑名单限制（免检分支，不是拒绝式守卫）
   const user = event.context.user
-  if (user && ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)) {
+  if (user && isSongAdminRole(user)) {
     return {
       isBlocked: false,
       reasons: [],

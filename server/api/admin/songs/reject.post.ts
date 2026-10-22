@@ -2,16 +2,11 @@ import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
+import { canRejectSongs } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
+  // 权限：song.reject（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canRejectSongs(event)
 
   const body = await readBody(event)
 

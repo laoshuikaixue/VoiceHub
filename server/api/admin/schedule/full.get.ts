@@ -14,25 +14,12 @@ import {
   buildNameToUsersMap,
   formatDisambiguatedNameFromMap
 } from '~~/server/utils/userDisplayName'
+import { canReadSchedule } from '~~/server/utils/rbac'
 import { parseScheduleDateQuery } from '~~/server/utils/schedule-date-query'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户身份验证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有歌曲管理员及以上权限才能访问完整排期数据'
-    })
-  }
+  // 权限：schedule.read（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canReadSchedule(event)
 
   const query = getQuery(event)
   const { date, playTimeId, includeDrafts = 'true' } = query

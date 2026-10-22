@@ -4,11 +4,12 @@ import { scheduleSongPool } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { canWriteSchedule } from '~~/server/utils/rbac'
 import { fetchPoolCount } from '~~/server/utils/scheduleSongPool'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  // 权限：schedule.write（SONG_ADMIN 及以上）
+  await canWriteSchedule(event)
 
   const query = getQuery(event)
   const songIdsRaw = query.songIds

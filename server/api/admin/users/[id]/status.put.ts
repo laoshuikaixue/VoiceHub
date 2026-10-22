@@ -6,17 +6,12 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { canChangeUserStatus, isStudentUser } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    // 权限：user.status（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const user = await canChangeUserStatus(event)
 
     const userId = getRouterParam(event, 'id')
     const body = await readBody(event)
@@ -64,8 +59,8 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
     }
 
-    // 检查是否为学生用户
-    if (targetUser.role !== 'USER') {
+    // 检查是否为学生用户（客体域规则：本接口只改学生状态）
+    if (!isStudentUser(targetUser)) {
       throw createError({
         statusCode: 400,
         message: '只能修改学生用户的状态'

@@ -1,17 +1,11 @@
-import { verifyAdminAuth } from '~~/server/utils/auth'
 import { databaseManager } from '~~/server/utils/database-manager'
+import { canResetDatabase } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
+  // 数据库写操作仅限超级管理员（routePermissionMap 登记 database.reset；守卫在 try 外）
+  await canResetDatabase(event)
+
   try {
-    const authResult = await verifyAdminAuth(event)
-
-    if (!authResult.success) {
-      throw createError({
-        statusCode: 401,
-        message: authResult.message
-      })
-    }
-
     const cleanedCount = await databaseManager.cleanupExpiredSessions()
 
     databaseManager.clearHealthCheckCache()

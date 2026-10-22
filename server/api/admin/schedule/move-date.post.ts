@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { canWriteSchedule } from '~~/server/utils/rbac'
 
 const parsePlayTimeId = (raw: unknown): number | null => {
   if (raw === undefined || raw === null || raw === '') return null
@@ -11,13 +12,8 @@ const parsePlayTimeId = (raw: unknown): number | null => {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
+  // 权限：schedule.write（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canWriteSchedule(event)
 
   const body = await readBody(event)
   const fromDate = typeof body?.fromDate === 'string' ? body.fromDate.trim() : ''

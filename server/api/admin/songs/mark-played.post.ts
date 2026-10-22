@@ -7,6 +7,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import { z } from 'zod'
+import { canWriteSongs } from '~~/server/utils/rbac'
 
 const markPlayedSchema = z.object({
   songId: z.number().optional(),
@@ -15,23 +16,8 @@ const markPlayedSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能标记歌曲'
-    })
-  }
-
-  // 检查是否是管理员
-  if (!['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员可以标记歌曲为已播放'
-    })
-  }
+  // 权限：song.write（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canWriteSongs(event)
 
   const body = await readBody(event)
   const validatedDataResult = markPlayedSchema.safeParse(body)

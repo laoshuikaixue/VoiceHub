@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { canExecuteBackup } from '~~/server/utils/rbac'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
 function normalizePath(p: string): string {
@@ -9,10 +10,8 @@ function normalizePath(p: string): string {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以测试 WebDAV 连接')
-  }
+  // 权限：backup.execute（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  await canExecuteBackup(event)
 
   const body = await readBody(event)
   let { url, username, password, path: dirPath } = body

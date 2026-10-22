@@ -11,6 +11,7 @@ import {
   type MaskableSong
 } from '~~/server/utils/studentMask'
 import { formatDisambiguatedName, NAME_DISAMBIGUATION_CTES } from '~~/server/utils/userDisplayName'
+import { isSongAdminRole } from '~~/server/utils/rbac'
 
 interface SongResponse extends MaskableSong {
   id: number
@@ -303,7 +304,7 @@ export default defineEventHandler(async (event) => {
     const requestedPage = parseInt(String(query.page || ''), 10)
     const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
     const user = event.context.user || null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = isSongAdminRole(user)
 
     const params: any[] = [user?.id ?? null]
     const addParam = (value: any) => {
@@ -880,7 +881,7 @@ export default defineEventHandler(async (event) => {
         )
         const fallbackPage = Math.max(parseInt(String(fallbackQuery.page || ''), 10) || 1, 1)
         const fallbackUser = event.context.user || null
-        const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+        const fallbackIsAdmin = isSongAdminRole(fallbackUser)
         return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin, {
           scope: fallbackScope,
           sortBy: fallbackSortBy,

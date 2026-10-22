@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { canRejectSongs } from '~~/server/utils/rbac'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
@@ -10,9 +10,8 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 const MAX_BATCH_REJECT_COUNT = 1000
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
-  const user = event.context.user
+  // 权限：song.reject（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canRejectSongs(event)
 
   const body = await readBody(event)
 

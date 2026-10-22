@@ -3,6 +3,7 @@ import test from 'node:test'
 import { build } from 'esbuild'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { IncomingMessage, ServerResponse } from 'node:http'
 import { Socket } from 'node:net'
@@ -55,6 +56,10 @@ type DateQueryModule = {
   parseScheduleDateQuery(value: unknown): { startOfDay: Date; endOfDay: Date } | null
 }
 
+// 本文件只桩掉数据库与认证：RBAC guard 走 legacy 分支（catalog minRole 派生，三态同签名），
+// 避免为日期查询测试再桩一套权限表查询。RBAC 正式路径由 tests/server/rbac/** 覆盖。
+process.env.RBAC_ENABLED = 'false'
+
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const require = createRequire(import.meta.url)
 const database: FixtureDatabase = {
@@ -90,8 +95,13 @@ async function loadModule<T>(path: string): Promise<T> {
           if (args.path === '~/drizzle/db') return { path: 'database', namespace: 'fixture' }
           if (args.path === '../../utils/auth') return { path: 'auth', namespace: 'fixture' }
           if (args.path === './system-settings-helper') return { path: 'settings', namespace: 'fixture' }
-          if (args.path.startsWith('~~/')) return { path: resolve(root, args.path.slice(3) + '.ts') }
-          if (args.path.startsWith('~/')) return { path: resolve(root, 'app', args.path.slice(2) + '.ts') }
+          // 别名既可能是单文件（x.ts）也可能是目录 barrel（x/index.ts），两者都要解析
+          const resolveAlias = (base: string) => {
+            const file = resolve(root, base + '.ts')
+            return existsSync(file) ? file : resolve(root, base, 'index.ts')
+          }
+          if (args.path.startsWith('~~/')) return { path: resolveAlias(args.path.slice(3)) }
+          if (args.path.startsWith('~/')) return { path: resolveAlias('app/' + args.path.slice(2)) }
           return null
         })
         builder.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({

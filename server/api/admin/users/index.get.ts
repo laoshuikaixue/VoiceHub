@@ -4,18 +4,12 @@ import { users } from '~/drizzle/schema'
 import { asc, desc, count, sql } from 'drizzle-orm'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 import { buildUserFilterConditions } from '~~/server/utils/user-filter'
+import { canReadUsers } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查用户是否为管理员
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以访问用户列表'
-      })
-    }
+    // 权限：user.read（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const user = await canReadUsers(event)
 
     const query = getQuery(event)
     const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
@@ -127,6 +121,8 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error: any) {
+    // 守卫异常（401/403）必须原样抛出：旧实现把权限错误吞成 500（已修）
+    if (error?.statusCode) throw error
     console.error('获取用户列表失败:', error)
     throw createError({
       statusCode: 500,

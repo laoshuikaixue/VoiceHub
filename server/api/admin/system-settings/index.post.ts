@@ -13,6 +13,7 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { canWriteSystemSettings, isSuperAdmin } from '~~/server/utils/rbac'
 import {
   SERVER_ERROR_CODES,
   MUSIC_SOURCE_PLATFORMS,
@@ -184,12 +185,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能更新系统设置'
-    })
-  }
+  await canWriteSystemSettings(event)
 
   try {
     const body = await readBody(event)
@@ -202,7 +198,7 @@ export default defineEventHandler(async (event) => {
     let settings = settingsResult[0]
 
     if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
-      if (user.role !== 'SUPER_ADMIN') {
+      if (!isSuperAdmin(user)) {
         // 主题设置仅超级管理员可修改：普通管理员请求剥离主题字段，其余配置照常处理
         delete body.defaultTheme
         delete body.enabledThemes

@@ -1,18 +1,11 @@
-import { verifyAdminAuth } from '~~/server/utils/auth'
 import { databaseManager } from '~~/server/utils/database-manager'
+import { canReadSystemSettings } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
+  // 验证管理员权限（守卫在 try 外：401/403 原样抛出，不被 catch 改写）
+  await canReadSystemSettings(event)
+
   try {
-    // 验证管理员权限
-    const authResult = await verifyAdminAuth(event)
-
-    if (!authResult.success) {
-      throw createError({
-        statusCode: 401,
-        message: authResult.message
-      })
-    }
-
     // 使用改进的数据库管理器获取性能指标
     const performanceMetrics = await databaseManager.getPerformanceMetrics()
 

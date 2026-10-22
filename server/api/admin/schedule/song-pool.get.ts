@@ -2,12 +2,13 @@ import { defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, scheduleSongPool, users, votes } from '~/drizzle/schema'
 import { inArray, count } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { canReadSchedule, isSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
+  // 权限：schedule.read（SONG_ADMIN 及以上）
+  const user = await canReadSchedule(event)
 
-  const isSuperAdmin = event.context.user?.role === 'SUPER_ADMIN'
+  const showSubmissionNote = isSuperAdmin(user)
 
   const poolRows = await db.select().from(scheduleSongPool).orderBy(scheduleSongPool.createdAt)
 
@@ -71,7 +72,7 @@ export default defineEventHandler(async (event) => {
       cardCodeId: song.cardCodeId,
       usedCardCode: song.cardCodeId != null,
       hasSubmissionNote: song.submissionNote ? true : false,
-      submissionNote: isSuperAdmin ? song.submissionNote : undefined,
+      submissionNote: showSubmissionNote ? song.submissionNote : undefined,
       addedBy: row.addedBy,
       addedByName: addedByUser?.name || addedByUser?.username || null,
       createdAt: row.createdAt

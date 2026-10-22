@@ -118,7 +118,21 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 抛错必须用 `Error` 实例（可附加 `data`），禁止 `throw { data: ... }` 字面量
 - 客户端用户可见错误统一 `useServerErrors().localize(err)` 展示，禁止直接取 `error.data.message`/`error.message`（中文消息在英文界面会泄漏）
 
-### 4.9. 网易云接口白名单同步
+### 4.9. RBAC 权限目录与数据 seed（S1 起）
+
+- 权限 key 的唯一权威定义是 `shared/rbac/permission-catalog.js`（每项含 `minRole`，角色矩阵与 legacy 冒号词表都由它派生）；`server/utils/rbac/constants.ts` 只是它的薄 re-export。禁止在 server / app / scripts / tests 里再抄第二份 key 字面量——契约检查 `scripts/contract-checks/single-source.mjs` 会非零退出拦住
+- 新增权限：只改 catalog（key + category + 双语描述 + `minRole` + `isApiPermission`）→ 跑 `pnpm db:seed` 幂等落库 → 在 `routePermissionMap` 注册路由。给角色调整权限 = 改该权限的 `minRole` 再跑 `pnpm db:seed`（脚本先清空该角色再写回，降权＝删行）
+- 历史冒号风格 API Key 权限归一化：`pnpm exec tsx scripts/normalize-api-permissions.js`；映射唯一来源是 catalog 的 `LEGACY_PERMISSION_MAP`，禁止在脚本里另抄一份
+- seed 只挂唯一迁移链：`pnpm db:migrate`（= `scripts/db-migrate.js`：`drizzle-kit migrate` → seed）、`pnpm safe-migrate`、`pnpm deploy`、`scripts/db-sync.js` 任一入口成功后权限数据都必须就位。seed 脚本缺失或执行失败一律非零退出，**禁止** `fileExists` 家族的文件存在性静默跳过（历史事故：seed 被跳过 → 权限表长期为空、管理接口全部 403，而部署日志显示成功）
+- 权限 key 或角色矩阵变更属契约变更：除 catalog 外必须同步 `tests/contract/permission-catalog.test.ts`（冻结基线 + 8 条 legacy 期望）与 `scripts/contract-checks/legacy-map.mjs`，并跑 `pnpm contract:check` 确认全绿
+- 数据层回滚：`pnpm rbac:rollback`（执行 `scripts/rbac-rollback.sql`：DROP 8 张表 + `api_keys` 8 列 + 清理迁移记录，全部 `IF EXISTS` 幂等）；执行前先 `pg_dump`，S5 上线后该脚本须改为「保留列、只回滚代码」
+- 迁移文件仍只能由 `pnpm db:generate` 生成（见 §4.2）：回滚脚本里记录的 sha256 必须等于该迁移 SQL 的文件哈希，`when` 必须等于 journal 条目
+- 服务端判权只用 `requirePermission(event, PERMISSIONS.*)`（唯一权威 guard）；确需按角色分支时用内核白名单函数（`isSuperAdmin` / `isAdminRole` / `isSongAdminRole` / `getUserRole` / `extractUserIdentity`）。`voicehub/no-raw-role-check`（error）覆盖 `server/api/**`：任意 `.role` 读取都报错，唯一豁免是「白名单函数的直接实参」
+- Vue 组件禁 `lang="ts"`：`voicehub/no-lang-ts`（error）覆盖 `app/**/*.vue`（存量债已由 eslint 基线吸收，只减不增）
+- 内核契约由 `scripts/contract-checks/kernel-isolation.mjs` 把关：`server/api/**` 零引用 `utils/rbac`、权限解析只有 `resolvePermissions.ts` 一处权威实现（除内核外不得直查 `role_permissions` / `user_permissions`）、内核零 key 字面量、legacy 路径必须由 catalog 派生
+- 新增/改动路由必须在 `server/utils/rbac/routePermissionMap.ts` 登记：**未登记 = 拒绝**（`server/api/admin/**` 与 `server/api/open/**` 没有「仅登录」兜底）；`scripts/contract-checks/route-coverage.mjs` 会断言 `server/api/**` 每条路由都被显式分类，并把放错位置的辅助模块（无 `defineEventHandler`）拦下
+
+### 4.10. 网易云接口白名单同步
 `server/api/api-enhanced/netease/[...path].ts` 的 `allowedEndpoints`（端点路径 → 允许的 HTTP 方法）是该代理的唯一放行名单，未列入的接口一律 403。该路由匿名可达且能触达上游全部接口（含发短信、注册、账号绑定等有外部副作用的接口），白名单是唯一的闸门。
 - 新增或变更网易云调用端点时，必须同步更新 `allowedEndpoints`，禁止只改调用方。调用点分散：前端音源适配器 `useMusicSources`（搜索/歌词）、封面/时长/详情、听歌识曲、评论、扫码登录、歌单、播放记录/听歌上报、云盘上传（`NeteaseUploadDialog`）、服务端 `songCoverFetcher`/`songDurationFetcher` 等，逐一确认
 - 只放行实际使用的端点与真实使用的方法（如 `/audio/match`、`/cloud/upload/*` 为 POST，其余多为 GET）；禁止图省事整段放行、加通配前缀或改成默认放行

@@ -719,7 +719,14 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
 
 ```
 VoiceHub/
+├── .dockerignore              # Docker 构建忽略文件
 ├── .github/                   # GitHub 配置目录
+│   ├── ISSUE_TEMPLATE/        # Issue 模板
+│   │   ├── bug_report.yml      # 缺陷报告模板
+│   │   ├── config.yml          # Issue 模板选择器配置
+│   │   ├── feature_request.yml # 功能请求模板
+│   │   ├── question.yml        # 使用提问模板
+│   │   └── security_report.yml # 安全问题报告模板
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
 │       ├── db-migrate-test.yml # 空库全量数据库迁移校验
@@ -744,8 +751,8 @@ VoiceHub/
 │   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       ├── year-review.css    # 年度回顾样式
 │   │       └── themes/            # 主题目录
-│   │           ├── dark.css         # 深色主题设计变量
-│   │           ├── light.css        # 亮色主题设计变量
+│   │           ├── ClassicDark.css  # 经典深色主题设计变量
+│   │           ├── ClassicLight.css # 经典浅色主题设计变量
 │   │           └── ModernLight.css # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
@@ -908,11 +915,11 @@ VoiceHub/
 │   │   ├── useNotifications.ts # 通知功能hooks
 │   │   ├── useOAuthBindReminder.ts # 微信/QQ绑定引导浏览器存储状态hooks
 │   │   ├── usePlatformConfig.ts    # 平台管理配置hooks
-│   │   ├── usePermissions.ts   # 权限管理hooks
 │   │   ├── usePasswordStrength.ts # 密码强度检测hooks
 │   │   ├── usePlayerLayout.ts  # 播放器布局（固定底部/自由拖拽）偏好hooks
 │   │   ├── useProgress.ts      # 进度管理hooks
 │   │   ├── useProgressEvents.ts # 进度事件hooks
+│   │   ├── useRbac.ts          # 前端 RBAC 权限镜像（数据源 /api/admin/rbac/my-permissions）
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSafeLocale.ts    # 安全 i18n 文本包装hooks
 │   │   ├── useScrollMemory.ts  # 页面滚动位置记忆hooks
@@ -957,25 +964,9 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
+│   │   ├── sentry.client.ts    # 客户端 Sentry 错误追踪插件
+│   │   ├── theme.client.ts     # 客户端主题同步插件
 │   │   └── time-sync.client.ts # 客户端服务器时间对时插件
-│   ├── public/                # 静态文件目录
-│   │   ├── images/            # 图片资源
-│   │   │   └── beian.png      # 备案图标
-│   │   ├── themes/            # 主题图片
-│   │   │   ├── ClassicDark/          # 经典深色主题图片
-│   │   │   │   ├── logo.svg   # SVG格式Logo
-│   │   │   │   ├── search.svg # 搜索图标
-│   │   │   │   └── thumbs-up.svg # 点赞图标
-│   │   │   ├── ClassicLight/         # 经典亮色主题图片
-│   │   │   │   ├── logo.svg   # SVG格式Logo
-│   │   │   │   ├── search.svg # 搜索图标
-│   │   │   │   └── thumbs-up.svg # 点赞图标
-│   │   │   └── ModernLight/          # 现代浅色主题图片
-│   │   │       ├── logo.svg   # SVG格式Logo
-│   │   │       ├── search.svg # 搜索图标
-│   │   │       └── thumbs-up.svg # 点赞图标
-│   │   ├── favicon.ico        # 网站图标
-│   │   └── robots.txt         # 搜索引擎爬虫配置
 │   ├── workers/             # Web Worker
 │   │   └── audioEncoderWorker.js # 音频编码 Web Worker
 │   └── utils/                 # 工具函数
@@ -1020,9 +1011,10 @@ VoiceHub/
 │       ├── qqCookie.ts        # QQ音乐登录Cookie存取与续期广播
 │       ├── qqUserLibrary.ts   # QQ音乐用户资料库（歌单/最近播放）
 │       ├── oauth-register.ts  # OAuth注册工具
-│       ├── email-verification.ts # 注册邮箱验证码
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
 │       ├── password-policy.ts # 统一密码策略
+│       ├── rbac-page-access.ts # 页面→权限映射纯逻辑（PAGE_PERMISSIONS 20 个 pageId）
+│       ├── session-reset.ts    # 会话失效清理唯一入口
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
 │       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
@@ -1120,6 +1112,16 @@ VoiceHub/
 │   │   │   ├── replay-requests/     # 重播申请管理API
 │   │   │   │   ├── index.get.ts     # 获取重播申请列表
 │   │   │   │   └── reject.post.ts   # 拒绝重播申请
+│   │   │   ├── rbac/                # RBAC 权限与角色管理API
+│   │   │   │   ├── my-permissions.get.ts # 获取当前用户权限状态
+│   │   │   │   ├── permissions.get.ts # 获取权限目录列表
+│   │   │   │   ├── roles.get.ts     # 获取角色权限矩阵
+│   │   │   │   ├── roles/           # 角色权限操作子目录
+│   │   │   │   │   └── [role].put.ts    # 更新角色权限
+│   │   │   │   ├── user-permissions.get.ts # 获取用户权限授予列表
+│   │   │   │   ├── user-permissions.post.ts # 新增用户权限授予
+│   │   │   │   └── user-permissions/ # 用户权限授予操作子目录
+│   │   │   │   │   └── [id].delete.ts   # 撤销用户权限授予
 │   │   │   ├── request-times/       # 点歌时间管理API
 │   │   │   │   ├── [id].ts          # 点歌时间操作
 │   │   │   │   ├── index.post.ts    # 创建点歌时间
@@ -1166,6 +1168,7 @@ VoiceHub/
 │   │   │   │   ├── trends.get.ts    # 趋势分析
 │   │   │   │   └── user-engagement.get.ts # 用户参与度统计
 │   │   │   ├── system-settings/     # 系统设置API
+│   │   │   │   ├── clear-aggregate-bindings.post.ts # 清理聚合 OAuth 绑定
 │   │   │   │   ├── env-oauth-import.post.ts # 导入环境变量OAuth配置
 │   │   │   │   ├── env-oauth.get.ts # 获取环境变量OAuth配置
 │   │   │   │   ├── index.post.ts    # 更新系统设置
@@ -1177,11 +1180,11 @@ VoiceHub/
 │   │   │   │   └── runtime-clear.post.ts # 清空运行事件缓冲
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
+│   │   │       │   ├── approval.post.ts       # 注册审核
 │   │   │       │   ├── reset-password.post.ts # 重置用户密码
 │   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
 │   │   │       │   ├── status-logs.get.ts # 获取用户状态变更日志
 │   │   │       │   └── status.put.ts    # 更新用户状态
-│   │   │       ├── [id].approval.post.ts # 注册审核
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].get.ts      # 用户详情
@@ -1192,7 +1195,7 @@ VoiceHub/
 │   │   │       ├── export.get.ts    # 导出用户列表
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
-│   │   │       ├── options.ts       # 用户管理选项
+│   │   │       ├── options.get.ts             # 用户管理选项
 │   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── api-enhanced/          # 网易云音乐API
 │   │   │   └── netease/           # 网易云增强接口代理
@@ -1294,18 +1297,18 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── bot/            # AstrBot 插件令牌回调
-│   │   │   ├── voicehub/            # 私聊绑定、歌单与投递回调
-│   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
-│   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
-│   │   │   │   ├── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
-│   │   │   │   ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）
-│   │   │   │   ├── ack.post.ts      # 回执投递结果（claimToken 原样带回）
-│   │   │   │   ├── song-search.post.ts # 机器人侧点歌搜索
-│   │   │   │   ├── song-sources.get.ts # 机器人侧可用音源平台列表
-│   │   │   │   ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
-│   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
-│   │   │   │   ├── password-reset.post.ts # 机器人侧两步确认重置密码
-│   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
+│   │   │   └── voicehub/            # 私聊绑定、歌单与投递回调
+│   │   │       ├── bind.post.ts     # 一次性绑定码换取会话绑定
+│   │   │       ├── unbind.post.ts   # 机器人侧解绑当前会话
+│   │   │       ├── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
+│   │   │       ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）
+│   │   │       ├── ack.post.ts      # 回执投递结果（claimToken 原样带回）
+│   │   │       ├── song-search.post.ts # 机器人侧点歌搜索
+│   │   │       ├── song-sources.get.ts # 机器人侧可用音源平台列表
+│   │   │       ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
+│   │   │       ├── song-request.post.ts # 机器人侧点歌投稿
+│   │   │       ├── password-reset.post.ts # 机器人侧两步确认重置密码
+│   │   │       └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
 │   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
@@ -1398,10 +1401,12 @@ VoiceHub/
 │   │   ├── 00.request-id.ts # 请求ID注入中间件
 │   │   ├── api-auth.ts     # API认证中间件
 │   │   ├── api-cors.ts     # API跨域中间件
-│   │   └── auth.ts         # 认证中间件
+│   │   ├── auth.ts         # 认证中间件
+│   │   └── rbac.ts          # RBAC 运行时门禁（routePermissionMap 唯一消费方）
 │   ├── plugins/            # 服务端插件
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
+│   │   ├── astrbot-group-flush.ts # AstrBot 群事件投递插件
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   │   └── statistics-code.ts # 站点统计代码注入插件
@@ -1413,6 +1418,8 @@ VoiceHub/
 │   │   ├── durationValidationService.ts # 歌曲时长校验与补齐服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── astrbotNotificationService.ts # AstrBot通知服务
+│   │   ├── astrbotGroupService.ts        # AstrBot 群事件服务
+│   │   ├── astrbotOutboxService.ts       # AstrBot 群事件发件箱服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
@@ -1440,12 +1447,16 @@ VoiceHub/
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
+│   │   ├── auth-session.ts                  # 登录会话读写与撤销工具
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
 │   │   ├── card-code-delete-handler.ts # 点歌券删除开放API处理器
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
+│   │   ├── db-errors.ts                     # 数据库驱动错误读取工具
+│   │   ├── email-verification.ts            # 注册邮箱验证码
+│   │   ├── esa-captcha-pass.ts              # ESA 验证码放行凭证校验
 │   │   ├── geo.ts          # 地理位置工具
 │   │   ├── grade-class-core.ts # 年级班级选项纯函数
 │   │   ├── grade-class-options.ts # 年级班级选项提取工具
@@ -1470,7 +1481,9 @@ VoiceHub/
 │   │   │   ├── store.ts     # 配置读写、名称解析、产物落盘与刷新
 │   │   │   ├── tickets.ts   # 加密凭证签发与校验
 │   │   │   └── types.ts     # 插件类型定义
+│   │   ├── native_bilibili.ts               # Bilibili 原生API
 │   │   ├── native_common.ts # 原生API通用工具
+│   │   ├── native_mg.ts                     # 咪咕音乐原生API
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
@@ -1478,7 +1491,6 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
-│   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
@@ -1487,7 +1499,6 @@ VoiceHub/
 │   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
-│   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
 │   │   ├── song-type-resolver.ts # 歌曲类型（语种/曲风）解析工具
@@ -1500,6 +1511,7 @@ VoiceHub/
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具
+│   │   ├── serverless-runtime.ts            # Serverless 运行环境判定
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
@@ -1515,52 +1527,180 @@ VoiceHub/
 │   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── user-filter.ts  # 用户列表/导出共用筛选条件构建
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
+│   │   ├── rbac/                            # RBAC 内核目录
+│   │   │   ├── cache.ts              # 权限缓存（TTL + in-flight 去重 + 主动失效）
+│   │   │   ├── constants.ts          # catalog 薄 re-export（导出名冻结）
+│   │   │   ├── fallback.ts           # RBAC 运行时开关
+│   │   │   ├── guards.ts             # 权限 guards（requirePermission）
+│   │   │   ├── index.ts              # 模块统一导出
+│   │   │   ├── legacyRoleCheck.ts    # legacy 角色校验（应急回滚路径）
+│   │   │   ├── policies.ts           # 具名策略
+│   │   │   ├── resolvePermissions.ts # 权限单一权威解析
+│   │   │   └── routePermissionMap.ts # 路由权限注册中心
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行插件构建与 Nuxt 构建
 │   ├── build-music-source-plugins.ts # 生成 Serverless 音源插件部署快照
 │   ├── check-deploy.js    # 部署前检查
+│   ├── check-permission-contract.mjs # 权限契约检查跑器（执行 contract-checks/*.mjs）
 │   ├── ci-update-pnpm-hash.py # Nix CI 读写 pnpmDeps 哈希
+│   ├── contract-checks/   # 权限契约检查模块（catalog 结构/派生、legacy 硬编码期望、单一来源扫描、内核隔离）
+│   │   ├── catalog-consumers.mjs # catalog 消费面检查（API 枚举与 re-export 冻结）
+│   │   ├── catalog.mjs           # catalog 结构与派生一致性检查
+│   │   ├── kernel-isolation.mjs  # RBAC 内核隔离检查
+│   │   ├── legacy-map.mjs        # legacy 冒号词表归一化检查
+│   │   ├── middleware-wiring.mjs # 中间件接线检查
+│   │   ├── route-coverage.mjs    # 路由权限覆盖检查
+│   │   └── single-source.mjs     # 权限 key 单一来源检查
 │   ├── clear-database.js  # 清空数据库
 │   ├── create-admin.js    # 创建管理员账户
-│   ├── db-sync.js         # 数据库同步
+│   ├── db-migrate.js      # 唯一迁移链入口：drizzle-kit migrate → seed（pnpm db:migrate）
+│   ├── db-sync.js         # 数据库同步（成功后写 RBAC seed）
 │   ├── deploy.js          # 一键部署脚本
 │   ├── drizzle/           # Drizzle 迁移辅助脚本
 │   │   └── migrations/
+│   │       └── meta/ # drizzle-kit 迁移 journal 目录
+│   │           └── _journal.json # 迁移 journal（drizzle-kit 自动维护）
+│   ├── eslint-baseline.mjs # ESLint 增量基线 ratchet（只禁新增 error）
+│   ├── gate.mjs           # 本地门禁：install/db:check/lint/test/contract/build 六步
+│   ├── lib/               # 门禁与迁移链共享工具（跨平台命令解析、Nuxt 产物准备、seed 步骤）
+│   │   ├── gate-utils.mjs # 门禁脚本共享工具
+│   │   └── seed-step.js   # 迁移链 seed 步骤共享实现
 │   ├── netlify-build.js   # Netlify 构建脚本
+│   ├── normalize-api-permissions.js # 旧冒号风格 API Key 权限归一化（映射取自 catalog）
+│   ├── package.json                  # 脚本子包配置（独立安装运行 scripts/）
 │   ├── postinstall.js     # 安装后脚本
+│   ├── rbac-rollback.js   # 数据层回滚执行器（执行 rbac-rollback.sql 并核对结果）
+│   ├── rbac-rollback.sql  # 数据层回滚 SQL（DROP 8 表 + api_keys 8 列 + 清理迁移记录，幂等）
 │   ├── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
 │   ├── reset-database.js  # 重置数据库
-│   └── safe-migrate.js    # 安全迁移（带备份）
-├── tests/                 # 自动化测试（节选）
-│   └── frontend/          # 前端音源测试
-│       └── netease-catalog.test.ts # 网易云曲库响应核验与取链回归
+│   ├── safe-migrate.js    # 安全迁移（带备份，成功后写 RBAC seed）
+│   ├── seed-permissions.js # RBAC 权限 seed（从 catalog 派生，幂等，随迁移链自动执行）
+│   └── typecheck-server.js           # server 目录独立类型检查（不在 tsconfig include 中）
+├── shared/                # 前后端共享模块（Nuxt 4 shared/ 自动扫描层）
+│   └── rbac/
+│       └── permission-catalog.js # RBAC 权限目录唯一权威定义（35 key + minRole 派生 + legacy 映射）
+├── tests/                 # 自动化测试
+│   ├── contract/          # 权限契约冻结基线测试（tests/contract/permission-catalog.test.ts）
+│   │   ├── _selftest.test.ts # 嵌套 glob 自证用例（S0-5）
+│   │   └── permission-catalog.test.ts # S1 冻结基线：35 项 / 矩阵 0-12-25-35 / legacy 8 条
+│   ├── frontend/          # 前端音源与播放器测试
+│   └── server/             # 服务端策略与安全测试
+│       ├── rbac/           # RBAC 单测（kernel/ 解析·缓存·guards·legacy·规则；routes/ 路由映射·具名策略）
+│       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
+│       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
+│       ├── esa-captcha.test.ts # 阿里云 ESA AI验证码区域与服务端节点解析测试
+│       ├── important-notification-policy.test.ts # 重要通知策略测试
+│       ├── initial-password-policy.test.ts # 初始密码状态策略测试
+│       ├── invalid-playback-urls.test.ts # 无效播放地址登记与淘汰测试
+│       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
+│       ├── music-source-plugin-platform.test.ts # 插件平台键解析测试
+│       ├── music-source-runtime.test.ts # 插件沙箱与网络策略测试
+│       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
+│       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
+│       ├── password-policy.test.ts # 密码策略测试
+│       ├── player-layout.test.ts # 播放器自由拖拽限位与偏好解析测试
+│       ├── qq-comment-normalize.test.ts # QQ音乐评论归一化测试
+│       ├── song-duration-policy.test.ts # 歌曲时长归一化与补齐决策测试
+│       ├── submission-restriction-policy.test.ts # 重复投稿限制模式判定测试
+│       ├── token-version-policy.test.ts # 令牌版本策略测试
+│       ├── user-archive.test.ts # 账号归档筛选参数解析测试
+│       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
+├── .prettierignore            # Prettier 忽略文件
+├── .prettierrc                # Prettier 格式化配置
 ├── .vercelignore          # Vercel部署忽略文件
+├── AGENTS.md                  # 项目 Agent 行为规范
+├── CODE_OF_CONDUCT.md         # 行为准则（英文）
+├── CODE_OF_CONDUCT.zh-CN.md   # 行为准则（简体中文）
 ├── docker-compose/        # Docker Compose配置目录
+│   ├── README.md                                # 配置文件说明与版本选择建议
+│   ├── docker-compose-prebuild-github-redis.yml # GitHub 官方预构建 + Redis
+│   ├── docker-compose-prebuild-github.yml       # GitHub 官方预构建（无 Redis）
+│   ├── docker-compose-prebuild-nju-redis.yml    # 南大镜像加速预构建 + Redis
+│   ├── docker-compose-prebuild-nju.yml          # 南大镜像加速预构建（无 Redis）
+│   ├── docker-compose-redis.yml                 # 本地构建 + Redis
+│   └── docker-compose.yml                       # 本地构建（无 Redis）
 ├── docker-compose.yml     # Docker编排文件
 ├── Dockerfile             # Docker构建文件
 ├── Dockerfile-postgres    # PostgreSQL Docker构建文件
 ├── drizzle.config.ts      # Drizzle配置文件
 ├── edgeone.json           # EdgeOne Pages 部署配置
+├── eslint-baseline.json   # ESLint 增量基线冻结值（由 pnpm lint:baseline --regen 生成）
+├── eslint-rules/          # 自定义 ESLint 规则（voicehub/no-raw-role-check、voicehub/no-lang-ts）
+│   ├── no-lang-ts.js        # 禁止 Vue SFC 使用 lang 类型标注
+│   └── no-raw-role-check.js # 禁止裸读 role 字段
 ├── eslint.config.mjs      # ESLint 配置
 ├── flake.lock             # Nix flake锁定文件
 ├── flake.nix              # Nix构建与NixOS模块配置
 ├── fnos/                  # 飞牛 OS 安装包相关配置
+│   ├── app/     # 飞牛 OS 应用入口配置
+│   │   └── ui/ # 飞牛 OS 应用 UI 配置
+│   │       └── config # 应用入口与端口配置
+│   ├── cmd/     # 飞牛 OS 安装包生命周期脚本
+│   │   └── main # 容器运行状态检查脚本
+│   └── manifest # 飞牛 OS 应用清单（名称/版本/平台）
 ├── LICENSE                # 开源许可证文件
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖
+├── package-lock.json          # npm 依赖锁定文件（仅工具链使用）
 ├── pnpm-lock.yaml         # pnpm 依赖锁定文件
 ├── pnpm-workspace.yaml    # pnpm 依赖构建许可配置
+├── public/                    # 静态资源目录（构建时原样拷贝到站点根路径）
+│   ├── assets/      # 不随主题切换的公共资源
+│   │   ├── logo-144.png # 站点 Logo（144px）
+│   │   └── logo.png     # 站点 Logo
+│   ├── audio-match/ # 听歌识曲前端资源（AudioWorklet 与 WASM）
+│   │   ├── afp.js      # 音频指纹（AFP）WASM 胶水代码
+│   │   ├── afp.wasm.js # 音频指纹（AFP）WASM 二进制
+│   │   └── rec.js      # AudioWorklet 录音处理器
+│   ├── favicon.ico  # 网站图标
+│   ├── images/      # 图片资源
+│   │   └── beian.png # 备案图标
+│   ├── robots.txt   # 搜索引擎爬虫配置
+│   └── themes/      # 主题图片
+│       ├── ClassicDark/  # 经典深色主题图片
+│       │   ├── logo.svg      # SVG格式Logo
+│       │   ├── search.svg    # 搜索图标
+│       │   └── thumbs-up.svg # 点赞图标
+│       ├── ClassicLight/ # 经典亮色主题图片
+│       │   ├── logo.svg      # SVG格式Logo
+│       │   ├── search.svg    # 搜索图标
+│       │   └── thumbs-up.svg # 点赞图标
+│       └── ModernLight/  # 现代浅色主题图片
+│           ├── logo.svg      # SVG格式Logo
+│           ├── search.svg    # 搜索图标
+│           └── thumbs-up.svg # 点赞图标
 ├── README.md              # 项目说明文档
 ├── sh/                    # 一键部署脚本目录
+│   ├── main.sh # 一键部署脚本
+│   └── next/   # 日常维护菜单脚本
+│       ├── deploy.sh # 部署/更新
+│       ├── main.sh   # 维护菜单入口
+│       └── update.sh # 更新
 ├── tsconfig.json          # TypeScript配置文件
+├── tools/                     # 工具与运维脚本
+│   └── server/ # Linux 测试服务器运维脚本（环境盘点/装 PG/门禁验证，非运行时依赖）
+│       ├── README.md            # 脚本用途说明
+│       ├── migrations-probe.sql # 迁移记录探查 SQL
+│       ├── srv-inventory.sh     # 验证环境盘点
+│       ├── srv-pg-fix.sh        # 幂等修正测试角色/库
+│       ├── srv-pg.sh            # 安装 PostgreSQL 并建隔离测试库
+│       ├── srv-setup.sh         # 环境准备（swap / Node 22 / pnpm / PostgreSQL）
+│       ├── srv-status.sh        # 服务器状态检查
+│       ├── srv-verify-s1.sh     # S1（RBAC 数据骨架）真实 PG 验证
+│       ├── srv-verify.sh        # 主分支真实 PG 验证
+│       ├── verification-s1.md   # S1 验证记录
+│       ├── verification-s2.md   # S2 验证记录
+│       ├── verification-s3b1.md # S3-B1 验证记录
+│       └── verification-s3b2.md # S3-B2 验证记录
 ├── UPGRADE.md             # 升级指南
 └── vercel.json            # Vercel部署配置
 ```
@@ -1606,6 +1746,11 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
+  - **`server/utils/rbac/`**: RBAC 内核目录（`constants.ts` 为 `shared/rbac/permission-catalog.js` 的薄 re-export，导出名冻结）
+
+#### 共享模块 (shared/)
+
+- **`shared/rbac/permission-catalog.js`**: RBAC 权限目录唯一权威定义（35 个 key + `minRole` 派生角色矩阵 + legacy 冒号词表 + 命名正则）；server / app / scripts / seed 一律 import 本模块
 
 #### 静态资源
 
@@ -1847,6 +1992,48 @@ psql -h localhost -U username -d database_name < backup.sql
 - **元数据**：包含创建时间、创建者、表信息等
 
 ## 开发指南
+
+### 运行手册
+
+开发与提交前的常用校验命令，均在仓库根目录执行。
+
+#### `pnpm gate` —— 本地门禁（一条命令跑完全部检查）
+
+六步顺序执行，任一步非零退出即中断：
+
+| 步骤 | 实际执行 | 说明 |
+| --- | --- | --- |
+| `install` | `pnpm install --frozen-lockfile` | 校验 lockfile 与 `package.json` 未漂移 |
+| `db:check` | `pnpm db:check` | 迁移快照与 journal 一致性校验，无需连接数据库 |
+| `lint` | `scripts/eslint-baseline.mjs --check` | ESLint 增量基线，只禁新增 error；执行前先补齐 `.nuxt` 产物 |
+| `test` | `pnpm test` | 全量 `tests/**/*.test.ts`；收集到的测试文件数低于基线（26）直接判失败 |
+| `contract` | `pnpm contract:check` | 权限契约检查 |
+| `build` | `pnpm build` | 实测约 10 分钟，能抓到「纯 JS `<script setup>` 里写类型注解」这类构建期缺陷 |
+
+- `pnpm gate --no-build`：跳过构建，日常迭代用
+- `pnpm gate --only=test,contract`：只跑指定步骤
+- 结束时额外校验 `.github/` 无未提交改动（D23：不得变更主仓库 CI 行为）
+- 门禁逻辑位于 `scripts/gate.mjs`，未接入 CI workflow；输出需自行贴进 PR 描述作为证据
+
+#### `pnpm contract:check` —— 权限契约检查
+
+等价于 `node scripts/check-permission-contract.mjs`。扫描 `scripts/contract-checks/*.mjs`，逐个执行各模块导出的 `checks`：全部通过退出 0，任一失败收集后退出 1。
+
+- 权限 key 或角色矩阵变更时必须跑通本项：除 `shared/rbac/permission-catalog.js` 外，还需同步 `tests/contract/permission-catalog.test.ts` 与 `scripts/contract-checks/legacy-map.mjs`
+- `scripts/contract-checks/` 目录存在但没有任何 `.mjs` 时按失败处理（拒绝假绿）
+
+#### `pnpm db:check` —— 迁移一致性检查
+
+等价于 `pnpm exec drizzle-kit check`。校验迁移目录中 snapshot 与 `_journal.json` 是否自洽，**不需要连接数据库**，因此可在无 Postgres 的环境（含 CI）安全执行。
+
+#### `pnpm db:generate` —— 生成迁移文件
+
+等价于 `pnpm exec drizzle-kit generate --name=auto-migration`。改动 `app/drizzle/schema.ts` 后执行，自动生成迁移 SQL、snapshot 与 journal 条目。
+
+- 迁移文件（SQL + snapshot + journal 条目）**只能**由本命令生成，禁止手工编写 SQL、手工创建 snapshot 或手工编辑 `_journal.json`；手工迁移会导致 snapshot 格式与 drizzle-kit 版本不兼容，后续 `db:generate` / `db:check` / `db:migrate` 全部失败
+- 需要语义化名称时用 `pnpm db:generate:name <name>`
+- 生成后禁止手工改名或编造时间戳：改名会让数据库中已执行的迁移记录无法匹配，产生重复迁移
+- 本命令只生成文件、不写数据库；应用迁移用 `pnpm db:migrate`（= `scripts/db-migrate.js`，`drizzle-kit migrate` → seed 的唯一迁移链）
 
 ### 组合式API
 

@@ -9,6 +9,7 @@ import { isSecureRequest } from '~~/server/utils/request-utils'
 import { getInitialPasswordPolicyViolation } from '~/utils/password-policy'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { canSetInitialPassword } from '~~/server/utils/initial-password-policy'
+import { getUserRole } from '~~/server/utils/rbac'
 import {
   PASSWORD_AUDIT_ACTIONS,
   consumePasswordRateLimit,
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
     })
     passwordUpdated = true
 
-    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion, event.context.authSessionId)
+    const newToken = JWTEnhanced.generateToken(user.id, getUserRole(user) as string, tokenVersion, event.context.authSessionId)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),

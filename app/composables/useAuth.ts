@@ -1,6 +1,5 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
-import { useUserFilters } from '~/composables/useUserFilters'
 import { useServerErrors } from '~/composables/useLocaleText'
 
 interface LoginResponse {
@@ -78,7 +77,9 @@ export const useAuth = () => {
 
       // 只有当之前是已认证状态，且接口明确返回401（Token无效/过期），才进行清理和跳转
       if (hadAuth && error.statusCode === 401) {
-        clearAuthState()
+        // 函数体内动态导入：session-reset 顶层依赖 useAuth，静态导入会形成循环
+        const { resetSession } = await import('~/utils/session-reset')
+        await resetSession()
         // Token失效，重定向到登录页
         await navigateTo('/login?error=SessionExpired')
       } else if (!hadAuth && error.statusCode === 401) {
@@ -167,7 +168,7 @@ export const useAuth = () => {
       })
       await syncPasswordChangeState(response, '密码修改成功，但刷新用户状态失败:')
     } catch (error: any) {
-      throw new Error(localizeServerError(error, '密码修改失败，请重试'))
+      throw new Error(localizeServerError(error, '密码修改失败，请重试'), { cause: error })
     } finally {
       loading.value = false
     }
@@ -193,19 +194,9 @@ export const useAuth = () => {
       // 忽略登出错误
     }
 
-    clearAuthState()
-
-    // 清理 admin 相关全局状态
-    try {
-      const { resetUserFilters } = useUserFilters()
-      resetUserFilters()
-    } catch (e) {
-      // ignore
-    }
-
-    if (import.meta.client && redirect) {
-      await navigateTo('/')
-    }
+    // 函数体内动态导入：session-reset 顶层依赖 useAuth，静态导入会形成循环
+    const { resetSession } = await import('~/utils/session-reset')
+    await resetSession({ redirectTo: redirect ? '/' : null })
   }
 
   const getAuthConfig = () => {
@@ -237,6 +228,7 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
+    clearAuthState,
     setAuthState,
     getToken,
     getAuthConfig

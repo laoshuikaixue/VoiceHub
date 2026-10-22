@@ -6,17 +6,12 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { canChangeUserStatus, canMutateTarget, isStudentUser, isSuperAdmin } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    // 权限：user.status（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const user = await canChangeUserStatus(event)
 
     const body = await readBody(event)
     const { userIds, status, reason, sourceStatus } = body
@@ -117,11 +112,11 @@ export default defineEventHandler(async (event) => {
         errors.push({ userId: u.id, error: '禁止在用户管理中批量更新自己的账户' })
         continue
       }
-      if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+      if (!canMutateTarget(user, u)) {
         errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
         continue
       }
-      if (u.role !== 'USER' && user.role !== 'SUPER_ADMIN') {
+      if (!isSuperAdmin(user) && !isStudentUser(u)) {
         errors.push({ userId: u.id, error: '权限不足：普通管理员无法批量修改其他管理员状态' })
         continue
       }

@@ -5,6 +5,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { getUserRole } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   const authUser = event.context.user
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
     name: dbUser.name,
     grade: dbUser.grade,
     class: dbUser.class,
-    role: dbUser.role,
+    role: getUserRole(dbUser),
     forcePasswordChange: dbUser.forcePasswordChange,
     passwordChangedAt: dbUser.passwordChangedAt,
     requirePasswordChange,

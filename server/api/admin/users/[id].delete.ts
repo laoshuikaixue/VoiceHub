@@ -2,17 +2,12 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { assertCanMutateTarget, canManageUsers } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查认证和权限
-    const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '没有权限访问'
-      })
-    }
+    // 权限：user.manage（ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
+    const user = await canManageUsers(event)
 
     const userId = getRouterParam(event, 'id')
 
@@ -48,14 +43,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 3. 越级删除保护
-    // 如果目标用户是 SUPER_ADMIN，操作者必须是 SUPER_ADMIN
-    if (existingUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足：普通管理员无法删除超级管理员'
-      })
-    }
+    // 3. 越级删除保护（客体策略 D8：目标为 SUPER_ADMIN 时仅 SUPER_ADMIN 可操作）
+    assertCanMutateTarget(event, existingUser, { message: '权限不足：普通管理员无法删除超级管理员' })
 
     // 删除用户
     await db.delete(users).where(eq(users.id, parseInt(userId)))

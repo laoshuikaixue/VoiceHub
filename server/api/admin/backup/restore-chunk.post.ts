@@ -35,16 +35,11 @@ import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
+import { isSuperAdmin, canRestoreBackup } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以恢复备份'
-    })
-  }
+  // 权限：backup.restore（SUPER_ADMIN）；未登录 401 / 账号异常 403 / 缺权限 403
+  const user = await canRestoreBackup(event)
 
   const body = await readBody(event)
   const {
@@ -56,7 +51,7 @@ export default defineEventHandler(async (event) => {
     hasSuperAdminInBackup = false
   } = body
 
-  if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
+  if (overwriteSuperAdmin && !isSuperAdmin(user)) {
     throw createError({
       statusCode: 403,
       message: '仅超级管理员可以覆盖超级管理员账号数据'

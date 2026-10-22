@@ -7,23 +7,11 @@ import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl
 } from '~~/server/utils/oauth-providers'
+import { canWriteSystemSettings } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能导入环境配置'
-    })
-  }
+  // 检查用户认证和权限
+  await canWriteSystemSettings(event)
 
   const body = await readBody(event)
   const provider = typeof body.provider === 'string' ? body.provider : ''

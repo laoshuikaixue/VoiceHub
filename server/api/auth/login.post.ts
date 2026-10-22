@@ -23,6 +23,7 @@ import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { createApiError } from '~~/server/utils/apiError'
 import { createAuthSession } from '~~/server/utils/auth-session'
+import { getUserRole } from '~~/server/utils/rbac'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -116,29 +117,26 @@ export default defineEventHandler(async (event) => {
     }
 
     // 查找用户
-    const userResult = await db
-      .select({
-        id: users.id,
-        username: users.username,
-        name: users.name,
-        grade: users.grade,
-        class: users.class,
-        password: users.password,
-        role: users.role,
-        lastLogin: users.lastLogin,
-        lastLoginIp: users.lastLoginIp,
-        passwordChangedAt: users.passwordChangedAt,
-        forcePasswordChange: users.forcePasswordChange,
-        tokenVersion: users.tokenVersion,
-        status: users.status,
-        email: users.email,
-        emailVerified: users.emailVerified
-      })
-      .from(users)
-      .where(eq(users.username, body.username))
-      .limit(1)
-
-    const user = userResult[0] || null
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, body.username),
+      columns: {
+        id: true,
+        username: true,
+        name: true,
+        grade: true,
+        class: true,
+        password: true,
+        role: true,
+        lastLogin: true,
+        lastLoginIp: true,
+        passwordChangedAt: true,
+        forcePasswordChange: true,
+        tokenVersion: true,
+        status: true,
+        email: true,
+        emailVerified: true
+      }
+    })
 
     if (!user) {
       // 记录登录失败（用户不存在）
@@ -255,7 +253,7 @@ export default defineEventHandler(async (event) => {
         name: user.name,
         grade: user.grade,
         class: user.class,
-        role: user.role,
+        role: getUserRole(user),
         email: user.email,
         emailVerified: user.emailVerified,
         forcePasswordChange: user.forcePasswordChange,
