@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { useAuth } from './useAuth'
 import { useServerErrors } from './useLocaleText'
 import { useLocale } from '~/utils/locale'
+import { formatDateTime } from '~/utils/timeUtils'
+import { notifySchedulePlaylistChanged } from './useSchedulePlaylistSync'
 import type { PlayTime, SystemSettings } from '~/types'
 
 export const useAdmin = () => {
@@ -42,6 +44,7 @@ export const useAdmin = () => {
         ...authConfig
       })
 
+      notifySchedulePlaylistChanged({ dates: [formatDateTime(playDate, 'YYYY-MM-DD')] })
       return data
     } catch (err: any) {
       error.value = err.message || failed('createSchedule')
@@ -80,6 +83,10 @@ export const useAdmin = () => {
         return { success: false, message: error.value } as const
       }
 
+      const playDate = response.schedule?.playDate
+      notifySchedulePlaylistChanged(
+        typeof playDate === 'string' ? { dates: [playDate.slice(0, 10)] } : {}
+      )
       return response
     } catch (err: any) {
       const errorMessage = err.data?.message || err.message || failed('removeSchedule')
@@ -91,8 +98,8 @@ export const useAdmin = () => {
     }
   }
 
-  // 更新排期顺序
-  const updateScheduleSequence = async (schedules: Array<{ id: number; sequence: number }>) => {
+  // 更新排期顺序；条目可携带 playDate，用于将队列刷新收窄到受影响日期
+  const updateScheduleSequence = async (schedules: Array<{ id: number; sequence: number; playDate?: string }>) => {
     if (!isAdmin.value) {
       error.value = adminOnly('updateScheduleSequence')
       return null
@@ -103,13 +110,15 @@ export const useAdmin = () => {
 
     try {
       const authConfig = getAuthConfig()
+      const dates = [...new Set(schedules.map((s) => s.playDate?.slice(0, 10)).filter(Boolean))]
 
       const data = await $fetch('/api/admin/schedule/sequence', {
         method: 'POST',
-        body: { schedules },
+        body: { schedules: schedules.map(({ id, sequence }) => ({ id, sequence })) },
         ...authConfig
       })
 
+      notifySchedulePlaylistChanged(dates.length ? { dates } : {})
       return data
     } catch (err: any) {
       error.value = err.message || failed('updateScheduleSequence')

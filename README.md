@@ -926,6 +926,7 @@ VoiceHub/
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
+│   │   ├── useSchedulePlaylistSync.ts # 本标签页排期保存后的队列刷新与生命周期
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
 │   │   ├── useTheme.ts         # 主题管理
@@ -1006,6 +1007,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
+│       ├── neteaseCatalog.ts  # 网易云曲库播放响应的歌曲、音质与试听标记核验
 │       ├── qqCookie.ts        # QQ音乐登录Cookie存取与续期广播
 │       ├── qqUserLibrary.ts   # QQ音乐用户资料库（歌单/最近播放）
 │       ├── oauth-register.ts  # OAuth注册工具
@@ -1016,6 +1018,8 @@ VoiceHub/
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
 │       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
+│       ├── schedulePlaylist.ts # 排期队列身份匹配与续播位置
+│       ├── schedulePlaylistRefresh.ts # 排期队列按需串行刷新与旧结果丢弃
 │       ├── timeUtils.ts       # 时间工具
 │       ├── user-archive.ts    # 账号归档判定与筛选参数解析
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
@@ -1503,6 +1507,7 @@ VoiceHub/
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
+│   │   ├── schedule-date-query.ts # 排期日期查询校验与 UTC 边界
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具
@@ -1580,6 +1585,7 @@ VoiceHub/
 │   ├── contract/          # 权限契约冻结基线测试（tests/contract/permission-catalog.test.ts）
 │   │   ├── _selftest.test.ts # 嵌套 glob 自证用例（S0-5）
 │   │   └── permission-catalog.test.ts # S1 冻结基线：35 项 / 矩阵 0-12-25-35 / legacy 8 条
+│   ├── frontend/          # 前端音源与播放器测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── rbac/           # RBAC 单测（kernel/ 解析·缓存·guards·legacy·规则；routes/ 路由映射·具名策略）
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试

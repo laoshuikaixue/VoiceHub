@@ -1321,7 +1321,19 @@ export const pages = {
       }
     },
     audioQuality: {
+      actualQualityNotice: '请求{0}，当前音质：{1}',
       unknown: '未知音质',
+      levels: {
+        standard: '标准',
+        higher: '较高',
+        exhigh: 'HQ极高',
+        lossless: 'SQ无损',
+        hires: 'Hi-Res',
+        jyeffect: '高清臻音',
+        vivid: '臻音全景声',
+        sky: '沉浸环绕声',
+        jymaster: '超清母带'
+      },
       options: {
         standard: { label: '标准', description: '适合流量有限的情况' },
         neteaseHq: { label: 'HQ极高', description: '高品质音乐体验' },
@@ -1435,6 +1447,10 @@ export const pages = {
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
     networkOffline: '网络连接已断开，请检查网络后重试',
+    scheduleSyncFailed: '播放队列更新失败，当前队列已保留',
+    scheduleSyncAuthChanged: '登录身份已变化，已停止排期同步',
+    scheduleWaiting: '等待排期歌曲，点击暂停等待',
+    playPause: '播放/暂停',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
     pluginExcluded: '插件音源已排除',
     pluginInvalidUrl: '插件音源返回的播放链接无效',

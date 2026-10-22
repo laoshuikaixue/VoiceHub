@@ -206,7 +206,7 @@ export const useAudioPlayerControl = () => {
     if (!globalAudioPlayer.getPlayingStatus().value) {
       const current = globalAudioPlayer.getCurrentSong().value
       if (current) {
-        globalAudioPlayer.playSong(current)
+        globalAudioPlayer.resumeSong()
       }
     }
   }
@@ -386,9 +386,16 @@ export const useAudioPlayerControl = () => {
     // 标记用户已交互
     hasUserInteracted.value = true
 
+    if (globalAudioPlayer.scheduleWaiting.value) {
+      globalAudioPlayer.pauseSong()
+      return true
+    }
     if (isPlaying.value) {
+      globalAudioPlayer.pauseSong()
       return pause()
     } else {
+      if (globalAudioPlayer.scheduleFinished.value) return globalAudioPlayer.resumeSong()
+      globalAudioPlayer.resumeSong()
       return await play()
     }
   }
@@ -737,6 +744,10 @@ export const useAudioPlayerControl = () => {
   }
 
   const onEnded = () => {
+    if (globalAudioPlayer.handleScheduleEnded(playMode.value)) {
+      isPlaying.value = false
+      return
+    }
     // 根据播放模式处理播放结束事件
     if (playMode.value === 'loopOne') {
       // 单曲循环：重新播放当前歌曲

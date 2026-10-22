@@ -36,6 +36,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useSchedulePlaylistSync } from '~/composables/useSchedulePlaylistSync'
 import { useAuth } from '~/composables/useAuth'
 import { useImportantNotification } from '~/composables/useImportantNotification'
 import ImportantNotificationModal from '~/components/UI/ImportantNotificationModal.vue'
@@ -62,6 +63,7 @@ const notificationContainer = ref(null)
 
 // 音频播放器
 const audioPlayer = useAudioPlayer()
+useSchedulePlaylistSync()
 const currentSong = ref(null)
 const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
 const shouldHidePlayer = computed(() => route.path === '/change-password')
@@ -139,7 +141,7 @@ const handlePlayerEnded = () => {
 const handlePlayerSongChange = (song) => {
   if (!song) return
   currentSong.value = song
-  audioPlayer.playSong(song)
+  audioPlayer.updateCurrentSong(song)
 }
 
 // 设置鸿蒙系统控制事件监听
@@ -151,7 +153,7 @@ const setupHarmonyOSListeners = () => {
     const currentGlobalSong = audioPlayer.getCurrentSong().value
     if (currentGlobalSong) {
       // 如果有当前歌曲，恢复播放
-      audioPlayer.playSong(currentGlobalSong)
+      audioPlayer.resumeSong()
     }
   }
 

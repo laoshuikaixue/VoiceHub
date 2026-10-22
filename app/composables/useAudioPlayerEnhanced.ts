@@ -1,9 +1,24 @@
 import { computed, ref } from 'vue'
-import { useAudioQuality } from './useAudioQuality'
-import type { MusicTrackMeta } from '~/utils/musicUrl'
+import { useAudioQuality, getNeteaseQualityLevel } from './useAudioQuality'
+import type { MusicTrackMeta, MusicUrlResolveResult } from '~/utils/musicUrl'
+
+type PlaybackAttempt = Partial<MusicUrlResolveResult> & { success: boolean; error?: string }
 
 export const useAudioPlayerEnhanced = () => {
-  const { getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+  const { getQuality, getQualityOptions, saveQuality, getNeteaseQualityLabel, getNeteaseQualityNotice } = useAudioQuality()
+  // 返回音质仅在接口 level 可识别时覆盖显示；未知音质（含未登录走解锁链路）沿用请求音质
+  const resolveResultQuality = (platform: string, result: PlaybackAttempt) => {
+    const level = ['netease', 'netease-podcast'].includes(platform) ? result.actualQuality || null : null
+    return { level, label: level ? getNeteaseQualityLabel(level) : null }
+  }
+  const resultQualityLabel = (platform: string, result: PlaybackAttempt, fallback: string | number) =>
+    resolveResultQuality(platform, result).label || fallback
+  const resultQualityMessage = (platform: string, result: PlaybackAttempt, requested: number, fallback: string | number) => {
+    const { level, label } = resolveResultQuality(platform, result)
+    return level && label && level !== getNeteaseQualityLevel(requested)
+      ? getNeteaseQualityNotice(requested, level)
+      : `已切换到${label || fallback}`
+  }
 
   // 使用全局通知函数
   const addNotification = (options) => {
@@ -41,23 +56,23 @@ export const useAudioPlayerEnhanced = () => {
     musicId,
     qualityOrPlayUrl,
     options?: { unblock?: boolean; quality?: number; musicInfo?: MusicTrackMeta }
-  ) => {
+  ): Promise<PlaybackAttempt> => {
     try {
       const requestOptions =
         typeof qualityOrPlayUrl === 'number'
           ? { ...options, quality: qualityOrPlayUrl }
           : options
 
-      const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')
-      const url = await coreGetMusicUrl(
+      const { getMusicUrlResult: coreGetMusicUrl } = await import('~/utils/musicUrl')
+      const result = await coreGetMusicUrl(
         platform,
         musicId,
         typeof qualityOrPlayUrl === 'string' ? qualityOrPlayUrl : undefined,
         requestOptions
       )
 
-      if (url) {
-        return { success: true, url }
+      if (result.url) {
+        return { ...result, success: true }
       }
       return { success: false, error: '未获取到播放链接' }
     } catch (error) {
@@ -81,8 +96,10 @@ export const useAudioPlayerEnhanced = () => {
 
     // 尝试下一个音质
     for (let i = currentIndex + 1; i < qualityOptions.length; i++) {
-      const newQuality = qualityOptions[i].value
-      console.log(`尝试切换到音质: ${qualityOptions[i].label}`)
+      const option = qualityOptions[i]
+      if (!option) continue
+      const newQuality = option.value
+      console.log(`尝试切换到音质: ${option.label}`)
 
       // 检查是否为播客内容
       const isPodcast =
@@ -107,7 +124,7 @@ export const useAudioPlayerEnhanced = () => {
 
         addNotification({
           type: 'info',
-          message: `已切换到${qualityOptions[i].label}`,
+          message: resultQualityMessage(platform, result, newQuality, option.label),
           duration: 3000
         })
 
@@ -115,15 +132,17 @@ export const useAudioPlayerEnhanced = () => {
           success: true,
           url: result.url,
           quality: newQuality,
-          qualityLabel: qualityOptions[i].label
+          qualityLabel: resultQualityLabel(platform, result, option.label)
         }
       }
     }
 
     // 如果所有更低音质都失败，尝试更高音质
     for (let i = currentIndex - 1; i >= 0; i--) {
-      const newQuality = qualityOptions[i].value
-      console.log(`尝试切换到音质: ${qualityOptions[i].label}`)
+      const option = qualityOptions[i]
+      if (!option) continue
+      const newQuality = option.value
+      console.log(`尝试切换到音质: ${option.label}`)
 
       // 检查是否为播客内容
       const isPodcast =
@@ -148,7 +167,7 @@ export const useAudioPlayerEnhanced = () => {
 
         addNotification({
           type: 'info',
-          message: `已切换到${qualityOptions[i].label}`,
+          message: resultQualityMessage(platform, result, newQuality, option.label),
           duration: 3000
         })
 
@@ -156,7 +175,7 @@ export const useAudioPlayerEnhanced = () => {
           success: true,
           url: result.url,
           quality: newQuality,
-          qualityLabel: qualityOptions[i].label
+          qualityLabel: resultQualityLabel(platform, result, option.label)
         }
       }
     }
@@ -297,11 +316,12 @@ export const useAudioPlayerEnhanced = () => {
 
         const qualityOptions = getQualityOptions(song.musicPlatform)
         const qualityLabel =
-          qualityOptions.find((option) => option.value === newQuality)?.label || newQuality
+          resultQualityLabel(song.musicPlatform, result,
+            qualityOptions.find((option) => option.value === newQuality)?.label || newQuality)
 
         addNotification({
           type: 'success',
-          message: `已切换到${qualityLabel}`,
+          message: resultQualityMessage(song.musicPlatform, result, newQuality, qualityLabel),
           duration: 3000
         })
 

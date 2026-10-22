@@ -1356,7 +1356,19 @@ export const pages = {
       }
     },
     audioQuality: {
+      actualQualityNotice: 'Requested {0}; current quality: {1}',
       unknown: 'Unknown quality',
+      levels: {
+        standard: 'Standard',
+        higher: 'Higher',
+        exhigh: 'HQ High',
+        lossless: 'SQ Lossless',
+        hires: 'Hi-Res',
+        jyeffect: 'HD Effect',
+        vivid: 'Vivid',
+        sky: 'Immersive',
+        jymaster: 'Master'
+      },
       options: {
         standard: { label: 'Standard', description: 'Suitable when data is limited' },
         neteaseHq: { label: 'HQ High', description: 'High-quality music experience' },
@@ -1473,6 +1485,10 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     networkOffline: 'Network disconnected. Check your connection and try again.',
+    scheduleSyncFailed: 'Queue update failed. The current queue was retained.',
+    scheduleSyncAuthChanged: 'Your sign-in changed. Schedule sync stopped.',
+    scheduleWaiting: 'Waiting for songs. Click to pause.',
+    playPause: 'Play/Pause',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
     pluginExcluded: 'Source plugin is excluded',
     pluginInvalidUrl: 'Source plugin returned an invalid playback link',

@@ -77,7 +77,7 @@
               <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="white" />
               <Icon
                 v-else
-                :name="control.isPlaying.value ? 'pause' : 'play'"
+                :name="control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value ? 'pause' : 'play'"
                 :size="24"
                 color="white"
               />
@@ -185,11 +185,11 @@
               <span
                 :class="{ disabled: control.hasError.value || control.isLoadingTrack.value }"
                 class="play-pause-btn music-icon"
-                title="播放/暂停"
+                :title="sync.globalAudioPlayer.scheduleWaiting.value ? audioPlayerLocale.scheduleWaiting : audioPlayerLocale.playPause"
                 @click="handleTogglePlay"
               >
                 <AppSpinner v-if="control.isLoadingTrack.value" :size="18" color="white" />
-                <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
+                <Icon v-else-if="control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value" name="pause" size="24" />
                 <Icon v-else name="play" size="24" />
               </span>
 
@@ -329,6 +329,7 @@ import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
+  getCachedMusicUrlQuality,
   getMusicUrlResult,
   isKnownInvalidQqAudioUrl
 } from '~/utils/musicUrl'
@@ -363,7 +364,7 @@ const emit = defineEmits(['close', 'ended', 'error', 'songChange'])
 // 使用 composables
 const control = useAudioPlayerControl()
 const sync = useAudioPlayerSync()
-const { getQualityLabel, getQuality, getQualityOptions, saveQuality } = useAudioQuality()
+const { getQualityLabel, getQuality, getQualityOptions, saveQuality, getNeteaseQualityLabel } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const mediaSession = useMediaSession()
 const wakeLock = useWakeLock()
@@ -651,7 +652,7 @@ const trySwitchPlaybackSource = async () => {
       }
     }
 
-    sync.globalAudioPlayer.playSong(updatedSong)
+    sync.globalAudioPlayer.updateCurrentSong(updatedSong)
     emit('songChange', updatedSong)
 
     if (window.$showNotification) {
@@ -1301,12 +1302,18 @@ const handleSeekToPosition = (event) => {
 }
 
 // 获取当前歌曲平台的音质文本
+const reportedQuality = computed(() => control.isLoadingTrack.value ? undefined
+  : getCachedMusicUrlQuality(props.song?.musicUrl || audioPlayer.value?.currentSrc || audioPlayer.value?.src))
+// 返回音质仅在接口 level 可识别时覆盖显示；未知音质（含未登录走解锁链路）沿用请求音质
+const actualQualityLabel = computed(() =>
+  ['netease', 'netease-podcast'].includes(props.song?.musicPlatform)
+    ? getNeteaseQualityLabel(reportedQuality.value) : null)
 const currentQualityText = computed(() => {
   if (!props.song || !props.song.musicPlatform) return '音质'
 
   const platform = props.song.musicPlatform
   const quality = getQuality(platform)
-  const label = getQualityLabel(platform, quality)
+  const label = actualQualityLabel.value || getQualityLabel(platform, quality)
 
   // 简化显示文本
   return label.replace(/音质|音乐/, '').trim() || '音质'
@@ -1321,6 +1328,10 @@ const currentPlatformOptions = computed(() => {
 // 检查是否是当前音质
 const isCurrentQuality = (qualityValue) => {
   if (!props.song || !props.song.musicPlatform) return false
+  if (actualQualityLabel.value) {
+    const matched = currentPlatformOptions.value.find(option => option.level === reportedQuality.value)?.value
+    if (matched !== undefined) return matched === qualityValue
+  }
   return getQuality(props.song.musicPlatform) === qualityValue
 }
 
@@ -1378,6 +1389,7 @@ const cyclePlayMode = () => {
       window.$showNotification(audioPlayerLocale.value.loopOneEnabled, 'info')
   } else if (current === 'loopOne') {
     control.setPlayMode('off')
+    if (sync.globalAudioPlayer.scheduleWaiting.value) sync.globalAudioPlayer.pauseSong()
     if (window.$showNotification)
       window.$showNotification(audioPlayerLocale.value.singleEnabled, 'info')
   } else {
@@ -1546,13 +1558,14 @@ watch(
     coverError.value = false
 
     // 避免双向触发 - 仅当是同一首歌时才跳过（防止playNext时block加载新歌）
-    if (isSyncingFromGlobal.value && oldSong && String(newSong.id) === String(oldSong.id)) return
+    if (isSyncingFromGlobal.value && oldSong && String(newSong.id) === String(oldSong.id) &&
+      newSong.schedulePlaybackKey === oldSong.schedulePlaybackKey) return
 
     // 确保组件已经挂载
     if (!isMounted.value) return
 
     // 如果是新歌曲，加载并播放
-    if (!oldSong || newSong.id !== oldSong.id) {
+    if (!oldSong || newSong.id !== oldSong.id || newSong.schedulePlaybackKey !== oldSong.schedulePlaybackKey) {
       const loadSuccess = await control.loadSong(newSong)
       if (loadSuccess) {
         sync.setGlobalPlaylist(newSong, props.playlist)
@@ -1886,6 +1899,7 @@ onMounted(async () => {
       },
       onPause: () => {
         isSyncingFromGlobal.value = true
+        sync.globalAudioPlayer.pauseSong()
         if (control.audioPlayer.value) {
           control.pause()
         }
@@ -1939,7 +1953,7 @@ onMounted(async () => {
         }
       },
       onPause: () => {
-        if (control.isPlaying.value) {
+        if (control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value) {
           handleTogglePlay()
         }
       },

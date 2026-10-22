@@ -15,6 +15,7 @@ import {
   formatDisambiguatedNameFromMap
 } from '~~/server/utils/userDisplayName'
 import { canReadSchedule } from '~~/server/utils/rbac'
+import { parseScheduleDateQuery } from '~~/server/utils/schedule-date-query'
 
 export default defineEventHandler(async (event) => {
   // 权限：schedule.read（SONG_ADMIN 及以上）；未登录 401 / 账号异常 403 / 缺权限 403
@@ -22,26 +23,15 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const { date, playTimeId, includeDrafts = 'true' } = query
+  const dateRange = parseScheduleDateQuery(date)
 
   try {
     // 构建查询条件
     const conditions = []
 
     // 日期过滤
-    if (date) {
-      const targetDate = new Date(date as string)
-      const startOfDay = new Date(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate()
-      )
-      const endOfDay = new Date(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate() + 1
-      )
-
-      conditions.push(and(gte(schedules.playDate, startOfDay), lt(schedules.playDate, endOfDay)))
+    if (dateRange) {
+      conditions.push(and(gte(schedules.playDate, dateRange.startOfDay), lt(schedules.playDate, dateRange.endOfDay)))
     }
 
     // 播放时间过滤
@@ -81,6 +71,7 @@ export default defineEventHandler(async (event) => {
         songMusicPlatform: songs.musicPlatform,
         songMusicId: songs.musicId,
         songDurationSeconds: songs.durationSeconds,
+        songPlayUrl: songs.playUrl,
         songCardCodeId: songs.cardCodeId,
         songSubmissionNote: songs.submissionNote,
         songSubmissionNotePublic: songs.submissionNotePublic,
@@ -339,6 +330,7 @@ export default defineEventHandler(async (event) => {
             musicPlatform: schedule.songMusicPlatform || null,
             musicId: schedule.songMusicId || null,
             durationSeconds: schedule.songDurationSeconds || null,
+            playUrl: schedule.songPlayUrl || null,
             semester: schedule.songSemester || null,
             createdAt: schedule.songCreatedAt,
             submissionNote: hasReplayMeta ? replayMeta.submissionNote : null,

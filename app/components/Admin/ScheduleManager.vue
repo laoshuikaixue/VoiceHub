@@ -881,7 +881,7 @@
                   <!-- 封面图片 -->
                   <div
                     class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer hover:opacity-80 transition-opacity"
-                    @click.stop="playSong(schedule.song)"
+                    @click.stop="playSong(schedule)"
                   >
                     <img
                       v-if="schedule.song.cover"
@@ -1984,6 +1984,7 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
+import { notifySchedulePlaylistChanged } from '~/composables/useSchedulePlaylistSync'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
@@ -2192,11 +2193,22 @@ const playSong = (songOrSchedule) => {
   // 兼容右键菜单传入的排期项（含 .song 字段）
   const song = songOrSchedule && songOrSchedule.song ? songOrSchedule.song : songOrSchedule
   if (!song) return
-  // 播放顺序列表中的歌曲，以播放顺序为队列
-  if (
-    localScheduledSongs.value.some((s) => s.song && String(s.song.id) === String(song.id))
-  ) {
-    playSongWithQueue(song, localScheduledSongs.value.map((s) => s.song))
+  // 仅实际排期条目使用排期播放来源
+  const index = songOrSchedule?.song
+    ? localScheduledSongs.value.findIndex((item) => item === songOrSchedule)
+    : -1
+  if (index >= 0) {
+    const items = localScheduledSongs.value.map((item) => ({ ...item, song: { ...item.song } }))
+    playSongWithQueue(song, undefined, {
+      items,
+      index,
+      source: {
+        date: selectedDate.value,
+        playTimeId: selectedPlayTime.value ? Number(selectedPlayTime.value) : 'all',
+        includeDrafts: true,
+        pending: hasChanges.value
+      }
+    })
     return
   }
   // 待排歌曲列表中的歌曲，以当前待排列表为队列
@@ -5065,6 +5077,7 @@ const confirmMoveDate = async () => {
         )
       }
     } finally {
+      notifySchedulePlaylistChanged({ dates: [sourceDate, targetDate] })
       loading.value = false
     }
   }
@@ -5171,6 +5184,9 @@ const confirmCopyDate = async () => {
             window.$showNotification(callLocale('errors.copyDateFailed', `复制失败: ${backendMessage}`, backendMessage), 'error')
           }
         } finally {
+          if (sourceSchedules.length > 0) {
+            notifySchedulePlaylistChanged({ dates: [targetDate] })
+          }
           loading.value = false
         }
       }
@@ -5232,6 +5248,9 @@ const confirmCopyDate = async () => {
           )
         }
       } finally {
+        if (sourceSchedules.length > 0) {
+          notifySchedulePlaylistChanged({ dates: [targetDate] })
+        }
         loading.value = false
       }
     }
@@ -5317,16 +5336,18 @@ const confirmCopyDate = async () => {
 
   confirmAction.value = async () => {
     loading.value = true
+    const succeededScheduleIds = []
+    const replacedDrafts = []
+    const affectedDates = new Set()
     try {
       let totalCopied = 0
-      let succeededScheduleIds = []
-      let replacedDrafts = []
 
       for (let i = 0; i < targetDays; i++) {
         const srcDay = i % sourceDays
         const srcDate = addDaysToString(fromStart, srcDay)
         const tgtDate = addDaysToString(toStart, i)
         const overwriteDrafts = draftTargetDates.includes(tgtDate)
+        affectedDates.add(tgtDate)
 
         const result = await $fetch('/api/admin/schedule/copy', {
           method: 'POST',
@@ -5383,6 +5404,9 @@ const confirmCopyDate = async () => {
         )
       }
     } finally {
+      if (affectedDates.size > 0) {
+        notifySchedulePlaylistChanged({ dates: [...affectedDates] })
+      }
       loading.value = false
     }
   }
@@ -5434,13 +5458,15 @@ const getUnspecifiedPlayTimeWarningCount = () => {
 // songs 数组顺序即播放顺序，服务端在同一事务内完成旧排期删除与草稿写入
 const saveDraftConfirmed = async () => {
   loading.value = true
+  const savedDate = selectedDate.value
+  const savedPlayTime = selectedPlayTime.value ? Number(selectedPlayTime.value) : 'all'
 
   try {
     await $fetch('/api/admin/schedule/bulk-draft', {
       method: 'POST',
       body: {
-        playDate: selectedDate.value,
-        playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+        playDate: savedDate,
+        playTimeId: savedPlayTime === 'all' ? null : savedPlayTime,
         songs: localScheduledSongs.value.map((item) => ({
           songId: item.song.id,
           replayRequestId: item.replayRequestId || item.song?.replayRequestId || null
@@ -5449,6 +5475,7 @@ const saveDraftConfirmed = async () => {
       ...auth.getAuthConfig()
     })
 
+    notifySchedulePlaylistChanged({ dates: [savedDate], playTimeId: savedPlayTime })
     hasChanges.value = false
     await loadData() // 重新加载数据
 
@@ -5535,6 +5562,8 @@ const publishSchedule = async () => {
 // 确认发布排期
 const publishScheduleConfirmed = async () => {
   loading.value = true
+  const savedDate = selectedDate.value
+  const savedPlayTime = selectedPlayTime.value ? Number(selectedPlayTime.value) : 'all'
 
   try {
     // 构建发布数据，携带拖拽时显式选择的重播申请绑定
@@ -5548,13 +5577,14 @@ const publishScheduleConfirmed = async () => {
     await $fetch('/api/admin/schedule/bulk-publish', {
       method: 'POST',
       body: {
-        playDate: selectedDate.value,
-        playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+        playDate: savedDate,
+        playTimeId: savedPlayTime === 'all' ? null : savedPlayTime,
         songs: songsToPublish
       },
       ...auth.getAuthConfig()
     })
 
+    notifySchedulePlaylistChanged({ dates: [savedDate], playTimeId: savedPlayTime })
     hasChanges.value = false
     await loadData() // 重新加载数据
 
@@ -5613,6 +5643,8 @@ const publishSingleDraftConfirmed = async (draft) => {
       ...auth.getAuthConfig()
     })
 
+    const date = getScheduleDateValue(draft.playDate)
+    notifySchedulePlaylistChanged(date ? { dates: [date] } : {})
     await loadData() // 重新加载数据
 
     // 确保界面更新
