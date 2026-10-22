@@ -79,6 +79,11 @@
               mkdir -p "$out/lib/voicehub/app/drizzle"
               cp -r app/drizzle/.      "$out/lib/voicehub/app/drizzle/"
 
+              # db.ts 运行时依赖该模块（tsx 直跑源码；Node 会把软链解析到 store 真实路径，
+              # 因此必须打进包内，仅在 StateDirectory 建软链无效），对齐 Dockerfile 运行阶段
+              mkdir -p "$out/lib/voicehub/server/utils"
+              cp server/utils/serverless-runtime.ts "$out/lib/voicehub/server/utils/"
+
               # Nix 运行时只走 deploy.js → db-sync.js/create-admin.js（以及手动构建时的 build.js）；
               # netlify-build/safe-migrate/redis-scan 等平台脚本不在此拷贝
               cp scripts/deploy.js scripts/db-sync.js scripts/create-admin.js \
@@ -332,8 +337,14 @@
                       # StateDirectory：/nix/store 只读且 ProtectSystem=strict 下无法写入；
                       # 只读产物以软链引入，升级时 -f 覆盖即可；-T 防止目标误为真实目录时嵌套
                       mkdir -p "$STATE/.data/music-source-plugins" "$STATE/backups" "$STATE/logs/archive"
-                      for f in .output node_modules package.json pnpm-workspace.yaml pnpm-lock.yaml drizzle.config.ts app scripts; do
-                        ln -sfT "$PKG/$f" "$STATE/$f"
+                      # 自动枚举包内全部顶层条目：仍是零拷贝（仅符号链接），新增文件时无需再维护列表；
+                      # 可写目录已在上面创建，跳过包内同名项避免被只读软链覆盖
+                      for f in "$PKG"/* "$PKG"/.[!.]*; do
+                        [ -e "$f" ] || continue
+                        case "$(basename "$f")" in
+                          .data|backups|logs) continue ;;
+                        esac
+                        ln -sfT "$f" "$STATE/$(basename "$f")"
                       done
                       ${lib.optionalString cfg.database.createLocally ''
                         # postgres.js 不消费 DATABASE_URL 中的 ?host= 参数做 Unix 套接字选路，
