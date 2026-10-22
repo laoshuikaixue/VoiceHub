@@ -185,6 +185,47 @@
                 "${buildScript}/bin/voicehub-build";
             };
           };
+
+          # 真机级验证：VM 内实际执行 deploy.js（迁移 + create-admin）并启动 .output。
+          # 求值冒烟看不到 DynamicUser + postgres peer 认证、tsx 运行时解析等运行时故障。
+          checks = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+            voicehub-vm = pkgs.testers.runNixOSTest {
+              name = "voicehub";
+
+              nodes.machine = { pkgs, ... }: {
+                imports = [ self.nixosModules.default ];
+
+                services.voicehub = {
+                  enable = true;
+                  database.createLocally = true;
+                  # deploy.js 强制要求 JWT_SECRET；测试值固定即可
+                  extraEnvironment.JWT_SECRET = "voicehub-vm-test-secret-0123456789";
+                };
+
+                virtualisation = {
+                  memorySize = 3072;
+                  cores = 2;
+                };
+
+                environment.systemPackages = [ pkgs.curl ];
+              };
+
+              testScript = ''
+                start_all()
+                machine.wait_for_unit("postgresql.service", timeout=120)
+                # Type=simple 下 unit 会先变为 active，真正的门是 deploy 结束后才监听的端口
+                machine.wait_for_unit("voicehub.service", timeout=900)
+                machine.wait_for_open_port(3000, timeout=900)
+
+                machine.succeed("curl -fsS http://127.0.0.1:3000/api/site-config >/dev/null")
+                machine.succeed("curl -fsS http://127.0.0.1:3000/api/songs/count >/dev/null")
+
+                machine.succeed("journalctl -u voicehub --no-pager | grep -q '数据库同步成功'")
+                machine.succeed("journalctl -u voicehub --no-pager | grep -q '管理员创建成功'")
+                machine.succeed("systemctl is-active --quiet voicehub.service")
+              '';
+            };
+          };
         }
       )
     // {
