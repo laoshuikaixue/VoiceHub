@@ -8,7 +8,7 @@ import {
   verifyCompactOAuthState
 } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, users, systemSettings } from '~/drizzle/db'
+import { db, eq, and, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { createAuthSession } from '~~/server/utils/auth-session'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
@@ -387,6 +387,41 @@ async function handleUserLoginOrBind(
         event,
         `/auth/error?code=ACCOUNT_BLOCKED&message=${encodeURIComponent(`账户处于风险控制期，请在 ${remaining} 分钟后重试`)}`
       )
+    }
+
+    // 2FA 门控：账号已启用 TOTP 时，OAuth 登录不能绕过二次验证直接下发会话。
+    // 否则只要拿到第三方账号（如 GitHub）即可登录，2FA 形同虚设。
+    // 该检查必须发生在写入 lastLogin 之前——未通过二次验证的尝试不应留下登录成功记录。
+    const totpIdentity = await db.query.userIdentities.findFirst({
+      where: and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))
+    })
+
+    if (totpIdentity) {
+      // 签发预认证临时令牌，交由 /api/auth/2fa/verify 完成真正的会话签发
+      const preAuthToken = JWTEnhanced.sign(
+        {
+          userId: user.id,
+          tokenVersion: user.tokenVersion,
+          type: 'pre-auth',
+          scope: '2fa_pending'
+        },
+        { expiresIn: '5m' }
+      )
+
+      setCookie(event, 'pre-auth-token', preAuthToken, {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: 'lax',
+        maxAge: 60 * 5,
+        path: '/'
+      })
+
+      // 本次是登录而非绑定：清理可能残留的绑定令牌，避免 2FA 校验时被当作绑定流程消费
+      deleteCookie(event, 'binding-token')
+
+      // 保留原始回跳目标（仅站内路径，由 getSafeOAuthReturnPath 保证）
+      const redirectQuery = safeReturnTo ? `&redirect=${encodeURIComponent(safeReturnTo)}` : ''
+      return sendRedirect(event, `/login?action=2fa${redirectQuery}`)
     }
 
     await db.transaction(async (tx) => {

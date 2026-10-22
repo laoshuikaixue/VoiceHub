@@ -6,8 +6,9 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-      - JWT_SECRET=your-jwt-secret-here
+      # 密钥一律从 .env 注入，无默认值：示例值公开可查，等同于无密钥
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL 必须设置，参考 .env.example}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET 必须设置，执行 openssl rand -base64 48 生成}
       - NODE_ENV=production
       - SKIP_BUILD=true
     depends_on:

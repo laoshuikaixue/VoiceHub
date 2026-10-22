@@ -1,6 +1,46 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { isTrustedOrigin, normalizeOrigin } from '~~/server/utils/request-utils'
 
-export default defineEventHandler((event) => {
+/**
+ * 校验外部受信客户端的 HMAC 签名。
+ * 签名串： `${timestamp}\n${method}\n${pathname}\n${nonce}`
+ * 时间窗 5 分钟；未配置 PLUGIN_SHARED_SECRET 时一律拒绝（不降级放行）。
+ */
+async function verifyPluginSignature(event: any, pathname: string): Promise<boolean> {
+  const secret = String(process.env.PLUGIN_SHARED_SECRET || '')
+  if (!secret || secret.length < 32) return false
+
+  const timestamp = String(getHeader(event, 'x-plugin-timestamp') || '')
+  const nonce = String(getHeader(event, 'x-plugin-nonce') || '')
+  const signature = String(getHeader(event, 'x-plugin-signature') || '')
+  if (!timestamp || !nonce || !signature) return false
+
+  const ts = Number(timestamp)
+  if (!Number.isFinite(ts)) return false
+  if (Math.abs(Math.floor(Date.now() / 1000) - ts) > 300) return false
+
+  const expected = createHmac('sha256', secret)
+    .update(`${timestamp}\n${getMethod(event)}\n${pathname}\n${nonce}`)
+    .digest('hex')
+
+  const a = Buffer.from(signature, 'hex')
+  const b = Buffer.from(expected, 'hex')
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return false
+
+  // nonce 一次性消费，防重放（依赖 Redis；未配置 Redis 时退化为时间窗约束）
+  try {
+    const { getStore, setStore } = await import('~~/server/utils/captchaStore')
+    const key = `plugin-nonce:${nonce}`
+    const used = await getStore(key)
+    if (used) return false
+    await setStore(key, '1', 300)
+  } catch {
+    // Redis 不可用时仅依赖 5 分钟时间窗
+  }
+  return true
+}
+
+export default defineEventHandler(async (event) => {
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
   const method = getMethod(event)
@@ -14,10 +54,14 @@ export default defineEventHandler((event) => {
     return
   }
 
-  // 内部受信客户端绕过 CORS 校验
-  const requestedFrom = getHeader(event, 'x-requested-from')
-  if (requestedFrom === 'ClassIslandPlugin') {
-    return
+  // 受信任的外部客户端（如 ClassIslandPlugin）需要显式授权才能绕过 Origin 校验。
+  // 安全说明：自定义请求头可被任意客户端伪造，因此不能仅凭请求头放行；
+  // 必须同时提供由 PLUGIN_SHARED_SECRET 签名的 HMAC（5 分钟时间窗 + 路径绑定）。
+  if (getHeader(event, 'x-requested-from') === 'ClassIslandPlugin') {
+    if (await verifyPluginSignature(event, pathname)) {
+      return
+    }
+    throw createError({ statusCode: 403, message: 'Forbidden: 插件签名无效' })
   }
 
   // 显式配置 NUXT_PUBLIC_HOST 时使用配置来源校验。

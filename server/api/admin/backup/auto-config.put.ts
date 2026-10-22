@@ -6,6 +6,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { validateOutboundUrl } from '~~/server/utils/outbound-url'
 
 /** 备份配置结构校验 */
 const backupConfigSchema = z.object({
@@ -77,6 +78,22 @@ export default defineEventHandler(async (event) => {
     const parsed = backupConfigSchema.safeParse(config)
     if (!parsed.success) {
       throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备份配置结构无效: ${parsed.error.issues[0]?.message || '未知错误'}`)
+    }
+
+    // SSRF 防护：WebDAV url / S3 endpoint 落库后会被定时备份任务反复请求，
+    // 必须在保存时拦截指向云元数据服务等非存储目标的地址。
+    const outboundTargets: Array<{ label: string; value: string }> = []
+    if (parsed.data.methods.s3.enabled && parsed.data.methods.s3.endpoint) {
+      outboundTargets.push({ label: 'S3 endpoint', value: parsed.data.methods.s3.endpoint })
+    }
+    if (parsed.data.methods.webdav.enabled && parsed.data.methods.webdav.url) {
+      outboundTargets.push({ label: 'WebDAV 地址', value: parsed.data.methods.webdav.url })
+    }
+    for (const target of outboundTargets) {
+      const check = await validateOutboundUrl(target.value)
+      if (!check.valid) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${target.label}不合法：${check.reason || '未知原因'}`)
+      }
     }
   }
 

@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { validateOutboundUrl } from '~~/server/utils/outbound-url'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
 function normalizePath(p: string): string {
@@ -28,6 +29,13 @@ export default defineEventHandler(async (event) => {
 
   if (!url || !username || !password) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：url, username, password')
+  }
+
+  // SSRF 防护：WebDAV 目标由管理员填写，服务端会对其发起写入请求，
+  // 需阻断指向云元数据服务等非存储目标的地址。
+  const urlCheck = await validateOutboundUrl(url)
+  if (!urlCheck.valid) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `WebDAV 地址不合法：${urlCheck.reason || '未知原因'}`)
   }
 
   try {

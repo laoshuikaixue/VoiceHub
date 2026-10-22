@@ -27,24 +27,22 @@ const SUPPORTED_CLIENT_IP_HEADERS = new Set([
   'forwarded'
 ])
 
-// 未配置 TRUSTED_CLIENT_IP_HEADERS 时的回退头部列表，覆盖主流平台
-const FALLBACK_CLIENT_IP_HEADERS = Object.freeze([
-  'x-forwarded-for',
-  'x-real-ip',
-  'x-vercel-forwarded-for',
-  'cf-connecting-ip',
-  'true-client-ip'
-])
-
+/**
+ * 可信客户端 IP 头部白名单。
+ *
+ * 安全说明：这些头部全部可被客户端伪造，仅当部署者显式通过
+ * TRUSTED_CLIENT_IP_HEADERS 声明「自己确实位于该 CDN / 反向代理之后」时才可读取。
+ * 未配置时一律只使用 TCP 连接地址，避免攻击者通过伪造 X-Forwarded-For
+ * 绕过登录失败封禁、注册限流、验证码冷却等所有基于 IP 的安全控制。
+ */
 function getTrustedClientIPHeaders() {
   const configured = String(process.env.TRUSTED_CLIENT_IP_HEADERS || '')
     .split(',')
     .map((header) => header.trim().toLowerCase())
     .filter((header) => SUPPORTED_CLIENT_IP_HEADERS.has(header))
 
-  return configured.length > 0
-    ? [...new Set(configured)]
-    : FALLBACK_CLIENT_IP_HEADERS
+  // 未显式配置时返回空数组：只信任 TCP 连接地址
+  return [...new Set(configured)]
 }
 
 /**

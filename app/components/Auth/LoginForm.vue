@@ -525,6 +525,8 @@ const showRegisterMode = ref(false)
 const route = useRoute()
 const router = useRouter()
 const isBindMode = computed(() => route.query.action === 'bind')
+// OAuth 登录时账号已启用 2FA：服务端不下发会话，只签发 pre-auth 令牌并跳回本页要求二次验证
+const is2FAMode = computed(() => route.query.action === '2fa')
 const providerUsername = computed(() => route.query.username || '')
 const providerName = computed(() => {
   const provider = route.query.provider || 'third-party'
@@ -775,7 +777,30 @@ onMounted(async () => {
   if (isBindMode.value) {
     await fetchClassOptions()
   }
+
+  // OAuth 登录且账号已启用 2FA：服务端已签发 pre-auth 令牌，此处拉取验证方式并直接弹出验证框
+  if (is2FAMode.value) {
+    await startOAuth2FAChallenge()
+  }
 })
+
+// 拉取待二次验证的登录信息并弹出验证框。
+// pre-auth 令牌存放在 httpOnly Cookie 中，前端不持有令牌本身，
+// 校验接口会自行回退读取 Cookie，因此这里只取 userId / 验证方式 / 脱敏邮箱。
+const startOAuth2FAChallenge = async () => {
+  try {
+    const pending = await $fetch('/api/auth/2fa/pending')
+    userId2FA.value = pending.userId
+    methods2FA.value = pending.methods || ['totp']
+    maskedEmail2FA.value = pending.maskedEmail || ''
+    tempToken2FA.value = ''
+    show2FA.value = true
+  } catch (err) {
+    error.value = err?.data?.message || locale.value.loginFailed || '会话已失效，请重新登录'
+    // 预认证令牌失效时退回普通登录流程
+    router.replace('/login')
+  }
+}
 
 onUnmounted(() => {
   WebAuthnAbortService.cancelCeremony()
