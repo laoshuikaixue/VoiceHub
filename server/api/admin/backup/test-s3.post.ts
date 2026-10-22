@@ -3,6 +3,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3, deleteFromS3 } from '~~/server/utils/s3Client'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { validateOutboundUrl } from '~~/server/utils/outbound-url'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -25,6 +26,13 @@ export default defineEventHandler(async (event) => {
 
   if (!endpoint || !bucket || !accessKey || !secretKey) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：endpoint, bucket, accessKey, secretKey')
+  }
+
+  // SSRF 防护：S3 endpoint 由管理员填写，服务端会向其发起带签名的 PUT/DELETE 请求，
+  // 需阻断指向云元数据服务等非存储目标的地址。
+  const endpointCheck = await validateOutboundUrl(endpoint)
+  if (!endpointCheck.valid) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `S3 endpoint 不合法：${endpointCheck.reason || '未知原因'}`)
   }
 
   const testKey = '.voicehub-test-connection'

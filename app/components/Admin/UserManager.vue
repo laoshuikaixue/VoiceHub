@@ -2636,10 +2636,20 @@ const openExportModal = () => {
 }
 
 // 将导出行的指定字段转为可读文本（role/status 按界面语言本地化，时间已在服务端格式化为北京时间）
+// 单元格文本统一做公式注入中和：以 = + - @ 开头的值前置单引号，避免被表格软件当作公式执行。
+// （XLSX 写出本身为字符串类型，此处为纵深防御，同时覆盖后续导出格式变更）
+const sanitizeSpreadsheetCell = (value) => {
+  if (value === null || typeof value === 'undefined') return ''
+  if (typeof value === 'number' || typeof value === 'boolean') return value
+  const text = String(value)
+  return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
+}
+
 const exportCellValue = (fieldKey, user) => {
   const exportLocale = locale.value.exportModal || {}
   const bool = exportLocale.boolean || {}
   const verified = exportLocale.verified || {}
+  const raw = (() => {
   switch (fieldKey) {
     case 'id':
       return user.id ?? ''
@@ -2684,6 +2694,8 @@ const exportCellValue = (fieldKey, user) => {
     default:
       return ''
   }
+  })()
+  return sanitizeSpreadsheetCell(raw)
 }
 
 const buildExportFileName = () => {

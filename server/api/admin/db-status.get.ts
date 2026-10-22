@@ -4,12 +4,11 @@ import { users } from '~/drizzle/schema'
 import { count, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
+  // 数据库拓扑与全站用户数属于敏感运维信息，仅超级管理员可读。
+  // 中间件的 /api/admin 粗粒度放行（ADMIN/SONG_ADMIN）不足以覆盖此端点。
   const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
+  if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+    throw createError({ statusCode: 403, message: '只有超级管理员可以访问数据库状态' })
   }
 
   try {

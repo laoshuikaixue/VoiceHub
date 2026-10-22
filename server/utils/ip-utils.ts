@@ -27,12 +27,6 @@ const SUPPORTED_CLIENT_IP_HEADERS = new Set([
   'forwarded'
 ])
 
-// 未配置 TRUSTED_CLIENT_IP_HEADERS 时，仅在前置代理与源站同机/内网时回退到通用转发头
-const PROXY_FALLBACK_CLIENT_IP_HEADERS = Object.freeze([
-  'x-forwarded-for',
-  'x-real-ip'
-])
-
 function getPlatformClientIPHeaders(): string[] {
   if (process.env.VERCEL) return ['x-vercel-forwarded-for']
   if (process.env.NETLIFY) return ['x-nf-client-connection-ip']
@@ -42,60 +36,37 @@ function getPlatformClientIPHeaders(): string[] {
   return []
 }
 
-function getTrustedClientIPHeaders(remoteAddress: string | null) {
+/**
+ * 可信客户端 IP 头部白名单。
+ *
+ * 安全说明：通用转发头（x-forwarded-for 等）可被客户端伪造，仅当部署者
+ * 显式通过 TRUSTED_CLIENT_IP_HEADERS 声明「自己确实位于该 CDN / 反向代理之后」，
+ * 或运行在会强制覆盖自身注入头的云平台（Vercel/Netlify/EdgeOne）时才可读取。
+ * 其余场景一律只使用 TCP 连接地址。
+ */
+function getTrustedClientIPHeaders(): string[] {
   const configured = String(process.env.TRUSTED_CLIENT_IP_HEADERS || '')
     .split(',')
     .map((header) => header.trim().toLowerCase())
     .filter((header) => SUPPORTED_CLIENT_IP_HEADERS.has(header))
 
-  if (configured.length > 0) {
-    return [...new Set(configured)]
-  }
-
-  // 云平台会覆盖自身注入的转发头，可直接信任
+  // 云平台会强制覆盖自身注入的转发头（客户端无法伪造），可直接信任
   const platformHeaders = getPlatformClientIPHeaders()
   if (platformHeaders.length > 0) {
     return platformHeaders
   }
 
-  // 公网直连源站时忽略转发头，防止客户端伪造 IP 绕过封禁与限流；
-  // 前置反向代理与源站同机或内网时仍按通用头解析，兼容自建反代。
-  return remoteAddress && isPrivateOrLoopbackAddress(remoteAddress)
-    ? [...PROXY_FALLBACK_CLIENT_IP_HEADERS]
-    : []
+  // 安全说明：不回退到 x-forwarded-for / x-real-ip 等通用转发头。
+  // Docker/K8s 场景下反向代理与源站同处内网，「内网即可信」判定不成立：
+  // X-Forwarded-For 的首个候选始终由客户端控制，回退会让攻击者伪造 IP
+  // 绕过登录失败封禁、注册限流、验证码冷却等所有基于 IP 的安全控制。
+  // 自建反代的部署者请显式配置 TRUSTED_CLIENT_IP_HEADERS（如 x-real-ip）。
+  return []
 }
 
 function getRemoteAddress(event: H3Event): string | null {
   const raw = event.node.req.socket?.remoteAddress
   return raw ? normalizeIPCandidate(raw) : null
-}
-
-function isPrivateOrLoopbackAddress(ip: string): boolean {
-  if (ip === '::1') return true
-  if (
-    ip.startsWith('127.') ||
-    ip.startsWith('10.') ||
-    ip.startsWith('192.168.') ||
-    ip.startsWith('169.254.')
-  ) {
-    return true
-  }
-
-  const ipv4 = ip.match(/^172\.(\d{1,2})\./)
-  if (ipv4) {
-    const second = Number(ipv4[1])
-    if (second >= 16 && second <= 31) return true
-  }
-
-  const lower = ip.toLowerCase()
-  return (
-    lower.startsWith('fc') ||
-    lower.startsWith('fd') ||
-    lower.startsWith('fe8') ||
-    lower.startsWith('fe9') ||
-    lower.startsWith('fea') ||
-    lower.startsWith('feb')
-  )
 }
 
 /**
@@ -107,9 +78,9 @@ export function getClientIP(event: H3Event): string {
   const headers = getHeaders(event)
   const remoteAddress = getRemoteAddress(event)
 
-  // 只有部署者明确声明受信头部、平台环境或内网反代场景才读取转发头，
-  // 避免客户端直连源站时伪造 IP 绕过封禁与限流。
-  const ipHeaders = getTrustedClientIPHeaders(remoteAddress)
+  // 只有部署者明确声明受信头部、或运行在会覆盖注入头的云平台时才读取转发头，
+  // 避免客户端直连或经内网代理时伪造 IP 绕过封禁与限流。
+  const ipHeaders = getTrustedClientIPHeaders()
 
   for (const header of ipHeaders) {
     const value = headers[header]

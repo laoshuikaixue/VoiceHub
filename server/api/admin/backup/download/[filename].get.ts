@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getRouterParam, setHeader } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { isAllowedBackupFilename } from '~~/server/utils/backup-filename'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -22,19 +23,13 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 验证文件名安全性
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    // 与 /api/admin/backup/download 保持同一套白名单规则：
+    // 必须是允许的备份文件名（纯 basename + 固定前缀 + .json 扩展名），
+    // 避免下载 backups 目录内的其它 .json 文件。
+    if (!isAllowedBackupFilename(filename)) {
       throw createError({
         statusCode: 400,
-        message: '无效的文件名'
-      })
-    }
-
-    // 验证文件扩展名
-    if (!filename.endsWith('.json')) {
-      throw createError({
-        statusCode: 400,
-        message: '只能下载 JSON 格式的备份文件'
+        message: '无效的备份文件'
       })
     }
 

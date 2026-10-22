@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { isAllowedBackupFilename } from '~~/server/utils/backup-filename'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -23,21 +24,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 安全检查：确保文件名不包含路径遍历字符
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-      throw createError({
-        statusCode: 400,
-        message: '无效的文件名'
-      })
-    }
-
-    // 检查文件是否为备份文件
-    if (
-      !filename.endsWith('.json') ||
-      (!filename.startsWith('database-backup-') &&
-        !filename.startsWith('users-backup-') &&
-        !filename.startsWith('uploaded-'))
-    ) {
+    // 统一白名单校验：纯 basename + 允许的备份文件名前缀 + .json 扩展名
+    if (!isAllowedBackupFilename(filename)) {
       throw createError({
         statusCode: 400,
         message: '无效的备份文件'

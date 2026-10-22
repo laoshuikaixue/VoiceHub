@@ -76,6 +76,14 @@ COPY --from=builder /app/scripts ./scripts
 # 运行时生成插件 prelude 失败；运行阶段已按目标架构安装 esbuild，删除副本让其回落到 /app/node_modules
 RUN rm -rf .output/server/node_modules/esbuild .output/server/node_modules/@esbuild
 
+# 以非 root 用户运行：容器逃逸或任意代码执行时不再天然拥有 root 权限。
+# 使用 node 官方镜像内置的 node 用户（各发行版均存在，alpine 为 /etc/passwd 条目，
+# debian slim 同理），避免 groupadd/useradd 在 busybox 与 shadow-utils 间的差异。
+# 备份目录（backups/）由应用在运行时写入，需提前创建并授权。
+RUN set -eux; \
+    mkdir -p /app/backups; \
+    chown -R node:node /app
+
 # 环境变量配置
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -84,6 +92,8 @@ ENV NODE_ENV=production \
 
 # 暴露端口
 EXPOSE $PORT
+
+USER node
 
 # 完成数据库迁移后启动应用，插件配置由服务端读取。
 CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]
