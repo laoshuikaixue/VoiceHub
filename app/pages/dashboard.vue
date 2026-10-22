@@ -1,7 +1,7 @@
 <template>
   <div>
     <ClientOnly>
-      <div class="admin-layout" @touchend="handleTouchEnd" @touchstart="handleTouchStart">
+      <div v-if="permissions.loaded.value" class="admin-layout" @touchend="handleTouchEnd" @touchstart="handleTouchStart">
         <!-- 左侧导航栏 -->
         <AdminSidebar
           :is-open="sidebarOpen"
@@ -216,7 +216,7 @@
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { Menu, ChevronUp } from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
-import { usePermissions } from '~/composables/usePermissions'
+import { useRbac } from '~/composables/useRbac'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { useScrollMemory } from '~/composables/useScrollMemory'
@@ -258,7 +258,7 @@ provide('registerBeforeNavigate', registerBeforeNavigate)
 
 // 服务
 let auth = null
-const permissions = usePermissions()
+const permissions = useRbac()
 
 // 方法
 const getPageTitle = () => {
@@ -400,8 +400,11 @@ onMounted(async () => {
     return
   }
 
-  // 检查用户是否有访问后台的权限
-  if (!permissions.canAccessAdmin.value) {
+  // 等待权限集合拉取完成（loaded 为 true 前 canAccessPage 恒 false）
+  await permissions.ensureLoaded()
+
+  // 检查用户是否有访问后台的权限；拉取失败（degraded）时不跳转，避免误踢已登录用户
+  if (permissions.loaded.value && !permissions.degraded.value && !permissions.canAccessAdmin.value) {
     await navigateTo('/')
     return
   }
