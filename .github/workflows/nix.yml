@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   nix-check:
-    name: 构建校验与 pnpmDeps 哈希同步
+    name: 构建校验、pnpmDeps 哈希同步与 VM 激活测试
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -137,7 +137,8 @@ jobs:
           fi
 
       - name: 运行 nix flake check
-        run: nix flake check
+        # checks 里的 VM 测试耗时较长，交给独立的 vm-test job；此处仅求值，尽快暴露 eval 错误
+        run: nix flake check --no-build
 
       - name: 求值 NixOS 模块冒烟检查
         # flake check 不实例化 systemd.services，模块字段拼写与脚本转义错误要到真机才暴露；
@@ -180,3 +181,8 @@ jobs:
           # pnpm run 依赖 PATH 中的 sh，bash 被移出 makeBinPath 时启动脚本会以 exit -2 静默死亡
           grep -qE 'export PATH="[^"]*bash' "$script" || { echo "::error::启动脚本 PATH 缺少 bash"; exit 1; }
           echo "✅ NixOS 模块冒烟检查通过"
+
+      - name: 运行 NixOS 模块 VM 激活测试
+        # 与构建同 job，复用 /nix/store 中刚构建的 voicehub，冷缓存下也只构建一次；
+        # 标准 runner 无 /dev/kvm 走 TCG，故放在便宜的求值检查之后
+        run: nix build .#checks.x86_64-linux.voicehub-vm -L
