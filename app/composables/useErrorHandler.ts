@@ -59,22 +59,9 @@ export const useErrorHandler = () => {
 
         console.log('认证错误:', errorMessage)
 
-        // 清除认证状态
-        auth.user.value = null
-        auth.token.value = null
-        auth.isAuthenticated.value = false
-        auth.isAdmin.value = false
-
-        // 清除 cookie
-        if (import.meta.client) {
-          // 删除 auth-token cookie
-          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
-          
-          // 如果是 HTTPS，也尝试删除 secure cookie
-          if (window.location.protocol === 'https:') {
-            document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure'
-          }
-        }
+        // 清除认证状态、cookie 与各类缓存
+        const { resetSession } = await import('~/utils/session-reset')
+        await resetSession()
 
         // 显示错误提示
         if (import.meta.client) {
