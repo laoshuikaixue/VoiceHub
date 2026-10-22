@@ -1205,7 +1205,6 @@ VoiceHub/
 │   │   │   ├── email-code.post.ts # 注册邮箱验证码发送
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
-│   │   │   │   ├── pending.get.ts     # 拉取预认证待验证信息（OAuth 回调 2FA）
 │   │   │   │   └── verify.post.ts     # 验证2FA代码
 │   │   │   ├── webauthn/      # WebAuthn 相关 API
 │   │   │   │   ├── login/     # 登录验证
@@ -1512,7 +1511,6 @@ VoiceHub/
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── system-event-buffer.ts # 系统看板进程内运行事件环形缓冲
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
-│   │   ├── two-factor-challenge.ts # 2FA 预认证令牌签发与脱敏挑战信息
 │   │   ├── userDisplayName.ts # 同名用户消歧统一口径（仅在读用户参与统计）
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数

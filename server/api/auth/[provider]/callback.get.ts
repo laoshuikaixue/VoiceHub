@@ -11,7 +11,6 @@ import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, users, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { createAuthSession } from '~~/server/utils/auth-session'
-import { setPreAuthCookie, signPreAuthToken } from '~~/server/utils/two-factor-challenge'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
 import {
@@ -388,18 +387,6 @@ async function handleUserLoginOrBind(
         event,
         `/auth/error?code=ACCOUNT_BLOCKED&message=${encodeURIComponent(`账户处于风险控制期，请在 ${remaining} 分钟后重试`)}`
       )
-    }
-
-    // OAuth 登录补全 2FA 门禁：已绑定 TOTP 的用户必须完成二次验证，
-    // 未通过前不落 lastLogin、不下发 auth-token（第三方账号失守不等于本站失守）
-    const totpIdentity = await db.query.userIdentities.findFirst({
-      where: (t, { eq, and }) => and(eq(t.userId, user.id), eq(t.provider, 'totp'))
-    })
-    if (totpIdentity) {
-      setPreAuthCookie(event, signPreAuthToken(user), isSecure)
-      deleteCookie(event, 'binding-token')
-      const redirectQuery = safeReturnTo ? `&redirect=${encodeURIComponent(safeReturnTo)}` : ''
-      return sendRedirect(event, `/login?action=2fa${redirectQuery}`)
     }
 
     await db.transaction(async (tx) => {

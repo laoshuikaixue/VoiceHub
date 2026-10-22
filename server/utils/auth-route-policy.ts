@@ -32,8 +32,6 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/auth/oauth-register', methods: ['POST'] },
   { path: '/api/auth/2fa/verify', methods: ['POST'] },
   { path: '/api/auth/2fa/send-email', methods: ['POST'] },
-  // OAuth 回调命中 2FA 后，凭 httpOnly pre-auth-token 拉取待验证信息（此时无登录态）
-  { path: '/api/auth/2fa/pending', methods: GET_METHODS },
   { path: '/api/auth/forgot-password', methods: ['POST'] },
   { path: '/api/auth/reset-password', methods: ['POST'] },
   { path: '/api/auth/captcha', methods: GET_METHODS },
