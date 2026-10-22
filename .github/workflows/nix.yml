@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   nix-check:
-    name: 构建校验与 pnpmDeps 哈希同步
+    name: 构建校验、pnpmDeps 哈希同步与 VM 激活测试
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -182,23 +182,7 @@ jobs:
           grep -qE 'export PATH="[^"]*bash' "$script" || { echo "::error::启动脚本 PATH 缺少 bash"; exit 1; }
           echo "✅ NixOS 模块冒烟检查通过"
 
-  vm-test:
-    name: NixOS 模块 VM 激活测试
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v6
-
-      - name: 安装 Nix
-        uses: DeterminateSystems/determinate-nix-action@v3
-
-      - name: 配置 Cachix 二进制缓存
-        uses: cachix/cachix-action@v17
-        with:
-          name: voicehub
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-      - name: 运行 VM 测试
-        # 标准 runner 通常无 /dev/kvm，QEMU 走 TCG，预留较长超时
+      - name: 运行 NixOS 模块 VM 激活测试
+        # 与构建同 job，复用 /nix/store 中刚构建的 voicehub，冷缓存下也只构建一次；
+        # 标准 runner 无 /dev/kvm 走 TCG，故放在便宜的求值检查之后
         run: nix build .#checks.x86_64-linux.voicehub-vm -L
