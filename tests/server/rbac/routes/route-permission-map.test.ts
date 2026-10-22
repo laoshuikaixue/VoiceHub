@@ -95,7 +95,7 @@ test('S3-B1 顺序敏感：精确规则先于宽前缀命中（42 条抽查）',
     ['PUT', '/api/admin/system-settings', 'system_settings.write'],
     ['PATCH', '/api/admin/system-settings', 'system_settings.write'],
     ['DELETE', '/api/admin/system-settings', 'system_settings.write'],
-    ['GET', '/api/admin/music-source-plugins', 'system_settings.read'],
+    ['GET', '/api/admin/music-source-plugins', 'system_settings.write'],
     ['PUT', '/api/admin/music-source-plugins/order', 'system_settings.write'],
     ['GET', '/api/admin/notifications/history', 'notification.send'],
     ['DELETE', '/api/admin/notifications/history/batch-1', 'notification.send'],
@@ -147,7 +147,8 @@ test('S3-B1 路径规范化：查询串与尾部斜杠不影响判定', () => {
 })
 
 test('S3-B1 rbac 域的 7 个端点已被注册（S3-B5 / S4 依赖）', () => {
-  assert.equal(resolveRoutePermission('GET', '/api/admin/rbac/my-permissions'), 'permissions.read')
+  // 裁决 11.1：my-permissions 移入 PUBLIC_ROUTE_PATTERNS（仅需登录，本表不判权限）
+  assert.equal(resolveRoutePermission('GET', '/api/admin/rbac/my-permissions'), null)
   assert.equal(resolveRoutePermission('GET', '/api/admin/rbac/permissions'), 'permissions.read')
   assert.equal(resolveRoutePermission('GET', '/api/admin/rbac/roles'), 'permissions.read')
   assert.equal(resolveRoutePermission('PUT', '/api/admin/rbac/roles/ADMIN'), 'role.manage')

@@ -57,7 +57,7 @@ export type RouteRule = {
  */
 export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   // ── RBAC 管理（S3-B5 交付的端点，须先于其它前缀注册）──
-  { method: 'GET', pattern: /^\/api\/admin\/rbac\/my-permissions$/, key: PERMISSIONS.PERMISSIONS_READ, note: '本人权限只读（S4 镜像用）' },
+  // my-permissions 不在本表：仅需登录，见 PUBLIC_ROUTE_PATTERNS
   { method: 'GET', pattern: /^\/api\/admin\/rbac\/permissions$/, key: PERMISSIONS.PERMISSIONS_READ },
   { method: 'GET', pattern: /^\/api\/admin\/rbac\/roles$/, key: PERMISSIONS.PERMISSIONS_READ },
   { method: 'PUT', pattern: /^\/api\/admin\/rbac\/roles\/[^/]+$/, key: PERMISSIONS.ROLE_MANAGE },
@@ -110,7 +110,8 @@ export const ROUTE_RULES: readonly RouteRule[] = Object.freeze([
   { method: 'ANY', pattern: /^\/api\/admin\/smtp(\/.*)?$/, key: PERMISSIONS.SMTP_MANAGE },
 
   // ── 音源插件（现状无守卫 → 按站点配置域收紧）──
-  { method: 'GET', pattern: /^\/api\/admin\/music-source-plugins(\/.*)?$/, key: PERMISSIONS.SYSTEM_SETTINGS_READ },
+  // GET 映射到 write 语义：实现要求 SUPER_ADMIN（server/utils/music-source-plugins/access.ts），映射不得比实现松
+  { method: 'GET', pattern: /^\/api\/admin\/music-source-plugins(\/.*)?$/, key: PERMISSIONS.SYSTEM_SETTINGS_WRITE },
   { method: 'ANY', pattern: /^\/api\/admin\/music-source-plugins(\/.*)?$/, key: PERMISSIONS.SYSTEM_SETTINGS_WRITE },
 
   // ── 通知 ──
@@ -174,7 +175,10 @@ export const PUBLIC_ROUTE_PATTERNS: readonly RegExp[] = Object.freeze([
   /^\/api\/sys\/time$/,
   /^\/api\/site-config$/,
   /^\/api\/platform-config(\/.*)?$/,
-  /^\/api\/legal-documents$/
+  /^\/api\/legal-documents$/,
+  // 本人权限集合：**仅需登录**，端点内用 requireActiveUser 自取当前用户。
+  // /api/admin 的管理员门禁由 server/middleware/auth.ts:322-333 保证，本表只跳过权限判定。
+  /^\/api\/admin\/rbac\/my-permissions$/
 ])
 
 /** 规范化路径：去查询串与尾部斜杠 */

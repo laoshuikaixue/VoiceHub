@@ -5,8 +5,8 @@
  *   - system-board 三个端点现状 verifyAdminAuth + 文件内 role !== 'SUPER_ADMIN'，
  *     映射 database.reset(SUPER_ADMIN) ⇒ 净效果等价，属**已批准的收紧**（内联 403 换成内核 403）。
  *   - music-source-plugins 八个端点现状 pluginAccess(event, true) = isSuperAdmin（SUPER_ADMIN），
- *     与 ANY → system_settings.write(SUPER_ADMIN) 等价；GET 映射为 system_settings.read(ADMIN)，
- *     比文件守卫**更松** ⇒ 本批**不改这些文件**，作为「需裁决的放开」冻结在此测试里。
+ *     与 ANY → system_settings.write(SUPER_ADMIN) 等价；GET 映射原为 system_settings.read(ADMIN)，
+ *     比文件守卫**更松** ⇒ 裁决 11.2 已改严为 system_settings.write，映射与实现等价。
  */
 
 import assert from 'node:assert/strict'
@@ -34,9 +34,9 @@ const SYSTEM_BOARD: Wired[] = [
   { file: 'server/api/admin/system-board/runtime-clear.post.ts', method: 'POST', route: '/api/admin/system-board/runtime-clear', permission: 'database.reset', policy: 'canResetDatabase' }
 ]
 
-// 本批刻意保持原样：文件守卫 = SUPER_ADMIN，映射 GET 更松
+// 文件守卫保持原样（pluginAccess = SUPER_ADMIN）；GET 映射经裁决 11.2 改严为 system_settings.write
 const PLUGINS_UNCHANGED: Wired[] = [
-  { file: 'server/api/admin/music-source-plugins/index.get.ts', method: 'GET', route: '/api/admin/music-source-plugins', permission: 'system_settings.read', policy: 'pluginAccess' },
+  { file: 'server/api/admin/music-source-plugins/index.get.ts', method: 'GET', route: '/api/admin/music-source-plugins', permission: 'system_settings.write', policy: 'pluginAccess' },
   { file: 'server/api/admin/music-source-plugins/index.post.ts', method: 'POST', route: '/api/admin/music-source-plugins', permission: 'system_settings.write', policy: 'pluginAccess' },
   { file: 'server/api/admin/music-source-plugins/order.put.ts', method: 'PUT', route: '/api/admin/music-source-plugins/order', permission: 'system_settings.write', policy: 'pluginAccess' },
   { file: 'server/api/admin/music-source-plugins/[id].put.ts', method: 'PUT', route: '/api/admin/music-source-plugins/p1', permission: 'system_settings.write', policy: 'pluginAccess' },
@@ -128,7 +128,7 @@ test('S3-B4 music-source-plugins 8 个端点保持原判权：仍走 pluginAcces
   }
 })
 
-test('S3-B4 music-source-plugins 映射冻结：写操作 SUPER_ADMIN 等价，GET 映射更松（需裁决）', async () => {
+test('S3-B4 music-source-plugins 映射：读写均 SUPER_ADMIN，与文件守卫等价（裁决 11.2 已落地）', async () => {
   for (const item of PLUGINS_UNCHANGED) {
     assert.equal(resolveRoutePermission(item.method, item.route), item.permission, `${item.method} ${item.route}`)
   }
@@ -137,8 +137,9 @@ test('S3-B4 music-source-plugins 映射冻结：写操作 SUPER_ADMIN 等价，G
   assert.equal(await allowedForRole('ADMIN', 'system_settings.write'), false, 'ADMIN 不应能写音源插件')
   assert.equal(await allowedForRole('SUPER_ADMIN', 'system_settings.write'), true, 'SUPER_ADMIN 应能写音源插件')
 
-  // GET：映射 system_settings.read(ADMIN) 比文件内 SUPER_ADMIN 守卫更松 —— 记录为已知分歧，本批不放开
-  assert.equal(await allowedForRole('ADMIN', 'system_settings.read'), true, 'ADMIN 通过 GET 映射的 key')
+  // GET：映射已改严为 system_settings.write(SUPER_ADMIN)，不再比文件守卫松
+  assert.equal(await allowedForRole('ADMIN', 'system_settings.write'), false, 'ADMIN 不应能读音源插件配置')
+  assert.equal(await allowedForRole('SUPER_ADMIN', 'system_settings.write'), true, 'SUPER_ADMIN 应能读音源插件配置')
   const getText = readSource('server/api/admin/music-source-plugins/index.get.ts')
   assert.ok(getText.includes('await pluginAccess(event, true)'), 'GET 端点仍由 pluginAccess 兜住 SUPER_ADMIN')
 })

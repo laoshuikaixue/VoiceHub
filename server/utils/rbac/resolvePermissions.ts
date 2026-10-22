@@ -19,8 +19,10 @@
  *   - 本模块是权限解析的**唯一权威实现**（`scripts/contract-checks/kernel-isolation.mjs` 断言）。
  */
 
-import { sql } from 'drizzle-orm'
-import { isPermissionKey, normalizePermission, type PermissionKey } from './constants.ts'
+import { eq, inArray, sql } from 'drizzle-orm'
+import { ROLES, isPermissionKey, normalizePermission, type PermissionKey } from './constants.ts'
+import { createApiError } from '../apiError.ts'
+import { SERVER_ERROR_CODES } from '../../config/constants.ts'
 import { createPermissionCache, type PermissionCache } from './cache.ts'
 
 export type PermissionSet = ReadonlySet<PermissionKey>
@@ -176,4 +178,242 @@ export function invalidateUserPermissions(userId: number): void {
 /** 角色矩阵变更后调用 */
 export function invalidateAllPermissions(): void {
   rbacCache.invalidateAll()
+}
+
+// ── 管理端只读查询（R2-I）──────────────────────────────────────────────────────
+// 为何必须留在本文件：scripts/contract-checks/kernel-isolation.mjs:86-98 断言 server/** 中直查
+// role_permissions / user_permissions 表的文件**恰好只有本文件**，管理端读矩阵 / 读加授同样必须经内核。
+
+/** 角色 × 权限矩阵的一行（列名用 roleName：server/api/** 禁裸读 .role） */
+export type RolePermissionRow = { roleName: string; permissionKey: string }
+
+/** 个人加授 / 减授记录 */
+export type UserPermissionGrantRow = {
+  id: number
+  userId: number
+  userName: string | null
+  userUsername: string
+  permissionId: number
+  permissionKey: string
+  permissionCategory: string
+  permissionDescriptionZh: string | null
+  grantType: string | null
+  expiresAt: Date | null
+  grantedBy: number
+  reason: string | null
+  createdAt: Date
+}
+
+/** 读取角色 × 权限矩阵全量行（不走缓存：管理界面要求实时） */
+export async function loadRolePermissionRows(): Promise<RolePermissionRow[]> {
+  const { db } = await import('~/drizzle/db')
+  return (await db.execute<RolePermissionRow>(sql`
+    SELECT rp.role AS "roleName", p.key AS "permissionKey"
+    FROM role_permissions rp
+    JOIN permissions p ON p.id = rp."permissionId"
+    ORDER BY rp.role, p.key
+  `)) as unknown as RolePermissionRow[]
+}
+
+/** 读取全部个人加授 / 减授记录（不走缓存；含已过期行，过期语义由消费方按 expiresAt 判定） */
+export async function loadUserPermissionGrants(): Promise<UserPermissionGrantRow[]> {
+  const { db } = await import('~/drizzle/db')
+  return (await db.execute<UserPermissionGrantRow>(sql`
+    SELECT up.id AS id,
+           up."userId" AS "userId",
+           u.name AS "userName",
+           u.username AS "userUsername",
+           up."permissionId" AS "permissionId",
+           p.key AS "permissionKey",
+           p.category AS "permissionCategory",
+           p."descriptionZh" AS "permissionDescriptionZh",
+           up."grantType" AS "grantType",
+           up."expiresAt" AS "expiresAt",
+           up."grantedBy" AS "grantedBy",
+           up.reason AS reason,
+           up."createdAt" AS "createdAt"
+    FROM user_permissions up
+    JOIN "User" u ON u.id = up."userId"
+    JOIN permissions p ON p.id = up."permissionId"
+    ORDER BY up."createdAt" DESC, up.id DESC
+  `)) as unknown as UserPermissionGrantRow[]
+}
+
+// ── 管理端写入（R2-I-b）────────────────────────────────────────────────────────
+// 与上方只读查询同因：两张表的直查只允许出现在本文件（kernel-isolation.mjs:86-98）。
+// 失效缓存由调用方（端点）负责，内核不隐式清理全局缓存。
+
+/** 角色矩阵覆盖式写入结果 */
+export type RolePermissionWriteResult = { roleName: string; permissionKeys: string[] }
+
+/** 个人加授 / 减授写入入参 */
+export type UserPermissionGrantWriteInput = {
+  userId: number
+  permissionKey: string
+  grantType: string
+  expiresAt: Date | null
+  grantedBy: number
+  reason: string | null
+}
+
+/** 个人加授 / 减授写入结果 */
+export type UserPermissionGrantWriteResult = {
+  id: number
+  userId: number
+  permissionId: number
+  grantType: string
+  expiresAt: Date | null
+  grantedBy: number
+  reason: string | null
+}
+
+/** 权限 key → id；缺失的 key 由调用方拒绝 */
+async function resolvePermissionIds(keys: string[]): Promise<Map<string, number>> {
+  if (keys.length === 0) return new Map()
+  const { db } = await import('~/drizzle/db')
+  const { permissions } = await import('~/drizzle/schema')
+  const rows = await db
+    .select({ id: permissions.id, key: permissions.key })
+    .from(permissions)
+    .where(inArray(permissions.key, keys))
+  return new Map(rows.map((row) => [row.key, row.id]))
+}
+
+/**
+ * 覆盖式写入角色 × 权限矩阵（先删该角色全部行再插入 ⇒ 幂等）。
+ *
+ * 拒绝口径：未知角色 400；SUPER_ADMIN 403（防锁死）；目录外或目录内不存在的 key 400。
+ * key → id 解析在事务之前完成，任一 key 缺行时整体不落库，不会留下「旧行已删、新行未写」。
+ */
+export async function replaceRolePermissions(
+  roleName: string,
+  permissionKeys: string[]
+): Promise<RolePermissionWriteResult> {
+  if (!Object.values(ROLES).some((role) => role === roleName)) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `无效的角色：${roleName}`)
+  }
+  if (roleName === ROLES.SUPER_ADMIN) {
+    throw createApiError(
+      403,
+      SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION,
+      'SUPER_ADMIN 角色不允许修改（防锁死）'
+    )
+  }
+
+  const uniqueKeys = [...new Set(permissionKeys)]
+  const unknownKeys = uniqueKeys.filter((key) => !isPermissionKey(key))
+  if (unknownKeys.length > 0) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `未知权限 key：${unknownKeys.join(', ')}`
+    )
+  }
+
+  const idByKey = await resolvePermissionIds(uniqueKeys)
+  const missingKeys = uniqueKeys.filter((key) => !idByKey.has(key))
+  if (missingKeys.length > 0) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `权限目录中不存在：${missingKeys.join(', ')}`
+    )
+  }
+
+  const { db } = await import('~/drizzle/db')
+  const { rolePermissions } = await import('~/drizzle/schema')
+  await db.transaction(async (tx) => {
+    await tx.delete(rolePermissions).where(eq(rolePermissions.role, roleName))
+    if (uniqueKeys.length > 0) {
+      await tx.insert(rolePermissions).values(
+        uniqueKeys.map((key) => ({ role: roleName, permissionId: idByKey.get(key) as number }))
+      )
+    }
+  })
+
+  return { roleName, permissionKeys: uniqueKeys }
+}
+
+/**
+ * 个人加授 / 减授按**完整业务键** `(userId, permissionId)` upsert。
+ *
+ * 表上有 unique(userId, permissionId)：同一用户同一权限重复提交只更新授权语义，不产生重复行。
+ * `grantedBy` 由调用方传入当前操作者 id（内核不读请求上下文）。
+ */
+export async function upsertUserPermissionGrant(
+  input: UserPermissionGrantWriteInput
+): Promise<UserPermissionGrantWriteResult> {
+  if (!isPermissionKey(input.permissionKey)) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `未知权限 key：${input.permissionKey}`
+    )
+  }
+
+  const idByKey = await resolvePermissionIds([input.permissionKey])
+  const permissionId = idByKey.get(input.permissionKey)
+  if (!permissionId) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `权限目录中不存在：${input.permissionKey}`
+    )
+  }
+
+  const { db } = await import('~/drizzle/db')
+  const { userPermissions, users } = await import('~/drizzle/schema')
+
+  const target = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, input.userId))
+    .limit(1)
+  if (target.length === 0) {
+    throw createApiError(404, SERVER_ERROR_CODES.COMMON_TARGET_NOT_FOUND, `用户不存在：${input.userId}`)
+  }
+
+  const rows = await db
+    .insert(userPermissions)
+    .values({
+      userId: input.userId,
+      permissionId,
+      grantType: input.grantType,
+      expiresAt: input.expiresAt,
+      grantedBy: input.grantedBy,
+      reason: input.reason
+    })
+    .onConflictDoUpdate({
+      target: [userPermissions.userId, userPermissions.permissionId],
+      set: {
+        grantType: input.grantType,
+        expiresAt: input.expiresAt,
+        grantedBy: input.grantedBy,
+        reason: input.reason
+      }
+    })
+    .returning({
+      id: userPermissions.id,
+      userId: userPermissions.userId,
+      permissionId: userPermissions.permissionId,
+      grantType: userPermissions.grantType,
+      expiresAt: userPermissions.expiresAt,
+      grantedBy: userPermissions.grantedBy,
+      reason: userPermissions.reason
+    })
+
+  const [row] = rows
+  if (!row) throw new Error('个人加授写入未返回行')
+  return row
+}
+
+/** 按 id 删除个人加授记录；返回被删行的 userId（供调用方失效缓存），不存在返回 null */
+export async function deleteUserPermissionGrant(id: number): Promise<{ userId: number } | null> {
+  const { db } = await import('~/drizzle/db')
+  const { userPermissions } = await import('~/drizzle/schema')
+  const rows = await db
+    .delete(userPermissions)
+    .where(eq(userPermissions.id, id))
+    .returning({ userId: userPermissions.userId })
+  return rows[0] ?? null
 }
