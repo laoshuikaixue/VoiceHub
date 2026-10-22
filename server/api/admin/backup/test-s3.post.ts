@@ -3,6 +3,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3, deleteFromS3 } from '~~/server/utils/s3Client'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -26,6 +27,9 @@ export default defineEventHandler(async (event) => {
   if (!endpoint || !bucket || !accessKey || !secretKey) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：endpoint, bucket, accessKey, secretKey')
   }
+
+  // 防 SSRF：拒绝指向云元数据/内部管理地址的目标
+  assertSafeOutboundUrl(endpoint, 'S3 endpoint')
 
   const testKey = '.voicehub-test-connection'
 

@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getRouterParam, setHeader } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { isSafeBackupFilename } from '~~/server/utils/backup-filename'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -22,19 +23,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 验证文件名安全性
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    // 安全校验：与 download.get.ts 共用同一备份文件名白名单（此前仅防路径遍历，可越权下载任意 .json）
+    if (!isSafeBackupFilename(filename)) {
       throw createError({
         statusCode: 400,
-        message: '无效的文件名'
-      })
-    }
-
-    // 验证文件扩展名
-    if (!filename.endsWith('.json')) {
-      throw createError({
-        statusCode: 400,
-        message: '只能下载 JSON 格式的备份文件'
+        message: '无效的备份文件'
       })
     }
 

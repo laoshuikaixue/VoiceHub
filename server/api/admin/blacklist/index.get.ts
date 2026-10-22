@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songBlacklists } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike } from 'drizzle-orm'
+import { resolvePagination } from '~~/server/utils/pagination'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -14,8 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event)
-  const page = parseInt(query.page as string) || 1
-  const limit = parseInt(query.limit as string) || 20
+  const { page, limit, offset } = resolvePagination(query.page, query.limit, 20, 200)
   const type = query.type as string
   const search = query.search as string
 
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
       .where(whereClause)
       .orderBy(desc(songBlacklists.createdAt))
       .limit(limit)
-      .offset((page - 1) * limit)
+      .offset(offset)
 
     return {
       blacklist,

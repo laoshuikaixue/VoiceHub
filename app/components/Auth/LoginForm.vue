@@ -765,17 +765,33 @@ const recordLegalConsent = async () => {
 }
 
 onMounted(async () => {
+  // OAuth 回调命中 2FA 时重定向到此：action=2fa，凭 httpOnly pre-auth-token 拉取待验证信息
+  const pending2FA = route.query.action === '2fa'
   const isApiSupported = browserSupportsWebAuthn()
   isWebAuthnSupported.value = isApiSupported
 
   // Conditional UI 应尽早启动，让支持的浏览器通过账号输入框原生推荐 Passkey。
-  if (isApiSupported && !isBindMode.value) {
+  if (isApiSupported && !isBindMode.value && !pending2FA) {
     void startConditionalWebAuthnLogin()
   }
 
   await fetchSiteConfig()
   if (isBindMode.value) {
     await fetchClassOptions()
+  }
+
+  if (pending2FA) {
+    try {
+      const info = await $fetch('/api/auth/2fa/pending')
+      userId2FA.value = info.userId
+      methods2FA.value = info.methods || ['totp']
+      maskedEmail2FA.value = info.maskedEmail || ''
+      // 令牌留在服务端，验证时由 2fa/verify 回退读 pre-auth-token Cookie
+      tempToken2FA.value = ''
+      show2FA.value = true
+    } catch {
+      await router.replace({ query: {} })
+    }
   }
 })
 

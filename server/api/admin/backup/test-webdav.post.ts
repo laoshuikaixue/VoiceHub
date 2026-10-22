@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
 function normalizePath(p: string): string {
@@ -29,6 +30,9 @@ export default defineEventHandler(async (event) => {
   if (!url || !username || !password) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：url, username, password')
   }
+
+  // 防 SSRF：拒绝指向云元数据/内部管理地址的目标
+  assertSafeOutboundUrl(url, 'WebDAV url')
 
   try {
     const baseUrl = url.replace(/\/$/, '')
