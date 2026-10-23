@@ -117,7 +117,7 @@
                       {{ locale.fingerprintLastIp }}
                     </div>
                     <div class="text-xs font-bold text-text-secondary mt-1 break-all">
-                      {{ item.lastLoginIp || '-' }}
+                      {{ item.lastUsedIp || '-' }}
                     </div>
                   </div>
                   <div class="p-3 bg-bg-primary-30 rounded-xl border border-border-secondary-30">

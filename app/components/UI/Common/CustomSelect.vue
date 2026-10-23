@@ -1,25 +1,26 @@
 <template>
   <div ref="containerRef" class="relative" :class="className">
-    <div
-      class="flex items-center gap-2 px-3 py-2 bg-bg-primary border rounded-lg transition-all select-none"
-      :class="[
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-        isOpen
-          ? 'border-primary-50 bg-primary-hover-5 shadow-lg'
-          : 'border-border-secondary hover:border-border-tertiary'
-      ]"
-      @click="toggleDropdown"
-    >
-      <div class="flex flex-col flex-1 min-w-0">
-        <span
-          v-if="label"
-          class="text-[8px] font-black uppercase tracking-widest leading-none mb-0.5 transition-colors"
-          :class="isOpen ? 'text-primary' : 'text-text-disabled'"
-        >
-          {{ label }}
-        </span>
-        <span class="text-[11px] font-bold text-text-secondary truncate">{{ displayLabel }}</span>
-      </div>
+  <div
+    class="flex items-center gap-2 bg-bg-primary border rounded-lg transition-all select-none"
+    :class="[
+      sizeClass,
+      disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+      isOpen
+        ? 'border-primary-50 bg-primary-hover-5 shadow-lg'
+        : 'border-border-secondary hover:border-border-tertiary'
+    ]"
+    @click="toggleDropdown"
+  >
+    <div class="flex flex-col flex-1 min-w-0">
+      <span
+        v-if="label"
+        class="text-[8px] font-black uppercase tracking-widest leading-none mb-0.5 transition-colors"
+        :class="isOpen ? 'text-primary' : 'text-text-disabled'"
+      >
+        {{ label }}
+      </span>
+      <span class="font-bold text-text-secondary truncate">{{ displayLabel }}</span>
+    </div>
       <div class="transition-transform duration-200" :class="{ 'rotate-180': isOpen }">
         <ChevronDown :size="12" :class="isOpen ? 'text-primary' : 'text-text-secondary'" />
       </div>
@@ -97,6 +98,11 @@ const props = defineProps({
   multiple: {
     type: Boolean,
     default: false
+  },
+  // 与 AppDatePicker 统一的高度档位：xs | sm（默认）| md | lg | xl
+  size: {
+    type: String,
+    default: 'sm'
   }
 })
 
@@ -111,6 +117,23 @@ const { zIndex, onOpenChange } = usePopupZIndex()
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
 const resolvedPlaceholder = computed(() => props.placeholder || locale.value?.selectPlaceholder || '请选择')
+
+// 与 AppDatePicker 完全一致的尺寸档位，保证两者并排时高度/基线对齐
+const sizeClass = computed(() => {
+  switch (props.size) {
+    case 'xs':
+      return 'px-2 py-1 text-[10px]'
+    case 'md':
+      return 'px-3 py-2.5 text-sm'
+    case 'lg':
+      return 'px-4 py-3 text-sm'
+    case 'xl':
+      return 'p-3 text-base'
+    case 'sm':
+    default:
+      return 'px-3 py-2 text-[11px]'
+  }
+})
 
 // 统一获取当前值
 const currentValue = computed(() => {

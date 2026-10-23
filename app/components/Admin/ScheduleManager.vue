@@ -444,7 +444,7 @@
                         }}
                       </span>
                     </div>
-                    <!-- 第二行：歌手 · 期望时段 -->
+                    <!-- 第二行：歌手 · 期望时段 · 期望日期 -->
                     <div class="text-[11px] text-text-tertiary truncate flex items-center gap-1">
                       <span class="truncate max-w-[120px]">{{ song.artist }}</span>
                       <span
@@ -452,6 +452,12 @@
                         class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap shrink-0"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
+                      </span>
+                      <span
+                        v-if="song.preferredPlayDate"
+                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap shrink-0"
+                      >
+                        {{ callLocale('preferredPlayDate', `期望日期: ${song.preferredPlayDate}`, song.preferredPlayDate) }}
                       </span>
                       <span
                         v-if="activeTab === 'pool' && song.addedByName"
@@ -1696,7 +1702,25 @@
           </div>
 
           <div class="text-[11px] text-text-disabled">
-            {{ locale.availableCount(autoScheduleCandidates.length) }}
+            {{ locale.availableCount(autoSchedulePlacement.eligible.length) }}
+          </div>
+
+          <!-- 期望落位约束诊断：显式说明被排除的歌曲数量与原因，避免静默丢弃 -->
+          <div
+            v-if="autoSchedulePlacement.excludedByDate > 0 || autoSchedulePlacement.excludedByPlayTime > 0"
+            class="space-y-1 px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60"
+          >
+            <div class="flex items-start gap-2 text-[10px] leading-relaxed">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
+              <div class="space-y-1">
+                <p v-if="autoSchedulePlacement.excludedByPlayTime > 0" class="text-text-secondary">
+                  {{ locale.messages.excludedByPlayTime(autoSchedulePlacement.excludedByPlayTime) }}
+                </p>
+                <p v-if="autoSchedulePlacement.excludedByDate > 0" class="text-text-secondary">
+                  {{ locale.messages.excludedByDate(autoSchedulePlacement.excludedByDate) }}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div class="flex gap-2">
@@ -1707,7 +1731,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoScheduleCandidates.length === 0"
+              :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoSchedulePlacement.eligible.length === 0"
               class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               @click="runAutoSchedule"
             >
@@ -2000,7 +2024,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
 import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
-import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
+import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem, filterByExpectedPlacement } from '~/utils/autoSchedule'
 import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
@@ -2963,6 +2987,7 @@ const allUnscheduledSongs = computed(() => {
       hasSubmissionNote: item.hasSubmissionNote || false,
       submissionNote: item.submissionNote || null,
       preferredPlayTimeId: item.preferredPlayTimeId || null,
+      preferredPlayDate: item.preferredPlayDate || null,
       musicId: item.musicId || null,
       musicPlatform: item.musicPlatform || null,
       requesterGrade: item.requesterGrade || null,
@@ -4263,10 +4288,26 @@ const autoScheduleCandidates = computed(() => {
       .filter((item) => !excludeIds.has(item.songId))
       .map(poolCandidateFromItem)
     const baseIds = new Set(base.map((s) => s.id))
-    return [...base, ...poolCandidates.filter((p) => !baseIds.has(p.songId))]
+    return [...base, ...poolCandidates.filter((p) => !baseIds.has(p.id))]
   }
   return base
 })
+
+// 自动排期的期望落位约束：
+// - 目标日期 = 当前选中的排期日期（期望日期的歌曲只在当天参与排期）
+// - 目标时段 = 当前选中的播出时段（期望时段是硬约束，只能排到该时段）
+//   未选择时段时整批会以「未指定时段」落位，因此带期望时段的歌曲不参与本次排期
+const autoScheduleOptions = computed(() => ({
+  targetDate: selectedDate.value,
+  targetPlayTimeId: selectedPlayTime.value
+    ? Number(selectedPlayTime.value)
+    : null
+}))
+
+// 期望落位约束过滤后的候选与被排除的统计（用于界面显式提示，避免静默丢弃）
+const autoSchedulePlacement = computed(() =>
+  filterByExpectedPlacement(autoScheduleCandidates.value, autoScheduleOptions.value)
+)
 
 const buildPreSelected = () => {
   return autoScheduleFixExisting.value ? localScheduledSongs.value.filter(
@@ -4282,7 +4323,9 @@ const buildPreSelected = () => {
     musicPlatform: s.song.musicPlatform || null,
     requester: s.song.requester || null,
     cover: s.song.cover || null,
-    createdAt: s.song.createdAt || null
+    createdAt: s.song.createdAt || null,
+    preferredPlayDate: s.song.preferredPlayDate || null,
+    preferredPlayTimeId: s.song.preferredPlayTimeId || null
   })) : []
 }
 
@@ -4299,7 +4342,7 @@ const runAutoSchedule = () => {
   const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
     ? Math.floor(autoScheduleTargetRequesterCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount, heatWeightRatio())
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount, heatWeightRatio(), autoScheduleOptions.value)
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
@@ -4331,7 +4374,7 @@ const generateMorePlans = async () => {
   const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
     ? Math.floor(autoScheduleTargetRequesterCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount, heatWeightRatio())
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount, heatWeightRatio(), autoScheduleOptions.value)
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
   let addedCount = 0
@@ -4677,6 +4720,39 @@ const setSongScheduledFlag = (songId, scheduled) => {
   if (songInList) songInList.scheduled = scheduled
 }
 
+// 当前视图是否允许放入指定了期望时段的歌曲：
+// 指定了时段的歌曲只能排到该时段，因此在其它时段视图中应阻止加入
+const getPlayTimeConflict = (song) => {
+  const preferredPlayTimeId = song?.preferredPlayTimeId || null
+  if (!preferredPlayTimeId) return null
+  const currentPlayTimeId = selectedPlayTime.value ? Number(selectedPlayTime.value) : null
+  if (currentPlayTimeId === preferredPlayTimeId) return null
+  return {
+    preferredPlayTimeId,
+    preferredPlayTimeName: getPlayTimeName(preferredPlayTimeId),
+    currentPlayTimeId
+  }
+}
+
+// 手工加入排期前校验期望时段约束，返回 true 表示允许加入
+const canAddToSchedule = (song) => {
+  const conflict = getPlayTimeConflict(song)
+  if (!conflict) return true
+  if (window.$showNotification) {
+    const name = conflict.preferredPlayTimeName || `时段#${conflict.preferredPlayTimeId}`
+    window.$showNotification(
+      callLocale(
+        'messages.playTimeConstraintViolation',
+        `《${song?.title || '该歌曲'}》指定了播出时段「${name}」，只能排到该时段`,
+        song?.title || '',
+        name
+      ),
+      'warning'
+    )
+  }
+  return false
+}
+
 // 从拖拽数据中查找歌曲（优先查 songs/replayRequests，再回退到 pool）
 const findSongFromDragData = (dragData) => {
   const songId = parseInt(dragData.songId)
@@ -4710,6 +4786,7 @@ const findSongFromDragData = (dragData) => {
         hasSubmissionNote: poolItem.hasSubmissionNote || false,
         submissionNote: poolItem.submissionNote || null,
         preferredPlayTimeId: poolItem.preferredPlayTimeId || null,
+        preferredPlayDate: poolItem.preferredPlayDate || null,
         semester: poolItem.semester || null
       }
     }
@@ -4724,6 +4801,8 @@ const addSongToScheduleFromDrag = (event) => {
 
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
   if (existingIndex !== -1) return
+
+  if (!canAddToSchedule(song)) return
 
   const insertIndex = localScheduledSongs.value.length
 
@@ -4752,6 +4831,8 @@ const insertSongToScheduleAt = (event, dropIndex) => {
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
   if (existingIndex !== -1) return
 
+  if (!canAddToSchedule(song)) return
+
   const newSchedule = {
     id: Date.now(),
     replayRequestId: song.replayRequestId || null,
@@ -4778,6 +4859,7 @@ const insertSongToScheduleAt = (event, dropIndex) => {
 const addSongToSchedule = (song) => {
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
   if (existingIndex !== -1) return
+  if (!canAddToSchedule(song)) return
 
   const newSchedule = {
     id: Date.now(),

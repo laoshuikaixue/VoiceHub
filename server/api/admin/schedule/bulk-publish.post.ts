@@ -15,6 +15,7 @@ import {
   fulfillReplayRequestsForSchedule,
   restoreReplayRequestsToPending
 } from '~~/server/utils/scheduleReplayBinding'
+import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -96,6 +97,19 @@ export default defineEventHandler(async (event) => {
         message: `歌曲不存在：${missingSongIds.join(', ')}`
       })
     }
+
+    // 落位约束：指定了期望日期/时段的歌曲只能排到对应位置
+    await assertSchedulePlacement(
+      {
+        playDate: inputDateStr,
+        playTimeId,
+        items: scheduleItems.map((item) => ({
+          songId: item.songId,
+          replayRequestId: item.replayRequestId
+        }))
+      },
+      await loadSongTitleMap(Array.from(new Set(songIds)))
+    )
 
     // 需要发送通知的列表
     const notificationsToSend: SongSelectedEntry[] = []

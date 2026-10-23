@@ -5,11 +5,15 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { hashFingerprint, isValidFingerprint } from '~~/server/utils/fingerprint'
 
-// 当前账号的浏览器指纹绑定列表；传入 fingerprint 时服务端标记哪条是当前浏览器
+// 当前账号已采集的浏览器指纹数据列表；传入 fingerprint 时服务端标记哪条是当前浏览器
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED_ACCESS, '需要登录才能查看绑定列表')
+    throw createApiError(
+      401,
+      SERVER_ERROR_CODES.AUTH_UNAUTHORIZED_ACCESS,
+      '需要登录才能查看浏览器指纹数据'
+    )
   }
 
   const query = getQuery(event)
@@ -39,7 +43,7 @@ export default defineEventHandler(async (event) => {
     device: binding.device,
     createdAt: binding.createdAt,
     lastUsedAt: binding.lastUsedAt,
-    lastLoginIp: binding.lastLoginIp,
+    lastUsedIp: binding.lastUsedIp,
     current: currentHash != null && binding.fingerprintHash === currentHash
   }))
 })

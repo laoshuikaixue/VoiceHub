@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
           enablePlayTimeSelection: false,
           playSlotRequired: false,
           qqOAuthEnabled: false,
-          fingerprintLoginEnabled: false,
+          fingerprintDataEnabled: false,
           siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
           siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
           schoolLogoHomeUrl: null,

@@ -51,7 +51,7 @@ const siteConfig = ref({
   captchaEnabled: false,
   captchaProvider: 'graphic',
   captchaMaxFailures: 3,
-  fingerprintLoginEnabled: false,
+  fingerprintDataEnabled: false,
   turnstileSiteKey: '',
   esaCaptchaPrefix: '',
   esaCaptchaScenes: '[]',
@@ -149,7 +149,7 @@ export const useSiteConfig = () => {
         allowOAuthRegistration: false,
         captchaEnabled: false,
         captchaProvider: 'graphic',
-        fingerprintLoginEnabled: false,
+        fingerprintDataEnabled: false,
         turnstileSiteKey: '',
         esaCaptchaPrefix: '',
         esaCaptchaScenes: '[]',
@@ -238,8 +238,8 @@ export const useSiteConfig = () => {
   )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
-  // 浏览器指纹登录总开关（管理员配置）
-  const fingerprintLoginEnabled = computed(() => siteConfig.value.fingerprintLoginEnabled === true)
+  // 浏览器指纹数据采集总开关（管理员配置）
+  const fingerprintDataEnabled = computed(() => siteConfig.value.fingerprintDataEnabled === true)
   // 触发图形验证码的失败阈值：0 = 每次必验，空值/非法回退 3
   const captchaMaxFailures = computed(() => {
     const raw = siteConfig.value.captchaMaxFailures
@@ -346,7 +346,7 @@ export const useSiteConfig = () => {
     captchaEnabled,
     captchaProvider,
     captchaMaxFailures,
-    fingerprintLoginEnabled,
+    fingerprintDataEnabled,
     turnstileSiteKey,
     esaCaptchaScenes,
     smtpEnabled,

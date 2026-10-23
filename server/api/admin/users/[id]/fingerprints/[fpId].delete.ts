@@ -4,7 +4,7 @@ import { db, browserFingerprints, users } from '~/drizzle/db'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
-// 管理员撤销任意账号的浏览器指纹绑定
+// 管理员删除任意账号的浏览器指纹数据
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.user
   if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(
       404,
       SERVER_ERROR_CODES.AUTH_FINGERPRINT_NOT_FOUND,
-      '绑定不存在或已被移除'
+      '记录不存在或已被移除'
     )
   }
 

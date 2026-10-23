@@ -303,7 +303,7 @@
             <AuthTwoFactorSetup :initial-enabled="auth.user.value?.has2FA" />
           </section>
 
-          <!-- 浏览器指纹登录 -->
+          <!-- 浏览器指纹数据 -->
           <AccountFingerprintManager />
 
           <!-- 登录会话 -->

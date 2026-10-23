@@ -839,7 +839,7 @@ export default defineEventHandler(async (event) => {
             const fields = [
               'enablePlayTimeSelection',
               'playSlotRequired',
-              'fingerprintLoginEnabled',
+              'fingerprintDataEnabled',
               'instanceId',
               'defaultTheme',
               'enabledThemes',

@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
           device: true,
           createdAt: true,
           lastUsedAt: true,
-          lastLoginIp: true
+          lastUsedIp: true
         },
         orderBy: (fingerprints, { desc }) => [desc(fingerprints.createdAt)]
       }

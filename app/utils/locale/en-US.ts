@@ -214,9 +214,9 @@ export const siteConfig = {
   forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
   forcePasswordChangeOnFirstLoginDesc:
     'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
-  fingerprintLoginEnabled: 'Browser Fingerprint Sign-in',
-  fingerprintLoginEnabledDesc:
-    'When enabled, users can bind the current browser to their account in Account Management (password verification required) and sign in with one click on the login page. Turning this off immediately invalidates all existing fingerprint bindings.',
+  fingerprintDataEnabled: 'Browser Fingerprint Data Collection',
+  fingerprintDataEnabledDesc:
+    'When enabled, users may voluntarily opt in to browser fingerprint collection in Account Management and view or delete their own fingerprint records. Fingerprints are stored as data only and are never used as a sign-in credential. Turning this off disables collection site-wide.',
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc:
     'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
@@ -466,6 +466,13 @@ export const common = {
     weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
     monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     yearSuffix: ''
+  },
+  timePicker: {
+    placeholder: 'Select time',
+    now: 'Now',
+    clear: 'Clear',
+    hour: 'h',
+    minute: 'm'
   }
 } as const
 
@@ -575,38 +582,56 @@ export const pages = {
       }
     },
     fingerprint: {
-      title: 'Browser Fingerprint Sign-in',
-      desc: 'Register this browser to sign in with one click on the login page, no password needed',
-      loading: 'Loading bindings...',
+      title: 'Browser Fingerprint Data',
+      desc: 'Voluntarily collect and manage this browser fingerprint as a user data record',
+      loading: 'Loading fingerprint records...',
       disabledNotice:
-        'Browser fingerprint sign-in is not enabled by the administrator yet. You can bind this browser once it is turned on.',
+        'Browser fingerprint data collection is not enabled by the administrator yet. Once turned on, you can opt in here and review your records.',
+      notEnabledTitle: 'Browser fingerprint data collection is off',
+      notEnabledDesc:
+        'When enabled, this browser fingerprint is collected locally (Canvas drawing, WebGL renderer, font list, screen resolution, time zone, UA and other environment traits) and stored as a user data record. Fingerprints are never used to sign in, and nothing is collected after you turn this off.',
       emptyDesc:
-        'No browsers bound yet. After enabling, click "Sign in with browser fingerprint" on the login page for password-free access.',
-      enableCurrent: 'Enable This Browser',
-      enableSuccess: 'Browser fingerprint enabled',
+        'No browser fingerprint records yet. Use the button below to collect the fingerprint of this browser.',
+      enableAction: 'Enable Browser Fingerprint Collection',
+      enableSuccess: 'Browser fingerprint collection enabled',
       enableFailed: 'Failed to enable. Check your password and try again.',
-      collectFailed: 'Failed to collect browser fingerprint. Please refresh and try again.',
+      disableAction: 'Turn Off Collection',
+      disableSuccess: 'Collection turned off and collected fingerprints cleared',
+      disableFailed: 'Failed to turn off. Please try again later.',
+      disableDialogTitle: 'Turn Off Browser Fingerprint Collection',
+      disableMessage:
+        'Turning this off stops collection and deletes every collected fingerprint record. Continue?',
+      collectCurrent: 'Collect This Browser',
+      collectSuccess: 'Browser fingerprint collected',
+      collectFailed: 'Collection failed. Please refresh and try again.',
       currentBrowser: 'This browser',
-      boundAt: 'Bound',
-      lastUsed: 'Last used',
-      neverUsed: 'Never used',
-      unbind: 'Remove',
-      unbindSuccess: 'Browser binding removed',
-      unbindFailed: 'Failed to remove binding',
-      unbindDialogTitle: 'Remove Browser Fingerprint',
-      unbindMessage:
-        'Remove "{0}"? This browser will need password verification again to re-enable fingerprint sign-in.',
+      collectedAt: 'Collected',
+      lastUsed: 'Last collected',
+      neverUsed: 'Never collected',
+      delete: 'Delete',
+      deleteSuccess: 'Fingerprint record deleted',
+      deleteFailed: 'Failed to delete',
+      deleteDialogTitle: 'Delete Browser Fingerprint Record',
+      deleteMessage: 'Delete the fingerprint record for "{0}"?',
       limitHint:
-        'Up to 10 browsers per account. Do not enable on shared computers; remove the binding after signing out.',
+        'Up to 10 browser fingerprints per account. It is best not to collect on shared computers.',
       cancel: 'Cancel',
       enableDialog: {
-        title: 'Enable Browser Fingerprint Sign-in',
-        desc: 'Verify your account password to bind this browser fingerprint',
-        label: 'Label (optional)',
-        labelPlaceholder: 'e.g. Dorm PC, Classroom PC',
+        title: 'Enable Browser Fingerprint Data Collection',
+        desc: 'This is a sensitive action: verify your password and confirm what gets collected',
+        consentTitle: 'The following browser information will be collected:',
+        collectItems: [
+          'Canvas drawing fingerprint and WebGL renderer information',
+          'List of fonts installed on this machine',
+          'Screen resolution, pixel density and color depth',
+          'System time zone, locale and browser version',
+          'Audio context rendering results and other environment traits'
+        ],
+        consentLabel:
+          'I understand the above and agree to enable browser fingerprint data collection (stored as data only, never used as a sign-in credential)',
         password: 'Current password',
         passwordPlaceholder: 'Enter your current password to confirm',
-        confirm: 'Verify & Enable'
+        confirm: 'Confirm & Enable'
       }
     },
     social: {
@@ -1095,10 +1120,6 @@ export const pages = {
       login: 'Log In',
       or: 'or',
       webauthn: 'Sign in with Passkey',
-      fingerprintLogin: 'Sign in with browser fingerprint',
-      fingerprintBoundHint: (username: string) => `This browser is bound to account: ${username}`,
-      fingerprintCollectFailed: 'Failed to collect browser fingerprint. Please refresh and try again.',
-      fingerprintLoginFailed: 'Browser fingerprint sign-in failed. Please use your password.',
       platformNote: 'Accounts are not shared across different VoiceHub platforms',
       fullLoginInfo: 'Please complete your login information',
       fullRegisterInfo: 'Please complete your registration information',
@@ -3197,6 +3218,7 @@ export const admin = {
     emptySongs: 'No song records',
     pendingSongItemName: 'pending songs',
     preferredPlayTime: (name: string) => `Preferred: ${name}`,
+    preferredPlayDate: (date: string) => `Preferred date: ${date}`,
     tabs: {
       normal: 'Normal',
       replay: 'Replay Requests',
@@ -3326,7 +3348,13 @@ export const admin = {
       candidateDurationsProgressTotal: '{0} song(s)',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: 'No matching song combination found',
-      autoScheduleNoMorePlans: 'No more unique plans available'
+      autoScheduleNoMorePlans: 'No more unique plans available',
+      playTimeConstraintViolation: (title: string, playTimeName: string) =>
+        `"${title}" specifies play time slot "${playTimeName}" and can only be scheduled in that slot`,
+      excludedByPlayTime: (count: number) =>
+        `${count} song(s) specify a different play time slot and were excluded as a hard constraint`,
+      excludedByDate: (count: number) =>
+        `${count} song(s) have a preferred date other than today and were excluded`
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',
@@ -5047,22 +5075,22 @@ export const admin = {
       emailBinding: 'Email Binding',
       oauthBinding: 'OAuth Account Binding',
       loading: 'Loading...',
-      fingerprintBinding: 'Browser Fingerprint Sign-in',
-      fingerprintBound: (count: number) => `${count} browser(s) bound`,
+      fingerprintBinding: 'Browser Fingerprint Data',
+      fingerprintBound: (count: number) => `${count} browser(s) collected`,
       bound: (value: string) => `Bound: ${value}`,
-      unbound: 'Unbound',
-      fingerprintBindingsTitle: 'Browser Fingerprint Bindings',
-      fingerprintBindingsDesc: 'View and revoke browser fingerprints bound to this user',
-      fingerprintBindingsEmpty: 'No browser fingerprint bindings',
-      fingerprintBoundAt: 'Bound At',
-      fingerprintLastUsed: 'Last Sign-in',
-      fingerprintLastIp: 'Last Sign-in IP',
+      unbound: 'Not collected',
+      fingerprintBindingsTitle: 'Browser Fingerprint Data',
+      fingerprintBindingsDesc: 'View and delete browser fingerprint records collected by this user',
+      fingerprintBindingsEmpty: 'No browser fingerprint records',
+      fingerprintBoundAt: 'Collected At',
+      fingerprintLastUsed: 'Last Collected',
+      fingerprintLastIp: 'Last Collected IP',
       fingerprintDevice: 'Device',
       fingerprintNever: 'Never',
-      revoke: 'Revoke',
-      fingerprintRevokeSuccess: 'Browser fingerprint binding revoked',
-      fingerprintRevokeFailed: 'Failed to revoke binding',
-      fingerprintLoadFailed: 'Failed to load browser fingerprint bindings',
+      revoke: 'Delete',
+      fingerprintRevokeSuccess: 'Browser fingerprint record deleted',
+      fingerprintRevokeFailed: 'Failed to delete record',
+      fingerprintLoadFailed: 'Failed to load browser fingerprint records',
       oauthBindingsTitle: 'OAuth Binding Details',
       oauthBindingsDesc: 'View third-party accounts bound to this user',
       oauthBindingsEmpty: 'No bound accounts',
@@ -5376,11 +5404,12 @@ export const serverErrors = {
   AUTH_TOTP_NOT_ENABLED: 'TOTP verification is not enabled',
   AUTH_PASSKEY_ACCOUNT_NOT_FOUND: 'No account is associated with this passkey',
   AUTH_FINGERPRINT_INVALID: 'Invalid browser fingerprint. Please refresh and try again.',
-  AUTH_FINGERPRINT_DISABLED: 'Browser fingerprint sign-in is not enabled. Please use your password.',
-  AUTH_FINGERPRINT_NOT_BOUND: 'This browser is not bound to an account, or the binding was removed.',
-  AUTH_FINGERPRINT_BOUND_TO_OTHER: 'This browser is already bound to another account. Unbind it there first.',
-  AUTH_FINGERPRINT_LIMIT_EXCEEDED: 'Binding limit reached. Remove a browser you no longer use first.',
-  AUTH_FINGERPRINT_NOT_FOUND: 'Binding does not exist or was already removed.',
+  AUTH_FINGERPRINT_DISABLED: 'Browser fingerprint data collection is not enabled',
+  AUTH_FINGERPRINT_BOUND_TO_OTHER:
+    'This browser is already collected by another account. Delete it there first.',
+  AUTH_FINGERPRINT_LIMIT_EXCEEDED:
+    'Collection limit reached. Remove browsers you no longer use first.',
+  AUTH_FINGERPRINT_NOT_FOUND: 'The record does not exist or was already removed.',
   AUTH_DEVICE_NOT_FOUND: 'Device not found',
   AUTH_UNAUTHORIZED: 'Unauthorized',
   AUTH_UNAUTHORIZED_ACCESS: 'Unauthorized access',
@@ -5464,6 +5493,10 @@ export const serverErrors = {
     'You can only request a replay for songs from the current semester',
   SONG_INVITATION_FAILED: 'Failed to process the invitation',
   SONG_SCHEDULED_CANNOT_WITHDRAW: 'Scheduled songs cannot be withdrawn',
+  SONG_SCHEDULE_PREFERRED_TIME_MISMATCH:
+    'A song with a specified play time slot can only be scheduled in that slot',
+  SONG_SCHEDULE_PREFERRED_DATE_MISMATCH:
+    "The song's preferred play date does not match the target date",
   SONG_PLAYED_CANNOT_WITHDRAW: 'Played songs cannot be withdrawn',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: 'There is no active semester, so a replay cannot be requested',
   SONG_RESTRICTION_SAME_SONG:

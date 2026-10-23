@@ -30,6 +30,7 @@
           :label="filter.label"
           :value="getSelectValueLabel(filter)"
           :options="filter.options.map((o) => o.label)"
+          size="xs"
           class="w-full"
           @change="(val) => updateSelectFilter(filter, val)"
         />

@@ -444,7 +444,7 @@
 
     <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
 
-    <div v-if="!isBindMode && !showRegisterMode && (isWebAuthnSupported || fingerprintLoginEnabled)" class="webauthn-section">
+    <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
@@ -452,13 +452,6 @@
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
-      <button v-if="fingerprintLoginEnabled" type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleFingerprintLogin">
-        <ScanFace :size="20" class="webauthn-icon" />
-        <span>{{ locale.fingerprintLogin }}</span>
-      </button>
-      <p v-if="fingerprintLoginEnabled && fingerprintBound" class="fingerprint-hint">
-        {{ formatLocale(locale.fingerprintBoundHint, fingerprintMaskedUsername) }}
-      </p>
     </div>
 
     <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
@@ -508,9 +501,8 @@ import {
   signalUnknownWebAuthnCredential,
   startWebAuthnAuthentication
 } from '~/utils/webauthn'
-import { Fingerprint, ScanFace } from '@lucide/vue'
+import { Fingerprint } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
-import { collectFingerprint } from '~/utils/fingerprint'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
@@ -521,7 +513,7 @@ import { useLocale } from '~/utils/locale'
 import { useOAuthBindReminder } from '~/composables/useOAuthBindReminder'
 import { ESA_CAPTCHA_VERIFY_HEADER, ESA_CAPTCHA_PASS_HEADER, getEsaCaptchaRejectCode, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 
-const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion, fingerprintLoginEnabled } = useSiteConfig()
+const { allowOAuthRegistration, allowRegister, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes, registerEmailRequired, registerRequiresGradeClass, legalConsentEnabled, legalConsentDisplayMode, legalConsentDocuments, legalConsentVersion } = useSiteConfig()
 const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -609,9 +601,6 @@ const loading = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isWebAuthnSupported = ref(false)
-// 浏览器指纹登录：当前浏览器是否已绑定（含绑定的掩码用户名）
-const fingerprintBound = ref(false)
-const fingerprintMaskedUsername = ref('')
 const classOptionsLoading = ref(false)
 const classOptionsLoaded = ref(false)
 const classOptions = ref([])
@@ -787,9 +776,6 @@ onMounted(async () => {
   await fetchSiteConfig()
   if (isBindMode.value) {
     await fetchClassOptions()
-  }
-  if (!isBindMode.value) {
-    void checkFingerprintBinding()
   }
 })
 
@@ -1348,56 +1334,6 @@ const handleWebAuthnLogin = async () => {
     loading.value = false
   }
 }
-
-// 浏览器指纹一键登录：本地采集指纹 → 预检提示 → 提交登录
-const handleFingerprintLogin = async () => {
-  if (requireLegalConsent()) return
-  loading.value = true
-  error.value = ''
-
-  try {
-    const { fingerprint } = await collectFingerprint()
-    if (!fingerprint) {
-      error.value = locale.value.fingerprintCollectFailed || '浏览器指纹采集失败，请刷新页面后重试'
-      return
-    }
-
-    const response = await $fetch('/api/auth/fingerprint/login', {
-      method: 'POST',
-      body: { fingerprint }
-    })
-
-    if (response.success) {
-      await auth.initAuth(true)
-      await recordLegalConsent()
-      await redirectAfterLogin()
-    } else {
-      error.value = locale.value.fingerprintLoginFailed || '浏览器指纹登录失败，请使用账号密码登录'
-    }
-  } catch (e) {
-    console.error('浏览器指纹登录错误:', e)
-    error.value = localizeServerError(e, locale.value.fingerprintLoginFailed || '浏览器指纹登录失败，请使用账号密码登录')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 挂载后预检当前浏览器是否已绑定指纹，用于展示掩码用户名提示
-const checkFingerprintBinding = async () => {
-  if (!fingerprintLoginEnabled.value) return
-  try {
-    const { fingerprint } = await collectFingerprint()
-    if (!fingerprint) return
-    const result = await $fetch('/api/auth/fingerprint/check', {
-      query: { fingerprint }
-    })
-    fingerprintBound.value = result?.available === true
-    fingerprintMaskedUsername.value = result?.maskedUsername || ''
-  } catch (e) {
-    // 预检失败不阻断登录页，仅不展示绑定提示
-    console.warn('浏览器指纹预检失败:', e)
-  }
-}
 </script>
 
 <style scoped>
@@ -1872,13 +1808,6 @@ const checkFingerprintBinding = async () => {
 .webauthn-icon {
   width: 20px;
   height: 20px;
-}
-
-.fingerprint-hint {
-  margin: 0;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-tertiary);
 }
 
 /* 响应式设计 */

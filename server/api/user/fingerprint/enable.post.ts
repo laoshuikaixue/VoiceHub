@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs'
 import { defineEventHandler, readBody, getHeader } from 'h3'
 import { count, eq } from 'drizzle-orm'
 import { db, users, browserFingerprints } from '~/drizzle/db'
@@ -11,20 +10,42 @@ import {
 } from '~~/server/utils/fingerprint'
 import { parseUserAgent } from '~~/server/utils/auth-session'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import { getServerDate } from '~~/server/utils/serverTime'
 
-// 启用当前浏览器的指纹登录：需密码认证，同一浏览器全局只能绑定一个账号
+// 采集当前浏览器的浏览器指纹，作为用户数据项保存。
+// 仅在用户显式开启「浏览器指纹数据」后可用；指纹仅作数据记录，不参与任何鉴权。
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED_ACCESS, '需要登录才能绑定浏览器指纹')
+    throw createApiError(
+      401,
+      SERVER_ERROR_CODES.AUTH_UNAUTHORIZED_ACCESS,
+      '需要登录才能采集浏览器指纹'
+    )
   }
 
   const settings = await getSystemSettingsCached()
-  if (!settings?.fingerprintLoginEnabled) {
+  if (!settings?.fingerprintDataEnabled) {
     throw createApiError(
       403,
       SERVER_ERROR_CODES.AUTH_FINGERPRINT_DISABLED,
-      '管理员未开启浏览器指纹登录功能'
+      '管理员未开启浏览器指纹数据采集功能'
+    )
+  }
+
+  const userRecord = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+    columns: { id: true, fingerprintDataEnabled: true }
+  })
+  if (!userRecord) {
+    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED_ACCESS, '账号不存在')
+  }
+  if (!userRecord.fingerprintDataEnabled) {
+    throw createApiError(
+      403,
+      SERVER_ERROR_CODES.AUTH_FINGERPRINT_DISABLED,
+      '尚未开启浏览器指纹数据采集，请先在账号设置中开启'
     )
   }
 
@@ -38,33 +59,12 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const password = typeof body?.password === 'string' ? body.password : ''
-  if (!password) {
-    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请输入当前密码以完成验证')
-  }
-
-  const userRecord = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-    columns: { id: true, password: true }
-  })
-  if (!userRecord) {
-    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED_ACCESS, '账号不存在')
-  }
-
-  const isPasswordValid = await bcrypt.compare(password, userRecord.password)
-  if (!isPasswordValid) {
-    throw createApiError(
-      403,
-      SERVER_ERROR_CODES.AUTH_CURRENT_PASSWORD_INCORRECT,
-      '当前密码错误，无法绑定浏览器指纹'
-    )
-  }
-
   const label = typeof body?.label === 'string' ? body.label.trim().slice(0, 50) : ''
   const fingerprintHash = hashFingerprint(fingerprint)
   const metadata = parseUserAgent(getHeader(event, 'user-agent') || '')
+  const clientIp = getClientIP(event)
 
-  // 同一浏览器已被其他账号绑定：全局唯一，避免指纹登录时出现账号歧义
+  // 同一浏览器已被其他账号采集：全局唯一，避免同一浏览器出现在多个账号的数据中
   const existing = await db.query.browserFingerprints.findFirst({
     where: eq(browserFingerprints.fingerprintHash, fingerprintHash)
   })
@@ -72,16 +72,18 @@ export default defineEventHandler(async (event) => {
     throw createApiError(
       409,
       SERVER_ERROR_CODES.AUTH_FINGERPRINT_BOUND_TO_OTHER,
-      '该浏览器已绑定其他账号，请先在对应账号中解绑'
+      '该浏览器已被其他账号采集，请先在对应账号中删除'
     )
   }
 
   if (existing) {
-    // 同一账号重复启用：仅刷新备注与设备信息
+    // 同一账号重复采集：仅刷新备注与设备信息
     await db
       .update(browserFingerprints)
       .set({
         label: label || existing.label,
+        lastUsedAt: getServerDate(),
+        lastUsedIp: clientIp,
         ...metadata
       })
       .where(eq(browserFingerprints.id, existing.id))
@@ -96,7 +98,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(
       409,
       SERVER_ERROR_CODES.AUTH_FINGERPRINT_LIMIT_EXCEEDED,
-      `每个账号最多绑定 ${MAX_FINGERPRINT_BINDINGS} 个浏览器，请先解绑不再使用的设备`
+      `每个账号最多可保存 ${MAX_FINGERPRINT_BINDINGS} 个浏览器指纹，请先删除不再使用的设备`
     )
   }
 
@@ -106,6 +108,8 @@ export default defineEventHandler(async (event) => {
       userId: user.id,
       fingerprintHash,
       label: label || null,
+      lastUsedAt: getServerDate(),
+      lastUsedIp: clientIp,
       ...metadata
     })
     .returning({ id: browserFingerprints.id })

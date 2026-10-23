@@ -254,34 +254,24 @@
                   <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.startTimeOptional }}</label
                   >
-                  <div class="relative">
-                    <input
-                      v-model="formData.startTime"
-                      type="time"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 appearance-none"
-                    >
-                    <Clock
-                      class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
-                      :size="14"
-                    />
-                  </div>
+                  <AppTimePicker
+                    v-model="formData.startTime"
+                    :placeholder="locale.startTimeOptional"
+                    size="md"
+                    rounded="lg"
+                  />
                   <p class="text-[9px] text-text-disabled px-1">{{ locale.startTimeHint }}</p>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.endTimeOptional }}</label
                   >
-                  <div class="relative">
-                    <input
-                      v-model="formData.endTime"
-                      type="time"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 appearance-none"
-                    >
-                    <Clock
-                      class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
-                      :size="14"
-                    />
-                  </div>
+                  <AppTimePicker
+                    v-model="formData.endTime"
+                    :placeholder="locale.endTimeOptional"
+                    size="md"
+                    rounded="lg"
+                  />
                   <p class="text-[9px] text-text-disabled px-1">{{ locale.endTimeHint }}</p>
                 </div>
               </div>
@@ -419,6 +409,7 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import type { PlayTime } from '~/types'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppTimePicker from '~/components/UI/Common/AppTimePicker.vue'
 import {
   Plus,
   Clock,
