@@ -605,12 +605,14 @@ const customOAuth2Strategy: OAuthStrategy = {
 const qqOAuthStrategy: OAuthStrategy = {
   getAuthorizeUrl(redirectUri, state, config) {
     if (!config?.clientId) throw createError({ statusCode: 500, message: 'QQ互联 App ID 未配置' })
-    const url = new URL('https://graph.qq.com/oauth2.0/authorize')
-    url.searchParams.set('response_type', 'code')
-    url.searchParams.set('client_id', config.clientId)
-    url.searchParams.set('redirect_uri', redirectUri)
-    url.searchParams.set('state', state)
-    return url.toString()
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: config.clientId,
+      redirect_uri: redirectUri,
+      state,
+      scope: 'get_user_info'
+    })
+    return `https://graph.qq.com/oauth2.0/authorize?${params.toString()}`
   },
   async exchangeToken(code, redirectUri, config) {
     if (!config?.clientId || !config.clientSecret)
@@ -620,24 +622,36 @@ const qqOAuthStrategy: OAuthStrategy = {
       client_id: config.clientId,
       client_secret: config.clientSecret,
       code,
-      redirect_uri: redirectUri
+      redirect_uri: redirectUri,
+      fmt: 'json',
+      need_openid: '1'
     })
     const response = await $fetch<string>(
       `https://graph.qq.com/oauth2.0/token?${params.toString()}`,
       { responseType: 'text' }
     )
-    const token = new URLSearchParams(response).get('access_token')
+    const tokenData = response.trim().startsWith('{')
+      ? JSON.parse(response)
+      : Object.fromEntries(new URLSearchParams(response))
+    if (tokenData.error || tokenData.error_description)
+      throw new Error(tokenData.error_description || tokenData.error)
+    const token = tokenData.access_token
     if (!token) throw new Error('QQ互联未返回访问令牌')
     return token
   },
   async getUserInfo(accessToken, config) {
     const me = await $fetch<string>('https://graph.qq.com/oauth2.0/me', {
-      query: { access_token: accessToken },
+      query: { access_token: accessToken, fmt: 'json' },
       responseType: 'text'
     })
-    const match = me.match(/^\s*callback\s*\(\s*(\{[\s\S]*\})\s*\)\s*;?\s*$/)
-    if (!match) throw new Error('QQ互联返回了无效的 OpenID 响应')
-    const identity = JSON.parse(match[1]!)
+    let identity: any
+    try {
+      identity = JSON.parse(me)
+    } catch {
+      const match = me.match(/^\s*callback\s*\(\s*(\{[\s\S]*\})\s*\)\s*;?\s*$/)
+      if (!match) throw new Error('QQ互联返回了无效的 OpenID 响应')
+      identity = JSON.parse(match[1]!)
+    }
     if (identity.error || !identity.openid || identity.client_id !== config?.clientId)
       throw new Error('QQ互联返回的 OpenID 无效')
     const profile = await $fetch<any>('https://graph.qq.com/user/get_user_info', {
@@ -648,11 +662,17 @@ const qqOAuthStrategy: OAuthStrategy = {
       }
     })
     if (profile?.ret !== 0) throw new Error('QQ互联获取用户资料失败')
+    const avatar =
+      typeof profile.figureurl_qq_2 === 'string'
+        ? profile.figureurl_qq_2
+        : typeof profile.figureurl_qq_1 === 'string'
+          ? profile.figureurl_qq_1
+          : undefined
     return {
       id: String(identity.openid),
       username: String(profile.nickname || identity.openid),
       name: profile.nickname ? String(profile.nickname) : undefined,
-      avatar: typeof profile.figureurl_qq_2 === 'string' ? profile.figureurl_qq_2 : undefined
+      avatar
     }
   }
 }
