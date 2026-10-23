@@ -2988,6 +2988,8 @@ export const admin = {
     removeFromPoolFailed: 'Failed to remove',
     addedBy: 'Added by',
     playSong: 'Play',
+    replaceSource: 'Replace Source',
+    replaceSourceSuccess: 'Source replaced',
     removeFromSchedule: 'Remove from schedule',
     addToScheduleSuccess: 'Added to schedule',
     playlist: 'Playlist',

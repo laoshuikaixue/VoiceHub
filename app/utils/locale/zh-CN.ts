@@ -2910,6 +2910,8 @@ export const admin = {
     removeFromPoolFailed: '移除失败',
     addedBy: '添加者',
     playSong: '播放歌曲',
+    replaceSource: '更换音源',
+    replaceSourceSuccess: '换源成功',
     removeFromSchedule: '从排期移除',
     addToScheduleSuccess: '已加入排期',
     playlist: '播放列表',
