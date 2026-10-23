@@ -1,20 +1,19 @@
-# feat: 播出日期时段选择 · QQ 互联 OAuth · 批量标记播放 · 浏览器指纹数据 · 自动排期期望落位约束 · 统一日期时间选择器
+# feat: 播出日期时段选择 · QQ 互联 OAuth · 批量标记播放 · 自动排期期望落位约束 · 统一日期时间选择器
 
 ## 概述
 
-本 PR 为 VoiceHub 新增 6 项功能，均在现有架构上增量实现，未改动上游既有安全加固逻辑（CORS HMAC 签名校验、IP 信任链、JWT 弱密钥 fail-fast 等）。
+本 PR 为 VoiceHub 新增 5 项功能，均在现有架构上增量实现，未改动上游既有安全加固逻辑（CORS HMAC 签名校验、IP 信任链、JWT 弱密钥 fail-fast 等）。
 
 | # | 功能 | 领域 |
 |---|---|---|
 | 1 | 播出日期 + 时段两级选择（选歌后弹窗） | 点歌 |
 | 2 | QQ 互联 OAuth 直连登录 | 认证 |
 | 3 | 批量标记播放 / 未播放 | 歌曲管理 |
-| 4 | 浏览器指纹数据采集（用户数据项） | 账号 |
-| 5 | 自动排期期望落位约束 | 排期 |
-| 6 | 统一日期 / 时间选择器组件 | UI 基建 |
+| 4 | 自动排期期望落位约束 | 排期 |
+| 5 | 统一日期 / 时间选择器组件 | UI 基建 |
 
-**变更规模**：73 个文件，+16444 / −249 行（不含本说明文档）
-**数据库迁移**：4 个（`20261023040954` / `20261023042547` / `20261023050353` / `20261023160852`）
+**变更规模**：68 个文件，+16750 / −248 行（不含本说明文档）
+**数据库迁移**：3 个（`20261023040954` / `20261023042547` / `20261023050353`）
 
 ---
 
@@ -75,35 +74,7 @@
 
 ---
 
-## 四、浏览器指纹数据采集（用户数据项）
-
-浏览器指纹从「登录凭证」彻底降级为**用户数据项**：不再参与任何鉴权，仅供用户与管理员查看。引入**两级开关**，开启时**逐条告知将收集的环境特征**并要求显式确认。
-
-### 数据层
-| 变更 | 说明 |
-|---|---|
-| `User.fingerprintDataEnabled` | `boolean`，**新增**，用户自愿开关，默认 `false` |
-| `SystemSettings.fingerprintLoginEnabled` → `fingerprintDataEnabled` | 列重命名，管理员总开关 |
-| `browser_fingerprints.last_login_ip` → `last_used_ip` | 列重命名，语义由「登录 IP」改为「最近采集 IP」 |
-
-新表 `browser_fingerprints`：`userId` FK cascade、`fingerprintHash` 全局唯一索引、`label` / `browser` / `operatingSystem` / `device`、`createdAt` / `lastUsedAt` / `lastUsedIp`。
-
-### 服务端
-- 端点从 `server/api/auth/fingerprint/` 迁至 `server/api/user/fingerprint/`（`enable` / `list` / `[id].delete`），**登录相关端点 `login.post` / `check.get` 整体移除**，鉴权白名单同步清理
-- **新增 `preference.get.ts`**：查询用户开关状态（同时返回管理员总开关是否可用）
-- **新增 `preference.post.ts`**：开启需**密码校验 + `consent: true` 显式确认**（证明操作者是账号本人，且用户已知悉采集内容）；关闭时**级联删除**该账号已采集的全部指纹数据
-- `server/utils/fingerprint.ts`：`MAX_FINGERPRINT_BINDINGS=10`；`isValidFingerprint`（`/^[a-f0-9]{64}$/`）；`hashFingerprint` = `sha256(指纹 + pepper)`，pepper 取 `FINGERPRINT_PEPPER || JWT_SECRET` —— 不明文存原始指纹
-- 错误码移除登录专用 `AUTH_FINGERPRINT_NOT_BOUND`
-
-### 前端
-- `app/utils/fingerprint.js`（零依赖）：canvas 2D / WebGL debug renderer / OfflineAudioContext 浮点累积 / 字体宽度探测 / 屏幕硬件 / 时区 / Chromium 高熵 UA-Data；cyrb53 四轮种子拼接为 64 位十六进制；排除主题相关信号；WebGL 用完即 `loseContext`；SSR 返回空
-- `Account/FingerprintManager.vue` **重写**为三态：**未开启**（说明用途 + 开启按钮）→ **已开启**（记录列表 + 采集 / 关闭入口）→ **无记录**（空状态引导）。开启弹窗含**采集内容清单**（Canvas / WebGL / 字体列表 / 屏幕分辨率 / 时区 / 音频上下文）+ **勾选确认** + 密码校验，未勾选时确认按钮禁用
-- `Admin/FingerprintBindingsModal.vue` + `UserManager.vue`：管理员查看 / 删除用户已采集的指纹数据
-- `SiteConfigManager.vue`：安全区总开关（文案改为「浏览器指纹数据采集」，明确不作为登录凭证）
-
----
-
-## 五、自动排期期望落位约束
+## 四、自动排期期望落位约束
 
 自动排期新增「期望落位」语义：
 
@@ -130,7 +101,7 @@
 
 ---
 
-## 六、统一日期 / 时间选择器组件
+## 五、统一日期 / 时间选择器组件
 
 自绘日期与时间选择器，全站替换原生 `<input type="date">` / `datetime-local` / `time`，不依赖原生控件、明暗主题自动适配。
 
@@ -154,15 +125,12 @@
 
 ## 验证
 
-- **单元测试**：`node --experimental-strip-types --test "tests/**/*.test.ts"` → **512 / 512 通过**
+- **单元测试**：`node --experimental-strip-types --test "tests/**/*.test.ts"` → **508 / 508 通过**
   - 新增 `tests/frontend/autoSchedule-placement-constraint.test.ts`（15 例）：归一化、时段硬约束、日期软约束、排除计数、方案比较命中数、算法层集成
-  - 新增 `tests/server/fingerprint-data-only.test.ts`（4 例）：登录端点已移除、路由不再匿名放行、新端点全部需登录态、错误码双语齐备
 - **类型检查**：`pnpm run typecheck:server` 通过（总错误 572 条，闸门族 3 条均在白名单内）
 - **生产构建**：`pnpm run build` 通过，`◆ ✨ Build complete`，`.output` 正常产出
 
 ## 部署须知
 
-1. 执行数据库迁移：`pnpm run db:migrate`（4 个新迁移）
-2. 浏览器指纹功能需在**站点配置 → 安全与隐私**开启总开关；用户另需在**账号设置**自愿开启并确认采集内容
-3. 浏览器指纹加盐 pepper 为可选环境变量 `FINGERPRINT_PEPPER`（未配置时复用 `JWT_SECRET`）
-4. QQ 互联需在 QQ 互联开放平台创建网站应用并在后台填入 App ID / App Key，App Key 打雾保存
+1. 执行数据库迁移：`pnpm run db:migrate`（3 个新迁移）
+2. QQ 互联需在 QQ 互联开放平台创建网站应用并在后台填入 App ID / App Key，App Key 打雾保存
