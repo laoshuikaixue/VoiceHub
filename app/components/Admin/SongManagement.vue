@@ -317,7 +317,8 @@
               <!-- 音源标识独立成行，避免歌手名过长时被挤掉 -->
               <div v-if="song.musicPlatform" class="mt-1 flex">
                 <span
-                  class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-bg-tertiary text-text-tertiary border border-border-secondary-50 whitespace-nowrap"
+                  class="platform-tag px-1 whitespace-nowrap"
+                  :class="'platform-' + platformTagClass(song.musicPlatform)"
                 >{{ platformLabel(song.musicPlatform) }}</span>
               </div>
               <span
@@ -1273,7 +1274,7 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl, getCoverThumbUrl } from '~/utils/url'
@@ -1474,6 +1475,8 @@ const platformLabel = (platform) => {
   const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
   return plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
 }
+// 平台标签配色类名，插件音源统一走 plugin
+const platformTagClass = (platform) => (BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin')
 const musicPlatformOptions = computed(() => {
   const list = [...getAvailablePlatforms()]
   for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {

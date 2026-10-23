@@ -408,3 +408,15 @@
   color: var(--text-tertiary);
   margin-bottom: var(--spacing-lg);
 }
+
+/* 投稿平台标签：按音源区分文字颜色 */
+.platform-tag {
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.platform-netease { color: #c3484d; }
+.platform-tencent { color: #2f9e63; }
+.platform-bilibili { color: #d96f9b; }
+.platform-migu { color: #d97a2f; }
+.platform-plugin { color: var(--overlay-40); }

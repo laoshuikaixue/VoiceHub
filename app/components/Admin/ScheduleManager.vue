@@ -6001,14 +6001,5 @@ const handleTouchReturnToDraggable = async () => {
   width: 100%;
 }
 
-/* 管理员扩展信息：投稿平台标签 */
-.platform-tag {
-  font-size: 9px;
-  font-weight: 500;
-}
-.platform-netease { color: #c3484d; }
-.platform-tencent { color: #2f9e63; }
-.platform-bilibili { color: #d96f9b; }
-.platform-migu { color: #d97a2f; }
-.platform-plugin { color: var(--overlay-40); }
+/* 管理员扩展信息：投稿平台标签样式见 assets/css/components.css 的 .platform-tag */
 </style>
