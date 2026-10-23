@@ -2800,12 +2800,12 @@ const formatPlayTimeOptionLabel = (playTime) => {
 }
 
 // 播出日期 + 时段表单校验：
-// - 后台开启「时段必选」时，播出时段必须选择；播出日期可选（不填则由服务端自动分配到最近一个开放该时段的日期）
+// - 后台开启「时段选择」时，播出时段必须选择；播出日期可选（不填则由服务端自动分配到最近一个开放该时段的日期）
 // - 指定日期时，该日期所在星期必须开放所选时段（日期优先级高于时段）
 const validatePlaySlotSelection = () => {
   if (!playTimeSelectionEnabled.value) return true
 
-  if (playSlotRequired.value && !preferredPlayTimeId.value) {
+  if (playTimeSelectionEnabled.value && !preferredPlayTimeId.value) {
     playSlotError.value = locale.value.playSlotTimeRequiredError || '请选择期望播出时段'
     error.value = playSlotError.value
     if (window.$showNotification) {
@@ -2879,11 +2879,11 @@ const handlePlaySlotConfirm = async ({ date, timeId }) => {
   if (!pending) return
 
   if (pending.manual) {
-    await handleSubmit()
+    await handleSubmit(true)
     return
   }
 
-  await submitSong(pending.result, pending.options)
+  await submitSong(pending.result, { ...(pending.options || {}), fromSlotModal: true })
 }
 
 /** 取消时段选择：放弃本次投稿 */
@@ -3753,14 +3753,12 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
-  // 播出时段选择：功能开启时先弹窗收集（时段必选、日期可选），确认后再真正提交
-  // 重播申请走 requestReplay，仅沿用已选时段，不重复弹窗
-  if (playTimeSelectionEnabled.value && options.replayRequest !== true) {
-    if (playSlotRequired.value && !preferredPlayTimeId.value) {
-      pendingPlaySlotSubmit.value = { result, options }
-      showPlaySlotModal.value = true
-      return
-    }
+  // 播出时段选择：功能开启时，每次点歌投稿都先弹窗收集（时段必选、日期可选），确认后再真正提交
+  // 重播申请走 requestReplay，仅沿用已选时段，不重复弹窗；fromSlotModal 标记确认后的回调用，避免循环再弹
+  if (playTimeSelectionEnabled.value && options.replayRequest !== true && !options.fromSlotModal) {
+    pendingPlaySlotSubmit.value = { result, options }
+    showPlaySlotModal.value = true
+    return
   }
 
   // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
@@ -3937,11 +3935,11 @@ const submitSong = async (result, options = {}) => {
 }
 
 // 直接提交表单（手动投稿）
-const handleSubmit = async () => {
+const handleSubmit = async (fromSlotModal = false) => {
   if (submitting.value) return
 
-  // 播出时段选择：功能开启且时段必选时，先弹窗收集，确认后再继续提交
-  if (playTimeSelectionEnabled.value && playSlotRequired.value && !preferredPlayTimeId.value) {
+  // 播出时段选择：功能开启时，每次投稿都先弹窗收集，确认后再继续提交；fromSlotModal 为确认后回调用，避免循环再弹
+  if (playTimeSelectionEnabled.value && !fromSlotModal) {
     pendingPlaySlotSubmit.value = { manual: true }
     showPlaySlotModal.value = true
     return
