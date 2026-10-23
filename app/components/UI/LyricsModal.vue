@@ -415,6 +415,7 @@ import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { getCachedMusicUrlQuality } from '~/utils/musicUrl'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
 import { convertToHttps, getCoverLargeUrl, getSizedCoverUrl } from '~/utils/url'
@@ -489,7 +490,7 @@ const playMode = computed(() => audioPlayerControl.playMode.value)
 const isLoadingTrack = computed(() => audioPlayerControl.isLoadingTrack.value)
 const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
-const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
+const { getQuality, getQualityLabel, getQualityOptions, saveQuality, getNeteaseQualityLabel } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
 const lyricManager = useLyricManager()
 const currentCoverUrl = computed(() =>
@@ -515,11 +516,17 @@ const canShowComments = computed(() => {
   return /^\d+$/.test(String(song.musicId || '').trim()) || song.musicPlatform === 'tencent'
 })
 
+const reportedQuality = computed(() => audioPlayerControl.isLoadingTrack.value ? undefined
+  : getCachedMusicUrlQuality(currentSong.value?.musicUrl || audioPlayerControl.audioPlayer.value?.currentSrc || audioPlayerControl.audioPlayer.value?.src))
+// 返回音质仅在接口 level 可识别时覆盖显示；未知音质（含未登录走解锁链路）沿用请求音质
+const actualQualityLabel = computed(() =>
+  ['netease', 'netease-podcast'].includes(currentSong.value?.musicPlatform)
+    ? getNeteaseQualityLabel(reportedQuality.value) : null)
 const currentQualityText = computed(() => {
   const platform = currentSong.value?.musicPlatform
   if (!platform) return locale.value.quality
   const quality = getQuality(platform)
-  const label = getQualityLabel(platform, quality)
+  const label = actualQualityLabel.value || getQualityLabel(platform, quality)
   return label.replace(/音质|音乐|quality|music/gi, '').trim() || locale.value.quality
 })
 
@@ -543,6 +550,10 @@ const currentPlatformOptions = computed(() => {
 })
 
 const isCurrentQuality = (qualityValue) => {
+  if (actualQualityLabel.value) {
+    const matched = currentPlatformOptions.value.find(option => option.level === reportedQuality.value)?.value
+    if (matched !== undefined) return matched === qualityValue
+  }
   const platform = currentSong.value?.musicPlatform
   if (!platform) return false
   return getQuality(platform) === qualityValue

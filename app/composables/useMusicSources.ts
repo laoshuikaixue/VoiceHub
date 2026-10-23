@@ -19,6 +19,8 @@ import {
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
 import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
+import { getNeteaseCatalogResult } from '~/utils/neteaseCatalog'
+import { getNeteaseQualityLevel } from './useAudioQuality'
 import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
@@ -1782,25 +1784,7 @@ export const useMusicSources = () => {
   /**
    * 将VoiceHub音质数值映射到网易云API的level参数
    */
-  const mapQualityToLevel = (quality: number): string => {
-    // 根据网易云API文档映射音质等级
-    switch (quality) {
-      case 2:
-        return 'standard' // 标准 (128k)
-      case 3:
-        return 'higher' // 较高 (192k)
-      case 4:
-        return 'exhigh' // HQ极高 (320k)
-      case 5:
-        return 'lossless' // SQ无损
-      case 6:
-        return 'hires' // Hi-Res
-      case 9:
-        return 'jymaster' // 超清母带
-      default:
-        return 'exhigh' // 默认极高音质
-    }
-  }
+  const mapQualityToLevel = getNeteaseQualityLevel
 
   /**
    * 获取歌曲播放URL
@@ -1821,6 +1805,7 @@ export const useMusicSources = () => {
     success: boolean
     url?: string
     source?: string
+    actualQuality?: string | null
     error?: string
   }> => {
     // 特殊处理 netease-podcast 平台：使用网易云逻辑但禁用 unblock
@@ -1962,6 +1947,7 @@ export const useMusicSources = () => {
 
         try {
           let url: string | null = null
+          let actualQuality: string | null | undefined
 
           if (source.id === 'bilibili') {
             const result = await getBilibiliTrackUrl(idParam, options?.bilibiliCid)
@@ -2128,9 +2114,9 @@ export const useMusicSources = () => {
               timeout: source.timeout || 8000
             })
 
-            if (response?.code === 200 && Array.isArray(response.data) && response.data[0]?.url) {
-              url = response.data[0].url as string
-            }
+            const result = getNeteaseCatalogResult(response, idParam)
+            url = result?.url || null
+            actualQuality = result?.actualQuality
           }
 
           if (url) {
@@ -2147,7 +2133,7 @@ export const useMusicSources = () => {
               const validation = await validatePlayUrl(url)
 
               if (validation.valid) {
-                return { success: true, url, source: source.id }
+                return { success: true, url, source: source.id, actualQuality }
               } else {
                 // 继续尝试下一个音源
               }

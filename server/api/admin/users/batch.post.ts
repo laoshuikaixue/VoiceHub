@@ -43,6 +43,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 服务端独立设限：防止单个请求提交任意数量用户打爆内存/连接（前端按 50 条分批，正常不会触达）
+  const MAX_BATCH_SIZE = 500
+  if (body.users.length > MAX_BATCH_SIZE) {
+    throw createError({
+      statusCode: 400,
+      message: `单次最多批量创建 ${MAX_BATCH_SIZE} 个用户`
+    })
+  }
+
   const results = {
     created: 0,
     failed: 0,
@@ -152,9 +161,19 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 4. 并发加密密码 (由于使用 bcrypt.hash 异步方法，使用 Promise.all 并发处理可以显著提速)
-    const hashedPasswords = await Promise.all(
-      usersToInsertData.map((userData) => bcrypt.hash(userData.password, 10))
+    // 4. 加密密码：bcrypt cost=10 为纯 CPU 计算，全并发会长时间独占事件循环拖慢同进程其他请求，固定并发度分批执行
+    const BCRYPT_CONCURRENCY = 4
+    const hashedPasswords = new Array<string>(usersToInsertData.length)
+    let hashCursor = 0
+    const hashWorker = async () => {
+      while (hashCursor < usersToInsertData.length) {
+        const idx = hashCursor++
+        const item = usersToInsertData[idx]
+        if (item) hashedPasswords[idx] = await bcrypt.hash(item.password, 10)
+      }
+    }
+    await Promise.all(
+      Array.from({ length: Math.min(BCRYPT_CONCURRENCY, usersToInsertData.length) }, () => hashWorker())
     )
 
     // 5. 准备批量插入的数据

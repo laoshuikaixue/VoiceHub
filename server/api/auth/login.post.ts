@@ -159,8 +159,6 @@ export default defineEventHandler(async (event) => {
       throw createApiError(403, 'AUTH_ACCOUNT_WITHDRAWN', '该账号已退学，限制访问')
     } else if (user.status === 'graduate') {
       throw createApiError(403, 'AUTH_ACCOUNT_GRADUATED', '该账号已毕业，限制访问')
-    } else if (user.status === 'banned') {
-      throw createApiError(403, 'AUTH_ACCOUNT_BANNED', '该账号已被封禁')
     } else if (user.status === 'pending') {
       throw createApiError(403, 'AUTH_USER_PENDING_APPROVAL', '账号待管理员审核，请耐心等待')
     } else if (user.status === 'rejected') {

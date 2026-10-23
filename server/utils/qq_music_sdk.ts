@@ -3,7 +3,6 @@ import {
   getLyric,
   getMusicPlay,
   getQQLoginQr,
-  getSearchByKey,
   search
 } from '@sansenjian/qq-music-api/sdk'
 import {
@@ -776,8 +775,12 @@ export const getQqUserAvatar = async ({
   uin?: string
   k?: string
   size?: number
-}) => {
-  return await getUserAvatar({ uin, k, size })
+}): Promise<{ avatarUrl: string; message: string }> => {
+  // SDK 把 services 导出统一声明成泛型 ApiFunction，此处按实际返回结构补齐类型
+  return (await getUserAvatar({ uin, k, size })) as unknown as {
+    avatarUrl: string
+    message: string
+  }
 }
 
 export const getQqVipInfo = async ({ cookie }: { cookie?: string }) => {

@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, songs, users } from '~/drizzle/schema'
 import { desc, eq } from 'drizzle-orm'
+import { resolvePagination } from '~~/server/utils/pagination'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event)
-  const limit = parseInt(query.limit as string) || 10
+  const { limit } = resolvePagination(undefined, query.limit, 10, 100)
 
   try {
     // 获取最近的活动记录

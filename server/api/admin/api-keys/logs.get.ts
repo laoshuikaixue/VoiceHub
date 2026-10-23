@@ -1,4 +1,5 @@
 import { ApiLogService } from '~~/server/services/apiLogService'
+import { resolvePagination } from '~~/server/utils/pagination'
 
 /**
  * 获取API访问日志
@@ -15,8 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event)
-  const page = parseInt(query.page as string) || 1
-  const limit = parseInt(query.limit as string) || 50
+  const { page, limit } = resolvePagination(query.page, query.limit, 50, 500)
   const apiKeyId = query.apiKeyId as string
   const endpoint = query.endpoint as string
   const method = query.method as string
@@ -26,8 +26,6 @@ export default defineEventHandler(async (event) => {
   const ipAddress = query.ipAddress as string
   const sortBy = (query.sortBy as string) || 'createdAt'
   const sortOrder = (query.sortOrder as string) || 'desc'
-
-  const offset = (page - 1) * limit
 
   try {
     // 使用ApiLogService获取日志

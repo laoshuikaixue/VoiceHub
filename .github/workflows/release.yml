@@ -150,12 +150,14 @@ jobs:
 
           # 文件集对齐 Dockerfile 运行阶段：除 .output 外，迁移与管理脚本仍需源文件
           STAGE="staging/voicehub"
-          mkdir -p "$STAGE/app"
+          mkdir -p "$STAGE/app" "$STAGE/server/utils"
           cp -r .output "$STAGE/.output"
           cp -r app/drizzle "$STAGE/app/drizzle"
           cp -r scripts "$STAGE/scripts"
           cp -r docker-compose "$STAGE/docker-compose"
           cp drizzle.config.ts package.json pnpm-lock.yaml pnpm-workspace.yaml .env.example "$STAGE/"
+          # db.ts 运行时依赖该模块（tsx 直跑源码），缺失时 deploy 阶段的 create-admin 报 ERR_MODULE_NOT_FOUND
+          cp server/utils/serverless-runtime.ts "$STAGE/server/utils/"
 
           # 与 Dockerfile CMD 一致：先同步数据库再启动，PREBUILT 跳过安装与构建
           cat > "$STAGE/start.sh" <<'EOS'
@@ -168,7 +170,11 @@ jobs:
           EOS
           chmod +x "$STAGE/start.sh"
 
-          # 运行包内容与 CPU 架构无关（.output 内无原生二进制），后缀仅标识构建平台
+          # 剔除构建平台（amd64）的 esbuild 二进制副本：与 Dockerfile 运行阶段一致，
+          # 删除后按目标平台安装的生产依赖 node_modules/esbuild 生效
+          rm -rf "$STAGE/.output/server/node_modules/esbuild" "$STAGE/.output/server/node_modules/@esbuild"
+
+          # 产物按 amd64 平台构建（.output 内其余文件为 JS/资源，跨架构通用），文件名保留架构后缀
           tar -czf "voicehub-${VERSION}-amd64.tar.gz" -C staging voicehub
           rm -rf staging
           ls -lh voicehub-*.tar.gz

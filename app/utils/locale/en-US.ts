@@ -1356,7 +1356,19 @@ export const pages = {
       }
     },
     audioQuality: {
+      actualQualityNotice: 'Requested {0}; current quality: {1}',
       unknown: 'Unknown quality',
+      levels: {
+        standard: 'Standard',
+        higher: 'Higher',
+        exhigh: 'HQ High',
+        lossless: 'SQ Lossless',
+        hires: 'Hi-Res',
+        jyeffect: 'HD Effect',
+        vivid: 'Vivid',
+        sky: 'Immersive',
+        jymaster: 'Master'
+      },
       options: {
         standard: { label: 'Standard', description: 'Suitable when data is limited' },
         neteaseHq: { label: 'HQ High', description: 'High-quality music experience' },
@@ -1473,6 +1485,10 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     networkOffline: 'Network disconnected. Check your connection and try again.',
+    scheduleSyncFailed: 'Queue update failed. The current queue was retained.',
+    scheduleSyncAuthChanged: 'Your sign-in changed. Schedule sync stopped.',
+    scheduleWaiting: 'Waiting for songs. Click to pause.',
+    playPause: 'Play/Pause',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
     pluginExcluded: 'Source plugin is excluded',
     pluginInvalidUrl: 'Source plugin returned an invalid playback link',
@@ -2540,6 +2556,39 @@ export const admin = {
       saveChanges: 'Save Changes',
       adding: 'Adding...',
       addSong: 'Add Song'
+    },
+    sourceReplace: {
+      sectionTitle: 'Source Info',
+      button: 'Replace Source',
+      title: 'Replace Song Source',
+      subtitle:
+        'Search other platforms and replace the platform, music ID, cover and duration with a matched track',
+      currentSource: 'Current Source',
+      current: 'Current',
+      searchPlaceholder: 'Enter title, optionally with artist',
+      search: 'Search',
+      searching: 'Searching...',
+      all: 'All',
+      autoSearchHint:
+        'Searched other sources by title automatically. Edit keywords to search manually.',
+      keywordsRequired: 'Enter search keywords',
+      empty: 'No matching tracks found',
+      emptyHint: 'Try different keywords, or switch platform and search again',
+      searchFailed: 'Search failed',
+      platformFailed: (platform: string) => `${platform} search failed`,
+      matchHigh: 'High match',
+      matchMedium: 'Possible match',
+      matchLow: 'Low match',
+      durationUnknown: 'Unknown duration',
+      selectPage: 'Select part',
+      pageLabel: (page: number) => `P${page}`,
+      selectedHint:
+        'Platform, music ID and cover will be replaced; duration updates when available, play URL is cleared',
+      selectHint: 'Select a search result',
+      apply: 'Apply',
+      applying: 'Fetching info...',
+      applied: 'New source filled in. Save the song to apply it.',
+      cancel: 'Cancel'
     },
     songDownloadDialog: {
       title: 'Download Songs',
@@ -5256,7 +5305,6 @@ export const serverErrors = {
     'This third-party account is already bound. Please sign in directly or bind it to an existing account.',
   AUTH_ACCOUNT_UNAVAILABLE_OR_RESTRICTED: 'This account is unavailable or access is restricted',
   AUTH_ACCOUNT_GRADUATED: 'This account has graduated; access is restricted',
-  AUTH_ACCOUNT_BANNED: 'This account has been banned',
   AUTH_ACCOUNT_WITHDRAWN: 'This account has withdrawn; access is restricted',
   AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE: 'This account is currently unavailable',
   AUTH_NO_SECURITY_EMAIL:

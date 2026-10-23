@@ -1,16 +1,22 @@
 import { computed, readonly, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
 import { getLoginStatus } from '~/utils/neteaseApi'
+import { useLocaleText } from './useLocaleText'
 import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX } from '~/utils/pluginPlatform'
+
+export const getNeteaseQualityLevel = (quality: number) => {
+  const value = Number(quality)
+  return value === 3 ? 'higher' : QUALITY_OPTIONS.netease.find(option => option.value === value)?.level || 'exhigh'
+}
 
 // 音质配置
 export const QUALITY_OPTIONS = {
   netease: [
-    { value: 2, key: 'standard' },
-    { value: 4, key: 'neteaseHq' },
-    { value: 5, key: 'neteaseSq' },
-    { value: 6, key: 'neteaseHiRes' },
-    { value: 9, key: 'neteaseMaster' }
+    { value: 2, key: 'standard', level: 'standard' },
+    { value: 4, key: 'neteaseHq', level: 'exhigh' },
+    { value: 5, key: 'neteaseSq', level: 'lossless' },
+    { value: 6, key: 'neteaseHiRes', level: 'hires' },
+    { value: 9, key: 'neteaseMaster', level: 'jymaster' }
   ],
   tencent: [
     { value: 4, key: 'standard' },
@@ -115,6 +121,7 @@ const refreshNeteaseVipStatus = async () => {
 export function useAudioQuality() {
   const { ui } = useLocale()
   const locale = computed(() => ui.value?.audioQuality || {})
+  const { t } = useLocaleText(locale)
 
   // 检查网易云登录状态
   const checkNeteaseLoginStatus = () => {
@@ -196,11 +203,14 @@ export function useAudioQuality() {
   // 获取指定平台的音质选项
   const getQualityOptions = (platform: string) => {
     const key = normalizeQualityPlatform(platform)
+    const platformOptions =
+      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string; level?: string }>>)[key] || []
+    const localizedOptions = locale.value?.options as Record<string, { label: string; description: string }> | undefined
 
-    return (QUALITY_OPTIONS[key] || []).map((option) => ({
+    return platformOptions.map((option) => ({
       ...option,
-      label: locale.value?.options?.[option.key]?.label || option.key,
-      description: locale.value?.options?.[option.key]?.description || '使用推荐音质设置'
+      label: localizedOptions?.[option.key]?.label || option.key,
+      description: localizedOptions?.[option.key]?.description || '使用推荐音质设置'
     }))
   }
 
@@ -210,6 +220,14 @@ export function useAudioQuality() {
     const option = options.find((opt) => opt.value === quality)
     return option ? option.label : locale.value.unknown
   }
+
+  // 返回音质与请求音质是两套取值：level 标签只描述接口实测，无法识别时返回 null 交由调用方回落
+  const getNeteaseQualityLabel = (level: string | null | undefined) => {
+    const levels: Record<string, string | undefined> = locale.value?.levels || {}
+    return (level && levels[level]) || null
+  }
+  const getNeteaseQualityNotice = (requestedQuality: number, level: string) =>
+    t('actualQualityNotice', '', getQualityLabel('netease', Number(requestedQuality)), getNeteaseQualityLabel(level))
 
   // 获取音质描述
   const getQualityDescription = (platform: string, quality: number) => {
@@ -234,6 +252,8 @@ export function useAudioQuality() {
     getQuality,
     getQualityOptions,
     getQualityLabel,
+    getNeteaseQualityLabel,
+    getNeteaseQualityNotice,
     getQualityDescription,
     currentQualityText,
     QUALITY_OPTIONS,

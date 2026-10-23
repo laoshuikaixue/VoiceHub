@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes, songReplayRequests } from '~/drizzle/schema'
 import { count, countDistinct, desc, eq, sql } from 'drizzle-orm'
+import { resolvePagination } from '~~/server/utils/pagination'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const semester = query.semester as string
-  const limit = parseInt(query.limit as string) || 10
+  const { limit } = resolvePagination(undefined, query.limit, 10, 100)
   const sortBy = (query.sortBy as string) || 'vote'
 
   try {

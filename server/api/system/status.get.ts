@@ -1,9 +1,20 @@
-import { defineEventHandler } from 'h3'
+import { createError, defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { isTelemetryEnabled } from '~~/server/utils/telemetry'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const currentUser = event.context.user
+  if (
+    !currentUser ||
+    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)
+  ) {
+    throw createError({
+      statusCode: 403,
+      message: '没有权限访问'
+    })
+  }
+
   try {
     const instanceId = await getInstanceId()
     const telemetryEnabled = await isTelemetryEnabled()
