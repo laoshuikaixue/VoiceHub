@@ -1,5 +1,4 @@
 import wasm from 'vite-plugin-wasm'
-import { resolve } from 'node:path'
 import { fileURLToPath } from 'url'
 
 // 解析自定义 SEO 和 PWA 配置
@@ -83,7 +82,7 @@ export default defineNuxtConfig({
         : nitro.options.errorHandler
           ? [nitro.options.errorHandler]
           : []
-      handlers.unshift(resolve(nitro.options.rootDir, 'server/error.ts'))
+      handlers.unshift(fileURLToPath(new URL('./server/error.ts', import.meta.url)))
       nitro.options.errorHandler = handlers
     }
   },

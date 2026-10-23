@@ -7,7 +7,6 @@ import { resolveCaptchaSettings } from '~~/server/services/securityService'
 import { assertRequestCaptchaPassed } from '~~/server/utils/request-captcha'
 import { SmtpService } from '~~/server/services/smtpService'
 import { db } from '~/drizzle/db'
-import { systemSettings } from '~/drizzle/schema'
 import {
   generateEmailCode,
   storeEmailCode,
