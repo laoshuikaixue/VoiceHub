@@ -107,17 +107,13 @@ export default defineNuxtConfig({
         'primary-light': 'var(--primary-light)',
         'primary-border': 'var(--primary-border)',
         // === 语义色 ===
+        // 注意：success/warning/error 的 hover/light 变体在下方 colorXXX 段定义，
+        // 此处仅保留未被覆盖的 border 变体，避免重复键静默覆盖。
         success: 'var(--success)',
-        'success-hover': 'var(--success-hover)',
-        'success-light': 'var(--success-light)',
         'success-border': 'var(--success-border)',
         warning: 'var(--warning)',
-        'warning-hover': 'var(--warning-hover)',
-        'warning-light': 'var(--warning-light)',
         'warning-border': 'var(--warning-border)',
         error: 'var(--error)',
-        'error-hover': 'var(--error-hover)',
-        'error-light': 'var(--error-light)',
         'error-border': 'var(--error-border)',
         // === 背景色 ===
         'bg-primary': 'var(--bg-primary)',
