@@ -148,16 +148,18 @@
                 >{{ locale.dateRange }}</label
               >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input
+                <AppDatePicker
                   v-model="settings.startDate"
-                  type="date"
-                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
+                  size="md"
+                  rounded="lg"
+                  class-name="w-full"
                   max="9999-12-31"
                 />
-                <input
+                <AppDatePicker
                   v-model="settings.endDate"
-                  type="date"
-                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
+                  size="md"
+                  rounded="lg"
+                  class-name="w-full"
                   max="9999-12-31"
                 />
               </div>
@@ -554,6 +556,7 @@ import {
   ListChecks
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import { useLocale } from '~/utils/locale'
 
 // 导入子组件

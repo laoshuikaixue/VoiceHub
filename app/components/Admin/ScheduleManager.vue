@@ -102,10 +102,11 @@
           </button>
         </div>
         <div class="p-6 space-y-6">
-          <input
+          <AppDatePicker
             v-model="manualSelectedDate"
-            class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary transition-colors"
-            type="date"
+            size="lg"
+            rounded="xl"
+            class-name="w-full"
           />
           <div class="flex gap-3">
             <button
@@ -1225,10 +1226,11 @@
       </div>
       <div class="p-6 space-y-4">
           <div class="text-xs text-text-tertiary">{{ locale.currentDate(selectedDate) }}</div>
-        <input
+        <AppDatePicker
           v-model="moveTargetDate"
-          class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-info transition-colors"
-          type="date"
+          size="lg"
+          rounded="xl"
+          class-name="w-full"
         />
         <template v-if="playTimeEnabled">
           <CustomSelect
@@ -1315,10 +1317,11 @@
           <div v-if="copyMode === 'single'" class="space-y-1.5">
             <div class="gap-3 flex items-center">
               <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
-              <input
+              <AppDatePicker
                 v-model="copyFromStart"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                type="date"
+                size="md"
+                rounded="xl"
+                class-name="flex-1"
               />
             </div>
           </div>
@@ -1326,18 +1329,20 @@
           <div v-else class="space-y-1.5">
             <div class="gap-3 flex items-center">
               <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
-              <input
+              <AppDatePicker
                 v-model="copyFromStart"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                type="date"
+                size="md"
+                rounded="xl"
+                class-name="flex-1"
               />
             </div>
             <div class="gap-3 flex items-center">
               <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
-              <input
+              <AppDatePicker
                 v-model="copyFromEnd"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                type="date"
+                size="md"
+                rounded="xl"
+                class-name="flex-1"
               />
             </div>
           </div>
@@ -1352,10 +1357,11 @@
           <div v-if="copyMode === 'single'" class="space-y-1.5">
             <div class="gap-3 flex items-center">
               <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetSingleDate }}</span>
-              <input
+              <AppDatePicker
                 v-model="copySingleTargetDate"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                type="date"
+                size="md"
+                rounded="xl"
+                class-name="flex-1"
               />
             </div>
           </div>
@@ -1363,18 +1369,20 @@
           <div v-else class="space-y-1.5">
             <div class="gap-3 flex items-center">
               <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetStart }}</span>
-              <input
+              <AppDatePicker
                 v-model="copyToStart"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                type="date"
+                size="md"
+                rounded="xl"
+                class-name="flex-1"
               />
             </div>
             <div class="gap-3 flex items-center">
               <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetEnd }}</span>
-              <input
+              <AppDatePicker
                 v-model="copyToEnd"
-                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
-                type="date"
+                size="md"
+                rounded="xl"
+                class-name="flex-1"
               />
             </div>
           </div>
@@ -1982,6 +1990,7 @@ import ConfirmDialog from '../UI/ConfirmDialog.vue'
 import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { notifySchedulePlaylistChanged } from '~/composables/useSchedulePlaylistSync'

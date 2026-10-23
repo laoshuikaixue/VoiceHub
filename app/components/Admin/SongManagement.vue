@@ -153,17 +153,13 @@
             :placeholder="locale.filters.selectPlayTime"
             class-name="w-full lg:w-40"
           />
-          <div class="flex flex-col gap-1 w-full lg:w-40">
-            <label
-              class="text-[8px] font-black text-text-disabled uppercase tracking-widest px-1 leading-none"
-              >{{ locale.filters.playDate }}</label
-            >
-            <input
-              v-model="selectedPlayDate"
-              type="date"
-              class="play-date-input w-full bg-bg-primary border border-border-secondary hover:border-border-tertiary rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
-            />
-          </div>
+          <AppDatePicker
+            v-model="selectedPlayDate"
+            :label="locale.filters.playDate"
+            class-name="w-full lg:w-40"
+            rounded="lg"
+            size="sm"
+          />
           <CustomSelect
             v-model="statusFilter"
             :label="locale.filters.status"
@@ -1290,6 +1286,7 @@ import SongSourceReplaceModal from '~/components/Admin/SongSourceReplaceModal.vu
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Search,
@@ -3102,21 +3099,5 @@ onUnmounted(() => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--panel-bg-hover);
-}
-
-/* 播出日期选择框：对齐 CustomSelect 的盒子观感，统一原生日历图标主题色 */
-.play-date-input {
-  color-scheme: light dark;
-}
-.play-date-input::-webkit-calendar-picker-indicator {
-  width: 14px;
-  height: 14px;
-  opacity: 0.55;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.play-date-input:hover::-webkit-calendar-picker-indicator,
-.play-date-input:focus::-webkit-calendar-picker-indicator {
-  opacity: 0.9;
 }
 </style>

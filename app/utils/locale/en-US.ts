@@ -454,6 +454,18 @@ export const common = {
     login: 'Log In',
     related: 'Related documents',
     backHome: 'Back to home'
+  },
+  datePicker: {
+    placeholder: 'Select date',
+    today: 'Today',
+    clear: 'Clear',
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
+    prevYear: 'Previous year',
+    nextYear: 'Next year',
+    weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+    monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    yearSuffix: ''
   }
 } as const
 

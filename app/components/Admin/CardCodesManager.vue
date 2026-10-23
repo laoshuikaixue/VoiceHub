@@ -337,19 +337,21 @@
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.startDate }}</label>
-          <input
+          <AppDatePicker
             v-model="logFilters.startDate"
-            type="date"
-            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-          >
+            size="md"
+            rounded="xl"
+            class-name="w-full"
+          />
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.endDate }}</label>
-          <input
+          <AppDatePicker
             v-model="logFilters.endDate"
-            type="date"
-            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-          >
+            size="md"
+            rounded="xl"
+            class-name="w-full"
+          />
         </div>
       </div>
 
@@ -421,6 +423,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

@@ -441,6 +441,18 @@ export const common = {
     login: '登录',
     related: '相关文档',
     backHome: '返回首页'
+  },
+  datePicker: {
+    placeholder: '选择日期',
+    today: '今天',
+    clear: '清除',
+    prevMonth: '上一月',
+    nextMonth: '下一月',
+    prevYear: '上一年',
+    nextYear: '下一年',
+    weekdays: ['日', '一', '二', '三', '四', '五', '六'],
+    monthNames: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+    yearSuffix: '年'
   }
 } as const
 
