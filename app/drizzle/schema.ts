@@ -42,8 +42,6 @@ export const users = pgTable('User', {
   remark: text('remark'),
   legalConsentVersion: text('legal_consent_version'),
   legalConsentAt: timestamp('legal_consent_at'),
-  // 浏览器指纹数据采集开关：用户自行选择是否开启（仅作为用户数据项，不用于登录）
-  fingerprintDataEnabled: boolean('fingerprintDataEnabled').default(false).notNull(),
 }, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
@@ -462,8 +460,8 @@ export const systemSettings = pgTable('SystemSettings', {
   // 图形验证码
   captchaEnabled: boolean('captchaEnabled').default(false).notNull(),
   captchaMaxFailures: integer('captchaMaxFailures').default(3).notNull(),
-  // 浏览器指纹数据采集总开关：关闭时全站不可采集/查看指纹数据项
-  fingerprintDataEnabled: boolean('fingerprintDataEnabled').default(false).notNull(),
+  // 浏览器指纹登录总开关：关闭时登录页不展示入口，已绑定的指纹一律拒绝登录
+  fingerprintLoginEnabled: boolean('fingerprintLoginEnabled').default(false).notNull(),
 
   // 自动备份配置
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
@@ -624,11 +622,11 @@ export const userIdentities = pgTable('UserIdentity', {
   unq: unique().on(t.provider, t.providerUserId),
 }));
 
-// 浏览器指纹数据表：一条记录 = 一个浏览器指纹采集数据项（仅作数据记录，不参与鉴权）
+// 浏览器指纹登录绑定表：一条记录 = 一个浏览器指纹绑定到一个账号
 export const browserFingerprints = pgTable('browser_fingerprints', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  // 客户端原始指纹经服务端加盐哈希后存储；全局唯一，同一浏览器只归属一个账号
+  // 客户端原始指纹经服务端加盐哈希后存储；全局唯一，同一浏览器只能绑定一个账号
   fingerprintHash: text('fingerprint_hash').notNull(),
   // 用户自定义备注（如"宿舍电脑"），为空时前端回退展示浏览器信息
   label: text('label'),
@@ -636,9 +634,8 @@ export const browserFingerprints = pgTable('browser_fingerprints', {
   operatingSystem: text('operating_system'),
   device: text('device'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  // 最近一次采集到该浏览器指纹的时间与来源 IP（仅作数据记录，不参与鉴权）
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-  lastUsedIp: text('last_used_ip')
+  lastLoginIp: text('last_login_ip')
 }, (table) => [
   uniqueIndex('browser_fingerprints_hash_unique').on(table.fingerprintHash),
   index('browser_fingerprints_user_idx').on(table.userId)

@@ -303,9 +303,6 @@
             <AuthTwoFactorSetup :initial-enabled="auth.user.value?.has2FA" />
           </section>
 
-          <!-- 浏览器指纹数据 -->
-          <AccountFingerprintManager />
-
           <!-- 登录会话 -->
           <section :class="sectionClass">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary-50 pb-5 mb-6">
@@ -533,7 +530,6 @@ import {
   X
 } from '@lucide/vue'
 import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
-import AccountFingerprintManager from '~/components/Account/FingerprintManager.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useChkszSource } from '~/composables/useChkszSource'
 import { useToast } from '~/composables/useToast'

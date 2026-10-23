@@ -750,8 +750,7 @@ VoiceHub/
 │   │           └── ModernLight.css # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
-│   │   │   ├── SocialBindings.vue     # 社交账号绑定
-│   │   │   └── FingerprintManager.vue # 浏览器指纹数据采集管理（自愿开启/关闭/删除）
+│   │   │   └── SocialBindings.vue     # 社交账号绑定
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
@@ -763,7 +762,6 @@ VoiceHub/
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── DuplicateSongsModal.vue # 重复歌曲检测弹窗
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
-│   │   ├── FingerprintBindingsModal.vue # 浏览器指纹数据详情弹窗（管理员查看/删除）
 │   │   │   ├── MusicSourceController.vue # 音源控制管理
 │   │   │   ├── MusicSourcePlugins.vue # LX Music 与 MusicFree 插件音源管理
 │   │   │   ├── NotificationHistory.vue # 通知发送历史与用户已读明细

@@ -214,9 +214,6 @@ export const siteConfig = {
   forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
   forcePasswordChangeOnFirstLoginDesc:
     'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
-  fingerprintDataEnabled: 'Browser Fingerprint Data Collection',
-  fingerprintDataEnabledDesc:
-    'When enabled, users may voluntarily opt in to browser fingerprint collection in Account Management and view or delete their own fingerprint records. Fingerprints are stored as data only and are never used as a sign-in credential. Turning this off disables collection site-wide.',
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc:
     'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
@@ -577,61 +574,7 @@ export const pages = {
         twoFactor: '2FA',
         oauth: 'OAuth',
         webauthn: 'Passkey',
-        fingerprint: 'Browser fingerprint',
         legacy: 'Legacy'
-      }
-    },
-    fingerprint: {
-      title: 'Browser Fingerprint Data',
-      desc: 'Voluntarily collect and manage this browser fingerprint as a user data record',
-      loading: 'Loading fingerprint records...',
-      disabledNotice:
-        'Browser fingerprint data collection is not enabled by the administrator yet. Once turned on, you can opt in here and review your records.',
-      notEnabledTitle: 'Browser fingerprint data collection is off',
-      notEnabledDesc:
-        'When enabled, this browser fingerprint is collected locally (Canvas drawing, WebGL renderer, font list, screen resolution, time zone, UA and other environment traits) and stored as a user data record. Fingerprints are never used to sign in, and nothing is collected after you turn this off.',
-      emptyDesc:
-        'No browser fingerprint records yet. Use the button below to collect the fingerprint of this browser.',
-      enableAction: 'Enable Browser Fingerprint Collection',
-      enableSuccess: 'Browser fingerprint collection enabled',
-      enableFailed: 'Failed to enable. Check your password and try again.',
-      disableAction: 'Turn Off Collection',
-      disableSuccess: 'Collection turned off and collected fingerprints cleared',
-      disableFailed: 'Failed to turn off. Please try again later.',
-      disableDialogTitle: 'Turn Off Browser Fingerprint Collection',
-      disableMessage:
-        'Turning this off stops collection and deletes every collected fingerprint record. Continue?',
-      collectCurrent: 'Collect This Browser',
-      collectSuccess: 'Browser fingerprint collected',
-      collectFailed: 'Collection failed. Please refresh and try again.',
-      currentBrowser: 'This browser',
-      collectedAt: 'Collected',
-      lastUsed: 'Last collected',
-      neverUsed: 'Never collected',
-      delete: 'Delete',
-      deleteSuccess: 'Fingerprint record deleted',
-      deleteFailed: 'Failed to delete',
-      deleteDialogTitle: 'Delete Browser Fingerprint Record',
-      deleteMessage: 'Delete the fingerprint record for "{0}"?',
-      limitHint:
-        'Up to 10 browser fingerprints per account. It is best not to collect on shared computers.',
-      cancel: 'Cancel',
-      enableDialog: {
-        title: 'Enable Browser Fingerprint Data Collection',
-        desc: 'This is a sensitive action: verify your password and confirm what gets collected',
-        consentTitle: 'The following browser information will be collected:',
-        collectItems: [
-          'Canvas drawing fingerprint and WebGL renderer information',
-          'List of fonts installed on this machine',
-          'Screen resolution, pixel density and color depth',
-          'System time zone, locale and browser version',
-          'Audio context rendering results and other environment traits'
-        ],
-        consentLabel:
-          'I understand the above and agree to enable browser fingerprint data collection (stored as data only, never used as a sign-in credential)',
-        password: 'Current password',
-        passwordPlaceholder: 'Enter your current password to confirm',
-        confirm: 'Confirm & Enable'
       }
     },
     social: {
@@ -5075,22 +5018,9 @@ export const admin = {
       emailBinding: 'Email Binding',
       oauthBinding: 'OAuth Account Binding',
       loading: 'Loading...',
-      fingerprintBinding: 'Browser Fingerprint Data',
-      fingerprintBound: (count: number) => `${count} browser(s) collected`,
       bound: (value: string) => `Bound: ${value}`,
-      unbound: 'Not collected',
-      fingerprintBindingsTitle: 'Browser Fingerprint Data',
-      fingerprintBindingsDesc: 'View and delete browser fingerprint records collected by this user',
-      fingerprintBindingsEmpty: 'No browser fingerprint records',
-      fingerprintBoundAt: 'Collected At',
-      fingerprintLastUsed: 'Last Collected',
-      fingerprintLastIp: 'Last Collected IP',
-      fingerprintDevice: 'Device',
-      fingerprintNever: 'Never',
-      revoke: 'Delete',
-      fingerprintRevokeSuccess: 'Browser fingerprint record deleted',
-      fingerprintRevokeFailed: 'Failed to delete record',
-      fingerprintLoadFailed: 'Failed to load browser fingerprint records',
+      unbound: 'Unbound',
+      revoke: 'Revoke',
       oauthBindingsTitle: 'OAuth Binding Details',
       oauthBindingsDesc: 'View third-party accounts bound to this user',
       oauthBindingsEmpty: 'No bound accounts',
@@ -5403,13 +5333,6 @@ export const serverErrors = {
   AUTH_AGGREGATED_LOGIN_UNSUPPORTED: 'The aggregated login method is disabled or unsupported',
   AUTH_TOTP_NOT_ENABLED: 'TOTP verification is not enabled',
   AUTH_PASSKEY_ACCOUNT_NOT_FOUND: 'No account is associated with this passkey',
-  AUTH_FINGERPRINT_INVALID: 'Invalid browser fingerprint. Please refresh and try again.',
-  AUTH_FINGERPRINT_DISABLED: 'Browser fingerprint data collection is not enabled',
-  AUTH_FINGERPRINT_BOUND_TO_OTHER:
-    'This browser is already collected by another account. Delete it there first.',
-  AUTH_FINGERPRINT_LIMIT_EXCEEDED:
-    'Collection limit reached. Remove browsers you no longer use first.',
-  AUTH_FINGERPRINT_NOT_FOUND: 'The record does not exist or was already removed.',
   AUTH_DEVICE_NOT_FOUND: 'Device not found',
   AUTH_UNAUTHORIZED: 'Unauthorized',
   AUTH_UNAUTHORIZED_ACCESS: 'Unauthorized access',

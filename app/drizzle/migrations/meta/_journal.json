@@ -407,13 +407,6 @@
       "when": 1792731833125,
       "tag": "20261023050353_add_browser_fingerprints",
       "breakpoints": true
-    },
-    {
-      "idx": 58,
-      "version": "7",
-      "when": 1792771732688,
-      "tag": "20261023160852_remove_fingerprint_login",
-      "breakpoints": true
     }
   ]
 }
