@@ -82,7 +82,7 @@ export default defineNuxtConfig({
         : nitro.options.errorHandler
           ? [nitro.options.errorHandler]
           : []
-      handlers.unshift(fileURLToPath(new URL('./server/error.ts', import.meta.url)))
+      handlers.unshift(fileURLToPath(new URL('./server/error.ts', import.meta.url)).replaceAll('\\', '/'))
       nitro.options.errorHandler = handlers
     }
   },
