@@ -2470,7 +2470,9 @@ export const admin = {
       stats: 'Stats',
       status: 'Status',
       actions: 'Actions',
-      selectPage: 'Select Page'
+      selectPage: 'Select Page',
+      submitStat: (count: number) => `Sub ${count}`,
+      playStat: (count: number) => `Played ${count}`
     },
     empty: {
       search: 'No matching songs found',

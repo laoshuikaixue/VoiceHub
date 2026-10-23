@@ -461,8 +461,10 @@
                     </div>
                   </div>
 
-                  <!-- 右侧操作区 -->
-                  <div class="flex items-center gap-1.5 shrink-0">
+                  <!-- 操作区：移动端整行换到文字下方右对齐，桌面端保持在右侧 -->
+                  <div
+                    class="flex items-center justify-end gap-1.5 shrink-0 basis-full lg:basis-auto lg:justify-start"
+                  >
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"

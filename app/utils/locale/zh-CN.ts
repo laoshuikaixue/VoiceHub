@@ -2409,7 +2409,9 @@ export const admin = {
       stats: '统计',
       status: '状态',
       actions: '操作',
-      selectPage: '全选本页'
+      selectPage: '全选本页',
+      submitStat: (count: number) => `投 ${count}`,
+      playStat: (count: number) => `播 ${count}`
     },
     empty: {
       search: '没有找到匹配的歌曲',
