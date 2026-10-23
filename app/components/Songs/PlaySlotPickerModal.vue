@@ -45,7 +45,7 @@
               <input
                 id="play-slot-date"
                 v-model="localDate"
-                class="form-input play-slot-date-input"
+                class="play-slot-date-input w-full bg-bg-primary border border-border-secondary hover:border-border-tertiary rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 type="date"
                 :min="minDate"
               >
@@ -295,8 +295,46 @@ const handleConfirm = () => {
   line-height: 1.4;
 }
 
+/* 播出日期输入：原生日期控件默认外观与 CustomSelect 不一致，
+   这里对齐盒子观感，并修正深色主题下的白底/黑字/黑图标 */
 .play-slot-date-input {
   cursor: pointer;
+  font-family: inherit;
+  color-scheme: light dark;
+}
+
+/* 内部字段文字跟随控件文字色（覆盖 UA 默认黑色） */
+.play-slot-date-input::-webkit-datetime-edit,
+.play-slot-date-input::-webkit-datetime-edit-fields-wrapper,
+.play-slot-date-input::-webkit-datetime-edit-text,
+.play-slot-date-input::-webkit-datetime-edit-month-field,
+.play-slot-date-input::-webkit-datetime-edit-day-field,
+.play-slot-date-input::-webkit-datetime-edit-year-field {
+  color: inherit;
+}
+
+/* 日历图标：与 CustomSelect 的箭头同为小尺寸次要色 */
+.play-slot-date-input::-webkit-calendar-picker-indicator {
+  width: 14px;
+  height: 14px;
+  margin-left: 0.25rem;
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.play-slot-date-input:hover::-webkit-calendar-picker-indicator,
+.play-slot-date-input:focus::-webkit-calendar-picker-indicator {
+  opacity: 0.9;
+}
+
+/* 深色主题：UA 默认黑色图标在深底上不可见，刷白；同时让原生日期面板走深色 */
+:root[data-theme='ClassicDark'] .play-slot-date-input {
+  color-scheme: dark;
+}
+
+:root[data-theme='ClassicDark'] .play-slot-date-input::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1);
 }
 
 .play-slot-field-hint {
