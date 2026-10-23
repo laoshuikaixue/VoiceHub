@@ -1,4 +1,5 @@
 import wasm from 'vite-plugin-wasm'
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'url'
 
 // 解析自定义 SEO 和 PWA 配置
@@ -71,6 +72,21 @@ const absoluteLogo =
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-30',
+  // 注册全局错误处理器：nitro 2.x 的错误处理链是数组，直接配置 nitro.errorHandler
+  // 会把 Nuxt 错误页处理器挤出链外（HTML 错误页回归），因此通过 nitro:init 钩子
+  // 把 server/error.ts unshift 到链首，链变为：
+  //   [server/error.ts, Nuxt 错误页处理器, nitro 默认处理器]
+  hooks: {
+    'nitro:init'(nitro) {
+      const handlers = Array.isArray(nitro.options.errorHandler)
+        ? nitro.options.errorHandler
+        : nitro.options.errorHandler
+          ? [nitro.options.errorHandler]
+          : []
+      handlers.unshift(resolve(nitro.options.rootDir, 'server/error.ts'))
+      nitro.options.errorHandler = handlers
+    }
+  },
   future: {
     compatibilityVersion: 4
   },
