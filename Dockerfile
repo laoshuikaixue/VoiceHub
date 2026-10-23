@@ -85,5 +85,10 @@ ENV NODE_ENV=production \
 # 暴露端口
 EXPOSE $PORT
 
+# 以非 root 用户运行（应用本身无需特权；迁移通过数据库连接执行）
+RUN addgroup -S voicehub && adduser -S voicehub -G voicehub \
+    && chown -R voicehub:voicehub /app
+USER voicehub
+
 # 完成数据库迁移后启动应用，插件配置由服务端读取。
 CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]
