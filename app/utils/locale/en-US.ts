@@ -2590,7 +2590,9 @@ export const admin = {
       apply: 'Apply',
       applying: 'Fetching info...',
       applied: 'New source filled in. Save the song to apply it.',
-      cancel: 'Cancel'
+      cancel: 'Cancel',
+      preview: 'Preview',
+      stopPreview: 'Stop Preview'
     },
     songDownloadDialog: {
       title: 'Download Songs',

@@ -2522,7 +2522,9 @@ export const admin = {
       apply: '应用替换',
       applying: '获取信息中...',
       applied: '已填入新音源信息，保存后生效',
-      cancel: '取消'
+      cancel: '取消',
+      preview: '试听',
+      stopPreview: '停止试听'
     },
     songDownloadDialog: {
       title: '下载歌曲',
