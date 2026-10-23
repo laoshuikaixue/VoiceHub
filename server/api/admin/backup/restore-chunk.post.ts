@@ -900,7 +900,7 @@ export default defineEventHandler(async (event) => {
               'allowOAuthRegistration',
               'allowRegister',
               'registerRequiresApproval',
-                'registerEmailRequired',
+              'registerEmailRequired',
               'registerRequiresGradeClass',
               'oauthRegisterRequiresApproval',
               'submissionNoteRequiresApproval',
@@ -918,6 +918,9 @@ export default defineEventHandler(async (event) => {
               'googleOAuthEnabled',
               'googleClientId',
               'googleClientSecret',
+              'qqOAuthEnabled',
+              'qqOAuthAppId',
+              'qqOAuthAppKey',
               'aggregateOAuthEnabled',
               'aggregateOAuthAppId',
               'aggregateOAuthAppKey',
@@ -958,20 +961,53 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
             })
-            if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
-              if (!Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || !Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
-                throw createApiError(400, SERVER_ERROR_CODES.THEME_INVALID_LIST, '主题配置必须同时包含默认主题和启用主题列表')
+            if (
+              Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') ||
+              Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')
+            ) {
+              if (
+                !Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') ||
+                !Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')
+              ) {
+                throw createApiError(
+                  400,
+                  SERVER_ERROR_CODES.THEME_INVALID_LIST,
+                  '主题配置必须同时包含默认主题和启用主题列表'
+                )
               }
-              systemSettingsData.enabledThemes = JSON.stringify(validateThemeConfig(systemSettingsData.defaultTheme, systemSettingsData.enabledThemes))
+              systemSettingsData.enabledThemes = JSON.stringify(
+                validateThemeConfig(
+                  systemSettingsData.defaultTheme,
+                  systemSettingsData.enabledThemes
+                )
+              )
             }
             for (const field of ['scheduleDaysBeforeEnabled', 'scheduleDaysAfterEnabled']) {
-              if (Object.prototype.hasOwnProperty.call(systemSettingsData, field) && systemSettingsData[field] !== null && typeof systemSettingsData[field] !== 'boolean') {
-                throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${field} 必须是布尔值`)
+              if (
+                Object.prototype.hasOwnProperty.call(systemSettingsData, field) &&
+                systemSettingsData[field] !== null &&
+                typeof systemSettingsData[field] !== 'boolean'
+              ) {
+                throw createApiError(
+                  400,
+                  SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+                  `${field} 必须是布尔值`
+                )
               }
             }
             for (const field of ['scheduleDaysBefore', 'scheduleDaysAfter']) {
-              if (Object.prototype.hasOwnProperty.call(systemSettingsData, field) && (systemSettingsData[field] !== null && (!Number.isInteger(systemSettingsData[field]) || systemSettingsData[field] < 1 || systemSettingsData[field] > 730))) {
-                throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${field} 必须是 1-730 的正整数`)
+              if (
+                Object.prototype.hasOwnProperty.call(systemSettingsData, field) &&
+                systemSettingsData[field] !== null &&
+                (!Number.isInteger(systemSettingsData[field]) ||
+                  systemSettingsData[field] < 1 ||
+                  systemSettingsData[field] > 730)
+              ) {
+                throw createApiError(
+                  400,
+                  SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+                  `${field} 必须是 1-730 的正整数`
+                )
               }
             }
             systemSettingsData = normalizeScheduleVisibilitySettings(systemSettingsData)
@@ -1029,7 +1065,10 @@ export default defineEventHandler(async (event) => {
                 where: eq(emailTemplates.key, record.key)
               })
               if (existing) {
-                await tx.update(emailTemplates).set(templateData).where(eq(emailTemplates.id, existing.id))
+                await tx
+                  .update(emailTemplates)
+                  .set(templateData)
+                  .where(eq(emailTemplates.id, existing.id))
                 stats.updated++
               } else {
                 await tx.insert(emailTemplates).values(templateData)
@@ -1040,7 +1079,10 @@ export default defineEventHandler(async (event) => {
                 where: eq(emailTemplates.id, record.id)
               })
               if (existing) {
-                await tx.update(emailTemplates).set(templateData).where(eq(emailTemplates.id, record.id))
+                await tx
+                  .update(emailTemplates)
+                  .set(templateData)
+                  .where(eq(emailTemplates.id, record.id))
                 stats.updated++
               } else {
                 await tx.insert(emailTemplates).values({ ...templateData, id: record.id })
@@ -1458,7 +1500,16 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'scheduleSongPool': {
-            await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats, () => { stats.created++ })
+            await restoreScheduleSongPoolRecord(
+              tx,
+              record,
+              songIdMapping,
+              userIdMapping,
+              stats,
+              () => {
+                stats.created++
+              }
+            )
             break
           }
 
@@ -1661,7 +1712,9 @@ export default defineEventHandler(async (event) => {
                   where: eq(users.id, record.createdByUserId)
                 })
                 if (!userExists) {
-                  stats.warnings.push(`API密钥 ${record.name ?? record.id ?? ''} 的创建者不存在，已跳过`)
+                  stats.warnings.push(
+                    `API密钥 ${record.name ?? record.id ?? ''} 的创建者不存在，已跳过`
+                  )
                   break
                 }
               }
@@ -1756,7 +1809,9 @@ export default defineEventHandler(async (event) => {
             }
 
             if (!validApiKeyId || !record.permission) {
-              stats.warnings.push(`API密钥权限 ${record.id ?? ''} 关联的密钥不存在或缺少权限值，已跳过`)
+              stats.warnings.push(
+                `API密钥权限 ${record.id ?? ''} 关联的密钥不存在或缺少权限值，已跳过`
+              )
               break
             }
 

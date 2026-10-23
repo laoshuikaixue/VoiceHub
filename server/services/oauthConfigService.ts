@@ -38,6 +38,8 @@ export const isOAuthProviderEnabled = async (provider: OAuthProvider): Promise<b
   if (provider === 'github') return !!settings.githubOAuthEnabled
   if (provider === 'casdoor') return !!settings.casdoorOAuthEnabled
   if (provider === 'google') return !!settings.googleOAuthEnabled
+  if (provider === 'qq')
+    return !!settings.qqOAuthEnabled && !!settings.qqOAuthAppId && !!settings.qqOAuthAppKey
   if (provider === 'oauth2') return !!settings.customOAuthEnabled
   if (provider === 'aggregate') return !!settings.aggregateOAuthEnabled
 
@@ -83,6 +85,20 @@ export const getProviderRuntimeConfig = async (
     }
   }
 
+  if (provider === 'google') {
+    return {
+      clientId: settings.googleClientId || undefined,
+      clientSecret: settings.googleClientSecret || undefined
+    }
+  }
+
+  if (provider === 'qq') {
+    return {
+      clientId: settings.qqOAuthAppId || undefined,
+      clientSecret: settings.qqOAuthAppKey || undefined
+    }
+  }
+
   if (provider === 'aggregate') {
     const loginTypes = getAggregateOAuthLoginTypesOrDefault(settings.aggregateOAuthLoginType)
     return {
@@ -104,6 +120,7 @@ export const getOAuthProviderDisplayName = async (provider: OAuthProvider): Prom
     if (provider === 'github') return 'GitHub'
     if (provider === 'casdoor') return 'Casdoor'
     if (provider === 'google') return 'Google'
+    if (provider === 'qq') return 'QQ'
     if (provider === 'aggregate') return '聚合登陆'
   }
 

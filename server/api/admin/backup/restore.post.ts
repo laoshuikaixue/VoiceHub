@@ -1160,7 +1160,9 @@ export default defineEventHandler(async (event) => {
                         }
                         // 空行直接跳过，避免空值配置行锁死配置优先校验
                         if (!gradeClassData.grade || !gradeClassData.class) {
-                          stats.warnings.push(`gradeClass 记录 ${record.id ?? ''} 年级或班级为空，已跳过`)
+                          stats.warnings.push(
+                            `gradeClass 记录 ${record.id ?? ''} 年级或班级为空，已跳过`
+                          )
                           break
                         }
 
@@ -1280,6 +1282,9 @@ export default defineEventHandler(async (event) => {
                           'googleOAuthEnabled',
                           'googleClientId',
                           'googleClientSecret',
+                          'qqOAuthEnabled',
+                          'qqOAuthAppId',
+                          'qqOAuthAppKey',
                           'aggregateOAuthEnabled',
                           'aggregateOAuthAppId',
                           'aggregateOAuthAppKey',
@@ -1324,20 +1329,65 @@ export default defineEventHandler(async (event) => {
                             systemSettingsData[field] = record[field]
                           }
                         })
-                        if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
-                          if (!Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || !Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
-                            throw createApiError(400, SERVER_ERROR_CODES.THEME_INVALID_LIST, '主题配置必须同时包含默认主题和启用主题列表')
+                        if (
+                          Object.prototype.hasOwnProperty.call(
+                            systemSettingsData,
+                            'defaultTheme'
+                          ) ||
+                          Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')
+                        ) {
+                          if (
+                            !Object.prototype.hasOwnProperty.call(
+                              systemSettingsData,
+                              'defaultTheme'
+                            ) ||
+                            !Object.prototype.hasOwnProperty.call(
+                              systemSettingsData,
+                              'enabledThemes'
+                            )
+                          ) {
+                            throw createApiError(
+                              400,
+                              SERVER_ERROR_CODES.THEME_INVALID_LIST,
+                              '主题配置必须同时包含默认主题和启用主题列表'
+                            )
                           }
-                          systemSettingsData.enabledThemes = JSON.stringify(validateThemeConfig(systemSettingsData.defaultTheme, systemSettingsData.enabledThemes))
+                          systemSettingsData.enabledThemes = JSON.stringify(
+                            validateThemeConfig(
+                              systemSettingsData.defaultTheme,
+                              systemSettingsData.enabledThemes
+                            )
+                          )
                         }
-                        for (const field of ['scheduleDaysBeforeEnabled', 'scheduleDaysAfterEnabled']) {
-                          if (Object.prototype.hasOwnProperty.call(systemSettingsData, field) && systemSettingsData[field] !== null && typeof systemSettingsData[field] !== 'boolean') {
-                            throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${field} 必须是布尔值`)
+                        for (const field of [
+                          'scheduleDaysBeforeEnabled',
+                          'scheduleDaysAfterEnabled'
+                        ]) {
+                          if (
+                            Object.prototype.hasOwnProperty.call(systemSettingsData, field) &&
+                            systemSettingsData[field] !== null &&
+                            typeof systemSettingsData[field] !== 'boolean'
+                          ) {
+                            throw createApiError(
+                              400,
+                              SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+                              `${field} 必须是布尔值`
+                            )
                           }
                         }
                         for (const field of ['scheduleDaysBefore', 'scheduleDaysAfter']) {
-                          if (Object.prototype.hasOwnProperty.call(systemSettingsData, field) && (systemSettingsData[field] !== null && (!Number.isInteger(systemSettingsData[field]) || systemSettingsData[field] < 1 || systemSettingsData[field] > 730))) {
-                            throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `${field} 必须是 1-730 的正整数`)
+                          if (
+                            Object.prototype.hasOwnProperty.call(systemSettingsData, field) &&
+                            systemSettingsData[field] !== null &&
+                            (!Number.isInteger(systemSettingsData[field]) ||
+                              systemSettingsData[field] < 1 ||
+                              systemSettingsData[field] > 730)
+                          ) {
+                            throw createApiError(
+                              400,
+                              SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+                              `${field} 必须是 1-730 的正整数`
+                            )
                           }
                         }
                         systemSettingsData = normalizeScheduleVisibilitySettings(systemSettingsData)
@@ -2162,7 +2212,13 @@ export default defineEventHandler(async (event) => {
                         break
 
                       case 'scheduleSongPool': {
-                        await restoreScheduleSongPoolRecord(tx, record, songIdMapping, userIdMapping, stats)
+                        await restoreScheduleSongPoolRecord(
+                          tx,
+                          record,
+                          songIdMapping,
+                          userIdMapping,
+                          stats
+                        )
                         break
                       }
 
@@ -2617,9 +2673,9 @@ export default defineEventHandler(async (event) => {
     try {
       const restoredSettings = await db.select().from(systemSettings).limit(1)
       if (
-      restoredSettings[0]?.registerEmailRequired &&
-      (!restoredSettings[0]?.smtpEnabled || !restoredSettings[0]?.smtpHost)
-    ) {
+        restoredSettings[0]?.registerEmailRequired &&
+        (!restoredSettings[0]?.smtpEnabled || !restoredSettings[0]?.smtpHost)
+      ) {
         await db
           .update(systemSettings)
           .set({ registerEmailRequired: false })

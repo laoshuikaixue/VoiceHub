@@ -1,5 +1,8 @@
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
-import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
+import {
+  DEFAULT_ASTRBOT_GROUP_EVENTS,
+  DEFAULT_ASTRBOT_GROUP_THROTTLE
+} from '~~/server/utils/astrbot-group'
 import { DEFAULT_ASTRBOT_WEEKLY_CONFIG } from '~~/server/utils/astrbot-weekly-config'
 
 export const normalizeScheduleVisibilitySettings = (settings) => {
@@ -88,6 +91,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   astrbotPushMode: 'push',
   astrbotWeeklyConfig: DEFAULT_ASTRBOT_WEEKLY_CONFIG,
   allowOAuthRegistration: false,
+  qqOAuthEnabled: false,
+  qqOAuthAppId: null,
+  qqOAuthAppKey: null,
   allowRegister: false,
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
@@ -119,7 +125,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
   // 平台管理
   enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
-  platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
+  platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS])
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -165,6 +171,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'githubOAuthEnabled',
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',
+  'qqOAuthEnabled',
   'aggregateOAuthEnabled',
   'aggregateOAuthLoginType',
   'customOAuthEnabled',
