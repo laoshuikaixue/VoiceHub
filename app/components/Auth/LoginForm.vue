@@ -453,7 +453,7 @@
         <span>{{ locale.webauthn }}</span>
       </button>
       <button v-if="fingerprintLoginEnabled" type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleFingerprintLogin">
-        <FingerprintPattern :size="20" class="webauthn-icon" />
+        <ScanFace :size="20" class="webauthn-icon" />
         <span>{{ locale.fingerprintLogin }}</span>
       </button>
       <p v-if="fingerprintLoginEnabled && fingerprintBound" class="fingerprint-hint">
@@ -508,7 +508,7 @@ import {
   signalUnknownWebAuthnCredential,
   startWebAuthnAuthentication
 } from '~/utils/webauthn'
-import { Fingerprint, FingerprintPattern } from '@lucide/vue'
+import { Fingerprint, ScanFace } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import { collectFingerprint } from '~/utils/fingerprint'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -1813,6 +1813,13 @@ const checkFingerprintBinding = async () => {
 
 .webauthn-section {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.webauthn-section .divider {
+  margin: 20px 0 10px;
 }
 
 .divider {
@@ -1868,7 +1875,7 @@ const checkFingerprintBinding = async () => {
 }
 
 .fingerprint-hint {
-  margin: 8px 0 0;
+  margin: 0;
   text-align: center;
   font-size: 12px;
   color: var(--text-tertiary);

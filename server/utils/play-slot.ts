@@ -52,3 +52,30 @@ export function validatePlayDateString(dateString: unknown): { valid: boolean; m
   }
   return { valid: true }
 }
+
+/**
+ * 找到「从今天起最近的一个、该时段开放的日期」。
+ *
+ * 用于「时段必选但日期可选」的场景：用户只选了时段没选日期时，
+ * 由服务端自动分配到最近一个该时段确实开放的日期，避免出现空排期。
+ * 未配置星期的时段视为每天开放，直接返回今天。
+ *
+ * @param weekdays 该时段的适用星期（空/未配置 = 每天）
+ * @param startDate 起始日期（含），默认北京时间今天
+ * @param horizonDays 最多向后查找的天数
+ */
+export function findNearestDateForSlot(
+  weekdays: unknown,
+  startDate?: string,
+  horizonDays = 60
+): string | null {
+  const start = startDate && validatePlayDateString(startDate).valid ? startDate : getBeijingDateString()
+  const base = dayjs.tz(start, BEIJING_TIMEZONE)
+  for (let offset = 0; offset <= horizonDays; offset++) {
+    const candidate = base.add(offset, 'day')
+    if (slotAppliesToWeekday(weekdays, candidate.day())) {
+      return candidate.format('YYYY-MM-DD')
+    }
+  }
+  return null
+}
