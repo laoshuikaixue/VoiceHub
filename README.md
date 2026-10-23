@@ -20,9 +20,9 @@
 
 ### 🎵 核心功能
 
-- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出时段
+- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出日期与播出时段
 - **多平台登录支持**：
-  - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
+  - **OAuth 账户系统**：支持通过 GitHub、Casdoor、Google、QQ 互联等 OAuth 提供商快速创建和登录账户
     - **直接创建账户**：用户通过 OAuth 认证后可创建新账户，但仍需设置本地用户名和密码
     - **账户绑定**：已有账户的用户可将 OAuth 身份绑定到现有账户，实现多平台统一登录
     - **WebAuthn 支持**：支持 HarmonyOS Passkey、Windows Hello、生物识别和硬件安全密钥（如 YubiKey）登录
@@ -62,7 +62,7 @@
 - **排期草稿**：支持保存排期草稿功能，允许管理员分步完成排期安排
   - 草稿状态不影响公开展示，可随时修改和完善
   - 支持草稿发布为正式排期，确保排期质量
-- **播出时段**：灵活配置播出时段，**支持多时段管理**
+- **播出时段**：灵活配置播出时段，**支持多时段管理**；可按星期分别配置各天可选时段，支持自定义时段名称，点歌时先选日期再按星期自动加载对应时段，可开启时段必选
 - **排期复制**：支持将某日期的排期完整复制到另一日期，原排期保留不变
 - **打印排期**：支持自定义纸张大小、内容选择、编写备注和PDF导出的打印功能
 - **学期管理**：管理员可设置当前学期，自动关联点歌记录
@@ -694,6 +694,7 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
   - GitHub：Client ID / Secret
   - Casdoor：Server URL / Client ID / Secret / Organization Name
   - Google：Client ID / Secret
+  - QQ 互联：App ID / App Key（直连 QQ 互联开放平台，非聚合登录）
   - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝等平台
   - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
@@ -749,7 +750,8 @@ VoiceHub/
 │   │           └── ModernLight.css # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
-│   │   │   └── SocialBindings.vue     # 社交账号绑定
+│   │   │   ├── SocialBindings.vue     # 社交账号绑定
+│   │   │   └── FingerprintManager.vue # 浏览器指纹登录管理（启用/解绑）
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
@@ -761,6 +763,7 @@ VoiceHub/
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── DuplicateSongsModal.vue # 重复歌曲检测弹窗
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
+│   │   ├── FingerprintBindingsModal.vue # 浏览器指纹绑定详情弹窗（管理员查看/撤销）
 │   │   │   ├── MusicSourceController.vue # 音源控制管理
 │   │   │   ├── MusicSourcePlugins.vue # LX Music 与 MusicFree 插件音源管理
 │   │   │   ├── NotificationHistory.vue # 通知发送历史与用户已读明细
@@ -1735,7 +1738,7 @@ app/assets/css/themes/
 11. **系统设置**：配置系统参数和功能开关
     - 站点信息配置：标题、Logo、描述等
     - 投稿限额设置：每日/每周投稿限制
-    - 播出时段管理：配置不同的播出时间段
+    - 播出时段管理：配置不同的播出时间段，按星期设置各天可选时段与时段必选开关
     - 功能开关：启用/禁用特定功能
 12. **通知管理**：向用户发送系统通知
     - 支持按全体用户、年级、班级或多班级发送
@@ -2014,6 +2017,20 @@ const strategies: Record<string, OAuthStrategy> = {
 - **Casdoor 组织名称**
 
 配置保存后，系统会立即启用 Casdoor 登录策略。
+
+#### QQ 互联配置说明
+
+项目内置对 [QQ 互联](https://wiki.connect.qq.com/) 的直连接入（走 `graph.qq.com` 官方 OAuth 2.0 端点，与需要第三方服务商的「聚合登录」相互独立）。
+
+1. 在 [QQ 互联管理台](https://connect.qq.com/) 创建网站应用，获取 **App ID** 与 **App Key**，并在应用中登记回调地址（与后台「OAuth 重定向 URI」一致，即 `https://yourdomain.com/api/auth/qq/callback`）。
+2. 进入管理员后台的 **站点配置 -> OAuth 第三方登录配置**，开启「QQ 互联」并填入 App ID / App Key。App Key 在后台打雾保存，不会明文回显。
+3. 保存后登录页即出现独立的 QQ 登录按钮；用户在 QQ 内嵌浏览器中访问时还会显示大按钮快速登录。
+
+安全与身份说明：
+
+- 授权流程复用统一的 state 机制：AES 加密 + HttpOnly Cookie 中的 CSRF 随机值 + 10 分钟有效期，回调时逐一校验。
+- 身份关联依据为 QQ 互联返回的 **openid**（同一应用下用户唯一且稳定），昵称与头像仅作为展示资料同步，不参与身份判定。
+- 授权码仅可使用一次；QQ 返回的业务错误（如 `error_description`）会原样透出，便于排查。
 
 #### 前端图标配置
 

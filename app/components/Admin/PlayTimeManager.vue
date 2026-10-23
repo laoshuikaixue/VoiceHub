@@ -8,7 +8,7 @@
           {{ locale.desc }}
         </p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <div
           class="bg-bg-secondary-40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
         >
@@ -26,6 +26,28 @@
               :class="[
                 'absolute top-1 w-3 h-3 bg-bg-secondary rounded-full transition-all',
                 enablePlayTimeSelection ? 'left-6' : 'left-1'
+              ]"
+            />
+          </button>
+        </div>
+        <div
+          class="bg-bg-secondary-40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
+          :title="locale.requireSlotDesc"
+        >
+          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+            >{{ locale.requireSlot }}</span
+          >
+          <button
+            :class="[
+              'relative w-10 h-5 rounded-full transition-colors',
+              playSlotRequired ? 'bg-primary-hover' : 'bg-bg-tertiary'
+            ]"
+            @click="toggleSlotRequired"
+          >
+            <div
+              :class="[
+                'absolute top-1 w-3 h-3 bg-bg-secondary rounded-full transition-all',
+                playSlotRequired ? 'left-6' : 'left-1'
               ]"
             />
           </button>
@@ -138,6 +160,22 @@
               </div>
             </div>
 
+            <!-- 适用星期：未配置 = 每天均可选 -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span
+                v-for="day in weekdayChips(playTime.weekdays)"
+                :key="day.value"
+                :class="[
+                  'px-1.5 py-0.5 rounded text-[9px] font-black border transition-all',
+                  day.active
+                    ? 'bg-primary-10 text-primary border-primary-20'
+                    : 'bg-bg-tertiary-50 text-text-disabled border-border-tertiary-50'
+                ]"
+              >
+                {{ day.label }}
+              </span>
+            </div>
+
             <p class="text-xs text-text-tertiary font-medium leading-relaxed min-h-[32px] line-clamp-2">
               {{ playTime.description || locale.noDescription }}
             </p>
@@ -246,6 +284,31 @@
                   </div>
                   <p class="text-[9px] text-text-disabled px-1">{{ locale.endTimeHint }}</p>
                 </div>
+              </div>
+
+              <div class="space-y-2">
+                <label
+                  class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 flex items-center gap-2"
+                >
+                  <CalendarDays :size="10" /> {{ locale.weekdaysTitle }}
+                </label>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="day in weekdayOptions"
+                    :key="day.value"
+                    type="button"
+                    :class="[
+                      'px-3 py-2 rounded-lg text-xs font-black border transition-all',
+                      formData.weekdays.includes(day.value)
+                        ? 'bg-primary-hover-10 text-primary border-primary-30'
+                        : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary'
+                    ]"
+                    @click="toggleWeekday(day.value)"
+                  >
+                    {{ day.label }}
+                  </button>
+                </div>
+                <p class="text-[9px] text-text-disabled px-1">{{ locale.weekdaysHint }}</p>
               </div>
 
               <div class="space-y-2">
@@ -366,7 +429,8 @@ import {
   Info,
   AlertCircle,
   X,
-  AlignLeft
+  AlignLeft,
+  CalendarDays
 } from '@lucide/vue'
 
 const { getAuthConfig, isAdmin } = useAuth()
@@ -394,12 +458,42 @@ const formSubmitting = ref(false)
 const deleteInProgress = ref(false)
 const formError = ref('')
 const enablePlayTimeSelection = ref(false)
+// 「点歌时段必选」总开关：开启后用户提交点歌必须选择播出日期与时段
+const playSlotRequired = ref(false)
 const deleteConfirmTitleText = computed(() => {
   const title = locale.value.deleteConfirmTitle
   const name = playTimeToDelete.value?.name || ''
   if (typeof title === 'function') return title(name)
   return (title || '').replace('{0}', name)
 })
+
+// 星期选项（0=周日 … 6=周六）
+const weekdayOptions = computed(() => {
+  const labels = locale.value.weekdaysFull || ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return [0, 1, 2, 3, 4, 5, 6].map((value) => ({ value, label: labels[value] }))
+})
+
+// 卡片上的星期展示：配置了星期则高亮显示，未配置则全部置灰（表示每天均可选）
+const weekdayChips = (weekdays: number[] | null | undefined) => {
+  const days = Array.isArray(weekdays) && weekdays.length > 0 ? weekdays : null
+  const labels = locale.value.weekdaysShort || ['日', '一', '二', '三', '四', '五', '六']
+  return [0, 1, 2, 3, 4, 5, 6].map((value) => ({
+    value,
+    label: labels[value],
+    active: days === null || days.includes(value)
+  }))
+}
+
+// 勾选/取消适用星期
+const toggleWeekday = (value: number) => {
+  const index = formData.weekdays.indexOf(value)
+  if (index >= 0) {
+    formData.weekdays.splice(index, 1)
+  } else {
+    formData.weekdays.push(value)
+    formData.weekdays.sort((a, b) => a - b)
+  }
+}
 
 // 表单数据
 const formData = reactive({
@@ -408,7 +502,9 @@ const formData = reactive({
   startTime: '',
   endTime: '',
   description: '',
-  enabled: true
+  enabled: true,
+  // 适用星期（0=周日…6=周六），空数组 = 每天均可选
+  weekdays: [] as number[]
 })
 
 // 初始化
@@ -479,6 +575,7 @@ const fetchSystemSettings = async () => {
       ...authConfig
     })
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
+    playSlotRequired.value = data.playSlotRequired || false
   } catch (err: any) {
     console.error('获取系统设置失败:', getErrorMessage(err))
   }
@@ -488,6 +585,12 @@ const fetchSystemSettings = async () => {
 const toggleGlobalEnabled = async () => {
   enablePlayTimeSelection.value = !enablePlayTimeSelection.value
   await updateSystemSettings()
+}
+
+// 切换「时段必选」总开关
+const toggleSlotRequired = async () => {
+  playSlotRequired.value = !playSlotRequired.value
+  await updateSlotRequiredSettings()
 }
 
 // 更新系统设置
@@ -513,6 +616,29 @@ const updateSystemSettings = async () => {
   }
 }
 
+// 更新「时段必选」开关
+const updateSlotRequiredSettings = async () => {
+  if (!isAdmin.value) return
+
+  try {
+    const authConfig = getAuthConfig()
+    await $fetch('/api/admin/system-settings', {
+      method: 'POST',
+      body: {
+        playSlotRequired: playSlotRequired.value
+      },
+      ...authConfig
+    })
+
+    showNotification(locale.value.messages.slotRequiredUpdated, 'success')
+  } catch (err: any) {
+    error.value = getErrorMessage(err) || locale.value.errors.updateSlotRequiredFailed
+    showNotification(error.value, 'error')
+    // 如果失败，恢复状态
+    playSlotRequired.value = !playSlotRequired.value
+  }
+}
+
 // 打开添加表单
 const openAddForm = () => {
   showAddForm.value = true
@@ -522,7 +648,8 @@ const openAddForm = () => {
     startTime: '',
     endTime: '',
     description: '',
-    enabled: true
+    enabled: true,
+    weekdays: []
   })
 }
 
@@ -535,7 +662,9 @@ const editPlayTime = (playTime: PlayTime) => {
     startTime: playTime.startTime || '',
     endTime: playTime.endTime || '',
     description: playTime.description || '',
-    enabled: playTime.enabled
+    enabled: playTime.enabled,
+    // 未配置星期 = 每天均可选，编辑时展示为空（不勾选任何一天）
+    weekdays: Array.isArray(playTime.weekdays) ? [...playTime.weekdays].sort((a, b) => a - b) : []
   })
 }
 
@@ -640,7 +769,9 @@ const savePlayTime = async () => {
         startTime: formData.startTime || null,
         endTime: formData.endTime || null,
         description: formData.description || null,
-        enabled: formData.enabled
+        enabled: formData.enabled,
+        // 空数组 = 清除星期配置，恢复每天均可选
+        weekdays: [...formData.weekdays].sort((a, b) => a - b)
       },
       ...authConfig
     })
@@ -675,7 +806,8 @@ const cancelForm = () => {
     startTime: '',
     endTime: '',
     description: '',
-    enabled: true
+    enabled: true,
+    weekdays: []
   })
 }
 </script>

@@ -1159,6 +1159,13 @@
       @close="closeOAuthBindingsModal"
     />
 
+    <!-- 浏览器指纹绑定详情模态框 -->
+    <FingerprintBindingsModal
+      :show="showFingerprintBindingsModal"
+      :user-id="selectedUserDetail?.id"
+      @close="closeFingerprintBindingsModal"
+    />
+
     <!-- 用户详细信息模态框 -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
@@ -1432,6 +1439,53 @@
                       />
                     </div>
                   </button>
+
+                  <!-- 浏览器指纹绑定 -->
+                  <button
+                    type="button"
+                    class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl flex items-center justify-between w-full text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    :class="
+                      selectedUserDetail.browserFingerprints?.length > 0
+                        ? 'cursor-pointer hover:bg-bg-primary hover:border-border-tertiary group'
+                        : ''
+                    "
+                    @click="openFingerprintBindingsModal"
+                  >
+                    <div class="space-y-1 overflow-hidden pr-2">
+                      <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                        {{ locale.detail.fingerprintBinding }}
+                      </div>
+                      <div
+                        class="text-sm font-bold truncate"
+                        :class="
+                          selectedUserDetail.browserFingerprints?.length > 0 ? 'text-success' : 'text-text-tertiary'
+                        "
+                        :title="selectedUserDetail.browserFingerprints?.length > 0 ? formatMessage(locale.detail.fingerprintBound, selectedUserDetail.browserFingerprints.length) : locale.detail.unbound"
+                      >
+                        {{
+                          selectedUserDetail.browserFingerprints?.length > 0
+                            ? formatMessage(locale.detail.fingerprintBound, selectedUserDetail.browserFingerprints.length)
+                            : locale.detail.unbound
+                        }}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <div
+                        :class="[
+                          'w-8 h-8 rounded-xl flex items-center justify-center',
+                          selectedUserDetail.browserFingerprints?.length > 0
+                            ? 'bg-success-10 text-success'
+                            : 'bg-bg-tertiary text-text-disabled'
+                        ]"
+                      >
+                        <FingerprintPattern :size="16" />
+                      </div>
+                      <ChevronRight
+                        :size="16"
+                        class="text-text-disabled transition-transform group-hover:translate-x-0.5"
+                      />
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -1653,12 +1707,14 @@ import {
   AtSign,
   Briefcase,
   Link,
-  ClipboardCheck
+  ClipboardCheck,
+  FingerprintPattern
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import OAuthBindingsModal from '~/components/Admin/OAuthBindingsModal.vue'
+import FingerprintBindingsModal from '~/components/Admin/FingerprintBindingsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import UserExportModal from '~/components/Admin/UserExportModal.vue'
 import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
@@ -1821,6 +1877,8 @@ const selectedUserDetail = ref(null)
 
 // OAuth 绑定详情模态框状态
 const showOAuthBindingsModal = ref(false)
+// 浏览器指纹绑定模态框状态
+const showFingerprintBindingsModal = ref(false)
 
 // 状态变更日志模态框状态
 
@@ -2252,6 +2310,15 @@ const openOAuthBindingsModal = () => {
 
 const closeOAuthBindingsModal = () => {
   showOAuthBindingsModal.value = false
+}
+
+const openFingerprintBindingsModal = () => {
+  if (!selectedUserDetail.value?.id) return
+  showFingerprintBindingsModal.value = true
+}
+
+const closeFingerprintBindingsModal = () => {
+  showFingerprintBindingsModal.value = false
 }
 
 const closeBatchUpdateModal = () => {

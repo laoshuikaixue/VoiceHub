@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -77,6 +77,8 @@ export const playTimes = pgTable('PlayTime', {
   endTime: text('endTime'),
   enabled: boolean('enabled').default(true).notNull(),
   description: text('description'),
+  // 适用星期（0=周日, 1=周一 … 6=周六）；NULL/空数组 = 每天均可选（兼容历史数据）
+  weekdays: jsonb('weekdays').$type<number[]>(),
 });
 
 // 年级班级配置表（选择器选项来源，优先于从用户提取）
@@ -118,6 +120,8 @@ export const songs = pgTable('Song', {
   submissionNotePublicStatus: text('submissionNotePublicStatus'),
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  // 用户选择的期望播出日期（北京时间 YYYY-MM-DD），与 preferredPlayTimeId 共同构成「日期 + 时段」
+  preferredPlayDate: date('preferredPlayDate', { mode: 'string' }),
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
@@ -305,6 +309,8 @@ export const systemSettings = pgTable('SystemSettings', {
   instanceId: text('instance_id'),
   telemetryEnabled: boolean('telemetryEnabled').default(true).notNull(),
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
+  // 点歌时播出日期+时段是否强制必选（全局总开关，依赖 enablePlayTimeSelection）
+  playSlotRequired: boolean('playSlotRequired').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),
   schoolLogoHomeUrl: text('schoolLogoHomeUrl'),
@@ -427,6 +433,10 @@ export const systemSettings = pgTable('SystemSettings', {
   googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
   googleClientId: text('googleClientId'),
   googleClientSecret: text('googleClientSecret'),
+  // QQ 互联 OAuth（直连 QQ 互联开放平台，非聚合登录）
+  qqOAuthEnabled: boolean('qqOAuthEnabled').default(false).notNull(),
+  qqOAuthAppId: text('qqOAuthAppId'),
+  qqOAuthAppKey: text('qqOAuthAppKey'),
   // 聚合登陆
   aggregateOAuthEnabled: boolean('aggregateOAuthEnabled').default(false).notNull(),
   aggregateOAuthAppId: text('aggregateOAuthAppId'),
@@ -450,6 +460,8 @@ export const systemSettings = pgTable('SystemSettings', {
   // 图形验证码
   captchaEnabled: boolean('captchaEnabled').default(false).notNull(),
   captchaMaxFailures: integer('captchaMaxFailures').default(3).notNull(),
+  // 浏览器指纹登录总开关：关闭时登录页不展示入口，已绑定的指纹一律拒绝登录
+  fingerprintLoginEnabled: boolean('fingerprintLoginEnabled').default(false).notNull(),
 
   // 自动备份配置
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
@@ -610,6 +622,28 @@ export const userIdentities = pgTable('UserIdentity', {
   unq: unique().on(t.provider, t.providerUserId),
 }));
 
+// 浏览器指纹登录绑定表：一条记录 = 一个浏览器指纹绑定到一个账号
+export const browserFingerprints = pgTable('browser_fingerprints', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // 客户端原始指纹经服务端加盐哈希后存储；全局唯一，同一浏览器只能绑定一个账号
+  fingerprintHash: text('fingerprint_hash').notNull(),
+  // 用户自定义备注（如"宿舍电脑"），为空时前端回退展示浏览器信息
+  label: text('label'),
+  browser: text('browser'),
+  operatingSystem: text('operating_system'),
+  device: text('device'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  lastLoginIp: text('last_login_ip')
+}, (table) => [
+  uniqueIndex('browser_fingerprints_hash_unique').on(table.fingerprintHash),
+  index('browser_fingerprints_user_idx').on(table.userId)
+]);
+
+export type BrowserFingerprint = typeof browserFingerprints.$inferSelect;
+export type NewBrowserFingerprint = typeof browserFingerprints.$inferInsert;
+
 export const passwordAuditLogs = pgTable('PasswordAuditLog', {
   id: serial('id').primaryKey(),
   userId: integer('userId').notNull(),
@@ -638,6 +672,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   votes: many(votes),
   notifications: many(notifications),
   identities: many(userIdentities),
+  browserFingerprints: many(browserFingerprints),
   notificationSettings: one(notificationSettings, {
     fields: [users.id],
     references: [notificationSettings.userId],
@@ -656,6 +691,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 export const userIdentitiesRelations = relations(userIdentities, ({ one }) => ({
   user: one(users, {
     fields: [userIdentities.userId],
+    references: [users.id],
+  }),
+}));
+
+export const browserFingerprintsRelations = relations(browserFingerprints, ({ one }) => ({
+  user: one(users, {
+    fields: [browserFingerprints.userId],
     references: [users.id],
   }),
 }));

@@ -815,6 +815,20 @@
             />
           </div>
 
+          <!-- 浏览器指纹登录开关 -->
+          <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.fingerprintLoginEnabled }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.fingerprintLoginEnabledDesc }}</p>
+            </div>
+            <input
+              id="fingerprint-login-enabled"
+              v-model="formData.fingerprintLoginEnabled"
+              type="checkbox"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+            />
+          </div>
+
           <!-- 允许注册开关 -->
           <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
             <div class="flex items-center justify-between p-3">
@@ -1399,6 +1413,7 @@ const formData = ref({
   hideStudentInfo: true,
   allowAnonymousSubmission: false,
   forcePasswordChangeOnFirstLogin: false,
+  fingerprintLoginEnabled: false,
   telemetryEnabled: true,
   captchaEnabled: false,
   captchaProvider: 'graphic',
@@ -1567,6 +1582,7 @@ const loadConfig = async () => {
       hideStudentInfo: data.hideStudentInfo ?? true,
       allowAnonymousSubmission: data.allowAnonymousSubmission === true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
+      fingerprintLoginEnabled: data.fingerprintLoginEnabled === true,
       telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,
       captchaProvider: data.captchaProvider || 'graphic',

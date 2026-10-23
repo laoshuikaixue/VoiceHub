@@ -411,19 +411,46 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段、备注和点歌券 -->
-            <div v-if="playTimeSelectionEnabled" class="form-row mb-4">
-              <!-- 播出时段选择 -->
+            <!-- 播出日期、播出时段、备注和点歌券 -->
+            <div v-if="playTimeSelectionEnabled" class="form-row mb-4 play-slot-row">
+              <!-- 第一步：选择播出日期 -->
+              <div class="form-group">
+                <div class="input-wrapper">
+                  <label for="play-date" class="play-slot-label">
+                    {{ locale.preferredPlayDate }}
+                    <span v-if="playSlotRequired" class="play-slot-required-tag">{{
+                      locale.required
+                    }}</span>
+                  </label>
+                  <input
+                    id="play-date"
+                    v-model="preferredPlayDate"
+                    class="form-input play-date-input"
+                    type="date"
+                    :min="todayPlayDate"
+                  >
+                  <p class="play-slot-hint">{{ locale.playDateHint }}</p>
+                </div>
+              </div>
+
+              <!-- 第二步：根据选中日期所在星期，自动加载预设的可选播出时段 -->
               <div class="form-group">
                 <div class="input-wrapper">
                   <CustomSelect
                     v-model="preferredPlayTimeId"
                     :options="formattedPlayTimes"
-                    :label="locale.preferredPlayTime"
+                    :label="selectedDateWeekdayLabel || locale.preferredPlayTime"
                     label-key="displayName"
                     value-key="id"
-                    :placeholder="locale.choosePlayTime"
+                    :placeholder="preferredPlayDate ? locale.choosePlayTime : locale.selectDateFirst"
                   />
+                  <p
+                    v-if="preferredPlayDate && availablePlayTimesForDate.length === 0"
+                    class="play-slot-hint text-error"
+                  >
+                    {{ locale.noSlotsForDate }}
+                  </p>
+                  <p v-if="playSlotError" class="play-slot-error">{{ playSlotError }}</p>
                 </div>
               </div>
             </div>
@@ -1697,6 +1724,11 @@ const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
+// 播出日期 + 时段两级选择：先选日期，再按该日期所在星期加载预设时段
+const preferredPlayDate = ref('')
+// 后台「时段必选」总开关：开启后提交点歌必须同时选择日期与时段
+const playSlotRequired = ref(false)
+const playSlotError = ref('')
 
 const cardCodeEnabled = computed(
   () => enableCardCodeRequests.value || requireCardCodeForRequests.value
@@ -2338,6 +2370,7 @@ const fetchPlayTimes = async () => {
       const data = await response.json()
       playTimes.value = data.playTimes || []
       playTimeSelectionEnabled.value = data.enabled || false
+      playSlotRequired.value = data.required || false
     }
   } catch (err) {
     console.error('获取播出时段失败:', err)
@@ -2748,12 +2781,60 @@ const enabledPlayTimes = computed(() => {
   return playTimes.value.filter((pt) => pt.enabled)
 })
 
+// 日期字符串（YYYY-MM-DD）→ 星期（0=周日…6=周六）；按北京时间解析，避免时区偏移导致星期错位
+const getWeekdayFromDateString = (dateString) => {
+  const date = new Date(`${dateString}T00:00:00+08:00`)
+  return Number.isNaN(date.getTime()) ? null : date.getDay()
+}
+
+// 今天（北京时间）的日期串，作为日期选择器的可选下限
+const todayPlayDate = computed(() => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date())
+  } catch {
+    return new Date().toISOString().slice(0, 10)
+  }
+})
+
+// 选中日期（按星期）对应的可选播出时段：weekdays 为空/未配置的时段视为每天均可选
+const availablePlayTimesForDate = computed(() => {
+  if (!preferredPlayDate.value) return []
+  const weekday = getWeekdayFromDateString(preferredPlayDate.value)
+  if (weekday === null) return []
+  return enabledPlayTimes.value.filter((pt) => {
+    const days = Array.isArray(pt.weekdays) && pt.weekdays.length > 0 ? pt.weekdays : null
+    return days === null || days.includes(weekday)
+  })
+})
+
+// 选中日期星期文案，如「周五可选的播出时段」
+const selectedDateWeekdayLabel = computed(() => {
+  if (!preferredPlayDate.value) return ''
+  const weekday = getWeekdayFromDateString(preferredPlayDate.value)
+  if (weekday === null) return ''
+  const weekdayNames = locale.value.weekdaysFull || []
+  const weekdayName = weekdayNames[weekday] || ''
+  return locale.value.playSlotsForDate ? locale.value.playSlotsForDate(weekdayName) : ''
+})
+
+// 时段下拉选项：仅展示选中日期对应星期预设的时段
 const formattedPlayTimes = computed(() => {
-  const options = enabledPlayTimes.value.map((pt) => ({
+  const options = availablePlayTimesForDate.value.map((pt) => ({
     ...pt,
     displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
   return [{ id: '', displayName: locale.value.choosePlayTime }, ...options]
+})
+
+// 切换日期后重置时段：不同星期的预设时段不同，避免残留无效选项
+watch(preferredPlayDate, () => {
+  preferredPlayTimeId.value = ''
+  playSlotError.value = ''
 })
 
 // 格式化播出时段时间范围
@@ -2769,6 +2850,34 @@ const formatPlayTimeRange = (playTime) => {
   }
 
   return locale.value.choosePlayTime
+}
+
+// 播出日期 + 时段表单校验：
+// - 后台开启「时段必选」时，日期与时段都必须选择，否则阻止提交
+// - 未选日期但选了时段同样阻止（时段依据日期所在星期加载，无法独立校验）
+const validatePlaySlotSelection = () => {
+  if (!playTimeSelectionEnabled.value) return true
+
+  if (playSlotRequired.value && (!preferredPlayDate.value || !preferredPlayTimeId.value)) {
+    playSlotError.value = locale.value.playSlotRequiredError || '请选择期望播出日期与播出时段'
+    error.value = playSlotError.value
+    if (window.$showNotification) {
+      window.$showNotification(playSlotError.value, 'error')
+    }
+    return false
+  }
+
+  if (preferredPlayTimeId.value && !preferredPlayDate.value) {
+    playSlotError.value = locale.value.playSlotDateFirstError || '请先选择播出日期，再选择播出时段'
+    error.value = playSlotError.value
+    if (window.$showNotification) {
+      window.$showNotification(playSlotError.value, 'error')
+    }
+    return false
+  }
+
+  playSlotError.value = ''
+  return true
 }
 
 // 监听用户状态变化，当用户登录后重新获取投稿状态
@@ -3630,6 +3739,11 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
+  // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
+  if (!validatePlaySlotSelection()) {
+    return
+  }
+
   submitting.value = true
   error.value = ''
 
@@ -3763,6 +3877,7 @@ const submitSong = async (result, options = {}) => {
       title: title.value,
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      preferredPlayDate: preferredPlayDate.value || null,
       cover: selectedCover.value,
       musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
@@ -3801,6 +3916,11 @@ const submitSong = async (result, options = {}) => {
 const handleSubmit = async () => {
   if (submitting.value) return
 
+  // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
+  if (!validatePlaySlotSelection()) {
+    return
+  }
+
   if (!(await ensureCardCodeForSubmit())) {
     return
   }
@@ -3824,6 +3944,7 @@ const handleSubmit = async () => {
       title: title.value,
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      preferredPlayDate: preferredPlayDate.value || null,
       cover: selectedCover.value,
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
@@ -4160,6 +4281,11 @@ const handleManualSubmit = async () => {
     return
   }
 
+  // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
+  if (!validatePlaySlotSelection()) {
+    return
+  }
+
   if (!(await ensureCardCodeForSubmit())) {
     return
   }
@@ -4215,6 +4341,7 @@ const handleManualSubmit = async () => {
       title: title.value,
       artist: manualArtist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      preferredPlayDate: preferredPlayDate.value || null,
       cover: manualCover.value?.trim() || '',
       playUrl: trimmedPlayUrl,
       musicPlatform: hasManualPlayUrl ? null : platform.value,
@@ -4249,6 +4376,8 @@ const resetForm = () => {
   title.value = ''
   artist.value = ''
   preferredPlayTimeId.value = ''
+  preferredPlayDate.value = ''
+  playSlotError.value = ''
   searchResults.value = []
   restrictionCheckMap.value = new Map()
   selectedCover.value = ''
@@ -5094,6 +5223,50 @@ defineExpose({
 .form-select:focus {
   outline: none;
   border-color: var(--color-accent);
+}
+
+/* 播出日期 + 时段两级选择 */
+.play-slot-label {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--overlay-90);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.play-slot-required-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-error, #ef4444);
+  border: 1px solid var(--color-error, #ef4444);
+  border-radius: 4px;
+  padding: 0 0.25rem;
+  line-height: 1.4;
+}
+
+.play-date-input {
+  cursor: pointer;
+}
+
+.play-slot-hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--overlay-40);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.play-slot-error {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-error, #ef4444);
+  margin-top: 0.25rem;
+  line-height: 1.4;
 }
 
 /* 平台选择按钮样式 */

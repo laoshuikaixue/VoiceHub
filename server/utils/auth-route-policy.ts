@@ -45,6 +45,10 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/site-config', methods: GET_METHODS },
   { path: '/api/system/location', methods: GET_METHODS },
   { path: '/api/auth/webauthn/login', methods: ['POST'] },
+  // 浏览器指纹一键登录（匿名访问，接口自身校验指纹绑定与账号状态）
+  { path: '/api/auth/fingerprint/login', methods: ['POST'] },
+  // 登录页匿名预检：当前浏览器是否已绑定指纹（仅返回布尔与掩码用户名）
+  { path: '/api/auth/fingerprint/check', methods: GET_METHODS },
   { path: '/api/music/resolve-url', methods: ['POST'] },
   { path: '/api/music/state', methods: ['POST'] },
   { path: '/api/music/websocket', methods: GET_METHODS },

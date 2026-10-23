@@ -1200,6 +1200,8 @@ export default defineEventHandler(async (event) => {
                         let systemSettingsData = {}
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
+                          'playSlotRequired',
+                          'fingerprintLoginEnabled',
                           'instanceId',
                           'defaultTheme',
                           'enabledThemes',
@@ -1280,6 +1282,9 @@ export default defineEventHandler(async (event) => {
                           'googleOAuthEnabled',
                           'googleClientId',
                           'googleClientSecret',
+                          'qqOAuthEnabled',
+                          'qqOAuthAppId',
+                          'qqOAuthAppKey',
                           'aggregateOAuthEnabled',
                           'aggregateOAuthAppId',
                           'aggregateOAuthAppKey',
