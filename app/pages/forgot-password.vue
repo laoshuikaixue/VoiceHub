@@ -58,6 +58,38 @@
             </div>
           </div>
 
+          <div
+            v-show="showCaptcha"
+            class="form-group"
+            :class="{ 'esa-captcha-mount': captchaProvider === 'esa' && esaSceneId }"
+          >
+            <TurnstileWidget
+              v-if="captchaProvider === 'turnstile'"
+              ref="turnstileRef"
+              v-model="turnstileToken"
+            />
+            <EsaCaptchaWidget
+              v-else-if="captchaProvider === 'esa' && esaSceneId"
+              :key="esaSceneId"
+              ref="esaCaptchaRef"
+              v-model="esaVerifyParam"
+              :scene-id="esaSceneId"
+              :button-selector="esaButtonSelector"
+              @verified="handleSubmit"
+              @load-error="handleEsaCaptchaLoadError"
+            />
+            <!-- ESA 已启用但当前接口与域名解析不到场景 ID，不能回落成图形验证码 -->
+            <p v-else-if="captchaProvider === 'esa'" class="esa-scene-hint">
+              {{ captchaLocale.esaCaptchaSceneMissing }}
+            </p>
+            <CaptchaInput
+              v-else
+              ref="captchaRef"
+              v-model="captchaInput"
+              @update:captchaId="captchaId = $event"
+            />
+          </div>
+
           <div v-if="error" class="error-container">
             <svg class="error-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" />
@@ -67,7 +99,7 @@
             <span class="error-message">{{ error }}</span>
           </div>
 
-          <button :disabled="loading" class="submit-btn" type="submit">
+          <button id="forgot-password-submit-button" :disabled="loading" class="submit-btn" type="submit">
             <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
               <circle cx="12" cy="12" fill="none" r="10" stroke="currentColor" stroke-dasharray="31.416" stroke-dashoffset="31.416" stroke-linecap="round" stroke-width="2">
                 <animate attributeName="stroke-dasharray" dur="2s" repeatCount="indefinite" values="0 31.416;15.708 15.708;0 31.416"/>
@@ -93,12 +125,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useLocale } from '~/utils/locale'
+import CaptchaInput from '~/components/Auth/CaptchaInput.vue'
+import TurnstileWidget from '~/components/Auth/TurnstileWidget.vue'
+import EsaCaptchaWidget from '~/components/Auth/EsaCaptchaWidget.vue'
+import { ESA_CAPTCHA_VERIFY_HEADER, ESA_CAPTCHA_PASS_HEADER, getEsaCaptchaRejectCode, resolveEsaCaptchaSceneId } from '~/utils/esaCaptcha'
 
-const { siteTitle, initSiteConfig } = useSiteConfig()
-const { pages } = useLocale()
+const { siteTitle, initSiteConfig, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes } = useSiteConfig()
+const { pages, auth } = useLocale()
 const locale = computed(() => pages.value?.forgotPassword || {})
+// 复用登录表单已有人机验证文案键，中英自动对齐
+const captchaLocale = computed(() => auth.value?.loginForm || {})
 
 const username = ref('')
 const email = ref('')
@@ -111,6 +149,113 @@ const maskedEmail = ref('')
 
 // 服务端错误统一通过错误码本地化，成功文案直接取本地化整句
 const { localize: localizeServerError } = useServerErrors()
+
+// 人机验证：复用三 providers 组件
+const captchaId = ref('')
+const captchaInput = ref('')
+const captchaRef = ref(null)
+const turnstileToken = ref('')
+const turnstileRef = ref(null)
+const esaVerifyParam = ref('')
+const esaPassToken = ref('')
+const esaCaptchaRef = ref(null)
+const isGraphicCaptchaRequired = ref(false)
+const esaButtonSelector = '#forgot-password-submit-button'
+
+// 场景按当前域名解析（统一走公共验证接口），SSR 阶段无域名只能命中「任意域名」规则
+const esaSceneId = computed(() =>
+  resolveEsaCaptchaSceneId(
+    esaCaptchaScenes.value,
+    'common',
+    import.meta.client ? window.location.hostname : ''
+  )
+)
+
+// 显示判据：ESA 无场景 ID 视为未开启；图形按阈值/预检；Turnstile/ESA 每次必验
+const showCaptcha = computed(() => {
+  if (captchaProvider.value === 'esa' && !esaSceneId.value) return false
+  if (!captchaEnabled.value) return false
+  if (isGraphicCaptchaRequired.value) return true
+  if (captchaProvider.value === 'graphic' && captchaMaxFailures.value === 0) return true
+  return captchaProvider.value === 'turnstile' || captchaProvider.value === 'esa'
+})
+
+// 预检：输入账号名后查询服务端是否已要求图形验证码，刷新后无需先被 400 拒绝一次
+let captchaPrecheckTimer = null
+const precheckCaptchaRequired = () => {
+  if (!captchaEnabled.value || captchaProvider.value !== 'graphic') return
+  if (captchaMaxFailures.value === 0 || isGraphicCaptchaRequired.value) return
+  const name = username.value.trim()
+  if (!name) return
+  $fetch('/api/auth/captcha-required', { query: { username: name } })
+    .then((res) => {
+      if (res?.captchaRequired) isGraphicCaptchaRequired.value = true
+    })
+    .catch(() => {})
+}
+watch(username, () => {
+  clearTimeout(captchaPrecheckTimer)
+  captchaPrecheckTimer = setTimeout(precheckCaptchaRequired, 400)
+})
+onUnmounted(() => clearTimeout(captchaPrecheckTimer))
+
+// ESA SDK 脚本加载失败时给出提示而非静默无响应
+const handleEsaCaptchaLoadError = () => {
+  error.value = captchaLocale.value.esaCaptchaLoadFailed || '人机验证组件加载失败，请刷新页面重试'
+}
+
+// 请求被 ESA 边缘拦截时源站收不到请求，按响应头原因码提示
+const applyEsaCaptchaRejectError = (err) => {
+  const code = getEsaCaptchaRejectCode(err)
+  if (!code) return false
+  const reason = captchaLocale.value.esaVerifyCodes?.[code]
+  error.value = reason
+    ? formatLocale(
+        captchaLocale.value.esaVerifyFailedWithReason || '人机验证未通过：{0}（原因码 {1}），请重试或联系管理员',
+        reason,
+        code
+      )
+    : formatLocale(captchaLocale.value.esaVerifyFailed || '人机验证未通过（原因码 {0}），请重试或联系管理员', code)
+  return true
+}
+
+// ESA 必须先取得验签参数（一次性有效，由按钮触发弹窗后经 verified 回调再次进入）
+const ensureEsaCaptchaVerified = () => {
+  if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  return !!esaVerifyParam.value
+}
+
+// 用一次性验签参数向公共验证接口换取短期通过凭证；找回密码分两步，每次提交都重新换取
+const ensureEsaPassToken = async () => {
+  if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  try {
+    const res = await $fetch('/api/captcha/verify', {
+      method: 'POST',
+      headers: { [ESA_CAPTCHA_VERIFY_HEADER]: esaVerifyParam.value },
+      body: { purpose: 'forgot_password' }
+    })
+    esaPassToken.value = res?.required && res?.passToken ? res.passToken : ''
+    return true
+  } catch (err) {
+    if (!applyEsaCaptchaRejectError(err)) {
+      error.value = localizeServerError(err, locale.value.requestFailed)
+    }
+    esaCaptchaRef.value?.reset?.()
+    return false
+  }
+}
+
+// 一次验证仅服务一步提交，进入下一步或失败后清空一次性参数并按需刷新
+const refreshCaptcha = () => {
+  esaVerifyParam.value = ''
+  esaPassToken.value = ''
+  if (!showCaptcha.value) return
+  nextTick(() => {
+    if (captchaProvider.value === 'turnstile') turnstileRef.value?.reset?.()
+    else if (captchaProvider.value === 'esa') esaCaptchaRef.value?.reset?.()
+    else if (captchaProvider.value === 'graphic') captchaRef.value?.refreshCaptcha?.()
+  })
+}
 
 useHead({
   title: () => siteTitle.value ? `${locale.value.title} | ${siteTitle.value}` : locale.value.title
@@ -133,24 +278,43 @@ const handleSubmit = async () => {
     }
   }
 
+  // ESA：提交按钮先触发 SDK 弹窗，验证通过回调再次进入此处；未取得验签参数前不发起请求
+  if (!ensureEsaCaptchaVerified()) return
+
   loading.value = true
   error.value = ''
 
   try {
-    const body = step.value === 1 
+    const body = step.value === 1
       ? { username: username.value }
       : { username: username.value, email: email.value }
 
+    // 图形/Turnstile 走请求体，ESA 走换取到的短期通过凭证请求头
+    const headers = {}
+    if (showCaptcha.value) {
+      if (captchaProvider.value === 'turnstile') {
+        body.turnstileToken = turnstileToken.value
+      } else if (captchaProvider.value === 'esa') {
+        if (!(await ensureEsaPassToken())) return
+        if (esaPassToken.value) headers[ESA_CAPTCHA_PASS_HEADER] = esaPassToken.value
+      } else {
+        body.captchaId = captchaId.value
+        body.captchaInput = captchaInput.value.trim()
+      }
+    }
+
     const response = await $fetch('/api/auth/forgot-password', {
       method: 'POST',
-      body
+      body,
+      headers
     })
 
     if (response.success) {
       if (response.step === 2) {
-        // 进入补全邮箱步骤
+        // 进入补全邮箱步骤，下一步需重新验证
         step.value = 2
         maskedEmail.value = response.maskedEmail || ''
+        refreshCaptcha()
       } else if (response.step === 3) {
         // 成功发送邮件
         success.value = true
@@ -159,6 +323,12 @@ const handleSubmit = async () => {
     }
   } catch (err) {
     error.value = localizeServerError(err, locale.value.requestFailed)
+    applyEsaCaptchaRejectError(err)
+
+    const innerData = err.data?.data
+    // 后端要求验证码时显示验证区域（图形验证码场景）
+    if (innerData?.captchaRequired) isGraphicCaptchaRequired.value = true
+    refreshCaptcha()
   } finally {
     loading.value = false
   }
@@ -383,6 +553,18 @@ const handleSubmit = async () => {
 .loading-spinner {
   width: 20px;
   height: 20px;
+}
+
+/* ESA 为弹窗形态，挂载点没有可见内容；移出布局避免在表单里占出一段空白 */
+.esa-captcha-mount {
+  position: absolute;
+}
+
+/* ESA 已启用但场景 ID 缺失时的提示 */
+.esa-scene-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--error);
 }
 
 .form-footer {

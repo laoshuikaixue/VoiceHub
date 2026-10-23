@@ -1489,6 +1489,7 @@ VoiceHub/
 │   │   ├── register-validation.ts # 注册校验纯函数
 │   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
+│   │   ├── request-captcha.ts # 图形/Turnstile/ESA 人机验证统一校验
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
