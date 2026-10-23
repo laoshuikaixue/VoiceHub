@@ -3,9 +3,10 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { resolveCaptchaSettings } from '~~/server/services/securityService'
+import { assertRequestCaptchaPassed } from '~~/server/utils/request-captcha'
 import { SmtpService } from '~~/server/services/smtpService'
 import { db } from '~/drizzle/db'
-import { systemSettings } from '~/drizzle/schema'
 import {
   generateEmailCode,
   storeEmailCode,
@@ -56,6 +57,16 @@ export default defineEventHandler(async (event) => {
   if (!(await smtpService.ensureInitialized())) {
     throw createApiError(503, SERVER_ERROR_CODES.AUTH_EMAIL_SERVICE_UNAVAILABLE, '邮件服务未配置或不可用，请联系管理员')
   }
+
+  // 人机验证：公开邮件发送出口，注册链路开启验证即必验（图形/Turnstile/ESA），防止被当作邮件轰炸通道
+  const captchaSettings = await resolveCaptchaSettings()
+  await assertRequestCaptchaPassed(event, {
+    settings: captchaSettings,
+    body,
+    clientIp,
+    purpose: 'email_code',
+    required: captchaSettings.enabled
+  })
 
   // 先发邮件，发送成功后才落码（失败不落码，也不触发冷却）
   const code = generateEmailCode()

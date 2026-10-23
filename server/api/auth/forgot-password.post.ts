@@ -9,6 +9,8 @@ import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
+import { resolveCaptchaSettings, isPasswordLoginCaptchaRequired } from '~~/server/services/securityService'
+import { assertRequestCaptchaPassed } from '~~/server/utils/request-captcha'
 import { publicAddress } from '~~/server/utils/music-source-plugins/network'
 
 // 未配置 NUXT_PUBLIC_HOST 时可安全使用请求 Host 的部署特征：
@@ -69,6 +71,17 @@ export default defineEventHandler(async (event) => {
   if (!username) {
     throw createApiError(400, 'AUTH_ACCOUNT_NAME_REQUIRED', '请提供账号名')
   }
+
+  // 人机验证：图形按失败阈值触发、Turnstile/ESA 每次必验，防范账号名枚举与重置邮件轰炸
+  const captchaSettings = await resolveCaptchaSettings()
+  const needCaptcha = await isPasswordLoginCaptchaRequired(String(username), clientIP, captchaSettings)
+  await assertRequestCaptchaPassed(event, {
+    settings: captchaSettings,
+    body,
+    clientIp: clientIP,
+    purpose: 'forgot_password',
+    required: needCaptcha
+  })
 
   try {
     const userResult = await db.select().from(users).where(eq(users.username, username)).limit(1)

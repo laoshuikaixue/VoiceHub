@@ -71,6 +71,21 @@ const absoluteLogo =
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-30',
+  // 注册全局错误处理器：nitro 2.x 的错误处理链是数组，直接配置 nitro.errorHandler
+  // 会把 Nuxt 错误页处理器挤出链外（HTML 错误页回归），因此通过 nitro:init 钩子
+  // 把 server/error.ts unshift 到链首，链变为：
+  //   [server/error.ts, Nuxt 错误页处理器, nitro 默认处理器]
+  hooks: {
+    'nitro:init'(nitro) {
+      const handlers = Array.isArray(nitro.options.errorHandler)
+        ? nitro.options.errorHandler
+        : nitro.options.errorHandler
+          ? [nitro.options.errorHandler]
+          : []
+      handlers.unshift(fileURLToPath(new URL('./server/error.ts', import.meta.url)).replaceAll('\\', '/'))
+      nitro.options.errorHandler = handlers
+    }
+  },
   future: {
     compatibilityVersion: 4
   },
@@ -107,17 +122,10 @@ export default defineNuxtConfig({
         'primary-light': 'var(--primary-light)',
         'primary-border': 'var(--primary-border)',
         // === 语义色 ===
-        success: 'var(--success)',
-        'success-hover': 'var(--success-hover)',
-        'success-light': 'var(--success-light)',
+        // 注意：success/warning/error 及其 hover/light 变体在下方 colorXXX 段定义，
+        // 此处仅保留未被覆盖的 border 变体，避免重复键静默覆盖。
         'success-border': 'var(--success-border)',
-        warning: 'var(--warning)',
-        'warning-hover': 'var(--warning-hover)',
-        'warning-light': 'var(--warning-light)',
         'warning-border': 'var(--warning-border)',
-        error: 'var(--error)',
-        'error-hover': 'var(--error-hover)',
-        'error-light': 'var(--error-light)',
         'error-border': 'var(--error-border)',
         // === 背景色 ===
         'bg-primary': 'var(--bg-primary)',

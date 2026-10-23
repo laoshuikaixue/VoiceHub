@@ -323,6 +323,7 @@
             @input="error = ''"
           />
           <button
+            id="send-email-code-button"
             type="button"
             class="code-btn"
             :disabled="loginTermsBlocked || sendingCode || codeCountdown > 0"
@@ -330,6 +331,19 @@
           >
             {{ codeCountdown > 0 ? locale.codeCountdown(codeCountdown) : locale.sendCode }}
           </button>
+        </div>
+        <!-- ESA 发码独立弹窗实例，绑定发码按钮，与提交按钮凭证互不复用 -->
+        <div v-if="captchaProvider === 'esa' && esaSceneId" class="esa-captcha-mount">
+          <EsaCaptchaWidget
+            :key="'code-' + esaSceneId"
+            ref="esaCodeCaptchaRef"
+            v-model="esaCodeVerifyParam"
+            :scene-id="esaSceneId"
+            :button-selector="sendCodeButtonSelector"
+            element-id="esa-captcha-element-code"
+            @verified="sendEmailCode"
+            @load-error="handleEsaCaptchaLoadError"
+          />
         </div>
       </div>
 
@@ -542,6 +556,11 @@ const esaVerifyParam = ref('')
 const esaPassToken = ref('')
 const esaCaptchaRef = ref(null)
 const esaButtonSelector = '#auth-submit-button'
+// 注册邮箱发码独立的 ESA 实例：弹窗绑发码按钮，与提交按钮的凭证互不复用
+const esaCodeVerifyParam = ref('')
+const esaCodePassToken = ref('')
+const esaCodeCaptchaRef = ref(null)
+const sendCodeButtonSelector = '#send-email-code-button'
 // 验证码统一走公共验证接口，场景按当前域名解析（不再区分登录/注册）
 // SSR 阶段无域名，仅能命中「任意域名」规则
 const esaSceneId = computed(() =>
@@ -556,6 +575,8 @@ const esaSceneId = computed(() =>
 watch(showRegisterMode, () => {
   esaVerifyParam.value = ''
   esaPassToken.value = ''
+  esaCodeVerifyParam.value = ''
+  esaCodePassToken.value = ''
 })
 
 const showCaptcha = computed(() => {
@@ -870,6 +891,27 @@ const ensureEsaPassToken = async (purpose) => {
   }
 }
 
+// 用发码按钮的独立验签参数换取 email_code 凭证；60 秒 TTL，每次发码重新换取
+const ensureEsaCodePassToken = async () => {
+  if (!showCaptcha.value || captchaProvider.value !== 'esa') return true
+  if (esaCodePassToken.value) return true
+  try {
+    const res = await $fetch('/api/captcha/verify', {
+      method: 'POST',
+      headers: { [ESA_CAPTCHA_VERIFY_HEADER]: esaCodeVerifyParam.value },
+      body: { purpose: 'email_code' }
+    })
+    if (res?.required && res?.passToken) esaCodePassToken.value = res.passToken
+    return true
+  } catch (err) {
+    if (!applyEsaCaptchaRejectError(err)) {
+      error.value = localizeServerError(err, locale.value.codeSendFailed)
+    }
+    esaCodeCaptchaRef.value?.reset?.()
+    return false
+  }
+}
+
 const handleLogin = async () => {
   if (requireLegalConsent()) return
   if (!username.value || !password.value) {
@@ -1116,7 +1158,7 @@ const handleRegisterOAuth = async () => {
   }
 }
 
-// 发送邮箱验证码：校验格式 → POST /api/auth/email-code → 60 秒倒计时
+// 发送邮箱验证码：校验格式 → 附加人机验证 → POST /api/auth/email-code → 60 秒倒计时
 const sendEmailCode = async () => {
   const emailValue = email.value.trim()
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -1125,12 +1167,32 @@ const sendEmailCode = async () => {
     return
   }
 
+  // ESA 发码弹窗：首次点击先触发验证，验证通过回调再次进入本函数
+  if (showCaptcha.value && captchaProvider.value === 'esa' && !esaCodeVerifyParam.value) return
+
   error.value = ''
   sendingCode.value = true
+
   try {
+    // 图形/Turnstile 复用注册表单当前验证码；ESA 用发码按钮的独立实例换取 email_code 凭证
+    const body = { email: emailValue }
+    const headers = {}
+    if (showCaptcha.value) {
+      if (captchaProvider.value === 'turnstile') {
+        body.turnstileToken = turnstileToken.value
+      } else if (captchaProvider.value === 'esa') {
+        if (!(await ensureEsaCodePassToken())) return
+        if (esaCodePassToken.value) headers[ESA_CAPTCHA_PASS_HEADER] = esaCodePassToken.value
+      } else {
+        body.captchaId = captchaId.value
+        body.captchaInput = captchaInput.value.trim()
+      }
+    }
+
     await $fetch('/api/auth/email-code', {
       method: 'POST',
-      body: { email: emailValue }
+      body,
+      headers
     })
     toastSuccess(locale.value.codeSent)
     codeCountdown.value = 60
@@ -1145,8 +1207,22 @@ const sendEmailCode = async () => {
   } catch (err) {
     const apiError = useServerErrors().localize(err, locale.value.codeSendFailed)
     error.value = apiError
+    if (err.data?.data?.captchaRequired) isGraphicCaptchaRequired.value = true
   } finally {
     sendingCode.value = false
+    // 发码消费或失败均需刷新验证码，最终注册提交/重发重新验证
+    if (showCaptcha.value) {
+      await nextTick()
+      if (captchaProvider.value === 'turnstile') {
+        turnstileRef.value?.reset?.()
+      } else if (captchaProvider.value === 'esa') {
+        esaCodeVerifyParam.value = ''
+        esaCodePassToken.value = ''
+        esaCodeCaptchaRef.value?.reset?.()
+      } else {
+        captchaRef.value?.refreshCaptcha?.()
+      }
+    }
   }
 }
 

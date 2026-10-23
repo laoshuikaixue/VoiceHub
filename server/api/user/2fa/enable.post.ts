@@ -3,6 +3,7 @@ const { authenticator } = otplib
 import bcrypt from 'bcryptjs'
 import { db, userIdentities, users, eq, and } from '~/drizzle/db'
 import { createApiError } from '~~/server/utils/apiError'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -53,7 +54,7 @@ export default defineEventHandler(async (event) => {
       userId: user.id,
       provider: 'totp',
       providerUserId: secret,
-      createdAt: new Date()
+      createdAt: getServerDate()
     })
   }
 
