@@ -1,5 +1,12 @@
 /* 移动端管理界面优化样式 */
 
+/* 移动端根字号按视口宽度自适应，仅作用于含 .admin-layout 的后台页面 */
+@media screen and (max-width: 1023px) {
+  html:has(.admin-layout) {
+    font-size: clamp(13px, 3.6vw, 15px);
+  }
+}
+
 /* 确保打印时不受移动端样式影响 */
 @media print {
   * {
