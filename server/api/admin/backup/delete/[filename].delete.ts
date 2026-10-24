@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
       message: '备份文件删除成功',
       filename
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('删除备份文件失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    let backupData
+    let backupData: any
     let mode = 'merge'
     let clearExisting = false
     let overwriteSuperAdmin = false
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
 
       try {
         backupData = JSON.parse(fileData)
-      } catch (error) {
+      } catch (error: any) {
         throw createError({
           statusCode: 400,
           message: '备份文件格式错误'
@@ -137,7 +137,7 @@ export default defineEventHandler(async (event) => {
       try {
         const fileContent = await fs.readFile(filepath, 'utf8')
         backupData = JSON.parse(fileContent)
-      } catch (error) {
+      } catch (error: any) {
         throw createError({
           statusCode: 404,
           message: '备份文件不存在或格式错误'
@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
     console.log(`- 创建者: ${backupData.metadata.creator}`)
     console.log(`- 总记录数: ${backupData.metadata.totalRecords}`)
 
-    const backupUsers = Array.isArray(backupData.data?.users) ? backupData.data.users : []
+    const backupUsers: any[] = Array.isArray(backupData.data?.users) ? backupData.data.users : []
     const hasSuperAdminInBackup = backupUsers.some((record) => record?.role === 'SUPER_ADMIN')
     if (overwriteSuperAdmin && user.role !== 'SUPER_ADMIN') {
       throw createError({
@@ -171,7 +171,17 @@ export default defineEventHandler(async (event) => {
       mode === 'replace' && clearExisting && overwriteSuperAdmin && hasSuperAdminInBackup
     const preservedSuperAdminIds = new Set<number>()
 
-    const restoreResults = {
+    const restoreResults: {
+      success: boolean
+      message: string
+      details: {
+        tablesProcessed: number
+        recordsRestored: number
+        errors: string[]
+        warnings: string[]
+        sequenceResets?: string[]
+      }
+    } = {
       success: true,
       message: '数据恢复完成',
       details: {
@@ -286,7 +296,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(systemSettings)
         }
         console.log('✅ 现有数据已清空')
-      } catch (error) {
+      } catch (error: any) {
         console.error('清空数据失败:', error)
         restoreResults.details.warnings.push(`清空数据失败: ${error.message}`)
       }
@@ -371,8 +381,8 @@ export default defineEventHandler(async (event) => {
                         break
                       case 'users':
                         // 动态构建用户数据，自动跳过不存在的字段
-                        const buildUserData = (includePassword = false) => {
-                          const userData = {}
+                        const buildUserData = (includePassword = false): any => {
+                          const userData: Record<string, any> = {}
                           const userFields = [
                             'username',
                             'name',
@@ -440,7 +450,7 @@ export default defineEventHandler(async (event) => {
                           return userData
                         }
 
-                        let createdUser
+                        let createdUser: any
                         if (mode === 'merge') {
                           // 在merge模式下，先检查用户名是否存在
                           const existingUser = await tx
@@ -485,7 +495,7 @@ export default defineEventHandler(async (event) => {
                                   .returning({ id: users.id })
                                 createdUser = result[0]
                               }
-                            } catch (error) {
+                            } catch (error: any) {
                               // 如果创建失败（可能是ID冲突），让数据库自动生成ID
                               console.warn(
                                 `用户 ${record.username} 使用原始ID创建失败，使用自动生成ID: ${error.message}`
@@ -509,7 +519,7 @@ export default defineEventHandler(async (event) => {
                                 .where(eq(users.id, record.id))
                                 .limit(1)
                               if (existingProtectedUser.length > 0) {
-                                userIdMapping.set(record.id, existingProtectedUser[0].id)
+                                userIdMapping.set(record.id, existingProtectedUser[0]!.id)
                                 restoreResults.details.warnings.push(
                                   `已保留超级管理员账户 ${record.username || `#${record.id}`}`
                                 )
@@ -545,7 +555,7 @@ export default defineEventHandler(async (event) => {
                               .limit(1)
 
                             if (existingUserWithUsername.length > 0) {
-                              const targetUser = existingUserWithUsername[0]
+                              const targetUser = existingUserWithUsername[0]!
                               const isProtectedTargetUser =
                                 targetUser.role === 'SUPER_ADMIN' ||
                                 preservedSuperAdminIds.has(Number(targetUser.id))
@@ -559,12 +569,12 @@ export default defineEventHandler(async (event) => {
 
                               // 用户名已存在（如保留的admin），更新该用户，并建立映射
                               console.warn(
-                                `用户 ${record.username} (ID ${record.id}) 的用户名已存在于 ID ${existingUserWithUsername[0].id}，将合并数据`
+                                `用户 ${record.username} (ID ${record.id}) 的用户名已存在于 ID ${existingUserWithUsername[0]!.id}，将合并数据`
                               )
                               const result = await tx
                                 .update(users)
                                 .set(buildUserData(true))
-                                .where(eq(users.id, existingUserWithUsername[0].id))
+                                .where(eq(users.id, existingUserWithUsername[0]!.id))
                                 .returning({ id: users.id })
                               createdUser = result[0]
                             } else {
@@ -786,7 +796,7 @@ export default defineEventHandler(async (event) => {
                               await tx
                                 .update(cardCodes)
                                 .set(cardCodeData)
-                                .where(eq(cardCodes.id, existingCardCode[0].id))
+                                .where(eq(cardCodes.id, existingCardCode[0]!.id))
                                 .returning()
                             )[0]
                           } else {
@@ -890,7 +900,7 @@ export default defineEventHandler(async (event) => {
                         }
 
                         // 动态构建歌曲数据，自动跳过不存在的字段
-                        const songData = {
+                        const songData: any = {
                           requesterId: validRequesterId, // 必需字段
                           preferredPlayTimeId: validPreferredPlayTimeId, // 已验证的字段
                           cardCodeId: validCardCodeId
@@ -938,7 +948,7 @@ export default defineEventHandler(async (event) => {
                           songData.updatedAt = new Date()
                         }
 
-                        let createdSong
+                        let createdSong: any
                         if (mode === 'merge') {
                           // 检查是否存在相同的歌曲（按标题和艺术家）
                           const existingSong = await tx
@@ -954,7 +964,7 @@ export default defineEventHandler(async (event) => {
                             const result = await tx
                               .update(songs)
                               .set(songData)
-                              .where(eq(songs.id, existingSong[0].id))
+                              .where(eq(songs.id, existingSong[0]!.id))
                               .returning({ id: songs.id })
                             createdSong = result[0]
                           } else {
@@ -985,7 +995,7 @@ export default defineEventHandler(async (event) => {
                                   .returning({ id: songs.id })
                                 createdSong = result[0]
                               }
-                            } catch (error) {
+                            } catch (error: any) {
                               // 如果创建失败（可能是ID冲突），让数据库自动生成ID
                               console.warn(
                                 `歌曲 ${record.title} 使用原始ID创建失败，使用自动生成ID: ${error.message}`
@@ -1036,7 +1046,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'playTimes':
                         // 动态构建播放时段数据，自动跳过不存在的字段
-                        const playTimeData = {}
+                        const playTimeData: any = {}
                         const playTimeFields = ['name', 'startTime', 'endTime', 'description']
 
                         playTimeFields.forEach((field) => {
@@ -1063,7 +1073,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(playTimes)
                               .set(playTimeData)
-                              .where(eq(playTimes.id, existingPlayTime[0].id))
+                              .where(eq(playTimes.id, existingPlayTime[0]!.id))
                           } else {
                             // 如果不存在，创建新播放时段（不指定ID，让数据库自动生成）
                             await tx.insert(playTimes).values(playTimeData)
@@ -1097,7 +1107,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'semesters':
                         // 动态构建学期数据，自动跳过不存在的字段
-                        const semesterData = {}
+                        const semesterData: any = {}
                         const semesterFields = ['name']
 
                         semesterFields.forEach((field) => {
@@ -1197,7 +1207,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'systemSettings':
                         // 动态构建系统设置数据，自动跳过不存在的字段
-                        let systemSettingsData = {}
+                        let systemSettingsData: any = {}
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
                           'instanceId',
@@ -1355,7 +1365,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(systemSettings)
                               .set(systemSettingsData)
-                              .where(eq(systemSettings.id, existingSystemSettings[0].id))
+                              .where(eq(systemSettings.id, existingSystemSettings[0]!.id))
                           } else {
                             // 如果不存在，创建新系统设置（不指定ID，让数据库自动生成）
                             await tx.insert(systemSettings).values(systemSettingsData)
@@ -1432,7 +1442,7 @@ export default defineEventHandler(async (event) => {
                         }
 
                         // 动态构建排期数据，自动跳过不存在的字段
-                        const scheduleData = {
+                        const scheduleData: any = {
                           songId: validSongId,
                           playDate: new Date(record.playDate),
                           playTimeId: validPlayTimeId
@@ -1461,7 +1471,7 @@ export default defineEventHandler(async (event) => {
                             .limit(1)
                           if (
                             boundReplayRequest.length > 0 &&
-                            boundReplayRequest[0].songId === validSongId
+                            boundReplayRequest[0]!.songId === validSongId
                           ) {
                             validScheduleReplayRequestId = record.replayRequestId
                           }
@@ -1486,7 +1496,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(schedules)
                               .set(scheduleData)
-                              .where(eq(schedules.id, existingSchedule[0].id))
+                              .where(eq(schedules.id, existingSchedule[0]!.id))
                           } else {
                             // 如果不存在，创建新排期（不指定ID，让数据库自动生成）
                             await tx.insert(schedules).values(scheduleData)
@@ -1538,7 +1548,7 @@ export default defineEventHandler(async (event) => {
                         }
 
                         // 动态构建通知设置数据，自动跳过不存在的字段
-                        const notificationSettingsData = { userId: validUserId }
+                        const notificationSettingsData: any = { userId: validUserId }
                         const notificationFields = [
                           'refreshInterval',
                           'songVotedThreshold',
@@ -1643,7 +1653,7 @@ export default defineEventHandler(async (event) => {
                         }
 
                         // 动态构建通知数据，自动跳过不存在的字段
-                        const notificationData = { userId: validNotificationUserId }
+                        const notificationData: any = { userId: validNotificationUserId }
                         const notificationDataFields = [
                           'batchId',
                           'source',
@@ -1676,7 +1686,7 @@ export default defineEventHandler(async (event) => {
                                 .limit(1)
                               notificationData.senderId =
                                 senderExists.length > 0 &&
-                                senderExists[0].username === record.senderUsername
+                                senderExists[0]!.username === record.senderUsername
                                   ? record.senderId
                                   : null
                             }
@@ -1721,7 +1731,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(notifications)
                               .set(notificationData)
-                              .where(eq(notifications.id, existingNotification[0].id))
+                              .where(eq(notifications.id, existingNotification[0]!.id))
                           } else {
                             // 如果不存在，创建新通知（不指定ID，让数据库自动生成）
                             await tx.insert(notifications).values(notificationData)
@@ -1805,7 +1815,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(songBlacklists)
                               .set(blacklistData)
-                              .where(eq(songBlacklists.id, existingBlacklist[0].id))
+                              .where(eq(songBlacklists.id, existingBlacklist[0]!.id))
                           } else {
                             // 如果不存在，创建新记录（不指定ID，让数据库自动生成）
                             await tx.insert(songBlacklists).values(blacklistData)
@@ -2130,7 +2140,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(votes)
                               .set(voteData)
-                              .where(eq(votes.id, existingVote[0].id))
+                              .where(eq(votes.id, existingVote[0]!.id))
                           } else {
                             // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
                             await tx.insert(votes).values(voteData)
@@ -2153,7 +2163,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(votes)
                               .set(voteData)
-                              .where(eq(votes.id, existingVote[0].id))
+                              .where(eq(votes.id, existingVote[0]!.id))
                           } else {
                             // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
                             await tx.insert(votes).values(voteData)
@@ -2168,7 +2178,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'requestTimes':
                         // requestTimes表没有外键依赖
-                        const requestTimeData = {
+                        const requestTimeData: any = {
                           name: record.name,
                           startTime: record.startTime ? new Date(record.startTime) : null,
                           endTime: record.endTime ? new Date(record.endTime) : null,
@@ -2194,7 +2204,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(requestTimes)
                               .set(requestTimeData)
-                              .where(eq(requestTimes.id, existingRequestTime[0].id))
+                              .where(eq(requestTimes.id, existingRequestTime[0]!.id))
                           } else {
                             // 如果不存在，创建新记录
                             await tx.insert(requestTimes).values(requestTimeData)
@@ -2276,7 +2286,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(emailTemplates)
                               .set(emailTemplateData)
-                              .where(eq(emailTemplates.id, existingEmailTemplate[0].id))
+                              .where(eq(emailTemplates.id, existingEmailTemplate[0]!.id))
                           } else {
                             // 如果不存在，创建新记录
                             await tx.insert(emailTemplates).values(emailTemplateData)
@@ -2365,7 +2375,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(apiKeys)
                               .set(apiKeyData)
-                              .where(eq(apiKeys.id, existingApiKey[0].id))
+                              .where(eq(apiKeys.id, existingApiKey[0]!.id))
                           } else {
                             // 如果不存在，创建新记录
                             await tx.insert(apiKeys).values(apiKeyData)
@@ -2446,7 +2456,7 @@ export default defineEventHandler(async (event) => {
                             await tx
                               .update(apiKeyPermissions)
                               .set(apiKeyPermissionData)
-                              .where(eq(apiKeyPermissions.id, existingApiKeyPermission[0].id))
+                              .where(eq(apiKeyPermissions.id, existingApiKeyPermission[0]!.id))
                           } else {
                             // 如果不存在，创建新记录
                             await tx.insert(apiKeyPermissions).values(apiKeyPermissionData)
@@ -2527,13 +2537,13 @@ export default defineEventHandler(async (event) => {
                   {
                     timeout: 15000, // 每个记录事务15秒超时
                     maxWait: 3000 // 最大等待时间3秒
-                  }
+                  } as any
                 )
 
                 // 成功处理，跳出重试循环
                 restoredCount++
                 break
-              } catch (recordError) {
+              } catch (recordError: any) {
                 lastError = recordError
                 retryCount++
 
@@ -2603,7 +2613,7 @@ export default defineEventHandler(async (event) => {
         console.log(`✅ ${tableName}: 恢复了 ${restoredCount}/${tableData.length} 条记录`)
         restoreResults.details.recordsRestored += restoredCount
         restoreResults.details.tablesProcessed++
-      } catch (tableError) {
+      } catch (tableError: any) {
         console.error(`恢复表 ${tableName} 失败:`, tableError)
         restoreResults.details.errors.push(`表 ${tableName}: ${tableError.message}`)
       }
@@ -2623,10 +2633,10 @@ export default defineEventHandler(async (event) => {
         await db
           .update(systemSettings)
           .set({ registerEmailRequired: false })
-          .where(eq(systemSettings.id, restoredSettings[0].id))
+          .where(eq(systemSettings.id, restoredSettings[0]!.id))
         console.warn('⚠️ SMTP 未配置，已剥离 registerEmailRequired，避免注册邮箱流程不可用')
       }
-    } catch (settingsError) {
+    } catch (settingsError: any) {
       console.error('恢复后设置一致性校验失败:', settingsError)
     }
 
@@ -2654,7 +2664,7 @@ export default defineEventHandler(async (event) => {
     for (const tableName of tablesToReset) {
       try {
         // 调用 fix-sequence 端点
-        const response = await $fetch('/api/admin/fix-sequence', {
+        const response = await ($fetch as any)('/api/admin/fix-sequence', {
           method: 'POST',
           body: { table: tableName },
           headers: {
@@ -2671,7 +2681,7 @@ export default defineEventHandler(async (event) => {
           sequenceResetResults.push(errorMsg)
           console.warn(`⚠️ ${errorMsg}`)
         }
-      } catch (sequenceError) {
+      } catch (sequenceError: any) {
         const errorMsg = `${tableName}: 序列重置失败 - ${sequenceError.message}`
         sequenceResetResults.push(errorMsg)
         console.warn(`⚠️ ${errorMsg}`)
@@ -2696,14 +2706,14 @@ export default defineEventHandler(async (event) => {
         restoreResults.details.warnings.push('SMTP未启用或配置不完整，SMTP实例已重置')
       }
       console.log('数据恢复后SMTP配置已重载')
-    } catch (smtpError) {
+    } catch (smtpError: any) {
       console.warn('重载SMTP配置失败:', smtpError)
       restoreResults.details.warnings = restoreResults.details.warnings || []
       restoreResults.details.warnings.push('重载SMTP配置失败')
     }
 
     return restoreResults
-  } catch (error) {
+  } catch (error: any) {
     console.error('恢复数据库备份失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
       // 如果目录不存在，尝试创建它
       try {
         await fs.mkdir(backupDir, { recursive: true })
-      } catch (mkdirError) {
+      } catch (mkdirError: any) {
         console.warn('无法创建备份目录，可能在只读文件系统中:', mkdirError.message)
         return {
           success: true,
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
               totalRecords: backupData.totalUsers || backupData.users.length
             }
           }
-        } catch (parseError) {
+        } catch (parseError: any) {
           console.warn(`无法解析备份文件 ${filename}:`, parseError.message)
         }
 
