@@ -451,6 +451,25 @@ export const common = {
     login: 'Log In',
     related: 'Related documents',
     backHome: 'Back to home'
+  },
+  datePicker: {
+    placeholder: 'Select date',
+    today: 'Today',
+    clear: 'Clear',
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
+    prevYear: 'Previous year',
+    nextYear: 'Next year',
+    weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+    monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    yearSuffix: ''
+  },
+  timePicker: {
+    placeholder: 'Select time',
+    now: 'Now',
+    clear: 'Clear',
+    hour: 'h',
+    minute: 'm'
   }
 } as const
 
@@ -1841,6 +1860,23 @@ export const pages = {
       qqLoginExpired: 'QQ Music session expired, please sign in again',
       preferredPlayTime: 'Preferred Time Slot',
       choosePlayTime: 'Choose time slot',
+      preferredPlayDate: 'Preferred Broadcast Date',
+      playDateHint: 'After picking a date, available time slots load automatically based on that weekday',
+      selectDateFirst: 'Select a broadcast date first',
+      playSlotsForDate: (weekday: string) => `Time slots available on ${weekday}`,
+      noSlotsForDate: 'No time slot is available on this date. Please pick another date.',
+      playSlotRequiredError: 'Please select a time slot',
+      playSlotDateFirstError: 'Please select a broadcast date before choosing a time slot',
+      playSlotTimeRequiredError: 'Please select a time slot',
+      playSlotNotOpenOnDate: 'The selected time slot is not available on this date. Please pick another date or slot.',
+      playSlotModalTitle: 'Choose time slot',
+      playSlotModalSubtitle: 'Time slot is required; broadcast date is optional — leave it blank to auto-assign the nearest available date',
+      playSlotDateOptionalHint: 'Without a date, the request is assigned to the nearest date where this slot is open',
+      playSlotDateSelectedHint: 'Date selected — only slots open on that date are listed below',
+      playSlotTimeFreeHint: 'Any enabled time slot can be chosen',
+      playSlotTimeRestrictedHint: 'Only slots open on the selected date are listed',
+      playSlotAutoAssignHint: 'No broadcast date specified — the request will be assigned to the nearest date where this slot is open',
+      weekdaysFull: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
       submissionNote: 'Submission Note',
       cardCode: 'Request Card',
       required: 'Required',
@@ -1922,6 +1958,7 @@ export const pages = {
       publicToUsers: 'Remark visible to signed-in users',
       anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
+      submissionNotePlaceholder: 'Anything to add? (optional, up to 300 chars)',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',
       album: 'Album: ',
@@ -2433,6 +2470,8 @@ export const admin = {
       reject: 'Reject Song',
       deleteSong: 'Delete Song',
       batchReject: 'Reject',
+      batchMarkPlayed: 'Mark as Played',
+      batchMarkUnplayed: 'Mark as Unplayed',
       addToPool: 'Add to Pool',
       removeFromPool: 'Remove from Pool'
     },
@@ -2441,6 +2480,7 @@ export const admin = {
       selectSemester: 'Select Semester',
       playTime: 'Play Time',
       selectPlayTime: 'Select Time',
+      playDate: 'Broadcast Date',
       status: 'Status',
       selectStatus: 'Select Status',
       pool: 'Pool',
@@ -2732,6 +2772,11 @@ export const admin = {
         missing > 0
           ? `Batch reject completed: ${rejected} succeeded, ${missing} not found`
           : `Batch rejected ${rejected} songs, requesters notified`,
+      batchMarkPlayedSuccess: (count: number) => `Marked ${count} songs as played`,
+      batchMarkUnplayedSuccess: (count: number) =>
+        `Removed played status from ${count} songs`,
+      batchMarkPlayedNoop: 'All selected songs are already marked as played',
+      batchMarkUnplayedNoop: 'None of the selected songs are marked as played',
       rejectSuccess: 'Song rejected and requester notified',
       validatingUrl: 'Validating URL, please wait...',
       validatingCoverUrl: 'Validating cover URL, please wait...',
@@ -3117,6 +3162,7 @@ export const admin = {
     emptySongs: 'No song records',
     pendingSongItemName: 'pending songs',
     preferredPlayTime: (name: string) => `Preferred: ${name}`,
+    preferredPlayDate: (date: string) => `Preferred date: ${date}`,
     tabs: {
       normal: 'Normal',
       replay: 'Replay Requests',
@@ -3246,7 +3292,13 @@ export const admin = {
       candidateDurationsProgressTotal: '{0} song(s)',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: 'No matching song combination found',
-      autoScheduleNoMorePlans: 'No more unique plans available'
+      autoScheduleNoMorePlans: 'No more unique plans available',
+      playTimeConstraintViolation: (title: string, playTimeName: string) =>
+        `"${title}" specifies play time slot "${playTimeName}" and can only be scheduled in that slot`,
+      excludedByPlayTime: (count: number) =>
+        `${count} song(s) specify a different play time slot and were excluded as a hard constraint`,
+      excludedByDate: (count: number) =>
+        `${count} song(s) have a preferred date other than today and were excluded`
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',
@@ -3440,6 +3492,12 @@ export const admin = {
     githubClientSecretPlaceholder: 'Enter GitHub Client Secret',
     googleClientIdPlaceholder: 'Enter Google Client ID (xxx.apps.googleusercontent.com)',
     googleClientSecretPlaceholder: 'Enter Google Client Secret',
+    qqTitle: 'QQ Connect',
+    qqAppId: 'App ID',
+    qqAppKey: 'App Key',
+    qqAppIdPlaceholder: 'Enter the App ID of your QQ Connect application',
+    qqAppKeyPlaceholder: 'Enter the App Key of your QQ Connect application',
+    qqDocLabel: 'View QQ Connect Docs',
     aggregateTitle: 'Aggregate OAuth',
     aggregateLoginTypeLabel: 'Login Methods',
     aggregateLoginTypePlaceholder: 'Select at least one login method',
@@ -3558,6 +3616,12 @@ export const admin = {
     title: 'Play Time Management',
     desc: 'Define regular broadcast windows. Users can request songs or view schedules within these periods.',
     enableSelection: 'Enable Time Selection',
+    requireSlot: 'Require Date & Slot',
+    requireSlotDesc: 'When enabled, users must pick a broadcast date and time slot to submit a request; when off, the slot is optional',
+    weekdaysTitle: 'Available Weekdays',
+    weekdaysHint: 'No selection means available every day. After a user picks a date, only slots checked for that weekday are shown.',
+    weekdaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    weekdaysFull: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     add: 'Add Play Time',
     aboutTitle: 'About Time Limits',
     aboutDesc:
@@ -3593,6 +3657,7 @@ export const admin = {
       'This cannot be undone. Related song request and schedule play-time settings may be affected or cleared.',
     messages: {
       systemSettingsUpdated: 'System settings updated',
+      slotRequiredUpdated: 'Required setting updated',
       playTimeEnabled: 'Play time enabled',
       playTimeDisabled: 'Play time disabled',
       playTimeDeleted: 'Play time deleted',
@@ -3603,6 +3668,7 @@ export const admin = {
       adminOnly: 'Only admins can manage play times',
       fetchPlayTimesFailed: 'Failed to fetch play times',
       updateSystemSettingsFailed: 'Failed to update system settings',
+      updateSlotRequiredFailed: 'Failed to update required setting',
       updatePlayTimeStatusFailed: 'Failed to update play time status',
       deletePlayTimeFailed: 'Failed to delete play time',
       startBeforeEnd: 'Start time must be earlier than end time',
@@ -4952,8 +5018,10 @@ export const admin = {
       meowBinding: 'MeoW Account Binding',
       emailBinding: 'Email Binding',
       oauthBinding: 'OAuth Account Binding',
+      loading: 'Loading...',
       bound: (value: string) => `Bound: ${value}`,
       unbound: 'Unbound',
+      revoke: 'Revoke',
       oauthBindingsTitle: 'OAuth Binding Details',
       oauthBindingsDesc: 'View third-party accounts bound to this user',
       oauthBindingsEmpty: 'No bound accounts',
@@ -5349,6 +5417,10 @@ export const serverErrors = {
     'You can only request a replay for songs from the current semester',
   SONG_INVITATION_FAILED: 'Failed to process the invitation',
   SONG_SCHEDULED_CANNOT_WITHDRAW: 'Scheduled songs cannot be withdrawn',
+  SONG_SCHEDULE_PREFERRED_TIME_MISMATCH:
+    'A song with a specified play time slot can only be scheduled in that slot',
+  SONG_SCHEDULE_PREFERRED_DATE_MISMATCH:
+    "The song's preferred play date does not match the target date",
   SONG_PLAYED_CANNOT_WITHDRAW: 'Played songs cannot be withdrawn',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: 'There is no active semester, so a replay cannot be requested',
   SONG_RESTRICTION_SAME_SONG:

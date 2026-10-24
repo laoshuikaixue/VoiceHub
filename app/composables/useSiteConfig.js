@@ -62,6 +62,7 @@ const siteConfig = ref({
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
+  qqOAuthEnabled: false,
   aggregateOAuthEnabled: false,
   aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
@@ -158,6 +159,7 @@ export const useSiteConfig = () => {
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
+        qqOAuthEnabled: false,
         aggregateOAuthEnabled: false,
         aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
@@ -249,6 +251,7 @@ export const useSiteConfig = () => {
     github: !!siteConfig.value.githubOAuthEnabled,
     casdoor: !!siteConfig.value.casdoorOAuthEnabled,
     google: !!siteConfig.value.googleOAuthEnabled,
+    qq: !!siteConfig.value.qqOAuthEnabled,
     aggregate: !!siteConfig.value.aggregateOAuthEnabled,
     oauth2: !!siteConfig.value.customOAuthEnabled
   }))
@@ -263,6 +266,9 @@ export const useSiteConfig = () => {
     }
     if (siteConfig.value.googleOAuthEnabled) {
       providers.push({ key: 'google', name: 'Google' })
+    }
+    if (siteConfig.value.qqOAuthEnabled) {
+      providers.push({ key: 'qq', name: 'QQ' })
     }
     if (siteConfig.value.aggregateOAuthEnabled) {
       const enabledLoginTypes = getAggregateOAuthLoginTypesOrDefault(

@@ -438,6 +438,25 @@ export const common = {
     login: '登录',
     related: '相关文档',
     backHome: '返回首页'
+  },
+  datePicker: {
+    placeholder: '选择日期',
+    today: '今天',
+    clear: '清除',
+    prevMonth: '上一月',
+    nextMonth: '下一月',
+    prevYear: '上一年',
+    nextYear: '下一年',
+    weekdays: ['日', '一', '二', '三', '四', '五', '六'],
+    monthNames: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+    yearSuffix: '年'
+  },
+  timePicker: {
+    placeholder: '选择时间',
+    now: '现在',
+    clear: '清除',
+    hour: '时',
+    minute: '分'
   }
 } as const
 
@@ -1794,6 +1813,23 @@ export const pages = {
       qqLoginExpired: 'QQ 音乐登录已失效，请重新登录',
       preferredPlayTime: '期望播出时段',
       choosePlayTime: '选择时段',
+      preferredPlayDate: '期望播出日期',
+      playDateHint: '选择日期后，将按该日期所在星期自动加载可选的播出时段',
+      selectDateFirst: '请先选择播出日期',
+      playSlotsForDate: (weekday: string) => `${weekday}可选的播出时段`,
+      noSlotsForDate: '该日期暂无可用播出时段，请选择其他日期',
+      playSlotRequiredError: '请选择期望播出时段',
+      playSlotDateFirstError: '请先选择播出日期，再选择播出时段',
+      playSlotTimeRequiredError: '请选择期望播出时段',
+      playSlotNotOpenOnDate: '所选播出时段在该日期不开放，请重新选择日期或时段',
+      playSlotModalTitle: '选择播出时段',
+      playSlotModalSubtitle: '时段必选；播出日期可选，留空将自动分配到最近的可用日期',
+      playSlotDateOptionalHint: '不指定日期时，系统会分配到最近一个该时段开放的日期',
+      playSlotDateSelectedHint: '已指定日期，下方仅显示该日期开放的播出时段',
+      playSlotTimeFreeHint: '可选择任一启用的播出时段',
+      playSlotTimeRestrictedHint: '仅显示该日期开放的播出时段',
+      playSlotAutoAssignHint: '未指定播出日期，将自动分配到最近一个该时段开放的日期',
+      weekdaysFull: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
       submissionNote: '投稿备注留言',
       cardCode: '点歌券',
       required: '必填',
@@ -1867,6 +1903,7 @@ export const pages = {
       publicToUsers: '备注留言公开给已登录用户',
       anonymousSubmission: '匿名投稿',
       submissionNoteApprovalHint: '公开留言需管理员审核通过后展示',
+      submissionNotePlaceholder: '想说点什么？（选填，最多 300 字）',
       coverAlt: '封面',
       albumDetailsTitle: '点击查看专辑详情',
       album: '专辑：',
@@ -2372,6 +2409,8 @@ export const admin = {
       reject: '驳回歌曲',
       deleteSong: '删除歌曲',
       batchReject: '驳回',
+      batchMarkPlayed: '标记已播放',
+      batchMarkUnplayed: '标记未播放',
       addToPool: '加入备选池',
       removeFromPool: '移出备选池'
     },
@@ -2380,6 +2419,7 @@ export const admin = {
       selectSemester: '选择学期',
       playTime: '播出时段',
       selectPlayTime: '选择时段',
+      playDate: '播出日期',
       status: '状态',
       selectStatus: '选择状态',
       pool: '备选池',
@@ -2663,6 +2703,10 @@ export const admin = {
         missing > 0
           ? `批量驳回完成，成功 ${rejected} 首，${missing} 首未找到`
           : `批量驳回成功，共 ${rejected} 首，已通知投稿人`,
+      batchMarkPlayedSuccess: (count: number) => `已将 ${count} 首歌曲标记为已播放`,
+      batchMarkUnplayedSuccess: (count: number) => `已将 ${count} 首歌曲撤回已播放状态`,
+      batchMarkPlayedNoop: '所选歌曲均已是已播放状态',
+      batchMarkUnplayedNoop: '所选歌曲均已是未播放状态',
       rejectSuccess: '歌曲驳回成功，已通知投稿人',
       validatingUrl: '正在验证URL，请稍候...',
       validatingCoverUrl: '正在验证封面URL，请稍候...',
@@ -3039,6 +3083,7 @@ export const admin = {
     emptySongs: '暂无歌曲记录',
     pendingSongItemName: '首待排歌曲',
     preferredPlayTime: (name: string) => `期望: ${name}`,
+    preferredPlayDate: (date: string) => `期望日期: ${date}`,
     tabs: {
       normal: '普通投稿',
       replay: '重播申请',
@@ -3161,7 +3206,13 @@ export const admin = {
       candidateDurationsProgressTotal: '{0} 首歌',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: '未能找到满足条件的歌曲组合',
-      autoScheduleNoMorePlans: '已无更多不同方案'
+      autoScheduleNoMorePlans: '已无更多不同方案',
+      playTimeConstraintViolation: (title: string, playTimeName: string) =>
+        `《${title}》指定了播出时段「${playTimeName}」，只能排到该时段`,
+      excludedByPlayTime: (count: number) =>
+        `${count} 首歌曲指定了其它播出时段，已按硬约束排除在本次自动排期之外`,
+      excludedByDate: (count: number) =>
+        `${count} 首歌曲的期望日期不是当天，已排除在本次自动排期之外`
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
@@ -3348,6 +3399,12 @@ export const admin = {
     githubClientSecretPlaceholder: '输入 GitHub Client Secret',
     googleClientIdPlaceholder: '输入 Google Client ID（xxx.apps.googleusercontent.com）',
     googleClientSecretPlaceholder: '输入 Google Client Secret',
+    qqTitle: 'QQ 互联',
+    qqAppId: 'App ID',
+    qqAppKey: 'App Key',
+    qqAppIdPlaceholder: '输入 QQ 互联应用的 App ID',
+    qqAppKeyPlaceholder: '输入 QQ 互联应用的 App Key',
+    qqDocLabel: '查看 QQ 互联文档',
     aggregateTitle: '聚合登录',
     aggregateLoginTypeLabel: '登录方式',
     aggregateLoginTypePlaceholder: '请选择至少一种登录方式',
@@ -3462,6 +3519,12 @@ export const admin = {
     title: '播出时段管理',
     desc: '定义校园广播的常规播放窗口，用户仅可在这些时间段内进行点歌或查看排期',
     enableSelection: '启用播出时段选择',
+    requireSlot: '点歌时段必选',
+    requireSlotDesc: '开启后，用户提交点歌时必须选择播出日期与播出时段；关闭则时段可留空',
+    weekdaysTitle: '适用星期',
+    weekdaysHint: '不勾选表示每天均可选；用户选择日期后，仅展示该日期所在星期勾选的时段',
+    weekdaysShort: ['日', '一', '二', '三', '四', '五', '六'],
+    weekdaysFull: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
     add: '添加播出时段',
     aboutTitle: '关于时段限制',
     aboutDesc:
@@ -3496,6 +3559,7 @@ export const admin = {
     deleteConfirmDesc: '此操作不可恢复，相关的歌曲点播和排期的时段设置将受影响或被清除。',
     messages: {
       systemSettingsUpdated: '系统设置已更新',
+      slotRequiredUpdated: '必选设置已更新',
       playTimeEnabled: '播出时段已启用',
       playTimeDisabled: '播出时段已禁用',
       playTimeDeleted: '播出时段已删除',
@@ -3506,6 +3570,7 @@ export const admin = {
       adminOnly: '只有管理员才能管理播出时段',
       fetchPlayTimesFailed: '获取播出时段失败',
       updateSystemSettingsFailed: '更新系统设置失败',
+      updateSlotRequiredFailed: '更新必选设置失败',
       updatePlayTimeStatusFailed: '更新播出时段状态失败',
       deletePlayTimeFailed: '删除播出时段失败',
       startBeforeEnd: '开始时间必须早于结束时间',
@@ -4799,8 +4864,10 @@ export const admin = {
       meowBinding: 'MeoW 账号绑定',
       emailBinding: '邮箱绑定',
       oauthBinding: 'OAuth 账号绑定',
+      loading: '加载中...',
       bound: (value: string) => `已绑定: ${value}`,
       unbound: '未绑定',
+      revoke: '撤销',
       oauthBindingsTitle: 'OAuth 绑定详情',
       oauthBindingsDesc: '查看该用户绑定的第三方账号信息',
       oauthBindingsEmpty: '暂无绑定信息',
@@ -5159,6 +5226,8 @@ export const serverErrors = {
   SONG_REPLAY_CURRENT_SEMESTER_ONLY: '只能申请重播当前学期的歌曲',
   SONG_INVITATION_FAILED: '处理邀请失败',
   SONG_SCHEDULED_CANNOT_WITHDRAW: '已排期的歌曲不能撤回',
+  SONG_SCHEDULE_PREFERRED_TIME_MISMATCH: '指定了播出时段的歌曲只能排到该时段',
+  SONG_SCHEDULE_PREFERRED_DATE_MISMATCH: '该歌曲的期望播出日期与目标日期不一致',
   SONG_PLAYED_CANNOT_WITHDRAW: '已播放的歌曲不能撤回',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: '当前没有活跃学期，无法申请重播',
   SONG_RESTRICTION_SAME_SONG: '《{1}》排期后 {0} 小时内不能重复投稿',

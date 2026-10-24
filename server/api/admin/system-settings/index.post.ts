@@ -257,6 +257,16 @@ export default defineEventHandler(async (event) => {
       updateData.enablePlayTimeSelection = body.enablePlayTimeSelection
     }
 
+    if (body.playSlotRequired !== undefined) {
+      if (typeof body.playSlotRequired !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'playSlotRequired 必须是布尔值'
+        })
+      }
+      updateData.playSlotRequired = body.playSlotRequired
+    }
+
     if (body.siteTitle !== undefined) {
       updateData.siteTitle = body.siteTitle
     }
@@ -1062,6 +1072,10 @@ export default defineEventHandler(async (event) => {
       body.googleOAuthEnabled !== undefined
         ? body.googleOAuthEnabled
         : (settings?.googleOAuthEnabled ?? false)
+    const nextQqOAuthEnabled =
+      body.qqOAuthEnabled !== undefined
+        ? body.qqOAuthEnabled
+        : (settings?.qqOAuthEnabled ?? false)
     const nextAggregateOAuthEnabled =
       body.aggregateOAuthEnabled !== undefined
         ? body.aggregateOAuthEnabled
@@ -1075,6 +1089,7 @@ export default defineEventHandler(async (event) => {
       nextGithubOAuthEnabled ||
       nextCasdoorOAuthEnabled ||
       nextGoogleOAuthEnabled ||
+      nextQqOAuthEnabled ||
       nextAggregateOAuthEnabled ||
       nextCustomOAuthEnabled
     ) {
@@ -1178,6 +1193,37 @@ export default defineEventHandler(async (event) => {
 
     if (body.googleClientSecret !== undefined && body.googleClientSecret !== SECRET_FIELD_MASK) {
       updateData.googleClientSecret = body.googleClientSecret
+    }
+
+    // QQ 互联 OAuth（直连 QQ 互联开放平台）
+    if (body.qqOAuthEnabled !== undefined) {
+      if (typeof body.qqOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'qqOAuthEnabled 必须是布尔值'
+        })
+      }
+      if (body.qqOAuthEnabled && !body.qqOAuthAppId && !settings?.qqOAuthAppId) {
+        throw createError({ statusCode: 400, message: '启用 QQ 登录时必须提供 App ID' })
+      }
+      if (body.qqOAuthEnabled && !body.qqOAuthAppKey && !settings?.qqOAuthAppKey) {
+        throw createError({ statusCode: 400, message: '启用 QQ 登录时必须提供 App Key' })
+      }
+      updateData.qqOAuthEnabled = body.qqOAuthEnabled
+    }
+
+    if (body.qqOAuthAppId !== undefined) {
+      if (body.qqOAuthAppId !== null && typeof body.qqOAuthAppId !== 'string') {
+        throw createError({ statusCode: 400, message: 'qqOAuthAppId 必须是字符串' })
+      }
+      updateData.qqOAuthAppId = typeof body.qqOAuthAppId === 'string' ? body.qqOAuthAppId.trim() : body.qqOAuthAppId
+    }
+
+    if (body.qqOAuthAppKey !== undefined && body.qqOAuthAppKey !== SECRET_FIELD_MASK) {
+      if (body.qqOAuthAppKey !== null && typeof body.qqOAuthAppKey !== 'string') {
+        throw createError({ statusCode: 400, message: 'qqOAuthAppKey 必须是字符串' })
+      }
+      updateData.qqOAuthAppKey = typeof body.qqOAuthAppKey === 'string' ? body.qqOAuthAppKey.trim() : body.qqOAuthAppKey
     }
 
     // 聚合登陆

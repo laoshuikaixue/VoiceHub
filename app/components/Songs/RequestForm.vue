@@ -411,28 +411,14 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段、备注和点歌券 -->
-            <div v-if="playTimeSelectionEnabled" class="form-row mb-4">
-              <!-- 播出时段选择 -->
-              <div class="form-group">
-                <div class="input-wrapper">
-                  <CustomSelect
-                    v-model="preferredPlayTimeId"
-                    :options="formattedPlayTimes"
-                    :label="locale.preferredPlayTime"
-                    label-key="displayName"
-                    value-key="id"
-                    :placeholder="locale.choosePlayTime"
-                  />
-                </div>
-              </div>
-            </div>
-
             <div
-              v-if="enableSubmissionRemarks || cardCodeEnabled"
+              v-if="(enableSubmissionRemarks && !noteInSlotModal) || cardCodeEnabled"
               class="form-row submission-meta-row"
             >
-              <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
+              <div
+                v-if="enableSubmissionRemarks && !noteInSlotModal"
+                class="form-group submission-note-group"
+              >
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <label
@@ -547,7 +533,10 @@
                 v-if="cardCodeEnabled"
                 :class="[
                   'form-group card-code-form-group',
-                  { 'mobile-hidden-card-code-group': enableSubmissionRemarks }
+                  {
+                    'mobile-hidden-card-code-group':
+                      enableSubmissionRemarks && !noteInSlotModal
+                  }
                 ]"
               >
                 <div class="desktop-card-code-panel">
@@ -606,7 +595,7 @@
                 </div>
 
                 <button
-                  v-if="!enableSubmissionRemarks"
+                  v-if="!enableSubmissionRemarks || noteInSlotModal"
                   :class="[
                     'mobile-card-code-button',
                     trimmedCardCode
@@ -1518,6 +1507,28 @@
       type="file"
       @change="handleImportDataQQ"
     >
+
+    <!-- 播出时段选择弹窗：选歌后弹出，时段必选、日期可选；留言功能开启时一并集成留言输入 -->
+    <SongsPlaySlotPickerModal
+      v-model:show="showPlaySlotModal"
+      v-model:note="submissionNote"
+      v-model:note-public="submissionNotePublic"
+      v-model:note-anonymous="submissionAnonymous"
+      :play-times="enabledPlayTimes"
+      :required="playSlotRequired"
+      :initial-date="preferredPlayDate"
+      :initial-time-id="preferredPlayTimeId"
+      :today="todayPlayDate"
+      :weekday-names="locale.weekdaysFull || []"
+      :text="playSlotModalText"
+      :format-label="formatPlayTimeOptionLabel"
+      :show-note="noteInSlotModal"
+      :show-note-anonymous="allowAnonymousSubmission && !!user"
+      :note-approval-required="submissionNoteRequiresApproval"
+      :note-text="playSlotNoteText"
+      @confirm="handlePlaySlotConfirm"
+      @cancel="handlePlaySlotCancel"
+    />
   </div>
 </template>
 
@@ -1535,7 +1546,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
-import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import PlaySlotPickerModal from '~/components/Songs/PlaySlotPickerModal.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, getCoverThumbUrl, validateUrl } from '~/utils/url'
@@ -1697,6 +1708,15 @@ const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
+// 播出日期 + 时段选择：选歌后由弹窗收集，时段必选、日期可选
+const preferredPlayDate = ref('')
+// 后台「时段必选」总开关：开启后投稿必须选择播出时段（日期可留空自动分配）
+const playSlotRequired = ref(false)
+const playSlotError = ref('')
+// 时段选择弹窗
+const showPlaySlotModal = ref(false)
+// 弹窗确认后待真正提交的歌曲与上下文
+const pendingPlaySlotSubmit = ref(null)
 
 const cardCodeEnabled = computed(
   () => enableCardCodeRequests.value || requireCardCodeForRequests.value
@@ -2338,6 +2358,7 @@ const fetchPlayTimes = async () => {
       const data = await response.json()
       playTimes.value = data.playTimes || []
       playTimeSelectionEnabled.value = data.enabled || false
+      playSlotRequired.value = data.required || false
     }
   } catch (err) {
     console.error('获取播出时段失败:', err)
@@ -2748,12 +2769,24 @@ const enabledPlayTimes = computed(() => {
   return playTimes.value.filter((pt) => pt.enabled)
 })
 
-const formattedPlayTimes = computed(() => {
-  const options = enabledPlayTimes.value.map((pt) => ({
-    ...pt,
-    displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
-  }))
-  return [{ id: '', displayName: locale.value.choosePlayTime }, ...options]
+// 日期字符串（YYYY-MM-DD）→ 星期（0=周日…6=周六）；按北京时间解析，避免时区偏移导致星期错位
+const getWeekdayFromDateString = (dateString) => {
+  const date = new Date(`${dateString}T00:00:00+08:00`)
+  return Number.isNaN(date.getTime()) ? null : date.getDay()
+}
+
+// 今天（北京时间）的日期串，作为日期选择器的可选下限
+const todayPlayDate = computed(() => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date())
+  } catch {
+    return new Date().toISOString().slice(0, 10)
+  }
 })
 
 // 格式化播出时段时间范围
@@ -2769,6 +2802,127 @@ const formatPlayTimeRange = (playTime) => {
   }
 
   return locale.value.choosePlayTime
+}
+
+// 播出时段下拉选项文案：名称 + 时间范围
+const formatPlayTimeOptionLabel = (playTime) => {
+  const range = formatPlayTimeRange(playTime)
+  if (!playTime?.name) return range
+  if (!range || range === locale.value.choosePlayTime) return playTime.name
+  return `${playTime.name} (${range})`
+}
+
+// 播出日期 + 时段表单校验：
+// - 后台开启「时段选择」时，播出时段必须选择；播出日期可选（不填则由服务端自动分配到最近一个开放该时段的日期）
+// - 指定日期时，该日期所在星期必须开放所选时段（日期优先级高于时段）
+const validatePlaySlotSelection = () => {
+  if (!playTimeSelectionEnabled.value) return true
+
+  if (playTimeSelectionEnabled.value && !preferredPlayTimeId.value) {
+    playSlotError.value = locale.value.playSlotTimeRequiredError || '请选择期望播出时段'
+    error.value = playSlotError.value
+    if (window.$showNotification) {
+      window.$showNotification(playSlotError.value, 'error')
+    }
+    return false
+  }
+
+  // 指定日期时校验时段在该日期星期是否开放（与弹窗内的即时过滤保持一致）
+  if (preferredPlayDate.value && preferredPlayTimeId.value) {
+    const slot = enabledPlayTimes.value.find(
+      (pt) => String(pt.id) === String(preferredPlayTimeId.value)
+    )
+    if (slot) {
+      const weekday = getWeekdayFromDateString(preferredPlayDate.value)
+      if (weekday !== null) {
+        const days = Array.isArray(slot.weekdays) && slot.weekdays.length > 0 ? slot.weekdays : null
+        const applies = days === null || days.includes(weekday)
+        if (!applies) {
+          playSlotError.value =
+            locale.value.playSlotNotOpenOnDate || '所选播出时段在该日期不开放，请重新选择'
+          error.value = playSlotError.value
+          if (window.$showNotification) {
+            window.$showNotification(playSlotError.value, 'error')
+          }
+          return false
+        }
+      }
+    }
+  }
+
+  playSlotError.value = ''
+  return true
+}
+
+// 播出时段选择弹窗的界面文案
+const playSlotModalText = computed(() => ({
+  title: locale.value.playSlotModalTitle || '选择播出时段',
+  subtitle:
+    locale.value.playSlotModalSubtitle || '时段必选；播出日期可选，留空将自动分配到最近的可用日期',
+  dateLabel: locale.value.preferredPlayDate || '期望播出日期',
+  timeLabel: locale.value.preferredPlayTime || '期望播出时段',
+  optional: locale.value.optional || '可选',
+  required: locale.value.required || '必选',
+  timePlaceholder: locale.value.choosePlayTime || '请选择播出时段',
+  dateOptionalHint:
+    locale.value.playSlotDateOptionalHint || '不指定日期时，系统会分配到最近一个该时段开放的日期',
+  dateSelectedHint:
+    locale.value.playSlotDateSelectedHint || '已指定日期，下方仅显示该日期开放的播出时段',
+  timeFreeHint: locale.value.playSlotTimeFreeHint || '可选择任一启用的播出时段',
+  timeRestrictedHint: locale.value.playSlotTimeRestrictedHint || '仅显示该日期开放的播出时段',
+  autoAssignHint:
+    locale.value.playSlotAutoAssignHint || '未指定播出日期，将自动分配到最近一个该时段开放的日期',
+  noSlotsForDate: locale.value.noSlotsForDate || '该日期没有开放的播出时段，请更换日期',
+  timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
+  cancel: locale.value.cancel || '取消',
+  confirm: locale.value.confirmSubmit || '确认提交'
+}))
+
+/**
+ * 留言输入框是否集成进时段弹窗：
+ * 时段选择开启 + 留言功能开启 → 集成（弹窗内填写，表单内不再重复出现）
+ * 任一未开启 → 不集成，表单内沿用原有独立输入框样式
+ */
+const noteInSlotModal = computed(
+  () => playTimeSelectionEnabled.value && enableSubmissionRemarks.value
+)
+
+/** 时段弹窗内投稿留言区的文案 */
+const playSlotNoteText = computed(() => ({
+  label: locale.value.submissionNote || '投稿留言',
+  publicToUsers: locale.value.publicToUsers || '备注留言公开给已登录用户',
+  anonymous: locale.value.anonymousSubmission || '匿名投稿',
+  approvalHint: locale.value.submissionNoteApprovalHint || '公开留言需管理员审核通过后展示',
+  placeholder: locale.value.submissionNotePlaceholder || '想说点什么？（选填，最多 300 字）'
+}))
+
+/**
+ * 时段选择弹窗确认回调：写入选中的日期与时段，然后继续之前中断的投稿。
+ * 日期留空时保持为空，由服务端自动分配到最近一个开放该时段的日期。
+ */
+const handlePlaySlotConfirm = async ({ date, timeId }) => {
+  preferredPlayDate.value = date || ''
+  preferredPlayTimeId.value = timeId ? String(timeId) : ''
+  playSlotError.value = ''
+
+  const pending = pendingPlaySlotSubmit.value
+  pendingPlaySlotSubmit.value = null
+  if (!pending) return
+
+  if (pending.manual) {
+    await handleSubmit(true)
+    return
+  }
+
+  await submitSong(pending.result, { ...(pending.options || {}), fromSlotModal: true })
+}
+
+/** 取消时段选择：放弃本次投稿 */
+const handlePlaySlotCancel = () => {
+  pendingPlaySlotSubmit.value = null
+  preferredPlayTimeId.value = ''
+  preferredPlayDate.value = ''
+  playSlotError.value = ''
 }
 
 // 监听用户状态变化，当用户登录后重新获取投稿状态
@@ -3630,6 +3784,19 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
+  // 播出时段选择：功能开启时，每次点歌投稿都先弹窗收集（时段必选、日期可选），确认后再真正提交
+  // 重播申请走 requestReplay，仅沿用已选时段，不重复弹窗；fromSlotModal 标记确认后的回调用，避免循环再弹
+  if (playTimeSelectionEnabled.value && options.replayRequest !== true && !options.fromSlotModal) {
+    pendingPlaySlotSubmit.value = { result, options }
+    showPlaySlotModal.value = true
+    return
+  }
+
+  // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
+  if (!validatePlaySlotSelection()) {
+    return
+  }
+
   submitting.value = true
   error.value = ''
 
@@ -3763,6 +3930,7 @@ const submitSong = async (result, options = {}) => {
       title: title.value,
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      preferredPlayDate: preferredPlayDate.value || null,
       cover: selectedCover.value,
       musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
@@ -3797,9 +3965,21 @@ const submitSong = async (result, options = {}) => {
   }
 }
 
-// 直接提交表单
-const handleSubmit = async () => {
+// 直接提交表单（手动投稿）
+const handleSubmit = async (fromSlotModal = false) => {
   if (submitting.value) return
+
+  // 播出时段选择：功能开启时，每次投稿都先弹窗收集，确认后再继续提交；fromSlotModal 为确认后回调用，避免循环再弹
+  if (playTimeSelectionEnabled.value && !fromSlotModal) {
+    pendingPlaySlotSubmit.value = { manual: true }
+    showPlaySlotModal.value = true
+    return
+  }
+
+  // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
+  if (!validatePlaySlotSelection()) {
+    return
+  }
 
   if (!(await ensureCardCodeForSubmit())) {
     return
@@ -3824,6 +4004,7 @@ const handleSubmit = async () => {
       title: title.value,
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      preferredPlayDate: preferredPlayDate.value || null,
       cover: selectedCover.value,
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
@@ -4160,6 +4341,11 @@ const handleManualSubmit = async () => {
     return
   }
 
+  // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
+  if (!validatePlaySlotSelection()) {
+    return
+  }
+
   if (!(await ensureCardCodeForSubmit())) {
     return
   }
@@ -4215,6 +4401,7 @@ const handleManualSubmit = async () => {
       title: title.value,
       artist: manualArtist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+      preferredPlayDate: preferredPlayDate.value || null,
       cover: manualCover.value?.trim() || '',
       playUrl: trimmedPlayUrl,
       musicPlatform: hasManualPlayUrl ? null : platform.value,
@@ -4249,6 +4436,8 @@ const resetForm = () => {
   title.value = ''
   artist.value = ''
   preferredPlayTimeId.value = ''
+  preferredPlayDate.value = ''
+  playSlotError.value = ''
   searchResults.value = []
   restrictionCheckMap.value = new Map()
   selectedCover.value = ''

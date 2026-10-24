@@ -386,6 +386,20 @@
       "when": 1792242270895,
       "tag": "20261017130430_add_submission_anonymous",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792728594394,
+      "tag": "20261023040954_add_play_date_slot",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1792729548010,
+      "tag": "20261023042547_add_qq_oauth",
+      "breakpoints": true
     }
   ]
 }

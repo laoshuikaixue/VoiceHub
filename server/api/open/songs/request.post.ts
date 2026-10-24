@@ -14,6 +14,7 @@ const ALLOWED_FIELDS = [
   'submissionNote',
   'submissionNotePublic',
   'preferredPlayTimeId',
+  'preferredPlayDate',
   'cardCode',
   'collaborators'
 ]

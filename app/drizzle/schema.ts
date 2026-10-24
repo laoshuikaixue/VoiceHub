@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -77,6 +77,8 @@ export const playTimes = pgTable('PlayTime', {
   endTime: text('endTime'),
   enabled: boolean('enabled').default(true).notNull(),
   description: text('description'),
+  // 适用星期（0=周日, 1=周一 … 6=周六）；NULL/空数组 = 每天均可选（兼容历史数据）
+  weekdays: jsonb('weekdays').$type<number[]>(),
 });
 
 // 年级班级配置表（选择器选项来源，优先于从用户提取）
@@ -118,6 +120,8 @@ export const songs = pgTable('Song', {
   submissionNotePublicStatus: text('submissionNotePublicStatus'),
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  // 用户选择的期望播出日期（北京时间 YYYY-MM-DD），与 preferredPlayTimeId 共同构成「日期 + 时段」
+  preferredPlayDate: date('preferredPlayDate', { mode: 'string' }),
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
@@ -305,6 +309,8 @@ export const systemSettings = pgTable('SystemSettings', {
   instanceId: text('instance_id'),
   telemetryEnabled: boolean('telemetryEnabled').default(true).notNull(),
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
+  // 点歌时播出日期+时段是否强制必选（全局总开关，依赖 enablePlayTimeSelection）
+  playSlotRequired: boolean('playSlotRequired').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),
   schoolLogoHomeUrl: text('schoolLogoHomeUrl'),
@@ -427,6 +433,10 @@ export const systemSettings = pgTable('SystemSettings', {
   googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
   googleClientId: text('googleClientId'),
   googleClientSecret: text('googleClientSecret'),
+  // QQ 互联 OAuth（直连 QQ 互联开放平台，非聚合登录）
+  qqOAuthEnabled: boolean('qqOAuthEnabled').default(false).notNull(),
+  qqOAuthAppId: text('qqOAuthAppId'),
+  qqOAuthAppKey: text('qqOAuthAppKey'),
   // 聚合登陆
   aggregateOAuthEnabled: boolean('aggregateOAuthEnabled').default(false).notNull(),
   aggregateOAuthAppId: text('aggregateOAuthAppId'),

@@ -28,6 +28,36 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
+          <!-- 桌面端批量标记播放状态（独立按钮组，与下载/驳回/删除分离） -->
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 scale-95 translate-x-10"
+            enter-to-class="opacity-100 scale-100 translate-x-0"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 scale-100 translate-x-0"
+            leave-to-class="opacity-0 scale-95 translate-x-10"
+          >
+            <div
+              v-if="selectedSongs.length > 0"
+              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
+            >
+              <button
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                @click="batchMarkPlayed"
+              >
+                <Check :size="14" class="text-success-70" /> {{ locale.actions.batchMarkPlayed }} ({{
+                  selectedSongs.length
+                }})
+              </button>
+              <button
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                @click="batchMarkUnplayed"
+              >
+                <RotateCcw :size="14" /> {{ locale.actions.batchMarkUnplayed }} ({{ selectedSongs.length }})
+              </button>
+            </div>
+          </Transition>
+
           <!-- 桌面端批量操作 -->
           <Transition
             enter-active-class="transition duration-200 ease-out"
@@ -122,6 +152,13 @@
             value-key="id"
             :placeholder="locale.filters.selectPlayTime"
             class-name="w-full lg:w-40"
+          />
+          <AppDatePicker
+            v-model="selectedPlayDate"
+            :label="locale.filters.playDate"
+            class-name="w-full lg:w-40"
+            rounded="lg"
+            size="sm"
           />
           <CustomSelect
             v-model="statusFilter"
@@ -332,8 +369,11 @@
                 <span v-if="song.user" class="text-[10px] font-bold text-text-disabled truncate max-w-[100px]"
                   >@{{ song.user.username }}</span
                 >
-                <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-primary mt-1">
-                  {{ getLocaleMessage('preferredPlayTime', getPlayTimeName(song.preferredPlayTimeId)) }}
+                <span
+                  v-if="song.preferredPlayTimeId || song.preferredPlayDate"
+                  class="text-[10px] font-bold text-primary mt-1"
+                >
+                  {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
                 </span>
                 <span
                   class="hidden lg:inline text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-60"
@@ -459,33 +499,52 @@
     >
       <div
         v-if="selectedSongs.length > 0"
-        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_var(--mobile-table-shadow)] backdrop-blur-xl flex items-center justify-between"
+        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_var(--mobile-table-shadow)] backdrop-blur-xl flex flex-col gap-2"
       >
-        <div class="px-3 flex flex-col">
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
-          <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
+        <div class="flex items-center justify-between">
+          <div class="px-3 flex flex-col">
+            <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
+            <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+              @click="openDownloadDialog"
+            >
+              <Download :size="16" class="mb-1" />
+              <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-warning rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+              @click="batchReject"
+            >
+              <X :size="16" class="mb-1" />
+              <span class="text-[9px] font-bold">{{ locale.actions.batchReject }}</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+              @click="batchDelete"
+            >
+              <Trash2 :size="16" class="mb-1" />
+              <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
+        <!-- 批量标记播放状态（独立按钮组） -->
+        <div class="flex items-center gap-2 border-t border-border-secondary-50 pt-2">
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
-            @click="openDownloadDialog"
+            class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+            @click="batchMarkPlayed"
           >
-            <Download :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
+            <Check :size="16" />
+            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkPlayed }}</span>
           </button>
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-warning rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
-            @click="batchReject"
+            class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+            @click="batchMarkUnplayed"
           >
-            <X :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">{{ locale.actions.batchReject }}</span>
-          </button>
-          <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
-            @click="batchDelete"
-          >
-            <Trash2 :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
+            <RotateCcw :size="16" />
+            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
           </button>
         </div>
       </div>
@@ -1227,6 +1286,7 @@ import SongSourceReplaceModal from '~/components/Admin/SongSourceReplaceModal.vu
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Search,
@@ -1327,6 +1387,8 @@ const selectedSemesterName = computed(() => {
 // 时段相关
 const selectedPlayTime = ref('all')
 const availablePlayTimes = ref([])
+// 播出日期筛选（YYYY-MM-DD，空 = 不限）
+const selectedPlayDate = ref('')
 
 // 选项配置
 const statusOptions = computed(() => [
@@ -1538,6 +1600,11 @@ const baseFilteredSongs = computed(() => {
     })
   }
 
+  // 播出日期过滤（精确匹配用户点歌时选定的期望播出日期）
+  if (selectedPlayDate.value) {
+    filtered = filtered.filter((song) => song.preferredPlayDate === selectedPlayDate.value)
+  }
+
   return filtered
 })
 
@@ -1701,6 +1768,25 @@ const getPlayTimeName = (playTimeId) => {
   if (!playTime) return ''
 
   return formatPlayTimeDisplay(playTime)
+}
+
+// 展示点歌时选定的「播出日期 + 时段」，如「10月24日 周五 · 早上」
+const formatPlaySlotDisplay = (song) => {
+  const parts = []
+  if (song.preferredPlayDate) {
+    // 按北京时间解析，避免时区偏移导致日期/星期错位
+    const date = dayjs(`${song.preferredPlayDate}T00:00:00+08:00`)
+    if (date.isValid()) {
+      const weekdayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+      parts.push(`${date.format('M月D日')} ${weekdayLabels[date.day()]}`)
+    } else {
+      parts.push(song.preferredPlayDate)
+    }
+  }
+  if (song.preferredPlayTimeId) {
+    parts.push(getPlayTimeName(song.preferredPlayTimeId))
+  }
+  return parts.join(' · ')
 }
 
 const getStatusText = (song) => {
@@ -1908,6 +1994,78 @@ const markAsUnplayed = async (songId) => {
       console.error('标记未播放失败:', error)
       showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
     }
+}
+
+// 批量标记为已播放（服务端已按 played=false 过滤，无需逐首确认）
+const batchMarkPlayed = async () => {
+  if (selectedSongs.value.length === 0) return
+
+  const songIds = [...selectedSongs.value]
+  try {
+    loading.value = true
+
+    const result = await $fetch('/api/admin/songs/mark-played', {
+      method: 'POST',
+      body: { songIds },
+      ...auth.getAuthConfig()
+    })
+
+    await refreshSongs()
+    // 刷新会清空勾选，按仍存在的歌曲恢复，便于连续批量操作
+    selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
+
+    const updated = result?.count ?? 0
+    showNotification(
+      updated > 0
+        ? getNestedMessage('messages', 'batchMarkPlayedSuccess', updated)
+        : getNestedMessage('messages', 'batchMarkPlayedNoop'),
+      updated > 0 ? 'success' : 'warning'
+    )
+  } catch (error) {
+    console.error('批量标记已播放失败:', error)
+    showNotification(
+      getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')),
+      'error'
+    )
+  } finally {
+    loading.value = false
+  }
+}
+
+// 批量撤回已播放状态（服务端已按 played=true 过滤，无需逐首确认）
+const batchMarkUnplayed = async () => {
+  if (selectedSongs.value.length === 0) return
+
+  const songIds = [...selectedSongs.value]
+  try {
+    loading.value = true
+
+    const result = await $fetch('/api/admin/songs/mark-played', {
+      method: 'POST',
+      body: { songIds, unmark: true },
+      ...auth.getAuthConfig()
+    })
+
+    await refreshSongs()
+    // 刷新会清空勾选，按仍存在的歌曲恢复，便于连续批量操作
+    selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
+
+    const updated = result?.count ?? 0
+    showNotification(
+      updated > 0
+        ? getNestedMessage('messages', 'batchMarkUnplayedSuccess', updated)
+        : getNestedMessage('messages', 'batchMarkUnplayedNoop'),
+      updated > 0 ? 'success' : 'warning'
+    )
+  } catch (error) {
+    console.error('批量撤回已播放失败:', error)
+    showNotification(
+      getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')),
+      'error'
+    )
+  } finally {
+    loading.value = false
+  }
 }
 
 // 加入 / 移出备选池

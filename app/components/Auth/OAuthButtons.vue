@@ -18,6 +18,7 @@
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
         <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" />
         <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" />
+        <Icon v-else-if="provider.key === 'qq'" name="oauth-qq" :size="26" />
         <Icon
           v-else-if="provider.routeProvider === 'aggregate'"
           :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"
@@ -75,6 +76,9 @@ const providerButtonClass = (provider) => {
   }
   if (key === 'google') {
     return `${baseClass} hover:bg-bg-secondary hover:text-black hover:border-[var(--panel-border)]`
+  }
+  if (key === 'qq') {
+    return `${baseClass} hover:bg-[var(--oauth-qq)] hover:text-text-primary hover:border-[var(--oauth-qq)]`
   }
   if (key === 'aggregate') {
     const aggregateClasses = {

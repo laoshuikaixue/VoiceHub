@@ -8,6 +8,7 @@ const SECRET_FIELDS = [
   ['githubClientSecret', SECRET_FIELD_MASK],
   ['casdoorClientSecret', SECRET_FIELD_MASK],
   ['googleClientSecret', SECRET_FIELD_MASK],
+  ['qqOAuthAppKey', SECRET_FIELD_MASK],
   ['aggregateOAuthAppKey', SECRET_FIELD_MASK],
   ['customOAuthClientSecret', SECRET_FIELD_MASK],
   ['turnstileSecretKey', SECRET_FIELD_MASK]
@@ -24,6 +25,7 @@ export const maskSystemSettingsSecrets = <T extends Record<string, any>>(setting
     githubClientSecret: settings.githubClientSecret ? SECRET_FIELD_MASK : settings.githubClientSecret,
     casdoorClientSecret: settings.casdoorClientSecret ? SECRET_FIELD_MASK : settings.casdoorClientSecret,
     googleClientSecret: settings.googleClientSecret ? SECRET_FIELD_MASK : settings.googleClientSecret,
+    qqOAuthAppKey: settings.qqOAuthAppKey ? SECRET_FIELD_MASK : settings.qqOAuthAppKey,
     aggregateOAuthAppKey: settings.aggregateOAuthAppKey ? SECRET_FIELD_MASK : settings.aggregateOAuthAppKey,
     customOAuthClientSecret: settings.customOAuthClientSecret
       ? SECRET_FIELD_MASK

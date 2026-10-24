@@ -351,6 +351,7 @@ export const useSongs = (options: { pageSize?: number; compact?: boolean } = {})
     title: string
     artist: string
     preferredPlayTimeId?: number | null
+    preferredPlayDate?: string | null
     cover?: string | null
     musicPlatform?: string | null
     musicId?: string | null

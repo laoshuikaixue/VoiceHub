@@ -7,6 +7,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 const MAX_SCHEDULE_ITEMS = 1000
@@ -84,6 +85,19 @@ export default defineEventHandler(async (event) => {
         .map((item) => item.replayRequestId)
         .filter((id): id is number => id !== null)
     )
+  )
+
+  // 落位约束：指定了期望日期/时段的歌曲只能排到对应位置，手工拖拽同样受约束
+  await assertSchedulePlacement(
+    {
+      playDate: inputDateStr,
+      playTimeId,
+      items: scheduleItems.map((item) => ({
+        songId: item.songId,
+        replayRequestId: item.replayRequestId
+      }))
+    },
+    await loadSongTitleMap(songIds)
   )
 
   const result = await db.transaction(async (tx) => {
