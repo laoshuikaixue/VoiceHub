@@ -1958,6 +1958,7 @@ export const pages = {
       publicToUsers: 'Remark visible to signed-in users',
       anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
+      submissionNotePlaceholder: 'Anything to add? (optional, up to 300 chars)',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',
       album: 'Album: ',

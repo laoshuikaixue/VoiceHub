@@ -412,10 +412,13 @@
 
           <div class="results-content">
             <div
-              v-if="enableSubmissionRemarks || cardCodeEnabled"
+              v-if="(enableSubmissionRemarks && !noteInSlotModal) || cardCodeEnabled"
               class="form-row submission-meta-row"
             >
-              <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
+              <div
+                v-if="enableSubmissionRemarks && !noteInSlotModal"
+                class="form-group submission-note-group"
+              >
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <label
@@ -530,7 +533,10 @@
                 v-if="cardCodeEnabled"
                 :class="[
                   'form-group card-code-form-group',
-                  { 'mobile-hidden-card-code-group': enableSubmissionRemarks }
+                  {
+                    'mobile-hidden-card-code-group':
+                      enableSubmissionRemarks && !noteInSlotModal
+                  }
                 ]"
               >
                 <div class="desktop-card-code-panel">
@@ -589,7 +595,7 @@
                 </div>
 
                 <button
-                  v-if="!enableSubmissionRemarks"
+                  v-if="!enableSubmissionRemarks || noteInSlotModal"
                   :class="[
                     'mobile-card-code-button',
                     trimmedCardCode
@@ -1502,9 +1508,12 @@
       @change="handleImportDataQQ"
     >
 
-    <!-- 播出时段选择弹窗：选歌后弹出，时段必选、日期可选 -->
+    <!-- 播出时段选择弹窗：选歌后弹出，时段必选、日期可选；留言功能开启时一并集成留言输入 -->
     <SongsPlaySlotPickerModal
       v-model:show="showPlaySlotModal"
+      v-model:note="submissionNote"
+      v-model:note-public="submissionNotePublic"
+      v-model:note-anonymous="submissionAnonymous"
       :play-times="enabledPlayTimes"
       :required="playSlotRequired"
       :initial-date="preferredPlayDate"
@@ -1513,6 +1522,10 @@
       :weekday-names="locale.weekdaysFull || []"
       :text="playSlotModalText"
       :format-label="formatPlayTimeOptionLabel"
+      :show-note="noteInSlotModal"
+      :show-note-anonymous="allowAnonymousSubmission && !!user"
+      :note-approval-required="submissionNoteRequiresApproval"
+      :note-text="playSlotNoteText"
       @confirm="handlePlaySlotConfirm"
       @cancel="handlePlaySlotCancel"
     />
@@ -2863,6 +2876,24 @@ const playSlotModalText = computed(() => ({
   timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
   cancel: locale.value.cancel || '取消',
   confirm: locale.value.confirmSubmit || '确认提交'
+}))
+
+/**
+ * 留言输入框是否集成进时段弹窗：
+ * 时段选择开启 + 留言功能开启 → 集成（弹窗内填写，表单内不再重复出现）
+ * 任一未开启 → 不集成，表单内沿用原有独立输入框样式
+ */
+const noteInSlotModal = computed(
+  () => playTimeSelectionEnabled.value && enableSubmissionRemarks.value
+)
+
+/** 时段弹窗内投稿留言区的文案 */
+const playSlotNoteText = computed(() => ({
+  label: locale.value.submissionNote || '投稿留言',
+  publicToUsers: locale.value.publicToUsers || '备注留言公开给已登录用户',
+  anonymous: locale.value.anonymousSubmission || '匿名投稿',
+  approvalHint: locale.value.submissionNoteApprovalHint || '公开留言需管理员审核通过后展示',
+  placeholder: locale.value.submissionNotePlaceholder || '想说点什么？（选填，最多 300 字）'
 }))
 
 /**

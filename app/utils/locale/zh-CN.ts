@@ -1903,6 +1903,7 @@ export const pages = {
       publicToUsers: '备注留言公开给已登录用户',
       anonymousSubmission: '匿名投稿',
       submissionNoteApprovalHint: '公开留言需管理员审核通过后展示',
+      submissionNotePlaceholder: '想说点什么？（选填，最多 300 字）',
       coverAlt: '封面',
       albumDetailsTitle: '点击查看专辑详情',
       album: '专辑：',

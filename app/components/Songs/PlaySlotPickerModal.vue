@@ -77,6 +77,83 @@
               </p>
             </div>
 
+            <!-- 第三步：投稿留言（时段选择开启时集成到此，替代表单内的独立输入框） -->
+            <div v-if="showNote" class="play-slot-field">
+              <label class="play-slot-field-label" for="play-slot-note">
+                <Icon :size="14" name="message-circle" />
+                <span>{{ noteText.label }}</span>
+                <span class="play-slot-optional-tag">{{ text.optional }}</span>
+              </label>
+              <div class="play-slot-note-options">
+                <label class="play-slot-note-checkbox">
+                  <input
+                    v-model="notePublicModel"
+                    type="checkbox"
+                    class="play-slot-note-checkbox-input"
+                  />
+                  <span class="play-slot-note-checkbox-box">
+                    <svg
+                      class="play-slot-note-checkbox-icon"
+                      viewBox="0 0 12 10"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M1 5L4.5 8.5L11 1.5"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span class="play-slot-note-checkbox-text">{{
+                    noteText.publicToUsers
+                  }}</span>
+                </label>
+                <label v-if="showNoteAnonymous" class="play-slot-note-checkbox">
+                  <input
+                    v-model="noteAnonymousModel"
+                    type="checkbox"
+                    class="play-slot-note-checkbox-input"
+                  />
+                  <span class="play-slot-note-checkbox-box">
+                    <svg
+                      class="play-slot-note-checkbox-icon"
+                      viewBox="0 0 12 10"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M1 5L4.5 8.5L11 1.5"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span class="play-slot-note-checkbox-text">{{
+                    noteText.anonymous
+                  }}</span>
+                </label>
+              </div>
+              <textarea
+                id="play-slot-note"
+                v-model="noteModel"
+                maxlength="300"
+                class="play-slot-note-input"
+                :placeholder="noteText.placeholder"
+              />
+              <div class="play-slot-note-footer">
+                <p v-if="noteApprovalRequired" class="play-slot-note-approval">
+                  <Icon name="info" :size="12" class="shrink-0 text-warning" />
+                  <span class="truncate">{{ noteText.approvalHint }}</span>
+                </p>
+                <span class="shrink-0">{{ noteLength }}/300</span>
+              </div>
+            </div>
+
             <!-- 自动分配提示 -->
             <div
               v-if="!localDate && localTimeId"
@@ -168,16 +245,77 @@ const props = defineProps({
   formatLabel: {
     type: Function,
     default: null
+  },
+  // 是否在弹窗内集成投稿留言输入框（时段选择开启 + 留言功能开启时为 true）
+  showNote: {
+    type: Boolean,
+    default: false
+  },
+  // 留言内容（v-model:note）
+  note: {
+    type: String,
+    default: ''
+  },
+  // 留言是否公开给已登录用户（v-model:notePublic）
+  notePublic: {
+    type: Boolean,
+    default: true
+  },
+  // 是否匿名投稿（v-model:noteAnonymous）
+  noteAnonymous: {
+    type: Boolean,
+    default: false
+  },
+  // 是否展示「匿名投稿」勾选项（由 allowAnonymousSubmission 与登录态决定）
+  showNoteAnonymous: {
+    type: Boolean,
+    default: false
+  },
+  // 公开留言是否需要审核（控制审核提示文案）
+  noteApprovalRequired: {
+    type: Boolean,
+    default: false
+  },
+  // 留言区文案
+  noteText: {
+    type: Object,
+    default: () => ({})
   }
 })
 
-const emit = defineEmits(['update:show', 'confirm', 'cancel'])
+const emit = defineEmits([
+  'update:show',
+  'update:note',
+  'update:notePublic',
+  'update:noteAnonymous',
+  'confirm',
+  'cancel'
+])
 
 const localDate = ref('')
 const localTimeId = ref('')
 const errorMessage = ref('')
 
 const minDate = computed(() => props.today || '')
+
+/** 留言区三个 v-model：透传给父组件，父组件是唯一的真实数据源 */
+const noteModel = computed({
+  get: () => props.note,
+  set: (value) => emit('update:note', value)
+})
+
+const notePublicModel = computed({
+  get: () => props.notePublic,
+  set: (value) => emit('update:notePublic', value)
+})
+
+const noteAnonymousModel = computed({
+  get: () => props.noteAnonymous,
+  set: (value) => emit('update:noteAnonymous', value)
+})
+
+/** 留言字数统计（上限 300，与表单内原输入框一致） */
+const noteLength = computed(() => String(props.note ?? '').length)
 
 /** 计算日期串（YYYY-MM-DD）对应的星期，0=周日…6=周六；解析失败返回 null */
 const getWeekday = (dateString) => {
@@ -328,5 +466,112 @@ const handleConfirm = () => {
 .play-slot-auto-hint :deep(svg) {
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+/* 投稿留言字段（集成进弹窗时使用） */
+.play-slot-note-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.play-slot-note-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.play-slot-note-checkbox-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.play-slot-note-checkbox-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-secondary);
+  border-radius: 4px;
+  background: var(--bg-secondary-60);
+  transition: all 0.15s ease;
+}
+
+.play-slot-note-checkbox-input:checked + .play-slot-note-checkbox-box {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.play-slot-note-checkbox-input:focus-visible + .play-slot-note-checkbox-box {
+  outline: 2px solid var(--primary-50);
+  outline-offset: 2px;
+}
+
+.play-slot-note-checkbox-icon {
+  width: 11px;
+  height: 9px;
+  color: var(--text-primary);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.play-slot-note-checkbox-input:checked + .play-slot-note-checkbox-box .play-slot-note-checkbox-icon {
+  opacity: 1;
+}
+
+.play-slot-note-checkbox-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.play-slot-note-input {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-secondary-60);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  resize: vertical;
+  transition: all 0.15s ease;
+}
+
+.play-slot-note-input::placeholder {
+  color: var(--text-quaternary);
+}
+
+.play-slot-note-input:focus {
+  outline: none;
+  border-color: var(--primary-50);
+  box-shadow: 0 0 0 1px var(--primary-10);
+}
+
+.play-slot-note-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.play-slot-note-approval {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.25rem;
 }
 </style>
