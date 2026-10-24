@@ -433,11 +433,14 @@ onUnmounted(() => {
 
 .time-cell {
   display: flex;
-  height: 32px;
+  width: 100%;
+  height: 34px;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-secondary);
   scroll-snap-align: center;
