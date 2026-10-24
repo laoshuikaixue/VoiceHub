@@ -2017,20 +2017,6 @@ const strategies: Record<string, OAuthStrategy> = {
 
 配置保存后，系统会立即启用 Casdoor 登录策略。
 
-#### QQ 互联配置说明
-
-项目内置对 [QQ 互联](https://wiki.connect.qq.com/) 的直连接入（走 `graph.qq.com` 官方 OAuth 2.0 端点，与需要第三方服务商的「聚合登录」相互独立）。
-
-1. 在 [QQ 互联管理台](https://connect.qq.com/) 创建网站应用，获取 **App ID** 与 **App Key**，并在应用中登记回调地址（与后台「OAuth 重定向 URI」一致，即 `https://yourdomain.com/api/auth/qq/callback`）。
-2. 进入管理员后台的 **站点配置 -> OAuth 第三方登录配置**，开启「QQ 互联」并填入 App ID / App Key。App Key 在后台打雾保存，不会明文回显。
-3. 保存后登录页即出现独立的 QQ 登录按钮；用户在 QQ 内嵌浏览器中访问时还会显示大按钮快速登录。
-
-安全与身份说明：
-
-- 授权流程复用统一的 state 机制：AES 加密 + HttpOnly Cookie 中的 CSRF 随机值 + 10 分钟有效期，回调时逐一校验。
-- 身份关联依据为 QQ 互联返回的 **openid**（同一应用下用户唯一且稳定），昵称与头像仅作为展示资料同步，不参与身份判定。
-- 授权码仅可使用一次；QQ 返回的业务错误（如 `error_description`）会原样透出，便于排查。
-
 #### 前端图标配置
 
 当添加了新的服务端 OAuth 策略后，如果需要在前端登录页面显示对应的图标按钮，请按照以下步骤操作：

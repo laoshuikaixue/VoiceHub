@@ -433,10 +433,6 @@ export const systemSettings = pgTable('SystemSettings', {
   googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
   googleClientId: text('googleClientId'),
   googleClientSecret: text('googleClientSecret'),
-  // QQ 互联 OAuth（直连 QQ 互联开放平台，非聚合登录）
-  qqOAuthEnabled: boolean('qqOAuthEnabled').default(false).notNull(),
-  qqOAuthAppId: text('qqOAuthAppId'),
-  qqOAuthAppKey: text('qqOAuthAppKey'),
   // 聚合登陆
   aggregateOAuthEnabled: boolean('aggregateOAuthEnabled').default(false).notNull(),
   aggregateOAuthAppId: text('aggregateOAuthAppId'),

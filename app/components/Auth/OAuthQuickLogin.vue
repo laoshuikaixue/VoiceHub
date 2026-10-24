@@ -62,13 +62,8 @@ const aggregateLoginTypes = computed(() => {
   return types
 })
 
-// 直连 QQ 互联（provider key = 'qq'）与聚合登录的 QQ 方式均可作为 QQ 内嵌浏览器快速登录入口
-const hasDirectQqProvider = computed(() =>
-  (oauthProviders.value || []).some((provider) => provider.key === 'qq')
-)
-
 const showWeChat = computed(() => env.value.isWeChat && aggregateLoginTypes.value.has('wx'))
-const showQQ = computed(() => env.value.isQQApp && (hasDirectQqProvider.value || aggregateLoginTypes.value.has('qq')))
+const showQQ = computed(() => env.value.isQQApp && aggregateLoginTypes.value.has('qq'))
 const hasQuickLogin = computed(() => showWeChat.value || showQQ.value)
 
 const loginWith = (loginType) => {
@@ -81,10 +76,8 @@ const loginWith = (loginType) => {
   const query = new URLSearchParams()
   if (safeRedirect) query.set('redirect', safeRedirect)
   const queryString = query.toString()
-  // 优先走直连 QQ 互联；未配置直连时才回退到聚合登录的 QQ 方式
-  const useDirectQq = loginType === 'qq' && hasDirectQqProvider.value
-  const endpoint = useDirectQq ? '/api/auth/qq' : '/api/auth/aggregate'
-  if (!useDirectQq) query.set('type', loginType)
+  const endpoint = '/api/auth/aggregate'
+  query.set('type', loginType)
   navigateTo(`${endpoint}${queryString ? `?${queryString}` : ''}`, { external: true })
 }
 </script>

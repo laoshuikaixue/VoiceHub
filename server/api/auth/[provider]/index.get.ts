@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(
       400,
       'AUTH_UNSUPPORTED_OAUTH_PROVIDER',
-      '当前仅支持 GitHub / Casdoor / Google / QQ / 聚合登陆 / 第三方 OAuth2'
+      '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
     )
   }
 

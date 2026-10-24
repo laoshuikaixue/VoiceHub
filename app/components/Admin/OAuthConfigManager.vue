@@ -462,7 +462,6 @@ const envData = ref({
   hasGithubConfig: false,
   hasCasdoorConfig: false,
   hasGoogleConfig: false,
-  hasQqConfig: false,
   hasAggregateConfig: false
 })
 
@@ -502,20 +501,6 @@ const oauthProviders = computed(() => [
     clientIdPlaceholder: locale.value?.googleClientIdPlaceholder || 'Enter Google Client ID',
     clientSecretLabel: locale.value?.googleClientSecret || 'Google Client Secret',
     clientSecretPlaceholder: locale.value?.googleClientSecretPlaceholder || 'Enter Google Client Secret',
-  },
-  {
-    id: 'qq',
-    title: locale.value?.qqTitle || 'QQ 互联',
-    hasEnvConfig: envData.value.hasQqConfig,
-    enabledKey: 'qqOAuthEnabled',
-    clientIdKey: 'qqOAuthAppId',
-    clientSecretKey: 'qqOAuthAppKey',
-    clientIdLabel: locale.value?.qqAppId || 'App ID',
-    clientIdPlaceholder: locale.value?.qqAppIdPlaceholder || '输入 QQ 互联应用的 App ID',
-    clientSecretLabel: locale.value?.qqAppKey || 'App Key',
-    clientSecretPlaceholder: locale.value?.qqAppKeyPlaceholder || '输入 QQ 互联应用的 App Key',
-    docUrl: 'https://wiki.connect.qq.com/',
-    docLabel: locale.value?.qqDocLabel || '查看 QQ 互联文档'
   },
   {
     id: 'aggregate',

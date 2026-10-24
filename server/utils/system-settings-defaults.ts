@@ -167,7 +167,6 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'githubOAuthEnabled',
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',
-  'qqOAuthEnabled',
   'aggregateOAuthEnabled',
   'aggregateOAuthLoginType',
   'customOAuthEnabled',
