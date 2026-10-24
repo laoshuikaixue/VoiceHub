@@ -18,6 +18,7 @@
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
         <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" />
         <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" />
+        <Icon v-else-if="provider.key === 'qq'" name="oauth-qq" :size="26" />
         <Icon
           v-else-if="provider.routeProvider === 'aggregate'"
           :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"
@@ -76,21 +77,32 @@ const providerButtonClass = (provider) => {
   if (key === 'google') {
     return `${baseClass} hover:bg-bg-secondary hover:text-black hover:border-[var(--panel-border)]`
   }
+  if (key === 'qq') {
+    return `${baseClass} text-[var(--oauth-qq)] hover:bg-[var(--oauth-qq)] hover:text-white hover:border-[var(--oauth-qq)]`
+  }
   if (key === 'aggregate') {
     const aggregateClasses = {
       qq: 'hover:bg-[var(--oauth-qq)] hover:text-text-primary hover:border-[var(--oauth-qq)]',
       wx: 'hover:bg-[var(--oauth-wx)] hover:text-text-primary hover:border-[var(--oauth-wx)]',
-      alipay: 'hover:bg-[var(--oauth-alipay)] hover:text-text-primary hover:border-[var(--oauth-alipay)]',
+      alipay:
+        'hover:bg-[var(--oauth-alipay)] hover:text-text-primary hover:border-[var(--oauth-alipay)]',
       sina: 'hover:bg-[var(--oauth-sina)] hover:text-text-primary hover:border-[var(--oauth-sina)]',
-      baidu: 'hover:bg-[var(--oauth-baidu)] hover:text-text-primary hover:border-[var(--oauth-baidu)]',
-      douyin: 'hover:bg-[var(--panel-bg-darkest)] hover:text-text-primary hover:border-[var(--oauth-douyin)]',
-      huawei: 'hover:bg-[var(--oauth-huawei)] hover:text-text-primary hover:border-[var(--oauth-huawei)]',
-      xiaomi: 'hover:bg-[var(--oauth-xiaomi)] hover:text-text-primary hover:border-[var(--oauth-xiaomi)]',
-      gitee: 'hover:bg-[var(--oauth-gitee)] hover:text-text-primary hover:border-[var(--oauth-gitee)]',
+      baidu:
+        'hover:bg-[var(--oauth-baidu)] hover:text-text-primary hover:border-[var(--oauth-baidu)]',
+      douyin:
+        'hover:bg-[var(--panel-bg-darkest)] hover:text-text-primary hover:border-[var(--oauth-douyin)]',
+      huawei:
+        'hover:bg-[var(--oauth-huawei)] hover:text-text-primary hover:border-[var(--oauth-huawei)]',
+      xiaomi:
+        'hover:bg-[var(--oauth-xiaomi)] hover:text-text-primary hover:border-[var(--oauth-xiaomi)]',
+      gitee:
+        'hover:bg-[var(--oauth-gitee)] hover:text-text-primary hover:border-[var(--oauth-gitee)]',
       gitea:
         '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:var(--text-primary)] hover:bg-bg-secondary hover:text-black hover:border-primary',
-      bilibili: 'hover:bg-[var(--oauth-bilibili)] hover:text-text-primary hover:border-[var(--oauth-bilibili)]',
-      kuaishou: 'hover:bg-[var(--oauth-kuaishou)] hover:text-text-primary hover:border-[var(--oauth-kuaishou)]'
+      bilibili:
+        'hover:bg-[var(--oauth-bilibili)] hover:text-text-primary hover:border-[var(--oauth-bilibili)]',
+      kuaishou:
+        'hover:bg-[var(--oauth-kuaishou)] hover:text-text-primary hover:border-[var(--oauth-kuaishou)]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }

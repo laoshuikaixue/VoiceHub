@@ -410,6 +410,9 @@ export const systemSettings = pgTable('SystemSettings', {
 
   // OAuth 配置
   allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),
+  qqOAuthEnabled: boolean('qqOAuthEnabled').default(false).notNull(),
+  qqOAuthAppId: text('qqOAuthAppId'),
+  qqOAuthAppKey: text('qqOAuthAppKey'),
   oauthRedirectUri: text('oauthRedirectUri'),
   oauthStateSecret: text('oauthStateSecret'),
   oauthProviders: text('oauthProviders').default('[]'),

@@ -19,7 +19,9 @@
     <!-- 基础配置 -->
     <div class="space-y-4 mb-6 pb-6 border-b border-border-secondary">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ locale.baseSettings }}</h4>
+        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+          {{ locale.baseSettings }}
+        </h4>
         <button
           v-if="envData.hasBaseConfig"
           type="button"
@@ -35,7 +37,9 @@
         <div class="flex items-center justify-between p-3">
           <div class="pr-4">
             <p class="text-xs font-bold text-text-primary">{{ locale.allowRegistration }}</p>
-            <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegistrationDesc }}</p>
+            <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+              {{ locale.allowRegistrationDesc }}
+            </p>
           </div>
           <div class="flex items-center gap-2">
             <span
@@ -58,10 +62,16 @@
           v-if="formData.allowOAuthRegistration"
           class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
         >
-          <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+          <div
+            class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
+          >
             <div class="pr-4">
-              <p class="text-xs font-bold text-text-primary">{{ locale.oauthRegisterRequiresApproval }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.oauthRegisterRequiresApprovalDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">
+                {{ locale.oauthRegisterRequiresApproval }}
+              </p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+                {{ locale.oauthRegisterRequiresApprovalDesc }}
+              </p>
             </div>
             <input
               v-model="formData.oauthRegisterRequiresApproval"
@@ -71,10 +81,16 @@
             />
           </div>
 
-          <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+          <div
+            class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl"
+          >
             <div class="pr-4">
-              <p class="text-xs font-bold text-text-primary">{{ siteLocale.registerRequiresGradeClass }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ siteLocale.registerRequiresGradeClassDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">
+                {{ siteLocale.registerRequiresGradeClass }}
+              </p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+                {{ siteLocale.registerRequiresGradeClassDesc }}
+              </p>
             </div>
             <input
               v-model="formData.registerRequiresGradeClass"
@@ -88,7 +104,10 @@
       <div>
         <label :class="labelClass">{{ locale.redirectUri }}</label>
         <p class="text-[10px] text-text-disabled px-1 mb-2">
-          {{ locale.redirectExample }} <code class="bg-bg-primary px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
+          {{ locale.redirectExample }}
+          <code class="bg-bg-primary px-2 py-1 rounded"
+            >https://yourdomain.com/api/auth/[provider]/callback</code
+          >
         </p>
         <input
           v-model="formData.oauthRedirectUri"
@@ -223,7 +242,9 @@
     <!-- Custom OAuth2 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ locale.customOAuth }}</h4>
+        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+          {{ locale.customOAuth }}
+        </h4>
         <div class="flex items-center gap-2">
           <span
             :class="[
@@ -294,9 +315,9 @@
 
         <div>
           <label :class="labelClass">{{ locale.clientId }}</label>
-            <input
-              v-model="formData.customOAuthClientId"
-              autocomplete="off"
+          <input
+            v-model="formData.customOAuthClientId"
+            autocomplete="off"
             type="text"
             :placeholder="locale.clientIdPlaceholder"
             :class="inputClass"
@@ -310,7 +331,9 @@
               v-model="formData.customOAuthClientSecret"
               autocomplete="new-password"
               :type="showSecrets.custom ? 'text' : 'password'"
-              :placeholder="showSecrets.custom ? locale.clientSecretPlaceholder : '••••••••••••••••'"
+              :placeholder="
+                showSecrets.custom ? locale.clientSecretPlaceholder : '••••••••••••••••'
+              "
               :class="inputClass"
             />
             <button
@@ -380,14 +403,17 @@
     </div>
 
     <!-- 信息提示 -->
-    <div
-      class="mt-6 p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
-    >
+    <div class="mt-6 p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3">
       <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-text-tertiary leading-relaxed space-y-1">
         <p>
           {{ locale.brokerHintPrefix }}
-          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-primary hover:underline">VoiceHub-Auth-Broker</a>
+          <a
+            href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker"
+            target="_blank"
+            class="text-primary hover:underline"
+            >VoiceHub-Auth-Broker</a
+          >
           {{ locale.brokerHintSuffix }}
         </p>
       </div>
@@ -441,8 +467,10 @@ const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
   'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
-const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
+const labelClass =
+  'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
+const cardClass =
+  'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 const showSecrets = ref({
   state: false,
@@ -476,7 +504,8 @@ const oauthProviders = computed(() => [
     clientIdLabel: locale.value?.githubClientId || 'GitHub Client ID',
     clientIdPlaceholder: locale.value?.githubClientIdPlaceholder || 'Enter GitHub Client ID',
     clientSecretLabel: locale.value?.githubClientSecret || 'GitHub Client Secret',
-    clientSecretPlaceholder: locale.value?.githubClientSecretPlaceholder || 'Enter GitHub Client Secret',
+    clientSecretPlaceholder:
+      locale.value?.githubClientSecretPlaceholder || 'Enter GitHub Client Secret'
   },
   {
     id: 'casdoor',
@@ -488,7 +517,7 @@ const oauthProviders = computed(() => [
     clientIdLabel: locale.value?.casdoorClientId || 'Casdoor Client ID',
     clientIdPlaceholder: locale.value?.clientIdPlaceholder || 'Enter Client ID',
     clientSecretLabel: locale.value?.casdoorClientSecret || 'Casdoor Client Secret',
-    clientSecretPlaceholder: locale.value?.clientSecretPlaceholder || 'Enter Client Secret',
+    clientSecretPlaceholder: locale.value?.clientSecretPlaceholder || 'Enter Client Secret'
   },
   {
     id: 'google',
@@ -500,7 +529,22 @@ const oauthProviders = computed(() => [
     clientIdLabel: locale.value?.googleClientId || 'Google Client ID',
     clientIdPlaceholder: locale.value?.googleClientIdPlaceholder || 'Enter Google Client ID',
     clientSecretLabel: locale.value?.googleClientSecret || 'Google Client Secret',
-    clientSecretPlaceholder: locale.value?.googleClientSecretPlaceholder || 'Enter Google Client Secret',
+    clientSecretPlaceholder:
+      locale.value?.googleClientSecretPlaceholder || 'Enter Google Client Secret'
+  },
+  {
+    id: 'qq',
+    title: locale.value?.qqTitle || 'QQ互联',
+    hasEnvConfig: false,
+    enabledKey: 'qqOAuthEnabled',
+    clientIdKey: 'qqOAuthAppId',
+    clientSecretKey: 'qqOAuthAppKey',
+    clientIdLabel: 'App ID',
+    clientIdPlaceholder: '输入 QQ互联 App ID',
+    clientSecretLabel: 'App Key',
+    clientSecretPlaceholder: '输入 QQ互联 App Key',
+    docUrl: 'https://wiki.connect.qq.com/开发攻略_server-side',
+    docLabel: locale.value?.qqDocLabel || '查看 QQ互联接入文档'
   },
   {
     id: 'aggregate',
@@ -512,8 +556,7 @@ const oauthProviders = computed(() => [
     clientIdLabel: 'AppID',
     clientIdPlaceholder: locale.value?.aggregateClientIdPlaceholder || '输入聚合登录 AppID',
     clientSecretLabel: 'AppKey',
-    clientSecretPlaceholder:
-      locale.value?.aggregateClientSecretPlaceholder || '输入聚合登录 AppKey'
+    clientSecretPlaceholder: locale.value?.aggregateClientSecretPlaceholder || '输入聚合登录 AppKey'
   }
 ])
 
@@ -562,7 +605,15 @@ const handleClearBindings = async () => {
       method: 'POST'
     })
     showClearConfirm.value = false
-    showToast(callLocale('clearBindingsSuccess', `已成功清除 ${res.count} 条聚合登录绑定数据（影响 ${res.usersAffected} 位用户）`, res.count, res.usersAffected), 'success')
+    showToast(
+      callLocale(
+        'clearBindingsSuccess',
+        `已成功清除 ${res.count} 条聚合登录绑定数据（影响 ${res.usersAffected} 位用户）`,
+        res.count,
+        res.usersAffected
+      ),
+      'success'
+    )
   } catch (err) {
     console.error('清除聚合登录绑定失败:', err)
     showToast(
