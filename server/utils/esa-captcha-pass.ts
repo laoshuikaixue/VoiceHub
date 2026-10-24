@@ -14,7 +14,7 @@ import { createApiError } from './apiError'
 export const verifyEsaCaptchaPass = (
   event: H3Event,
   scenes: unknown,
-  purpose: 'login' | 'register'
+  purpose: 'login' | 'register' | 'forgot_password' | 'email_code'
 ): void => {
   const host = getRequestHostname(event)
   if (!resolveEsaCaptchaSceneId(scenes, 'common', host)) return

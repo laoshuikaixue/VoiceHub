@@ -14,8 +14,8 @@ import {
   ESA_CAPTCHA_PASS_TICKET_TTL
 } from '~~/server/config/constants'
 
-// 凭证可服务的业务接口（与 login/register 的校验分支一一对应）
-const ESA_PASS_PURPOSES = ['login', 'register'] as const
+// 凭证可服务的业务接口（与各业务接口的校验分支一一对应）
+const ESA_PASS_PURPOSES = ['login', 'register', 'forgot_password', 'email_code'] as const
 
 // 单 IP 签发频率限制，遏制直连源站时的凭证批量获取
 const VERIFY_RATE_LIMIT = 60

@@ -1,7 +1,7 @@
 <template>
   <div class="esa-captcha-widget">
     <!-- SDK 只识别 #id 选择器，且要求元素在初始化时已存在于页面中 -->
-    <div id="esa-captcha-element" />
+    <div :id="elementId" />
   </div>
 </template>
 
@@ -21,6 +21,11 @@ const props = defineProps({
   sceneId: {
     type: String,
     default: ''
+  },
+  // SDK 挂载元素 id；同一页面需多个验证码实例时各传不同值避免 id 冲突
+  elementId: {
+    type: String,
+    default: 'esa-captcha-element'
   }
 })
 
@@ -79,7 +84,7 @@ const initCaptcha = () => {
   window.initAliyunCaptcha({
     SceneId: sceneId,
     mode: 'popup',
-    element: '#esa-captcha-element',
+    element: '#' + props.elementId,
     button: props.buttonSelector,
     language: resolveLanguage(),
     // 验证成功：把验签参数交给调用方，由登录/注册请求随请求头带给 ESA 边缘验签
