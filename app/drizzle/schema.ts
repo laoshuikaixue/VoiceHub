@@ -8,6 +8,7 @@ export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
 export const cardCodeStatusEnum = pgEnum('card_code_status', [
   'AVAILABLE',
+  'ASSIGNED',
   'LOCKED',
   'REDEEMED',
   'INVALID'
@@ -859,6 +860,9 @@ export const cardCodes = pgTable('CardCode', {
   lockedAt: timestamp('lockedAt'),
   redeemedBy: integer('redeemedBy').references(() => users.id, { onDelete: 'set null' }),
   redeemedAt: timestamp('redeemedAt'),
+  // 派发给用户后归属的持有人；回收后置空
+  assignedTo: integer('assignedTo').references(() => users.id, { onDelete: 'set null' }),
+  assignedAt: timestamp('assignedAt'),
   note: text('note'),
 });
 
@@ -878,6 +882,53 @@ export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
 
 export type CardCode = typeof cardCodes.$inferSelect;
 export type NewCardCode = typeof cardCodes.$inferInsert;
+
+// 点歌券派发状态
+export const cardCodeAssignmentStatusEnum = pgEnum('card_code_assignment_status', [
+  'ASSIGNED',   // 已派发给用户，尚未使用
+  'USED',       // 用户已使用
+  'RECYCLED',   // 已被管理员回收
+  'FAILED'      // 派发失败
+]);
+
+// 点歌券派发记录表：记录派发时间、派发人员、接收人、回收与失败原因
+export const cardCodeAssignments = pgTable('CardCodeAssignment', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'cascade' }),
+  codeSnapshot: text('codeSnapshot').notNull(),
+  // 接收人（被派发用户）
+  userId: integer('userId').references(() => users.id, { onDelete: 'set null' }),
+  userNameSnapshot: text('userNameSnapshot'),
+  // 派发人员
+  assignedBy: integer('assignedBy').references(() => users.id, { onDelete: 'set null' }),
+  assignedByName: text('assignedByName'),
+  // 派发时间
+  assignedAt: timestamp('assignedAt').defaultNow().notNull(),
+  status: cardCodeAssignmentStatusEnum('status').default('ASSIGNED').notNull(),
+  // 使用时间
+  usedAt: timestamp('usedAt'),
+  // 回收信息
+  recycledAt: timestamp('recycledAt'),
+  recycledBy: integer('recycledBy').references(() => users.id, { onDelete: 'set null' }),
+  recycledByName: text('recycledByName'),
+  recycleReason: text('recycleReason'),
+  // 失败原因（派发过程出错时写入）
+  failureReason: text('failureReason'),
+  // 通知发送结果：SENT 成功 / FAILED 失败 / SKIPPED 未发送
+  notifyStatus: text('notifyStatus').default('SKIPPED').notNull(),
+  notifyError: text('notifyError'),
+  note: text('note')
+}, (table) => [
+  index('card_code_assignment_card_code_id_idx').on(table.cardCodeId),
+  index('card_code_assignment_user_id_idx').on(table.userId),
+  index('card_code_assignment_status_idx').on(table.status),
+  index('card_code_assignment_assigned_at_idx').on(table.assignedAt)
+]);
+
+export type CardCodeAssignment = typeof cardCodeAssignments.$inferSelect;
+export type NewCardCodeAssignment = typeof cardCodeAssignments.$inferInsert;
 
 // 自动备份历史记录表
 export const backupHistory = pgTable('BackupHistory', {

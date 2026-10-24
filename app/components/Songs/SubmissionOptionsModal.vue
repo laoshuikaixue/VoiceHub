@@ -178,24 +178,47 @@
                 </button>
               </div>
 
-              <div class="options-card-code-row">
-                <input
-                  id="options-card-code"
-                  v-model="cardCodeDraftModel"
-                  class="options-input"
-                  :placeholder="text.cardCodePlaceholder"
-                  type="text"
-                  @keydown.enter.prevent="emit('save-card-code')"
-                >
-                <button
-                  class="options-mini-btn"
-                  type="button"
-                  :disabled="cardCodeChecking"
-                  @click="emit('save-card-code')"
-                >
-                  {{ cardCodeChecking ? text.validatingShort : text.save }}
-                </button>
+              <!-- 已派发到名下的点歌券：直接从下拉中选择 -->
+              <div v-if="myCardCodes.length" class="options-field">
+                <label class="options-label" for="options-my-card-code">
+                  <span>{{ text.cardCodeMyCodes }}</span>
+                  <span class="options-tag">{{ text.cardCodeMyCodesCount(myCardCodes.length) }}</span>
+                </label>
+                <CustomSelect
+                  :model-value="selectedMyCardCode"
+                  :options="myCardCodeOptions"
+                  label-key="displayName"
+                  value-key="code"
+                  :placeholder="text.cardCodeSelectPlaceholder"
+                  @update:model-value="handleMyCardCodeSelect"
+                />
               </div>
+
+              <!-- 手动输入：没有派发券，或收到了未登记的券码 -->
+              <div class="options-field">
+                <label class="options-label" for="options-card-code">
+                  <span>{{ text.cardCodeManualInput }}</span>
+                </label>
+                <div class="options-card-code-row">
+                  <input
+                    id="options-card-code"
+                    v-model="cardCodeDraftModel"
+                    class="options-input"
+                    :placeholder="text.cardCodeManualPlaceholder"
+                    type="text"
+                    @keydown.enter.prevent="emit('save-card-code')"
+                  >
+                  <button
+                    class="options-mini-btn"
+                    type="button"
+                    :disabled="cardCodeChecking"
+                    @click="emit('save-card-code')"
+                  >
+                    {{ cardCodeChecking ? text.validatingShort : text.cardCodeAddManually }}
+                  </button>
+                </div>
+              </div>
+
               <p class="options-hint" :class="cardCodeStatusClass">{{ cardCodeStatus }}</p>
               <p class="options-hint">{{ text.cardCodeHelper }}</p>
             </div>
@@ -339,6 +362,11 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // 派发到当前用户名下的点歌券（用于下拉选择）
+  myCardCodes: {
+    type: Array,
+    default: () => []
+  },
   // 点歌券状态文案与语义色
   cardCodeStatus: {
     type: String,
@@ -367,6 +395,7 @@ const emit = defineEmits([
   'update:cardCodeDraft',
   'save-card-code',
   'clear-card-code',
+  'select-my-card-code',
   'confirm',
   'cancel'
 ])
@@ -399,6 +428,31 @@ const cardCodeDraftModel = computed({
 })
 
 const noteLength = computed(() => String(props.note ?? '').length)
+
+/** 派发到名下的点歌券下拉项 */
+const myCardCodeOptions = computed(() =>
+  (props.myCardCodes || []).map((item) => ({
+    ...item,
+    displayName: item.code
+  }))
+)
+
+/** 当前选中的派发券码 */
+const selectedMyCardCode = computed(() => {
+  const current = String(props.cardCode || '').trim().toUpperCase()
+  if (!current) return ''
+  const exists = (props.myCardCodes || []).some((item) => String(item.code).toUpperCase() === current)
+  return exists ? current : ''
+})
+
+/** 从下拉中选取已派发的点歌券：交由父组件校验并保存 */
+const handleMyCardCodeSelect = (code) => {
+  if (!code) {
+    emit('clear-card-code')
+    return
+  }
+  emit('select-my-card-code', String(code).trim().toUpperCase())
+}
 
 /** 三段控件全部不可用时给出提示（例如留言、点歌券、时段均未开启） */
 const isEmpty = computed(

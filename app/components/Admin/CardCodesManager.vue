@@ -143,6 +143,10 @@
                     <span v-if="item.lockedAt">{{ getLocaleMessage('lockedAt', formatDate(item.lockedAt)) }}</span>
                     <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ getLocaleMessage('redeemedAt', formatDate(item.redeemedAt)) }}</span>
                   </p>
+                  <p v-if="item.assignedTo" class="mt-1 text-[10px] text-info leading-relaxed">
+                    {{ locale.assignmentAssignee }}: {{ item.assigneeName || item.assigneeUsername || item.assignedTo }}
+                    <span v-if="item.assignedAt" class="block text-text-tertiary">{{ formatDate(item.assignedAt) }}</span>
+                  </p>
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="space-y-2">
@@ -289,6 +293,242 @@
       </section>
     </div>
 
+    <!-- 派发点歌券 -->
+    <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.assignTitle }}</h3>
+          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignDesc }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectUser }}</label>
+          <div class="relative">
+            <input
+              v-model="assignUserKeyword"
+              type="text"
+              :placeholder="locale.assignSelectUserPlaceholder"
+              class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+              @focus="openRecipientDropdown"
+              @input="openRecipientDropdown"
+              @keydown.esc="closeRecipientDropdown"
+            >
+            <div
+              v-if="recipientDropdownOpen && recipientCandidates.length"
+              class="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border-secondary bg-bg-secondary shadow-xl"
+            >
+              <button
+                v-for="candidate in recipientCandidates"
+                :key="candidate.id"
+                class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary-50"
+                type="button"
+                @click="selectRecipient(candidate)"
+              >
+                <span class="min-w-0 flex-1 truncate">
+                  {{ candidate.name || candidate.username }}
+                  <span class="text-text-tertiary">({{ candidate.username }})</span>
+                </span>
+                <span class="shrink-0 text-[10px] text-text-tertiary">
+                  {{ [candidate.grade, candidate.class].filter(Boolean).join(' · ') }}
+                </span>
+              </button>
+            </div>
+          </div>
+          <p v-if="assignTarget" class="mt-1.5 text-[11px] text-info">
+            {{ locale.assignSelectUser }}: {{ assignTarget.name || assignTarget.username }}
+            <span class="text-text-tertiary">({{ assignTarget.username }})</span>
+          </p>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectCodes }}</label>
+          <div class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5">
+            <p class="text-sm text-text-primary">
+              {{ getLocaleMessage('assignSelectedCodes', assignableSelectedIds.length) }}
+            </p>
+            <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignSelectCodesHint }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
+        <input
+          v-model="assignNote"
+          type="text"
+          :placeholder="locale.assignNotePlaceholder"
+          class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+        >
+      </div>
+
+      <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-text-secondary">
+        <input v-model="assignNotify" type="checkbox" class="h-4 w-4 rounded border-border-tertiary bg-bg-secondary text-primary">
+        {{ locale.assignNotify }}
+      </label>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          class="flex items-center gap-2 rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
+          :disabled="assigning"
+          @click="submitAssign"
+        >
+          <Send :size="14" /> {{ assigning ? locale.exporting : locale.assignSubmit }}
+        </button>
+        <span v-if="assignResult" class="text-xs font-bold" :class="assignResult.failedCount > 0 ? 'text-warning' : 'text-success'">
+          {{ assignResult.failedCount > 0
+            ? getLocaleMessage('assignPartial', assignResult.assignedCount, assignResult.failedCount)
+            : getLocaleMessage('assignSuccess', assignResult.assignedCount) }}
+        </span>
+      </div>
+
+      <!-- 派发失败明细 -->
+      <div v-if="assignResult && assignResult.failures.length" class="rounded-xl border border-warning-20 bg-warning-5 p-3 space-y-1.5">
+        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-warning">{{ locale.assignResultTitle }}</p>
+        <p v-for="(failure, index) in assignResult.failures" :key="index" class="text-[11px] leading-relaxed text-text-secondary">
+          <span class="font-mono text-text-primary">{{ failure.code || `#${failure.cardCodeId}` }}</span>
+          — {{ failure.reason }}
+        </p>
+      </div>
+    </section>
+
+    <!-- 派发记录 -->
+    <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.assignmentsTitle }}</h3>
+          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignmentsDesc }}</p>
+        </div>
+        <button
+          class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary"
+          @click="fetchAssignments"
+        >
+          {{ locale.refreshLogs }}
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 xl:grid-cols-4">
+        <div class="xl:col-span-2">
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
+          <input
+            v-model="assignmentFilters.q"
+            type="text"
+            :placeholder="locale.assignmentFilterPlaceholder"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+            @keyup.enter="fetchAssignments(1)"
+          >
+        </div>
+        <div>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignmentStatus }}</label>
+          <CustomSelect
+            v-model="assignmentFilters.status"
+            :options="assignmentStatusOptions"
+            label-key="label"
+            value-key="value"
+            :placeholder="locale.allAssignmentStatuses"
+            class-name="w-full"
+            @change="fetchAssignments(1)"
+          />
+        </div>
+        <div class="flex items-end gap-2">
+          <button
+            class="rounded-xl bg-primary-hover px-4 py-2.5 text-xs font-black text-text-primary hover:bg-primary transition-colors"
+            @click="fetchAssignments(1)"
+          >
+            {{ locale.queryLogs }}
+          </button>
+          <button
+            class="rounded-xl border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-secondary"
+            @click="resetAssignmentFilters"
+          >
+            {{ locale.clearConditions }}
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          v-for="chip in assignmentStatsChips"
+          :key="chip.key"
+          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-black tracking-[0.2em]"
+          :class="chip.class"
+        >
+          {{ chip.label }}
+          <span class="text-[11px]">{{ chip.value }}</span>
+        </span>
+      </div>
+
+      <div v-if="assignmentsLoading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
+        {{ locale.loadingLogs }}
+      </div>
+
+      <div v-else class="overflow-x-auto rounded-2xl border border-border-secondary">
+        <table class="min-w-[900px] text-left text-sm">
+          <thead class="bg-bg-primary-80 text-text-tertiary">
+            <tr>
+              <th class="px-3 py-3 w-20">{{ locale.logId }}</th>
+              <th class="px-3 py-3">{{ locale.cardCode }}</th>
+              <th class="px-3 py-3 w-32">{{ locale.assignmentStatus }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.assignmentAssignee }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.assignmentDispatcher }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.assignmentAssignedAt }}</th>
+              <th class="px-3 py-3 w-32">{{ locale.actions }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in assignments"
+              :key="item.id"
+              class="border-t border-border-secondary-80 hover:bg-bg-primary-70 transition-colors"
+            >
+              <td class="px-3 py-3 text-text-tertiary">{{ item.id }}</td>
+              <td class="px-3 py-3 font-mono text-text-primary break-all">{{ item.codeSnapshot }}</td>
+              <td class="px-3 py-3">
+                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', assignmentStatusMeta(item.status).class]">
+                  {{ assignmentStatusMeta(item.status).label }}
+                </span>
+                <p v-if="item.failureReason" class="mt-1 text-[10px] text-error leading-relaxed">
+                  {{ item.assignmentFailureReason }}: {{ item.failureReason }}
+                </p>
+                <p v-if="item.notifyStatus === 'FAILED' && item.notifyError" class="mt-1 text-[10px] text-warning leading-relaxed">
+                  {{ item.notifyError }}
+                </p>
+              </td>
+              <td class="px-3 py-3 text-text-secondary">
+                {{ item.userNameSnapshot || locale.unknownUser }}
+              </td>
+              <td class="px-3 py-3 text-text-secondary">
+                {{ item.assignedByName || locale.unknownUser }}
+              </td>
+              <td class="px-3 py-3 text-text-tertiary">{{ formatDate(item.assignedAt) }}</td>
+              <td class="px-3 py-3">
+                <button
+                  v-if="item.status === 'ASSIGNED'"
+                  class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning"
+                  @click="recycleAssignment(item)"
+                >
+                  {{ locale.assignmentRecycle }}
+                </button>
+                <span v-else class="text-[11px] text-text-disabled">—</span>
+              </td>
+            </tr>
+            <tr v-if="!assignments.length">
+              <td colspan="7" class="px-3 py-8 text-center text-sm text-text-tertiary">{{ locale.assignmentNoRecords }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination
+        v-model:current-page="assignmentPagination.page"
+        :total-pages="assignmentPagination.totalPages"
+        :total-items="assignmentPagination.total"
+        item-name="条派发记录"
+        @change="fetchAssignments"
+      />
+    </section>
+
     <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
@@ -421,7 +661,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { Copy, Download, Plus, RefreshCw, Search } from '@lucide/vue'
+import { Copy, Download, Plus, RefreshCw, Search, Send } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
@@ -452,9 +692,60 @@ const createNote = ref('')
 const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' })
 const lastGeneratedCodes = ref([])
 
+// ===== 派发点歌券 =====
+const assignUserKeyword = ref('')
+const assignTarget = ref(null)
+const assignNote = ref('')
+const assignNotify = ref(true)
+const assigning = ref(false)
+const assignResult = ref(null)
+const assignments = ref([])
+const assignmentsLoading = ref(false)
+const assignmentStats = ref({ total: 0, assigned: 0, used: 0, recycled: 0, failed: 0 })
+const assignmentFilters = ref({ q: '', status: '' })
+const assignmentPagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
+const recipientCandidates = ref([])
+const recipientDropdownOpen = ref(false)
+let recipientSearchTimer = null
+
+const assignmentStatusOptions = computed(() => [
+  { label: locale.value?.allAssignmentStatuses || 'All Statuses', value: '' },
+  { label: locale.value?.assignmentStatusAssigned || 'Assigned', value: 'ASSIGNED' },
+  { label: locale.value?.assignmentStatusUsed || 'Used', value: 'USED' },
+  { label: locale.value?.assignmentStatusRecycled || 'Recycled', value: 'RECYCLED' },
+  { label: locale.value?.assignmentStatusFailed || 'Failed', value: 'FAILED' }
+])
+
+const assignmentStatusMeta = (status) => {
+  const statusMap = {
+    ASSIGNED: { label: locale.value?.assignmentStatusAssigned || 'Assigned', class: 'bg-info-10 text-info border border-info-20' },
+    USED: { label: locale.value?.assignmentStatusUsed || 'Used', class: 'bg-primary-10 text-primary border border-primary-20' },
+    RECYCLED: { label: locale.value?.assignmentStatusRecycled || 'Recycled', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' },
+    FAILED: { label: locale.value?.assignmentStatusFailed || 'Failed', class: 'bg-error-10 text-error border border-error-20' }
+  }
+  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
+}
+
+const assignmentStatsChips = computed(() => [
+  { key: 'total', label: locale.value?.assignmentStatTotal || 'Total', value: assignmentStats.value.total, class: 'bg-bg-tertiary text-text-primary' },
+  { key: 'assigned', label: locale.value?.assignmentStatusAssigned || 'Assigned', value: assignmentStats.value.assigned, class: 'bg-info-10 text-info border border-info-20' },
+  { key: 'used', label: locale.value?.assignmentStatusUsed || 'Used', value: assignmentStats.value.used, class: 'bg-primary-10 text-primary border border-primary-20' },
+  { key: 'recycled', label: locale.value?.assignmentStatusRecycled || 'Recycled', value: assignmentStats.value.recycled, class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' },
+  { key: 'failed', label: locale.value?.assignmentStatusFailed || 'Failed', value: assignmentStats.value.failed, class: 'bg-error-10 text-error border border-error-20' }
+])
+
+/** 只有「可用」状态的点歌券可以派发 */
+const assignableSelectedIds = computed(() =>
+  selectedIds.value.filter((id) => {
+    const item = codes.value.find((row) => row.id === id)
+    return item && item.status === 'AVAILABLE'
+  })
+)
+
 const statusFilterOptions = computed(() => [
   { label: locale.value?.allStatus || 'All Status', value: '' },
   { label: locale.value?.available || 'Available', value: 'AVAILABLE' },
+  { label: locale.value?.assignedStatus || 'Assigned', value: 'ASSIGNED' },
   { label: locale.value?.lockedStatus || 'Locked', value: 'LOCKED' },
   { label: locale.value?.redeemedStatus || 'Redeemed', value: 'REDEEMED' },
   { label: locale.value?.invalidStatus || 'Invalid', value: 'INVALID' }
@@ -470,6 +761,7 @@ const bulkStatusOptions = computed(() => [
 const statusMeta = (status) => {
   const statusMap = {
     AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-success-10 text-success border border-success-20' },
+    ASSIGNED: { label: locale.value?.assigned || 'Assigned', class: 'bg-info-10 text-info border border-info-20' },
     LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-warning-10 text-warning border border-warning-20' },
     REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-primary-10 text-primary border border-primary-20' },
     INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-error-10 text-error border border-error-20' }
@@ -493,12 +785,14 @@ const logSourceMeta = (source) => {
 const stats = computed(() => {
   const total = cardStats.value?.total ?? 0
   const available = cardStats.value?.available ?? 0
+  const assigned = cardStats.value?.assigned ?? 0
   const locked = cardStats.value?.locked ?? 0
   const redeemed = cardStats.value?.redeemed ?? 0
 
   return [
     { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-bg-tertiary text-text-primary' },
     { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-success-10 text-success' },
+    { label: locale.value?.stats?.assigned || 'Assigned', value: assigned, hint: locale.value?.stats?.assignedHint || 'Dispatched', badgeClass: 'bg-info-10 text-info border border-info-20' },
     { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-warning-10 text-warning' },
     { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-primary-10 text-primary' }
   ]
@@ -542,6 +836,7 @@ const fetchCodes = async (page = pagination.value.page) => {
       cardStats.value = {
         total: Number(res.stats?.total || 0),
         available: Number(res.stats?.available || 0),
+        assigned: Number(res.stats?.assigned || 0),
         locked: Number(res.stats?.locked || 0),
         redeemed: Number(res.stats?.redeemed || 0)
       }
@@ -582,8 +877,166 @@ const resetLogFilters = async () => {
   await fetchRedeemLogs()
 }
 
+// ===== 派发相关 =====
+const fetchAssignments = async (page = assignmentPagination.value.page) => {
+  const nextPage = Number(page)
+  assignmentPagination.value.page = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1
+  assignmentsLoading.value = true
+  try {
+    const query = new URLSearchParams()
+    query.set('page', String(assignmentPagination.value.page))
+    query.set('limit', String(assignmentPagination.value.limit))
+    if (assignmentFilters.value.q.trim()) query.set('q', assignmentFilters.value.q.trim())
+    if (assignmentFilters.value.status) query.set('status', assignmentFilters.value.status)
+
+    const res = await $fetch(`/api/admin/card-codes/assignments?${query.toString()}`)
+    if (res?.success) {
+      assignments.value = Array.isArray(res.data) ? res.data : []
+      assignmentStats.value = {
+        total: Number(res.stats?.total || 0),
+        assigned: Number(res.stats?.assigned || 0),
+        used: Number(res.stats?.used || 0),
+        recycled: Number(res.stats?.recycled || 0),
+        failed: Number(res.stats?.failed || 0)
+      }
+      assignmentPagination.value = {
+        ...assignmentPagination.value,
+        ...(res.pagination || {}),
+        totalPages: Math.max(1, Number(res.pagination?.totalPages || 1))
+      }
+    }
+  } catch (error) {
+    console.error('获取派发记录失败', error)
+    showToast(getNestedMessage('messages2', 'fetchAssignmentsFailed'), 'error')
+  } finally {
+    assignmentsLoading.value = false
+  }
+}
+
+const resetAssignmentFilters = async () => {
+  assignmentFilters.value = { q: '', status: '' }
+  await fetchAssignments(1)
+}
+
+/** 搜索接收人（防抖，避免逐字请求） */
+const openRecipientDropdown = () => {
+  recipientDropdownOpen.value = true
+  if (recipientSearchTimer) clearTimeout(recipientSearchTimer)
+  recipientSearchTimer = setTimeout(() => {
+    fetchRecipients()
+  }, 220)
+}
+
+const closeRecipientDropdown = () => {
+  recipientDropdownOpen.value = false
+}
+
+const fetchRecipients = async () => {
+  try {
+    const query = new URLSearchParams()
+    if (assignUserKeyword.value.trim()) query.set('q', assignUserKeyword.value.trim())
+    const res = await $fetch(`/api/admin/card-codes/recipients?${query.toString()}`)
+    recipientCandidates.value = Array.isArray(res?.data) ? res.data : []
+    recipientDropdownOpen.value = true
+  } catch (error) {
+    console.error('搜索接收用户失败', error)
+    recipientCandidates.value = []
+  }
+}
+
+/** 选定接收用户 */
+const selectRecipient = (candidate) => {
+  assignTarget.value = {
+    id: Number(candidate.id),
+    name: candidate.name || '',
+    username: candidate.username || ''
+  }
+  assignUserKeyword.value = candidate.name || candidate.username || ''
+  recipientDropdownOpen.value = false
+}
+
+/** 提交派发 */
+const submitAssign = async () => {
+  if (!assignTarget.value) {
+    showToast(locale.value?.assignNoUser || '请先选择接收用户', 'warning')
+    return
+  }
+  if (!assignableSelectedIds.value.length) {
+    showToast(locale.value?.assignNoCodes || '请先勾选要派发的点歌券', 'warning')
+    return
+  }
+
+  assigning.value = true
+  assignResult.value = null
+  try {
+    const res = await $fetch('/api/admin/card-codes/assign', {
+      method: 'POST',
+      body: {
+        userId: assignTarget.value.id,
+        cardCodeIds: assignableSelectedIds.value,
+        note: assignNote.value.trim(),
+        notify: assignNotify.value
+      }
+    })
+
+    assignResult.value = {
+      assignedCount: Number(res?.assignedCount || 0),
+      failedCount: Number(res?.failedCount || 0),
+      failures: Array.isArray(res?.failures) ? res.failures : []
+    }
+
+    if (assignResult.value.assignedCount > 0) {
+      showToast(
+        assignResult.value.failedCount > 0
+          ? getLocaleMessage('assignPartial', assignResult.value.assignedCount, assignResult.value.failedCount)
+          : getLocaleMessage('assignSuccess', assignResult.value.assignedCount),
+        assignResult.value.failedCount > 0 ? 'warning' : 'success'
+      )
+    } else {
+      showToast(locale.value?.assignAllFailed || '所有点歌券派发失败', 'error')
+    }
+
+    // 派发后清空选择与备注，并刷新列表与派发记录
+    selectedIds.value = []
+    assignNote.value = ''
+    await Promise.all([fetchCodes(pagination.value.page), fetchAssignments(1)])
+  } catch (error) {
+    console.error('派发点歌券失败', error)
+    showToast(locale.value?.assignFailed || '派发点歌券失败', 'error')
+  } finally {
+    assigning.value = false
+  }
+}
+
+/** 回收已派发的点歌券 */
+const recycleAssignment = async (item) => {
+  const code = item.codeSnapshot || ''
+  const confirmed = window.confirm(
+    locale.value?.assignmentRecycleConfirm?.(code) || `确定回收点歌券 ${code} 吗？`
+  )
+  if (!confirmed) return
+
+  try {
+    const res = await $fetch('/api/admin/card-codes/recycle', {
+      method: 'POST',
+      body: { assignmentIds: [item.id], reason: '' }
+    })
+    const count = Number(res?.recycledCount || 0)
+    if (count > 0) {
+      showToast(locale.value?.recycleSuccess?.(count) || `成功回收 ${count} 张点歌券`, 'success')
+      await Promise.all([fetchCodes(pagination.value.page), fetchAssignments(assignmentPagination.value.page)])
+    } else {
+      const reason = res?.failures?.[0]?.reason
+      showToast(reason || locale.value?.recycleFailed || '回收点歌券失败', 'error')
+    }
+  } catch (error) {
+    console.error('回收点歌券失败', error)
+    showToast(locale.value?.recycleFailed || '回收点歌券失败', 'error')
+  }
+}
+
 const refreshAll = async () => {
-  await Promise.all([fetchCodes(), fetchRedeemLogs()])
+  await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments()])
 }
 
 const resetFilters = async () => {

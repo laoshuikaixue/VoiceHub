@@ -127,6 +127,11 @@
               {{ locale.loginNow }}
             </button>
           </div>
+          <!-- 投稿设置内容说明：随时段/留言/点歌券等开关动态变化 -->
+          <div v-if="submissionOptionsSummary" class="submission-options-summary">
+            <Icon :size="12" name="settings" class="shrink-0" />
+            <span>{{ submissionOptionsSummary }}</span>
+          </div>
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
             v-if="
@@ -1201,12 +1206,14 @@
       :show-card-code="cardCodeEnabled"
       :card-code="cardCode"
       :card-code-required="requireCardCodeForRequests"
+      :my-card-codes="myCardCodes"
       :card-code-status="cardCodeStatusText"
       :card-code-status-tone="cardCodeStatusTone"
       :card-code-checking="cardCodeValidation.checking"
       :text="submissionOptionsText"
       @save-card-code="saveCardCode"
       @clear-card-code="clearCardCode"
+      @select-my-card-code="selectMyCardCode"
       @confirm="handlePlaySlotConfirm"
       @cancel="handlePlaySlotCancel"
     />
@@ -1304,6 +1311,8 @@ const submissionNotePublic = ref(true)
 const submissionAnonymous = ref(false)
 const cardCode = ref('')
 const cardCodeDraft = ref('')
+// 派发到当前用户名下的点歌券（用于投稿选项弹窗的下拉选择）
+const myCardCodes = ref([])
 const cardCodeValidation = ref({
   checking: false,
   valid: null,
@@ -1514,6 +1523,41 @@ const clearCardCode = () => {
   cardCode.value = ''
   cardCodeDraft.value = ''
   resetCardCodeValidation()
+}
+
+/**
+ * 拉取派发到当前用户名下的点歌券。
+ * 仅在登录且启用点歌券时有意义；失败时静默降级为「无券可选」，
+ * 不影响用户手动输入券码的路径。
+ */
+const fetchMyCardCodes = async () => {
+  if (!user.value || !cardCodeEnabled.value) {
+    myCardCodes.value = []
+    return
+  }
+  try {
+    const response = await $fetch('/api/card-codes/mine', {
+      ...auth.getAuthConfig()
+    })
+    myCardCodes.value = Array.isArray(response?.data) ? response.data : []
+  } catch (error) {
+    console.error('获取我的点歌券失败', error)
+    myCardCodes.value = []
+  }
+}
+
+/** 从下拉中选取已派发的点歌券：走与手动输入相同的校验链路 */
+const selectMyCardCode = async (code) => {
+  const normalized = String(code || '').trim().toUpperCase()
+  if (!normalized) {
+    clearCardCode()
+    return
+  }
+  if (!(await validateCardCode(normalized))) {
+    return
+  }
+  cardCode.value = normalized
+  cardCodeDraft.value = normalized
 }
 
 const ensureCardCodeForSubmit = async () => {
@@ -2526,6 +2570,34 @@ const submissionOptionsAvailable = computed(
     cardCodeEnabled.value
 )
 
+/**
+ * 「投稿设置包含……」说明文案。
+ * 内容随站点开关动态变化：
+ * - 开启时段选择 → 追加「播出安排」
+ * - 开启投稿留言 → 追加「投稿留言」
+ * - 开启匿名投稿（且已登录）→ 追加「匿名投稿」
+ * - 开启点歌券 → 追加「点歌券」
+ * 全部关闭时不展示该行。
+ */
+const submissionOptionsSummary = computed(() => {
+  const items = []
+  if (playTimeSelectionEnabled.value) {
+    items.push(locale.value.submissionOptionItemSlot || '播出安排')
+  }
+  if (enableSubmissionRemarks.value) {
+    items.push(locale.value.submissionOptionItemNote || '投稿留言')
+  }
+  if (allowAnonymousSubmission.value && !!user.value) {
+    items.push(locale.value.submissionOptionItemAnonymous || '匿名投稿')
+  }
+  if (cardCodeEnabled.value) {
+    items.push(locale.value.submissionOptionItemCardCode || '点歌券')
+  }
+  if (!items.length) return ''
+  const template = locale.value.submissionOptionsSummary || '投稿设置包含：{items}'
+  return template.replace('{items}', items.join('、'))
+})
+
 /** 是否已经设置过任何投稿选项（用于「更多选项」按钮的状态点） */
 const hasSubmissionOptions = computed(
   () =>
@@ -2540,6 +2612,8 @@ const hasSubmissionOptions = computed(
 const openSubmissionOptions = () => {
   submissionOptionsMode.value = 'options'
   showSubmissionOptions.value = true
+  // 打开弹窗时刷新已派发券，保证下拉列表是最新的
+  fetchMyCardCodes()
 }
 
 /** 后台开启「时段必选」但尚未选择时段 → 投稿时弹窗收集，确认后继续提交 */
@@ -2591,6 +2665,18 @@ const submissionOptionsText = computed(() => {
     cardCodeLabel: locale.value.cardCode || '点歌券',
     cardCodePlaceholder: locale.value.cardCodePlaceholder || '请输入点歌券',
     cardCodeHelper: cardCodeFieldMeta.value.helper,
+    // 已派发券下拉选择
+    cardCodeMyCodes: locale.value.cardCodeMyCodes || '我的点歌券',
+    cardCodeSelectPlaceholder: locale.value.cardCodeSelectPlaceholder || '从我的点歌券中选择',
+    cardCodeNoCodes: locale.value.cardCodeNoCodes || '暂无可用的点歌券',
+    cardCodeMyCodesCount: (count) =>
+      typeof locale.value.cardCodeMyCodesCount === 'function'
+        ? locale.value.cardCodeMyCodesCount(count)
+        : `我有 ${count} 张点歌券`,
+    // 手动添加
+    cardCodeAddManually: locale.value.cardCodeAddManually || '添加点歌券',
+    cardCodeManualInput: locale.value.cardCodeManualInput || '手动输入券码',
+    cardCodeManualPlaceholder: locale.value.cardCodeManualPlaceholder || '输入收到的点歌券码',
     // 操作
     save: locale.value.save || '保存',
     validatingShort: locale.value.validatingShort || '验证中',
@@ -4836,6 +4922,28 @@ defineExpose({
 .login-required-notice .login-link-btn:hover {
   background: var(--primary-35);
   color: var(--text-link-hover);
+}
+
+/* 投稿设置内容说明：与登录提示同一区域，视觉上更轻 */
+.submission-options-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px dashed var(--overlay-16);
+  border-radius: 8px;
+  background: var(--surface-card-bg-medium);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.submission-options-summary svg {
+  margin-top: 0.15rem;
+  color: var(--text-quaternary);
 }
 
 .submission-status-horizontal {

@@ -393,6 +393,13 @@
       "when": 1792728594394,
       "tag": "20261023040954_add_play_date_slot",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1792850248538,
+      "tag": "20261024135728_add_card_code_assignment",
+      "breakpoints": true
     }
   ]
 }

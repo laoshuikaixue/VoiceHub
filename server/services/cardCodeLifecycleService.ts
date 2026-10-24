@@ -1,6 +1,10 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { createError } from 'h3'
 import { cardCodeRedeemLogs, cardCodes } from '~/drizzle/schema'
+import {
+  markCardCodeAssignmentUsed,
+  restoreCardCodeAssignment
+} from '~~/server/services/cardCodeAssignmentService'
 
 type CardCodeTransitionContext = {
   songId: number
@@ -46,6 +50,8 @@ export const redeemCardCodeForSchedule = async (
       source: 'SCHEDULE_AUTO',
       songId
     })
+    // 派发过的点歌券核销后，把派发记录置为已使用，保证「派发 → 使用」链路可追溯
+    await markCardCodeAssignmentUsed(tx, redeemedCardCode.id, redeemedAt)
     return { changed: true, status: 'REDEEMED' }
   }
 
@@ -138,10 +144,14 @@ export const releaseCardCodeAfterSongWithdrawal = async (
     return { changed: false, status: current.status }
   }
 
+  // 派发给指定用户的券被撤回时，仍归还给原持有人，避免用户凭空丢失券
+  const backToAssignee = current.assignedTo != null
+  const restoredStatus = backToAssignee ? 'ASSIGNED' : 'AVAILABLE'
+
   const releaseResult = await tx
     .update(cardCodes)
     .set({
-      status: 'AVAILABLE',
+      status: restoredStatus,
       lockedBy: null,
       lockedAt: null,
       redeemedBy: null,
@@ -164,5 +174,10 @@ export const releaseCardCodeAfterSongWithdrawal = async (
     songId
   })
 
-  return { changed: true, status: 'AVAILABLE' }
+  // 归还给持有人时，派发记录从「已使用」回到「已派发」
+  if (backToAssignee) {
+    await restoreCardCodeAssignment(tx, cardCodeId, releasedAt)
+  }
+
+  return { changed: true, status: restoredStatus }
 }

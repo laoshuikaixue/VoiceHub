@@ -47,18 +47,26 @@ export default defineEventHandler(async (event) => {
           // 清理锁定信息
           newValues.lockedBy = null
           newValues.lockedAt = null
+          // 手工改状态等于绕过派发流程，需解除持有人绑定
+          newValues.assignedTo = null
+          newValues.assignedAt = null
         } else if (status === 'AVAILABLE') {
           newValues.status = 'AVAILABLE'
           newValues.lockedBy = null
           newValues.lockedAt = null
           newValues.redeemedBy = null
           newValues.redeemedAt = null
+          // 回到可用池即解除派发绑定
+          newValues.assignedTo = null
+          newValues.assignedAt = null
         } else if (status === 'LOCKED') {
           newValues.status = 'LOCKED'
           newValues.lockedBy = user.id
           newValues.lockedAt = now
           newValues.redeemedBy = null
           newValues.redeemedAt = null
+          newValues.assignedTo = null
+          newValues.assignedAt = null
         } else if (status === 'INVALID') {
           newValues.status = 'INVALID'
           // 作废时清理锁定与核销信息，与批量更新行为一致
@@ -66,6 +74,14 @@ export default defineEventHandler(async (event) => {
           newValues.lockedAt = null
           newValues.redeemedBy = null
           newValues.redeemedAt = null
+          newValues.assignedTo = null
+          newValues.assignedAt = null
+        } else if (status === 'ASSIGNED') {
+          // 手工置为已派发但没有持有人，与派发记录不一致，拒绝
+          throw createError({
+            statusCode: 400,
+            message: '「已派发」状态需通过派发功能设置，请使用派发功能指定接收人'
+          })
         }
       }
 

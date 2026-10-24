@@ -43,24 +43,45 @@ export default defineEventHandler(async (event) => {
     const updateObj: any = { updatedAt: new Date() }
     const status = validatedData.status
     if (status) {
+      if (status === 'ASSIGNED') {
+        // 手工置为已派发但没有持有人，与派发记录不一致，拒绝
+        throw createError({
+          statusCode: 400,
+          message: '「已派发」状态需通过派发功能设置，请使用派发功能指定接收人'
+        })
+      }
       updateObj.status = status
       if (status === 'REDEEMED') {
         updateObj.redeemedBy = operatorId
         updateObj.redeemedAt = new Date()
         updateObj.lockedBy = null
         updateObj.lockedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
       }
       if (status === 'LOCKED') {
         updateObj.lockedBy = operatorId
         updateObj.lockedAt = new Date()
         updateObj.redeemedBy = null
         updateObj.redeemedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
       }
       if (status === 'AVAILABLE') {
         updateObj.lockedBy = null
         updateObj.lockedAt = null
         updateObj.redeemedBy = null
         updateObj.redeemedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
+      }
+      if (status === 'INVALID') {
+        updateObj.lockedBy = null
+        updateObj.lockedAt = null
+        updateObj.redeemedBy = null
+        updateObj.redeemedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
       }
     }
     if ('note' in validatedData) {

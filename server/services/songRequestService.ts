@@ -467,7 +467,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           .limit(1)
 
         const found = codeRows[0]
-        if (!found || found.status !== 'AVAILABLE') {
+        if (!found) {
           throw createApiError(
             400,
             'CARD_CODE_INVALID_OR_USED',
@@ -475,10 +475,25 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           )
         }
 
+        // 派发给指定用户的券只能由该用户核销；未派发的券沿用原有规则
+        const isAssignedToSelf = found.status === 'ASSIGNED' && found.assignedTo === user.id
+        if (found.status !== 'AVAILABLE' && !isAssignedToSelf) {
+          throw createApiError(
+            400,
+            'CARD_CODE_INVALID_OR_USED',
+            'Request card is invalid or already used'
+          )
+        }
+
+        // 条件更新保证并发下同一张券只会被锁定一次
         const lockResult = await tx
           .update(cardCodes)
           .set({ status: 'LOCKED', lockedBy: user.id, lockedAt: new Date() })
-          .where(and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'AVAILABLE')))
+          .where(
+            isAssignedToSelf
+              ? and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'ASSIGNED'))
+              : and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'AVAILABLE'))
+          )
           .returning()
 
         if (lockResult.length === 0) {
