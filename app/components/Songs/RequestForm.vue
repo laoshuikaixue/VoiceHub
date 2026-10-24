@@ -2580,22 +2580,35 @@ const submissionOptionsAvailable = computed(
  * 全部关闭时不展示该行。
  */
 const submissionOptionsSummary = computed(() => {
+  // useSafeLocale 会把文案包装成带 toString 的函数，这里统一取出纯文本
+  const text = (key, fallback) => {
+    const value = locale.value?.[key]
+    if (typeof value === 'function') return String(value)
+    if (typeof value === 'string') return value
+    return fallback
+  }
+
   const items = []
   if (playTimeSelectionEnabled.value) {
-    items.push(locale.value.submissionOptionItemSlot || '播出安排')
+    items.push(text('submissionOptionItemSlot', '播出安排'))
   }
   if (enableSubmissionRemarks.value) {
-    items.push(locale.value.submissionOptionItemNote || '投稿留言')
+    items.push(text('submissionOptionItemNote', '投稿留言'))
   }
   if (allowAnonymousSubmission.value && !!user.value) {
-    items.push(locale.value.submissionOptionItemAnonymous || '匿名投稿')
+    items.push(text('submissionOptionItemAnonymous', '匿名投稿'))
   }
   if (cardCodeEnabled.value) {
-    items.push(locale.value.submissionOptionItemCardCode || '点歌券')
+    items.push(text('submissionOptionItemCardCode', '点歌券'))
   }
   if (!items.length) return ''
-  const template = locale.value.submissionOptionsSummary || '投稿设置包含：{items}'
-  return template.replace('{items}', items.join('、'))
+
+  const joined = items.join('、')
+  const template = locale.value?.submissionOptionsSummary
+  // 正常走 locale 的 {0} 占位符；缺失时退回内置文案
+  if (typeof template === 'function') return template(joined)
+  if (typeof template === 'string') return template.replace('{0}', joined)
+  return `投稿设置包含：${joined}`
 })
 
 /** 是否已经设置过任何投稿选项（用于「更多选项」按钮的状态点） */
@@ -2667,8 +2680,13 @@ const submissionOptionsText = computed(() => {
     cardCodeHelper: cardCodeFieldMeta.value.helper,
     // 已派发券下拉选择
     cardCodeMyCodes: locale.value.cardCodeMyCodes || '我的点歌券',
-    cardCodeSelectPlaceholder: locale.value.cardCodeSelectPlaceholder || '从我的点歌券中选择',
+    cardCodeSelectLabel: locale.value.cardCodeSelectLabel || '选择点歌券',
+    cardCodeSelectPlaceholder:
+      locale.value.cardCodeSelectPlaceholder || '从我的点歌券中选择，或手动输入券码',
     cardCodeNoCodes: locale.value.cardCodeNoCodes || '暂无可用的点歌券',
+    cardCodeNoCodesHint:
+      locale.value.cardCodeNoCodesHint ||
+      '暂无可用的点歌券，可在列表中选择「手动输入券码」录入。',
     cardCodeMyCodesCount: (count) =>
       typeof locale.value.cardCodeMyCodesCount === 'function'
         ? locale.value.cardCodeMyCodesCount(count)
@@ -2676,8 +2694,10 @@ const submissionOptionsText = computed(() => {
     // 手动添加
     cardCodeAddManually: locale.value.cardCodeAddManually || '添加点歌券',
     cardCodeManualInput: locale.value.cardCodeManualInput || '手动输入券码',
+    cardCodeManualOption: locale.value.cardCodeManualOption || '手动输入券码',
     cardCodeManualPlaceholder: locale.value.cardCodeManualPlaceholder || '输入收到的点歌券码',
     // 操作
+    clear: locale.value.clear || '清除',
     save: locale.value.save || '保存',
     validatingShort: locale.value.validatingShort || '验证中',
     cancel: locale.value.cancel || '取消',

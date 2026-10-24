@@ -93,16 +93,56 @@
               </div>
             </div>
 
-            <!-- 二、投稿留言 / 匿名投稿 -->
-            <div v-if="showNote || showAnonymous" class="options-section">
-              <div class="options-section-head">
-                <span class="options-section-title">
-                  <Icon :size="14" name="message-circle" />
-                  <span>{{ showNote ? text.noteLabel : text.anonymousLabel }}</span>
-                </span>
-                <div v-if="showNote" class="options-inline-options">
-                  <label class="options-checkbox">
-                    <input v-model="notePublicModel" type="checkbox" class="options-checkbox-input" />
+            <!-- 二、投稿留言 / 匿名投稿 / 点歌券
+                 三者同属「投稿内容」一组，组内不画分割线；
+                 分割线只出现在本组与上方「播出安排」之间。 -->
+            <div
+              v-if="showNote || showAnonymous || showCardCode"
+              class="options-group"
+              :class="{ 'options-group--separated': slotEnabled }"
+            >
+              <!-- 2.1 投稿留言 / 匿名投稿 -->
+              <div v-if="showNote || showAnonymous" class="options-section">
+                <div class="options-section-head">
+                  <span class="options-section-title">
+                    <Icon :size="14" name="message-circle" />
+                    <span>{{ showNote ? text.noteLabel : text.anonymousLabel }}</span>
+                  </span>
+                  <div v-if="showNote" class="options-inline-options">
+                    <label class="options-checkbox">
+                      <input v-model="notePublicModel" type="checkbox" class="options-checkbox-input" />
+                      <span class="options-checkbox-box">
+                        <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M1 5L4.5 8.5L11 1.5"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      <span class="options-checkbox-text">{{ text.publicToUsers }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <textarea
+                  v-if="showNote"
+                  id="options-note"
+                  v-model="noteModel"
+                  maxlength="300"
+                  class="options-note-input"
+                  :placeholder="text.notePlaceholder"
+                />
+
+                <div class="options-note-footer">
+                  <label v-if="showAnonymous" class="options-checkbox">
+                    <input
+                      v-model="noteAnonymousModel"
+                      type="checkbox"
+                      class="options-checkbox-input"
+                    />
                     <span class="options-checkbox-box">
                       <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -114,113 +154,87 @@
                         />
                       </svg>
                     </span>
-                    <span class="options-checkbox-text">{{ text.publicToUsers }}</span>
+                    <span class="options-checkbox-text">{{ text.anonymous }}</span>
                   </label>
+                  <span v-else />
+                  <span v-if="showNote" class="options-counter">{{ noteLength }}/300</span>
                 </div>
+
+                <p v-if="showNote && noteApprovalRequired" class="options-hint is-warning">
+                  <Icon name="info" :size="12" class="shrink-0" />
+                  <span class="truncate">{{ text.approvalHint }}</span>
+                </p>
               </div>
 
-              <textarea
-                v-if="showNote"
-                id="options-note"
-                v-model="noteModel"
-                maxlength="300"
-                class="options-note-input"
-                :placeholder="text.notePlaceholder"
-              />
-
-              <div class="options-note-footer">
-                <label v-if="showAnonymous" class="options-checkbox">
-                  <input
-                    v-model="noteAnonymousModel"
-                    type="checkbox"
-                    class="options-checkbox-input"
-                  />
-                  <span class="options-checkbox-box">
-                    <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M1 5L4.5 8.5L11 1.5"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+              <!-- 2.2 点歌券 -->
+              <div v-if="showCardCode" class="options-section">
+                <div class="options-section-head">
+                  <span class="options-section-title">
+                    <Icon :size="14" name="gift" />
+                    <span>{{ text.cardCodeLabel }}</span>
+                    <span :class="['options-tag', { 'options-tag-required': cardCodeRequired }]">
+                      {{ cardCodeRequired ? text.required : text.optional }}
+                    </span>
                   </span>
-                  <span class="options-checkbox-text">{{ text.anonymous }}</span>
-                </label>
-                <span v-else />
-                <span v-if="showNote" class="options-counter">{{ noteLength }}/300</span>
-              </div>
-
-              <p v-if="showNote && noteApprovalRequired" class="options-hint is-warning">
-                <Icon name="info" :size="12" class="shrink-0" />
-                <span class="truncate">{{ text.approvalHint }}</span>
-              </p>
-            </div>
-
-            <!-- 三、点歌券 -->
-            <div v-if="showCardCode" class="options-section">
-              <div class="options-section-head">
-                <span class="options-section-title">
-                  <Icon :size="14" name="gift" />
-                  <span>{{ text.cardCodeLabel }}</span>
-                  <span :class="['options-tag', { 'options-tag-required': cardCodeRequired }]">
-                    {{ cardCodeRequired ? text.required : text.optional }}
-                  </span>
-                </span>
-                <button
-                  v-if="cardCode || cardCodeDraft"
-                  class="options-clear-link"
-                  type="button"
-                  @click="emit('clear-card-code')"
-                >
-                  {{ text.clear }}
-                </button>
-              </div>
-
-              <!-- 已派发到名下的点歌券：直接从下拉中选择 -->
-              <div v-if="myCardCodes.length" class="options-field">
-                <label class="options-label" for="options-my-card-code">
-                  <span>{{ text.cardCodeMyCodes }}</span>
-                  <span class="options-tag">{{ text.cardCodeMyCodesCount(myCardCodes.length) }}</span>
-                </label>
-                <CustomSelect
-                  :model-value="selectedMyCardCode"
-                  :options="myCardCodeOptions"
-                  label-key="displayName"
-                  value-key="code"
-                  :placeholder="text.cardCodeSelectPlaceholder"
-                  @update:model-value="handleMyCardCodeSelect"
-                />
-              </div>
-
-              <!-- 手动输入：没有派发券，或收到了未登记的券码 -->
-              <div class="options-field">
-                <label class="options-label" for="options-card-code">
-                  <span>{{ text.cardCodeManualInput }}</span>
-                </label>
-                <div class="options-card-code-row">
-                  <input
-                    id="options-card-code"
-                    v-model="cardCodeDraftModel"
-                    class="options-input"
-                    :placeholder="text.cardCodeManualPlaceholder"
-                    type="text"
-                    @keydown.enter.prevent="emit('save-card-code')"
-                  >
                   <button
-                    class="options-mini-btn"
+                    v-if="cardCode || cardCodeDraft"
+                    class="options-clear-link"
                     type="button"
-                    :disabled="cardCodeChecking"
-                    @click="emit('save-card-code')"
+                    @click="emit('clear-card-code')"
                   >
-                    {{ cardCodeChecking ? text.validatingShort : text.cardCodeAddManually }}
+                    {{ text.clear }}
                   </button>
                 </div>
-              </div>
 
-              <p class="options-hint" :class="cardCodeStatusClass">{{ cardCodeStatus }}</p>
-              <p class="options-hint">{{ text.cardCodeHelper }}</p>
+                <!-- 点歌券下拉：我的点歌券 + 「手动输入券码」同在一个列表里选择 -->
+                <div class="options-field">
+                  <label class="options-label" for="options-card-code-select">
+                    <span>{{ text.cardCodeSelectLabel }}</span>
+                    <span v-if="myCardCodes.length" class="options-tag">
+                      {{ text.cardCodeMyCodesCount(myCardCodes.length) }}
+                    </span>
+                  </label>
+                  <CustomSelect
+                    :model-value="cardCodeSelection"
+                    :options="cardCodeOptions"
+                    label-key="displayName"
+                    value-key="code"
+                    :placeholder="text.cardCodeSelectPlaceholder"
+                    @update:model-value="handleCardCodeSelect"
+                  />
+                  <p v-if="!myCardCodes.length" class="options-hint">
+                    {{ text.cardCodeNoCodesHint }}
+                  </p>
+                </div>
+
+                <!-- 手动输入：仅在下拉中选中「手动输入券码」后展开 -->
+                <div v-if="showManualInput" class="options-field">
+                  <label class="options-label" for="options-card-code">
+                    <span>{{ text.cardCodeManualInput }}</span>
+                  </label>
+                  <div class="options-card-code-row">
+                    <input
+                      id="options-card-code"
+                      v-model="cardCodeDraftModel"
+                      class="options-input"
+                      :placeholder="text.cardCodeManualPlaceholder"
+                      type="text"
+                      @keydown.enter.prevent="emit('save-card-code')"
+                    >
+                    <button
+                      class="options-mini-btn"
+                      type="button"
+                      :disabled="cardCodeChecking"
+                      @click="emit('save-card-code')"
+                    >
+                      {{ cardCodeChecking ? text.validatingShort : text.cardCodeAddManually }}
+                    </button>
+                  </div>
+                </div>
+
+                <p class="options-hint" :class="cardCodeStatusClass">{{ cardCodeStatus }}</p>
+                <p class="options-hint">{{ text.cardCodeHelper }}</p>
+              </div>
             </div>
 
             <!-- 空内容提示 -->
@@ -403,6 +417,8 @@ const emit = defineEmits([
 const localDate = ref('')
 const localTimeId = ref('')
 const errorMessage = ref('')
+// 是否主动选中了下拉中的「手动输入券码」（选中后展开输入框）
+const manualCardCodeMode = ref(false)
 
 const minDate = computed(() => props.today || '')
 
@@ -437,21 +453,54 @@ const myCardCodeOptions = computed(() =>
   }))
 )
 
-/** 当前选中的派发券码 */
-const selectedMyCardCode = computed(() => {
+/** 「手动输入券码」在下拉列表中的特殊值 */
+const MANUAL_CARD_CODE_VALUE = '__manual__'
+
+/**
+ * 点歌券下拉列表 = 我的点歌券 + 「手动输入券码」。
+ * 手动输入不再单独占一块区域，而是作为下拉里的一项，
+ * 选中后才展开输入框。
+ */
+const cardCodeOptions = computed(() => [
+  ...myCardCodeOptions.value,
+  {
+    code: MANUAL_CARD_CODE_VALUE,
+    displayName: String(props.text?.cardCodeManualOption || '手动输入券码')
+  }
+])
+
+/**
+ * 下拉当前选中值：
+ * - 手动输入模式 → 特殊值（同时也是已保存券码不在「我的点歌券」时的兜底）
+ * - 已保存的券码在「我的点歌券」里 → 该券码
+ * - 未选择 → 空
+ * 由 props.cardCode 派生，因此校验未通过时会自动回弹到真实状态。
+ */
+const cardCodeSelection = computed(() => {
+  if (manualCardCodeMode.value) return MANUAL_CARD_CODE_VALUE
   const current = String(props.cardCode || '').trim().toUpperCase()
   if (!current) return ''
-  const exists = (props.myCardCodes || []).some((item) => String(item.code).toUpperCase() === current)
-  return exists ? current : ''
+  const owned = (props.myCardCodes || []).some((item) => String(item.code).toUpperCase() === current)
+  return owned ? current : MANUAL_CARD_CODE_VALUE
 })
 
-/** 从下拉中选取已派发的点歌券：交由父组件校验并保存 */
-const handleMyCardCodeSelect = (code) => {
+/** 是否处于「手动输入券码」模式（展开输入框） */
+const showManualInput = computed(() => cardCodeSelection.value === MANUAL_CARD_CODE_VALUE)
+
+/** 从下拉中选取点歌券：派发券走校验链路，手动输入项则展开输入框 */
+const handleCardCodeSelect = (value) => {
+  const code = String(value || '').trim()
   if (!code) {
+    manualCardCodeMode.value = false
     emit('clear-card-code')
     return
   }
-  emit('select-my-card-code', String(code).trim().toUpperCase())
+  if (code === MANUAL_CARD_CODE_VALUE) {
+    manualCardCodeMode.value = true
+    return
+  }
+  manualCardCodeMode.value = false
+  emit('select-my-card-code', code.toUpperCase())
 }
 
 /** 三段控件全部不可用时给出提示（例如留言、点歌券、时段均未开启） */
@@ -506,6 +555,18 @@ watch(
     localDate.value = props.slotEnabled ? props.initialDate || '' : ''
     localTimeId.value = props.slotEnabled && props.initialTimeId ? String(props.initialTimeId) : ''
     errorMessage.value = ''
+    // 打开时重置手动模式：由已保存券码是否在「我的点歌券」中决定
+    manualCardCodeMode.value = false
+  }
+)
+
+/** 父组件清空点歌券后，退出手动输入模式 */
+watch(
+  () => props.cardCode,
+  (value) => {
+    if (!String(value || '').trim()) {
+      manualCardCodeMode.value = false
+    }
   }
 )
 
@@ -558,7 +619,15 @@ const handleConfirm = () => {
   gap: 0.75rem;
 }
 
-.options-section + .options-section {
+/* 「投稿留言 / 点歌券」同属一组，组内不再画分割线 */
+.options-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 分割线只出现在「投稿内容」组与「播出安排」之间 */
+.options-group--separated {
   padding-top: 1.25rem;
   border-top: 1px dashed var(--border-secondary-50);
 }
