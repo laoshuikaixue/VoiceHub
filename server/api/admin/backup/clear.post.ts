@@ -196,7 +196,7 @@ export default defineEventHandler(async (event) => {
       preservedSuperAdminIds,
       temporaryPreservedUserId
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('清空数据失败:', error)
     throw createError({
       statusCode: 500,

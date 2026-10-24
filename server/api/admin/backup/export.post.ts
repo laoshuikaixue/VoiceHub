@@ -52,7 +52,23 @@ export default defineEventHandler(async (event) => {
     console.log('开始创建数据库备份...')
 
     // 创建备份数据对象
-    const backupData = {
+    const backupData: {
+      metadata: {
+        version: string
+        timestamp: string
+        creator: string
+        description: string
+        backupType: string
+        tables: Array<{
+          name: string
+          description: string
+          recordCount: number
+          skipped?: boolean
+        }>
+        totalRecords: number
+      }
+      data: Record<string, any>
+    } = {
       metadata: {
         version: '1.0',
         timestamp: new Date().toISOString(),
@@ -518,7 +534,7 @@ export default defineEventHandler(async (event) => {
 
         totalRecords += tableData.length
         console.log(`✅ ${tableName}: ${tableData.length} 条记录`)
-      } catch (error) {
+      } catch (error: any) {
         // 检查是否为表不存在错误
         // Postgres 错误代码 42P01: undefined_table (表不存在)
         const isTableMissing =
@@ -610,7 +626,7 @@ export default defineEventHandler(async (event) => {
             downloadMode: 'file' // 标识为文件下载模式
           }
         }
-      } catch (fsError) {
+      } catch (fsError: any) {
         console.warn('文件系统操作失败，回退到直接返回模式:', fsError.message)
 
         // 如果文件系统操作失败，回退到直接返回模式
@@ -628,7 +644,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('创建数据库备份失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,
