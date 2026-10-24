@@ -411,258 +411,6 @@
           </div>
 
           <div class="results-content">
-            <div
-              v-if="(enableSubmissionRemarks && !noteInSlotModal) || cardCodeEnabled"
-              class="form-row submission-meta-row"
-            >
-              <div
-                v-if="enableSubmissionRemarks && !noteInSlotModal"
-                class="form-group submission-note-group"
-              >
-                <div class="input-wrapper">
-                  <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <label
-                      for="submission-note"
-                      class="text-[12px] font-bold text-text-secondary"
-                      >{{ locale.submissionNote }}</label
-                    >
-                    <div class="flex flex-wrap items-center gap-2">
-                      <button
-                        v-if="cardCodeEnabled"
-                        :class="[
-                          'mobile-card-code-chip',
-                          trimmedCardCode
-                            ? cardCodeValidation.valid
-                              ? 'is-valid'
-                              : cardCodeValidation.valid === false
-                                ? 'is-invalid'
-                                : 'has-code'
-                            : cardCodeFieldMeta.required
-                              ? 'is-required'
-                              : ''
-                        ]"
-                        type="button"
-                        @click="openCardCodeModal"
-                      >
-                        <Icon
-                          :size="12"
-                          :name="
-                            cardCodeValidation.checking
-                              ? 'loader'
-                              : trimmedCardCode
-                                ? cardCodeValidation.valid === false
-                                  ? 'close'
-                                  : 'check'
-                                : 'plus'
-                          "
-                        />
-                        <span>{{ mobileCardCodeLabel }}</span>
-                      </button>
-                      <label class="custom-checkbox-wrapper">
-                        <input
-                          v-model="submissionNotePublic"
-                          type="checkbox"
-                          class="custom-checkbox-input"
-                          :disabled="!siteConfigLoaded"
-                        />
-                        <span class="custom-checkbox-box">
-                          <svg
-                            class="custom-checkbox-icon"
-                            viewBox="0 0 12 10"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M1 5L4.5 8.5L11 1.5"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                          </svg>
-                        </span>
-                        <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
-                      </label>
-                      <label
-                        v-if="allowAnonymousSubmission && user"
-                        class="custom-checkbox-wrapper"
-                      >
-                        <input
-                          v-model="submissionAnonymous"
-                          type="checkbox"
-                          class="custom-checkbox-input"
-                          :disabled="!siteConfigLoaded"
-                        />
-                        <span class="custom-checkbox-box">
-                          <svg
-                            class="custom-checkbox-icon"
-                            viewBox="0 0 12 10"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M1 5L4.5 8.5L11 1.5"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                          </svg>
-                        </span>
-                        <span class="custom-checkbox-text">{{ locale.anonymousSubmission }}</span>
-                      </label>
-                    </div>
-                  </div>
-                  <textarea
-                    id="submission-note"
-                    v-model="submissionNote"
-                    maxlength="300"
-                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary-10 resize-y transition-all"
-                  />
-                  <div class="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-tertiary">
-                    <p v-if="submissionNoteRequiresApproval" class="flex min-w-0 items-center gap-1">
-                      <Icon name="info" size="12" class="shrink-0 text-warning" />
-                      <span class="truncate">{{ locale.submissionNoteApprovalHint }}</span>
-                    </p>
-                    <span class="shrink-0">{{ submissionNote.length }}/300</span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                v-if="cardCodeEnabled"
-                :class="[
-                  'form-group card-code-form-group',
-                  {
-                    'mobile-hidden-card-code-group':
-                      enableSubmissionRemarks && !noteInSlotModal
-                  }
-                ]"
-              >
-                <div class="desktop-card-code-panel">
-                  <div class="flex min-w-0 items-center gap-2">
-                    <div class="min-w-0">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-text-primary">{{
-                          locale.cardCode
-                        }}</span>
-                        <span
-                          :class="[
-                            'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
-                            cardCodeFieldMeta.required
-                              ? 'border-warning-30 bg-warning-10 text-warning-300'
-                              : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
-                          ]"
-                        >
-                          {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
-                        </span>
-                      </div>
-                      <p
-                        :class="[
-                          'mt-1 truncate text-[11px]',
-                          cardCodeValidation.valid
-                            ? 'text-success-300'
-                            : cardCodeValidation.valid === false
-                              ? 'text-error-80'
-                              : cardCodeFieldMeta.required
-                                ? 'text-warning-300'
-                                : 'text-text-tertiary'
-                        ]"
-                      >
-                        {{ cardCodeStatusText }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex shrink-0 items-center gap-2">
-                    <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-20 bg-warning-10 px-3 text-xs font-black text-warning transition-all hover:border-warning-40 hover:bg-warning-15"
-                      type="button"
-                      @click="openCardCodeModal"
-                    >
-                      <Icon :size="13" :name="trimmedCardCode ? 'edit' : 'plus'" />
-                      {{ trimmedCardCode ? locale.editCardCode : locale.addCardCode }}
-                    </button>
-                    <button
-                      v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary-80 text-text-tertiary transition-all hover:border-error-30 hover:text-error"
-                      :title="locale.clearCardCode"
-                      type="button"
-                      @click="clearCardCode"
-                    >
-                      <Icon :size="13" name="close" />
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  v-if="!enableSubmissionRemarks || noteInSlotModal"
-                  :class="[
-                    'mobile-card-code-button',
-                    trimmedCardCode
-                      ? cardCodeValidation.valid
-                        ? 'is-valid'
-                        : cardCodeValidation.valid === false
-                          ? 'is-invalid'
-                          : 'has-code'
-                      : cardCodeFieldMeta.required
-                        ? 'is-required'
-                        : ''
-                  ]"
-                  type="button"
-                  @click="openCardCodeModal"
-                >
-                  <span class="flex min-w-0 items-center gap-2">
-                    <Icon
-                      :size="14"
-                      :name="
-                        cardCodeValidation.checking
-                          ? 'loader'
-                          : trimmedCardCode
-                            ? cardCodeValidation.valid === false
-                              ? 'close'
-                              : 'check'
-                            : 'plus'
-                      "
-                    />
-                    <span class="truncate">{{ cardCodeStatusText }}</span>
-                  </span>
-                  <Icon :size="13" name="chevron-right" />
-                </button>
-              </div>
-            </div>
-
-            <!-- 匿名投稿：备注功能未开启时独立成行，由站点开关 allowAnonymousSubmission 控制 -->
-            <div
-              v-if="allowAnonymousSubmission && user && !enableSubmissionRemarks"
-              class="form-row anonymous-submission-row"
-            >
-              <label class="custom-checkbox-wrapper">
-                <input
-                  v-model="submissionAnonymous"
-                  type="checkbox"
-                  class="custom-checkbox-input"
-                  :disabled="!siteConfigLoaded"
-                />
-                <span class="custom-checkbox-box">
-                  <svg
-                    class="custom-checkbox-icon"
-                    viewBox="0 0 12 10"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M1 5L4.5 8.5L11 1.5"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </span>
-                <span class="custom-checkbox-text">{{ locale.anonymousSubmission }}</span>
-              </label>
-            </div>
-
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <AppSpinner :size="40" />
@@ -714,6 +462,19 @@
                       </p>
                     </div>
                     <div class="result-actions">
+                      <!-- 投稿选项：留言 / 点歌券 / 播出时段，由用户主动打开，不拦截直接投稿 -->
+                      <button
+                        v-if="submissionOptionsAvailable"
+                        :class="['options-trigger-btn', { 'has-options': hasSubmissionOptions }]"
+                        :aria-label="locale.submissionOptions"
+                        :title="locale.submissionOptions"
+                        type="button"
+                        @click.stop.prevent="openSubmissionOptions"
+                      >
+                        <Icon name="settings" :size="16" />
+                        <span v-if="hasSubmissionOptions" class="options-trigger-dot" />
+                      </button>
+
                       <!-- QQ音乐上传到网易云按钮（仅当结果确实来自QQ音乐时显示） -->
                       <button
                         v-if="isTencentSource(result)"
@@ -904,6 +665,15 @@
                   >
                     {{ locale.manualSubmitLong }}
                   </button>
+                  <button
+                    v-if="submissionOptionsAvailable && user"
+                    class="options-trigger-text-btn"
+                    type="button"
+                    @click="openSubmissionOptions"
+                  >
+                    <Icon name="settings" :size="14" />
+                    <span>{{ locale.submissionOptions }}</span>
+                  </button>
                 </div>
               </div>
 
@@ -928,6 +698,15 @@
                   @click="showManualModal = true"
                 >
                   {{ locale.manualSubmit }}
+                </button>
+                <button
+                  v-if="submissionOptionsAvailable && user"
+                  class="options-trigger-text-btn"
+                  type="button"
+                  @click="openSubmissionOptions"
+                >
+                  <Icon name="settings" :size="14" />
+                  <span>{{ locale.submissionOptions }}</span>
                 </button>
               </div>
 
@@ -1045,115 +824,6 @@
       :title="locale.addCollaboratorTitle"
       @select="handleUserSelect"
     />
-
-    <!-- 点歌券输入弹窗 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary-80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
-          @click.self="closeCardCodeModal"
-        >
-          <div
-            class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
-            @click.stop
-          >
-            <div
-              class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4"
-            >
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
-                  <span
-                    :class="[
-                      'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
-                      cardCodeFieldMeta.required
-                        ? 'border-warning-30 bg-warning-10 text-warning-300'
-                        : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
-                    ]"
-                  >
-                    {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
-                  </span>
-                </div>
-                <p class="mt-1 text-[11px] text-text-tertiary">{{ cardCodeFieldMeta.helper }}</p>
-              </div>
-              <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary-60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
-                type="button"
-                @click="closeCardCodeModal"
-              >
-                <Icon :size="15" name="close" />
-              </button>
-            </div>
-
-            <div class="px-5 py-5">
-              <label
-                for="card-code-modal"
-                class="px-1 text-[10px] font-black uppercase tracking-widest text-text-disabled"
-              >
-                {{ locale.cardCodeLabel }}
-              </label>
-              <input
-                id="card-code-modal"
-                ref="cardCodeInputRef"
-                v-model="cardCodeDraft"
-                :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
-                type="text"
-                @keydown.enter.prevent="saveCardCode"
-              >
-              <p
-                :class="[
-                  'mt-2 px-1 text-[11px]',
-                  cardCodeValidation.valid
-                    ? 'text-success-300'
-                    : cardCodeValidation.valid === false
-                      ? 'text-error-80'
-                      : 'text-text-tertiary'
-                ]"
-              >
-                {{ cardCodeModalHint }}
-              </p>
-            </div>
-
-            <div
-              class="flex flex-col-reverse gap-2 border-t border-border-secondary-70 bg-bg-secondary-70 px-5 py-4 sm:flex-row sm:justify-end"
-            >
-              <button
-                class="rounded-lg px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:text-text-secondary"
-                type="button"
-                @click="closeCardCodeModal"
-              >
-                {{ locale.cancel }}
-              </button>
-              <button
-                v-if="trimmedCardCode"
-                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error-30 hover:text-error"
-                type="button"
-                @click="clearCardCode"
-              >
-                {{ locale.clear }}
-              </button>
-              <button
-                :disabled="cardCodeValidation.checking"
-                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-text-primary transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
-                type="button"
-                @click="saveCardCode"
-              >
-                {{ cardCodeValidation.checking ? locale.validatingCardCode : locale.save }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
 
     <Teleport to="body">
       <Transition
@@ -1508,24 +1178,35 @@
       @change="handleImportDataQQ"
     >
 
-    <!-- 播出时段选择弹窗：选歌后弹出，时段必选、日期可选；留言功能开启时一并集成留言输入 -->
-    <SongsPlaySlotPickerModal
-      v-model:show="showPlaySlotModal"
+    <!-- 投稿选项弹窗：留言 / 点歌券 / 播出时段。
+         默认由「更多选项」按钮主动打开，只保存选项；
+         后台开启「时段必选」时，投稿也会弹出此弹窗，确认后继续提交。 -->
+    <SubmissionOptionsModal
+      v-model:show="showSubmissionOptions"
       v-model:note="submissionNote"
       v-model:note-public="submissionNotePublic"
       v-model:note-anonymous="submissionAnonymous"
+      v-model:card-code-draft="cardCodeDraft"
+      :mode="submissionOptionsMode"
+      :slot-enabled="playTimeSelectionEnabled"
+      :slot-required="playSlotRequired"
       :play-times="enabledPlayTimes"
-      :required="playSlotRequired"
       :initial-date="preferredPlayDate"
       :initial-time-id="preferredPlayTimeId"
       :today="todayPlayDate"
-      :weekday-names="locale.weekdaysFull || []"
-      :text="playSlotModalText"
       :format-label="formatPlayTimeOptionLabel"
-      :show-note="noteInSlotModal"
-      :show-note-anonymous="allowAnonymousSubmission && !!user"
+      :show-note="enableSubmissionRemarks"
+      :show-anonymous="allowAnonymousSubmission && !!user"
       :note-approval-required="submissionNoteRequiresApproval"
-      :note-text="playSlotNoteText"
+      :show-card-code="cardCodeEnabled"
+      :card-code="cardCode"
+      :card-code-required="requireCardCodeForRequests"
+      :card-code-status="cardCodeStatusText"
+      :card-code-status-tone="cardCodeStatusTone"
+      :card-code-checking="cardCodeValidation.checking"
+      :text="submissionOptionsText"
+      @save-card-code="saveCardCode"
+      @clear-card-code="clearCardCode"
       @confirm="handlePlaySlotConfirm"
       @cancel="handlePlaySlotCancel"
     />
@@ -1546,7 +1227,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
-import PlaySlotPickerModal from '~/components/Songs/PlaySlotPickerModal.vue'
+import SubmissionOptionsModal from '~/components/Songs/SubmissionOptionsModal.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, getCoverThumbUrl, validateUrl } from '~/utils/url'
@@ -1623,8 +1304,6 @@ const submissionNotePublic = ref(true)
 const submissionAnonymous = ref(false)
 const cardCode = ref('')
 const cardCodeDraft = ref('')
-const showCardCodeModal = ref(false)
-const cardCodeInputRef = ref(null)
 const cardCodeValidation = ref({
   checking: false,
   valid: null,
@@ -1708,13 +1387,15 @@ const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
-// 播出日期 + 时段选择：选歌后由弹窗收集，时段必选、日期可选
+// 播出日期 + 时段选择：日期可选，时段在后台上开启「时段必选」时必选
 const preferredPlayDate = ref('')
 // 后台「时段必选」总开关：开启后投稿必须选择播出时段（日期可留空自动分配）
 const playSlotRequired = ref(false)
 const playSlotError = ref('')
-// 时段选择弹窗
-const showPlaySlotModal = ref(false)
+// 投稿选项弹窗（留言 / 点歌券 / 播出时段）
+const showSubmissionOptions = ref(false)
+// 弹窗模式：options = 用户主动打开仅保存选项；required = 强制选择时段，确认后继续投稿
+const submissionOptionsMode = ref('options')
 // 弹窗确认后待真正提交的歌曲与上下文
 const pendingPlaySlotSubmit = ref(null)
 
@@ -1750,21 +1431,13 @@ const cardCodeStatusText = computed(() => {
     ? locale.value.cardCodeRequiredStatus
     : locale.value.cardCodeOptionalStatus
 })
-const mobileCardCodeLabel = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingShort
-  if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid === false) return locale.value.cardCodeInvalid
-    if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
-    return locale.value.cardCodeFilled
-  }
-  return cardCodeFieldMeta.value.required
-    ? locale.value.cardCodeRequiredShort
-    : locale.value.cardCodeOptionalShort
-})
-const cardCodeModalHint = computed(() => {
-  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
-  if (cardCodeValidation.value.message) return cardCodeValidation.value.message
-  return locale.value.cardCodeSaveHint
+/** 点歌券状态语义色：验证中 / 可用 / 无效 / 必填未填 */
+const cardCodeStatusTone = computed(() => {
+  if (cardCodeValidation.value.checking) return 'idle'
+  if (cardCodeValidation.value.valid === true) return 'ok'
+  if (cardCodeValidation.value.valid === false) return 'error'
+  if (trimmedCardCode.value) return 'idle'
+  return cardCodeFieldMeta.value.required ? 'warn' : 'idle'
 })
 
 const resetCardCodeValidation = () => {
@@ -1772,22 +1445,6 @@ const resetCardCodeValidation = () => {
     checking: false,
     valid: null,
     message: ''
-  }
-}
-
-const openCardCodeModal = async () => {
-  cardCodeDraft.value = cardCode.value
-  showCardCodeModal.value = true
-  await nextTick()
-  cardCodeInputRef.value?.focus()
-}
-
-const closeCardCodeModal = () => {
-  const draftChanged = cardCodeDraft.value.trim() !== cardCode.value.trim()
-  showCardCodeModal.value = false
-  cardCodeDraft.value = cardCode.value
-  if (draftChanged) {
-    resetCardCodeValidation()
   }
 }
 
@@ -1850,13 +1507,12 @@ const saveCardCode = async () => {
   }
 
   cardCode.value = draft
-  showCardCodeModal.value = false
+  cardCodeDraft.value = draft
 }
 
 const clearCardCode = () => {
   cardCode.value = ''
   cardCodeDraft.value = ''
-  showCardCodeModal.value = false
   resetCardCodeValidation()
 }
 
@@ -1870,7 +1526,8 @@ const ensureCardCodeForSubmit = async () => {
       return true
     }
 
-    await openCardCodeModal()
+    // 必填点歌券未填写：打开投稿选项弹窗，让用户就地补填
+    openSubmissionOptions()
     if (window.$showNotification) {
       window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
     }
@@ -2812,19 +2469,25 @@ const formatPlayTimeOptionLabel = (playTime) => {
   return `${playTime.name} (${range})`
 }
 
-// 播出日期 + 时段表单校验：
-// - 后台开启「时段选择」时，播出时段必须选择；播出日期可选（不填则由服务端自动分配到最近一个开放该时段的日期）
+// 播出日期 + 时段校验：
+// - 仅当后台开启「时段必选」时，播出时段才必须选择；播出日期始终可选
 // - 指定日期时，该日期所在星期必须开放所选时段（日期优先级高于时段）
 const validatePlaySlotSelection = () => {
   if (!playTimeSelectionEnabled.value) return true
 
-  if (playTimeSelectionEnabled.value && !preferredPlayTimeId.value) {
+  if (playSlotRequired.value && !preferredPlayTimeId.value) {
     playSlotError.value = locale.value.playSlotTimeRequiredError || '请选择期望播出时段'
     error.value = playSlotError.value
     if (window.$showNotification) {
       window.$showNotification(playSlotError.value, 'error')
     }
     return false
+  }
+
+  // 时段为可选项且未选择时，无需继续校验
+  if (!preferredPlayTimeId.value) {
+    playSlotError.value = ''
+    return true
   }
 
   // 指定日期时校验时段在该日期星期是否开放（与弹窗内的即时过滤保持一致）
@@ -2854,60 +2517,108 @@ const validatePlaySlotSelection = () => {
   return true
 }
 
-// 播出时段选择弹窗的界面文案
-const playSlotModalText = computed(() => ({
-  title: locale.value.playSlotModalTitle || '选择播出时段',
-  subtitle:
-    locale.value.playSlotModalSubtitle || '时段必选；播出日期可选，留空将自动分配到最近的可用日期',
-  dateLabel: locale.value.preferredPlayDate || '期望播出日期',
-  timeLabel: locale.value.preferredPlayTime || '期望播出时段',
-  optional: locale.value.optional || '可选',
-  required: locale.value.required || '必选',
-  timePlaceholder: locale.value.choosePlayTime || '请选择播出时段',
-  dateOptionalHint:
-    locale.value.playSlotDateOptionalHint || '不指定日期时，系统会分配到最近一个该时段开放的日期',
-  dateSelectedHint:
-    locale.value.playSlotDateSelectedHint || '已指定日期，下方仅显示该日期开放的播出时段',
-  timeFreeHint: locale.value.playSlotTimeFreeHint || '可选择任一启用的播出时段',
-  timeRestrictedHint: locale.value.playSlotTimeRestrictedHint || '仅显示该日期开放的播出时段',
-  autoAssignHint:
-    locale.value.playSlotAutoAssignHint || '未指定播出日期，将自动分配到最近一个该时段开放的日期',
-  noSlotsForDate: locale.value.noSlotsForDate || '该日期没有开放的播出时段，请更换日期',
-  timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
-  cancel: locale.value.cancel || '取消',
-  confirm: locale.value.confirmSubmit || '确认提交'
-}))
-
-/**
- * 留言输入框是否集成进时段弹窗：
- * 时段选择开启 + 留言功能开启 → 集成（弹窗内填写，表单内不再重复出现）
- * 任一未开启 → 不集成，表单内沿用原有独立输入框样式
- */
-const noteInSlotModal = computed(
-  () => playTimeSelectionEnabled.value && enableSubmissionRemarks.value
+/** 弹窗内是否有可配置的内容（决定「更多选项」按钮是否出现） */
+const submissionOptionsAvailable = computed(
+  () =>
+    playTimeSelectionEnabled.value ||
+    enableSubmissionRemarks.value ||
+    (allowAnonymousSubmission.value && !!user.value) ||
+    cardCodeEnabled.value
 )
 
-/** 时段弹窗内投稿留言区的文案 */
-const playSlotNoteText = computed(() => ({
-  label: locale.value.submissionNote || '投稿留言',
-  publicToUsers: locale.value.publicToUsers || '备注留言公开给已登录用户',
-  anonymous: locale.value.anonymousSubmission || '匿名投稿',
-  approvalHint: locale.value.submissionNoteApprovalHint || '公开留言需管理员审核通过后展示',
-  placeholder: locale.value.submissionNotePlaceholder || '想说点什么？（选填，最多 300 字）'
-}))
+/** 是否已经设置过任何投稿选项（用于「更多选项」按钮的状态点） */
+const hasSubmissionOptions = computed(
+  () =>
+    !!(
+      submissionNote.value.trim() ||
+      trimmedCardCode.value ||
+      preferredPlayTimeId.value
+    )
+)
+
+/** 用户主动打开投稿选项弹窗：只保存选项，不触发投稿 */
+const openSubmissionOptions = () => {
+  submissionOptionsMode.value = 'options'
+  showSubmissionOptions.value = true
+}
+
+/** 后台开启「时段必选」但尚未选择时段 → 投稿时弹窗收集，确认后继续提交 */
+const requiresSlotSelection = computed(
+  () => playTimeSelectionEnabled.value && playSlotRequired.value && !preferredPlayTimeId.value
+)
+
+const openRequiredSlotOptions = (pending) => {
+  pendingPlaySlotSubmit.value = pending
+  submissionOptionsMode.value = 'required'
+  showSubmissionOptions.value = true
+}
+
+// 投稿选项弹窗的界面文案
+const submissionOptionsText = computed(() => {
+  const requiredMode = submissionOptionsMode.value === 'required'
+  return {
+    // 标题随模式切换：强制选时段时强调时段，主动打开时强调「选项」
+    title: requiredMode
+      ? locale.value.playSlotModalTitle || '选择播出时段'
+      : locale.value.submissionOptionsTitle || '投稿选项',
+    subtitle: requiredMode
+      ? locale.value.playSlotModalSubtitle ||
+        '时段必选；播出日期可选，留空将自动分配到最近的可用日期'
+      : locale.value.submissionOptionsSubtitle || '留言与点歌券会随本次投稿一并提交，均为选填',
+    // 播出时段
+    slotSectionTitle: locale.value.playSlotSectionTitle || '播出安排',
+    clearSlot: locale.value.clear || '清除',
+    dateLabel: locale.value.preferredPlayDate || '期望播出日期',
+    timeLabel: locale.value.preferredPlayTime || '期望播出时段',
+    optional: locale.value.optional || '可选',
+    required: locale.value.required || '必选',
+    timePlaceholder: locale.value.choosePlayTime || '请选择播出时段',
+    timeFreeHint: locale.value.playSlotTimeFreeHint || '可选择任一启用的播出时段',
+    timeRestrictedHint: locale.value.playSlotTimeRestrictedHint || '仅显示该日期开放的播出时段',
+    autoAssignHint:
+      locale.value.playSlotAutoAssignHint || '未指定播出日期，将自动分配到最近一个该时段开放的日期',
+    noSlotsForDate: locale.value.noSlotsForDate || '该日期没有开放的播出时段，请更换日期',
+    timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
+    // 投稿留言
+    noteLabel: locale.value.submissionNote || '投稿留言',
+    anonymousLabel: locale.value.anonymousSubmission || '匿名投稿',
+    publicToUsers: locale.value.publicToUsers || '备注留言公开给已登录用户',
+    anonymous: locale.value.anonymousSubmission || '匿名投稿',
+    approvalHint: locale.value.submissionNoteApprovalHint || '公开留言需管理员审核通过后展示',
+    notePlaceholder:
+      locale.value.submissionNotePlaceholder || '想说点什么？（选填，最多 300 字）',
+    // 点歌券
+    cardCodeLabel: locale.value.cardCode || '点歌券',
+    cardCodePlaceholder: locale.value.cardCodePlaceholder || '请输入点歌券',
+    cardCodeHelper: cardCodeFieldMeta.value.helper,
+    // 操作
+    save: locale.value.save || '保存',
+    validatingShort: locale.value.validatingShort || '验证中',
+    cancel: locale.value.cancel || '取消',
+    confirm: requiredMode ? locale.value.confirmSubmit || '确认投稿' : locale.value.save || '保存',
+    emptyHint: locale.value.submissionOptionsEmptyHint || '当前站点未开放可配置的投稿选项'
+  }
+})
 
 /**
- * 时段选择弹窗确认回调：写入选中的日期与时段，然后继续之前中断的投稿。
- * 日期留空时保持为空，由服务端自动分配到最近一个开放该时段的日期。
+ * 投稿选项弹窗确认回调：写入选中的日期与时段。
+ * - 「更多选项」模式：仅保存选项，不提交
+ * - 「时段必选」模式：保存后继续之前中断的投稿
+ * 日期仅在选了时段时才有意义，时段留空则一并清空。
  */
 const handlePlaySlotConfirm = async ({ date, timeId }) => {
-  preferredPlayDate.value = date || ''
   preferredPlayTimeId.value = timeId ? String(timeId) : ''
+  preferredPlayDate.value = timeId ? date || '' : ''
   playSlotError.value = ''
 
   const pending = pendingPlaySlotSubmit.value
   pendingPlaySlotSubmit.value = null
   if (!pending) return
+
+  if (pending.manualForm) {
+    await handleManualSubmit(true)
+    return
+  }
 
   if (pending.manual) {
     await handleSubmit(true)
@@ -2917,11 +2628,9 @@ const handlePlaySlotConfirm = async ({ date, timeId }) => {
   await submitSong(pending.result, { ...(pending.options || {}), fromSlotModal: true })
 }
 
-/** 取消时段选择：放弃本次投稿 */
+/** 取消投稿选项弹窗：丢弃本次弹窗上下文，保留此前已选好的选项 */
 const handlePlaySlotCancel = () => {
   pendingPlaySlotSubmit.value = null
-  preferredPlayTimeId.value = ''
-  preferredPlayDate.value = ''
   playSlotError.value = ''
 }
 
@@ -3784,11 +3493,10 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
-  // 播出时段选择：功能开启时，每次点歌投稿都先弹窗收集（时段必选、日期可选），确认后再真正提交
+  // 播出时段：仅在后台开启「时段必选」且尚未选择时段时，投稿后弹窗收集，确认后再真正提交
   // 重播申请走 requestReplay，仅沿用已选时段，不重复弹窗；fromSlotModal 标记确认后的回调用，避免循环再弹
-  if (playTimeSelectionEnabled.value && options.replayRequest !== true && !options.fromSlotModal) {
-    pendingPlaySlotSubmit.value = { result, options }
-    showPlaySlotModal.value = true
+  if (requiresSlotSelection.value && options.replayRequest !== true && !options.fromSlotModal) {
+    openRequiredSlotOptions({ result, options })
     return
   }
 
@@ -3969,10 +3677,9 @@ const submitSong = async (result, options = {}) => {
 const handleSubmit = async (fromSlotModal = false) => {
   if (submitting.value) return
 
-  // 播出时段选择：功能开启时，每次投稿都先弹窗收集，确认后再继续提交；fromSlotModal 为确认后回调用，避免循环再弹
-  if (playTimeSelectionEnabled.value && !fromSlotModal) {
-    pendingPlaySlotSubmit.value = { manual: true }
-    showPlaySlotModal.value = true
+  // 播出时段：仅在后台开启「时段必选」且尚未选择时段时弹窗收集，确认后再继续提交；fromSlotModal 为确认后的回调用，避免循环再弹
+  if (requiresSlotSelection.value && !fromSlotModal) {
+    openRequiredSlotOptions({ manual: true })
     return
   }
 
@@ -4315,7 +4022,7 @@ const handlePlaylistPlay = async (song) => {
 }
 
 // 手动输入相关方法
-const handleManualSubmit = async () => {
+const handleManualSubmit = async (fromSlotModal = false) => {
   if (!title.value.trim() || !manualArtist.value.trim()) {
     error.value = locale.value.notifications.completeSongInfoRequired
     if (window.$showNotification) {
@@ -4338,6 +4045,12 @@ const handleManualSubmit = async () => {
     if (window.$showNotification) {
       window.$showNotification(locale.value.notifications.fixPlayUrl, 'error')
     }
+    return
+  }
+
+  // 播出时段：仅在后台开启「时段必选」且尚未选择时段时弹窗收集，确认后再继续提交
+  if (requiresSlotSelection.value && !fromSlotModal) {
+    openRequiredSlotOptions({ manualForm: true })
     return
   }
 
@@ -4453,8 +4166,10 @@ const resetForm = () => {
   submissionAnonymous.value = false
   cardCode.value = ''
   cardCodeDraft.value = ''
-  showCardCodeModal.value = false
   resetCardCodeValidation()
+  showSubmissionOptions.value = false
+  pendingPlaySlotSubmit.value = null
+  submissionOptionsMode.value = 'options'
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }
@@ -5215,33 +4930,6 @@ defineExpose({
 .form-row .form-group {
   flex: 1;
   min-width: 0;
-}
-
-.submission-meta-row {
-  align-items: stretch;
-}
-
-.submission-note-group,
-.card-code-form-group {
-  flex-basis: 0;
-}
-
-.desktop-card-code-panel {
-  min-height: 94px;
-  height: 100%;
-  border: 1px solid var(--panel-bg-deep);
-  border-radius: 12px;
-  background: var(--panel-bg-overlay);
-  padding: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.mobile-card-code-chip,
-.mobile-card-code-button {
-  display: none;
 }
 
 .form-group {
@@ -6578,6 +6266,68 @@ defineExpose({
   flex-shrink: 0;
 }
 
+/* 投稿选项入口：紧贴「选择投稿」按钮，用户主动打开留言 / 点歌券 / 时段弹窗 */
+.options-trigger-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--overlay-16);
+  background: var(--overlay-10);
+  color: var(--overlay-70);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.options-trigger-btn:hover {
+  border-color: var(--overlay-30);
+  background: var(--overlay-20);
+  color: var(--text-primary);
+}
+
+.options-trigger-btn.has-options {
+  border-color: var(--primary-50);
+  color: var(--color-accent-light);
+}
+
+.options-trigger-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--bg-secondary);
+}
+
+.options-trigger-text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--overlay-16);
+  background: var(--overlay-10);
+  color: var(--overlay-70);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.options-trigger-text-btn:hover {
+  border-color: var(--overlay-30);
+  background: var(--overlay-20);
+  color: var(--text-primary);
+}
+
 .cloud-disk-btn {
   background: linear-gradient(180deg, var(--color-error) 0%, var(--color-error-hover) 100%);
   border: 1px solid var(--overlay-20);
@@ -7149,80 +6899,6 @@ defineExpose({
   .form-row {
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .submission-meta-row {
-    gap: 0.75rem;
-  }
-
-  .card-code-form-group {
-    margin-bottom: 0;
-  }
-
-  .mobile-hidden-card-code-group {
-    display: none;
-  }
-
-  .desktop-card-code-panel {
-    display: none;
-  }
-
-  .mobile-card-code-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    min-height: 28px;
-    border-radius: 999px;
-    border: 1px solid var(--requestform-mobile-chip-border);
-    background: var(--requestform-mobile-chip-bg);
-    color: var(--requestform-mobile-chip-text);
-    padding: 0.25rem 0.55rem;
-    font-size: 11px;
-    font-weight: 800;
-    white-space: nowrap;
-  }
-
-  .mobile-card-code-button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    width: 100%;
-    min-height: 42px;
-    border-radius: 12px;
-    border: 1px solid var(--requestform-mobile-chip-border-sm);
-    background: var(--panel-bg-overlay);
-    color: var(--requestform-mobile-button-text);
-    padding: 0.65rem 0.85rem;
-    font-size: 13px;
-    font-weight: 800;
-  }
-
-  .mobile-card-code-chip.is-required,
-  .mobile-card-code-button.is-required {
-    border-color: var(--requestform-chip-required-border);
-    background: var(--requestform-chip-required-bg);
-    color: var(--color-warning-light);
-  }
-
-  .mobile-card-code-chip.has-code,
-  .mobile-card-code-button.has-code {
-    border-color: var(--requestform-chip-required-border-sm);
-    color: var(--color-warning-light);
-  }
-
-  .mobile-card-code-chip.is-valid,
-  .mobile-card-code-button.is-valid {
-    border-color: var(--requestform-chip-valid-border);
-    background: var(--success-10);
-    color: var(--color-success-light);
-  }
-
-  .mobile-card-code-chip.is-invalid,
-  .mobile-card-code-button.is-invalid {
-    border-color: var(--requestform-chip-invalid-border);
-    background: var(--requestform-chip-invalid-bg);
-    color: var(--color-error-light);
   }
 
   .form-group label {

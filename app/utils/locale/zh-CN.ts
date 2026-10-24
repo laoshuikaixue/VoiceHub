@@ -1865,6 +1865,11 @@ export const pages = {
       cardCodeLockedOrUnavailable: '点歌券已被锁定或不可用',
       cardCodeRequiredForSite: '本站点已启用仅点歌券投稿，请提供有效点歌券',
       cardCodeTooLong: '点歌券不能超过100个字符',
+      submissionOptions: '更多选项',
+      submissionOptionsTitle: '投稿选项',
+      submissionOptionsSubtitle: '留言与点歌券会随本次投稿一并提交，均为选填',
+      submissionOptionsEmptyHint: '当前站点未开放可配置的投稿选项',
+      playSlotSectionTitle: '播出安排',
       notifications: {
         restrictionSameSong: '该歌曲处于投稿限制冷却期，请稍后再试',
         restrictionSameArtist: '该歌手处于投稿限制冷却期，请稍后再试',

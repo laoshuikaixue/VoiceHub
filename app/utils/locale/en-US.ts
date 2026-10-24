@@ -1915,6 +1915,12 @@ export const pages = {
       cardCodeLockedOrUnavailable: 'This request card is locked or unavailable',
       cardCodeRequiredForSite: 'This site requires a valid request card to submit songs',
       cardCodeTooLong: 'Request card code cannot exceed 100 characters',
+      submissionOptions: 'More options',
+      submissionOptionsTitle: 'Submission options',
+      submissionOptionsSubtitle:
+        'Your note and request card are submitted with this request; both are optional',
+      submissionOptionsEmptyHint: 'No configurable submission options are available on this site',
+      playSlotSectionTitle: 'Broadcast schedule',
       notifications: {
         restrictionSameSong: 'This song is in a submission cooldown period. Please try again later',
         restrictionSameArtist:
