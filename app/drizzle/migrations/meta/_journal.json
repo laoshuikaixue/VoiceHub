@@ -400,13 +400,6 @@
       "when": 1792729548010,
       "tag": "20261023042547_add_qq_oauth",
       "breakpoints": true
-    },
-    {
-      "idx": 57,
-      "version": "7",
-      "when": 1792731833125,
-      "tag": "20261023050353_add_browser_fingerprints",
-      "breakpoints": true
     }
   ]
 }

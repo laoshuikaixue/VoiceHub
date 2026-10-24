@@ -89,18 +89,6 @@ export default defineEventHandler(async (event) => {
             avatar: true,
             createdAt: true
           }
-        },
-        browserFingerprints: {
-          columns: {
-            id: true,
-            label: true,
-            browser: true,
-            operatingSystem: true,
-            device: true,
-            createdAt: true,
-            lastUsedAt: true,
-            lastLoginIp: true
-          }
         }
       }
     })

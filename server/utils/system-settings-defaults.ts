@@ -98,8 +98,6 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   captchaEnabled: false, // 默认关闭图形验证码
   captchaMaxFailures: 3, //触发阈值
   captchaProvider: 'graphic', // 默认使用图形验证码
-  // 浏览器指纹登录默认关闭，由管理员按需开启
-  fingerprintLoginEnabled: false,
   turnstileSiteKey: null,
   turnstileSecretKey: null,
   // 阿里云 ESA AI 验证码（身份标与场景 ID 均由 ESA 控制台生成，非机密信息）
@@ -177,7 +175,6 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'captchaEnabled',
   'captchaMaxFailures',
   'captchaProvider',
-  'fingerprintLoginEnabled',
   'turnstileSiteKey',
   'esaCaptchaPrefix',
   'esaCaptchaScenes',

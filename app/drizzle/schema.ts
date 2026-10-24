@@ -460,8 +460,6 @@ export const systemSettings = pgTable('SystemSettings', {
   // 图形验证码
   captchaEnabled: boolean('captchaEnabled').default(false).notNull(),
   captchaMaxFailures: integer('captchaMaxFailures').default(3).notNull(),
-  // 浏览器指纹登录总开关：关闭时登录页不展示入口，已绑定的指纹一律拒绝登录
-  fingerprintLoginEnabled: boolean('fingerprintLoginEnabled').default(false).notNull(),
 
   // 自动备份配置
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
@@ -622,28 +620,6 @@ export const userIdentities = pgTable('UserIdentity', {
   unq: unique().on(t.provider, t.providerUserId),
 }));
 
-// 浏览器指纹登录绑定表：一条记录 = 一个浏览器指纹绑定到一个账号
-export const browserFingerprints = pgTable('browser_fingerprints', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  // 客户端原始指纹经服务端加盐哈希后存储；全局唯一，同一浏览器只能绑定一个账号
-  fingerprintHash: text('fingerprint_hash').notNull(),
-  // 用户自定义备注（如"宿舍电脑"），为空时前端回退展示浏览器信息
-  label: text('label'),
-  browser: text('browser'),
-  operatingSystem: text('operating_system'),
-  device: text('device'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-  lastLoginIp: text('last_login_ip')
-}, (table) => [
-  uniqueIndex('browser_fingerprints_hash_unique').on(table.fingerprintHash),
-  index('browser_fingerprints_user_idx').on(table.userId)
-]);
-
-export type BrowserFingerprint = typeof browserFingerprints.$inferSelect;
-export type NewBrowserFingerprint = typeof browserFingerprints.$inferInsert;
-
 export const passwordAuditLogs = pgTable('PasswordAuditLog', {
   id: serial('id').primaryKey(),
   userId: integer('userId').notNull(),
@@ -672,7 +648,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   votes: many(votes),
   notifications: many(notifications),
   identities: many(userIdentities),
-  browserFingerprints: many(browserFingerprints),
   notificationSettings: one(notificationSettings, {
     fields: [users.id],
     references: [notificationSettings.userId],
@@ -691,13 +666,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 export const userIdentitiesRelations = relations(userIdentities, ({ one }) => ({
   user: one(users, {
     fields: [userIdentities.userId],
-    references: [users.id],
-  }),
-}));
-
-export const browserFingerprintsRelations = relations(browserFingerprints, ({ one }) => ({
-  user: one(users, {
-    fields: [browserFingerprints.userId],
     references: [users.id],
   }),
 }));

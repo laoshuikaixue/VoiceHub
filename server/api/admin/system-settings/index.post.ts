@@ -267,16 +267,6 @@ export default defineEventHandler(async (event) => {
       updateData.playSlotRequired = body.playSlotRequired
     }
 
-    if (body.fingerprintLoginEnabled !== undefined) {
-      if (typeof body.fingerprintLoginEnabled !== 'boolean') {
-        throw createError({
-          statusCode: 400,
-          message: 'fingerprintLoginEnabled 必须是布尔值'
-        })
-      }
-      updateData.fingerprintLoginEnabled = body.fingerprintLoginEnabled
-    }
-
     if (body.siteTitle !== undefined) {
       updateData.siteTitle = body.siteTitle
     }

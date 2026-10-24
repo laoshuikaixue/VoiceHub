@@ -1201,7 +1201,6 @@ export default defineEventHandler(async (event) => {
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
                           'playSlotRequired',
-                          'fingerprintLoginEnabled',
                           'instanceId',
                           'defaultTheme',
                           'enabledThemes',
