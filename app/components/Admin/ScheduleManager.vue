@@ -1880,6 +1880,26 @@
         <Play class="w-3 h-3" />
         <span>{{ locale.playSong }}</span>
       </button>
+      <!-- 加入备选池 / 加入排期：仅桌面端保留在二级菜单，移动端使用卡片按钮 -->
+      <template v-if="contextMenuSide === 'left'">
+        <button
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          :disabled="poolSongIds.has(contextMenuSong.id)"
+          @click="addSingleToPool(contextMenuSong.id); contextMenuOpen = false"
+        >
+          <FolderPlus class="w-3 h-3" />
+          <span>{{ locale.addSingleToPool }}</span>
+        </button>
+        <button
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay' || activeTab === 'pool'"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
+        >
+          <PlaySquare class="w-3 h-3" />
+          <span>{{ locale.addToSchedule }}</span>
+        </button>
+      </template>
       <button
         class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
         @click="openSourceReplace"
