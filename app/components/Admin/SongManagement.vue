@@ -308,12 +308,19 @@
                 </span>
               </h4>
               <p class="text-xs text-text-tertiary font-medium truncate mt-0.5 flex items-center gap-1.5">
-                <span>{{ song.artist }}</span>
+                <span class="truncate min-w-0">{{ song.artist }}</span>
                 <span
                   v-if="song.durationSeconds"
                   class="text-text-disabled shrink-0"
                 >{{ formatDuration(song.durationSeconds) }}</span>
               </p>
+              <!-- 音源标识独立成行，避免歌手名过长时被挤掉 -->
+              <div v-if="song.musicPlatform" class="mt-1 flex">
+                <span
+                  class="platform-tag px-1 whitespace-nowrap"
+                  :class="'platform-' + platformTagClass(song.musicPlatform)"
+                >{{ platformLabel(song.musicPlatform) }}</span>
+              </div>
               <span
                 class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
                 >{{ formatDate(song.requestedAt) }}</span
@@ -331,6 +338,12 @@
                 <span class="text-xs font-bold text-text-tertiary truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
                 <span v-if="song.user" class="text-[10px] font-bold text-text-disabled truncate max-w-[100px]"
                   >@{{ song.user.username }}</span
+                >
+                <!-- 该投稿人累计投稿数与已播放数 -->
+                <span
+                  v-if="song.submissionCount != null && song.playCount != null"
+                  class="text-[10px] font-bold text-text-disabled mt-0.5 whitespace-nowrap"
+                >{{ locale.table.submitStat(song.submissionCount) }} · {{ locale.table.playStat(song.playCount) }}</span
                 >
                 <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-primary mt-1">
                   {{ getLocaleMessage('preferredPlayTime', getPlayTimeName(song.preferredPlayTimeId)) }}
@@ -1261,7 +1274,7 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl, getCoverThumbUrl } from '~/utils/url'
@@ -1462,6 +1475,8 @@ const platformLabel = (platform) => {
   const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
   return plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
 }
+// 平台标签配色类名，插件音源统一走 plugin
+const platformTagClass = (platform) => (BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin')
 const musicPlatformOptions = computed(() => {
   const list = [...getAvailablePlatforms()]
   for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {

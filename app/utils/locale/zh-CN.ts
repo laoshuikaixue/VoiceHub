@@ -2409,7 +2409,9 @@ export const admin = {
       stats: '统计',
       status: '状态',
       actions: '操作',
-      selectPage: '全选本页'
+      selectPage: '全选本页',
+      submitStat: (count: number) => `投 ${count}`,
+      playStat: (count: number) => `播 ${count}`
     },
     empty: {
       search: '没有找到匹配的歌曲',
@@ -2520,7 +2522,9 @@ export const admin = {
       apply: '应用替换',
       applying: '获取信息中...',
       applied: '已填入新音源信息，保存后生效',
-      cancel: '取消'
+      cancel: '取消',
+      preview: '试听',
+      stopPreview: '停止试听'
     },
     songDownloadDialog: {
       title: '下载歌曲',
@@ -2908,6 +2912,8 @@ export const admin = {
     removeFromPoolFailed: '移除失败',
     addedBy: '添加者',
     playSong: '播放歌曲',
+    replaceSource: '更换音源',
+    replaceSourceSuccess: '换源成功',
     removeFromSchedule: '从排期移除',
     addToScheduleSuccess: '已加入排期',
     playlist: '播放列表',

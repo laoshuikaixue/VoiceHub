@@ -461,8 +461,10 @@
                     </div>
                   </div>
 
-                  <!-- 右侧操作区 -->
-                  <div class="flex items-center gap-1.5 shrink-0">
+                  <!-- 操作区：移动端整行换到文字下方右对齐，桌面端保持在右侧 -->
+                  <div
+                    class="flex items-center justify-end gap-1.5 shrink-0 basis-full lg:basis-auto lg:justify-start"
+                  >
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"
@@ -1878,10 +1880,11 @@
         <Play class="w-3 h-3" />
         <span>{{ locale.playSong }}</span>
       </button>
+      <!-- 加入备选池 / 加入排期：仅桌面端保留在二级菜单，移动端使用卡片按钮 -->
       <template v-if="contextMenuSide === 'left'">
         <button
-          v-if="activeTab === 'normal' || activeTab === 'all'"
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           :disabled="poolSongIds.has(contextMenuSong.id)"
           @click="addSingleToPool(contextMenuSong.id); contextMenuOpen = false"
         >
@@ -1889,30 +1892,21 @@
           <span>{{ locale.addSingleToPool }}</span>
         </button>
         <button
-          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay' || activeTab === 'pool'"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
           @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
         >
           <PlaySquare class="w-3 h-3" />
           <span>{{ locale.addToSchedule }}</span>
-        </button>
-        <button
-          v-if="activeTab === 'pool'"
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
-          @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
-        >
-          <PlaySquare class="w-3 h-3" />
-          <span>{{ locale.addToSchedule }}</span>
-        </button>
-        <button
-          v-if="activeTab === 'pool'"
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors"
-          @click="removeFromPool(contextMenuSong.songId || contextMenuSong.id); contextMenuOpen = false"
-        >
-          <Trash2 class="w-3 h-3" />
-          <span>{{ locale.removeFromPool }}</span>
         </button>
       </template>
+      <button
+        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+        @click="openSourceReplace"
+      >
+        <ArrowLeftRight class="w-3 h-3" />
+        <span>{{ locale.replaceSource }}</span>
+      </button>
       <template v-if="contextMenuSide === 'right'">
         <button
           class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors"
@@ -1921,17 +1915,17 @@
           <Trash2 class="w-3 h-3" />
           <span>{{ locale.removeFromSchedule }}</span>
         </button>
-        <button
-          v-if="contextMenuSong.isDraft"
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-success hover:bg-success-10 transition-colors"
-          @click="publishSingleDraft(contextMenuSong); contextMenuOpen = false"
-        >
-          <Send class="w-3 h-3" />
-          <span>{{ locale.publishThisDraft }}</span>
-        </button>
       </template>
     </div>
   </div>
+
+  <!-- 换源弹窗 -->
+  <SongSourceReplaceModal
+    :show="showSourceReplaceModal"
+    :song="sourceReplaceSong || {}"
+    @close="showSourceReplaceModal = false"
+    @apply="applySourceReplacement"
+  />
 </template>
 
 <script setup>
@@ -1969,6 +1963,7 @@ import {
   Trash2,
   Copy,
   RefreshCcw,
+  ArrowLeftRight,
   Loader2,
   Sparkles,
   FolderPlus,
@@ -1976,6 +1971,7 @@ import {
   Lock
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
+import SongSourceReplaceModal from './SongSourceReplaceModal.vue'
 import SchedulePlaylistExportModal from './SchedulePlaylistExportModal.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
@@ -2437,6 +2433,58 @@ const openContextMenu = (e, side, song) => {
   contextMenuOpen.value = true
 }
 const closeContextMenu = () => { contextMenuOpen.value = false }
+
+// 换源：右侧排期卡片的菜单项拿到的是 schedule 对象，需取内层 song
+const showSourceReplaceModal = ref(false)
+const sourceReplaceSong = ref(null)
+const openSourceReplace = () => {
+  const song = contextMenuSide.value === 'right' ? contextMenuSong.value?.song : contextMenuSong.value
+  contextMenuOpen.value = false
+  if (!song?.id) return
+  sourceReplaceSong.value = song
+  showSourceReplaceModal.value = true
+}
+
+// 换源结果直接写库（后端要求 title/artist），并就地更新本地列表
+const applySourceReplacement = async (payload) => {
+  const song = sourceReplaceSong.value
+  if (!song?.id || !adminService) return
+
+  try {
+    await adminService.updateSong(song.id, {
+      title: song.title,
+      artist: song.artist,
+      musicPlatform: payload.musicPlatform || null,
+      musicId: payload.musicId || null,
+      cover: payload.cover || null,
+      // 旧播放地址指向原音源，换源后必须清空
+      playUrl: null,
+      durationSeconds: payload.durationSeconds ?? null,
+      selectionToken: payload.selectionToken || undefined
+    })
+
+    const patchSong = (item) => {
+      if (!item || item.id !== song.id) return
+      item.musicPlatform = payload.musicPlatform || null
+      item.musicId = payload.musicId || null
+      if (payload.cover) item.cover = payload.cover
+      if (payload.durationSeconds != null) item.durationSeconds = payload.durationSeconds
+      item.playUrl = null
+    }
+    patchSong(songs.value?.find((item) => item.id === song.id))
+    for (const schedule of localScheduledSongs.value || []) patchSong(schedule.song)
+
+    showSourceReplaceModal.value = false
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.replaceSourceSuccess || '换源成功', 'success')
+    }
+  } catch (err) {
+    console.error('换源失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification(localizeServerError(err), 'error')
+    }
+  }
+}
 const autoScheduleTargetMinutes = ref(null)
 const autoScheduleTargetSongCount = ref(null)
 const autoScheduleTargetRequesterCount = ref(null)
@@ -5999,14 +6047,5 @@ const handleTouchReturnToDraggable = async () => {
   width: 100%;
 }
 
-/* 管理员扩展信息：投稿平台标签 */
-.platform-tag {
-  font-size: 9px;
-  font-weight: 500;
-}
-.platform-netease { color: #c3484d; }
-.platform-tencent { color: #2f9e63; }
-.platform-bilibili { color: #d96f9b; }
-.platform-migu { color: #d97a2f; }
-.platform-plugin { color: var(--overlay-40); }
+/* 管理员扩展信息：投稿平台标签样式见 assets/css/components.css 的 .platform-tag */
 </style>

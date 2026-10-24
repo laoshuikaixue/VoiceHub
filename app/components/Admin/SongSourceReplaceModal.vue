@@ -207,7 +207,7 @@
                 @click="selectResult(item)"
               >
                 <div
-                  class="w-12 h-12 rounded-lg bg-bg-tertiary-40 border border-border-tertiary-30 flex items-center justify-center overflow-hidden shrink-0"
+                  class="w-12 h-12 rounded-lg bg-bg-tertiary-40 border border-border-tertiary-30 flex items-center justify-center overflow-hidden shrink-0 relative group/preview"
                 >
                   <img
                     v-if="item.cover"
@@ -216,6 +216,24 @@
                     referrerpolicy="no-referrer"
                   />
                   <Music v-else :size="18" class="text-text-disabled" />
+                  <button
+                    type="button"
+                    class="absolute inset-0 flex items-center justify-center bg-bg-primary-50 text-text-primary transition-opacity"
+                    :class="
+                      isPreviewing(item)
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover/preview:opacity-100'
+                    "
+                    :title="
+                      isPreviewing(item)
+                        ? t('sourceReplace.stopPreview')
+                        : t('sourceReplace.preview')
+                    "
+                    @click.stop="togglePreview(item)"
+                  >
+                    <Pause v-if="isPreviewing(item)" :size="18" class="fill-current" />
+                    <Play v-else :size="18" class="fill-current" />
+                  </button>
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2 min-w-0">
@@ -338,12 +356,24 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { AlertCircle, ArrowLeftRight, Check, Loader2, Music, Search, X } from '@lucide/vue'
+import {
+  AlertCircle,
+  ArrowLeftRight,
+  Check,
+  Loader2,
+  Music,
+  Pause,
+  Play,
+  Search,
+  X
+} from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
+import { useSongPlayer } from '~/composables/useSongPlayer'
+import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
 import { getPlatformDisplayName } from '~/utils/platforms'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
@@ -372,6 +402,8 @@ const { t } = useLocaleText(computed(() => admin.value?.songManagement || {}))
 const { localize: localizeServerError } = useServerErrors()
 const { getAvailablePlatforms, loadPlatformConfig, pluginPlatforms } = usePlatformConfig()
 const musicSources = useMusicSources()
+const { playSong } = useSongPlayer()
+const audioPlayer = useAudioPlayer()
 
 const platformLabel = (platform) => {
   if (!platform) return ''
@@ -466,7 +498,10 @@ const pageOptions = computed(() => {
 
 const platformCount = (platform) => (platformResults.value[platform] || []).length
 
-const closeModal = () => emit('close')
+const closeModal = () => {
+  stopPreview()
+  emit('close')
+}
 
 const cancelSearch = (settleLoading = true) => {
   searchRunId += 1
@@ -647,6 +682,55 @@ const selectResult = (item) => {
   selectedPageIndex.value = 0
 }
 
+// 构建试听用歌曲对象，bilibili 需拼接 cid 与分P
+const buildPreviewSong = (item) => {
+  let musicId = item.musicId
+  if (item.musicPlatform === 'bilibili') {
+    const page = item.pages?.[0]
+    if (page?.cid) {
+      const bvid = String(item.musicId).split(':')[0]
+      const parts = [bvid, String(page.cid)]
+      if (Number(page.page) > 1) parts.push(String(page.page))
+      musicId = parts.join(':')
+    }
+  }
+  return {
+    id: `preview:${item.key}`,
+    title: item.title,
+    artist: item.artist,
+    album: item.album || null,
+    cover: item.cover || null,
+    duration: item.durationSeconds || null,
+    musicPlatform: item.musicPlatform,
+    musicId,
+    selectionToken: item.selectionToken
+  }
+}
+
+// 当前是否正在试听该条目
+const isPreviewing = (item) => {
+  const current = audioPlayer.getCurrentSong().value
+  if (!current) return false
+  return current.id === `preview:${item.key}` && audioPlayer.getPlayingStatus().value
+}
+
+// 点击封面切换试听播放/暂停
+const togglePreview = async (item) => {
+  if (isPreviewing(item)) {
+    audioPlayer.pauseSong()
+    return
+  }
+  await playSong(buildPreviewSong(item))
+}
+
+// 关闭弹窗时停止试听
+const stopPreview = () => {
+  const current = audioPlayer.getCurrentSong().value
+  if (current && String(current.id).startsWith('preview:')) {
+    audioPlayer.pauseSong()
+  }
+}
+
 const matchLevel = (item) => {
   if (item.score >= 140) return 'high'
   if (item.score >= 70) return 'medium'
@@ -746,6 +830,7 @@ watch(
   () => props.show,
   async (visible) => {
     if (!visible) {
+      stopPreview()
       cancelSearch()
       return
     }
@@ -759,7 +844,10 @@ watch(
   }
 )
 
-onBeforeUnmount(() => cancelSearch())
+onBeforeUnmount(() => {
+  stopPreview()
+  cancelSearch()
+})
 </script>
 
 <style scoped>
