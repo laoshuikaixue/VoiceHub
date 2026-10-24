@@ -400,6 +400,13 @@
       "when": 1792850248538,
       "tag": "20261024135728_add_card_code_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1792858227933,
+      "tag": "20261024161027_add_user_tags",
+      "breakpoints": true
     }
   ]
 }

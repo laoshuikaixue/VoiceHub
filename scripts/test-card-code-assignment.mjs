@@ -148,10 +148,193 @@ const run = async () => {
   check('已核销的券无法回收', recycleUsed.length === 0)
   void a3
 
-  // 清理
-  await sql`DELETE FROM "CardCodeAssignment" WHERE "cardCodeId" IN ${sql(codes.map((c) => c.id))}`
-  await sql`DELETE FROM "CardCode" WHERE id IN ${sql(codes.map((c) => c.id))}`
+  // 9. 标签：批量打标签（去重）
+  await sql`UPDATE "User" SET tags = '{}'::text[] WHERE id IN ${sql([userA.id, userB.id])}`
+  await sql`
+    UPDATE "User"
+    SET tags = ARRAY(SELECT DISTINCT t FROM unnest(tags || ${['广播员', '住校生']}::text[]) AS t)
+    WHERE id IN ${sql([userA.id, userB.id])}
+  `
+  const tagged = await sql`SELECT id, tags FROM "User" WHERE id IN ${sql([userA.id, userB.id])} ORDER BY id`
+  check(
+    '批量打标签成功且已去重',
+    tagged.every((row) => row.tags.length === 2 && row.tags.includes('广播员') && row.tags.includes('住校生')),
+    JSON.stringify(tagged.map((row) => row.tags))
+  )
+
+  // 10. 标签：重复添加同一标签不会产生重复项
+  await sql`
+    UPDATE "User"
+    SET tags = ARRAY(SELECT DISTINCT t FROM unnest(tags || ${['广播员']}::text[]) AS t)
+    WHERE id = ${userA.id}
+  `
+  const [afterDup] = await sql`SELECT tags FROM "User" WHERE id = ${userA.id}`
+  check('重复添加标签不产生重复项', afterDup.tags.length === 2, JSON.stringify(afterDup.tags))
+
+  // 11. 标签：按标签查询（数组重叠运算）
+  const byTag = await sql`
+    SELECT id FROM "User" WHERE tags && ${['广播员']}::text[] ORDER BY id
+  `
+  check('按标签查询命中全部带标签用户', byTag.length === 2, `count=${byTag.length}`)
+
+  const byTagMiss = await sql`
+    SELECT id FROM "User" WHERE tags && ${['不存在的标签']}::text[]
+  `
+  check('按不存在的标签查询结果为空', byTagMiss.length === 0, `count=${byTagMiss.length}`)
+
+  // 12. 标签：重命名（全局替换 + 去重）
+  await sql`
+    UPDATE "User"
+    SET tags = ARRAY(SELECT DISTINCT t FROM unnest(array_replace(tags, ${'广播员'}, ${'编辑部'})) AS t WHERE t IS NOT NULL AND t <> '')
+    WHERE ${'广播员'} = ANY(tags)
+  `
+  const [renamed] = await sql`SELECT tags FROM "User" WHERE id = ${userA.id}`
+  check(
+    '标签重命名生效且无重复',
+    renamed.tags.includes('编辑部') && !renamed.tags.includes('广播员') && renamed.tags.length === 2,
+    JSON.stringify(renamed.tags)
+  )
+
+  // 13. 标签：删除（从所有用户移除）
+  await sql`UPDATE "User" SET tags = array_remove(tags, ${'住校生'}) WHERE tags @> ARRAY[${'住校生'}]::text[]`
+  const [afterDelete] = await sql`SELECT tags FROM "User" WHERE id = ${userB.id}`
+  check('标签删除后用户身上不再保留', !afterDelete.tags.includes('住校生'), JSON.stringify(afterDelete.tags))
+
+  // 14. 班级筛选：按年级/班级查询接收人
+  // 只统计本次测试创建的用户，避免库中已有的同年级同班数据影响计数
+  await sql`UPDATE "User" SET grade = ${'高一'}, class = ${'3班'} WHERE id = ${userA.id}`
+  await sql`UPDATE "User" SET grade = ${'高一'}, class = ${'5班'} WHERE id = ${userB.id}`
+  const testUserIds = [userA.id, userB.id]
+  const byClass = await sql`
+    SELECT id FROM "User" WHERE grade = ${'高一'} AND class = ${'3班'} AND id IN ${sql(testUserIds)}
+  `
+  check('按班级查询命中对应班级用户', byClass.length === 1 && byClass[0].id === userA.id, `count=${byClass.length}`)
+
+  const byGrade = await sql`SELECT id FROM "User" WHERE grade = ${'高一'} AND id IN ${sql(testUserIds)}`
+  check('按年级查询命中该年级全部用户', byGrade.length === 2, `count=${byGrade.length}`)
+
+  // 15. 多用户轮流派发：5 张券分给 3 人，前 2 人各 2 张、最后 1 人 1 张
+  const batchCodes = await sql`
+    INSERT INTO "CardCode" (code, status, note, "createdAt", "updatedAt")
+    VALUES
+      (${`CC-BATCH-1-${stamp}`}, 'AVAILABLE', 'batch', now(), now()),
+      (${`CC-BATCH-2-${stamp}`}, 'AVAILABLE', 'batch', now(), now()),
+      (${`CC-BATCH-3-${stamp}`}, 'AVAILABLE', 'batch', now(), now()),
+      (${`CC-BATCH-4-${stamp}`}, 'AVAILABLE', 'batch', now(), now()),
+      (${`CC-BATCH-5-${stamp}`}, 'AVAILABLE', 'batch', now(), now())
+    RETURNING id, code
+  `
+  const batchTargets = [userA.id, userB.id, admin.id]
+  const dealt = new Map()
+  batchCodes.forEach((code, index) => {
+    const owner = batchTargets[index % batchTargets.length]
+    dealt.set(owner, [...(dealt.get(owner) || []), code.id])
+  })
+  for (const [owner, ids] of dealt) {
+    for (const cardCodeId of ids) {
+      const res = await sql`
+        UPDATE "CardCode"
+        SET status = 'ASSIGNED', "assignedTo" = ${owner}, "assignedAt" = now(), "updatedAt" = now()
+        WHERE id = ${cardCodeId} AND status = 'AVAILABLE'
+        RETURNING id, code
+      `
+      if (res[0]) {
+        await sql`
+          INSERT INTO "CardCodeAssignment"
+            ("cardCodeId", "codeSnapshot", "userId", "userNameSnapshot", "assignedBy", "assignedByName", status, "assignedAt", "notifyStatus", "createdAt", "updatedAt")
+          VALUES (${res[0].id}, ${res[0].code}, ${owner}, '批量测试', ${admin.id}, 'CC测试管理员', 'ASSIGNED', now(), 'SKIPPED', now(), now())
+        `
+      }
+    }
+  }
+  const batchRows = await sql`
+    SELECT c."assignedTo" AS owner, count(*)::int AS cnt
+    FROM "CardCode" c
+    WHERE c.id IN ${sql(batchCodes.map((c) => c.id))} AND c.status = 'ASSIGNED'
+    GROUP BY c."assignedTo"
+  `
+  const countMap = new Map(batchRows.map((row) => [row.owner, row.cnt]))
+  check(
+    '轮流派发按发牌顺序分配（2/2/1）',
+    countMap.get(userA.id) === 2 && countMap.get(userB.id) === 2 && countMap.get(admin.id) === 1,
+    JSON.stringify(batchRows.map((row) => ({ owner: row.owner, cnt: row.cnt })))
+  )
+
+  const batchRecords = await sql`
+    SELECT count(*)::int AS cnt FROM "CardCodeAssignment" WHERE "cardCodeId" IN ${sql(batchCodes.map((c) => c.id))}
+  `
+  check('每次派发都留有记录', batchRecords[0].cnt === 5, `count=${batchRecords[0].cnt}`)
+
+  // ===== 按接收人现场生成并派发（生成模式） =====
+  // 每人固定获得 N 张，不采用轮流分配，因此不存在券不够分导致的漏发
+  const generatedCodes = []
+  {
+    const perUser = 2
+    const recipients = [userA.id, userB.id]
+    const total = recipients.length * perUser
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    const used = new Set()
+    while (used.size < total) {
+      let code = ''
+      for (let i = 0; i < 12; i++) code += charset[Math.floor(Math.random() * charset.length)]
+      if (!used.has(code)) used.add(code)
+    }
+    const inserted = await sql`
+      INSERT INTO "CardCode" (code, status, note, "createdAt", "updatedAt")
+      SELECT c, 'AVAILABLE', 'generated', now(), now()
+      FROM unnest(${sql.array([...used])}) AS c
+      RETURNING id, code
+    `
+    generatedCodes.push(...inserted)
+
+    // 每人 2 张
+    let cursor = 0
+    for (const userId of recipients) {
+      for (let k = 0; k < perUser; k++) {
+        const card = inserted[cursor++]
+        await sql`
+          UPDATE "CardCode"
+          SET status = 'ASSIGNED', "assignedTo" = ${userId}, "assignedAt" = now(), "updatedAt" = now()
+          WHERE id = ${card.id} AND status = 'AVAILABLE'
+        `
+        await sql`
+          INSERT INTO "CardCodeAssignment"
+            ("cardCodeId", "codeSnapshot", "userId", "userNameSnapshot", "assignedBy", "assignedByName", status, "assignedAt", "notifyStatus", "createdAt", "updatedAt")
+          VALUES (${card.id}, ${card.code}, ${userId}, 'CC测试用户', ${admin.id}, 'CC测试管理员', 'ASSIGNED', now(), 'SENT', now(), now())
+        `
+      }
+    }
+
+    const genCount = await sql`
+      SELECT "userId", count(*)::int AS cnt FROM "CardCodeAssignment"
+      WHERE "cardCodeId" IN ${sql(inserted.map((c) => c.id))} GROUP BY "userId"
+    `
+    check(
+      '生成模式每人获得固定张数（2 张）',
+      genCount.length === 2 && genCount.every((r) => Number(r.cnt) === perUser),
+      JSON.stringify(genCount.map((r) => ({ owner: r.userId, cnt: r.cnt })))
+    )
+
+    const genNoDup = await sql`
+      SELECT count(*)::int AS total, count(DISTINCT code)::int AS uniq
+      FROM "CardCode" WHERE id IN ${sql(inserted.map((c) => c.id))}
+    `
+    check('生成的券码互不重复', genNoDup[0].total === genNoDup[0].uniq, JSON.stringify(genNoDup[0]))
+
+    const genRecords = await sql`
+      SELECT count(*)::int AS cnt FROM "CardCodeAssignment" WHERE "cardCodeId" IN ${sql(inserted.map((c) => c.id))}
+    `
+    check('生成派发同样留有派发记录', genRecords[0].cnt === total, `count=${genRecords[0].cnt}`)
+  }
+
+  // 清理（按用户名模式兜底，避免异常中断时留下测试数据影响后续统计）
+  // 先删派发记录再删券，遵守外键约束
+  await sql`DELETE FROM "CardCodeAssignment" WHERE "cardCodeId" IN ${sql([...codes, ...batchCodes, ...generatedCodes].map((c) => c.id))}`
+  await sql`DELETE FROM "CardCodeAssignment" WHERE "codeSnapshot" LIKE ${'CC-TEST-%'} OR "codeSnapshot" LIKE ${'CC-BATCH-%'}`
+  await sql`DELETE FROM "CardCode" WHERE id IN ${sql([...codes, ...batchCodes, ...generatedCodes].map((c) => c.id))}`
+  await sql`DELETE FROM "CardCode" WHERE code LIKE ${'CC-TEST-%'} OR code LIKE ${'CC-BATCH-%'}`
   await sql`DELETE FROM "User" WHERE id IN ${sql([admin.id, userA.id, userB.id])}`
+  await sql`DELETE FROM "User" WHERE username ~ ${'^cc_(admin|user_[ab])_'}`
 
   await sql.end()
 

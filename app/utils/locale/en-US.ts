@@ -4333,6 +4333,35 @@ export const admin = {
     assignTitle: 'Assign request cards',
     assignDesc:
       'Assign request cards to a user. They can pick one from the dropdown when submitting, or type the code manually under "More options"',
+    assignModeUsers: 'Pick users',
+    assignModeTags: 'By tag',
+    assignModeClass: 'By class',
+    assignClearRecipients: 'Clear',
+    assignTooManyRecipients: 'Up to 500 recipients per assignment',
+    assignSelectTags: 'Select tags',
+    assignSelectTagsPlaceholder: 'Click to pick tags to assign to (multi-select)',
+    assignTagUserCount: (count: number) => `${count} user(s)`,
+    assignMatchedRecipients: 'Matched recipients',
+    assignPersonUnit: 'user(s)',
+    assignViewList: 'View list',
+    assignHideList: 'Hide list',
+    assignPreviewLoading: 'Matching recipients...',
+    assignTagNoMatch: 'No users match the selected tags',
+    assignClassNoMatch: 'Pick a grade or class to match recipients',
+    assignPreviewTruncated: (max: number) => `Many matches; only the first ${max} are shown`,
+    assignClassGrade: 'Grade',
+    assignClassName: 'Class',
+    assignSelectGrade: 'Select a grade',
+    assignSelectGradeFirst: 'Select a grade first',
+    assignAllClasses: 'All classes',
+    assignDistributionHint: (codes: number, recipients: number) =>
+      `${codes} request card(s) selected. They are dealt in order across ${recipients} recipient(s); when there are more recipients than cards, the leftovers are listed in the result.`,
+    assignGenerateDistributionHint: (count: number, recipients: number) =>
+      `${count} new request card(s) will be generated and assigned to each of the ${recipients} recipient(s), ${count * recipients} in total. Every recipient gets their own cards — nobody is left out.`,
+    assignResultSummary: (assigned: number, recipients: number, failed: number) =>
+      `Assigned ${assigned} card(s) to ${recipients} user(s); ${failed} failed`,
+    assignSkippedRecipients: (count: number) => `${count} user(s) received no card (not enough cards): `,
+    assignInvalidRecipients: 'These users cannot receive cards: ',
     assignSelectUser: 'Recipient',
     assignSelectUserPlaceholder: 'Click to choose who receives the request cards',
     assignNoUser: 'Please choose a recipient first',
@@ -4340,6 +4369,14 @@ export const admin = {
     assignSelectCodesHint: 'Only cards in the "Available" state can be assigned',
     assignSelectedCodes: (count: number) => `${count} request card(s) selected`,
     assignNoCodes: 'Please tick the request cards you want to assign in the list',
+    assignSource: 'Card source',
+    assignSourceSelected: 'Use existing cards',
+    assignSourceGenerate: 'Generate for recipients',
+    assignCountPerUser: 'Cards per recipient',
+    assignGenerateHint: (count: number, recipients: number) =>
+      `Generate ${count} new request card(s) for each of the ${recipients} recipient(s), ${count * recipients} in total — no need to tick cards in advance.`,
+    assignInvalidCount: 'Cards per recipient must be a positive integer',
+    assignGeneratedCodes: (count: number) => `${count} newly generated request card(s): `,
     assignNotePlaceholder: 'Optional: assignment note, stored in the assignment record',
     assignNotify: 'Also send an in-site notification',
     assignSubmit: 'Assign',
@@ -4382,7 +4419,39 @@ export const admin = {
     messages2: {
       fetchAssignmentsFailed: 'Failed to fetch assignment records',
       recycleFailed: 'Failed to recycle request cards'
-    }
+    },
+    tagManage: 'Tags',
+    tagModalDesc:
+      'Create, rename, or delete tags and tag users in bulk. Tags can then be used to pick recipients when assigning request cards',
+    tagListTitle: 'All tags',
+    tagEmptyHint:
+      'No tags yet. Pick users on the right and add a tag — once created, a tag can be used for tag-based assignment',
+    tagRename: 'Rename',
+    tagRenameSave: 'Save',
+    tagRenameCancel: 'Cancel',
+    tagDelete: 'Delete',
+    tagDeleteConfirm: (name: string, count: number) =>
+      `Delete tag "${name}"? It will be removed from ${count} user(s).`,
+    tagRenamed: 'Tag renamed',
+    tagRenameFailed: 'Failed to rename tag',
+    tagDeleted: 'Tag deleted',
+    tagDeleteFailed: 'Failed to delete tag',
+    tagTooLong: 'A tag name cannot exceed 20 characters',
+    tagApplyTitle: 'Tag users',
+    tagApplyLabel: 'Tag name',
+    tagApplyPlaceholder: 'Type a tag name and press Enter to add it below',
+    tagApplyAdd: 'Add',
+    tagApplySubmit: 'Add tags',
+    tagRemoveSubmit: 'Remove tags',
+    tagApplyDone: (updated: number, skipped: number) =>
+      skipped > 0
+        ? `Tags added for ${updated} user(s); ${skipped} unchanged`
+        : `Tags added for ${updated} user(s)`,
+    tagRemoveDone: (updated: number, skipped: number) =>
+      skipped > 0
+        ? `Tags removed for ${updated} user(s); ${skipped} unchanged`
+        : `Tags removed for ${updated} user(s)`,
+    tagApplyFailed: 'Failed to update user tags'
   },
   databaseManager: {
     title: 'Database Operations',

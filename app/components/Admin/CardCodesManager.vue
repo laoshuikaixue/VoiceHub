@@ -295,63 +295,260 @@
 
     <!-- 派发点歌券 -->
     <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.assignTitle }}</h3>
-          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignDesc }}</p>
+      <div>
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.assignTitle }}</h3>
+        <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignDesc }}</p>
+      </div>
+
+      <!-- 派发方式切换 -->
+      <div class="flex gap-1 rounded-xl border border-border-secondary bg-bg-primary p-1">
+        <button
+          v-for="mode in assignModes"
+          :key="mode.value"
+          type="button"
+          class="flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors"
+          :class="assignMode === mode.value ? 'bg-primary-hover text-text-primary' : 'text-text-secondary hover:text-text-primary'"
+          @click="switchAssignMode(mode.value)"
+        >
+          {{ mode.label }}
+        </button>
+      </div>
+
+      <!-- 方式一：选择用户（支持多选） -->
+      <div v-if="assignMode === 'users'">
+        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectUser }}</label>
+        <div ref="recipientDropdownRef" class="relative">
+          <input
+            v-model="assignUserKeyword"
+            type="text"
+            :placeholder="locale.assignSelectUserPlaceholder"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+            @focus="openRecipientDropdown"
+            @input="openRecipientDropdown"
+            @keydown.esc="closeRecipientDropdown"
+            @keydown.enter.prevent="toggleRecipient(recipientCandidates[0])"
+          >
+          <div
+            v-if="recipientDropdownOpen && recipientCandidates.length"
+            class="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border-secondary bg-bg-secondary shadow-xl"
+          >
+            <button
+              v-for="candidate in recipientCandidates"
+              :key="candidate.id"
+              class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary-50"
+              type="button"
+              @click="toggleRecipient(candidate)"
+            >
+              <span
+                class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
+                :class="isRecipientSelected(candidate.id) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
+              >
+                {{ isRecipientSelected(candidate.id) ? '✓' : '' }}
+              </span>
+              <span class="min-w-0 flex-1 truncate">
+                {{ candidate.name || candidate.username }}
+                <span class="text-text-tertiary">({{ candidate.username }})</span>
+              </span>
+              <span class="shrink-0 text-[10px] text-text-tertiary">
+                {{ [candidate.grade, candidate.class].filter(Boolean).join(' · ') }}
+              </span>
+            </button>
+          </div>
+        </div>
+        <div v-if="assignTargets.length" class="mt-2 flex flex-wrap items-center gap-2">
+          <span
+            v-for="target in assignTargets"
+            :key="target.id"
+            class="inline-flex items-center gap-1 rounded-full border border-info-20 bg-info-10 px-2.5 py-1 text-[11px] font-bold text-info"
+          >
+            {{ target.name || target.username }}
+            <button type="button" class="text-info/70 transition-colors hover:text-info" @click="removeRecipient(target.id)">
+              <X :size="12" />
+            </button>
+          </span>
+          <button
+            type="button"
+            class="text-[11px] font-bold text-text-tertiary transition-colors hover:text-text-primary"
+            @click="clearRecipients"
+          >
+            {{ locale.assignClearRecipients }}
+          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <div>
-          <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectUser }}</label>
-          <div class="relative">
-            <input
-              v-model="assignUserKeyword"
-              type="text"
-              :placeholder="locale.assignSelectUserPlaceholder"
-              class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
-              @focus="openRecipientDropdown"
-              @input="openRecipientDropdown"
-              @keydown.esc="closeRecipientDropdown"
+      <!-- 方式二：按标签 -->
+      <div v-else-if="assignMode === 'tags'" class="space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectTags }}</label>
+          <button
+            type="button"
+            class="flex items-center gap-1 text-[11px] font-bold text-primary transition-colors hover:text-primary-hover"
+            @click="openTagManager"
+          >
+            <Tags :size="12" /> {{ locale.tagManage }}
+          </button>
+        </div>
+        <div ref="tagDropdownRef" class="relative">
+          <input
+            :value="selectedTagNames.join('、')"
+            type="text"
+            readonly
+            :placeholder="locale.assignSelectTagsPlaceholder"
+            class="w-full cursor-pointer rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+            @click="tagDropdownOpen = !tagDropdownOpen"
+          >
+          <div
+            v-if="tagDropdownOpen"
+            class="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border-secondary bg-bg-secondary shadow-xl"
+          >
+            <button
+              v-for="tag in availableTags"
+              :key="tag.name"
+              type="button"
+              class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary-50"
+              @click="toggleTagSelection(tag.name)"
             >
-            <div
-              v-if="recipientDropdownOpen && recipientCandidates.length"
-              class="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-xl border border-border-secondary bg-bg-secondary shadow-xl"
-            >
-              <button
-                v-for="candidate in recipientCandidates"
-                :key="candidate.id"
-                class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary-50"
-                type="button"
-                @click="selectRecipient(candidate)"
+              <span
+                class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
+                :class="selectedTagNames.includes(tag.name) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
               >
-                <span class="min-w-0 flex-1 truncate">
-                  {{ candidate.name || candidate.username }}
-                  <span class="text-text-tertiary">({{ candidate.username }})</span>
-                </span>
-                <span class="shrink-0 text-[10px] text-text-tertiary">
-                  {{ [candidate.grade, candidate.class].filter(Boolean).join(' · ') }}
-                </span>
-              </button>
-            </div>
+                {{ selectedTagNames.includes(tag.name) ? '✓' : '' }}
+              </span>
+              <span class="min-w-0 flex-1 truncate">{{ tag.name }}</span>
+              <span class="shrink-0 text-[10px] text-text-tertiary">{{ getLocaleMessage('assignTagUserCount', tag.userCount) }}</span>
+            </button>
+            <p v-if="!availableTags.length" class="px-3 py-4 text-center text-xs text-text-tertiary">
+              {{ locale.tagEmptyHint }}
+            </p>
           </div>
-          <p v-if="assignTarget" class="mt-1.5 text-[11px] text-info">
-            {{ locale.assignSelectUser }}: {{ assignTarget.name || assignTarget.username }}
-            <span class="text-text-tertiary">({{ assignTarget.username }})</span>
+        </div>
+        <div v-if="selectedTagNames.length" class="flex flex-wrap gap-2">
+          <span
+            v-for="name in selectedTagNames"
+            :key="name"
+            class="inline-flex items-center gap-1 rounded-full border border-primary-20 bg-primary-10 px-2.5 py-1 text-[11px] font-bold text-primary"
+          >
+            {{ name }}
+            <button type="button" class="text-primary/70 transition-colors hover:text-primary" @click="toggleTagSelection(name)">
+              <X :size="12" />
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- 方式三：按班级 -->
+      <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignClassGrade }}</label>
+          <CustomSelect
+            v-model="classGrade"
+            :options="gradeOptions"
+            label-key="label"
+            value-key="value"
+            :placeholder="locale.assignSelectGrade"
+            class-name="w-full"
+          />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignClassName }}</label>
+          <CustomSelect
+            v-model="classClassName"
+            :options="classOptions"
+            label-key="label"
+            value-key="value"
+            :placeholder="classGrade ? locale.assignAllClasses : locale.assignSelectGradeFirst"
+            class-name="w-full"
+            :disabled="!classGrade"
+          />
+        </div>
+      </div>
+
+      <!-- 接收人预览（按标签 / 按班级） -->
+      <div v-if="assignMode !== 'users'" class="rounded-xl border border-border-secondary bg-bg-primary p-3">
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-xs font-bold text-text-secondary">
+            {{ locale.assignMatchedRecipients }}
+            <span class="text-primary">{{ previewUsers.length }}</span>
+            {{ locale.assignPersonUnit }}
+          </p>
+          <button
+            v-if="previewUsers.length"
+            type="button"
+            class="shrink-0 text-[11px] font-bold text-primary transition-colors hover:text-primary-hover"
+            @click="previewExpanded = !previewExpanded"
+          >
+            {{ previewExpanded ? locale.assignHideList : locale.assignViewList }}
+          </button>
+        </div>
+        <p v-if="previewLoading" class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignPreviewLoading }}</p>
+        <p v-else-if="!previewUsers.length" class="mt-1 text-[11px] text-text-tertiary">
+          {{ assignMode === 'tags' ? locale.assignTagNoMatch : locale.assignClassNoMatch }}
+        </p>
+        <p v-if="previewTruncated" class="mt-1 text-[11px] font-bold text-warning">
+          {{ getLocaleMessage('assignPreviewTruncated', MAX_PREVIEW_RECIPIENTS) }}
+        </p>
+        <div v-if="previewExpanded && previewUsers.length" class="mt-2 max-h-40 space-y-1 overflow-y-auto">
+          <p v-for="item in previewUsers" :key="item.id" class="text-[11px] leading-relaxed text-text-secondary">
+            {{ item.name || item.username }}
+            <span class="text-text-tertiary">({{ item.username }})</span>
+            <span v-if="item.grade || item.class" class="text-text-tertiary"> · {{ [item.grade, item.class].filter(Boolean).join(' · ') }}</span>
           </p>
         </div>
+      </div>
 
-        <div>
-          <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectCodes }}</label>
-          <div class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5">
-            <p class="text-sm text-text-primary">
-              {{ getLocaleMessage('assignSelectedCodes', assignableSelectedIds.length) }}
-            </p>
-            <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignSelectCodesHint }}</p>
-          </div>
+      <!-- 券来源：使用已勾选的券 / 按接收人现场生成 -->
+      <div>
+        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSource }}</label>
+        <div class="flex gap-1 rounded-xl border border-border-secondary bg-bg-primary p-1">
+          <button
+            v-for="source in assignSources"
+            :key="source.value"
+            type="button"
+            class="flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors"
+            :class="assignSource === source.value ? 'bg-primary-hover text-text-primary' : 'text-text-secondary hover:text-text-primary'"
+            @click="switchAssignSource(source.value)"
+          >
+            {{ source.label }}
+          </button>
         </div>
       </div>
+
+      <!-- 来源一：从已勾选的点歌券中派发 -->
+      <div v-if="assignSource === 'selected'">
+        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectCodes }}</label>
+        <div class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5">
+          <p class="text-sm text-text-primary">
+            {{ getLocaleMessage('assignSelectedCodes', assignableSelectedIds.length) }}
+          </p>
+          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignSelectCodesHint }}</p>
+        </div>
+      </div>
+
+      <!-- 来源二：按接收人现场生成并派发 -->
+      <div v-else>
+        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignCountPerUser }}</label>
+        <div class="flex items-center gap-2">
+          <input
+            v-model.number="assignCountPerUser"
+            type="number"
+            min="1"
+            max="100"
+            class="w-24 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
+          >
+          <p class="text-[11px] leading-relaxed text-text-tertiary">
+            {{ getLocaleMessage('assignGenerateHint', assignCountPerUser, resolvedRecipientCount) }}
+          </p>
+        </div>
+      </div>
+
+      <p class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-[11px] leading-relaxed text-text-tertiary">
+        <template v-if="assignSource === 'selected'">
+          {{ getLocaleMessage('assignDistributionHint', assignableSelectedIds.length, resolvedRecipientCount) }}
+        </template>
+        <template v-else>
+          {{ getLocaleMessage('assignGenerateDistributionHint', assignCountPerUser, resolvedRecipientCount) }}
+        </template>
+      </p>
 
       <div>
         <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
@@ -371,7 +568,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <button
           class="flex items-center gap-2 rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
-          :disabled="assigning"
+          :disabled="assigning || !canSubmitAssign"
           @click="submitAssign"
         >
           <Send :size="14" /> {{ assigning ? locale.exporting : locale.assignSubmit }}
@@ -383,13 +580,30 @@
         </span>
       </div>
 
-      <!-- 派发失败明细 -->
-      <div v-if="assignResult && assignResult.failures.length" class="rounded-xl border border-warning-20 bg-warning-5 p-3 space-y-1.5">
-        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-warning">{{ locale.assignResultTitle }}</p>
-        <p v-for="(failure, index) in assignResult.failures" :key="index" class="text-[11px] leading-relaxed text-text-secondary">
-          <span class="font-mono text-text-primary">{{ failure.code || `#${failure.cardCodeId}` }}</span>
-          — {{ failure.reason }}
+      <!-- 派发结果明细 -->
+      <div v-if="assignResult" class="space-y-2 rounded-xl border border-border-secondary bg-bg-primary p-3">
+        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignResultTitle }}</p>
+        <p class="text-xs font-bold text-text-primary">
+          {{ getLocaleMessage('assignResultSummary', assignResult.assignedCount, assignResult.servedRecipients, assignResult.failedCount) }}
         </p>
+        <p v-if="assignResult.skippedRecipients.length" class="text-[11px] leading-relaxed text-warning">
+          {{ getLocaleMessage('assignSkippedRecipients', assignResult.skippedRecipients.length) }}
+          {{ assignResult.skippedRecipients.map((item) => item.name || item.username).join('、') }}
+        </p>
+        <p v-if="assignResult.generateMode && assignResult.generatedCodes.length" class="text-[11px] leading-relaxed text-text-tertiary">
+          {{ getLocaleMessage('assignGeneratedCodes', assignResult.generatedCodes.length) }}
+          {{ assignResult.generatedCodes.join('、') }}
+        </p>
+        <p v-if="assignResult.invalidRecipients.length" class="text-[11px] leading-relaxed text-error">
+          {{ locale.assignInvalidRecipients }}
+          {{ assignResult.invalidRecipients.map((item) => `#${item.userId} ${item.reason}`).join('；') }}
+        </p>
+        <div v-if="assignResult.failures.length" class="space-y-1">
+          <p v-for="(failure, index) in assignResult.failures" :key="index" class="text-[11px] leading-relaxed text-text-secondary">
+            <span class="font-mono text-text-primary">{{ failure.code || `#${failure.cardCodeId}` }}</span>
+            — {{ failure.reason }}
+          </p>
+        </div>
       </div>
     </section>
 
@@ -657,11 +871,182 @@
       </div>
     </section>
   </div>
+
+  <!-- 标签管理弹窗 -->
+  <Teleport to="body">
+    <div v-if="tagModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="tagModalOpen = false" />
+      <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div class="sticky top-0 z-10 bg-panel-bg-deepest-95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
+          <div>
+            <h3 class="text-lg font-black text-text-primary-lighter tracking-tight">{{ locale.tagManage }}</h3>
+            <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.tagModalDesc }}</p>
+          </div>
+          <button
+            class="flex items-center justify-center p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light"
+            @click="tagModalOpen = false"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 px-6 py-5 lg:grid-cols-2">
+          <!-- 左：全部标签 -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-black uppercase tracking-widest text-text-tertiary">{{ locale.tagListTitle }}</h4>
+            <div v-if="!availableTags.length" class="rounded-xl border border-border-secondary bg-bg-primary p-4 text-center text-xs text-text-tertiary">
+              {{ locale.tagEmptyHint }}
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="tag in availableTags"
+                :key="tag.name"
+                class="flex items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2"
+              >
+                <template v-if="renamingTag && renamingTag.from === tag.name">
+                  <input
+                    v-model="renamingTag.to"
+                    type="text"
+                    class="min-w-0 flex-1 rounded-lg border border-border-secondary bg-bg-secondary px-2 py-1 text-sm text-text-primary focus:outline-none focus:border-primary-40"
+                    @keydown.enter.prevent="confirmRenameTag"
+                    @keydown.esc="renamingTag = null"
+                  >
+                  <button type="button" class="text-[11px] font-bold text-primary hover:text-primary-hover" @click="confirmRenameTag">
+                    {{ locale.tagRenameSave }}
+                  </button>
+                  <button type="button" class="text-[11px] font-bold text-text-tertiary hover:text-text-primary" @click="renamingTag = null">
+                    {{ locale.tagRenameCancel }}
+                  </button>
+                </template>
+                <template v-else>
+                  <span class="min-w-0 flex-1 truncate text-sm font-bold text-text-primary">{{ tag.name }}</span>
+                  <span class="shrink-0 text-[10px] text-text-tertiary">{{ getLocaleMessage('assignTagUserCount', tag.userCount) }}</span>
+                  <button type="button" class="shrink-0 text-[11px] font-bold text-text-secondary hover:text-primary" @click="renamingTag = { from: tag.name, to: tag.name }">
+                    {{ locale.tagRename }}
+                  </button>
+                  <button type="button" class="shrink-0 text-[11px] font-bold text-text-secondary hover:text-error" @click="deleteTag(tag)">
+                    {{ locale.tagDelete }}
+                  </button>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右：给用户打标签 -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-black uppercase tracking-widest text-text-tertiary">{{ locale.tagApplyTitle }}</h4>
+
+            <div ref="tagUserDropdownRef" class="relative">
+              <input
+                v-model="tagUserKeyword"
+                type="text"
+                :placeholder="locale.assignSelectUserPlaceholder"
+                class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+                @focus="openTagUserDropdown"
+                @input="openTagUserDropdown"
+                @keydown.esc="tagUserDropdownOpen = false"
+              >
+              <div
+                v-if="tagUserDropdownOpen && tagUserCandidates.length"
+                class="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border-secondary bg-bg-secondary shadow-xl"
+              >
+                <button
+                  v-for="candidate in tagUserCandidates"
+                  :key="candidate.id"
+                  type="button"
+                  class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary-50"
+                  @click="toggleTagUser(candidate)"
+                >
+                  <span
+                    class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
+                    :class="isTagUserSelected(candidate.id) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
+                  >
+                    {{ isTagUserSelected(candidate.id) ? '✓' : '' }}
+                  </span>
+                  <span class="min-w-0 flex-1 truncate">
+                    {{ candidate.name || candidate.username }}
+                    <span class="text-text-tertiary">({{ candidate.username }})</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="tagUserSelected.length" class="flex flex-wrap items-center gap-2">
+              <span
+                v-for="target in tagUserSelected"
+                :key="target.id"
+                class="inline-flex items-center gap-1 rounded-full border border-info-20 bg-info-10 px-2.5 py-1 text-[11px] font-bold text-info"
+              >
+                {{ target.name || target.username }}
+                <button type="button" class="text-info/70 transition-colors hover:text-info" @click="removeTagUser(target.id)">
+                  <X :size="12" />
+                </button>
+              </span>
+              <button type="button" class="text-[11px] font-bold text-text-tertiary hover:text-text-primary" @click="tagUserSelected = []">
+                {{ locale.assignClearRecipients }}
+              </button>
+            </div>
+
+            <div>
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.tagApplyLabel }}</label>
+              <div class="flex gap-2">
+                <input
+                  v-model="tagApplyInput"
+                  type="text"
+                  :placeholder="locale.tagApplyPlaceholder"
+                  class="min-w-0 flex-1 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+                  @keydown.enter.prevent="commitTagApplyInput"
+                >
+                <button
+                  type="button"
+                  class="shrink-0 rounded-xl border border-border-secondary bg-bg-secondary px-3 py-2 text-xs font-bold text-text-secondary hover:text-text-primary"
+                  @click="commitTagApplyInput"
+                >
+                  {{ locale.tagApplyAdd }}
+                </button>
+              </div>
+              <div v-if="tagApplyList.length" class="mt-2 flex flex-wrap gap-2">
+                <span
+                  v-for="name in tagApplyList"
+                  :key="name"
+                  class="inline-flex items-center gap-1 rounded-full border border-primary-20 bg-primary-10 px-2.5 py-1 text-[11px] font-bold text-primary"
+                >
+                  {{ name }}
+                  <button type="button" class="text-primary/70 transition-colors hover:text-primary" @click="removeTagApplyInput(name)">
+                    <X :size="12" />
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
+                :disabled="tagSubmitting || !tagUserSelected.length || !tagApplyList.length"
+                @click="applyTagsToUsers('add')"
+              >
+                {{ locale.tagApplySubmit }}
+              </button>
+              <button
+                type="button"
+                class="rounded-xl border border-border-secondary bg-bg-secondary px-4 py-2 text-xs font-bold text-text-secondary transition-colors hover:text-text-primary disabled:opacity-50"
+                :disabled="tagSubmitting || !tagUserSelected.length || !tagApplyList.length"
+                @click="applyTagsToUsers('remove')"
+              >
+                {{ locale.tagRemoveSubmit }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { Copy, Download, Plus, RefreshCw, Search, Send } from '@lucide/vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { Copy, Download, Plus, RefreshCw, Search, Send, Tags, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
@@ -693,8 +1078,9 @@ const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDE
 const lastGeneratedCodes = ref([])
 
 // ===== 派发点歌券 =====
+const MAX_PREVIEW_RECIPIENTS = 2000
 const assignUserKeyword = ref('')
-const assignTarget = ref(null)
+const assignTargets = ref([])
 const assignNote = ref('')
 const assignNotify = ref(true)
 const assigning = ref(false)
@@ -706,7 +1092,93 @@ const assignmentFilters = ref({ q: '', status: '' })
 const assignmentPagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
 const recipientCandidates = ref([])
 const recipientDropdownOpen = ref(false)
+const recipientDropdownRef = ref(null)
 let recipientSearchTimer = null
+
+// 派发方式：选择用户 / 按标签 / 按班级
+const assignMode = ref('users')
+const assignModes = computed(() => [
+  { value: 'users', label: locale.value?.assignModeUsers || '选择用户' },
+  { value: 'tags', label: locale.value?.assignModeTags || '按标签' },
+  { value: 'class', label: locale.value?.assignModeClass || '按班级' }
+])
+
+// 券来源：使用已勾选的券 / 按接收人现场生成
+const assignSource = ref('selected')
+const assignSources = computed(() => [
+  { value: 'selected', label: locale.value?.assignSourceSelected || '使用已有点歌券' },
+  { value: 'generate', label: locale.value?.assignSourceGenerate || '为接收人新生成' }
+])
+// 每人派发张数（仅「为接收人新生成」模式生效）
+const assignCountPerUser = ref(1)
+
+// 按标签派发
+const availableTags = ref([])
+const selectedTagNames = ref([])
+const tagDropdownOpen = ref(false)
+const tagDropdownRef = ref(null)
+
+// 按班级派发
+const classGrade = ref('')
+const classClassName = ref('')
+const classFacets = ref({ grades: [], classes: [] })
+
+// 接收人预览（按标签 / 按班级）
+const previewUsers = ref([])
+const previewLoading = ref(false)
+const previewExpanded = ref(false)
+const previewTruncated = ref(false)
+
+// 标签管理弹窗
+const tagModalOpen = ref(false)
+const tagApplyInput = ref('')
+const tagApplyList = ref([])
+const renamingTag = ref(null)
+const tagUserKeyword = ref('')
+const tagUserCandidates = ref([])
+const tagUserDropdownOpen = ref(false)
+const tagUserDropdownRef = ref(null)
+const tagUserSelected = ref([])
+const tagSubmitting = ref(false)
+let tagUserSearchTimer = null
+
+/** 当前生效的接收人列表：选择用户模式取勾选结果，其余模式取匹配预览 */
+const resolvedRecipients = computed(() => {
+  if (assignMode.value === 'users') return assignTargets.value
+  return previewUsers.value.map((item) => ({
+    id: Number(item.id),
+    name: item.name || '',
+    username: item.username || ''
+  }))
+})
+
+const resolvedRecipientCount = computed(() => resolvedRecipients.value.length)
+
+const canSubmitAssign = computed(() => {
+  if (resolvedRecipientCount.value <= 0) return false
+  // 生成模式不依赖库存券，只需接收人与每人张数合法
+  if (assignSource.value === 'generate') {
+    return Number.isInteger(assignCountPerUser.value) && assignCountPerUser.value >= 1 && assignCountPerUser.value <= 100
+  }
+  return assignableSelectedIds.value.length > 0
+})
+
+const gradeOptions = computed(() =>
+  classFacets.value.grades.map((item) => ({
+    label: `${item.value}（${item.userCount}）`,
+    value: item.value
+  }))
+)
+
+const classOptions = computed(() => {
+  const options = classFacets.value.classes
+    .filter((item) => !classGrade.value || item.grade === classGrade.value)
+    .map((item) => ({
+      label: `${item.class}（${item.userCount}）`,
+      value: item.class
+    }))
+  return [{ label: locale.value?.assignAllClasses || '全部班级', value: '' }, ...options]
+})
 
 const assignmentStatusOptions = computed(() => [
   { label: locale.value?.allAssignmentStatuses || 'All Statuses', value: '' },
@@ -937,32 +1409,303 @@ const fetchRecipients = async () => {
     if (assignUserKeyword.value.trim()) query.set('q', assignUserKeyword.value.trim())
     const res = await $fetch(`/api/admin/card-codes/recipients?${query.toString()}`)
     recipientCandidates.value = Array.isArray(res?.data) ? res.data : []
-    recipientDropdownOpen.value = true
+    // 请求可能晚于用户的关闭操作返回，只有用户仍保持打开状态时才展开下拉
+    if (!recipientDropdownOpen.value) return
   } catch (error) {
     console.error('搜索接收用户失败', error)
     recipientCandidates.value = []
   }
 }
 
-/** 选定接收用户 */
-const selectRecipient = (candidate) => {
-  assignTarget.value = {
-    id: Number(candidate.id),
-    name: candidate.name || '',
-    username: candidate.username || ''
+/** 勾选 / 取消勾选接收用户 */
+const toggleRecipient = (candidate) => {
+  if (!candidate) return
+  const id = Number(candidate.id)
+  if (assignTargets.value.some((item) => item.id === id)) {
+    assignTargets.value = assignTargets.value.filter((item) => item.id !== id)
+    return
   }
-  assignUserKeyword.value = candidate.name || candidate.username || ''
+  if (assignTargets.value.length >= 500) {
+    showToast(locale.value?.assignTooManyRecipients || '单次最多派发给 500 位用户', 'warning')
+    return
+  }
+  assignTargets.value = [
+    ...assignTargets.value,
+    { id, name: candidate.name || '', username: candidate.username || '' }
+  ]
+}
+
+const isRecipientSelected = (id) => assignTargets.value.some((item) => item.id === Number(id))
+
+const removeRecipient = (id) => {
+  assignTargets.value = assignTargets.value.filter((item) => item.id !== Number(id))
+}
+
+const clearRecipients = () => {
+  assignTargets.value = []
+}
+
+/** 切换派发方式 */
+const switchAssignMode = (mode) => {
+  if (assignMode.value === mode) return
+  assignMode.value = mode
+  assignResult.value = null
   recipientDropdownOpen.value = false
+  tagDropdownOpen.value = false
+  previewExpanded.value = false
+  // 切换方式后旧名单不再作废，先清空再按新条件重新匹配，避免沿用上一模式的接收人
+  previewUsers.value = []
+  previewTruncated.value = false
+  if (mode === 'class' && !classFacets.value.grades.length) {
+    fetchClassFacets()
+  }
+  if (mode !== 'users') {
+    fetchPreviewRecipients()
+  }
+}
+
+// ===== 券来源切换 =====
+const switchAssignSource = (source) => {
+  if (assignSource.value === source) return
+  assignSource.value = source
+  assignResult.value = null
+  if (source === 'generate') {
+    // 每人张数兜底为合法值，避免残留 0 或非法输入导致按钮不可用
+    if (!Number.isInteger(assignCountPerUser.value) || assignCountPerUser.value < 1) {
+      assignCountPerUser.value = 1
+    }
+    if (assignCountPerUser.value > 100) assignCountPerUser.value = 100
+  }
+}
+
+// ===== 按标签派发 =====
+const fetchTags = async () => {
+  try {
+    const res = await $fetch('/api/admin/users/tags')
+    availableTags.value = Array.isArray(res?.data) ? res.data : []
+  } catch (error) {
+    console.error('获取用户标签失败', error)
+    availableTags.value = []
+  }
+}
+
+const toggleTagSelection = (name) => {
+  if (selectedTagNames.value.includes(name)) {
+    selectedTagNames.value = selectedTagNames.value.filter((item) => item !== name)
+    return
+  }
+  selectedTagNames.value = [...selectedTagNames.value, name]
+}
+
+// ===== 按班级派发 =====
+const fetchClassFacets = async () => {
+  try {
+    const res = await $fetch('/api/admin/card-codes/recipients?facets=1')
+    classFacets.value = {
+      grades: Array.isArray(res?.facets?.grades) ? res.facets.grades : [],
+      classes: Array.isArray(res?.facets?.classes) ? res.facets.classes : []
+    }
+  } catch (error) {
+    console.error('获取年级班级维度失败', error)
+    classFacets.value = { grades: [], classes: [] }
+  }
+}
+
+// ===== 接收人预览（按标签 / 按班级） =====
+const fetchPreviewRecipients = async () => {
+  if (assignMode.value === 'users') return
+  previewLoading.value = true
+  try {
+    const query = new URLSearchParams()
+    query.set('all', '1')
+    if (assignMode.value === 'tags') {
+      if (!selectedTagNames.value.length) {
+        previewUsers.value = []
+        previewTruncated.value = false
+        return
+      }
+      query.set('tags', selectedTagNames.value.join(','))
+    } else {
+      if (!classGrade.value) {
+        previewUsers.value = []
+        previewTruncated.value = false
+        return
+      }
+      query.set('grade', classGrade.value)
+      if (classClassName.value) query.set('class', classClassName.value)
+    }
+    const res = await $fetch(`/api/admin/card-codes/recipients?${query.toString()}`)
+    previewUsers.value = Array.isArray(res?.data) ? res.data : []
+    previewTruncated.value = Boolean(res?.truncated)
+  } catch (error) {
+    console.error('获取匹配接收人失败', error)
+    previewUsers.value = []
+    previewTruncated.value = false
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+// ===== 标签管理弹窗 =====
+const openTagManager = () => {
+  renamingTag.value = null
+  tagApplyInput.value = ''
+  tagApplyList.value = []
+  tagUserKeyword.value = ''
+  tagUserCandidates.value = []
+  tagUserSelected.value = []
+  tagDropdownOpen.value = false
+  tagModalOpen.value = true
+  fetchTags()
+}
+
+const openTagUserDropdown = () => {
+  tagUserDropdownOpen.value = true
+  if (tagUserSearchTimer) clearTimeout(tagUserSearchTimer)
+  tagUserSearchTimer = setTimeout(() => {
+    fetchTagUsers()
+  }, 220)
+}
+
+const fetchTagUsers = async () => {
+  try {
+    const query = new URLSearchParams()
+    if (tagUserKeyword.value.trim()) query.set('q', tagUserKeyword.value.trim())
+    const res = await $fetch(`/api/admin/card-codes/recipients?${query.toString()}`)
+    tagUserCandidates.value = Array.isArray(res?.data) ? res.data : []
+    tagUserDropdownOpen.value = true
+  } catch (error) {
+    console.error('搜索用户失败', error)
+    tagUserCandidates.value = []
+  }
+}
+
+const isTagUserSelected = (id) => tagUserSelected.value.some((item) => item.id === Number(id))
+
+const toggleTagUser = (candidate) => {
+  if (!candidate) return
+  const id = Number(candidate.id)
+  if (tagUserSelected.value.some((item) => item.id === id)) {
+    tagUserSelected.value = tagUserSelected.value.filter((item) => item.id !== id)
+    return
+  }
+  tagUserSelected.value = [
+    ...tagUserSelected.value,
+    { id, name: candidate.name || '', username: candidate.username || '' }
+  ]
+}
+
+const removeTagUser = (id) => {
+  tagUserSelected.value = tagUserSelected.value.filter((item) => item.id !== Number(id))
+}
+
+const commitTagApplyInput = () => {
+  const name = tagApplyInput.value.trim()
+  if (!name) return
+  if (name.length > 20) {
+    showToast(locale.value?.tagTooLong || '标签名长度不能超过 20 个字符', 'warning')
+    return
+  }
+  if (!tagApplyList.value.includes(name)) {
+    tagApplyList.value = [...tagApplyList.value, name]
+  }
+  tagApplyInput.value = ''
+}
+
+const removeTagApplyInput = (name) => {
+  tagApplyList.value = tagApplyList.value.filter((item) => item !== name)
+}
+
+const applyTagsToUsers = async (mode) => {
+  if (!tagUserSelected.value.length || !tagApplyList.value.length) return
+  tagSubmitting.value = true
+  try {
+    const res = await $fetch('/api/admin/users/tags', {
+      method: 'POST',
+      body: {
+        userIds: tagUserSelected.value.map((item) => item.id),
+        add: mode === 'add' ? tagApplyList.value : [],
+        remove: mode === 'remove' ? tagApplyList.value : []
+      }
+    })
+    const updated = Number(res?.updatedCount || 0)
+    const skipped = Array.isArray(res?.skipped) ? res.skipped : []
+    showToast(
+      getLocaleMessage(
+        mode === 'add' ? 'tagApplyDone' : 'tagRemoveDone',
+        updated,
+        skipped.length
+      ),
+      'success'
+    )
+    tagApplyList.value = []
+    await fetchTags()
+    if (assignMode.value === 'tags') await fetchPreviewRecipients()
+  } catch (error) {
+    console.error('更新用户标签失败', error)
+    showToast(locale.value?.tagApplyFailed || '更新用户标签失败', 'error')
+  } finally {
+    tagSubmitting.value = false
+  }
+}
+
+const confirmRenameTag = async () => {
+  const from = renamingTag.value?.from || ''
+  const to = (renamingTag.value?.to || '').trim()
+  if (!from || !to) return
+  if (to.length > 20) {
+    showToast(locale.value?.tagTooLong || '标签名长度不能超过 20 个字符', 'warning')
+    return
+  }
+  try {
+    await $fetch('/api/admin/users/tags', {
+      method: 'PUT',
+      body: { from, to }
+    })
+    showToast(locale.value?.tagRenamed || '标签已重命名', 'success')
+    renamingTag.value = null
+    await Promise.all([fetchTags(), assignMode.value === 'tags' ? fetchPreviewRecipients() : Promise.resolve()])
+  } catch (error) {
+    console.error('重命名标签失败', error)
+    showToast(locale.value?.tagRenameFailed || '重命名标签失败', 'error')
+  }
+}
+
+const deleteTag = async (tag) => {
+  const confirmed = window.confirm(
+    locale.value?.tagDeleteConfirm?.(tag.name, tag.userCount)
+    || `确定删除标签「${tag.name}」吗？将从 ${tag.userCount} 位用户身上移除该标签。`
+  )
+  if (!confirmed) return
+  try {
+    await $fetch(`/api/admin/users/tags?name=${encodeURIComponent(tag.name)}`, {
+      method: 'DELETE'
+    })
+    showToast(locale.value?.tagDeleted || '标签已删除', 'success')
+    if (selectedTagNames.value.includes(tag.name)) {
+      selectedTagNames.value = selectedTagNames.value.filter((item) => item !== tag.name)
+    }
+    await Promise.all([fetchTags(), assignMode.value === 'tags' ? fetchPreviewRecipients() : Promise.resolve()])
+  } catch (error) {
+    console.error('删除标签失败', error)
+    showToast(locale.value?.tagDeleteFailed || '删除标签失败', 'error')
+  }
 }
 
 /** 提交派发 */
 const submitAssign = async () => {
-  if (!assignTarget.value) {
+  const recipients = resolvedRecipients.value
+  if (!recipients.length) {
     showToast(locale.value?.assignNoUser || '请先选择接收用户', 'warning')
     return
   }
-  if (!assignableSelectedIds.value.length) {
+  const useGenerate = assignSource.value === 'generate'
+  if (!useGenerate && !assignableSelectedIds.value.length) {
     showToast(locale.value?.assignNoCodes || '请先勾选要派发的点歌券', 'warning')
+    return
+  }
+  if (useGenerate && (!Number.isInteger(assignCountPerUser.value) || assignCountPerUser.value < 1)) {
+    showToast(locale.value?.assignInvalidCount || '每人派发张数必须为正整数', 'warning')
     return
   }
 
@@ -972,8 +1715,11 @@ const submitAssign = async () => {
     const res = await $fetch('/api/admin/card-codes/assign', {
       method: 'POST',
       body: {
-        userId: assignTarget.value.id,
-        cardCodeIds: assignableSelectedIds.value,
+        userIds: recipients.map((item) => item.id),
+        // 生成模式下不传 cardCodeIds，由后端按人数现场生成新券
+        ...(useGenerate
+          ? { countPerUser: assignCountPerUser.value }
+          : { cardCodeIds: assignableSelectedIds.value }),
         note: assignNote.value.trim(),
         notify: assignNotify.value
       }
@@ -982,6 +1728,11 @@ const submitAssign = async () => {
     assignResult.value = {
       assignedCount: Number(res?.assignedCount || 0),
       failedCount: Number(res?.failedCount || 0),
+      servedRecipients: Number(res?.servedRecipients || 0),
+      generateMode: Boolean(res?.generateMode),
+      generatedCodes: Array.isArray(res?.generatedCodes) ? res.generatedCodes : [],
+      skippedRecipients: Array.isArray(res?.skippedRecipients) ? res.skippedRecipients : [],
+      invalidRecipients: Array.isArray(res?.invalidRecipients) ? res.invalidRecipients : [],
       failures: Array.isArray(res?.failures) ? res.failures : []
     }
 
@@ -996,10 +1747,14 @@ const submitAssign = async () => {
       showToast(locale.value?.assignAllFailed || '所有点歌券派发失败', 'error')
     }
 
-    // 派发后清空选择与备注，并刷新列表与派发记录
+    // 派发后清空选择与备注，并刷新列表、派发记录与匹配名单
     selectedIds.value = []
     assignNote.value = ''
-    await Promise.all([fetchCodes(pagination.value.page), fetchAssignments(1)])
+    await Promise.all([
+      fetchCodes(pagination.value.page),
+      fetchAssignments(1),
+      assignMode.value === 'users' ? Promise.resolve() : fetchPreviewRecipients()
+    ])
   } catch (error) {
     console.error('派发点歌券失败', error)
     showToast(locale.value?.assignFailed || '派发点歌券失败', 'error')
@@ -1036,8 +1791,51 @@ const recycleAssignment = async (item) => {
 }
 
 const refreshAll = async () => {
-  await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments()])
+  await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments(), fetchTags(), fetchClassFacets()])
 }
+
+// 标签 / 班级条件变化时刷新匹配名单
+watch(selectedTagNames, () => {
+  fetchPreviewRecipients()
+})
+watch([classGrade, classClassName], () => {
+  // 年级清空时同步清空班级，避免脏条件
+  if (!classGrade.value && classClassName.value) {
+    classClassName.value = ''
+  }
+  fetchPreviewRecipients()
+})
+
+// 点击空白处收起下拉（与 CustomSelect 的行为保持一致）
+const handleAssignDropdownOutside = (event) => {
+  const target = event.target
+  if (recipientDropdownOpen.value) {
+    const container = recipientDropdownRef.value
+    if (!container || !container.contains(target)) {
+      recipientDropdownOpen.value = false
+    }
+  }
+  if (tagDropdownOpen.value) {
+    const container = tagDropdownRef.value
+    if (!container || !container.contains(target)) {
+      tagDropdownOpen.value = false
+    }
+  }
+  if (tagUserDropdownOpen.value) {
+    const container = tagUserDropdownRef.value
+    if (!container || !container.contains(target)) {
+      tagUserDropdownOpen.value = false
+    }
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleAssignDropdownOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousedown', handleAssignDropdownOutside)
+})
 
 const resetFilters = async () => {
   filters.value = { q: '', status: '' }
