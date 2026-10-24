@@ -575,7 +575,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-warning-200 transition-all hover:border-warning-40 hover:bg-warning-15"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-20 bg-warning-10 px-3 text-xs font-black text-warning transition-all hover:border-warning-40 hover:bg-warning-15"
                       type="button"
                       @click="openCardCodeModal"
                     >
