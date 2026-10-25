@@ -64,7 +64,10 @@ const isAggregateSuccessCode = (value: unknown): boolean =>
 const normalizeAggregateEndpoint = (endpoint?: string): string => {
   const value = endpoint?.trim()
   if (!value) {
-    throw createError({ statusCode: 500, message: '聚合登录接口地址未配置，请在管理员后台完成配置' })
+    throw createError({
+      statusCode: 500,
+      message: '聚合登录接口地址未配置，请在管理员后台完成配置'
+    })
   }
   try {
     const url = new URL(value)
@@ -599,10 +602,86 @@ const customOAuth2Strategy: OAuthStrategy = {
 }
 
 // 策略注册表
+const qqOAuthStrategy: OAuthStrategy = {
+  getAuthorizeUrl(redirectUri, state, config) {
+    if (!config?.clientId) throw createError({ statusCode: 500, message: 'QQ互联 App ID 未配置' })
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: config.clientId,
+      redirect_uri: redirectUri,
+      state,
+      scope: 'get_user_info'
+    })
+    return `https://graph.qq.com/oauth2.0/authorize?${params.toString()}`
+  },
+  async exchangeToken(code, redirectUri, config) {
+    if (!config?.clientId || !config.clientSecret)
+      throw createError({ statusCode: 500, message: 'QQ互联 App ID 或 App Key 未配置' })
+    const params = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code,
+      redirect_uri: redirectUri,
+      fmt: 'json',
+      need_openid: '1'
+    })
+    const response = await $fetch<string>(
+      `https://graph.qq.com/oauth2.0/token?${params.toString()}`,
+      { responseType: 'text' }
+    )
+    const tokenData = response.trim().startsWith('{')
+      ? JSON.parse(response)
+      : Object.fromEntries(new URLSearchParams(response))
+    if (tokenData.error || tokenData.error_description)
+      throw new Error(tokenData.error_description || tokenData.error)
+    const token = tokenData.access_token
+    if (!token) throw new Error('QQ互联未返回访问令牌')
+    return token
+  },
+  async getUserInfo(accessToken, config) {
+    const me = await $fetch<string>('https://graph.qq.com/oauth2.0/me', {
+      query: { access_token: accessToken, fmt: 'json' },
+      responseType: 'text'
+    })
+    let identity: any
+    try {
+      identity = JSON.parse(me)
+    } catch {
+      const match = me.match(/^\s*callback\s*\(\s*(\{[\s\S]*\})\s*\)\s*;?\s*$/)
+      if (!match) throw new Error('QQ互联返回了无效的 OpenID 响应')
+      identity = JSON.parse(match[1]!)
+    }
+    if (identity.error || !identity.openid || identity.client_id !== config?.clientId)
+      throw new Error('QQ互联返回的 OpenID 无效')
+    const profile = await $fetch<any>('https://graph.qq.com/user/get_user_info', {
+      query: {
+        access_token: accessToken,
+        oauth_consumer_key: config?.clientId,
+        openid: identity.openid
+      }
+    })
+    if (profile?.ret !== 0) throw new Error('QQ互联获取用户资料失败')
+    const avatar =
+      typeof profile.figureurl_qq_2 === 'string'
+        ? profile.figureurl_qq_2
+        : typeof profile.figureurl_qq_1 === 'string'
+          ? profile.figureurl_qq_1
+          : undefined
+    return {
+      id: String(identity.openid),
+      username: String(profile.nickname || identity.openid),
+      name: profile.nickname ? String(profile.nickname) : undefined,
+      avatar
+    }
+  }
+}
+
 const strategies: Record<string, OAuthStrategy> = {
   github: githubStrategy,
   casdoor: casdoorStrategy,
   google: googleStrategy,
+  qq: qqOAuthStrategy,
   oauth2: customOAuth2Strategy,
   aggregate: aggregateOAuthStrategy
 }

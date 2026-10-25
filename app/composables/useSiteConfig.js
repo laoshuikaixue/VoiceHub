@@ -25,7 +25,8 @@ export const joinThemeLogoUrl = (dark, light) => {
   const normalizedDark = typeof dark === 'string' ? dark.trim() : ''
   const normalizedLight = typeof light === 'string' ? light.trim() : ''
   if (!normalizedDark && !normalizedLight) return ''
-  if (!normalizedLight || normalizedLight === normalizedDark) return normalizedDark || normalizedLight
+  if (!normalizedLight || normalizedLight === normalizedDark)
+    return normalizedDark || normalizedLight
   return `${normalizedDark}||${normalizedLight}`
 }
 
@@ -120,7 +121,9 @@ export const useSiteConfig = () => {
       try {
         applyThemeConfig(
           data.defaultTheme,
-          typeof data.enabledThemes === 'string' ? JSON.parse(data.enabledThemes) : data.enabledThemes
+          typeof data.enabledThemes === 'string'
+            ? JSON.parse(data.enabledThemes)
+            : data.enabledThemes
         )
       } catch {
         applyThemeConfig('System', null)
@@ -202,12 +205,13 @@ export const useSiteConfig = () => {
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
-  const allowAnonymousSubmission = computed(() => siteConfig.value.allowAnonymousSubmission === true)
+  const allowAnonymousSubmission = computed(
+    () => siteConfig.value.allowAnonymousSubmission === true
+  )
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
   const requireCardCodeForRequests = computed(
-    () =>
-      enableCardCodeRequests.value && siteConfig.value.requireCardCodeForRequests === true
+    () => enableCardCodeRequests.value && siteConfig.value.requireCardCodeForRequests === true
   )
   const enableCardCodeLimitBypass = computed(
     () => siteConfig.value.enableCardCodeLimitBypass === true
@@ -219,13 +223,20 @@ export const useSiteConfig = () => {
     () => siteConfig.value.registerRequiresGradeClass === true
   )
   const legalConsentEnabled = computed(() => siteConfig.value.legalConsentEnabled === true)
-  const legalConsentDisplayMode = computed(() => siteConfig.value.legalConsentDisplayMode || 'modal')
+  const legalConsentDisplayMode = computed(
+    () => siteConfig.value.legalConsentDisplayMode || 'modal'
+  )
   const legalConsentUpdatedDate = computed(() => siteConfig.value.legalConsentUpdatedDate || '')
   const legalConsentDocuments = computed(() => {
     try {
-      const docs = typeof siteConfig.value.legalConsentDocuments === 'string' ? JSON.parse(siteConfig.value.legalConsentDocuments) : siteConfig.value.legalConsentDocuments
+      const docs =
+        typeof siteConfig.value.legalConsentDocuments === 'string'
+          ? JSON.parse(siteConfig.value.legalConsentDocuments)
+          : siteConfig.value.legalConsentDocuments
       return Array.isArray(docs) ? docs.filter((doc) => doc?.name && doc?.slug) : []
-    } catch { return [] }
+    } catch {
+      return []
+    }
   })
   // 条款内容版本指纹（服务端派生），登录页据此判定是否需重新同意，随文档内容变化而变化
   const legalConsentVersion = computed(() => siteConfig.value.legalConsentVersion || '')
@@ -263,6 +274,9 @@ export const useSiteConfig = () => {
     }
     if (siteConfig.value.googleOAuthEnabled) {
       providers.push({ key: 'google', name: 'Google' })
+    }
+    if (siteConfig.value.qqOAuthEnabled) {
+      providers.push({ key: 'qq', name: 'QQ' })
     }
     if (siteConfig.value.aggregateOAuthEnabled) {
       const enabledLoginTypes = getAggregateOAuthLoginTypesOrDefault(

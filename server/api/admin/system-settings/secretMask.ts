@@ -9,6 +9,7 @@ const SECRET_FIELDS = [
   ['casdoorClientSecret', SECRET_FIELD_MASK],
   ['googleClientSecret', SECRET_FIELD_MASK],
   ['aggregateOAuthAppKey', SECRET_FIELD_MASK],
+  ['qqOAuthAppKey', SECRET_FIELD_MASK],
   ['customOAuthClientSecret', SECRET_FIELD_MASK],
   ['turnstileSecretKey', SECRET_FIELD_MASK]
 ]
@@ -21,14 +22,25 @@ export const maskSystemSettingsSecrets = <T extends Record<string, any>>(setting
     smtpPassword: settings.smtpPassword ? SMTP_PASSWORD_MASK : settings.smtpPassword,
     astrbotToken: settings.astrbotToken ? SECRET_FIELD_MASK : settings.astrbotToken,
     oauthStateSecret: settings.oauthStateSecret ? SECRET_FIELD_MASK : settings.oauthStateSecret,
-    githubClientSecret: settings.githubClientSecret ? SECRET_FIELD_MASK : settings.githubClientSecret,
-    casdoorClientSecret: settings.casdoorClientSecret ? SECRET_FIELD_MASK : settings.casdoorClientSecret,
-    googleClientSecret: settings.googleClientSecret ? SECRET_FIELD_MASK : settings.googleClientSecret,
-    aggregateOAuthAppKey: settings.aggregateOAuthAppKey ? SECRET_FIELD_MASK : settings.aggregateOAuthAppKey,
+    githubClientSecret: settings.githubClientSecret
+      ? SECRET_FIELD_MASK
+      : settings.githubClientSecret,
+    casdoorClientSecret: settings.casdoorClientSecret
+      ? SECRET_FIELD_MASK
+      : settings.casdoorClientSecret,
+    googleClientSecret: settings.googleClientSecret
+      ? SECRET_FIELD_MASK
+      : settings.googleClientSecret,
+    aggregateOAuthAppKey: settings.aggregateOAuthAppKey
+      ? SECRET_FIELD_MASK
+      : settings.aggregateOAuthAppKey,
+    qqOAuthAppKey: settings.qqOAuthAppKey ? SECRET_FIELD_MASK : settings.qqOAuthAppKey,
     customOAuthClientSecret: settings.customOAuthClientSecret
       ? SECRET_FIELD_MASK
       : settings.customOAuthClientSecret,
-    turnstileSecretKey: settings.turnstileSecretKey ? SECRET_FIELD_MASK : settings.turnstileSecretKey
+    turnstileSecretKey: settings.turnstileSecretKey
+      ? SECRET_FIELD_MASK
+      : settings.turnstileSecretKey
   }
 }
 
