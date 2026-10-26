@@ -407,6 +407,13 @@
       "when": 1792858227933,
       "tag": "20261024161027_add_user_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1792995472181,
+      "tag": "20261026061752_add_card_code_dispatch_plan",
+      "breakpoints": true
     }
   ]
 }

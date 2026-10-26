@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { and, asc, eq, ilike, isNotNull, ne, or, sql } from 'drizzle-orm'
+import { and, asc, eq, ilike, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
+import { UNSET_KEY } from '~~/server/utils/recipient-tree'
 
 /**
  * 派发点歌券时的接收人查询。
@@ -11,9 +12,9 @@ import { and, asc, eq, ilike, isNotNull, ne, or, sql } from 'drizzle-orm'
  * 支持的查询维度：
  * - q：按姓名/用户名搜索
  * - tags：按标签过滤（命中任意一个标签即返回，多个用逗号分隔）
- * - grade / class：按年级/班级过滤
+ * - grade / class：按年级/班级过滤；传 __unset__ 表示「未设置年级/班级」
  * - all=1：返回全部匹配结果（上限 2000，用于派发前名单预览）
- * - facets=1：附带返回年级/班级维度及各组合的用户数（用于派发面板下拉选项）
+ * - facets=1：附带返回年级/班级维度及各组合的用户数
  */
 const MAX_PREVIEW_COUNT = 2000
 
@@ -47,10 +48,16 @@ export default defineEventHandler(async (event) => {
     conditions.push(sql`${users.tags} && ${tagArray}`)
   }
   if (grade) {
-    conditions.push(eq(users.grade, grade))
+    // __unset__ 表示筛「未填写年级」的账号，与树里的「未设置年级」分组对应。
+    // 历史数据里空串与 NULL 都存在过，两种都算未设置，否则分组点开是空的。
+    conditions.push(
+      grade === UNSET_KEY ? or(isNull(users.grade), eq(users.grade, ''))! : eq(users.grade, grade)
+    )
   }
   if (className) {
-    conditions.push(eq(users.class, className))
+    conditions.push(
+      className === UNSET_KEY ? or(isNull(users.class), eq(users.class, ''))! : eq(users.class, className)
+    )
   }
 
   const whereClause = and(...conditions)
