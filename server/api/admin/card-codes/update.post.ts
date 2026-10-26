@@ -1,6 +1,8 @@
+import { getServerDate } from '~~/server/utils/serverTime'
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray, eq } from 'drizzle-orm'
+import { syncAssignmentOnManualStatusChange, assertCardCodesUnbound } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 
 export default defineEventHandler(async (event) => {
@@ -41,31 +43,46 @@ export default defineEventHandler(async (event) => {
       if (!CARD_CODE_STATUSES.includes(status as any)) {
         throw createError({ statusCode: 400, message: '不支持的状态值' })
       }
+      if (status === 'ASSIGNED') {
+        // 手工置为已派发但没有持有人，与派发记录不一致，拒绝
+        throw createError({
+          statusCode: 400,
+          message: '「已派发」状态需通过派发功能设置，请使用派发功能指定接收人'
+        })
+      }
       updateObj.status = status
     }
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
-      updateObj.redeemedAt = new Date()
+      updateObj.redeemedAt = getServerDate()
       updateObj.lockedBy = null
       updateObj.lockedAt = null
+      updateObj.assignedTo = null
+      updateObj.assignedAt = null
     }
     if (status === 'LOCKED') {
       updateObj.lockedBy = user.id
-      updateObj.lockedAt = new Date()
+      updateObj.lockedAt = getServerDate()
       updateObj.redeemedBy = null
       updateObj.redeemedAt = null
+      updateObj.assignedTo = null
+      updateObj.assignedAt = null
     }
     if (status === 'AVAILABLE') {
       updateObj.lockedBy = null
       updateObj.lockedAt = null
       updateObj.redeemedBy = null
       updateObj.redeemedAt = null
+      updateObj.assignedTo = null
+      updateObj.assignedAt = null
     }
     if (status === 'INVALID') {
       updateObj.lockedBy = null
       updateObj.lockedAt = null
       updateObj.redeemedBy = null
       updateObj.redeemedAt = null
+      updateObj.assignedTo = null
+      updateObj.assignedAt = null
     }
     if (typeof body.note !== 'undefined') {
       updateObj.note = typeof body.note === 'string' ? body.note.trim() || null : body.note
@@ -73,10 +90,22 @@ export default defineEventHandler(async (event) => {
     if (Object.keys(updateObj).length === 0) {
       throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
-    updateObj.updatedAt = new Date()
+    updateObj.updatedAt = getServerDate()
 
     const res = await db.transaction(async (tx) => {
+      if (status) await assertCardCodesUnbound(tx, normalizedIds)
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
+
+      // 批量改状态同样要收敛活跃的派发记录，避免券已解绑、ASSIGNED 记录还挂着
+      if (status && updatedRows.length > 0) {
+        await syncAssignmentOnManualStatusChange({
+          tx,
+          cardCodeIds: updatedRows.map((row) => row.id),
+          status,
+          actor: { id: user.id, name: user.name, username: user.username },
+          reason: '管理员批量修改点歌券状态'
+        })
+      }
 
       if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows
@@ -88,7 +117,7 @@ export default defineEventHandler(async (event) => {
             cardCodeId: row.id,
             codeSnapshot: row.code,
             redeemedBy: user.id,
-            redeemedAt: row.redeemedAt || new Date(),
+            redeemedAt: row.redeemedAt || getServerDate(),
             source: 'ADMIN_MANUAL',
             songId: null
           }))
@@ -104,6 +133,7 @@ export default defineEventHandler(async (event) => {
     return { success: true, data: res }
   } catch (err: any) {
     console.error('更新点歌券失败', err)
-    throw createError({ statusCode: err.statusCode || 500, message: err.message || '更新点歌券失败' })
+    if (err.statusCode) throw err
+    throw createError({ statusCode: 500, message: err.message || '更新点歌券失败' })
   }
 })

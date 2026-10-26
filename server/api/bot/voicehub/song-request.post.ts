@@ -148,6 +148,12 @@ export default defineEventHandler(async (event) => {
     ? rawPlayTime
     : undefined
 
+  // 播出日期：与时段配套传入（YYYY-MM-DD），格式与是否可选由服务端统一校验
+  const rawPlayDate = typeof body?.preferredPlayDate === 'string' ? body.preferredPlayDate.trim() : ''
+  const playDate = siteSettings?.enablePlayTimeSelection === true && /^\d{4}-\d{2}-\d{2}$/.test(rawPlayDate)
+    ? rawPlayDate
+    : undefined
+
   const payload = isManual
     ? {
         // 手动投稿：无平台标识、无 musicId，标题/歌手来自用户输入；非字符串拒绝，避免强转污染投稿数据
@@ -155,7 +161,8 @@ export default defineEventHandler(async (event) => {
         artist: typeof manual.artist === 'string' ? manual.artist.trim() : '',
         submissionNote: note,
         cardCode,
-        preferredPlayTimeId: playTimeId
+        preferredPlayTimeId: playTimeId,
+        ...(playDate ? { preferredPlayDate: playDate } : {})
       }
     : {
         title: candidate!.title,
@@ -165,7 +172,8 @@ export default defineEventHandler(async (event) => {
         musicId: candidate!.musicId,
         submissionNote: note,
         cardCode,
-        preferredPlayTimeId: playTimeId
+        preferredPlayTimeId: playTimeId,
+        ...(playDate ? { preferredPlayDate: playDate } : {})
         // 候选已由本接口的密封票据保护，不叠加站点选择票据
       }
 
@@ -178,7 +186,8 @@ export default defineEventHandler(async (event) => {
 
   let song: any
   try {
-    song = await requestSongForUser(event, { id: binding.userId, role: user.role }, payload)
+    // 机器人无时段选择界面，不套用站点的「时段必选」限制
+    song = await requestSongForUser(event, { id: binding.userId, role: user.role }, payload, { enforceRequiredPlaySlot: false })
   } catch (error: any) {
     // 站点侧业务错误保留原错误码；无稳定码的参数错误统一归入通用参数错误。
     if (error?.statusCode) {

@@ -257,6 +257,31 @@ export default defineEventHandler(async (event) => {
       updateData.enablePlayTimeSelection = body.enablePlayTimeSelection
     }
 
+    if (body.playSlotRequired !== undefined) {
+      if (typeof body.playSlotRequired !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'playSlotRequired 必须是布尔值'
+        })
+      }
+      updateData.playSlotRequired = body.playSlotRequired
+    }
+
+    // 交叉校验：「时段必选」依赖「播出时段选择」总开关，提交值与当前持久化值合并后判定
+    const mergedEnablePlayTimeSelection = body.enablePlayTimeSelection !== undefined
+      ? body.enablePlayTimeSelection
+      : settings?.enablePlayTimeSelection === true
+    const mergedPlaySlotRequired = body.playSlotRequired !== undefined
+      ? body.playSlotRequired
+      : settings?.playSlotRequired === true
+    if (mergedPlaySlotRequired && !mergedEnablePlayTimeSelection) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '启用「时段必选」前需先开启「播出时段选择」'
+      )
+    }
+
     if (body.siteTitle !== undefined) {
       updateData.siteTitle = body.siteTitle
     }

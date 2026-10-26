@@ -20,7 +20,8 @@
 
 ### 🎵 核心功能
 
-- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出时段
+- **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出日期与播出时段
+- **点歌券**：支持用户派发与回收。投稿后锁券，正式发布且标记已播放后核销；未播放时取消发布或换日保留绑定，撤回投稿归还点歌券。
 - **多平台登录支持**：
   - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
     - **直接创建账户**：用户通过 OAuth 认证后可创建新账户，但仍需设置本地用户名和密码
@@ -756,6 +757,9 @@ VoiceHub/
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   │   ├── CardCodeAvailablePicker.vue # 可用点歌券勾选面板
+│   │   │   ├── CardCodeDispatchModal.vue # 点歌券派发弹窗
+│   │   │   ├── CardCodeRecipientPicker.vue # 派发接收人搜索与年级班级圈选
 │   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
@@ -836,7 +840,8 @@ VoiceHub/
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
 │   │   │   ├── RequestForm.vue        # 点歌表单
 │   │   │   ├── ScheduleList.vue       # 排期列表展示
-│   │   │   └── SongList.vue           # 歌曲列表
+│   │   │   ├── SongList.vue           # 歌曲列表
+│   │   │   └── SubmissionOptionsModal.vue # 投稿选项弹窗
 │   │   ├── UI/                # 通用UI组件
 │   │   │   ├── AudioPlayer/   # 音频播放器组件模块
 │   │   │   │   ├── AudioElement.vue   # 音频元素组件
@@ -844,7 +849,10 @@ VoiceHub/
 │   │   │   │   ├── PlayerInfo.vue     # 播放器信息组件
 │   │   │   │   └── VolumeControl.vue  # 播放器音量控制组件
 │   │   │   ├── Common/        # 通用UI组件
+│   │   │   │   ├── AppDatePicker.vue # 自绘日期选择器
+│   │   │   │   ├── AppDateTimePicker.vue # 自绘日期时间选择器
 │   │   │   │   ├── AppSpinner.vue      # 通用加载转圈组件
+│   │   │   │   ├── AppTimePicker.vue   # 自绘时间选择器
 │   │   │   │   ├── CollapsibleSection.vue # 可折叠区域组件
 │   │   │   │   ├── CustomSelect.vue   # 自定义选择器
 │   │   │   │   ├── DataTable.vue      # 通用数据表格组件
@@ -1077,11 +1085,16 @@ VoiceHub/
 │   │   │   │   └── index.post.ts    # 新增配置项
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
+│   │   │   │   ├── assignments.get.ts # 派发记录查询
+│   │   │   │   ├── assign.post.ts   # 派发点歌券给用户
 │   │   │   │   ├── create.post.ts   # 创建点歌券
 │   │   │   │   ├── delete.post.ts   # 删除点歌券
 │   │   │   │   ├── export.get.ts    # 导出点歌券
 │   │   │   │   ├── index.get.ts     # 获取点歌券列表
+│   │   │   │   ├── recipients.get.ts # 派发接收人查询
+│   │   │   │   ├── recipients-tree.get.ts # 按年级班级树查询接收人
 │   │   │   │   ├── redeem-logs.get.ts # 获取点歌券日志
+│   │   │   │   ├── recycle.post.ts  # 回收已派发未使用的点歌券
 │   │   │   │   └── update.post.ts   # 批量更新点歌券
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
@@ -1235,6 +1248,7 @@ VoiceHub/
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
 │   │   ├── card-codes/     # 点歌券API
+│   │   │   ├── mine.get.ts          # 查询当前用户持有的已派发券
 │   │   │   └── validate.post.ts     # 验证点歌券可用性
 │   │   ├── captcha/        # 人机验证API
 │   │   │   └── verify.post.ts       # ESA 公共验证接口（边缘验签后签发短期凭证）
@@ -1409,6 +1423,8 @@ VoiceHub/
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
+│   │   ├── cardCodeAssignmentService.ts # 点歌券派发与回收服务
+│   │   ├── cardCodeGeneratorService.ts # 点歌券券码生成与入库服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── durationValidationService.ts # 歌曲时长校验与补齐服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
@@ -1484,6 +1500,7 @@ VoiceHub/
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
+│   │   ├── play-slot.ts    # 播出时段适用星期与播出日期校验
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── legal-consent.ts # 条款内容指纹计算与注册同意校验
 │   │   ├── register-validation.ts # 注册校验纯函数
@@ -1491,6 +1508,8 @@ VoiceHub/
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-captcha.ts # 图形/Turnstile/ESA 人机验证统一校验
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── card-code-backup.ts # 点歌券与派发流水恢复
+│   │   ├── recipient-tree.ts # 派发接收人年级班级树构建
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
@@ -1499,8 +1518,9 @@ VoiceHub/
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
-│   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
 │   │   ├── schedule-date-query.ts # 排期日期查询校验与 UTC 边界
+│   │   ├── schedulePlacementConstraint.ts # 排期落位硬约束（期望时段）
+│   │   ├── scheduleReplayBinding.ts # 排期重播绑定工具
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具

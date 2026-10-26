@@ -28,6 +28,38 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
+          <!-- 桌面端批量播放状态 -->
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 scale-95 translate-x-10"
+            enter-to-class="opacity-100 scale-100 translate-x-0"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 scale-100 translate-x-0"
+            leave-to-class="opacity-0 scale-95 translate-x-10"
+          >
+            <div
+              v-if="selectedSongs.length > 0"
+              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
+            >
+              <button
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                @click="batchMarkPlayed"
+                :disabled="loading || batchMarking"
+              >
+                <Check :size="14" class="text-success-70" /> {{ locale.actions.batchMarkPlayed }} ({{
+                  selectedSongs.length
+                }})
+              </button>
+              <button
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                @click="batchMarkUnplayed"
+                :disabled="loading || batchMarking"
+              >
+                <RotateCcw :size="14" /> {{ locale.actions.batchMarkUnplayed }} ({{ selectedSongs.length }})
+              </button>
+            </div>
+          </Transition>
+
           <!-- 桌面端批量操作 -->
           <Transition
             enter-active-class="transition duration-200 ease-out"
@@ -122,6 +154,13 @@
             value-key="id"
             :placeholder="locale.filters.selectPlayTime"
             class-name="w-full lg:w-40"
+          />
+          <AppDatePicker
+            v-model="selectedPlayDate"
+            :label="locale.filters.playDate"
+            class-name="w-full lg:w-40"
+            rounded="lg"
+            size="sm"
           />
           <CustomSelect
             v-model="statusFilter"
@@ -345,8 +384,11 @@
                   class="text-[10px] font-bold text-text-disabled mt-0.5 whitespace-nowrap"
                 >{{ locale.table.submitStat(song.submissionCount) }} · {{ locale.table.playStat(song.playCount) }}</span
                 >
-                <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-primary mt-1">
-                  {{ getLocaleMessage('preferredPlayTime', getPlayTimeName(song.preferredPlayTimeId)) }}
+                <span
+                  v-if="song.preferredPlayTimeId || song.preferredPlayDate"
+                  class="text-[10px] font-bold text-primary mt-1"
+                >
+                  {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
                 </span>
                 <span
                   class="hidden lg:inline text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-60"
@@ -472,33 +514,54 @@
     >
       <div
         v-if="selectedSongs.length > 0"
-        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_var(--mobile-table-shadow)] backdrop-blur-xl flex items-center justify-between"
+        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_var(--mobile-table-shadow)] backdrop-blur-xl flex flex-col gap-2"
       >
-        <div class="px-3 flex flex-col">
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
-          <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
+        <div class="flex items-center justify-between">
+          <div class="px-3 flex flex-col">
+            <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
+            <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+              @click="openDownloadDialog"
+            >
+              <Download :size="16" class="mb-1" />
+              <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-warning rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+              @click="batchReject"
+            >
+              <X :size="16" class="mb-1" />
+              <span class="text-[9px] font-bold">{{ locale.actions.batchReject }}</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+              @click="batchDelete"
+            >
+              <Trash2 :size="16" class="mb-1" />
+              <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
+        <!-- 批量播放状态 -->
+        <div class="flex items-center gap-2 border-t border-border-secondary-50 pt-2">
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
-            @click="openDownloadDialog"
+            class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+            @click="batchMarkPlayed"
+            :disabled="loading || batchMarking"
           >
-            <Download :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
+            <Check :size="16" />
+            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkPlayed }}</span>
           </button>
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-warning rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
-            @click="batchReject"
+            class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
+            @click="batchMarkUnplayed"
+            :disabled="loading || batchMarking"
           >
-            <X :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">{{ locale.actions.batchReject }}</span>
-          </button>
-          <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
-            @click="batchDelete"
-          >
-            <Trash2 :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
+            <RotateCcw :size="16" />
+            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
           </button>
         </div>
       </div>
@@ -516,6 +579,18 @@
       :cancel-text="locale.dialog.cancel"
       @confirm="confirmDelete"
       @close="showDeleteDialog = false"
+    />
+
+    <ConfirmDialog
+      :show="showPlaybackConfirm"
+      :title="playbackConfirmTitle"
+      :message="playbackConfirmMessage"
+      :loading="batchMarking"
+      :type="playbackConfirmMode === 'played' ? 'success' : 'warning'"
+      :confirm-text="playbackConfirmMode === 'played' ? locale.actions.batchMarkPlayed : locale.actions.batchMarkUnplayed"
+      :cancel-text="locale.dialog.cancel"
+      @confirm="confirmPlaybackChange"
+      @close="closePlaybackConfirm"
     />
 
     <SubmissionRemarkDialog
@@ -901,6 +976,17 @@
                   :placeholder="locale.editModal.selectPreferredPlayTime"
                 />
               </div>
+              <div v-if="showEditModal" class="space-y-2">
+                <AppDatePicker
+                  v-model="editForm.preferredPlayDate"
+                  :label="locale.editModal.preferredPlayDate"
+                  :placeholder="locale.editModal.preferredPlayDate"
+                  :min="playDateMin"
+                  class-name="w-full"
+                  rounded="lg"
+                  size="sm"
+                />
+              </div>
             </div>
 
             <div v-if="showEditModal" class="space-y-3">
@@ -1240,6 +1326,7 @@ import SongSourceReplaceModal from '~/components/Admin/SongSourceReplaceModal.vu
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Search,
@@ -1278,7 +1365,7 @@ import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl, getCoverThumbUrl } from '~/utils/url'
-import { formatDuration } from '~/utils/timeUtils'
+import { formatDuration, getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
@@ -1287,7 +1374,7 @@ dayjs.extend(customParseFormat)
 // 响应式数据
 const { showToast: showNotification } = useToast()
 const { localize: localizeServerError } = useServerErrors()
-const { admin, siteConfig, currentLocale } = useLocale()
+const { admin, siteConfig, songs: songsLocale, currentLocale } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.songManagement || {}
   const emptyText = () => ''
@@ -1317,6 +1404,7 @@ const locale = computed(() => {
 })
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
 const loading = ref(false)
+const batchMarking = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const poolFilter = ref('all')
@@ -1340,6 +1428,8 @@ const selectedSemesterName = computed(() => {
 // 时段相关
 const selectedPlayTime = ref('all')
 const availablePlayTimes = ref([])
+// 播出日期筛选（YYYY-MM-DD，空 = 不限）
+const selectedPlayDate = ref('')
 
 // 选项配置
 const statusOptions = computed(() => [
@@ -1374,6 +1464,19 @@ const showDeleteDialog = ref(false)
 const deleteDialogTitle = ref('')
 const deleteDialogMessage = ref('')
 const deleteAction = ref(null)
+const showPlaybackConfirm = ref(false)
+const playbackConfirmMode = ref('played')
+const playbackConfirmSongIds = ref([])
+const playbackConfirmTitle = computed(() =>
+  playbackConfirmMode.value === 'played'
+    ? locale.value.dialog?.markPlayedTitle || '确认标记为已播放'
+    : locale.value.dialog?.markUnplayedTitle || '确认标记为未播放'
+)
+const playbackConfirmMessage = computed(() =>
+  playbackConfirmMode.value === 'played'
+    ? locale.value.dialog?.markPlayedMessage?.(playbackConfirmSongIds.value.length) || `确认标记 ${playbackConfirmSongIds.value.length} 首歌曲为已播放？`
+    : locale.value.dialog?.markUnplayedMessage?.(playbackConfirmSongIds.value.length) || `确认撤回 ${playbackConfirmSongIds.value.length} 首歌曲的已播放状态？`
+)
 
 // 投票人员弹窗相关
 const showVotersModal = ref(false)
@@ -1415,6 +1518,8 @@ const rejectSongInfo = ref({
 
 // 编辑歌曲相关
 const showEditModal = ref(false)
+// 期望播出日期可选下限：今天（北京时间），过往日期不可排期
+const playDateMin = computed(() => getBeijingDateString())
 const editLoading = ref(false)
 const refreshDurationLoading = ref(false)
 const refreshCoverLoading = ref(false)
@@ -1425,6 +1530,7 @@ const editForm = ref({
   requester: '',
   semester: '',
   preferredPlayTimeId: 'none',
+  preferredPlayDate: '',
   submissionNote: '',
   submissionNotePublic: false,
   submissionAnonymous: false,
@@ -1553,6 +1659,11 @@ const baseFilteredSongs = computed(() => {
     })
   }
 
+  // 播出日期过滤（精确匹配用户点歌时选定的期望播出日期）
+  if (selectedPlayDate.value) {
+    filtered = filtered.filter((song) => song.preferredPlayDate === selectedPlayDate.value)
+  }
+
   return filtered
 })
 
@@ -1589,6 +1700,11 @@ const filteredSongs = computed(() => {
 
   // 排序
   filtered.sort((a, b) => {
+    // 使用点歌券的歌曲优先置顶，不随排序方式改变
+    const aCard = a.cardCodeId ? 1 : 0
+    const bCard = b.cardCodeId ? 1 : 0
+    if (aCard !== bCard) return bCard - aCard
+
     switch (sortOption.value) {
       case 'time-desc':
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
@@ -1716,6 +1832,20 @@ const getPlayTimeName = (playTimeId) => {
   if (!playTime) return ''
 
   return formatPlayTimeDisplay(playTime)
+}
+
+// 期望播出日期与时段
+const formatPlaySlotDisplay = (song) => {
+  const parts = []
+  if (song.preferredPlayDate) {
+    const weekday = getBeijingWeekday(song.preferredPlayDate)
+    const weekdayLabel = weekday === null ? '' : songsLocale.value?.requestForm?.weekdaysFull?.[weekday]
+    parts.push([song.preferredPlayDate, weekdayLabel].filter(Boolean).join(' '))
+  }
+  if (song.preferredPlayTimeId) {
+    parts.push(getPlayTimeName(song.preferredPlayTimeId))
+  }
+  return parts.join(' · ')
 }
 
 const getStatusText = (song) => {
@@ -1905,25 +2035,81 @@ const refreshSongs = async (forceRefresh = false) => {
   }
 }
 
-const markAsPlayed = async (songId) => {
+const executePlaybackChange = async (songIds, unmark = false) => {
   try {
-    await songsService.markPlayed(songId)
+    const result = unmark
+      ? await $fetch('/api/admin/songs/mark-played', {
+          method: 'POST',
+          body: { songIds, unmark: true },
+          ...auth.getAuthConfig()
+        })
+      : await $fetch('/api/admin/songs/mark-played', {
+          method: 'POST',
+          body: { songIds },
+          ...auth.getAuthConfig()
+        })
     await refreshSongs()
+    return Number(result?.count || 0)
   } catch (error) {
-      console.error('标记已播放失败:', error)
-      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
-    }
+    console.error(unmark ? '标记未播放失败:' : '标记已播放失败:', error)
+    showNotification(getNestedMessage('errors', 'markFailed', localizeServerError(error)), 'error')
+    return null
+  }
 }
 
-const markAsUnplayed = async (songId) => {
-  try {
-    await songsService.unmarkPlayed(songId)
-    await refreshSongs()
-  } catch (error) {
-      console.error('标记未播放失败:', error)
-      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
-    }
+const openPlaybackConfirm = (songIds, mode) => {
+  const ids = [...new Set(songIds.filter((id) => Number.isInteger(id) && id > 0))]
+  if (!ids.length || loading.value || batchMarking.value) return
+  playbackConfirmSongIds.value = ids
+  playbackConfirmMode.value = mode
+  showPlaybackConfirm.value = true
 }
+
+const closePlaybackConfirm = () => {
+  if (batchMarking.value) return
+  showPlaybackConfirm.value = false
+  playbackConfirmSongIds.value = []
+}
+
+const markAsPlayed = (songId) => openPlaybackConfirm([songId], 'played')
+
+const markAsUnplayed = (songId) => openPlaybackConfirm([songId], 'unplayed')
+
+const confirmPlaybackChange = async () => {
+  if (batchMarking.value || !playbackConfirmSongIds.value.length) return
+  batchMarking.value = true
+  try {
+    loading.value = true
+    const songIds = [...playbackConfirmSongIds.value]
+    const updated = await executePlaybackChange(songIds, playbackConfirmMode.value === 'unplayed')
+    if (updated === null) return
+    selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
+    showNotification(
+      updated > 0
+        ? getNestedMessage(
+            'messages',
+            playbackConfirmMode.value === 'played' ? 'batchMarkPlayedSuccess' : 'batchMarkUnplayedSuccess',
+            updated
+          )
+        : getNestedMessage(
+            'messages',
+            playbackConfirmMode.value === 'played' ? 'batchMarkPlayedNoop' : 'batchMarkUnplayedNoop'
+          ),
+      updated > 0 ? 'success' : 'warning'
+    )
+  } catch (error) {
+    console.error('更新播放状态失败:', error)
+  } finally {
+    batchMarking.value = false
+    loading.value = false
+    showPlaybackConfirm.value = false
+    playbackConfirmSongIds.value = []
+  }
+}
+
+const batchMarkPlayed = () => openPlaybackConfirm(selectedSongs.value, 'played')
+
+const batchMarkUnplayed = () => openPlaybackConfirm(selectedSongs.value, 'unplayed')
 
 // 加入 / 移出备选池
 const toggleSongPool = async (song) => {
@@ -2196,6 +2382,7 @@ const editSong = (song) => {
     requester: song.requesterId || song.requester_id || song.requester || '',
     semester: song.semester || '',
     preferredPlayTimeId: song.preferredPlayTimeId || 'none',
+    preferredPlayDate: song.preferredPlayDate || '',
     submissionNote: song.submissionNote || '',
     submissionNotePublic: song.submissionNotePublic === true,
     submissionAnonymous: song.submissionAnonymous === true,
@@ -2318,6 +2505,7 @@ const saveEditSong = async () => {
         editForm.value.preferredPlayTimeId === 'none'
           ? null
           : editForm.value.preferredPlayTimeId || null,
+      preferredPlayDate: editForm.value.preferredPlayDate || null,
       submissionNote: submissionNoteClearRequested.value ? null : editForm.value.submissionNote,
       submissionNotePublic: submissionNoteClearRequested.value
         ? false
@@ -2447,6 +2635,7 @@ const cancelEditSong = () => {
     requester: '',
     semester: '',
     preferredPlayTimeId: 'none',
+    preferredPlayDate: '',
     submissionNote: '',
     submissionNotePublic: false,
     musicPlatform: '',

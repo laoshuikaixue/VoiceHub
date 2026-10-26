@@ -1,12 +1,13 @@
 import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
-import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { parseScheduleReplayRequestId, resolveScheduleReplayBindings, restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 const MAX_SCHEDULE_ITEMS = 1000
@@ -48,9 +49,7 @@ function parseScheduleItems(value: unknown): ScheduleItem[] {
     if (!Number.isInteger(songId) || songId <= 0) {
       throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `第 ${index + 1} 条排期的歌曲ID无效`)
     }
-    const rawReplayId = Number(item?.replayRequestId)
-    const replayRequestId =
-      Number.isInteger(rawReplayId) && rawReplayId > 0 ? rawReplayId : null
+    const replayRequestId = parseScheduleReplayRequestId(item?.replayRequestId)
 
     return { songId, sequence: index + 1, replayRequestId }
   })
@@ -78,14 +77,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const songIds = Array.from(new Set(scheduleItems.map((item) => item.songId)))
-  const replayRequestIds = Array.from(
-    new Set(
-      scheduleItems
-        .map((item) => item.replayRequestId)
-        .filter((id): id is number => id !== null)
-    )
-  )
-
   const result = await db.transaction(async (tx) => {
     if (playTimeId) {
       const playTime = await tx
@@ -114,40 +105,28 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 草稿仅记录重播绑定，不改动申请状态
-    if (replayRequestIds.length > 0) {
-      const replayRequests = await tx
-        .select({
-          id: songReplayRequests.id,
-          songId: songReplayRequests.songId,
-          status: songReplayRequests.status
-        })
-        .from(songReplayRequests)
-        .where(inArray(songReplayRequests.id, replayRequestIds))
-      const replayMap = new Map(replayRequests.map((request) => [request.id, request]))
-      for (const item of scheduleItems) {
-        if (item.replayRequestId === null) continue
-        const request = replayMap.get(item.replayRequestId)
-        if (!request || request.songId !== item.songId || request.status !== 'PENDING') {
-          throw createApiError(
-            400,
-            SERVER_ERROR_CODES.SONG_REPLAY_INVALID_REQUEST,
-            '重播申请无效或已被处理'
-          )
-        }
-      }
-    }
-
     // 覆盖前先取出窗口内排期，用于返还被移除的已发布排期的点歌券与重播申请
     const schedulesToReplace = await tx
       .select({
         songId: schedules.songId,
+        replayRequestId: schedules.replayRequestId,
         isDraft: schedules.isDraft,
         cardCodeId: songs.cardCodeId
       })
       .from(schedules)
       .leftJoin(songs, eq(schedules.songId, songs.id))
       .where(and(...whereConditions))
+
+    const previousBindings = new Map<number, number>()
+    for (const schedule of schedulesToReplace) {
+      if (schedule.replayRequestId) previousBindings.set(schedule.songId, schedule.replayRequestId)
+    }
+    const resolvedItems = await resolveScheduleReplayBindings(tx, scheduleItems, previousBindings)
+    await assertSchedulePlacement(
+      { playTimeId, items: resolvedItems },
+      await loadSongTitleMap(songIds, tx),
+      tx
+    )
 
     await tx.delete(schedules).where(and(...whereConditions))
 
@@ -213,7 +192,7 @@ export default defineEventHandler(async (event) => {
 
     if (scheduleItems.length > 0) {
       await tx.insert(schedules).values(
-        scheduleItems.map((item) => ({
+        resolvedItems.map((item) => ({
           songId: item.songId,
           playDate,
           sequence: item.sequence,

@@ -60,11 +60,12 @@ export default defineEventHandler(async (event) => {
 
     let stats
     if (includeStats) {
-      stats = { total: 0, available: 0, locked: 0, redeemed: 0, invalid: 0 }
+      stats = { total: 0, available: 0, assigned: 0, locked: 0, redeemed: 0, invalid: 0 }
       for (const row of statsRows) {
         const value = Number(row.count || 0)
         stats.total += value
         if (row.status === 'AVAILABLE') stats.available = value
+        if (row.status === 'ASSIGNED') stats.assigned = value
         if (row.status === 'LOCKED') stats.locked = value
         if (row.status === 'REDEEMED') stats.redeemed = value
         if (row.status === 'INVALID') stats.invalid = value
@@ -75,7 +76,8 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       data: {
-        cardCodes: items,
+        // assignedTo / assignedAt 是站内持有信息，不对外暴露
+        cardCodes: items.map(({ assignedTo: _assignedTo, assignedAt: _assignedAt, ...rest }: any) => rest),
         pagination: {
           page,
           limit,

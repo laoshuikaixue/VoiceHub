@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
           ...SYSTEM_SETTINGS_DEFAULTS,
           telemetryEnabled: true,
           enablePlayTimeSelection: false,
+          playSlotRequired: false,
           siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
           siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
           schoolLogoHomeUrl: null,

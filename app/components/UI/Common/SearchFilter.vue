@@ -30,6 +30,7 @@
           :label="filter.label"
           :value="getSelectValueLabel(filter)"
           :options="filter.options.map((o) => o.label)"
+          size="xs"
           class="w-full"
           @change="(val) => updateSelectFilter(filter, val)"
         />
@@ -39,19 +40,23 @@
           v-else-if="filter.type === 'dateRange'"
           class="flex items-center gap-2 p-1 bg-bg-primary border border-border-secondary rounded-2xl"
         >
-          <input
-            type="date"
-            :value="filterValues[filter.key]?.start || ''"
-            class="bg-transparent border-none text-[10px] font-bold text-text-secondary focus:ring-0 px-2 py-1 w-28"
-            @input="updateDateRange(filter.key, 'start', $event.target.value)"
-          >
+          <AppDatePicker
+            :model-value="filterValues[filter.key]?.start || ''"
+            variant="ghost"
+            size="xs"
+            rounded="lg"
+            class-name="w-28 shrink-0"
+            @update:model-value="updateDateRange(filter.key, 'start', $event)"
+          />
           <span class="text-text-secondary text-[10px] font-black uppercase">{{ locale.to }}</span>
-          <input
-            type="date"
-            :value="filterValues[filter.key]?.end || ''"
-            class="bg-transparent border-none text-[10px] font-bold text-text-secondary focus:ring-0 px-2 py-1 w-28"
-            @input="updateDateRange(filter.key, 'end', $event.target.value)"
-          >
+          <AppDatePicker
+            :model-value="filterValues[filter.key]?.end || ''"
+            variant="ghost"
+            size="xs"
+            rounded="lg"
+            class-name="w-28 shrink-0"
+            @update:model-value="updateDateRange(filter.key, 'end', $event)"
+          />
         </div>
 
         <!-- 多选过滤器 -->
@@ -133,6 +138,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Search, X, ChevronDown, RotateCcw } from '@lucide/vue'
 import CustomSelect from './CustomSelect.vue'
+import AppDatePicker from './AppDatePicker.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

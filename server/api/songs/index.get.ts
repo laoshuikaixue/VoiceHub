@@ -42,6 +42,8 @@ interface SongResponse extends MaskableSong {
   voted?: boolean
   preferredPlayTimeId?: number | null
   preferredPlayTime?: any
+  // 期望播出日期（YYYY-MM-DD），与 preferredPlayTimeId 共同构成「日期 + 时段」
+  preferredPlayDate?: string | null
   scheduleDate?: string
   schedulePlayed?: boolean
   replayRequestStatus?: string
@@ -245,6 +247,7 @@ const loadBasicSongs = async (
     hasSubmissionNote: false, submissionNote: null, submissionNotePublic: false,
     submissionAnonymous: row.submissionAnonymous === true,
     preferredPlayTimeId: null,
+    preferredPlayDate: null,
     ...(user
       ? {
           voted: row.voted === true,
@@ -455,6 +458,7 @@ export default defineEventHandler(async (event) => {
         submissionNotePublicStatus: null,
         replayRequestId: null,
         preferredPlayTimeId: null,
+        preferredPlayDate: null,
         ...(user
           ? {
               voted: row.voted === true,
@@ -599,6 +603,7 @@ export default defineEventHandler(async (event) => {
         s."submissionAnonymous",
         s."submissionNotePublicStatus",
         s."preferredPlayTimeId",
+        to_char(s."preferredPlayDate", 'YYYY-MM-DD') AS "preferredPlayDate",
         u.id AS "requesterId",
         u.name AS "requesterName",
         u.grade AS "requesterGrade",
@@ -801,6 +806,7 @@ export default defineEventHandler(async (event) => {
         submissionNotePublicStatus: canViewSubmissionNote ? (row.submissionNotePublicStatus || null) : null,
         replayRequestId: row.replayRequestId ? Number(row.replayRequestId) : null,
         preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null,
+        preferredPlayDate: row.preferredPlayDate || null,
         ...(isAdmin && row.requesterId && requesterStatsMap.has(Number(row.requesterId))
           ? {
               submissionCount: requesterStatsMap.get(Number(row.requesterId))!.submissionCount,

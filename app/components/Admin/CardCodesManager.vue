@@ -1,5 +1,26 @@
 <template>
   <div class="space-y-6">
+    <ConfirmDialog
+      :show="statusConfirmOpen"
+      :title="locale.statusChangeTitle"
+      :message="statusConfirmMessage"
+      :loading="saving"
+      type="warning"
+      :confirm-text="locale.statusChangeConfirm"
+      :cancel-text="locale.statusChangeCancel"
+      @confirm="confirmStatusUpdate"
+      @close="closeStatusConfirm"
+    />
+
+    <ConfirmDialog
+      :show="genericConfirm.open"
+      :title="genericConfirm.title"
+      :message="genericConfirm.message"
+      type="warning"
+      @confirm="runGenericConfirm"
+      @close="closeGenericConfirm"
+    />
+
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <h2 class="text-lg font-black">{{ locale.title }}</h2>
@@ -21,6 +42,12 @@
           @click="exportCodes"
         >
           <Download :size="14" /> {{ exporting ? locale.exporting : exportButtonText }}
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-secondary bg-bg-secondary text-text-secondary text-xs font-bold hover:border-border-tertiary transition-all"
+          @click="openDispatchFromSelection"
+        >
+          <Send :size="14" /> {{ locale.dispatchCoupon || '派发点歌券' }}
         </button>
       </div>
     </div>
@@ -86,6 +113,12 @@
           >
             {{ locale.applyBulk }}
           </button>
+          <button
+            class="px-3 py-2 rounded-lg bg-primary text-text-primary text-xs font-bold hover:bg-primary-hover transition-colors"
+            @click="openDispatchFromSelection"
+          >
+            {{ locale.dispatchSelected }}
+          </button>
           <button class="px-3 py-2 rounded-lg bg-bg-secondary text-text-secondary text-xs font-bold border border-border-secondary" @click="clearSelection">
             {{ locale.cancelSelection }}
           </button>
@@ -93,7 +126,8 @@
 
         <div class="overflow-x-auto rounded-2xl border border-border-secondary">
           <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-bg-primary-60 p-8 text-center text-sm text-text-tertiary">
-            {{ locale.loading }}
+            <AppSpinner :size="22" />
+            <span class="ml-2">{{ locale.loading }}</span>
           </div>
 
           <table v-else class="min-w-[880px] table-fixed text-left text-sm">
@@ -143,6 +177,10 @@
                     <span v-if="item.lockedAt">{{ getLocaleMessage('lockedAt', formatDate(item.lockedAt)) }}</span>
                     <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ getLocaleMessage('redeemedAt', formatDate(item.redeemedAt)) }}</span>
                   </p>
+                  <p v-if="item.assignedTo" class="mt-1 text-[10px] text-info leading-relaxed">
+                    {{ locale.assignmentAssignee }}: {{ item.assigneeName || item.assigneeUsername || item.assignedTo }}
+                    <span v-if="item.assignedAt" class="block text-text-tertiary">{{ formatDate(item.assignedAt) }}</span>
+                  </p>
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="space-y-2">
@@ -163,10 +201,22 @@
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary" @click="updateStatus([item.id], 'AVAILABLE')">{{ locale.available }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'AVAILABLE')">{{ locale.available }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'LOCKED')">{{ locale.locked }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'INVALID')">{{ locale.invalid }}</button>
+                    <!-- 禁用态的按钮不会派发鼠标事件，title 挂在外层 span 才能可靠悬停显示 -->
+                    <span
+                      :title="item.status === 'AVAILABLE' ? (locale.dispatchRowHint || '派发这张点歌券给指定用户') : dispatchDisabledReason(item)"
+                    >
+                      <button
+                        class="rounded-lg border border-primary-30 bg-primary-10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:border-primary-50 hover:bg-primary-20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-primary-30 disabled:hover:bg-primary-10"
+                        :disabled="item.status !== 'AVAILABLE'"
+                        @click="openDispatchForCode(item)"
+                      >
+                        {{ locale.dispatch }}
+                      </button>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -248,7 +298,8 @@
               :disabled="saving"
               @click="createCodes"
             >
-              <Plus :size="14" /> {{ locale.createCardCode }}
+              <AppSpinner v-if="saving" :size="14" color="white" />
+              <Plus v-else :size="14" /> {{ locale.createCardCode }}
             </button>
             <button class="rounded-xl border border-border-secondary bg-bg-primary px-3.5 py-2 text-xs font-bold text-text-secondary" @click="fillDemoCodes">
               {{ locale.fillDemo }}
@@ -289,6 +340,144 @@
       </section>
     </div>
 
+
+    <!-- 派发记录 -->
+    <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.assignmentsTitle }}</h3>
+          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignmentsDesc }}</p>
+        </div>
+        <button
+          class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary"
+          @click="fetchAssignments"
+        >
+          {{ locale.refreshLogs }}
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 xl:grid-cols-4">
+        <div class="xl:col-span-2">
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
+          <input
+            v-model="assignmentFilters.q"
+            type="text"
+            :placeholder="locale.assignmentFilterPlaceholder"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
+            @keyup.enter="fetchAssignments(1)"
+          >
+        </div>
+        <div>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignmentStatus }}</label>
+          <CustomSelect
+            v-model="assignmentFilters.status"
+            :options="assignmentStatusOptions"
+            label-key="label"
+            value-key="value"
+            :placeholder="locale.allAssignmentStatuses"
+            class-name="w-full"
+            @change="fetchAssignments(1)"
+          />
+        </div>
+        <div class="flex items-end gap-2">
+          <button
+            class="rounded-xl bg-primary-hover px-4 py-2.5 text-xs font-black text-text-primary hover:bg-primary transition-colors"
+            @click="fetchAssignments(1)"
+          >
+            {{ locale.queryLogs }}
+          </button>
+          <button
+            class="rounded-xl border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-secondary"
+            @click="resetAssignmentFilters"
+          >
+            {{ locale.clearConditions }}
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          v-for="chip in assignmentStatsChips"
+          :key="chip.key"
+          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-black tracking-[0.2em]"
+          :class="chip.class"
+        >
+          {{ chip.label }}
+          <span class="text-[11px]">{{ chip.value }}</span>
+        </span>
+      </div>
+
+      <div v-if="assignmentsLoading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
+        <AppSpinner :size="20" />
+        <span class="ml-2">{{ locale.loadingLogs }}</span>
+      </div>
+
+      <div v-else class="overflow-x-auto rounded-2xl border border-border-secondary">
+        <table class="min-w-[900px] text-left text-sm">
+          <thead class="bg-bg-primary-80 text-text-tertiary">
+            <tr>
+              <th class="px-3 py-3 w-20">{{ locale.logId }}</th>
+              <th class="px-3 py-3">{{ locale.cardCode }}</th>
+              <th class="px-3 py-3 w-32">{{ locale.assignmentStatus }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.assignmentAssignee }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.assignmentDispatcher }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.assignmentAssignedAt }}</th>
+              <th class="px-3 py-3 w-32">{{ locale.actions }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in assignments"
+              :key="item.id"
+              class="border-t border-border-secondary-80 hover:bg-bg-primary-70 transition-colors"
+            >
+              <td class="px-3 py-3 text-text-tertiary">{{ item.id }}</td>
+              <td class="px-3 py-3 font-mono text-text-primary break-all">{{ item.codeSnapshot }}</td>
+              <td class="px-3 py-3">
+                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', assignmentStatusMeta(item.status).class]">
+                  {{ assignmentStatusMeta(item.status).label }}
+                </span>
+                <p v-if="item.failureReason" class="mt-1 text-[10px] text-error leading-relaxed">
+                  {{ locale.assignmentFailureReason }}: {{ localizeAssignmentFailure(item) }}
+                </p>
+                <p v-if="item.notifyStatus === 'FAILED' && item.notifyError" class="mt-1 text-[10px] text-warning leading-relaxed">
+                  {{ locale.notifyFailedButAssigned }}
+                </p>
+              </td>
+              <td class="px-3 py-3 text-text-secondary">
+                {{ item.userNameSnapshot || locale.unknownUser }}
+              </td>
+              <td class="px-3 py-3 text-text-secondary">
+                {{ item.assignedByName || locale.unknownUser }}
+              </td>
+              <td class="px-3 py-3 text-text-tertiary">{{ formatDate(item.assignedAt) }}</td>
+              <td class="px-3 py-3">
+                <button
+                  v-if="item.status === 'ASSIGNED'"
+                  class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning"
+                  @click="recycleAssignment(item)"
+                >
+                  {{ locale.assignmentRecycle }}
+                </button>
+                <span v-else class="text-[11px] text-text-disabled">—</span>
+              </td>
+            </tr>
+            <tr v-if="!assignments.length">
+              <td colspan="7" class="px-3 py-8 text-center text-sm text-text-tertiary">{{ locale.assignmentNoRecords }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination
+        v-model:current-page="assignmentPagination.page"
+        :total-pages="assignmentPagination.totalPages"
+        :total-items="assignmentPagination.total"
+        item-name="条派发记录"
+        @change="fetchAssignments"
+      />
+    </section>
+
     <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
@@ -316,15 +505,14 @@
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.source }}</label>
-          <select
+          <CustomSelect
             v-model="logFilters.source"
-            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-          >
-            <option value="">{{ locale.allSources }}</option>
-            <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual || '手动核销' }}</option>
-            <option value="SCHEDULE_AUTO">{{ locale.sources?.scheduleAuto || '排期自动' }}</option>
-            <option value="SCHEDULE_REMOVE">{{ locale.sources?.scheduleRemove || '移除排期' }}</option>
-          </select>
+            :options="logSourceOptions"
+            label-key="label"
+            value-key="value"
+            :placeholder="locale.allSources"
+            class-name="w-full"
+          />
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.redeemer }}</label>
@@ -337,19 +525,21 @@
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.startDate }}</label>
-          <input
+          <AppDatePicker
             v-model="logFilters.startDate"
-            type="date"
-            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-          >
+            size="md"
+            rounded="xl"
+            class-name="w-full"
+          />
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.endDate }}</label>
-          <input
+          <AppDatePicker
             v-model="logFilters.endDate"
-            type="date"
-            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-          >
+            size="md"
+            rounded="xl"
+            class-name="w-full"
+          />
         </div>
       </div>
 
@@ -369,7 +559,8 @@
       </div>
 
       <div v-if="logsLoading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
-        {{ locale.loadingLogs }}
+        <AppSpinner :size="20" />
+        <span class="ml-2">{{ locale.loadingLogs }}</span>
       </div>
 
       <div v-else class="overflow-hidden rounded-2xl border border-border-secondary">
@@ -414,21 +605,42 @@
         </table>
       </div>
     </section>
+
   </div>
+
+  <!-- 派发点歌券弹窗（集成到券列表的「派发」入口） -->
+  <CardCodeDispatchModal
+    v-model="dispatchOpen"
+    :coupons="dispatchCoupons"
+    :notice="dispatchNotice"
+    @dispatched="onDispatched"
+  />
+
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { Copy, Download, Plus, RefreshCw, Search } from '@lucide/vue'
+import { Copy, Download, Plus, RefreshCw, Search, Send } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import CardCodeDispatchModal from '~/components/Admin/CardCodeDispatchModal.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
+import { formatDateTime, parseUtcTimestamp } from '~/utils/timeUtils'
 
 const { showToast } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.cardCodesManager || {})
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
+const { localize: localizeServerError } = useServerErrors()
+const localizeAssignmentFailure = (item) => localizeServerError(
+  { data: item?.error },
+  locale.value.assignFailed
+)
 
 const codes = ref([])
 const redeemLogs = ref([])
@@ -437,7 +649,13 @@ const logsLoading = ref(false)
 const saving = ref(false)
 const exporting = ref(false)
 const selectedIds = ref([])
+const dispatchOpen = ref(false)
+const dispatchCoupons = ref([])
+const dispatchNotice = ref('')
 const bulkStatus = ref('AVAILABLE')
+const statusConfirmOpen = ref(false)
+const statusConfirmIds = ref([])
+const statusConfirmTarget = ref('')
 const pagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
 const cardStats = ref({ total: 0, available: 0, locked: 0, redeemed: 0 })
 
@@ -449,12 +667,104 @@ const createNote = ref('')
 const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' })
 const lastGeneratedCodes = ref([])
 
+const assignments = ref([])
+const assignmentsLoading = ref(false)
+const assignmentStats = ref({ total: 0, assigned: 0, used: 0, recycled: 0, failed: 0 })
+const assignmentFilters = ref({ q: '', status: '' })
+const assignmentPagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
+
+const assignmentStatusOptions = computed(() => [
+  { label: locale.value?.allAssignmentStatuses || 'All Statuses', value: '' },
+  { label: locale.value?.assignmentStatusAssigned || 'Assigned', value: 'ASSIGNED' },
+  { label: locale.value?.assignmentStatusUsed || 'Used', value: 'USED' },
+  { label: locale.value?.assignmentStatusRecycled || 'Recycled', value: 'RECYCLED' },
+  { label: locale.value?.assignmentStatusFailed || 'Failed', value: 'FAILED' }
+])
+
+const assignmentStatusMeta = (status) => {
+  const statusMap = {
+    ASSIGNED: { label: locale.value?.assignmentStatusAssigned || 'Assigned', class: 'bg-info-10 text-info border border-info-20' },
+    USED: { label: locale.value?.assignmentStatusUsed || 'Used', class: 'bg-primary-10 text-primary border border-primary-20' },
+    RECYCLED: { label: locale.value?.assignmentStatusRecycled || 'Recycled', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' },
+    FAILED: { label: locale.value?.assignmentStatusFailed || 'Failed', class: 'bg-error-10 text-error border border-error-20' }
+  }
+  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
+}
+
+const assignmentStatsChips = computed(() => [
+  { key: 'total', label: locale.value?.assignmentStatTotal || 'Total', value: assignmentStats.value.total, class: 'bg-bg-tertiary text-text-primary' },
+  { key: 'assigned', label: locale.value?.assignmentStatusAssigned || 'Assigned', value: assignmentStats.value.assigned, class: 'bg-info-10 text-info border border-info-20' },
+  { key: 'used', label: locale.value?.assignmentStatusUsed || 'Used', value: assignmentStats.value.used, class: 'bg-primary-10 text-primary border border-primary-20' },
+  { key: 'recycled', label: locale.value?.assignmentStatusRecycled || 'Recycled', value: assignmentStats.value.recycled, class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' },
+  { key: 'failed', label: locale.value?.assignmentStatusFailed || 'Failed', value: assignmentStats.value.failed, class: 'bg-error-10 text-error border border-error-20' }
+])
+
+/** 勾选的可用点歌券 */
+const selectedAvailableCodes = computed(() =>
+  selectedIds.value
+    .map((id) => codes.value.find((row) => row.id === id))
+    .filter((item) => item && item.status === 'AVAILABLE')
+    .map((item) => ({ id: item.id, code: item.code, status: item.status }))
+)
+
+/** 派发按钮禁用原因 */
+const dispatchDisabledReason = (item) => {
+  const statusLabel = {
+    ASSIGNED: locale.value?.assigned || '已派发',
+    LOCKED: locale.value?.locked || '锁定',
+    REDEEMED: locale.value?.redeemed || '核销',
+    INVALID: locale.value?.invalid || '作废'
+  }[item?.status] || locale.value?.assigned || '已派发'
+  const template = locale.value?.dispatchRowDisabledHint
+    || '该券当前为「{status}」状态，不可直接派发；请先将其恢复为「可用」'
+  return String(template).replace('{status}', statusLabel)
+}
+
+/** 预选可用点歌券 */
+const openDispatchFromSelection = () => {
+  dispatchCoupons.value = selectedAvailableCodes.value
+  dispatchNotice.value = selectedAvailableCodes.value.length
+    ? ''
+    : (locale.value?.dispatchNoAvailableHint || '未勾选「可用」状态的点歌券，可在下方列表中直接勾选')
+  dispatchOpen.value = true
+}
+
+/** 派发指定可用点歌券 */
+const openDispatchForCode = (item) => {
+  if (!item) return
+  if (item.status !== 'AVAILABLE') {
+    showToast(dispatchDisabledReason(item), 'warning')
+    return
+  }
+  dispatchCoupons.value = [{ id: item.id, code: item.code, status: item.status }]
+  dispatchNotice.value = ''
+  dispatchOpen.value = true
+}
+
+/** 派发完成后：刷新列表与派发记录，并清空勾选 */
+const onDispatched = async () => {
+  selectedIds.value = []
+  await Promise.all([fetchCodes(pagination.value.page), fetchAssignments(1)])
+}
+
 const statusFilterOptions = computed(() => [
   { label: locale.value?.allStatus || 'All Status', value: '' },
   { label: locale.value?.available || 'Available', value: 'AVAILABLE' },
+  { label: locale.value?.assignedStatus || 'Assigned', value: 'ASSIGNED' },
   { label: locale.value?.lockedStatus || 'Locked', value: 'LOCKED' },
   { label: locale.value?.redeemedStatus || 'Redeemed', value: 'REDEEMED' },
   { label: locale.value?.invalidStatus || 'Invalid', value: 'INVALID' }
+])
+
+const logSourceOptions = computed(() => [
+  { label: locale.value?.allSources || 'All Sources', value: '' },
+  { label: locale.value?.sources?.adminManual || 'Manual Redeem', value: 'ADMIN_MANUAL' },
+  { label: locale.value?.sources?.openApiManual || 'Open API Redeem', value: 'OPEN_API_MANUAL' },
+  { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', value: 'SCHEDULE_AUTO' },
+  { label: locale.value?.sources?.songPlayed || 'Played Redeem', value: 'SONG_PLAYED' },
+  { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', value: 'SCHEDULE_REMOVE' },
+  { label: locale.value?.sources?.playbackCancel || 'Playback Cancel', value: 'PLAYBACK_CANCEL' },
+  { label: locale.value?.sources?.withdraw || 'Withdraw', value: 'WITHDRAW' }
 ])
 
 const bulkStatusOptions = computed(() => [
@@ -467,6 +777,7 @@ const bulkStatusOptions = computed(() => [
 const statusMeta = (status) => {
   const statusMap = {
     AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-success-10 text-success border border-success-20' },
+    ASSIGNED: { label: locale.value?.assigned || 'Assigned', class: 'bg-info-10 text-info border border-info-20' },
     LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-warning-10 text-warning border border-warning-20' },
     REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-primary-10 text-primary border border-primary-20' },
     INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-error-10 text-error border border-error-20' }
@@ -474,13 +785,31 @@ const statusMeta = (status) => {
   return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
 }
 
+const statusConfirmMessage = computed(() => {
+  if (!statusConfirmIds.value.length) return ''
+  const label = statusMeta(statusConfirmTarget.value).label
+  const base = locale.value?.statusChangeMessage?.(statusConfirmIds.value.length, label)
+    || `Set ${statusConfirmIds.value.length} request card(s) to "${label}"?`
+  const unbindCount = codes.value.filter(
+    (item) => statusConfirmIds.value.includes(item.id) && (item.assignedTo || item.status === 'ASSIGNED')
+  ).length
+  return unbindCount
+    ? `${base}\n${locale.value?.statusChangeUnbindHint || 'Dispatched cards will be unbound.'}`
+    : base
+})
+
 const logSourceMeta = (source) => {
+  // 服务端可写入的 source 值见 cardCodeLifecycleService 与手动/开放 API 核销入口，
+  // 映射必须覆盖全部取值，否则兑换日志会回落成「未知」
   const sourceMap = {
     ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-primary-10 text-primary border border-primary-20' },
     ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-primary-10 text-primary border border-primary-20' },
+    OPEN_API_MANUAL: { label: locale.value?.sources?.openApiManual || 'Open API Redeem', class: 'bg-primary-10 text-primary border border-primary-20' },
     SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-success-10 text-success border border-success-20' },
+    SONG_PLAYED: { label: locale.value?.sources?.songPlayed || 'Played Redeem', class: 'bg-success-10 text-success border border-success-20' },
     SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-warning-10 text-warning border border-warning-20' },
     SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-success-10 text-success border border-success-20' },
+    PLAYBACK_CANCEL: { label: locale.value?.sources?.playbackCancel || 'Playback Cancel', class: 'bg-info-10 text-info border border-info-20' },
     WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-warning-10 text-warning border border-warning-20' },
     UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
   }
@@ -490,12 +819,14 @@ const logSourceMeta = (source) => {
 const stats = computed(() => {
   const total = cardStats.value?.total ?? 0
   const available = cardStats.value?.available ?? 0
+  const assigned = cardStats.value?.assigned ?? 0
   const locked = cardStats.value?.locked ?? 0
   const redeemed = cardStats.value?.redeemed ?? 0
 
   return [
     { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-bg-tertiary text-text-primary' },
     { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-success-10 text-success' },
+    { label: locale.value?.stats?.assigned || 'Assigned', value: assigned, hint: locale.value?.stats?.assignedHint || 'Dispatched', badgeClass: 'bg-info-10 text-info border border-info-20' },
     { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-warning-10 text-warning' },
     { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-primary-10 text-primary' }
   ]
@@ -539,6 +870,7 @@ const fetchCodes = async (page = pagination.value.page) => {
       cardStats.value = {
         total: Number(res.stats?.total || 0),
         available: Number(res.stats?.available || 0),
+        assigned: Number(res.stats?.assigned || 0),
         locked: Number(res.stats?.locked || 0),
         redeemed: Number(res.stats?.redeemed || 0)
       }
@@ -579,8 +911,100 @@ const resetLogFilters = async () => {
   await fetchRedeemLogs()
 }
 
+// ===== 派发相关 =====
+const fetchAssignments = async (page = assignmentPagination.value.page) => {
+  const nextPage = Number(page)
+  assignmentPagination.value.page = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1
+  assignmentsLoading.value = true
+  try {
+    const query = new URLSearchParams()
+    query.set('page', String(assignmentPagination.value.page))
+    query.set('limit', String(assignmentPagination.value.limit))
+    if (assignmentFilters.value.q.trim()) query.set('q', assignmentFilters.value.q.trim())
+    if (assignmentFilters.value.status) query.set('status', assignmentFilters.value.status)
+
+    const res = await $fetch(`/api/admin/card-codes/assignments?${query.toString()}`)
+    if (res?.success) {
+      assignments.value = Array.isArray(res.data) ? res.data : []
+      assignmentStats.value = {
+        total: Number(res.stats?.total || 0),
+        assigned: Number(res.stats?.assigned || 0),
+        used: Number(res.stats?.used || 0),
+        recycled: Number(res.stats?.recycled || 0),
+        failed: Number(res.stats?.failed || 0)
+      }
+      assignmentPagination.value = {
+        ...assignmentPagination.value,
+        ...(res.pagination || {}),
+        totalPages: Math.max(1, Number(res.pagination?.totalPages || 1))
+      }
+    }
+  } catch (error) {
+    console.error('获取派发记录失败', error)
+    showToast(getNestedMessage('messages2', 'fetchAssignmentsFailed'), 'error')
+  } finally {
+    assignmentsLoading.value = false
+  }
+}
+
+const resetAssignmentFilters = async () => {
+  assignmentFilters.value = { q: '', status: '' }
+  await fetchAssignments(1)
+}
+
+
+
+/** 二级确认统一走系统内置弹窗，不使用浏览器原生 confirm */
+const genericConfirm = ref({ open: false, title: '', message: '', action: null })
+
+const askConfirm = (message, action, title = '') => {
+  genericConfirm.value = { open: true, title, message, action }
+}
+
+const closeGenericConfirm = () => {
+  genericConfirm.value = { open: false, title: '', message: '', action: null }
+}
+
+const runGenericConfirm = async () => {
+  const { action } = genericConfirm.value
+  closeGenericConfirm()
+  await action?.()
+}
+
+/** 回收已派发的点歌券 */
+const recycleAssignment = (item) => {
+  const code = item.codeSnapshot || ''
+  askConfirm(
+    locale.value?.assignmentRecycleConfirm?.(code) || `确定回收点歌券 ${code} 吗？`,
+    () => performRecycle(item)
+  )
+}
+
+const performRecycle = async (item) => {
+  try {
+    const res = await $fetch('/api/admin/card-codes/recycle', {
+      method: 'POST',
+      body: { assignmentIds: [item.id], reason: '' }
+    })
+    const count = Number(res?.recycledCount || 0)
+    if (count > 0) {
+      showToast(locale.value?.recycleSuccess?.(count) || `成功回收 ${count} 张点歌券`, 'success')
+      await Promise.all([fetchCodes(pagination.value.page), fetchAssignments(assignmentPagination.value.page)])
+    } else {
+      const failure = res?.failures?.[0]
+      showToast(localizeServerError(
+        { data: failure?.error },
+        locale.value.recycleFailed
+      ), 'error')
+    }
+  } catch (error) {
+    console.error('回收点歌券失败', error)
+    showToast(localizeServerError(error, locale.value.recycleFailed), 'error')
+  }
+}
+
 const refreshAll = async () => {
-  await Promise.all([fetchCodes(), fetchRedeemLogs()])
+  await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments()])
 }
 
 const resetFilters = async () => {
@@ -613,15 +1037,10 @@ const toggleSelectAll = () => {
 const formatDate = (value) => {
   if (!value) return '—'
   try {
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(value))
+    const date = parseUtcTimestamp(value)
+    return Number.isNaN(date.getTime()) ? '—' : formatDateTime(date, 'YYYY/MM/DD HH:mm')
   } catch {
-    return String(value)
+    return '—'
   }
 }
 
@@ -697,6 +1116,21 @@ const exportCodes = async () => {
   }
 }
 
+const requestStatusUpdate = (ids, status) => {
+  const normalized = [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))]
+  if (!normalized.length || saving.value) return
+  statusConfirmIds.value = normalized
+  statusConfirmTarget.value = status
+  statusConfirmOpen.value = true
+}
+
+const closeStatusConfirm = () => {
+  if (saving.value) return
+  statusConfirmOpen.value = false
+  statusConfirmIds.value = []
+  statusConfirmTarget.value = ''
+}
+
 const updateStatus = async (ids, status) => {
   saving.value = true
   try {
@@ -715,13 +1149,25 @@ const updateStatus = async (ids, status) => {
     }
 
     showToast(getNestedMessage('messages', 'statusUpdated'), 'success')
-    await Promise.all([fetchCodes(), fetchRedeemLogs()])
+    await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments()])
+    return true
   } catch (error) {
     console.error('更新点歌券状态失败', error)
-    showToast(getNestedMessage('messages', 'updateStatusFailed'), 'error')
+    showToast(localizeServerError(error, getNestedMessage('messages', 'updateStatusFailed')), 'error')
+    return false
   } finally {
     saving.value = false
   }
+}
+
+const confirmStatusUpdate = async () => {
+  if (saving.value || !statusConfirmIds.value.length || !statusConfirmTarget.value) return
+  const ids = [...statusConfirmIds.value]
+  const success = await updateStatus(ids, statusConfirmTarget.value)
+  if (success && ids.every((id) => selectedIds.value.includes(id))) clearSelection()
+  statusConfirmOpen.value = false
+  statusConfirmIds.value = []
+  statusConfirmTarget.value = ''
 }
 
 const saveNote = async (item) => {
@@ -743,8 +1189,7 @@ const saveNote = async (item) => {
 
 const applyBulkStatus = async () => {
   if (!selectedIds.value.length) return
-  await updateStatus(selectedIds.value, bulkStatus.value)
-  clearSelection()
+  requestStatusUpdate(selectedIds.value, bulkStatus.value)
 }
 
 const createCodes = async () => {

@@ -439,21 +439,23 @@
                 <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.startDateTime }}</label
                 >
-                <input
+                <AppDateTimePicker
                   v-model="formData.startTime"
-                  type="datetime-local"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30"
-                >
+                  :placeholder="locale.startDateTime"
+                  size="md"
+                  rounded="2xl"
+                />
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.endDateTime }}</label
                 >
-                <input
+                <AppDateTimePicker
                   v-model="formData.endTime"
-                  type="datetime-local"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30"
-                >
+                  :placeholder="locale.endDateTime"
+                  size="md"
+                  rounded="2xl"
+                />
               </div>
             </div>
 
@@ -650,6 +652,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import type { RequestTime } from '~/types'
+import AppDateTimePicker from '~/components/UI/Common/AppDateTimePicker.vue'
 import {
   Plus,
   Calendar,

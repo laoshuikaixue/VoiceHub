@@ -91,6 +91,8 @@ export default defineEventHandler(async (event) => {
         songSubmissionNotePublicStatus: songs.submissionNotePublicStatus,
         songSemester: songs.semester,
         songCreatedAt: songs.createdAt,
+        songPreferredPlayTimeId: songs.preferredPlayTimeId,
+        songPreferredPlayDate: songs.preferredPlayDate,
         requesterName: users.name,
         requesterGrade: users.grade,
         requesterClass: users.class,
@@ -353,7 +355,12 @@ export default defineEventHandler(async (event) => {
             // 歌曲自身投稿时填写的留言，与重播申请备注相互独立
             originalSubmissionNote: schedule.songSubmissionNote || null,
             originalSubmissionNotePublic: originalNotePublic,
-            preferredPlayTimeId: hasReplayMeta ? replayMeta.preferredPlayTimeId : null,
+            // 期望时段：重播申请指定的时段优先，其次回退到歌曲自身投稿时选择的时段
+            preferredPlayTimeId: hasReplayMeta
+              ? (replayMeta.preferredPlayTimeId ?? schedule.songPreferredPlayTimeId ?? null)
+              : (schedule.songPreferredPlayTimeId ?? null),
+            // 期望播出日期：自动排期命中该日期时优先安排；重播条目不含日期偏好，不沿用原始投稿的日期
+            preferredPlayDate: hasReplayMeta ? null : (schedule.songPreferredPlayDate || null),
             // 重播申请信息
             replayRequestCount: isReplaySong ? replayRequestCount : 0,
             replayRequesters: isReplaySong ? formattedReplayRequesters : [],

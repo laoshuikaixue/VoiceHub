@@ -125,7 +125,8 @@ test('投稿端点：unseal 校验票据，跨会话/过期统一 400 文案', (
 })
 
 test('投稿端点：按绑定账号的真实 role 投稿，绝不硬编码管理员', () => {
-  assert.match(songRequest, /await requestSongForUser\(event, \{ id: binding\.userId, role: user\.role \}, payload\)/)
+  // 机器人无时段选择界面，必须豁免站点「时段必选」（AGENTS §4.5 开关需覆盖全部调用路径）
+  assert.match(songRequest, /await requestSongForUser\(event, \{ id: binding\.userId, role: user\.role \}, payload, \{ enforceRequiredPlaySlot: false \}\)/)
   assert.match(songRequest, /from\(users\)/)
   assert.match(songRequest, /user\.status !== 'active'/)
   // 管理员会豁免限额/时段/强制关闭投稿等规则，角色只能来自数据库真实行

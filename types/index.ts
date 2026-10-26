@@ -38,6 +38,8 @@ export interface Song {
   semester: string | null
   preferredPlayTimeId?: number | null
   preferredPlayTime?: PlayTime | null
+  // 点歌时选定的期望播出日期（YYYY-MM-DD），与 preferredPlayTime 共同构成「日期 + 时段」
+  preferredPlayDate?: string | null
   cover?: string | null // 音乐封面URL
   musicPlatform?: string | null // 音乐平台（netease, tencent等）
   musicId?: string | null // 平台上的歌曲ID
@@ -145,6 +147,8 @@ export interface PlayTime {
   endTime?: string // 结束时间，格式为"HH:MM"，可选
   enabled: boolean // 是否启用
   description?: string // 描述，可选
+  // 适用星期（0=周日, 1=周一 … 6=周六）；null/undefined = 每天均可选
+  weekdays?: number[] | null
 }
 
 // 学期接口

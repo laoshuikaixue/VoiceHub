@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { playTimes } from '~/drizzle/schema'
 import { ilike } from 'drizzle-orm'
+import { normalizeWeekdays } from '~~/server/utils/play-slot'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -55,6 +56,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 验证适用星期（可选）：0-6 的整数数组，空数组/不传 = 每天均可选
+  const weekdays = normalizeWeekdays(body.weekdays)
+  if (body.weekdays !== undefined && body.weekdays !== null && !Array.isArray(body.weekdays)) {
+    throw createError({
+      statusCode: 400,
+      message: '适用星期必须是数组（0=周日 … 6=周六）'
+    })
+  }
+
   try {
     // 检查名称是否已存在
     const existingPlayTimeResult = await db
@@ -79,7 +89,8 @@ export default defineEventHandler(async (event) => {
         startTime: body.startTime || null,
         endTime: body.endTime || null,
         description: body.description || null,
-        enabled: body.enabled !== undefined ? body.enabled : true
+        enabled: body.enabled !== undefined ? body.enabled : true,
+        weekdays
       })
       .returning()
     const newPlayTime = newPlayTimeResult[0]

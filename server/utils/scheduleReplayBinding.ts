@@ -1,15 +1,88 @@
-import { and, eq, sql } from 'drizzle-orm'
-import { schedules, songReplayRequests } from '~/drizzle/schema'
+import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
+import { schedules, songReplayRequests, songs } from '~/drizzle/schema'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+
+interface ReplayBindingItem {
+  songId: number
+  replayRequestId?: number | null
+}
+
+interface ReplayBindingRow {
+  id: number
+  songId: number
+  status: string
+}
+
+export function parseScheduleReplayRequestId(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') return null
+  const id = Number(value)
+  if (!Number.isInteger(id) || id <= 0) {
+    throw createApiError(400, SERVER_ERROR_CODES.SONG_REPLAY_INVALID_REQUEST, '重播申请无效或已被处理')
+  }
+  return id
+}
+
+/** rows 按创建时间和 ID 升序排列。 */
+export function selectScheduleReplayBindings<T extends ReplayBindingItem>(
+  items: T[],
+  rows: ReplayBindingRow[],
+  existingBindings: Map<number, number> = new Map()
+): Array<T & { replayRequestId: number | null }> {
+  const requests = new Map(rows.map((row) => [row.id, row]))
+  const firstPending = new Map<number, number>()
+  for (const row of rows) {
+    if (row.status === 'PENDING' && !firstPending.has(row.songId)) {
+      firstPending.set(row.songId, row.id)
+    }
+  }
+  return items.map((item) => {
+    const previousId = existingBindings.get(item.songId)
+    const requestId = item.replayRequestId ?? firstPending.get(item.songId) ?? previousId ?? null
+    if (requestId !== null) {
+      const request = requests.get(requestId)
+      if (
+        !request || request.songId !== item.songId ||
+        (request.status !== 'PENDING' && !(request.status === 'FULFILLED' && previousId === requestId))
+      ) {
+        throw createApiError(400, SERVER_ERROR_CODES.SONG_REPLAY_INVALID_REQUEST, '重播申请无效或已被处理')
+      }
+    }
+    return { ...item, replayRequestId: requestId }
+  })
+}
+
+export async function resolveScheduleReplayBindings<T extends ReplayBindingItem>(
+  tx: any,
+  items: T[],
+  existingBindings: Map<number, number> = new Map()
+): Promise<Array<T & { replayRequestId: number | null }>> {
+  if (items.length === 0) return []
+  const songIds = [...new Set(items.map((item) => item.songId))]
+  await tx.select({ id: songs.id }).from(songs).where(inArray(songs.id, songIds)).orderBy(asc(songs.id)).for('update')
+  const requestIds = [...new Set([
+    ...items.map((item) => item.replayRequestId),
+    ...existingBindings.values()
+  ].filter((id): id is number => typeof id === 'number' && id > 0))]
+  const pendingCondition = and(inArray(songReplayRequests.songId, songIds), eq(songReplayRequests.status, 'PENDING'))
+  const rows = await tx.select({
+    id: songReplayRequests.id,
+    songId: songReplayRequests.songId,
+    status: songReplayRequests.status
+  }).from(songReplayRequests)
+    .where(requestIds.length ? or(pendingCondition, inArray(songReplayRequests.id, requestIds)) : pendingCondition)
+    .orderBy(asc(songReplayRequests.createdAt), asc(songReplayRequests.id))
+    .for('update')
+  return selectScheduleReplayBindings(items, rows, existingBindings)
+}
 
 interface FulfillReplayRequestsParams {
   tx: any
   songId: number
   scheduleId: number
   at: Date
-  /** 草稿排期显式绑定的申请 ID；未提供或已失效时回退到最早的待处理申请 */
-  preferredRequestId?: number | null
-  /** 重发排期前的旧绑定；无任何待处理申请时回写该绑定，避免重播标识丢失 */
-  fallbackRequestId?: number | null
+  /** 已在当前事务内验证的最终绑定；传入后禁止重新选择申请。 */
+  resolvedRequestId: number | null
 }
 
 interface FulfilledReplayRequests {
@@ -29,16 +102,19 @@ interface RestoreReplayRequestsParams {
  * 发布排期时履行该歌曲的全部待处理重播申请，并把排期绑定到其中一条申请上。
  * 歌曲被安排播放即视为所有申请人的诉求都已满足，避免残留永远无人处理的 PENDING 记录。
  * 采用单条 UPDATE + RETURNING，避免先查后改窗口内新增的申请被履行却漏发通知。
- * 若没有任何待处理申请：优先回写 fallbackRequestId（重发排期场景），否则清除失效绑定并返回 null。
+ * 最终绑定由调用方在当前事务中解析并校验。
  */
 export async function fulfillReplayRequestsForSchedule({
   tx,
   songId,
   scheduleId,
   at,
-  preferredRequestId,
-  fallbackRequestId
+  resolvedRequestId
 }: FulfillReplayRequestsParams): Promise<FulfilledReplayRequests | null> {
+  if (resolvedRequestId === null) {
+    await tx.update(schedules).set({ replayRequestId: null, updatedAt: at }).where(eq(schedules.id, scheduleId))
+    return null
+  }
   const fulfilledRequests: Array<{ id: number; userId: number; createdAt: Date }> = await tx
     .update(songReplayRequests)
     .set({
@@ -52,37 +128,16 @@ export async function fulfillReplayRequestsForSchedule({
       createdAt: songReplayRequests.createdAt
     })
 
-  // 按先到先得排序，便于回退绑定最早的申请
-  fulfilledRequests.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  )
-  const earliestRequest = fulfilledRequests[0]
-  if (!earliestRequest) {
-    // 无待处理申请：重发排期时保留原绑定，否则清除草稿残留的失效绑定
-    const restoredBinding = fallbackRequestId || null
-    await tx
-      .update(schedules)
-      .set({ replayRequestId: restoredBinding, updatedAt: at })
-      .where(eq(schedules.id, scheduleId))
-    return restoredBinding ? { replayRequestId: restoredBinding, replayRequesterIds: [] } : null
-  }
-
-  // 优先使用草稿显式绑定的申请，否则绑定最早的待处理申请
-  const boundRequest =
-    (preferredRequestId &&
-      fulfilledRequests.find((request) => request.id === preferredRequestId)) ||
-    earliestRequest
-
   await tx
     .update(schedules)
     .set({
-      replayRequestId: boundRequest.id,
+      replayRequestId: resolvedRequestId,
       updatedAt: at
     })
     .where(eq(schedules.id, scheduleId))
 
   return {
-    replayRequestId: boundRequest.id,
+    replayRequestId: resolvedRequestId,
     replayRequesterIds: [...new Set(fulfilledRequests.map((request) => request.userId))]
   }
 }
