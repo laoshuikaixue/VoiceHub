@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     // 设置响应头
     setHeader(event, 'Content-Type', 'application/json')
     setHeader(event, 'Content-Disposition', `attachment; filename="${filename}"`)
-    setHeader(event, 'Content-Length', stats.size.toString())
+    setHeader(event, 'Content-Length', stats.size)
     setHeader(event, 'Cache-Control', 'no-cache')
 
     // 读取并返回文件内容
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
     console.log(`管理员 ${user.username} 下载了备份文件: ${filename}`)
 
     return fileContent
-  } catch (error) {
+  } catch (error: any) {
     console.error('下载备份文件失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

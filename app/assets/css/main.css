@@ -13,6 +13,19 @@
   color-scheme: light dark;
 }
 
+/* 全站字号基准：桌面 15px，移动端按视口宽度自适应收缩（rem 尺寸随之等比缩小） */
+@media screen {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media screen and (max-width: 1023px) {
+  html {
+    font-size: clamp(13px, 3.6vw, 15px);
+  }
+}
+
 /* 全局控件默认强调色 — 跟随主题主色调，但允许显式 accent-* 类覆盖 */
 input[type="checkbox"]:not([class*="accent-"]),
 input[type="radio"]:not([class*="accent-"]),

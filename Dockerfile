@@ -85,5 +85,9 @@ ENV NODE_ENV=production \
 # 暴露端口
 EXPOSE $PORT
 
+# 以非 root 用户运行（node 官方镜像自带 node 用户，无需手动创建）
+RUN chown -R node:node /app
+USER node
+
 # 完成数据库迁移后启动应用，插件配置由服务端读取。
 CMD ["sh", "-c", "node scripts/deploy.js && node .output/server/index.mjs"]

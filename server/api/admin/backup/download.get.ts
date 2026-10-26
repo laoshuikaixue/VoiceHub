@@ -46,11 +46,11 @@ export default defineEventHandler(async (event) => {
       // 设置响应头
       setHeader(event, 'Content-Type', 'application/json')
       setHeader(event, 'Content-Disposition', `attachment; filename="${filename}"`)
-      setHeader(event, 'Content-Length', fileStats.size.toString())
+      setHeader(event, 'Content-Length', fileStats.size)
       setHeader(event, 'Cache-Control', 'no-cache')
 
       return fileContent
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === 'ENOENT') {
         throw createError({
           statusCode: 404,
@@ -62,7 +62,7 @@ export default defineEventHandler(async (event) => {
         message: '读取备份文件失败'
       })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('下载备份文件失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

@@ -2652,7 +2652,9 @@ export const admin = {
       apply: 'Apply',
       applying: 'Fetching info...',
       applied: 'New source filled in. Save the song to apply it.',
-      cancel: 'Cancel'
+      cancel: 'Cancel',
+      preview: 'Preview',
+      stopPreview: 'Stop Preview'
     },
     songDownloadDialog: {
       title: 'Download Songs',
@@ -3055,6 +3057,8 @@ export const admin = {
     removeFromPoolFailed: 'Failed to remove',
     addedBy: 'Added by',
     playSong: 'Play',
+    replaceSource: 'Replace Source',
+    replaceSourceSuccess: 'Source replaced',
     removeFromSchedule: 'Remove from schedule',
     addToScheduleSuccess: 'Added to schedule',
     playlist: 'Playlist',

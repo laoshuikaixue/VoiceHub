@@ -1,6 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
+// @ts-ignore formidable 未随包提供类型声明
 import formidable from 'formidable'
 
 export default defineEventHandler(async (event) => {
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
       uploadDir: backupDir,
       keepExtensions: true,
       maxFileSize: 100 * 1024 * 1024, // 100MB
-      filter: ({ mimetype, originalFilename }) => {
+      filter: ({ mimetype, originalFilename }: any) => {
         // 只允许 JSON 文件
         return (
           mimetype === 'application/json' ||
@@ -123,7 +124,7 @@ export default defineEventHandler(async (event) => {
         metadata: backupData.metadata || null
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('上传备份文件失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,
