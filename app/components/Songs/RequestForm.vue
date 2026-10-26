@@ -90,17 +90,6 @@
               <Icon :size="16" name="history" />
               <span class="btn-text">{{ locale.importFromPast }}</span>
             </button>
-            <button
-              v-if="submissionOptionsAvailable && user"
-              class="options-trigger-text-btn unified-options-trigger"
-              :aria-label="locale.submissionOptions"
-              :title="locale.submissionOptions"
-              type="button"
-              @click="openSubmissionOptions"
-            >
-              <Icon name="settings" :size="14" />
-              <span>{{ locale.submissionOptions }}</span>
-            </button>
           </div>
 
           <!-- 联合投稿人区域 -->
@@ -137,11 +126,6 @@
             <button class="login-link-btn" type="button" @click="handleLoginRedirect">
               {{ locale.loginNow }}
             </button>
-          </div>
-          <!-- 投稿设置摘要 -->
-          <div v-if="submissionOptionsSummary" class="submission-options-summary">
-            <Icon :size="12" name="settings" class="shrink-0" />
-            <span>{{ submissionOptionsSummary }}</span>
           </div>
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
@@ -240,6 +224,23 @@
                 <span class="status-value">{{ locale.cardCodeBypassesLimit }}</span>
               </div>
             </div>
+          </div>
+
+          <!-- 投稿设置摘要 - 位于投稿限额提示下方，按钮打开投稿选项弹窗 -->
+          <div v-if="submissionOptionsSummary" class="submission-options-summary">
+            <button
+              v-if="submissionOptionsAvailable && user"
+              class="submission-options-trigger"
+              :aria-label="locale.submissionOptions"
+              :title="locale.submissionOptions"
+              type="button"
+              @click="openSubmissionOptions"
+            >
+              <Icon name="settings" :size="13" />
+              <span>{{ locale.submissionOptions }}</span>
+            </button>
+            <Icon v-else :size="12" name="settings" class="shrink-0" />
+            <span>{{ submissionOptionsSummary }}</span>
           </div>
 
           <!-- 音乐平台选择按钮 -->
@@ -4881,8 +4882,9 @@ defineExpose({
 /* 投稿设置摘要 */
 .submission-options-summary {
   display: flex;
-  align-items: flex-start;
-  gap: 0.375rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.5rem;
   margin-bottom: 0.5rem;
   padding: 0.35rem 0.75rem;
   border: 1px dashed var(--overlay-16);
@@ -4895,9 +4897,32 @@ defineExpose({
   text-align: left;
 }
 
-.submission-options-summary svg {
-  margin-top: 0.15rem;
-  color: var(--text-quaternary);
+/* 摘要行内的投稿选项入口按钮 */
+.submission-options-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--overlay-16);
+  border-radius: 999px;
+  background: var(--overlay-10);
+  color: var(--overlay-75);
+  font-family: 'MiSans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.submission-options-trigger:hover {
+  border-color: var(--overlay-30);
+  background: var(--overlay-20);
+  color: var(--text-primary);
 }
 
 .submission-status-horizontal {
@@ -6328,34 +6353,6 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.options-trigger-text-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 8px;
-  border: 1px solid var(--overlay-16);
-  background: var(--overlay-10);
-  color: var(--overlay-70);
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.options-trigger-text-btn:hover {
-  border-color: var(--overlay-30);
-  background: var(--overlay-20);
-  color: var(--text-primary);
-}
-
-.unified-options-trigger {
-  min-height: 42px;
-  flex-shrink: 0;
-}
-
 .cloud-disk-btn {
   background: linear-gradient(180deg, var(--color-error) 0%, var(--color-error-hover) 100%);
   border: 1px solid var(--overlay-20);
@@ -7184,11 +7181,6 @@ defineExpose({
 
 @media (max-width: 768px) {
   .import-semester-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .unified-options-trigger {
     width: 100%;
     justify-content: center;
   }
