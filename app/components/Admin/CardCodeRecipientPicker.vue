@@ -73,7 +73,7 @@
       </div>
     </div>
 
-    <!-- 组织树：年级 → 班级 → 用户。默认只展开到年级，避免一次渲染全校用户 -->
+    <!-- 组织树：年级 → 班级 → 用户 -->
     <div v-else class="rounded-xl border border-border-secondary bg-bg-primary">
       <div class="flex items-center justify-between gap-2 border-b border-border-secondary px-3 py-2">
         <p class="text-[11px] font-bold text-text-tertiary">
@@ -378,7 +378,7 @@ const toggleClass = async (gradeValue, classValue) => {
   await loadClassUsers(gradeValue, classValue)
 }
 
-/** 整班/整年级全选：没加载过的班级先按需拉取，避免只选到已展开的那几个班 */
+/** 整班或整年级全选。 */
 const selectWholeClass = async (gradeValue, classValue) => {
   await loadClassUsers(gradeValue, classValue)
   const users = classUsersOf(gradeValue, classValue)
@@ -430,7 +430,7 @@ const runSearch = async () => {
 
 const handleKeywordInput = () => {
   if (searchTimer) clearTimeout(searchTimer)
-  // 输入停顿 300ms 再查，避免每敲一个字打一次库
+  // 输入停顿 300ms 后查询。
   searchTimer = setTimeout(runSearch, 300)
 }
 

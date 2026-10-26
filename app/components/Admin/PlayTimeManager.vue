@@ -574,7 +574,7 @@ const fetchSystemSettings = async () => {
   }
 }
 
-// 切换全局启用状态（关闭总开关时一并取消「时段必选」，避免留下无效组合）
+// 切换全局启用状态。
 const toggleGlobalEnabled = async () => {
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
   const nextEnabled = !prev.enabled

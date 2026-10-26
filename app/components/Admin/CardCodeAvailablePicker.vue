@@ -115,7 +115,7 @@ let timer = null
 
 const isSelected = (id) => props.modelValue.includes(id)
 
-// 该券是否只存在于预勾选里（当前搜索/分页结果中查不到）—— 标记出来避免管理员误判
+// 标记当前结果之外的预勾选券。
 const presetOnlyIds = ref(new Set())
 const isPresetOnly = (id) => presetOnlyIds.value.has(id)
 
@@ -183,7 +183,7 @@ const fetchCodes = async () => {
   }
 }
 
-// 搜索防抖，避免每敲一个字就打一次接口
+// 搜索防抖。
 const handleKeywordInput = () => {
   if (timer) clearTimeout(timer)
   timer = setTimeout(fetchCodes, 300)
@@ -194,7 +194,7 @@ const clearKeyword = () => {
   fetchCodes()
 }
 
-// 预勾选：仅保留仍在列表中（AVAILABLE）的券，避免把已发放的券带进提交
+// 预勾选仅保留 AVAILABLE 券。
 watch(
   () => props.presetCoupons,
   (list) => {

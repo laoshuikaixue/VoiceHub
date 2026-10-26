@@ -1707,7 +1707,7 @@
             {{ locale.availableCount(autoSchedulePlacement.eligible.length) }}
           </div>
 
-          <!-- 期望时段是硬约束，被排除的数量必须显式说明，避免静默丢弃 -->
+          <!-- 期望时段约束提示 -->
           <div
             v-if="autoSchedulePlacement.excludedByPlayTime > 0"
             class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60"
@@ -4349,7 +4349,7 @@ const autoScheduleOptions = computed(() => ({
     : null
 }))
 
-// 硬约束过滤后的候选与被排除数量（用于界面显式提示，避免静默丢弃）
+// 硬约束过滤结果。
 const autoSchedulePlacement = computed(() =>
   filterByExpectedPlacement(autoScheduleCandidates.value, autoScheduleOptions.value)
 )
@@ -4771,7 +4771,7 @@ const setSongScheduledFlag = (songId, scheduled) => {
 }
 
 // 当前视图是否允许放入指定了期望时段的歌曲：
-// 指定了时段的歌曲只能排到该时段，因此在其它时段视图中应阻止加入
+// 指定时段的歌曲只能加入对应时段。
 const getPlayTimeConflict = (song) => {
   const preferredPlayTimeId = song?.preferredPlayTimeId || null
   if (!preferredPlayTimeId) return null

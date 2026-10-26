@@ -87,7 +87,11 @@ export const restoreCardCodeAfterScheduleRemoval = async (
   if (!cardCodeId) return { changed: false, reason: 'NO_CARD_CODE' }
   const { song, card } = await readBinding(tx, songId, cardCodeId)
   const published = await readPublished(tx, songId)
-  if (song.played || published.some((row: any) => row.played)) {
+  const hasPlayed = song.played || published.some((row: any) => row.played)
+  if (hasPlayed) {
+    if (published.length && card.status === 'LOCKED') {
+      return redeemCardCodeForSchedule(tx, { songId, cardCodeId, operatorId, at })
+    }
     return { changed: false, status: card.status, reason: 'ALREADY_PLAYED' }
   }
   if (card.status === 'LOCKED') return { changed: false, status: 'LOCKED' }

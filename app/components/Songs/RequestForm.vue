@@ -127,7 +127,7 @@
               {{ locale.loginNow }}
             </button>
           </div>
-          <!-- 投稿设置内容说明：随时段/留言/点歌券等开关动态变化 -->
+          <!-- 投稿设置摘要 -->
           <div v-if="submissionOptionsSummary" class="submission-options-summary">
             <Icon :size="12" name="settings" class="shrink-0" />
             <span>{{ submissionOptionsSummary }}</span>
@@ -2551,7 +2551,7 @@ const submissionOptionsAvailable = computed(
 
 /** 生成投稿设置摘要。 */
 const submissionOptionsSummary = computed(() => {
-  // useSafeLocale 会把文案包装成带 toString 的函数，这里统一取出纯文本
+  // 读取 locale 文案。
   const text = (key, fallback) => {
     const value = locale.value?.[key]
     if (typeof value === 'function') return String(value)
@@ -2703,7 +2703,7 @@ const handlePlaySlotConfirm = async ({ date, timeId }) => {
   await submitSong(pending.result, { ...(pending.options || {}), fromSlotModal: true })
 }
 
-/** 取消投稿选项弹窗：丢弃本次弹窗上下文，保留此前已选好的选项 */
+/** 取消投稿选项弹窗。 */
 const handlePlaySlotCancel = () => {
   pendingPlaySlotSubmit.value = null
   playSlotError.value = ''
@@ -4912,7 +4912,7 @@ defineExpose({
   color: var(--text-link-hover);
 }
 
-/* 投稿设置内容说明：与登录提示同一区域，视觉上更轻 */
+/* 投稿设置摘要 */
 .submission-options-summary {
   display: flex;
   align-items: flex-start;
