@@ -157,25 +157,46 @@ test('播出日期星期使用当前语言词典', () => {
   assert.equal(vm.runInContext("formatPlaySlotDisplay({ preferredPlayDate: '2026-10-26' })", context), '2026-10-26 周一')
 })
 
-test('批量播放状态请求防重，错误按错误码本地化', async () => {
+test('播放状态操作先打开二次确认，确认执行期间不会重复提交', async () => {
   for (const handler of ['batchMarkPlayed', 'batchMarkUnplayed']) {
+    const shared = {
+      loading: ref(false),
+      batchMarking: ref(false),
+      selectedSongs: ref([1, 2]),
+      playbackConfirmSongIds: ref([] as number[]),
+      playbackConfirmMode: ref(''),
+      showPlaybackConfirm: ref(false)
+    }
+    const state = setup('app/components/Admin/SongManagement.vue', [handler, 'openPlaybackConfirm'], shared)
+    vm.runInContext(`${handler}()`, state.context)
+    assert.equal(vm.runInContext('showPlaybackConfirm.value', state.context), true)
+    assert.equal(vm.runInContext('playbackConfirmMode.value', state.context), handler === 'batchMarkPlayed' ? 'played' : 'unplayed')
+    assert.equal(vm.runInContext('JSON.stringify(playbackConfirmSongIds.value)', state.context), '[1,2]')
+
     let release: () => void = () => {}
     let calls = 0
-    const notifications: string[] = []
-    const { context } = setup('app/components/Admin/SongManagement.vue', [handler], {
-      loading: ref(false), batchMarking: ref(false), selectedSongs: ref([1]), songs: ref([{ id: 1 }]),
-      $fetch: async () => { calls += 1; await new Promise<void>((resolve) => { release = resolve }); throw { data: { code: 'COMMON_INVALID_PARAMS' } } },
-      refreshSongs: async () => {}, auth: { getAuthConfig: () => ({}) }, console: { error: () => {} },
-      localizeServerError: (error: any) => error.data.code === 'COMMON_INVALID_PARAMS' ? 'Invalid parameters' : '',
-      getNestedMessage: (_group: string, _key: string, value: string) => value,
-      showNotification: (message: string) => notifications.push(message)
+    const confirmation = setup('app/components/Admin/SongManagement.vue', ['confirmPlaybackChange'], {
+      batchMarking: shared.batchMarking,
+      loading: shared.loading,
+      playbackConfirmSongIds: ref([1]),
+      playbackConfirmMode: ref('played'),
+      selectedSongs: ref([1]),
+      songs: ref([{ id: 1 }]),
+      showPlaybackConfirm: shared.showPlaybackConfirm,
+      executePlaybackChange: async () => {
+        calls += 1
+        await new Promise<void>((resolve) => { release = resolve })
+        return 1
+      },
+      getNestedMessage: () => 'ok',
+      showNotification: () => {}
     })
-    const pending = vm.runInContext(`${handler}()`, context)
-    await vm.runInContext(`${handler}()`, context)
+    shared.batchMarking.value = false
+    const pending = vm.runInContext('confirmPlaybackChange()', confirmation.context)
+    vm.runInContext('confirmPlaybackChange()', confirmation.context)
     assert.equal(calls, 1)
     release()
     await pending
-    assert.equal(notifications[0], 'Invalid parameters')
-    assert.equal(vm.runInContext('batchMarking.value', context), false)
+    assert.equal(shared.batchMarking.value, false)
   }
 })

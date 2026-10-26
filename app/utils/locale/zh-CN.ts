@@ -2486,7 +2486,11 @@ export const admin = {
       deleteSongTitle: '删除歌曲',
       deleteSongMessage: (title: string) => `确定要删除歌曲 "${title}" 吗？此操作不可撤销。`,
       batchDeleteTitle: '批量删除歌曲',
-      batchDeleteMessage: (count: number) => `确定要删除选中的 ${count} 首歌曲吗？此操作不可撤销。`
+      batchDeleteMessage: (count: number) => `确定要删除选中的 ${count} 首歌曲吗？此操作不可撤销。`,
+      markPlayedTitle: '确认标记为已播放',
+      markPlayedMessage: (count: number) => `确定将选中的 ${count} 首歌曲标记为已播放吗？`,
+      markUnplayedTitle: '确认标记为未播放',
+      markUnplayedMessage: (count: number) => `确定撤回选中的 ${count} 首歌曲的已播放状态吗？`
     },
     rejectDialog: {
       title: '驳回歌曲',
@@ -4107,6 +4111,12 @@ export const admin = {
     setLocked: '设为锁定',
     setRedeemed: '设为核销',
     setInvalid: '设为作废',
+    statusChangeTitle: '确认变更点歌券状态',
+    statusChangeMessage: (count: number, status: string) =>
+      `确定将选中的 ${count} 张点歌券设为「${status}」吗？`,
+    statusChangeUnbindHint: '已派发的点歌券会解除当前绑定，记录转为已回收；之后设为可用时需要重新派发。',
+    statusChangeCancel: '取消',
+    statusChangeConfirm: '确认变更',
     unknown: '未知',
     empty: '没有找到符合条件的点歌券',
     itemName: '张点歌券',
@@ -4130,7 +4140,7 @@ export const admin = {
     quickTipsTitle: '快速说明',
     quickTips: [
       '支持按状态和关键词筛选，搜索范围包含点歌券和备注。',
-      '支持单条和批量状态切换，方便锁定、核销或作废。',
+      '支持单条和批量状态切换；作废会解除派发，之后设为可用需要重新派发。',
       '备注可直接就地编辑，适合记录发放对象、批次来源等信息。',
       '导出会按当前筛选条件生成完整 CSV；勾选点歌券后会优先导出勾选项。'
     ],

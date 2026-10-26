@@ -1,5 +1,17 @@
 <template>
   <div class="space-y-6">
+    <ConfirmDialog
+      :show="statusConfirmOpen"
+      :title="locale.statusChangeTitle"
+      :message="statusConfirmMessage"
+      :loading="saving"
+      type="warning"
+      :confirm-text="locale.statusChangeConfirm"
+      :cancel-text="locale.statusChangeCancel"
+      @confirm="confirmStatusUpdate"
+      @close="closeStatusConfirm"
+    />
+
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <h2 class="text-lg font-black">{{ locale.title }}</h2>
@@ -111,7 +123,8 @@
 
         <div class="overflow-x-auto rounded-2xl border border-border-secondary">
           <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-bg-primary-60 p-8 text-center text-sm text-text-tertiary">
-            {{ locale.loading }}
+            <AppSpinner :size="22" />
+            <span class="ml-2">{{ locale.loading }}</span>
           </div>
 
           <table v-else class="min-w-[880px] table-fixed text-left text-sm">
@@ -185,10 +198,10 @@
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary" @click="updateStatus([item.id], 'AVAILABLE')">{{ locale.available }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'AVAILABLE')">{{ locale.available }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'LOCKED')">{{ locale.locked }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'INVALID')">{{ locale.invalid }}</button>
                     <!-- 禁用态的按钮不会派发鼠标事件，title 挂在外层 span 才能可靠悬停显示 -->
                     <span
                       :title="item.status === 'AVAILABLE' ? (locale.dispatchRowHint || '派发这张点歌券给指定用户') : dispatchDisabledReason(item)"
@@ -282,7 +295,8 @@
               :disabled="saving"
               @click="createCodes"
             >
-              <Plus :size="14" /> {{ locale.createCardCode }}
+              <AppSpinner v-if="saving" :size="14" color="white" />
+              <Plus v-else :size="14" /> {{ locale.createCardCode }}
             </button>
             <button class="rounded-xl border border-border-secondary bg-bg-primary px-3.5 py-2 text-xs font-bold text-text-secondary" @click="fillDemoCodes">
               {{ locale.fillDemo }}
@@ -391,7 +405,8 @@
       </div>
 
       <div v-if="assignmentsLoading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
-        {{ locale.loadingLogs }}
+        <AppSpinner :size="20" />
+        <span class="ml-2">{{ locale.loadingLogs }}</span>
       </div>
 
       <div v-else class="overflow-x-auto rounded-2xl border border-border-secondary">
@@ -487,15 +502,14 @@
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.source }}</label>
-          <select
+          <CustomSelect
             v-model="logFilters.source"
-            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-          >
-            <option value="">{{ locale.allSources }}</option>
-            <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual || '手动核销' }}</option>
-            <option value="SCHEDULE_AUTO">{{ locale.sources?.scheduleAuto || '排期自动' }}</option>
-            <option value="SCHEDULE_REMOVE">{{ locale.sources?.scheduleRemove || '移除排期' }}</option>
-          </select>
+            :options="logSourceOptions"
+            label-key="label"
+            value-key="value"
+            :placeholder="locale.allSources"
+            class-name="w-full"
+          />
         </div>
         <div>
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.redeemer }}</label>
@@ -542,7 +556,8 @@
       </div>
 
       <div v-if="logsLoading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
-        {{ locale.loadingLogs }}
+        <AppSpinner :size="20" />
+        <span class="ml-2">{{ locale.loadingLogs }}</span>
       </div>
 
       <div v-else class="overflow-hidden rounded-2xl border border-border-secondary">
@@ -775,11 +790,13 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search, Send, Tags, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CardCodeDispatchModal from '~/components/Admin/CardCodeDispatchModal.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-import { useServerErrors } from '~/composables/useLocaleText'
+import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { formatDateTime, parseUtcTimestamp } from '~/utils/timeUtils'
 
 const { showToast } = useToast()
@@ -803,6 +820,9 @@ const dispatchOpen = ref(false)
 const dispatchCoupons = ref([])
 const dispatchNotice = ref('')
 const bulkStatus = ref('AVAILABLE')
+const statusConfirmOpen = ref(false)
+const statusConfirmIds = ref([])
+const statusConfirmTarget = ref('')
 const pagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
 const cardStats = ref({ total: 0, available: 0, locked: 0, redeemed: 0 })
 
@@ -922,6 +942,13 @@ const statusFilterOptions = computed(() => [
   { label: locale.value?.invalidStatus || 'Invalid', value: 'INVALID' }
 ])
 
+const logSourceOptions = computed(() => [
+  { label: locale.value?.allSources || 'All Sources', value: '' },
+  { label: locale.value?.sources?.adminManual || 'Manual Redeem', value: 'ADMIN_MANUAL' },
+  { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', value: 'SCHEDULE_AUTO' },
+  { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', value: 'SCHEDULE_REMOVE' }
+])
+
 const bulkStatusOptions = computed(() => [
   { label: locale.value?.setAvailable || 'Set Available', value: 'AVAILABLE' },
   { label: locale.value?.setLocked || 'Set Locked', value: 'LOCKED' },
@@ -939,6 +966,19 @@ const statusMeta = (status) => {
   }
   return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
 }
+
+const statusConfirmMessage = computed(() => {
+  if (!statusConfirmIds.value.length) return ''
+  const label = statusMeta(statusConfirmTarget.value).label
+  const base = locale.value?.statusChangeMessage?.(statusConfirmIds.value.length, label)
+    || `Set ${statusConfirmIds.value.length} request card(s) to "${label}"?`
+  const unbindCount = codes.value.filter(
+    (item) => statusConfirmIds.value.includes(item.id) && (item.assignedTo || item.status === 'ASSIGNED')
+  ).length
+  return unbindCount
+    ? `${base}\n${locale.value?.statusChangeUnbindHint || 'Dispatched cards will be unbound.'}`
+    : base
+})
 
 const logSourceMeta = (source) => {
   const sourceMap = {
@@ -1408,6 +1448,21 @@ const exportCodes = async () => {
   }
 }
 
+const requestStatusUpdate = (ids, status) => {
+  const normalized = [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))]
+  if (!normalized.length || saving.value) return
+  statusConfirmIds.value = normalized
+  statusConfirmTarget.value = status
+  statusConfirmOpen.value = true
+}
+
+const closeStatusConfirm = () => {
+  if (saving.value) return
+  statusConfirmOpen.value = false
+  statusConfirmIds.value = []
+  statusConfirmTarget.value = ''
+}
+
 const updateStatus = async (ids, status) => {
   saving.value = true
   try {
@@ -1426,13 +1481,25 @@ const updateStatus = async (ids, status) => {
     }
 
     showToast(getNestedMessage('messages', 'statusUpdated'), 'success')
-    await Promise.all([fetchCodes(), fetchRedeemLogs()])
+    await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments()])
+    return true
   } catch (error) {
     console.error('更新点歌券状态失败', error)
-    showToast(getNestedMessage('messages', 'updateStatusFailed'), 'error')
+    showToast(localizeServerError(error, getNestedMessage('messages', 'updateStatusFailed')), 'error')
+    return false
   } finally {
     saving.value = false
   }
+}
+
+const confirmStatusUpdate = async () => {
+  if (saving.value || !statusConfirmIds.value.length || !statusConfirmTarget.value) return
+  const ids = [...statusConfirmIds.value]
+  const success = await updateStatus(ids, statusConfirmTarget.value)
+  if (success && ids.every((id) => selectedIds.value.includes(id))) clearSelection()
+  statusConfirmOpen.value = false
+  statusConfirmIds.value = []
+  statusConfirmTarget.value = ''
 }
 
 const saveNote = async (item) => {
@@ -1454,8 +1521,7 @@ const saveNote = async (item) => {
 
 const applyBulkStatus = async () => {
   if (!selectedIds.value.length) return
-  await updateStatus(selectedIds.value, bulkStatus.value)
-  clearSelection()
+  requestStatusUpdate(selectedIds.value, bulkStatus.value)
 }
 
 const createCodes = async () => {

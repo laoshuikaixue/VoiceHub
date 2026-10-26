@@ -90,6 +90,17 @@
               <Icon :size="16" name="history" />
               <span class="btn-text">{{ locale.importFromPast }}</span>
             </button>
+            <button
+              v-if="submissionOptionsAvailable && user"
+              class="options-trigger-text-btn unified-options-trigger"
+              :aria-label="locale.submissionOptions"
+              :title="locale.submissionOptions"
+              type="button"
+              @click="openSubmissionOptions"
+            >
+              <Icon name="settings" :size="14" />
+              <span>{{ locale.submissionOptions }}</span>
+            </button>
           </div>
 
           <!-- 联合投稿人区域 -->
@@ -467,19 +478,6 @@
                       </p>
                     </div>
                     <div class="result-actions">
-                      <!-- 投稿选项：留言 / 点歌券 / 播出时段，由用户主动打开，不拦截直接投稿 -->
-                      <button
-                        v-if="submissionOptionsAvailable"
-                        :class="['options-trigger-btn', { 'has-options': hasSubmissionOptions }]"
-                        :aria-label="locale.submissionOptions"
-                        :title="locale.submissionOptions"
-                        type="button"
-                        @click.stop.prevent="openSubmissionOptions"
-                      >
-                        <Icon name="settings" :size="16" />
-                        <span v-if="hasSubmissionOptions" class="options-trigger-dot" />
-                      </button>
-
                       <!-- QQ音乐上传到网易云按钮（仅当结果确实来自QQ音乐时显示） -->
                       <button
                         v-if="isTencentSource(result)"
@@ -670,15 +668,6 @@
                   >
                     {{ locale.manualSubmitLong }}
                   </button>
-                  <button
-                    v-if="submissionOptionsAvailable && user"
-                    class="options-trigger-text-btn"
-                    type="button"
-                    @click="openSubmissionOptions"
-                  >
-                    <Icon name="settings" :size="14" />
-                    <span>{{ locale.submissionOptions }}</span>
-                  </button>
                 </div>
               </div>
 
@@ -703,15 +692,6 @@
                   @click="showManualModal = true"
                 >
                   {{ locale.manualSubmit }}
-                </button>
-                <button
-                  v-if="submissionOptionsAvailable && user"
-                  class="options-trigger-text-btn"
-                  type="button"
-                  @click="openSubmissionOptions"
-                >
-                  <Icon name="settings" :size="14" />
-                  <span>{{ locale.submissionOptions }}</span>
                 </button>
               </div>
 
@@ -2582,17 +2562,6 @@ const submissionOptionsSummary = computed(() => {
   return `投稿设置包含：${joined}`
 })
 
-/** 是否已经设置过任何投稿选项（用于「更多选项」按钮的状态点） */
-const hasSubmissionOptions = computed(
-  () =>
-    !!(
-      submissionNote.value.trim() ||
-      trimmedCardCode.value ||
-      preferredPlayTimeId.value ||
-      preferredPlayDate.value
-    )
-)
-
 /** 用户主动打开投稿选项弹窗：只保存选项，不触发投稿 */
 const openSubmissionOptions = () => {
   todayPlayDate.value = getBeijingDateString()
@@ -3733,8 +3702,7 @@ const submitSong = async (result, options = {}) => {
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
-    // 成功提示由父组件处理，这里只重置表单
-    resetForm()
+    // 表单在父组件确认投稿成功后重置
     return true
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
@@ -3801,8 +3769,7 @@ const handleSubmit = async (fromSlotModal = false) => {
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
-    // 成功提示由父组件处理，这里只重置表单
-    resetForm()
+    // 表单在父组件确认投稿成功后重置
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
@@ -4205,9 +4172,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
-    // 成功提示由父组件处理，这里只重置表单和关闭弹窗
-    resetForm()
-    showManualModal.value = false
+    // 父组件确认投稿成功后统一重置表单并关闭弹窗
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
@@ -4530,7 +4495,8 @@ const canSubmitManualForm = computed(() => {
 
 // 暴露方法给父组件
 defineExpose({
-  refreshSubmissionStatus: fetchSubmissionStatus
+  refreshSubmissionStatus: fetchSubmissionStatus,
+  resetForm
 })
 </script>
 
@@ -6362,45 +6328,6 @@ defineExpose({
   flex-shrink: 0;
 }
 
-/* 投稿选项入口：紧贴「选择投稿」按钮，用户主动打开留言 / 点歌券 / 时段弹窗 */
-.options-trigger-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  border: 1px solid var(--overlay-16);
-  background: var(--overlay-10);
-  color: var(--overlay-70);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.options-trigger-btn:hover {
-  border-color: var(--overlay-30);
-  background: var(--overlay-20);
-  color: var(--text-primary);
-}
-
-.options-trigger-btn.has-options {
-  border-color: var(--primary-50);
-  color: var(--color-accent-light);
-}
-
-.options-trigger-dot {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--bg-secondary);
-}
-
 .options-trigger-text-btn {
   display: inline-flex;
   align-items: center;
@@ -6422,6 +6349,11 @@ defineExpose({
   border-color: var(--overlay-30);
   background: var(--overlay-20);
   color: var(--text-primary);
+}
+
+.unified-options-trigger {
+  min-height: 42px;
+  flex-shrink: 0;
 }
 
 .cloud-disk-btn {
@@ -7252,6 +7184,11 @@ defineExpose({
 
 @media (max-width: 768px) {
   .import-semester-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .unified-options-trigger {
     width: 100%;
     justify-content: center;
   }

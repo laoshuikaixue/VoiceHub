@@ -34,6 +34,7 @@
     <div v-if="keyword.trim()" class="rounded-xl border border-border-secondary bg-bg-primary">
       <div class="flex items-center justify-between gap-2 border-b border-border-secondary px-3 py-2">
         <p class="text-[11px] font-bold text-text-tertiary">
+          <AppSpinner v-if="searching" :size="13" class="mr-1 align-middle" />
           {{ searching ? locale.assignSearching : getMessage('assignSearchResultCount', searchResults.length) }}
         </p>
         <button
@@ -91,6 +92,7 @@
       </div>
 
       <div v-if="treeLoading && !tree.length" class="px-3 py-8 text-center text-xs text-text-tertiary">
+        <AppSpinner :size="18" />
         {{ locale.assignPreviewLoading }}
       </div>
       <p v-else-if="!tree.length" class="px-3 py-8 text-center text-xs text-text-tertiary">
@@ -231,6 +233,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { ChevronDown, ChevronRight, RefreshCw, Search, X } from '@lucide/vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'

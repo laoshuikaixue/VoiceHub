@@ -2550,7 +2550,11 @@ export const admin = {
       deleteSongMessage: (title: string) => `Delete song "${title}"? This action cannot be undone.`,
       batchDeleteTitle: 'Batch Delete Songs',
       batchDeleteMessage: (count: number) =>
-        `Delete the selected ${count} songs? This action cannot be undone.`
+        `Delete the selected ${count} songs? This action cannot be undone.`,
+      markPlayedTitle: 'Confirm Mark as Played',
+      markPlayedMessage: (count: number) => `Mark the selected ${count} song(s) as played?`,
+      markUnplayedTitle: 'Confirm Mark as Unplayed',
+      markUnplayedMessage: (count: number) => `Revert the played status for the selected ${count} song(s)?`
     },
     rejectDialog: {
       title: 'Reject Song',
@@ -4238,6 +4242,13 @@ export const admin = {
     setLocked: 'Set Locked',
     setRedeemed: 'Set Redeemed',
     setInvalid: 'Set Invalid',
+    statusChangeTitle: 'Confirm Request Card Status',
+    statusChangeMessage: (count: number, status: string) =>
+      `Set the selected ${count} request card(s) to "${status}"?`,
+    statusChangeUnbindHint:
+      'Dispatched cards will be unbound and their assignment recorded as recycled. Set them to Available first if you want to return them to inventory, then dispatch them again.',
+    statusChangeCancel: 'Cancel',
+    statusChangeConfirm: 'Confirm Change',
     unknown: 'Unknown',
     empty: 'No matching request cards found',
     itemName: 'request cards',
@@ -4263,7 +4274,7 @@ export const admin = {
     quickTipsTitle: 'Quick Tips',
     quickTips: [
       'Filter by status and keyword; search covers request cards and notes.',
-      'Switch single or bulk statuses to lock, redeem, or invalidate cards.',
+      'Change single or bulk statuses. Invalidating a dispatched card unbinds it; setting it to Available returns it to inventory and requires a new dispatch.',
       'Edit notes in place to record recipients, batches, or source details.',
       'Export generates a complete CSV from current filters; selected cards are exported first.'
     ],

@@ -581,6 +581,18 @@
       @close="showDeleteDialog = false"
     />
 
+    <ConfirmDialog
+      :show="showPlaybackConfirm"
+      :title="playbackConfirmTitle"
+      :message="playbackConfirmMessage"
+      :loading="batchMarking"
+      :type="playbackConfirmMode === 'played' ? 'success' : 'warning'"
+      :confirm-text="playbackConfirmMode === 'played' ? locale.actions.batchMarkPlayed : locale.actions.batchMarkUnplayed"
+      :cancel-text="locale.dialog.cancel"
+      @confirm="confirmPlaybackChange"
+      @close="closePlaybackConfirm"
+    />
+
     <SubmissionRemarkDialog
       :show="submissionRemarkDialog.show"
       :song-title="submissionRemarkDialog.songTitle"
@@ -1452,6 +1464,19 @@ const showDeleteDialog = ref(false)
 const deleteDialogTitle = ref('')
 const deleteDialogMessage = ref('')
 const deleteAction = ref(null)
+const showPlaybackConfirm = ref(false)
+const playbackConfirmMode = ref('played')
+const playbackConfirmSongIds = ref([])
+const playbackConfirmTitle = computed(() =>
+  playbackConfirmMode.value === 'played'
+    ? locale.value.dialog?.markPlayedTitle || '确认标记为已播放'
+    : locale.value.dialog?.markUnplayedTitle || '确认标记为未播放'
+)
+const playbackConfirmMessage = computed(() =>
+  playbackConfirmMode.value === 'played'
+    ? locale.value.dialog?.markPlayedMessage?.(playbackConfirmSongIds.value.length) || `确认标记 ${playbackConfirmSongIds.value.length} 首歌曲为已播放？`
+    : locale.value.dialog?.markUnplayedMessage?.(playbackConfirmSongIds.value.length) || `确认撤回 ${playbackConfirmSongIds.value.length} 首歌曲的已播放状态？`
+)
 
 // 投票人员弹窗相关
 const showVotersModal = ref(false)
@@ -2005,101 +2030,81 @@ const refreshSongs = async (forceRefresh = false) => {
   }
 }
 
-const markAsPlayed = async (songId) => {
+const executePlaybackChange = async (songIds, unmark = false) => {
   try {
-    await songsService.markPlayed(songId)
+    const result = unmark
+      ? await $fetch('/api/admin/songs/mark-played', {
+          method: 'POST',
+          body: { songIds, unmark: true },
+          ...auth.getAuthConfig()
+        })
+      : await $fetch('/api/admin/songs/mark-played', {
+          method: 'POST',
+          body: { songIds },
+          ...auth.getAuthConfig()
+        })
     await refreshSongs()
+    return Number(result?.count || 0)
   } catch (error) {
-      console.error('标记已播放失败:', error)
-      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
-    }
-}
-
-const markAsUnplayed = async (songId) => {
-  try {
-    await songsService.unmarkPlayed(songId)
-    await refreshSongs()
-  } catch (error) {
-      console.error('标记未播放失败:', error)
-      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
-    }
-}
-
-// 批量标记已播放
-const batchMarkPlayed = async () => {
-  if (loading.value || batchMarking.value || selectedSongs.value.length === 0) return
-  batchMarking.value = true
-
-  const songIds = [...selectedSongs.value]
-  try {
-    loading.value = true
-
-    const result = await $fetch('/api/admin/songs/mark-played', {
-      method: 'POST',
-      body: { songIds },
-      ...auth.getAuthConfig()
-    })
-
-    await refreshSongs()
-    // 保留仍存在歌曲的勾选
-    selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
-
-    const updated = result?.count ?? 0
-    showNotification(
-      updated > 0
-        ? getNestedMessage('messages', 'batchMarkPlayedSuccess', updated)
-        : getNestedMessage('messages', 'batchMarkPlayedNoop'),
-      updated > 0 ? 'success' : 'warning'
-    )
-  } catch (error) {
-    console.error('批量标记已播放失败:', error)
-    showNotification(
-      getNestedMessage('errors', 'markFailed', localizeServerError(error)),
-      'error'
-    )
-  } finally {
-    batchMarking.value = false
-    loading.value = false
+    console.error(unmark ? '标记未播放失败:' : '标记已播放失败:', error)
+    showNotification(getNestedMessage('errors', 'markFailed', localizeServerError(error)), 'error')
+    return null
   }
 }
 
-// 批量撤回已播放
-const batchMarkUnplayed = async () => {
-  if (loading.value || batchMarking.value || selectedSongs.value.length === 0) return
-  batchMarking.value = true
+const openPlaybackConfirm = (songIds, mode) => {
+  const ids = [...new Set(songIds.filter((id) => Number.isInteger(id) && id > 0))]
+  if (!ids.length || loading.value || batchMarking.value) return
+  playbackConfirmSongIds.value = ids
+  playbackConfirmMode.value = mode
+  showPlaybackConfirm.value = true
+}
 
-  const songIds = [...selectedSongs.value]
+const closePlaybackConfirm = () => {
+  if (batchMarking.value) return
+  showPlaybackConfirm.value = false
+  playbackConfirmSongIds.value = []
+}
+
+const markAsPlayed = (songId) => openPlaybackConfirm([songId], 'played')
+
+const markAsUnplayed = (songId) => openPlaybackConfirm([songId], 'unplayed')
+
+const confirmPlaybackChange = async () => {
+  if (batchMarking.value || !playbackConfirmSongIds.value.length) return
+  batchMarking.value = true
   try {
     loading.value = true
-
-    const result = await $fetch('/api/admin/songs/mark-played', {
-      method: 'POST',
-      body: { songIds, unmark: true },
-      ...auth.getAuthConfig()
-    })
-
-    await refreshSongs()
-    // 保留仍存在歌曲的勾选
+    const songIds = [...playbackConfirmSongIds.value]
+    const updated = await executePlaybackChange(songIds, playbackConfirmMode.value === 'unplayed')
+    if (updated === null) return
     selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
-
-    const updated = result?.count ?? 0
     showNotification(
       updated > 0
-        ? getNestedMessage('messages', 'batchMarkUnplayedSuccess', updated)
-        : getNestedMessage('messages', 'batchMarkUnplayedNoop'),
+        ? getNestedMessage(
+            'messages',
+            playbackConfirmMode.value === 'played' ? 'batchMarkPlayedSuccess' : 'batchMarkUnplayedSuccess',
+            updated
+          )
+        : getNestedMessage(
+            'messages',
+            playbackConfirmMode.value === 'played' ? 'batchMarkPlayedNoop' : 'batchMarkUnplayedNoop'
+          ),
       updated > 0 ? 'success' : 'warning'
     )
   } catch (error) {
-    console.error('批量撤回已播放失败:', error)
-    showNotification(
-      getNestedMessage('errors', 'markFailed', localizeServerError(error)),
-      'error'
-    )
+    console.error('更新播放状态失败:', error)
   } finally {
     batchMarking.value = false
     loading.value = false
+    showPlaybackConfirm.value = false
+    playbackConfirmSongIds.value = []
   }
 }
+
+const batchMarkPlayed = () => openPlaybackConfirm(selectedSongs.value, 'played')
+
+const batchMarkUnplayed = () => openPlaybackConfirm(selectedSongs.value, 'unplayed')
 
 // 加入 / 移出备选池
 const toggleSongPool = async (song) => {

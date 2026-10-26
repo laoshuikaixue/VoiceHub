@@ -619,7 +619,16 @@ const handleConfirm = () => {
   gap: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 800;
+  line-height: 1.35;
   color: var(--text-secondary);
+}
+
+.options-section-title :deep(svg),
+.options-hint :deep(svg) {
+  flex: 0 0 auto;
+  align-self: center;
+  display: block;
+  vertical-align: middle;
 }
 
 .options-field {

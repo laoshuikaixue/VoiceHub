@@ -33,6 +33,7 @@
     <div class="rounded-xl border border-border-secondary bg-bg-primary">
       <div class="flex items-center justify-between gap-2 border-b border-border-secondary px-3 py-2">
         <p class="text-[11px] font-bold text-text-tertiary">
+          <AppSpinner v-if="loading" :size="13" class="mr-1 align-middle" />
           {{ loading ? locale.assignCodeLoading : getMessage('assignCodeSummary', modelValue.length, total) }}
         </p>
         <button
@@ -83,6 +84,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { Search, X } from '@lucide/vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'
 

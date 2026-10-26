@@ -1704,6 +1704,8 @@ const handleRequest = async (songData) => {
         window.$showNotification(getHomeText('messages', 'requestSuccess', songData.title, songData.artist), 'success')
       }
 
+      requestFormRef.value?.resetForm?.()
+
       // 强制刷新歌曲列表
       await refreshSongs()
 

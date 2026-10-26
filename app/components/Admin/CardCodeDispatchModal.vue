@@ -118,7 +118,8 @@
               :disabled="assigning || !canSubmit"
               @click="submit"
             >
-              <Send :size="14" /> {{ assigning ? locale.exporting : locale.assignSubmit }}
+              <AppSpinner v-if="assigning" :size="14" color="white" />
+              <Send v-else :size="14" /> {{ assigning ? locale.exporting : locale.assignSubmit }}
             </button>
             <span v-if="assignResult" class="text-xs font-bold" :class="assignResult.failedCount > 0 ? 'text-warning' : 'text-success'">
               {{ assignResult.failedCount > 0
@@ -163,6 +164,7 @@ import { computed, ref, watch } from 'vue'
 import { Send, X } from '@lucide/vue'
 import CardCodeRecipientPicker from '~/components/Admin/CardCodeRecipientPicker.vue'
 import CardCodeAvailablePicker from '~/components/Admin/CardCodeAvailablePicker.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
