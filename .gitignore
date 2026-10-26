@@ -34,6 +34,7 @@ backups/
 .vscode
 .trae
 .qoder
+.qoder-credits
 .codebuddy
 .figma
 .codex
@@ -51,6 +52,3 @@ result
 # Tencent Cloud EdgeOne
 .edgeone/*
 .tef_dist/*
-
-# 本地 PR 描述草稿，不纳入版本管理
-PR_DESCRIPTION.md

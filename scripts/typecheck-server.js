@@ -19,9 +19,7 @@ const GATED_CODES = new Set(['2551', '2561', '2554', '2353', '2305', '2307'])
 const BASELINE = {
   'server/api/notifications/settings.post.ts|TS2307': 1,
   'server/utils/music-source-plugins/network.ts|TS2554': 1,
-  'server/utils/qq_music_sdk.ts|TS2554': 1,
-  // drizzle 的 PgTransactionConfig 不接 timeout，该超时参数在此类下确实不存在
-  'server/api/admin/backup/restore.post.ts|TS2353': 1
+  'server/utils/qq_music_sdk.ts|TS2554': 1
 }
 
 if (!existsSync(TSCONFIG)) {
