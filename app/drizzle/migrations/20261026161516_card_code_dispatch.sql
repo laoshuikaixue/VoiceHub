@@ -25,7 +25,6 @@ CREATE TABLE "CardCodeAssignment" (
 --> statement-breakpoint
 ALTER TABLE "CardCode" ADD COLUMN "assignedTo" integer;--> statement-breakpoint
 ALTER TABLE "CardCode" ADD COLUMN "assignedAt" timestamp;--> statement-breakpoint
-ALTER TABLE "User" ADD COLUMN "tags" text[] DEFAULT '{}'::text[] NOT NULL;--> statement-breakpoint
 ALTER TABLE "CardCodeAssignment" ADD CONSTRAINT "CardCodeAssignment_cardCodeId_CardCode_id_fk" FOREIGN KEY ("cardCodeId") REFERENCES "public"."CardCode"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "CardCodeAssignment" ADD CONSTRAINT "CardCodeAssignment_userId_User_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "CardCodeAssignment" ADD CONSTRAINT "CardCodeAssignment_assignedBy_User_id_fk" FOREIGN KEY ("assignedBy") REFERENCES "public"."User"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -37,6 +36,5 @@ CREATE INDEX "card_code_assignment_status_assigned_at_idx" ON "CardCodeAssignmen
 CREATE INDEX "card_code_assignment_assigned_at_idx" ON "CardCodeAssignment" USING btree ("assignedAt");--> statement-breakpoint
 ALTER TABLE "CardCode" ADD CONSTRAINT "CardCode_assignedTo_User_id_fk" FOREIGN KEY ("assignedTo") REFERENCES "public"."User"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "card_code_assigned_to_status_idx" ON "CardCode" USING btree ("assignedTo","status");--> statement-breakpoint
-CREATE INDEX "user_tags_gin_idx" ON "User" USING gin ("tags");--> statement-breakpoint
 ALTER TABLE "CardCode" ADD CONSTRAINT "card_code_assigned_status_has_holder" CHECK (CAST("CardCode"."status" AS text) <> 'ASSIGNED' OR "CardCode"."assignedTo" IS NOT NULL);--> statement-breakpoint
 ALTER TABLE "CardCode" ADD CONSTRAINT "card_code_unassigned_status_no_holder" CHECK (CAST("CardCode"."status" AS text) NOT IN ('AVAILABLE', 'INVALID') OR "CardCode"."assignedTo" IS NULL);

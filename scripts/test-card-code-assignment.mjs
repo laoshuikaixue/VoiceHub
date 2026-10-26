@@ -148,59 +148,7 @@ const run = async () => {
   check('已核销的券无法回收', recycleUsed.length === 0)
   void a3
 
-  // 9. 标签：批量打标签（去重）
-  await sql`UPDATE "User" SET tags = '{}'::text[] WHERE id IN ${sql([userA.id, userB.id])}`
-  await sql`
-    UPDATE "User"
-    SET tags = ARRAY(SELECT DISTINCT t FROM unnest(tags || ${['广播员', '住校生']}::text[]) AS t)
-    WHERE id IN ${sql([userA.id, userB.id])}
-  `
-  const tagged = await sql`SELECT id, tags FROM "User" WHERE id IN ${sql([userA.id, userB.id])} ORDER BY id`
-  check(
-    '批量打标签成功且已去重',
-    tagged.every((row) => row.tags.length === 2 && row.tags.includes('广播员') && row.tags.includes('住校生')),
-    JSON.stringify(tagged.map((row) => row.tags))
-  )
-
-  // 10. 标签：重复添加同一标签不会产生重复项
-  await sql`
-    UPDATE "User"
-    SET tags = ARRAY(SELECT DISTINCT t FROM unnest(tags || ${['广播员']}::text[]) AS t)
-    WHERE id = ${userA.id}
-  `
-  const [afterDup] = await sql`SELECT tags FROM "User" WHERE id = ${userA.id}`
-  check('重复添加标签不产生重复项', afterDup.tags.length === 2, JSON.stringify(afterDup.tags))
-
-  // 11. 标签：按标签查询（数组重叠运算）
-  const byTag = await sql`
-    SELECT id FROM "User" WHERE tags && ${['广播员']}::text[] ORDER BY id
-  `
-  check('按标签查询命中全部带标签用户', byTag.length === 2, `count=${byTag.length}`)
-
-  const byTagMiss = await sql`
-    SELECT id FROM "User" WHERE tags && ${['不存在的标签']}::text[]
-  `
-  check('按不存在的标签查询结果为空', byTagMiss.length === 0, `count=${byTagMiss.length}`)
-
-  // 12. 标签：重命名（全局替换 + 去重）
-  await sql`
-    UPDATE "User"
-    SET tags = ARRAY(SELECT DISTINCT t FROM unnest(array_replace(tags, ${'广播员'}, ${'编辑部'})) AS t WHERE t IS NOT NULL AND t <> '')
-    WHERE ${'广播员'} = ANY(tags)
-  `
-  const [renamed] = await sql`SELECT tags FROM "User" WHERE id = ${userA.id}`
-  check(
-    '标签重命名生效且无重复',
-    renamed.tags.includes('编辑部') && !renamed.tags.includes('广播员') && renamed.tags.length === 2,
-    JSON.stringify(renamed.tags)
-  )
-
-  // 13. 标签：删除（从所有用户移除）
-  await sql`UPDATE "User" SET tags = array_remove(tags, ${'住校生'}) WHERE tags @> ARRAY[${'住校生'}]::text[]`
-  const [afterDelete] = await sql`SELECT tags FROM "User" WHERE id = ${userB.id}`
-  check('标签删除后用户身上不再保留', !afterDelete.tags.includes('住校生'), JSON.stringify(afterDelete.tags))
-
-  // 14. 班级筛选：按年级/班级查询接收人
+  // 9. 班级筛选：按年级/班级查询接收人
   // 只统计本次测试创建的用户，避免库中已有的同年级同班数据影响计数
   await sql`UPDATE "User" SET grade = ${'高一'}, class = ${'3班'} WHERE id = ${userA.id}`
   await sql`UPDATE "User" SET grade = ${'高一'}, class = ${'5班'} WHERE id = ${userB.id}`
@@ -213,7 +161,7 @@ const run = async () => {
   const byGrade = await sql`SELECT id FROM "User" WHERE grade = ${'高一'} AND id IN ${sql(testUserIds)}`
   check('按年级查询命中该年级全部用户', byGrade.length === 2, `count=${byGrade.length}`)
 
-  // 15. 多用户轮流派发：5 张券分给 3 人，前 2 人各 2 张、最后 1 人 1 张
+  // 10. 多用户轮流派发：5 张券分给 3 人，前 2 人各 2 张、最后 1 人 1 张
   const batchCodes = await sql`
     INSERT INTO "CardCode" (code, status, note, "createdAt", "updatedAt")
     VALUES

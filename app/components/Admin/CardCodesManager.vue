@@ -49,12 +49,6 @@
         >
           <Send :size="14" /> {{ locale.dispatchCoupon || '派发点歌券' }}
         </button>
-        <button
-          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-secondary bg-bg-secondary text-text-secondary text-xs font-bold hover:border-border-tertiary transition-all"
-          @click="openTagManager"
-        >
-          <Tags :size="14" /> {{ locale.tagManage }}
-        </button>
       </div>
     </div>
 
@@ -622,181 +616,11 @@
     @dispatched="onDispatched"
   />
 
-  <!-- 标签管理弹窗 -->
-  <Teleport to="body">
-    <div v-if="tagModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="tagModalOpen = false" />
-      <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div class="sticky top-0 z-10 bg-panel-bg-deepest-95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
-          <div>
-            <h3 class="text-lg font-black text-text-primary-lighter tracking-tight">{{ locale.tagManage }}</h3>
-            <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.tagModalDesc }}</p>
-          </div>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light"
-            @click="tagModalOpen = false"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <div class="grid grid-cols-1 gap-5 px-6 py-5 lg:grid-cols-2">
-          <!-- 左：全部标签 -->
-          <div class="space-y-3">
-            <h4 class="text-xs font-black uppercase tracking-widest text-text-tertiary">{{ locale.tagListTitle }}</h4>
-            <div v-if="!availableTags.length" class="rounded-xl border border-border-secondary bg-bg-primary p-4 text-center text-xs text-text-tertiary">
-              {{ locale.tagEmptyHint }}
-            </div>
-            <div v-else class="space-y-2">
-              <div
-                v-for="tag in availableTags"
-                :key="tag.name"
-                class="flex items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2"
-              >
-                <template v-if="renamingTag && renamingTag.from === tag.name">
-                  <input
-                    v-model="renamingTag.to"
-                    type="text"
-                    class="min-w-0 flex-1 rounded-lg border border-border-secondary bg-bg-secondary px-2 py-1 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-                    @keydown.enter.prevent="confirmRenameTag"
-                    @keydown.esc="renamingTag = null"
-                  >
-                  <button type="button" class="text-[11px] font-bold text-primary hover:text-primary-hover" @click="confirmRenameTag">
-                    {{ locale.tagRenameSave }}
-                  </button>
-                  <button type="button" class="text-[11px] font-bold text-text-tertiary hover:text-text-primary" @click="renamingTag = null">
-                    {{ locale.tagRenameCancel }}
-                  </button>
-                </template>
-                <template v-else>
-                  <span class="min-w-0 flex-1 truncate text-sm font-bold text-text-primary">{{ tag.name }}</span>
-                  <span class="shrink-0 text-[10px] text-text-tertiary">{{ getLocaleMessage('assignTagUserCount', tag.userCount) }}</span>
-                  <button type="button" class="shrink-0 text-[11px] font-bold text-text-secondary hover:text-primary" @click="renamingTag = { from: tag.name, to: tag.name }">
-                    {{ locale.tagRename }}
-                  </button>
-                  <button type="button" class="shrink-0 text-[11px] font-bold text-text-secondary hover:text-error" @click="deleteTag(tag)">
-                    {{ locale.tagDelete }}
-                  </button>
-                </template>
-              </div>
-            </div>
-          </div>
-
-          <!-- 右：给用户打标签 -->
-          <div class="space-y-3">
-            <h4 class="text-xs font-black uppercase tracking-widest text-text-tertiary">{{ locale.tagApplyTitle }}</h4>
-
-            <div ref="tagUserDropdownRef" class="relative">
-              <input
-                v-model="tagUserKeyword"
-                type="text"
-                :placeholder="locale.assignSelectUserPlaceholder"
-                class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
-                @focus="openTagUserDropdown"
-                @input="openTagUserDropdown"
-                @keydown.esc="tagUserDropdownOpen = false"
-              >
-              <div
-                v-if="tagUserDropdownOpen && tagUserCandidates.length"
-                class="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border-secondary bg-bg-secondary shadow-xl"
-              >
-                <button
-                  v-for="candidate in tagUserCandidates"
-                  :key="candidate.id"
-                  type="button"
-                  class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary-50"
-                  @click="toggleTagUser(candidate)"
-                >
-                  <span
-                    class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
-                    :class="isTagUserSelected(candidate.id) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
-                  >
-                    {{ isTagUserSelected(candidate.id) ? '✓' : '' }}
-                  </span>
-                  <span class="min-w-0 flex-1 truncate">
-                    {{ candidate.name || candidate.username }}
-                    <span class="text-text-tertiary">({{ candidate.username }})</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div v-if="tagUserSelected.length" class="flex flex-wrap items-center gap-2">
-              <span
-                v-for="target in tagUserSelected"
-                :key="target.id"
-                class="inline-flex items-center gap-1 rounded-full border border-info-20 bg-info-10 px-2.5 py-1 text-[11px] font-bold text-info"
-              >
-                {{ target.name || target.username }}
-                <button type="button" class="text-info/70 transition-colors hover:text-info" @click="removeTagUser(target.id)">
-                  <X :size="12" />
-                </button>
-              </span>
-              <button type="button" class="text-[11px] font-bold text-text-tertiary hover:text-text-primary" @click="tagUserSelected = []">
-                {{ locale.assignClearRecipients }}
-              </button>
-            </div>
-
-            <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.tagApplyLabel }}</label>
-              <div class="flex gap-2">
-                <input
-                  v-model="tagApplyInput"
-                  type="text"
-                  :placeholder="locale.tagApplyPlaceholder"
-                  class="min-w-0 flex-1 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
-                  @keydown.enter.prevent="commitTagApplyInput"
-                >
-                <button
-                  type="button"
-                  class="shrink-0 rounded-xl border border-border-secondary bg-bg-secondary px-3 py-2 text-xs font-bold text-text-secondary hover:text-text-primary"
-                  @click="commitTagApplyInput"
-                >
-                  {{ locale.tagApplyAdd }}
-                </button>
-              </div>
-              <div v-if="tagApplyList.length" class="mt-2 flex flex-wrap gap-2">
-                <span
-                  v-for="name in tagApplyList"
-                  :key="name"
-                  class="inline-flex items-center gap-1 rounded-full border border-primary-20 bg-primary-10 px-2.5 py-1 text-[11px] font-bold text-primary"
-                >
-                  {{ name }}
-                  <button type="button" class="text-primary/70 transition-colors hover:text-primary" @click="removeTagApplyInput(name)">
-                    <X :size="12" />
-                  </button>
-                </span>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-              <button
-                type="button"
-                class="rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
-                :disabled="tagSubmitting || !tagUserSelected.length || !tagApplyList.length"
-                @click="applyTagsToUsers('add')"
-              >
-                {{ locale.tagApplySubmit }}
-              </button>
-              <button
-                type="button"
-                class="rounded-xl border border-border-secondary bg-bg-secondary px-4 py-2 text-xs font-bold text-text-secondary transition-colors hover:text-text-primary disabled:opacity-50"
-                :disabled="tagSubmitting || !tagUserSelected.length || !tagApplyList.length"
-                @click="applyTagsToUsers('remove')"
-              >
-                {{ locale.tagRemoveSubmit }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Copy, Download, Plus, RefreshCw, Search, Send, Tags, X } from '@lucide/vue'
+import { computed, onMounted, ref } from 'vue'
+import { Copy, Download, Plus, RefreshCw, Search, Send, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
@@ -848,25 +672,6 @@ const assignmentsLoading = ref(false)
 const assignmentStats = ref({ total: 0, assigned: 0, used: 0, recycled: 0, failed: 0 })
 const assignmentFilters = ref({ q: '', status: '' })
 const assignmentPagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
-
-
-// 按标签派发
-const availableTags = ref([])
-
-
-// 标签管理弹窗
-const tagModalOpen = ref(false)
-const tagApplyInput = ref('')
-const tagApplyList = ref([])
-const renamingTag = ref(null)
-const tagUserKeyword = ref('')
-const tagUserCandidates = ref([])
-const tagUserDropdownOpen = ref(false)
-const tagUserDropdownRef = ref(null)
-const tagUserSelected = ref([])
-const tagSubmitting = ref(false)
-let tagUserSearchTimer = null
-
 
 const assignmentStatusOptions = computed(() => [
   { label: locale.value?.allAssignmentStatuses || 'All Statuses', value: '' },
@@ -1149,141 +954,6 @@ const resetAssignmentFilters = async () => {
 
 
 
-// ===== 按标签派发 =====
-const fetchTags = async () => {
-  try {
-    const res = await $fetch('/api/admin/users/tags')
-    availableTags.value = Array.isArray(res?.data) ? res.data : []
-  } catch (error) {
-    console.error('获取用户标签失败', error)
-    availableTags.value = []
-  }
-}
-
-
-// ===== 标签管理弹窗 =====
-const openTagManager = () => {
-  renamingTag.value = null
-  tagApplyInput.value = ''
-  tagApplyList.value = []
-  tagUserKeyword.value = ''
-  tagUserCandidates.value = []
-  tagUserSelected.value = []
-  tagModalOpen.value = true
-  fetchTags()
-}
-
-const openTagUserDropdown = () => {
-  tagUserDropdownOpen.value = true
-  if (tagUserSearchTimer) clearTimeout(tagUserSearchTimer)
-  tagUserSearchTimer = setTimeout(() => {
-    fetchTagUsers()
-  }, 220)
-}
-
-const fetchTagUsers = async () => {
-  try {
-    const query = new URLSearchParams()
-    if (tagUserKeyword.value.trim()) query.set('q', tagUserKeyword.value.trim())
-    const res = await $fetch(`/api/admin/card-codes/recipients?${query.toString()}`)
-    tagUserCandidates.value = Array.isArray(res?.data) ? res.data : []
-    tagUserDropdownOpen.value = true
-  } catch (error) {
-    console.error('搜索用户失败', error)
-    tagUserCandidates.value = []
-  }
-}
-
-const isTagUserSelected = (id) => tagUserSelected.value.some((item) => item.id === Number(id))
-
-const toggleTagUser = (candidate) => {
-  if (!candidate) return
-  const id = Number(candidate.id)
-  if (tagUserSelected.value.some((item) => item.id === id)) {
-    tagUserSelected.value = tagUserSelected.value.filter((item) => item.id !== id)
-    return
-  }
-  tagUserSelected.value = [
-    ...tagUserSelected.value,
-    { id, name: candidate.name || '', username: candidate.username || '' }
-  ]
-}
-
-const removeTagUser = (id) => {
-  tagUserSelected.value = tagUserSelected.value.filter((item) => item.id !== Number(id))
-}
-
-const commitTagApplyInput = () => {
-  const name = tagApplyInput.value.trim()
-  if (!name) return
-  if (name.length > 20) {
-    showToast(locale.value?.tagTooLong || '标签名长度不能超过 20 个字符', 'warning')
-    return
-  }
-  if (!tagApplyList.value.includes(name)) {
-    tagApplyList.value = [...tagApplyList.value, name]
-  }
-  tagApplyInput.value = ''
-}
-
-const removeTagApplyInput = (name) => {
-  tagApplyList.value = tagApplyList.value.filter((item) => item !== name)
-}
-
-const applyTagsToUsers = async (mode) => {
-  if (!tagUserSelected.value.length || !tagApplyList.value.length) return
-  tagSubmitting.value = true
-  try {
-    const res = await $fetch('/api/admin/users/tags', {
-      method: 'POST',
-      body: {
-        userIds: tagUserSelected.value.map((item) => item.id),
-        add: mode === 'add' ? tagApplyList.value : [],
-        remove: mode === 'remove' ? tagApplyList.value : []
-      }
-    })
-    const updated = Number(res?.updatedCount || 0)
-    const skipped = Array.isArray(res?.skipped) ? res.skipped : []
-    showToast(
-      getLocaleMessage(
-        mode === 'add' ? 'tagApplyDone' : 'tagRemoveDone',
-        updated,
-        skipped.length
-      ),
-      'success'
-    )
-    tagApplyList.value = []
-    await fetchTags()
-  } catch (error) {
-    console.error('更新用户标签失败', error)
-    showToast(locale.value?.tagApplyFailed || '更新用户标签失败', 'error')
-  } finally {
-    tagSubmitting.value = false
-  }
-}
-
-const confirmRenameTag = async () => {
-  const from = renamingTag.value?.from || ''
-  const to = (renamingTag.value?.to || '').trim()
-  if (!from || !to) return
-  if (to.length > 20) {
-    showToast(locale.value?.tagTooLong || '标签名长度不能超过 20 个字符', 'warning')
-    return
-  }
-  try {
-    await $fetch('/api/admin/users/tags', {
-      method: 'PUT',
-      body: { from, to }
-    })
-    showToast(locale.value?.tagRenamed || '标签已重命名', 'success')
-    renamingTag.value = null
-    await fetchTags()
-  } catch (error) {
-    console.error('重命名标签失败', error)
-    showToast(locale.value?.tagRenameFailed || '重命名标签失败', 'error')
-  }
-}
-
 /** 二级确认统一走系统内置弹窗，不使用浏览器原生 confirm */
 const genericConfirm = ref({ open: false, title: '', message: '', action: null })
 
@@ -1300,28 +970,6 @@ const runGenericConfirm = async () => {
   closeGenericConfirm()
   await action?.()
 }
-
-const deleteTag = (tag) => {
-  askConfirm(
-    locale.value?.tagDeleteConfirm?.(tag.name, tag.userCount)
-    || `确定删除标签「${tag.name}」吗？将从 ${tag.userCount} 位用户身上移除该标签。`,
-    () => removeTag(tag)
-  )
-}
-
-const removeTag = async (tag) => {
-  try {
-    await $fetch(`/api/admin/users/tags?name=${encodeURIComponent(tag.name)}`, {
-      method: 'DELETE'
-    })
-    showToast(locale.value?.tagDeleted || '标签已删除', 'success')
-    await fetchTags()
-  } catch (error) {
-    console.error('删除标签失败', error)
-    showToast(locale.value?.tagDeleteFailed || '删除标签失败', 'error')
-  }
-}
-
 
 /** 回收已派发的点歌券 */
 const recycleAssignment = (item) => {
@@ -1356,28 +1004,8 @@ const performRecycle = async (item) => {
 }
 
 const refreshAll = async () => {
-  await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments(), fetchTags()])
+  await Promise.all([fetchCodes(), fetchRedeemLogs(), fetchAssignments()])
 }
-
-
-// 点击外部关闭标签用户下拉
-const handleAssignDropdownOutside = (event) => {
-  const target = event.target
-  if (tagUserDropdownOpen.value) {
-    const container = tagUserDropdownRef.value
-    if (!container || !container.contains(target)) {
-      tagUserDropdownOpen.value = false
-    }
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('mousedown', handleAssignDropdownOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', handleAssignDropdownOutside)
-})
 
 const resetFilters = async () => {
   filters.value = { q: '', status: '' }

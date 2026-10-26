@@ -4,7 +4,7 @@ import { and, asc, eq, ilike, isNotNull, isNull, ne, or, sql } from 'drizzle-orm
 import { UNSET_KEY } from '~~/server/utils/recipient-tree'
 import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
-/** 按姓名、标签与班级查询接收人及组织统计。 */
+/** 按姓名与年级班级查询接收人及组织统计。 */
 const MAX_PREVIEW_COUNT = 2000
 
 export default defineEventHandler(async (event) => {
@@ -12,9 +12,6 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const keyword = typeof query.q === 'string' ? query.q.trim() : ''
-  const tags = typeof query.tags === 'string'
-    ? [...new Set(query.tags.split(',').map((tag) => tag.trim()).filter(Boolean))]
-    : []
   const grade = typeof query.grade === 'string' ? query.grade.trim() : ''
   const className = typeof query.class === 'string' ? query.class.trim() : ''
   const returnAll = query.all === '1' || query.all === 'true'
@@ -23,11 +20,6 @@ export default defineEventHandler(async (event) => {
   const conditions = [ne(users.status, 'pending')]
   if (keyword) {
     conditions.push(or(ilike(users.name, `%${keyword}%`), ilike(users.username, `%${keyword}%`))!)
-  }
-  if (tags.length) {
-    // 匹配任意标签
-    const tagArray = sql`ARRAY[${sql.join(tags.map((tag) => sql`${tag}`), sql`, `)}]::text[]`
-    conditions.push(sql`${users.tags} && ${tagArray}`)
   }
   if (grade) {
     // 空串与 NULL 均归为未设置
@@ -85,7 +77,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 有筛选条件或明确要求全量时放宽上限，否则按搜索联想场景限制条数
-  const hasFilter = Boolean(keyword || tags.length || grade || className)
+  const hasFilter = Boolean(keyword || grade || className)
   const limit = returnAll || hasFilter ? MAX_PREVIEW_COUNT : 30
 
   const rows = await db
@@ -96,8 +88,7 @@ export default defineEventHandler(async (event) => {
       grade: users.grade,
       class: users.class,
       role: users.role,
-      status: users.status,
-      tags: users.tags
+      status: users.status
     })
     .from(users)
     .where(whereClause)

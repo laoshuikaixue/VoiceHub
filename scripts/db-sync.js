@@ -287,8 +287,7 @@ async function checkSchemaConsistency(sql) {
       'tokenVersion',
       'remark',
       'avatarProvider',
-      'avatarProviderUserId',
-      'tags'
+      'avatarProviderUserId'
     ],
     Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId', 'preferredPlayDate'],
     CardCode: ['assignedTo', 'assignedAt'],

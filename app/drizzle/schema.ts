@@ -41,11 +41,9 @@ export const users = pgTable('User', {
   statusChangedBy: integer('statusChangedBy'),
   // 注册时可选填写的备注，管理员审核时可修改
   remark: text('remark'),
-  // 用户标签（如：广播员、住校生、社团成员），支持按标签批量派发点歌券等分组场景
-  tags: text('tags').array().default(sql`'{}'::text[]`).notNull(),
   legalConsentVersion: text('legal_consent_version'),
   legalConsentAt: timestamp('legal_consent_at'),
-}, (table) => [uniqueIndex('User_username_unique').on(table.username), index('user_tags_gin_idx').using('gin', table.tags)]);
+}, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
 export const authSessions = pgTable('auth_sessions', {

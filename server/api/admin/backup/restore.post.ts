@@ -380,7 +380,6 @@ export default defineEventHandler(async (event) => {
                             'remark',
                             'avatarProvider',
                             'avatarProviderUserId',
-                            'tags',
                             'legalConsentVersion'
                           ]
 

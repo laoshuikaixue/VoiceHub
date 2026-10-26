@@ -4365,7 +4365,6 @@ export const admin = {
     assignUnsetGrade: 'Unset grade',
     assignUnsetClass: 'Unset class',
     assignTooManyRecipients: (max: number) => `Up to ${max} recipients per assignment`,
-    assignTagUserCount: (count: number) => `${count} user(s)`,
     assignPreviewLoading: 'Matching recipients...',
     assignDistributionHint: (codes: number, recipients: number) =>
       `${codes} request card(s) selected. They are dealt in order across ${recipients} recipient(s); when there are more recipients than cards, the leftovers are listed in the result.`,
@@ -4432,38 +4431,6 @@ export const admin = {
       fetchAssignmentsFailed: 'Failed to fetch assignment records',
       recycleFailed: 'Failed to recycle request cards'
     },
-    tagManage: 'Tags',
-    tagModalDesc:
-      'Create, rename, or delete tags and tag users in bulk. Tags can then be used to pick recipients when assigning request cards',
-    tagListTitle: 'All tags',
-    tagEmptyHint:
-      'No tags yet. Pick users on the right and add a tag — once created, a tag can be used for tag-based assignment',
-    tagRename: 'Rename',
-    tagRenameSave: 'Save',
-    tagRenameCancel: 'Cancel',
-    tagDelete: 'Delete',
-    tagDeleteConfirm: (name: string, count: number) =>
-      `Delete tag "${name}"? It will be removed from ${count} user(s).`,
-    tagRenamed: 'Tag renamed',
-    tagRenameFailed: 'Failed to rename tag',
-    tagDeleted: 'Tag deleted',
-    tagDeleteFailed: 'Failed to delete tag',
-    tagTooLong: 'A tag name cannot exceed 20 characters',
-    tagApplyTitle: 'Tag users',
-    tagApplyLabel: 'Tag name',
-    tagApplyPlaceholder: 'Type a tag name and press Enter to add it below',
-    tagApplyAdd: 'Add',
-    tagApplySubmit: 'Add tags',
-    tagRemoveSubmit: 'Remove tags',
-    tagApplyDone: (updated: number, skipped: number) =>
-      skipped > 0
-        ? `Tags added for ${updated} user(s); ${skipped} unchanged`
-        : `Tags added for ${updated} user(s)`,
-    tagRemoveDone: (updated: number, skipped: number) =>
-      skipped > 0
-        ? `Tags removed for ${updated} user(s); ${skipped} unchanged`
-        : `Tags removed for ${updated} user(s)`,
-    tagApplyFailed: 'Failed to update user tags'
   },
   databaseManager: {
     title: 'Database Operations',

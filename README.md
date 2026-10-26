@@ -1206,11 +1206,7 @@ VoiceHub/
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── options.ts       # 用户管理选项
-│   │   │       ├── status-logs.get.ts # 用户状态日志
-│   │   │       ├── tags.delete.ts   # 全局删除用户标签
-│   │   │       ├── tags.get.ts      # 标签清单与各标签人数
-│   │   │       ├── tags.post.ts     # 批量添加/移除用户标签
-│   │   │       └── tags.put.ts      # 全局重命名用户标签
+│   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── api-enhanced/          # 网易云音乐API
 │   │   │   └── netease/           # 网易云增强接口代理
 │   │   │       └── [...path].ts   # 转发网易云API请求

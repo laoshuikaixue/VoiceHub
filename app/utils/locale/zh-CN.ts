@@ -4229,7 +4229,6 @@ export const admin = {
     assignUnsetGrade: '未设置年级',
     assignUnsetClass: '未设置班级',
     assignTooManyRecipients: (max: number) => `单次最多派发给 ${max} 位用户`,
-    assignTagUserCount: (count: number) => `${count} 人`,
     assignPreviewLoading: '正在匹配接收人...',
     assignDistributionHint: (codes: number, recipients: number) =>
       `已选择 ${codes} 张点歌券，将按顺序轮流分配给 ${recipients} 位接收人；接收人多于点歌券时，未获得券的用户会在派发结果中列出。`,
@@ -4294,32 +4293,6 @@ export const admin = {
       fetchAssignmentsFailed: '获取派发记录失败',
       recycleFailed: '回收点歌券失败'
     },
-    tagManage: '标签管理',
-    tagModalDesc: '创建、重命名、删除标签，或给用户批量打标签；派发点歌券时可按标签批量选择接收人',
-    tagListTitle: '全部标签',
-    tagEmptyHint: '还没有标签。可在右侧选择用户并添加标签，标签创建后即可用于按标签派发',
-    tagRename: '重命名',
-    tagRenameSave: '保存',
-    tagRenameCancel: '取消',
-    tagDelete: '删除',
-    tagDeleteConfirm: (name: string, count: number) =>
-      `确定删除标签「${name}」吗？将从 ${count} 位用户身上移除该标签。`,
-    tagRenamed: '标签已重命名',
-    tagRenameFailed: '重命名标签失败',
-    tagDeleted: '标签已删除',
-    tagDeleteFailed: '删除标签失败',
-    tagTooLong: '标签名长度不能超过 20 个字符',
-    tagApplyTitle: '给用户打标签',
-    tagApplyLabel: '标签名称',
-    tagApplyPlaceholder: '输入标签名，回车添加到下面',
-    tagApplyAdd: '添加',
-    tagApplySubmit: '添加标签',
-    tagRemoveSubmit: '移除标签',
-    tagApplyDone: (updated: number, skipped: number) =>
-      skipped > 0 ? `已为 ${updated} 位用户添加标签，${skipped} 位用户无变化` : `已为 ${updated} 位用户添加标签`,
-    tagRemoveDone: (updated: number, skipped: number) =>
-      skipped > 0 ? `已从 ${updated} 位用户移除标签，${skipped} 位用户无变化` : `已从 ${updated} 位用户移除标签`,
-    tagApplyFailed: '更新用户标签失败'
   },
   databaseManager: {
     title: '数据库操作',

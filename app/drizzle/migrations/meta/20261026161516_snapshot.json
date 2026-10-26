@@ -1,5 +1,5 @@
 {
-  "id": "16fa851f-4029-4eef-89b8-7836a84be125",
+  "id": "bd5c01d3-9b2d-488b-b081-e6826336cda4",
   "prevId": "960cb0c9-ca7d-4109-af43-9da11b34718f",
   "version": "7",
   "dialect": "postgresql",
@@ -4143,13 +4143,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "tags": {
-          "name": "tags",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::text[]"
-        },
         "legal_consent_version": {
           "name": "legal_consent_version",
           "type": "text",
@@ -4177,21 +4170,6 @@
           "isUnique": true,
           "concurrently": false,
           "method": "btree",
-          "with": {}
-        },
-        "user_tags_gin_idx": {
-          "name": "user_tags_gin_idx",
-          "columns": [
-            {
-              "expression": "tags",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
           "with": {}
         }
       },
