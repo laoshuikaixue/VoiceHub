@@ -76,7 +76,8 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       data: {
-        cardCodes: items,
+        // assignedTo / assignedAt 是站内持有信息，不对外暴露
+        cardCodes: items.map(({ assignedTo: _assignedTo, assignedAt: _assignedAt, ...rest }: any) => rest),
         pagination: {
           page,
           limit,

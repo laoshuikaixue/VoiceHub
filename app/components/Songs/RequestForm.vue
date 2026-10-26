@@ -1234,6 +1234,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
+import { getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
 import SubmissionOptionsModal from '~/components/Songs/SubmissionOptionsModal.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
@@ -1398,7 +1399,7 @@ const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
 // 播出日期 + 时段选择：日期可选，时段在后台上开启「时段必选」时必选
 const preferredPlayDate = ref('')
-// 后台「时段必选」总开关：开启后投稿必须选择播出时段（日期可留空自动分配）
+// 后台「时段必选」总开关：仅约束网页投稿，日期始终可留空
 const playSlotRequired = ref(false)
 const playSlotError = ref('')
 // 投稿选项弹窗（留言 / 点歌券 / 播出时段）
@@ -2470,25 +2471,11 @@ const enabledPlayTimes = computed(() => {
   return playTimes.value.filter((pt) => pt.enabled)
 })
 
-// 日期字符串（YYYY-MM-DD）→ 星期（0=周日…6=周六）；按北京时间解析，避免时区偏移导致星期错位
-const getWeekdayFromDateString = (dateString) => {
-  const date = new Date(`${dateString}T00:00:00+08:00`)
-  return Number.isNaN(date.getTime()) ? null : date.getDay()
-}
+// 日期串（YYYY-MM-DD）→ 星期（0=周日…6=周六），由 timeUtils 统一按北京时间计算
+const getWeekdayFromDateString = (dateString) => getBeijingWeekday(dateString)
 
 // 今天（北京时间）的日期串，作为日期选择器的可选下限
-const todayPlayDate = computed(() => {
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(new Date())
-  } catch {
-    return new Date().toISOString().slice(0, 10)
-  }
-})
+const todayPlayDate = computed(() => getBeijingDateString())
 
 // 格式化播出时段时间范围
 const formatPlayTimeRange = (playTime) => {
@@ -2514,8 +2501,8 @@ const formatPlayTimeOptionLabel = (playTime) => {
 }
 
 // 播出日期 + 时段校验：
-// - 仅当后台开启「时段必选」时，播出时段才必须选择；播出日期始终可选
-// - 指定日期时，该日期所在星期必须开放所选时段（日期优先级高于时段）
+// - 仅当后台开启「时段必选」时，播出时段才必须选择；播出日期始终可选且不填则不限制播出日
+// - 指定日期时，该日期所在星期必须开放所选时段
 const validatePlaySlotSelection = () => {
   if (!playTimeSelectionEnabled.value) return true
 
@@ -2650,7 +2637,7 @@ const submissionOptionsText = computed(() => {
       : locale.value.submissionOptionsTitle || '投稿选项',
     subtitle: requiredMode
       ? locale.value.playSlotModalSubtitle ||
-        '时段必选；播出日期可选，留空将自动分配到最近的可用日期'
+        '时段必选；播出日期可选，留空则由后台排期安排播出日'
       : locale.value.submissionOptionsSubtitle || '留言与点歌券会随本次投稿一并提交，均为选填',
     // 播出时段
     slotSectionTitle: locale.value.playSlotSectionTitle || '播出安排',
@@ -2662,8 +2649,8 @@ const submissionOptionsText = computed(() => {
     timePlaceholder: locale.value.choosePlayTime || '请选择播出时段',
     timeFreeHint: locale.value.playSlotTimeFreeHint || '可选择任一启用的播出时段',
     timeRestrictedHint: locale.value.playSlotTimeRestrictedHint || '仅显示该日期开放的播出时段',
-    autoAssignHint:
-      locale.value.playSlotAutoAssignHint || '未指定播出日期，将自动分配到最近一个该时段开放的日期',
+    dateOptionalHint:
+      locale.value.playSlotDateOptionalHint || '未指定播出日期，具体播出日由后台排期决定',
     noSlotsForDate: locale.value.noSlotsForDate || '该日期没有开放的播出时段，请更换日期',
     timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
     // 投稿留言
@@ -2710,11 +2697,11 @@ const submissionOptionsText = computed(() => {
  * 投稿选项弹窗确认回调：写入选中的日期与时段。
  * - 「更多选项」模式：仅保存选项，不提交
  * - 「时段必选」模式：保存后继续之前中断的投稿
- * 日期仅在选了时段时才有意义，时段留空则一并清空。
+ * 日期与时段各自独立：可以只指定日期，也可以只选时段。
  */
 const handlePlaySlotConfirm = async ({ date, timeId }) => {
   preferredPlayTimeId.value = timeId ? String(timeId) : ''
-  preferredPlayDate.value = timeId ? date || '' : ''
+  preferredPlayDate.value = date || ''
   playSlotError.value = ''
 
   const pending = pendingPlaySlotSubmit.value

@@ -1823,12 +1823,11 @@ export const pages = {
       playSlotTimeRequiredError: '请选择期望播出时段',
       playSlotNotOpenOnDate: '所选播出时段在该日期不开放，请重新选择日期或时段',
       playSlotModalTitle: '选择播出时段',
-      playSlotModalSubtitle: '时段必选；播出日期可选，留空将自动分配到最近的可用日期',
-      playSlotDateOptionalHint: '不指定日期时，系统会分配到最近一个该时段开放的日期',
+      playSlotModalSubtitle: '时段必选；播出日期可选，留空则由后台排期安排播出日',
+      playSlotDateOptionalHint: '未指定播出日期，具体播出日由后台排期决定',
       playSlotDateSelectedHint: '已指定日期，下方仅显示该日期开放的播出时段',
       playSlotTimeFreeHint: '可选择任一启用的播出时段',
       playSlotTimeRestrictedHint: '仅显示该日期开放的播出时段',
-      playSlotAutoAssignHint: '未指定播出日期，将自动分配到最近一个该时段开放的日期',
       weekdaysFull: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
       submissionNote: '投稿备注留言',
       cardCode: '点歌券',
@@ -3232,8 +3231,8 @@ export const admin = {
         `《${title}》指定了播出时段「${playTimeName}」，只能排到该时段`,
       excludedByPlayTime: (count: number) =>
         `${count} 首歌曲指定了其它播出时段，已按硬约束排除在本次自动排期之外`,
-      excludedByDate: (count: number) =>
-        `${count} 首歌曲的期望日期不是当天，已排除在本次自动排期之外`
+      preferredDateHits: (count: number) =>
+        `${count} 首歌曲的期望播出日期是当天，将优先安排`
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
@@ -4366,7 +4365,13 @@ export const admin = {
       runNoCodes: '未派发出任何券',
       deleteConfirm: (name: string) => `确定删除计划「${name}」吗？`,
       runSuccess: (count: number) => `已派发 ${count} 张点歌券`,
-      scanDueDone: (count: number) => `本次执行了 ${count} 个到期计划`
+      scanDueDone: (count: number) => `本次执行了 ${count} 个到期计划`,
+      serverlessHint: '当前为无服务器部署，进程内定时器不会启动：计划只会在外部调度或手动触发时执行。请配置外部定时任务 POST /api/open/card-codes/dispatch-plans/run-due（带 X-API-Key，需 card-codes:write 权限），或需要时点「扫描到期计划」。',
+      runNowOnceConfirm: (name: string) => `「${name}」是单次计划，立即执行会真实发券并结束该计划，确定执行？`,
+      descOnce: (start: string) => `单次：${start}`,
+      descDaily: (time: string) => `每天 ${time}`,
+      descWeekly: (days: string, time: string) => `每周 ${days} ${time}`,
+      descMonthly: (day: number, time: string) => `每月 ${day} 日 ${time}`
     },
     messages2: {
       fetchAssignmentsFailed: '获取派发记录失败',
@@ -5453,8 +5458,11 @@ export const serverErrors = {
   SONG_REPLAY_CURRENT_SEMESTER_ONLY: '只能申请重播当前学期的歌曲',
   SONG_INVITATION_FAILED: '处理邀请失败',
   SONG_SCHEDULED_CANNOT_WITHDRAW: '已排期的歌曲不能撤回',
+  SONG_PLAY_SLOT_REQUIRED: '请选择期望播出时段',
+  SONG_PLAY_DATE_FORMAT_INVALID: '播出日期格式不正确，应为 YYYY-MM-DD',
+  SONG_PLAY_DATE_BEFORE_TODAY: '播出日期不能早于今天',
+  SONG_PLAY_SLOT_NOT_OPEN_ON_DATE: '所选播出时段在 {0}（{1}）不开放，请重新选择日期或时段',
   SONG_SCHEDULE_PREFERRED_TIME_MISMATCH: '指定了播出时段的歌曲只能排到该时段',
-  SONG_SCHEDULE_PREFERRED_DATE_MISMATCH: '该歌曲的期望播出日期与目标日期不一致',
   SONG_PLAYED_CANNOT_WITHDRAW: '已播放的歌曲不能撤回',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: '当前没有活跃学期，无法申请重播',
   SONG_RESTRICTION_SAME_SONG: '《{1}》排期后 {0} 小时内不能重复投稿',

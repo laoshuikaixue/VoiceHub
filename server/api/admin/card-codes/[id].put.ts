@@ -2,6 +2,10 @@ import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
+import { getServerDate } from '~~/server/utils/serverTime'
+import {
+  syncAssignmentOnManualStatusChange
+} from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 
 export default defineEventHandler(async (event) => {
@@ -33,8 +37,8 @@ export default defineEventHandler(async (event) => {
       const current = rows[0]
       if (!current) throw createError({ statusCode: 404, message: '点歌券未找到' })
 
-      const newValues: any = { updatedAt: new Date() }
-      const now = new Date()
+      const now = getServerDate()
+      const newValues: any = { updatedAt: now }
 
       if (status) {
         if (!CARD_CODE_STATUSES.includes(status as any)) {
@@ -89,6 +93,17 @@ export default defineEventHandler(async (event) => {
 
       const res = await tx.update(cardCodes).set(newValues).where(eq(cardCodes.id, id)).returning()
       const newRow = res[0]
+
+      // 手工改状态绕过了派发流程，同步收敛活跃的派发记录，否则 ASSIGNED 记录会永久挂住
+      if (status && newRow.status !== 'ASSIGNED') {
+        await syncAssignmentOnManualStatusChange({
+          tx,
+          cardCodeIds: [id],
+          status: newRow.status,
+          actor: { id: user.id, name: user.name, username: user.username },
+          reason: '管理员手工修改点歌券状态'
+        })
+      }
 
       if (status === 'REDEEMED' && current.status !== status) {
         await tx.insert(cardCodeRedeemLogs).values({

@@ -1,15 +1,10 @@
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc.js'
-import timezone from 'dayjs/plugin/timezone.js'
-import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import { getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
 
-dayjs.extend(utc)
-dayjs.extend(timezone)
-
-const BEIJING_TIMEZONE = 'Asia/Shanghai'
-
-/** 星期取值：0=周日, 1=周一 … 6=周六（与 JS Date#getDay 一致） */
-export const WEEKDAY_VALUES = [0, 1, 2, 3, 4, 5, 6] as const
+/**
+ * 播出时段「适用星期」与播出日期的判定规则。
+ * 星期口径：0=周日, 1=周一 … 6=周六（与 JS Date#getDay 一致），
+ * 时区换算由 timeUtils 统一实现。
+ */
 
 /**
  * 规范化「适用星期」输入：仅保留 0-6 的整数并去重排序。
@@ -23,59 +18,27 @@ export function normalizeWeekdays(value: unknown): number[] | null {
 }
 
 /** 该时段在指定星期是否可选（未配置星期 = 每天可选） */
-export function slotAppliesToWeekday(weekdays: unknown, weekday: number): boolean {
+export function slotAppliesToWeekday(weekdays: unknown, weekday: number | null): boolean {
+  if (weekday === null) return false
   const days = normalizeWeekdays(weekdays)
   return days === null || days.includes(weekday)
 }
 
-/** 当前北京时间日期串（YYYY-MM-DD） */
-export function getBeijingDateString(): string {
-  return getBeijingTimeISOString().slice(0, 10)
+/** 计算日期串（YYYY-MM-DD）在北京时间下的星期（0=周日…6=周六）；无法解析返回 null */
+export function getWeekdayOfDateString(dateString: string): number | null {
+  return getBeijingWeekday(dateString)
 }
 
-/** 计算日期串（YYYY-MM-DD）在 Asia/Shanghai 时区下的星期（0=周日…6=周六） */
-export function getWeekdayOfDateString(dateString: string): number {
-  return dayjs.tz(dateString, BEIJING_TIMEZONE).day()
-}
-
-/** 校验日期串格式与合理性：必须为 YYYY-MM-DD 且不能早于今天（北京时间） */
-export function validatePlayDateString(dateString: unknown): { valid: boolean; message?: string } {
+/** 校验播出日期：必须为 YYYY-MM-DD 且不能早于北京时间今天 */
+export function validatePlayDateString(dateString: unknown): { valid: boolean; code?: string } {
   if (typeof dateString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return { valid: false, message: '播出日期格式不正确，应为 YYYY-MM-DD' }
+    return { valid: false, code: 'SONG_PLAY_DATE_FORMAT_INVALID' }
   }
-  const parsed = dayjs.tz(dateString, BEIJING_TIMEZONE)
-  if (!parsed.isValid()) {
-    return { valid: false, message: '播出日期无效' }
+  if (getBeijingWeekday(dateString) === null) {
+    return { valid: false, code: 'SONG_PLAY_DATE_FORMAT_INVALID' }
   }
   if (dateString < getBeijingDateString()) {
-    return { valid: false, message: '播出日期不能早于今天' }
+    return { valid: false, code: 'SONG_PLAY_DATE_BEFORE_TODAY' }
   }
   return { valid: true }
-}
-
-/**
- * 找到「从今天起最近的一个、该时段开放的日期」。
- *
- * 用于「时段必选但日期可选」的场景：用户只选了时段没选日期时，
- * 由服务端自动分配到最近一个该时段确实开放的日期，避免出现空排期。
- * 未配置星期的时段视为每天开放，直接返回今天。
- *
- * @param weekdays 该时段的适用星期（空/未配置 = 每天）
- * @param startDate 起始日期（含），默认北京时间今天
- * @param horizonDays 最多向后查找的天数
- */
-export function findNearestDateForSlot(
-  weekdays: unknown,
-  startDate?: string,
-  horizonDays = 60
-): string | null {
-  const start = startDate && validatePlayDateString(startDate).valid ? startDate : getBeijingDateString()
-  const base = dayjs.tz(start, BEIJING_TIMEZONE)
-  for (let offset = 0; offset <= horizonDays; offset++) {
-    const candidate = base.add(offset, 'day')
-    if (slotAppliesToWeekday(weekdays, candidate.day())) {
-      return candidate.format('YYYY-MM-DD')
-    }
-  }
-  return null
 }

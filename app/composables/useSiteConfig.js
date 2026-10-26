@@ -158,7 +158,7 @@ export const useSiteConfig = () => {
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
-              aggregateOAuthEnabled: false,
+        aggregateOAuthEnabled: false,
         aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
         customOAuthDisplayName: '',

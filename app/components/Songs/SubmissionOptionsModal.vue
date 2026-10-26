@@ -85,7 +85,7 @@
                   {{ text.noSlotsForDate }}
                 </p>
                 <p v-else-if="localTimeId && !localDate" class="options-hint">
-                  {{ text.autoAssignHint }}
+                  {{ text.dateOptionalHint }}
                 </p>
                 <p v-else class="options-hint">
                   {{ localDate ? text.timeRestrictedHint : text.timeFreeHint }}
@@ -276,6 +276,7 @@ import { computed, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
+import { getBeijingWeekday } from '~/utils/timeUtils'
 
 const props = defineProps({
   show: {
@@ -515,12 +516,7 @@ const cardCodeStatusClass = computed(() => ({
 }))
 
 /** 计算日期串（YYYY-MM-DD）对应的星期，0=周日…6=周六；解析失败返回 null */
-const getWeekday = (dateString) => {
-  if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null
-  const [y, m, d] = dateString.split('-').map(Number)
-  const date = new Date(Date.UTC(y, m - 1, d))
-  return date.getUTCDay()
-}
+const getWeekday = (dateString) => getBeijingWeekday(dateString)
 
 /** 时段是否在指定星期开放（未配置星期 = 每天开放） */
 const slotAppliesToWeekday = (slot, weekday) => {

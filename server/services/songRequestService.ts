@@ -24,11 +24,10 @@ import {
   type LimitType
 } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
-import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import { getBeijingTimeISOString, getWeekdayLabel } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { getServerDate } from '~~/server/utils/serverTime'
 import {
-  findNearestDateForSlot,
   getWeekdayOfDateString,
   slotAppliesToWeekday,
   validatePlayDateString
@@ -42,6 +41,15 @@ import { readSelection } from '~~/server/utils/music-source-plugins/resolver'
 type SongRequestUser = {
   id: number
   role: string
+}
+
+export type SongRequestOptions = {
+  /**
+   * 是否按站点设置强制要求选择播出时段。
+   * 网页投稿表单为 true；机器人 / 开放 API 等没有时段选择界面的入口传 false，
+   * 未提供时段时按「未指定时段」落库。
+   */
+  enforceRequiredPlaySlot?: boolean
 }
 
 const songRequestBodySchema = z.object({
@@ -82,7 +90,13 @@ const songRequestBodySchema = z.object({
   collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
 })
 
-export async function requestSongForUser(event: any, user: SongRequestUser, body: any) {
+export async function requestSongForUser(
+  event: any,
+  user: SongRequestUser,
+  body: any,
+  options: SongRequestOptions = {}
+) {
+  const enforceRequiredPlaySlot = options.enforceRequiredPlaySlot !== false
   const parsedBody = songRequestBodySchema.safeParse(body || {})
   if (!parsedBody.success) {
     const issues = parsedBody.error.issues || []
@@ -344,12 +358,13 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     }
 
     // 播出日期 + 时段选择（依赖 enablePlayTimeSelection 总开关）
-    // 交互口径：时段必选、日期可选；日期优先级高于时段
-    //   - 指定日期 → 该日期星期必须开放所选时段，否则拒绝
-    //   - 未指定日期 → 自动分配到最近一个开放该时段的日期
+    // 口径：时段是硬约束（开启时段必选后网页投稿必须选择，排期也只能排到该时段）；
+    //       播出日期是可选偏好，仅在用户显式选择时落库，未选择保持 null 交由排期决定
     const playTimeSelectionEnabled = systemSettingsData?.enablePlayTimeSelection === true
     const playSlotRequired =
-      playTimeSelectionEnabled && systemSettingsData?.playSlotRequired === true
+      playTimeSelectionEnabled &&
+      systemSettingsData?.playSlotRequired === true &&
+      enforceRequiredPlaySlot
     const requestedPlayDate =
       typeof requestBody.preferredPlayDate === 'string' && requestBody.preferredPlayDate
         ? requestBody.preferredPlayDate
@@ -357,25 +372,25 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const hasPlayTime = !!requestBody.preferredPlayTimeId
 
     let preferredPlayTime = null
-    // 最终落库的播出日期：请求指定的，或自动分配得到的
-    let playDate: string | null = null
+    let playDate: string | null = requestedPlayDate
 
     if (playTimeSelectionEnabled) {
-      // 必选模式下时段必须选择（日期可留空，稍后自动分配）
       if (playSlotRequired && !hasPlayTime) {
-        throw createError({
-          statusCode: 400,
-          message: '请选择期望播出时段'
-        })
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SONG_PLAY_SLOT_REQUIRED,
+          '请选择期望播出时段'
+        )
       }
 
       if (requestedPlayDate) {
         const dateCheck = validatePlayDateString(requestedPlayDate)
         if (!dateCheck.valid) {
-          throw createError({
-            statusCode: 400,
-            message: dateCheck.message || '播出日期无效'
-          })
+          throw createApiError(
+            400,
+            dateCheck.code || SERVER_ERROR_CODES.SONG_PLAY_DATE_FORMAT_INVALID,
+            '播出日期无效'
+          )
         }
       }
 
@@ -394,30 +409,19 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           })
         }
 
+        // 指定的日期不开放该时段则拒绝（弹窗内已按星期过滤，服务端同样校验）
         if (requestedPlayDate) {
-          // 日期 → 时段一致性：下拉框只展示该星期预设时段，服务端同样强校验
           const weekday = getWeekdayOfDateString(requestedPlayDate)
           if (!slotAppliesToWeekday(preferredPlayTime.weekdays, weekday)) {
-            const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-            throw createError({
-              statusCode: 400,
-              message: `所选播出时段在 ${requestedPlayDate}（${weekdayNames[weekday]}）不开放，请重新选择日期或时段`
-            })
+            const weekdayLabel = getWeekdayLabel(weekday)
+            throw createApiError(
+              400,
+              SERVER_ERROR_CODES.SONG_PLAY_SLOT_NOT_OPEN_ON_DATE,
+              `所选播出时段在 ${requestedPlayDate}（${weekdayLabel}）不开放，请重新选择日期或时段`,
+              { params: [requestedPlayDate, weekdayLabel] }
+            )
           }
-          playDate = requestedPlayDate
-        } else {
-          // 未指定日期：自动分配到最近一个开放该时段的日期
-          const assignedDate = findNearestDateForSlot(preferredPlayTime.weekdays)
-          if (!assignedDate) {
-            throw createError({
-              statusCode: 400,
-              message: '所选播出时段在近期没有开放的日期，请更换时段或指定日期'
-            })
-          }
-          playDate = assignedDate
         }
-      } else {
-        playDate = requestedPlayDate
       }
     } else if (requestedPlayDate || hasPlayTime) {
       // 功能未开启时忽略任何日期/时段入参，防止绕过开关写入

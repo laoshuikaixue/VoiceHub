@@ -7,6 +7,9 @@ dayjs.extend(timezone)
 
 const BEIJING_TIMEZONE = 'Asia/Shanghai'
 
+/** 星期标签权威表：0=周日 … 6=周六 */
+const WEEKDAY_LABELS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
 /**
  * 时间工具函数
  * 使用 dayjs 处理北京时间（UTC+8）相关逻辑
@@ -93,6 +96,29 @@ export function getBeijingTimeISOString(): string {
 }
 
 /**
+ * 获取北京时间的日期串（YYYY-MM-DD），用于「今天」边界与按日期比较
+ */
+export function getBeijingDateString(date?: Date): string {
+  const target = date ? dayjs(date).tz(BEIJING_TIMEZONE) : dayjs(getSyncedNow()).tz(BEIJING_TIMEZONE)
+  return target.format('YYYY-MM-DD')
+}
+
+/**
+ * 日期串（YYYY-MM-DD）按北京时间对应的星期（0=周日 … 6=周六）；无法解析返回 null
+ */
+export function getBeijingWeekday(dateString: string): number | null {
+  if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null
+  const parsed = dayjs.tz(dateString, BEIJING_TIMEZONE)
+  return parsed.isValid() ? parsed.day() : null
+}
+
+/** 星期数字（0=周日 … 6=周六）→ 中文标签 */
+export function getWeekdayLabel(weekday: number | null | undefined): string {
+  if (weekday === null || weekday === undefined) return ''
+  return WEEKDAY_LABELS[weekday] ?? ''
+}
+
+/**
  * 获取北京时间的小时 (0-23)
  */
 export function getBeijingHour(date: Date): number {
@@ -135,8 +161,7 @@ export function getBeijingEndOfWeek(date?: Date): Date {
 
 /** 北京时间星期标签，供排期展示统一使用。 */
 export function getBeijingWeekdayLabel(date: Date): string {
-  const labels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  return labels[dayjs(date).tz(BEIJING_TIMEZONE).day()] ?? ''
+  return getWeekdayLabel(dayjs(date).tz(BEIJING_TIMEZONE).day())
 }
 
 /**

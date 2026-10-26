@@ -5,6 +5,9 @@ import {
   apiKeyPermissions,
   apiKeys,
   apiLogs,
+  cardCodeAssignments,
+  cardCodeDispatchPlans,
+  cardCodeDispatchRuns,
   cardCodeRedeemLogs,
   cardCodes,
   collaborationLogs,
@@ -192,6 +195,9 @@ export default defineEventHandler(async (event) => {
           await db.delete(apiKeys)
           await db.delete(notifications)
           await db.delete(notificationSettings)
+          await db.delete(cardCodeDispatchRuns)
+          await db.delete(cardCodeDispatchPlans)
+          await db.delete(cardCodeAssignments)
           await db.delete(cardCodeRedeemLogs)
           await db.delete(collaborationLogs)
           await db.delete(songCollaborators)
@@ -275,6 +281,9 @@ export default defineEventHandler(async (event) => {
           await db.delete(schedules)
           await db.delete(votes)
           await db.delete(songs)
+          await db.delete(cardCodeDispatchRuns)
+          await db.delete(cardCodeDispatchPlans)
+          await db.delete(cardCodeAssignments)
           await db.delete(cardCodes)
           await db.delete(songBlacklists)
           await db.delete(emailTemplates)
@@ -321,6 +330,9 @@ export default defineEventHandler(async (event) => {
       'schedules',
       'scheduleSongPool',
       'cardCodeRedeemLogs',
+      'cardCodeAssignments',
+      'cardCodeDispatchPlans',
+      'cardCodeDispatchRuns',
       'notificationSettings',
       'notifications',
       'apiKeys',
@@ -389,6 +401,7 @@ export default defineEventHandler(async (event) => {
                             'remark',
                             'avatarProvider',
                             'avatarProviderUserId',
+                            'tags',
                             'legalConsentVersion'
                           ]
 
@@ -747,7 +760,7 @@ export default defineEventHandler(async (event) => {
                           return
                         }
 
-                        const mapUserId = async (field: 'lockedBy' | 'redeemedBy') => {
+                        const mapUserId = async (field: 'lockedBy' | 'redeemedBy' | 'assignedTo') => {
                           if (!record[field]) return null
                           const mappedUserId = userIdMapping.get(record[field])
                           if (mappedUserId) return mappedUserId
@@ -762,6 +775,11 @@ export default defineEventHandler(async (event) => {
 
                         cardCodeData.lockedBy = await mapUserId('lockedBy')
                         cardCodeData.redeemedBy = await mapUserId('redeemedBy')
+                        // 已派发券必须连持有人一起恢复，否则恢复后 status=ASSIGNED 但无人持有，谁也用不了
+                        cardCodeData.assignedTo = await mapUserId('assignedTo')
+                        cardCodeData.assignedAt = record.assignedAt
+                          ? new Date(record.assignedAt)
+                          : null
                         cardCodeData.lockedAt = record.lockedAt ? new Date(record.lockedAt) : null
                         cardCodeData.redeemedAt = record.redeemedAt
                           ? new Date(record.redeemedAt)
@@ -2057,6 +2075,206 @@ export default defineEventHandler(async (event) => {
                         break
                       }
 
+                      case 'cardCodeAssignments': {
+                        // 派发记录是流水，只在替换模式按备份原 id 落回；合并模式跳过并提示，避免跨库 id 语义混乱
+                        if (mode === 'merge') {
+                          console.warn('合并模式下跳过点歌券派发记录恢复')
+                          return
+                        }
+                        if (!record.codeSnapshot) {
+                          console.warn('点歌券派发记录缺少 codeSnapshot，跳过此记录')
+                          return
+                        }
+
+                        const mapAssignmentUserId = async (value: unknown) => {
+                          const id = Number(value)
+                          if (!Number.isInteger(id) || id <= 0) return null
+                          const mapped = userIdMapping.get(id)
+                          if (mapped) return mapped
+                          const exists = await tx
+                            .select({ id: users.id })
+                            .from(users)
+                            .where(eq(users.id, id))
+                            .limit(1)
+                          return exists.length > 0 ? id : null
+                        }
+
+                        let assignmentCardCodeId: number | null = null
+                        const rawAssignmentCardCodeId = Number(record.cardCodeId)
+                        if (Number.isInteger(rawAssignmentCardCodeId) && rawAssignmentCardCodeId > 0) {
+                          assignmentCardCodeId = cardCodeIdMapping.get(rawAssignmentCardCodeId) || rawAssignmentCardCodeId
+                          const cardCodeExists = await tx
+                            .select({ id: cardCodes.id })
+                            .from(cardCodes)
+                            .where(eq(cardCodes.id, assignmentCardCodeId as number))
+                            .limit(1)
+                          if (cardCodeExists.length === 0) assignmentCardCodeId = null
+                        }
+
+                        const assignmentData = {
+                          id: record.id,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
+                          cardCodeId: assignmentCardCodeId,
+                          codeSnapshot: record.codeSnapshot,
+                          userId: await mapAssignmentUserId(record.userId),
+                          userNameSnapshot: record.userNameSnapshot,
+                          assignedBy: await mapAssignmentUserId(record.assignedBy),
+                          assignedByName: record.assignedByName,
+                          assignedAt: record.assignedAt ? new Date(record.assignedAt) : new Date(),
+                          status: record.status || 'ASSIGNED',
+                          usedAt: record.usedAt ? new Date(record.usedAt) : null,
+                          recycledAt: record.recycledAt ? new Date(record.recycledAt) : null,
+                          recycledBy: await mapAssignmentUserId(record.recycledBy),
+                          recycledByName: record.recycledByName,
+                          recycleReason: record.recycleReason,
+                          failureReason: record.failureReason,
+                          notifyStatus: record.notifyStatus || 'SKIPPED',
+                          notifyError: record.notifyError,
+                          note: record.note
+                        }
+
+                        const existingAssignment = await tx
+                          .select({ id: cardCodeAssignments.id })
+                          .from(cardCodeAssignments)
+                          .where(eq(cardCodeAssignments.id, record.id))
+                          .limit(1)
+                        if (existingAssignment.length > 0) {
+                          await tx
+                            .update(cardCodeAssignments)
+                            .set(assignmentData)
+                            .where(eq(cardCodeAssignments.id, record.id))
+                        } else {
+                          await tx.insert(cardCodeAssignments).values(assignmentData)
+                        }
+                        break
+                      }
+
+                      case 'cardCodeDispatchPlans': {
+                        if (mode === 'merge') {
+                          console.warn('合并模式下跳过自动派发计划恢复')
+                          return
+                        }
+                        if (!record.name || !record.startAt) {
+                          console.warn('自动派发计划缺少必填字段，跳过此记录')
+                          return
+                        }
+
+                        let planCreatedBy: number | null = null
+                        const rawPlanCreator = Number(record.createdBy)
+                        if (Number.isInteger(rawPlanCreator) && rawPlanCreator > 0) {
+                          planCreatedBy = userIdMapping.get(rawPlanCreator) || rawPlanCreator
+                          const creatorExists = await tx
+                            .select({ id: users.id })
+                            .from(users)
+                            .where(eq(users.id, planCreatedBy as number))
+                            .limit(1)
+                          if (creatorExists.length === 0) planCreatedBy = null
+                        }
+
+                        // CHECK 约束会拒非法值，这里先回落到合法默认，避免一条脏记录拖整表事务
+                        const rawPlanCount = Number(record.countPerUser)
+                        const rawPlanDay = Number(record.dayOfMonth)
+
+                        const planData = {
+                          id: record.id,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
+                          name: record.name,
+                          enabled: record.enabled !== false,
+                          countPerUser:
+                            Number.isInteger(rawPlanCount) && rawPlanCount >= 1 && rawPlanCount <= 100
+                              ? rawPlanCount
+                              : 1,
+                          recipientIds: Array.isArray(record.recipientIds)
+                            ? record.recipientIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
+                            : [],
+                          note: record.note ?? null,
+                          notify: record.notify !== false,
+                          prefix: record.prefix ?? null,
+                          scheduleType: ['once', 'daily', 'weekly', 'monthly'].includes(record.scheduleType)
+                            ? record.scheduleType
+                            : 'once',
+                          startAt: new Date(record.startAt),
+                          endAt: record.endAt ? new Date(record.endAt) : null,
+                          weekdays: Array.isArray(record.weekdays)
+                            ? record.weekdays.map((day: unknown) => Number(day)).filter((day: number) => Number.isInteger(day) && day >= 0 && day <= 6)
+                            : [],
+                          dayOfMonth:
+                            Number.isInteger(rawPlanDay) && rawPlanDay >= 1 && rawPlanDay <= 31
+                              ? rawPlanDay
+                              : null,
+                          nextRunAt: record.nextRunAt ? new Date(record.nextRunAt) : null,
+                          lastRunAt: record.lastRunAt ? new Date(record.lastRunAt) : null,
+                          runningAt: null,
+                          lastStatus: record.lastStatus ?? null,
+                          lastMessage: record.lastMessage ?? null,
+                          runCount: Number(record.runCount) || 0,
+                          createdBy: planCreatedBy,
+                          createdByName: record.createdByName ?? null
+                        }
+
+                        const existingPlan = await tx
+                          .select({ id: cardCodeDispatchPlans.id })
+                          .from(cardCodeDispatchPlans)
+                          .where(eq(cardCodeDispatchPlans.id, record.id))
+                          .limit(1)
+                        if (existingPlan.length > 0) {
+                          await tx
+                            .update(cardCodeDispatchPlans)
+                            .set(planData)
+                            .where(eq(cardCodeDispatchPlans.id, record.id))
+                        } else {
+                          await tx.insert(cardCodeDispatchPlans).values(planData)
+                        }
+                        break
+                      }
+
+                      case 'cardCodeDispatchRuns': {
+                        if (mode === 'merge') {
+                          console.warn('合并模式下跳过自动派发执行历史恢复')
+                          return
+                        }
+                        const runPlanId = Number(record.planId)
+                        if (!Number.isInteger(runPlanId) || runPlanId <= 0) return
+                        const planExists = await tx
+                          .select({ id: cardCodeDispatchPlans.id })
+                          .from(cardCodeDispatchPlans)
+                          .where(eq(cardCodeDispatchPlans.id, runPlanId))
+                          .limit(1)
+                        if (planExists.length === 0) return
+
+                        const runData = {
+                          id: record.id,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+                          planId: runPlanId,
+                          planName: record.planName ?? null,
+                          triggerSource: record.triggerSource || 'SCHEDULED',
+                          startedAt: record.startedAt ? new Date(record.startedAt) : new Date(),
+                          finishedAt: record.finishedAt ? new Date(record.finishedAt) : null,
+                          status: record.status || 'RUNNING',
+                          assignedCount: Number(record.assignedCount) || 0,
+                          failedCount: Number(record.failedCount) || 0,
+                          servedRecipients: Number(record.servedRecipients) || 0,
+                          message: record.message ?? null
+                        }
+
+                        const existingRun = await tx
+                          .select({ id: cardCodeDispatchRuns.id })
+                          .from(cardCodeDispatchRuns)
+                          .where(eq(cardCodeDispatchRuns.id, record.id))
+                          .limit(1)
+                        if (existingRun.length > 0) {
+                          await tx
+                            .update(cardCodeDispatchRuns)
+                            .set(runData)
+                            .where(eq(cardCodeDispatchRuns.id, record.id))
+                        } else {
+                          await tx.insert(cardCodeDispatchRuns).values(runData)
+                        }
+                        break
+                      }
+
                       case 'votes':
                         // 验证外键约束
                         let validVoteUserId = record.userId
@@ -2649,7 +2867,12 @@ export default defineEventHandler(async (event) => {
       'SongBlacklist',
       'SongReplayRequest',
       'RequestTime',
-      'EmailTemplate'
+      'EmailTemplate',
+      'CardCode',
+      'CardCodeRedeemLog',
+      'CardCodeAssignment',
+      'CardCodeDispatchPlan',
+      'CardCodeDispatchRun'
     ]
 
     for (const tableName of tablesToReset) {

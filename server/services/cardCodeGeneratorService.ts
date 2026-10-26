@@ -123,31 +123,7 @@ export async function createCardCodes(params: {
 }
 
 /**
- * 查询指定券码是否已存在。
- */
-export async function findExistingCardCodes(codes: string[]): Promise<Set<string>> {
-  const uniqueCodes = [...new Set(codes.map((code) => String(code).trim().toUpperCase()).filter(Boolean))]
-  if (!uniqueCodes.length) return new Set()
-  const rows = await db
-    .select({ code: cardCodes.code })
-    .from(cardCodes)
-    .where(inArray(cardCodes.code, uniqueCodes))
-  return new Set(rows.map((row) => row.code))
-}
-
-/**
- * 回收一批券到 AVAILABLE 状态（派发生成环节失败时清理孤儿券）。
- */
-export async function releaseCardCodes(ids: number[]): Promise<void> {
-  if (!ids.length) return
-  await db
-    .update(cardCodes)
-    .set({ status: 'AVAILABLE', assignedTo: null, assignedAt: null, updatedAt: new Date() })
-    .where(inArray(cardCodes.id, ids))
-}
-
-/**
- * 删除一批券（仅用于生成后整体未派发成功的回滚场景）。
+ * 删除一批券（仅用于生成后未派发成功的清理场景）。
  */
 export async function deleteCardCodes(ids: number[]): Promise<void> {
   if (!ids.length) return

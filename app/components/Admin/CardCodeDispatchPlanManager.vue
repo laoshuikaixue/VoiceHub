@@ -24,6 +24,13 @@
       </div>
     </div>
 
+    <p
+      v-if="isExternalScheduler"
+      class="rounded-xl border border-border-secondary bg-warning-10 px-3 py-2.5 text-[11px] leading-relaxed text-warning"
+    >
+      {{ dp.serverlessHint }}
+    </p>
+
     <p v-if="loading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
       {{ locale.loading }}
     </p>
@@ -192,12 +199,12 @@
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.dispatchPlans.startAt }}</label>
-                <input
+                <AppDateTimePicker
                   v-model="form.startAtLocal"
-                  type="datetime-local"
-                  step="60"
-                  class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
-                >
+                  size="lg"
+                  rounded="xl"
+                  :placeholder="locale.dispatchPlans.startAt"
+                />
                 <p v-if="startAtIsPast" class="mt-1.5 text-[11px] leading-relaxed text-warning">
                   {{ dp.value?.startAtPastHint || '所选时间已过，该计划不会自动执行；如需马上发券，请保存后在列表点「立即执行」。' }}
                 </p>
@@ -207,12 +214,12 @@
               </div>
               <div>
                 <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.dispatchPlans.endAt }}</label>
-                <input
+                <AppDateTimePicker
                   v-model="form.endAtLocal"
-                  type="datetime-local"
-                  step="60"
-                  class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
-                >
+                  size="lg"
+                  rounded="xl"
+                  :placeholder="locale.dispatchPlans.endAt"
+                />
               </div>
             </div>
 
@@ -286,20 +293,23 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { Plus, Send, X } from '@lucide/vue'
+import AppDateTimePicker from '~/components/UI/Common/AppDateTimePicker.vue'
 import CardCodeRecipientPicker from '~/components/Admin/CardCodeRecipientPicker.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'
+import { formatDateTime, parseToBeijingTime } from '~/utils/timeUtils'
+import { getSyncedTimestamp } from '~/composables/useSyncedTime'
 
 const { showToast } = useToast()
-const { admin } = useLocale()
+const { admin, common } = useLocale()
 const locale = computed(() => admin.value?.cardCodesManager || {})
 const { msg: getMessage } = useLocaleText(locale)
 // dispatchPlans 是 cardCodesManager 下的嵌套对象，单独取一层，避免每层都写长链
 const dp = computed(() => locale.value?.dispatchPlans || {})
 
-const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
-const weekdayLabels = WEEKDAY_LABELS
+// 星期标签复用日期选择器的本地化表，避免英文界面混出中文
+const weekdayLabels = computed(() => common.value?.datePicker?.weekdays || [])
 
 const scheduleOptions = computed(() => [
   { value: 'once', label: dp.value?.scheduleOnce || '指定日期（一次）' },
@@ -314,6 +324,9 @@ const saving = ref(false)
 const runningId = ref(null)
 const formOpen = ref(false)
 const editingId = ref(null)
+// external：无服务器部署，进程内定时器不跑，界面必须说明怎么触发
+const scheduler = ref('internal')
+const isExternalScheduler = computed(() => scheduler.value === 'external')
 
 const emptyForm = () => ({
   name: '',
@@ -336,66 +349,41 @@ const startAtIsPast = computed(() => {
   if (form.value.scheduleType !== 'once') return false
   const iso = toISO(form.value.startAtLocal)
   if (!iso) return false
-  return new Date(iso).getTime() <= Date.now()
+  return new Date(iso).getTime() <= getSyncedTimestamp()
 })
 
-// ===== 时间处理：业务统一用北京时间（Asia/Shanghai）=====
-// 表单用 datetime-local（无时区），按北京时间理解；提交时补 +08:00 转成 UTC ISO 给后端
+// ===== 时间处理：表单按北京时间理解，入库前统一走 timeUtils 换算 =====
 const toISO = (local) => {
   if (!local) return null
-  const withTz = `${local}:00+08:00`
-  const d = new Date(withTz)
-  return Number.isNaN(d.getTime()) ? null : d.toISOString()
+  const date = parseToBeijingTime(local)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
-const formatBJ = (iso) => {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  try {
-    return new Intl.DateTimeFormat('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(d)
-  } catch {
-    return String(iso)
-  }
+const formatBJ = (value) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? String(value) : formatDateTime(date)
 }
 
-const toLocalInput = (iso) => {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(d).replace(', ', 'T')
-  } catch {
-    return ''
-  }
+const toLocalInput = (value) => {
+  if (!value) return ''
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : formatDateTime(date, 'YYYY-MM-DDTHH:mm')
 }
 
 const describeSchedule = (plan) => {
   const start = formatBJ(plan.startAt)
   const time = start.slice(-5)
-  if (plan.scheduleType === 'once') return `单次：${start}`
-  if (plan.scheduleType === 'daily') return `每天 ${time} 起`
+  if (plan.scheduleType === 'once') return dp.value?.descOnce?.(start) || start
+  if (plan.scheduleType === 'daily') return dp.value?.descDaily?.(time) || time
   if (plan.scheduleType === 'weekly') {
-    const days = (plan.weekdays || []).map((d) => WEEKDAY_LABELS[d] ?? '?').join('、')
-    return `每周 ${days || '—'} ${time} 起`
+    const days = (plan.weekdays || [])
+      .map((day) => weekdayLabels.value[day] ?? '')
+      .filter(Boolean)
+      .join('、')
+    return dp.value?.descWeekly?.(days, time) || `${days} ${time}`
   }
-  if (plan.scheduleType === 'monthly') return `每月 ${plan.dayOfMonth} 日 ${time} 起`
+  if (plan.scheduleType === 'monthly') return dp.value?.descMonthly?.(plan.dayOfMonth, time) || `${plan.dayOfMonth} ${time}`
   return plan.scheduleType
 }
 
@@ -414,6 +402,7 @@ const fetchPlans = async () => {
   try {
     const res = await $fetch('/api/admin/card-codes/dispatch-plans')
     plans.value = Array.isArray(res?.data) ? res.data : []
+    scheduler.value = res?.scheduler === 'external' ? 'external' : 'internal'
   } catch (error) {
     console.error('加载自动派发计划失败', error)
     showToast(dp.value?.loadFailed || '加载自动派发计划失败', 'error')
@@ -548,6 +537,13 @@ const toggleEnabled = async (plan) => {
 }
 
 const runNow = async (plan) => {
+  // 单次计划立即执行会真实发券并结束排期，先让管理员确认
+  if (plan.scheduleType === 'once') {
+    const confirmed = window.confirm(
+      dp.value?.runNowOnceConfirm?.(plan.name) || `「${plan.name}」是单次计划，立即执行会真实发券并结束该计划，确定执行？`
+    )
+    if (!confirmed) return
+  }
   runningId.value = plan.id
   try {
     const res = await $fetch(`/api/admin/card-codes/dispatch-plans/${plan.id}/run`, { method: 'POST' })
@@ -571,8 +567,8 @@ const runNow = async (plan) => {
 const scanDue = async () => {
   try {
     const res = await $fetch('/api/admin/card-codes/dispatch-plans/run-due', { method: 'POST' })
-    const results = Array.isArray(res?.results) ? res.results : []
-    const executed = results.length
+    const results = Array.isArray(res?.data) ? res.data : []
+    const executed = typeof res?.executed === 'number' ? res.executed : results.length
     showToast(getMessage('dispatchPlans.scanDueDone', executed), 'success')
     await fetchPlans()
   } catch (error) {

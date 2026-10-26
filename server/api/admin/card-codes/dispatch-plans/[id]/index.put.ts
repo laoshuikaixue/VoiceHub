@@ -85,7 +85,8 @@ export default defineEventHandler(async (event) => {
     .update(cardCodeDispatchPlans)
     .set({
       name: input.name,
-      enabled: body.enabled !== false,
+      // 编辑表单不提交 enabled，缺省必须沿用原值，否则已停用的计划一改备注就被静默重启并发券
+      enabled: body.enabled === undefined ? existing.enabled : body.enabled !== false,
       countPerUser: input.countPerUser,
       recipientIds: input.recipientIds,
       note: input.note,

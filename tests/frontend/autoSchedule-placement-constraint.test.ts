@@ -67,7 +67,6 @@ test('期望时段是硬约束：时段不符的歌曲被排除并计数', () =>
 
   assert.deepEqual(res.eligible.map((s) => s.id), [2, 3])
   assert.equal(res.excludedByPlayTime, 1)
-  assert.equal(res.excludedByDate, 0)
 })
 
 test('未指定时段视图下，带期望时段的歌曲不参与排期', () => {
@@ -86,7 +85,7 @@ test('未传 targetPlayTimeId 时不启用时段约束', () => {
   assert.equal(res.excludedByPlayTime, 0)
 })
 
-test('期望日期是软约束：非当天的歌曲不参与本次排期并计数', () => {
+test('期望日期是软偏好：非当天的歌曲仍参与本次排期', () => {
   const candidates = [
     mk(1, { preferredPlayDate: '2026-03-18' }),
     mk(2, { preferredPlayDate: '2026-03-19' }),
@@ -94,9 +93,15 @@ test('期望日期是软约束：非当天的歌曲不参与本次排期并计�
   ]
   const res = filterByExpectedPlacement(candidates, { targetDate: '2026-03-18', targetPlayTimeId: null })
 
-  assert.deepEqual(res.eligible.map((s) => s.id), [1, 3])
-  assert.equal(res.excludedByDate, 1)
+  assert.deepEqual(res.eligible.map((s) => s.id), [1, 2, 3])
   assert.equal(res.excludedByPlayTime, 0)
+})
+
+test('期望日期已过期的歌曲不会被锁死在排期之外', () => {
+  const candidates = [mk(1, { preferredPlayDate: '2020-01-01' }), mk(2)]
+  const res = filterByExpectedPlacement(candidates, { targetDate: '2026-03-18', targetPlayTimeId: 2 })
+
+  assert.deepEqual(res.eligible.map((s) => s.id), [1, 2])
 })
 
 test('未设置期望日期/时段的歌曲始终可选', () => {
@@ -106,16 +111,14 @@ test('未设置期望日期/时段的歌曲始终可选', () => {
   })
 
   assert.deepEqual(res.eligible.map((s) => s.id), [1, 2])
-  assert.equal(res.excludedByDate, 0)
   assert.equal(res.excludedByPlayTime, 0)
 })
 
-test('期望时段不符优先于期望日期被判定为时段排除', () => {
+test('时段硬约束优先于日期偏好生效', () => {
   const candidates = [mk(1, { preferredPlayDate: '2026-03-19', preferredPlayTimeId: 7 })]
   const res = filterByExpectedPlacement(candidates, { targetDate: '2026-03-18', targetPlayTimeId: 2 })
 
   assert.equal(res.excludedByPlayTime, 1)
-  assert.equal(res.excludedByDate, 0)
   assert.equal(res.eligible.length, 0)
 })
 
@@ -155,23 +158,25 @@ test('countExpectedDateHits 只统计期望日期等于目标日期的歌曲', (
 
 // -------------------------------------------------------------- 算法层集成
 
-test('autoSchedule 不会把期望日期不符的歌曲排进当天', () => {
+test('autoSchedule 优先安排期望日期命中当天的歌曲，但不排除其它候选', () => {
   const candidates = [
     mk(1, { preferredPlayDate: '2026-03-19', durationSeconds: 300 }),
     mk(2, { preferredPlayDate: '2026-03-18', durationSeconds: 300 }),
     mk(3, { preferredPlayDate: '2026-03-18', durationSeconds: 300 })
   ]
-  const result = autoSchedule('middle', 10, candidates, [], 1, null, null, 0.8, {
+  // 目标 15 分钟 = 三首之和，证明期望日期不符的歌曲仍在候选池内
+  const full = autoSchedule('middle', 15, candidates, [], 1, null, null, 0.8, {
     targetDate: '2026-03-18',
     targetPlayTimeId: null
   })
+  assert.equal(full.songs.length, 3, '三首歌曲都应参与排期')
 
-  assert.ok(result.songs.length > 0)
-  assert.ok(
-    !result.songs.some((s) => s.id === 1),
-    '期望日期为 2026-03-19 的歌曲不应出现在 2026-03-18 的排期中'
-  )
-  assert.ok(result.songs.some((s) => s.id === 2), '期望日期命中的歌曲应被安排')
+  // 目标 10 分钟 = 两首，命中当天期望日期的歌曲应优先入选
+  const partial = autoSchedule('middle', 10, candidates, [], 1, null, null, 0.8, {
+    targetDate: '2026-03-18',
+    targetPlayTimeId: null
+  })
+  assert.equal(countExpectedDateHits(partial.songs, '2026-03-18'), 2)
 })
 
 test('autoSchedule 不会把带期望时段的歌曲排到其它时段', () => {
@@ -190,19 +195,18 @@ test('autoSchedule 不会把带期望时段的歌曲排到其它时段', () => {
   assert.ok(result.songs.some((s) => s.id === 1), '期望时段为 2 的歌曲应被安排')
 })
 
-test('autoScheduleExhaustive 同样遵守期望落位约束', () => {
+test('autoScheduleExhaustive 同样只把期望日期作为优先而非排除', () => {
   const candidates = [
     mk(1, { preferredPlayDate: '2026-03-19', durationSeconds: 300 }),
     mk(2, { preferredPlayDate: '2026-03-18', durationSeconds: 300 })
   ]
-  const result = autoScheduleExhaustive('middle', 5, candidates, [], 1, null, null, 0.8, {
+  // 目标 10 分钟 = 两首之和，日期不符的歌曲不应被排除
+  const result = autoScheduleExhaustive('middle', 10, candidates, [], 1, null, null, 0.8, {
     targetDate: '2026-03-18',
     targetPlayTimeId: null
   })
 
-  assert.ok(result.songs.length > 0)
-  assert.ok(!result.songs.some((s) => s.id === 1))
-  assert.ok(result.songs.some((s) => s.id === 2))
+  assert.equal(result.songs.length, 2)
 })
 
 test('方案比较会优先选择期望日期命中更多的方案', () => {

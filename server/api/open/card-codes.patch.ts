@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
+import { syncAssignmentOnManualStatusChange } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
 const MAX_ID_LENGTH = 32
@@ -103,6 +104,17 @@ export default defineEventHandler(async (event) => {
       const beforeMap = new Map(beforeRows.map((row) => [row.id, row]))
 
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, ids)).returning()
+
+      // 开放 API 改状态同样要收敛活跃的派发记录，与后台手工改状态保持一致
+      if (status && updatedRows.length > 0) {
+        await syncAssignmentOnManualStatusChange({
+          tx,
+          cardCodeIds: updatedRows.map((row) => row.id),
+          status,
+          actor: { id: operatorId, name: null, username: null },
+          reason: '开放 API 修改点歌券状态'
+        })
+      }
 
       if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows

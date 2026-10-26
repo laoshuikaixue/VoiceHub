@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { createError } from 'h3'
 import { cardCodeRedeemLogs, cardCodes } from '~/drizzle/schema'
+import { getServerDate } from '~~/server/utils/serverTime'
 import {
   markCardCodeAssignmentUsed,
   restoreCardCodeAssignment
@@ -13,7 +14,7 @@ type CardCodeTransitionContext = {
   at?: Date
 }
 
-const getTransitionTime = (at?: Date) => at || new Date()
+const getTransitionTime = (at?: Date) => at || getServerDate()
 
 const readCardCode = async (tx: any, cardCodeId: number) => {
   const rows = await tx.select().from(cardCodes).where(eq(cardCodes.id, cardCodeId)).limit(1)
@@ -102,12 +103,17 @@ export const restoreCardCodeAfterScheduleRemoval = async (
     return { changed: false, status: current.status }
   }
 
+  // 派发给指定用户的券移出排期时归还给持有人，与撤回投稿口径一致；
+  // 否则券停在 LOCKED 且派发记录停在 USED，用户用不了、管理员回收不了也无法重派。
+  const backToAssignee = current.assignedTo != null
+  const restoredStatus = backToAssignee ? 'ASSIGNED' : 'LOCKED'
+
   const restoreResult = await tx
     .update(cardCodes)
     .set({
-      status: 'LOCKED',
-      lockedBy: current.lockedBy || operatorId,
-      lockedAt: current.lockedAt || restoredAt,
+      status: restoredStatus,
+      lockedBy: backToAssignee ? null : current.lockedBy || operatorId,
+      lockedAt: backToAssignee ? null : current.lockedAt || restoredAt,
       redeemedBy: null,
       redeemedAt: null,
       updatedAt: restoredAt
@@ -128,7 +134,12 @@ export const restoreCardCodeAfterScheduleRemoval = async (
     songId
   })
 
-  return { changed: true, status: 'LOCKED' }
+  // 归还给持有人时，派发记录从「已使用」回到「已派发」
+  if (backToAssignee) {
+    await restoreCardCodeAssignment(tx, cardCodeId, restoredAt)
+  }
+
+  return { changed: true, status: restoredStatus }
 }
 
 export const releaseCardCodeAfterSongWithdrawal = async (

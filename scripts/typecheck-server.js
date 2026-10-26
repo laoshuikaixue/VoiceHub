@@ -11,15 +11,17 @@ import { resolve } from 'path'
 const TSCONFIG = '.nuxt/tsconfig.server.json'
 const TSC = resolve('node_modules/typescript/bin/tsc')
 
-// 纳入闸门的错误码：属性不存在且给出建议 / 对象字面量未知属性 / 实参数量不符 /
-// 模块无此导出 / 找不到模块
-const GATED_CODES = new Set(['2551', '2561', '2554', '2305', '2307'])
+// 纳入闸门的错误码：属性不存在且给出建议 / 对象字面量未知属性 / 属性不存在无建议 /
+// 实参数量不符 / 模块无此导出 / 找不到模块
+const GATED_CODES = new Set(['2551', '2561', '2554', '2353', '2305', '2307'])
 
 // 已知且暂无法在仓库内消除的条目（文件 + 错误码 + 出现次数），新增或超出即失败。
 const BASELINE = {
   'server/api/notifications/settings.post.ts|TS2307': 1,
   'server/utils/music-source-plugins/network.ts|TS2554': 1,
-  'server/utils/qq_music_sdk.ts|TS2554': 1
+  'server/utils/qq_music_sdk.ts|TS2554': 1,
+  // drizzle 的 PgTransactionConfig 不接 timeout，该超时参数在此类下确实不存在
+  'server/api/admin/backup/restore.post.ts|TS2353': 1
 }
 
 if (!existsSync(TSCONFIG)) {

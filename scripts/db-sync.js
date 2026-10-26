@@ -160,6 +160,19 @@ async function ensureUserStatusEnumValues(sql) {
   }
 }
 
+/** 补齐 card_code_status 的派发枚举值（push 前手工补，避免旧库缺值导致运行期报错） */
+async function ensureCardCodeStatusEnumValues(sql) {
+  const assignedExists = await enumValueExists(sql, 'card_code_status', 'ASSIGNED')
+  if (assignedExists) return
+
+  const lockedExists = await enumValueExists(sql, 'card_code_status', 'LOCKED')
+  if (lockedExists) {
+    await sql`ALTER TYPE "public"."card_code_status" ADD VALUE 'ASSIGNED' BEFORE 'LOCKED'`
+  } else {
+    await sql`ALTER TYPE "public"."card_code_status" ADD VALUE 'ASSIGNED'`
+  }
+}
+
 async function tableExists(sql, tableName) {
   const result = await sql`
     SELECT EXISTS (
@@ -236,7 +249,8 @@ async function ensureNoDuplicateUsernames(sql) {
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
     ['user_status', ['graduate', 'pending', 'rejected']],
-    ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']]
+    ['card_code_status', ['AVAILABLE', 'ASSIGNED', 'LOCKED', 'REDEEMED', 'INVALID']],
+    ['card_code_assignment_status', ['ASSIGNED', 'USED', 'RECYCLED', 'FAILED']]
   ]
   const requiredTables = [
     'api_keys',
@@ -248,6 +262,9 @@ async function checkSchemaConsistency(sql) {
     'BackupHistory',
     'CardCode',
     'CardCodeRedeemLog',
+    'CardCodeAssignment',
+    'CardCodeDispatchPlan',
+    'CardCodeDispatchRun',
     'PasswordAuditLog',
     'PasswordRateLimit',
     'GradeClass',
@@ -265,9 +282,11 @@ async function checkSchemaConsistency(sql) {
       'tokenVersion',
       'remark',
       'avatarProvider',
-      'avatarProviderUserId'
+      'avatarProviderUserId',
+      'tags'
     ],
     Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
+    CardCode: ['assignedTo', 'assignedAt'],
     song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
     user_status_logs: ['username', 'name'],
     Schedule: ['isDraft', 'publishedAt'],
@@ -405,6 +424,7 @@ async function checkSchemaConsistency(sql) {
 async function repairSchemaWithPush(sql) {
   // 先补齐枚举值，再执行 push
   await ensureUserStatusEnumValues(sql)
+  await ensureCardCodeStatusEnumValues(sql)
   const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
   if (
     !safeExec(pushCommand, {

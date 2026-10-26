@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray, eq } from 'drizzle-orm'
+import { syncAssignmentOnManualStatusChange } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 
 export default defineEventHandler(async (event) => {
@@ -92,6 +93,17 @@ export default defineEventHandler(async (event) => {
 
     const res = await db.transaction(async (tx) => {
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
+
+      // 批量改状态同样要收敛活跃的派发记录，避免券已解绑、ASSIGNED 记录还挂着
+      if (status && updatedRows.length > 0) {
+        await syncAssignmentOnManualStatusChange({
+          tx,
+          cardCodeIds: updatedRows.map((row) => row.id),
+          status,
+          actor: { id: user.id, name: user.name, username: user.username },
+          reason: '管理员批量修改点歌券状态'
+        })
+      }
 
       if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows

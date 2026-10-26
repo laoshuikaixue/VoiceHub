@@ -87,10 +87,9 @@ export default defineEventHandler(async (event) => {
     )
   )
 
-  // 落位约束：指定了期望日期/时段的歌曲只能排到对应位置，手工拖拽同样受约束
+  // 落位硬约束：指定了期望时段的歌曲只能排到该时段，手工拖拽同样受约束
   await assertSchedulePlacement(
     {
-      playDate: inputDateStr,
       playTimeId,
       items: scheduleItems.map((item) => ({
         songId: item.songId,

@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
 
 const parsePlayTimeId = (raw: unknown): number | null => {
   if (raw === undefined || raw === null || raw === '') return null
@@ -81,6 +82,7 @@ export default defineEventHandler(async (event) => {
           id: schedules.id,
           songId: schedules.songId,
           playTimeId: schedules.playTimeId,
+          replayRequestId: schedules.replayRequestId,
           requesterId: songs.requesterId,
           songTitle: songs.title
         })
@@ -98,6 +100,21 @@ export default defineEventHandler(async (event) => {
       }
 
       const updateTime = getServerDate()
+      // 换时段迁移同样受期望时段硬约束，不得把指定了时段的歌曲挪到其它时段；
+      // 只改日期（保持各歌曲原时段）不改变落位，无需校验
+      if (toPlayTimeId !== null) {
+        await assertSchedulePlacement(
+          {
+            playTimeId: toPlayTimeId,
+            items: sourceSchedules.map((s) => ({
+              songId: s.songId,
+              replayRequestId: s.replayRequestId
+            }))
+          },
+          new Map(sourceSchedules.map((s) => [s.songId, s.songTitle]))
+        )
+      }
+
       // 按目标时段分组：toPlayTimeId 指定则统一目标时段，否则保持各歌曲原时段
       const groups = new Map<number | null, typeof sourceSchedules>()
       for (const s of sourceSchedules) {

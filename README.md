@@ -837,7 +837,8 @@ VoiceHub/
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
 │   │   │   ├── RequestForm.vue        # 点歌表单
 │   │   │   ├── ScheduleList.vue       # 排期列表展示
-│   │   │   └── SongList.vue           # 歌曲列表
+│   │   │   ├── SongList.vue           # 歌曲列表
+│   │   │   └── SubmissionOptionsModal.vue # 投稿选项弹窗
 │   │   ├── UI/                # 通用UI组件
 │   │   │   ├── AudioPlayer/   # 音频播放器组件模块
 │   │   │   │   ├── AudioElement.vue   # 音频元素组件
@@ -1485,6 +1486,7 @@ VoiceHub/
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
+│   │   ├── play-slot.ts    # 播出时段适用星期与播出日期校验
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── legal-consent.ts # 条款内容指纹计算与注册同意校验
 │   │   ├── register-validation.ts # 注册校验纯函数
@@ -1500,7 +1502,7 @@ VoiceHub/
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
-│   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
+│   │   ├── scheduleReplayBin│   │   ├── schedulePlacementConstraint.ts # 排期落位硬约束（期望时段）
 │   │   ├── schedule-date-query.ts # 排期日期查询校验与 UTC 边界
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具

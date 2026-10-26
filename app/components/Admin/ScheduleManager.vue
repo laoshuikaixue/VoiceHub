@@ -1705,23 +1705,23 @@
             {{ locale.availableCount(autoSchedulePlacement.eligible.length) }}
           </div>
 
-          <!-- 期望落位约束诊断：显式说明被排除的歌曲数量与原因，避免静默丢弃 -->
+          <!-- 期望时段是硬约束，被排除的数量必须显式说明，避免静默丢弃 -->
           <div
-            v-if="autoSchedulePlacement.excludedByDate > 0 || autoSchedulePlacement.excludedByPlayTime > 0"
-            class="space-y-1 px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60"
+            v-if="autoSchedulePlacement.excludedByPlayTime > 0"
+            class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60"
           >
-            <div class="flex items-start gap-2 text-[10px] leading-relaxed">
+            <div class="flex items-start gap-2 text-[10px] leading-relaxed text-text-secondary">
               <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
-              <div class="space-y-1">
-                <p v-if="autoSchedulePlacement.excludedByPlayTime > 0" class="text-text-secondary">
-                  {{ locale.messages.excludedByPlayTime(autoSchedulePlacement.excludedByPlayTime) }}
-                </p>
-                <p v-if="autoSchedulePlacement.excludedByDate > 0" class="text-text-secondary">
-                  {{ locale.messages.excludedByDate(autoSchedulePlacement.excludedByDate) }}
-                </p>
-              </div>
+              <p>{{ locale.messages.excludedByPlayTime(autoSchedulePlacement.excludedByPlayTime) }}</p>
             </div>
           </div>
+          <!-- 期望日期是软偏好：只提示当天会优先安排多少首，不排除任何歌曲 -->
+          <p
+            v-if="autoScheduleDateHits > 0"
+            class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60 text-[10px] leading-relaxed text-text-secondary"
+          >
+            {{ locale.messages.preferredDateHits(autoScheduleDateHits) }}
+          </p>
 
           <div class="flex gap-2">
             <button
@@ -2024,7 +2024,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
 import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
-import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem, filterByExpectedPlacement } from '~/utils/autoSchedule'
+import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem, filterByExpectedPlacement, countExpectedDateHits } from '~/utils/autoSchedule'
 import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
@@ -4294,7 +4294,7 @@ const autoScheduleCandidates = computed(() => {
 })
 
 // 自动排期的期望落位约束：
-// - 目标日期 = 当前选中的排期日期（期望日期的歌曲只在当天参与排期）
+// - 目标日期 = 当前选中的排期日期（期望日期是软偏好，命中当天的候选优先安排，不排除其它歌曲）
 // - 目标时段 = 当前选中的播出时段（期望时段是硬约束，只能排到该时段）
 //   未选择时段时整批会以「未指定时段」落位，因此带期望时段的歌曲不参与本次排期
 const autoScheduleOptions = computed(() => ({
@@ -4304,9 +4304,14 @@ const autoScheduleOptions = computed(() => ({
     : null
 }))
 
-// 期望落位约束过滤后的候选与被排除的统计（用于界面显式提示，避免静默丢弃）
+// 硬约束过滤后的候选与被排除数量（用于界面显式提示，避免静默丢弃）
 const autoSchedulePlacement = computed(() =>
   filterByExpectedPlacement(autoScheduleCandidates.value, autoScheduleOptions.value)
+)
+
+// 候选池中期望日期命中当天的歌曲数，仅用于提示优先安排
+const autoScheduleDateHits = computed(() =>
+  countExpectedDateHits(autoSchedulePlacement.value.eligible, autoScheduleOptions.value.targetDate)
 )
 
 const buildPreSelected = () => {

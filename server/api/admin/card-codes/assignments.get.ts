@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { cardCodeAssignments } from '~/drizzle/schema'
 import { and, count, desc, eq, gte, ilike, lte, or } from 'drizzle-orm'
+import { getBeijingEndOfDay, getBeijingStartOfDay, parseToBeijingTime } from '~/utils/timeUtils'
 
 /**
  * 派发记录查询：支持按状态、接收人、派发人、关键词与时间范围筛选。
@@ -48,13 +49,17 @@ export default defineEventHandler(async (event) => {
       conditions.push(ilike(cardCodeAssignments.assignedByName, `%${dispatcherName}%`))
     }
     if (startDate) {
-      conditions.push(gte(cardCodeAssignments.assignedAt, new Date(startDate)))
+      // 日期筛选按北京当天的起止边界，不能拿服务端本地时区划天
+      const from = parseToBeijingTime(startDate)
+      if (!Number.isNaN(from.getTime())) {
+        conditions.push(gte(cardCodeAssignments.assignedAt, getBeijingStartOfDay(from)))
+      }
     }
     if (endDate) {
-      const end = new Date(endDate)
-      // 结束日期为当天时，向上取到当天 23:59:59.999，覆盖当天全天
-      end.setHours(23, 59, 59, 999)
-      conditions.push(lte(cardCodeAssignments.assignedAt, end))
+      const to = parseToBeijingTime(endDate)
+      if (!Number.isNaN(to.getTime())) {
+        conditions.push(lte(cardCodeAssignments.assignedAt, getBeijingEndOfDay(to)))
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined

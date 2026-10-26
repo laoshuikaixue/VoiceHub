@@ -1870,12 +1870,11 @@ export const pages = {
       playSlotTimeRequiredError: 'Please select a time slot',
       playSlotNotOpenOnDate: 'The selected time slot is not available on this date. Please pick another date or slot.',
       playSlotModalTitle: 'Choose time slot',
-      playSlotModalSubtitle: 'Time slot is required; broadcast date is optional — leave it blank to auto-assign the nearest available date',
-      playSlotDateOptionalHint: 'Without a date, the request is assigned to the nearest date where this slot is open',
+      playSlotModalSubtitle: 'Time slot is required; broadcast date is optional — leave it blank to let the schedule decide',
+      playSlotDateOptionalHint: 'No broadcast date set — the date is decided when scheduling',
       playSlotDateSelectedHint: 'Date selected — only slots open on that date are listed below',
       playSlotTimeFreeHint: 'Any enabled time slot can be chosen',
       playSlotTimeRestrictedHint: 'Only slots open on the selected date are listed',
-      playSlotAutoAssignHint: 'No broadcast date specified — the request will be assigned to the nearest date where this slot is open',
       weekdaysFull: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
       submissionNote: 'Submission Note',
       cardCode: 'Request Card',
@@ -3319,8 +3318,8 @@ export const admin = {
         `"${title}" specifies play time slot "${playTimeName}" and can only be scheduled in that slot`,
       excludedByPlayTime: (count: number) =>
         `${count} song(s) specify a different play time slot and were excluded as a hard constraint`,
-      excludedByDate: (count: number) =>
-        `${count} song(s) have a preferred date other than today and were excluded`
+      preferredDateHits: (count: number) =>
+        `${count} song(s) prefer today and will be scheduled first`
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',
@@ -4503,7 +4502,13 @@ export const admin = {
       runNoCodes: 'No card was dispatched',
       deleteConfirm: (name: string) => `Delete plan "${name}"?`,
       runSuccess: (count: number) => `Dispatched ${count} request card(s)`,
-      scanDueDone: (count: number) => `Ran ${count} due plan(s)`
+      scanDueDone: (count: number) => `Ran ${count} due plan(s)`,
+      serverlessHint: 'Serverless runtime: the in-process scheduler never starts, so plans only run when triggered. Point an external timer at POST /api/open/card-codes/dispatch-plans/run-due (X-API-Key header, card-codes:write permission), or press "Scan due plans" when needed.',
+      runNowOnceConfirm: (name: string) => `"${name}" is a one-time plan. Running now dispatches cards for real and ends the plan. Continue?`,
+      descOnce: (start: string) => `Once: ${start}`,
+      descDaily: (time: string) => `Daily ${time}`,
+      descWeekly: (days: string, time: string) => `Weekly ${days} ${time}`,
+      descMonthly: (day: number, time: string) => `Monthly on day ${day} ${time}`
     },
     messages2: {
       fetchAssignmentsFailed: 'Failed to fetch assignment records',
@@ -5654,10 +5659,13 @@ export const serverErrors = {
     'You can only request a replay for songs from the current semester',
   SONG_INVITATION_FAILED: 'Failed to process the invitation',
   SONG_SCHEDULED_CANNOT_WITHDRAW: 'Scheduled songs cannot be withdrawn',
+  SONG_PLAY_SLOT_REQUIRED: 'Please select a preferred play time slot',
+  SONG_PLAY_DATE_FORMAT_INVALID: 'Invalid broadcast date, expected YYYY-MM-DD',
+  SONG_PLAY_DATE_BEFORE_TODAY: 'The broadcast date cannot be earlier than today',
+  SONG_PLAY_SLOT_NOT_OPEN_ON_DATE:
+    'The selected slot is not open on {0} ({1}); pick another date or slot',
   SONG_SCHEDULE_PREFERRED_TIME_MISMATCH:
     'A song with a specified play time slot can only be scheduled in that slot',
-  SONG_SCHEDULE_PREFERRED_DATE_MISMATCH:
-    "The song's preferred play date does not match the target date",
   SONG_PLAYED_CANNOT_WITHDRAW: 'Played songs cannot be withdrawn',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: 'There is no active semester, so a replay cannot be requested',
   SONG_RESTRICTION_SAME_SONG:

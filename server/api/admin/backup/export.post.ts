@@ -6,6 +6,9 @@ import {
   apiKeys,
   apiKeyPermissions,
   apiLogs,
+  cardCodeAssignments,
+  cardCodeDispatchPlans,
+  cardCodeDispatchRuns,
   cardCodeRedeemLogs,
   cardCodes,
   collaborationLogs,
@@ -130,6 +133,18 @@ export default defineEventHandler(async (event) => {
           }))
         },
         description: '点歌券数据'
+      },
+      cardCodeAssignments: {
+        query: async () => await db.select().from(cardCodeAssignments),
+        description: '点歌券派发记录'
+      },
+      cardCodeDispatchPlans: {
+        query: async () => await db.select().from(cardCodeDispatchPlans),
+        description: '点歌券自动派发计划'
+      },
+      cardCodeDispatchRuns: {
+        query: async () => await db.select().from(cardCodeDispatchRuns),
+        description: '点歌券自动派发执行历史'
       },
       cardCodeRedeemLogs: {
         query: async () => {

@@ -1,4 +1,5 @@
 import { SCHEDULE_TYPES, type ScheduleType } from '~~/server/services/dispatchPlanService'
+import { parseToBeijingTime } from '~/utils/timeUtils'
 
 /**
  * 自动派发计划的入参规范化与校验。
@@ -31,12 +32,17 @@ function fail(message: string): never {
 
 function parseDate(value: unknown, field: string): Date | null {
   if (value === null || value === undefined || value === '') return null
-  const date = value instanceof Date ? value : new Date(String(value))
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? fail(`${field}不是有效时间`) : value
+  const raw = String(value).trim()
+  // 带时区标记的按标记解析；不带时区的裸时间（如 2026-10-27T20:00）一律按北京时间理解，
+  // 避免服务端本地时区为 UTC 时整体偏移 8 小时
+  const withTz = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw)
+  const date = withTz ? new Date(raw) : parseToBeijingTime(raw)
   if (Number.isNaN(date.getTime())) fail(`${field}不是有效时间`)
   return date
 }
 
-export function normalizeDispatchPlanInput(body: any, options: { partial?: boolean } = {}): NormalizedDispatchPlan {
+export function normalizeDispatchPlanInput(body: any): NormalizedDispatchPlan {
   const raw = body || {}
 
   const name = typeof raw.name === 'string' ? raw.name.trim() : ''

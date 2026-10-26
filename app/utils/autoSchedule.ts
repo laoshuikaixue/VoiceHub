@@ -30,7 +30,7 @@ export interface AutoScheduleCandidate {
   voteCount?: number | null
   // UI 标记：是否为固定歌曲
   isFixed?: boolean
-  /** 投稿时选择的期望播出日期（YYYY-MM-DD）：仅在该日期参与排期，且命中时优先安排 */
+  /** 投稿时显式选择的期望播出日期（YYYY-MM-DD）：命中当天时优先安排，不作为排除条件 */
   preferredPlayDate?: string | null
   /** 投稿时选择的期望播出时段 ID：硬约束，只能排到该时段 */
   preferredPlayTimeId?: number | null
@@ -42,8 +42,7 @@ export interface AutoScheduleCandidate {
 export interface AutoScheduleOptions {
   /**
    * 目标播出日期（YYYY-MM-DD）。
-   * 设置了期望播出日期的歌曲只在它的期望日期参与排期；
-   * 命中目标日期的候选会被优先安排（软约束）。
+   * 期望日期是软偏好：命中目标日期的候选优先安排，其余候选仍参与本次排期。
    */
   targetDate?: string | null
   /**
@@ -60,10 +59,8 @@ export interface AutoScheduleOptions {
  * 期望落位过滤结果
  */
 export interface AutoSchedulePlacementFilter {
-  /** 通过约束校验、可参与本次排期的候选 */
+  /** 通过硬约束校验、可参与本次排期的候选 */
   eligible: AutoScheduleCandidate[]
-  /** 因期望日期不属于本次排期日期而被排除的数量 */
-  excludedByDate: number
   /** 因期望时段与本次排期时段不符而被排除的数量 */
   excludedByPlayTime: number
 }
@@ -89,27 +86,22 @@ export function normalizePreferredPlayTimeId(value: unknown): number | null {
 }
 
 /**
- * 按「期望落位」约束过滤候选：
- * - 期望时段是硬约束：歌曲只能排到它自己指定的时段
- * - 期望日期是软约束：歌曲属于它期望的那一天，不参与其它日期的排期
- *   （否则它会被别的日期抢走，永远排不到期望日）
+ * 按「期望落位」硬约束过滤候选：期望时段是硬约束，歌曲只能排到它自己指定的时段。
+ * 期望日期不在此过滤，由 preferExpectedDate 与方案比较体现优先级。
  *
- * 排除数量会一并返回，供界面显式提示，避免出现「静默丢弃」而无人察觉。
+ * 排除数量会一并返回，供界面显式提示，避免「静默丢弃」而无人察觉。
  */
 export function filterByExpectedPlacement(
   candidates: AutoScheduleCandidate[],
   options?: AutoScheduleOptions
 ): AutoSchedulePlacementFilter {
-  const targetDate = normalizePreferredPlayDate(options?.targetDate)
   const hasSlotConstraint = !!options && options.targetPlayTimeId !== undefined
   const targetPlayTimeId = hasSlotConstraint ? options!.targetPlayTimeId ?? null : null
 
   const eligible: AutoScheduleCandidate[] = []
-  let excludedByDate = 0
   let excludedByPlayTime = 0
 
   for (const song of candidates) {
-    const preferredDate = normalizePreferredPlayDate(song.preferredPlayDate)
     const preferredPlayTimeId = normalizePreferredPlayTimeId(song.preferredPlayTimeId)
 
     // 期望时段硬约束
@@ -126,16 +118,10 @@ export function filterByExpectedPlacement(
       }
     }
 
-    // 期望日期软约束
-    if (targetDate && preferredDate && preferredDate !== targetDate) {
-      excludedByDate++
-      continue
-    }
-
     eligible.push(song)
   }
 
-  return { eligible, excludedByDate, excludedByPlayTime }
+  return { eligible, excludedByPlayTime }
 }
 
 /**
@@ -263,8 +249,6 @@ function prepareScheduleInput(
   preSelectedSeconds: number
   availableCandidates: AutoScheduleCandidate[]
   emptyResult: AutoScheduleResult
-  excludedByDate: number
-  excludedByPlayTime: number
   earlyReturn?: AutoScheduleResult | AutoScheduleResult[]
 } {
   const targetSeconds = Math.floor(targetMinutes * 60)
@@ -274,10 +258,8 @@ function prepareScheduleInput(
     0
   )
 
-  // 期望落位约束：期望时段为硬约束、期望日期为软约束
+  // 期望落位硬约束：期望时段不符的候选不参与本次排期
   const placement = filterByExpectedPlacement(candidates, options)
-  const excludedByDate = placement.excludedByDate
-  const excludedByPlayTime = placement.excludedByPlayTime
 
   const availableCandidates = placement.eligible.filter(
     (s) => !preSelectedIds.has(s.id) && typeof s.durationSeconds === 'number' && s.durationSeconds > 0
@@ -290,8 +272,6 @@ function prepareScheduleInput(
       preSelectedSeconds,
       availableCandidates,
       emptyResult,
-      excludedByDate,
-      excludedByPlayTime,
       earlyReturn: plansCount === 1 ? emptyResult : [emptyResult]
     }
   }
@@ -305,8 +285,6 @@ function prepareScheduleInput(
       preSelectedSeconds,
       availableCandidates,
       emptyResult,
-      excludedByDate,
-      excludedByPlayTime,
       earlyReturn: plansCount === 1 ? result : [result]
     }
   }
@@ -315,9 +293,7 @@ function prepareScheduleInput(
     targetSeconds,
     preSelectedSeconds,
     availableCandidates,
-    emptyResult,
-    excludedByDate,
-    excludedByPlayTime
+    emptyResult
   }
 }
 

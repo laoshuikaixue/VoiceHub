@@ -3,7 +3,8 @@ import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
 import { and, asc, eq, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { cardCodeDispatchPlans, users } from '~/drizzle/schema'
+import { cardCodeDispatchPlans, cardCodeDispatchRuns, users } from '~/drizzle/schema'
+import { getServerDate } from '~~/server/utils/serverTime'
 import {
   generateAndAssignCardCodes,
   type AssignTarget
@@ -17,8 +18,9 @@ const BEIJING_TIMEZONE = 'Asia/Shanghai'
 
 /**
  * 执行抢占的失效阈值。
- * 定时器在派发中途被重启/杀进程时 runningAt 会残留，超过该时长视为失效并允许重新抢占，
- * 否则这条计划会永久卡在「执行中」。
+ * 抢占后 runningAt 会残留到本次执行结束；超过该阈值视为上一次执行异常中断，
+ * 允许重新抢占，避免计划永久卡在「执行中」。
+ * 注意：一次执行的超时窗口不能超过该阈值，否则可能与下一个实例重复抢占。
  */
 const STALE_RUNNING_MS = 10 * 60 * 1000
 
@@ -36,6 +38,9 @@ export type DispatchPlanSchedule = {
 }
 
 export type DispatchRunStatus = 'SUCCESS' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
+
+/** 自动派发执行历史的触发来源 */
+export type DispatchTriggerSource = 'SCHEDULED' | 'CRON' | 'MANUAL'
 
 export type DispatchRunResult = {
   planId: number
@@ -114,7 +119,9 @@ export function computeNextRunAt(plan: DispatchPlanSchedule, from: Date = new Da
     const day = Math.min(targetDay, month.daysInMonth())
     const candidate = atTime(month.date(day))
     const ms = candidate.valueOf()
-    if (ms > fromMs && withinEnd(ms)) return candidate.toDate()
+    // 同时满足「晚于 from」与「不早于首次执行时间」：否则当月执行日在 startAt 之前时，
+    // 会被算出一个比管理员选的首次执行时间更早的落位
+    if (ms > fromMs && ms >= startAt.getTime() && withinEnd(ms)) return candidate.toDate()
   }
   return null
 }
@@ -129,23 +136,49 @@ async function getPlan(planId: number) {
 }
 
 /**
- * 抢占执行权。
+ * 抢占一次执行权，并在同一条条件更新里把游标推到下一次。
  *
- * 用 runningAt 做乐观锁：定时扫描与管理员「立即执行」可能同时命中同一条计划，
- * 只有一条能抢到。条件里带上失效阈值，避免异常中断后计划永久卡死。
+ * 多实例部署、定时扫描与管理员「立即执行」同时命中同一条计划时，只有全部条件都成立的
+ * 一次 UPDATE 能抢到。到点执行会顺带把 nextRunAt 推到下一次（单次计划置空并停用），
+ * 因此即使本次派发到一半被打断，下一轮扫描也不会把同一批券重复发出去。
+ * 手动 force 只占住 runningAt 防并发，不挪用循环计划的排期。
  */
-async function claimPlan(planId: number, now: Date): Promise<boolean> {
+async function claimPlanOccurrence(
+  plan: typeof cardCodeDispatchPlans.$inferSelect,
+  now: Date,
+  options: { force: boolean }
+): Promise<boolean> {
   const staleBefore = new Date(now.getTime() - STALE_RUNNING_MS)
+
+  // 单次计划只要真实跑过一轮就消耗掉（含试跑），避免试跑后到点再发一次
+  let patch: Record<string, unknown> = { runningAt: now, updatedAt: now }
+  if (plan.scheduleType === 'once') {
+    patch = { ...patch, nextRunAt: null, enabled: false }
+  } else if (!options.force) {
+    const next = computeNextRunAt(
+      {
+        scheduleType: plan.scheduleType,
+        startAt: plan.startAt,
+        endAt: plan.endAt,
+        weekdays: plan.weekdays || [],
+        dayOfMonth: plan.dayOfMonth
+      },
+      now
+    )
+    // 算不出下一次 = 已过 endAt 或规则失效，同时停用避免计划静默挂着
+    patch = { ...patch, nextRunAt: next, ...(next === null ? { enabled: false } : {}) }
+  }
+
   const claimed = await db
     .update(cardCodeDispatchPlans)
-    .set({ runningAt: now })
+    .set(patch)
     .where(
       and(
-        eq(cardCodeDispatchPlans.id, planId),
-        or(
-          isNull(cardCodeDispatchPlans.runningAt),
-          lt(cardCodeDispatchPlans.runningAt, staleBefore)
-        )
+        eq(cardCodeDispatchPlans.id, plan.id),
+        ...(options.force
+          ? []
+          : [eq(cardCodeDispatchPlans.enabled, true), lte(cardCodeDispatchPlans.nextRunAt, now)]),
+        or(isNull(cardCodeDispatchPlans.runningAt), lt(cardCodeDispatchPlans.runningAt, staleBefore))
       )
     )
     .returning({ id: cardCodeDispatchPlans.id })
@@ -261,73 +294,62 @@ async function performDispatch(
   }
 }
 
-async function finishPlan(
-  plan: typeof cardCodeDispatchPlans.$inferSelect,
+async function recordPlanOutcome(
+  planId: number,
+  runId: number | null,
   now: Date,
-  result: DispatchRunResult,
-  options: { force?: boolean } = {}
+  result: Pick<DispatchRunResult, 'status' | 'message' | 'assignedCount' | 'failedCount' | 'servedRecipients'>
 ) {
-  // 单次计划被「立即执行」后就算走完了：原定时间点不能再发一次，否则会重复派发。
-  // 循环计划则不动排期 —— 立即执行只是提前试跑，不影响下一次正常触发。
-  const consumed = plan.scheduleType === 'once'
-  const nextRunAt = consumed
-    ? null
-    : computeNextRunAt(
-        {
-          scheduleType: plan.scheduleType,
-          startAt: plan.startAt,
-          endAt: plan.endAt,
-          weekdays: plan.weekdays || [],
-          dayOfMonth: plan.dayOfMonth
-        },
-        now
-      )
-
+  // 游标已在抢占时推好，这里只回写本次结果与执行历史
   await db
     .update(cardCodeDispatchPlans)
     .set({
       lastRunAt: now,
-      nextRunAt,
       lastStatus: result.status,
-      lastMessage: result.message,
+      lastMessage: result.message.slice(0, 500),
       runCount: sql`${cardCodeDispatchPlans.runCount} + 1`,
-      // 单次计划执行完就自然结束，不必留着一条永不触发的启用记录
-      ...(consumed ? { enabled: false } : {}),
       updatedAt: now
     })
-    .where(eq(cardCodeDispatchPlans.id, plan.id))
+    .where(eq(cardCodeDispatchPlans.id, planId))
+
+  if (runId) {
+    await db
+      .update(cardCodeDispatchRuns)
+      .set({
+        finishedAt: now,
+        status: result.status,
+        assignedCount: result.assignedCount,
+        failedCount: result.failedCount,
+        servedRecipients: result.servedRecipients,
+        message: result.message.slice(0, 500)
+      })
+      .where(eq(cardCodeDispatchRuns.id, runId))
+  }
 }
 
 async function markPlanFailure(
-  plan: typeof cardCodeDispatchPlans.$inferSelect,
+  planId: number,
+  runId: number | null,
   now: Date,
-  message: string,
-  options: { force?: boolean } = {}
+  message: string
 ) {
-  const consumed = plan.scheduleType === 'once'
-  const nextRunAt = consumed
-    ? null
-    : computeNextRunAt(
-        {
-          scheduleType: plan.scheduleType,
-          startAt: plan.startAt,
-          endAt: plan.endAt,
-          weekdays: plan.weekdays || [],
-          dayOfMonth: plan.dayOfMonth
-        },
-        now
-      )
   await db
     .update(cardCodeDispatchPlans)
     .set({
       lastRunAt: now,
-      nextRunAt,
       lastStatus: 'FAILED',
       lastMessage: message.slice(0, 500),
-      ...(consumed ? { enabled: false } : {}),
+      runCount: sql`${cardCodeDispatchPlans.runCount} + 1`,
       updatedAt: now
     })
-    .where(eq(cardCodeDispatchPlans.id, plan.id))
+    .where(eq(cardCodeDispatchPlans.id, planId))
+
+  if (runId) {
+    await db
+      .update(cardCodeDispatchRuns)
+      .set({ finishedAt: now, status: 'FAILED', message: message.slice(0, 500) })
+      .where(eq(cardCodeDispatchRuns.id, runId))
+  }
 }
 
 async function clearRunning(planId: number) {
@@ -341,46 +363,66 @@ async function clearRunning(planId: number) {
  * 执行一条计划。
  *
  * @param options.force 管理员点「立即执行」时为 true —— 忽略 nextRunAt 未到点的限制，
- *   但仍然走 runningAt 抢占，避免与定时器重复派发
+ *   但仍走抢占避免与定时器重复派发；单次计划无论是否 force，跑过一轮就消耗掉排期。
  */
 export async function executeDispatchPlan(
   planId: number,
-  options: { force?: boolean } = {}
+  options: { force?: boolean; triggerSource?: DispatchTriggerSource } = {}
 ): Promise<DispatchRunResult> {
+  const force = options.force === true
+  const triggerSource = options.triggerSource || (force ? 'MANUAL' : 'SCHEDULED')
+
   const plan = await getPlan(planId)
   if (!plan) {
     throw createError({ statusCode: 404, message: '自动派发计划不存在' })
   }
-  if (!plan.enabled && !options.force) {
+  if (!plan.enabled && !force) {
     throw createError({ statusCode: 400, message: '该计划已停用' })
   }
 
-  const now = new Date()
-  if (!(await claimPlan(planId, now))) {
-    throw createError({ statusCode: 409, message: '该计划正在执行中，请稍后再试' })
+  const now = getServerDate()
+  if (!(await claimPlanOccurrence(plan, now, { force }))) {
+    throw createError({
+      statusCode: 409,
+      message: force ? '该计划正在执行中，请稍后再试' : '该计划已被其他实例领取或尚未到点'
+    })
   }
+
+  const [run] = await db
+    .insert(cardCodeDispatchRuns)
+    .values({
+      planId: plan.id,
+      planName: plan.name,
+      triggerSource,
+      startedAt: now,
+      status: 'RUNNING'
+    })
+    .returning({ id: cardCodeDispatchRuns.id })
 
   try {
     const result = await performDispatch(plan, now)
-    await finishPlan(plan, now, result, options)
+    await recordPlanOutcome(plan.id, run?.id ?? null, now, result)
     return result
   } catch (error) {
     const message = error instanceof Error ? error.message : '自动派发执行失败'
-    await markPlanFailure(plan, now, message, options)
+    await markPlanFailure(plan.id, run?.id ?? null, now, message)
     throw error
   } finally {
-    await clearRunning(planId)
+    await clearRunning(plan.id)
   }
 }
 
 /**
- * 扫描到点计划并执行。由 nitro 插件周期调用。
+ * 扫描到点计划并执行。
  *
- * 单条失败不影响其他计划：createError 之类的异常在这里收敛为日志，
- * 失败原因已随 markPlanFailure 落到计划记录上，管理端能看到。
+ * 由管理员手动触发（后台「扫描到期计划」按钮）调用，不设后台自动任务。
+ * 单条失败不影响其他计划：异常在这里收敛为日志，失败原因已落到计划与执行历史。
  */
-export async function runDueDispatchPlans(limit = 20): Promise<DispatchRunResult[]> {
-  const now = new Date()
+export async function runDueDispatchPlans(
+  options: { limit?: number; triggerSource?: DispatchTriggerSource } = {}
+): Promise<DispatchRunResult[]> {
+  const limit = options.limit ?? 20
+  const now = getServerDate()
   const due = await db
     .select()
     .from(cardCodeDispatchPlans)
@@ -391,7 +433,7 @@ export async function runDueDispatchPlans(limit = 20): Promise<DispatchRunResult
   const results: DispatchRunResult[] = []
   for (const plan of due) {
     try {
-      results.push(await executeDispatchPlan(plan.id))
+      results.push(await executeDispatchPlan(plan.id, { triggerSource: options.triggerSource }))
     } catch (error) {
       console.error(`[点歌券自动派发] 计划 #${plan.id}（${plan.name}）执行失败:`, error)
     }
