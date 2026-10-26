@@ -954,8 +954,12 @@ const statusFilterOptions = computed(() => [
 const logSourceOptions = computed(() => [
   { label: locale.value?.allSources || 'All Sources', value: '' },
   { label: locale.value?.sources?.adminManual || 'Manual Redeem', value: 'ADMIN_MANUAL' },
+  { label: locale.value?.sources?.openApiManual || 'Open API Redeem', value: 'OPEN_API_MANUAL' },
   { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', value: 'SCHEDULE_AUTO' },
-  { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', value: 'SCHEDULE_REMOVE' }
+  { label: locale.value?.sources?.songPlayed || 'Played Redeem', value: 'SONG_PLAYED' },
+  { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', value: 'SCHEDULE_REMOVE' },
+  { label: locale.value?.sources?.playbackCancel || 'Playback Cancel', value: 'PLAYBACK_CANCEL' },
+  { label: locale.value?.sources?.withdraw || 'Withdraw', value: 'WITHDRAW' }
 ])
 
 const bulkStatusOptions = computed(() => [
@@ -990,12 +994,17 @@ const statusConfirmMessage = computed(() => {
 })
 
 const logSourceMeta = (source) => {
+  // 服务端可写入的 source 值见 cardCodeLifecycleService 与手动/开放 API 核销入口，
+  // 映射必须覆盖全部取值，否则兑换日志会回落成「未知」
   const sourceMap = {
     ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-primary-10 text-primary border border-primary-20' },
     ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-primary-10 text-primary border border-primary-20' },
+    OPEN_API_MANUAL: { label: locale.value?.sources?.openApiManual || 'Open API Redeem', class: 'bg-primary-10 text-primary border border-primary-20' },
     SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-success-10 text-success border border-success-20' },
+    SONG_PLAYED: { label: locale.value?.sources?.songPlayed || 'Played Redeem', class: 'bg-success-10 text-success border border-success-20' },
     SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-warning-10 text-warning border border-warning-20' },
     SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-success-10 text-success border border-success-20' },
+    PLAYBACK_CANCEL: { label: locale.value?.sources?.playbackCancel || 'Playback Cancel', class: 'bg-info-10 text-info border border-info-20' },
     WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-warning-10 text-warning border border-warning-20' },
     UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
   }

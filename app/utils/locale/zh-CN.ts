@@ -4168,9 +4168,12 @@ export const admin = {
     sources: {
       adminManual: '手动核销',
       admin: '管理员操作',
+      openApiManual: '开放API核销',
       scheduleAuto: '排期自动',
+      songPlayed: '播放核销',
       scheduleRemove: '移除排期',
       schedule: '排期',
+      playbackCancel: '取消播放',
       withdraw: '撤回'
     },
     messages: {

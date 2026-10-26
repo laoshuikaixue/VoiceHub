@@ -4303,9 +4303,12 @@ export const admin = {
     sources: {
       adminManual: 'Manual Redeem',
       admin: 'Admin Action',
+      openApiManual: 'Open API Redeem',
       scheduleAuto: 'Schedule Auto',
+      songPlayed: 'Played Redeem',
       scheduleRemove: 'Schedule Remove',
       schedule: 'Schedule',
+      playbackCancel: 'Playback Cancel',
       withdraw: 'Withdraw'
     },
     messages: {

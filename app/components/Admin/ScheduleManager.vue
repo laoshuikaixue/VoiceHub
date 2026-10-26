@@ -3108,8 +3108,17 @@ const allUnscheduledSongs = computed(() => {
     })
   }
 
+  // 使用点歌券的歌曲优先置顶，不随排序方式改变
+  const byCardCodeFirst = (a, b) => {
+    const aCard = a.cardCodeId || a.usedCardCode ? 1 : 0
+    const bCard = b.cardCodeId || b.usedCardCode ? 1 : 0
+    return bCard - aCard
+  }
+
   return [...unscheduledSongs].sort((a, b) => {
     if (activeTab.value === 'pool') {
+      const cardDiff = byCardCodeFirst(a, b)
+      if (cardDiff !== 0) return cardDiff
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     }
     // 重播申请默认按申请数量降序排列，如果数量相同则按时间
@@ -3118,6 +3127,10 @@ const allUnscheduledSongs = computed(() => {
         return (b.requestCount || 0) - (a.requestCount || 0)
       }
     }
+
+    // 重播 tab 以申请数为第一键，数量相同才轮到点歌券置顶
+    const cardDiff = byCardCodeFirst(a, b)
+    if (cardDiff !== 0) return cardDiff
 
     switch (songSortOption.value) {
       case 'time-desc':

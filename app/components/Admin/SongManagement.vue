@@ -1700,6 +1700,11 @@ const filteredSongs = computed(() => {
 
   // 排序
   filtered.sort((a, b) => {
+    // 使用点歌券的歌曲优先置顶，不随排序方式改变
+    const aCard = a.cardCodeId ? 1 : 0
+    const bCard = b.cardCodeId ? 1 : 0
+    if (aCard !== bCard) return bCard - aCard
+
     switch (sortOption.value) {
       case 'time-desc':
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
