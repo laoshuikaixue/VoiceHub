@@ -11,6 +11,7 @@ import { createSubmissionNoteClearedNotification } from '~~/server/services/noti
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { validatePlayDateString } from '~~/server/utils/play-slot'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
@@ -81,6 +82,22 @@ export default defineEventHandler(async (event) => {
     if (body.semester !== undefined) updateData.semester = body.semester || null
     if (body.preferredPlayTimeId !== undefined)
       updateData.preferredPlayTimeId = body.preferredPlayTimeId || null
+    // 期望播出日期：管理员可修正或清空投稿人选错的日期（软偏好，不影响已生成的排期）
+    if (body.preferredPlayDate !== undefined) {
+      const nextPlayDate = typeof body.preferredPlayDate === 'string' ? body.preferredPlayDate.trim() : ''
+      if (!nextPlayDate) {
+        updateData.preferredPlayDate = null
+      } else {
+        // 存量值本身可能是已过期的日期，仅在管理员改动它时校验，避免改其他字段时被连带拒绝
+        if (nextPlayDate !== (existingSong.preferredPlayDate || '')) {
+          const dateCheck = validatePlayDateString(nextPlayDate)
+          if (!dateCheck.valid) {
+            throw createApiError(400, dateCheck.code || SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '播出日期无效')
+          }
+        }
+        updateData.preferredPlayDate = nextPlayDate
+      }
+    }
     if (body.musicPlatform !== undefined) updateData.musicPlatform = body.musicPlatform || null
     if (body.musicId !== undefined) updateData.musicId = body.musicId || null
     if ((body.musicPlatform !== undefined && body.musicPlatform !== existingSong.musicPlatform) ||

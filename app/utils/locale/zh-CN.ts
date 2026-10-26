@@ -2469,7 +2469,9 @@ export const admin = {
       stats: '统计',
       status: '状态',
       actions: '操作',
-      selectPage: '全选本页'
+      selectPage: '全选本页',
+      submitStat: (count: number) => `投 ${count}`,
+      playStat: (count: number) => `播 ${count}`
     },
     empty: {
       search: '没有找到匹配的歌曲',
@@ -2522,6 +2524,7 @@ export const admin = {
       collaboratorHint: '支持添加多个联合投稿人，保存后立即生效',
       preferredPlayTime: '期望时段 (可选)',
       selectPreferredPlayTime: '选择期望播出时段',
+      preferredPlayDate: '期望播出日期',
       submissionNote: '歌曲备注',
       clearNote: '清空备注',
       cancelClearNote: '撤销清空',

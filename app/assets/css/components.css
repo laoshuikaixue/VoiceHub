@@ -408,3 +408,20 @@
   color: var(--text-tertiary);
   margin-bottom: var(--spacing-lg);
 }
+
+/* 投稿平台标签：按音源区分颜色，带浅色背景底 */
+.platform-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.platform-netease { color: #c3484d; background: rgba(195, 72, 77, 0.14); }
+.platform-tencent { color: #2f9e63; background: rgba(47, 158, 99, 0.14); }
+.platform-bilibili { color: #d96f9b; background: rgba(217, 111, 155, 0.14); }
+.platform-migu { color: #d97a2f; background: rgba(217, 122, 47, 0.14); }
+.platform-plugin { color: var(--text-tertiary); background: var(--bg-tertiary); }
