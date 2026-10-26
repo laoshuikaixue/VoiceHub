@@ -1554,7 +1554,7 @@
 
           <!-- 工具栏 -->
           <div class="flex items-center gap-2 p-2 bg-bg-secondary-50 border border-border-secondary rounded-xl">
-            <div class="flex items-center gap-2 flex-1">
+            <div class="flex items-center gap-2 flex-1 flex-wrap">
               <Lock class="w-3.5 h-3.5 text-text-tertiary shrink-0" />
               <span class="text-[10px] font-bold text-text-secondary uppercase tracking-wider shrink-0">
                 {{ locale.fixExistingSelected }}
@@ -1570,14 +1570,23 @@
                 />
               </button>
               <span
-                v-if="autoScheduleFixExisting && autoScheduleScheduledSeconds > 0"
-                class="text-[10px] font-bold text-primary"
+                v-if="autoScheduleFixExisting && localScheduledSongs.length > 0"
+                class="text-[10px] font-bold text-primary whitespace-nowrap"
               >
-                {{ locale.fixExistingCount(localScheduledSongs.length) }} ·
-                {{ locale.fixExistingRemaining(autoScheduleTargetMinutes || 0, autoScheduleScheduledSeconds) }}
+                {{ locale.fixExistingCount(localScheduledSongs.length) }}
+                <template v-if="autoScheduleScheduledSeconds > 0">
+                  · {{ locale.fixExistingRemaining(autoScheduleTargetMinutes || 0, autoScheduleScheduledSeconds) }}
+                </template>
               </span>
-              <span v-else-if="autoScheduleFixExisting && localScheduledSongs.length === 0" class="text-[10px] text-text-disabled">
+              <span v-else-if="autoScheduleFixExisting" class="text-[10px] text-text-disabled">
                 {{ locale.fixExistingNone }}
+              </span>
+              <span
+                v-if="autoScheduleFixExisting && autoScheduleFixedMissingDuration > 0"
+                class="text-[10px] font-bold text-warning whitespace-nowrap"
+                :title="locale.fixExistingMissingDurationTip"
+              >
+                {{ locale.fixExistingMissingDuration(autoScheduleFixedMissingDuration) }}
               </span>
             </div>
             <button
@@ -1701,12 +1710,13 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoScheduleCandidates.length === 0"
+              :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoScheduleCandidates.length === 0 || autoScheduleRunning"
               class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               @click="runAutoSchedule"
             >
-              <Sparkles class="w-3.5 h-3.5" />
-              {{ locale.autoScheduleRun }}
+              <Loader2 v-if="autoScheduleRunning" class="w-3.5 h-3.5 animate-spin" />
+              <Sparkles v-else class="w-3.5 h-3.5" />
+              {{ autoScheduleRunning ? autoScheduleRunningText : locale.autoScheduleRun }}
             </button>
           </div>
         </div>
@@ -1987,7 +1997,7 @@ import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
 import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
-import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem } from '~/utils/autoSchedule'
+import { autoSchedule, autoScheduleExhaustive, poolCandidateFromItem, fixedCandidatesFromScheduled } from '~/utils/autoSchedule'
 import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
 
@@ -2545,10 +2555,16 @@ loadAutoScheduleSettings()
 
 const autoScheduleScheduledSeconds = computed(() => {
   if (!autoScheduleFixExisting.value) return 0
-  return localScheduledSongs.value.reduce((sum, s) => {
-    const dur = s.song && typeof s.song.durationSeconds === 'number' ? s.song.durationSeconds : 0
-    return sum + dur
-  }, 0)
+  return fixedCandidatesFromScheduled(localScheduledSongs.value).reduce(
+    (sum, s) => sum + (s.durationSeconds || 0),
+    0
+  )
+})
+
+// 固定歌曲中时长未知的数量：仍会固定，只是不计入目标时长
+const autoScheduleFixedMissingDuration = computed(() => {
+  if (!autoScheduleFixExisting.value) return 0
+  return fixedCandidatesFromScheduled(localScheduledSongs.value).filter((s) => !s.durationSeconds).length
 })
 
 const actualExhaustive = computed(() => {
@@ -4155,15 +4171,19 @@ const refreshAutoCandidateDurations = async () => {
   refreshAutoCandidatesAbortController = new AbortController()
   const { signal } = refreshAutoCandidatesAbortController
 
-  const candidates = autoScheduleCandidates.value
-  if (candidates.length === 0) {
+  // 固定歌曲也要补齐时长，否则无法计入目标时长
+  const fixedMissing = autoScheduleFixExisting.value
+    ? fixedCandidatesFromScheduled(localScheduledSongs.value).filter((s) => !s.durationSeconds)
+    : []
+  const refreshTargets = [...autoScheduleCandidates.value, ...fixedMissing]
+  if (refreshTargets.length === 0) {
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages.candidateDurationsSkipped, 'info')
     }
     return
   }
 
-  const toRefresh = candidates.filter((s) => s.musicPlatform && s.musicId)
+  const toRefresh = refreshTargets.filter((s) => s.musicPlatform && s.musicId)
   if (toRefresh.length === 0) {
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages.candidateDurationsSkipped, 'info')
@@ -4186,6 +4206,9 @@ const refreshAutoCandidateDurations = async () => {
       const dur = result.durationSeconds
       const songIdx = songs.value.findIndex((s) => s.id === song.id)
       if (songIdx !== -1) songs.value[songIdx].durationSeconds = dur
+      for (const schedule of localScheduledSongs.value) {
+        if (schedule.song && schedule.song.id === song.id) schedule.song.durationSeconds = dur
+      }
       for (const r of replayRequests.value) {
         if (r.id === song.id) { r.durationSeconds = dur; break }
       }
@@ -4308,48 +4331,116 @@ const autoScheduleCandidates = computed(() => {
 })
 
 const buildPreSelected = () => {
-  return autoScheduleFixExisting.value ? localScheduledSongs.value.filter(
-    (s) => typeof s.song.durationSeconds === 'number' && s.song.durationSeconds > 0
-  ).map((s) => ({
-    id: s.song.id,
-    songId: s.song.id,
-    title: s.song.title,
-    artist: s.song.artist,
-    durationSeconds: s.song.durationSeconds || 0,
-    replayRequestId: s.replayRequestId || null,
-    musicId: s.song.musicId || null,
-    musicPlatform: s.song.musicPlatform || null,
-    requester: s.song.requester || null,
-    cover: s.song.cover || null,
-    createdAt: s.song.createdAt || null
-  })) : []
+  return autoScheduleFixExisting.value ? fixedCandidatesFromScheduled(localScheduledSongs.value) : []
 }
 
-const runAutoSchedule = () => {
-  const candidates = autoScheduleCandidates.value
-  const candidateIds = new Set(candidates.map((s) => s.id))
-  const preSelected = buildPreSelected()
-  const fn = autoScheduleAlgorithm.value === 'auto'
-    ? (autoScheduleCandidates.value.length < 20 ? autoScheduleExhaustive : autoSchedule)
-    : (autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule)
-  const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
-    ? Math.floor(autoScheduleTargetSongCount.value)
-    : null
-  const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
-    ? Math.floor(autoScheduleTargetRequesterCount.value)
-    : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount, heatWeightRatio())
-  const plansArray = Array.isArray(results) ? results : [results]
-  const first = plansArray[0]
-  if (!first || first.songs.length === 0) {
-    if (window.$showNotification) {
-      window.$showNotification(callLocale('messages.autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')
-    }
-    return
+// 固定歌曲时长未知时先补时长，避免按 0 计入导致目标时长算不准
+const autoScheduleResolvingFixed = ref({ running: false, progress: '', total: 0 })
+// 补时长总预算：超时后按未知时长继续排期
+const AUTO_SCHEDULE_FIXED_DURATION_TIMEOUT = 20000
+
+const applyFixedDuration = (songId, durationSeconds) => {
+  for (const schedule of localScheduledSongs.value) {
+    if (schedule.song && schedule.song.id === songId) schedule.song.durationSeconds = durationSeconds
   }
-  autoSchedulePlans.value = plansArray.map((p) => ({ ...p, candidateIds }))
-  currentPlanIndex.value = 0
-  autoScheduleResult.value = autoSchedulePlans.value[0]
+  const songIdx = songs.value.findIndex((s) => s.id === songId)
+  if (songIdx !== -1) songs.value[songIdx].durationSeconds = durationSeconds
+  for (const poolItem of songPool.value) {
+    if (poolItem.songId === songId) { poolItem.durationSeconds = durationSeconds; break }
+  }
+}
+
+const resolveFixedSongDurations = async () => {
+  if (!autoScheduleFixExisting.value) return 0
+
+  const missing = []
+  const seen = new Set()
+  for (const entry of localScheduledSongs.value) {
+    const song = entry?.song
+    if (!song || song.id == null || seen.has(song.id)) continue
+    if (typeof song.durationSeconds === 'number' && song.durationSeconds > 0) continue
+    if (!song.musicPlatform || !song.musicId) continue
+    seen.add(song.id)
+    missing.push(song)
+  }
+  if (missing.length === 0) return 0
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), AUTO_SCHEDULE_FIXED_DURATION_TIMEOUT)
+  autoScheduleResolvingFixed.value = { running: true, progress: '', total: missing.length }
+  let resolved = 0
+  let done = 0
+  try {
+    await runConcurrent(
+      missing.map((song) => ({
+        fn: async (signal) => {
+          if (signal?.aborted) return null
+          return await requestSongDuration(song, signal)
+        },
+        signal: controller.signal
+      })),
+      3,
+      (completed) => {
+        autoScheduleResolvingFixed.value.progress = `${completed} / ${missing.length}`
+      },
+      (idx, entry) => {
+        done++
+        const durationSeconds = entry?.ok ? entry.result?.durationSeconds : null
+        if (durationSeconds) {
+          applyFixedDuration(missing[idx].id, durationSeconds)
+          resolved++
+        }
+        autoScheduleResolvingFixed.value.progress = `${done} / ${missing.length}`
+      }
+    )
+  } catch {
+    // 补时长失败不阻塞排期，未知时长继续按 0 处理
+  } finally {
+    clearTimeout(timer)
+    autoScheduleResolvingFixed.value = { running: false, progress: '', total: 0 }
+  }
+  return resolved
+}
+
+const autoScheduleRunning = ref(false)
+const autoScheduleRunningText = computed(() => {
+  const { running, progress } = autoScheduleResolvingFixed.value
+  if (running && progress) return locale.value.fixExistingResolvingDuration(progress)
+  return locale.value.autoScheduleRunning
+})
+
+const runAutoSchedule = async () => {
+  if (autoScheduleRunning.value) return
+  autoScheduleRunning.value = true
+  try {
+    await resolveFixedSongDurations()
+    const candidates = autoScheduleCandidates.value
+    const candidateIds = new Set(candidates.map((s) => s.id))
+    const preSelected = buildPreSelected()
+    const fn = autoScheduleAlgorithm.value === 'auto'
+      ? (autoScheduleCandidates.value.length < 20 ? autoScheduleExhaustive : autoSchedule)
+      : (autoScheduleAlgorithm.value === 'exhaustive' ? autoScheduleExhaustive : autoSchedule)
+    const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
+      ? Math.floor(autoScheduleTargetSongCount.value)
+      : null
+    const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
+      ? Math.floor(autoScheduleTargetRequesterCount.value)
+      : null
+    const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount, heatWeightRatio())
+    const plansArray = Array.isArray(results) ? results : [results]
+    const first = plansArray[0]
+    if (!first || first.songs.length === 0) {
+      if (window.$showNotification) {
+        window.$showNotification(callLocale('messages.autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')
+      }
+      return
+    }
+    autoSchedulePlans.value = plansArray.map((p) => ({ ...p, candidateIds }))
+    currentPlanIndex.value = 0
+    autoScheduleResult.value = autoSchedulePlans.value[0]
+  } finally {
+    autoScheduleRunning.value = false
+  }
 }
 
 const generateMorePlans = async () => {
@@ -4414,8 +4505,9 @@ const goToNextPlan = () => {
 
 const confirmAutoSchedule = () => {
   const candidateIds = autoScheduleResult.value.candidateIds || new Set()
-  const confirmed = autoScheduleResult.value.songs.filter((song) =>
-    candidateIds.has(song.id)
+  // 固定歌曲不在候选池中，不能按候选 id 过滤，否则会被当成失效候选丢弃
+  const confirmed = autoScheduleResult.value.songs.filter(
+    (song) => song.isFixed || candidateIds.has(song.id)
   )
   const baseId = Date.now()
   let appliedCount = 0
