@@ -397,22 +397,8 @@
     {
       "idx": 56,
       "version": "7",
-      "when": 1792850248538,
-      "tag": "20261024135728_add_card_code_assignment",
-      "breakpoints": true
-    },
-    {
-      "idx": 57,
-      "version": "7",
-      "when": 1792858227933,
-      "tag": "20261024161027_add_user_tags",
-      "breakpoints": true
-    },
-    {
-      "idx": 58,
-      "version": "7",
-      "when": 1792995472181,
-      "tag": "20261026061752_add_card_code_dispatch_plan",
+      "when": 1793007454537,
+      "tag": "20261026093734_card_code_dispatch",
       "breakpoints": true
     }
   ]

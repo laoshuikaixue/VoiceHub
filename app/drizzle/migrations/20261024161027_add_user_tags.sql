@@ -1,1 +1,0 @@
-ALTER TABLE "User" ADD COLUMN "tags" text[] DEFAULT '{}'::text[] NOT NULL;

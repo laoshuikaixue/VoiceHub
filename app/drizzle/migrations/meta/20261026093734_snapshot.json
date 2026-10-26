@@ -1,6 +1,6 @@
 {
-  "id": "d28611d2-f066-4475-895b-6fc66964447c",
-  "prevId": "66d69be7-fa2d-4546-a74b-57dd942bb92f",
+  "id": "b13c80dd-bdda-4a7c-8356-485b457db7a3",
+  "prevId": "960cb0c9-ca7d-4109-af43-9da11b34718f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -911,11 +911,33 @@
           "method": "btree",
           "with": {}
         },
-        "card_code_assignment_user_id_idx": {
-          "name": "card_code_assignment_user_id_idx",
+        "card_code_assignment_active_per_card_unique": {
+          "name": "card_code_assignment_active_per_card_unique",
+          "columns": [
+            {
+              "expression": "cardCodeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"CardCodeAssignment\".\"status\" = 'ASSIGNED'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "card_code_assignment_user_status_idx": {
+          "name": "card_code_assignment_user_status_idx",
           "columns": [
             {
               "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -926,11 +948,17 @@
           "method": "btree",
           "with": {}
         },
-        "card_code_assignment_status_idx": {
-          "name": "card_code_assignment_status_idx",
+        "card_code_assignment_status_assigned_at_idx": {
+          "name": "card_code_assignment_status_assigned_at_idx",
           "columns": [
             {
               "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "assignedAt",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -968,7 +996,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "CardCodeAssignment_userId_User_id_fk": {
@@ -1008,6 +1036,346 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.CardCodeDispatchPlan": {
+      "name": "CardCodeDispatchPlan",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "countPerUser": {
+          "name": "countPerUser",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "recipientIds": {
+          "name": "recipientIds",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::integer[]"
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notify": {
+          "name": "notify",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "prefix": {
+          "name": "prefix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scheduleType": {
+          "name": "scheduleType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'once'"
+        },
+        "startAt": {
+          "name": "startAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endAt": {
+          "name": "endAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weekdays": {
+          "name": "weekdays",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::integer[]"
+        },
+        "dayOfMonth": {
+          "name": "dayOfMonth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nextRunAt": {
+          "name": "nextRunAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastRunAt": {
+          "name": "lastRunAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "runningAt": {
+          "name": "runningAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastStatus": {
+          "name": "lastStatus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastMessage": {
+          "name": "lastMessage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "runCount": {
+          "name": "runCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "createdBy": {
+          "name": "createdBy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdByName": {
+          "name": "createdByName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "card_code_dispatch_plan_due_idx": {
+          "name": "card_code_dispatch_plan_due_idx",
+          "columns": [
+            {
+              "expression": "enabled",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nextRunAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "CardCodeDispatchPlan_createdBy_User_id_fk": {
+          "name": "CardCodeDispatchPlan_createdBy_User_id_fk",
+          "tableFrom": "CardCodeDispatchPlan",
+          "tableTo": "User",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "card_code_dispatch_plan_schedule_type": {
+          "name": "card_code_dispatch_plan_schedule_type",
+          "value": "\"CardCodeDispatchPlan\".\"scheduleType\" IN ('once', 'daily', 'weekly', 'monthly')"
+        },
+        "card_code_dispatch_plan_count_per_user": {
+          "name": "card_code_dispatch_plan_count_per_user",
+          "value": "\"CardCodeDispatchPlan\".\"countPerUser\" BETWEEN 1 AND 100"
+        },
+        "card_code_dispatch_plan_day_of_month": {
+          "name": "card_code_dispatch_plan_day_of_month",
+          "value": "\"CardCodeDispatchPlan\".\"dayOfMonth\" IS NULL OR \"CardCodeDispatchPlan\".\"dayOfMonth\" BETWEEN 1 AND 31"
+        },
+        "card_code_dispatch_plan_end_after_start": {
+          "name": "card_code_dispatch_plan_end_after_start",
+          "value": "\"CardCodeDispatchPlan\".\"endAt\" IS NULL OR \"CardCodeDispatchPlan\".\"endAt\" > \"CardCodeDispatchPlan\".\"startAt\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.CardCodeDispatchRun": {
+      "name": "CardCodeDispatchRun",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "planId": {
+          "name": "planId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "planName": {
+          "name": "planName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "triggerSource": {
+          "name": "triggerSource",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SCHEDULED'"
+        },
+        "startedAt": {
+          "name": "startedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finishedAt": {
+          "name": "finishedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'RUNNING'"
+        },
+        "assignedCount": {
+          "name": "assignedCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "failedCount": {
+          "name": "failedCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "servedRecipients": {
+          "name": "servedRecipients",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "card_code_dispatch_run_plan_started_idx": {
+          "name": "card_code_dispatch_run_plan_started_idx",
+          "columns": [
+            {
+              "expression": "planId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "startedAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "CardCodeDispatchRun_planId_CardCodeDispatchPlan_id_fk": {
+          "name": "CardCodeDispatchRun_planId_CardCodeDispatchPlan_id_fk",
+          "tableFrom": "CardCodeDispatchRun",
+          "tableTo": "CardCodeDispatchPlan",
+          "columnsFrom": [
+            "planId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1218,7 +1586,29 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "card_code_assigned_to_status_idx": {
+          "name": "card_code_assigned_to_status_idx",
+          "columns": [
+            {
+              "expression": "assignedTo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "CardCode_lockedBy_User_id_fk": {
           "name": "CardCode_lockedBy_User_id_fk",
@@ -1271,7 +1661,16 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "card_code_assigned_status_has_holder": {
+          "name": "card_code_assigned_status_has_holder",
+          "value": "CAST(\"CardCode\".\"status\" AS text) <> 'ASSIGNED' OR \"CardCode\".\"assignedTo\" IS NOT NULL"
+        },
+        "card_code_unassigned_status_no_holder": {
+          "name": "card_code_unassigned_status_no_holder",
+          "value": "CAST(\"CardCode\".\"status\" AS text) NOT IN ('AVAILABLE', 'INVALID') OR \"CardCode\".\"assignedTo\" IS NULL"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.collaboration_logs": {
@@ -4118,6 +4517,21 @@
           "isUnique": true,
           "concurrently": false,
           "method": "btree",
+          "with": {}
+        },
+        "user_tags_gin_idx": {
+          "name": "user_tags_gin_idx",
+          "columns": [
+            {
+              "expression": "tags",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
           "with": {}
         }
       },

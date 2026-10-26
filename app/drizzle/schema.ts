@@ -1,4 +1,4 @@
-import {bigint, boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -45,7 +45,7 @@ export const users = pgTable('User', {
   tags: text('tags').array().default(sql`'{}'::text[]`).notNull(),
   legalConsentVersion: text('legal_consent_version'),
   legalConsentAt: timestamp('legal_consent_at'),
-}, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
+}, (table) => [uniqueIndex('User_username_unique').on(table.username), index('user_tags_gin_idx').using('gin', table.tags)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
 export const authSessions = pgTable('auth_sessions', {
@@ -866,7 +866,14 @@ export const cardCodes = pgTable('CardCode', {
   assignedTo: integer('assignedTo').references(() => users.id, { onDelete: 'set null' }),
   assignedAt: timestamp('assignedAt'),
   note: text('note'),
-});
+}, (table) => [
+  // 用户端「我的点歌券」按持有人 + 活跃状态查询
+  index('card_code_assigned_to_status_idx').on(table.assignedTo, table.status),
+  // 持有权与状态必须自洽：ASSIGNED 一定有持有人，回到可用池/作废一定解除持有人
+  // 用文本比较而非枚举字面量：同一迁移里刚 ADD VALUE 的新枚举值事务内不可引用
+  check('card_code_assigned_status_has_holder', sql`CAST(${table.status} AS text) <> 'ASSIGNED' OR ${table.assignedTo} IS NOT NULL`),
+  check('card_code_unassigned_status_no_holder', sql`CAST(${table.status} AS text) NOT IN ('AVAILABLE', 'INVALID') OR ${table.assignedTo} IS NULL`),
+]);
 
 // 卡密兑换日志表
 export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
@@ -898,7 +905,8 @@ export const cardCodeAssignments = pgTable('CardCodeAssignment', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'cascade' }),
+  // 删券不销毁审计流水，与 CardCodeRedeemLog 一致靠 codeSnapshot 追溯
+  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
   codeSnapshot: text('codeSnapshot').notNull(),
   // 接收人（被派发用户）
   userId: integer('userId').references(() => users.id, { onDelete: 'set null' }),
@@ -924,8 +932,12 @@ export const cardCodeAssignments = pgTable('CardCodeAssignment', {
   note: text('note')
 }, (table) => [
   index('card_code_assignment_card_code_id_idx').on(table.cardCodeId),
-  index('card_code_assignment_user_id_idx').on(table.userId),
-  index('card_code_assignment_status_idx').on(table.status),
+  // 一张券同时只能有一条活跃派发记录
+  uniqueIndex('card_code_assignment_active_per_card_unique')
+    .on(table.cardCodeId)
+    .where(sql`${table.status} = 'ASSIGNED'`),
+  index('card_code_assignment_user_status_idx').on(table.userId, table.status),
+  index('card_code_assignment_status_assigned_at_idx').on(table.status, table.assignedAt),
   index('card_code_assignment_assigned_at_idx').on(table.assignedAt)
 ]);
 
@@ -977,12 +989,40 @@ export const cardCodeDispatchPlans = pgTable('CardCodeDispatchPlan', {
   createdBy: integer('createdBy').references(() => users.id, { onDelete: 'set null' }),
   createdByName: text('createdByName')
 }, (table) => [
-  index('card_code_dispatch_plan_next_run_at_idx').on(table.nextRunAt),
-  index('card_code_dispatch_plan_enabled_idx').on(table.enabled)
+  // 到期扫描谓词：enabled = true AND nextRunAt <= now ORDER BY nextRunAt
+  index('card_code_dispatch_plan_due_idx').on(table.enabled, table.nextRunAt),
+  check('card_code_dispatch_plan_schedule_type', sql`${table.scheduleType} IN ('once', 'daily', 'weekly', 'monthly')`),
+  check('card_code_dispatch_plan_count_per_user', sql`${table.countPerUser} BETWEEN 1 AND 100`),
+  check('card_code_dispatch_plan_day_of_month', sql`${table.dayOfMonth} IS NULL OR ${table.dayOfMonth} BETWEEN 1 AND 31`),
+  check('card_code_dispatch_plan_end_after_start', sql`${table.endAt} IS NULL OR ${table.endAt} > ${table.startAt}`),
 ]);
 
 export type CardCodeDispatchPlan = typeof cardCodeDispatchPlans.$inferSelect;
 export type NewCardCodeDispatchPlan = typeof cardCodeDispatchPlans.$inferInsert;
+
+// 自动派发执行历史：一次触发一条，记录批次结果与来源。
+// 计划表只保留下一次执行时间等游标，具体每一轮做了什么必须在这里可查（含被中断的批次）。
+export const cardCodeDispatchRuns = pgTable('CardCodeDispatchRun', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  planId: integer('planId').references(() => cardCodeDispatchPlans.id, { onDelete: 'cascade' }),
+  planName: text('planName'),
+  // 触发来源：SCHEDULED 进程内定时器 / CRON 外部调度 / MANUAL 管理员手动
+  triggerSource: text('triggerSource').default('SCHEDULED').notNull(),
+  startedAt: timestamp('startedAt').notNull(),
+  finishedAt: timestamp('finishedAt'),
+  // SUCCESS / PARTIAL / FAILED / RUNNING
+  status: text('status').default('RUNNING').notNull(),
+  assignedCount: integer('assignedCount').default(0).notNull(),
+  failedCount: integer('failedCount').default(0).notNull(),
+  servedRecipients: integer('servedRecipients').default(0).notNull(),
+  message: text('message')
+}, (table) => [
+  index('card_code_dispatch_run_plan_started_idx').on(table.planId, table.startedAt)
+]);
+
+export type CardCodeDispatchRun = typeof cardCodeDispatchRuns.$inferSelect;
+export type NewCardCodeDispatchRun = typeof cardCodeDispatchRuns.$inferInsert;
 
 // 自动备份历史记录表
 export const backupHistory = pgTable('BackupHistory', {
