@@ -12,7 +12,7 @@ import { getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
  */
 export function normalizeWeekdays(value: unknown): number[] | null {
   if (!Array.isArray(value)) return null
-  const days = [...new Set(value.map((v) => Number(v)).filter((v) => Number.isInteger(v) && v >= 0 && v <= 6))]
+  const days = [...new Set(value.filter((v) => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 6))]
     .sort((a, b) => a - b)
   return days.length > 0 ? days : null
 }

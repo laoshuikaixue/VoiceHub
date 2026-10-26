@@ -92,7 +92,6 @@ export const getProviderDisplayName = (provider: string): string => {
     github: 'GitHub',
     casdoor: 'Casdoor',
     google: 'Google',
-    qq: 'QQ',
     oauth2: auth.value?.oauthButtons?.customOAuthProvider || '第三方 OAuth',
     aggregate: auth.value?.oauthButtons?.aggregateOAuthProvider || '聚合登录'
   }

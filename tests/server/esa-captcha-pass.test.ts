@@ -33,7 +33,7 @@ test('ESA 通过凭证 purpose 不符无法解出，防止跨业务接口复用'
     // 换一枚派生密钥（不同 purpose）即解验失败，模拟凭证被拿到别的用途下重放
     assert.throws(() => unseal(token, 'esa-captcha-pass-tampered'))
     // 篡改密文首字符同样破坏 GCM 认证标签
-    assert.throws(() => unseal('x' + token.slice(1), ESA_CAPTCHA_PASS_TICKET_PURPOSE))
+    assert.throws(() => unseal((token[0] === 'x' ? 'y' : 'x') + token.slice(1), ESA_CAPTCHA_PASS_TICKET_PURPOSE))
   } finally {
     if (previous === undefined) delete process.env.JWT_SECRET
     else process.env.JWT_SECRET = previous

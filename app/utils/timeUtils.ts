@@ -74,6 +74,12 @@ export function formatDateTime(date: Date, format: string = 'YYYY/M/D H:mm:ss'):
   return dayjs(date).tz(BEIJING_TIMEZONE).format(format)
 }
 
+/** 解析接口的 UTC 墙钟字符串或带时区的时间。 */
+export function parseUtcTimestamp(value: string | Date): Date {
+  if (value instanceof Date) return value
+  return dayjs.utc(value).toDate()
+}
+
 /**
  * 获取时间戳 (Date 对象)
  */

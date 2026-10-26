@@ -1,7 +1,9 @@
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { cardCodeAssignments, cardCodes, users } from '~/drizzle/schema'
+import { cardCodeAssignments, cardCodes, songs, users } from '~/drizzle/schema'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import {
   createCardCodes,
@@ -9,16 +11,7 @@ import {
   generateCardCodes
 } from '~~/server/services/cardCodeGeneratorService'
 
-/**
- * 点歌券派发服务。
- *
- * 交互模型参考美团/团购优惠券：
- * - 管理员把「未使用的点歌券」派发给指定用户，券即被该用户锁定持有（status=ASSIGNED）
- * - 用户投稿时可直接从下拉框选择自己持有的点歌券，也可手动输入券码
- * - 管理员可以回收尚未使用的已派发券，券回到 AVAILABLE 池中
- * - 每次派发/回收/使用都会落一条 CardCodeAssignment 记录，保留派发时间、派发人、接收人
- * - 通知发送失败不影响派发本身，失败原因记录在 notifyStatus/notifyError 字段中
- */
+/** 点歌券派发、回收与生命周期同步。 */
 
 export type AssignActor = {
   id: number
@@ -39,6 +32,7 @@ export type AssignOutcome = {
   success: boolean
   /** 失败时的原因（已使用、已被派发、通知发送失败等） */
   reason?: string
+  error?: { code: string; params?: unknown[] }
   /** 通知是否发送成功 */
   notified?: boolean
 }
@@ -63,6 +57,10 @@ export type BatchAssignResult = {
   }
 }
 
+export const CARD_CODE_DISPATCH_LIMITS = {
+  recipients: 500, existingCards: 500, generatedCards: 1000, perUser: 100
+} as const
+
 const NOTIFY_STATUS_SENT = 'SENT'
 const NOTIFY_STATUS_FAILED = 'FAILED'
 const NOTIFY_STATUS_SKIPPED = 'SKIPPED'
@@ -80,13 +78,7 @@ const toNotifyEntry = (target: AssignTarget, assigned: AssignOutcome[]) => ({
   codes: assigned.map((entry) => entry.code).filter(Boolean)
 })
 
-/**
- * 派发单张点歌券给一个接收人。
- *
- * 状态流转与审计写入在同一事务内完成，保证「券为 ASSIGNED」与「存在活跃派发记录」始终一致；
- * 并发下用条件 UPDATE（仅 AVAILABLE 可派发）保证同一张券不会被派发两次。
- * 通知不在这里发，由 notifyAssignedRecipients 按接收人聚合发送。
- */
+/** 在事务内派发单张点歌券并写入审计记录。 */
 async function assignOneCard(params: {
   cardCodeId: number
   target: AssignTarget
@@ -100,6 +92,7 @@ async function assignOneCard(params: {
 
   try {
     return await db.transaction(async (tx) => {
+      await tx.select({ id: users.id }).from(users).where(eq(users.id, target.id)).for('key share')
       const locked = await tx
         .update(cardCodes)
         .set({ status: 'ASSIGNED', assignedTo: target.id, assignedAt: now, updatedAt: now })
@@ -119,6 +112,7 @@ async function assignOneCard(params: {
           cardCodeId,
           assignmentId: null,
           success: false,
+          error: { code: SERVER_ERROR_CODES.CARD_CODE_NOT_ASSIGNABLE },
           reason: existing
             ? existing.status === 'ASSIGNED'
               ? '该点歌券已派发给其他用户，请先回收后再派发'
@@ -149,7 +143,7 @@ async function assignOneCard(params: {
       } satisfies AssignOutcome
     })
   } catch (error: any) {
-    const reason = error?.message || '派发失败'
+    const reason = '派发失败，请刷新后重试'
     console.error('派发点歌券失败:', error)
 
     // 事务已整体回滚（券状态与审计记录都未生效），这里只补一条 FAILED 流水
@@ -177,16 +171,11 @@ async function assignOneCard(params: {
       console.error('记录点歌券派发失败日志出错:', insertError)
     }
 
-    return { code, cardCodeId, assignmentId: null, success: false, reason }
+    return { code, cardCodeId, assignmentId: null, success: false, reason, error: { code: SERVER_ERROR_CODES.CARD_CODE_ASSIGN_FAILED } }
   }
 }
 
-/**
- * 按接收人聚合发送派发通知：一次派发无论多少张券只发一条站内通知。
- *
- * 通知失败不回滚派发，结果写回该接收人本次所有审计行的 notifyStatus/notifyError，
- * 对应团购券「券已到账、消息未送达」的语义。
- */
+/** 按接收人聚合发送派发通知。 */
 async function notifyAssignedRecipients(
   entries: Array<{ target: AssignTarget; assignmentIds: number[]; codes: string[] }>,
   actor: AssignActor
@@ -227,15 +216,7 @@ async function notifyAssignedRecipients(
   }
 }
 
-/**
- * 把一批点歌券轮流派发给多个接收人（发牌式分配）。
- *
- * 例如 5 张券、2 位接收人：第 1、3、5 张给第 1 人，第 2、4 张给第 2 人。
- * 接收人多于券时，排在后面的接收人不会获得券，会在 skipped 中列出，
- * 由前端明确提示，避免出现「静默漏发」。
- *
- * 每张券独立处理：单张失败不会中断整批，失败原因逐条记录。
- */
+/** 轮流向多个接收人派发库存券，逐张记录失败。 */
 export async function assignCardCodesToUsers(params: {
   cardCodeIds: number[]
   targets: AssignTarget[]
@@ -332,20 +313,11 @@ function generateCardCodesOrThrow(options: Parameters<typeof generateCardCodes>[
   try {
     return generateCardCodes(options)
   } catch (error: any) {
-    throw createError({
-      statusCode: error?.statusCode || 400,
-      message: error?.message || '生成点歌券失败'
-    })
+    throw createApiError(error?.statusCode || 400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '生成参数无效')
   }
 }
 
-/**
- * 批量派发本次现场生成的券：一名接收人一条 UPDATE + 一条多行 INSERT。
- *
- * 券码由本流程刚写入，除本流程外无人知晓，不存在被其他请求抢占的并发窗口，
- * 因此不需要逐张事务；1000 张规模下往返数从千级降到个位数，避免撞上请求超时。
- * 勾选已有券的派发仍走 assignOneCard 的逐张条件更新，作为并发闸门。
- */
+/** 批量派发本次生成的点歌券。 */
 async function assignGeneratedCardsToTarget(params: {
   cardCodeIds: number[]
   target: AssignTarget
@@ -360,6 +332,7 @@ async function assignGeneratedCardsToTarget(params: {
   const now = getServerDate()
 
   return db.transaction(async (tx) => {
+    await tx.select({ id: users.id }).from(users).where(eq(users.id, target.id)).for('key share')
     const assignedRows = await tx
       .update(cardCodes)
       .set({ status: 'ASSIGNED', assignedTo: target.id, assignedAt: now, updatedAt: now })
@@ -405,6 +378,7 @@ async function assignGeneratedCardsToTarget(params: {
         cardCodeId,
         assignmentId: null,
         success: false,
+        error: { code: SERVER_ERROR_CODES.CARD_CODE_NOT_ASSIGNABLE },
         reason: '该点歌券已不在可用池，派发未生效'
       })
     }
@@ -413,15 +387,7 @@ async function assignGeneratedCardsToTarget(params: {
   })
 }
 
-/**
- * 为每位接收人现场生成点歌券并直接派发。
- *
- * 与「先勾选库存券再派发」不同，这里按人数 × 每人张数即时生成新券，
- * 生成后按接收人批量派发给对应用户，不需要管理员提前在列表里勾选。
- *
- * 每人获得的券数固定（不采用轮流分配），因此每位用户都不会被落下；
- * 若某位用户派发失败，仅该用户失败，其它用户不受影响。
- */
+/** 为每位接收人生成并派发固定数量的点歌券。 */
 export async function generateAndAssignCardCodes(params: {
   targets: AssignTarget[]
   /** 每人派发的张数 */
@@ -438,8 +404,8 @@ export async function generateAndAssignCardCodes(params: {
   const { targets, countPerUser, actor, note, notify = true, prefix, cardNote } = params
 
   const perUser = Number(countPerUser)
-  if (!Number.isInteger(perUser) || perUser <= 0) {
-    throw createError({ statusCode: 400, message: '每人派发张数必须为正整数' })
+  if (!Number.isInteger(perUser) || perUser <= 0 || perUser > CARD_CODE_DISPATCH_LIMITS.perUser) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '每人派发张数必须为 1-100 的整数')
   }
 
   const perUserResult: UserAssignResult[] = targets.map((target) => ({
@@ -486,25 +452,31 @@ export async function generateAndAssignCardCodes(params: {
         cardCodeId: null,
         assignmentId: null,
         success: false,
+        error: { code: SERVER_ERROR_CODES.CARD_CODE_ASSIGN_FAILED },
         reason: `点歌券生成数量不足（只生成 ${slice.length} 张），未能足额派发`
       })
     }
 
-    const outcomes = await assignGeneratedCardsToTarget({
-      cardCodeIds: slice,
-      target,
-      targetName,
-      actor,
-      actorName,
-      note
-    })
-    for (const outcome of outcomes) {
-      if (outcome.success) {
-        result.assigned.push(outcome)
-        if (outcome.cardCodeId) assignedIds.add(outcome.cardCodeId)
-      } else {
-        result.failures.push(outcome)
+    try {
+      const outcomes = await assignGeneratedCardsToTarget({
+        cardCodeIds: slice, target, targetName, actor, actorName, note
+      })
+      for (const outcome of outcomes) {
+        if (outcome.success) {
+          result.assigned.push(outcome)
+          if (outcome.cardCodeId) assignedIds.add(outcome.cardCodeId)
+        } else {
+          result.failures.push(outcome)
+        }
       }
+    } catch (error) {
+      console.error('生成券派发失败:', error)
+      result.failures.push(...slice.map((cardCodeId) => ({
+        code: created.find((row) => row.id === cardCodeId)?.code || '',
+        cardCodeId, assignmentId: null, success: false,
+        reason: '派发失败，请刷新后重试',
+        error: { code: SERVER_ERROR_CODES.CARD_CODE_ASSIGN_FAILED }
+      })))
     }
   }
 
@@ -545,13 +517,7 @@ export async function generateAndAssignCardCodes(params: {
   }
 }
 
-/**
- * 回收已派发但尚未使用的点歌券。
- * 回收后点歌券回到 AVAILABLE 池，可重新派发给其他用户。
- *
- * 券状态与审计记录在同一事务内更新，并校验影响行数：
- * 券已被投稿锁定或核销时整条回收失败，不出现「记录已回收、券没回池」的假成功。
- */
+/** 回收未使用的派发券并同步审计记录。 */
 export async function recycleCardCodeAssignments(params: {
   assignmentIds: number[]
   actor: AssignActor
@@ -573,24 +539,33 @@ export async function recycleCardCodeAssignments(params: {
             id: cardCodeAssignments.id,
             cardCodeId: cardCodeAssignments.cardCodeId,
             codeSnapshot: cardCodeAssignments.codeSnapshot,
-            status: cardCodeAssignments.status
+            status: cardCodeAssignments.status,
+            userId: cardCodeAssignments.userId
           })
           .from(cardCodeAssignments)
           .where(eq(cardCodeAssignments.id, assignmentId))
           .limit(1)
-          .for('update')
 
         const row = rows[0]
         if (!row) {
-          return { code: '', cardCodeId: null, assignmentId, success: false, reason: '派发记录不存在' }
+          return { code: '', cardCodeId: null, assignmentId, success: false, reason: '派发记录不存在', error: { code: SERVER_ERROR_CODES.CARD_CODE_ASSIGNMENT_NOT_FOUND } }
         }
 
+        if (row.cardCodeId) {
+          await tx.select({ id: cardCodes.id }).from(cardCodes).where(eq(cardCodes.id, row.cardCodeId)).for('update')
+        }
+        const [lockedAssignment] = await tx.select().from(cardCodeAssignments)
+          .where(eq(cardCodeAssignments.id, assignmentId)).limit(1).for('update')
+        if (!lockedAssignment || lockedAssignment.status !== row.status) {
+          throw createApiError(409, SERVER_ERROR_CODES.CARD_CODE_RECYCLE_FAILED, '派发记录状态已变化')
+        }
         if (row.status !== 'ASSIGNED') {
           return {
             code: row.codeSnapshot,
             cardCodeId: row.cardCodeId,
             assignmentId,
             success: false,
+            error: { code: SERVER_ERROR_CODES.CARD_CODE_RECYCLE_FAILED },
             reason:
               row.status === 'USED'
                 ? '该点歌券已被使用，无法回收'
@@ -608,8 +583,8 @@ export async function recycleCardCodeAssignments(params: {
           const released = await tx
             .update(cardCodes)
             .set({ status: 'AVAILABLE', assignedTo: null, assignedAt: null, updatedAt: now })
-            .where(and(eq(cardCodes.id, row.cardCodeId), eq(cardCodes.status, 'ASSIGNED')))
-            .returning({ assignedTo: cardCodes.assignedTo })
+            .where(and(eq(cardCodes.id, row.cardCodeId), eq(cardCodes.status, 'ASSIGNED'), eq(cardCodes.assignedTo, row.userId!)))
+            .returning({ id: cardCodes.id })
 
           if (released.length === 0) {
             const [card] = await tx
@@ -622,15 +597,16 @@ export async function recycleCardCodeAssignments(params: {
               cardCodeId: row.cardCodeId,
               assignmentId,
               success: false,
+              error: { code: SERVER_ERROR_CODES.CARD_CODE_RECYCLE_FAILED },
               reason: card
                 ? `该点歌券当前状态为 ${card.status}，已被投稿使用，无法回收`
                 : '点歌券不存在，无法回收'
             }
           }
-          holderId = released[0]?.assignedTo ?? null
+          holderId = row.userId
         }
 
-        await tx
+        const recycled = await tx
           .update(cardCodeAssignments)
           .set({
             status: 'RECYCLED',
@@ -641,6 +617,8 @@ export async function recycleCardCodeAssignments(params: {
             updatedAt: now
           })
           .where(and(eq(cardCodeAssignments.id, assignmentId), eq(cardCodeAssignments.status, 'ASSIGNED')))
+          .returning({ id: cardCodeAssignments.id })
+        if (recycled.length !== 1) throw createApiError(409, SERVER_ERROR_CODES.CARD_CODE_RECYCLE_FAILED, '派发记录状态已变化')
 
         return {
           code: row.codeSnapshot,
@@ -663,7 +641,8 @@ export async function recycleCardCodeAssignments(params: {
         cardCodeId: null,
         assignmentId,
         success: false,
-        reason: error?.message || '回收失败'
+        reason: '回收失败，请刷新后重试',
+        error: { code: SERVER_ERROR_CODES.CARD_CODE_RECYCLE_FAILED }
       })
     }
   }
@@ -687,12 +666,7 @@ export async function recycleCardCodeAssignments(params: {
   return outcomes
 }
 
-/**
- * 管理员手工或开放 API 改券状态时，同步收敛活跃的派发记录。
- *
- * 这三条路径会解除持有人绑定，若不同步收敛，活跃 ASSIGNED 记录会永久挂住
- * （既挡住重新派发，也让回收列表出现幽灵记录）。
- */
+/** 同步手工状态变更与活跃派发记录。 */
 export async function syncAssignmentOnManualStatusChange(params: {
   tx: any
   cardCodeIds: number[]
@@ -737,38 +711,41 @@ export async function markCardCodeAssignmentUsed(
   cardCodeId: number,
   usedAt: Date = getServerDate()
 ): Promise<void> {
-  await tx
-    .update(cardCodeAssignments)
+  const [card] = await tx.select({ assignedTo: cardCodes.assignedTo }).from(cardCodes)
+    .where(eq(cardCodes.id, cardCodeId)).limit(1)
+  if (!card?.assignedTo) return
+  const result = await tx.update(cardCodeAssignments)
     .set({ status: 'USED', usedAt, updatedAt: usedAt })
-    .where(
-      and(
-        eq(cardCodeAssignments.cardCodeId, cardCodeId),
-        eq(cardCodeAssignments.status, 'ASSIGNED')
-      )
-    )
+    .where(and(eq(cardCodeAssignments.cardCodeId, cardCodeId),
+      eq(cardCodeAssignments.userId, card.assignedTo), eq(cardCodeAssignments.status, 'ASSIGNED')))
+    .returning({ id: cardCodeAssignments.id })
+  if (result.length !== 1) throw createApiError(
+    409, SERVER_ERROR_CODES.CARD_CODE_LOCKED_OR_UNAVAILABLE, '当前派发记录不存在或已变化'
+  )
 }
 
-/**
- * 投稿撤回或移出排期导致点歌券释放时，把本次使用的派发记录恢复为 ASSIGNED，
- * 让用户下次投稿时仍可继续使用这张券。
- *
- * 只回滚 USED 记录：同一张券的历史 RECYCLED 记录属于已完结的旧持有人，
- * 复活它会与新券的活跃记录撞上「一张券只能一条 ASSIGNED」唯一索引。
- */
+/** 投稿撤回或移出排期时恢复本次派发记录。 */
 export async function restoreCardCodeAssignment(
   tx: any,
   cardCodeId: number,
   at: Date = getServerDate()
 ): Promise<void> {
-  await tx
-    .update(cardCodeAssignments)
+  const [card] = await tx.select({ assignedTo: cardCodes.assignedTo, assignedAt: cardCodes.assignedAt })
+    .from(cardCodes).where(eq(cardCodes.id, cardCodeId)).limit(1)
+  if (!card?.assignedTo) return
+  const [latest] = await tx.select().from(cardCodeAssignments).where(and(
+    eq(cardCodeAssignments.cardCodeId, cardCodeId), eq(cardCodeAssignments.userId, card.assignedTo),
+    inArray(cardCodeAssignments.status, ['ASSIGNED', 'USED'])
+  )).orderBy(desc(cardCodeAssignments.assignedAt), desc(cardCodeAssignments.id)).limit(1).for('update')
+  if (!latest || latest.status === 'ASSIGNED') return
+  if (card.assignedAt && latest.assignedAt < card.assignedAt) return
+  const result = await tx.update(cardCodeAssignments)
     .set({ status: 'ASSIGNED', usedAt: null, updatedAt: at })
-    .where(
-      and(
-        eq(cardCodeAssignments.cardCodeId, cardCodeId),
-        eq(cardCodeAssignments.status, 'USED')
-      )
-    )
+    .where(and(eq(cardCodeAssignments.id, latest.id), eq(cardCodeAssignments.status, 'USED')))
+    .returning({ id: cardCodeAssignments.id })
+  if (result.length !== 1) throw createApiError(
+    409, SERVER_ERROR_CODES.CARD_CODE_LOCKED_OR_UNAVAILABLE, '派发记录状态已变化'
+  )
 }
 
 /**
@@ -796,4 +773,15 @@ export async function listUserAssignedCardCodes(userId: number) {
     )
     .where(and(eq(cardCodes.assignedTo, userId), eq(cardCodes.status, 'ASSIGNED')))
     .orderBy(sql`${cardCodes.assignedAt} desc nulls last`)
+}
+
+/** 手工状态变更仅处理未关联投稿的券。 */
+export async function assertCardCodesUnbound(tx: any, ids: number[]): Promise<void> {
+  if (!ids.length) return
+  await tx.select({ id: cardCodes.id }).from(cardCodes).where(inArray(cardCodes.id, ids))
+    .orderBy(cardCodes.id).for('update')
+  const bound = await tx.select({ id: songs.id }).from(songs).where(inArray(songs.cardCodeId, ids)).limit(1)
+  if (bound.length) throw createApiError(
+    409, SERVER_ERROR_CODES.CARD_CODE_BOUND_TO_SONG, '已关联投稿的点歌券需通过歌曲或排期流程处理'
+  )
 }

@@ -58,7 +58,7 @@
               </button>
             </div>
 
-            <!-- 来源一：使用已有点歌券（弹窗内直接搜索勾选，无需回到列表页） -->
+            <!-- 使用已有点歌券 -->
             <div v-if="source === 'selected'" class="mt-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5">
               <p class="mb-2 text-sm text-text-primary">{{ getMessage('assignSelectedCodes', selectedIds.length) }}</p>
               <p class="mb-2 text-[11px] text-text-tertiary">{{ locale.assignSelectCodesHint }}</p>
@@ -143,12 +143,12 @@
             </p>
             <p v-if="assignResult.invalidRecipients.length" class="text-[11px] leading-relaxed text-error">
               {{ locale.assignInvalidRecipients }}
-              {{ assignResult.invalidRecipients.map((item) => `#${item.userId} ${item.reason}`).join('；') }}
+              {{ assignResult.invalidRecipients.map((item) => `#${item.userId} ${localizeFailure(item)}`).join('；') }}
             </p>
             <div v-if="assignResult.failures.length" class="space-y-1">
               <p v-for="(failure, index) in assignResult.failures" :key="index" class="text-[11px] leading-relaxed text-text-secondary">
                 <span class="font-mono text-text-primary">{{ failure.code || `#${failure.cardCodeId}` }}</span>
-                — {{ failure.reason }}
+                — {{ localizeFailure(failure) }}
               </p>
             </div>
           </div>
@@ -165,20 +165,19 @@ import CardCodeRecipientPicker from '~/components/Admin/CardCodeRecipientPicker.
 import CardCodeAvailablePicker from '~/components/Admin/CardCodeAvailablePicker.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-import { useLocaleText } from '~/composables/useLocaleText'
+import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false
   },
-  // 父组件传入的「预勾选券」：从券列表行内派发或批量派发时带进来的那几张。
-  // 弹窗内仍可自由增删，最终以弹窗内的勾选结果为准。
+  // 预勾选券
   coupons: {
     type: Array,
     default: () => []
   },
-  // 顶部提示：例如行内派发时该券状态不可直接派发，告知管理员将改为现场生成
+  // 派发提示
   notice: {
     type: String,
     default: ''
@@ -191,6 +190,11 @@ const { showToast } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.cardCodesManager || {})
 const { msg: getMessage } = useLocaleText(locale)
+const { localize: localizeServerError } = useServerErrors()
+const localizeFailure = (item) => localizeServerError(
+  { data: item?.error },
+  locale.value.assignFailed
+)
 
 const recipients = ref([])
 const source = ref('selected')
@@ -218,7 +222,7 @@ const canSubmit = computed(() => {
   return selectedIds.value.length > 0
 })
 
-// 每次打开弹窗：清空历史结果与接收人，并据预勾选券决定默认来源
+// 打开弹窗时重置表单
 watch(
   () => props.modelValue,
   (open) => {
@@ -230,8 +234,6 @@ watch(
     notify.value = true
     countPerUser.value = 1
     selectedIds.value = [...presetIds.value]
-    // 默认停在「使用已有点歌券」：该页签内已内置券列表，
-    // 从券列表行内/批量进入时刚才选中的券已被预勾选。
     source.value = 'selected'
   }
 )
@@ -239,6 +241,7 @@ watch(
 const close = () => emit('update:modelValue', false)
 
 const submit = async () => {
+  if (assigning.value) return
   if (!resolvedRecipientCount.value) {
     showToast(locale.value?.assignNoUser || '请先选择接收用户', 'warning')
     return
@@ -290,11 +293,10 @@ const submit = async () => {
       showToast(locale.value?.assignAllFailed || '所有点歌券派发失败', 'error')
     }
 
-    // 通知父组件刷新列表与派发记录；弹窗保持打开以展示明细
     emit('dispatched')
   } catch (error) {
     console.error('派发点歌券失败', error)
-    showToast(locale.value?.assignFailed || '派发点歌券失败', 'error')
+    showToast(localizeServerError(error, locale.value.assignFailed), 'error')
   } finally {
     assigning.value = false
   }

@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
     return {
       ...item.song,
       requesterId: latestRequest?.userId || null,
-      preferredPlayTimeId: latestRequest?.preferredPlayTimeId || null,
+      preferredPlayTimeId: latestRequest?.preferredPlayTimeId ?? item.song.preferredPlayTimeId ?? null,
       // 重播申请不包含期望播出日期，不沿用原始投稿那个已过期的日期
       preferredPlayDate: null,
       submissionNote: latestRequest?.submissionNote || null,

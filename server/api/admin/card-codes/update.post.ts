@@ -1,7 +1,8 @@
+import { getServerDate } from '~~/server/utils/serverTime'
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray, eq } from 'drizzle-orm'
-import { syncAssignmentOnManualStatusChange } from '~~/server/services/cardCodeAssignmentService'
+import { syncAssignmentOnManualStatusChange, assertCardCodesUnbound } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 
 export default defineEventHandler(async (event) => {
@@ -53,7 +54,7 @@ export default defineEventHandler(async (event) => {
     }
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
-      updateObj.redeemedAt = new Date()
+      updateObj.redeemedAt = getServerDate()
       updateObj.lockedBy = null
       updateObj.lockedAt = null
       updateObj.assignedTo = null
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
     }
     if (status === 'LOCKED') {
       updateObj.lockedBy = user.id
-      updateObj.lockedAt = new Date()
+      updateObj.lockedAt = getServerDate()
       updateObj.redeemedBy = null
       updateObj.redeemedAt = null
       updateObj.assignedTo = null
@@ -89,9 +90,10 @@ export default defineEventHandler(async (event) => {
     if (Object.keys(updateObj).length === 0) {
       throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
-    updateObj.updatedAt = new Date()
+    updateObj.updatedAt = getServerDate()
 
     const res = await db.transaction(async (tx) => {
+      if (status) await assertCardCodesUnbound(tx, normalizedIds)
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
 
       // 批量改状态同样要收敛活跃的派发记录，避免券已解绑、ASSIGNED 记录还挂着
@@ -115,7 +117,7 @@ export default defineEventHandler(async (event) => {
             cardCodeId: row.id,
             codeSnapshot: row.code,
             redeemedBy: user.id,
-            redeemedAt: row.redeemedAt || new Date(),
+            redeemedAt: row.redeemedAt || getServerDate(),
             source: 'ADMIN_MANUAL',
             songId: null
           }))
@@ -131,6 +133,7 @@ export default defineEventHandler(async (event) => {
     return { success: true, data: res }
   } catch (err: any) {
     console.error('更新点歌券失败', err)
-    throw createError({ statusCode: err.statusCode || 500, message: err.message || '更新点歌券失败' })
+    if (err.statusCode) throw err
+    throw createError({ statusCode: 500, message: err.message || '更新点歌券失败' })
   }
 })

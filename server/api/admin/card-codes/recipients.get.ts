@@ -2,30 +2,13 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, asc, eq, ilike, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { UNSET_KEY } from '~~/server/utils/recipient-tree'
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
-/**
- * 派发点歌券时的接收人查询。
- *
- * 与 /api/users/search 的区别：这里返回真实姓名与用户名（管理端派发需要核对具体对象），
- * 且排除待审核账号（未通过审核的用户无法接收点歌券）。
- *
- * 支持的查询维度：
- * - q：按姓名/用户名搜索
- * - tags：按标签过滤（命中任意一个标签即返回，多个用逗号分隔）
- * - grade / class：按年级/班级过滤；传 __unset__ 表示「未设置年级/班级」
- * - all=1：返回全部匹配结果（上限 2000，用于派发前名单预览）
- * - facets=1：附带返回年级/班级维度及各组合的用户数
- */
+/** 按姓名、标签与班级查询接收人及组织统计。 */
 const MAX_PREVIEW_COUNT = 2000
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  requireSongAdmin(event)
 
   const query = getQuery(event)
   const keyword = typeof query.q === 'string' ? query.q.trim() : ''
@@ -42,14 +25,12 @@ export default defineEventHandler(async (event) => {
     conditions.push(or(ilike(users.name, `%${keyword}%`), ilike(users.username, `%${keyword}%`))!)
   }
   if (tags.length) {
-    // 数组重叠运算：用户拥有任意一个所选标签即命中
-    // 标签逐个参数化传入，避免把 JS 数组当成行记录渲染
+    // 匹配任意标签
     const tagArray = sql`ARRAY[${sql.join(tags.map((tag) => sql`${tag}`), sql`, `)}]::text[]`
     conditions.push(sql`${users.tags} && ${tagArray}`)
   }
   if (grade) {
-    // __unset__ 表示筛「未填写年级」的账号，与树里的「未设置年级」分组对应。
-    // 历史数据里空串与 NULL 都存在过，两种都算未设置，否则分组点开是空的。
+    // 空串与 NULL 均归为未设置
     conditions.push(
       grade === UNSET_KEY ? or(isNull(users.grade), eq(users.grade, ''))! : eq(users.grade, grade)
     )

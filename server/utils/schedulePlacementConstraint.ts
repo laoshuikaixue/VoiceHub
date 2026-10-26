@@ -1,22 +1,10 @@
-import { inArray } from 'drizzle-orm'
+import { asc, inArray } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { songReplayRequests, songs } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
-/**
- * 排期落位约束
- *
- * 投稿人在投稿时可以选择「期望播出时段」，后台排期必须遵守：
- * 指定了时段的歌曲**只能**排到该时段，排到其它时段一律拒绝。
- *
- * 该校验在保存草稿 / 发布排期 / 换时段迁移三个入口统一执行，
- * 避免「自动排期遵守、手工拖拽或迁移绕过」的不一致。
- * 未选择期望时段的歌曲（null）不受限制。
- *
- * 注：「期望播出日期」是自动排期算法的**偏好**（尽可能安排到那天），
- * 不作为任何入口的拦截条件，因此不在服务端校验。
- */
+/** 校验歌曲期望时段与实际排期时段。期望日期仅作自动排期偏好。 */
 
 /** 归一化期望播出时段 ID；非正整数视为未指定 */
 function normalizePreferredPlayTimeId(value: unknown): number | null {
@@ -64,18 +52,21 @@ export function resolveItemPlayTimeId(
  * 期望时段以「重播申请自己指定的时段」优先，缺省时回退到歌曲投稿时选择的时段。
  */
 export async function checkSchedulePlacement(
-  input: SchedulePlacementCheckInput
+  input: SchedulePlacementCheckInput,
+  database: Pick<typeof db, 'select'> = db
 ): Promise<SchedulePlacementViolation[]> {
   const songIds = Array.from(new Set(input.items.map((item) => item.songId)))
   if (songIds.length === 0) return []
 
-  const songRows = await db
+  const songRows = await database
     .select({
       id: songs.id,
       preferredPlayTimeId: songs.preferredPlayTimeId
     })
     .from(songs)
     .where(inArray(songs.id, songIds))
+    .orderBy(asc(songs.id))
+    .for('update')
 
   const songMap = new Map(songRows.map((row) => [row.id, row]))
 
@@ -87,34 +78,35 @@ export async function checkSchedulePlacement(
         .filter((id): id is number => typeof id === 'number' && id > 0)
     )
   )
-  const replayMap = new Map<number, number | null>()
+  const replayMap = new Map<number, { songId: number; status: string; preferredPlayTimeId: number | null }>()
   if (replayRequestIds.length > 0) {
-    const replayRows = await db
+    const replayRows = await database
       .select({
         id: songReplayRequests.id,
+        songId: songReplayRequests.songId,
+        status: songReplayRequests.status,
         preferredPlayTimeId: songReplayRequests.preferredPlayTimeId
       })
       .from(songReplayRequests)
       .where(inArray(songReplayRequests.id, replayRequestIds))
     replayRows.forEach((row) => {
-      replayMap.set(row.id, normalizePreferredPlayTimeId(row.preferredPlayTimeId))
+      replayMap.set(row.id, { ...row, preferredPlayTimeId: normalizePreferredPlayTimeId(row.preferredPlayTimeId) })
     })
   }
 
   const violations: SchedulePlacementViolation[] = []
-  const seen = new Set<number>()
-
   for (const item of input.items) {
-    if (seen.has(item.songId)) continue
-    seen.add(item.songId)
-
     const song = songMap.get(item.songId)
     if (!song) continue
 
-    const replayPreferred =
-      item.replayRequestId != null ? replayMap.get(item.replayRequestId) : undefined
+    const replay = item.replayRequestId != null ? replayMap.get(item.replayRequestId) : undefined
+    if (item.replayRequestId != null && (
+      !replay || replay.songId !== item.songId || !['PENDING', 'FULFILLED'].includes(replay.status)
+    )) {
+      throw createApiError(400, SERVER_ERROR_CODES.SONG_REPLAY_INVALID_REQUEST, '重播申请无效或已被处理')
+    }
     const expectedPlayTimeId =
-      replayPreferred ?? normalizePreferredPlayTimeId(song.preferredPlayTimeId)
+      replay?.preferredPlayTimeId ?? normalizePreferredPlayTimeId(song.preferredPlayTimeId)
     if (expectedPlayTimeId === null) continue
 
     const actualPlayTimeId = resolveItemPlayTimeId(item, input.playTimeId)
@@ -133,9 +125,10 @@ export async function checkSchedulePlacement(
  */
 export async function assertSchedulePlacement(
   input: SchedulePlacementCheckInput,
-  songTitleMap?: Map<number, string>
+  songTitleMap?: Map<number, string>,
+  database: Pick<typeof db, 'select'> = db
 ): Promise<void> {
-  const violations = await checkSchedulePlacement(input)
+  const violations = await checkSchedulePlacement(input, database)
   if (violations.length === 0) return
 
   const describe = (songId: number) => songTitleMap?.get(songId) || `歌曲#${songId}`
@@ -154,10 +147,10 @@ export async function assertSchedulePlacement(
 /**
  * 查询歌曲标题，用于错误提示
  */
-export async function loadSongTitleMap(songIds: number[]): Promise<Map<number, string>> {
+export async function loadSongTitleMap(songIds: number[], database: Pick<typeof db, 'select'> = db): Promise<Map<number, string>> {
   const map = new Map<number, string>()
   if (songIds.length === 0) return map
-  const rows = await db
+  const rows = await database
     .select({ id: songs.id, title: songs.title })
     .from(songs)
     .where(inArray(songs.id, songIds))

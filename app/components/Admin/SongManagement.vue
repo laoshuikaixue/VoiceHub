@@ -28,7 +28,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <!-- 桌面端批量标记播放状态（独立按钮组，与下载/驳回/删除分离） -->
+          <!-- 桌面端批量播放状态 -->
           <Transition
             enter-active-class="transition duration-200 ease-out"
             enter-from-class="opacity-0 scale-95 translate-x-10"
@@ -44,6 +44,7 @@
               <button
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchMarkPlayed"
+                :disabled="loading || batchMarking"
               >
                 <Check :size="14" class="text-success-70" /> {{ locale.actions.batchMarkPlayed }} ({{
                   selectedSongs.length
@@ -52,6 +53,7 @@
               <button
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchMarkUnplayed"
+                :disabled="loading || batchMarking"
               >
                 <RotateCcw :size="14" /> {{ locale.actions.batchMarkUnplayed }} ({{ selectedSongs.length }})
               </button>
@@ -543,11 +545,12 @@
             </button>
           </div>
         </div>
-        <!-- 批量标记播放状态（独立按钮组） -->
+        <!-- 批量播放状态 -->
         <div class="flex items-center gap-2 border-t border-border-secondary-50 pt-2">
           <button
             class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
             @click="batchMarkPlayed"
+            :disabled="loading || batchMarking"
           >
             <Check :size="16" />
             <span class="text-[10px] font-bold">{{ locale.actions.batchMarkPlayed }}</span>
@@ -555,6 +558,7 @@
           <button
             class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
             @click="batchMarkUnplayed"
+            :disabled="loading || batchMarking"
           >
             <RotateCcw :size="16" />
             <span class="text-[10px] font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
@@ -1349,7 +1353,7 @@ import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl, getCoverThumbUrl } from '~/utils/url'
-import { formatDuration, getBeijingDateString } from '~/utils/timeUtils'
+import { formatDuration, getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
@@ -1358,7 +1362,7 @@ dayjs.extend(customParseFormat)
 // 响应式数据
 const { showToast: showNotification } = useToast()
 const { localize: localizeServerError } = useServerErrors()
-const { admin, siteConfig, currentLocale } = useLocale()
+const { admin, siteConfig, songs: songsLocale, currentLocale } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.songManagement || {}
   const emptyText = () => ''
@@ -1388,6 +1392,7 @@ const locale = computed(() => {
 })
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
 const loading = ref(false)
+const batchMarking = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const poolFilter = ref('all')
@@ -1799,18 +1804,13 @@ const getPlayTimeName = (playTimeId) => {
   return formatPlayTimeDisplay(playTime)
 }
 
-// 展示点歌时选定的「播出日期 + 时段」，如「10月24日 周五 · 早上」
+// 期望播出日期与时段
 const formatPlaySlotDisplay = (song) => {
   const parts = []
   if (song.preferredPlayDate) {
-    // 按北京时间解析，避免时区偏移导致日期/星期错位
-    const date = dayjs(`${song.preferredPlayDate}T00:00:00+08:00`)
-    if (date.isValid()) {
-      const weekdayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-      parts.push(`${date.format('M月D日')} ${weekdayLabels[date.day()]}`)
-    } else {
-      parts.push(song.preferredPlayDate)
-    }
+    const weekday = getBeijingWeekday(song.preferredPlayDate)
+    const weekdayLabel = weekday === null ? '' : songsLocale.value?.requestForm?.weekdaysFull?.[weekday]
+    parts.push([song.preferredPlayDate, weekdayLabel].filter(Boolean).join(' '))
   }
   if (song.preferredPlayTimeId) {
     parts.push(getPlayTimeName(song.preferredPlayTimeId))
@@ -2025,9 +2025,10 @@ const markAsUnplayed = async (songId) => {
     }
 }
 
-// 批量标记为已播放（服务端已按 played=false 过滤，无需逐首确认）
+// 批量标记已播放
 const batchMarkPlayed = async () => {
-  if (selectedSongs.value.length === 0) return
+  if (loading.value || batchMarking.value || selectedSongs.value.length === 0) return
+  batchMarking.value = true
 
   const songIds = [...selectedSongs.value]
   try {
@@ -2040,7 +2041,7 @@ const batchMarkPlayed = async () => {
     })
 
     await refreshSongs()
-    // 刷新会清空勾选，按仍存在的歌曲恢复，便于连续批量操作
+    // 保留仍存在歌曲的勾选
     selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
 
     const updated = result?.count ?? 0
@@ -2053,17 +2054,19 @@ const batchMarkPlayed = async () => {
   } catch (error) {
     console.error('批量标记已播放失败:', error)
     showNotification(
-      getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')),
+      getNestedMessage('errors', 'markFailed', localizeServerError(error)),
       'error'
     )
   } finally {
+    batchMarking.value = false
     loading.value = false
   }
 }
 
-// 批量撤回已播放状态（服务端已按 played=true 过滤，无需逐首确认）
+// 批量撤回已播放
 const batchMarkUnplayed = async () => {
-  if (selectedSongs.value.length === 0) return
+  if (loading.value || batchMarking.value || selectedSongs.value.length === 0) return
+  batchMarking.value = true
 
   const songIds = [...selectedSongs.value]
   try {
@@ -2076,7 +2079,7 @@ const batchMarkUnplayed = async () => {
     })
 
     await refreshSongs()
-    // 刷新会清空勾选，按仍存在的歌曲恢复，便于连续批量操作
+    // 保留仍存在歌曲的勾选
     selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
 
     const updated = result?.count ?? 0
@@ -2089,10 +2092,11 @@ const batchMarkUnplayed = async () => {
   } catch (error) {
     console.error('批量撤回已播放失败:', error)
     showNotification(
-      getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')),
+      getNestedMessage('errors', 'markFailed', localizeServerError(error)),
       'error'
     )
   } finally {
+    batchMarking.value = false
     loading.value = false
   }
 }

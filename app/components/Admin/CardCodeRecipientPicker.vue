@@ -235,16 +235,7 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'
 
-/**
- * 点歌券派发的接收人选择器。
- *
- * 交互按「用户管理」的组织结构来：默认只列出年级，点开年级才出现班级，点开班级才拉取该班用户。
- * 之所以不全量返回：一所学校上千人，一次性塞进弹窗会让移动端卡住，也没必要把
- * 没打算派发的人渲染出来。
- *
- * 已选用户以对象数组的形式 v-model 出去（含姓名/用户名），上层派发时直接取 id 提交，
- * 名单展示不需要再回查。
- */
+/** 按组织树选择点歌券接收人。 */
 
 const props = defineProps({
   modelValue: {

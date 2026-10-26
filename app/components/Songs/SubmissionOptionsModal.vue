@@ -93,9 +93,7 @@
               </div>
             </div>
 
-            <!-- 二、投稿留言 / 匿名投稿 / 点歌券
-                 三者同属「投稿内容」一组，组内不画分割线；
-                 分割线只出现在本组与上方「播出安排」之间。 -->
+            <!-- 投稿内容 -->
             <div
               v-if="showNote || showAnonymous || showCardCode"
               class="options-group"
@@ -283,11 +281,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  /**
-   * 弹窗模式：
-   * - options：用户主动点击「更多选项」打开，只保存选项，不触发投稿
-   * - required：后台开启「时段必选」时，投稿后弹出，确认后继续投稿
-   */
+  /** 弹窗模式：options 保存选项，required 确认后继续投稿。 */
   mode: {
     type: String,
     default: 'options'
@@ -457,11 +451,7 @@ const myCardCodeOptions = computed(() =>
 /** 「手动输入券码」在下拉列表中的特殊值 */
 const MANUAL_CARD_CODE_VALUE = '__manual__'
 
-/**
- * 点歌券下拉列表 = 我的点歌券 + 「手动输入券码」。
- * 手动输入不再单独占一块区域，而是作为下拉里的一项，
- * 选中后才展开输入框。
- */
+/** 点歌券下拉包含已派发券与手动输入项。 */
 const cardCodeOptions = computed(() => [
   ...myCardCodeOptions.value,
   {
@@ -470,13 +460,7 @@ const cardCodeOptions = computed(() => [
   }
 ])
 
-/**
- * 下拉当前选中值：
- * - 手动输入模式 → 特殊值（同时也是已保存券码不在「我的点歌券」时的兜底）
- * - 已保存的券码在「我的点歌券」里 → 该券码
- * - 未选择 → 空
- * 由 props.cardCode 派生，因此校验未通过时会自动回弹到真实状态。
- */
+/** 根据已保存券码计算下拉选中值。 */
 const cardCodeSelection = computed(() => {
   if (manualCardCodeMode.value) return MANUAL_CARD_CODE_VALUE
   const current = String(props.cardCode || '').trim().toUpperCase()
@@ -525,11 +509,7 @@ const slotAppliesToWeekday = (slot, weekday) => {
   return days === null || days.includes(weekday)
 }
 
-/**
- * 可选时段列表：
- * - 选了日期 → 仅列出该日期星期开放的时段（日期优先级高于时段）
- * - 未选日期 → 列出全部启用时段
- */
+/** 按日期星期过滤可选时段。 */
 const availableTimes = computed(() => {
   const weekday = getWeekday(localDate.value)
   return props.playTimes.filter((slot) => slotAppliesToWeekday(slot, weekday))
@@ -566,10 +546,7 @@ watch(
   }
 )
 
-/**
- * 切换日期后：若已选时段在新的日期星期不开放，自动清空时段。
- * 日期优先级高于时段——不允许出现「该日期没有的时段」。
- */
+/** 切换日期后清除失效时段。 */
 watch(localDate, () => {
   errorMessage.value = ''
   if (!localTimeId.value) return

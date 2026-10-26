@@ -2,6 +2,8 @@ import { db, eq, ne, schedules, songs, and } from '~/drizzle/db'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -56,6 +58,10 @@ export default defineEventHandler(async (event) => {
 
     // 使用事务包装删除和重播状态更新操作
     const result = await db.transaction(async (tx) => {
+      if (existingSchedule.songId) {
+        await tx.select({ id: songs.id }).from(songs)
+          .where(eq(songs.id, existingSchedule.songId)).for('update')
+      }
       // 删除排期
       const deletedSchedule = await tx
         .delete(schedules)
@@ -122,18 +128,7 @@ export default defineEventHandler(async (event) => {
     console.error('移除排期失败:', error)
 
     // 处理数据库特定错误
-    if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
-      return {
-        success: false,
-        message: '排期不存在或已被删除'
-      }
-    }
-
-    // 确保返回一个成功=false的响应，而不是抛出错误
-    return {
-      success: false,
-      message: error.message || '移除排期失败',
-      error: error.code || 'UNKNOWN_ERROR'
-    }
+    if (error.statusCode) throw error
+    throw createApiError(500, SERVER_ERROR_CODES.SONG_OPERATION_FAILED, '移除排期失败')
   }
 })

@@ -1,6 +1,6 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNull, notExists } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { cardCodes } from '~/drizzle/schema'
+import { cardCodeAssignments, cardCodes, songs } from '~/drizzle/schema'
 
 /**
  * 点歌券码生成工具。
@@ -117,6 +117,7 @@ export async function createCardCodes(params: {
         note: params.note || null
       }))
     )
+    .onConflictDoNothing({ target: cardCodes.code })
     .returning({ id: cardCodes.id, code: cardCodes.code })
 
   return rows
@@ -127,5 +128,11 @@ export async function createCardCodes(params: {
  */
 export async function deleteCardCodes(ids: number[]): Promise<void> {
   if (!ids.length) return
-  await db.delete(cardCodes).where(inArray(cardCodes.id, ids))
+  await db.delete(cardCodes).where(and(
+    inArray(cardCodes.id, ids), eq(cardCodes.status, 'AVAILABLE'), isNull(cardCodes.assignedTo),
+    notExists(db.select({ id: songs.id }).from(songs).where(eq(songs.cardCodeId, cardCodes.id))),
+    notExists(db.select({ id: cardCodeAssignments.id }).from(cardCodeAssignments).where(and(
+      eq(cardCodeAssignments.cardCodeId, cardCodes.id), eq(cardCodeAssignments.status, 'ASSIGNED')
+    )))
+  ))
 }

@@ -10,6 +10,7 @@
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       @click="toggle"
+      @keydown.esc.stop="close"
     >
       <span class="flex min-w-0 flex-1 flex-col">
         <span
@@ -44,6 +45,7 @@
           :style="[popupStyle, { zIndex }]"
           class="fixed w-[268px] rounded-xl border border-border-secondary bg-bg-primary p-2 shadow-2xl backdrop-blur-xl"
           role="dialog"
+          tabindex="-1"
           :aria-label="text.placeholder"
           @keydown.esc.stop="close"
         >
@@ -175,6 +177,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Calendar, ChevronLeft, ChevronRight } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { usePopupZIndex } from '~/composables/useZIndex'
+import { getSyncedDate } from '~/composables/useSyncedTime'
+import { getBeijingDateString } from '~/utils/timeUtils'
 
 const props = defineProps({
   modelValue: {
@@ -207,7 +211,7 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  // 由调用方指定的「今天」（如服务器同步时间），留空则取浏览器本地日期
+  // 由调用方指定的北京时间日期
   today: {
     type: String,
     default: ''
@@ -283,12 +287,13 @@ const normalizeISODate = (value) => {
   return parsed ? toISODate(parsed.year, parsed.month, parsed.day) : ''
 }
 
-// 基准「今天」：优先使用调用方传入（服务器时间），否则取本地日期
+const currentDate = ref(getBeijingDateString(getSyncedDate()))
+
+// 基准日期使用同步后的北京时间
 const todayDate = computed(() => {
   const fromProps = parseISODate(props.today)
   if (fromProps) return fromProps
-  const now = new Date()
-  return { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() }
+  return parseISODate(currentDate.value)
 })
 const todayISO = computed(() => toISODate(todayDate.value.year, todayDate.value.month, todayDate.value.day))
 
@@ -480,9 +485,11 @@ const toggle = async () => {
     isOpen.value = false
     return
   }
+  currentDate.value = getBeijingDateString(getSyncedDate())
   syncViewToValue()
   isOpen.value = true
   await nextTick()
+  popupRef.value?.focus({ preventScroll: true })
   updatePosition()
   requestAnimationFrame(updatePosition)
 }
@@ -557,6 +564,7 @@ const clear = () => {
 }
 
 const goToday = () => {
+  currentDate.value = getBeijingDateString(getSyncedDate())
   if (todayDisabled.value) return
   viewYear.value = todayDate.value.year
   viewMonth.value = todayDate.value.month
@@ -582,6 +590,7 @@ watch(isOpen, (open) => {
     window.addEventListener('scroll', handleViewportChange, true)
     window.addEventListener('resize', handleViewportChange)
   } else {
+    if (popupRef.value?.contains(document.activeElement)) triggerRef.value?.focus({ preventScroll: true })
     window.removeEventListener('scroll', handleViewportChange, true)
     window.removeEventListener('resize', handleViewportChange)
   }

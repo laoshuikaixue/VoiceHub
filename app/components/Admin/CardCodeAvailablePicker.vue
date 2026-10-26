@@ -86,12 +86,7 @@ import { Search, X } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'
 
-/**
- * 派发弹窗内嵌的「可用点歌券」选择器。
- *
- * 只有状态为 AVAILABLE 的券能作为待派发券（其它状态已发放/锁定/核销/作废不可再派）。
- * 管理员在这里直接搜索并勾选，无需回到列表页操作。
- */
+/** 选择可用点歌券。 */
 const props = defineProps({
   // 已勾选的点歌券 ID
   modelValue: {
@@ -163,8 +158,7 @@ const fetchCodes = async () => {
       }
     })
     const list = Array.isArray(res?.data) ? res.data : []
-    // 预勾选的券可能不在当前搜索/分页结果里（甚至已被别人领走），
-    // 合并进来才能让管理员看见「到底勾了哪几张」，避免计数与列表对不上。
+    // 保留当前结果之外的预勾选项。
     const known = new Set(list.map((item) => item.id))
     const extras = props.presetCoupons
       .map((item) => ({

@@ -1,29 +1,19 @@
 import { db } from '~/drizzle/db'
 import { cardCodeAssignments } from '~/drizzle/schema'
 import { and, count, desc, eq, gte, ilike, lte, or } from 'drizzle-orm'
-import { getBeijingEndOfDay, getBeijingStartOfDay, parseToBeijingTime } from '~/utils/timeUtils'
+import { formatDateTime, getBeijingEndOfDay, getBeijingStartOfDay, parseToBeijingTime } from '~/utils/timeUtils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
-/**
- * 派发记录查询：支持按状态、接收人、派发人、关键词与时间范围筛选。
- * 返回派发时间、派发人员、接收人、通知状态与失败原因，供管理员追溯。
- */
+/** 按用户、状态与北京日期查询派发记录。 */
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  requireSongAdmin(event)
 
-  // 日期筛选按北京当天的起止边界，不能拿服务端本地时区划天；
-  // 格式非法直接拒绝，避免条件被静默丢弃后返回全量数据
   const query = getQuery(event)
   const parseDayBoundary = (value: unknown, field: string): Date | null => {
+    if (value === undefined || value === '') return null
     const text = typeof value === 'string' ? value.trim() : ''
-    if (!text) return null
     if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
       throw createApiError(
         400,
@@ -31,8 +21,13 @@ export default defineEventHandler(async (event) => {
         `${field}必须为有效的 YYYY-MM-DD 格式`
       )
     }
-    const parsed = parseToBeijingTime(text)
-    if (Number.isNaN(parsed.getTime())) {
+    let parsed: Date
+    try {
+      parsed = parseToBeijingTime(text)
+      if (Number.isNaN(parsed.getTime()) || formatDateTime(parsed, 'YYYY-MM-DD') !== text) {
+        throw new RangeError('日期无效')
+      }
+    } catch {
       throw createApiError(
         400,
         SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
@@ -43,6 +38,9 @@ export default defineEventHandler(async (event) => {
   }
   const fromDay = parseDayBoundary(query.startDate, '开始日期')
   const toDay = parseDayBoundary(query.endDate, '结束日期')
+  if (fromDay && toDay && fromDay > toDay) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '开始日期不能晚于结束日期')
+  }
 
   try {
     const status = typeof query.status === 'string' ? query.status.trim().toUpperCase() : ''
@@ -110,7 +108,14 @@ export default defineEventHandler(async (event) => {
     const total = Number(totalResult[0]?.count || 0)
     return {
       success: true,
-      data: result,
+      data: result.map((row) => ({
+        ...row,
+        assignedAtDisplay: formatDateTime(row.assignedAt),
+        usedAtDisplay: row.usedAt ? formatDateTime(row.usedAt) : null,
+        recycledAtDisplay: row.recycledAt ? formatDateTime(row.recycledAt) : null,
+        createdAtDisplay: formatDateTime(row.createdAt),
+        updatedAtDisplay: formatDateTime(row.updatedAt)
+      })),
       pagination: {
         page,
         limit,
@@ -121,6 +126,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (err) {
     console.error('获取点歌券派发记录失败', err)
-    throw createError({ statusCode: 500, message: '获取点歌券派发记录失败' })
+    throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, '获取点歌券派发记录失败')
   }
 })

@@ -493,10 +493,10 @@ export async function requestSongForUser(
         // 条件更新保证并发下同一张券只会被锁定一次
         const lockResult = await tx
           .update(cardCodes)
-          .set({ status: 'LOCKED', lockedBy: user.id, lockedAt: new Date() })
+          .set({ status: 'LOCKED', lockedBy: user.id, lockedAt: getServerDate(), updatedAt: getServerDate() })
           .where(
             isAssignedToSelf
-              ? and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'ASSIGNED'))
+              ? and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'ASSIGNED'), eq(cardCodes.assignedTo, user.id))
               : and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'AVAILABLE'))
           )
           .returning()

@@ -221,3 +221,33 @@ test('方案比较会优先选择期望日期命中更多的方案', () => {
 
   assert.equal(countExpectedDateHits(result.songs, '2026-03-18'), 1, '期望日期命中的歌曲应优先入选')
 })
+
+test('日期偏好不使相差最小方案牺牲时长', () => {
+  const candidates = [
+    mk(1, { durationSeconds: 300, preferredPlayDate: '2026-03-18' }),
+    mk(2, { durationSeconds: 600, preferredPlayDate: '2026-03-18' })
+  ]
+  for (const algorithm of [autoSchedule, autoScheduleExhaustive]) {
+    const result = algorithm('middle', 5, candidates, [], 1, null, null, 0.8, {
+      targetDate: '2026-03-18', targetPlayTimeId: null
+    })
+    assert.ok(!Array.isArray(result))
+    assert.equal(result.totalDuration, 300)
+    assert.deepEqual(result.songs.map((song) => song.id), [1])
+  }
+})
+
+test('非当天的精确时长方案优于当天的偏离方案', () => {
+  const candidates = [
+    mk(1, { durationSeconds: 300 }),
+    mk(2, { durationSeconds: 420, preferredPlayDate: '2026-03-18' })
+  ]
+  for (const algorithm of [autoSchedule, autoScheduleExhaustive]) {
+    const result = algorithm('middle', 5, candidates, [], 1, null, null, 0.8, {
+      targetDate: '2026-03-18', targetPlayTimeId: null
+    })
+    assert.ok(!Array.isArray(result))
+    assert.equal(result.absDiff, 0)
+    assert.equal(result.songs[0].id, 1)
+  }
+})

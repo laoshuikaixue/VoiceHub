@@ -1,29 +1,15 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { and, ne, sql } from 'drizzle-orm'
+import { ne, sql } from 'drizzle-orm'
 import { smartSort } from '~~/server/utils/grade-class-core'
 import { UNSET_KEY } from '~~/server/utils/recipient-tree'
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
-/**
- * 派发接收人的组织树（年级 → 班级）。
- *
- * 只返回两级维度与人数，不返回用户明细：一所学校上千人，一次性把用户全塞进
- * 下拉会让首屏变慢，也不利于移动端。用户明细由前端在展开某个班级时按
- * grade + class 调 /api/admin/card-codes/recipients 拉取。
- *
- * 未填写年级/班级的用户不会丢：归入 value = UNSET_KEY 的分组，前端展示为
- * 「未设置年级 / 未设置班级」，避免这类账号在派发界面里不可见。
- */
+/** 查询接收人组织树，空年级或班级归入 UNSET_KEY。 */
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  requireSongAdmin(event)
 
-  // 一次聚合查询取出「年级 + 班级」的人数矩阵，避免逐个年级再查一次
+  // 按年级与班级聚合人数
   const rows = await db
     .select({
       grade: users.grade,

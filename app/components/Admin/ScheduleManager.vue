@@ -4341,10 +4341,7 @@ const autoScheduleCandidates = computed(() => {
   return base
 })
 
-// 自动排期的期望落位约束：
-// - 目标日期 = 当前选中的排期日期（期望日期是软偏好，命中当天的候选优先安排，不排除其它歌曲）
-// - 目标时段 = 当前选中的播出时段（期望时段是硬约束，只能排到该时段）
-//   未选择时段时整批会以「未指定时段」落位，因此带期望时段的歌曲不参与本次排期
+// 自动排期按期望时段过滤，按期望日期排序。
 const autoScheduleOptions = computed(() => ({
   targetDate: selectedDate.value,
   targetPlayTimeId: selectedPlayTime.value
@@ -5213,12 +5210,7 @@ const confirmMoveDate = async () => {
     } catch (error) {
       console.error('迁移排期日期失败:', error)
       if (window.$showNotification) {
-        const backendMessage =
-          getThrownMessage(error) || formatLocaleValue(locale.value?.unknown) || '未知错误'
-        window.$showNotification(
-          callLocale('errors.moveDateFailed', `迁移失败: ${backendMessage}`, backendMessage),
-          'error'
-        )
+        window.$showNotification(localizeServerError(error), 'error')
       }
     } finally {
       notifySchedulePlaylistChanged({ dates: [sourceDate, targetDate] })
@@ -5636,11 +5628,7 @@ const saveDraftConfirmed = async () => {
   } catch (error) {
     console.error('保存草稿失败:', error)
     if (window.$showNotification) {
-      const message = getThrownMessage(error) || '未知错误'
-      window.$showNotification(
-        callLocale('errors.saveDraftFailed', `保存草稿失败: ${message}`, message),
-        'error'
-      )
+      window.$showNotification(localizeServerError(error), 'error')
     }
   } finally {
     loading.value = false
@@ -5745,11 +5733,7 @@ const publishScheduleConfirmed = async () => {
   } catch (error) {
     console.error('发布排期失败:', error)
     if (window.$showNotification) {
-      const message = getThrownMessage(error) || '未知错误'
-      window.$showNotification(
-        callLocale('errors.publishScheduleFailed', `发布排期失败: ${message}`, message),
-        'error'
-      )
+      window.$showNotification(localizeServerError(error), 'error')
     }
   } finally {
     loading.value = false
@@ -5807,11 +5791,7 @@ const publishSingleDraftConfirmed = async (draft) => {
   } catch (error) {
     console.error('发布单个草稿失败:', error)
     if (window.$showNotification) {
-      const message = getThrownMessage(error) || '未知错误'
-      window.$showNotification(
-        callLocale('errors.publishDraftFailed', `发布草稿失败: ${message}`, message),
-        'error'
-      )
+      window.$showNotification(localizeServerError(error), 'error')
     }
   } finally {
     loading.value = false
@@ -6037,6 +6017,7 @@ const handleTouchEnd = (event) => {
 
 const handleTouchDropToSequence = async (targetElement) => {
   const song = touchDragData.value.item
+  if (!canAddToSchedule(song)) return
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
   if (existingIndex !== -1) return
 

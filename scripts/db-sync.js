@@ -290,12 +290,15 @@ async function checkSchemaConsistency(sql) {
       'avatarProviderUserId',
       'tags'
     ],
-    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId'],
+    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId', 'preferredPlayDate'],
     CardCode: ['assignedTo', 'assignedAt'],
+    CardCodeAssignment: ['cardCodeId', 'userId', 'assignedAt', 'status'],
+    PlayTime: ['weekdays'],
     song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
     user_status_logs: ['username', 'name'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
+      'playSlotRequired',
       'instance_id',
       'telemetryEnabled',
       'smtpEnabled',

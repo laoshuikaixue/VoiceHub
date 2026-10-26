@@ -10,6 +10,7 @@
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       @click="toggle"
+      @keydown.esc.stop="close"
     >
       <span class="flex min-w-0 flex-1 flex-col">
         <span
@@ -44,6 +45,7 @@
           :style="[popupStyle, { zIndex }]"
           class="fixed w-[200px] rounded-xl border border-border-secondary bg-bg-primary p-2 shadow-2xl backdrop-blur-xl"
           role="dialog"
+          tabindex="-1"
           :aria-label="text.placeholder"
           @keydown.esc.stop="close"
         >
@@ -124,6 +126,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Clock } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { usePopupZIndex } from '~/composables/useZIndex'
+import { getSyncedDate } from '~/composables/useSyncedTime'
+import { formatDateTime } from '~/utils/timeUtils'
 
 const props = defineProps({
   modelValue: {
@@ -334,6 +338,7 @@ const toggle = async () => {
   }
   isOpen.value = true
   await nextTick()
+  popupRef.value?.focus({ preventScroll: true })
   updatePosition()
   requestAnimationFrame(updatePosition)
   syncViewToValue()
@@ -366,12 +371,11 @@ const clear = () => {
 }
 
 const goNow = () => {
-  const now = new Date()
+  const [h, currentMinute] = formatDateTime(getSyncedDate(), 'HH:mm').split(':').map(Number)
   const step = props.minuteStep > 1 ? props.minuteStep : 1
-  let m = now.getMinutes()
+  let m = currentMinute
   // 对齐到步进
   m = Math.floor(m / step) * step
-  const h = now.getHours()
   emitValue(buildTimeString(h, m))
   syncViewToValue()
 }
@@ -393,6 +397,7 @@ watch(isOpen, (open) => {
     window.addEventListener('scroll', handleViewportChange, true)
     window.addEventListener('resize', handleViewportChange)
   } else {
+    if (popupRef.value?.contains(document.activeElement)) triggerRef.value?.focus({ preventScroll: true })
     window.removeEventListener('scroll', handleViewportChange, true)
     window.removeEventListener('resize', handleViewportChange)
   }

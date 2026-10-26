@@ -1,8 +1,9 @@
+import { getServerDate } from '~~/server/utils/serverTime'
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
-import { syncAssignmentOnManualStatusChange } from '~~/server/services/cardCodeAssignmentService'
+import { syncAssignmentOnManualStatusChange, assertCardCodesUnbound } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
 const MAX_ID_LENGTH = 32
@@ -41,7 +42,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })
     }
 
-    const updateObj: any = { updatedAt: new Date() }
+    const updateObj: any = { updatedAt: getServerDate() }
     const status = validatedData.status
     if (status) {
       if (status === 'ASSIGNED') {
@@ -54,7 +55,7 @@ export default defineEventHandler(async (event) => {
       updateObj.status = status
       if (status === 'REDEEMED') {
         updateObj.redeemedBy = operatorId
-        updateObj.redeemedAt = new Date()
+        updateObj.redeemedAt = getServerDate()
         updateObj.lockedBy = null
         updateObj.lockedAt = null
         updateObj.assignedTo = null
@@ -62,7 +63,7 @@ export default defineEventHandler(async (event) => {
       }
       if (status === 'LOCKED') {
         updateObj.lockedBy = operatorId
-        updateObj.lockedAt = new Date()
+        updateObj.lockedAt = getServerDate()
         updateObj.redeemedBy = null
         updateObj.redeemedAt = null
         updateObj.assignedTo = null
@@ -93,6 +94,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const updatedCardCodes = await db.transaction(async (tx) => {
+      if (status) await assertCardCodesUnbound(tx, ids)
       const beforeRows = await tx
         .select({
           id: cardCodes.id,
@@ -126,7 +128,7 @@ export default defineEventHandler(async (event) => {
             cardCodeId: row.id,
             codeSnapshot: row.code,
             redeemedBy: operatorId,
-            redeemedAt: row.redeemedAt || new Date(),
+            redeemedAt: row.redeemedAt || getServerDate(),
             source: 'OPEN_API_MANUAL',
             songId: null
           }))

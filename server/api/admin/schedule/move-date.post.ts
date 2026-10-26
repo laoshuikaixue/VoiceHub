@@ -111,7 +111,8 @@ export default defineEventHandler(async (event) => {
               replayRequestId: s.replayRequestId
             }))
           },
-          new Map(sourceSchedules.map((s) => [s.songId, s.songTitle]))
+          new Map(sourceSchedules.map((s) => [s.songId, s.songTitle])),
+          tx
         )
       }
 
@@ -193,6 +194,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('迁移排期日期失败:', error)
+    if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
       message: error.message || '迁移排期日期失败'

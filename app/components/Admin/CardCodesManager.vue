@@ -420,10 +420,10 @@
                   {{ assignmentStatusMeta(item.status).label }}
                 </span>
                 <p v-if="item.failureReason" class="mt-1 text-[10px] text-error leading-relaxed">
-                  {{ item.assignmentFailureReason }}: {{ item.failureReason }}
+                  {{ locale.assignmentFailureReason }}: {{ localizeAssignmentFailure(item) }}
                 </p>
                 <p v-if="item.notifyStatus === 'FAILED' && item.notifyError" class="mt-1 text-[10px] text-warning leading-relaxed">
-                  {{ item.notifyError }}
+                  {{ locale.notifyFailedButAssigned }}
                 </p>
               </td>
               <td class="px-3 py-3 text-text-secondary">
@@ -779,11 +779,18 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CardCodeDispatchModal from '~/components/Admin/CardCodeDispatchModal.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
+import { formatDateTime, parseUtcTimestamp } from '~/utils/timeUtils'
 
 const { showToast } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.cardCodesManager || {})
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
+const { localize: localizeServerError } = useServerErrors()
+const localizeAssignmentFailure = (item) => localizeServerError(
+  { data: item?.error },
+  locale.value.assignFailed
+)
 
 const codes = ref([])
 const redeemLogs = ref([])
@@ -858,7 +865,7 @@ const assignmentStatsChips = computed(() => [
   { key: 'failed', label: locale.value?.assignmentStatusFailed || 'Failed', value: assignmentStats.value.failed, class: 'bg-error-10 text-error border border-error-20' }
 ])
 
-/** 当前勾选中、状态为「可用」的点歌券，作为派发弹窗的候选券 */
+/** 勾选的可用点歌券 */
 const selectedAvailableCodes = computed(() =>
   selectedIds.value
     .map((id) => codes.value.find((row) => row.id === id))
@@ -866,8 +873,7 @@ const selectedAvailableCodes = computed(() =>
     .map((item) => ({ id: item.id, code: item.code, status: item.status }))
 )
 
-/** 派发按钮的禁用原因：按券的当前状态给出具体解释，
- *  避免管理员只看到一只灰按钮却不知道为什么点不动。 */
+/** 派发按钮禁用原因 */
 const dispatchDisabledReason = (item) => {
   const statusLabel = {
     ASSIGNED: locale.value?.assigned || '已派发',
@@ -880,7 +886,7 @@ const dispatchDisabledReason = (item) => {
   return String(template).replace('{status}', statusLabel)
 }
 
-/** 打开派发弹窗：把当前勾选的可用券带进去预勾选，管理员可在弹窗里继续增删 */
+/** 预选可用点歌券 */
 const openDispatchFromSelection = () => {
   dispatchCoupons.value = selectedAvailableCodes.value
   dispatchNotice.value = selectedAvailableCodes.value.length
@@ -889,9 +895,7 @@ const openDispatchFromSelection = () => {
   dispatchOpen.value = true
 }
 
-/** 从券列表行的「派发」按钮打开。
- *  仅「可用」状态的券能作为待派发券，会被预勾选；其它状态（已发放/锁定/核销/作废）
- *  的按钮已在界面上禁用，此处保留兜底，避免被绕过时静默丢券。 */
+/** 派发指定可用点歌券 */
 const openDispatchForCode = (item) => {
   if (!item) return
   if (item.status !== 'AVAILABLE') {
@@ -1259,12 +1263,15 @@ const recycleAssignment = async (item) => {
       showToast(locale.value?.recycleSuccess?.(count) || `成功回收 ${count} 张点歌券`, 'success')
       await Promise.all([fetchCodes(pagination.value.page), fetchAssignments(assignmentPagination.value.page)])
     } else {
-      const reason = res?.failures?.[0]?.reason
-      showToast(reason || locale.value?.recycleFailed || '回收点歌券失败', 'error')
+      const failure = res?.failures?.[0]
+      showToast(localizeServerError(
+        { data: failure?.error },
+        locale.value.recycleFailed
+      ), 'error')
     }
   } catch (error) {
     console.error('回收点歌券失败', error)
-    showToast(locale.value?.recycleFailed || '回收点歌券失败', 'error')
+    showToast(localizeServerError(error, locale.value.recycleFailed), 'error')
   }
 }
 
@@ -1273,7 +1280,7 @@ const refreshAll = async () => {
 }
 
 
-// 点击空白处收起下拉（与 CustomSelect 的行为保持一致）
+// 点击外部关闭标签用户下拉
 const handleAssignDropdownOutside = (event) => {
   const target = event.target
   if (tagUserDropdownOpen.value) {
@@ -1322,15 +1329,10 @@ const toggleSelectAll = () => {
 const formatDate = (value) => {
   if (!value) return '—'
   try {
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(value))
+    const date = parseUtcTimestamp(value)
+    return Number.isNaN(date.getTime()) ? '—' : formatDateTime(date, 'YYYY/MM/DD HH:mm')
   } catch {
-    return String(value)
+    return '—'
   }
 }
 

@@ -1183,9 +1183,7 @@
       @change="handleImportDataQQ"
     >
 
-    <!-- 投稿选项弹窗：留言 / 点歌券 / 播出时段。
-         默认由「更多选项」按钮主动打开，只保存选项；
-         后台开启「时段必选」时，投稿也会弹出此弹窗，确认后继续提交。 -->
+    <!-- 投稿选项弹窗 -->
     <SubmissionOptionsModal
       v-model:show="showSubmissionOptions"
       v-model:note="submissionNote"
@@ -1526,11 +1524,7 @@ const clearCardCode = () => {
   resetCardCodeValidation()
 }
 
-/**
- * 拉取派发到当前用户名下的点歌券。
- * 仅在登录且启用点歌券时有意义；失败时静默降级为「无券可选」，
- * 不影响用户手动输入券码的路径。
- */
+/** 拉取当前用户的派发券。 */
 const fetchMyCardCodes = async () => {
   if (!user.value || !cardCodeEnabled.value) {
     myCardCodes.value = []
@@ -2474,8 +2468,8 @@ const enabledPlayTimes = computed(() => {
 // 日期串（YYYY-MM-DD）→ 星期（0=周日…6=周六），由 timeUtils 统一按北京时间计算
 const getWeekdayFromDateString = (dateString) => getBeijingWeekday(dateString)
 
-// 今天（北京时间）的日期串，作为日期选择器的可选下限
-const todayPlayDate = computed(() => getBeijingDateString())
+// 北京日期作为日期选择下限，打开弹窗时刷新
+const todayPlayDate = ref(getBeijingDateString())
 
 // 格式化播出时段时间范围
 const formatPlayTimeRange = (playTime) => {
@@ -2500,13 +2494,11 @@ const formatPlayTimeOptionLabel = (playTime) => {
   return `${playTime.name} (${range})`
 }
 
-// 播出日期 + 时段校验：
-// - 仅当后台开启「时段必选」时，播出时段才必须选择；播出日期始终可选且不填则不限制播出日
-// - 指定日期时，该日期所在星期必须开放所选时段
-const validatePlaySlotSelection = () => {
+// 校验日期与时段。
+const validatePlaySlotSelection = (enforceRequired = true) => {
   if (!playTimeSelectionEnabled.value) return true
 
-  if (playSlotRequired.value && !preferredPlayTimeId.value) {
+  if (enforceRequired && playSlotRequired.value && !preferredPlayTimeId.value) {
     playSlotError.value = locale.value.playSlotTimeRequiredError || '请选择期望播出时段'
     error.value = playSlotError.value
     if (window.$showNotification) {
@@ -2557,15 +2549,7 @@ const submissionOptionsAvailable = computed(
     cardCodeEnabled.value
 )
 
-/**
- * 「投稿设置包含……」说明文案。
- * 内容随站点开关动态变化：
- * - 开启时段选择 → 追加「播出安排」
- * - 开启投稿留言 → 追加「投稿留言」
- * - 开启匿名投稿（且已登录）→ 追加「匿名投稿」
- * - 开启点歌券 → 追加「点歌券」
- * 全部关闭时不展示该行。
- */
+/** 生成投稿设置摘要。 */
 const submissionOptionsSummary = computed(() => {
   // useSafeLocale 会把文案包装成带 toString 的函数，这里统一取出纯文本
   const text = (key, fallback) => {
@@ -2611,6 +2595,7 @@ const hasSubmissionOptions = computed(
 
 /** 用户主动打开投稿选项弹窗：只保存选项，不触发投稿 */
 const openSubmissionOptions = () => {
+  todayPlayDate.value = getBeijingDateString()
   submissionOptionsMode.value = 'options'
   showSubmissionOptions.value = true
   // 打开弹窗时刷新已派发券，保证下拉列表是最新的
@@ -2623,6 +2608,7 @@ const requiresSlotSelection = computed(
 )
 
 const openRequiredSlotOptions = (pending) => {
+  todayPlayDate.value = getBeijingDateString()
   pendingPlaySlotSubmit.value = pending
   submissionOptionsMode.value = 'required'
   showSubmissionOptions.value = true
@@ -2694,12 +2680,7 @@ const submissionOptionsText = computed(() => {
   }
 })
 
-/**
- * 投稿选项弹窗确认回调：写入选中的日期与时段。
- * - 「更多选项」模式：仅保存选项，不提交
- * - 「时段必选」模式：保存后继续之前中断的投稿
- * 日期与时段各自独立：可以只指定日期，也可以只选时段。
- */
+/** 保存弹窗选项并按模式继续投稿。 */
 const handlePlaySlotConfirm = async ({ date, timeId }) => {
   preferredPlayTimeId.value = timeId ? String(timeId) : ''
   preferredPlayDate.value = date || ''
@@ -3587,15 +3568,14 @@ const submitSong = async (result, options = {}) => {
     return
   }
 
-  // 播出时段：仅在后台开启「时段必选」且尚未选择时段时，投稿后弹窗收集，确认后再真正提交
-  // 重播申请走 requestReplay，仅沿用已选时段，不重复弹窗；fromSlotModal 标记确认后的回调用，避免循环再弹
+  // 校验投稿日期与时段。
   if (requiresSlotSelection.value && options.replayRequest !== true && !options.fromSlotModal) {
     openRequiredSlotOptions({ result, options })
     return
   }
 
   // 播出日期 + 时段校验（必选模式下未选择则阻止提交）
-  if (!validatePlaySlotSelection()) {
+  if (!validatePlaySlotSelection(options.replayRequest !== true)) {
     return
   }
 
@@ -3771,8 +3751,8 @@ const submitSong = async (result, options = {}) => {
 const handleSubmit = async (fromSlotModal = false) => {
   if (submitting.value) return
 
-  // 播出时段：仅在后台开启「时段必选」且尚未选择时段时弹窗收集，确认后再继续提交；fromSlotModal 为确认后的回调用，避免循环再弹
-  if (requiresSlotSelection.value && !fromSlotModal) {
+  // 校验手动投稿日期与时段。
+  if (requiresSlotSelection.value && fromSlotModal !== true) {
     openRequiredSlotOptions({ manual: true })
     return
   }
@@ -4143,7 +4123,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
   }
 
   // 播出时段：仅在后台开启「时段必选」且尚未选择时段时弹窗收集，确认后再继续提交
-  if (requiresSlotSelection.value && !fromSlotModal) {
+  if (requiresSlotSelection.value && fromSlotModal !== true) {
     openRequiredSlotOptions({ manualForm: true })
     return
   }

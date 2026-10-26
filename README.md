@@ -21,6 +21,7 @@
 ### 🎵 核心功能
 
 - **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出日期与播出时段
+- **点歌券**：支持用户派发与回收。投稿后锁券，正式发布且标记已播放后核销；未播放时取消发布或换日保留绑定，撤回投稿归还点歌券。
 - **多平台登录支持**：
   - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
     - **直接创建账户**：用户通过 OAuth 认证后可创建新账户，但仍需设置本地用户名和密码
@@ -758,7 +759,7 @@ VoiceHub/
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
 │   │   │   ├── CardCodeAvailablePicker.vue # 可用点歌券勾选面板
 │   │   │   ├── CardCodeDispatchModal.vue # 点歌券派发弹窗
-│   │   │   ├── CardCodeRecipientPicker.vue # 派发接收人圈选（用户/标签/班级）
+│   │   │   ├── CardCodeRecipientPicker.vue # 派发接收人搜索与年级班级圈选
 │   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
@@ -1511,6 +1512,7 @@ VoiceHub/
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-captcha.ts # 图形/Turnstile/ESA 人机验证统一校验
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── card-code-backup.ts # 点歌券与派发流水恢复
 │   │   ├── recipient-tree.ts # 派发接收人年级班级树构建
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策

@@ -1,5 +1,9 @@
 import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { sql } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 /**
  * 全局删除标签：从所有用户身上移除指定标签。
@@ -8,26 +12,25 @@ import { sql } from 'drizzle-orm'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '未授权访问')
   }
   if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
+    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '权限不足')
   }
 
   const query = getQuery(event)
   const name = typeof query.name === 'string' ? query.name.trim() : ''
   if (!name) {
-    throw createError({ statusCode: 400, message: '请指定要删除的标签名' })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请指定要删除的标签名')
   }
 
-  const result = await db.execute(sql`
-    UPDATE "User"
-    SET tags = array_remove(tags, ${name}), "updatedAt" = now()
-    WHERE tags @> ARRAY[${name}]::text[]
-  `)
+  const result = await db.update(users).set({
+    tags: sql`array_remove(${users.tags}, ${name})`,
+    updatedAt: getServerDate()
+  }).where(sql`${users.tags} @> ARRAY[${name}]::text[]`).returning({ id: users.id })
 
   return {
     success: true,
-    updatedCount: Number((result as any)?.count ?? (result as any)?.rowCount ?? 0)
+    updatedCount: result.length
   }
 })

@@ -1,17 +1,12 @@
-import { recycleCardCodeAssignments } from '~~/server/services/cardCodeAssignmentService'
+import { CARD_CODE_DISPATCH_LIMITS, recycleCardCodeAssignments } from '~~/server/services/cardCodeAssignmentService'
+import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
-/**
- * 管理员回收已派发的点歌券。
- * 回收后点歌券回到 AVAILABLE 池中，可重新派发。
- */
+/** 回收派发券到可用池。 */
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
+  requireSongAdmin(event)
+  const user = event.context.user!
 
   const body = (await readBody(event)) || {}
   const rawIds: unknown[] = Array.isArray(body.assignmentIds) ? (body.assignmentIds as unknown[]) : []
@@ -24,7 +19,10 @@ export default defineEventHandler(async (event) => {
   ]
 
   if (!assignmentIds.length) {
-    throw createError({ statusCode: 400, message: '请至少选择一条派发记录' })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请至少选择一条派发记录')
+  }
+  if (assignmentIds.length > CARD_CODE_DISPATCH_LIMITS.existingCards) {
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `单次最多回收 ${CARD_CODE_DISPATCH_LIMITS.existingCards} 条派发记录`)
   }
 
   const reason = typeof body.reason === 'string' ? body.reason.trim() : ''

@@ -36,28 +36,15 @@ export interface AutoScheduleCandidate {
   preferredPlayTimeId?: number | null
 }
 
-/**
- * 自动排期的可选约束
- */
+/** 自动排期约束。 */
 export interface AutoScheduleOptions {
-  /**
-   * 目标播出日期（YYYY-MM-DD）。
-   * 期望日期是软偏好：命中目标日期的候选优先安排，其余候选仍参与本次排期。
-   */
+  /** 目标播出日期；命中候选优先安排。 */
   targetDate?: string | null
-  /**
-   * 目标播出时段 ID。
-   * - 传入数字：期望时段与目标不一致的歌曲不参与排期（硬约束）
-   * - 传入 null：未指定时段视图，设置了期望时段的歌曲不参与排期
-   *   （整批会以「未指定时段」落位，无法保证落到指定时段）
-   * - 不传（undefined）：不启用时段约束
-   */
+  /** 目标播出时段 ID；传入时启用硬约束。 */
   targetPlayTimeId?: number | null
 }
 
-/**
- * 期望落位过滤结果
- */
+/** 期望落位过滤结果。 */
 export interface AutoSchedulePlacementFilter {
   /** 通过硬约束校验、可参与本次排期的候选 */
   eligible: AutoScheduleCandidate[]
@@ -85,12 +72,7 @@ export function normalizePreferredPlayTimeId(value: unknown): number | null {
   return Number.isInteger(num) && num > 0 ? num : null
 }
 
-/**
- * 按「期望落位」硬约束过滤候选：期望时段是硬约束，歌曲只能排到它自己指定的时段。
- * 期望日期不在此过滤，由 preferExpectedDate 与方案比较体现优先级。
- *
- * 排除数量会一并返回，供界面显式提示，避免「静默丢弃」而无人察觉。
- */
+/** 按期望时段硬约束过滤候选，并返回排除数量。 */
 export function filterByExpectedPlacement(
   candidates: AutoScheduleCandidate[],
   options?: AutoScheduleOptions
@@ -124,9 +106,7 @@ export function filterByExpectedPlacement(
   return { eligible, excludedByPlayTime }
 }
 
-/**
- * 期望日期优先排序：命中目标日期的候选排到最前，其余保持原有相对顺序
- */
+/** 将命中目标日期的候选移到前面。 */
 export function preferExpectedDate<T extends AutoScheduleCandidate>(
   list: T[],
   targetDate?: string | null
@@ -142,9 +122,7 @@ export function preferExpectedDate<T extends AutoScheduleCandidate>(
   return [...matched, ...rest]
 }
 
-/**
- * 统计方案中命中期望日期的歌曲数量（用于方案比较时优先选择）
- */
+/** 统计方案命中目标日期的数量。 */
 export function countExpectedDateHits(
   songs: AutoScheduleCandidate[],
   targetDate?: string | null
@@ -225,7 +203,8 @@ function compareResults(a: AutoScheduleResult, b: AutoScheduleResult, ctx: Resul
     const bReqDiff = Math.abs(distinctRequesterCount(b.songs, ctx) - ctx.targetRequesterCount)
     if (aReqDiff !== bReqDiff) return aReqDiff - bReqDiff
   }
-  // 命中期望日期的歌曲更多者优先（期望日期与首数/投稿人同属「方案构成」目标）
+  if (a.absDiff !== b.absDiff) return a.absDiff - b.absDiff
+  // 同等时长方案优先命中期望日期。
   if (ctx.targetDate) {
     const aHits = countExpectedDateHits(a.songs, ctx.targetDate)
     const bHits = countExpectedDateHits(b.songs, ctx.targetDate)

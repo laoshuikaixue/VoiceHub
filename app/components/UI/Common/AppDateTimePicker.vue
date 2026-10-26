@@ -10,6 +10,7 @@
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       @click="toggle"
+      @keydown.esc.stop="close"
     >
       <span class="flex min-w-0 flex-1 flex-col">
         <span
@@ -44,6 +45,7 @@
           :style="[popupStyle, { zIndex }]"
           class="fixed w-[268px] rounded-xl border border-border-secondary bg-bg-primary p-2 shadow-2xl backdrop-blur-xl"
           role="dialog"
+          tabindex="-1"
           :aria-label="text.placeholder"
           @keydown.esc.stop="close"
         >
@@ -219,6 +221,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Calendar, ChevronLeft, ChevronRight } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { usePopupZIndex } from '~/composables/useZIndex'
+import { getSyncedDate } from '~/composables/useSyncedTime'
+import { formatDateTime, getBeijingDateString } from '~/utils/timeUtils'
 
 const props = defineProps({
   modelValue: {
@@ -319,7 +323,7 @@ const toISODate = (year, month, day) => `${year}-${pad2(month + 1)}-${pad2(day)}
 const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate()
 
 const parseCombined = (value) => {
-  const matched = /^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2})$/.exec(String(value ?? '').trim())
+  const matched = /^(\d{4})-(\d{1,2})-(\d{1,2})[T ](\d{1,2}):(\d{1,2})(:\d{2}(?:\.\d{1,6})?)?$/.exec(String(value ?? '').trim())
   if (!matched) return null
   const year = Number(matched[1])
   const month = Number(matched[2]) - 1
@@ -328,7 +332,9 @@ const parseCombined = (value) => {
   const minute = Number(matched[5])
   if (!year || month < 0 || month > 11 || day < 1 || day > 31) return null
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null
-  return { year, month, day, hour, minute }
+  const seconds = matched[6] || ''
+  if (seconds && Number(seconds.slice(1)) >= 60) return null
+  return { year, month, day, hour, minute, seconds }
 }
 
 const parseISODate = (value) => {
@@ -346,11 +352,12 @@ const normalizeISODate = (value) => {
   return parsed ? toISODate(parsed.year, parsed.month, parsed.day) : ''
 }
 
+const currentDate = ref(getBeijingDateString(getSyncedDate()))
+
 const todayDate = computed(() => {
   const fromProps = parseISODate(props.today)
   if (fromProps) return fromProps
-  const now = new Date()
-  return { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() }
+  return parseISODate(currentDate.value)
 })
 const todayISO = computed(() => toISODate(todayDate.value.year, todayDate.value.month, todayDate.value.day))
 
@@ -370,7 +377,7 @@ const selectedDate = computed(() => {
 })
 const selectedTime = computed(() => {
   const s = selected.value
-  return s ? { hour: s.hour, minute: s.minute } : null
+  return s ? { hour: s.hour, minute: s.minute, seconds: s.seconds } : null
 })
 const todayDisabled = computed(() => isOutOfRange(todayISO.value))
 
@@ -456,7 +463,7 @@ const buildCell = (year, month, day, outside) => {
     day,
     outside,
     isToday: iso === todayISO.value,
-    isSelected: iso === normalizeISODate(props.modelValue ? props.modelValue.split('T')[0] : ''),
+    isSelected: iso === (selectedDate.value ? toISODate(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day) : ''),
     disabled: isOutOfRange(iso)
   }
 }
@@ -571,9 +578,11 @@ const toggle = async () => {
     isOpen.value = false
     return
   }
+  currentDate.value = getBeijingDateString(getSyncedDate())
   syncViewToValue()
   isOpen.value = true
   await nextTick()
+  popupRef.value?.focus({ preventScroll: true })
   updatePosition()
   requestAnimationFrame(updatePosition)
 }
@@ -629,7 +638,7 @@ const emitValue = (value) => {
   emit('change', value)
 }
 
-const buildTimeString = (h, m) => `${pad2(h)}:${pad2(m)}`
+const buildTimeString = (h, m) => `${pad2(h)}:${pad2(m)}${selectedTime.value?.seconds || ''}`
 
 const currentDateISO = () => {
   const d = selectedDate.value
@@ -639,7 +648,9 @@ const currentDateISO = () => {
 
 const selectDay = (cell) => {
   if (cell.disabled || !cell.iso) return
-  const timeStr = selectedTime.value ? buildTimeString(selectedTime.value.hour, selectedTime.value.minute) : buildTimeString(new Date().getHours(), new Date().getMinutes())
+  const timeStr = selectedTime.value
+    ? buildTimeString(selectedTime.value.hour, selectedTime.value.minute)
+    : formatDateTime(getSyncedDate(), 'HH:mm')
   emitValue(`${cell.iso}T${timeStr}`)
   if (cell.outside) {
     const parsed = parseISODate(cell.iso)
@@ -669,12 +680,13 @@ const clear = () => {
 }
 
 const goToday = () => {
+  currentDate.value = getBeijingDateString(getSyncedDate())
   if (todayDisabled.value) return
-  const now = new Date()
+  const [h, currentMinute] = formatDateTime(getSyncedDate(), 'HH:mm').split(':').map(Number)
   const step = props.minuteStep > 1 ? props.minuteStep : 1
-  let m = now.getMinutes()
+  let m = currentMinute
   m = Math.floor(m / step) * step
-  emitValue(`${todayISO.value}T${buildTimeString(now.getHours(), m)}`)
+  emitValue(`${todayISO.value}T${pad2(h)}:${pad2(m)}`)
   isOpen.value = false
 }
 
@@ -695,6 +707,7 @@ watch(isOpen, (open) => {
     window.addEventListener('scroll', handleViewportChange, true)
     window.addEventListener('resize', handleViewportChange)
   } else {
+    if (popupRef.value?.contains(document.activeElement)) triggerRef.value?.focus({ preventScroll: true })
     window.removeEventListener('scroll', handleViewportChange, true)
     window.removeEventListener('resize', handleViewportChange)
   }

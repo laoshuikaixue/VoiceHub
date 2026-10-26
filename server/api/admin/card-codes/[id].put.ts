@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { getServerDate } from '~~/server/utils/serverTime'
 import {
-  syncAssignmentOnManualStatusChange
+  syncAssignmentOnManualStatusChange, assertCardCodesUnbound
 } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 
@@ -32,6 +32,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const updated = await db.transaction(async (tx) => {
+      if (status) await assertCardCodesUnbound(tx, [id])
       // 获取当前状态
       const rows = await tx.select().from(cardCodes).where(eq(cardCodes.id, id)).limit(1)
       const current = rows[0]
@@ -122,6 +123,7 @@ export default defineEventHandler(async (event) => {
     return { success: true, data: updated }
   } catch (err: any) {
     console.error('更新点歌券失败:', err)
-    throw createError({ statusCode: err.statusCode || 500, message: err.message || '更新失败' })
+    if (err.statusCode) throw err
+    throw createError({ statusCode: 500, message: err.message || '更新失败' })
   }
 })
