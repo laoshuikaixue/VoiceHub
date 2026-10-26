@@ -4246,7 +4246,7 @@ export const admin = {
     statusChangeMessage: (count: number, status: string) =>
       `Set the selected ${count} request card(s) to "${status}"?`,
     statusChangeUnbindHint:
-      'Dispatched cards will be unbound and their assignment recorded as recycled. Set them to Available first if you want to return them to inventory, then dispatch them again.',
+      'Dispatched song request cards will be unbound and marked as recycled.',
     statusChangeCancel: 'Cancel',
     statusChangeConfirm: 'Confirm Change',
     unknown: 'Unknown',

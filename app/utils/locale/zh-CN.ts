@@ -4114,7 +4114,7 @@ export const admin = {
     statusChangeTitle: '确认变更点歌券状态',
     statusChangeMessage: (count: number, status: string) =>
       `确定将选中的 ${count} 张点歌券设为「${status}」吗？`,
-    statusChangeUnbindHint: '已派发的点歌券会解除当前绑定，记录转为已回收；之后设为可用时需要重新派发。',
+    statusChangeUnbindHint: '已派发的点歌券会解除当前绑定，记录转为已回收。',
     statusChangeCancel: '取消',
     statusChangeConfirm: '确认变更',
     unknown: '未知',

@@ -12,6 +12,15 @@
       @close="closeStatusConfirm"
     />
 
+    <ConfirmDialog
+      :show="genericConfirm.open"
+      :title="genericConfirm.title"
+      :message="genericConfirm.message"
+      type="warning"
+      @confirm="runGenericConfirm"
+      @close="closeGenericConfirm"
+    />
+
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <h2 class="text-lg font-black">{{ locale.title }}</h2>
@@ -1266,12 +1275,32 @@ const confirmRenameTag = async () => {
   }
 }
 
-const deleteTag = async (tag) => {
-  const confirmed = window.confirm(
+/** 二级确认统一走系统内置弹窗，不使用浏览器原生 confirm */
+const genericConfirm = ref({ open: false, title: '', message: '', action: null })
+
+const askConfirm = (message, action, title = '') => {
+  genericConfirm.value = { open: true, title, message, action }
+}
+
+const closeGenericConfirm = () => {
+  genericConfirm.value = { open: false, title: '', message: '', action: null }
+}
+
+const runGenericConfirm = async () => {
+  const { action } = genericConfirm.value
+  closeGenericConfirm()
+  await action?.()
+}
+
+const deleteTag = (tag) => {
+  askConfirm(
     locale.value?.tagDeleteConfirm?.(tag.name, tag.userCount)
-    || `确定删除标签「${tag.name}」吗？将从 ${tag.userCount} 位用户身上移除该标签。`
+    || `确定删除标签「${tag.name}」吗？将从 ${tag.userCount} 位用户身上移除该标签。`,
+    () => removeTag(tag)
   )
-  if (!confirmed) return
+}
+
+const removeTag = async (tag) => {
   try {
     await $fetch(`/api/admin/users/tags?name=${encodeURIComponent(tag.name)}`, {
       method: 'DELETE'
@@ -1286,13 +1315,15 @@ const deleteTag = async (tag) => {
 
 
 /** 回收已派发的点歌券 */
-const recycleAssignment = async (item) => {
+const recycleAssignment = (item) => {
   const code = item.codeSnapshot || ''
-  const confirmed = window.confirm(
-    locale.value?.assignmentRecycleConfirm?.(code) || `确定回收点歌券 ${code} 吗？`
+  askConfirm(
+    locale.value?.assignmentRecycleConfirm?.(code) || `确定回收点歌券 ${code} 吗？`,
+    () => performRecycle(item)
   )
-  if (!confirmed) return
+}
 
+const performRecycle = async (item) => {
   try {
     const res = await $fetch('/api/admin/card-codes/recycle', {
       method: 'POST',
