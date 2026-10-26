@@ -189,13 +189,18 @@
                     <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
                     <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
                     <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
-                    <button
-                      class="rounded-lg border border-primary-30 bg-primary-10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:border-primary-50 hover:bg-primary-20"
-                      :title="item.status === 'AVAILABLE' ? (locale.dispatchRowHint || '派发这张点歌券给指定用户') : (locale.dispatchRowUnavailableHint || '该券当前状态不可直接派发，将按接收人现场生成新券')"
-                      @click="openDispatchForCode(item)"
+                    <!-- 禁用态的按钮不会派发鼠标事件，title 挂在外层 span 才能可靠悬停显示 -->
+                    <span
+                      :title="item.status === 'AVAILABLE' ? (locale.dispatchRowHint || '派发这张点歌券给指定用户') : dispatchDisabledReason(item)"
                     >
-                      {{ locale.dispatch }}
-                    </button>
+                      <button
+                        class="rounded-lg border border-primary-30 bg-primary-10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:border-primary-50 hover:bg-primary-20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-primary-30 disabled:hover:bg-primary-10"
+                        :disabled="item.status !== 'AVAILABLE'"
+                        @click="openDispatchForCode(item)"
+                      >
+                        {{ locale.dispatch }}
+                      </button>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -865,6 +870,20 @@ const selectedAvailableCodes = computed(() =>
     .map((item) => ({ id: item.id, code: item.code, status: item.status }))
 )
 
+/** 派发按钮的禁用原因：按券的当前状态给出具体解释，
+ *  避免管理员只看到一只灰按钮却不知道为什么点不动。 */
+const dispatchDisabledReason = (item) => {
+  const statusLabel = {
+    ASSIGNED: locale.value?.assigned || '已派发',
+    LOCKED: locale.value?.locked || '锁定',
+    REDEEMED: locale.value?.redeemed || '核销',
+    INVALID: locale.value?.invalid || '作废'
+  }[item?.status] || locale.value?.assigned || '已派发'
+  const template = locale.value?.dispatchRowDisabledHint
+    || '该券当前为「{status}」状态，不可直接派发；请先将其恢复为「可用」'
+  return String(template).replace('{status}', statusLabel)
+}
+
 /** 打开派发弹窗：把当前勾选的可用券带进去预勾选，管理员可在弹窗里继续增删 */
 const openDispatchFromSelection = () => {
   dispatchCoupons.value = selectedAvailableCodes.value
@@ -876,17 +895,15 @@ const openDispatchFromSelection = () => {
 
 /** 从券列表行的「派发」按钮打开。
  *  仅「可用」状态的券能作为待派发券，会被预勾选；其它状态（已发放/锁定/核销/作废）
- *  无法直接派发，此时不给预勾选，但弹窗仍停在「使用已有点歌券」页签，
- *  管理员可以改选其它可用券，或切换到「为接收人新生成」。 */
+ *  的按钮已在界面上禁用，此处保留兜底，避免被绕过时静默丢券。 */
 const openDispatchForCode = (item) => {
   if (!item) return
-  const dispatchable = item.status === 'AVAILABLE'
-  dispatchCoupons.value = dispatchable
-    ? [{ id: item.id, code: item.code, status: item.status }]
-    : []
-  dispatchNotice.value = dispatchable
-    ? ''
-    : (locale.value?.dispatchRowUnavailableHint || '该券当前状态不可直接派发，请在下方选择可用券，或切换到「为接收人新生成」')
+  if (item.status !== 'AVAILABLE') {
+    showToast(dispatchDisabledReason(item), 'warning')
+    return
+  }
+  dispatchCoupons.value = [{ id: item.id, code: item.code, status: item.status }]
+  dispatchNotice.value = ''
   dispatchOpen.value = true
 }
 

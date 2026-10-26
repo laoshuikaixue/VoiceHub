@@ -4088,7 +4088,7 @@ export const admin = {
     dispatchSelected: '派发所选',
     dispatchCoupon: '派发点歌券',
     dispatchRowHint: '派发这张点歌券给指定用户',
-    dispatchRowUnavailableHint: '该券当前状态不可直接派发，请在下方选择可用券，或切换到「为接收人新生成」',
+    dispatchRowDisabledHint: '该券当前为「{status}」状态，不可直接派发；请先将其恢复为「可用」',
     dispatchNoAvailableHint: '未勾选「可用」状态的点歌券，可在下方列表中直接勾选',
     loading: '加载点歌券中...',
     cardCode: '点歌券',

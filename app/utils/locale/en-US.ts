@@ -4219,7 +4219,7 @@ export const admin = {
     dispatchSelected: 'Dispatch Selected',
     dispatchCoupon: 'Dispatch Coupons',
     dispatchRowHint: 'Dispatch this coupon to selected users',
-    dispatchRowUnavailableHint: 'This coupon cannot be dispatched directly — pick an available one below, or switch to "Generate for recipients"',
+    dispatchRowDisabledHint: 'This coupon is "{status}" and cannot be dispatched — switch it back to "Available" first',
     dispatchNoAvailableHint: 'No coupon in "Available" status is selected — you can tick one in the list below',
     loading: 'Loading request cards...',
     cardCode: 'Request Card',
