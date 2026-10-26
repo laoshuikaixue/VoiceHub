@@ -228,43 +228,6 @@ async function notifyAssignedRecipients(
 }
 
 /**
- * 把点歌券派发给指定用户。
- *
- * 每张券独立处理：单张失败（已被使用、已被他人派发、通知发送异常）不会中断整批，
- * 失败原因逐条返回给前端，便于管理员定位问题并重试。
- */
-export async function assignCardCodesToUser(params: {
-  cardCodeIds: number[]
-  target: AssignTarget
-  actor: AssignActor
-  note?: string | null
-  /** 是否给接收人发送站内通知 */
-  notify?: boolean
-}): Promise<AssignOutcome[]> {
-  const { cardCodeIds, target, actor, note, notify = true } = params
-  const outcomes: AssignOutcome[] = []
-  if (!cardCodeIds.length) return outcomes
-
-  const actorName = resolveDisplayName(actor)
-  const targetName = resolveDisplayName(target)
-
-  for (const cardCodeId of cardCodeIds) {
-    outcomes.push(
-      await assignOneCard({ cardCodeId, target, actor, actorName, targetName, note })
-    )
-  }
-
-  if (notify) {
-    await notifyAssignedRecipients(
-      [toNotifyEntry(target, outcomes.filter((outcome) => outcome.success))],
-      actor
-    )
-  }
-
-  return outcomes
-}
-
-/**
  * 把一批点歌券轮流派发给多个接收人（发牌式分配）。
  *
  * 例如 5 张券、2 位接收人：第 1、3、5 张给第 1 人，第 2、4 张给第 2 人。
@@ -377,10 +340,84 @@ function generateCardCodesOrThrow(options: Parameters<typeof generateCardCodes>[
 }
 
 /**
+ * 批量派发本次现场生成的券：一名接收人一条 UPDATE + 一条多行 INSERT。
+ *
+ * 券码由本流程刚写入，除本流程外无人知晓，不存在被其他请求抢占的并发窗口，
+ * 因此不需要逐张事务；1000 张规模下往返数从千级降到个位数，避免撞上请求超时。
+ * 勾选已有券的派发仍走 assignOneCard 的逐张条件更新，作为并发闸门。
+ */
+async function assignGeneratedCardsToTarget(params: {
+  cardCodeIds: number[]
+  target: AssignTarget
+  targetName: string
+  actor: AssignActor
+  actorName: string
+  note?: string | null
+}): Promise<AssignOutcome[]> {
+  const { cardCodeIds, target, targetName, actor, actorName, note } = params
+  if (!cardCodeIds.length) return []
+
+  const now = getServerDate()
+
+  return db.transaction(async (tx) => {
+    const assignedRows = await tx
+      .update(cardCodes)
+      .set({ status: 'ASSIGNED', assignedTo: target.id, assignedAt: now, updatedAt: now })
+      .where(and(inArray(cardCodes.id, cardCodeIds), eq(cardCodes.status, 'AVAILABLE')))
+      .returning({ id: cardCodes.id, code: cardCodes.code })
+
+    const outcomes: AssignOutcome[] = assignedRows.map((row) => ({
+      code: row.code,
+      cardCodeId: row.id,
+      assignmentId: null,
+      success: true
+    }))
+
+    if (assignedRows.length) {
+      const auditRows = await tx
+        .insert(cardCodeAssignments)
+        .values(
+          assignedRows.map((row) => ({
+            cardCodeId: row.id,
+            codeSnapshot: row.code,
+            userId: target.id,
+            userNameSnapshot: targetName,
+            assignedBy: actor.id,
+            assignedByName: actorName,
+            status: 'ASSIGNED' as const,
+            note: note || null
+          }))
+        )
+        .returning({ id: cardCodeAssignments.id, cardCodeId: cardCodeAssignments.cardCodeId })
+
+      const assignmentIdByCard = new Map(auditRows.map((row) => [row.cardCodeId, row.id]))
+      outcomes.forEach((outcome) => {
+        if (outcome.cardCodeId) outcome.assignmentId = assignmentIdByCard.get(outcome.cardCodeId) ?? null
+      })
+    }
+
+    // 券不在可用池（生成与派发之间被其他流程改过状态）时如实报失败，不静默丢名额
+    const missedIds = cardCodeIds.filter((id) => !assignedRows.some((row) => row.id === id))
+    for (const cardCodeId of missedIds) {
+      console.warn(`点歌券 #${cardCodeId} 派发时已不在可用池，本次未派发`)
+      outcomes.push({
+        code: '',
+        cardCodeId,
+        assignmentId: null,
+        success: false,
+        reason: '该点歌券已不在可用池，派发未生效'
+      })
+    }
+
+    return outcomes
+  })
+}
+
+/**
  * 为每位接收人现场生成点歌券并直接派发。
  *
  * 与「先勾选库存券再派发」不同，这里按人数 × 每人张数即时生成新券，
- * 生成后逐张派发给对应用户，不需要管理员提前在列表里勾选。
+ * 生成后按接收人批量派发给对应用户，不需要管理员提前在列表里勾选。
  *
  * 每人获得的券数固定（不采用轮流分配），因此每位用户都不会被落下；
  * 若某位用户派发失败，仅该用户失败，其它用户不受影响。
@@ -453,18 +490,18 @@ export async function generateAndAssignCardCodes(params: {
       })
     }
 
-    for (const cardCodeId of slice) {
-      const outcome = await assignOneCard({
-        cardCodeId,
-        target,
-        actor,
-        actorName,
-        targetName,
-        note
-      })
+    const outcomes = await assignGeneratedCardsToTarget({
+      cardCodeIds: slice,
+      target,
+      targetName,
+      actor,
+      actorName,
+      note
+    })
+    for (const outcome of outcomes) {
       if (outcome.success) {
         result.assigned.push(outcome)
-        assignedIds.add(cardCodeId)
+        if (outcome.cardCodeId) assignedIds.add(outcome.cardCodeId)
       } else {
         result.failures.push(outcome)
       }
@@ -712,8 +749,11 @@ export async function markCardCodeAssignmentUsed(
 }
 
 /**
- * 投稿撤回或移出排期导致点歌券释放时，把派发记录恢复为 ASSIGNED，
+ * 投稿撤回或移出排期导致点歌券释放时，把本次使用的派发记录恢复为 ASSIGNED，
  * 让用户下次投稿时仍可继续使用这张券。
+ *
+ * 只回滚 USED 记录：同一张券的历史 RECYCLED 记录属于已完结的旧持有人，
+ * 复活它会与新券的活跃记录撞上「一张券只能一条 ASSIGNED」唯一索引。
  */
 export async function restoreCardCodeAssignment(
   tx: any,
@@ -722,11 +762,11 @@ export async function restoreCardCodeAssignment(
 ): Promise<void> {
   await tx
     .update(cardCodeAssignments)
-    .set({ status: 'ASSIGNED', usedAt: null, recycledAt: null, updatedAt: at })
+    .set({ status: 'ASSIGNED', usedAt: null, updatedAt: at })
     .where(
       and(
         eq(cardCodeAssignments.cardCodeId, cardCodeId),
-        inArray(cardCodeAssignments.status, ['USED', 'RECYCLED'])
+        eq(cardCodeAssignments.status, 'USED')
       )
     )
 }

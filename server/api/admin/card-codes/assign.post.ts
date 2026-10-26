@@ -1,6 +1,8 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   assignCardCodesToUsers,
   generateAndAssignCardCodes,
@@ -63,6 +65,15 @@ export default defineEventHandler(async (event) => {
   const rawCountPerUser = Number(body.countPerUser)
   const countPerUser = Number.isInteger(rawCountPerUser) && rawCountPerUser > 0 ? rawCountPerUser : 0
   const generateMode = countPerUser > 0
+
+  // 两种券来源不可同时提交：同时传会静默丢弃勾选券并多发券，明确拒绝
+  if (generateMode && cardCodeIds.length) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      '生成派发与勾选券不能同时提交，请只保留一种券来源'
+    )
+  }
 
   if (!generateMode && !cardCodeIds.length) {
     throw createError({ statusCode: 400, message: '请至少选择一张点歌券' })

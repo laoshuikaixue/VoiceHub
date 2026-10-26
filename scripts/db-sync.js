@@ -31,7 +31,7 @@ function safeExec(command, options = {}) {
   try {
     execSync(command, { stdio: 'inherit', ...options })
     return true
-  } catch (e) {
+  } catch {
     return false
   }
 }
@@ -269,7 +269,14 @@ async function checkSchemaConsistency(sql) {
     'auth_sessions'
   ]
   // 关键唯一索引（legacy 库可能缺失导致并发竞态/迁移失败）
-  const requiredIndexes = [['User', 'User_username_unique']]
+  const requiredIndexes = [
+    ['User', 'User_username_unique'],
+    // 标签圈选依赖 GIN，缺失时按标签查询会全表扫
+    ['User', 'user_tags_gin_idx'],
+    // 一张券同时只能一条活跃派发记录
+    ['CardCodeAssignment', 'card_code_assignment_active_per_card_unique'],
+    ['CardCode', 'card_code_assigned_to_status_idx']
+  ]
   const requiredColumns = {
     User: [
       'status',

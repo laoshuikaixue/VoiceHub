@@ -74,11 +74,10 @@ const loginWith = (loginType) => {
       ? redirect
       : null
   const query = new URLSearchParams()
-  if (safeRedirect) query.set('redirect', safeRedirect)
-  const queryString = query.toString()
-  const endpoint = '/api/auth/aggregate'
+  // type 是聚合登录必传参，缺失会被服务端 400 拒绝，必须在生成 query 前写入
   query.set('type', loginType)
-  navigateTo(`${endpoint}${queryString ? `?${queryString}` : ''}`, { external: true })
+  if (safeRedirect) query.set('redirect', safeRedirect)
+  navigateTo(`/api/auth/aggregate?${query.toString()}`, { external: true })
 }
 </script>
 

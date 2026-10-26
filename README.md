@@ -757,6 +757,9 @@ VoiceHub/
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   │   ├── CardCodeAvailablePicker.vue # 可用点歌券勾选面板
+│   │   │   ├── CardCodeDispatchModal.vue # 点歌券派发弹窗
+│   │   │   ├── CardCodeRecipientPicker.vue # 派发接收人圈选（用户/标签/班级）
 │   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
@@ -846,7 +849,10 @@ VoiceHub/
 │   │   │   │   ├── PlayerInfo.vue     # 播放器信息组件
 │   │   │   │   └── VolumeControl.vue  # 播放器音量控制组件
 │   │   │   ├── Common/        # 通用UI组件
+│   │   │   │   ├── AppDatePicker.vue # 自绘日期选择器
+│   │   │   │   ├── AppDateTimePicker.vue # 自绘日期时间选择器
 │   │   │   │   ├── AppSpinner.vue      # 通用加载转圈组件
+│   │   │   │   ├── AppTimePicker.vue   # 自绘时间选择器
 │   │   │   │   ├── CollapsibleSection.vue # 可折叠区域组件
 │   │   │   │   ├── CustomSelect.vue   # 自定义选择器
 │   │   │   │   ├── DataTable.vue      # 通用数据表格组件
@@ -1200,7 +1206,11 @@ VoiceHub/
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── options.ts       # 用户管理选项
-│   │   │       └── status-logs.get.ts # 用户状态日志
+│   │   │       ├── status-logs.get.ts # 用户状态日志
+│   │   │       ├── tags.delete.ts   # 全局删除用户标签
+│   │   │       ├── tags.get.ts      # 标签清单与各标签人数
+│   │   │       ├── tags.post.ts     # 批量添加/移除用户标签
+│   │   │       └── tags.put.ts      # 全局重命名用户标签
 │   │   ├── api-enhanced/          # 网易云音乐API
 │   │   │   └── netease/           # 网易云增强接口代理
 │   │   │       └── [...path].ts   # 转发网易云API请求
@@ -1242,6 +1252,7 @@ VoiceHub/
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
 │   │   ├── card-codes/     # 点歌券API
+│   │   │   ├── mine.get.ts          # 查询当前用户持有的已派发券
 │   │   │   └── validate.post.ts     # 验证点歌券可用性
 │   │   ├── captcha/        # 人机验证API
 │   │   │   └── verify.post.ts       # ESA 公共验证接口（边缘验签后签发短期凭证）
@@ -1501,6 +1512,7 @@ VoiceHub/
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-captcha.ts # 图形/Turnstile/ESA 人机验证统一校验
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── recipient-tree.ts # 派发接收人年级班级树构建
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具

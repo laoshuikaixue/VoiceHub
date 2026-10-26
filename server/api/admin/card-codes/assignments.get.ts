@@ -2,6 +2,8 @@ import { db } from '~/drizzle/db'
 import { cardCodeAssignments } from '~/drizzle/schema'
 import { and, count, desc, eq, gte, ilike, lte, or } from 'drizzle-orm'
 import { getBeijingEndOfDay, getBeijingStartOfDay, parseToBeijingTime } from '~/utils/timeUtils'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 /**
  * 派发记录查询：支持按状态、接收人、派发人、关键词与时间范围筛选。
@@ -16,14 +18,37 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: '权限不足' })
   }
 
+  // 日期筛选按北京当天的起止边界，不能拿服务端本地时区划天；
+  // 格式非法直接拒绝，避免条件被静默丢弃后返回全量数据
+  const query = getQuery(event)
+  const parseDayBoundary = (value: unknown, field: string): Date | null => {
+    const text = typeof value === 'string' ? value.trim() : ''
+    if (!text) return null
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        `${field}必须为有效的 YYYY-MM-DD 格式`
+      )
+    }
+    const parsed = parseToBeijingTime(text)
+    if (Number.isNaN(parsed.getTime())) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        `${field}必须为有效的 YYYY-MM-DD 格式`
+      )
+    }
+    return parsed
+  }
+  const fromDay = parseDayBoundary(query.startDate, '开始日期')
+  const toDay = parseDayBoundary(query.endDate, '结束日期')
+
   try {
-    const query = getQuery(event)
     const status = typeof query.status === 'string' ? query.status.trim().toUpperCase() : ''
     const keyword = typeof query.q === 'string' ? query.q.trim() : ''
     const assigneeName = typeof query.assignee === 'string' ? query.assignee.trim() : ''
     const dispatcherName = typeof query.dispatcher === 'string' ? query.dispatcher.trim() : ''
-    const startDate = typeof query.startDate === 'string' ? query.startDate.trim() : ''
-    const endDate = typeof query.endDate === 'string' ? query.endDate.trim() : ''
     const page = Math.max(1, Number.parseInt(String(query.page || '1'), 10) || 1)
     const limitInput = Number.parseInt(String(query.limit || '10'), 10) || 10
     const limit = Math.min(100, Math.max(1, limitInput))
@@ -48,18 +73,11 @@ export default defineEventHandler(async (event) => {
     if (dispatcherName) {
       conditions.push(ilike(cardCodeAssignments.assignedByName, `%${dispatcherName}%`))
     }
-    if (startDate) {
-      // 日期筛选按北京当天的起止边界，不能拿服务端本地时区划天
-      const from = parseToBeijingTime(startDate)
-      if (!Number.isNaN(from.getTime())) {
-        conditions.push(gte(cardCodeAssignments.assignedAt, getBeijingStartOfDay(from)))
-      }
+    if (fromDay) {
+      conditions.push(gte(cardCodeAssignments.assignedAt, getBeijingStartOfDay(fromDay)))
     }
-    if (endDate) {
-      const to = parseToBeijingTime(endDate)
-      if (!Number.isNaN(to.getTime())) {
-        conditions.push(lte(cardCodeAssignments.assignedAt, getBeijingEndOfDay(to)))
-      }
+    if (toDay) {
+      conditions.push(lte(cardCodeAssignments.assignedAt, getBeijingEndOfDay(toDay)))
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
