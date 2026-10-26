@@ -588,9 +588,6 @@
       </div>
     </section>
 
-    <!-- 自动派发计划（需求二：自动化派发） -->
-    <CardCodeDispatchPlanManager />
-
   </div>
 
   <!-- 派发点歌券弹窗（集成到券列表的「派发」入口） -->
@@ -779,7 +776,6 @@ import { Copy, Download, Plus, RefreshCw, Search, Send, Tags, X } from '@lucide/
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
-import CardCodeDispatchPlanManager from '~/components/Admin/CardCodeDispatchPlanManager.vue'
 import CardCodeDispatchModal from '~/components/Admin/CardCodeDispatchModal.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

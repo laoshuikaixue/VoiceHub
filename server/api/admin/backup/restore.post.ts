@@ -6,8 +6,6 @@ import {
   apiKeys,
   apiLogs,
   cardCodeAssignments,
-  cardCodeDispatchPlans,
-  cardCodeDispatchRuns,
   cardCodeRedeemLogs,
   cardCodes,
   collaborationLogs,
@@ -195,8 +193,6 @@ export default defineEventHandler(async (event) => {
           await db.delete(apiKeys)
           await db.delete(notifications)
           await db.delete(notificationSettings)
-          await db.delete(cardCodeDispatchRuns)
-          await db.delete(cardCodeDispatchPlans)
           await db.delete(cardCodeAssignments)
           await db.delete(cardCodeRedeemLogs)
           await db.delete(collaborationLogs)
@@ -281,8 +277,6 @@ export default defineEventHandler(async (event) => {
           await db.delete(schedules)
           await db.delete(votes)
           await db.delete(songs)
-          await db.delete(cardCodeDispatchRuns)
-          await db.delete(cardCodeDispatchPlans)
           await db.delete(cardCodeAssignments)
           await db.delete(cardCodes)
           await db.delete(songBlacklists)
@@ -331,8 +325,6 @@ export default defineEventHandler(async (event) => {
       'scheduleSongPool',
       'cardCodeRedeemLogs',
       'cardCodeAssignments',
-      'cardCodeDispatchPlans',
-      'cardCodeDispatchRuns',
       'notificationSettings',
       'notifications',
       'apiKeys',
@@ -2150,131 +2142,6 @@ export default defineEventHandler(async (event) => {
                         break
                       }
 
-                      case 'cardCodeDispatchPlans': {
-                        if (mode === 'merge') {
-                          console.warn('合并模式下跳过自动派发计划恢复')
-                          return
-                        }
-                        if (!record.name || !record.startAt) {
-                          console.warn('自动派发计划缺少必填字段，跳过此记录')
-                          return
-                        }
-
-                        let planCreatedBy: number | null = null
-                        const rawPlanCreator = Number(record.createdBy)
-                        if (Number.isInteger(rawPlanCreator) && rawPlanCreator > 0) {
-                          planCreatedBy = userIdMapping.get(rawPlanCreator) || rawPlanCreator
-                          const creatorExists = await tx
-                            .select({ id: users.id })
-                            .from(users)
-                            .where(eq(users.id, planCreatedBy as number))
-                            .limit(1)
-                          if (creatorExists.length === 0) planCreatedBy = null
-                        }
-
-                        // CHECK 约束会拒非法值，这里先回落到合法默认，避免一条脏记录拖整表事务
-                        const rawPlanCount = Number(record.countPerUser)
-                        const rawPlanDay = Number(record.dayOfMonth)
-
-                        const planData = {
-                          id: record.id,
-                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                          updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
-                          name: record.name,
-                          enabled: record.enabled !== false,
-                          countPerUser:
-                            Number.isInteger(rawPlanCount) && rawPlanCount >= 1 && rawPlanCount <= 100
-                              ? rawPlanCount
-                              : 1,
-                          recipientIds: Array.isArray(record.recipientIds)
-                            ? record.recipientIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
-                            : [],
-                          note: record.note ?? null,
-                          notify: record.notify !== false,
-                          prefix: record.prefix ?? null,
-                          scheduleType: ['once', 'daily', 'weekly', 'monthly'].includes(record.scheduleType)
-                            ? record.scheduleType
-                            : 'once',
-                          startAt: new Date(record.startAt),
-                          endAt: record.endAt ? new Date(record.endAt) : null,
-                          weekdays: Array.isArray(record.weekdays)
-                            ? record.weekdays.map((day: unknown) => Number(day)).filter((day: number) => Number.isInteger(day) && day >= 0 && day <= 6)
-                            : [],
-                          dayOfMonth:
-                            Number.isInteger(rawPlanDay) && rawPlanDay >= 1 && rawPlanDay <= 31
-                              ? rawPlanDay
-                              : null,
-                          nextRunAt: record.nextRunAt ? new Date(record.nextRunAt) : null,
-                          lastRunAt: record.lastRunAt ? new Date(record.lastRunAt) : null,
-                          runningAt: null,
-                          lastStatus: record.lastStatus ?? null,
-                          lastMessage: record.lastMessage ?? null,
-                          runCount: Number(record.runCount) || 0,
-                          createdBy: planCreatedBy,
-                          createdByName: record.createdByName ?? null
-                        }
-
-                        const existingPlan = await tx
-                          .select({ id: cardCodeDispatchPlans.id })
-                          .from(cardCodeDispatchPlans)
-                          .where(eq(cardCodeDispatchPlans.id, record.id))
-                          .limit(1)
-                        if (existingPlan.length > 0) {
-                          await tx
-                            .update(cardCodeDispatchPlans)
-                            .set(planData)
-                            .where(eq(cardCodeDispatchPlans.id, record.id))
-                        } else {
-                          await tx.insert(cardCodeDispatchPlans).values(planData)
-                        }
-                        break
-                      }
-
-                      case 'cardCodeDispatchRuns': {
-                        if (mode === 'merge') {
-                          console.warn('合并模式下跳过自动派发执行历史恢复')
-                          return
-                        }
-                        const runPlanId = Number(record.planId)
-                        if (!Number.isInteger(runPlanId) || runPlanId <= 0) return
-                        const planExists = await tx
-                          .select({ id: cardCodeDispatchPlans.id })
-                          .from(cardCodeDispatchPlans)
-                          .where(eq(cardCodeDispatchPlans.id, runPlanId))
-                          .limit(1)
-                        if (planExists.length === 0) return
-
-                        const runData = {
-                          id: record.id,
-                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-                          planId: runPlanId,
-                          planName: record.planName ?? null,
-                          triggerSource: record.triggerSource || 'SCHEDULED',
-                          startedAt: record.startedAt ? new Date(record.startedAt) : new Date(),
-                          finishedAt: record.finishedAt ? new Date(record.finishedAt) : null,
-                          status: record.status || 'RUNNING',
-                          assignedCount: Number(record.assignedCount) || 0,
-                          failedCount: Number(record.failedCount) || 0,
-                          servedRecipients: Number(record.servedRecipients) || 0,
-                          message: record.message ?? null
-                        }
-
-                        const existingRun = await tx
-                          .select({ id: cardCodeDispatchRuns.id })
-                          .from(cardCodeDispatchRuns)
-                          .where(eq(cardCodeDispatchRuns.id, record.id))
-                          .limit(1)
-                        if (existingRun.length > 0) {
-                          await tx
-                            .update(cardCodeDispatchRuns)
-                            .set(runData)
-                            .where(eq(cardCodeDispatchRuns.id, record.id))
-                        } else {
-                          await tx.insert(cardCodeDispatchRuns).values(runData)
-                        }
-                        break
-                      }
-
                       case 'votes':
                         // 验证外键约束
                         let validVoteUserId = record.userId
@@ -2870,9 +2737,7 @@ export default defineEventHandler(async (event) => {
       'EmailTemplate',
       'CardCode',
       'CardCodeRedeemLog',
-      'CardCodeAssignment',
-      'CardCodeDispatchPlan',
-      'CardCodeDispatchRun'
+      'CardCodeAssignment'
     ]
 
     for (const tableName of tablesToReset) {

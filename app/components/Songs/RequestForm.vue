@@ -2604,7 +2604,8 @@ const hasSubmissionOptions = computed(
     !!(
       submissionNote.value.trim() ||
       trimmedCardCode.value ||
-      preferredPlayTimeId.value
+      preferredPlayTimeId.value ||
+      preferredPlayDate.value
     )
 )
 

@@ -1079,11 +1079,16 @@ VoiceHub/
 │   │   │   │   └── index.post.ts    # 新增配置项
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
+│   │   │   │   ├── assignments.get.ts # 派发记录查询
+│   │   │   │   ├── assign.post.ts   # 派发点歌券给用户
 │   │   │   │   ├── create.post.ts   # 创建点歌券
 │   │   │   │   ├── delete.post.ts   # 删除点歌券
 │   │   │   │   ├── export.get.ts    # 导出点歌券
 │   │   │   │   ├── index.get.ts     # 获取点歌券列表
+│   │   │   │   ├── recipients.get.ts # 派发接收人查询
+│   │   │   │   ├── recipients-tree.get.ts # 按年级班级树查询接收人
 │   │   │   │   ├── redeem-logs.get.ts # 获取点歌券日志
+│   │   │   │   ├── recycle.post.ts  # 回收已派发未使用的点歌券
 │   │   │   │   └── update.post.ts   # 批量更新点歌券
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
@@ -1411,6 +1416,8 @@ VoiceHub/
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
+│   │   ├── cardCodeAssignmentService.ts # 点歌券派发与回收服务
+│   │   ├── cardCodeGeneratorService.ts # 点歌券券码生成与入库服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── durationValidationService.ts # 歌曲时长校验与补齐服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务

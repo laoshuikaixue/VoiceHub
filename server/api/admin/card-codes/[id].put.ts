@@ -95,11 +95,11 @@ export default defineEventHandler(async (event) => {
       const newRow = res[0]
 
       // 手工改状态绕过了派发流程，同步收敛活跃的派发记录，否则 ASSIGNED 记录会永久挂住
-      if (status && newRow.status !== 'ASSIGNED') {
+      if (status && status !== 'ASSIGNED') {
         await syncAssignmentOnManualStatusChange({
           tx,
           cardCodeIds: [id],
-          status: newRow.status,
+          status,
           actor: { id: user.id, name: user.name, username: user.username },
           reason: '管理员手工修改点歌券状态'
         })

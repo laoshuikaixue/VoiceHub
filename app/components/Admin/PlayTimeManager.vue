@@ -40,8 +40,10 @@
           <button
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
+              enablePlayTimeSelection ? '' : 'opacity-40 cursor-not-allowed',
               playSlotRequired ? 'bg-primary-hover' : 'bg-bg-tertiary'
             ]"
+            :disabled="!enablePlayTimeSelection"
             @click="toggleSlotRequired"
           >
             <div
@@ -572,20 +574,25 @@ const fetchSystemSettings = async () => {
   }
 }
 
-// 切换全局启用状态
+// 切换全局启用状态（关闭总开关时一并取消「时段必选」，避免留下无效组合）
 const toggleGlobalEnabled = async () => {
-  enablePlayTimeSelection.value = !enablePlayTimeSelection.value
-  await updateSystemSettings()
+  const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
+  const nextEnabled = !prev.enabled
+  enablePlayTimeSelection.value = nextEnabled
+  playSlotRequired.value = nextEnabled ? prev.required : false
+  await savePlayTimeFlags(prev, locale.value.messages.systemSettingsUpdated, locale.value.errors.updateSystemSettingsFailed)
 }
 
-// 切换「时段必选」总开关
+// 切换「时段必选」总开关（仅在总开关开启时可用）
 const toggleSlotRequired = async () => {
-  playSlotRequired.value = !playSlotRequired.value
-  await updateSlotRequiredSettings()
+  if (!enablePlayTimeSelection.value) return
+  const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
+  playSlotRequired.value = !prev.required
+  await savePlayTimeFlags(prev, locale.value.messages.slotRequiredUpdated, locale.value.errors.updateSlotRequiredFailed)
 }
 
-// 更新系统设置
-const updateSystemSettings = async () => {
+// 保存两个开关：两者相互约束，同一请求提交完整组合
+const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
   if (!isAdmin.value) return
 
   try {
@@ -593,40 +600,19 @@ const updateSystemSettings = async () => {
     await $fetch('/api/admin/system-settings', {
       method: 'POST',
       body: {
-        enablePlayTimeSelection: enablePlayTimeSelection.value
-      },
-      ...authConfig
-    })
-
-    showNotification(locale.value.messages.systemSettingsUpdated, 'success')
-  } catch (err: any) {
-    error.value = getErrorMessage(err) || locale.value.errors.updateSystemSettingsFailed
-    showNotification(error.value, 'error')
-    // 如果失败，恢复状态
-    enablePlayTimeSelection.value = !enablePlayTimeSelection.value
-  }
-}
-
-// 更新「时段必选」开关
-const updateSlotRequiredSettings = async () => {
-  if (!isAdmin.value) return
-
-  try {
-    const authConfig = getAuthConfig()
-    await $fetch('/api/admin/system-settings', {
-      method: 'POST',
-      body: {
+        enablePlayTimeSelection: enablePlayTimeSelection.value,
         playSlotRequired: playSlotRequired.value
       },
       ...authConfig
     })
 
-    showNotification(locale.value.messages.slotRequiredUpdated, 'success')
+    showNotification(successMessage, 'success')
   } catch (err: any) {
-    error.value = getErrorMessage(err) || locale.value.errors.updateSlotRequiredFailed
+    error.value = getErrorMessage(err) || failMessage
     showNotification(error.value, 'error')
-    // 如果失败，恢复状态
-    playSlotRequired.value = !playSlotRequired.value
+    // 保存失败回滚两个开关状态
+    enablePlayTimeSelection.value = prev.enabled
+    playSlotRequired.value = prev.required
   }
 }
 

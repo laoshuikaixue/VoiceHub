@@ -263,8 +263,6 @@ async function checkSchemaConsistency(sql) {
     'CardCode',
     'CardCodeRedeemLog',
     'CardCodeAssignment',
-    'CardCodeDispatchPlan',
-    'CardCodeDispatchRun',
     'PasswordAuditLog',
     'PasswordRateLimit',
     'GradeClass',

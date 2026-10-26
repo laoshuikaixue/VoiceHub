@@ -364,6 +364,18 @@ export async function assignCardCodesToUsers(params: {
   }
 }
 
+/** 生成券码并把生成器抛出的校验错误转为 400 */
+function generateCardCodesOrThrow(options: Parameters<typeof generateCardCodes>[0]): string[] {
+  try {
+    return generateCardCodes(options)
+  } catch (error: any) {
+    throw createError({
+      statusCode: error?.statusCode || 400,
+      message: error?.message || '生成点歌券失败'
+    })
+  }
+}
+
 /**
  * 为每位接收人现场生成点歌券并直接派发。
  *
@@ -412,15 +424,7 @@ export async function generateAndAssignCardCodes(params: {
   const actorName = resolveDisplayName(actor)
 
   // 先生成全部券码再入库，避免部分生成后才发现字符集不足
-  let generatedCodes: string[] = []
-  try {
-    generatedCodes = generateCardCodes({ count: totalCount, prefix })
-  } catch (error: any) {
-    throw createError({
-      statusCode: error?.statusCode || 400,
-      message: error?.message || '生成点歌券失败'
-    })
-  }
+  const generatedCodes = generateCardCodesOrThrow({ count: totalCount, prefix })
 
   const created = await createCardCodes({ codes: generatedCodes, note: cardNote || null })
   const createdIds = created.map((row) => row.id)
@@ -586,7 +590,7 @@ export async function recycleCardCodeAssignments(params: {
                 : '点歌券不存在，无法回收'
             }
           }
-          holderId = released[0].assignedTo
+          holderId = released[0]?.assignedTo ?? null
         }
 
         await tx

@@ -372,7 +372,8 @@ export async function requestSongForUser(
     const hasPlayTime = !!requestBody.preferredPlayTimeId
 
     let preferredPlayTime = null
-    let playDate: string | null = requestedPlayDate
+    // 仅取用户显式指定的日期，未选择则为 null
+    const playDate: string | null = requestedPlayDate
 
     if (playTimeSelectionEnabled) {
       if (playSlotRequired && !hasPlayTime) {
