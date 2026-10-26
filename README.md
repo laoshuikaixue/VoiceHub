@@ -22,7 +22,7 @@
 
 - **智能点歌系统**：用户可以点歌或给已有歌曲投票，支持网易云音乐、QQ音乐和哔哩哔哩搜索，可选择期望播出日期与播出时段
 - **多平台登录支持**：
-  - **OAuth 账户系统**：支持通过 GitHub、Casdoor、Google、QQ 互联等 OAuth 提供商快速创建和登录账户
+  - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
     - **直接创建账户**：用户通过 OAuth 认证后可创建新账户，但仍需设置本地用户名和密码
     - **账户绑定**：已有账户的用户可将 OAuth 身份绑定到现有账户，实现多平台统一登录
     - **WebAuthn 支持**：支持 HarmonyOS Passkey、Windows Hello、生物识别和硬件安全密钥（如 YubiKey）登录
@@ -62,7 +62,7 @@
 - **排期草稿**：支持保存排期草稿功能，允许管理员分步完成排期安排
   - 草稿状态不影响公开展示，可随时修改和完善
   - 支持草稿发布为正式排期，确保排期质量
-- **播出时段**：灵活配置播出时段，**支持多时段管理**；可按星期分别配置各天可选时段，支持自定义时段名称，点歌时先选日期再按星期自动加载对应时段，可开启时段必选
+- **播出时段**：灵活配置播出时段，**支持多时段管理**
 - **排期复制**：支持将某日期的排期完整复制到另一日期，原排期保留不变
 - **打印排期**：支持自定义纸张大小、内容选择、编写备注和PDF导出的打印功能
 - **学期管理**：管理员可设置当前学期，自动关联点歌记录
@@ -694,7 +694,6 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
   - GitHub：Client ID / Secret
   - Casdoor：Server URL / Client ID / Secret / Organization Name
   - Google：Client ID / Secret
-  - QQ 互联：App ID / App Key（直连 QQ 互联开放平台，非聚合登录）
   - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝等平台
   - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
@@ -1521,8 +1520,9 @@ VoiceHub/
 │   │   ├── songDurationFetcher.ts # 外部平台歌曲时长获取工具
 │   │   ├── restoreScheduleSongPool.ts # 排期备选池恢复工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
-│   │   ├── scheduleReplayBin│   │   ├── schedulePlacementConstraint.ts # 排期落位硬约束（期望时段）
 │   │   ├── schedule-date-query.ts # 排期日期查询校验与 UTC 边界
+│   │   ├── schedulePlacementConstraint.ts # 排期落位硬约束（期望时段）
+│   │   ├── scheduleReplayBinding.ts # 排期重播绑定工具
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具
