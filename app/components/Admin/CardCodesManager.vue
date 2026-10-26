@@ -620,7 +620,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { Copy, Download, Plus, RefreshCw, Search, Send, X } from '@lucide/vue'
+import { Copy, Download, Plus, RefreshCw, Search, Send } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
