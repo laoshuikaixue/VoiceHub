@@ -1,7 +1,9 @@
+import { getServerDate } from '~~/server/utils/serverTime'
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
+import { syncAssignmentOnManualStatusChange, assertCardCodesUnbound } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
 const MAX_ID_LENGTH = 32
@@ -40,27 +42,48 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })
     }
 
-    const updateObj: any = { updatedAt: new Date() }
+    const updateObj: any = { updatedAt: getServerDate() }
     const status = validatedData.status
     if (status) {
+      if (status === 'ASSIGNED') {
+        // 手工置为已派发但没有持有人，与派发记录不一致，拒绝
+        throw createError({
+          statusCode: 400,
+          message: '「已派发」状态需通过派发功能设置，请使用派发功能指定接收人'
+        })
+      }
       updateObj.status = status
       if (status === 'REDEEMED') {
         updateObj.redeemedBy = operatorId
-        updateObj.redeemedAt = new Date()
+        updateObj.redeemedAt = getServerDate()
         updateObj.lockedBy = null
         updateObj.lockedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
       }
       if (status === 'LOCKED') {
         updateObj.lockedBy = operatorId
-        updateObj.lockedAt = new Date()
+        updateObj.lockedAt = getServerDate()
         updateObj.redeemedBy = null
         updateObj.redeemedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
       }
       if (status === 'AVAILABLE') {
         updateObj.lockedBy = null
         updateObj.lockedAt = null
         updateObj.redeemedBy = null
         updateObj.redeemedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
+      }
+      if (status === 'INVALID') {
+        updateObj.lockedBy = null
+        updateObj.lockedAt = null
+        updateObj.redeemedBy = null
+        updateObj.redeemedAt = null
+        updateObj.assignedTo = null
+        updateObj.assignedAt = null
       }
     }
     if ('note' in validatedData) {
@@ -71,6 +94,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const updatedCardCodes = await db.transaction(async (tx) => {
+      if (status) await assertCardCodesUnbound(tx, ids)
       const beforeRows = await tx
         .select({
           id: cardCodes.id,
@@ -83,6 +107,17 @@ export default defineEventHandler(async (event) => {
 
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, ids)).returning()
 
+      // 开放 API 改状态同样要收敛活跃的派发记录，与后台手工改状态保持一致
+      if (status && updatedRows.length > 0) {
+        await syncAssignmentOnManualStatusChange({
+          tx,
+          cardCodeIds: updatedRows.map((row) => row.id),
+          status,
+          actor: { id: operatorId, name: null, username: null },
+          reason: '开放 API 修改点歌券状态'
+        })
+      }
+
       if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows
           .filter((row) => {
@@ -93,7 +128,7 @@ export default defineEventHandler(async (event) => {
             cardCodeId: row.id,
             codeSnapshot: row.code,
             redeemedBy: operatorId,
-            redeemedAt: row.redeemedAt || new Date(),
+            redeemedAt: row.redeemedAt || getServerDate(),
             source: 'OPEN_API_MANUAL',
             songId: null
           }))

@@ -462,7 +462,7 @@
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleWebAuthnLogin">
+      <button v-if="isWebAuthnSupported" type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
@@ -1825,6 +1825,13 @@ const handleWebAuthnLogin = async () => {
 
 .webauthn-section {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.webauthn-section .divider {
+  margin: 20px 0 10px;
 }
 
 .divider {

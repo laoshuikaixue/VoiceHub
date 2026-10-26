@@ -2,10 +2,13 @@ import { db } from '~/drizzle/db'
 import { createSongPlayedNotifications } from '~~/server/services/notificationService'
 import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, inArray } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { redeemCardCodeForSchedule, restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { z } from 'zod'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 const markPlayedSchema = z.object({
   songId: z.number().optional(),
@@ -15,6 +18,10 @@ const markPlayedSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
+  const operatorId = Number(event.context.apiKey?.createdByUserId)
+  if (!Number.isInteger(operatorId) || operatorId <= 0) {
+    throw createApiError(401, SERVER_ERROR_CODES.CARD_CODE_AUTH_REQUIRED, 'API认证失败')
+  }
   const validatedDataResult = markPlayedSchema.safeParse(body)
 
   if (!validatedDataResult.success) {
@@ -53,12 +60,17 @@ export default defineEventHandler(async (event) => {
       .update(songs)
       .set({
         played: !isUnmark,
-        playedAt: isUnmark ? null : getBeijingTime()
+        playedAt: isUnmark ? null : getServerDate()
       })
       .where(condition)
-      .returning({ id: songs.id })
+      .returning({ id: songs.id, cardCodeId: songs.cardCodeId })
 
     const updatedSongIds = updatedSongsResult.map((s) => s.id)
+    for (const song of updatedSongsResult) {
+      const transition = isUnmark ? restoreCardCodeAfterScheduleRemoval : redeemCardCodeForSchedule
+      await transition(tx, { songId: song.id, cardCodeId: song.cardCodeId, operatorId, at: getServerDate(), cancelPlayback: isUnmark })
+    }
+
 
     if (updatedSongIds.length > 0) {
       if (!isUnmark) {
@@ -67,7 +79,7 @@ export default defineEventHandler(async (event) => {
           .update(songReplayRequests)
           .set({
             status: 'FULFILLED',
-            updatedAt: getBeijingTime()
+            updatedAt: getServerDate()
           })
           .where(
             and(
@@ -85,7 +97,7 @@ export default defineEventHandler(async (event) => {
         const restoredCount = await restoreReplayRequestsToPending({
           tx,
           songIds: updatedSongIds,
-          at: getBeijingTime()
+          at: getServerDate()
         })
 
         if (restoredCount > 0) {

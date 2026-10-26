@@ -3,8 +3,9 @@ import { schedules, songs } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
-import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
-import { getBeijingTimestamp } from '~/utils/timeUtils'
+import { fulfillReplayRequestsForSchedule, resolveScheduleReplayBindings } from '~~/server/utils/scheduleReplayBinding'
+import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -74,8 +75,28 @@ export default defineEventHandler(async (event) => {
 
     // 使用事务包装更新排期和重播申请状态操作，保证原子性
     const publishResult = await db.transaction(async (tx) => {
+      await tx.select({ id: songs.id }).from(songs).where(eq(songs.id, draft.song.id)).for('update')
+      const [currentDraft] = await tx.select({
+        songId: schedules.songId,
+        replayRequestId: schedules.replayRequestId,
+        playTimeId: schedules.playTimeId
+      }).from(schedules)
+        .where(and(eq(schedules.id, body.scheduleId), eq(schedules.isDraft, true)))
+        .for('update')
+      if (!currentDraft || currentDraft.songId !== draft.song.id) {
+        throw createError({ statusCode: 409, message: '排期已发布或状态已变化，请刷新后重试' })
+      }
       // 更新草稿为已发布状态
-      const publishedAt = new Date(getBeijingTimestamp())
+      const publishedAt = getServerDate()
+      const [resolvedItem] = await resolveScheduleReplayBindings(tx, [{
+        songId: draft.song.id,
+        replayRequestId: currentDraft.replayRequestId
+      }], currentDraft.replayRequestId ? new Map([[draft.song.id, currentDraft.replayRequestId]]) : new Map())
+      await assertSchedulePlacement(
+        { playTimeId: currentDraft.playTimeId, items: [resolvedItem!] },
+        new Map([[draft.song.id, draft.song.title]]),
+        tx
+      )
 
       const publishResult = await tx
         .update(schedules)
@@ -115,8 +136,7 @@ export default defineEventHandler(async (event) => {
         songId: draft.song.id,
         scheduleId: body.scheduleId,
         at: publishedAt,
-        preferredRequestId: draft.replayRequestId || undefined,
-        fallbackRequestId: draft.replayRequestId || undefined
+        resolvedRequestId: resolvedItem!.replayRequestId
       })
 
       if (replayBinding) {

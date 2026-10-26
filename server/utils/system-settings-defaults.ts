@@ -19,6 +19,7 @@ export const normalizeScheduleVisibilitySettings = (settings) => {
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
   enablePlayTimeSelection: false,
+  playSlotRequired: false,
   siteTitle: 'VoiceHub',
   siteLogoUrl: '/favicon.ico',
   schoolLogoHomeUrl: null,
@@ -137,6 +138,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'gonganNumber',
   'showBeianIcon',
   'enablePlayTimeSelection',
+  'playSlotRequired',
   'enableSubmissionLimit',
   'dailySubmissionLimit',
   'weeklySubmissionLimit',

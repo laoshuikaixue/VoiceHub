@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { and, count, eq, ne } from 'drizzle-orm'
+import { normalizeWeekdays } from '~~/server/utils/play-slot'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -90,6 +91,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 验证适用星期（可选）：0-6 的整数数组，空数组/不传 = 每天均可选
+    if (body.weekdays !== undefined && body.weekdays !== null && !Array.isArray(body.weekdays)) {
+      throw createError({
+        statusCode: 400,
+        message: '适用星期必须是数组（0=周日 … 6=周六）'
+      })
+    }
+    const weekdays = normalizeWeekdays(body.weekdays)
+
     try {
       // 检查名称是否已存在（排除当前ID）
       const existingPlayTimeResult = await db
@@ -114,7 +124,8 @@ export default defineEventHandler(async (event) => {
           startTime: body.startTime || null,
           endTime: body.endTime || null,
           description: body.description ?? null,
-          enabled: body.enabled !== undefined ? body.enabled : true
+          enabled: body.enabled !== undefined ? body.enabled : true,
+          weekdays
         })
         .where(eq(playTimes.id, id))
         .returning()
@@ -137,6 +148,18 @@ export default defineEventHandler(async (event) => {
   } else if (method === 'PATCH') {
     // 部分更新（主要用于启用/禁用）
     const body = await readBody(event)
+
+    // 适用星期（可选）：0-6 的整数数组，空数组 = 清除配置恢复「每天均可选」
+    let weekdays: number[] | null | undefined
+    if (body.weekdays !== undefined) {
+      if (body.weekdays !== null && !Array.isArray(body.weekdays)) {
+        throw createError({
+          statusCode: 400,
+          message: '适用星期必须是数组（0=周日 … 6=周六）'
+        })
+      }
+      weekdays = normalizeWeekdays(body.weekdays)
+    }
 
     try {
       // 如果要更新名称，先检查是否存在重名
@@ -164,6 +187,7 @@ export default defineEventHandler(async (event) => {
       if (body.endTime !== undefined) updateData.endTime = body.endTime
       if (body.description !== undefined) updateData.description = body.description
       if (body.enabled !== undefined) updateData.enabled = body.enabled
+      if (weekdays !== undefined) updateData.weekdays = weekdays
 
       const updatedPlayTimeResult = await db
         .update(playTimes)

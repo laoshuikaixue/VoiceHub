@@ -40,6 +40,8 @@ export default defineEventHandler(async (event) => {
         playedAt: songs.playedAt,
         semester: songs.semester,
         preferredPlayTimeId: songs.preferredPlayTimeId,
+        // 期望播出日期：自动排期时该歌曲只在对应日期参与排期
+        preferredPlayDate: songs.preferredPlayDate,
         cover: songs.cover,
         playUrl: songs.playUrl,
         musicPlatform: songs.musicPlatform,
@@ -139,7 +141,9 @@ export default defineEventHandler(async (event) => {
     return {
       ...item.song,
       requesterId: latestRequest?.userId || null,
-      preferredPlayTimeId: latestRequest?.preferredPlayTimeId || null,
+      preferredPlayTimeId: latestRequest?.preferredPlayTimeId ?? item.song.preferredPlayTimeId ?? null,
+      // 重播申请不包含期望播出日期，不沿用原始投稿那个已过期的日期
+      preferredPlayDate: null,
       submissionNote: latestRequest?.submissionNote || null,
       submissionNotePublic: latestRequest?.submissionNotePublic === true,
       submissionNotePublicStatus: latestRequest?.submissionNotePublicStatus || null,

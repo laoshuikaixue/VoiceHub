@@ -9,13 +9,12 @@
     <form @submit.prevent="handleSubmit">
       <div class="mb-4">
         <label class="block mb-2 font-medium text-text-primary" for="playDate">{{ locale.playDate }}</label>
-        <input
-          id="playDate"
+        <AppDatePicker
           v-model="playDate"
-          class="w-full p-3 border border-primary-10 rounded-lg text-base bg-bg-tertiary-50 text-text-primary outline-none transition-colors duration-150 focus:border-primary focus:shadow-[0_0_0_2px_var(--primary-light)]"
-          required
-          type="date"
-        >
+          size="xl"
+          rounded="lg"
+          class-name="w-full"
+        />
       </div>
 
       <!-- 播出时段选择 -->
@@ -73,6 +72,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

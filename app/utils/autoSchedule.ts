@@ -30,6 +30,110 @@ export interface AutoScheduleCandidate {
   voteCount?: number | null
   // UI 标记：是否为固定歌曲
   isFixed?: boolean
+  /** 投稿时显式选择的期望播出日期（YYYY-MM-DD）：命中当天时优先安排，不作为排除条件 */
+  preferredPlayDate?: string | null
+  /** 投稿时选择的期望播出时段 ID：硬约束，只能排到该时段 */
+  preferredPlayTimeId?: number | null
+}
+
+/** 自动排期约束。 */
+export interface AutoScheduleOptions {
+  /** 目标播出日期；命中候选优先安排。 */
+  targetDate?: string | null
+  /** 目标播出时段 ID；传入时启用硬约束。 */
+  targetPlayTimeId?: number | null
+}
+
+/** 期望落位过滤结果。 */
+export interface AutoSchedulePlacementFilter {
+  /** 通过硬约束校验、可参与本次排期的候选 */
+  eligible: AutoScheduleCandidate[]
+  /** 因期望时段与本次排期时段不符而被排除的数量 */
+  excludedByPlayTime: number
+}
+
+/**
+ * 归一化期望播出日期：仅保留 YYYY-MM-DD 部分，无法解析时返回 null
+ */
+export function normalizePreferredPlayDate(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  const str = String(value).trim()
+  if (!str) return null
+  const matched = str.match(/^(\d{4}-\d{2}-\d{2})/)
+  return matched ? matched[1] : null
+}
+
+/**
+ * 归一化期望播出时段 ID：非正整数视为「未指定时段」
+ */
+export function normalizePreferredPlayTimeId(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const num = Number(value)
+  return Number.isInteger(num) && num > 0 ? num : null
+}
+
+/** 按期望时段硬约束过滤候选，并返回排除数量。 */
+export function filterByExpectedPlacement(
+  candidates: AutoScheduleCandidate[],
+  options?: AutoScheduleOptions
+): AutoSchedulePlacementFilter {
+  const hasSlotConstraint = !!options && options.targetPlayTimeId !== undefined
+  const targetPlayTimeId = hasSlotConstraint ? options!.targetPlayTimeId ?? null : null
+
+  const eligible: AutoScheduleCandidate[] = []
+  let excludedByPlayTime = 0
+
+  for (const song of candidates) {
+    const preferredPlayTimeId = normalizePreferredPlayTimeId(song.preferredPlayTimeId)
+
+    // 期望时段硬约束
+    if (hasSlotConstraint) {
+      if (targetPlayTimeId === null) {
+        // 未指定时段视图：整批落位到「未指定时段」，无法保证落到指定时段
+        if (preferredPlayTimeId !== null) {
+          excludedByPlayTime++
+          continue
+        }
+      } else if (preferredPlayTimeId !== null && preferredPlayTimeId !== targetPlayTimeId) {
+        excludedByPlayTime++
+        continue
+      }
+    }
+
+    eligible.push(song)
+  }
+
+  return { eligible, excludedByPlayTime }
+}
+
+/** 将命中目标日期的候选移到前面。 */
+export function preferExpectedDate<T extends AutoScheduleCandidate>(
+  list: T[],
+  targetDate?: string | null
+): T[] {
+  const date = normalizePreferredPlayDate(targetDate)
+  if (!date) return [...list]
+  const matched: T[] = []
+  const rest: T[] = []
+  for (const song of list) {
+    if (normalizePreferredPlayDate(song.preferredPlayDate) === date) matched.push(song)
+    else rest.push(song)
+  }
+  return [...matched, ...rest]
+}
+
+/** 统计方案命中目标日期的数量。 */
+export function countExpectedDateHits(
+  songs: AutoScheduleCandidate[],
+  targetDate?: string | null
+): number {
+  const date = normalizePreferredPlayDate(targetDate)
+  if (!date) return 0
+  let count = 0
+  for (const song of songs) {
+    if (normalizePreferredPlayDate(song.preferredPlayDate) === date) count++
+  }
+  return count
 }
 
 export interface AutoScheduleResult {
@@ -73,6 +177,8 @@ interface ResultCompareContext {
   fixedCount: number
   targetRequesterCount: number | null
   fixedRequesterSet: Set<string>
+  /** 目标播出日期（YYYY-MM-DD），用于优先选择命中期望日期的方案 */
+  targetDate: string | null
 }
 
 function distinctRequesterCount(
@@ -97,6 +203,13 @@ function compareResults(a: AutoScheduleResult, b: AutoScheduleResult, ctx: Resul
     const bReqDiff = Math.abs(distinctRequesterCount(b.songs, ctx) - ctx.targetRequesterCount)
     if (aReqDiff !== bReqDiff) return aReqDiff - bReqDiff
   }
+  if (a.absDiff !== b.absDiff) return a.absDiff - b.absDiff
+  // 同等时长方案优先命中期望日期。
+  if (ctx.targetDate) {
+    const aHits = countExpectedDateHits(a.songs, ctx.targetDate)
+    const bHits = countExpectedDateHits(b.songs, ctx.targetDate)
+    if (aHits !== bHits) return bHits - aHits
+  }
   return a.absDiff - b.absDiff || b.songs.length - a.songs.length
 }
 
@@ -108,7 +221,8 @@ function prepareScheduleInput(
   targetMinutes: number,
   candidates: AutoScheduleCandidate[],
   preSelected: AutoScheduleCandidate[],
-  plansCount: number
+  plansCount: number,
+  options?: AutoScheduleOptions
 ): {
   targetSeconds: number
   preSelectedSeconds: number
@@ -123,23 +237,43 @@ function prepareScheduleInput(
     0
   )
 
-  const availableCandidates = candidates.filter(
+  // 期望落位硬约束：期望时段不符的候选不参与本次排期
+  const placement = filterByExpectedPlacement(candidates, options)
+
+  const availableCandidates = placement.eligible.filter(
     (s) => !preSelectedIds.has(s.id) && typeof s.durationSeconds === 'number' && s.durationSeconds > 0
   )
   const emptyResult: AutoScheduleResult = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
 
   if (availableCandidates.length === 0 && preSelected.length === 0) {
-    return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult, earlyReturn: plansCount === 1 ? emptyResult : [emptyResult] }
+    return {
+      targetSeconds,
+      preSelectedSeconds,
+      availableCandidates,
+      emptyResult,
+      earlyReturn: plansCount === 1 ? emptyResult : [emptyResult]
+    }
   }
   if (availableCandidates.length === 0) {
     const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
     const total = preSelectedSeconds
     const diff = total - targetSeconds
     const result: AutoScheduleResult = { songs: fixedSongs, totalDuration: total, diff, absDiff: Math.abs(diff) }
-    return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult, earlyReturn: plansCount === 1 ? result : [result] }
+    return {
+      targetSeconds,
+      preSelectedSeconds,
+      availableCandidates,
+      emptyResult,
+      earlyReturn: plansCount === 1 ? result : [result]
+    }
   }
 
-  return { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult }
+  return {
+    targetSeconds,
+    preSelectedSeconds,
+    availableCandidates,
+    emptyResult
+  }
 }
 
 /** 默认热度权重：0.8 = 排序权重里 80% 来自热度、20% 来自随机（站长实测对比后定稿：80% 偏向明显又不失随机） */
@@ -220,20 +354,23 @@ export function autoSchedule(
   plansCount: number = 1,
   targetSongCount?: number | null,
   targetRequesterCount?: number | null,
-  heatWeight: number = DEFAULT_HEAT_WEIGHT
+  heatWeight: number = DEFAULT_HEAT_WEIGHT,
+  options?: AutoScheduleOptions
 ): AutoScheduleResult | AutoScheduleResult[] {
-  const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
+  const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount, options)
   if (input.earlyReturn !== undefined) return input.earlyReturn
   const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
   // 热度秩归一化表（用于生成顺序与方案比较）
   const heatMap = buildHeatMap(availableCandidates)
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
   const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
+  const targetDate = normalizePreferredPlayDate(options?.targetDate)
   const compareCtx: ResultCompareContext = {
     targetSongCount: normalizedTargetSongCount,
     fixedCount: preSelected.length,
     targetRequesterCount: normalizedTargetRequesterCount,
-    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean))
+    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean)),
+    targetDate
   }
   const targetAdditionalCount = normalizedTargetSongCount === null
     ? null
@@ -339,9 +476,12 @@ export function autoSchedule(
   // 设置投稿人目标时分散排序，优先覆盖不同投稿人
   const diversifiedDescending = diversifyOrder(sortedDescending, normalizedTargetRequesterCount)
   const diversifiedAscending = diversifyOrder(sortedAscending, normalizedTargetRequesterCount)
+  // 期望日期优先：命中目标日期的歌曲排在最前，保证「可能的情况下」优先安排到当天
+  const preferredDescending = preferExpectedDate(diversifiedDescending, targetDate)
+  const preferredAscending = preferExpectedDate(diversifiedAscending, targetDate)
   const sortedByDuration = normalizedTargetSongCount !== null && direction === 'under'
-    ? diversifiedAscending
-    : diversifiedDescending
+    ? preferredAscending
+    : preferredDescending
 
   // 生成方案
   const plans: AutoScheduleResult[] = []
@@ -357,8 +497,8 @@ export function autoSchedule(
 
   // 确定性路径
   if (direction === 'middle') {
-    addUnique(runGreedy(normalizedTargetSongCount !== null ? diversifiedAscending : diversifiedDescending, 'under'))
-    addUnique(runGreedy(diversifiedDescending, 'over'))
+    addUnique(runGreedy(normalizedTargetSongCount !== null ? preferredAscending : preferredDescending, 'under'))
+    addUnique(runGreedy(preferredDescending, 'over'))
   } else {
     addUnique(runGreedy(sortedByDuration, direction))
   }
@@ -374,7 +514,9 @@ export function autoSchedule(
         ? shuffleList(availableCandidates)
         : heatWeightedOrder(availableCandidates, heatWeight)
     const dir = direction === 'middle' ? (i % 2 === 0 ? 'under' : 'over') : direction
-    addUnique(runGreedy(diversifyOrder(ordered, normalizedTargetRequesterCount), dir))
+    // 期望日期命中的歌曲始终前置，保证随机方案也优先安排到当天
+    const diversified = diversifyOrder(ordered, normalizedTargetRequesterCount)
+    addUnique(runGreedy(preferExpectedDate(diversified, targetDate), dir))
   }
 
   // 按质量排序：首数偏差 → 投稿人偏差 → 时长偏差 → 歌曲数 → 热度（同等优秀时更热的优先）
@@ -413,13 +555,15 @@ export function autoScheduleExhaustive(
   plansCount: number = 1,
   targetSongCount?: number | null,
   targetRequesterCount?: number | null,
-  heatWeight: number = DEFAULT_HEAT_WEIGHT
+  heatWeight: number = DEFAULT_HEAT_WEIGHT,
+  options?: AutoScheduleOptions
 ): AutoScheduleResult | AutoScheduleResult[] {
-  const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount)
+  const input = prepareScheduleInput(targetMinutes, candidates, preSelected, plansCount, options)
   if (input.earlyReturn !== undefined) return input.earlyReturn
   const { targetSeconds, preSelectedSeconds, availableCandidates, emptyResult } = input
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
   const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
+  const targetDate = normalizePreferredPlayDate(options?.targetDate)
   const heatMap = buildHeatMap(availableCandidates)
   // 热度权重：0 时穷举完全不参考热度（与滑杆 0% = 不看热度 一致）；>0 时热度仅作同分方案的末位比较
   const normalizedHeatWeight = Math.min(1, Math.max(0, Number.isFinite(heatWeight) ? heatWeight : DEFAULT_HEAT_WEIGHT))
@@ -430,7 +574,8 @@ export function autoScheduleExhaustive(
     targetSongCount: normalizedTargetSongCount,
     fixedCount: preSelected.length,
     targetRequesterCount: normalizedTargetRequesterCount,
-    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean))
+    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean)),
+    targetDate
   }
 
   // 将时长收窄为 number 类型，消除后续的非空断言
@@ -438,13 +583,17 @@ export function autoScheduleExhaustive(
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
   // 按时长降序排列，大歌曲优先，利于剪枝；启用热度时同长度热度高者在前；设置投稿人目标时分散排序
-  const sorted = diversifyOrder(
-    [...(availableCandidates as DurationCandidate[])].sort(
-      (a, b) =>
-        b.durationSeconds - a.durationSeconds ||
-        (heatEnabled ? (b.voteCount || 0) - (a.voteCount || 0) : 0)
+  // 期望日期命中的歌曲前置：DFS 优先探索包含它们的分支，更容易产出「安排到当天」的方案
+  const sorted = preferExpectedDate(
+    diversifyOrder(
+      [...(availableCandidates as DurationCandidate[])].sort(
+        (a, b) =>
+          b.durationSeconds - a.durationSeconds ||
+          (heatEnabled ? (b.voteCount || 0) - (a.voteCount || 0) : 0)
+      ),
+      normalizedTargetRequesterCount
     ),
-    normalizedTargetRequesterCount
+    targetDate
   )
   const n = sorted.length
 
@@ -577,6 +726,8 @@ export interface ScheduledEntryForFix {
     requester?: string | null
     cover?: string | null
     createdAt?: string | null
+    preferredPlayDate?: string | null
+    preferredPlayTimeId?: number | null
   } | null
   replayRequestId?: number | null
 }
@@ -606,7 +757,9 @@ export function fixedCandidatesFromScheduled(entries: ScheduledEntryForFix[]): A
       musicPlatform: song.musicPlatform || null,
       requester: song.requester || null,
       cover: song.cover || null,
-      createdAt: song.createdAt || null
+      createdAt: song.createdAt || null,
+      preferredPlayDate: song.preferredPlayDate || null,
+      preferredPlayTimeId: song.preferredPlayTimeId || null
     })
   }
   return result
@@ -629,6 +782,9 @@ export function poolCandidateFromItem(item: any): AutoScheduleCandidate {
     cover: item.cover,
     createdAt: item.createdAt,
     // 热度：备选池条目带 voteCount；缺失按 0 处理
-    voteCount: Number.isFinite(Number(item.voteCount)) ? Number(item.voteCount) : 0
+    voteCount: Number.isFinite(Number(item.voteCount)) ? Number(item.voteCount) : 0,
+    // 期望落位信息：期望时段是硬约束，期望日期是软约束
+    preferredPlayDate: normalizePreferredPlayDate(item.preferredPlayDate),
+    preferredPlayTimeId: normalizePreferredPlayTimeId(item.preferredPlayTimeId)
   }
 }

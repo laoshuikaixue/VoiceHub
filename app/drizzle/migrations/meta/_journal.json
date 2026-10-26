@@ -386,6 +386,20 @@
       "when": 1792242270895,
       "tag": "20261017130430_add_submission_anonymous",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792728594394,
+      "tag": "20261023040954_add_play_date_slot",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1793031316640,
+      "tag": "20261026161516_card_code_dispatch",
+      "breakpoints": true
     }
   ]
 }

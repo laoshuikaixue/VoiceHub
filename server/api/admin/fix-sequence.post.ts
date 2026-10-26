@@ -1,5 +1,7 @@
 import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -117,11 +119,9 @@ export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
     const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '需要管理员权限'
-      })
+    if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '需要登录')
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '需要管理员权限')
     }
 
     const body = await readBody(event)
@@ -143,7 +143,10 @@ export default defineEventHandler(async (event) => {
       'SongBlacklist',
       'SongReplayRequest',
       'RequestTime',
-      'EmailTemplate'
+      'EmailTemplate',
+      'CardCode',
+      'CardCodeRedeemLog',
+      'CardCodeAssignment'
     ]
 
     // Prisma模型名到数据库表名的映射
@@ -162,7 +165,10 @@ export default defineEventHandler(async (event) => {
       SongBlacklist: 'SongBlacklist',
       SongReplayRequest: 'song_replay_requests',
       RequestTime: 'RequestTime',
-      EmailTemplate: 'EmailTemplate'
+      EmailTemplate: 'EmailTemplate',
+      CardCode: 'CardCode',
+      CardCodeRedeemLog: 'CardCodeRedeemLog',
+      CardCodeAssignment: 'CardCodeAssignment'
     }
 
     // 如果没有指定表名或指定为'all'，则修复所有表
@@ -225,7 +231,8 @@ export default defineEventHandler(async (event) => {
     // 使用辅助函数修复单个表
     return await fixTableSequence(table, dbTableName)
   } catch (error) {
-    console.error('Fix sequence error:', error)
+    if ((error as any).statusCode) throw error
+    console.error('修复序列失败:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : '未知错误'

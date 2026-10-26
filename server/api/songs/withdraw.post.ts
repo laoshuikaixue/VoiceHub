@@ -140,6 +140,7 @@ export default defineEventHandler(async (event) => {
   // 投稿关联数据一起进入事务，避免撤回失败时只删掉一部分数据。
   try {
     await db.transaction(async (tx) => {
+      await tx.select({ id: songs.id }).from(songs).where(eq(songs.id, song.id)).for('update')
       await tx.delete(songCollaborators).where(eq(songCollaborators.songId, body.songId))
       await tx.delete(votes).where(eq(votes.songId, body.songId))
 
@@ -172,8 +173,9 @@ export default defineEventHandler(async (event) => {
     })
   } catch (txErr: any) {
     console.error('撤回事务失败:', txErr)
+    if (txErr.statusCode) throw txErr
     throw createError({
-      statusCode: txErr.statusCode || 500,
+      statusCode: 500,
       message: txErr.message || '撤回歌曲失败，请稍后重试'
     })
   }

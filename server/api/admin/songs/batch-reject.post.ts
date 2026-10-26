@@ -1,3 +1,4 @@
+import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
 import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
     // 使用事务确保批量驳回操作的原子性
     await db.transaction(async (tx) => {
       // 在事务中重新检查歌曲是否存在
-      const existingSongs = await tx.select().from(songs).where(inArray(songs.id, songIds))
+      const existingSongs = await tx.select().from(songs).where(inArray(songs.id, songIds)).orderBy(songs.id).for('update')
 
       if (existingSongs.length === 0) {
         throw createApiError(404, SERVER_ERROR_CODES.SONG_NOT_FOUND, '歌曲不存在或已被删除')
@@ -83,6 +84,11 @@ export default defineEventHandler(async (event) => {
       await tx.delete(votes).where(inArray(votes.songId, existingIds))
       console.log(`删除了投票记录`)
 
+      for (const song of existingSongs) {
+        await releaseCardCodeAfterSongWithdrawal(tx, {
+          songId: song.id, cardCodeId: song.cardCodeId, operatorId: user.id, removeSong: true
+        })
+      }
       // 批量删除歌曲的所有排期
       await tx.delete(schedules).where(inArray(schedules.songId, existingIds))
       console.log(`删除了排期记录`)

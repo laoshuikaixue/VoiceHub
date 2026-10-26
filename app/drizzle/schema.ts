@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -8,6 +8,7 @@ export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
 export const cardCodeStatusEnum = pgEnum('card_code_status', [
   'AVAILABLE',
+  'ASSIGNED',
   'LOCKED',
   'REDEEMED',
   'INVALID'
@@ -77,6 +78,8 @@ export const playTimes = pgTable('PlayTime', {
   endTime: text('endTime'),
   enabled: boolean('enabled').default(true).notNull(),
   description: text('description'),
+  // 适用星期（0=周日, 1=周一 … 6=周六）；NULL/空数组 = 每天均可选（兼容历史数据）
+  weekdays: jsonb('weekdays').$type<number[]>(),
 });
 
 // 年级班级配置表（选择器选项来源，优先于从用户提取）
@@ -118,6 +121,8 @@ export const songs = pgTable('Song', {
   submissionNotePublicStatus: text('submissionNotePublicStatus'),
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  // 用户选择的期望播出日期（北京时间 YYYY-MM-DD），与 preferredPlayTimeId 共同构成「日期 + 时段」
+  preferredPlayDate: date('preferredPlayDate', { mode: 'string' }),
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
@@ -305,6 +310,8 @@ export const systemSettings = pgTable('SystemSettings', {
   instanceId: text('instance_id'),
   telemetryEnabled: boolean('telemetryEnabled').default(true).notNull(),
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
+  // 点歌时播出日期+时段是否强制必选（全局总开关，依赖 enablePlayTimeSelection）
+  playSlotRequired: boolean('playSlotRequired').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),
   schoolLogoHomeUrl: text('schoolLogoHomeUrl'),
@@ -853,8 +860,18 @@ export const cardCodes = pgTable('CardCode', {
   lockedAt: timestamp('lockedAt'),
   redeemedBy: integer('redeemedBy').references(() => users.id, { onDelete: 'set null' }),
   redeemedAt: timestamp('redeemedAt'),
+  // 派发给用户后归属的持有人；回收后置空
+  assignedTo: integer('assignedTo').references(() => users.id, { onDelete: 'set null' }),
+  assignedAt: timestamp('assignedAt'),
   note: text('note'),
-});
+}, (table) => [
+  // 用户端「我的点歌券」按持有人 + 活跃状态查询
+  index('card_code_assigned_to_status_idx').on(table.assignedTo, table.status),
+  // 持有权与状态必须自洽：ASSIGNED 一定有持有人，回到可用池/作废一定解除持有人
+  // 用文本比较而非枚举字面量：同一迁移里刚 ADD VALUE 的新枚举值事务内不可引用
+  check('card_code_assigned_status_has_holder', sql`CAST(${table.status} AS text) <> 'ASSIGNED' OR ${table.assignedTo} IS NOT NULL`),
+  check('card_code_unassigned_status_no_holder', sql`CAST(${table.status} AS text) NOT IN ('AVAILABLE', 'INVALID') OR ${table.assignedTo} IS NULL`),
+]);
 
 // 卡密兑换日志表
 export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
@@ -872,6 +889,58 @@ export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
 
 export type CardCode = typeof cardCodes.$inferSelect;
 export type NewCardCode = typeof cardCodes.$inferInsert;
+
+// 点歌券派发状态
+export const cardCodeAssignmentStatusEnum = pgEnum('card_code_assignment_status', [
+  'ASSIGNED',   // 已派发给用户，尚未使用
+  'USED',       // 用户已使用
+  'RECYCLED',   // 已被管理员回收
+  'FAILED'      // 派发失败
+]);
+
+// 点歌券派发记录表：记录派发时间、派发人员、接收人、回收与失败原因
+export const cardCodeAssignments = pgTable('CardCodeAssignment', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  // 删券不销毁审计流水，与 CardCodeRedeemLog 一致靠 codeSnapshot 追溯
+  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  codeSnapshot: text('codeSnapshot').notNull(),
+  // 接收人（被派发用户）
+  userId: integer('userId').references(() => users.id, { onDelete: 'set null' }),
+  userNameSnapshot: text('userNameSnapshot'),
+  // 派发人员
+  assignedBy: integer('assignedBy').references(() => users.id, { onDelete: 'set null' }),
+  assignedByName: text('assignedByName'),
+  // 派发时间
+  assignedAt: timestamp('assignedAt').defaultNow().notNull(),
+  status: cardCodeAssignmentStatusEnum('status').default('ASSIGNED').notNull(),
+  // 使用时间
+  usedAt: timestamp('usedAt'),
+  // 回收信息
+  recycledAt: timestamp('recycledAt'),
+  recycledBy: integer('recycledBy').references(() => users.id, { onDelete: 'set null' }),
+  recycledByName: text('recycledByName'),
+  recycleReason: text('recycleReason'),
+  // 失败原因（派发过程出错时写入）
+  failureReason: text('failureReason'),
+  // 通知发送结果：SENT 成功 / FAILED 失败 / SKIPPED 未发送
+  notifyStatus: text('notifyStatus').default('SKIPPED').notNull(),
+  notifyError: text('notifyError'),
+  note: text('note')
+}, (table) => [
+  index('card_code_assignment_card_code_id_idx').on(table.cardCodeId),
+  // 一张券同时只能有一条活跃派发记录
+  uniqueIndex('card_code_assignment_active_per_card_unique')
+    .on(table.cardCodeId)
+    .where(sql`${table.status} = 'ASSIGNED'`),
+  index('card_code_assignment_user_status_idx').on(table.userId, table.status),
+  index('card_code_assignment_status_assigned_at_idx').on(table.status, table.assignedAt),
+  index('card_code_assignment_assigned_at_idx').on(table.assignedAt)
+]);
+
+export type CardCodeAssignment = typeof cardCodeAssignments.$inferSelect;
+export type NewCardCodeAssignment = typeof cardCodeAssignments.$inferInsert;
 
 // 自动备份历史记录表
 export const backupHistory = pgTable('BackupHistory', {
