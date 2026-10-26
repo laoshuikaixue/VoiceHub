@@ -15,7 +15,9 @@
     @loadstart="$emit('loadstart', $event)"
     @pause="$emit('pause', $event)"
     @play="$emit('play', $event)"
+    @stalled="$emit('stalled', $event)"
     @timeupdate="$emit('timeupdate', $event)"
+    @waiting="$emit('waiting', $event)"
   ></audio>
 </template>
 
@@ -39,7 +41,9 @@ const emit = defineEmits([
   'play',
   'pause',
   'loadstart',
-  'canplay'
+  'canplay',
+  'stalled',
+  'waiting'
 ])
 
 const audioPlayer = ref(null)
