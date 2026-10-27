@@ -614,8 +614,8 @@ export function autoScheduleExhaustive(
   const currentSongs: AutoScheduleCandidate[] = []
 
   const record = (currentTotal: number) => {
-    const canUseFixedOnly = normalizedTargetSongCount !== null && preSelected.length >= normalizedTargetSongCount
-    if (currentSongs.length === 0 && !canUseFixedOnly) return
+    // 固定歌曲自身即构成合法方案：固定时长已达目标时不应再为凑时长追加候选
+    if (currentSongs.length === 0 && preSelected.length === 0) return
     const total = currentTotal + preSelectedSeconds
     const diff = total - targetSeconds
     if (direction === 'over' && total < targetSeconds) return

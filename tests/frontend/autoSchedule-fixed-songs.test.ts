@@ -140,3 +140,22 @@ test('目标歌曲数小于固定歌曲数时固定歌曲仍全部保留', () =>
     }
   }
 })
+
+test('固定时长已覆盖目标时两种算法都只保留固定歌曲', () => {
+  // 起风了 5:25 已覆盖 5 分钟目标，任何候选都只会让偏差更大
+  const allSongs = makeSongs()
+  const fixed = fixedCandidatesFromScheduled(toEntries([allSongs[4]]))
+  const candidates = allSongs.filter((song) => !fixed.some((s) => s.id === song.id))
+
+  for (const fn of scheduleFns) {
+    for (const direction of ['under', 'middle', 'over']) {
+      const plans = toPlans(fn(direction, 5, candidates, fixed, 1))
+      assert.equal(plans.length > 0, true, `${fn.name}/${direction} 应给出方案`)
+      assert.deepEqual(
+        plans[0].songs.map((song) => song.id),
+        fixed.map((song) => song.id),
+        `${fn.name}/${direction} 不应为凑时长追加候选`
+      )
+    }
+  }
+})
