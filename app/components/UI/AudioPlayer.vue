@@ -599,7 +599,8 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
   }
 }
 
-const trySwitchPlaybackSource = async () => {
+// options.silent 为 true 时不弹内置换源提示，由调用方按场景自行提示
+const trySwitchPlaybackSource = async (options = { silent: false }) => {
   const song = activeSong.value
   if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song)) {
     return false
@@ -657,7 +658,7 @@ const trySwitchPlaybackSource = async () => {
     sync.globalAudioPlayer.updateCurrentSong(updatedSong)
     emit('songChange', updatedSong)
 
-    if (window.$showNotification) {
+    if (!options.silent && window.$showNotification) {
       window.$showNotification(audioPlayerLocale.value.fallbackSource, 'warning')
     }
 
@@ -726,7 +727,7 @@ const checkPlaybackStall = async () => {
   if (element.paused && !control.isPlaying.value && !control.isLoadingTrack.value) return
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return
 
-  const switched = await trySwitchPlaybackSource()
+  const switched = await trySwitchPlaybackSource({ silent: true })
   if (switched) {
     if (window.$showNotification) {
       window.$showNotification(audioPlayerLocale.value.slowNetworkRetry, 'warning')
