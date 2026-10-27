@@ -1502,6 +1502,8 @@ export const pages = {
     popupBlocked: 'The browser blocked the new tab. Allow pop-ups and try again.',
     originalLinkOpened: 'The original link was opened',
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
+    slowNetworkRetry: 'The current link loads too slowly. Switching to a fallback source.',
+    slowNetworkFailed: 'The playback link loads too slowly. Check your connection and retry.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     networkOffline: 'Network disconnected. Check your connection and try again.',
     scheduleSyncFailed: 'Queue update failed. The current queue was retained.',

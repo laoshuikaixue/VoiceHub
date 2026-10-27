@@ -263,7 +263,9 @@
             @loadstart="handleLoadStart"
             @pause="handlePause"
             @play="handlePlay"
+            @stalled="handleNetworkStall"
             @timeupdate="handleTimeUpdate"
+            @waiting="handleNetworkStall"
           />
         </ClientOnly>
       </div>
@@ -597,7 +599,8 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
   }
 }
 
-const trySwitchPlaybackSource = async () => {
+// options.silent 为 true 时不弹内置换源提示，由调用方按场景自行提示
+const trySwitchPlaybackSource = async (options = { silent: false }) => {
   const song = activeSong.value
   if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song)) {
     return false
@@ -655,7 +658,7 @@ const trySwitchPlaybackSource = async () => {
     sync.globalAudioPlayer.updateCurrentSong(updatedSong)
     emit('songChange', updatedSong)
 
-    if (window.$showNotification) {
+    if (!options.silent && window.$showNotification) {
       window.$showNotification(audioPlayerLocale.value.fallbackSource, 'warning')
     }
 
@@ -696,6 +699,43 @@ const trySwitchPlaybackSource = async () => {
   } finally {
     isFallbackHandling.value = false
     control.isLoadingTrack.value = false
+  }
+}
+
+// CDN 偶发阶段限速时音频会无限停在 readyState 0/1，按超时换源而不是一直转圈
+const PLAYBACK_STALL_TIMEOUT_MS = 8000
+let stallTimer = null
+
+const clearStallWatch = () => {
+  if (stallTimer) {
+    clearTimeout(stallTimer)
+    stallTimer = null
+  }
+}
+
+const armStallWatch = () => {
+  clearStallWatch()
+  stallTimer = setTimeout(checkPlaybackStall, PLAYBACK_STALL_TIMEOUT_MS)
+}
+
+const checkPlaybackStall = async () => {
+  stallTimer = null
+  const element = audioPlayer.value
+  if (!element || isFallbackHandling.value) return
+  // 已缓冲到可播放或用户已暂停时不处理
+  if (element.readyState >= 3) return
+  if (element.paused && !control.isPlaying.value && !control.isLoadingTrack.value) return
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+
+  const switched = await trySwitchPlaybackSource({ silent: true })
+  if (switched) {
+    if (window.$showNotification) {
+      window.$showNotification(audioPlayerLocale.value.slowNetworkRetry, 'warning')
+    }
+    return
+  }
+  if (window.$showNotification) {
+    window.$showNotification(audioPlayerLocale.value.slowNetworkFailed, 'warning')
   }
 }
 
@@ -886,6 +926,7 @@ const handlePlay = () => {
 }
 
 const handlePause = () => {
+  clearStallWatch()
   control.onPause()
 
   if (isSyncingFromGlobal.value) return
@@ -1042,6 +1083,7 @@ const handleLoaded = async () => {
 }
 
 const handleError = async (error) => {
+  clearStallWatch()
   // 忽略主动清空 src 或关闭播放器导致的错误
   const audioEl = audioPlayer.value
   if (
@@ -1178,6 +1220,7 @@ const handleError = async (error) => {
 }
 
 const handleEnded = () => {
+  clearStallWatch()
   if (audioPlayer.value) {
     void tryScrobbleNeteaseSong(
       audioPlayer.value.duration || control.currentTime.value,
@@ -1203,10 +1246,18 @@ const handleEnded = () => {
 
 const handleLoadStart = () => {
   control.onLoadStart()
+  armStallWatch()
 }
 
 const handleCanPlay = () => {
+  clearStallWatch()
   control.onCanPlay()
+}
+
+// 长时缓冲不足（waiting/stalled）时重新计时，网络恢复后由 canplay 清除
+// 不依赖 isPlaying：播放器状态可能滞后，卡住判定统一由 checkPlaybackStall 决定
+const handleNetworkStall = () => {
+  armStallWatch()
 }
 
 // UI 事件处理器
@@ -2113,6 +2164,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  clearStallWatch()
   // 清理音频播放器
   control.cleanup()
 
