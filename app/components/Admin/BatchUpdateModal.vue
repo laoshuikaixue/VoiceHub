@@ -1579,7 +1579,11 @@ const loadXLSX = async () => {
     }
 
     const script = document.createElement('script')
-    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+    // SheetJS 官方发布源，npm 上的 xlsx 包已停更（停留在 0.18.5）
+    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+    // 加载源完整性校验值，来源变更时须同步重算
+    script.crossOrigin = 'anonymous'
+    script.integrity = 'sha256-zAFRMKqFIefwiPiImOupSczcv7ON8L0Sm0S3Jzw6b0E='
     script.onload = resolve
     script.onerror = (error) => {
       console.error('加载XLSX库失败:', error)

@@ -2753,14 +2753,13 @@ const closeImportModal = () => {
 const loadXLSX = async () => {
   if (typeof window !== 'undefined' && !xlsxLoaded.value) {
     try {
-      // 使用多个可靠的CDN源，如果一个失败可以尝试另一个
+      // SheetJS 官方发布源，npm 上的 xlsx 包已停更（停留在 0.18.5）
       const cdnUrls = [
-        'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+        'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
       ]
+      // 加载源完整性校验值，来源变更时须同步重算
+      const xlsxIntegrity = 'sha256-zAFRMKqFIefwiPiImOupSczcv7ON8L0Sm0S3Jzw6b0E='
 
-      // 尝试加载第一个CDN
       let loaded = false
       for (const url of cdnUrls) {
         if (loaded) break
@@ -2770,6 +2769,9 @@ const loadXLSX = async () => {
             const script = document.createElement('script')
             script.src = url
             script.async = true
+            // integrity 校验要求 CORS 模式加载
+            script.crossOrigin = 'anonymous'
+            script.integrity = xlsxIntegrity
 
             script.onload = () => {
               xlsxLoaded.value = true
