@@ -3072,6 +3072,10 @@ export const admin = {
       return `剩余 ${Math.floor(sec / 60)}分${String(Math.floor(sec % 60)).padStart(2, '0')}秒`
     },
     fixExistingNone: '当前无已排期歌曲',
+    fixExistingMissingDuration: (n) => `${n} 首时长未知`,
+    fixExistingMissingDurationTip: '时长未知的固定歌曲仍会保留，但不计入目标时长；运行排期时会自动尝试补齐，也可点右侧按钮手动补齐',
+    fixExistingResolvingDuration: (progress) => `补齐时长 ${progress}`,
+    autoScheduleRunning: '计算中',
     replaySong: '重播歌曲',
     replay: '重播',
     draft: '草稿',

@@ -614,8 +614,8 @@ export function autoScheduleExhaustive(
   const currentSongs: AutoScheduleCandidate[] = []
 
   const record = (currentTotal: number) => {
-    const canUseFixedOnly = normalizedTargetSongCount !== null && preSelected.length >= normalizedTargetSongCount
-    if (currentSongs.length === 0 && !canUseFixedOnly) return
+    // 固定歌曲自身即构成合法方案：固定时长已达目标时不应再为凑时长追加候选
+    if (currentSongs.length === 0 && preSelected.length === 0) return
     const total = currentTotal + preSelectedSeconds
     const diff = total - targetSeconds
     if (direction === 'over' && total < targetSeconds) return
@@ -692,6 +692,14 @@ export function autoScheduleExhaustive(
 
   dfs(0, 0)
 
+  // 没有任何合法方案时，至少返回「仅固定歌曲」的方案，避免固定歌曲全部丢失
+  // （固定歌曲总时长已不小于目标、或方向约束凑不出解时会走到这里）
+  if (solutions.length === 0 && preSelected.length > 0) {
+    const total = preSelectedSeconds
+    const diff = total - targetSeconds
+    solutions.push({ songs: [], totalDuration: total, diff, absDiff: Math.abs(diff) })
+  }
+
   solutions.sort((a, b) => {
     const base = compareResults(a, b, compareCtx)
     return base !== 0 ? base : heatTiebreak(a, b)
@@ -704,6 +712,57 @@ export function autoScheduleExhaustive(
   }))
 
   return plansCount === 1 ? (finalPlans[0] || emptyResult) : finalPlans
+}
+
+/** 排期列表中固定所需的字段 */
+export interface ScheduledEntryForFix {
+  song?: {
+    id?: number | null
+    title?: string
+    artist?: string
+    durationSeconds?: number | null
+    musicId?: string | null
+    musicPlatform?: string | null
+    requester?: string | null
+    cover?: string | null
+    createdAt?: string | null
+    preferredPlayDate?: string | null
+    preferredPlayTimeId?: number | null
+  } | null
+  replayRequestId?: number | null
+}
+
+/**
+ * 将已排期条目转换为固定候选歌曲
+ * 时长未知的歌曲仍保留（按 0 计入），避免固定时被静默丢弃
+ */
+export function fixedCandidatesFromScheduled(entries: ScheduledEntryForFix[]): AutoScheduleCandidate[] {
+  const result: AutoScheduleCandidate[] = []
+  const seen = new Set<number>()
+  for (const entry of entries) {
+    const song = entry?.song
+    if (!song || song.id == null) continue
+    const id = Number(song.id)
+    if (!Number.isFinite(id) || seen.has(id)) continue
+    seen.add(id)
+    const duration = Number(song.durationSeconds)
+    result.push({
+      id,
+      songId: id,
+      title: song.title || '',
+      artist: song.artist || '',
+      durationSeconds: Number.isFinite(duration) && duration > 0 ? Math.floor(duration) : 0,
+      replayRequestId: entry.replayRequestId || null,
+      musicId: song.musicId || null,
+      musicPlatform: song.musicPlatform || null,
+      requester: song.requester || null,
+      cover: song.cover || null,
+      createdAt: song.createdAt || null,
+      preferredPlayDate: song.preferredPlayDate || null,
+      preferredPlayTimeId: song.preferredPlayTimeId || null
+    })
+  }
+  return result
 }
 
 /**

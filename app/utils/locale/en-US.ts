@@ -3152,6 +3152,10 @@ export const admin = {
       return `${Math.floor(sec / 60)}m ${String(Math.floor(sec % 60)).padStart(2, '0')}s left`
     },
     fixExistingNone: 'No scheduled songs yet',
+    fixExistingMissingDuration: (n) => `${n} missing duration`,
+    fixExistingMissingDurationTip: 'Fixed songs without duration are kept but excluded from the target duration; scheduling resolves them automatically, or use the button on the right',
+    fixExistingResolvingDuration: (progress) => `Resolving ${progress}`,
+    autoScheduleRunning: 'Working',
     replaySong: 'Replay Song',
     replay: 'Replay',
     draft: 'Draft',
