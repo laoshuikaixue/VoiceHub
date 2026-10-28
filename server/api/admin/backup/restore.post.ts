@@ -37,6 +37,7 @@ import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-sett
 import { restoreAstrbotBindings } from '~~/server/utils/astrbot-backup'
 import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { createApiError } from '~~/server/utils/apiError'
+import { clearDefaultPlayTime } from '~~/server/utils/play-time-default'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
@@ -1053,12 +1054,10 @@ export default defineEventHandler(async (event) => {
                         // 默认播出时段：备份含该字段才恢复。为 true 时先清空现有默认，
                         // 避免与部分唯一索引冲突；备份内出现多条时以最后一条为准。
                         if (record.hasOwnProperty('isDefault')) {
-                          const wantsDefault = record.isDefault === true
+                          // 不变式：默认时段必须启用，停用行钳位为 false，防手工编辑的备份落库后默认静默失效
+                          const wantsDefault = record.isDefault === true && playTimeData.enabled === true
                           if (wantsDefault) {
-                            await tx
-                              .update(playTimes)
-                              .set({ isDefault: false })
-                              .where(eq(playTimes.isDefault, true))
+                            await clearDefaultPlayTime(tx)
                           }
                           playTimeData.isDefault = wantsDefault
                         }

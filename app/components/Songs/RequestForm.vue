@@ -4223,6 +4223,8 @@ const resetForm = () => {
   showSubmissionOptions.value = false
   pendingPlaySlotSubmit.value = null
   submissionOptionsMode.value = 'options'
+  // 重置默认时段预选标记，保证下一次投稿仍能重新应用默认时段
+  defaultSlotApplied.value = false
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }

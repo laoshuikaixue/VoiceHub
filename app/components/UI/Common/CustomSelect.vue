@@ -237,7 +237,8 @@ const toggleDropdown = async () => {
 const selectOption = (option) => {
   if (props.multiple) {
     const selectedValues = Array.isArray(currentValue.value) ? [...currentValue.value] : []
-    const existingIndex = selectedValues.indexOf(option.value)
+    // 与显示/选中态一致使用宽松比较，避免类型不一致时「显示为已选却点不掉」并 push 进混合类型数组
+    const existingIndex = selectedValues.findIndex((value) => isSameValue(option.value, value))
     if (existingIndex >= 0) {
       selectedValues.splice(existingIndex, 1)
     } else {

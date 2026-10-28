@@ -3,7 +3,9 @@ import { playTimes } from '~/drizzle/schema'
 import { ilike } from 'drizzle-orm'
 import { normalizeWeekdays } from '~~/server/utils/play-slot'
 import { setDefaultPlayTime } from '~~/server/utils/play-time-default'
-import { isUniqueViolation } from '~~/server/utils/db-errors'
+import { isDeadlockDetected, isUniqueViolation } from '~~/server/utils/db-errors'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -71,10 +73,11 @@ export default defineEventHandler(async (event) => {
   const isDefault = body.isDefault === true
   const enabled = body.enabled !== undefined ? body.enabled : true
   if (isDefault && !enabled) {
-    throw createError({
-      statusCode: 400,
-      message: '已停用的播出时段不能设为默认时段'
-    })
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.PLAY_TIME_DEFAULT_REQUIRES_ENABLED,
+      '已停用的播出时段不能设为默认时段'
+    )
   }
 
   try {
@@ -118,12 +121,13 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('创建播出时段失败:', error)
 
-    // 并发切换默认时段撞上部分唯一索引：让调用方重试，而不是报成 500
-    if (isUniqueViolation(error)) {
-      throw createError({
-        statusCode: 409,
-        message: '默认播出时段正在被其他操作修改，请重试'
-      })
+    // 并发切换默认时段撞上部分唯一索引或被死锁牺牲：让调用方重试，而不是报成 500
+    if (isUniqueViolation(error) || isDeadlockDetected(error)) {
+      throw createApiError(
+        409,
+        SERVER_ERROR_CODES.PLAY_TIME_DEFAULT_CONFLICT,
+        '默认播出时段正在被其他操作修改，请重试'
+      )
     }
 
     // 如果是我们自定义的错误，直接抛出

@@ -5710,5 +5710,7 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_FETCH_FAILED: 'Failed to fetch notification history',
   NOTIFICATION_HISTORY_UPDATE_FAILED: 'Failed to update notification',
   NOTIFICATION_HISTORY_DELETE_FAILED: 'Failed to delete notification',
+  PLAY_TIME_DEFAULT_REQUIRES_ENABLED: 'A disabled play time slot cannot be set as the default',
+  PLAY_TIME_DEFAULT_CONFLICT: 'The default play time slot is being updated elsewhere, please retry',
   SYSTEM_BOARD_FAILED: 'System board data is unavailable. Please retry later.'
 } as const

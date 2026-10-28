@@ -438,6 +438,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import type { PlayTime } from '~/types'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import AppTimePicker from '~/components/UI/Common/AppTimePicker.vue'
@@ -457,6 +458,7 @@ import {
 
 const { getAuthConfig, isAdmin } = useAuth()
 const { showToast: showNotification } = useToast()
+const { localize: localizeServerError } = useServerErrors()
 const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.playTimeManager || {}
@@ -596,7 +598,7 @@ const fetchPlayTimes = async () => {
       return a.name.localeCompare(b.name)
     })
   } catch (err: any) {
-    error.value = getErrorMessage(err) || locale.value.errors.fetchPlayTimesFailed
+    error.value = localizeServerError(err, locale.value.errors.fetchPlayTimesFailed)
   } finally {
     loading.value = false
   }
@@ -697,7 +699,7 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
   try {
     const authConfig = getAuthConfig()
-    await $fetch(`/api/admin/play-times/${playTime.id}`, {
+    const updated: any = await $fetch(`/api/admin/play-times/${playTime.id}`, {
       method: 'PATCH',
       body: {
         enabled: !playTime.enabled
@@ -707,16 +709,15 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
     // 更新本地数据
     await fetchPlayTimes()
-    // 停用的如果是默认时段，后端会同时取消默认，这里给出明确提示
-    const message =
-      playTime.isDefault && playTime.enabled
-        ? locale.value?.messages?.defaultSlotCleared || 'Default play time cleared'
-        : playTime.enabled
-          ? locale.value?.messages?.playTimeDisabled || 'Play time disabled'
-          : locale.value?.messages?.playTimeEnabled || 'Play time enabled'
+    // 停用的如果是默认时段，后端会同时取消默认，按返回的 defaultCleared 给出明确提示
+    const message = updated?.defaultCleared
+      ? locale.value?.messages?.defaultSlotCleared || 'Default play time cleared'
+      : playTime.enabled
+        ? locale.value?.messages?.playTimeDisabled || 'Play time disabled'
+        : locale.value?.messages?.playTimeEnabled || 'Play time enabled'
     showNotification(message, 'success')
   } catch (err: any) {
-    error.value = getErrorMessage(err) || locale.value.errors.updatePlayTimeStatusFailed
+    error.value = localizeServerError(err, locale.value.errors.updatePlayTimeStatusFailed)
     showNotification(error.value, 'error')
   }
 }
@@ -746,7 +747,7 @@ const deletePlayTime = async () => {
     playTimeToDelete.value = null
     showNotification(locale.value?.messages?.playTimeDeleted || 'Play time deleted', 'success')
   } catch (err: any) {
-    error.value = getErrorMessage(err) || locale.value.errors.deletePlayTimeFailed
+    error.value = localizeServerError(err, locale.value.errors.deletePlayTimeFailed)
     showNotification(error.value, 'error')
   } finally {
     deleteInProgress.value = false
@@ -813,7 +814,7 @@ const savePlayTime = async () => {
       'success'
     )
   } catch (err: any) {
-    formError.value = getErrorMessage(err) || locale.value.errors.savePlayTimeFailed
+    formError.value = localizeServerError(err, locale.value.errors.savePlayTimeFailed)
     showNotification(formError.value, 'error')
   } finally {
     formSubmitting.value = false

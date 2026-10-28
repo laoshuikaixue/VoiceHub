@@ -5504,5 +5504,7 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_FETCH_FAILED: '获取通知历史失败',
   NOTIFICATION_HISTORY_UPDATE_FAILED: '修改通知失败',
   NOTIFICATION_HISTORY_DELETE_FAILED: '删除通知失败',
+  PLAY_TIME_DEFAULT_REQUIRES_ENABLED: '已停用的播出时段不能设为默认时段',
+  PLAY_TIME_DEFAULT_CONFLICT: '默认播出时段正在被其他操作修改，请重试',
   SYSTEM_BOARD_FAILED: '系统看板数据异常，请稍后重试'
 } as const
