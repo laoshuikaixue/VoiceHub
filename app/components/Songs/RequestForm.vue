@@ -500,7 +500,9 @@
                         <button
                           v-if="canResubmitBilibiliEpisodes(result)"
                           :disabled="
-                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                            !canSubmitFromSearch ||
+                            isSongBlockedByRestriction(result) ||
+                            isResultSubmitting(result)
                           "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
@@ -518,7 +520,9 @@
                         <span class="similar-text">{{ locale.partialEpisodesSubmitted }}</span>
                         <button
                           :disabled="
-                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                            !canSubmitFromSearch ||
+                            isSongBlockedByRestriction(result) ||
+                            isResultSubmitting(result)
                           "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
@@ -545,17 +549,21 @@
                         <button
                           v-if="auth.isAdmin.value || (siteConfigLoaded && !enableSubmissionRestriction)"
                           :disabled="
-                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                            !canSubmitFromSearch ||
+                            isSongBlockedByRestriction(result) ||
+                            isResultSubmitting(result)
                           "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                         >
-                          {{ locale.chooseSubmit }}
+                          {{ isResultSubmitting(result) ? locale.processing : locale.chooseSubmit }}
                         </button>
                         <button
                           v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
                           :disabled="
-                            !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                            !canSubmitFromSearch ||
+                            isSongBlockedByRestriction(result) ||
+                            isResultSubmitting(result)
                           "
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
@@ -626,7 +634,9 @@
                       <button
                         v-else
                         :disabled="
-                          !canSubmitFromSearch || isSongBlockedByRestriction(result) || submitting
+                          !canSubmitFromSearch ||
+                          isSongBlockedByRestriction(result) ||
+                          isResultSubmitting(result)
                         "
                         :title="
                           isSongBlockedByRestriction(result)
@@ -637,7 +647,7 @@
                         @click.stop.prevent="submitSong(result)"
                       >
                         {{
-                          submitting
+                          isResultSubmitting(result)
                             ? locale.processing
                             : platform === 'netease' && searchType === 1009
                               ? locale.chooseProgram
@@ -1302,6 +1312,9 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
+// 正在投稿的搜索结果标识：投稿被播出时段弹窗拦下时 submitting 尚未置位，
+// 用它让卡片按钮从点击起就保持「处理中」
+const submittingSongKey = ref('')
 
 const {
   getAvailablePlatforms,
@@ -2695,6 +2708,7 @@ const handlePlaySlotConfirm = async ({ date, timeId }) => {
 /** 取消投稿选项弹窗。 */
 const handlePlaySlotCancel = () => {
   pendingPlaySlotSubmit.value = null
+  submittingSongKey.value = ''
   playSlotError.value = ''
 }
 
@@ -2820,6 +2834,22 @@ const getSimilarSong = (result) => {
     // 如果没有学期信息，检查所有歌曲（向后兼容）
     return titleMatch
   })
+}
+
+// 搜索结果投稿按钮的标识：平台 + 曲目 ID，用于定位正在投稿的那一张卡片
+const getSearchResultKey = (result) => {
+  if (!result) return ''
+  const id = result.musicId || result.id
+  if (id) return `${platform.value}:${id}`
+  return `title:${normalizeString(result.song || result.title || '')}`
+}
+
+// 该卡片是否处于投稿中（含播出时段弹窗确认前的等待阶段）
+const isResultSubmitting = (result) => {
+  if (pendingPlaySlotSubmit.value && getSearchResultKey(pendingPlaySlotSubmit.value.result) === getSearchResultKey(result)) {
+    return true
+  }
+  return submitting.value && !!submittingSongKey.value && submittingSongKey.value === getSearchResultKey(result)
 }
 
 // 从搜索结果中点赞已存在的歌曲
@@ -3478,10 +3508,16 @@ const resolveSubmissionDuration = async (result, actualMusicPlatform, fallbackUr
   return audioDuration
 }
 
+// 结束一次投稿：卡片投稿由父页完成网络请求，调用本接口（或 resetForm）后才能恢复按钮文案
+const endSubmission = () => {
+  submitting.value = false
+  submittingSongKey.value = ''
+}
+
 // 提交选中的歌曲
 const submitSong = async (result, options = {}) => {
-  // 防止重复点击和重复提交
-  if (submitting.value) return
+  // 防止重复点击和重复提交；播出时段弹窗拦下的这次投稿待确认后继续，不在此拦截
+  if (submitting.value && !isResultSubmitting(result)) return
 
   // 如果是播客/电台模式，且是在网易云平台下，且不是具体的单集提交
   if (
@@ -3559,6 +3595,8 @@ const submitSong = async (result, options = {}) => {
 
   // 校验投稿日期与时段。
   if (requiresSlotSelection.value && options.replayRequest !== true && !options.fromSlotModal) {
+    // 记下本次投稿的卡片，弹窗关闭到请求返回期间按钮持续显示「处理中」
+    submittingSongKey.value = getSearchResultKey(result)
     openRequiredSlotOptions({ result, options })
     return
   }
@@ -3569,6 +3607,7 @@ const submitSong = async (result, options = {}) => {
   }
 
   submitting.value = true
+  submittingSongKey.value = getSearchResultKey(result)
   error.value = ''
 
   title.value = songTitle
@@ -3616,11 +3655,12 @@ const submitSong = async (result, options = {}) => {
       return false
     } finally {
       submitting.value = false
+      submittingSongKey.value = ''
     }
   }
 
   if (!(await ensureCardCodeForSubmit())) {
-    submitting.value = false
+    endSubmission()
     return false
   }
 
@@ -3631,7 +3671,7 @@ const submitSong = async (result, options = {}) => {
     if (window.$showNotification) {
       window.$showNotification(limitCheck.message, 'error')
     }
-    submitting.value = false
+    endSubmission()
     return
   }
 
@@ -3655,7 +3695,7 @@ const submitSong = async (result, options = {}) => {
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
-        submitting.value = false
+        endSubmission()
         return
       }
     } catch (err) {
@@ -3722,7 +3762,7 @@ const submitSong = async (result, options = {}) => {
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
-    // 表单在父组件确认投稿成功后重置
+    // 投稿状态由父组件在请求结束后通过 endSubmission / resetForm 释放
     return true
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
@@ -3730,8 +3770,6 @@ const submitSong = async (result, options = {}) => {
       window.$showNotification(error.value, 'error')
     }
     return false
-  } finally {
-    submitting.value = false
   }
 }
 
@@ -3765,6 +3803,7 @@ const handleSubmit = async (fromSlotModal = false) => {
   }
 
   submitting.value = true
+  submittingSongKey.value = ''
   error.value = ''
 
   try {
@@ -3789,14 +3828,13 @@ const handleSubmit = async (fromSlotModal = false) => {
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
-    // 表单在父组件确认投稿成功后重置
+    // 表单在父组件确认投稿成功后重置，投稿期间保留「提交中」文案
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
-  } finally {
-    submitting.value = false
+    endSubmission()
   }
 }
 
@@ -4135,6 +4173,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
   }
 
   submitting.value = true
+  submittingSongKey.value = ''
   error.value = ''
 
   // 管理员不受黑名单限制
@@ -4157,7 +4196,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
-        submitting.value = false
+        endSubmission()
         return
       }
     } catch (err) {
@@ -4192,14 +4231,13 @@ const handleManualSubmit = async (fromSlotModal = false) => {
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
 
-    // 父组件确认投稿成功后统一重置表单并关闭弹窗
+    // 父组件确认投稿成功后统一重置表单并关闭弹窗，投稿期间保留「提交中」文案
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
-  } finally {
-    submitting.value = false
+    endSubmission()
   }
 }
 
@@ -4229,6 +4267,9 @@ const resetForm = () => {
   showSubmissionOptions.value = false
   pendingPlaySlotSubmit.value = null
   submissionOptionsMode.value = 'options'
+  // 投稿完成后释放卡片按钮的「处理中」状态
+  submitting.value = false
+  submittingSongKey.value = ''
   // 重置默认时段预选标记，保证下一次投稿仍能重新应用默认时段
   defaultSlotApplied.value = false
   // 重置URL验证状态
@@ -4518,7 +4559,8 @@ const canSubmitManualForm = computed(() => {
 // 暴露方法给父组件
 defineExpose({
   refreshSubmissionStatus: fetchSubmissionStatus,
-  resetForm
+  resetForm,
+  endSubmission
 })
 </script>
 

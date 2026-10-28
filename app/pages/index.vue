@@ -1732,6 +1732,9 @@ const handleRequest = async (songData) => {
       )
     }
     return false
+  } finally {
+    // 释放投稿中状态，否则投稿选项弹窗关闭后卡片会停在「处理中」
+    requestFormRef.value?.endSubmission?.()
   }
 }
 
