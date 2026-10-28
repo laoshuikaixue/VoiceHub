@@ -2,6 +2,8 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { and, count, eq, ne } from 'drizzle-orm'
 import { normalizeWeekdays } from '~~/server/utils/play-slot'
+import { setDefaultPlayTime } from '~~/server/utils/play-time-default'
+import { isUniqueViolation } from '~~/server/utils/db-errors'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -101,6 +103,25 @@ export default defineEventHandler(async (event) => {
     const weekdays = normalizeWeekdays(body.weekdays)
 
     try {
+      const currentResult = await db.select().from(playTimes).where(eq(playTimes.id, id)).limit(1)
+      const current = currentResult[0]
+      if (!current) {
+        throw createError({
+          statusCode: 404,
+          message: '找不到指定的播出时段'
+        })
+      }
+
+      // 省略 isDefault 时保留原值，避免旧客户端整表更新时误清默认
+      const enabled = body.enabled !== undefined ? body.enabled : true
+      const isDefault = body.isDefault !== undefined ? body.isDefault === true : current.isDefault
+      if (isDefault && !enabled) {
+        throw createError({
+          statusCode: 400,
+          message: '已停用的播出时段不能设为默认时段'
+        })
+      }
+
       // 检查名称是否已存在（排除当前ID）
       const existingPlayTimeResult = await db
         .select()
@@ -116,24 +137,39 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // 更新播出时段
-      const updatedPlayTimeResult = await db
-        .update(playTimes)
-        .set({
-          name: body.name,
-          startTime: body.startTime || null,
-          endTime: body.endTime || null,
-          description: body.description ?? null,
-          enabled: body.enabled !== undefined ? body.enabled : true,
-          weekdays
-        })
-        .where(eq(playTimes.id, id))
-        .returning()
-      const updatedPlayTime = updatedPlayTimeResult[0]
+      // 更新播出时段；默认时段在事务内切换，保证同时只有一个
+      const updatedPlayTime = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(playTimes)
+          .set({
+            name: body.name,
+            startTime: body.startTime || null,
+            endTime: body.endTime || null,
+            description: body.description ?? null,
+            enabled,
+            weekdays,
+            isDefault: false
+          })
+          .where(eq(playTimes.id, id))
+          .returning()
+
+        if (!isDefault) return row
+
+        await setDefaultPlayTime(tx, id)
+        return { ...row, isDefault: true }
+      })
 
       return updatedPlayTime
     } catch (error: any) {
       console.error('更新播出时段失败:', error)
+
+      // 并发切换默认时段撞上部分唯一索引：让调用方重试，而不是报成 500
+      if (isUniqueViolation(error)) {
+        throw createError({
+          statusCode: 409,
+          message: '默认播出时段正在被其他操作修改，请重试'
+        })
+      }
 
       // 如果是我们自定义的错误，直接抛出
       if (error.statusCode) {
@@ -162,6 +198,29 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+      const currentResult = await db.select().from(playTimes).where(eq(playTimes.id, id)).limit(1)
+      const current = currentResult[0]
+      if (!current) {
+        throw createError({
+          statusCode: 404,
+          message: '找不到指定的播出时段'
+        })
+      }
+
+      // 不变式：默认时段必须启用。停用时自动取消默认，避免留下不可用的默认值
+      const enabled = body.enabled !== undefined ? body.enabled : current.enabled
+      let isDefault = current.isDefault
+      if (body.isDefault !== undefined) isDefault = body.isDefault === true
+      if (!enabled) {
+        if (body.isDefault === true) {
+          throw createError({
+            statusCode: 400,
+            message: '已停用的播出时段不能设为默认时段'
+          })
+        }
+        isDefault = false
+      }
+
       // 如果要更新名称，先检查是否存在重名
       if (body.name !== undefined) {
         // 检查名称是否已存在（排除当前ID）
@@ -180,7 +239,7 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 更新播出时段
+      // 更新播出时段；默认时段在事务内切换，保证同时只有一个
       const updateData: any = {}
       if (body.name !== undefined) updateData.name = body.name
       if (body.startTime !== undefined) updateData.startTime = body.startTime
@@ -189,16 +248,33 @@ export default defineEventHandler(async (event) => {
       if (body.enabled !== undefined) updateData.enabled = body.enabled
       if (weekdays !== undefined) updateData.weekdays = weekdays
 
-      const updatedPlayTimeResult = await db
-        .update(playTimes)
-        .set(updateData)
-        .where(eq(playTimes.id, id))
-        .returning()
-      const updatedPlayTime = updatedPlayTimeResult[0]
+      const updatedPlayTime = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(playTimes)
+          .set({ ...updateData, isDefault: false })
+          .where(eq(playTimes.id, id))
+          .returning()
 
-      return updatedPlayTime
+        if (!isDefault) return row
+
+        await setDefaultPlayTime(tx, id)
+        return { ...row, isDefault: true }
+      })
+
+      return {
+        ...updatedPlayTime,
+        // 供前端提示：本次操作是否顺带取消了默认时段（例如停用默认时段）
+        defaultCleared: current.isDefault && !isDefault
+      }
     } catch (error: any) {
       console.error('部分更新播出时段失败:', error)
+
+      if (isUniqueViolation(error)) {
+        throw createError({
+          statusCode: 409,
+          message: '默认播出时段正在被其他操作修改，请重试'
+        })
+      }
 
       // 如果是我们自定义的错误，直接抛出
       if (error.statusCode) {
@@ -246,6 +322,8 @@ export default defineEventHandler(async (event) => {
 
       return {
         message: '播出时段已成功删除',
+        // 删除的是默认时段时，默认值随之消失（不会自动改指其它时段）
+        defaultCleared: deletedPlayTime?.isDefault === true,
         affected: { songs: songsCount, schedules: schedulesCount }
       }
     } catch (error) {

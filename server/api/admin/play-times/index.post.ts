@@ -2,6 +2,8 @@ import { db } from '~/drizzle/db'
 import { playTimes } from '~/drizzle/schema'
 import { ilike } from 'drizzle-orm'
 import { normalizeWeekdays } from '~~/server/utils/play-slot'
+import { setDefaultPlayTime } from '~~/server/utils/play-time-default'
+import { isUniqueViolation } from '~~/server/utils/db-errors'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -65,6 +67,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 默认时段必须可用：停用的时段不参与用户选择，设为默认没有意义
+  const isDefault = body.isDefault === true
+  const enabled = body.enabled !== undefined ? body.enabled : true
+  if (isDefault && !enabled) {
+    throw createError({
+      statusCode: 400,
+      message: '已停用的播出时段不能设为默认时段'
+    })
+  }
+
   try {
     // 检查名称是否已存在
     const existingPlayTimeResult = await db
@@ -81,23 +93,38 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 创建新的播出时段
-    const newPlayTimeResult = await db
-      .insert(playTimes)
-      .values({
-        name: body.name,
-        startTime: body.startTime || null,
-        endTime: body.endTime || null,
-        description: body.description || null,
-        enabled: body.enabled !== undefined ? body.enabled : true,
-        weekdays
-      })
-      .returning()
-    const newPlayTime = newPlayTimeResult[0]
+    // 创建新的播出时段；默认时段在事务内切换，保证同时只有一个
+    const newPlayTime = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(playTimes)
+        .values({
+          name: body.name,
+          startTime: body.startTime || null,
+          endTime: body.endTime || null,
+          description: body.description || null,
+          enabled,
+          weekdays,
+          isDefault: false
+        })
+        .returning()
+
+      if (!isDefault) return created
+
+      await setDefaultPlayTime(tx, created.id)
+      return { ...created, isDefault: true }
+    })
 
     return newPlayTime
   } catch (error: any) {
     console.error('创建播出时段失败:', error)
+
+    // 并发切换默认时段撞上部分唯一索引：让调用方重试，而不是报成 500
+    if (isUniqueViolation(error)) {
+      throw createError({
+        statusCode: 409,
+        message: '默认播出时段正在被其他操作修改，请重试'
+      })
+    }
 
     // 如果是我们自定义的错误，直接抛出
     if (error.statusCode) {

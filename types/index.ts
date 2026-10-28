@@ -149,6 +149,8 @@ export interface PlayTime {
   description?: string // 描述，可选
   // 适用星期（0=周日, 1=周一 … 6=周六）；null/undefined = 每天均可选
   weekdays?: number[] | null
+  // 是否为默认播出时段：用户投稿未选择时段时自动预选，同一时间最多一个
+  isDefault?: boolean
 }
 
 // 学期接口

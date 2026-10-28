@@ -273,7 +273,9 @@ async function checkSchemaConsistency(sql) {
     ['User', 'User_username_unique'],
     // 一张券同时只能一条活跃派发记录
     ['CardCodeAssignment', 'card_code_assignment_active_per_card_unique'],
-    ['CardCode', 'card_code_assigned_to_status_idx']
+    ['CardCode', 'card_code_assigned_to_status_idx'],
+    // 同一时间只能有一个默认播出时段
+    ['PlayTime', 'play_time_single_default_unique']
   ]
   const requiredColumns = {
     User: [
@@ -290,7 +292,7 @@ async function checkSchemaConsistency(sql) {
     Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'submissionNotePublicStatus', 'hitRequestId', 'cardCodeId', 'preferredPlayDate'],
     CardCode: ['assignedTo', 'assignedAt'],
     CardCodeAssignment: ['cardCodeId', 'userId', 'assignedAt', 'status'],
-    PlayTime: ['weekdays'],
+    PlayTime: ['weekdays', 'isDefault'],
     song_replay_requests: ['submission_note', 'submission_note_public', 'submission_note_public_status'],
     user_status_logs: ['username', 'name'],
     Schedule: ['isDraft', 'publishedAt'],

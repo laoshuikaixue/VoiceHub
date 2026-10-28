@@ -1375,6 +1375,8 @@ const collaborators = ref([])
 const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
+// 默认播出时段是否已处理：只在首次加载时预选一次，避免用户主动清空后被刷新填回
+const defaultSlotApplied = ref(false)
 const loadingPlayTimes = ref(false)
 // 播出日期 + 时段选择：日期可选，时段在后台上开启「时段必选」时必选
 const preferredPlayDate = ref('')
@@ -2036,6 +2038,17 @@ const fetchPlayTimes = async () => {
       playTimes.value = data.playTimes || []
       playTimeSelectionEnabled.value = data.enabled || false
       playSlotRequired.value = data.required || false
+
+      // 默认播出时段：仅在首次加载且用户尚未选择时预选一次。
+      // 不覆盖用户已有的选择，也不在用户主动清空后重新填回。
+      if (!defaultSlotApplied.value) {
+        defaultSlotApplied.value = true
+        if (data.enabled && data.defaultPlayTimeId && !preferredPlayTimeId.value) {
+          const defaultId = String(data.defaultPlayTimeId)
+          const exists = (data.playTimes || []).some((pt) => String(pt.id) === defaultId)
+          if (exists) preferredPlayTimeId.value = defaultId
+        }
+      }
     }
   } catch (err) {
     console.error('获取播出时段失败:', err)

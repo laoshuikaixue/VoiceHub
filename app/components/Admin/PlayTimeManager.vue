@@ -131,6 +131,12 @@
             </div>
             <div class="flex items-center gap-2">
               <span
+                v-if="playTime.isDefault"
+                class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border bg-primary-10 text-primary border-primary-20"
+              >
+                {{ locale.defaultBadge }}
+              </span>
+              <span
                 :class="[
                   'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
                   playTime.enabled
@@ -328,6 +334,29 @@
                 >
               </label>
 
+              <label
+                :class="[
+                  'flex items-start gap-3 px-1 group',
+                  formData.enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                ]"
+              >
+                <input
+                  v-model="formData.isDefault"
+                  type="checkbox"
+                  class="mt-0.5 w-4 h-4 rounded border-border-secondary bg-bg-primary"
+                  :disabled="!formData.enabled"
+                >
+                <span class="min-w-0">
+                  <span
+                    class="block text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
+                    >{{ locale.defaultSlot }}</span
+                  >
+                  <span class="mt-1 block text-[10px] leading-relaxed text-text-tertiary">{{
+                    locale.defaultSlotHint
+                  }}</span>
+                </span>
+              </label>
+
               <div
                 v-if="formError"
                 class="bg-error-10 border border-error-20 rounded-lg p-3 text-[11px] text-error"
@@ -405,7 +434,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
@@ -497,8 +526,18 @@ const formData = reactive({
   description: '',
   enabled: true,
   // 适用星期（0=周日…6=周六），空数组 = 每天均可选
-  weekdays: [] as number[]
+  weekdays: [] as number[],
+  // 默认播出时段：用户投稿未选择时段时自动预选
+  isDefault: false
 })
+
+// 停用的时段不能作为默认时段：取消启用时同步取消默认勾选
+watch(
+  () => formData.enabled,
+  (enabled) => {
+    if (!enabled) formData.isDefault = false
+  }
+)
 
 // 初始化
 onMounted(async () => {
@@ -524,7 +563,12 @@ const fetchPlayTimes = async () => {
 
     // 自定义排序：先按启用状态排序，然后有时间的排在前面，没有时间的排在后面
     playTimes.value = data.sort((a: PlayTime, b: PlayTime) => {
-      // 首先按启用状态排序
+      // 默认时段排最前，便于识别
+      if (a.isDefault !== b.isDefault) {
+        return a.isDefault ? -1 : 1
+      }
+
+      // 然后按启用状态排序
       if (a.enabled !== b.enabled) {
         return a.enabled ? -1 : 1 // 启用的排在前面
       }
@@ -626,7 +670,8 @@ const openAddForm = () => {
     endTime: '',
     description: '',
     enabled: true,
-    weekdays: []
+    weekdays: [],
+    isDefault: false
   })
 }
 
@@ -641,7 +686,8 @@ const editPlayTime = (playTime: PlayTime) => {
     description: playTime.description || '',
     enabled: playTime.enabled,
     // 未配置星期 = 每天均可选，编辑时展示为空（不勾选任何一天）
-    weekdays: Array.isArray(playTime.weekdays) ? [...playTime.weekdays].sort((a, b) => a - b) : []
+    weekdays: Array.isArray(playTime.weekdays) ? [...playTime.weekdays].sort((a, b) => a - b) : [],
+    isDefault: playTime.isDefault === true
   })
 }
 
@@ -661,12 +707,14 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
     // 更新本地数据
     await fetchPlayTimes()
-    showNotification(
-      playTime.enabled
-        ? (locale.value?.messages?.playTimeDisabled || 'Play time disabled')
-        : (locale.value?.messages?.playTimeEnabled || 'Play time enabled'),
-      'success'
-    )
+    // 停用的如果是默认时段，后端会同时取消默认，这里给出明确提示
+    const message =
+      playTime.isDefault && playTime.enabled
+        ? locale.value?.messages?.defaultSlotCleared || 'Default play time cleared'
+        : playTime.enabled
+          ? locale.value?.messages?.playTimeDisabled || 'Play time disabled'
+          : locale.value?.messages?.playTimeEnabled || 'Play time enabled'
+    showNotification(message, 'success')
   } catch (err: any) {
     error.value = getErrorMessage(err) || locale.value.errors.updatePlayTimeStatusFailed
     showNotification(error.value, 'error')
@@ -748,7 +796,9 @@ const savePlayTime = async () => {
         description: formData.description || null,
         enabled: formData.enabled,
         // 空数组 = 清除星期配置，恢复每天均可选
-        weekdays: [...formData.weekdays].sort((a, b) => a - b)
+        weekdays: [...formData.weekdays].sort((a, b) => a - b),
+        // 停用的时段不能作为默认时段
+        isDefault: formData.enabled ? formData.isDefault : false
       },
       ...authConfig
     })
@@ -784,7 +834,8 @@ const cancelForm = () => {
     endTime: '',
     description: '',
     enabled: true,
-    weekdays: []
+    weekdays: [],
+    isDefault: false
   })
 }
 </script>

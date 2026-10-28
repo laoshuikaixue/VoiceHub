@@ -1050,6 +1050,19 @@ export default defineEventHandler(async (event) => {
                           ? record.enabled
                           : true
 
+                        // 默认播出时段：备份含该字段才恢复。为 true 时先清空现有默认，
+                        // 避免与部分唯一索引冲突；备份内出现多条时以最后一条为准。
+                        if (record.hasOwnProperty('isDefault')) {
+                          const wantsDefault = record.isDefault === true
+                          if (wantsDefault) {
+                            await tx
+                              .update(playTimes)
+                              .set({ isDefault: false })
+                              .where(eq(playTimes.isDefault, true))
+                          }
+                          playTimeData.isDefault = wantsDefault
+                        }
+
                         if (mode === 'merge') {
                           // 检查是否存在相同名称的播放时段
                           const existingPlayTime = await tx

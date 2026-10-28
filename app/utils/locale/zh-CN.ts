@@ -3574,6 +3574,9 @@ export const admin = {
     descriptionOptional: '描述 (可选)',
     descriptionPlaceholder: '请输入时段描述信息...',
     enableThisPlayTime: '启用此播出时段',
+    defaultSlot: '设为默认播出时段',
+    defaultSlotHint: '用户投稿时若未选择时段，将自动预选该时段；同一时间只能有一个默认时段',
+    defaultBadge: '默认',
     cancel: '取消',
     saving: '保存中...',
     saveSettings: '保存设置',
@@ -3588,7 +3591,8 @@ export const admin = {
       playTimeDisabled: '播出时段已禁用',
       playTimeDeleted: '播出时段已删除',
       playTimeUpdated: '播出时段已更新',
-      playTimeCreated: '播出时段已创建'
+      playTimeCreated: '播出时段已创建',
+      defaultSlotCleared: '已停用并取消默认播出时段'
     },
     errors: {
       adminOnly: '只有管理员才能管理播出时段',

@@ -155,17 +155,25 @@ const normalizedOptions = computed(() => {
   })
 })
 
+// 选项值与 v-model 的类型可能不一致（如 id 是数字 2、v-model 是字符串 '2'），
+// 只比较原始值，否则匹配失败会退化成直接显示原始 id
+const isSameValue = (a, b) => {
+  if (a === b) return true
+  const isPrimitive = (value) => typeof value === 'string' || typeof value === 'number'
+  return isPrimitive(a) && isPrimitive(b) && String(a) === String(b)
+}
+
 // 获取当前显示标签
 const displayLabel = computed(() => {
   if (props.multiple) {
     const selectedValues = Array.isArray(currentValue.value) ? currentValue.value : []
     const labels = normalizedOptions.value
-      .filter((option) => selectedValues.includes(option.value))
+      .filter((option) => selectedValues.some((value) => isSameValue(option.value, value)))
       .map((option) => option.label)
     return labels.length > 0 ? labels.join('、') : props.placeholder
   }
 
-  const selected = normalizedOptions.value.find((opt) => opt.value === currentValue.value)
+  const selected = normalizedOptions.value.find((opt) => isSameValue(opt.value, currentValue.value))
   return selected
     ? selected.label
     : currentValue.value && typeof currentValue.value !== 'object'
@@ -175,9 +183,12 @@ const displayLabel = computed(() => {
 
 const isSelected = (option) => {
   if (props.multiple) {
-    return Array.isArray(currentValue.value) && currentValue.value.includes(option.value)
+    return (
+      Array.isArray(currentValue.value) &&
+      currentValue.value.some((value) => isSameValue(option.value, value))
+    )
   }
-  return option.value === currentValue.value
+  return isSameValue(option.value, currentValue.value)
 }
 
 const updatePosition = () => {

@@ -1,0 +1,2 @@
+ALTER TABLE "PlayTime" ADD COLUMN "isDefault" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "play_time_single_default_unique" ON "PlayTime" USING btree ("isDefault") WHERE "PlayTime"."isDefault" = true;

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const playTimesResult = await db
       .select()
       .from(playTimes)
-      .orderBy(desc(playTimes.enabled), asc(playTimes.startTime))
+      .orderBy(desc(playTimes.isDefault), desc(playTimes.enabled), asc(playTimes.startTime))
 
     return playTimesResult
   } catch (error) {
