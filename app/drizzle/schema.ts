@@ -69,18 +69,29 @@ export type AuthSession = typeof authSessions.$inferSelect;
 export type NewAuthSession = typeof authSessions.$inferInsert;
 
 // 播出时段表
-export const playTimes = pgTable('PlayTime', {
-  id: serial('id').primaryKey(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  name: text('name').notNull(),
-  startTime: text('startTime'),
-  endTime: text('endTime'),
-  enabled: boolean('enabled').default(true).notNull(),
-  description: text('description'),
-  // 适用星期（0=周日, 1=周一 … 6=周六）；NULL/空数组 = 每天均可选（兼容历史数据）
-  weekdays: jsonb('weekdays').$type<number[]>(),
-});
+export const playTimes = pgTable(
+  'PlayTime',
+  {
+    id: serial('id').primaryKey(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    name: text('name').notNull(),
+    startTime: text('startTime'),
+    endTime: text('endTime'),
+    enabled: boolean('enabled').default(true).notNull(),
+    description: text('description'),
+    // 适用星期（0=周日, 1=周一 … 6=周六）；NULL/空数组 = 每天均可选（兼容历史数据）
+    weekdays: jsonb('weekdays').$type<number[]>(),
+    // 默认播出时段：用户投稿未选择时段时自动预选。同一时间最多一个，
+    // 由下方部分唯一索引在数据库层兜底，不依赖调用方自觉。
+    isDefault: boolean('isDefault').default(false).notNull(),
+  },
+  (table) => [
+    uniqueIndex('play_time_single_default_unique')
+      .on(table.isDefault)
+      .where(sql`${table.isDefault} = true`),
+  ],
+);
 
 // 年级班级配置表（选择器选项来源，优先于从用户提取）
 export const gradeClass = pgTable(

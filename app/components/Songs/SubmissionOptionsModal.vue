@@ -515,10 +515,11 @@ const availableTimes = computed(() => {
   return props.playTimes.filter((slot) => slotAppliesToWeekday(slot, weekday))
 })
 
-/** 时段下拉选项 */
+/** 时段下拉选项：id 统一转成字符串，与 localTimeId 的取值类型保持一致 */
 const timeOptions = computed(() =>
   availableTimes.value.map((slot) => ({
     ...slot,
+    id: String(slot.id),
     displayName: props.formatLabel ? props.formatLabel(slot) : slot.name
   }))
 )

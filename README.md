@@ -1501,6 +1501,7 @@ VoiceHub/
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── play-slot.ts    # 播出时段适用星期与播出日期校验
+│   │   ├── play-time-default.ts # 默认播出时段事务内清设工具
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── legal-consent.ts # 条款内容指纹计算与注册同意校验
 │   │   ├── register-validation.ts # 注册校验纯函数

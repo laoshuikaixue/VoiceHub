@@ -21,9 +21,13 @@ export default defineEventHandler(async (event) => {
         .orderBy(asc(playTimes.startTime))
     }
 
+    // 默认时段：投稿时用户未选择时段则预选它；功能关闭或不启用时为 null
+    const defaultPlayTime = playTimesData.find((pt) => pt.isDefault) ?? null
+
     return {
       enabled,
       required,
+      defaultPlayTimeId: defaultPlayTime ? defaultPlayTime.id : null,
       // weekdays: null = 每天均可选（未配置）；数组 = 仅这些星期可选（0=周日…6=周六）
       playTimes: playTimesData.map((pt) => ({
         ...pt,

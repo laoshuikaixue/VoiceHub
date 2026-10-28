@@ -1176,7 +1176,7 @@
       :slot-required="playSlotRequired"
       :play-times="enabledPlayTimes"
       :initial-date="preferredPlayDate"
-      :initial-time-id="preferredPlayTimeId"
+      :initial-time-id="preferredPlayTimeId || defaultPlayTimeId"
       :today="todayPlayDate"
       :format-label="formatPlayTimeOptionLabel"
       :show-note="enableSubmissionRemarks"
@@ -1375,6 +1375,10 @@ const collaborators = ref([])
 const songService = useSongs({ compact: true })
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
+// 默认播出时段是否已处理：只在首次加载时预选一次，避免用户主动清空后被刷新填回
+const defaultSlotApplied = ref(false)
+// 后台配置的默认播出时段 id：必选模式下用于预填「选时段」弹窗（不直接写入选中值）
+const defaultPlayTimeId = ref('')
 const loadingPlayTimes = ref(false)
 // 播出日期 + 时段选择：日期可选，时段在后台上开启「时段必选」时必选
 const preferredPlayDate = ref('')
@@ -2036,6 +2040,21 @@ const fetchPlayTimes = async () => {
       playTimes.value = data.playTimes || []
       playTimeSelectionEnabled.value = data.enabled || false
       playSlotRequired.value = data.required || false
+
+      // 记录默认时段 id，供「必选」弹窗预填
+      defaultPlayTimeId.value = data.defaultPlayTimeId ? String(data.defaultPlayTimeId) : ''
+
+      // 默认播出时段仅在时段为「可选」时自动预选一次（写入 preferredPlayTimeId）。
+      // 开启「必选」时不预选，留给强制弹窗预填，保证用户仍需主动确认时段。
+      // 不覆盖用户已有的选择，也不在用户主动清空后重新填回。
+      if (!defaultSlotApplied.value) {
+        defaultSlotApplied.value = true
+        if (data.enabled && !data.required && data.defaultPlayTimeId && !preferredPlayTimeId.value) {
+          const defaultId = String(data.defaultPlayTimeId)
+          const exists = (data.playTimes || []).some((pt) => String(pt.id) === defaultId)
+          if (exists) preferredPlayTimeId.value = defaultId
+        }
+      }
     }
   } catch (err) {
     console.error('获取播出时段失败:', err)
@@ -4210,6 +4229,8 @@ const resetForm = () => {
   showSubmissionOptions.value = false
   pendingPlaySlotSubmit.value = null
   submissionOptionsMode.value = 'options'
+  // 重置默认时段预选标记，保证下一次投稿仍能重新应用默认时段
+  defaultSlotApplied.value = false
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }

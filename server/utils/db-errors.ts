@@ -15,3 +15,8 @@ export function pgErrorCode(error: unknown): string {
 export function isUniqueViolation(error: unknown): boolean {
   return pgErrorCode(error) === '23505'
 }
+
+/** 是否为死锁检测被牺牲方（PostgreSQL 40P01），并发切换默认时段时可能出现。 */
+export function isDeadlockDetected(error: unknown): boolean {
+  return pgErrorCode(error) === '40P01'
+}

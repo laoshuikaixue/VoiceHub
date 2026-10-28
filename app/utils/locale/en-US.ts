@@ -3672,6 +3672,10 @@ export const admin = {
     descriptionOptional: 'Description (Optional)',
     descriptionPlaceholder: 'Enter play time description...',
     enableThisPlayTime: 'Enable this play time',
+    defaultSlot: 'Set as default play time',
+    defaultSlotHint:
+      'Preselected when a user submits without choosing a slot. Only one default slot at a time.',
+    defaultBadge: 'Default',
     cancel: 'Cancel',
     saving: 'Saving...',
     saveSettings: 'Save Settings',
@@ -3687,7 +3691,8 @@ export const admin = {
       playTimeDisabled: 'Play time disabled',
       playTimeDeleted: 'Play time deleted',
       playTimeUpdated: 'Play time updated',
-      playTimeCreated: 'Play time created'
+      playTimeCreated: 'Play time created',
+      defaultSlotCleared: 'Play time disabled and default cleared'
     },
     errors: {
       adminOnly: 'Only admins can manage play times',
@@ -5705,5 +5710,7 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_FETCH_FAILED: 'Failed to fetch notification history',
   NOTIFICATION_HISTORY_UPDATE_FAILED: 'Failed to update notification',
   NOTIFICATION_HISTORY_DELETE_FAILED: 'Failed to delete notification',
+  PLAY_TIME_DEFAULT_REQUIRES_ENABLED: 'A disabled play time slot cannot be set as the default',
+  PLAY_TIME_DEFAULT_CONFLICT: 'The default play time slot is being updated elsewhere, please retry',
   SYSTEM_BOARD_FAILED: 'System board data is unavailable. Please retry later.'
 } as const

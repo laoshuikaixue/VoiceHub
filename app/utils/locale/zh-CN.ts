@@ -3574,6 +3574,9 @@ export const admin = {
     descriptionOptional: '描述 (可选)',
     descriptionPlaceholder: '请输入时段描述信息...',
     enableThisPlayTime: '启用此播出时段',
+    defaultSlot: '设为默认播出时段',
+    defaultSlotHint: '用户投稿时若未选择时段，将自动预选该时段；同一时间只能有一个默认时段',
+    defaultBadge: '默认',
     cancel: '取消',
     saving: '保存中...',
     saveSettings: '保存设置',
@@ -3588,7 +3591,8 @@ export const admin = {
       playTimeDisabled: '播出时段已禁用',
       playTimeDeleted: '播出时段已删除',
       playTimeUpdated: '播出时段已更新',
-      playTimeCreated: '播出时段已创建'
+      playTimeCreated: '播出时段已创建',
+      defaultSlotCleared: '已停用并取消默认播出时段'
     },
     errors: {
       adminOnly: '只有管理员才能管理播出时段',
@@ -5500,5 +5504,7 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_FETCH_FAILED: '获取通知历史失败',
   NOTIFICATION_HISTORY_UPDATE_FAILED: '修改通知失败',
   NOTIFICATION_HISTORY_DELETE_FAILED: '删除通知失败',
+  PLAY_TIME_DEFAULT_REQUIRES_ENABLED: '已停用的播出时段不能设为默认时段',
+  PLAY_TIME_DEFAULT_CONFLICT: '默认播出时段正在被其他操作修改，请重试',
   SYSTEM_BOARD_FAILED: '系统看板数据异常，请稍后重试'
 } as const
