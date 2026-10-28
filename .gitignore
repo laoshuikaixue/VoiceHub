@@ -39,6 +39,7 @@ backups/
 .figma
 .codex
 .agents
+package-lock.json
 scripts/package-lock.json
 
 # Nix build output
