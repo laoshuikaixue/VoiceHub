@@ -57,7 +57,7 @@
         >
       </div>
       <div
-        class="flex items-center gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar no-scrollbar"
+        class="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:items-center"
       >
         <!-- 角色筛选 -->
         <CustomSelect
@@ -67,7 +67,7 @@
           :placeholder="locale.allRoles"
           label-key="displayName"
           value-key="name"
-          class-name="flex-1 lg:w-40 min-w-[120px]"
+          class-name="min-w-0 lg:w-40"
         />
 
         <!-- 状态筛选 -->
@@ -78,7 +78,7 @@
           :placeholder="locale.allStatus"
           label-key="label"
           value-key="value"
-          class-name="flex-1 lg:w-32 min-w-[100px]"
+          class-name="min-w-0 lg:w-32"
         />
 
         <!-- 排序 -->
@@ -89,11 +89,13 @@
           :placeholder="locale.sortPlaceholder"
           label-key="label"
           value-key="value"
-          class-name="flex-1 lg:w-40 min-w-[140px]"
+          class-name="min-w-0 lg:w-40"
         />
 
         <button
-          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all shadow-sm flex items-center justify-center"
+          :aria-label="common.refreshData"
+          :title="common.refreshData"
+          class="flex w-full items-center justify-center rounded-lg border border-border-secondary bg-bg-primary p-3 text-text-disabled shadow-sm transition-colors hover:text-primary lg:w-auto"
           @click="loadUsers(1)"
         >
           <RefreshCw :size="14" />
@@ -1670,7 +1672,7 @@ import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 
-const { admin, currentLocale } = useLocale()
+const { admin, common, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
 const formatMessage = (value, ...args) => {
   if (typeof value === 'function') return value(...args)

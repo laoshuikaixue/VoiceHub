@@ -1073,7 +1073,7 @@
 
   <!-- 移动端底部操作栏 -->
   <div
-    class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-2 bg-bg-primary-90 backdrop-blur-xl border-t border-border-secondary flex items-center gap-2 pb-6"
+    class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-2 border-t border-border-secondary bg-bg-primary-90 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] backdrop-blur-xl lg:hidden"
   >
     <div class="flex-1 overflow-x-auto scrollbar-hide">
       <div class="flex items-center gap-1.5 w-max">
