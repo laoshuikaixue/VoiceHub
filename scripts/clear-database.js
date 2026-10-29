@@ -156,7 +156,7 @@ async function main() {
     // 创建默认管理员账户
     const hashedPassword = await bcrypt.hash('admin123', 10)
 
-    // 创建超级管理员用户
+    // 创建超级管理员用户（默认口令按临时密码对待，首次登录强制设置新密码）
     const [admin] = await db
       .insert(users)
       .values({
@@ -164,13 +164,14 @@ async function main() {
         username: 'admin',
         password: hashedPassword,
         role: 'SUPER_ADMIN',
-        forcePasswordChange: false
+        forcePasswordChange: true
       })
       .returning()
 
     console.log('默认超级管理员账户已创建:')
     console.log('用户名: admin')
     console.log('密码: admin123')
+    console.log('首次登录需设置新密码')
     console.log(`管理员ID: ${admin.id}`)
 
     // 调整User表的自增序列，确保下一个用户从admin.id + 1开始
