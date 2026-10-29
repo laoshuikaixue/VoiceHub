@@ -816,6 +816,7 @@ export const pages = {
     loginRequiredDesc: '您需要登录才能查看通知',
     loginNow: '立即登录',
     notificationCenter: '通知中心',
+    notificationSettingsLabel: '通知设置',
     unreadOverview: '未读概览',
     unreadCountSummary: (count: number) => `${count} 条未读通知`,
     viewUnreadNotifications: '查看未读',

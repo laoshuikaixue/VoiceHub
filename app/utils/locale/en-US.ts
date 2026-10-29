@@ -839,6 +839,7 @@ export const pages = {
     loginRequiredDesc: 'You need to log in to view notifications',
     loginNow: 'Log In Now',
     notificationCenter: 'Notification Center',
+    notificationSettingsLabel: 'Notification settings',
     unreadOverview: 'Unread overview',
     unreadCountSummary: (count: number) => `${count} unread notification${count === 1 ? '' : 's'}`,
     viewUnreadNotifications: 'View unread',

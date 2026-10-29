@@ -356,7 +356,7 @@
                       <Icon :size="15" name="check" />
                       <span>{{ locale.markAllRead }}</span>
                     </button>
-                    <button class="settings-icon" @click="toggleNotificationSettings">
+                    <button :aria-label="locale.notificationSettingsLabel" :title="locale.notificationSettingsLabel" class="settings-icon" type="button" @click="toggleNotificationSettings">
                       <svg
                         fill="none"
                         height="20"
@@ -3339,43 +3339,6 @@ if (
   border-color: var(--error-20);
 }
 
-.notification-actions-bar {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--overlay-8);
-}
-
-.action-button-large {
-  flex: 1;
-  background: var(--overlay-5);
-  border: 1px solid var(--overlay-10);
-  color: var(--text-primary);
-  padding: 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-button-large:hover:not(.disabled) {
-  background: var(--overlay-10);
-}
-
-.action-button-large.danger {
-  color: var(--color-error);
-}
-
-.action-button-large.danger:hover {
-  background: var(--error-10);
-}
-
-.action-button-large.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* 分页控件样式 */
 .notification-pagination {
   padding: 15px 0;
@@ -3540,44 +3503,48 @@ if (
 /* 底部操作区*/
 .notification-actions-bar {
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 15px 0;
-  border-top: 1px solid var(--overlay-10);
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--overlay-8);
 }
 
 .action-button-large {
-  background-color: var(--overlay-10);
-  border: none;
-  color: var(--light);
-  padding: 8px 16px;
-  border-radius: 6px;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid var(--overlay-12);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
-.action-button-large:hover {
-  background-color: var(--overlay-20);
+.action-button-large:hover:not(.disabled) {
+  background: var(--overlay-6);
+  color: var(--text-primary);
 }
 
 .action-button-large.danger {
+  border-color: var(--error-20);
   color: var(--color-error);
 }
 
 .action-button-large.danger:hover {
-  background-color: var(--error-20);
+  background: var(--error-10);
 }
 
 .action-button-large.disabled {
-  background-color: var(--overlay-5);
+  border-color: var(--overlay-8);
   color: var(--overlay-30);
   cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.action-button-large.disabled:hover {
-  background-color: var(--overlay-5);
+  opacity: 0.6;
 }
 
 /* ==================== 移动端设置==================== */
@@ -3980,7 +3947,7 @@ if (
     gap: 0.65rem 0.35rem;
   }
 
-  .notification-title {
+  .notification-header .notification-title {
     grid-column: 1;
     grid-row: 1;
     max-width: 90px;
