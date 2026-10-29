@@ -6020,11 +6020,11 @@ const handleTouchMove = (event) => {
     longPressTimer.value = null
   }
 
-  // 在移动端使用较小的拖拽阈值，桌面端需要长按
+  // 触屏设备必须长按后再拖动；否则纵向滑动交给页面滚动
+  const requiresLongPress = window.matchMedia('(pointer: coarse)').matches
   const dragThreshold = window.innerWidth <= 768 ? 10 : TOUCH_CONFIG.DRAG_THRESHOLD
 
-  // 只有在长按识别后或移动距离超过阈值时才开始拖拽
-  if (!isDragging.value && (isLongPressing.value || totalDelta > dragThreshold)) {
+  if (!isDragging.value && (isLongPressing.value || (!requiresLongPress && totalDelta > dragThreshold))) {
     isDragging.value = true
 
     // 创建拖拽元素
