@@ -365,7 +365,6 @@
                 <!-- 歌曲卡片内容 -->
                 <SongCard
                   :song="song"
-                  :compact="true"
                   :show-requester="true"
                   :warning="!!song.cardCodeId"
                   @play="playSong(song)"

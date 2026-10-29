@@ -4,7 +4,6 @@
     :class="{
       'admin-song-card--selected': selected,
       'admin-song-card--warning': warning,
-      'admin-song-card--compact': compact,
       'admin-song-card--with-leading': $slots.leading
     }"
   >
@@ -77,7 +76,6 @@ const props = defineProps({
   song: { type: Object, required: true },
   selected: { type: Boolean, default: false },
   warning: { type: Boolean, default: false },
-  compact: { type: Boolean, default: false },
   showRequester: { type: Boolean, default: true }
 })
 
@@ -112,7 +110,7 @@ const gradeClass = computed(() => {
 <style scoped>
 .admin-song-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -125,7 +123,7 @@ const gradeClass = computed(() => {
 }
 
 .admin-song-card--with-leading {
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
 }
 
 .admin-song-card:hover {
@@ -140,20 +138,6 @@ const gradeClass = computed(() => {
 .admin-song-card--warning {
   border-color: var(--warning-30);
   background: var(--warning-5);
-}
-
-.admin-song-card--compact {
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-.admin-song-card--compact.admin-song-card--with-leading {
-  grid-template-columns: auto auto minmax(0, 1fr);
-}
-
-.admin-song-card--compact .admin-song-card__actions {
-  grid-column: 1 / -1;
-  justify-content: flex-end;
-  margin-top: 2px;
 }
 
 .admin-song-card__leading {
@@ -268,10 +252,11 @@ const gradeClass = computed(() => {
 
 .admin-song-card__actions {
   display: flex;
+  grid-column: 1 / -1;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 @media (max-width: 640px) {
