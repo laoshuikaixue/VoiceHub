@@ -1,79 +1,74 @@
 <template>
-  <Teleport to="body">
-    <Transition name="confirm-dialog">
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center bg-bg-primary-80 p-4 backdrop-blur-sm"
-        @click="handleOverlayClick"
-      >
+  <AppModal
+    :close-on-esc="!loading"
+    :close-on-overlay="closeOnOverlay && !loading"
+    :persistent="loading"
+    :show="show"
+    :title="resolvedTitle"
+    hide-close
+    size="sm"
+    @update:show="handleCancel"
+  >
+    <template #header="{ titleId }">
+      <div class="flex w-full flex-col items-center text-center">
         <div
-          ref="dialogRef"
-          :aria-labelledby="titleId"
-          aria-modal="true"
-          class="confirm-panel w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
-          role="dialog"
-          tabindex="-1"
-          @click.stop
+          class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border transition-colors"
+          :class="iconClasses"
         >
-          <div class="flex flex-col items-center p-8 text-center">
-            <div
-              class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border transition-colors"
-              :class="iconClasses"
-            >
-              <Icon :name="iconName" :size="26" />
-            </div>
-
-            <div class="mb-7 space-y-2">
-              <h4 :id="titleId" class="text-lg font-bold tracking-tight text-text-primary">
-                {{ resolvedTitle }}
-              </h4>
-              <p class="whitespace-pre-line break-words text-sm font-medium leading-relaxed text-text-tertiary">
-                {{ message }}
-              </p>
-
-              <div v-if="showInput" class="w-full pt-4">
-                <input
-                  v-model="inputValue"
-                  :type="inputType"
-                  :placeholder="inputPlaceholder"
-                  class="w-full rounded-xl border border-border-tertiary-50 bg-bg-tertiary-50 px-4 py-3 text-base text-text-primary transition-colors placeholder:text-text-disabled focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  @keyup.enter="handleConfirm"
-                >
-              </div>
-            </div>
-
-            <div class="flex w-full gap-3">
-              <button
-                class="flex-1 rounded-xl bg-bg-tertiary px-5 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-quaternary disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="loading"
-                type="button"
-                @click="handleCancel"
-              >
-                {{ resolvedCancelText }}
-              </button>
-              <button
-                class="flex flex-[2] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-text-primary shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                :class="confirmBtnClasses"
-                :disabled="loading || (showInput && !inputValue)"
-                type="button"
-                @click="handleConfirm"
-              >
-                <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
-                {{ loading ? locale.processing : resolvedConfirmText }}
-              </button>
-            </div>
-          </div>
+          <Icon :name="iconName" :size="24" />
         </div>
+        <h4 :id="titleId" class="text-lg font-bold tracking-tight text-text-primary">
+          {{ resolvedTitle }}
+        </h4>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+
+    <div class="space-y-4 text-center">
+      <p class="whitespace-pre-line break-words text-sm font-medium leading-relaxed text-text-tertiary">
+        {{ message }}
+      </p>
+
+      <div v-if="showInput">
+        <input
+          v-model="inputValue"
+          :type="inputType"
+          :placeholder="inputPlaceholder"
+          class="w-full rounded-xl border border-border-tertiary-50 bg-bg-tertiary-50 px-4 py-3 text-base text-text-primary transition-colors placeholder:text-text-disabled focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          @keyup.enter="handleConfirm"
+        >
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex w-full gap-3">
+        <button
+          class="flex-1 rounded-xl bg-bg-tertiary px-5 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-quaternary disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="loading"
+          type="button"
+          @click="handleCancel"
+        >
+          {{ resolvedCancelText }}
+        </button>
+        <button
+          class="flex flex-[2] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-text-primary shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          :class="confirmBtnClasses"
+          :disabled="loading || (showInput && !inputValue)"
+          type="button"
+          @click="handleConfirm"
+        >
+          <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
+          {{ loading ? locale.processing : resolvedConfirmText }}
+        </button>
+      </div>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
-import { computed, ref, useId, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from './Icon.vue'
 import { useLocale } from '~/utils/locale'
-import { useFocusTrap } from '~/composables/useFocusTrap'
 
 const props = defineProps({
   show: {
@@ -126,13 +121,6 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 
 const inputValue = ref('')
-const dialogRef = ref(null)
-const titleId = `confirm-dialog-title-${useId()}`
-useFocusTrap(dialogRef, computed(() => props.show), {
-  onEscape: () => {
-    if (!props.loading) handleCancel()
-  }
-})
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
 const resolvedTitle = computed(() => props.title || locale.value?.confirmOperation || '确认操作')
@@ -157,12 +145,6 @@ const handleCancel = () => {
   emit('cancel')
   emit('close')
   emit('update:show', false)
-}
-
-const handleOverlayClick = () => {
-  if (props.closeOnOverlay && !props.loading) {
-    handleCancel()
-  }
 }
 
 const iconName = computed(() => {
@@ -208,34 +190,4 @@ const confirmBtnClasses = computed(() => {
 })
 </script>
 
-<style scoped>
-.confirm-dialog-enter-active {
-  transition: opacity var(--duration-normal) var(--ease-out);
-}
 
-.confirm-dialog-leave-active {
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.confirm-dialog-enter-from,
-.confirm-dialog-leave-to {
-  opacity: 0;
-}
-
-.confirm-dialog-enter-active .confirm-panel,
-.confirm-dialog-leave-active .confirm-panel {
-  transition:
-    opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-out);
-}
-
-.confirm-dialog-enter-from .confirm-panel,
-.confirm-dialog-leave-to .confirm-panel {
-  opacity: 0;
-  transform: translateY(8px) scale(0.96);
-}
-
-.confirm-dialog-leave-active .confirm-panel {
-  transition-duration: var(--duration-fast);
-}
-</style>

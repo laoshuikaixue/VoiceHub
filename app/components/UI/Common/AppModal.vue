@@ -18,7 +18,7 @@
           tabindex="-1"
         >
           <header v-if="title || $slots.header" class="app-modal__header">
-            <slot name="header">
+            <slot name="header" :title-id="titleId">
               <div class="app-modal__heading">
                 <slot name="icon" />
                 <div class="min-w-0">
@@ -57,6 +57,7 @@ import Icon from '~/components/UI/Icon.vue'
 import { useFocusTrap } from '~/composables/useFocusTrap'
 import { useLocale } from '~/utils/locale'
 import {
+  DEFAULT_MODAL_MOBILE_MODE,
   isModalMobileMode,
   readStoredModalMobileMode,
   syncModalMobileModeFromQuery
@@ -99,7 +100,7 @@ const resolvedCloseLabel = computed(
 const mobileMode = computed(() =>
   isModalMobileMode(props.mobileMode)
     ? props.mobileMode
-    : preferredMobileMode.value || 'fullscreen'
+    : preferredMobileMode.value || DEFAULT_MODAL_MOBILE_MODE
 )
 
 const modalStack = []

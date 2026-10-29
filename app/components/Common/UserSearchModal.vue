@@ -1,44 +1,19 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6"
-        @click.self="close"
+  <AppModal
+    :show="show"
+    :title="resolvedTitle"
+    size="lg"
+    @close="close"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary"
       >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+        <Icon name="user" :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-8 pb-4">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-              >
-                <Icon name="user" :size="24" />
-              </div>
-              <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
-            </div>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-              @click="close"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
             <!-- 搜索输入框 -->
             <div class="relative mb-6 group">
               <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -131,11 +106,9 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 底部操作栏 -->
-          <div class="p-8 pt-0">
-            <div class="flex items-center justify-between gap-4">
+    <template #footer>
+            <div class="flex w-full items-center justify-between gap-4">
               <div class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 <span v-if="selectedUsers.length > 0" class="text-primary">
                   {{ formatLocale(locale.selectedUsers, selectedUsers.length) }}
@@ -157,15 +130,13 @@
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 

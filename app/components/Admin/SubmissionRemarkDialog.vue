@@ -1,30 +1,14 @@
 <template>
-  <Transition
-    enter-active-class="transition duration-300 ease-out"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="transition duration-200 ease-in"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
+  <AppModal
+    :description="songTitle"
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="close"
   >
-    <div
-      v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      @click="close"
-    >
-      <div
-        class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-        @click.stop
-      >
-        <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-          <h3 class="text-xl font-bold text-text-primary">{{ locale.title }}</h3>
-          <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="close">
-            <X :size="20" />
-          </button>
-        </div>
-        <div class="p-8 space-y-4">
+    <div class="space-y-4">
+
           <div class="flex items-center gap-3">
-            <p class="text-xs text-text-tertiary font-medium">{{ songTitle }}</p>
             <span
               v-if="noteStatus === 'pending'"
               class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border bg-warning-10 text-warning border-warning-20"
@@ -90,15 +74,13 @@
               {{ locale.approveButton }}
             </button>
           </div>
-        </div>
-      </div>
     </div>
-  </Transition>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { X } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useLocale } from '~/utils/locale'
 
 defineProps({

@@ -2,6 +2,7 @@ export const MODAL_MOBILE_MODES = ['fullscreen', 'bottomsheet', 'dialog'] as con
 export type ModalMobileMode = (typeof MODAL_MOBILE_MODES)[number]
 
 export const MODAL_MOBILE_MODE_KEY = 'voicehub-modal-mobile-mode'
+export const DEFAULT_MODAL_MOBILE_MODE: ModalMobileMode = 'bottomsheet'
 
 export const isModalMobileMode = (value: unknown): value is ModalMobileMode =>
   typeof value === 'string' && (MODAL_MOBILE_MODES as readonly string[]).includes(value)

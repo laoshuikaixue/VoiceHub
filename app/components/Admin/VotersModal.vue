@@ -1,50 +1,19 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click.self="closeModal"
+  <AppModal
+    :description="songInfo?.title || ''"
+    :show="show"
+    :title="locale.title"
+    size="xl"
+    @close="closeModal"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary"
       >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
-        >
-          <!-- 头部 -->
-          <div
-            class="p-6 pb-4 flex items-center justify-between border-b border-border-secondary-50"
-          >
-            <div class="min-w-0">
-              <h3
-                class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3"
-              >
-                <div
-                  class="w-10 h-10 rounded-xl bg-primary-hover-10 flex items-center justify-center text-primary shrink-0"
-                >
-                  <Icon name="users" :size="20" />
-                </div>
-                {{ locale.title }}
-              </h3>
-              <p v-if="songInfo" class="text-xs text-text-tertiary mt-1 ml-13 truncate">
-                {{ songInfo.title }}
-              </p>
-            </div>
-            <button
-              class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all shrink-0"
-              @click="closeModal"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
+        <Icon name="users" :size="18" />
+      </span>
+    </template>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <!-- 歌曲信息 -->
             <div
               v-if="songInfo"
@@ -145,27 +114,24 @@
               <Icon name="heart" :size="48" class="mb-4 opacity-20" />
               <p class="text-sm font-bold">{{ locale.empty }}</p>
             </div>
-          </div>
 
-          <!-- 底部 -->
-          <div
-            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end"
-          >
+    <template #footer>
+      <div class="flex items-center justify-end">
+
             <button
               class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
               @click="closeModal"
             >
               {{ commonLocale.close }}
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useLocale } from '~/utils/locale'

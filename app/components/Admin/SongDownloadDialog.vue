@@ -1,29 +1,11 @@
 <template>
-  <Transition name="fade">
-    <div
-      v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
-      @click="closeDialog"
-    >
-      <Transition name="scale">
-        <div
-          v-if="show"
-          class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-4 border-b border-border-secondary shrink-0">
-            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.title }}</h3>
-            <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
-              @click="closeDialog"
-            >
-              <CloseIcon class="w-5 h-5" />
-            </button>
-          </div>
+  <AppModal
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="closeDialog"
+  >
 
-          <!-- 内容区域 -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             <!-- 音质选择 -->
             <section class="space-y-3">
               <label class="text-xs font-bold uppercase text-text-disabled tracking-[0.2em] px-1"
@@ -492,12 +474,10 @@
                 </div>
               </div>
             </section>
-          </div>
 
-          <!-- 底部按钮 -->
-          <div
-            class="p-4 border-t border-border-secondary bg-bg-secondary-50 flex items-center justify-between shrink-0"
-          >
+    <template #footer>
+      <div class="flex items-center justify-between gap-2">
+
             <div class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
               {{ getLocaleText('selectedSongsCount', '', selectedSongs.size) }}
             </div>
@@ -536,14 +516,13 @@
               </button>
             </div>
           </div>
-        </div>
-      </Transition>
-    </div>
-  </Transition>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch, reactive, onUnmounted } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrlResult } from '~/utils/musicUrl'
 import { persistQqMusicCookie } from '~/utils/qqCookie'
