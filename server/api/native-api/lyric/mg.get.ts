@@ -1,3 +1,5 @@
+import { requestNetwork } from '~~/server/utils/music-source-plugins/network'
+
 // 咪咕 mrc 逐字歌词解密（TEA 算法）
 const DELTA = BigInt('2654435769')
 const MIN_LENGTH = 32
@@ -119,6 +121,10 @@ const parseMrcToLrc = (str: string): string => {
   return lrcLines.join('\n')
 }
 
+// 歌词正文大小上限：正常歌词为几十 KB，超限说明目标不是歌词文件
+const LYRIC_MAX_BYTES = 512 * 1024
+const LYRIC_FETCH_TIMEOUT_MS = 8000
+
 const MIGU_LYRIC_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Linux; Android 5.1.1; Nexus 6 Build/LYZ28E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Mobile Safari/537.36',
@@ -127,131 +133,86 @@ const MIGU_LYRIC_HEADERS = {
 }
 
 const fetchLyricText = async (url: string) => {
-  const response = await fetch(url, {
-    headers: MIGU_LYRIC_HEADERS,
-    signal: AbortSignal.timeout(8000)
-  })
-  if (!response.ok) {
-    throw createError({ statusCode: 502, message: `咪咕歌词接口返回 ${response.status}` })
+  // 出站统一走安全网络层：协议与内嵌凭据校验、私网/云元数据地址拒绝、DNS 结果钉扎、
+  // 重定向逐跳复验、响应大小限制
+  const { status, bytes } = await requestNetwork(
+    url,
+    { headers: MIGU_LYRIC_HEADERS, signal: AbortSignal.timeout(LYRIC_FETCH_TIMEOUT_MS) },
+    LYRIC_MAX_BYTES
+  )
+  if (status < 200 || status >= 300) {
+    throw createError({ statusCode: 502, message: `咪咕歌词接口返回 ${status}` })
   }
-  return response.text()
+  return bytes.toString('utf8')
 }
 
+// 歌词地址只允许由 contentId 在服务端换取，不接受调用方传入 URL：
+// 本接口匿名可达，透传 URL 等于开放内网与云元数据读取入口
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const lrcUrl = query.lrcUrl as string
-  const contentId = query.contentId as string
-  const mrcUrl = query.mrcUrl as string
+  const contentId = typeof query.contentId === 'string' ? query.contentId.trim() : ''
 
-  // 优先使用 mrc 逐字歌词（解密后解析）
-  if (mrcUrl) {
-    try {
-      const mrcText = await fetchLyricText(mrcUrl)
-      const lrc = parseMrcToLrc(decryptMrc(mrcText))
-      if (!lrc || !lrc.trim()) {
-        throw createError({ statusCode: 404, message: '歌词内容为空' })
-      }
-      return {
-        success: true,
-        data: { lrc, trans: '', yrc: '', ttml: '' }
-      }
-    } catch (err: any) {
-      console.error('[mg.lyric] 获取 mrc 歌词失败:', err)
-      throw createError({
-        statusCode: err.statusCode || 500,
-        message: err.message || '获取歌词失败'
-      })
-    }
+  if (!contentId) {
+    throw createError({ statusCode: 400, message: '缺少 contentId 参数' })
   }
 
-  // 优先使用歌词URL
-  if (lrcUrl) {
-    try {
-      const lrcText = await fetchLyricText(lrcUrl)
+  try {
+    // 通过歌曲信息接口获取 lrcUrl/mrcUrl
+    const songInfoResponse: any = await $fetch(
+      `https://app.c.nf.migu.cn/resource/song/by-contentids/v2.0?contentId=${encodeURIComponent(contentId)}`,
+      { timeout: 10000 }
+    )
 
-      if (!lrcText || !lrcText.trim()) {
-        throw createError({ statusCode: 404, message: '歌词内容为空' })
-      }
-
-      return {
-        success: true,
-        data: {
-          lrc: lrcText,
-          trans: '',
-          yrc: '',
-          ttml: ''
-        }
-      }
-    } catch (err: any) {
-      console.error('[mg.lyric] 获取歌词失败:', err)
-      throw createError({
-        statusCode: err.statusCode || 500,
-        message: err.message || '获取歌词失败'
-      })
+    const code = songInfoResponse?.code?.toString() || ''
+    if (code !== '000000' || !songInfoResponse?.data?.length) {
+      throw createError({ statusCode: 404, message: '未找到歌曲信息' })
     }
-  }
 
-  // 如果没有提供歌词URL，通过contentId查询歌曲信息获取歌词URL
-  if (contentId) {
-    try {
-      // 通过歌曲信息接口获取 lrcUrl/mrcUrl
-      const songInfoResponse: any = await $fetch(
-        `https://app.c.nf.migu.cn/resource/song/by-contentids/v2.0?contentId=${contentId}`,
-        { timeout: 10000 }
-      )
+    const songData = songInfoResponse.data[0]
 
-      const code = songInfoResponse?.code?.toString() || ''
-      if (code !== '000000' || !songInfoResponse?.data?.length) {
-        throw createError({ statusCode: 404, message: '未找到歌曲信息' })
-      }
-
-      const songData = songInfoResponse.data[0]
-
-      // 优先使用 mrc 逐字歌词
-      if (songData?.mrcUrl) {
-        try {
-          const mrcText = await fetchLyricText(songData.mrcUrl)
-          const lrc = parseMrcToLrc(decryptMrc(mrcText))
-          if (lrc && lrc.trim()) {
-            return {
-              success: true,
-              data: { lrc, trans: '', yrc: '', ttml: '' }
-            }
+    // 优先使用 mrc 逐字歌词
+    if (songData?.mrcUrl) {
+      try {
+        const mrcText = await fetchLyricText(songData.mrcUrl)
+        const lrc = parseMrcToLrc(decryptMrc(mrcText))
+        if (lrc && lrc.trim()) {
+          return {
+            success: true,
+            data: { lrc, trans: '', yrc: '', ttml: '' }
           }
-        } catch (mrcErr) {
-          console.warn('[mg.lyric] mrc 歌词解析失败，回退 lrc:', mrcErr)
         }
+      } catch (mrcErr) {
+        console.warn('[mg.lyric] mrc 歌词解析失败，回退 lrc:', mrcErr)
       }
-
-      const songLrcUrl = songData?.lrcUrl
-      if (!songLrcUrl) {
-        throw createError({ statusCode: 404, message: '未找到歌词链接' })
-      }
-
-      // 获取歌词内容
-      const lrcText = await fetchLyricText(songLrcUrl)
-
-      return {
-        success: true,
-        data: {
-          lrc: lrcText,
-          trans: '',
-          yrc: '',
-          ttml: ''
-        }
-      }
-    } catch (err: any) {
-      console.error('[mg.lyric] 通过contentId获取歌词失败:', err)
-      throw createError({
-        statusCode: err.statusCode || 500,
-        message: err.message || '获取歌词失败'
-      })
     }
-  }
 
-  // 既没有歌词URL也没有contentId
-  throw createError({
-    statusCode: 400,
-    message: '缺少 lrcUrl、mrcUrl 或 contentId 参数'
-  })
+    const songLrcUrl = songData?.lrcUrl
+    if (!songLrcUrl) {
+      throw createError({ statusCode: 404, message: '未找到歌词链接' })
+    }
+
+    // 获取歌词内容
+    const lrcText = await fetchLyricText(songLrcUrl)
+    if (!lrcText || !lrcText.trim()) {
+      throw createError({ statusCode: 404, message: '歌词内容为空' })
+    }
+
+    return {
+      success: true,
+      data: {
+        lrc: lrcText,
+        trans: '',
+        yrc: '',
+        ttml: ''
+      }
+    }
+  } catch (err: any) {
+    console.error('[mg.lyric] 通过contentId获取歌词失败:', err)
+    // 已带错误码的出站拒绝原样抛出，由客户端按 code 本地化
+    if (err?.data?.code) throw err
+    throw createError({
+      statusCode: err.statusCode || 500,
+      message: err.message || '获取歌词失败'
+    })
+  }
 })
