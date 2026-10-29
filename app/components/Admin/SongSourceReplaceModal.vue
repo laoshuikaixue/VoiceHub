@@ -1,58 +1,21 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[90] flex items-center justify-center bg-bg-primary-80 p-0 backdrop-blur-sm sm:p-4"
-        @click.self="closeModal"
+  <AppModal
+    :description="t('sourceReplace.subtitle')"
+    :show="show"
+    :title="t('sourceReplace.title')"
+    size="2xl"
+    @close="closeModal"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary sm:h-10 sm:w-10 sm:rounded-xl"
       >
-        <div
-          ref="dialogRef"
-          aria-labelledby="source-replace-title"
-          aria-modal="true"
-          class="flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col overflow-hidden border-0 bg-bg-secondary shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-4xl sm:rounded-2xl sm:border sm:border-border-secondary"
-          role="dialog"
-        >
-          <!-- 头部 -->
-          <div
-            class="flex shrink-0 items-start justify-between gap-3 border-b border-border-secondary-50 px-4 py-3 sm:p-6 sm:pb-4"
-          >
-            <div class="min-w-0">
-              <h3
-                id="source-replace-title"
-                class="flex items-center gap-2.5 text-lg font-bold tracking-tight text-text-primary sm:gap-3 sm:text-xl"
-              >
-                <span
-                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary sm:h-10 sm:w-10 sm:rounded-xl"
-                >
-                  <ArrowLeftRight :size="20" />
-                </span>
-                {{ t('sourceReplace.title') }}
-              </h3>
-              <p class="mt-1 hidden text-xs text-text-tertiary sm:ml-13 sm:mt-2 sm:block">
-                {{ t('sourceReplace.subtitle') }}
-              </p>
-            </div>
-            <button
-              :aria-label="t('sourceReplace.cancel')"
-              class="flex shrink-0 items-center justify-center rounded-lg bg-bg-tertiary-50 p-2.5 text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-              type="button"
-              @click="closeModal"
-            >
-              <X :size="20" />
-            </button>
-          </div>
+        <ArrowLeftRight :size="18" />
+      </span>
+    </template>
 
-          <!-- 主体 -->
-          <div class="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-4 sm:space-y-4 sm:p-6">
-            <!-- 当前音源 -->
+    <div class="space-y-3 sm:space-y-4">
+      <!-- 当前音源 -->
             <div
               class="flex items-center gap-3 rounded-lg bg-bg-primary-30 p-3 sm:rounded-xl sm:border sm:border-border-secondary-60 sm:p-4"
             >
@@ -285,10 +248,8 @@
             </div>
           </div>
 
-          <!-- 底部 -->
-          <div
-            class="flex shrink-0 flex-col gap-3 border-t border-border-secondary-50 bg-bg-secondary-50 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:flex-row sm:items-center sm:p-5"
-          >
+    <template #footer>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div class="min-w-0 flex-1">
               <template v-if="selected">
                 <div class="flex flex-wrap items-center gap-3 min-w-0">
@@ -342,11 +303,9 @@
                 {{ applying ? t('sourceReplace.applying') : t('sourceReplace.apply') }}
               </button>
             </div>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
@@ -359,11 +318,10 @@ import {
   Music,
   Pause,
   Play,
-  Search,
-  X
+  Search
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import { useFocusTrap } from '~/composables/useFocusTrap'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
@@ -393,8 +351,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'apply'])
 
-const dialogRef = ref(null)
-useFocusTrap(dialogRef, computed(() => props.show), { onEscape: () => closeModal() })
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { t } = useLocaleText(computed(() => admin.value?.songManagement || {}))

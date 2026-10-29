@@ -16,6 +16,7 @@ interface FocusTrapOptions {
 
 let scrollLockCount = 0
 let originalBodyOverflow = ''
+const activeTraps: symbol[] = []
 
 const lockScroll = () => {
   if (typeof document === 'undefined') return
@@ -38,6 +39,7 @@ export function useFocusTrap(
   active: Ref<boolean>,
   options: FocusTrapOptions = {}
 ) {
+  const trapId = Symbol('focus-trap')
   let previousFocus: HTMLElement | null = null
   let started = false
   let keydownHandler: ((event: KeyboardEvent) => void) | null = null
@@ -45,6 +47,8 @@ export function useFocusTrap(
   const stop = () => {
     if (!started || typeof document === 'undefined') return
     started = false
+    const index = activeTraps.indexOf(trapId)
+    if (index >= 0) activeTraps.splice(index, 1)
     if (keydownHandler) document.removeEventListener('keydown', keydownHandler)
     keydownHandler = null
     if (options.lockScroll !== false) unlockScroll()
@@ -55,6 +59,7 @@ export function useFocusTrap(
   const start = async () => {
     if (started || import.meta.server) return
     started = true
+    activeTraps.push(trapId)
     previousFocus = document.activeElement as HTMLElement | null
     if (options.lockScroll !== false) lockScroll()
     await nextTick()
@@ -65,6 +70,7 @@ export function useFocusTrap(
     first.focus()
 
     keydownHandler = (event: KeyboardEvent) => {
+      if (activeTraps[activeTraps.length - 1] !== trapId) return
       if (event.key === 'Escape') {
         options.onEscape?.()
         return

@@ -495,42 +495,16 @@
     />
 
     <!-- 驳回歌曲对话框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :close-on-esc="!rejectLoading"
+      :close-on-overlay="!rejectLoading"
+      :persistent="rejectLoading"
+      :show="showRejectDialog"
+      :title="isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title"
+      size="md"
+      @close="cancelReject"
     >
-      <div
-        v-if="showRejectDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-80 p-4 backdrop-blur-sm"
-        @click.self="handleRejectOverlayClick"
-      >
-        <div
-          ref="rejectDialogRef"
-          aria-labelledby="reject-dialog-title"
-          aria-modal="true"
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-border-secondary bg-bg-secondary shadow-2xl"
-          role="dialog"
-          @click.stop
-        >
-          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 id="reject-dialog-title" class="text-xl font-bold text-text-primary">
-              {{ isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title }}
-            </h3>
-            <button
-              :aria-label="locale.dialog.cancel"
-              class="text-text-tertiary transition-colors hover:text-text-secondary"
-              type="button"
-              @click="cancelReject"
-            >
-              <X :size="20" />
-            </button>
-          </div>
-
-          <div class="p-8 space-y-6">
+      <div class="space-y-6">
             <div class="p-5 bg-bg-primary border border-border-secondary rounded-lg flex items-center gap-4">
               <div
                 class="w-10 h-10 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-10"
@@ -574,9 +548,11 @@
                 </p>
               </div>
             </label>
-          </div>
+          
+      </div>
 
-          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
+      <template #footer>
+        <div class="flex justify-end gap-3">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelReject"
@@ -590,10 +566,10 @@
             >
               {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
             </button>
-          </div>
+          
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 投票人员弹窗 -->
     <VotersModal :show="showVotersModal" :song-id="selectedSongId" @close="closeVotersModal" />
@@ -615,42 +591,14 @@
     />
 
     <!-- 编辑/添加歌曲模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :persistent="showEditModal ? editLoading : addLoading"
+      :show="showEditModal || showAddSongModal"
+      :title="showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle"
+      size="xl"
+      @close="handleEditOverlayClick"
     >
-      <div
-        v-if="showEditModal || showAddSongModal"
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-bg-primary-80 p-4 backdrop-blur-sm"
-        @click.self="handleEditOverlayClick"
-      >
-        <div
-          ref="editDialogRef"
-          aria-labelledby="edit-dialog-title"
-          aria-modal="true"
-          class="my-auto w-full max-w-2xl overflow-hidden rounded-xl border border-border-secondary bg-bg-secondary shadow-2xl"
-          role="dialog"
-          @click.stop
-        >
-          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 id="edit-dialog-title" class="text-xl font-bold text-text-primary">
-              {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
-            </h3>
-            <button
-              :aria-label="locale.editModal.cancel"
-              class="text-text-tertiary transition-colors hover:text-text-secondary"
-              type="button"
-              @click="showEditModal ? cancelEditSong() : cancelAddSong()"
-            >
-              <X :size="20" />
-            </button>
-          </div>
-
-          <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+      <div class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
                 <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
@@ -1180,9 +1128,11 @@
                 {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
               </p>
             </div>
-          </div>
+          
+      </div>
 
-          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
+      <template #footer>
+        <div class="flex justify-end gap-3">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"
@@ -1204,10 +1154,10 @@
                     : locale.editModal.addSong
               }}
             </button>
-          </div>
+          
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <SongSourceReplaceModal
       :show="showSourceReplaceModal"
@@ -1231,7 +1181,7 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import { useFocusTrap } from '~/composables/useFocusTrap'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   Search,
   Plus,
@@ -1438,8 +1388,6 @@ const editForm = ref({
   durationSeconds: ''
 })
 const showSourceReplaceModal = ref(false)
-const rejectDialogRef = ref(null)
-const editDialogRef = ref(null)
 // 换源选中的结果：仅在平台与音乐 ID 未被手动改动时随保存提交 selectionToken
 const editSourceSelection = ref(null)
 const originalEditMusicSource = ref({ platform: '', musicId: '' })
@@ -2680,11 +2628,8 @@ const saveAddSong = async () => {
   }
 }
 
-const handleRejectOverlayClick = () => {
-  if (!rejectLoading.value) cancelReject()
-}
-
 const handleEditOverlayClick = () => {
+  if (showEditModal.value ? editLoading.value : addLoading.value) return
   if (showEditModal.value) cancelEditSong()
   else cancelAddSong()
 }
@@ -2707,25 +2652,6 @@ const cancelAddSong = () => {
   addPlayUrlValidation.value = { valid: true, error: '', validating: false }
   clearSelectedUser()
 }
-
-useFocusTrap(rejectDialogRef, computed(() => showRejectDialog.value), {
-  onEscape: () => {
-    if (!rejectLoading.value) cancelReject()
-  }
-})
-
-useFocusTrap(
-  editDialogRef,
-  computed(
-    () => (showEditModal.value || showAddSongModal.value) && !showSourceReplaceModal.value
-  ),
-  {
-    onEscape: () => {
-      if (showEditModal.value) cancelEditSong()
-      else cancelAddSong()
-    }
-  }
-)
 
 // 用户搜索功能
 let searchTimeout = null

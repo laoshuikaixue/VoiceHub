@@ -857,6 +857,7 @@ VoiceHub/
 │   │   │   ├── Common/        # 通用UI组件
 │   │   │   │   ├── AppDatePicker.vue # 自绘日期选择器
 │   │   │   │   ├── AppDateTimePicker.vue # 自绘日期时间选择器
+│   │   │   │   ├── AppModal.vue        # 通用弹窗（移动端全屏/底部 sheet）
 │   │   │   │   ├── AppSpinner.vue      # 通用加载转圈组件
 │   │   │   │   ├── AppTimePicker.vue   # 自绘时间选择器
 │   │   │   │   ├── CollapsibleSection.vue # 可折叠区域组件

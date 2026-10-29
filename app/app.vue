@@ -43,6 +43,7 @@ import ImportantNotificationModal from '~/components/UI/ImportantNotificationMod
 import OAuthBindReminderModal from '~/components/Auth/OAuthBindReminderModal.vue'
 import LegalConsentModal from '~/components/Auth/LegalConsentModal.vue'
 import { useRoute } from 'vue-router'
+import { syncModalMobileModeFromQuery } from '~/utils/modalPreferences'
 
 const route = useRoute()
 const { user, isAuthenticated } = useAuth()
@@ -215,6 +216,8 @@ const setupHarmonyOSListeners = () => {
 onMounted(() => {
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
+  // 支持 ?modalMode=bottomsheet 临时切换并持久化弹窗移动端形态
+  syncModalMobileModeFromQuery()
 })
 
 // 重要通知仅在登录或会话恢复时检查一次，不做轮询，避免增加服务器负担
