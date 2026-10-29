@@ -68,7 +68,7 @@ import { computed } from 'vue'
 import { Play } from '@lucide/vue'
 import { formatDuration } from '~/utils/timeUtils'
 import { getCoverThumbUrl } from '~/utils/url'
-import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
+import { getPlatformLabel, getPlatformTagClass } from '~/utils/platforms'
 import { useLocale } from '~/utils/locale'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 
@@ -90,15 +90,13 @@ const coverUrl = computed(() => (props.song.cover ? getCoverThumbUrl(props.song.
 const durationText = computed(() =>
   props.song.durationSeconds ? formatDuration(Number(props.song.durationSeconds)) : ''
 )
-const platformName = computed(() => {
-  const platform = props.song.musicPlatform
-  if (!platform) return ''
-  const plugin = pluginPlatforms.value?.find((item) => item.platform === platform)
-  return plugin?.displayName || getPlatformDisplayName(platform, null, currentLocale.value)
-})
-const platformClass = computed(() =>
-  BUILTIN_PLATFORMS.includes(props.song.musicPlatform) ? props.song.musicPlatform : 'plugin'
+const platformName = computed(() =>
+  getPlatformLabel(props.song.musicPlatform, {
+    currentLocale: currentLocale.value,
+    pluginPlatforms: pluginPlatforms.value
+  })
 )
+const platformClass = computed(() => getPlatformTagClass(props.song.musicPlatform))
 const requester = computed(() => (props.showRequester ? props.song.requester || '' : ''))
 const gradeClass = computed(() => {
   const grade = props.song.requesterGrade || props.song.grade || ''

@@ -1244,10 +1244,10 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { getPlatformLabel } from '~/utils/platforms'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { validateUrl } from '~/utils/url'
-import { getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
+import { getBeijingDateString, getBeijingWeekday, getRelativeTimeParts } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
@@ -1457,12 +1457,12 @@ const addForm = ref({
 
 // 平台选项：内置平台按后台排序，插件音源使用插件显示名
 const { getAvailablePlatforms, loadPlatformConfig, pluginPlatforms } = usePlatformConfig()
-const platformLabel = (platform) => {
-  if (!platform) return ''
-  const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
-  return plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
-}
-// 平台标签配色类名，插件音源统一走 plugin
+const platformLabel = (platform) =>
+  getPlatformLabel(platform, {
+    siteConfig: siteConfig.value,
+    currentLocale: currentLocale.value,
+    pluginPlatforms: pluginPlatforms.value
+  })
 const musicPlatformOptions = computed(() => {
   const list = [...getAvailablePlatforms()]
   for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {
@@ -1696,14 +1696,12 @@ const canClearEditSubmissionNote = computed(() => {
 // 方法
 // 入参为服务端转好北京时间的 requestedAt（"YYYY/M/D H:mm:ss"）
 const formatDate = (dateString) => {
-  const date = dayjs(dateString, 'YYYY/M/D H:mm:ss').toDate()
-  const now = getSyncedDate()
-  const diff = now - date
-
-  if (diff < 60000) return getNestedMessage('timeAgo', 'justNow')
-  if (diff < 3600000) return getNestedMessage('timeAgo', 'minutes', Math.floor(diff / 60000))
-  if (diff < 86400000) return getNestedMessage('timeAgo', 'hours', Math.floor(diff / 3600000))
-  return getNestedMessage('timeAgo', 'days', Math.floor(diff / 86400000))
+  const parts = getRelativeTimeParts(dateString, { beijingWallClock: true })
+  if (!parts) return ''
+  if (parts.unit === 'justNow') return getNestedMessage('timeAgo', 'justNow')
+  if (parts.unit === 'minutes') return getNestedMessage('timeAgo', 'minutes', parts.value)
+  if (parts.unit === 'hours') return getNestedMessage('timeAgo', 'hours', parts.value)
+  return getNestedMessage('timeAgo', 'days', parts.value)
 }
 
 const getPlayTimeName = (playTimeId) => {

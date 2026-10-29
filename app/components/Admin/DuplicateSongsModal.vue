@@ -183,7 +183,7 @@ import { computed } from 'vue'
 import { Copy, X, Music, Heart, Edit2, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText } from '~/composables/useLocaleText'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { getPlatformLabel } from '~/utils/platforms'
 import { getCoverThumbUrl } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
 
@@ -217,7 +217,8 @@ const statusText = (song) => {
   return t('options.pending')
 }
 
-const platformLabel = (platform) => getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
+const platformLabel = (platform) =>
+  getPlatformLabel(platform, { siteConfig: siteConfig.value, currentLocale: currentLocale.value })
 
 const formatDate = (value) => {
   if (!value) return ''

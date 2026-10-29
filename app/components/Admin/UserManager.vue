@@ -1671,7 +1671,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
-import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
+import { formatDateTime, getBeijingTime, getRelativeTimeParts } from '~/utils/timeUtils'
 
 const { admin, common, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
@@ -2116,16 +2116,13 @@ watch(currentPage, (newPage) => {
 const formatDate = (dateString) => {
   const timeLocale = locale.value?.time || {}
   if (!dateString) return timeLocale.never || ''
-  const date = new Date(dateString)
-  const now = getSyncedDate()
-  const diff = now - date
-
-  if (diff < 60000) return timeLocale.justNow || ''
-  if (diff < 3600000) return formatMessage(timeLocale.minutesAgo, Math.floor(diff / 60000))
-  if (diff < 86400000) return formatMessage(timeLocale.hoursAgo, Math.floor(diff / 3600000))
-  if (diff < 86400000 * 7) return formatMessage(timeLocale.daysAgo, Math.floor(diff / 86400000))
-
-  return date.toLocaleDateString(currentLocale.value)
+  const parts = getRelativeTimeParts(dateString)
+  if (!parts) return timeLocale.never || ''
+  if (parts.unit === 'justNow') return timeLocale.justNow || ''
+  if (parts.unit === 'minutes') return formatMessage(timeLocale.minutesAgo, parts.value)
+  if (parts.unit === 'hours') return formatMessage(timeLocale.hoursAgo, parts.value)
+  if (parts.value < 7) return formatMessage(timeLocale.daysAgo, parts.value)
+  return formatDateTime(new Date(dateString), 'YYYY/M/D')
 }
 
 const getRoleClass = (role) => {

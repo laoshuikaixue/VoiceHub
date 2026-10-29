@@ -129,46 +129,30 @@
             </div>
 
             <!-- 平台选项卡 -->
-            <div class="scrollbar-hide flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <div
+              class="scrollbar-hide flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+            >
               <button
+                v-for="tab in platformTabs"
+                :key="tab.key"
                 type="button"
                 class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-colors sm:px-3"
                 :class="
-                  activeTab === 'all'
+                  activeTab === tab.key
                     ? 'border-primary-30 bg-primary-10 text-primary'
                     : 'border-border-secondary-60 bg-bg-primary-30 text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
                 "
-                @click="switchTab('all')"
+                @click="switchTab(tab.key)"
               >
-                {{ t('sourceReplace.all') }}
-                <span v-if="allResults.length" class="opacity-70">({{ allResults.length }})</span>
-              </button>
-              <button
-                v-for="platform in availablePlatforms"
-                :key="platform"
-                type="button"
-                class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-colors sm:px-3"
-                :class="
-                  activeTab === platform
-                    ? 'border-primary-30 bg-primary-10 text-primary'
-                    : 'border-border-secondary-60 bg-bg-primary-30 text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
-                "
-                @click="switchTab(platform)"
-              >
-                {{ platformLabel(platform) }}
-                <span v-if="platformCount(platform)" class="opacity-70"
-                  >({{ platformCount(platform) }})</span
-                >
-                <Loader2
-                  v-if="platformStates[platform] === 'loading'"
-                  :size="12"
-                  class="animate-spin"
-                />
+                {{ tab.label }}
+                <span v-if="tab.count" class="opacity-70">({{ tab.count }})</span>
+                <Loader2 v-if="tab.loading" :size="12" class="animate-spin" />
                 <span
-                  v-if="platform === song.musicPlatform"
-                  class="px-1 py-0.5 rounded bg-bg-tertiary text-text-disabled text-xs"
-                  >{{ t('sourceReplace.current') }}</span
+                  v-if="tab.current"
+                  class="rounded bg-bg-tertiary px-1 py-0.5 text-xs text-text-disabled"
                 >
+                  {{ t('sourceReplace.current') }}
+                </span>
               </button>
             </div>
 
@@ -381,7 +365,7 @@ import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { getPlatformLabel } from '~/utils/platforms'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { getCoverThumbUrl } from '~/utils/url'
@@ -411,13 +395,12 @@ const musicSources = useMusicSources()
 const { playSong } = useSongPlayer()
 const audioPlayer = useAudioPlayer()
 
-const platformLabel = (platform) => {
-  if (!platform) return ''
-  const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
-  return (
-    plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
-  )
-}
+const platformLabel = (platform) =>
+  getPlatformLabel(platform, {
+    siteConfig: siteConfig.value,
+    currentLocale: currentLocale.value,
+    pluginPlatforms: pluginPlatforms.value
+  })
 
 const keywords = ref('')
 const keywordError = ref(false)
@@ -503,6 +486,17 @@ const pageOptions = computed(() => {
 })
 
 const platformCount = (platform) => (platformResults.value[platform] || []).length
+
+const platformTabs = computed(() => [
+  { key: 'all', label: t('sourceReplace.all'), count: allResults.value.length },
+  ...availablePlatforms.value.map((platform) => ({
+    key: platform,
+    label: platformLabel(platform),
+    count: platformCount(platform),
+    loading: platformStates.value[platform] === 'loading',
+    current: platform === props.song.musicPlatform
+  }))
+])
 
 const closeModal = () => {
   stopPreview()

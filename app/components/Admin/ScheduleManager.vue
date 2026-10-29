@@ -1826,7 +1826,6 @@ import {
   FileBadge,
   PlaySquare,
   Play,
-  ChevronDown,
   ListMusic,
   Filter,
   Info,
@@ -1838,14 +1837,12 @@ import {
   ChevronLeft,
   MoreVertical,
   Calendar as CalendarIcon,
-  ArrowLeft,
   ArrowRight,
   Music2,
   Heart,
   Plus,
   Minus,
   CircleDot,
-  ExternalLink,
   MessageSquare,
   Trash2,
   Copy,
@@ -1870,12 +1867,10 @@ import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { notifySchedulePlaylistChanged } from '~/composables/useSchedulePlaylistSync'
-import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
-import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
-import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
+import { formatDuration, addDaysToString, getDaysBetween, getRelativeTimeParts } from '~/utils/timeUtils'
 import {
   autoSchedule,
   autoScheduleExhaustive,
@@ -2209,7 +2204,7 @@ const saveDurationEdit = async (song) => {
       // 清空时长
       const updated = await updateSongDuration(song.id, null)
       if (!updated) return
-      delete editingDuration.value[song.id]
+      Reflect.deleteProperty(editingDuration.value, song.id)
       editingDurationValue.value = ''
       return
     }
@@ -2229,7 +2224,7 @@ const saveDurationEdit = async (song) => {
 
     const updated = await updateSongDuration(song.id, seconds)
     if (!updated) return
-    delete editingDuration.value[song.id]
+    Reflect.deleteProperty(editingDuration.value, song.id)
     editingDurationValue.value = ''
   } finally {
     durationSaveInFlight.delete(song.id)
@@ -2287,7 +2282,7 @@ const updateSongDuration = async (songId, durationSeconds) => {
 
 // 取消编辑
 const cancelEditDuration = (songId) => {
-  delete editingDuration.value[songId]
+  Reflect.deleteProperty(editingDuration.value, songId)
   editingDurationValue.value = ''
 }
 
@@ -2328,7 +2323,6 @@ const openContextMenu = (e, side, song) => {
   }
   contextMenuOpen.value = true
 }
-const closeContextMenu = () => { contextMenuOpen.value = false }
 
 // 换源：右侧排期卡片的菜单项拿到的是 schedule 对象，需取内层 song
 const showSourceReplaceModal = ref(false)
@@ -2588,7 +2582,7 @@ const updateSubmissionNotePublicStatus = async (status) => {
           safeMessage('messages', status === 'rejected' ? 'remarkRejected' : 'remarkApproved', '备注留言审核状态已更新'),
           'success'
         )
-      } catch (notifyErr) {
+      } catch {
         // 静默失败，不影响主流程
       }
     }
@@ -2597,7 +2591,7 @@ const updateSubmissionNotePublicStatus = async (status) => {
     if (window.$showNotification) {
       try {
         window.$showNotification(safeMessage('errors', 'remarkUpdateFailed', '备注留言审核状态更新失败'), 'error')
-      } catch (notifyErr) {
+      } catch {
         // 静默失败，不影响主流程
       }
     }
@@ -2727,7 +2721,6 @@ const canPublish = computed(() => {
 
 // 草稿相关数据
 const drafts = ref([])
-const isDraftMode = ref(false)
 
 // 播出时段相关
 const playTimes = ref([])
@@ -2839,12 +2832,6 @@ const currentPage = computed({
 const pageSize = ref(10)
 
 // 管理员扩展信息：仅管理员在待排歌曲列表显示投稿平台与投稿统计
-const { currentLocale } = useLocale()
-const platformTagClass = (platform) => BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin'
-const platformLabel = (platform) => getPlatformDisplayName(platform, null, currentLocale.value)
-
-// 卡片已在姓名后单独展示年级/班级，去掉重名消歧的括号后缀避免重复
-const stripDisambiguationSuffix = (name) => (name || '').replace(/（[^（）]*）$/, '')
 
 // 服务
 let songsService = null
@@ -3051,16 +3038,13 @@ const isDesktop = ref(true)
 
 // 方法
 const formatDate = (dateString) => {
-  if (!dateString) return locale.value?.timeAgo?.never || '从未'
-  const date = new Date(dateString)
-  if (Number.isNaN(date.getTime())) return locale.value?.timeAgo?.never || '从未'
-  const now = getSyncedDate()
-  const diff = now - date
-
-  if (diff < 60000) return locale.value.timeAgo.justNow
-  if (diff < 3600000) return locale.value.timeAgo.minutes(Math.floor(diff / 60000))
-  if (diff < 86400000) return locale.value.timeAgo.hours(Math.floor(diff / 3600000))
-  return locale.value.timeAgo.days(Math.floor(diff / 86400000))
+  const parts = getRelativeTimeParts(dateString, { beijingWallClock: true })
+  const timeAgo = locale.value?.timeAgo
+  if (!parts) return timeAgo?.never || '从未'
+  if (parts.unit === 'justNow') return timeAgo.justNow
+  if (parts.unit === 'minutes') return timeAgo.minutes(parts.value)
+  if (parts.unit === 'hours') return timeAgo.hours(parts.value)
+  return timeAgo.days(parts.value)
 }
 
 // 检查窗口大小
@@ -3550,21 +3534,21 @@ const moveAllToPool = async () => {
       const added = result.added || []
       const skipped = result.skipped || []
       if (added.length > 0) {
-        window.$showNotification && window.$showNotification(
+        if (window.$showNotification) window.$showNotification(
           `${locale.value.addCurrentPageSuccess(added.length)}`,
           'success'
         )
       }
       if (skipped.length > 0) {
         const reasons = skipped.map((s) => s.reason).join('、')
-        window.$showNotification && window.$showNotification(
+        if (window.$showNotification) window.$showNotification(
           `${locale.value.addAllPendingSkipped(skipped.length)}（${reasons}）`,
           'warning'
         )
       }
     } catch (err) {
       console.error('移入备选池失败:', err)
-      window.$showNotification && window.$showNotification(
+      if (window.$showNotification) window.$showNotification(
         locale.value.addAllPendingFailed,
         'error'
       )
@@ -3586,13 +3570,13 @@ const addSingleToPool = async (songId) => {
     const added = result.added || []
     const skipped = result.skipped || []
     if (added.length > 0) {
-      window.$showNotification && window.$showNotification(
+      if (window.$showNotification) window.$showNotification(
         locale.value.addSingleToPoolSuccess,
         'success'
       )
     } else if (skipped.length > 0) {
       const reason = skipped[0]?.reason || ''
-      window.$showNotification && window.$showNotification(
+      if (window.$showNotification) window.$showNotification(
         `${locale.value.addSingleToPoolSkipped}（${reason}）`,
         'warning'
       )
@@ -3611,13 +3595,13 @@ const removeFromPool = async (songId) => {
       query: { songIds: songId }
     })
     await fetchSongPool()
-    window.$showNotification && window.$showNotification(
+    if (window.$showNotification) window.$showNotification(
       locale.value.removeFromPoolSuccess,
       'success'
     )
   } catch (err) {
     console.error('从备选池移除失败:', err)
-    window.$showNotification && window.$showNotification(
+    if (window.$showNotification) window.$showNotification(
       locale.value.removeFromPoolFailed,
       'error'
     )
@@ -3889,7 +3873,7 @@ const refreshDuration = async (song) => {
   }
 
   // 清除上次刷新状态
-  delete durationRefreshStatus.value[songId]
+  Reflect.deleteProperty(durationRefreshStatus.value, songId)
   refreshingDuration.value[songId] = true
   try {
     const result = await requestSongDuration(song)
@@ -3919,7 +3903,7 @@ const refreshDuration = async (song) => {
       durationRefreshStatus.value[songId] = 'success'
       setTimeout(() => {
         if (durationRefreshStatus.value[songId] === 'success') {
-          delete durationRefreshStatus.value[songId]
+          Reflect.deleteProperty(durationRefreshStatus.value, songId)
         }
       }, 3000)
       if (window.$showNotification) {
@@ -3930,7 +3914,7 @@ const refreshDuration = async (song) => {
       durationRefreshStatus.value[songId] = 'error'
       setTimeout(() => {
         if (durationRefreshStatus.value[songId] === 'error') {
-          delete durationRefreshStatus.value[songId]
+          Reflect.deleteProperty(durationRefreshStatus.value, songId)
         }
       }, 3000)
       if (window.$showNotification) {
@@ -3943,14 +3927,14 @@ const refreshDuration = async (song) => {
     durationRefreshStatus.value[songId] = 'error'
     setTimeout(() => {
       if (durationRefreshStatus.value[songId] === 'error') {
-        delete durationRefreshStatus.value[songId]
+        Reflect.deleteProperty(durationRefreshStatus.value, songId)
       }
     }, 3000)
     if (window.$showNotification) {
       window.$showNotification(localizeServerError(err), 'error')
     }
   } finally {
-    delete refreshingDuration.value[songId]
+    Reflect.deleteProperty(refreshingDuration.value, songId)
   }
 }
 
@@ -4068,7 +4052,7 @@ const refreshAllDurations = async (source = 'pending') => {
     // 等待 2 秒后统一清除颜色标记
     await new Promise((r) => setTimeout(r, 2000))
     for (const song of toRefresh) {
-      delete durationRefreshStatus.value[song.id]
+      Reflect.deleteProperty(durationRefreshStatus.value, song.id)
     }
     refreshAllAbortController = null
     refreshingAllDurations.value = { running: false, progress: '', done: 0, total: 0 }
@@ -4173,7 +4157,7 @@ const refreshAutoCandidateDurations = async () => {
     // 等待 2 秒后统一清除颜色标记
     await new Promise((r) => setTimeout(r, 2000))
     for (const song of toRefresh) {
-      delete durationRefreshStatus.value[song.id]
+      Reflect.deleteProperty(durationRefreshStatus.value, song.id)
     }
     refreshAutoCandidatesAbortController = null
     refreshingAutoCandidates.value = { running: false, progress: '' }
@@ -5567,11 +5551,6 @@ const loadDrafts = async () => {
 }
 
 // 刷新草稿列表
-const refreshDrafts = async () => {
-  await loadDrafts()
-  updateLocalScheduledSongs() // 更新播放顺序列表
-}
-
 // 当前日期下仍绑定具体播出时段的排期数量（已发布 + 草稿）
 const getUnspecifiedPlayTimeWarningCount = () => {
   if (!playTimeEnabled.value || selectedPlayTime.value) return 0

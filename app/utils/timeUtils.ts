@@ -80,6 +80,25 @@ export function parseUtcTimestamp(value: string | Date): Date {
   return dayjs.utc(value).toDate()
 }
 
+export type RelativeTimeUnit = 'justNow' | 'minutes' | 'hours' | 'days'
+
+/** 计算相对时间片段；beijingWallClock=true 用于接口已格式化的北京时间字符串 */
+export function getRelativeTimeParts(
+  value: string | Date,
+  options: { now?: Date; beijingWallClock?: boolean } = {}
+): { unit: RelativeTimeUnit; value: number } | null {
+  const date = options.beijingWallClock
+    ? parseToBeijingTime(String(value))
+    : parseUtcTimestamp(value)
+  if (Number.isNaN(date.getTime())) return null
+  const now = options.now ?? getBeijingTime()
+  const diff = Math.max(0, now.getTime() - date.getTime())
+  if (diff < 60_000) return { unit: 'justNow', value: 0 }
+  if (diff < 3_600_000) return { unit: 'minutes', value: Math.floor(diff / 60_000) }
+  if (diff < 86_400_000) return { unit: 'hours', value: Math.floor(diff / 3_600_000) }
+  return { unit: 'days', value: Math.floor(diff / 86_400_000) }
+}
+
 /**
  * 获取时间戳 (Date 对象)
  */
