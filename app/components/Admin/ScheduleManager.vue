@@ -344,7 +344,7 @@
 
           <div
             :class="[
-              'draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
+              'draggable-songs flex-1 border-2 border-dashed rounded-2xl p-2 md:p-3 min-h-[400px] transition-colors duration-200',
               isDraggableOver
                 ? 'border-primary bg-primary-5'
                 : 'border-border-secondary-80 bg-bg-secondary-20'
@@ -727,7 +727,7 @@
           <div
             ref="sequenceList"
             :class="[
-              'sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
+              'sequence-list flex-1 border-2 border-dashed rounded-2xl p-2 md:p-3 min-h-[400px] transition-colors duration-200',
               isSequenceOver ? 'border-primary bg-primary-5' : 'border-border-secondary-80 bg-bg-secondary-20'
             ]"
             @dragleave="handleSequenceDragLeave"

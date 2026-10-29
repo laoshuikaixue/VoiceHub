@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       <!-- 左侧：编辑区 -->
       <div class="lg:col-span-7 space-y-6">
-        <div class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-8 shadow-xl">
+        <div class="bg-bg-secondary-30 border border-border-secondary rounded-2xl p-8 shadow-xl">
           <div class="space-y-6">
             <!-- 标题 -->
             <div class="space-y-2">
@@ -396,7 +396,7 @@
       <!-- 右侧：预览区 -->
       <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-8">
         <div
-          class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-8 shadow-xl flex flex-col h-full"
+          class="bg-bg-secondary-30 border border-border-secondary rounded-2xl p-8 shadow-xl flex flex-col h-full"
         >
           <h3
             class="text-sm font-bold text-text-primary uppercase tracking-wider mb-6 flex items-center gap-2"

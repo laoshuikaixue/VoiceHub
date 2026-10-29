@@ -356,7 +356,7 @@
           v-if="createdApiKey"
           class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
         >
-          <div class="w-full max-w-xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
+          <div class="w-full max-w-xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-border-secondary flex items-center justify-between">
               <div>
                 <h3 class="text-lg font-bold text-text-primary">{{ locale.personalApiKey.createdTitle }}</h3>
@@ -412,7 +412,7 @@
           v-if="showApiKeyLogsModal"
           class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
         >
-          <div class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
+          <div class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-border-secondary flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-lg font-bold text-text-primary">{{ locale.personalApiKey.logsTitle }}</h3>
@@ -712,7 +712,7 @@ const getSessionMethod = (method) => {
 }
 
 // 样式类常量
-const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 md:p-8 shadow-2xl'
 
 const userInitials = computed(() => {
   const name = auth.user.value?.name || auth.user.value?.username || 'U'

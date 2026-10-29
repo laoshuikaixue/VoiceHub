@@ -8,7 +8,7 @@
       </div>
 
       <div
-        class="flex flex-wrap items-center gap-4 bg-bg-secondary-40 border border-border-secondary p-2 rounded-3xl"
+        class="flex flex-wrap items-center gap-4 bg-bg-secondary-40 border border-border-secondary p-2 rounded-2xl"
       >
         <div class="flex items-center gap-3 px-3 border-r border-border-secondary-50 mr-1">
           <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
@@ -100,7 +100,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- 添加时段按钮卡片 -->
       <button
-        class="group relative h-full min-h-[220px] bg-bg-secondary-20 border-2 border-dashed border-border-secondary rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-primary-hover-5 hover:border-primary-40 transition-all active:scale-95"
+        class="group relative h-full min-h-[220px] bg-bg-secondary-20 border-2 border-dashed border-border-secondary rounded-2xl flex flex-col items-center justify-center gap-4 hover:bg-primary-hover-5 hover:border-primary-40 transition-all active:scale-95"
         @click="showAddForm = true"
       >
         <div
@@ -131,7 +131,7 @@
           v-for="slot in requestTimes"
           :key="slot.id"
           :class="[
-            'group bg-bg-secondary-40 border rounded-3xl p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]',
+            'group bg-bg-secondary-40 border rounded-2xl p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]',
             slot.enabled && !slot.past ? 'border-border-secondary' : 'border-border-secondary-40 opacity-60'
           ]"
         >
@@ -262,7 +262,7 @@
 
     <!-- 统计概览 -->
     <div
-      class="bg-bg-secondary-20 border border-border-secondary rounded-3xl p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+      class="bg-bg-secondary-20 border border-border-secondary rounded-2xl p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
     >
       <div v-for="(stat, i) in stats" :key="i" class="flex items-center gap-4 group">
         <div
@@ -291,7 +291,7 @@
     <!-- 重复投稿限制面板 -->
     <div
       v-if="isAdmin"
-      class="bg-bg-secondary-20 border border-border-secondary rounded-3xl p-8 space-y-6"
+      class="bg-bg-secondary-20 border border-border-secondary rounded-2xl p-8 space-y-6"
     >
       <div class="flex items-center justify-between border-b border-border-secondary-50 pb-4">
         <div class="flex items-center gap-3">
@@ -410,7 +410,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
-          class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
+          class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden"
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
             <h3 class="text-xl font-bold text-text-primary">
@@ -553,11 +553,11 @@
         @click.self="showDeleteConfirm = false"
       >
         <div
-          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden p-8"
+          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden p-8"
         >
           <div class="flex flex-col items-center space-y-6">
             <div
-              class="w-16 h-16 rounded-[2rem] bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-xl shadow-[var(--error-glow-10)]"
+              class="w-16 h-16 rounded-2xl bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-xl shadow-[var(--error-glow-10)]"
             >
               <Trash2 :size="28" />
             </div>
@@ -592,7 +592,7 @@
 
     <!-- 说明部分 -->
     <div class="flex flex-col md:flex-row gap-6">
-      <div class="flex-1 bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-4">
+      <div class="flex-1 bg-bg-secondary-30 border border-border-secondary rounded-2xl p-6 space-y-4">
         <h4
           class="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
         >
@@ -621,7 +621,7 @@
         </ul>
       </div>
 
-      <div class="flex-1 bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-4">
+      <div class="flex-1 bg-bg-secondary-30 border border-border-secondary rounded-2xl p-6 space-y-4">
         <h4
           class="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
         >

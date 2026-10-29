@@ -16,7 +16,7 @@
         <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-3xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-3xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
@@ -99,7 +99,7 @@
           <div v-else-if="error" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center text-error">
               <div
-                class="w-16 h-16 rounded-3xl bg-error-10 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center mb-4"
               >
                 <Icon name="alert-circle" :size="32" />
               </div>
@@ -114,7 +114,7 @@
               class="flex flex-col items-center justify-center py-12 text-text-tertiary"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-2xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
                 <Icon name="music" :size="32" class="opacity-20" />
               </div>

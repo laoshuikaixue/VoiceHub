@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] overflow-hidden">
+  <div class="bg-bg-secondary-30 border border-border-secondary rounded-2xl overflow-hidden">
     <!-- 头部 -->
     <div class="flex items-center justify-between p-6 border-b border-border-secondary bg-bg-secondary-20">
       <div class="flex items-center gap-3">
@@ -215,7 +215,7 @@
           class="flex-1 flex flex-col items-center justify-center text-text-secondary space-y-4"
         >
           <div
-            class="w-16 h-16 rounded-3xl bg-bg-secondary-50 flex items-center justify-center border border-border-secondary-50"
+            class="w-16 h-16 rounded-2xl bg-bg-secondary-50 flex items-center justify-center border border-border-secondary-50"
           >
             <Mail :size="32" class="text-text-primary" />
           </div>

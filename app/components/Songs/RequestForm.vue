@@ -843,7 +843,7 @@
           class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-85 backdrop-blur-sm"
         >
           <div
-            class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             @click.stop
           >
             <div class="px-8 py-7 flex flex-col items-center text-center">

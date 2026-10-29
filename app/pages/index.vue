@@ -806,12 +806,12 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
+                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary-50 p-6 rounded-2xl border border-border-secondary-50"
                   v-html="renderedGuidelines"
                 />
                 <div
                   v-else
-                  class="space-y-3 bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
+                  class="space-y-3 bg-bg-primary-50 p-6 rounded-2xl border border-border-secondary-50"
                 >
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
                     <span class="text-primary font-bold">01</span>
@@ -836,7 +836,7 @@
                   {{ locale.playbackTime }}
                 </h4>
                 <div
-                  class="bg-primary-hover-10 border border-primary-20 p-6 rounded-3xl flex items-center gap-4"
+                  class="bg-primary-hover-10 border border-primary-20 p-6 rounded-2xl flex items-center gap-4"
                 >
                   <div
                     class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-[var(--primary-glow-40)]"

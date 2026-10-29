@@ -14,7 +14,7 @@
         @click.self="handleCancel"
       >
         <div
-          class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+          class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
         >
           <!-- 头部 -->
           <div class="px-7 pt-7 pb-5 flex items-start gap-4">

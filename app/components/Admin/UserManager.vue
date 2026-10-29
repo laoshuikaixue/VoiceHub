@@ -95,10 +95,11 @@
         <button
           :aria-label="common.refreshData"
           :title="common.refreshData"
-          class="flex w-full items-center justify-center rounded-lg border border-border-secondary bg-bg-primary p-3 text-text-disabled shadow-sm transition-colors hover:text-primary xl:w-auto"
+          class="flex w-full items-center justify-center gap-2 rounded-lg border border-border-secondary bg-bg-primary p-3 text-text-disabled shadow-sm transition-colors hover:text-primary xl:w-auto"
           @click="loadUsers(1)"
         >
           <RefreshCw :size="14" />
+          <span class="text-xs font-bold xl:hidden">{{ common.refreshData }}</span>
         </button>
       </div>
     </div>
@@ -604,7 +605,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl"
+          class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
           @click.stop
         >
           <div class="p-8">
@@ -799,12 +800,12 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
+          class="bg-bg-secondary border border-border-secondary w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
           @click.stop
         >
           <div class="p-8 text-center">
             <div
-              class="w-20 h-20 bg-warning-10 rounded-[2rem] flex items-center justify-center text-warning mx-auto mb-6"
+              class="w-20 h-20 bg-warning-10 rounded-2xl flex items-center justify-center text-warning mx-auto mb-6"
             >
               <Lock :size="32" />
             </div>
@@ -898,7 +899,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
+          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
           @click.stop
         >
           <div class="p-8">
@@ -925,7 +926,7 @@
             </div>
 
             <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-              <div class="p-5 bg-bg-primary-50 border border-border-secondary-50 rounded-3xl space-y-4">
+              <div class="p-5 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-4">
                 <div class="flex items-center gap-2 text-text-secondary font-bold text-sm mb-2">
                   <Info :size="16" class="text-primary" />
                   {{ locale.importModal.instructionsTitle }}
@@ -999,7 +1000,7 @@
                     @change="handleFileUpload"
                   >
                   <div
-                    class="w-full py-10 border-2 border-dashed border-border-secondary group-hover:border-success-50 group-hover:bg-success-5 rounded-3xl transition-all flex flex-col items-center justify-center gap-3"
+                    class="w-full py-10 border-2 border-dashed border-border-secondary group-hover:border-success-50 group-hover:bg-success-5 rounded-2xl transition-all flex flex-col items-center justify-center gap-3"
                   >
                     <div
                       class="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-disabled group-hover:text-success transition-colors"
@@ -1045,7 +1046,7 @@
                     >{{ formatMessage(locale.importModal.previewData, previewData.length) }}</label
                   >
                 </div>
-                <div class="overflow-hidden rounded-3xl border border-border-secondary bg-bg-primary-30">
+                <div class="overflow-hidden rounded-2xl border border-border-secondary bg-bg-primary-30">
                   <table class="w-full text-xs text-left">
                     <thead class="bg-bg-secondary-50 text-text-tertiary">
                       <tr>
@@ -1176,7 +1177,7 @@
         @click="closeUserDetailModal"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl"
+          class="bg-bg-secondary border border-border-secondary w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl"
           @click.stop
         >
           <div class="p-8">
@@ -1516,7 +1517,7 @@
 
                 <div
                   v-else-if="statusLogs.length === 0"
-                  class="py-12 text-center bg-bg-primary-30 border border-border-secondary-50 rounded-3xl"
+                  class="py-12 text-center bg-bg-primary-30 border border-border-secondary-50 rounded-2xl"
                 >
                   <p class="text-xs text-text-disabled">{{ locale.detail.noLogs }}</p>
                 </div>

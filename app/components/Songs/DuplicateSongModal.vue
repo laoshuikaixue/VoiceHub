@@ -13,7 +13,7 @@
       @click="$emit('close')"
     >
       <div
-        class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+        class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col"
         @click.stop
       >
         <!-- 头部 -->
@@ -44,7 +44,7 @@
 
           <!-- 歌曲卡片 -->
           <div
-            class="flex gap-4 p-5 bg-bg-primary border border-border-secondary rounded-3xl group shadow-xl"
+            class="flex gap-4 p-5 bg-bg-primary border border-border-secondary rounded-2xl group shadow-xl"
           >
             <div
               class="w-20 h-20 rounded-2xl overflow-hidden bg-bg-secondary flex-shrink-0 border border-border-secondary"

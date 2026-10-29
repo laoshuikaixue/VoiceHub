@@ -27,7 +27,7 @@
       v-else-if="error && !hasInitialData"
       class="flex flex-col items-center justify-center min-h-[60vh] space-y-6"
     >
-      <div class="flex items-center justify-center p-6 bg-error-10 border border-error-20 rounded-3xl">
+      <div class="flex items-center justify-center p-6 bg-error-10 border border-error-20 rounded-2xl">
         <X class="text-error" :size="48" />
       </div>
       <div class="text-center">
@@ -84,7 +84,7 @@
         <div
           v-for="(stat, i) in kpiStats"
           :key="i"
-          class="group relative p-6 bg-bg-secondary-40 border border-border-secondary-60 rounded-[2rem] overflow-hidden hover:border-border-tertiary transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]"
+          class="group relative p-6 bg-bg-secondary-40 border border-border-secondary-60 rounded-2xl overflow-hidden hover:border-border-tertiary transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]"
         >
           <div class="flex justify-between items-start">
             <div
@@ -133,7 +133,7 @@
         <!-- 实时脉冲部分 -->
         <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
-            class="p-8 bg-bg-secondary-20 border border-border-secondary-40 rounded-3xl flex items-center justify-between relative overflow-hidden group cursor-help"
+            class="p-8 bg-bg-secondary-20 border border-border-secondary-40 rounded-2xl flex items-center justify-between relative overflow-hidden group cursor-help"
             @mouseenter="handleMouseEnter"
             @mouseleave="handleMouseLeave"
           >
@@ -153,7 +153,7 @@
             </div>
           </div>
           <div
-            class="p-8 bg-bg-secondary-20 border border-border-secondary-40 rounded-3xl flex items-center justify-between relative overflow-hidden group"
+            class="p-8 bg-bg-secondary-20 border border-border-secondary-40 rounded-2xl flex items-center justify-between relative overflow-hidden group"
           >
             <div class="relative z-10">
               <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
@@ -385,7 +385,7 @@
             v-if="panelStates.activeUsers.loading && activeUsers.length === 0"
             class="flex-1 space-y-4"
           >
-            <div v-for="i in 4" :key="i" class="h-24 bg-bg-tertiary-20 animate-pulse rounded-3xl" />
+            <div v-for="i in 4" :key="i" class="h-24 bg-bg-tertiary-20 animate-pulse rounded-2xl" />
           </div>
           <div
             v-else-if="panelStates.activeUsers.error && activeUsers.length === 0"
@@ -409,7 +409,7 @@
             <div
               v-for="(user, i) in activeUsers.slice(0, 5)"
               :key="i"
-              class="relative p-5 bg-bg-primary-30 border border-border-secondary-50 rounded-3xl overflow-hidden group"
+              class="relative p-5 bg-bg-primary-30 border border-border-secondary-50 rounded-2xl overflow-hidden group"
             >
               <div class="flex items-center gap-4 relative z-10">
                 <div
@@ -469,7 +469,7 @@
             v-if="panelStates.semesterComparison.loading && semesterComparison.length === 0"
             class="flex-1 space-y-4"
           >
-            <div v-for="i in 3" :key="i" class="h-32 bg-bg-tertiary-20 animate-pulse rounded-[2rem]" />
+            <div v-for="i in 3" :key="i" class="h-32 bg-bg-tertiary-20 animate-pulse rounded-2xl" />
           </div>
           <div
             v-else-if="panelStates.semesterComparison.error && semesterComparison.length === 0"
@@ -493,7 +493,7 @@
             <div
               v-for="(sem, i) in semesterComparison"
               :key="i"
-              :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-success-5 border-success-20 shadow-lg shadow-[var(--success-glow-5)]' : 'bg-bg-primary-20 border-border-secondary-60 opacity-60 hover:opacity-100'}`"
+              :class="`p-6 border rounded-2xl transition-all ${sem.isActive ? 'bg-success-5 border-success-20 shadow-lg shadow-[var(--success-glow-5)]' : 'bg-bg-primary-20 border-border-secondary-60 opacity-60 hover:opacity-100'}`"
             >
               <div class="flex items-center justify-between mb-4">
                 <span class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{
@@ -547,7 +547,7 @@
         @mouseleave="handleTooltipMouseLeave"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 panel-enter"
+          class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 panel-enter"
         >
           <div
             class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary-10 to-transparent"

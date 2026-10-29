@@ -57,11 +57,11 @@
 
         <div
           v-if="currentSemester"
-          class="relative bg-gradient-to-br from-primary to-primary-hover rounded-3xl p-10 shadow-2xl shadow-[var(--primary-glow)] overflow-hidden group"
+          class="relative bg-gradient-to-br from-primary to-primary-hover rounded-2xl p-10 shadow-2xl shadow-[var(--primary-glow)] overflow-hidden group"
         >
           <div class="relative z-10 space-y-6">
             <div
-              class="w-16 h-16 rounded-3xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
+              class="w-16 h-16 rounded-2xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -134,7 +134,7 @@
 
         <div
           v-else
-          class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
+          class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-2xl p-20 flex flex-col items-center justify-center text-center gap-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -158,7 +158,7 @@
           </button>
         </div>
 
-        <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-3xl flex items-start gap-4">
+        <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-2xl flex items-start gap-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -214,7 +214,7 @@
         <div class="space-y-4">
           <div
             v-if="loading && semesters.length === 0"
-            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-2xl"
           >
             <p class="text-xs font-bold text-text-disabled">{{ locale.loading }}</p>
           </div>
@@ -222,7 +222,7 @@
           <div
             v-for="sem in sortedSemesters"
             :key="sem.id"
-            class="group flex items-center justify-between p-6 rounded-[2rem] border transition-all"
+            class="group flex items-center justify-between p-6 rounded-2xl border transition-all"
             :class="
               sem.isActive
                 ? 'bg-primary-hover-5 border-primary-30'
@@ -365,7 +365,7 @@
 
           <div
             v-if="semesters.length === 0 && !loading"
-            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-2xl"
           >
             <p class="text-xs font-bold text-text-disabled">{{ locale.empty }}</p>
           </div>
@@ -379,7 +379,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
     >
       <div
-        class="w-full max-w-md bg-bg-secondary rounded-3xl border border-border-secondary shadow-2xl overflow-hidden"
+        class="w-full max-w-md bg-bg-secondary rounded-2xl border border-border-secondary shadow-2xl overflow-hidden"
         @click.stop
       >
         <div class="p-8 space-y-6">

@@ -16,7 +16,7 @@
         <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-sm bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
+          class="relative w-full max-w-sm bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
@@ -50,7 +50,7 @@
 
               <div v-else-if="qrImg" class="relative group">
                 <div
-                  class="p-4 bg-bg-secondary rounded-3xl shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
+                  class="p-4 bg-bg-secondary rounded-2xl shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
                 >
                   <img
                     :src="qrImg"
@@ -61,7 +61,7 @@
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 bg-bg-secondary-90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-bg-secondary-80"
+                  class="absolute inset-0 bg-bg-secondary-90 backdrop-blur-sm rounded-2xl flex items-center justify-center cursor-pointer transition-all hover:bg-bg-secondary-80"
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-text-primary">

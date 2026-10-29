@@ -170,7 +170,7 @@ const { pages } = useLocale()
 const locale = computed(() => pages.value?.notificationSettings || {})
 
 // 样式类常量
-const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 md:p-8 shadow-2xl'
 const cardClass =
   'bg-bg-primary-40 border border-border-secondary-50 rounded-2xl p-5 transition-all hover:border-border-tertiary-50'
 const itemClass =

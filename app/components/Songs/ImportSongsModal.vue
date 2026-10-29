@@ -14,7 +14,7 @@
         @click.self="close"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
         >
           <!-- 结果展示视图 -->
           <div
@@ -44,7 +44,7 @@
             <div class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
               <div class="grid grid-cols-2 gap-4">
                 <div
-                  class="p-6 bg-success-5 border border-success-20 rounded-3xl flex flex-col items-center gap-2"
+                  class="p-6 bg-success-5 border border-success-20 rounded-2xl flex flex-col items-center gap-2"
                 >
                   <span class="text-xs font-bold text-success uppercase tracking-wider"
                     >{{ locale.successCount }}</span
@@ -54,7 +54,7 @@
                   }}</span>
                 </div>
                 <div
-                  class="p-6 bg-error-5 border border-error-20 rounded-3xl flex flex-col items-center gap-2"
+                  class="p-6 bg-error-5 border border-error-20 rounded-2xl flex flex-col items-center gap-2"
                 >
                   <span class="text-xs font-bold text-error uppercase tracking-wider"
                     >{{ locale.failedCount }}</span

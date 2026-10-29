@@ -14,7 +14,7 @@
         @click.self="close"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
         >
           <!-- 头部 -->
           <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">

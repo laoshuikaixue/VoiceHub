@@ -16,7 +16,7 @@
         <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-sm overflow-hidden rounded-3xl border border-border-secondary bg-bg-secondary shadow-2xl"
+          class="relative w-full max-w-sm overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
           @click.stop
         >
           <div class="flex items-center justify-between border-b border-border-secondary-50 p-8 pb-4">
@@ -80,7 +80,7 @@
 
               <div v-else-if="qrImg" class="group relative">
                 <div
-                  class="rounded-3xl bg-bg-secondary p-4 shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
+                  class="rounded-2xl bg-bg-secondary p-4 shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
                 >
                   <img
                     :src="qrImg"
@@ -91,7 +91,7 @@
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-3xl bg-bg-secondary-90 backdrop-blur-sm transition-all hover:bg-bg-secondary-80"
+                  class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-2xl bg-bg-secondary-90 backdrop-blur-sm transition-all hover:bg-bg-secondary-80"
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-text-primary">

@@ -24,7 +24,7 @@
       <!-- 左侧栏：SMTP 设置与测试 -->
       <div class="xl:col-span-4 space-y-8">
         <!-- SMTP 核心设置 -->
-        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+        <section class="bg-bg-secondary-30 border border-border-secondary rounded-2xl p-6 space-y-6">
           <div class="flex items-center justify-between">
             <h3
               class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
@@ -143,7 +143,7 @@
         </section>
 
         <!-- SMTP 测试模块 -->
-        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+        <section class="bg-bg-secondary-30 border border-border-secondary rounded-2xl p-6 space-y-6">
           <h3
             class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
           >
@@ -203,7 +203,7 @@
         <EmailTemplateManager />
       </div>
     </div>
-    <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+    <section class="bg-bg-secondary-30 border border-border-secondary rounded-2xl p-6 space-y-6">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-2 min-w-0">
           <Bot :size="16" class="text-primary shrink-0" />

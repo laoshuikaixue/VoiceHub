@@ -71,7 +71,7 @@
       class="flex flex-col items-center justify-center py-20 px-4 text-center"
     >
       <div
-        class="w-20 h-20 rounded-3xl bg-bg-secondary border border-border-secondary flex items-center justify-center mb-6 text-text-secondary shadow-xl"
+        class="w-20 h-20 rounded-2xl bg-bg-secondary border border-border-secondary flex items-center justify-center mb-6 text-text-secondary shadow-xl"
       >
         <Key :size="32" :stroke-width="1.5" />
       </div>
@@ -207,7 +207,7 @@
         <!-- 创建/编辑模态框 -->
         <div
           v-if="showCreateModal || showEditModal"
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden panel-enter"
+          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden panel-enter"
         >
           <div class="p-6 border-b border-border-secondary flex items-center justify-between">
             <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">
@@ -323,7 +323,7 @@
         <!-- 成功模态框 -->
         <div
           v-if="showSuccessModal"
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden panel-enter"
+          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden panel-enter"
         >
           <div class="p-6 border-b border-border-secondary flex items-center justify-between">
             <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">
@@ -397,7 +397,7 @@
         <!-- 详情模态框 -->
         <div
           v-if="showViewModal && selectedApiKey"
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden panel-enter"
+          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden panel-enter"
         >
           <div class="p-6 border-b border-border-secondary flex items-center justify-between">
             <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">{{ locale.details }}</h3>

@@ -93,7 +93,7 @@
     >
       <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
+        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.backupTitle }}</h3>
@@ -164,7 +164,7 @@
     >
       <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
+        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.restoreTitle }}</h3>
@@ -299,7 +299,7 @@
     >
       <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
+        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.resetSequenceTitle }}</h3>
@@ -365,7 +365,7 @@
     >
       <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
+        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
       >
         <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-xl font-bold text-error tracking-tight">{{ locale.dangerResetTitle }}</h3>

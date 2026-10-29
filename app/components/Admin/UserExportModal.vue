@@ -16,7 +16,7 @@
         <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- Header -->

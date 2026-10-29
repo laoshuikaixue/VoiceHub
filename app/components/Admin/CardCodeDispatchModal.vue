@@ -3,7 +3,7 @@
     <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="close" />
 
-      <div class="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl">
+      <div class="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl">
         <!-- 头部 -->
         <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-panel-bg-dark bg-panel-bg-deepest-95 px-5 py-4 backdrop-blur-sm">
           <div class="min-w-0">

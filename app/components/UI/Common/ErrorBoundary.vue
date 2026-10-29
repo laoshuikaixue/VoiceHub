@@ -5,7 +5,7 @@
     <!-- 错误状态 -->
     <div
       v-else
-      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-bg-secondary-30 border border-dashed border-border-secondary rounded-3xl panel-enter"
+      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-bg-secondary-30 border border-dashed border-border-secondary rounded-2xl panel-enter"
     >
       <div class="relative mb-6">
         <div class="absolute inset-0 blur-2xl bg-error-10 rounded-full" />

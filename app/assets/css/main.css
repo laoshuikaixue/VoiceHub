@@ -457,3 +457,40 @@ select,
 .fixed {
   margin: 0 !important;
 }
+
+/* 移动端空间密度：压缩大内边距、超大圆角与区块间距 */
+@media (max-width: 640px) {
+  .p-6 {
+    padding: 1rem;
+  }
+
+  .p-8 {
+    padding: 1.25rem;
+  }
+
+  .gap-6 {
+    gap: 1rem;
+  }
+
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1rem;
+  }
+
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 1.25rem;
+  }
+
+  .rounded-2xl {
+    border-radius: 12px;
+  }
+
+  .py-16 {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .py-20 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
