@@ -1471,6 +1471,7 @@ VoiceHub/
 │   │   ├── geo.ts          # 地理位置工具
 │   │   ├── grade-class-core.ts # 年级班级选项纯函数
 │   │   ├── grade-class-options.ts # 年级班级选项提取工具
+│   │   ├── identity-secrets.ts # 身份响应脱敏（TOTP 共享密钥不回传）
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略

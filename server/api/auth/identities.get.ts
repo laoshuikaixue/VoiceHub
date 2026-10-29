@@ -2,6 +2,7 @@ import { db, eq, userIdentities } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { getIdentityAvatarUrl } from '~~/server/utils/user-avatar'
+import { maskIdentitiesSecrets } from '~~/server/utils/identity-secrets'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -29,40 +30,43 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  return identities.map(identity => {
-    if (identity.provider === 'webauthn') {
-      try {
-        const data = JSON.parse(identity.providerUsername)
-        return {
-          ...identity,
-          providerUsername: data.label || 'WebAuthn 设备',
-          avatar: null,
-          isAvatarSource: false
-          // 可以在这里把 label 改为 userFriendlyName
+  // 头像判定与比对完成后再统一清除 TOTP 共享密钥
+  return maskIdentitiesSecrets(
+    identities.map(identity => {
+      if (identity.provider === 'webauthn') {
+        try {
+          const data = JSON.parse(identity.providerUsername)
+          return {
+            ...identity,
+            providerUsername: data.label || 'WebAuthn 设备',
+            avatar: null,
+            isAvatarSource: false
+            // 可以在这里把 label 改为 userFriendlyName
+          }
+        } catch {
+          return {
+            ...identity,
+            providerUsername: '未知设备',
+            avatar: null,
+            isAvatarSource: false
+          }
         }
-      } catch {
+      }
+      if (identity.provider === 'totp') {
         return {
           ...identity,
-          providerUsername: '未知设备',
           avatar: null,
           isAvatarSource: false
         }
       }
-    }
-    if (identity.provider === 'totp') {
+      const isAvatarSource =
+        userRecord?.avatarProvider === identity.provider &&
+        userRecord?.avatarProviderUserId === identity.providerUserId
       return {
         ...identity,
-        avatar: null,
-        isAvatarSource: false
+        avatar: getIdentityAvatarUrl(identity),
+        isAvatarSource
       }
-    }
-    const isAvatarSource =
-      userRecord?.avatarProvider === identity.provider &&
-      userRecord?.avatarProviderUserId === identity.providerUserId
-    return {
-      ...identity,
-      avatar: getIdentityAvatarUrl(identity),
-      isAvatarSource
-    }
-  })
+    })
+  )
 })

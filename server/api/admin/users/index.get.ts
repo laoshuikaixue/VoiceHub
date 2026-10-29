@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { asc, desc, count, sql } from 'drizzle-orm'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
+import { maskIdentitiesSecrets } from '~~/server/utils/identity-secrets'
 import { buildUserFilterConditions } from '~~/server/utils/user-filter'
 
 export default defineEventHandler(async (event) => {
@@ -98,6 +99,8 @@ export default defineEventHandler(async (event) => {
       const avatarSource = resolveAvatarSource(user, user.identities || [])
       return {
         ...user,
+        // 头像解析完成后清除 TOTP 共享密钥
+        identities: maskIdentitiesSecrets(user.identities),
         avatar: avatarSource?.url ?? null
       }
     })
