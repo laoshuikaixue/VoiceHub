@@ -181,6 +181,14 @@
         </button>
       </div>
 
+      <div
+        v-if="mobileTab === 'scheduled'"
+        class="mb-3 flex items-center justify-between rounded-lg border border-border-secondary bg-bg-secondary-30 px-3 py-2 text-xs lg:hidden"
+      >
+        <span class="text-text-tertiary">{{ locale.expectedTotalDuration }}</span>
+        <span class="font-bold text-primary">{{ formatDuration(scheduledTotalDuration) }}</span>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
         <!-- 左侧：待排歌曲（待排库） -->
         <div
@@ -346,12 +354,7 @@
               <div
                 v-for="song in filteredUnscheduledSongs"
                 :key="song.id"
-                :class="[
-                  'draggable-song relative group rounded-xl p-2.5 transition-all select-none',
-                  song.cardCodeId
-                    ? 'bg-warning-5 border border-warning-30'
-                    : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
-                ]"
+                class="draggable-song group relative select-none"
                 :draggable="true"
                 @dragend="dragEnd"
                 @dragstart="dragStart($event, song)"
@@ -360,301 +363,187 @@
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
                 <!-- 歌曲卡片内容 -->
-                <div class="flex flex-wrap items-center gap-2.5">
-                  <!-- 封面图片 -->
-                  <div
-                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer group-hover:opacity-90 transition-opacity"
-                    @click.stop="playSong(song)"
-                  >
-                    <img
-                      v-if="song.cover"
-                      :src="getCoverThumbUrl(song.cover)"
-                      class="w-full h-full object-cover"
-                      referrerpolicy="no-referrer"
-                      loading="lazy"
-                      alt=""
-                    />
-                    <div
-                      v-else
-                      class="w-full h-full flex items-center justify-center text-text-disabled"
+                <SongCard
+                  :song="song"
+                  :compact="true"
+                  :show-requester="true"
+                  :warning="!!song.cardCodeId"
+                  @play="playSong(song)"
+                >
+                  <template #badges>
+                    <span
+                      v-if="isPlaylistFilterActive && playlistNamesMap[song.musicId]"
+                      class="flex flex-shrink-0 items-center gap-1"
                     >
-                      <Music2 class="w-5 h-5 opacity-50" />
-                    </div>
-                    <div
-                      class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      <span
+                        v-for="(playlistName, idx) in playlistNamesMap[song.musicId]"
+                        :key="idx"
+                        class="max-w-[100px] truncate rounded border border-primary-20 bg-primary-10 px-1.5 py-[2px] text-xs font-normal leading-none text-primary"
+                        :title="playlistName"
+                      >
+                        {{ playlistName }}
+                      </span>
+                    </span>
+                    <button
+                      v-if="song.hasSubmissionNote && song.submissionNote"
+                      class="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-primary-30 bg-primary-10 text-primary transition-all hover:bg-primary-20"
+                      :title="locale.viewRemark"
+                      type="button"
+                      @click.stop="openSubmissionRemark(song)"
                     >
-                      <Play class="w-3 h-3 text-white fill-white" />
-                    </div>
-                  </div>
+                      <MessageSquare :size="12" />
+                    </button>
+                    <span
+                      v-if="song.cardCodeId"
+                      class="inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-xs font-bold text-warning"
+                      :title="locale.cardPending"
+                    >
+                      {{ locale.cardPending }}
+                    </span>
+                  </template>
 
-                  <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <!-- 第一行：歌名 + 时长 -->
-                    <div class="flex items-center gap-1.5 min-w-0">
-                      <h4
-                        class="font-bold text-text-primary text-xs truncate flex items-center gap-2 min-w-0 flex-1"
-                      >
-                        <span
-                          v-if="isBilibiliSong(song)"
-                          class="text-text-primary flex items-center gap-1 text-left truncate"
-                        >
-                          <span class="truncate">{{ song.title }}</span>
-                        </span>
-                        <span v-else class="truncate">{{ song.title }}</span>
-
-                        <!-- 歌单来源标签 -->
-                        <span
-                          v-if="isPlaylistFilterActive && playlistNamesMap[song.musicId]"
-                          class="flex items-center gap-1 flex-shrink-0"
-                        >
-                          <span
-                            v-for="(playlistName, idx) in playlistNamesMap[song.musicId]"
-                            :key="idx"
-                            class="px-1.5 py-[2px] bg-primary-10 text-primary rounded text-xs border border-primary-20 truncate max-w-[100px] font-normal leading-none"
-                            :title="playlistName"
-                          >
-                            {{ playlistName }}
-                          </span>
-                        </span>
-                      </h4>
-                      <button
-                        v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all flex-shrink-0"
-                        :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(song)"
-                      >
-                        <MessageSquare :size="12" />
-                      </button>
-                      <span
-                        v-if="song.cardCodeId"
-                        class="inline-flex items-center rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-xs font-bold text-warning whitespace-nowrap flex-shrink-0"
-                        :title="locale.cardPending"
-                      >
-                        {{ locale.cardPending }}
-                      </span>
-                      <span
-                        v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="text-xs text-primary-80 truncate max-w-[150px] cursor-pointer hover:text-primary transition-colors"
-                        :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(song)"
-                      >
-                        {{
-                          song.submissionNote.length > 25
-                            ? song.submissionNote.substring(0, 25) + '...'
-                            : song.submissionNote
-                        }}
-                      </span>
-                    </div>
-                    <!-- 第二行：歌手 · 期望时段 · 期望日期 -->
-                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1">
-                      <span class="truncate max-w-[120px]">{{ song.artist }}</span>
+                  <template #meta>
+                    <div class="admin-song-meta">
                       <span
                         v-if="song.preferredPlayTimeId"
-                        class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-xs border border-info-20 whitespace-nowrap shrink-0"
+                        class="rounded border border-info-20 bg-info-10 px-1.5 py-0.5 text-xs text-info"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                       <span
                         v-if="song.preferredPlayDate"
-                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-xs border border-primary-20 whitespace-nowrap shrink-0"
+                        class="rounded border border-primary-20 bg-primary-10 px-1.5 py-0.5 text-xs text-primary"
                       >
                         {{ callLocale('preferredPlayDate', `期望日期: ${song.preferredPlayDate}`, song.preferredPlayDate) }}
                       </span>
                       <span
                         v-if="activeTab === 'pool' && song.addedByName"
-                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-xs border border-primary-20 whitespace-nowrap shrink-0"
+                        class="rounded border border-primary-20 bg-primary-10 px-1.5 py-0.5 text-xs text-primary"
                       >
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
-                    </div>
-                  </div>
-
-                  <!-- 操作区：移动端整行换到文字下方右对齐，桌面端保持在右侧 -->
-                  <div
-                    class="flex items-center justify-end gap-1.5 shrink-0 basis-full lg:basis-auto lg:justify-start"
-                  >
-                    <!-- 普通模式：投票数 -->
-                    <div
-                      v-if="activeTab !== 'replay'"
-                      class="flex items-center gap-0.5 px-1.5 py-1 text-xs font-bold text-text-tertiary bg-bg-primary-50 rounded-md border border-border-secondary-50"
-                    >
-                      <Heart class="w-3 h-3 text-error-50" />
-                      {{ song.voteCount || 0 }}
-                    </div>
-
-                    <!-- 重播模式：查看按钮 -->
-                    <button
-                      v-if="activeTab === 'replay'"
-                      class="px-3 py-1.5 rounded-lg bg-primary-10 hover:bg-primary-20 text-primary border border-primary-20 text-xs font-bold transition-colors"
-                      @click.stop="openReplayModal(song)"
-                    >
-                      {{ locale.view }}
-                    </button>
-
-                    <!-- 重播模式：拒绝按钮（仅移动端） -->
-                    <button
-                      v-if="activeTab === 'replay'"
-                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors flex items-center justify-center"
-                      :title="locale.rejectRequest"
-                      @click.stop="rejectReplayRequest(song.id)"
-                    >
-                      <CloseIcon class="w-3.5 h-3.5" />
-                    </button>
-
-                    <!-- 待排库：加入备选池按钮 -->
-                    <button
-                      v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                      class="hidden lg:flex p-1.5 rounded-lg bg-info-10 border border-info-20 text-info hover:bg-info-20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-info-10"
-                      :disabled="poolSongIds.has(song.id)"
-                      :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
-                      @click.stop="addSingleToPool(song.id)"
-                    >
-                      <FolderPlus class="w-3.5 h-3.5" />
-                    </button>
-
-                    <!-- 备选池：移除按钮（桌面） -->
-                    <button
-                      v-if="activeTab === 'pool'"
-                      class="hidden lg:flex p-1.5 rounded-lg bg-error-10 border border-error-20 text-error hover:bg-error-20 transition-colors"
-                      :title="locale.removeFromPool"
-                      @click.stop="removeFromPool(song.songId)"
-                    >
-                      <Trash2 class="w-3.5 h-3.5" />
-                    </button>
-
-                    <!-- 移动端加入备选池按钮 -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-info-10 text-info hover:bg-info-20 active:scale-95 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-                      v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                      :disabled="poolSongIds.has(song.id)"
-                      :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
-                      @click.stop="addSingleToPool(song.id)"
-                    >
-                      <FolderPlus class="w-5 h-5" />
-                    </button>
-
-                    <!-- 备选池：加入排期按钮 -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
-                      v-if="activeTab === 'pool'"
-                      :title="locale.addToSchedule"
-                      @click.stop="addSongToSchedule(song)"
-                    >
-                      <Plus class="w-5 h-5" />
-                    </button>
-
-                    <!-- 备选池：移除按钮（移动端） -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0"
-                      v-if="activeTab === 'pool'"
-                      :title="locale.removeFromPool"
-                      @click.stop="removeFromPool(song.songId)"
-                    >
-                      <Trash2 class="w-5 h-5" />
-                    </button>
-
-                    <!-- 非备选池：加入排期按钮（移动端） -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
-                      v-if="activeTab !== 'pool'"
-                      :title="locale.addToSchedule"
-                      @click.stop="addSongToSchedule(song)"
-                    >
-                      <Plus class="w-5 h-5" />
-                    </button>
-
-                    <!-- 刷新时长按钮 -->
-                    <button
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary transition-colors"
-                      :title="locale.refreshDuration"
-                      :disabled="refreshingDuration[song.id]"
-                      @click.stop="refreshDuration(song)"
-                    >
-                      <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[song.id] }" />
-                    </button>
-
-                    <!-- 菜单按钮 -->
-                    <button
-                      type="button"
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-text-tertiary transition-colors"
-                      @click="openContextMenu($event, 'left', song)"
-                    >
-                      <MoreVertical class="w-4 h-4" />
-                    </button>
-                  </div>
-                  <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
-                  <div
-                    v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
-                    class="text-xs text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
-                  >
-                    <template v-if="song.requester">
-                      <span class="truncate max-w-[120px]">{{ stripDisambiguationSuffix(song.requester) }}</span>
-                      <span
-                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
-                        class="text-text-disabled shrink-0"
-                      >|</span>
-                      <span
-                        v-if="song.requesterGrade || song.grade || song.requesterClass || song.class"
-                        class="shrink-0"
-                      >{{ song.requesterGrade || song.grade }} {{ song.requesterClass || song.class }}</span>
-                    </template>
-                    <template v-if="auth?.isAdmin">
-                      <span
-                        v-if="song.requester && song.musicPlatform"
-                        class="text-text-disabled shrink-0"
-                      >·</span>
-                      <span
-                        v-if="song.musicPlatform"
-                        class="platform-tag px-1 whitespace-nowrap"
-                        :class="'platform-' + platformTagClass(song.musicPlatform)"
-                        :title="callLocale('platformSource', '投稿平台')"
-                      >
-                        {{ platformLabel(song.musicPlatform) }}
-                      </span>
-                      <template
-                        v-if="song.submissionCount != null && song.playCount != null"
-                      >
+                      <template v-if="auth?.isAdmin && song.submissionCount != null && song.playCount != null">
+                        <span>投 <strong class="font-mono text-text-secondary">{{ song.submissionCount }}</strong></span>
                         <span class="text-text-disabled">·</span>
-                        <span
-                          >投 <strong class="text-text-secondary font-mono">{{ song.submissionCount }}</strong></span
-                        >
-                        <span class="text-text-disabled">·</span>
-                        <span
-                          >播 <strong class="text-text-secondary font-mono">{{ song.playCount }}</strong></span
-                        >
+                        <span>播 <strong class="font-mono text-text-secondary">{{ song.playCount }}</strong></span>
                       </template>
-                    </template>
-                    <!-- 时长显示 / 行内编辑（放在行末） -->
-                    <span
-                      v-if="(song.requester || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))) && (song.durationSeconds || editingDuration[song.id])"
-                      class="text-text-disabled shrink-0"
-                    >·</span>
-                    <span
-                      v-if="song.durationSeconds && !editingDuration[song.id]"
-                      :class="[
-                        'shrink-0 px-1 rounded transition-colors cursor-pointer font-mono tabular-nums',
-                        durationRefreshStatus[song.id] === 'success'
-                          ? 'text-success bg-success-10'
-                          : durationRefreshStatus[song.id] === 'error'
-                            ? 'text-error bg-error-10'
-                            : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
-                      ]"
-                      :title="locale.messages?.editDuration || '点击编辑时长'"
-                      @click.stop="startEditDuration(song)"
-                    >{{ formatDuration(song.durationSeconds) }}</span>
-                    <input
-                      v-else-if="editingDuration[song.id]"
-                      ref="editingDurationInput"
-                      v-model="editingDurationValue"
-                      type="text"
-                      inputmode="text"
-                      pattern="[0-9:]*"
-                      class="w-16 text-xs font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                      :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                      @focusout="saveDurationEdit(song)"
-                      @keydown="handleDurationKeydown($event, song)"
-                    >
-                  </div>
-                </div>
+                      <span v-if="song.requestedAt" class="text-text-disabled">· {{ formatDate(song.requestedAt) }}</span>
+                      <span
+                        v-if="song.hasSubmissionNote && song.submissionNote"
+                        class="max-w-[220px] cursor-pointer truncate text-primary-80 transition-colors hover:text-primary"
+                        :title="locale.viewRemark"
+                        @click.stop="openSubmissionRemark(song)"
+                      >
+                        {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
+                      </span>
+                    </div>
+                  </template>
+
+                  <template #actions>
+                    <div class="admin-song-actions">
+                      <div
+                        v-if="activeTab !== 'replay'"
+                        class="flex items-center gap-0.5 rounded-md border border-border-secondary-50 bg-bg-primary-50 px-1.5 py-1 text-xs font-bold text-text-tertiary"
+                      >
+                        <Heart class="h-3 w-3 text-error-50" />
+                        {{ song.voteCount || 0 }}
+                      </div>
+
+                      <button
+                        v-if="activeTab === 'replay'"
+                        class="rounded-lg border border-primary-20 bg-primary-10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary-20"
+                        type="button"
+                        @click.stop="openReplayModal(song)"
+                      >
+                        {{ locale.view }}
+                      </button>
+                      <button
+                        v-if="activeTab === 'replay'"
+                        class="admin-song-icon-btn text-error lg:hidden"
+                        :title="locale.rejectRequest"
+                        type="button"
+                        @click.stop="rejectReplayRequest(song.id)"
+                      >
+                        <CloseIcon class="h-3.5 w-3.5" />
+                      </button>
+
+                      <button
+                        v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+                        class="admin-song-icon-btn hidden text-info lg:inline-flex"
+                        :disabled="poolSongIds.has(song.id)"
+                        :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
+                        type="button"
+                        @click.stop="addSingleToPool(song.id)"
+                      >
+                        <FolderPlus class="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        v-if="activeTab === 'pool'"
+                        class="admin-song-icon-btn hidden text-error lg:inline-flex"
+                        :title="locale.removeFromPool"
+                        type="button"
+                        @click.stop="removeFromPool(song.songId)"
+                      >
+                        <Trash2 class="h-3.5 w-3.5" />
+                      </button>
+
+                      <button
+                        class="admin-song-icon-btn text-info lg:hidden"
+                        v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+                        :disabled="poolSongIds.has(song.id)"
+                        :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
+                        type="button"
+                        @click.stop="addSingleToPool(song.id)"
+                      >
+                        <FolderPlus class="h-4 w-4" />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-primary lg:hidden"
+                        v-if="activeTab === 'pool'"
+                        :title="locale.addToSchedule"
+                        type="button"
+                        @click.stop="addSongToSchedule(song)"
+                      >
+                        <Plus class="h-4 w-4" />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-error lg:hidden"
+                        v-if="activeTab === 'pool'"
+                        :title="locale.removeFromPool"
+                        type="button"
+                        @click.stop="removeFromPool(song.songId)"
+                      >
+                        <Trash2 class="h-4 w-4" />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-primary lg:hidden"
+                        v-if="activeTab !== 'pool'"
+                        :title="locale.addToSchedule"
+                        type="button"
+                        @click.stop="addSongToSchedule(song)"
+                      >
+                        <Plus class="h-4 w-4" />
+                      </button>
+
+                      <button
+                        class="admin-song-icon-btn text-text-disabled hover:text-primary"
+                        :title="locale.refreshDuration"
+                        :disabled="refreshingDuration[song.id]"
+                        type="button"
+                        @click.stop="refreshDuration(song)"
+                      >
+                        <RefreshCcw class="h-3.5 w-3.5" :class="{ 'animate-spin': refreshingDuration[song.id] }" />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-text-disabled hover:text-text-tertiary"
+                        type="button"
+                        @click="openContextMenu($event, 'left', song)"
+                      >
+                        <MoreVertical class="h-4 w-4" />
+                      </button>
+                    </div>
+                  </template>
+                </SongCard>
               </div>
 
               <!-- 空状态 -->
@@ -860,12 +749,8 @@
                 v-for="(schedule, index) in localScheduledSongs"
                 :key="schedule.id"
                 :class="[
-                  'scheduled-song relative group bg-bg-secondary border border-border-secondary-50 rounded-xl p-3 hover:border-border-tertiary transition-all select-none',
-                  dragOverIndex === index ? 'border-t-2 border-t-primary' : '',
-                  schedule.isDraft ? 'border-warning-30 bg-warning-5' : '',
-                  schedule.song && (schedule.song.cardCodeId || schedule.song.usedCardCode)
-                    ? 'border-warning-30 bg-warning-5'
-                    : ''
+                  'scheduled-song group relative select-none transition-all',
+                  dragOverIndex === index ? 'border-t-2 border-t-primary' : ''
                 ]"
                 :data-schedule-id="schedule.id"
                 :draggable="true"
@@ -879,122 +764,57 @@
                 @dragenter.prevent="handleDragEnter($event, index)"
                 @drop.stop.prevent="dropReorder($event, index)"
               >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-bg-primary-50 border border-border-secondary text-text-tertiary font-bold text-xs flex-shrink-0"
-                  >
-                    <span class="text-xs text-text-disabled uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
-                    <span class="text-sm text-text-secondary leading-none">{{
-                      index + 1 < 10 ? '0' + (index + 1) : index + 1
-                    }}</span>
-                  </div>
-
-                  <!-- 封面图片 -->
-                  <div
-                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer hover:opacity-80 transition-opacity"
-                    @click.stop="playSong(schedule)"
-                  >
-                    <img
-                      v-if="schedule.song.cover"
-                      :src="getCoverThumbUrl(schedule.song.cover)"
-                      class="w-full h-full object-cover"
-                      referrerpolicy="no-referrer"
-                      loading="lazy"
-                      alt=""
-                    />
+                <SongCard
+                  :song="schedule.song"
+                  :warning="schedule.isDraft || !!schedule.song.cardCodeId || !!schedule.song.usedCardCode"
+                  @play="playSong(schedule)"
+                >
+                  <template #leading>
                     <div
-                      v-else
-                      class="w-full h-full flex items-center justify-center text-text-disabled"
+                      class="flex h-11 w-11 flex-col items-center justify-center rounded-lg border border-border-secondary bg-bg-primary-50 text-text-tertiary"
                     >
-                      <Music2 class="w-5 h-5 opacity-50" />
+                      <span class="text-xs leading-none text-text-disabled">{{ locale.positionShort }}</span>
+                      <span class="text-sm font-bold leading-none text-text-secondary">{{
+                        index + 1 < 10 ? '0' + (index + 1) : index + 1
+                      }}</span>
                     </div>
-                  </div>
+                  </template>
 
-                  <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <h4 class="font-bold text-text-primary text-sm truncate min-w-0">
-                        {{ schedule.song.title }}
-                      </h4>
-                      <button
-                        v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all flex-shrink-0"
-                        :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
-                      >
-                        <MessageSquare :size="12" />
-                      </button>
-                      <span
-                        v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
-                        class="text-xs text-primary-80 truncate max-w-[150px] cursor-pointer hover:text-primary transition-colors"
-                        :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
-                      >
-                        {{
-                          schedule.song.submissionNote.length > 25
-                            ? schedule.song.submissionNote.substring(0, 25) + '...'
-                            : schedule.song.submissionNote
-                        }}
-                      </span>
-                      <!-- 重播标识 -->
-                      <span
-                        v-if="schedule.replayRequestId != null"
-                        class="px-1.5 py-0.5 rounded text-xs font-bold bg-primary-10 text-primary border border-primary-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
-                        :title="locale.replaySong"
-                      >
-                        <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
-                      </span>
-                      <span
-                        v-if="schedule.isDraft"
-                        class="px-1.5 py-0.5 rounded text-xs font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
-                        >{{ locale.draft }}</span
-                      >
-                      <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
-                      <span
-                        v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
-                        class="px-1.5 py-0.5 rounded text-xs font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
-                        :title="locale.cardPending"
-                      >
-                        {{ locale.cardCode }}
-                      </span>
-                    </div>
-                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
-                      <span>{{ schedule.song.artist }}</span>
-                      <span
-                        v-if="schedule.song.durationSeconds && !editingDuration[schedule.song.id]"
-                        :class="[
-                          'shrink-0 px-1 rounded transition-colors cursor-pointer',
-                          durationRefreshStatus[schedule.song.id] === 'success'
-                            ? 'text-success bg-success-10'
-                            : durationRefreshStatus[schedule.song.id] === 'error'
-                              ? 'text-error bg-error-10'
-                              : 'text-text-disabled hover:text-text-secondary hover:bg-bg-quaternary'
-                        ]"
-                        :title="locale.messages?.editDuration || '点击编辑时长'"
-                        @click.stop="startEditDuration(schedule.song)"
-                      >{{ formatDuration(schedule.song.durationSeconds) }}</span>
-                      <input
-                        v-else-if="editingDuration[schedule.song.id]"
-                        ref="editingDurationInput"
-                        v-model="editingDurationValue"
-                        type="text"
-                        inputmode="text"
-                        pattern="[0-9:]*"
-                        class="w-20 text-xs font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
-                        :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
-                        @focusout="saveDurationEdit(schedule.song)"
-                        @keydown="handleDurationKeydown($event, schedule.song)"
-                      >
-                    </div>
-                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1">
-                      <span
-                        v-if="schedule.replayRequestId != null"
-                        :title="
-                          (locale.replayApplicants || '重播申请人：') +
-                          (schedule.song.replayRequesters || [])
-                            .map((r) => r.displayName || r.name)
-                            .join('、')
-                        "
-                      >
+                  <template #badges>
+                    <button
+                      v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
+                      class="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-primary-30 bg-primary-10 text-primary transition-all hover:bg-primary-20"
+                      :title="locale.viewRemark"
+                      type="button"
+                      @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
+                    >
+                      <MessageSquare :size="12" />
+                    </button>
+                    <span
+                      v-if="schedule.replayRequestId != null"
+                      class="flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded border border-primary-20 bg-primary-10 px-1.5 py-0.5 text-xs font-bold text-primary"
+                      :title="locale.replaySong"
+                    >
+                      <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
+                    </span>
+                    <span
+                      v-if="schedule.isDraft"
+                      class="flex-shrink-0 whitespace-nowrap rounded border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-xs font-bold text-warning"
+                    >
+                      {{ locale.draft }}
+                    </span>
+                    <span
+                      v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
+                      class="flex-shrink-0 whitespace-nowrap rounded border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-xs font-bold text-warning"
+                      :title="locale.cardPending"
+                    >
+                      {{ locale.cardCode }}
+                    </span>
+                  </template>
+
+                  <template #meta>
+                    <div class="admin-song-meta">
+                      <span v-if="schedule.replayRequestId != null" class="truncate">
                         {{ locale.applicant }}{{
                           (schedule.song.replayRequesters || [])
                             .slice(0, 2)
@@ -1006,65 +826,69 @@
                             : ''
                         }}
                       </span>
-                      <span v-else>{{ stripDisambiguationSuffix(schedule.song.requester) }}</span>
-                      <span
-                        v-if="schedule.song.requesterGrade || schedule.song.grade"
-                        class="text-text-disabled"
-                        >|</span
-                      >
-                      <span v-if="schedule.song.requesterGrade || schedule.song.grade">
-                        {{ schedule.song.requesterGrade || schedule.song.grade }}
-                        {{ schedule.song.requesterClass || schedule.song.class }}
+                      <span v-if="schedule.song.requestedAt" class="text-text-disabled">
+                        <span
+                          v-if="schedule.replayRequestId != null || schedule.song.preferredPlayTimeId"
+                        >· </span>{{ formatDate(schedule.song.requestedAt) }}
                       </span>
                       <span
                         v-if="schedule.song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-xs border border-info-20 whitespace-nowrap"
+                        class="rounded border border-info-20 bg-info-10 px-1.5 py-0.5 text-xs text-info"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(schedule.song.preferredPlayTimeId)}`, getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
+                      <span
+                        v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
+                        class="max-w-[220px] cursor-pointer truncate text-primary-80 transition-colors hover:text-primary"
+                        :title="locale.viewRemark"
+                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
+                      >
+                        {{ schedule.song.submissionNote.length > 25 ? schedule.song.submissionNote.substring(0, 25) + '...' : schedule.song.submissionNote }}
+                      </span>
                     </div>
-                  </div>
+                  </template>
 
-                  <div class="flex items-center gap-2">
-                    <button
-                      v-if="schedule.isDraft"
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-success-10 hover:bg-success-20 text-success border border-success-20 transition-colors"
-                      :title="locale.publishThisDraft"
-                      @click="publishSingleDraft(schedule)"
-                    >
-                      <Send class="w-3.5 h-3.5" />
-                    </button>
-
-                    <!-- 移动端删除按钮 -->
-                    <button
-                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0 flex items-center justify-center"
-                      @click.stop="removeSongFromSchedule(schedule)"
-                    >
-                      <Minus class="w-5 h-5" />
-                    </button>
-
-                    <!-- 刷新时长按钮 -->
-                    <button
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary hover:border-primary-30 transition-all duration-200"
-                      :class="{
-                        'bg-primary-10 border-primary-30 text-primary shadow-[0_0_0_3px_var(--primary-glow)]': refreshingDuration[schedule.song.id]
-                      }"
-                      :title="locale.refreshDuration"
-                      :disabled="refreshingDuration[schedule.song.id]"
-                      @click.stop="refreshDuration(schedule.song)"
-                    >
-                      <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }" />
-                    </button>
-
-                    <button
-                      type="button"
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-text-tertiary transition-colors"
-                      @click="openContextMenu($event, 'right', schedule)"
-                    >
-                      <MoreVertical class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                  <template #actions>
+                    <div class="admin-song-actions">
+                      <button
+                        v-if="schedule.isDraft"
+                        class="admin-song-icon-btn text-success"
+                        :title="locale.publishThisDraft"
+                        type="button"
+                        @click="publishSingleDraft(schedule)"
+                      >
+                        <Send class="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-error"
+                        :title="locale.removeFromSchedule"
+                        type="button"
+                        @click.stop="removeSongFromSchedule(schedule)"
+                      >
+                        <Minus class="h-4 w-4" />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-text-disabled hover:text-primary"
+                        :title="locale.refreshDuration"
+                        :disabled="refreshingDuration[schedule.song.id]"
+                        type="button"
+                        @click.stop="refreshDuration(schedule.song)"
+                      >
+                        <RefreshCcw
+                          class="h-3.5 w-3.5"
+                          :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }"
+                        />
+                      </button>
+                      <button
+                        class="admin-song-icon-btn text-text-disabled hover:text-text-tertiary"
+                        type="button"
+                        @click="openContextMenu($event, 'right', schedule)"
+                      >
+                        <MoreVertical class="h-4 w-4" />
+                      </button>
+                    </div>
+                  </template>
+                </SongCard>
               </div>
             </TransitionGroup>
           </div>
@@ -2016,6 +1840,7 @@ import {
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SongSourceReplaceModal from './SongSourceReplaceModal.vue'
+import SongCard from './SongCard.vue'
 import SchedulePlaylistExportModal from './SchedulePlaylistExportModal.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'

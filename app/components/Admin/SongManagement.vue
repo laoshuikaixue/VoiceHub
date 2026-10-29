@@ -203,295 +203,183 @@
         </div>
       </div>
 
-      <!-- 表头 -->
-      <div
-        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-border-secondary-60 bg-bg-secondary-40"
-      >
-        <div class="col-span-1 flex items-center">
-          <input
-            type="checkbox"
-            :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
-            @change="toggleSelectAll"
-          />
-        </div>
-        <div class="col-span-4 text-xs font-bold text-text-disabled uppercase tracking-wider">
-          {{ locale.table.songInfo }}
-        </div>
-        <div class="col-span-2 text-xs font-bold text-text-disabled uppercase tracking-wider">
-          {{ locale.table.requester }}
-        </div>
-        <div
-          class="hidden col-span-1 text-xs font-bold text-text-disabled uppercase tracking-wider text-center xl:block"
-        >
-          {{ locale.table.stats }}
-        </div>
-        <div
-          class="col-span-2 text-xs font-bold text-text-disabled uppercase tracking-wider text-center"
-        >
-          {{ locale.table.status }}
-        </div>
-        <div
-          class="col-span-3 text-xs font-bold text-text-disabled uppercase tracking-wider text-right pr-4 xl:col-span-2"
-        >
-          {{ locale.table.actions }}
-        </div>
-      </div>
-
-      <!-- 移动端批量操作栏 -->
+      <!-- 批量选择 -->
       <div
         v-if="filteredSongs.length > 0"
-        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-border-secondary-60 bg-bg-secondary-40"
+        class="flex items-center justify-between gap-3 border-b border-border-secondary-60 bg-bg-secondary-40 px-4 py-3"
       >
-        <label class="flex items-center gap-2 text-xs font-bold text-text-secondary cursor-pointer py-1">
+        <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-text-secondary">
           <input
-            type="checkbox"
             :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
+            class="h-5 w-5 cursor-pointer rounded-lg border-2 border-border-secondary bg-bg-primary"
+            type="checkbox"
             @change="toggleSelectAll"
           >
           {{ locale.table.selectPage }}
         </label>
-        <span v-if="selectedSongs.length > 0" class="text-xs text-primary font-bold">{{ getLocaleMessage('selectedItems', selectedSongs.length) }}</span>
+        <span v-if="selectedSongs.length > 0" class="text-xs font-bold text-primary">
+          {{ getLocaleMessage('selectedItems', selectedSongs.length) }}
+        </span>
       </div>
 
       <!-- 空状态 -->
       <div
         v-if="filteredSongs.length === 0 && !loading"
-        class="py-20 flex flex-col items-center justify-center text-text-tertiary"
+        class="flex flex-col items-center justify-center py-20 text-text-tertiary"
       >
-        <Music :size="48" class="text-text-primary mb-4" />
-        <p class="text-sm font-bold">{{ searchQuery ? locale.empty.search : locale.empty.default }}</p>
+        <Music :size="48" class="mb-4 text-text-primary" />
+        <p class="text-sm font-bold">
+          {{ searchQuery ? locale.empty.search : locale.empty.default }}
+        </p>
       </div>
 
-      <!-- 列表内容 -->
-      <div v-else class="divide-y divide-panel-bg-dark-40">
-        <div
+      <!-- 歌曲列表 -->
+      <div v-else class="grid grid-cols-1 gap-2 p-3 xl:grid-cols-2">
+        <SongCard
           v-for="song in paginatedSongs"
           :key="song.id"
-          :class="[
-            'flex flex-col lg:grid lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all lg:items-center group relative',
-            selectedSongs.includes(song.id) ? 'bg-primary-hover-5' : 'hover:bg-bg-tertiary-20'
-          ]"
+          :selected="selectedSongs.includes(song.id)"
+          :song="song"
+          @play="playSong(song)"
         >
-          <div class="hidden lg:flex col-span-1 items-center">
+          <template #leading>
             <input
-              type="checkbox"
               :checked="selectedSongs.includes(song.id)"
-              class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
+              class="h-5 w-5 cursor-pointer rounded-lg border-2 border-border-secondary bg-bg-primary"
+              type="checkbox"
               @change="toggleSelectSong(song.id)"
-            />
-          </div>
+            >
+          </template>
 
-          <div class="col-span-12 lg:col-span-4 flex items-center gap-3 lg:gap-4 w-full">
-            <label
-              class="lg:hidden flex items-center justify-center p-2 -ml-2 shrink-0 cursor-pointer"
+          <template #badges>
+            <button
+              v-if="song.hasSubmissionNote && song.submissionNote"
+              class="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-primary-30 bg-primary-10 text-primary transition-all hover:bg-primary-20"
+              :title="locale.actions.viewRemark"
+              type="button"
+              @click.stop="openSubmissionRemark(song)"
             >
-              <input
-                type="checkbox"
-                :checked="selectedSongs.includes(song.id)"
-                class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
-                @change="toggleSelectSong(song.id)"
-              />
-            </label>
-            <div
-              :class="[
-                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-bg-tertiary-40 border-border-tertiary-30 group-hover:border-border-tertiary cursor-pointer hover:opacity-80',
-                selectedSongs.includes(song.id) ? 'border-primary-50' : ''
-              ]"
-              @click.stop="playSong(song)"
-            >
-              <img
-                v-if="song.cover"
-                :src="getCoverThumbUrl(song.cover)"
-                class="w-full h-full object-cover"
-                referrerpolicy="no-referrer"
-              />
-              <Music v-else :size="20" class="text-text-disabled" />
-            </div>
-            <div class="min-w-0">
-              <h4
+              <MessageSquare :size="12" />
+            </button>
+          </template>
+
+          <template #meta>
+            <div class="admin-song-meta">
+              <span
                 :class="[
-                  'font-bold transition-colors flex items-center',
-                  selectedSongs.includes(song.id)
-                    ? 'text-primary'
-                    : 'text-text-primary group-hover:text-primary'
+                  'flex-shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-bold',
+                  song.played
+                    ? 'bg-success-10 text-success'
+                    : song.scheduled
+                      ? 'bg-primary-10 text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary'
                 ]"
               >
-                <span
-                  v-if="isBilibiliSong(song)"
-                  class="truncate flex items-center gap-1 text-left"
-                >
-                  {{ song.title }}
+                {{ getStatusText(song) }}
+              </span>
+              <span v-if="song.user?.username" class="text-text-disabled">@{{ song.user.username }}</span>
+              <template v-if="song.submissionCount != null && song.playCount != null">
+                <span>
+                  {{ locale.table.submitStat(song.submissionCount) }}
                 </span>
-                <span v-else class="truncate">{{ song.title }}</span>
-                <button
-                  v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all"
-                  :title="locale.actions.viewRemark"
-                  @click.stop="openSubmissionRemark(song)"
-                >
-                  <MessageSquare :size="12" />
-                </button>
-                <span
-                  v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 text-xs text-primary-80 truncate max-w-[200px] cursor-pointer hover:text-primary transition-colors font-normal"
-                  :title="locale.actions.viewRemark"
-                  @click.stop="openSubmissionRemark(song)"
-                >
-                  {{
-                    song.submissionNote.length > 25
-                      ? song.submissionNote.substring(0, 25) + '...'
-                      : song.submissionNote
-                  }}
+                <span class="text-text-disabled">·</span>
+                <span>
+                  {{ locale.table.playStat(song.playCount) }}
                 </span>
-              </h4>
-              <p class="text-xs text-text-tertiary font-medium truncate mt-0.5 flex items-center gap-1.5">
-                <span class="truncate min-w-0">{{ song.artist }}</span>
-                <span
-                  v-if="song.durationSeconds"
-                  class="text-text-disabled shrink-0"
-                >{{ formatDuration(song.durationSeconds) }}</span>
-              </p>
-              <!-- 音源标识独立成行，避免歌手名过长时被挤掉 -->
-              <div v-if="song.musicPlatform" class="mt-1 flex">
-                <span
-                  class="platform-tag px-1 whitespace-nowrap"
-                  :class="'platform-' + platformTagClass(song.musicPlatform)"
-                >{{ platformLabel(song.musicPlatform) }}</span>
-              </div>
+              </template>
+              <span v-if="song.preferredPlayTimeId || song.preferredPlayDate" class="text-primary">
+                {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
+              </span>
+              <span v-if="song.requestedAt" class="text-text-disabled">
+                · {{ formatDate(song.requestedAt) }}
+              </span>
               <span
-                class="lg:hidden text-xs font-bold text-text-secondary uppercase tracking-wider mt-1 inline-block"
-                >{{ formatDate(song.requestedAt) }}</span
+                v-if="song.hasSubmissionNote && song.submissionNote"
+                class="max-w-[220px] cursor-pointer truncate text-primary-80 transition-colors hover:text-primary"
+                :title="locale.actions.viewRemark"
+                @click.stop="openSubmissionRemark(song)"
               >
+                {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
+              </span>
             </div>
-          </div>
+          </template>
 
-          <!-- Mobile Bottom Section -->
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 w-full lg:contents mt-1 lg:mt-0"
-          >
-            <!-- Left side: Requester, Votes, Status -->
-            <div class="flex items-center gap-3 lg:contents">
-              <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
-                <span class="text-xs font-bold text-text-tertiary truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
-                <span v-if="song.user" class="text-xs font-bold text-text-disabled truncate max-w-[100px]"
-                  >@{{ song.user.username }}</span
-                >
-                <!-- 该投稿人累计投稿数与已播放数 -->
-                <span
-                  v-if="song.submissionCount != null && song.playCount != null"
-                  class="text-xs font-bold text-text-disabled mt-0.5 whitespace-nowrap"
-                >{{ locale.table.submitStat(song.submissionCount) }} · {{ locale.table.playStat(song.playCount) }}</span
-                >
-                <span
-                  v-if="song.preferredPlayTimeId || song.preferredPlayDate"
-                  class="text-xs font-bold text-primary mt-1"
-                >
-                  {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
-                </span>
-                <span
-                  class="hidden lg:inline text-xs font-bold text-text-secondary uppercase tracking-wider mt-1 opacity-60"
-                  >{{ formatDate(song.requestedAt) }}</span
-                >
-              </div>
-
-              <div class="col-span-3 text-center shrink-0 lg:hidden xl:col-span-1 xl:block">
-                <button
-                  :disabled="!(song.voteCount > 0)"
-                  :class="[
-                    'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
-                    song.voteCount > 0
-                      ? 'bg-color-pink-alpha-10 text-color-pink hover:bg-color-pink-alpha-10 cursor-pointer'
-                      : 'bg-bg-primary-30 text-text-secondary cursor-default'
-                  ]"
-                  @click="showVoters(song.id)"
-                >
-                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink-alpha-20' : ''" />
-                  {{ song.voteCount || 0 }}
-                </button>
-              </div>
-
-              <div class="col-span-3 lg:col-span-2 text-center shrink-0">
-                <span
-                  :class="[
-                    'px-2 py-0.5 text-xs font-bold rounded-md uppercase tracking-wider',
-                    song.played
-                      ? 'bg-success-10 text-success'
-                      : song.scheduled
-                        ? 'bg-primary-10 text-primary'
-                        : 'bg-bg-tertiary text-text-tertiary'
-                  ]"
-                >
-                  {{ getStatusText(song) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Right side: Actions -->
-            <div
-              class="col-span-12 ml-auto flex shrink-0 items-center justify-end gap-1 opacity-100 transition-all lg:col-span-3 xl:col-span-2"
-            >
+          <template #actions>
+            <div class="admin-song-actions">
               <button
-                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                :disabled="!(song.voteCount > 0)"
+                :class="[
+                  'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-colors',
+                  song.voteCount > 0
+                    ? 'bg-color-pink-alpha-10 text-color-pink'
+                    : 'bg-bg-primary-30 text-text-secondary'
+                ]"
+                type="button"
+                @click="showVoters(song.id)"
+              >
+                <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink-alpha-20' : ''" />
+                {{ song.voteCount || 0 }}
+              </button>
+              <button
+                class="admin-song-icon-btn text-primary"
                 :title="locale.actions.edit"
+                type="button"
                 @click="editSong(song)"
               >
                 <Edit2 :size="14" />
               </button>
-
               <button
                 v-if="!song.played"
-                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-success"
                 :title="locale.actions.markPlayed"
+                type="button"
                 @click="markAsPlayed(song.id)"
               >
                 <Check :size="14" />
               </button>
               <button
                 v-else
-                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-text-tertiary"
                 :title="locale.actions.markUnplayed"
+                type="button"
                 @click="markAsUnplayed(song.id)"
               >
                 <RotateCcw :size="14" />
               </button>
-
               <button
                 v-if="isAdmin"
-                :disabled="poolPendingIds.has(song.id)"
                 :class="[
-                  'flex items-center justify-center p-2.5 rounded-xl transition-all border lg:p-1.5',
-                  song.inPool
-                    ? 'bg-error-10 text-error border-error-20 hover:bg-error hover:text-text-primary'
-                    : 'bg-bg-tertiary-50 text-info border-border-tertiary-30 hover:bg-info hover:text-text-primary',
-                  poolPendingIds.has(song.id) ? 'opacity-50 cursor-wait' : ''
+                  'admin-song-icon-btn',
+                  song.inPool ? 'text-error' : 'text-info'
                 ]"
+                :disabled="poolPendingIds.has(song.id)"
                 :title="song.inPool ? locale.actions.removeFromPool : locale.actions.addToPool"
+                type="button"
                 @click="toggleSongPool(song)"
               >
                 <Loader2 v-if="poolPendingIds.has(song.id)" :size="14" class="animate-spin" />
                 <FolderMinus v-else-if="song.inPool" :size="14" />
                 <FolderPlus v-else :size="14" />
               </button>
-
               <button
-                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-warning"
                 :title="locale.actions.reject"
+                type="button"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
-                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-error"
                 :title="locale.actions.deleteSong"
+                type="button"
                 @click="deleteSong(song.id)"
               >
                 <Trash2 :size="14" />
               </button>
             </div>
-          </div>
-        </div>
+          </template>
+        </SongCard>
       </div>
     </div>
 
@@ -1320,6 +1208,7 @@
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
+import SongCard from './SongCard.vue'
 import DuplicateSongsModal from '~/components/Admin/DuplicateSongsModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SongSourceReplaceModal from '~/components/Admin/SongSourceReplaceModal.vue'
@@ -1341,12 +1230,6 @@ import {
   Music,
   Heart,
   Download,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  ExternalLink,
   MessageSquare,
   FolderPlus,
   FolderMinus,
@@ -1361,11 +1244,10 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
-import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { getPlatformDisplayName } from '~/utils/platforms'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
-import { validateUrl, getCoverThumbUrl } from '~/utils/url'
-import { formatDuration, getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
+import { validateUrl } from '~/utils/url'
+import { getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
@@ -1560,7 +1442,6 @@ const notifyOnSubmissionNoteClear = ref(true)
 // 添加歌曲相关
 const showAddSongModal = ref(false)
 const addLoading = ref(false)
-const searchLoading = ref(false)
 const addForm = ref({
   title: '',
   artist: '',
@@ -1582,7 +1463,6 @@ const platformLabel = (platform) => {
   return plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
 }
 // 平台标签配色类名，插件音源统一走 plugin
-const platformTagClass = (platform) => (BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin')
 const musicPlatformOptions = computed(() => {
   const list = [...getAvailablePlatforms()]
   for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {

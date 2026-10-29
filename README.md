@@ -792,6 +792,7 @@ VoiceHub/
 │   │   │   ├── SiteConfigManager.vue  # 站点配置管理
 │   │   │   ├── SmtpManager.vue        # SMTP邮件服务管理
 │   │   │   ├── SystemBoard.vue        # 系统看板（进程/数据库/表规模/生效配置/运行事件）
+│   │   │   ├── SongCard.vue           # 后台歌曲卡片（歌曲管理/待排/排期共用）
 │   │   │   ├── SongDownloadDialog.vue # 歌曲下载弹窗
 │   │   │   ├── SongManagement.vue     # 歌曲管理
 │   │   │   ├── SongSourceReplaceModal.vue # 歌曲换源弹窗（跨音源搜索与替换）
