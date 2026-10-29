@@ -73,13 +73,13 @@
 
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls" data-player-no-drag>
-            <button class="mobile-control-btn" @click.stop="handleTogglePlay">
-              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="white" />
+            <button :aria-label="sync.globalAudioPlayer.scheduleWaiting.value ? audioPlayerLocale.scheduleWaiting : audioPlayerLocale.playPause" class="mobile-control-btn" type="button" @click.stop="handleTogglePlay">
+              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="var(--text-primary)" />
               <Icon
                 v-else
                 :name="control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value ? 'pause' : 'play'"
                 :size="24"
-                color="white"
+                color="var(--text-primary)"
               />
             </button>
             <button
@@ -93,7 +93,7 @@
               <Pin v-if="isFloating" :size="18" color="var(--overlay-60)" />
               <Move v-else :size="18" color="var(--overlay-60)" />
             </button>
-            <button class="mobile-control-btn" @click.stop="stopPlaying">
+            <button aria-label="关闭播放器" class="mobile-control-btn" type="button" @click.stop="stopPlaying">
               <Icon name="close" :size="20" color="var(--overlay-60)" />
             </button>
           </div>
@@ -215,7 +215,7 @@
                 type="button"
                 @click="handleTogglePlay"
               >
-                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" color="white" />
+                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" color="var(--text-primary)" />
                 <Icon v-else-if="control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value" name="pause" size="24" />
                 <Icon v-else name="play" size="24" />
               </button>
@@ -2537,7 +2537,7 @@ const getFirstChar = (text) => {
   background: var(--audio-player-bar-bg);
   padding: 10px 7px 10px 13px;
   width: 400px;
-  height: 165px;
+  height: 172px;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   border: 1px solid var(--overlay-20);
@@ -2647,7 +2647,7 @@ const getFirstChar = (text) => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-collab-hover) 100%);
-  color: var(--text-primary);
+  color: #fff;
   font-size: 18px;
   font-weight: 600;
   font-family:
@@ -2787,7 +2787,7 @@ const getFirstChar = (text) => {
   margin-right: 4px;
   row-gap: 8px;
   flex: 1;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 /* 进度条和时间区域 */

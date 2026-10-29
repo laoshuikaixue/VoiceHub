@@ -2278,7 +2278,7 @@ const vRipple = {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
-  color: var(--text-primary);
+  color: #fff;
   font-size: 28px;
   font-weight: bold;
   font-family: 'MiSans-Demibold', sans-serif;
