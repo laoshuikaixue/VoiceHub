@@ -35,7 +35,7 @@
                   :aria-expanded="showThemeMenu"
                   @click="toggleThemeMenu"
                 >
-                  <Icon name="gift" :size="19" />
+                  <Icon name="palette" :size="19" />
                 </button>
 
                 <Transition name="dropdown-fade">
@@ -2116,6 +2116,7 @@ if (
   display: flex;
   flex-direction: column;
   min-height: 100dvh; /* 确保至少占满可视区域 */
+  overflow-x: clip;
 }
 
 .main-content {
@@ -3637,13 +3638,13 @@ if (
   }
 
   .language-switcher-trigger {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .theme-switcher-trigger {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .language-dropdown {
@@ -3692,11 +3693,6 @@ if (
     transform: scale(0.95);
     background: var(--overlay-15);
     border-color: var(--primary-40);
-  }
-
-  /* Footer 间距优化 */
-  :deep(.site-footer) {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
   /* 内容区域 - 全宽无边框*/

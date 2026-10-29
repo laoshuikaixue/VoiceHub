@@ -183,7 +183,7 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .site-footer {
-    padding: 15px 0;
+    padding: 15px 0 calc(96px + env(safe-area-inset-bottom, 0px));
     margin-top: 20px;
   }
 

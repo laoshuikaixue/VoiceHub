@@ -43,10 +43,10 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-12 xl:gap-8">
       <!-- 最近活动 -->
       <div
-        class="lg:col-span-5 bg-bg-secondary-40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
+        class="bg-bg-secondary-40 lg:col-span-1 xl:col-span-5 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
       >
         <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -113,7 +113,7 @@
 
       <!-- 系统状态 -->
       <div
-        class="lg:col-span-4 bg-bg-secondary-40 border border-border-secondary rounded-xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
+        class="bg-bg-secondary-40 lg:col-span-1 xl:col-span-4 border border-border-secondary rounded-xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
       >
         <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -168,7 +168,7 @@
 
       <!-- 快速操作 -->
       <div
-        class="lg:col-span-3 bg-bg-secondary-40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
+        class="bg-bg-secondary-40 lg:col-span-2 xl:col-span-3 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
       >
         <div class="px-6 py-5 border-b border-border-secondary">
           <h3 class="text-lg font-bold flex items-center gap-2">

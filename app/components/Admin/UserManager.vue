@@ -42,9 +42,9 @@
 
     <!-- Filter Bar -->
     <div
-      class="bg-bg-secondary-40 border border-border-secondary-60 rounded-xl p-3 flex flex-col lg:flex-row gap-3 items-center"
+      class="flex flex-col items-stretch gap-3 rounded-xl border border-border-secondary-60 bg-bg-secondary-40 p-3 xl:flex-row xl:items-center"
     >
-      <div class="relative flex-1 w-full group">
+      <div class="group relative w-full xl:flex-1">
         <Search
           class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
           :size="16"
@@ -57,7 +57,7 @@
         >
       </div>
       <div
-        class="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:items-center"
+        class="grid w-full grid-cols-2 gap-2 xl:flex xl:w-auto xl:items-center"
       >
         <!-- 角色筛选 -->
         <CustomSelect
@@ -67,7 +67,7 @@
           :placeholder="locale.allRoles"
           label-key="displayName"
           value-key="name"
-          class-name="min-w-0 lg:w-40"
+          class-name="min-w-0 w-full xl:w-40"
         />
 
         <!-- 状态筛选 -->
@@ -78,7 +78,7 @@
           :placeholder="locale.allStatus"
           label-key="label"
           value-key="value"
-          class-name="min-w-0 lg:w-32"
+          class-name="min-w-0 w-full xl:w-32"
         />
 
         <!-- 排序 -->
@@ -89,13 +89,13 @@
           :placeholder="locale.sortPlaceholder"
           label-key="label"
           value-key="value"
-          class-name="min-w-0 lg:w-40"
+          class-name="min-w-0 w-full xl:w-40"
         />
 
         <button
           :aria-label="common.refreshData"
           :title="common.refreshData"
-          class="flex w-full items-center justify-center rounded-lg border border-border-secondary bg-bg-primary p-3 text-text-disabled shadow-sm transition-colors hover:text-primary lg:w-auto"
+          class="flex w-full items-center justify-center rounded-lg border border-border-secondary bg-bg-primary p-3 text-text-disabled shadow-sm transition-colors hover:text-primary xl:w-auto"
           @click="loadUsers(1)"
         >
           <RefreshCw :size="14" />
@@ -256,7 +256,7 @@
       <template v-else>
         <!-- 桌面端表格 -->
         <div
-          class="hidden lg:block bg-bg-secondary-20 border border-border-secondary-50 rounded-xl overflow-hidden shadow-lg custom-scrollbar"
+          class="hidden lg:block bg-bg-secondary-20 border border-border-secondary-50 rounded-xl overflow-x-auto overflow-y-hidden shadow-lg custom-scrollbar"
         >
           <table class="w-full">
             <thead>
@@ -266,8 +266,8 @@
                 <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.userDetails }}</th>
                 <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.role }}</th>
                 <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.status }}</th>
-                <th class="whitespace-nowrap px-6 py-5 text-center">{{ locale.table.class }}</th>
-                <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.lastActivity }}</th>
+                <th class="hidden whitespace-nowrap px-6 py-5 text-center xl:table-cell">{{ locale.table.class }}</th>
+                <th class="hidden whitespace-nowrap px-6 py-5 text-left 2xl:table-cell">{{ locale.table.lastActivity }}</th>
                 <th class="whitespace-nowrap px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
               </tr>
             </thead>
@@ -363,10 +363,10 @@
                     {{ getStatusName('disabled') }}
                   </div>
                 </td>
-                <td class="px-6 py-5 text-center font-bold text-text-tertiary">
+                <td class="hidden px-6 py-5 text-center font-bold text-text-tertiary xl:table-cell">
                   {{ user.grade || '-' }} {{ user.class || '-' }}
                 </td>
-                <td class="px-6 py-5">
+                <td class="hidden px-6 py-5 2xl:table-cell">
                   <p class="text-text-tertiary font-bold">{{ formatDate(user.lastLogin) }}</p>
                   <p class="text-xs text-text-secondary font-mono mt-1 flex items-center gap-1">
                     <MapPin :size="10" /> {{ user.lastLoginIp || '-' }}
@@ -374,7 +374,7 @@
                 </td>
                 <td class="px-6 py-5 text-right pr-10">
                   <div
-                    class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons"
+                    class="flex items-center justify-end gap-1.5 opacity-100 transition-opacity action-buttons"
                   >
                     <button
                       :disabled="!canManageUser(user)"

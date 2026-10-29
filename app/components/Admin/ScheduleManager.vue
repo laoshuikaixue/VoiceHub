@@ -195,19 +195,19 @@
         >
           <div class="flex flex-wrap items-center justify-between gap-y-2 px-1">
             <h3
-              class="hidden lg:block text-lg font-bold tracking-tight text-text-primary uppercase whitespace-nowrap shrink-0"
+              class="hidden whitespace-nowrap text-lg font-bold uppercase tracking-tight text-text-primary xl:block xl:shrink-0"
             >
               {{ activeTab === 'pool' ? locale.poolList : locale.pendingSongs }}
             </h3>
             <div class="flex items-center gap-2 w-full lg:w-auto">
               <div
-                class="flex flex-1 lg:flex-none flex-wrap gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
+                class="flex min-w-0 flex-1 flex-wrap gap-1 rounded-xl border border-border-secondary bg-bg-secondary-50 p-1 lg:grid lg:grid-cols-2"
               >
                 <button
                   v-for="tab in scheduleTabs"
                   :key="tab.id"
                   :class="[
-                    'flex-1 lg:flex-none px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
+                    'flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold uppercase tracking-wider transition-all lg:flex-none',
                     activeTab === tab.id
                       ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
                       : 'text-text-disabled hover:text-text-tertiary'
@@ -817,6 +817,7 @@
                 </button>
               </div>
               <div class="h-6 w-[1px] bg-bg-tertiary mx-1" />
+              <div class="flex items-center gap-2">
               <button
                 :disabled="!canPublish"
                 class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-xs font-bold rounded-xl border border-success-20 transition-all uppercase tracking-wider active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
@@ -831,6 +832,7 @@
               >
                 <FileBadge class="w-3.5 h-3.5" /> {{ locale.saveAndPublish }}
               </button>
+              </div>
             </div>
           </div>
 

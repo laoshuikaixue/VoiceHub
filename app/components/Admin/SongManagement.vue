@@ -122,9 +122,9 @@
 
       <!-- 过滤器栏 -->
       <div
-        class="bg-bg-secondary-30 border border-border-secondary-60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
+        class="flex flex-col gap-4 rounded-xl border border-border-secondary-60 bg-bg-secondary-30 p-4 xl:flex-row xl:items-center"
       >
-        <div class="relative flex-1 group w-full lg:w-auto">
+        <div class="group relative w-full xl:flex-1">
           <Search
             class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
             :size="18"
@@ -136,7 +136,7 @@
             class="w-full bg-bg-primary-50 border border-border-secondary-80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary text-text-primary"
           />
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:flex lg:items-center gap-3 w-full lg:w-auto">
+        <div class="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 xl:flex xl:w-auto xl:items-center">
           <CustomSelect
             v-model="selectedSemester"
             :label="locale.filters.semester"
@@ -144,7 +144,7 @@
             label-key="name"
             value-key="id"
             :placeholder="locale.filters.selectSemester"
-            class-name="w-full lg:w-40"
+            class-name="min-w-0 w-full xl:w-40"
           />
           <CustomSelect
             v-model="selectedPlayTime"
@@ -153,12 +153,12 @@
             label-key="name"
             value-key="id"
             :placeholder="locale.filters.selectPlayTime"
-            class-name="w-full lg:w-40"
+            class-name="min-w-0 w-full xl:w-40"
           />
           <AppDatePicker
             v-model="selectedPlayDate"
             :label="locale.filters.playDate"
-            class-name="w-full lg:w-40"
+            class-name="min-w-0 w-full xl:w-40"
             rounded="lg"
             size="sm"
           />
@@ -167,7 +167,7 @@
             :label="locale.filters.status"
             :options="statusOptions"
             :placeholder="locale.filters.selectStatus"
-            class-name="w-full lg:w-32"
+            class-name="min-w-0 w-full xl:w-32"
           />
           <CustomSelect
             v-if="isAdmin"
@@ -175,14 +175,14 @@
             :label="locale.filters.pool"
             :options="poolOptions"
             :placeholder="locale.filters.selectPool"
-            class-name="w-full lg:w-32"
+            class-name="min-w-0 w-full xl:w-32"
           />
           <CustomSelect
             v-model="sortOption"
             :label="locale.filters.sort"
             :options="sortOptions"
             :placeholder="locale.filters.selectSort"
-            class-name="w-full lg:w-36 col-span-2 md:col-span-4 lg:col-span-1"
+            class-name="min-w-0 w-full xl:w-36"
           />
         </div>
       </div>
@@ -222,7 +222,7 @@
           {{ locale.table.requester }}
         </div>
         <div
-          class="col-span-1 text-xs font-bold text-text-disabled uppercase tracking-wider text-center"
+          class="hidden col-span-1 text-xs font-bold text-text-disabled uppercase tracking-wider text-center xl:block"
         >
           {{ locale.table.stats }}
         </div>
@@ -232,7 +232,7 @@
           {{ locale.table.status }}
         </div>
         <div
-          class="col-span-2 text-xs font-bold text-text-disabled uppercase tracking-wider text-right pr-4"
+          class="col-span-3 text-xs font-bold text-text-disabled uppercase tracking-wider text-right pr-4 xl:col-span-2"
         >
           {{ locale.table.actions }}
         </div>
@@ -396,7 +396,7 @@
                 >
               </div>
 
-              <div class="col-span-3 lg:col-span-1 text-center shrink-0">
+              <div class="col-span-3 text-center shrink-0 lg:hidden xl:col-span-1 xl:block">
                 <button
                   :disabled="!(song.voteCount > 0)"
                   :class="[
@@ -430,10 +430,10 @@
 
             <!-- Right side: Actions -->
             <div
-              class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
+              class="col-span-12 ml-auto flex shrink-0 items-center justify-end gap-1 opacity-100 transition-all lg:col-span-3 xl:col-span-2"
             >
               <button
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.edit"
                 @click="editSong(song)"
               >
@@ -442,7 +442,7 @@
 
               <button
                 v-if="!song.played"
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
               >
@@ -450,7 +450,7 @@
               </button>
               <button
                 v-else
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
               >
@@ -461,7 +461,7 @@
                 v-if="isAdmin"
                 :disabled="poolPendingIds.has(song.id)"
                 :class="[
-                  'flex items-center justify-center p-2 rounded-xl transition-all border',
+                  'flex items-center justify-center p-2.5 rounded-xl transition-all border lg:p-1.5',
                   song.inPool
                     ? 'bg-error-10 text-error border-error-20 hover:bg-error hover:text-text-primary'
                     : 'bg-bg-tertiary-50 text-info border-border-tertiary-30 hover:bg-info hover:text-text-primary',
@@ -476,14 +476,14 @@
               </button>
 
               <button
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="flex items-center justify-center p-2.5 bg-bg-tertiary-50 lg:p-1.5 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
               >

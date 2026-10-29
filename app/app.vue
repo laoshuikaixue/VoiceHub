@@ -245,6 +245,7 @@ watch(
   flex-direction: column;
   min-height: 100dvh;
   position: relative;
+  overflow-x: clip;
 }
 
 /* 主要内容 */
