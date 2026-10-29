@@ -213,13 +213,15 @@ async function handleUserLoginOrBind(
   const safeReturnTo = getSafeOAuthReturnPath(returnTo)
 
   // 4. 检查是否已登录（绑定模式）
-  const authToken = getCookie(event, 'auth-token')
+  // 中间件对 OAuth 路由上的失效登录态只清响应 Cookie 并标记 authRejected，请求头里的原始 Cookie 仍在；
+  // 已被撤销的会话（登出、移除设备）不得再用于绑定第三方身份，按匿名请求处理
+  const authToken = event.context.authRejected ? null : getCookie(event, 'auth-token')
   let currentUser: any = null
   if (authToken) {
     try {
       const payload = JWTEnhanced.verifyToken(authToken)
       currentUser = payload
-    } catch (e) {
+    } catch {
       // Token 无效或已过期，忽略
     }
   }
