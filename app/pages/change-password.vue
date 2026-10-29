@@ -166,7 +166,7 @@ onMounted(async () => {
 }
 
 .info-section {
-  background: linear-gradient(135deg, var(--color-indigo-hover) 0%, var(--color-collab-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   padding: 60px 40px;
   display: flex;
   align-items: center;

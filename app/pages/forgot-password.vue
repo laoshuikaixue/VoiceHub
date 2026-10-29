@@ -4,6 +4,7 @@
       <div class="auth-container">
       <div class="form-section">
         <div class="form-header">
+          <img alt="VoiceHub Logo" class="form-logo" :src="getLogo()">
           <h1 class="form-title">{{ locale.title }}</h1>
           <p class="form-subtitle">{{ locale.subtitle }}</p>
           <div class="header-divider" />
@@ -127,6 +128,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 import CaptchaInput from '~/components/Auth/CaptchaInput.vue'
 import TurnstileWidget from '~/components/Auth/TurnstileWidget.vue'
 import EsaCaptchaWidget from '~/components/Auth/EsaCaptchaWidget.vue'
@@ -134,6 +136,7 @@ import { ESA_CAPTCHA_VERIFY_HEADER, ESA_CAPTCHA_PASS_HEADER, getEsaCaptchaReject
 
 const { siteTitle, initSiteConfig, captchaEnabled, captchaProvider, captchaMaxFailures, esaCaptchaScenes } = useSiteConfig()
 const { pages, auth } = useLocale()
+const { getLogo } = useThemeImage()
 const locale = computed(() => pages.value?.forgotPassword || {})
 // 复用登录表单已有人机验证文案键，中英自动对齐
 const captchaLocale = computed(() => auth.value?.loginForm || {})
@@ -381,6 +384,15 @@ const handleSubmit = async () => {
 .form-header {
   text-align: center;
   margin-bottom: 32px;
+}
+
+.form-logo {
+  display: block;
+  width: auto;
+  max-width: 120px;
+  max-height: 40px;
+  margin: 0 auto 14px;
+  object-fit: contain;
 }
 
 .form-title {

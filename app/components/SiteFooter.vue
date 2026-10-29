@@ -97,7 +97,8 @@ onMounted(() => {
 <style scoped>
 .site-footer {
   text-align: center;
-  padding: 20px 0;
+  padding-top: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   margin-top: 30px;
   border-top: 1px solid var(--border-tertiary);
   width: 100%;

@@ -4,6 +4,7 @@
       <div class="auth-container">
       <div class="form-section">
         <div class="form-header">
+          <img alt="VoiceHub Logo" class="form-logo" :src="getLogo()">
           <h1 class="form-title">{{ locale.title }}</h1>
           <p class="form-subtitle">{{ locale.subtitle }}</p>
           <div class="header-divider" />
@@ -142,11 +143,13 @@ import { ref, computed, onMounted } from 'vue'
 
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 import { PASSWORD_MIN_LENGTH } from '~/utils/password-policy'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const route = useRoute()
 const { pages } = useLocale()
+const { getLogo } = useThemeImage()
 const locale = computed(() => pages.value?.resetPassword || {})
 
 const token = computed(() => route.query.token || '')
@@ -255,6 +258,15 @@ const handleSubmit = async () => {
 .form-header {
   text-align: center;
   margin-bottom: 32px;
+}
+
+.form-logo {
+  display: block;
+  width: auto;
+  max-width: 120px;
+  max-height: 40px;
+  margin: 0 auto 14px;
+  object-fit: contain;
 }
 
 .form-title {

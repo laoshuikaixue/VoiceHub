@@ -481,7 +481,7 @@ export const pages = {
     title: '重置密码',
     subtitle: '请设置您的新密码',
     goLogin: '去登录',
-    invalidTokenFull: '重置链接无效或缺少Token，请重新获取邮件',
+    invalidTokenFull: '重置链接无效或缺少令牌，请重新获取邮件',
     invalidToken: '重置链接无效',
     newPassword: '新密码',
     passwordPlaceholder: '至少6个字符',
