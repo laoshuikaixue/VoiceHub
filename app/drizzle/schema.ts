@@ -484,6 +484,8 @@ export const systemSettings = pgTable('SystemSettings', {
   // 主题管理配置
   defaultTheme: text('defaultTheme').default('System').notNull(),
   enabledThemes: text('enabledThemes').default('["System","ClassicDark","ClassicLight","ModernLight"]').notNull(),
+  // 站点强调色（HEX）；为空时使用各主题默认强调色
+  accentColor: text('accentColor'),
   // 平台管理配置（仅内置音源；插件音源由插件管理的启用状态与排序控制，不入库）
   enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),

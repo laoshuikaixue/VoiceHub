@@ -118,6 +118,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 主题管理
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
+  accentColor: null,
   // 平台管理
   enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
   platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
@@ -181,7 +182,8 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enabledPlatforms',
   'platformOrder',
   'defaultTheme',
-  'enabledThemes'
+  'enabledThemes',
+  'accentColor'
 ]
 
 export const filterPublicSettings = (data: any) => {

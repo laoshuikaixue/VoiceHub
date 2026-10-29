@@ -61,6 +61,11 @@ export const siteConfig = {
   // 视觉识别
   themeSettings: '主题设置',
   themeSettingsDesc: '为每个主题单独设置启用状态，并使用星标指定默认主题。',
+  accentColor: '站点强调色',
+  accentColorDesc: '统一覆盖主题中的按钮、链接与选中态颜色；留空使用主题默认值。',
+  accentColorReset: '恢复主题默认',
+  accentColorHint: '支持 #RGB 或 #RRGGBB 格式。',
+  accentColorInvalid: '请输入合法的 HEX 颜色，例如 #3b82f6。',
   setDefaultTheme: '设为默认主题',
   enableTheme: '启用主题',
   disableTheme: '禁用主题',
@@ -352,6 +357,7 @@ export const common = {
   confirm: '确定',
   close: '关闭',
   retry: '重试',
+  loading: '加载中',
   edit: '编辑',
   delete: '删除',
   actions: '操作',
@@ -1257,7 +1263,17 @@ export const pages = {
     },
     appLoadingScreen: {
       ariaLabel: 'VoiceHub 正在加载',
-      message: '正在同步排期、歌曲和用户状态'
+      message: '正在同步排期、歌曲和用户状态',
+      phases: {
+        start: '正在启动',
+        config: '读取站点配置',
+        auth: '验证登录状态',
+        slow: '网络响应较慢',
+        content: '加载页面内容',
+        fallback: '使用备用数据',
+        finalizing: '即将完成',
+        complete: '加载完成'
+      }
     }
   },
   ui: {

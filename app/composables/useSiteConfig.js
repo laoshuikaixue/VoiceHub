@@ -76,7 +76,8 @@ const siteConfig = ref({
   legalConsentDocuments: '[]',
   legalConsentVersion: '',
   defaultTheme: 'System',
-  enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
+  enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
+  accentColor: null
 })
 
 const isLoaded = ref(false)
@@ -120,10 +121,11 @@ export const useSiteConfig = () => {
       try {
         applyThemeConfig(
           data.defaultTheme,
-          typeof data.enabledThemes === 'string' ? JSON.parse(data.enabledThemes) : data.enabledThemes
+          typeof data.enabledThemes === 'string' ? JSON.parse(data.enabledThemes) : data.enabledThemes,
+          data.accentColor
         )
       } catch {
-        applyThemeConfig('System', null)
+        applyThemeConfig('System', null, null)
       }
       isLoaded.value = true
     } catch (error) {
@@ -167,7 +169,8 @@ export const useSiteConfig = () => {
         registerEmailRequired: false,
         registerRequiresGradeClass: false,
         defaultTheme: 'System',
-        enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
+        enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
+        accentColor: null
       }
       isLoaded.value = true
     } finally {

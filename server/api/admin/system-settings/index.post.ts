@@ -214,7 +214,11 @@ export default defineEventHandler(async (event) => {
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
 
-    if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
+    if (
+      body.defaultTheme !== undefined ||
+      body.enabledThemes !== undefined ||
+      body.accentColor !== undefined
+    ) {
       // 普通管理员提交主题字段已由上方守卫拦截，此处仅处理超级管理员请求
       const enabledThemes = body.enabledThemes !== undefined
         ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
@@ -223,6 +227,21 @@ export default defineEventHandler(async (event) => {
       validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
       if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
       updateData.enabledThemes = JSON.stringify(enabledThemes)
+    }
+
+    if (body.accentColor !== undefined && user.role === 'SUPER_ADMIN') {
+      const accent = typeof body.accentColor === 'string' ? body.accentColor.trim() : body.accentColor
+      if (accent === null || accent === '') {
+        updateData.accentColor = null
+      } else if (typeof accent === 'string' && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(accent)) {
+        updateData.accentColor = accent.toLowerCase()
+      } else {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'accentColor 必须是 #RGB 或 #RRGGBB 格式'
+        )
+      }
     }
 
     if (body.telemetryEnabled !== undefined) {
