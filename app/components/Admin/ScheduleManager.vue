@@ -238,7 +238,7 @@
                 class="hidden lg:flex items-center justify-center gap-1 p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
                 :disabled="refreshingAllDurations.running"
                 :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
-                @click="refreshAllDurations"
+                @click="refreshAllDurations('pending')"
               >
                 <RefreshCcw
                   class="w-3.5 h-3.5"
@@ -897,8 +897,46 @@
     </div>
   </div>
 
-  <!-- 移动端底部操作栏 -->
+  <!-- 移动端底部操作栏：待排歌曲 -->
   <div
+    v-if="mobileTab === 'pending'"
+    class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-2 border-t border-border-secondary bg-bg-primary-90 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] backdrop-blur-xl lg:hidden"
+  >
+    <div class="flex flex-1 items-center justify-center gap-2">
+      <button
+        v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+        class="flex w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-border-secondary bg-bg-secondary py-1.5 text-info transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+        :title="locale.addCurrentPage"
+        @click="moveAllToPool"
+      >
+        <FolderPlus class="h-4 w-4" />
+        <span class="whitespace-nowrap text-xs font-bold">{{ locale.addCurrentPageShort }}</span>
+      </button>
+      <button
+        class="flex w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-border-secondary bg-bg-secondary py-1.5 text-text-primary transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+        :disabled="refreshingAllDurations.running"
+        :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
+        @click="refreshAllDurations('pending')"
+      >
+        <RefreshCcw class="h-4 w-4" :class="{ 'animate-spin': refreshingAllDurations.running }" />
+        <span class="whitespace-nowrap text-xs font-bold">{{ locale.refreshPageDurationsShort }}</span>
+      </button>
+      <button
+        v-if="activeTab !== 'pool'"
+        class="flex w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-border-secondary bg-bg-secondary py-1.5 text-text-primary transition-all active:scale-95"
+        :title="locale.autoSchedule"
+        @click="openAutoScheduleDialog"
+      >
+        <Sparkles class="h-4 w-4" />
+        <span class="whitespace-nowrap text-xs font-bold">{{ locale.autoScheduleShort }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 移动端底部操作栏：播放列表 -->
+  <div
+    v-if="mobileTab === 'scheduled'"
     class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-2 border-t border-border-secondary bg-bg-primary-90 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] backdrop-blur-xl lg:hidden"
   >
     <div class="flex-1 overflow-x-auto scrollbar-hide">
@@ -962,16 +1000,6 @@
           <span class="text-xs font-bold whitespace-nowrap">{{ locale.clearListShort }}</span>
         </button>
         <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-          :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
-          :title="locale.addCurrentPage"
-          @click="moveAllToPool"
-        >
-          <FolderPlus class="w-4 h-4" />
-          <span class="text-xs font-bold whitespace-nowrap">{{ locale.addCurrentPageShort }}</span>
-        </button>
-        <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!canPublish"
           :title="locale.publishOnly"
@@ -984,18 +1012,10 @@
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="refreshingAllDurations.running"
           :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
-          @click="refreshAllDurations"
+          @click="refreshAllDurations('scheduled')"
         >
           <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': refreshingAllDurations.running }" />
           <span class="text-xs font-bold whitespace-nowrap">{{ locale.refreshPageDurationsShort }}</span>
-        </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
-          :title="locale.autoSchedule"
-          @click="openAutoScheduleDialog"
-        >
-          <Sparkles class="w-4 h-4" />
-          <span class="text-xs font-bold whitespace-nowrap">{{ locale.autoScheduleShort }}</span>
         </button>
       </div>
     </div>
