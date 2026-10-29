@@ -505,18 +505,25 @@
     >
       <div
         v-if="showRejectDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-80 p-4 backdrop-blur-sm"
+        @click.self="handleRejectOverlayClick"
       >
         <div
-          class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
+          ref="rejectDialogRef"
+          aria-labelledby="reject-dialog-title"
+          aria-modal="true"
+          class="w-full max-w-lg overflow-hidden rounded-xl border border-border-secondary bg-bg-secondary shadow-2xl"
+          role="dialog"
           @click.stop
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-text-primary">
+            <h3 id="reject-dialog-title" class="text-xl font-bold text-text-primary">
               {{ isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title }}
             </h3>
             <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
+              :aria-label="locale.dialog.cancel"
+              class="text-text-tertiary transition-colors hover:text-text-secondary"
+              type="button"
               @click="cancelReject"
             >
               <X :size="20" />
@@ -618,18 +625,25 @@
     >
       <div
         v-if="showEditModal || showAddSongModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm overflow-y-auto"
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-bg-primary-80 p-4 backdrop-blur-sm"
+        @click.self="handleEditOverlayClick"
       >
         <div
-          class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden my-auto"
+          ref="editDialogRef"
+          aria-labelledby="edit-dialog-title"
+          aria-modal="true"
+          class="my-auto w-full max-w-2xl overflow-hidden rounded-xl border border-border-secondary bg-bg-secondary shadow-2xl"
+          role="dialog"
           @click.stop
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-text-primary">
+            <h3 id="edit-dialog-title" class="text-xl font-bold text-text-primary">
               {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
             </h3>
             <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
+              :aria-label="locale.editModal.cancel"
+              class="text-text-tertiary transition-colors hover:text-text-secondary"
+              type="button"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"
             >
               <X :size="20" />
@@ -1217,6 +1231,7 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import { useFocusTrap } from '~/composables/useFocusTrap'
 import {
   Search,
   Plus,
@@ -1423,6 +1438,8 @@ const editForm = ref({
   durationSeconds: ''
 })
 const showSourceReplaceModal = ref(false)
+const rejectDialogRef = ref(null)
+const editDialogRef = ref(null)
 // 换源选中的结果：仅在平台与音乐 ID 未被手动改动时随保存提交 selectionToken
 const editSourceSelection = ref(null)
 const originalEditMusicSource = ref({ platform: '', musicId: '' })
@@ -2663,6 +2680,15 @@ const saveAddSong = async () => {
   }
 }
 
+const handleRejectOverlayClick = () => {
+  if (!rejectLoading.value) cancelReject()
+}
+
+const handleEditOverlayClick = () => {
+  if (showEditModal.value) cancelEditSong()
+  else cancelAddSong()
+}
+
 const cancelAddSong = () => {
   showAddSongModal.value = false
   addForm.value = {
@@ -2681,6 +2707,25 @@ const cancelAddSong = () => {
   addPlayUrlValidation.value = { valid: true, error: '', validating: false }
   clearSelectedUser()
 }
+
+useFocusTrap(rejectDialogRef, computed(() => showRejectDialog.value), {
+  onEscape: () => {
+    if (!rejectLoading.value) cancelReject()
+  }
+})
+
+useFocusTrap(
+  editDialogRef,
+  computed(
+    () => (showEditModal.value || showAddSongModal.value) && !showSourceReplaceModal.value
+  ),
+  {
+    onEscape: () => {
+      if (showEditModal.value) cancelEditSong()
+      else cancelAddSong()
+    }
+  }
+)
 
 // 用户搜索功能
 let searchTimeout = null

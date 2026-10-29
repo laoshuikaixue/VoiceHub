@@ -14,6 +14,24 @@ interface FocusTrapOptions {
   lockScroll?: boolean
 }
 
+let scrollLockCount = 0
+let originalBodyOverflow = ''
+
+const lockScroll = () => {
+  if (typeof document === 'undefined') return
+  if (scrollLockCount === 0) {
+    originalBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+  }
+  scrollLockCount += 1
+}
+
+const unlockScroll = () => {
+  if (typeof document === 'undefined') return
+  scrollLockCount = Math.max(0, scrollLockCount - 1)
+  if (scrollLockCount === 0) document.body.style.overflow = originalBodyOverflow
+}
+
 /** 将焦点限制在容器内，关闭时恢复到触发元素 */
 export function useFocusTrap(
   containerRef: Ref<HTMLElement | null>,
@@ -21,7 +39,6 @@ export function useFocusTrap(
   options: FocusTrapOptions = {}
 ) {
   let previousFocus: HTMLElement | null = null
-  let previousOverflow = ''
   let started = false
   let keydownHandler: ((event: KeyboardEvent) => void) | null = null
 
@@ -30,7 +47,7 @@ export function useFocusTrap(
     started = false
     if (keydownHandler) document.removeEventListener('keydown', keydownHandler)
     keydownHandler = null
-    if (options.lockScroll !== false) document.body.style.overflow = previousOverflow
+    if (options.lockScroll !== false) unlockScroll()
     if (previousFocus && previousFocus.isConnected) previousFocus.focus()
     previousFocus = null
   }
@@ -39,11 +56,9 @@ export function useFocusTrap(
     if (started || import.meta.server) return
     started = true
     previousFocus = document.activeElement as HTMLElement | null
-    if (options.lockScroll !== false) {
-      previousOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-    }
+    if (options.lockScroll !== false) lockScroll()
     await nextTick()
+    if (!started) return
     const container = containerRef.value
     if (!container) return
     const first = container.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) || container

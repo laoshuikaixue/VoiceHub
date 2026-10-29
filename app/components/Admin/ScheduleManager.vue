@@ -1753,11 +1753,15 @@
   <div
     v-if="contextMenuOpen"
     class="fixed inset-0 z-50"
-    @click="contextMenuOpen = false"
+    @click="closeContextMenu()"
+    @keydown.esc.stop.prevent="closeContextMenu()"
   >
     <div
-      class="absolute bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl p-1 min-w-[130px]"
+      ref="contextMenuRef"
+      aria-label="更多操作"
+      class="absolute min-w-[130px] rounded-xl border border-border-secondary bg-bg-secondary p-1 shadow-2xl"
       :style="contextMenuPos"
+      role="menu"
       @click.stop
     >
       <button
@@ -2302,13 +2306,16 @@ const contextMenuOpen = ref(false)
 const contextMenuSide = ref('left')
 const contextMenuSong = ref(null)
 const contextMenuPos = ref({ top: '50%', left: '50%' })
-const openContextMenu = (e, side, song) => {
+const contextMenuRef = ref(null)
+const contextMenuTrigger = ref(null)
+const openContextMenu = async (e, side, song) => {
   e.stopPropagation()
   const rect = e.currentTarget.getBoundingClientRect()
   const menuW = 150
-  const menuH = 120
+  const menuH = 180
   contextMenuSide.value = side
   contextMenuSong.value = song
+  contextMenuTrigger.value = e.currentTarget
   const vW = window.innerWidth
   let left = rect.right + 8
   if (left + menuW > vW) {
@@ -2316,12 +2323,20 @@ const openContextMenu = (e, side, song) => {
   }
   if (left < 8) left = vW - menuW - 8
   const top = rect.bottom + 8
-  const adjustedTop = top + menuH > window.innerHeight ? top - menuH : top
+  const adjustedTop = Math.max(8, top + menuH > window.innerHeight ? top - menuH : top)
   contextMenuPos.value = {
     top: `${adjustedTop}px`,
     left: `${left}px`
   }
   contextMenuOpen.value = true
+  await nextTick()
+  contextMenuRef.value?.querySelector('button:not([disabled])')?.focus()
+}
+
+const closeContextMenu = (restoreFocus = true) => {
+  if (!contextMenuOpen.value) return
+  contextMenuOpen.value = false
+  if (restoreFocus) nextTick(() => contextMenuTrigger.value?.focus())
 }
 
 // 换源：右侧排期卡片的菜单项拿到的是 schedule 对象，需取内层 song

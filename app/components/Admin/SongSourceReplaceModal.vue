@@ -14,7 +14,11 @@
         @click.self="closeModal"
       >
         <div
+          ref="dialogRef"
+          aria-labelledby="source-replace-title"
+          aria-modal="true"
           class="flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col overflow-hidden border-0 bg-bg-secondary shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-4xl sm:rounded-2xl sm:border sm:border-border-secondary"
+          role="dialog"
         >
           <!-- 头部 -->
           <div
@@ -22,6 +26,7 @@
           >
             <div class="min-w-0">
               <h3
+                id="source-replace-title"
                 class="flex items-center gap-2.5 text-lg font-bold tracking-tight text-text-primary sm:gap-3 sm:text-xl"
               >
                 <span
@@ -358,6 +363,7 @@ import {
   X
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import { useFocusTrap } from '~/composables/useFocusTrap'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
@@ -386,6 +392,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'apply'])
+
+const dialogRef = ref(null)
+useFocusTrap(dialogRef, computed(() => props.show), { onEscape: () => closeModal() })
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { t } = useLocaleText(computed(() => admin.value?.songManagement || {}))
