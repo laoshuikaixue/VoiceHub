@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { maskSystemSettingsSecrets } from './secretMask'
+import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 
@@ -69,7 +70,9 @@ export default defineEventHandler(async (event) => {
       settings = newSettingsResult[0]
     }
 
-    return maskSystemSettingsSecrets(settings)
+    const masked = maskSystemSettingsSecrets(settings)
+    // 普通管理员不回传超管专属配置（凭据、隐私与账号安全策略）
+    return user.role === 'SUPER_ADMIN' ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {
     console.error('获取系统设置失败:', error)
     throw createError({

@@ -1084,6 +1084,7 @@ import {
 } from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
+import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -1688,18 +1689,18 @@ const saveConfig = async () => {
           }
         : {})
     }
-    if (!isSuperAdmin.value) {
-      delete configToSave.defaultTheme
-      delete configToSave.enabledThemes
-    }
-    delete configToSave.schoolLogoHomeDarkUrl
-    delete configToSave.schoolLogoHomeLightUrl
+    // 超管专属字段不提交，避免普通管理员保存整表单被接口拒绝
+    const requestPayload = isSuperAdmin.value
+      ? { ...configToSave }
+      : stripSuperAdminOnlySettingFields(configToSave)
+    delete requestPayload.schoolLogoHomeDarkUrl
+    delete requestPayload.schoolLogoHomeLightUrl
 
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(configToSave)
+      body: JSON.stringify(requestPayload)
     })
 
     if (!response.ok) {

@@ -11,10 +11,10 @@ export default defineEventHandler((event) => {
     })
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      message: '只有管理员才能查看环境变量'
+      message: '只有超级管理员可以查看环境变量'
     })
   }
 

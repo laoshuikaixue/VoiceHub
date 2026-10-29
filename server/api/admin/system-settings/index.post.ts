@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
+import { findSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
@@ -194,6 +195,18 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
 
+    // 用户数据、凭据与出站目标类配置仅超级管理员可修改
+    if (user.role !== 'SUPER_ADMIN') {
+      const rejectedFields = findSuperAdminOnlySettingFields(body)
+      if (rejectedFields.length > 0) {
+        console.warn('[SystemSettings] 普通管理员提交超管专属配置已拒绝:', rejectedFields.join(', '))
+        throw createError({
+          statusCode: 403,
+          message: '只有超级管理员可以修改用户数据与凭据相关的配置'
+        })
+      }
+    }
+
     // 验证请求体
     const updateData: any = {}
 
@@ -202,19 +215,14 @@ export default defineEventHandler(async (event) => {
     let settings = settingsResult[0]
 
     if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
-      if (user.role !== 'SUPER_ADMIN') {
-        // 主题设置仅超级管理员可修改：普通管理员请求剥离主题字段，其余配置照常处理
-        delete body.defaultTheme
-        delete body.enabledThemes
-      } else {
-        const enabledThemes = body.enabledThemes !== undefined
-          ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
-          : parseThemeArray(settings?.enabledThemes, DEFAULT_THEMES)
-        const defaultTheme = body.defaultTheme !== undefined ? body.defaultTheme : settings?.defaultTheme || 'System'
-        validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
-        if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
-        updateData.enabledThemes = JSON.stringify(enabledThemes)
-      }
+      // 普通管理员提交主题字段已由上方守卫拦截，此处仅处理超级管理员请求
+      const enabledThemes = body.enabledThemes !== undefined
+        ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
+        : parseThemeArray(settings?.enabledThemes, DEFAULT_THEMES)
+      const defaultTheme = body.defaultTheme !== undefined ? body.defaultTheme : settings?.defaultTheme || 'System'
+      validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
+      if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
+      updateData.enabledThemes = JSON.stringify(enabledThemes)
     }
 
     if (body.telemetryEnabled !== undefined) {

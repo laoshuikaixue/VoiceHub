@@ -10,10 +10,10 @@ export default defineEventHandler(async (event) => {
     throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      message: '只有管理员才能清除聚合登录绑定'
+      message: '只有超级管理员可以清除聚合登录绑定'
     })
   }
 
