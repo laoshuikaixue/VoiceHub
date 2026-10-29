@@ -3,7 +3,6 @@
     <Transition name="app-modal">
       <div
         v-if="show"
-        :data-mobile-mode="mobileMode"
         :style="{ zIndex }"
         class="app-modal"
         @click.self="handleOverlayClick"
@@ -52,16 +51,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useFocusTrap } from '~/composables/useFocusTrap'
 import { useLocale } from '~/utils/locale'
-import {
-  DEFAULT_MODAL_MOBILE_MODE,
-  isModalMobileMode,
-  readStoredModalMobileMode,
-  syncModalMobileModeFromQuery
-} from '~/utils/modalPreferences'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -71,11 +64,6 @@ const props = defineProps({
     type: String,
     default: 'lg',
     validator: (value) => ['sm', 'md', 'lg', 'xl', '2xl', 'full'].includes(value)
-  },
-  mobileMode: {
-    type: String,
-    default: '',
-    validator: (value) => !value || isModalMobileMode(value)
   },
   closeOnOverlay: { type: Boolean, default: true },
   closeOnEsc: { type: Boolean, default: true },
@@ -91,16 +79,9 @@ const emit = defineEmits(['update:show', 'close'])
 const { common } = useLocale()
 const panelRef = ref(null)
 const titleId = `app-modal-title-${useId()}`
-const preferredMobileMode = ref('')
 
 const resolvedCloseLabel = computed(
   () => props.closeLabel || common.value?.close || 'Close'
-)
-
-const mobileMode = computed(() =>
-  isModalMobileMode(props.mobileMode)
-    ? props.mobileMode
-    : preferredMobileMode.value || DEFAULT_MODAL_MOBILE_MODE
 )
 
 const modalStack = []
@@ -120,11 +101,6 @@ watch(
   },
   { immediate: true }
 )
-
-onMounted(() => {
-  syncModalMobileModeFromQuery()
-  preferredMobileMode.value = readStoredModalMobileMode() || ''
-})
 
 const close = () => {
   if (props.persistent) return
@@ -287,35 +263,11 @@ useFocusTrap(panelRef, computed(() => props.show), {
 
 @media (max-width: 640px) {
   .app-modal {
+    align-items: flex-end;
     padding: 0;
   }
 
-  .app-modal[data-mobile-mode='fullscreen'] {
-    align-items: stretch;
-  }
-
-  .app-modal[data-mobile-mode='fullscreen'] .app-modal__panel {
-    width: 100%;
-    max-width: none;
-    height: 100dvh;
-    max-height: none;
-    border: 0;
-    border-radius: 0;
-  }
-
-  .app-modal[data-mobile-mode='fullscreen'] .app-modal__header {
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-  }
-
-  .app-modal[data-mobile-mode='fullscreen'] .app-modal__footer {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .app-modal[data-mobile-mode='bottomsheet'] {
-    align-items: flex-end;
-  }
-
-  .app-modal[data-mobile-mode='bottomsheet'] .app-modal__panel {
+  .app-modal__panel {
     width: 100%;
     max-width: none;
     max-height: 92dvh;
@@ -323,18 +275,14 @@ useFocusTrap(panelRef, computed(() => props.show), {
     border-bottom: 0;
   }
 
-  .app-modal[data-mobile-mode='bottomsheet'] .app-modal__footer {
+  .app-modal__footer {
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
-  .app-modal[data-mobile-mode='bottomsheet'].app-modal-enter-from .app-modal__panel,
-  .app-modal[data-mobile-mode='bottomsheet'].app-modal-leave-to .app-modal__panel {
+  .app-modal-enter-from .app-modal__panel,
+  .app-modal-leave-to .app-modal__panel {
+    opacity: 1;
     transform: translateY(100%);
-  }
-
-  .app-modal[data-mobile-mode='fullscreen'].app-modal-enter-from .app-modal__panel,
-  .app-modal[data-mobile-mode='fullscreen'].app-modal-leave-to .app-modal__panel {
-    transform: translateY(12px);
   }
 
   .app-modal__header,
