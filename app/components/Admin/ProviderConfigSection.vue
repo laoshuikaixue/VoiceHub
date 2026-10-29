@@ -1,21 +1,21 @@
 <template>
   <div class="space-y-4 mb-6 pb-6 border-b border-border-secondary">
     <div class="flex items-center justify-between">
-      <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ title }}</h4>
+      <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ title }}</h4>
       <div class="flex items-center gap-4">
         <a
           v-if="docUrl"
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="text-[10px] px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-xs px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
         >
           {{ docLabel || '查看文档' }}
         </a>
         <button
           v-if="hasEnvConfig"
           type="button"
-          class="text-[10px] px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-xs px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
           @click="$emit('import-env')"
         >
           <Download :size="12" />
@@ -24,7 +24,7 @@
         <div class="flex items-center gap-2">
           <span
             :class="[
-              'text-[10px] font-bold',
+              'text-xs font-bold',
               enabled ? 'text-success' : 'text-error'
             ]"
           >
@@ -112,5 +112,5 @@ const { admin } = useLocale()
 const locale = computed(() => admin.value?.oauthConfig || {})
 
 const inputClass = 'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
-const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
+const labelClass = 'text-xs font-bold text-text-disabled uppercase tracking-wider px-1 block mb-2'
 </script>

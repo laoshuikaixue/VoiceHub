@@ -337,13 +337,16 @@ const handleSubmit = async () => {
 
 <style scoped>
 .auth-layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(20px + env(safe-area-inset-left, 0px));
+  padding-right: calc(20px + env(safe-area-inset-right, 0px));
 }
 
 .auth-main {
@@ -623,7 +626,10 @@ const handleSubmit = async () => {
 
 @media (max-width: 768px) {
   .auth-layout {
-    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
   }
   .auth-container {
     border-radius: 16px;

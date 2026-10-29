@@ -3,7 +3,7 @@
     <!-- 头部区域 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
       <button
@@ -96,22 +96,22 @@
         <div class="flex items-start justify-between relative z-10">
           <div class="space-y-1">
             <div class="flex items-center gap-3">
-              <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">
+              <h4 class="text-sm font-bold text-text-primary uppercase tracking-wider">
                 {{ apiKey.name }}
               </h4>
               <span
                 v-if="apiKey.status === 'active'"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-success-10 text-success text-[10px] font-black rounded uppercase border border-success-20"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-success-10 text-success text-xs font-bold rounded uppercase border border-success-20"
                 >{{ locale.active }}</span
               >
               <span
                 v-else-if="apiKey.status === 'inactive'"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded uppercase border border-border-tertiary-50"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-xs font-bold rounded uppercase border border-border-tertiary-50"
                 >{{ locale.inactive }}</span
               >
               <span
                 v-else-if="apiKey.status === 'expired'"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-error-10 text-error text-[10px] font-black rounded uppercase border border-error-20"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-error-10 text-error text-xs font-bold rounded uppercase border border-error-20"
                 >{{ locale.expired }}</span
               >
             </div>
@@ -148,13 +148,13 @@
 
         <div class="mt-8 grid grid-cols-2 gap-4 border-t border-border-secondary-40 pt-6 relative z-10">
           <div class="space-y-0.5">
-            <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
               >{{ locale.creator }}</span
             >
             <p class="text-xs font-bold text-text-tertiary">{{ apiKey.creatorName || locale.unknown }}</p>
           </div>
           <div class="space-y-0.5">
-            <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
               >{{ locale.createdAt }}</span
             >
             <p class="text-xs font-bold text-text-tertiary">
@@ -162,14 +162,14 @@
             </p>
           </div>
           <div class="col-span-2 space-y-1">
-            <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
               >{{ locale.permissions }}</span
             >
             <div class="flex flex-wrap gap-1.5">
               <span
                 v-for="perm in apiKey.permissions"
                 :key="perm"
-                class="text-[9px] font-mono bg-bg-primary px-1.5 py-0.5 rounded text-text-tertiary border border-border-secondary-50"
+                class="text-xs font-mono bg-bg-primary px-1.5 py-0.5 rounded text-text-tertiary border border-border-secondary-50"
               >
                 {{ perm }}
               </span>
@@ -207,10 +207,10 @@
         <!-- 创建/编辑模态框 -->
         <div
           v-if="showCreateModal || showEditModal"
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden panel-enter"
         >
           <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-            <h3 class="text-lg font-black text-text-primary uppercase tracking-widest">
+            <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">
               {{ showCreateModal ? locale.create : locale.edit }}
             </h3>
             <button
@@ -223,7 +223,7 @@
 
           <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
                 >{{ locale.name }}</label
               >
               <input
@@ -234,7 +234,7 @@
               >
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
                 >{{ locale.description }}</label
               >
               <textarea
@@ -244,7 +244,7 @@
               />
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
                 >{{ locale.expiresAt }}</label
               >
               <CustomSelect
@@ -255,7 +255,7 @@
               />
             </div>
             <div class="space-y-3">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
                 >{{ locale.permissionSettings }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -282,7 +282,7 @@
                     >
                       {{ perm.label }}
                     </p>
-                    <p class="text-[9px] text-text-disabled mt-0.5">{{ perm.description }}</p>
+                    <p class="text-xs text-text-disabled mt-0.5">{{ perm.description }}</p>
                   </div>
                 </label>
               </div>
@@ -323,10 +323,10 @@
         <!-- 成功模态框 -->
         <div
           v-if="showSuccessModal"
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden panel-enter"
         >
           <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-            <h3 class="text-lg font-black text-text-primary uppercase tracking-widest">
+            <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">
               {{ locale.createSuccessTitle }}
             </h3>
             <button
@@ -346,12 +346,12 @@
               >
                 <Check :size="24" :stroke-width="3" />
               </div>
-              <h4 class="text-lg font-black text-success">{{ locale.createSuccessHeading }}</h4>
+              <h4 class="text-lg font-bold text-success">{{ locale.createSuccessHeading }}</h4>
               <p class="text-xs text-text-tertiary mt-2">{{ locale.createSuccessDesc }}</p>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-0.5"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
                 >{{ locale.fullKey }}</label
               >
               <div class="flex items-center gap-2">
@@ -377,7 +377,7 @@
                 class="flex items-center gap-2 p-3 bg-warning-10 border border-warning-20 rounded-xl text-warning"
               >
                 <AlertTriangle :size="14" class="shrink-0" />
-                <p class="text-[10px] font-bold">
+                <p class="text-xs font-bold">
                   {{ locale.copyWarning }}
                 </p>
               </div>
@@ -386,7 +386,7 @@
 
           <div class="p-6 border-t border-border-secondary">
             <button
-              class="w-full py-2.5 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-black rounded-xl transition-all"
+              class="w-full py-2.5 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-bold rounded-xl transition-all"
               @click="closeModals"
             >
               {{ locale.closeSaved }}
@@ -397,10 +397,10 @@
         <!-- 详情模态框 -->
         <div
           v-if="showViewModal && selectedApiKey"
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden panel-enter"
         >
           <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-            <h3 class="text-lg font-black text-text-primary uppercase tracking-widest">{{ locale.details }}</h3>
+            <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">{{ locale.details }}</h3>
             <button
               class="text-text-tertiary hover:text-text-primary transition-colors"
               @click="closeModals"
@@ -412,55 +412,55 @@
           <div class="p-6 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <section class="space-y-4">
               <h5
-                class="text-[10px] font-black text-text-disabled uppercase tracking-widest border-b border-border-secondary pb-2"
+                class="text-xs font-bold text-text-disabled uppercase tracking-wider border-b border-border-secondary pb-2"
               >
                 {{ locale.basicInfo }}
               </h5>
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-1">
-                  <span class="text-[10px] text-text-disabled font-bold">{{ locale.nameField }}</span>
+                  <span class="text-xs text-text-disabled font-bold">{{ locale.nameField }}</span>
                   <p class="text-xs font-bold text-text-primary">{{ selectedApiKey.name }}</p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-text-disabled font-bold">{{ locale.statusField }}</span>
+                  <span class="text-xs text-text-disabled font-bold">{{ locale.statusField }}</span>
                   <div>
                     <span
                       v-if="selectedApiKey.status === 'active'"
-                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-success-10 text-success text-[10px] font-black rounded uppercase border border-success-20"
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-success-10 text-success text-xs font-bold rounded uppercase border border-success-20"
                       >{{ locale.active }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'inactive'"
-                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded uppercase border border-border-tertiary-50"
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-xs font-bold rounded uppercase border border-border-tertiary-50"
                       >{{ locale.inactive }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'expired'"
-                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-error-10 text-error text-[10px] font-black rounded uppercase border border-error-20"
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-error-10 text-error text-xs font-bold rounded uppercase border border-error-20"
                       >{{ locale.expired }}</span
                     >
                   </div>
                 </div>
                 <div class="col-span-2 space-y-1">
-                  <span class="text-[10px] text-text-disabled font-bold">{{ locale.descField }}</span>
+                  <span class="text-xs text-text-disabled font-bold">{{ locale.descField }}</span>
                   <p class="text-xs font-bold text-text-tertiary leading-relaxed">
                     {{ selectedApiKey.description || locale.noDescription }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-text-disabled font-bold">{{ locale.creatorField }}</span>
+                  <span class="text-xs text-text-disabled font-bold">{{ locale.creatorField }}</span>
                   <p class="text-xs font-bold text-text-primary">
                     {{ selectedApiKey.creatorName || locale.unknown }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-text-disabled font-bold">{{ locale.createdAtField }}</span>
+                  <span class="text-xs text-text-disabled font-bold">{{ locale.createdAtField }}</span>
                   <p class="text-xs font-bold text-text-primary">
                     {{ formatDate(selectedApiKey.createdAt) }}
                   </p>
                 </div>
                 <div v-if="selectedApiKey.expiresAt" class="space-y-1">
-                  <span class="text-[10px] text-text-disabled font-bold">{{ locale.expiresAtField }}</span>
+                  <span class="text-xs text-text-disabled font-bold">{{ locale.expiresAtField }}</span>
                   <p
                     class="text-xs font-bold"
                     :class="selectedApiKey.isExpired ? 'text-error' : 'text-text-primary'"
@@ -473,7 +473,7 @@
 
             <section class="space-y-4">
               <h5
-                class="text-[10px] font-black text-text-disabled uppercase tracking-widest border-b border-border-secondary pb-2"
+                class="text-xs font-bold text-text-disabled uppercase tracking-wider border-b border-border-secondary pb-2"
               >
                 {{ locale.usageStats }}
               </h5>
@@ -482,10 +482,10 @@
                   class="p-4 bg-bg-primary border border-border-secondary rounded-2xl flex items-center justify-between group hover:border-primary-30 transition-all"
                 >
                   <div class="space-y-0.5">
-                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                       >{{ locale.totalCalls }}</span
                     >
-                    <p class="text-xl font-black text-text-primary">
+                    <p class="text-xl font-bold text-text-primary">
                       {{ selectedApiKey.usageCount || 0 }}
                     </p>
                   </div>
@@ -499,7 +499,7 @@
                   class="p-4 bg-bg-primary border border-border-secondary rounded-2xl flex items-center justify-between group hover:border-warning-30 transition-all"
                 >
                   <div class="space-y-0.5">
-                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                       >{{ locale.lastUsedAt }}</span
                     >
                     <p class="text-xs font-bold text-text-primary">
@@ -521,7 +521,7 @@
 
             <section class="space-y-4">
               <div class="flex items-center justify-between border-b border-border-secondary pb-2">
-                <h5 class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+                <h5 class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ locale.recentLogs }}
                 </h5>
                 <Pagination
@@ -537,14 +537,14 @@
                   class="flex flex-col items-center justify-center py-10 text-text-disabled gap-2"
                 >
                   <RefreshCw :size="24" class="animate-spin" />
-                  <span class="text-[10px] font-bold">{{ locale.loadingLogs }}</span>
+                  <span class="text-xs font-bold">{{ locale.loadingLogs }}</span>
                 </div>
                 <div
                   v-else-if="apiLogs.length === 0"
                   class="flex flex-col items-center justify-center py-10 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl"
                 >
                   <History :size="24" class="text-text-primary mb-2" />
-                  <span class="text-[10px] font-bold text-text-secondary uppercase tracking-widest"
+                  <span class="text-xs font-bold text-text-secondary uppercase tracking-wider"
                     >{{ locale.noLogs }}</span
                   >
                 </div>
@@ -556,14 +556,14 @@
                 >
                   <div class="flex items-center gap-4">
                     <div
-                      class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border"
+                      class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border"
                       :class="getMethodClass(log.method)"
                     >
                       {{ log.method }}
                     </div>
                     <div class="space-y-0.5">
                       <p class="text-xs font-mono text-text-tertiary">{{ log.endpoint }}</p>
-                      <div class="flex items-center gap-2 text-[9px] font-bold text-text-disabled">
+                      <div class="flex items-center gap-2 text-xs font-bold text-text-disabled">
                         <span>{{ formatDate(log.createdAt) }}</span>
                         <span>•</span>
                         <span>{{ log.ipAddress }}</span>
@@ -572,10 +572,10 @@
                   </div>
                   <div class="flex items-center gap-4">
                     <div class="text-right space-y-0.5">
-                      <p class="text-xs font-black" :class="getStatusColorClass(log.statusCode)">
+                      <p class="text-xs font-bold" :class="getStatusColorClass(log.statusCode)">
                         {{ log.statusCode }}
                       </p>
-                      <p class="text-[9px] font-bold text-text-disabled">{{ log.responseTimeMs }}ms</p>
+                      <p class="text-xs font-bold text-text-disabled">{{ log.responseTimeMs }}ms</p>
                     </div>
                   </div>
                 </div>

@@ -5,7 +5,7 @@
         <div class="w-full max-w-md max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-border-secondary shadow-2xl">
           <!-- 头部 -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-border-secondary">
-            <h3 class="text-lg font-black text-text-primary flex items-center gap-2">
+            <h3 class="text-lg font-bold text-text-primary flex items-center gap-2">
               <ClipboardCheck :size="18" />
               {{ locale.approval.title }}
             </h3>
@@ -18,18 +18,18 @@
             <!-- 注册基本信息 -->
             <div class="grid grid-cols-2 gap-3">
               <div class="bg-bg-secondary-40 rounded-xl px-4 py-3">
-                <p class="text-[11px] font-black uppercase tracking-widest text-text-tertiary">{{ locale.approval.username }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-text-tertiary">{{ locale.approval.username }}</p>
                 <p class="text-sm font-bold text-text-primary mt-1 break-all">@{{ user?.username || '-' }}</p>
               </div>
               <div class="bg-bg-secondary-40 rounded-xl px-4 py-3">
-                <p class="text-[11px] font-black uppercase tracking-widest text-text-tertiary">{{ locale.approval.registeredAt }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-text-tertiary">{{ locale.approval.registeredAt }}</p>
                 <p class="text-sm font-bold text-text-primary mt-1">{{ formatDate(user?.createdAt) }}</p>
               </div>
             </div>
 
             <!-- 注册备注（只读展示） -->
             <div class="bg-bg-secondary-40 rounded-xl px-4 py-3">
-              <p class="text-[11px] font-black uppercase tracking-widest text-text-tertiary">{{ locale.approval.remark }}</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-text-tertiary">{{ locale.approval.remark }}</p>
               <p class="text-sm font-bold text-text-primary mt-1 whitespace-pre-wrap break-all">{{ user?.remark || locale.approval.emptyRemark }}</p>
             </div>
 

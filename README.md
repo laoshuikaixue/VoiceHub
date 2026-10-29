@@ -745,13 +745,14 @@ VoiceHub/
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
 │   │       ├── theme-protection.css # 主题保护样式（浏览器兼容性）
+│   │       ├── tokens.css         # 设计令牌（字号、间距、圆角、动效）
 │   │       ├── transitions.css    # 过渡动画样式
 │   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       ├── year-review.css    # 年度回顾样式
 │   │       └── themes/            # 主题目录
-│   │           ├── dark.css         # 深色主题设计变量
-│   │           ├── light.css        # 亮色主题设计变量
-│   │           └── ModernLight.css # 现代浅色主题设计变量
+│   │           ├── ClassicDark.css  # 经典深色主题设计变量
+│   │           ├── ClassicLight.css # 经典浅色主题设计变量
+│   │           └── ModernLight.css  # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定
@@ -1663,6 +1664,7 @@ app/assets/css/themes/
 - **CSS 变量分离**：每个主题在独立的 CSS 文件中定义 `:root[data-theme="主题名"]` 选择器，包含所有设计变量（颜色、背景、文字、边框等）
 - **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入主题文件，各主题按需引入
 - **切换机制**：通过 `useTheme()` composable 和 `theme.client.ts` 插件实现主题切换与 localStorage 持久化
+- **站点强调色**：后台站点配置可设置 `accentColor`（HEX），通过 CSS 变量覆盖按钮、链接、选中态等品牌色；留空时使用各主题默认值
 
 #### 主题图片管理
 
@@ -1688,9 +1690,9 @@ app/assets/css/themes/
 如需新增自定义主题：
 
 1. 在 `app/assets/css/themes/` 下创建新主题，如 `ocean.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
-3. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
-4. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
-5. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `ClassicDark/` 和 `ClassicLight/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
+2. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
+3. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
+4. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `ClassicDark/` 和 `ClassicLight/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
 
 ## 使用说明
 

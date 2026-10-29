@@ -2,10 +2,10 @@
   <Teleport to="body">
     <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="$emit('close')" />
-      <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
+      <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl panel-enter">
         <!-- 标题栏 -->
         <div class="sticky top-0 z-10 bg-panel-bg-deepest-95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
-          <h3 class="text-lg font-black text-text-primary-lighter tracking-tight">{{ locale.title }}</h3>
+          <h3 class="text-lg font-bold text-text-primary-lighter tracking-tight">{{ locale.title }}</h3>
           <button class="flex items-center justify-center p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light" @click="$emit('close')">
             <X class="w-5 h-5" />
           </button>
@@ -17,7 +17,7 @@
             <div class="flex items-center justify-between">
               <div class="space-y-0.5">
                 <p class="text-sm font-bold text-text-primary-light">{{ locale.masterSwitch.label }}</p>
-                <p class="text-[11px] text-text-tertiary leading-relaxed">{{ locale.masterSwitch.desc }}</p>
+                <p class="text-xs text-text-tertiary leading-relaxed">{{ locale.masterSwitch.desc }}</p>
               </div>
               <button
                 type="button"
@@ -34,7 +34,7 @@
 
           <!-- 备份方式 -->
           <div>
-            <h4 class="text-xs font-black text-text-tertiary uppercase tracking-widest mb-3">{{ locale.methods.title }}</h4>
+            <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-3">{{ locale.methods.title }}</h4>
             <div class="space-y-3">
               <!-- S3 -->
               <MethodCard
@@ -60,7 +60,7 @@
                   </div>
                   <div class="flex gap-2">
                     <button
-                      class="flex-1 py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                      class="flex-1 py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                       :class="testing === 's3' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
                       :disabled="testing !== null"
                       @click="testConnection('s3')"
@@ -88,7 +88,7 @@
                   </div>
                   <InputField :label="locale.methods.webdav.path" :placeholder="locale.methods.webdav.pathPlaceholder" v-model="methods.webdav.path" />
                   <button
-                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                     :class="testing === 'webdav' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
                     :disabled="testing !== null"
                     @click="testConnection('webdav')"
@@ -111,7 +111,7 @@
                   <PasswordField :label="locale.methods.telegram.botToken" :placeholder="locale.methods.telegram.botTokenPlaceholder" v-model="methods.telegram.botToken" />
                   <InputField :label="locale.methods.telegram.chatId" :placeholder="locale.methods.telegram.chatIdPlaceholder" v-model="methods.telegram.chatId" />
                   <button
-                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                     :class="testing === 'telegram' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
                     :disabled="testing !== null"
                     @click="testConnection('telegram')"
@@ -133,11 +133,11 @@
                 <div class="space-y-3">
                   <div class="p-3 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-2.5">
                     <Info class="text-primary shrink-0 mt-0.5 w-3.5 h-3.5" />
-                    <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.methods.email.smtpHint }}</p>
+                    <p class="text-xs text-text-muted leading-relaxed">{{ locale.methods.email.smtpHint }}</p>
                   </div>
                   <InputField :label="locale.methods.email.recipient" :placeholder="locale.methods.email.recipientPlaceholder" v-model="methods.email.recipient" />
                   <button
-                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                     :class="testing === 'email' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
                     :disabled="testing !== null"
                     @click="testConnection('email')"
@@ -155,12 +155,12 @@
               <!-- 提示 -->
               <div class="p-3 bg-warning-10 border border-warning-10 rounded-xl flex items-start gap-2.5">
                 <Info class="text-warning shrink-0 mt-0.5 w-3.5 h-3.5" />
-                <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.endpoint.hint }}</p>
+                <p class="text-xs text-text-muted leading-relaxed">{{ locale.endpoint.hint }}</p>
               </div>
 
               <!-- 端点 URL -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.endpoint.url }}</label>
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.endpoint.url }}</label>
                 <div class="flex gap-2">
                   <code class="flex-1 bg-panel-bg-darkest border border-panel-bg-dark rounded-xl px-4 py-2.5 text-xs text-primary font-mono break-all select-all">
                     {{ triggerEndpointUrl }}
@@ -176,7 +176,7 @@
                 <button
                   v-for="method in triggerMethods"
                   :key="method.id"
-                  :class="['flex-1 py-2 text-[11px] font-bold rounded-lg transition-all', activeTriggerMethod === method.id ? 'bg-panel-bg-dark text-text-primary-lighter' : 'text-text-tertiary hover:text-text-secondary']"
+                  :class="['flex-1 py-2 text-xs font-bold rounded-lg transition-all', activeTriggerMethod === method.id ? 'bg-panel-bg-dark text-text-primary-lighter' : 'text-text-tertiary hover:text-text-secondary']"
                   @click="activeTriggerMethod = method.id"
                 >
                   {{ method.label }}
@@ -197,28 +197,28 @@
               <!-- cron-job.org -->
               <div v-if="activeTriggerMethod === 'cronjob'">
                 <div class="bg-panel-bg-darkest border border-panel-bg-dark rounded-xl p-4 space-y-2.5">
-                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                  <div class="flex items-center gap-2 text-xs text-text-muted">
                     <span class="text-text-disabled shrink-0">URL:</span>
-                    <code class="text-primary font-mono text-[10px] break-all">{{ triggerEndpointUrl }}</code>
+                    <code class="text-primary font-mono text-xs break-all">{{ triggerEndpointUrl }}</code>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                  <div class="flex items-center gap-2 text-xs text-text-muted">
                     <span class="text-text-disabled shrink-0">Method:</span>
                     <span class="text-text-secondary font-mono">POST</span>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                  <div class="flex items-center gap-2 text-xs text-text-muted">
                     <span class="text-text-disabled shrink-0">Header:</span>
-                    <code class="text-success font-mono text-[10px]">X-API-Key: YOUR_API_KEY</code>
+                    <code class="text-success font-mono text-xs">X-API-Key: YOUR_API_KEY</code>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                  <div class="flex items-center gap-2 text-xs text-text-muted">
                     <span class="text-text-disabled shrink-0"></span>
-                    <code class="text-success font-mono text-[10px]">Content-Type: application/json</code>
+                    <code class="text-success font-mono text-xs">Content-Type: application/json</code>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                  <div class="flex items-center gap-2 text-xs text-text-muted">
                     <span class="text-text-disabled shrink-0">Body:</span>
-                    <code class="text-warning font-mono text-[10px]">{"type": "full"}</code>
+                    <code class="text-warning font-mono text-xs">{"type": "full"}</code>
                   </div>
                 </div>
-                <a href="https://cron-job.org" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-[11px] text-primary hover:text-primary transition-colors mt-2">
+                <a href="https://cron-job.org" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary transition-colors mt-2">
                   {{ locale.endpoint.cronjobLink }}
                   <ExternalLink class="w-3 h-3" />
                 </a>
@@ -270,26 +270,26 @@ crontab -e
             <div v-else-if="historyRecords.length === 0" class="p-6 text-center text-text-disabled">
               <Clock class="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p class="text-xs font-medium">{{ locale.history.empty }}</p>
-              <p class="text-[10px] text-text-disabled mt-1">{{ locale.history.emptyHint }}</p>
+              <p class="text-xs text-text-disabled mt-1">{{ locale.history.emptyHint }}</p>
             </div>
             <div v-else class="space-y-2">
               <div v-for="record in historyRecords" :key="record.id" class="bg-panel-bg-darkest-50 border border-panel-bg-dark rounded-xl p-3">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
-                    <span :class="getStatusInfo(record).cls" class="px-2 py-0.5 text-[10px] font-bold rounded-md border">
+                    <span :class="getStatusInfo(record).cls" class="px-2 py-0.5 text-xs font-bold rounded-md border">
                       {{ getStatusInfo(record).text }}
                     </span>
-                    <span class="text-[11px] text-text-muted font-mono">{{ record.filename }}</span>
+                    <span class="text-xs text-text-muted font-mono">{{ record.filename }}</span>
                   </div>
-                  <span class="text-[10px] text-text-disabled">{{ formatTime(record.createdAt) }}</span>
+                  <span class="text-xs text-text-disabled">{{ formatTime(record.createdAt) }}</span>
                 </div>
-                <div class="flex items-center gap-4 text-[10px] text-text-tertiary">
+                <div class="flex items-center gap-4 text-xs text-text-tertiary">
                   <span>{{ record.totalRecords }} 条记录</span>
                   <span>{{ formatSize(record.backupSize) }}</span>
                   <span>{{ record.triggeredBy === 'api' ? 'API 触发' : record.triggeredBy || '未知' }}</span>
                 </div>
                 <div v-if="record.methods && record.methods.length" class="flex gap-2 mt-2">
-                  <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-success' : 'text-error'" class="text-[10px]">
+                  <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-success' : 'text-error'" class="text-xs">
                     {{ m.method }} {{ m.success ? '✓' : '✗' }}<span v-if="!m.success && m.error" class="text-text-tertiary ml-0.5">({{ formatMethodError(m.error) }})</span>
                   </span>
                 </div>
@@ -297,7 +297,7 @@ crontab -e
             </div>
             <div v-if="historyRecords.length > 0" class="flex justify-end pt-2">
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-text-tertiary hover:text-error bg-panel-bg-darkest-50 border border-panel-bg-dark hover:border-error-20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-text-tertiary hover:text-error bg-panel-bg-darkest-50 border border-panel-bg-dark hover:border-error-20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 :disabled="clearingHistory"
                 @click="clearHistory"
               >
@@ -310,10 +310,10 @@ crontab -e
 
         <!-- 底部操作栏 -->
         <div class="sticky bottom-0 bg-panel-bg-darkest-95 backdrop-blur-sm px-6 py-4 border-t border-panel-bg-dark rounded-b-3xl flex gap-3 justify-end">
-          <button class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest" @click="$emit('close')">
+          <button class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider" @click="$emit('close')">
             {{ locale.cancel }}
           </button>
-          <button class="px-6 py-2 bg-primary hover:bg-primary text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" :disabled="saving" @click="saveAll">
+          <button class="px-6 py-2 bg-primary hover:bg-primary text-white text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed" :disabled="saving" @click="saveAll">
             {{ saving ? '保存中...' : locale.saveAll }}
           </button>
         </div>

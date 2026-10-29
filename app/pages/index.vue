@@ -5,7 +5,6 @@
         v-if="showBootLoading"
         :message="bootMessage"
         :progress="bootProgress"
-        title="Loading..."
       />
     </Transition>
 
@@ -157,27 +156,42 @@
       <!-- 中间主体内容区域 -->
       <div class="content-area">
         <!-- 选项卡区域-->
-        <div class="tabs-row">
+        <div aria-label="页面切换" class="tabs-row" role="tablist">
           <div
+            :aria-selected="activeTab === 'schedule'"
             :class="{ active: activeTab === 'schedule' }"
+            :tabindex="activeTab === 'schedule' ? 0 : -1"
             class="section-tab"
+            data-tab="schedule"
+            role="tab"
             @click="handleTabClick('schedule')"
+            @keydown="handleTabKeydown"
           >
             <Icon class="tab-icon" name="calendar" :size="20" />
             <span class="tab-text">{{ locale.tabs.schedule }}</span>
           </div>
           <div
+            :aria-selected="activeTab === 'songs'"
             :class="{ active: activeTab === 'songs' }"
+            :tabindex="activeTab === 'songs' ? 0 : -1"
             class="section-tab"
+            data-tab="songs"
+            role="tab"
             @click="handleTabClick('songs')"
+            @keydown="handleTabKeydown"
           >
             <Icon class="tab-icon" name="music" :size="20" />
             <span class="tab-text">{{ locale.tabs.songs }}</span>
           </div>
           <div
+            :aria-selected="activeTab === 'request'"
             :class="{ active: activeTab === 'request' }"
+            :tabindex="activeTab === 'request' ? 0 : -1"
             class="section-tab"
+            data-tab="request"
+            role="tab"
             @click="handleTabClick('request')"
+            @keydown="handleTabKeydown"
           >
             <Icon class="tab-icon" name="search" :size="20" />
             <span class="tab-text">{{ locale.tabs.request }}</span>
@@ -185,10 +199,14 @@
           <ClientOnly>
             <div
               ref="notificationTabRef"
+              :aria-selected="activeTab === 'notification'"
               :class="{ active: activeTab === 'notification', disabled: !isClientAuthenticated }"
+              :tabindex="activeTab === 'notification' ? 0 : -1"
               class="section-tab"
               data-tab="notification"
+              role="tab"
               @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
+              @keydown="handleTabKeydown"
             >
               <div class="icon-wrapper">
                 <Icon class="tab-icon" name="message-circle" :size="20" />
@@ -215,7 +233,11 @@
         </div>
 
         <!-- 内容区域 -->
-        <div class="tab-content-container">
+        <div
+          :aria-label="locale.tabs[activeTab]"
+          class="tab-content-container"
+          role="tabpanel"
+        >
           <ClientOnly>
             <!-- 播出排期内容 -->
             <div v-if="activeTab === 'schedule'" key="schedule" class="tab-pane schedule-tab-pane">
@@ -732,10 +754,10 @@
     <!-- 规则弹窗 -->
     <Teleport to="body">
       <Transition
-        enter-active-class="transition duration-300 ease-out"
+        enter-active-class="transition duration-200 ease-out"
         enter-from-class="opacity-0 scale-95"
         enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
+        leave-active-class="transition duration-150 ease-out"
         leave-from-class="opacity-100 scale-100"
         leave-to-class="opacity-0 scale-95"
       >
@@ -745,11 +767,16 @@
           @click.self="showRules = false"
         >
           <div
-            class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+            ref="rulesDialogRef"
+            aria-labelledby="home-rules-title"
+            aria-modal="true"
+            class="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
+            role="dialog"
+            tabindex="-1"
           >
             <div class="p-8 pb-4 flex items-center justify-between">
               <div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
+                <h3 id="home-rules-title" class="flex items-center gap-3 text-lg font-bold tracking-tight text-text-primary">
                   <div
                     class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                   >
@@ -760,7 +787,9 @@
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                aria-label="关闭"
+                class="rounded-xl bg-bg-tertiary-50 p-2.5 text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                type="button"
                 @click="showRules = false"
               >
                 <Icon name="x" :size="20" />
@@ -770,7 +799,7 @@
             <div class="p-8 pt-4 space-y-8">
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
+                  class="text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-2"
                 >
                   <Icon name="message-circle" :size="12" />
                   {{ locale.submissionGuidelines }}
@@ -785,15 +814,15 @@
                   class="space-y-3 bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
                 >
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
-                    <span class="text-primary font-black">01</span>
+                    <span class="text-primary font-bold">01</span>
                     <p>{{ locale.defaultRules[0] }}</p>
                   </div>
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
-                    <span class="text-primary font-black">02</span>
+                    <span class="text-primary font-bold">02</span>
                     <p>{{ locale.defaultRules[1] }}</p>
                   </div>
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
-                    <span class="text-primary font-black">03</span>
+                    <span class="text-primary font-bold">03</span>
                     <p>{{ locale.defaultRules[2] }}</p>
                   </div>
                 </div>
@@ -801,7 +830,7 @@
 
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
+                  class="text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-2"
                 >
                   <Icon name="calendar" :size="12" />
                   {{ locale.playbackTime }}
@@ -815,8 +844,8 @@
                     <Icon name="clock" :size="24" />
                   </div>
                   <div>
-                    <p class="text-sm font-black text-text-primary">{{ locale.playbackTimeDesc }}</p>
-                    <p class="text-[10px] text-text-tertiary font-bold uppercase tracking-widest mt-0.5">
+                    <p class="text-sm font-bold text-text-primary">{{ locale.playbackTimeDesc }}</p>
+                    <p class="text-xs text-text-tertiary font-bold uppercase tracking-wider mt-0.5">
                       PLAYBACK TIME
                     </p>
                   </div>
@@ -826,7 +855,7 @@
 
             <div class="p-8 pt-0">
               <button
-                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
+                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider shadow-lg active:scale-95"
                 @click="showRules = false"
               >
                 {{ locale.gotIt }}
@@ -846,6 +875,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useFocusTrap } from '~/composables/useFocusTrap'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
@@ -918,6 +948,12 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
+const rulesDialogRef = ref(null)
+useFocusTrap(rulesDialogRef, computed(() => showRules.value), {
+  onEscape: () => {
+    showRules.value = false
+  }
+})
 const showUserActions = ref(false)
 const showLanguageMenu = ref(false)
 const showThemeMenu = ref(false)
@@ -1504,10 +1540,11 @@ const applyHomeData = () => {
     try {
       applyThemeConfig(
         d.config.defaultTheme,
-        typeof d.config.enabledThemes === 'string' ? JSON.parse(d.config.enabledThemes) : d.config.enabledThemes
+        typeof d.config.enabledThemes === 'string' ? JSON.parse(d.config.enabledThemes) : d.config.enabledThemes,
+        d.config.accentColor
       )
     } catch {
-      applyThemeConfig('System', null)
+      applyThemeConfig('System', null, null)
     }
   }
 
@@ -1982,7 +2019,30 @@ const vRipple = {
   }
 }
 
-// 处理标签点击事件，添加动画效果
+// 标签键盘导航：左右方向键切换，Home/End 跳转首尾
+const handleTabKeydown = (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    event.currentTarget.click()
+    return
+  }
+  const navigationKeys = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
+  if (!navigationKeys.includes(event.key)) return
+  event.preventDefault()
+  const tablist = event.currentTarget.closest('[role="tablist"]')
+  const tabs = Array.from(tablist?.querySelectorAll('[role="tab"]:not(.disabled)') || [])
+  const currentIndex = tabs.indexOf(event.currentTarget)
+  if (currentIndex < 0 || tabs.length === 0) return
+  let nextIndex = currentIndex
+  if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length
+  if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length
+  if (event.key === 'Home') nextIndex = 0
+  if (event.key === 'End') nextIndex = tabs.length - 1
+  const nextTab = tabs[nextIndex]
+  nextTab.focus()
+  nextTab.click()
+}
+
 const handleTabClick = (tab) => {
   activeTab.value = tab
 }
@@ -2055,7 +2115,7 @@ if (
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* 确保至少占满视口 */
+  min-height: 100dvh; /* 确保至少占满可视区域 */
 }
 
 .main-content {
@@ -2091,15 +2151,17 @@ if (
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  margin-top: -2rem;
+  margin-bottom: 1.25rem;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .logo-section {
   display: flex;
   align-items: center;
   gap: 20px;
-  min-height: 160px;
+  min-height: 96px;
 }
 
 .logo-link {
@@ -2108,7 +2170,7 @@ if (
 }
 
 .logo-image {
-  width: 150px;
+  width: 120px;
   height: auto;
   object-fit: contain;
 }
@@ -2123,7 +2185,7 @@ if (
 /* 横线样式 */
 .logo-divider {
   width: 2px;
-  height: 100px;
+  height: 64px;
   background: linear-gradient(
     to bottom,
     var(--overlay-30),
@@ -2135,8 +2197,8 @@ if (
 
 /* 学校logo样式 */
 .school-logo {
-  max-width: 200px;
-  max-height: 80px;
+  max-width: 180px;
+  max-height: 64px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -3642,19 +3704,21 @@ if (
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
-    background: var(--overlay-8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: white;
-    border: 1px solid var(--overlay-10);
-    box-shadow: 0 4px 12px var(--mask-10);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--color-accent);
+    color: #ffffff;
+    border: 1px solid var(--color-accent);
+    box-shadow: 0 4px 12px var(--primary-20);
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      transform var(--transition-fast),
+      box-shadow var(--transition-fast);
     flex-shrink: 0; /* 防止空间不足时按钮被压缩导致文字换行 */
     white-space: nowrap;
   }
 
   .login-options .login-btn :deep(.icon) {
-    color: var(--color-accent-light);
+    color: #ffffff;
   }
 
   .login-options .login-btn:active {
@@ -3705,7 +3769,7 @@ if (
     border: none;
     border-radius: 0;
     padding: 0; /* 移除固定内边距，改用 flex 居中 */
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--text-muted); /* text-text-tertiary */
     display: flex;
@@ -3714,21 +3778,26 @@ if (
     justify-content: center; /* 垂直居中内容 */
     gap: 4px;
     position: relative;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--transition-fast),
+      color var(--transition-fast),
+      transform var(--transition-fast);
   }
 
   .section-tab .tab-icon {
     display: block;
     margin-bottom: 2px;
-    transition: all 0.2s ease;
+    transition:
+      color var(--transition-fast),
+      transform var(--transition-fast);
     color: currentColor;
   }
 
   .section-tab .tab-text {
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    transition: all 0.2s ease;
+    transition: color var(--transition-fast);
   }
 
   .section-tab.active {
@@ -3768,7 +3837,7 @@ if (
 
   @keyframes dot-pop-in {
     0% {
-      transform: scale(0);
+      transform: scale(0.8);
       opacity: 0;
     }
     100% {
@@ -3825,7 +3894,7 @@ if (
     border-radius: 0;
     padding: 0 6px calc(80px + env(safe-area-inset-bottom, 0px));
     margin: 0;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100dvh - 120px);
   }
 
   .tab-pane {

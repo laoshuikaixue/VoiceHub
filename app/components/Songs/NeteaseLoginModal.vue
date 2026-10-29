@@ -22,7 +22,7 @@
           <!-- 头部 -->
           <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
             <div>
-              <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
+              <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                 <div
                   class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
@@ -45,7 +45,7 @@
             <div class="w-full flex flex-col items-center min-h-[250px] justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
                 <AppSpinner :size="48" class="mb-4" />
-                <p class="font-bold uppercase tracking-widest text-[10px]">{{ locale.loadingQr }}</p>
+                <p class="font-bold uppercase tracking-wider text-xs">{{ locale.loadingQr }}</p>
               </div>
 
               <div v-else-if="qrImg" class="relative group">
@@ -66,8 +66,8 @@
                 >
                   <div class="flex flex-col items-center text-text-primary">
                     <Icon name="refresh" :size="40" class="mb-3 text-text-tertiary" />
-                    <span class="font-black uppercase tracking-widest text-xs">{{ locale.qrExpired }}</span>
-                    <span class="text-[10px] text-text-tertiary mt-1 font-bold">{{ locale.clickRefresh }}</span>
+                    <span class="font-bold uppercase tracking-wider text-xs">{{ locale.qrExpired }}</span>
+                    <span class="text-xs text-text-tertiary mt-1 font-bold">{{ locale.clickRefresh }}</span>
                   </div>
                 </div>
               </div>
@@ -80,26 +80,26 @@
                 >
                   <p
                     v-if="status === 800"
-                    class="text-text-tertiary text-xs font-black uppercase tracking-widest"
+                    class="text-text-tertiary text-xs font-bold uppercase tracking-wider"
                   >
                     {{ locale.expiredRefresh }}
                   </p>
                   <p
                     v-else-if="status === 801"
-                    class="text-text-tertiary text-xs font-black uppercase tracking-widest"
+                    class="text-text-tertiary text-xs font-bold uppercase tracking-wider"
                   >
                     {{ locale.neteaseWaiting }}
                   </p>
                   <p
                     v-else-if="status === 802"
-                    class="text-primary text-xs font-black uppercase tracking-widest flex items-center justify-center"
+                    class="text-primary text-xs font-bold uppercase tracking-wider flex items-center justify-center"
                   >
                     <Icon name="check" :size="16" class="mr-2" />
                     {{ locale.scanSuccess }}
                   </p>
                   <p
                     v-else-if="status === 803"
-                    class="text-success text-xs font-black uppercase tracking-widest"
+                    class="text-success text-xs font-bold uppercase tracking-wider"
                   >
                     {{ locale.neteaseSuccess }}
                   </p>
@@ -110,7 +110,7 @@
             <!-- 说明提示 -->
             <div class="mt-8 p-4 bg-bg-tertiary-30 rounded-2xl border border-border-secondary-50 w-full">
               <p
-                class="text-[10px] leading-relaxed text-text-tertiary text-center uppercase tracking-[0.15em] font-black"
+                class="text-xs leading-relaxed text-text-tertiary text-center uppercase tracking-[0.15em] font-bold"
               >
                 {{ locale.neteaseTip }}
               </p>

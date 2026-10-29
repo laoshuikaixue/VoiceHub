@@ -22,8 +22,8 @@
           <!-- Header -->
           <div class="flex items-center justify-between p-6 border-b border-border-secondary-50">
             <div class="min-w-0">
-              <h3 class="text-lg font-black text-text-primary tracking-tight">{{ locale.title }}</h3>
-              <p class="mt-1 text-[11px] font-bold text-text-tertiary truncate">
+              <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ locale.title }}</h3>
+              <p class="mt-1 text-xs font-bold text-text-tertiary truncate">
                 {{ locale.scope(scopeText) }}
               </p>
             </div>
@@ -39,7 +39,7 @@
           <div class="flex-1 overflow-y-auto p-6 space-y-6">
             <div v-for="group in fieldGroups" :key="group.key" class="space-y-3">
               <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+                <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                   {{ group.title }}
                 </label>
               </div>
@@ -49,7 +49,7 @@
                   :key="fieldKey"
                   type="button"
                   :class="[
-                    'flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all text-left',
+                    'flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left',
                     selectedFields.includes(fieldKey)
                       ? 'bg-primary-10 border-primary-30 text-primary'
                       : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
@@ -63,13 +63,13 @@
             </div>
 
             <div v-if="selectedFields.includes('submissionNote')" class="space-y-2">
-              <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+              <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 {{ locale.noteOptionsTitle }}
               </label>
               <button
                 type="button"
                 :class="[
-                  'flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-[11px] font-bold transition-all text-left',
+                  'flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left',
                   includeUnapprovedNotes
                     ? 'bg-primary-10 border-primary-30 text-primary'
                     : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
@@ -79,7 +79,7 @@
                 <span class="flex-1">{{ locale.includeUnapprovedNotes }}</span>
                 <Check v-if="includeUnapprovedNotes" class="w-3.5 h-3.5 shrink-0" />
               </button>
-              <p class="text-[10px] leading-relaxed text-text-disabled">
+              <p class="text-xs leading-relaxed text-text-disabled">
                 {{ locale.includeUnapprovedNotesHint }}
               </p>
             </div>
@@ -87,7 +87,7 @@
 
           <!-- Footer -->
           <div class="flex items-center gap-3 p-6 border-t border-border-secondary-50">
-            <div class="flex items-center gap-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-text-tertiary uppercase tracking-wider">
               <span>{{ locale.columnCount(selectedFields.length) }}</span>
               <button
                 v-if="!isDefaultSelection"

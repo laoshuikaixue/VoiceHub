@@ -22,7 +22,7 @@
           >
             <div class="min-w-0">
               <h3
-                class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3"
+                class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3"
               >
                 <span
                   class="w-10 h-10 rounded-xl bg-primary-hover-10 flex items-center justify-center text-primary shrink-0"
@@ -61,7 +61,7 @@
                 <Music v-else :size="16" class="text-text-disabled" />
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ t('sourceReplace.currentSource') }}
                 </p>
                 <p class="text-sm font-bold text-text-primary truncate mt-0.5">
@@ -72,13 +72,13 @@
               <div class="shrink-0 text-right">
                 <span
                   v-if="song.musicPlatform"
-                  class="inline-block px-2 py-1 text-[10px] font-black rounded-md bg-bg-tertiary text-text-secondary"
+                  class="inline-block px-2 py-1 text-xs font-bold rounded-md bg-bg-tertiary text-text-secondary"
                 >
                   {{ platformLabel(song.musicPlatform) }}
                 </span>
                 <p
                   v-if="song.musicId"
-                  class="text-[10px] text-text-tertiary font-mono mt-1 truncate max-w-[180px]"
+                  class="text-xs text-text-tertiary font-mono mt-1 truncate max-w-[180px]"
                 >
                   {{ song.musicId }}
                 </p>
@@ -109,7 +109,7 @@
                 </div>
                 <button
                   type="button"
-                  class="px-5 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all shrink-0 flex items-center gap-2"
+                  class="px-5 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all shrink-0 flex items-center gap-2"
                   @click="runSearch"
                 >
                   <Loader2 v-if="activeIsLoading" :size="14" class="animate-spin" />
@@ -117,7 +117,7 @@
                   {{ activeIsLoading ? t('sourceReplace.searching') : t('sourceReplace.search') }}
                 </button>
               </div>
-              <p class="text-[10px] text-text-disabled font-medium px-1">
+              <p class="text-xs text-text-disabled font-medium px-1">
                 {{
                   keywordError
                     ? t('sourceReplace.keywordsRequired')
@@ -130,7 +130,7 @@
             <div class="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all"
                 :class="
                   activeTab === 'all'
                     ? 'border-primary-30 bg-primary-10 text-primary'
@@ -145,7 +145,7 @@
                 v-for="platform in availablePlatforms"
                 :key="platform"
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all"
                 :class="
                   activeTab === platform
                     ? 'border-primary-30 bg-primary-10 text-primary'
@@ -164,7 +164,7 @@
                 />
                 <span
                   v-if="platform === song.musicPlatform"
-                  class="px-1 py-0.5 rounded bg-bg-tertiary text-text-disabled text-[9px]"
+                  class="px-1 py-0.5 rounded bg-bg-tertiary text-text-disabled text-xs"
                   >{{ t('sourceReplace.current') }}</span
                 >
               </button>
@@ -175,7 +175,7 @@
               <span
                 v-for="platform in failedPlatforms"
                 :key="platform"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning-10 text-warning text-[10px] font-bold"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning-10 text-warning text-xs font-bold"
                 :title="platformErrors[platform]"
               >
                 <AlertCircle :size="12" />
@@ -242,25 +242,25 @@
                     }}</span>
                     <span
                       :class="[
-                        'shrink-0 px-1.5 py-0.5 text-[9px] font-black rounded uppercase tracking-wider',
+                        'shrink-0 px-1.5 py-0.5 text-xs font-bold rounded uppercase tracking-wider',
                         matchClass(item)
                       ]"
                     >
                       {{ matchLabel(item) }}
                     </span>
                   </div>
-                  <p class="text-[11px] text-text-tertiary truncate mt-1">
+                  <p class="text-xs text-text-tertiary truncate mt-1">
                     {{ item.artist }}
                     <template v-if="item.album"> · {{ item.album }}</template>
                   </p>
                 </div>
                 <div class="shrink-0 flex flex-col items-end gap-1">
                   <span
-                    class="px-1.5 py-0.5 text-[9px] font-black rounded bg-bg-tertiary text-text-secondary uppercase tracking-wider"
+                    class="px-1.5 py-0.5 text-xs font-bold rounded bg-bg-tertiary text-text-secondary uppercase tracking-wider"
                   >
                     {{ platformLabel(item.musicPlatform) }}
                   </span>
-                  <span class="text-[10px] text-text-tertiary">{{ durationText(item) }}</span>
+                  <span class="text-xs text-text-tertiary">{{ durationText(item) }}</span>
                 </div>
                 <span
                   class="w-5 h-5 rounded-full border flex items-center justify-center shrink-0"
@@ -284,7 +284,7 @@
               <p class="text-sm font-bold">
                 {{ hasSearched ? t('sourceReplace.empty') : t('sourceReplace.selectHint') }}
               </p>
-              <p v-if="hasSearched" class="text-[11px] mt-2 max-w-sm text-center leading-relaxed">
+              <p v-if="hasSearched" class="text-xs mt-2 max-w-sm text-center leading-relaxed">
                 {{ t('sourceReplace.emptyHint') }}
               </p>
             </div>
@@ -310,7 +310,7 @@
                   </div>
                   <div class="min-w-0">
                     <p class="text-xs font-bold text-text-primary truncate">{{ selected.title }}</p>
-                    <p class="text-[10px] text-text-tertiary truncate">
+                    <p class="text-xs text-text-tertiary truncate">
                       {{ selected.artist }} · {{ platformLabel(selected.musicPlatform) }}
                     </p>
                   </div>
@@ -322,11 +322,11 @@
                     />
                   </div>
                 </div>
-                <p class="text-[10px] text-text-disabled mt-1 truncate">
+                <p class="text-xs text-text-disabled mt-1 truncate">
                   {{ t('sourceReplace.selectedHint') }}
                 </p>
               </template>
-              <p v-else class="text-[11px] text-text-tertiary">
+              <p v-else class="text-xs text-text-tertiary">
                 {{ t('sourceReplace.selectHint') }}
               </p>
             </div>
@@ -339,7 +339,7 @@
               </button>
               <button
                 :disabled="!selected || applying"
-                class="px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                class="px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 @click="applySelection"
               >
                 <Loader2 v-if="applying" :size="14" class="animate-spin" />

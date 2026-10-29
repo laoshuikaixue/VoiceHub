@@ -5,7 +5,7 @@
       :class="{ 'app-spinner--accent': !color }"
       :style="spinnerStyle"
       role="status"
-      :aria-label="label || '加载中'"
+      :aria-label="resolvedLabel || undefined"
     />
     <span v-if="label" class="app-spinner-label">{{ label }}</span>
   </span>
@@ -13,6 +13,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   // 转圈直径（px）
@@ -24,6 +25,9 @@ const props = defineProps({
   // 自定义颜色（如播放器按钮旁的白色），不传则保持主题色
   color: { type: String, default: '' }
 })
+
+const { common } = useLocale()
+const resolvedLabel = computed(() => props.label || common.value?.loading || '')
 
 const spinnerStyle = computed(() => {
   const border = props.borderWidth || Math.max(2, Math.round(props.size / 10))

@@ -3,13 +3,13 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">
           {{ locale.desc }}
         </p>
       </div>
       <button
-        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
         @click="openModal"
       >
         <svg
@@ -50,7 +50,7 @@
               points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
             />
           </svg>
-          <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
+          <h3 class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em]">
             {{ locale.currentActive }}
           </h3>
         </div>
@@ -79,7 +79,7 @@
               </svg>
             </div>
             <div class="space-y-2">
-              <h4 class="text-3xl font-black text-text-primary tracking-tight leading-tight">
+              <h4 class="text-3xl font-bold text-text-primary tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
               <div class="flex items-center gap-2 text-text-primary-80 font-bold text-xs">
@@ -104,7 +104,7 @@
             </div>
             <div class="pt-4">
               <span
-                class="px-4 py-2 bg-bg-secondary-20 text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
+                class="px-4 py-2 bg-bg-secondary-20 text-text-primary text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg"
               >
                 {{ locale.inProgress }}
               </span>
@@ -153,7 +153,7 @@
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           <p class="text-sm font-bold text-text-disabled">{{ locale.noCurrent }}</p>
-          <button class="text-xs text-primary font-black hover:underline" @click="openModal">
+          <button class="text-xs text-primary font-bold hover:underline" @click="openModal">
             {{ locale.createNow }}
           </button>
         </div>
@@ -177,7 +177,7 @@
           </svg>
           <div class="space-y-1">
             <p class="text-xs font-bold text-text-tertiary">{{ locale.switchTitle }}</p>
-            <p class="text-[11px] text-text-disabled leading-relaxed">
+            <p class="text-xs text-text-disabled leading-relaxed">
               {{ locale.switchDesc }}
             </p>
           </div>
@@ -204,11 +204,11 @@
               <path d="M3 3v5h5" />
               <path d="M12 7v5l4 2" />
             </svg>
-            <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
+            <h3 class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em]">
               {{ locale.historyTitle }}
             </h3>
           </div>
-          <span class="text-[10px] font-black text-text-secondary">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
+          <span class="text-xs font-bold text-text-secondary">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
         </div>
 
         <div class="space-y-4">
@@ -263,7 +263,7 @@
                 >
                   {{ sem.name }}
                 </h5>
-                <p class="text-[10px] text-text-disabled font-medium uppercase tracking-widest mt-0.5">
+                <p class="text-xs text-text-disabled font-medium uppercase tracking-wider mt-0.5">
                   {{ getLocaleMessage('createdAt', formatDate(sem.createdAt)) }}
                 </p>
               </div>
@@ -288,12 +288,12 @@
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.currentSemester }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider">{{ locale.currentSemester }}</span>
               </div>
               <button
                 v-else
                 :disabled="loading"
-                class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black rounded-xl border border-border-tertiary transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-xs font-bold rounded-xl border border-border-tertiary transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="setActive(sem.id)"
               >
                 <svg
@@ -384,7 +384,7 @@
       >
         <div class="p-8 space-y-6">
           <div class="flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary tracking-tight">
+            <h3 class="text-xl font-bold text-text-primary tracking-tight">
               {{ isEditing ? locale.editSemester : locale.add }}
             </h3>
             <button
@@ -410,7 +410,7 @@
 
           <div class="space-y-6">
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.semesterName }}</label
               >
               <input
@@ -432,7 +432,7 @@
                   class="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
                   >{{ locale.setAsActive }}</span
                 >
-                <p class="text-[10px] text-text-disabled font-medium">
+                <p class="text-xs text-text-disabled font-medium">
                   {{ locale.setAsActiveHint }}
                 </p>
               </div>
@@ -455,7 +455,7 @@
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p class="text-[10px] text-text-tertiary leading-normal">
+              <p class="text-xs text-text-tertiary leading-normal">
                 {{ locale.namingTip }}
               </p>
             </div>
@@ -471,7 +471,7 @@
           </button>
           <button
             :disabled="submitting || !semesterForm.name.trim()"
-            class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:bg-primary-hover disabled:opacity-50 text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
+            class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:bg-primary-hover disabled:opacity-50 text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95"
             @click="handleSubmit"
           >
             {{ submitting ? (isEditing ? locale.saving : locale.creating) : (isEditing ? locale.saveChanges : locale.createSemester) }}

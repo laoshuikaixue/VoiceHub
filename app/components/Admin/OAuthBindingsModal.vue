@@ -22,7 +22,7 @@
           >
             <div>
               <h3
-                class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3"
+                class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3"
               >
                 <div
                   class="w-10 h-10 rounded-xl bg-success-10 flex items-center justify-center text-success"
@@ -85,7 +85,7 @@
                   </div>
 
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-black text-text-primary truncate">
+                    <div class="text-sm font-bold text-text-primary truncate">
                       {{ getOAuthProviderName(identity.provider) }}
                     </div>
                     <div class="text-xs text-text-tertiary mt-0.5 truncate">
@@ -111,7 +111,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div class="p-3 bg-bg-primary-30 rounded-xl border border-border-secondary-30">
                     <div
-                      class="text-[10px] font-black text-text-disabled uppercase tracking-tighter"
+                      class="text-xs font-bold text-text-disabled uppercase tracking-tighter"
                     >
                       {{ locale.oauthProvider }}
                     </div>
@@ -121,7 +121,7 @@
                   </div>
                   <div class="p-3 bg-bg-primary-30 rounded-xl border border-border-secondary-30">
                     <div
-                      class="text-[10px] font-black text-text-disabled uppercase tracking-tighter"
+                      class="text-xs font-bold text-text-disabled uppercase tracking-tighter"
                     >
                       {{ locale.oauthUsername }}
                     </div>
@@ -131,7 +131,7 @@
                   </div>
                   <div class="p-3 bg-bg-primary-30 rounded-xl border border-border-secondary-30">
                     <div
-                      class="text-[10px] font-black text-text-disabled uppercase tracking-tighter"
+                      class="text-xs font-bold text-text-disabled uppercase tracking-tighter"
                     >
                       {{ locale.oauthUserId }}
                     </div>
@@ -141,7 +141,7 @@
                   </div>
                   <div class="p-3 bg-bg-primary-30 rounded-xl border border-border-secondary-30">
                     <div
-                      class="text-[10px] font-black text-text-disabled uppercase tracking-tighter"
+                      class="text-xs font-bold text-text-disabled uppercase tracking-tighter"
                     >
                       {{ locale.oauthBoundAt }}
                     </div>

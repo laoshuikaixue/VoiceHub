@@ -524,7 +524,7 @@ const formatFileSize = (bytes) => {
 <style scoped>
 /* 主容器 */
 .backup-manager {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--panel-bg-deep);
   color: var(--panel-border-light);
   padding: 2rem;
@@ -1159,7 +1159,7 @@ const formatFileSize = (bytes) => {
 
   .modal {
     margin: 1rem;
-    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
   }
 
   .notification {

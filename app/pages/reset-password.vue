@@ -67,8 +67,8 @@
                 />
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]">{{ locale.passwordStrength }}</span>
-                <span class="text-[10px] font-black uppercase tracking-widest" :class="passwordStrength.textColorClass">
+                <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{{ locale.passwordStrength }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider" :class="passwordStrength.textColorClass">
                   {{ passwordStrength.text }}
                 </span>
               </div>
@@ -211,13 +211,16 @@ const handleSubmit = async () => {
 
 <style scoped>
 .auth-layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(20px + env(safe-area-inset-left, 0px));
+  padding-right: calc(20px + env(safe-area-inset-right, 0px));
 }
 
 .auth-main {
@@ -511,7 +514,10 @@ const handleSubmit = async () => {
 
 @media (max-width: 768px) {
   .auth-layout {
-    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
   }
   .auth-container {
     border-radius: 16px;

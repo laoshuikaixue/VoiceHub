@@ -20,7 +20,7 @@
           <div class="p-6 pb-4 flex items-center justify-between gap-4 border-b border-border-secondary-50 shrink-0">
             <div class="min-w-0">
               <h3
-                class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3"
+                class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3"
               >
                 <span
                   class="w-10 h-10 rounded-xl bg-primary-hover-10 flex items-center justify-center text-primary shrink-0"
@@ -45,7 +45,7 @@
           <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <p
               v-if="groups.length"
-              class="text-[10px] font-bold text-text-disabled mb-4 px-1 leading-relaxed"
+              class="text-xs font-bold text-text-disabled mb-4 px-1 leading-relaxed"
             >
               {{ t('duplicateModal.matchHint') }}
             </p>
@@ -53,7 +53,7 @@
             <div v-else class="flex flex-col items-center justify-center py-16 text-text-disabled">
               <Music :size="48" class="mb-4 opacity-20" />
               <p class="text-sm font-bold">{{ t('duplicateModal.empty') }}</p>
-              <p class="text-[11px] mt-2 max-w-sm text-center leading-relaxed">
+              <p class="text-xs mt-2 max-w-sm text-center leading-relaxed">
                 {{ t('duplicateModal.matchHint') }}
               </p>
             </div>
@@ -67,17 +67,17 @@
                 <!-- 分组标题：重复的歌曲本身 -->
                 <div class="flex items-center gap-3 px-4 py-3 bg-bg-secondary-40">
                   <div class="min-w-0 flex-1">
-                    <h4 class="text-sm font-black text-text-primary truncate">{{ group.title }}</h4>
-                    <p class="text-[11px] text-text-tertiary truncate mt-0.5">{{ group.artist }}</p>
+                    <h4 class="text-sm font-bold text-text-primary truncate">{{ group.title }}</h4>
+                    <p class="text-xs text-text-tertiary truncate mt-0.5">{{ group.artist }}</p>
                   </div>
                   <span
-                    class="shrink-0 px-2 py-1 text-[10px] font-black rounded-md uppercase tracking-wider bg-primary-10 text-primary"
+                    class="shrink-0 px-2 py-1 text-xs font-bold rounded-md uppercase tracking-wider bg-primary-10 text-primary"
                   >
                     {{ t('duplicateModal.dupCount', '', group.songs.length) }}
                   </span>
                   <span
                     :class="[
-                      'hidden sm:inline-block shrink-0 px-2 py-1 text-[10px] font-black rounded-md uppercase tracking-wider',
+                      'hidden sm:inline-block shrink-0 px-2 py-1 text-xs font-bold rounded-md uppercase tracking-wider',
                       group.sameSource ? 'bg-success-10 text-success' : 'bg-warning-10 text-warning'
                     ]"
                   >
@@ -109,12 +109,12 @@
                           song.requester || t('unknown')
                         }}</span>
                         <span
-                          class="px-1.5 py-0.5 text-[9px] font-black rounded bg-bg-tertiary text-text-disabled tracking-wider"
+                          class="px-1.5 py-0.5 text-xs font-bold rounded bg-bg-tertiary text-text-disabled tracking-wider"
                           >ID {{ song.id }}</span
                         >
                         <span
                           :class="[
-                            'px-1.5 py-0.5 text-[9px] font-black rounded uppercase tracking-wider',
+                            'px-1.5 py-0.5 text-xs font-bold rounded uppercase tracking-wider',
                             song.played
                               ? 'bg-success-10 text-success'
                               : song.scheduled
@@ -125,7 +125,7 @@
                         >
                       </div>
                       <div
-                        class="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-[11px] text-text-tertiary"
+                        class="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-text-tertiary"
                       >
                         <span>{{ formatDate(song.createdAt) }}</span>
                         <span v-if="song.semester">{{ song.semester }}</span>
@@ -166,7 +166,7 @@
             class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end shrink-0"
           >
             <button
-              class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+              class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
               @click="closeModal"
             >
               {{ commonLocale.close }}

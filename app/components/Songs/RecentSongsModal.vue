@@ -19,7 +19,7 @@
           <!-- 头部 -->
           <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
             <div>
-              <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
+              <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                 <div
                   class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
@@ -44,7 +44,7 @@
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
             >
               <Icon name="refresh" :size="32" class="animate-spin mb-4 text-primary" />
-              <div class="text-[10px] font-black uppercase tracking-widest">
+              <div class="text-xs font-bold uppercase tracking-wider">
                 {{ locale.loadingRecent }}
               </div>
             </div>
@@ -60,7 +60,7 @@
               </div>
               <p class="text-sm text-text-tertiary mb-6">{{ error }}</p>
               <button
-                class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+                class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
                 @click="fetchRecentSongs"
               >
                 {{ locale.retryLoad }}
@@ -72,7 +72,7 @@
               class="flex flex-col items-center justify-center py-20 text-text-disabled"
             >
               <Icon name="music" :size="48" class="mb-4 opacity-20" />
-              <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noRecent }}</p>
+              <p class="text-sm font-bold uppercase tracking-wider">{{ locale.noRecent }}</p>
             </div>
 
             <div v-else class="recent-song-list space-y-2">
@@ -105,16 +105,16 @@
                 <div class="flex-1 min-w-0">
                   <h4
                     :title="item.data?.name"
-                    class="text-sm font-black text-text-primary truncate mb-1"
+                    class="text-sm font-bold text-text-primary truncate mb-1"
                   >
                     {{ item.data?.name }}
                   </h4>
                   <div class="flex items-center gap-3">
-                    <span class="text-[10px] text-text-tertiary font-medium whitespace-nowrap">{{
+                    <span class="text-xs text-text-tertiary font-medium whitespace-nowrap">{{
                       formatTime(item.playTime)
                     }}</span>
                     <span
-                      class="text-[10px] text-text-disabled truncate font-bold uppercase tracking-tighter"
+                      class="text-xs text-text-disabled truncate font-bold uppercase tracking-tighter"
                       >{{ item.data?.ar?.map((a) => a.name).join('/') }}</span
                     >
                   </div>
@@ -126,12 +126,12 @@
                     class="flex items-center gap-2 px-3 py-1 bg-bg-tertiary-50 rounded-lg"
                   >
                     <Icon name="refresh" :size="10" class="animate-spin text-text-tertiary" />
-                    <span class="text-[10px] text-text-tertiary font-black uppercase">{{ locale.checking }}</span>
+                    <span class="text-xs text-text-tertiary font-bold uppercase">{{ locale.checking }}</span>
                   </div>
                   <template v-else-if="getSimilarSong(item.data)">
                     <div
                       :class="[
-                        'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border',
+                        'px-2 py-0.5 rounded text-xs font-bold uppercase tracking-tighter border',
                         getSimilarSong(item.data)?.played
                           ? 'bg-success-10 text-success border-success-20'
                           : getSimilarSong(item.data)?.scheduled
@@ -152,7 +152,7 @@
                       <button
                         v-if="getSimilarSong(item.data)?.played && isSuperAdmin"
                         :disabled="submitting"
-                        class="px-3 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-lg transition-all uppercase tracking-widest disabled:opacity-50"
+                        class="px-3 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all uppercase tracking-wider disabled:opacity-50"
                         @click="selectSong(item.data)"
                       >
                         {{
@@ -167,7 +167,7 @@
                           getSimilarSong(item.data)?.voted ||
                           submitting
                         "
-                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-quaternary disabled:bg-bg-secondary-50 text-text-tertiary disabled:text-text-secondary text-[10px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-quaternary disabled:bg-bg-secondary-50 text-text-tertiary disabled:text-text-secondary text-xs font-bold rounded-lg transition-all uppercase tracking-wider flex items-center gap-1.5"
                         @click="
                           getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled
                             ? null
@@ -188,7 +188,7 @@
                   <button
                     v-else
                     :disabled="submitting || songsLoadingForSimilar"
-                    class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)]"
+                    class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all uppercase tracking-wider active:scale-95 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)]"
                     @click="selectSong(item.data)"
                   >
                     {{
@@ -205,7 +205,7 @@
             class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end"
           >
             <button
-              class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+              class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
               @click="close"
             >
               {{ locale.close }}

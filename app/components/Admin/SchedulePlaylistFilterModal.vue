@@ -21,7 +21,7 @@
         >
           <!-- Header -->
           <div class="flex items-center justify-between p-6 border-b border-border-secondary-50">
-            <h3 class="text-lg font-black text-text-primary tracking-tight">{{ locale.title }}</h3>
+            <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ locale.title }}</h3>
             <button
               class="p-2 rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex items-center justify-center"
               @click="close"
@@ -34,7 +34,7 @@
           <div class="flex-1 overflow-y-auto p-6 space-y-6">
             <!-- Default Playlists -->
             <div class="space-y-3">
-              <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+              <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 {{ locale.defaultPlaylists }}
               </label>
               <div class="grid grid-cols-2 gap-2">
@@ -70,11 +70,11 @@
             <!-- Custom Playlists -->
             <div class="space-y-3">
               <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+                <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                   {{ locale.customPlaylists }}
                 </label>
                 <button
-                  class="p-1.5 rounded-lg bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-all flex items-center gap-1.5 text-[10px] font-bold"
+                  class="p-1.5 rounded-lg bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-all flex items-center gap-1.5 text-xs font-bold"
                   @click="refreshCustomPlaylists"
                   :disabled="isRefreshingCustom"
                   :title="locale.refreshTitle"

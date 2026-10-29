@@ -9,14 +9,14 @@
           <Mail :size="20" class="text-primary" />
         </div>
         <div>
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.title }}</h3>
-          <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.desc }}</p>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.title }}</h3>
+          <p class="text-xs text-text-tertiary mt-0.5">{{ locale.desc }}</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
         <button
           v-if="selected"
-          class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-[11px] font-bold rounded-xl transition-all"
+          class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all"
           :disabled="saving"
           @click="doPreview"
         >
@@ -24,7 +24,7 @@
         </button>
         <button
           v-if="selected"
-          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[11px] font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           :disabled="saving"
           @click="save"
         >
@@ -42,7 +42,7 @@
             <input
               type="text"
               :placeholder="locale.searchPlaceholder"
-              class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-9 pr-3 py-2 text-[10px] text-text-tertiary focus:outline-none focus:border-primary-30"
+              class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-9 pr-3 py-2 text-xs text-text-tertiary focus:outline-none focus:border-primary-30"
             >
           </div>
         </div>
@@ -60,7 +60,7 @@
           >
             <div class="flex items-center justify-between">
               <span
-                class="text-[11px] font-black tracking-tight transition-colors"
+                class="text-xs font-bold tracking-tight transition-colors"
                 :class="
                   selectedKey === t.key
                     ? 'text-primary'
@@ -72,19 +72,19 @@
               <div class="flex gap-1">
                 <span
                   v-if="t.isBuiltin && !t.isOverridden"
-                  class="px-1.5 py-0.5 rounded-md bg-bg-tertiary text-[8px] font-black text-text-tertiary uppercase tracking-tighter"
+                  class="px-1.5 py-0.5 rounded-md bg-bg-tertiary text-xs font-bold text-text-tertiary uppercase tracking-tighter"
                 >
                   {{ locale.builtin }}
                 </span>
                 <span
                   v-if="t.isOverridden"
-                  class="px-1.5 py-0.5 rounded-md bg-success-10 text-[8px] font-black text-success uppercase tracking-tighter"
+                  class="px-1.5 py-0.5 rounded-md bg-success-10 text-xs font-bold text-success uppercase tracking-tighter"
                 >
                   {{ locale.custom }}
                 </span>
               </div>
             </div>
-            <span class="text-[9px] font-bold text-text-disabled font-mono">{{ t.key }}</span>
+            <span class="text-xs font-bold text-text-disabled font-mono">{{ t.key }}</span>
           </button>
         </div>
       </div>
@@ -97,7 +97,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <div class="flex items-center justify-between px-1">
-                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                  <label class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                     >{{ locale.templateName }}</label
                   >
                 </div>
@@ -109,10 +109,10 @@
               </div>
               <div class="space-y-2">
                 <div class="flex items-center justify-between px-1">
-                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                  <label class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                     >{{ locale.emailSubject }}</label
                   >
-                  <span class="text-[9px] text-text-tertiary font-bold uppercase">{{ locale.supportsVariables }}</span>
+                  <span class="text-xs text-text-tertiary font-bold uppercase">{{ locale.supportsVariables }}</span>
                 </div>
                 <input
                   v-model="form.subject"
@@ -131,10 +131,10 @@
                 <Info :size="16" class="text-primary" />
               </div>
               <div class="space-y-1">
-                <h4 class="text-[10px] font-black text-primary uppercase tracking-widest">
+                <h4 class="text-xs font-bold text-primary uppercase tracking-wider">
                   {{ locale.availableVariables }}
                 </h4>
-                <p class="text-[11px] text-text-tertiary leading-relaxed font-mono">
+                <p class="text-xs text-text-tertiary leading-relaxed font-mono">
                   <template v-if="selected.key === 'verification.code'">
                     <span v-pre>{{ name }}, {{ email }}, {{ code }}, {{ expiresInMinutes }}</span>
                   </template>
@@ -149,17 +149,17 @@
             <div class="space-y-3">
               <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-2">
-                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                  <label class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                     >{{ locale.htmlContent }}</label
                   >
                   <span
-                    class="px-2 py-0.5 rounded-md bg-bg-secondary text-[8px] font-black text-text-tertiary uppercase"
+                    class="px-2 py-0.5 rounded-md bg-bg-secondary text-xs font-bold text-text-tertiary uppercase"
                     >Handlebars</span
                   >
                 </div>
                 <button
                   v-if="selected.isOverridden"
-                  class="flex items-center gap-1.5 text-[10px] font-bold text-error hover:text-error transition-colors"
+                  class="flex items-center gap-1.5 text-xs font-bold text-error hover:text-error transition-colors"
                   @click="restore"
                 >
                   <RotateCcw :size="12" /> {{ locale.restoreDefault }}
@@ -174,7 +174,7 @@
                 <textarea
                   v-model="form.html"
                   rows="16"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl p-6 text-[11px] text-text-secondary font-mono leading-relaxed focus:outline-none focus:border-primary-30 custom-scrollbar"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl p-6 text-xs text-text-secondary font-mono leading-relaxed focus:outline-none focus:border-primary-30 custom-scrollbar"
                   placeholder="<html>..."
                 />
               </div>
@@ -189,13 +189,13 @@
               <div v-if="previewHtml" class="space-y-4 pt-4 border-t border-border-secondary">
                 <div class="flex items-center justify-between px-1">
                   <label
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest flex items-center gap-2"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-2"
                   >
                     <Eye :size="14" /> {{ locale.livePreviewLabel }}
                     <span class="text-text-tertiary font-normal normal-case">{{ previewSubject }}</span>
                   </label>
                   <button
-                    class="text-[10px] font-bold text-text-tertiary hover:text-text-secondary"
+                    class="text-xs font-bold text-text-tertiary hover:text-text-secondary"
                     @click="previewHtml = ''"
                   >
                     {{ locale.hidePreview }}
@@ -219,7 +219,7 @@
           >
             <Mail :size="32" class="text-text-primary" />
           </div>
-          <p class="text-xs font-bold tracking-widest uppercase">{{ locale.emptySelectTemplate }}</p>
+          <p class="text-xs font-bold tracking-wider uppercase">{{ locale.emptySelectTemplate }}</p>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@
       <div v-if="!isFirstLogin" class="space-y-2">
         <label
           for="current-password"
-          class="text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+          class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
           >{{ locale.currentPassword }}</label
         >
         <div class="relative group">
@@ -45,7 +45,7 @@
       <div class="space-y-2">
         <label
           for="new-password"
-          class="text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+          class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
           >{{ locale.newPassword }}</label
         >
         <div class="relative group">
@@ -90,11 +90,11 @@
             />
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black uppercase tracking-widest text-text-tertiary"
+            <span class="text-xs font-bold uppercase tracking-wider text-text-tertiary"
               >{{ locale.passwordStrength }}</span
             >
             <span
-              class="text-[10px] font-black uppercase tracking-widest"
+              class="text-xs font-bold uppercase tracking-wider"
               :class="passwordStrength.textColorClass"
             >
               {{ passwordStrength.text }}
@@ -106,7 +106,7 @@
       <div class="space-y-2">
         <label
           for="confirm-password"
-          class="text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+          class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
           >{{ locale.confirmPassword }}</label
         >
         <div class="relative group">
@@ -150,11 +150,11 @@
             class="flex items-center gap-1.5 text-error"
           >
             <XCircle :size="12" />
-            <span class="text-[10px] font-bold">{{ locale.mismatch }}</span>
+            <span class="text-xs font-bold">{{ locale.mismatch }}</span>
           </div>
           <div v-else class="flex items-center gap-1.5 text-success">
             <CheckCircle2 :size="12" />
-            <span class="text-[10px] font-bold">{{ locale.matched }}</span>
+            <span class="text-xs font-bold">{{ locale.matched }}</span>
           </div>
         </div>
       </div>
@@ -180,7 +180,7 @@
 
       <button
         :disabled="loading || !isFormValid"
-        class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-50"
+        class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-50"
         type="submit"
       >
         <Loader2 v-if="loading" :size="18" class="animate-spin" />

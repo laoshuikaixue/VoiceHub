@@ -2,7 +2,7 @@
   <div class="max-w-[1400px] mx-auto space-y-8 pb-20">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
     </div>
@@ -14,7 +14,7 @@
           <div class="space-y-6">
             <!-- 标题 -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.notificationTitle }}</label
               >
               <input
@@ -27,7 +27,7 @@
 
             <!-- 内容 -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.notificationContent }}</label
               >
               <textarea
@@ -35,7 +35,7 @@
                 :placeholder="locale.contentPlaceholder"
                 class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary-30 transition-all text-text-primary placeholder:text-text-primary min-h-[160px] resize-none"
               />
-              <p class="px-1 text-[10px] font-medium text-text-disabled">
+              <p class="px-1 text-xs font-medium text-text-disabled">
                 {{ locale.markdownHint }}
               </p>
             </div>
@@ -61,7 +61,7 @@
                 />
               </span>
               <span class="min-w-0">
-                <span class="flex items-center gap-2 text-sm font-black text-text-primary">
+                <span class="flex items-center gap-2 text-sm font-bold text-text-primary">
                   <AlertTriangle
                     :size="16"
                     :class="form.important ? 'text-primary' : 'text-text-tertiary'"
@@ -93,7 +93,7 @@
                 />
               </span>
               <span class="min-w-0">
-                <span class="flex items-center gap-2 text-sm font-black text-text-primary">
+                <span class="flex items-center gap-2 text-sm font-bold text-text-primary">
                   <Megaphone
                     :size="16"
                     :class="form.broadcast ? 'text-primary' : 'text-text-tertiary'"
@@ -107,7 +107,7 @@
             </label>
 
             <div class="space-y-3 pt-4 border-t border-border-secondary-50">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.scope }}</label
               >
               <div class="flex flex-wrap gap-2">
@@ -115,7 +115,7 @@
                   v-for="opt in targetOptions"
                   :key="opt.id"
                   :class="[
-                    'flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all border',
+                    'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border',
                     form.scope === opt.id
                       ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-[var(--primary-glow)]'
                       : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
@@ -137,14 +137,14 @@
                   class="p-4 bg-primary-5 border border-primary-10 rounded-2xl flex items-center gap-4"
                 >
                   <Info class="text-primary shrink-0" :size="18" />
-                  <p class="text-[11px] font-bold text-text-tertiary">
+                  <p class="text-xs font-bold text-text-tertiary">
                     {{ locale.allUsersHint }}
                   </p>
                 </div>
 
                 <div v-else-if="form.scope === 'GRADE'" key="grade" class="space-y-4">
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                       >{{ locale.selectGrade }}</span
                     >
                     <CustomSelect
@@ -164,7 +164,7 @@
                   class="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                       >{{ locale.grade }}</span
                     >
                     <CustomSelect
@@ -177,7 +177,7 @@
                     />
                   </div>
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                       >{{ locale.className }}</span
                     >
                     <CustomSelect
@@ -229,7 +229,7 @@
                         :key="index"
                         class="flex items-center gap-2 px-3 py-1.5 bg-bg-secondary border border-border-secondary rounded-lg group"
                       >
-                        <span class="text-[10px] font-bold text-text-tertiary"
+                        <span class="text-xs font-bold text-text-tertiary"
                           >{{ cls.grade }} {{ cls.class }}</span
                         >
                         <button
@@ -241,7 +241,7 @@
                       </div>
                     </div>
                     <div v-else class="text-center py-4">
-                      <p class="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                      <p class="text-xs font-bold text-text-secondary uppercase tracking-wider">
                         {{ locale.noClassSelected }}
                       </p>
                     </div>
@@ -275,7 +275,7 @@
                     class="bg-bg-primary border border-border-secondary rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
                   >
                     <div class="px-4 py-2 border-b border-border-secondary-60 bg-bg-secondary-40">
-                      <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+                      <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                         >{{ getLocaleMessage('searchResults', userSearchResults.length) }}</span
                       >
                     </div>
@@ -289,22 +289,22 @@
                           {{ user.name || user.username }}
                         </h5>
                         <div class="flex items-center gap-2 mt-0.5">
-                          <span class="text-[10px] text-primary font-black"
+                          <span class="text-xs text-primary font-bold"
                             >@{{ user.username }}</span
                           >
                           <span
                             v-if="user.grade && user.class"
-                            class="text-[10px] text-text-disabled font-bold uppercase tracking-widest"
+                            class="text-xs text-text-disabled font-bold uppercase tracking-wider"
                             >{{ user.grade }} {{ user.class }}</span
                           >
-                          <span class="text-[10px] text-text-secondary font-black">{{
+                          <span class="text-xs text-text-secondary font-bold">{{
                             getRoleText(user.role)
                           }}</span>
                         </div>
                       </div>
                       <button
                         :disabled="isUserSelected(user.id)"
-                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-primary-hover hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-tertiary text-[10px] font-black rounded-lg transition-all uppercase"
+                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-primary-hover hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-tertiary text-xs font-bold rounded-lg transition-all uppercase"
                         @click="addUserToSelection(user)"
                       >
                         {{ isUserSelected(user.id) ? locale.selected : locale.select }}
@@ -315,11 +315,11 @@
                   <!-- 已选择的用户 -->
                   <div v-if="form.selectedUsers.length > 0" class="space-y-3">
                     <div class="flex items-center justify-between px-1">
-                      <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
+                      <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                         >{{ getLocaleMessage('selectedUsers', form.selectedUsers.length) }}</span
                       >
                       <button
-                        class="text-[9px] font-black text-error-70 hover:text-error uppercase tracking-widest transition-colors"
+                        class="text-xs font-bold text-error-70 hover:text-error uppercase tracking-wider transition-colors"
                         @click="clearAllSelectedUsers"
                       >
                         {{ locale.clearAll }}
@@ -332,10 +332,10 @@
                         class="flex items-center gap-2 px-3 py-1.5 bg-bg-secondary border border-border-secondary rounded-lg group"
                       >
                         <div class="flex flex-col">
-                          <span class="text-[10px] font-bold text-text-secondary leading-none">{{
+                          <span class="text-xs font-bold text-text-secondary leading-none">{{
                             user.name || user.username
                           }}</span>
-                          <span class="text-[8px] text-text-disabled">@{{ user.username }}</span>
+                          <span class="text-xs text-text-disabled">@{{ user.username }}</span>
                         </div>
                         <button
                           class="text-text-disabled hover:text-error transition-colors"
@@ -347,7 +347,7 @@
                     </div>
                   </div>
                   <div v-else class="text-center py-4">
-                    <p class="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                    <p class="text-xs font-bold text-text-secondary uppercase tracking-wider">
                       {{ locale.noUsersSelected }}
                     </p>
                   </div>
@@ -378,7 +378,7 @@
             <button
               :disabled="loading || !isFormValid"
               :class="[
-                'flex items-center gap-2 px-10 py-4 bg-bg-primary border border-border-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-[0.2em] shadow-lg',
+                'flex items-center gap-2 px-10 py-4 bg-bg-primary border border-border-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-[0.2em] shadow-lg',
                 loading || !isFormValid
                   ? 'text-text-primary cursor-not-allowed'
                   : 'text-text-tertiary hover:text-text-primary hover:border-border-tertiary hover:bg-bg-secondary'
@@ -399,7 +399,7 @@
           class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-8 shadow-xl flex flex-col h-full"
         >
           <h3
-            class="text-sm font-black text-text-primary uppercase tracking-widest mb-6 flex items-center gap-2"
+            class="text-sm font-bold text-text-primary uppercase tracking-wider mb-6 flex items-center gap-2"
           >
             <Eye :size="16" class="text-primary" /> {{ locale.previewTitle }}
           </h3>
@@ -421,12 +421,12 @@
                   </div>
                   <div class="min-w-0 flex-1">
                     <h4
-                      class="break-words text-sm font-black"
+                      class="break-words text-sm font-bold"
                       :class="form.title ? 'text-text-primary' : 'italic text-text-disabled'"
                     >
                       {{ form.title || locale.previewTitlePlaceholder }}
                     </h4>
-                    <p class="mt-1 truncate text-[11px] font-black text-text-disabled">
+                    <p class="mt-1 truncate text-xs font-bold text-text-disabled">
                       {{ locale.senderLabel }}：{{ previewSenderName }}
                     </p>
                   </div>
@@ -444,7 +444,7 @@
                 <footer class="flex items-center justify-between gap-4 border-t border-border-secondary-50 pt-4">
                   <div class="flex min-w-0 items-center gap-1.5 text-text-secondary">
                     <Users :size="13" class="shrink-0" aria-hidden="true" />
-                    <span class="truncate text-[10px] font-black text-text-disabled">
+                    <span class="truncate text-xs font-bold text-text-disabled">
                       {{ getLocaleMessage('previewScope', scopeDescription) }}
                     </span>
                   </div>
@@ -469,12 +469,12 @@
                   </div>
                   <div class="min-w-0 flex-1">
                     <h4
-                      class="break-words text-sm font-black"
+                      class="break-words text-sm font-bold"
                       :class="form.title ? 'text-text-primary' : 'italic text-text-disabled'"
                     >
                       {{ form.title || locale.previewTitlePlaceholder }}
                     </h4>
-                    <p class="mt-1 truncate text-[11px] font-black text-text-disabled">
+                    <p class="mt-1 truncate text-xs font-bold text-text-disabled">
                       {{ locale.senderLabel }}：{{ previewSenderName }}
                     </p>
                   </div>
@@ -492,7 +492,7 @@
                 <footer class="flex items-center justify-between gap-4 border-t border-border-secondary-50 pt-4">
                   <div class="flex min-w-0 items-center gap-1.5 text-text-secondary">
                     <Users :size="13" class="shrink-0" aria-hidden="true" />
-                    <span class="truncate text-[10px] font-black text-text-disabled">
+                    <span class="truncate text-xs font-bold text-text-disabled">
                       {{ getLocaleMessage('previewScope', scopeDescription) }}
                     </span>
                   </div>
@@ -505,7 +505,7 @@
               class="mt-6 flex w-full max-w-[320px] items-start gap-3 rounded-lg border border-warning-10 bg-warning-5 p-3"
             >
               <AlertCircle :size="14" class="mt-0.5 shrink-0 text-warning" />
-              <p class="text-[10px] font-black text-text-tertiary leading-normal">
+              <p class="text-xs font-bold text-text-tertiary leading-normal">
                 {{ locale.previewHint }}
               </p>
             </div>

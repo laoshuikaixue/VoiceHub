@@ -38,13 +38,13 @@
                 </div>
               </div>
               <div class="min-w-0 flex-1">
-                <h3 class="text-xl font-black text-text-primary tracking-tight truncate">
+                <h3 class="text-xl font-bold text-text-primary tracking-tight truncate">
                   {{ albumInfo && albumInfo.name ? albumInfo.name : locale.albumFallback }}
                 </h3>
                 <p class="text-xs font-bold text-text-tertiary mt-1 truncate">
                   {{ albumInfo && albumInfo.artist ? albumInfo.artist : locale.unknownArtist }}
                 </p>
-                <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-text-disabled">
+                <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-text-disabled">
                   <span v-if="albumInfo && albumInfo.size">
                     {{ callLocale('songCount', `${albumInfo.size} 首`, albumInfo.size) }}
                   </span>
@@ -58,7 +58,7 @@
                 <!-- 专辑描述 -->
                 <p
                   v-if="albumInfo && albumInfo.description"
-                  class="mt-2 text-[11px] text-text-tertiary leading-relaxed line-clamp-2 cursor-pointer hover:text-text-tertiary transition-colors"
+                  class="mt-2 text-xs text-text-tertiary leading-relaxed line-clamp-2 cursor-pointer hover:text-text-tertiary transition-colors"
                   :title="locale.viewFullIntro"
                   @click="showDescModal = true"
                 >
@@ -91,7 +91,7 @@
           <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center">
               <AppSpinner :size="48" class="mb-4" />
-              <p class="text-sm font-bold text-text-tertiary uppercase tracking-widest">{{ locale.loading }}</p>
+              <p class="text-sm font-bold text-text-tertiary uppercase tracking-wider">{{ locale.loading }}</p>
             </div>
           </div>
 
@@ -103,7 +103,7 @@
               >
                 <Icon name="alert-circle" :size="32" />
               </div>
-              <p class="text-sm font-bold uppercase tracking-widest">{{ error }}</p>
+              <p class="text-sm font-bold uppercase tracking-wider">{{ error }}</p>
             </div>
           </div>
 
@@ -118,7 +118,7 @@
               >
                 <Icon name="music" :size="32" class="opacity-20" />
               </div>
-              <p class="text-sm font-bold uppercase tracking-widest">
+              <p class="text-sm font-bold uppercase tracking-wider">
                 {{ searchQuery ? locale.noMatches : locale.noSongs }}
               </p>
             </div>
@@ -160,7 +160,7 @@
                     {{ song.name }}
                   </h4>
                   <div
-                    class="flex items-center gap-3 mt-0.5 text-[10px] text-text-tertiary font-bold uppercase tracking-wider"
+                    class="flex items-center gap-3 mt-0.5 text-xs text-text-tertiary font-bold uppercase tracking-wider"
                   >
                     <span class="truncate">{{ song.singer }}</span>
                     <span class="flex items-center shrink-0">
@@ -187,7 +187,7 @@
                   <template v-if="song.status.played">
                     <!-- 已播放标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider"
                     >
                       {{ requestLocale.played }}
                     </div>
@@ -196,7 +196,7 @@
                   <template v-else-if="song.status.scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider"
                     >
                       {{ requestLocale.scheduled }}
                     </div>
@@ -206,7 +206,7 @@
                     <div class="flex flex-col sm:flex-row gap-2 items-center">
                       <!-- 已投稿标签 -->
                       <div
-                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-bg-tertiary text-text-tertiary text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-bg-tertiary text-text-tertiary text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider"
                       >
                         {{ locale.submitted }}
                       </div>
@@ -216,7 +216,7 @@
                         v-if="!isMySong(song)"
                         :disabled="song.status.voted || submitting"
                         :class="[
-                          'w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
+                          'w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider transition-all active:scale-95',
                           song.status.voted
                             ? 'bg-error-10 text-error border border-error-20 cursor-not-allowed'
                             : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-error'
@@ -239,7 +239,7 @@
                     <!-- 投稿按钮（未投稿） -->
                     <button
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs sm:text-xs font-bold disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectSong(song)"
                     >
                       <span v-if="submitting && selectedSongId === song.songmid">{{ requestLocale.submitting }}</span>
@@ -273,7 +273,7 @@
           @click.stop
         >
           <div class="flex items-center justify-between mb-4">
-            <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.albumIntro }}</h4>
+            <h4 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.albumIntro }}</h4>
             <button
               class="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="showDescModal = false"

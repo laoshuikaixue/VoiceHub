@@ -7,8 +7,8 @@
         <!-- 头部 -->
         <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-panel-bg-dark bg-panel-bg-deepest-95 px-5 py-4 backdrop-blur-sm">
           <div class="min-w-0">
-            <h3 class="truncate text-base font-black text-text-primary-lighter">{{ locale.assignTitle }}</h3>
-            <p class="mt-0.5 truncate text-[11px] text-text-tertiary">{{ locale.assignDesc }}</p>
+            <h3 class="truncate text-base font-bold text-text-primary-lighter">{{ locale.assignTitle }}</h3>
+            <p class="mt-0.5 truncate text-xs text-text-tertiary">{{ locale.assignDesc }}</p>
           </div>
           <button
             type="button"
@@ -25,20 +25,20 @@
           <!-- 行内派发提示：该券状态不可直接派发 -->
           <p
             v-if="notice"
-            class="rounded-xl border border-warning-20 bg-warning-10 px-3 py-2.5 text-[11px] leading-relaxed text-warning"
+            class="rounded-xl border border-warning-20 bg-warning-10 px-3 py-2.5 text-xs leading-relaxed text-warning"
           >
             {{ notice }}
           </p>
 
           <!-- 接收人：树形选择器 -->
           <div>
-            <p class="mb-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectUser }}</p>
+            <p class="mb-1.5 text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSelectUser }}</p>
             <CardCodeRecipientPicker v-model="recipients" :max="recipientsMax" />
           </div>
 
           <!-- 券来源 -->
           <div>
-            <p class="mb-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSource }}</p>
+            <p class="mb-1.5 text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignSource }}</p>
             <div class="flex gap-1 rounded-xl border border-border-secondary bg-bg-primary p-1">
               <button
                 type="button"
@@ -61,13 +61,13 @@
             <!-- 使用已有点歌券 -->
             <div v-if="source === 'selected'" class="mt-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5">
               <p class="mb-2 text-sm text-text-primary">{{ getMessage('assignSelectedCodes', selectedIds.length) }}</p>
-              <p class="mb-2 text-[11px] text-text-tertiary">{{ locale.assignSelectCodesHint }}</p>
+              <p class="mb-2 text-xs text-text-tertiary">{{ locale.assignSelectCodesHint }}</p>
               <CardCodeAvailablePicker v-model="selectedIds" :preset-coupons="props.coupons" />
             </div>
 
             <!-- 来源二：按接收人现场生成 -->
             <div v-else class="mt-2">
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignCountPerUser }}</label>
+              <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignCountPerUser }}</label>
               <div class="flex items-center gap-2">
                 <input
                   v-model.number="countPerUser"
@@ -76,7 +76,7 @@
                   max="100"
                   class="w-24 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
                 >
-                <p class="text-[11px] leading-relaxed text-text-tertiary">
+                <p class="text-xs leading-relaxed text-text-tertiary">
                   {{ getMessage('assignGenerateHint', countPerUser, resolvedRecipientCount) }}
                 </p>
               </div>
@@ -84,7 +84,7 @@
           </div>
 
           <!-- 派发分布提示 -->
-          <p class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-[11px] leading-relaxed text-text-tertiary">
+          <p class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-xs leading-relaxed text-text-tertiary">
             <template v-if="source === 'selected'">
               {{ getMessage('assignDistributionHint', selectedIds.length, resolvedRecipientCount) }}
             </template>
@@ -95,7 +95,7 @@
 
           <!-- 备注 -->
           <div>
-            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
+            <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
             <input
               v-model="note"
               type="text"
@@ -114,7 +114,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              class="flex items-center gap-2 rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
+              class="flex items-center gap-2 rounded-xl bg-primary-hover px-4 py-2 text-xs font-bold text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
               :disabled="assigning || !canSubmit"
               @click="submit"
             >
@@ -130,24 +130,24 @@
 
           <!-- 派发结果明细 -->
           <div v-if="assignResult" class="space-y-2 rounded-xl border border-border-secondary bg-bg-primary p-3">
-            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignResultTitle }}</p>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignResultTitle }}</p>
             <p class="text-xs font-bold text-text-primary">
               {{ getMessage('assignResultSummary', assignResult.assignedCount, assignResult.servedRecipients, assignResult.failedCount) }}
             </p>
-            <p v-if="assignResult.skippedRecipients.length" class="text-[11px] leading-relaxed text-warning">
+            <p v-if="assignResult.skippedRecipients.length" class="text-xs leading-relaxed text-warning">
               {{ getMessage('assignSkippedRecipients', assignResult.skippedRecipients.length) }}
               {{ assignResult.skippedRecipients.map((item) => item.name || item.username).join('、') }}
             </p>
-            <p v-if="assignResult.generateMode && assignResult.generatedCodes.length" class="text-[11px] leading-relaxed text-text-tertiary">
+            <p v-if="assignResult.generateMode && assignResult.generatedCodes.length" class="text-xs leading-relaxed text-text-tertiary">
               {{ getMessage('assignGeneratedCodes', assignResult.generatedCodes.length) }}
               {{ assignResult.generatedCodes.join('、') }}
             </p>
-            <p v-if="assignResult.invalidRecipients.length" class="text-[11px] leading-relaxed text-error">
+            <p v-if="assignResult.invalidRecipients.length" class="text-xs leading-relaxed text-error">
               {{ locale.assignInvalidRecipients }}
               {{ assignResult.invalidRecipients.map((item) => `#${item.userId} ${localizeFailure(item)}`).join('；') }}
             </p>
             <div v-if="assignResult.failures.length" class="space-y-1">
-              <p v-for="(failure, index) in assignResult.failures" :key="index" class="text-[11px] leading-relaxed text-text-secondary">
+              <p v-for="(failure, index) in assignResult.failures" :key="index" class="text-xs leading-relaxed text-text-secondary">
                 <span class="font-mono text-text-primary">{{ failure.code || `#${failure.cardCodeId}` }}</span>
                 — {{ localizeFailure(failure) }}
               </p>

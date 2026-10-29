@@ -36,11 +36,11 @@
             ]"
             @click="handleDateSelect(date.value)"
           >
-            <span class="text-[10px] font-bold uppercase tracking-wider opacity-80">{{
+            <span class="text-xs font-bold uppercase tracking-wider opacity-80">{{
               date.weekday
             }}</span>
-            <span class="text-lg font-black leading-none my-0.5">{{ date.day }}</span>
-                  <span class="text-[9px] font-bold opacity-60">{{ callLocale('monthLabel', `${date.month}月`, date.month) }}</span>
+            <span class="text-lg font-bold leading-none my-0.5">{{ date.day }}</span>
+                  <span class="text-xs font-bold opacity-60">{{ callLocale('monthLabel', `${date.month}月`, date.month) }}</span>
           </button>
         </div>
 
@@ -93,7 +93,7 @@
         @click.stop
       >
         <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.selectDate }}</h3>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.selectDate }}</h3>
           <button
             class="text-text-tertiary hover:text-text-secondary transition-colors"
             @click="showManualDatePicker = false"
@@ -151,7 +151,7 @@
       >
         <button
           :class="[
-            'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
+            'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all',
             mobileTab === 'pending' ? 'bg-primary-hover text-text-primary shadow-lg' : 'text-text-tertiary'
           ]"
           @click="mobileTab = 'pending'"
@@ -159,14 +159,14 @@
           <ListMusic class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
             >{{ locale.pendingSongs }}
-            <span class="px-1.5 py-0.5 bg-bg-tertiary text-[10px] rounded text-text-tertiary">{{
+            <span class="px-1.5 py-0.5 bg-bg-tertiary text-xs rounded text-text-tertiary">{{
               filteredUnscheduledSongs.length
             }}</span></span
           >
         </button>
         <button
           :class="[
-            'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
+            'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all',
             mobileTab === 'scheduled' ? 'bg-primary-hover text-text-primary shadow-lg' : 'text-text-tertiary'
           ]"
           @click="mobileTab = 'scheduled'"
@@ -174,7 +174,7 @@
           <PlaySquare class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
             >{{ locale.playlist }}
-            <span class="px-1.5 py-0.5 bg-bg-tertiary text-[10px] rounded text-text-tertiary">{{
+            <span class="px-1.5 py-0.5 bg-bg-tertiary text-xs rounded text-text-tertiary">{{
               localScheduledSongs.length
             }}</span></span
           >
@@ -195,7 +195,7 @@
         >
           <div class="flex flex-wrap items-center justify-between gap-y-2 px-1">
             <h3
-              class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase whitespace-nowrap shrink-0"
+              class="hidden lg:block text-lg font-bold tracking-tight text-text-primary uppercase whitespace-nowrap shrink-0"
             >
               {{ activeTab === 'pool' ? locale.poolList : locale.pendingSongs }}
             </h3>
@@ -207,7 +207,7 @@
                   v-for="tab in scheduleTabs"
                   :key="tab.id"
                   :class="[
-                    'flex-1 lg:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    'flex-1 lg:flex-none px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                     activeTab === tab.id
                       ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
                       : 'text-text-disabled hover:text-text-tertiary'
@@ -238,7 +238,7 @@
                 />
                 <span
                   v-if="refreshingAllDurations.running"
-                  class="text-[9px] font-bold tabular-nums whitespace-nowrap"
+                  class="text-xs font-bold tabular-nums whitespace-nowrap"
                 >{{ refreshingAllDurations.done }}/{{ refreshingAllDurations.total }}</span>
                 <span
                   v-if="refreshingAllDurations.running"
@@ -261,7 +261,7 @@
             >
               <div class="flex items-center gap-2 text-text-tertiary">
                 <Filter class="w-3.5 h-3.5" />
-                <span class="text-[11px] font-black uppercase tracking-widest">{{ locale.searchAndFilter }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider">{{ locale.searchAndFilter }}</span>
               </div>
               <ChevronRight
                 :class="[
@@ -409,7 +409,7 @@
                           <span
                             v-for="(playlistName, idx) in playlistNamesMap[song.musicId]"
                             :key="idx"
-                            class="px-1.5 py-[2px] bg-primary-10 text-primary rounded text-[9px] border border-primary-20 truncate max-w-[100px] font-normal leading-none"
+                            class="px-1.5 py-[2px] bg-primary-10 text-primary rounded text-xs border border-primary-20 truncate max-w-[100px] font-normal leading-none"
                             :title="playlistName"
                           >
                             {{ playlistName }}
@@ -426,7 +426,7 @@
                       </button>
                       <span
                         v-if="song.cardCodeId"
-                        class="inline-flex items-center rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-[9px] font-bold text-warning whitespace-nowrap flex-shrink-0"
+                        class="inline-flex items-center rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-xs font-bold text-warning whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
                         {{ locale.cardPending }}
@@ -445,23 +445,23 @@
                       </span>
                     </div>
                     <!-- 第二行：歌手 · 期望时段 · 期望日期 -->
-                    <div class="text-[11px] text-text-tertiary truncate flex items-center gap-1">
+                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1">
                       <span class="truncate max-w-[120px]">{{ song.artist }}</span>
                       <span
                         v-if="song.preferredPlayTimeId"
-                        class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap shrink-0"
+                        class="ml-0.5 px-1.5 py-0.5 bg-info-10 text-info rounded text-xs border border-info-20 whitespace-nowrap shrink-0"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                       <span
                         v-if="song.preferredPlayDate"
-                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap shrink-0"
+                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-xs border border-primary-20 whitespace-nowrap shrink-0"
                       >
                         {{ callLocale('preferredPlayDate', `期望日期: ${song.preferredPlayDate}`, song.preferredPlayDate) }}
                       </span>
                       <span
                         v-if="activeTab === 'pool' && song.addedByName"
-                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap shrink-0"
+                        class="ml-0.5 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-xs border border-primary-20 whitespace-nowrap shrink-0"
                       >
                         {{ locale.addedBy }} {{ song.addedByName }}
                       </span>
@@ -475,7 +475,7 @@
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"
-                      class="flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 rounded-md border border-border-secondary-50"
+                      class="flex items-center gap-0.5 px-1.5 py-1 text-xs font-bold text-text-tertiary bg-bg-primary-50 rounded-md border border-border-secondary-50"
                     >
                       <Heart class="w-3 h-3 text-error-50" />
                       {{ song.voteCount || 0 }}
@@ -484,7 +484,7 @@
                     <!-- 重播模式：查看按钮 -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="px-3 py-1.5 rounded-lg bg-primary-10 hover:bg-primary-20 text-primary border border-primary-20 text-[10px] font-bold transition-colors"
+                      class="px-3 py-1.5 rounded-lg bg-primary-10 hover:bg-primary-20 text-primary border border-primary-20 text-xs font-bold transition-colors"
                       @click.stop="openReplayModal(song)"
                     >
                       {{ locale.view }}
@@ -584,7 +584,7 @@
                   <!-- 信息行：投稿人 | 班级 · 平台标签 · 投 x · 播 x（basis-full 换行占满整行，位于按钮下方） -->
                   <div
                     v-if="song.requester || song.durationSeconds || editingDuration[song.id] || (auth?.isAdmin && (song.musicPlatform || (song.submissionCount != null && song.playCount != null)))"
-                    class="text-[10px] text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
+                    class="text-xs text-text-tertiary flex items-center gap-1.5 flex-wrap basis-full min-w-0"
                   >
                     <template v-if="song.requester">
                       <span class="truncate max-w-[120px]">{{ stripDisambiguationSuffix(song.requester) }}</span>
@@ -648,7 +648,7 @@
                       type="text"
                       inputmode="text"
                       pattern="[0-9:]*"
-                      class="w-16 text-[10px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                      class="w-16 text-xs font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
                       :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
                       @focusout="saveDurationEdit(song)"
                       @keydown="handleDurationKeydown($event, song)"
@@ -664,15 +664,15 @@
               >
                 <div v-if="searchQuery" class="flex flex-col items-center">
                   <Search class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.emptySearch }}</p>
+                  <p class="text-xs font-bold uppercase tracking-wider">{{ locale.emptySearch }}</p>
                 </div>
                 <div v-else-if="activeTab === 'pool'" class="flex flex-col items-center">
                   <FolderPlus class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.poolEmptyHint }}</p>
+                  <p class="text-xs font-bold uppercase tracking-wider">{{ locale.poolEmptyHint }}</p>
                 </div>
                 <div v-else class="flex flex-col items-center">
                   <ListMusic class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.emptySongs }}</p>
+                  <p class="text-xs font-bold uppercase tracking-wider">{{ locale.emptySongs }}</p>
                 </div>
               </div>
             </div>
@@ -699,10 +699,10 @@
             class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
           >
             <div class="flex items-baseline gap-3">
-              <h3 class="text-lg font-black tracking-tight text-text-primary uppercase">{{ locale.playOrder }}</h3>
-              <span v-show="scheduledTotalDuration > 0" class="flex items-baseline gap-1.5 text-[11px] font-bold text-text-tertiary uppercase tracking-wider">
+              <h3 class="text-lg font-bold tracking-tight text-text-primary uppercase">{{ locale.playOrder }}</h3>
+              <span v-show="scheduledTotalDuration > 0" class="flex items-baseline gap-1.5 text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 {{ locale.expectedTotalDuration }}
-                <span class="text-sm font-black text-primary">{{ formatDuration(scheduledTotalDuration) }}</span>
+                <span class="text-sm font-bold text-primary">{{ formatDuration(scheduledTotalDuration) }}</span>
               </span>
             </div>
             <div
@@ -718,7 +718,7 @@
                 >
                   <Save class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.saveDraft }}</span
                   >
                 </button>
@@ -729,7 +729,7 @@
                 >
                   <Download class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.downloadSongs }}</span
                   >
                 </button>
@@ -740,7 +740,7 @@
                 >
                   <FileSpreadsheet class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.exportPlaylist }}</span
                   >
                 </button>
@@ -751,7 +751,7 @@
                 >
                   <CheckCircle2 class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.markAllPlayed }}</span
                   >
                 </button>
@@ -765,7 +765,7 @@
                     :class="{ 'animate-spin': refreshingAllDurations.running }"
                   />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.refreshPageDurations }}{{
                       refreshingAllDurations.running
                         ? ` (${refreshingAllDurations.progress})`
@@ -780,7 +780,7 @@
                 >
                   <Sparkles class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.autoSchedule }}</span
                   >
                 </button>
@@ -790,7 +790,7 @@
                 >
                   <ArrowRight class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.moveDate }}</span
                   >
                 </button>
@@ -800,7 +800,7 @@
                 >
                   <Copy class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.copyDate }}</span
                   >
                 </button>
@@ -811,7 +811,7 @@
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-xs text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.clearList }}</span
                   >
                 </button>
@@ -819,14 +819,14 @@
               <div class="h-6 w-[1px] bg-bg-tertiary mx-1" />
               <button
                 :disabled="!canPublish"
-                class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-[10px] font-black rounded-xl border border-success-20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-xs font-bold rounded-xl border border-success-20 transition-all uppercase tracking-wider active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="publishSchedule"
               >
                 <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
               </button>
               <button
                 :disabled="!hasChanges"
-                class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-wider active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
               >
                 <FileBadge class="w-3.5 h-3.5" /> {{ locale.saveAndPublish }}
@@ -850,7 +850,7 @@
               class="flex flex-col items-center justify-center h-full py-12 text-text-primary"
             >
               <PlaySquare class="w-8 h-8 mb-4 opacity-20" />
-              <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.addSongsHint }}</p>
+              <p class="text-xs font-bold uppercase tracking-wider">{{ locale.addSongsHint }}</p>
             </div>
 
             <TransitionGroup class="space-y-2" name="schedule-list" tag="div">
@@ -879,9 +879,9 @@
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-bg-primary-50 border border-border-secondary text-text-tertiary font-black text-xs flex-shrink-0"
+                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-bg-primary-50 border border-border-secondary text-text-tertiary font-bold text-xs flex-shrink-0"
                   >
-                    <span class="text-[8px] text-text-disabled uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
+                    <span class="text-xs text-text-disabled uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
                     <span class="text-sm text-text-secondary leading-none">{{
                       index + 1 < 10 ? '0' + (index + 1) : index + 1
                     }}</span>
@@ -936,20 +936,20 @@
                       <!-- 重播标识 -->
                       <span
                         v-if="schedule.replayRequestId != null"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-10 text-primary border border-primary-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
+                        class="px-1.5 py-0.5 rounded text-xs font-bold bg-primary-10 text-primary border border-primary-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
                         <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        class="px-1.5 py-0.5 rounded text-xs font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
                       <span
                         v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        class="px-1.5 py-0.5 rounded text-xs font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
                         {{ locale.cardCode }}
@@ -977,13 +977,13 @@
                         type="text"
                         inputmode="text"
                         pattern="[0-9:]*"
-                        class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                        class="w-20 text-xs font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
                         :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
                         @focusout="saveDurationEdit(schedule.song)"
                         @keydown="handleDurationKeydown($event, schedule.song)"
                       >
                     </div>
-                    <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
+                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1">
                       <span
                         v-if="schedule.replayRequestId != null"
                         :title="
@@ -1016,7 +1016,7 @@
                       </span>
                       <span
                         v-if="schedule.song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap"
+                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-xs border border-info-20 whitespace-nowrap"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(schedule.song.preferredPlayTimeId)}`, getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
@@ -1083,7 +1083,7 @@
           @click="openDownloadDialog"
         >
           <Download class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.downloadSongsShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.downloadSongsShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1092,7 +1092,7 @@
           @click="openPlaylistExportDialog"
         >
           <FileSpreadsheet class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.exportPlaylistShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.exportPlaylistShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
@@ -1100,7 +1100,7 @@
           @click="saveDraft"
         >
           <Save class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveDraftShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.saveDraftShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-success rounded-lg active:scale-95 transition-all"
@@ -1108,7 +1108,7 @@
           @click="markAllAsPlayed"
         >
           <CheckCircle2 class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.markAllPlayedShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.markAllPlayedShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all"
@@ -1116,7 +1116,7 @@
           @click="openMoveDateDialog"
         >
           <ArrowRight class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.moveDateShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.moveDateShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
@@ -1124,7 +1124,7 @@
           @click="openCopyDateDialog"
         >
           <Copy class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.copyDateShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.copyDateShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-error rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1133,7 +1133,7 @@
           @click="clearScheduleList"
         >
           <Trash2 class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.clearListShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.clearListShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1143,7 +1143,7 @@
           @click="moveAllToPool"
         >
           <FolderPlus class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.addCurrentPageShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.addCurrentPageShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1152,7 +1152,7 @@
           @click="publishSchedule"
         >
           <Send class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.publishScheduleShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.publishScheduleShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1161,7 +1161,7 @@
           @click="refreshAllDurations"
         >
           <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': refreshingAllDurations.running }" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.refreshPageDurationsShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.refreshPageDurationsShort }}</span>
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
@@ -1169,7 +1169,7 @@
           @click="openAutoScheduleDialog"
         >
           <Sparkles class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.autoScheduleShort }}</span>
+          <span class="text-xs font-bold whitespace-nowrap">{{ locale.autoScheduleShort }}</span>
         </button>
       </div>
     </div>
@@ -1177,11 +1177,11 @@
     <!-- 主要操作 -->
     <button
       :disabled="!hasChanges"
-      class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+      class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
       @click="saveSequence"
     >
       <FileBadge class="w-4 h-4" />
-      <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveAndPublishShort }}</span>
+      <span class="text-xs font-bold whitespace-nowrap">{{ locale.saveAndPublishShort }}</span>
     </button>
   </div>
 
@@ -1224,7 +1224,7 @@
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.moveDateTitle }}</h3>
+        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.moveDateTitle }}</h3>
         <button
           class="text-text-tertiary hover:text-text-secondary transition-colors"
           @click="showMoveDateDialog = false"
@@ -1281,7 +1281,7 @@
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.copyDateTitle }}</h3>
+        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.copyDateTitle }}</h3>
         <button
           class="text-text-tertiary hover:text-text-secondary transition-colors"
           @click="showCopyDateDialog = false"
@@ -1294,7 +1294,7 @@
         <div class="flex items-center gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
           <button
             :class="[
-              'flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all border',
+              'flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border',
               copyMode === 'single'
                 ? 'bg-primary-hover border-primary text-text-primary shadow-md shadow-[var(--primary-glow)]'
                 : 'border-transparent text-text-tertiary hover:text-text-secondary'
@@ -1305,7 +1305,7 @@
           </button>
           <button
             :class="[
-              'flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all border',
+              'flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border',
               copyMode === 'cycle'
                 ? 'bg-primary-hover border-primary text-text-primary shadow-md shadow-[var(--primary-glow)]'
                 : 'border-transparent text-text-tertiary hover:text-text-secondary'
@@ -1318,13 +1318,13 @@
 
         <!-- 源日期 -->
         <div>
-          <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
             {{ copyMode === 'single' ? locale.cycleCopySourceDate : locale.copyDateSourceRange }}
           </div>
           <!-- 单天模式：只显示一个源日期 -->
           <div v-if="copyMode === 'single'" class="space-y-1.5">
             <div class="gap-3 flex items-center">
-              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
+              <span class="text-xs text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
               <AppDatePicker
                 v-model="copyFromStart"
                 size="md"
@@ -1336,7 +1336,7 @@
           <!-- 周期模式：显示源日期范围 -->
           <div v-else class="space-y-1.5">
             <div class="gap-3 flex items-center">
-              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
+              <span class="text-xs text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
               <AppDatePicker
                 v-model="copyFromStart"
                 size="md"
@@ -1345,7 +1345,7 @@
               />
             </div>
             <div class="gap-3 flex items-center">
-              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
+              <span class="text-xs text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
               <AppDatePicker
                 v-model="copyFromEnd"
                 size="md"
@@ -1358,13 +1358,13 @@
 
         <!-- 目标日期 -->
         <div>
-          <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
             {{ locale.copyDateTargetRange }}
           </div>
           <!-- 单天模式：只显示一个目标日期 -->
           <div v-if="copyMode === 'single'" class="space-y-1.5">
             <div class="gap-3 flex items-center">
-              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetSingleDate }}</span>
+              <span class="text-xs text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetSingleDate }}</span>
               <AppDatePicker
                 v-model="copySingleTargetDate"
                 size="md"
@@ -1376,7 +1376,7 @@
           <!-- 周期模式：显示目标日期范围 -->
           <div v-else class="space-y-1.5">
             <div class="gap-3 flex items-center">
-              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetStart }}</span>
+              <span class="text-xs text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetStart }}</span>
               <AppDatePicker
                 v-model="copyToStart"
                 size="md"
@@ -1385,7 +1385,7 @@
               />
             </div>
             <div class="gap-3 flex items-center">
-              <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetEnd }}</span>
+              <span class="text-xs text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.cycleCopyTargetEnd }}</span>
               <AppDatePicker
                 v-model="copyToEnd"
                 size="md"
@@ -1424,7 +1424,7 @@
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">
+        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
         {{ locale.replayDetailTitle(replayModalTitle) }}
         </h3>
         <div class="flex items-center gap-3">
@@ -1457,13 +1457,13 @@
               </div>
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-text-primary">{{ req.name }}</span>
-                <span v-if="req.grade" class="text-[10px] text-text-tertiary"
+                <span v-if="req.grade" class="text-xs text-text-tertiary"
                   >{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span
                 >
               </div>
             </div>
             <div
-              class="flex items-center gap-1.5 text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              class="flex items-center gap-1.5 text-xs font-bold text-text-disabled uppercase tracking-wider"
             >
               <Clock class="w-2.5 h-2.5" />
               {{ formatDate(req.createdAt) }}
@@ -1471,7 +1471,7 @@
           </div>
           <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-text-secondary">
             <Info class="w-6 h-6 mx-auto mb-2 opacity-20" />
-        <p class="text-xs font-bold uppercase tracking-widest">{{ locale.noReplayDetails }}</p>
+        <p class="text-xs font-bold uppercase tracking-wider">{{ locale.noReplayDetails }}</p>
           </div>
         </div>
       </div>
@@ -1507,7 +1507,7 @@
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.autoScheduleTitle }}</h3>
+        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.autoScheduleTitle }}</h3>
         <button
           class="text-text-tertiary hover:text-text-secondary transition-colors"
           @click="closeAutoScheduleDialog"
@@ -1570,7 +1570,7 @@
           <div class="flex items-center gap-2 p-2 bg-bg-secondary-50 border border-border-secondary rounded-xl">
             <div class="flex items-center gap-2 flex-1 flex-wrap">
               <Lock class="w-3.5 h-3.5 text-text-tertiary shrink-0" />
-              <span class="text-[10px] font-bold text-text-secondary uppercase tracking-wider shrink-0">
+              <span class="text-xs font-bold text-text-secondary uppercase tracking-wider shrink-0">
                 {{ locale.fixExistingSelected }}
               </span>
               <button
@@ -1585,19 +1585,19 @@
               </button>
               <span
                 v-if="autoScheduleFixExisting && autoScheduleFixedSongs.length > 0"
-                class="text-[10px] font-bold text-primary whitespace-nowrap"
+                class="text-xs font-bold text-primary whitespace-nowrap"
               >
                 {{ locale.fixExistingCount(autoScheduleFixedSongs.length) }}
                 <template v-if="autoScheduleScheduledSeconds > 0">
                   · {{ locale.fixExistingRemaining(autoScheduleTargetMinutes || 0, autoScheduleScheduledSeconds) }}
                 </template>
               </span>
-              <span v-else-if="autoScheduleFixExisting" class="text-[10px] text-text-disabled">
+              <span v-else-if="autoScheduleFixExisting" class="text-xs text-text-disabled">
                 {{ locale.fixExistingNone }}
               </span>
               <span
                 v-if="autoScheduleFixExisting && autoScheduleFixedMissingDuration > 0"
-                class="text-[10px] font-bold text-warning whitespace-nowrap"
+                class="text-xs font-bold text-warning whitespace-nowrap"
                 :title="locale.fixExistingMissingDurationTip"
               >
                 {{ locale.fixExistingMissingDuration(autoScheduleFixedMissingDuration) }}
@@ -1605,7 +1605,7 @@
             </div>
             <button
               :disabled="refreshingAutoCandidates.running"
-              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               :title="locale.refreshCandidateDurations"
               @click="refreshAutoCandidateDurations"
             >
@@ -1668,7 +1668,7 @@
               step="5"
               type="range"
             >
-            <p class="mt-1.5 text-[10px] text-text-tertiary leading-relaxed">
+            <p class="mt-1.5 text-xs text-text-tertiary leading-relaxed">
               {{ locale.heatWeightDesc(autoScheduleHeatWeight) }}
             </p>
           </div>
@@ -1712,7 +1712,7 @@
             </div>
           </div>
 
-          <div class="text-[11px] text-text-disabled">
+          <div class="text-xs text-text-disabled">
             {{ locale.availableCount(autoSchedulePlacement.eligible.length) }}
           </div>
 
@@ -1721,7 +1721,7 @@
             v-if="autoSchedulePlacement.excludedByPlayTime > 0"
             class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60"
           >
-            <div class="flex items-start gap-2 text-[10px] leading-relaxed text-text-secondary">
+            <div class="flex items-start gap-2 text-xs leading-relaxed text-text-secondary">
               <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
               <p>{{ locale.messages.excludedByPlayTime(autoSchedulePlacement.excludedByPlayTime) }}</p>
             </div>
@@ -1729,7 +1729,7 @@
           <!-- 期望日期是软偏好：只提示当天会优先安排多少首，不排除任何歌曲 -->
           <p
             v-if="autoScheduleDateHits > 0"
-            class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60 text-[10px] leading-relaxed text-text-secondary"
+            class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60 text-xs leading-relaxed text-text-secondary"
           >
             {{ locale.messages.preferredDateHits(autoScheduleDateHits) }}
           </p>
@@ -1743,7 +1743,7 @@
             </button>
             <button
               :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoSchedulePlacement.eligible.length === 0 || autoScheduleRunning"
-              class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               @click="runAutoSchedule"
             >
               <Loader2 v-if="autoScheduleRunning" class="w-3.5 h-3.5 animate-spin" />
@@ -1761,10 +1761,10 @@
               <span class="text-xs font-bold text-text-primary">{{ locale.resultTitle }}</span>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-[11px] text-text-tertiary">
+              <span class="text-xs text-text-tertiary">
                 {{ locale.totalDuration }}
               </span>
-              <span class="text-sm font-black text-primary">
+              <span class="text-sm font-bold text-primary">
                 {{ formatDuration(autoScheduleResult.totalDuration) }}
               </span>
             </div>
@@ -1772,7 +1772,7 @@
 
           <div
             :class="[
-              'px-3 py-2 rounded-lg text-[11px] font-bold border',
+              'px-3 py-2 rounded-lg text-xs font-bold border',
               autoScheduleResult.diff <= 0
                 ? 'bg-info-10 border-info-20 text-info'
                 : 'bg-warning-10 border-warning-20 text-warning'
@@ -1790,7 +1790,7 @@
               :key="song.id"
               class="flex items-center gap-3 p-2.5 bg-bg-primary border border-border-secondary-50 rounded-lg"
             >
-              <span class="text-[10px] font-bold text-text-disabled w-5 shrink-0">{{ idx + 1 < 10 ? '0' + (idx + 1) : idx + 1 }}</span>
+              <span class="text-xs font-bold text-text-disabled w-5 shrink-0">{{ idx + 1 < 10 ? '0' + (idx + 1) : idx + 1 }}</span>
               <div
                 class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50"
               >
@@ -1814,7 +1814,7 @@
                   <span>{{ song.title }}</span>
                   <span
                     v-if="song.isFixed"
-                    class="inline-flex items-center gap-0.5 px-1 py-0.5 bg-primary-10 text-primary rounded text-[9px] font-bold border border-primary-20 shrink-0"
+                    class="inline-flex items-center gap-0.5 px-1 py-0.5 bg-primary-10 text-primary rounded text-xs font-bold border border-primary-20 shrink-0"
                   >
                     <Lock class="w-2.5 h-2.5" />
                     固定
@@ -1835,14 +1835,14 @@
                     type="text"
                     inputmode="text"
                     pattern="[0-9:]*"
-                    class="w-20 text-[11px] font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
+                    class="w-20 text-xs font-mono text-center bg-bg-primary border border-primary rounded px-1 py-0.5 text-text-primary focus:outline-none focus:border-primary shrink-0"
                     :placeholder="locale.messages?.durationInputPlaceholder || '分:秒'"
                     @focusout="saveDurationEdit(song)"
                     @keydown="handleDurationKeydown($event, song)"
                   >
                   <span v-if="song.requester" class="text-text-disabled">|</span>
                   <span v-if="song.requester" class="text-text-tertiary truncate">{{ song.requester }}</span>
-                  <span v-if="song.voteCount != null" class="ml-auto flex items-center gap-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 px-1.5 py-0.5 rounded-md border border-border-secondary-50 shrink-0">
+                  <span v-if="song.voteCount != null" class="ml-auto flex items-center gap-1 text-xs font-bold text-text-tertiary bg-bg-primary-50 px-1.5 py-0.5 rounded-md border border-border-secondary-50 shrink-0">
                     <Heart class="w-3 h-3 text-error-50" />
                     {{ song.voteCount }}
                   </span>
@@ -1861,7 +1861,7 @@
               <ChevronLeft class="w-3.5 h-3.5" />
               {{ locale.previousPlan }}
             </button>
-            <span class="text-[10px] font-bold text-text-tertiary whitespace-nowrap">
+            <span class="text-xs font-bold text-text-tertiary whitespace-nowrap">
               {{ locale.planIndicator(currentPlanIndex + 1, autoSchedulePlans.length) }}
             </span>
             <button
@@ -1916,7 +1916,7 @@
       @click.stop
     >
       <button
-        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-bold text-text-primary hover:bg-bg-primary transition-colors"
         @click="playSong(contextMenuSong); contextMenuOpen = false"
       >
         <Play class="w-3 h-3" />
@@ -1926,7 +1926,7 @@
       <template v-if="contextMenuSide === 'left'">
         <button
           v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           :disabled="poolSongIds.has(contextMenuSong.id)"
           @click="addSingleToPool(contextMenuSong.id); contextMenuOpen = false"
         >
@@ -1935,7 +1935,7 @@
         </button>
         <button
           v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay' || activeTab === 'pool'"
-          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-bold text-text-primary hover:bg-bg-primary transition-colors"
           @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
         >
           <PlaySquare class="w-3 h-3" />
@@ -1943,7 +1943,7 @@
         </button>
       </template>
       <button
-        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-bold text-text-primary hover:bg-bg-primary transition-colors"
         @click="openSourceReplace"
       >
         <ArrowLeftRight class="w-3 h-3" />
@@ -1951,7 +1951,7 @@
       </button>
       <template v-if="contextMenuSide === 'right'">
         <button
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-xs font-bold text-error hover:bg-error-10 transition-colors"
           @click="removeSongFromSchedule(contextMenuSong); contextMenuOpen = false"
         >
           <Trash2 class="w-3 h-3" />

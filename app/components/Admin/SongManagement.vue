@@ -4,22 +4,22 @@
     <div class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
         <div class="space-y-1">
-          <h2 class="text-3xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+          <h2 class="text-3xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
           <div class="flex items-center gap-6 mt-4">
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.stats.total }}</span
               >
               <span class="text-sm font-bold text-text-secondary">{{ baseFilteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.stats.played }}</span
               >
               <span class="text-sm font-bold text-success">{{ playedCount }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.stats.pending }}</span
               >
               <span class="text-sm font-bold text-primary">{{ pendingCount }}</span>
@@ -42,7 +42,7 @@
               class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchMarkPlayed"
                 :disabled="loading || batchMarking"
               >
@@ -51,7 +51,7 @@
                 }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchMarkUnplayed"
                 :disabled="loading || batchMarking"
               >
@@ -74,7 +74,7 @@
               class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="openDownloadDialog"
               >
                 <Download :size="14" class="text-success-70" /> {{ locale.actions.download }} ({{
@@ -82,13 +82,13 @@
                 }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-warning text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-warning text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchReject"
               >
                 <X :size="14" /> {{ locale.actions.batchReject }} ({{ selectedSongs.length }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchDelete"
               >
                 <Trash2 :size="14" class="text-error-70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
@@ -199,7 +199,7 @@
       >
         <div class="flex flex-col items-center gap-3">
           <AppSpinner :size="32" />
-          <span class="text-xs font-bold text-text-tertiary tracking-widest uppercase">{{ locale.loading }}</span>
+          <span class="text-xs font-bold text-text-tertiary tracking-wider uppercase">{{ locale.loading }}</span>
         </div>
       </div>
 
@@ -215,24 +215,24 @@
             @change="toggleSelectAll"
           />
         </div>
-        <div class="col-span-4 text-[10px] font-black text-text-disabled uppercase tracking-widest">
+        <div class="col-span-4 text-xs font-bold text-text-disabled uppercase tracking-wider">
           {{ locale.table.songInfo }}
         </div>
-        <div class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest">
+        <div class="col-span-2 text-xs font-bold text-text-disabled uppercase tracking-wider">
           {{ locale.table.requester }}
         </div>
         <div
-          class="col-span-1 text-[10px] font-black text-text-disabled uppercase tracking-widest text-center"
+          class="col-span-1 text-xs font-bold text-text-disabled uppercase tracking-wider text-center"
         >
           {{ locale.table.stats }}
         </div>
         <div
-          class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest text-center"
+          class="col-span-2 text-xs font-bold text-text-disabled uppercase tracking-wider text-center"
         >
           {{ locale.table.status }}
         </div>
         <div
-          class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest text-right pr-4"
+          class="col-span-2 text-xs font-bold text-text-disabled uppercase tracking-wider text-right pr-4"
         >
           {{ locale.table.actions }}
         </div>
@@ -361,7 +361,7 @@
                 >{{ platformLabel(song.musicPlatform) }}</span>
               </div>
               <span
-                class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
+                class="lg:hidden text-xs font-bold text-text-secondary uppercase tracking-wider mt-1 inline-block"
                 >{{ formatDate(song.requestedAt) }}</span
               >
             </div>
@@ -375,23 +375,23 @@
             <div class="flex items-center gap-3 lg:contents">
               <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
                 <span class="text-xs font-bold text-text-tertiary truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
-                <span v-if="song.user" class="text-[10px] font-bold text-text-disabled truncate max-w-[100px]"
+                <span v-if="song.user" class="text-xs font-bold text-text-disabled truncate max-w-[100px]"
                   >@{{ song.user.username }}</span
                 >
                 <!-- 该投稿人累计投稿数与已播放数 -->
                 <span
                   v-if="song.submissionCount != null && song.playCount != null"
-                  class="text-[10px] font-bold text-text-disabled mt-0.5 whitespace-nowrap"
+                  class="text-xs font-bold text-text-disabled mt-0.5 whitespace-nowrap"
                 >{{ locale.table.submitStat(song.submissionCount) }} · {{ locale.table.playStat(song.playCount) }}</span
                 >
                 <span
                   v-if="song.preferredPlayTimeId || song.preferredPlayDate"
-                  class="text-[10px] font-bold text-primary mt-1"
+                  class="text-xs font-bold text-primary mt-1"
                 >
                   {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
                 </span>
                 <span
-                  class="hidden lg:inline text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-60"
+                  class="hidden lg:inline text-xs font-bold text-text-secondary uppercase tracking-wider mt-1 opacity-60"
                   >{{ formatDate(song.requestedAt) }}</span
                 >
               </div>
@@ -415,7 +415,7 @@
               <div class="col-span-3 lg:col-span-2 text-center shrink-0">
                 <span
                   :class="[
-                    'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
+                    'px-2 py-0.5 text-xs font-bold rounded-md uppercase tracking-wider',
                     song.played
                       ? 'bg-success-10 text-success'
                       : song.scheduled
@@ -518,7 +518,7 @@
       >
         <div class="flex items-center justify-between">
           <div class="px-3 flex flex-col">
-            <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
+            <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ locale.selected }}</span>
             <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
           </div>
           <div class="flex items-center gap-2">
@@ -527,21 +527,21 @@
               @click="openDownloadDialog"
             >
               <Download :size="16" class="mb-1" />
-              <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
+              <span class="text-xs font-bold">{{ locale.actions.download }}</span>
             </button>
             <button
               class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-warning rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
               @click="batchReject"
             >
               <X :size="16" class="mb-1" />
-              <span class="text-[9px] font-bold">{{ locale.actions.batchReject }}</span>
+              <span class="text-xs font-bold">{{ locale.actions.batchReject }}</span>
             </button>
             <button
               class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
               @click="batchDelete"
             >
               <Trash2 :size="16" class="mb-1" />
-              <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
+              <span class="text-xs font-bold">{{ locale.actions.delete }}</span>
             </button>
           </div>
         </div>
@@ -553,7 +553,7 @@
             :disabled="loading || batchMarking"
           >
             <Check :size="16" />
-            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkPlayed }}</span>
+            <span class="text-xs font-bold">{{ locale.actions.batchMarkPlayed }}</span>
           </button>
           <button
             class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
@@ -561,7 +561,7 @@
             :disabled="loading || batchMarking"
           >
             <RotateCcw :size="16" />
-            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
+            <span class="text-xs font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
           </button>
         </div>
       </div>
@@ -624,7 +624,7 @@
           @click.stop
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary">
+            <h3 class="text-xl font-bold text-text-primary">
               {{ isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title }}
             </h3>
             <button
@@ -653,7 +653,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.rejectDialog.reason }}</label
               >
               <textarea
@@ -674,7 +674,7 @@
                   class="text-xs font-bold text-text-secondary group-hover:text-error transition-colors"
                   >{{ isBatchReject ? locale.rejectDialog.batchAddToBlacklist : locale.rejectDialog.addToBlacklist }}</span
                 >
-                <p class="text-[10px] text-text-disabled font-medium">
+                <p class="text-xs text-text-disabled font-medium">
                   {{ locale.rejectDialog.blacklistHint }}
                 </p>
               </div>
@@ -690,7 +690,7 @@
             </button>
             <button
               :disabled="rejectLoading"
-              class="px-8 py-2.5 bg-error hover:bg-error text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-error hover:bg-error text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               @click="confirmReject"
             >
               {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
@@ -737,7 +737,7 @@
           @click.stop
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary">
+            <h3 class="text-xl font-bold text-text-primary">
               {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
             </h3>
             <button
@@ -751,7 +751,7 @@
           <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.titleLabel }}</label
                 >
                 <input
@@ -770,7 +770,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.artistLabel }}</label
                 >
                 <input
@@ -791,7 +791,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.requester }}</label
               >
               <div class="relative user-search-container">
@@ -841,7 +841,7 @@
                   >
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-text-primary">{{ user.name }}</span>
-                      <span class="text-[10px] text-text-tertiary">@{{ user.username }}</span>
+                      <span class="text-xs text-text-tertiary">@{{ user.username }}</span>
                     </div>
                     <Check
                       v-if="
@@ -859,7 +859,7 @@
                 v-if="showEditModal ? selectedEditUser : selectedUser"
                 class="flex items-center gap-2 mt-2 px-1"
               >
-                <span class="text-[10px] font-bold text-primary"
+                <span class="text-xs font-bold text-primary"
                   >{{ locale.editModal.selectedUser((showEditModal ? selectedEditUser : selectedUser).name) }}
                   <template v-if="(showEditModal ? selectedEditUser : selectedUser).username">
                     (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})
@@ -875,7 +875,7 @@
             </div>
 
             <div v-if="showEditModal" class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.collaborators }}</label
               >
               <div class="space-y-3 user-search-container">
@@ -921,13 +921,13 @@
                     >
                       <div class="flex flex-col">
                         <span class="text-sm font-bold text-text-primary">{{ user.name }}</span>
-                        <span class="text-[10px] text-text-tertiary">@{{ user.username }}</span>
+                        <span class="text-xs text-text-tertiary">@{{ user.username }}</span>
                       </div>
                       <Plus :size="14" class="text-primary opacity-70 group-hover:opacity-100" />
                     </div>
                   </div>
                 </div>
-                <p class="text-[10px] text-text-disabled font-medium px-1">
+                <p class="text-xs text-text-disabled font-medium px-1">
                   {{ locale.editModal.collaboratorHint }}
                 </p>
               </div>
@@ -935,7 +935,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.filters.semester }}</label
                 >
                 <CustomSelect
@@ -956,7 +956,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.preferredPlayTime }}</label
                 >
                 <CustomSelect
@@ -991,12 +991,12 @@
 
             <div v-if="showEditModal" class="space-y-3">
               <div class="flex items-center justify-between gap-3 px-1">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                   >{{ locale.editModal.submissionNote }}</label
                 >
                 <button
                   :disabled="!canClearEditSubmissionNote && !submissionNoteClearRequested"
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black tracking-widest uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold tracking-wider uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   :class="
                     submissionNoteClearRequested
                       ? 'border-border-tertiary bg-bg-primary text-text-secondary hover:border-border-tertiary'
@@ -1037,7 +1037,7 @@
                     :class="submissionNoteClearRequested ? 'text-text-tertiary' : 'text-text-secondary group-hover:text-primary'"
                     >{{ locale.editModal.publicNote }}</span
                   >
-                  <p class="text-[10px] text-text-disabled font-medium">
+                  <p class="text-xs text-text-disabled font-medium">
                     {{ locale.editModal.publicNoteHint }}
                   </p>
                 </div>
@@ -1053,7 +1053,7 @@
                     class="text-xs font-bold text-text-secondary group-hover:text-primary"
                     >{{ locale.editModal.anonymousSubmission }}</span
                   >
-                  <p class="text-[10px] text-text-disabled font-medium">
+                  <p class="text-xs text-text-disabled font-medium">
                     {{ locale.editModal.anonymousSubmissionHint }}
                   </p>
                 </div>
@@ -1080,7 +1080,7 @@
                     <span class="text-xs font-bold text-text-secondary group-hover:text-warning transition-colors"
                       >{{ locale.editModal.notifyAfterClear }}</span
                     >
-                    <p class="text-[10px] text-text-disabled font-medium">
+                    <p class="text-xs text-text-disabled font-medium">
                       {{ locale.editModal.notifyAfterClearHint }}
                     </p>
                   </div>
@@ -1088,13 +1088,13 @@
               </div>
             </div>
             <div class="flex items-center justify-between gap-3 pt-4 border-t border-border-secondary-50">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
                 {{ locale.sourceReplace.sectionTitle }}
               </span>
               <button
                 v-if="showEditModal"
                 type="button"
-                class="flex items-center gap-2 px-4 py-2 bg-primary-10 hover:bg-primary-20 text-primary text-[11px] font-black rounded-lg border border-primary-20 transition-all active:scale-95"
+                class="flex items-center gap-2 px-4 py-2 bg-primary-10 hover:bg-primary-20 text-primary text-xs font-bold rounded-lg border border-primary-20 transition-all active:scale-95"
                 @click="openSourceReplaceModal"
               >
                 <ArrowLeftRight :size="14" />
@@ -1103,7 +1103,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
                   {{ locale.editModal.musicPlatform }}
                 </label>
                 <CustomSelect
@@ -1120,7 +1120,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.musicId }}</label
                 >
                 <input
@@ -1141,7 +1141,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.duration }}</label
               >
               <div class="flex gap-2">
@@ -1179,13 +1179,13 @@
                   {{ locale.editModal.refreshDuration }}
                 </button>
               </div>
-              <p class="text-[10px] text-text-disabled font-medium px-1">
+              <p class="text-xs text-text-disabled font-medium px-1">
                 {{ locale.editModal.durationHint }}
               </p>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.coverUrl }}</label
               >
               <div class="flex gap-2">
@@ -1224,7 +1224,7 @@
                   (showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -1233,7 +1233,7 @@
                   !(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editCoverValidation.error : addCoverValidation.error }}
@@ -1241,7 +1241,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.playUrl }}</label
               >
               <input
@@ -1263,7 +1263,7 @@
                   (showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -1272,7 +1272,7 @@
                   !(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
@@ -1289,7 +1289,7 @@
             </button>
             <button
               :disabled="showEditModal ? editLoading : !canSubmitAddForm || addLoading"
-              class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               @click="showEditModal ? saveEditSong() : saveAddSong()"
             >
               {{

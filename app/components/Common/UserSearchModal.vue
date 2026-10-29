@@ -27,7 +27,7 @@
               >
                 <Icon name="user" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
+              <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
@@ -73,7 +73,7 @@
                 >
                   <Icon name="search" :size="32" class="opacity-20" />
                 </div>
-                <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noMatchingUsers }}</p>
+                <p class="text-sm font-bold uppercase tracking-wider">{{ locale.noMatchingUsers }}</p>
               </div>
 
               <div
@@ -90,7 +90,7 @@
                 <!-- 头像 -->
                 <div
                   :class="[
-                    'w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black mr-4 transition-colors',
+                    'w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold mr-4 transition-colors',
                     isSelected(user) ? 'bg-primary-hover text-text-primary' : 'bg-bg-tertiary text-text-tertiary'
                   ]"
                 >
@@ -103,7 +103,7 @@
                     {{ user.name }}
                   </div>
                   <div
-                    class="text-[10px] font-black uppercase tracking-widest flex flex-wrap gap-2 mt-0.5 text-text-tertiary"
+                    class="text-xs font-bold uppercase tracking-wider flex flex-wrap gap-2 mt-0.5 text-text-tertiary"
                   >
                     <span v-if="user.grade" class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
@@ -136,21 +136,21 @@
           <!-- 底部操作栏 -->
           <div class="p-8 pt-0">
             <div class="flex items-center justify-between gap-4">
-              <div class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
+              <div class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 <span v-if="selectedUsers.length > 0" class="text-primary">
                   {{ formatLocale(locale.selectedUsers, selectedUsers.length) }}
                 </span>
               </div>
               <div class="flex gap-3">
                 <button
-                  class="px-6 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                  class="px-6 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold transition-all active:scale-95 uppercase tracking-wider"
                   @click="close"
                 >
                   {{ locale.cancel }}
                 </button>
                 <button
                   :disabled="selectedUsers.length === 0"
-                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                   @click="confirm"
                 >
                   {{ locale.confirm }}

@@ -48,7 +48,7 @@
             class-name="w-28 shrink-0"
             @update:model-value="updateDateRange(filter.key, 'start', $event)"
           />
-          <span class="text-text-secondary text-[10px] font-black uppercase">{{ locale.to }}</span>
+          <span class="text-text-secondary text-xs font-bold uppercase">{{ locale.to }}</span>
           <AppDatePicker
             :model-value="filterValues[filter.key]?.end || ''"
             variant="ghost"
@@ -69,10 +69,10 @@
             <div class="flex flex-col items-start gap-0.5 overflow-hidden">
               <span
                 v-if="filter.label"
-                class="text-[9px] font-black text-text-disabled uppercase tracking-widest leading-none"
+                class="text-xs font-bold text-text-disabled uppercase tracking-wider leading-none"
                 >{{ filter.label }}</span
               >
-              <span class="text-[11px] font-bold text-text-secondary truncate w-full text-left">{{
+              <span class="text-xs font-bold text-text-secondary truncate w-full text-left">{{
                 getMultiSelectLabel(filter)
               }}</span>
             </div>
@@ -122,7 +122,7 @@
     <div v-if="showActions" class="flex items-center gap-2 w-full lg:w-auto">
       <button
         v-if="hasActiveFilters"
-        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary hover:border-error-30 hover:bg-error-5 text-text-tertiary hover:text-error text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
+        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary hover:border-error-30 hover:bg-error-5 text-text-tertiary hover:text-error text-xs font-bold uppercase tracking-wider rounded-2xl transition-all"
         @click="clearAllFilters"
       >
         <RotateCcw :size="14" />

@@ -1,11 +1,11 @@
 <template>
   <div
-    class="max-w-[1400px] mx-auto space-y-8 pb-20 px-2 animate-in fade-in slide-in-from-bottom-4 duration-700"
+    class="max-w-[1400px] mx-auto space-y-8 pb-20 px-2 panel-enter"
   >
     <!-- 页面标题 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight flex items-center gap-3">
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight flex items-center gap-3">
           {{ locale.title }}
         </h2>
         <p class="text-xs text-text-tertiary mt-1 font-medium">
@@ -16,38 +16,38 @@
 
     <!-- 添加黑名单项表单 -->
     <section class="bg-bg-secondary-40 border border-border-secondary rounded-xl p-8 shadow-xl">
-      <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] mb-6 px-1">
+      <h3 class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em] mb-6 px-1">
         {{ locale.addTitle }}
       </h3>
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-end">
         <div class="xl:col-span-2 space-y-2">
-          <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+          <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
             >{{ locale.type }}</label
           >
           <div class="grid grid-cols-2 gap-1 p-1 bg-bg-primary border border-border-secondary rounded-lg">
             <button
-              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all"
               :class="newItem.type === 'SONG' ? 'bg-bg-tertiary text-primary' : 'text-text-disabled'"
               @click="selectType('SONG')"
             >
               <Music :size="12" /> {{ locale.song }}
             </button>
             <button
-              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all"
               :class="newItem.type === 'KEYWORD' ? 'bg-bg-tertiary text-info' : 'text-text-disabled'"
               @click="selectType('KEYWORD')"
             >
               <Type :size="12" /> {{ locale.keyword }}
             </button>
             <button
-              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all"
               :class="newItem.type === 'LANGUAGE' ? 'bg-bg-tertiary text-warning' : 'text-text-disabled'"
               @click="selectType('LANGUAGE')"
             >
               <Languages :size="12" /> {{ locale.language }}
             </button>
             <button
-              class="flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
+              class="flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all"
               :class="newItem.type === 'GENRE' ? 'bg-bg-tertiary text-success' : 'text-text-disabled'"
               @click="selectType('GENRE')"
             >
@@ -57,7 +57,7 @@
         </div>
 
         <div class="xl:col-span-4 space-y-2">
-          <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+          <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
             {{ valueLabel }}
           </label>
           <input
@@ -76,14 +76,14 @@
           />
           <p
             v-if="newItem.type === 'LANGUAGE' || newItem.type === 'GENRE'"
-            class="text-[10px] text-text-secondary px-1 leading-relaxed"
+            class="text-xs text-text-secondary px-1 leading-relaxed"
           >
             {{ newItem.type === 'LANGUAGE' ? locale.languageHint : locale.genreHint }}
           </p>
         </div>
 
         <div class="xl:col-span-4 space-y-2">
-          <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+          <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
             >{{ locale.reason }}</label
           >
           <input
@@ -97,7 +97,7 @@
         <div class="xl:col-span-2">
           <button
             :disabled="!newItem.value || loading"
-            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-bold rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
             @click="addBlacklistItem"
           >
             <Plus v-if="!loading" :size="16" />
@@ -144,7 +144,7 @@
     <!-- 黑名单列表 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between px-2">
-        <h4 class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+        <h4 class="text-xs font-bold text-text-disabled uppercase tracking-wider">
           {{ locale.listTitle(pagination.total) }}
         </h4>
       </div>
@@ -175,23 +175,23 @@
               <div class="space-y-1.5 min-w-0">
                 <div class="flex items-center gap-3">
                   <span
-                    class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border"
+                    class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
                     :class="getTypeMeta(item.type).badgeClass"
                   >
                     {{ getTypeMeta(item.type).label }}
                   </span>
-                  <h5 class="text-base font-black text-text-primary truncate tracking-tight">
+                  <h5 class="text-base font-bold text-text-primary truncate tracking-tight">
                     {{ item.value }}
                   </h5>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-4">
-                  <div class="flex items-center gap-2 text-text-tertiary font-bold text-[11px]">
+                  <div class="flex items-center gap-2 text-text-tertiary font-bold text-xs">
                     <MessageSquare :size="12" class="text-text-secondary" />
                     {{ locale.reasonPrefix }} {{ item.reason || locale.noReason }}
                   </div>
                   <div
-                    class="flex items-center gap-2 text-text-disabled font-bold text-[10px] uppercase tracking-tighter"
+                    class="flex items-center gap-2 text-text-disabled font-bold text-xs uppercase tracking-tighter"
                   >
                     <Clock :size="11" class="text-text-primary" />
                     {{ locale.createdAt }} {{ formatDate(item.createdAt) }}
@@ -205,7 +205,7 @@
             >
               <button
                 :disabled="loading"
-                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
                 :class="[
                   item.isActive
                     ? 'bg-bg-tertiary text-text-tertiary hover:text-warning hover:bg-warning-5 hover:border-warning-10 border border-transparent'
@@ -233,7 +233,7 @@
           class="py-20 flex flex-col items-center justify-center space-y-4"
         >
           <AppSpinner :size="48" />
-          <p class="text-text-tertiary text-xs font-bold uppercase tracking-widest">{{ locale.loading }}</p>
+          <p class="text-text-tertiary text-xs font-bold uppercase tracking-wider">{{ locale.loading }}</p>
         </div>
 
         <!-- 空状态 -->
@@ -248,7 +248,7 @@
           </div>
           <div class="space-y-1 px-4">
             <h6 class="text-sm font-bold text-text-disabled">{{ locale.emptyTitle }}</h6>
-            <p class="text-[10px] text-text-secondary font-bold uppercase tracking-widest">
+            <p class="text-xs text-text-secondary font-bold uppercase tracking-wider">
               {{ locale.emptyDesc }}
             </p>
           </div>
@@ -265,7 +265,7 @@
           <ChevronLeft :size="20" />
         </button>
         <div
-          class="px-6 py-3 bg-bg-secondary-50 border border-border-secondary rounded-lg text-[11px] font-black text-text-tertiary uppercase tracking-widest"
+          class="px-6 py-3 bg-bg-secondary-50 border border-border-secondary rounded-lg text-xs font-bold text-text-tertiary uppercase tracking-wider"
         >
           {{ locale.pagination(pagination.page, pagination.pages) }}
         </div>
@@ -293,7 +293,7 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
-          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden panel-enter"
           @click.stop
         >
           <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
@@ -310,14 +310,14 @@
             </div>
             <div class="flex gap-3 w-full pt-4">
               <button
-                class="flex-1 px-4 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary text-[10px] font-black rounded-lg transition-all uppercase tracking-widest"
+                class="flex-1 px-4 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary text-xs font-bold rounded-lg transition-all uppercase tracking-wider"
                 @click="showDeleteDialog = false"
               >
                 {{ locale.cancel }}
               </button>
               <button
                 :disabled="loading"
-                class="flex-1 px-4 py-4 bg-error hover:bg-error text-text-primary text-[10px] font-black rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
+                class="flex-1 px-4 py-4 bg-error hover:bg-error text-text-primary text-xs font-bold rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 uppercase tracking-wider disabled:opacity-50"
                 @click="confirmDelete"
               >
                 {{ loading ? locale.deleting : locale.confirmRemove }}

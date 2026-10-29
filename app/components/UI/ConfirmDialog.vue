@@ -1,64 +1,61 @@
 <template>
   <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
+    <Transition name="confirm-dialog">
       <div
         v-if="show"
-        class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
+        class="fixed inset-0 z-[2000] flex items-center justify-center bg-bg-primary-80 p-4 backdrop-blur-sm"
         @click="handleOverlayClick"
       >
         <div
-          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
+          ref="dialogRef"
+          :aria-labelledby="titleId"
+          aria-modal="true"
+          class="confirm-panel w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
+          role="dialog"
+          tabindex="-1"
           @click.stop
         >
-          <!-- 内容 -->
           <div class="flex flex-col items-center p-8 text-center">
-            <!-- 图标 -->
             <div
-              class="w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 transition-colors border"
+              class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border transition-colors"
               :class="iconClasses"
             >
-              <Icon :name="iconName" :size="40" />
+              <Icon :name="iconName" :size="26" />
             </div>
 
-            <!-- 文字内容 -->
-            <div class="space-y-2 mb-8">
-              <h4 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h4>
-              <p class="text-sm text-text-tertiary leading-relaxed font-medium whitespace-pre-line break-all">
+            <div class="mb-7 space-y-2">
+              <h4 :id="titleId" class="text-lg font-bold tracking-tight text-text-primary">
+                {{ resolvedTitle }}
+              </h4>
+              <p class="whitespace-pre-line break-words text-sm font-medium leading-relaxed text-text-tertiary">
                 {{ message }}
               </p>
-              
-              <!-- 可选的输入框 -->
-              <div v-if="showInput" class="pt-4 w-full">
+
+              <div v-if="showInput" class="w-full pt-4">
                 <input
                   v-model="inputValue"
                   :type="inputType"
                   :placeholder="inputPlaceholder"
-                  class="w-full bg-bg-tertiary-50 border border-border-tertiary-50 rounded-xl px-4 py-3 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+                  class="w-full rounded-xl border border-border-tertiary-50 bg-bg-tertiary-50 px-4 py-3 text-base text-text-primary transition-colors placeholder:text-text-disabled focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   @keyup.enter="handleConfirm"
-                />
+                >
               </div>
             </div>
 
-            <!-- 操作按钮 -->
-            <div class="flex gap-3 w-full">
+            <div class="flex w-full gap-3">
               <button
-                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex-1 rounded-xl bg-bg-tertiary px-5 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-quaternary disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="loading"
+                type="button"
                 @click="handleCancel"
               >
                 {{ resolvedCancelText }}
               </button>
               <button
-                class="flex-[2] px-6 py-4 text-text-primary text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex flex-[2] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-text-primary shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 :class="confirmBtnClasses"
                 :disabled="loading || (showInput && !inputValue)"
+                type="button"
                 @click="handleConfirm"
               >
                 <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
@@ -73,9 +70,10 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import Icon from './Icon.vue'
 import { useLocale } from '~/utils/locale'
+import { useFocusTrap } from '~/composables/useFocusTrap'
 
 const props = defineProps({
   show: {
@@ -128,6 +126,13 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 
 const inputValue = ref('')
+const dialogRef = ref(null)
+const titleId = `confirm-dialog-title-${useId()}`
+useFocusTrap(dialogRef, computed(() => props.show), {
+  onEscape: () => {
+    if (!props.loading) handleCancel()
+  }
+})
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
 const resolvedTitle = computed(() => props.title || locale.value?.confirmOperation || '确认操作')
@@ -203,4 +208,34 @@ const confirmBtnClasses = computed(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.confirm-dialog-enter-active {
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.confirm-dialog-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.confirm-dialog-enter-from,
+.confirm-dialog-leave-to {
+  opacity: 0;
+}
+
+.confirm-dialog-enter-active .confirm-panel,
+.confirm-dialog-leave-active .confirm-panel {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+.confirm-dialog-enter-from .confirm-panel,
+.confirm-dialog-leave-to .confirm-panel {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+
+.confirm-dialog-leave-active .confirm-panel {
+  transition-duration: var(--duration-fast);
+}
+</style>

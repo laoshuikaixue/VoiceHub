@@ -3,7 +3,7 @@
     <!-- 头部区域 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">
           {{ locale.desc }}
         </p>
@@ -27,7 +27,7 @@
         <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <div class="flex items-center justify-between">
             <h3
-              class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
+              class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
             >
               <Server :size="16" class="text-primary" /> {{ locale.serviceConfig }}
             </h3>
@@ -45,7 +45,7 @@
 
           <div class="space-y-4">
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.smtpHost }}</label
               >
               <input
@@ -57,7 +57,7 @@
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1.5">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.port }}</label
                 >
                 <input
@@ -68,7 +68,7 @@
                 >
               </div>
               <div class="space-y-1.5">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.secure }}</label
                 >
                 <CustomSelect
@@ -80,7 +80,7 @@
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.username }}</label
               >
               <input
@@ -92,7 +92,7 @@
               >
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.fromEmail }}</label
               >
               <input
@@ -102,12 +102,12 @@
                 :placeholder="config.smtpUsername || 'your-email@example.com'"
                 class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
-              <p class="text-[9px] text-text-tertiary px-1 italic">
+              <p class="text-xs text-text-tertiary px-1 italic">
                 {{ locale.fromEmailHint }}
               </p>
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.password }}</label
               >
               <input
@@ -119,7 +119,7 @@
               >
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.fromName }}</label
               >
               <input
@@ -145,14 +145,14 @@
         <!-- SMTP 测试模块 -->
         <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <h3
-            class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
+            class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
           >
             <Send :size="16" class="text-success" /> {{ locale.serviceTest }}
           </h3>
 
           <div class="space-y-4">
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.testEmail }}</label
               >
               <div class="flex gap-2">
@@ -188,7 +188,7 @@
                 <XCircle v-else :size="14" />
                 <div class="flex flex-col gap-0.5">
                   <p class="font-bold">{{ testResult.message }}</p>
-                  <p v-if="testResult.detail" class="text-[10px] opacity-80 break-all font-mono">
+                  <p v-if="testResult.detail" class="text-xs opacity-80 break-all font-mono">
                     {{ testResult.detail }}
                   </p>
                 </div>
@@ -207,7 +207,7 @@
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-2 min-w-0">
           <Bot :size="16" class="text-primary shrink-0" />
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest truncate">{{ astrbotLocale.title }}</h3>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider truncate">{{ astrbotLocale.title }}</h3>
         </div>
         <button
           type="button"
@@ -228,7 +228,7 @@
 
       <div v-if="astrbotLoaded" class="space-y-6">
         <div class="space-y-3">
-          <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.platformHint }}</p>
+          <p class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.platformHint }}</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <button
               v-for="platform in platformKeys"
@@ -250,33 +250,33 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 border-t border-border-secondary pt-5">
           <label class="space-y-1.5 block">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.baseUrl }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.baseUrl }}</span>
             <input v-model.trim="astrbotConfig.astrbotBaseUrl" type="url" :placeholder="astrbotLocale.baseUrlPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
           </label>
           <label class="space-y-1.5 block">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.token }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.token }}</span>
             <input v-model="astrbotTokenInput" type="password" autocomplete="new-password" :placeholder="astrbotTokenConfigured ? astrbotLocale.tokenUnchanged : astrbotLocale.tokenPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
           </label>
-          <p class="lg:col-span-2 text-[10px] text-text-tertiary px-1 -mt-1">{{ astrbotLocale.tokenHint }}</p>
+          <p class="lg:col-span-2 text-xs text-text-tertiary px-1 -mt-1">{{ astrbotLocale.tokenHint }}</p>
           <label class="space-y-1.5 block">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.pushMode }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.pushMode }}</span>
             <CustomSelect v-model="astrbotConfig.astrbotPushMode" class="w-full" :options="pushModeOptions" />
           </label>
-          <p class="lg:col-span-2 text-[10px] text-text-tertiary px-1 -mt-1">{{ astrbotLocale.pushModeHint }}</p>
+          <p class="lg:col-span-2 text-xs text-text-tertiary px-1 -mt-1">{{ astrbotLocale.pushModeHint }}</p>
         </div>
 
         <div class="space-y-3 border-t border-border-secondary pt-5">
           <div>
-            <h4 class="text-sm font-black text-text-primary">{{ astrbotLocale.weeklyTitle }}</h4>
+            <h4 class="text-sm font-bold text-text-primary">{{ astrbotLocale.weeklyTitle }}</h4>
             <p class="text-xs text-text-tertiary mt-1">{{ astrbotLocale.weeklyHint }}</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="space-y-1.5 block">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.weeklyLayout }}</span>
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.weeklyLayout }}</span>
               <CustomSelect v-model="astrbotWeeklyConfig.layoutStyle" :options="weeklyLayoutOptions" />
             </label>
             <label class="space-y-1.5 block">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.weeklyListColumns }}</span>
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.weeklyListColumns }}</span>
               <CustomSelect v-model="astrbotWeeklyConfig.listColumns" :options="weeklyColumnOptions" />
             </label>
           </div>
@@ -302,7 +302,7 @@
         <div class="space-y-5 border-t border-border-secondary pt-5">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h4 class="text-sm font-black text-text-primary">{{ astrbotLocale.groupTitle }}</h4>
+              <h4 class="text-sm font-bold text-text-primary">{{ astrbotLocale.groupTitle }}</h4>
               <p class="text-xs text-text-tertiary mt-1">{{ astrbotLocale.groupHint }}</p>
             </div>
             <button
@@ -319,7 +319,7 @@
           </div>
           <div class="space-y-3">
             <div>
-              <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupTargetsTitle }}</p>
+              <p class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.groupTargetsTitle }}</p>
               <p class="text-xs text-text-tertiary mt-1 px-1">{{ astrbotLocale.groupTargetsHint }}</p>
             </div>
             <div v-for="(target, index) in astrbotGroupTargets" :key="index" class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_9rem_8rem_2.5rem] gap-2 items-center">
@@ -335,7 +335,7 @@
             </button>
           </div>
           <div class="space-y-3">
-            <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupEventsTitle }}</p>
+            <p class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.groupEventsTitle }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <button
                 v-for="key in groupEventKeys"
@@ -356,19 +356,19 @@
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="space-y-1.5 block">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupMergeWindow }}</span>
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.groupMergeWindow }}</span>
               <input v-model.number="astrbotGroupThrottle.mergeWindowSeconds" type="number" min="0" max="3600" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
             </label>
             <label class="space-y-1.5 block">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ astrbotLocale.groupMinInterval }}</span>
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ astrbotLocale.groupMinInterval }}</span>
               <input v-model.number="astrbotGroupThrottle.minIntervalSeconds" type="number" min="0" max="3600" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
             </label>
           </div>
-          <p class="text-[10px] text-text-tertiary px-1">{{ astrbotLocale.groupThrottleHint }}</p>
+          <p class="text-xs text-text-tertiary px-1">{{ astrbotLocale.groupThrottleHint }}</p>
         </div>
 
         <div class="flex justify-end border-t border-border-secondary pt-5">
-          <button :disabled="astrbotSaving" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" @click="saveAstrbotConfig">
+          <button :disabled="astrbotSaving" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" @click="saveAstrbotConfig">
             <Save :size="14" /> {{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}
           </button>
         </div>

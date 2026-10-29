@@ -4,7 +4,7 @@
       <div>
         <div class="flex items-center gap-2">
           <History :size="18" class="text-primary" />
-          <h3 class="text-lg font-black text-text-primary-lighter">{{ locale.title }}</h3>
+          <h3 class="text-lg font-bold text-text-primary-lighter">{{ locale.title }}</h3>
         </div>
         <p class="mt-1 text-xs text-text-tertiary">{{ locale.description }}</p>
       </div>
@@ -119,7 +119,7 @@
     <template v-else>
       <div class="mt-6 hidden overflow-x-auto rounded-lg border border-panel-bg-dark md:block">
         <table class="w-full min-w-[760px] border-collapse text-left">
-          <thead class="bg-panel-bg-deepest-80 text-[10px] font-black uppercase text-text-disabled">
+          <thead class="bg-panel-bg-deepest-80 text-xs font-bold uppercase text-text-disabled">
             <tr>
               <th class="px-5 py-3">{{ locale.notification }}</th>
               <th class="px-5 py-3">{{ locale.type }}</th>
@@ -141,7 +141,7 @@
               </td>
               <td class="px-5 py-4 align-top">
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-bold"
+                  class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-bold"
                   :class="
                     item.important
                       ? 'border-warning-20 bg-warning-10 text-warning-light'
@@ -209,7 +209,7 @@
               </p>
             </div>
             <span
-              class="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-bold"
+              class="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold"
               :class="item.important ? 'text-warning-light' : 'text-text-tertiary'"
             >
               <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
@@ -289,12 +289,12 @@
               class="flex shrink-0 items-start justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
             >
               <div class="min-w-0">
-                <p class="text-[10px] font-black uppercase text-primary">
+                <p class="text-xs font-bold uppercase text-primary">
                   {{ locale.detailsEyebrow }}
                 </p>
                 <h2
                   id="notification-detail-title"
-                  class="mt-1 break-words text-lg font-black text-text-primary-lighter"
+                  class="mt-1 break-words text-lg font-bold text-text-primary-lighter"
                 >
                   {{ selectedBatch.title || locale.untitled }}
                 </h2>
@@ -343,7 +343,7 @@
                   <component :is="option.icon" :size="14" />
                   {{ option.label }}
                   <span
-                    class="min-w-6 rounded bg-panel-bg-deepest px-1.5 py-0.5 text-center text-[10px] text-text-muted"
+                    class="min-w-6 rounded bg-panel-bg-deepest px-1.5 py-0.5 text-center text-xs text-text-muted"
                   >
                     {{ option.count }}
                   </span>
@@ -383,7 +383,7 @@
               <template v-else>
                 <div class="mt-5 hidden overflow-x-auto rounded-lg border border-panel-bg-dark sm:block">
                   <table class="w-full min-w-[620px] border-collapse text-left">
-                    <thead class="bg-panel-bg-darkest-60 text-[10px] font-black uppercase text-text-tertiary">
+                    <thead class="bg-panel-bg-darkest-60 text-xs font-bold uppercase text-text-tertiary">
                       <tr>
                         <th class="px-4 py-3">{{ locale.recipient }}</th>
                         <th class="px-4 py-3">{{ locale.status }}</th>
@@ -394,7 +394,7 @@
                       <tr v-for="item in recipients" :key="item.id">
                         <td class="px-4 py-3">
                           <p class="text-xs font-bold text-text-secondary">{{ recipientName(item) }}</p>
-                          <p class="mt-1 text-[10px] text-text-disabled">{{ recipientMeta(item) }}</p>
+                          <p class="mt-1 text-xs text-text-disabled">{{ recipientMeta(item) }}</p>
                         </td>
                         <td class="px-4 py-3">
                           <span
@@ -421,7 +421,7 @@
                         <p class="break-words text-xs font-bold text-text-secondary">
                           {{ recipientName(item) }}
                         </p>
-                        <p class="mt-1 break-words text-[10px] text-text-disabled">
+                        <p class="mt-1 break-words text-xs text-text-disabled">
                           {{ recipientMeta(item) }}
                         </p>
                       </div>
@@ -434,7 +434,7 @@
                         {{ item.read ? locale.read : locale.unread }}
                       </span>
                     </div>
-                    <p class="mt-3 text-[10px] text-text-disabled">
+                    <p class="mt-3 text-xs text-text-disabled">
                       {{ locale.readAt }}：{{
                         item.readAt ? formatDateTime(item.readAt) : locale.notRead
                       }}
@@ -482,10 +482,10 @@
               class="flex shrink-0 items-center justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
             >
               <div>
-                <p class="text-[10px] font-black uppercase text-success">
+                <p class="text-xs font-bold uppercase text-success">
                   {{ locale.editEyebrow }}
                 </p>
-                <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-text-primary-lighter">
+                <h2 id="notification-edit-title" class="mt-1 text-lg font-bold text-text-primary-lighter">
                   {{ locale.editNotification }}
                 </h2>
               </div>
@@ -525,7 +525,7 @@
                   <label for="notification-edit-content" class="text-xs font-bold text-text-secondary">
                     {{ locale.editContent }}
                   </label>
-                  <span class="text-[10px] font-bold text-text-disabled">Markdown</span>
+                  <span class="text-xs font-bold text-text-disabled">Markdown</span>
                 </div>
                 <textarea
                   id="notification-edit-content"
@@ -547,7 +547,7 @@
                   <span class="block text-xs font-bold text-text-primary-light">{{
                     locale.editImportant
                   }}</span>
-                  <span class="mt-1 block text-[10px] leading-relaxed text-text-tertiary">
+                  <span class="mt-1 block text-xs leading-relaxed text-text-tertiary">
                     {{ locale.editImportantDescription }}
                   </span>
                 </span>
@@ -584,7 +584,7 @@
               <button
                 type="submit"
                 :disabled="editSaving"
-                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-8 text-xs font-black text-white transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-8 text-xs font-bold text-white transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
               >
                 <Loader2 v-if="editSaving" :size="15" class="animate-spin" />
                 <Save v-else :size="15" />

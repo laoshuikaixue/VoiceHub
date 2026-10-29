@@ -172,7 +172,7 @@
                       <h5 class="text-sm font-medium text-text-primary truncate">{{ song.title }}</h5>
                       <span
                         v-if="song.semester"
-                        class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-bg-tertiary text-text-tertiary border border-border-tertiary"
+                        class="px-1.5 py-0.5 rounded text-xs font-medium bg-bg-tertiary text-text-tertiary border border-border-tertiary"
                       >
                         {{ song.semester }}
                       </span>
@@ -219,7 +219,7 @@
                     <!-- Submitter Info (if available) -->
                     <div v-if="song.requester" class="hidden sm:block text-right min-w-[80px]">
                       <div class="text-xs text-text-secondary">{{ song.requester.name }}</div>
-                      <div class="text-[10px] text-text-tertiary">
+                      <div class="text-xs text-text-tertiary">
                         {{ song.requester.grade }}{{ song.requester.class }}
                       </div>
                     </div>

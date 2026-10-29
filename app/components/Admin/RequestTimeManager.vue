@@ -3,7 +3,7 @@
     <!-- 顶部标题和全局开关 -->
     <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
       <div class="space-y-1">
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary">{{ locale.desc }}</p>
       </div>
 
@@ -11,12 +11,12 @@
         class="flex flex-wrap items-center gap-4 bg-bg-secondary-40 border border-border-secondary p-2 rounded-3xl"
       >
         <div class="flex items-center gap-3 px-3 border-r border-border-secondary-50 mr-1">
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+          <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
             >{{ locale.currentStatus }}</span
           >
           <span
             :class="[
-              'px-2 py-0.5 rounded text-[10px] font-black uppercase transition-all',
+              'px-2 py-0.5 rounded text-xs font-bold uppercase transition-all',
               hitRequestTime ? 'bg-success-10 text-success' : 'bg-error-10 text-error'
             ]"
           >
@@ -25,7 +25,7 @@
         </div>
 
         <div class="flex items-center gap-3 px-2">
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+          <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
             >{{ locale.enableRequest }}</span
           >
           <button
@@ -45,7 +45,7 @@
         </div>
 
         <div class="flex items-center gap-3 px-2 border-l border-border-secondary-50">
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+          <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
             >{{ locale.enableTimeLimit }}</span
           >
           <button
@@ -64,7 +64,7 @@
           </button>
         </div>
         <div class="flex items-center gap-3 px-2 border-l border-border-secondary-50">
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+          <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
             >{{ locale.enableRestriction }}</span
           >
           <button
@@ -110,11 +110,11 @@
         </div>
         <div class="text-center">
           <h4
-            class="text-sm font-black text-text-tertiary group-hover:text-primary transition-colors uppercase tracking-widest"
+            class="text-sm font-bold text-text-tertiary group-hover:text-primary transition-colors uppercase tracking-wider"
           >
             {{ locale.addTime }}
           </h4>
-          <p class="text-[10px] text-text-disabled mt-1">{{ locale.addTimeDesc }}</p>
+          <p class="text-xs text-text-disabled mt-1">{{ locale.addTimeDesc }}</p>
         </div>
       </button>
 
@@ -149,7 +149,7 @@
             <div class="flex items-center gap-2">
               <span
                 :class="[
-                  'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
+                  'px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border transition-all',
                   slot.past
                     ? 'bg-error-10 text-error border-error-20'
                     : slot.enabled
@@ -165,7 +165,7 @@
           <div class="space-y-4">
             <div>
               <h4
-                class="text-lg font-black text-text-primary flex items-baseline gap-2 group-hover:text-primary transition-colors"
+                class="text-lg font-bold text-text-primary flex items-baseline gap-2 group-hover:text-primary transition-colors"
               >
                 {{ slot.name }}
                 <span class="text-xs font-bold text-text-disabled tracking-tight"
@@ -175,13 +175,13 @@
               <div class="mt-3 space-y-2">
                 <div class="flex items-center gap-2 text-text-tertiary font-bold">
                   <Clock :size="12" class="text-text-secondary" />
-                  <span class="text-[10px] uppercase tracking-tighter truncate">{{
+                  <span class="text-xs uppercase tracking-tighter truncate">{{
                     slot.startTime || locale.unlimited
                   }}</span>
                 </div>
                 <div class="flex items-center gap-2 text-text-tertiary font-bold">
                   <div class="w-3 h-[2px] bg-bg-tertiary ml-1.5" />
-                  <span class="text-[10px] uppercase tracking-tighter truncate">{{
+                  <span class="text-xs uppercase tracking-tighter truncate">{{
                     slot.endTime || locale.unlimited
                   }}</span>
                 </div>
@@ -197,7 +197,7 @@
             <!-- 投稿进度条 -->
             <div class="space-y-1.5">
               <div
-                class="flex justify-between text-[9px] font-black text-text-disabled uppercase tracking-widest px-0.5"
+                class="flex justify-between text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
               >
                 <span>{{ locale.progress }}</span>
                 <span
@@ -245,7 +245,7 @@
             <button
               v-show="!slot.past"
               :class="[
-                'flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
+                'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all',
                 slot.enabled
                   ? 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'
                   : 'bg-success text-text-primary shadow-lg shadow-[var(--success-glow-20)]'
@@ -280,10 +280,10 @@
           <component :is="stat.icon" :size="20" />
         </div>
         <div>
-          <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+          <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
             {{ stat.label }}
           </p>
-          <h5 class="text-xl font-black text-text-primary">{{ stat.value }}</h5>
+          <h5 class="text-xl font-bold text-text-primary">{{ stat.value }}</h5>
         </div>
       </div>
     </div>
@@ -299,15 +299,15 @@
             <Ban :size="20" />
           </div>
           <div>
-            <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">
+            <h4 class="text-sm font-bold text-text-primary uppercase tracking-wider">
               {{ locale.restrictionPanelTitle }}
             </h4>
-            <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.restrictionPanelDesc }}</p>
+            <p class="text-xs text-text-tertiary mt-0.5">{{ locale.restrictionPanelDesc }}</p>
           </div>
         </div>
         <button
           :disabled="restrictionSaving"
-          class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveRestrictionSettings"
         >
           <Save :size="14" />
@@ -317,14 +317,14 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1 space-y-4">
-          <label :class="['text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2']">
+          <label :class="['text-xs font-bold text-text-disabled uppercase tracking-wider px-1 block mb-2']">
             {{ locale.restrictionScope }}
           </label>
-          <p class="text-[10px] text-text-tertiary px-1">{{ locale.restrictionScopeDesc }}</p>
+          <p class="text-xs text-text-tertiary px-1">{{ locale.restrictionScopeDesc }}</p>
           <div class="flex gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
             <button
               :class="[
-                'flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                'flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                 submissionRestrictionScope === 'self'
                   ? 'bg-bg-tertiary text-primary shadow-sm'
                   : 'text-text-disabled hover:text-text-tertiary'
@@ -335,7 +335,7 @@
             </button>
             <button
               :class="[
-                'flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                'flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                 submissionRestrictionScope === 'all'
                   ? 'bg-bg-tertiary text-primary shadow-sm'
                   : 'text-text-disabled hover:text-text-tertiary'
@@ -345,14 +345,14 @@
               {{ locale.restrictionScopeAll }}
             </button>
           </div>
-          <p class="text-[10px] text-text-disabled px-1 italic">{{ locale.restrictionPanelHint }}</p>
+          <p class="text-xs text-text-disabled px-1 italic">{{ locale.restrictionPanelHint }}</p>
         </div>
 
         <div class="space-y-4">
-          <label :class="['text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2']">
+          <label :class="['text-xs font-bold text-text-disabled uppercase tracking-wider px-1 block mb-2']">
             {{ locale.sameSongRestrictionHours }}
           </label>
-          <p class="text-[10px] text-text-tertiary px-1">{{ locale.sameSongRestrictionHoursDesc }}</p>
+          <p class="text-xs text-text-tertiary px-1">{{ locale.sameSongRestrictionHoursDesc }}</p>
           <div class="relative">
             <input
               :value="sameSongRestrictionHours ?? ''"
@@ -366,16 +366,16 @@
               class="w-56 bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3 text-sm text-text-primary pr-16 focus:outline-none focus:border-primary-30"
             />
             <span
-              class="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+              class="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary uppercase"
               >{{ locale.restrictionUnit }}</span>
           </div>
         </div>
 
         <div class="space-y-4">
-          <label :class="['text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2']">
+          <label :class="['text-xs font-bold text-text-disabled uppercase tracking-wider px-1 block mb-2']">
             {{ locale.sameArtistRestrictionHours }}
           </label>
-          <p class="text-[10px] text-text-tertiary px-1">{{ locale.sameArtistRestrictionHoursDesc }}</p>
+          <p class="text-xs text-text-tertiary px-1">{{ locale.sameArtistRestrictionHoursDesc }}</p>
           <div class="relative">
             <input
               :value="sameArtistRestrictionHours ?? ''"
@@ -389,7 +389,7 @@
               class="w-56 bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3 text-sm text-text-primary pr-16 focus:outline-none focus:border-primary-30"
             />
             <span
-              class="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+              class="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary uppercase"
               >{{ locale.restrictionUnit }}</span>
           </div>
         </div>
@@ -413,7 +413,7 @@
           class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
         >
           <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary">
+            <h3 class="text-xl font-bold text-text-primary">
               {{ editingRequestTime ? locale.editTitle : locale.addTitle }}
             </h3>
             <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="cancelForm">
@@ -423,7 +423,7 @@
 
           <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.name }}</label
               >
               <input
@@ -436,7 +436,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.startDateTime }}</label
                 >
                 <AppDateTimePicker
@@ -447,7 +447,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.endDateTime }}</label
                 >
                 <AppDateTimePicker
@@ -461,7 +461,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.expectedCount }}</label
                 >
                 <div class="relative group">
@@ -471,13 +471,13 @@
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30"
                   >
                   <div
-                    class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-text-disabled font-bold text-[10px]"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-text-disabled font-bold text-xs"
                   >
                     <Hash :size="12" />
                     {{ locale.songUnit }}
                   </div>
                 </div>
-                <p class="text-[9px] text-text-disabled px-1">{{ locale.expectedHint }}</p>
+                <p class="text-xs text-text-disabled px-1">{{ locale.expectedHint }}</p>
               </div>
               <div class="space-y-2 flex flex-col justify-center pt-2">
                 <label class="flex items-center gap-3 cursor-pointer group px-1">
@@ -491,7 +491,7 @@
                       class="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
                       >{{ locale.enableThisRequestTime }}</span
                     >
-                    <p class="text-[9px] text-text-disabled font-medium">
+                    <p class="text-xs text-text-disabled font-medium">
                       {{ locale.enableThisRequestTimeHint }}
                     </p>
                   </div>
@@ -500,7 +500,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.descriptionOptional }}</label
               >
               <textarea
@@ -528,7 +528,7 @@
             </button>
             <button
               :disabled="formSubmitting"
-              class="px-10 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50"
+              class="px-10 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50"
               @click="saveRequestTime"
             >
               {{ formSubmitting ? locale.saving : locale.saveSettings }}
@@ -572,14 +572,14 @@
             </div>
             <div class="flex gap-3 w-full pt-4">
               <button
-                class="flex-1 px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-tertiary text-xs font-black rounded-2xl transition-all"
+                class="flex-1 px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-tertiary text-xs font-bold rounded-2xl transition-all"
                 @click="showDeleteConfirm = false"
               >
                 {{ locale.keepTime }}
               </button>
               <button
                 :disabled="deleteInProgress"
-                class="flex-1 px-4 py-3 bg-error hover:bg-error text-text-primary text-xs font-black rounded-2xl shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 disabled:opacity-50"
+                class="flex-1 px-4 py-3 bg-error hover:bg-error text-text-primary text-xs font-bold rounded-2xl shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 disabled:opacity-50"
                 @click="deleteRequestTime"
               >
                 {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}
@@ -594,20 +594,20 @@
     <div class="flex flex-col md:flex-row gap-6">
       <div class="flex-1 bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-4">
         <h4
-          class="text-xs font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
+          class="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
         >
           <CheckCircle2 :size="14" class="text-success" /> {{ locale.priorityTitle }}
         </h4>
-        <ul class="text-[11px] text-text-tertiary space-y-2 font-medium">
+        <ul class="text-xs text-text-tertiary space-y-2 font-medium">
           <li class="flex gap-2">
-            <span class="text-text-secondary font-black">1.</span>
+            <span class="text-text-secondary font-bold">1.</span>
             <span
               ><span class="text-text-secondary">{{ locale.globalSwitch }}</span>
               {{ locale.priorityGlobal }}</span
             >
           </li>
           <li class="flex gap-2">
-            <span class="text-text-secondary font-black">2.</span>
+            <span class="text-text-secondary font-bold">2.</span>
             <span
               >{{ locale.priorityTimeLimitPrefix }} <span class="text-text-secondary">{{ locale.timeLimit }}</span> {{ locale.priorityTimeLimitMiddle }}
               <span class="text-text-secondary">{{ locale.enabled }}</span> {{ locale.priorityTimeLimitAnd }}
@@ -615,7 +615,7 @@
             >
           </li>
           <li class="flex gap-2">
-            <span class="text-text-secondary font-black">3.</span>
+            <span class="text-text-secondary font-bold">3.</span>
             <span>{{ locale.priorityNoLimit }}</span>
           </li>
         </ul>
@@ -623,21 +623,21 @@
 
       <div class="flex-1 bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-4">
         <h4
-          class="text-xs font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
+          class="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
         >
           <XCircle :size="14" class="text-error" /> {{ locale.noticeTitle }}
         </h4>
-        <ul class="text-[11px] text-text-tertiary space-y-2 font-medium">
+        <ul class="text-xs text-text-tertiary space-y-2 font-medium">
           <li class="flex gap-2">
-            <span class="text-text-secondary font-black">•</span>
+            <span class="text-text-secondary font-bold">•</span>
             <span>{{ locale.noticeOverlap }}</span>
           </li>
           <li class="flex gap-2">
-            <span class="text-text-secondary font-black">•</span>
+            <span class="text-text-secondary font-bold">•</span>
             <span>{{ locale.noticeUnlimited }}</span>
           </li>
           <li class="flex gap-2">
-            <span class="text-text-secondary font-black">•</span>
+            <span class="text-text-secondary font-bold">•</span>
             <span>{{ locale.noticeExpired }}</span>
           </li>
         </ul>

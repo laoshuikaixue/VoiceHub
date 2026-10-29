@@ -21,11 +21,19 @@
 
     <!-- 移动端投稿须知 -->
     <div class="rules-section mobile-only-rules">
-      <h3 class="rules-title">
-        <Icon :size="16" class="rules-icon" name="bell" />
-        {{ locale.guidelinesTitle }}
-      </h3>
-      <div class="rules-content">
+      <button
+        :aria-expanded="showMobileGuidelines"
+        class="rules-toggle"
+        type="button"
+        @click="showMobileGuidelines = !showMobileGuidelines"
+      >
+        <span class="rules-title">
+          <Icon :size="16" class="rules-icon" name="bell" />
+          {{ locale.guidelinesTitle }}
+        </span>
+        <Icon :name="showMobileGuidelines ? 'chevron-up' : 'chevron-down'" :size="18" />
+      </button>
+      <div v-show="showMobileGuidelines" class="rules-content">
         <div
           v-if="submissionGuidelines"
           class="guidelines-content markdown-body"
@@ -940,7 +948,7 @@
                         <p class="truncate text-xs text-text-tertiary mt-0.5">{{ match.artist }}</p>
                       </div>
                       <div class="shrink-0 text-right">
-                        <span class="text-[11px] font-mono text-primary">
+                        <span class="text-xs font-mono text-primary">
                           {{ (match.startTime / 1000).toFixed(1) }}s
                         </span>
                       </div>
@@ -983,7 +991,7 @@
                 >
                   <Edit3 :size="24" />
                 </div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight">
+                <h3 class="text-xl font-bold text-text-primary tracking-tight">
                   {{ locale.manualTitle }}
                 </h3>
               </div>
@@ -1001,7 +1009,7 @@
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
                   <label
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.songName }}</label
                   >
                   <div class="relative group">
@@ -1021,7 +1029,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-artist"
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.artistName }}</label
                   >
                   <input
@@ -1038,7 +1046,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-cover"
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.coverUrl }}</label
                   >
                   <div class="relative group">
@@ -1069,13 +1077,13 @@
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!coverValidation.valid"
-                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
+                        class="text-xs font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
+                        class="text-xs font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1087,7 +1095,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-play-url"
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.playUrl }}</label
                   >
                   <div class="relative group">
@@ -1118,13 +1126,13 @@
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!playUrlValidation.valid"
-                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
+                        class="text-xs font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
+                        class="text-xs font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1147,7 +1155,7 @@
               </button>
               <button
                 :disabled="!canSubmitFromSearch || !canSubmitManualForm || submitting"
-                class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+                class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                 type="button"
                 @click="handleManualSubmit"
               >
@@ -1254,6 +1262,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['request', 'vote'])
+const showMobileGuidelines = ref(false)
+
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const { t: callLocale } = useLocaleText(locale)
@@ -4570,7 +4580,7 @@ defineExpose({
   color: var(--text-primary);
   display: flex;
   gap: 2rem;
-  height: calc(100vh - 160px);
+  height: calc(100dvh - 160px);
   min-height: 650px;
 }
 
@@ -6740,7 +6750,30 @@ defineExpose({
     border-radius: 18px;
   }
 
+  .rules-toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: none;
+    color: inherit;
+    padding: 0;
+    text-align: left;
+  }
+
+  .rules-toggle .rules-title {
+    margin-bottom: 0;
+  }
+
+  .rules-toggle + .rules-content {
+    margin-top: 1.25rem;
+  }
+
   .rules-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 15px;
     font-weight: 700;
     color: var(--overlay-90);

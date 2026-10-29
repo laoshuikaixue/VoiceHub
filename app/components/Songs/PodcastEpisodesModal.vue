@@ -27,7 +27,7 @@
               >
                 <Icon name="mic" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-text-primary tracking-tight truncate">
+              <h3 class="text-xl font-bold text-text-primary tracking-tight truncate">
                 {{ formatLocale(locale.programListTitle, radioName) }}
               </h3>
             </div>
@@ -46,7 +46,7 @@
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
             >
               <Icon name="refresh" :size="48" class="animate-spin mb-4 text-primary" />
-              <p class="font-black uppercase tracking-widest text-[10px]">{{ locale.loadingPrograms }}</p>
+              <p class="font-bold uppercase tracking-wider text-xs">{{ locale.loadingPrograms }}</p>
             </div>
 
             <div
@@ -60,7 +60,7 @@
               </div>
               <p class="text-sm text-text-tertiary mb-6">{{ error }}</p>
               <button
-                class="px-8 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+                class="px-8 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
                 @click="fetchPrograms(false)"
               >
                 {{ locale.retry }}
@@ -76,7 +76,7 @@
               >
                 <Icon name="mic" :size="32" class="opacity-20" />
               </div>
-              <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noPrograms }}</p>
+              <p class="text-sm font-bold uppercase tracking-wider">{{ locale.noPrograms }}</p>
             </div>
 
             <div v-else class="program-list space-y-3">
@@ -115,7 +115,7 @@
                     {{ program.name }}
                   </h4>
                   <div
-                    class="flex items-center gap-3 mt-1 text-[10px] text-text-tertiary font-bold uppercase tracking-wider"
+                    class="flex items-center gap-3 mt-1 text-xs text-text-tertiary font-bold uppercase tracking-wider"
                   >
                     <span class="flex items-center">
                       {{ formatDate(program.createTime) }}
@@ -135,26 +135,26 @@
                 <div class="ml-4 shrink-0 flex items-center gap-3">
                   <div
                     v-if="songsLoadingForSimilar"
-                    class="text-[10px] font-black text-text-disabled animate-pulse uppercase tracking-widest"
+                    class="text-xs font-bold text-text-disabled animate-pulse uppercase tracking-wider"
                   >
                     {{ locale.processing }}
                   </div>
                   <div v-else-if="getSimilarSong(program)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(program)?.played"
-                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-xs font-bold uppercase tracking-wider"
                     >
                       {{ locale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(program)?.scheduled"
-                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-xs font-bold uppercase tracking-wider"
                     >
                       {{ locale.scheduled }}
                     </span>
                     <span
                       v-else
-                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-xs font-bold uppercase tracking-wider"
                     >
                       {{ locale.existing }}
                     </span>
@@ -163,14 +163,14 @@
                       <button
                         v-if="getSimilarSong(program)?.played && isSuperAdmin"
                         :disabled="submitting"
-                        class="px-3 py-1.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                        class="px-3 py-1.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 uppercase tracking-wider"
                         @click.stop="selectProgram(program)"
                       >
                         {{ submitting && selectedProgramId === program.id ? '...' : locale.continueSubmit }}
                       </button>
                       <button
                         v-else
-                        class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-wider"
                         :class="[
                           getSimilarSong(program)?.voted
                             ? 'bg-error-10 text-error border border-error-20'
@@ -191,7 +191,7 @@
                   <button
                     v-else
                     :disabled="submitting"
-                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                     @click="selectProgram(program)"
                   >
                     {{ submitting && selectedProgramId === program.id ? locale.submitLoading : locale.selectSubmit }}
@@ -202,7 +202,7 @@
               <div v-if="hasMore" class="pt-6 pb-2 flex justify-center">
                 <button
                   :disabled="loadingMore"
-                  class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
+                  class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-wider"
                   @click="loadMore"
                 >
                   <Icon v-if="loadingMore" name="loader" :size="16" class="animate-spin" />

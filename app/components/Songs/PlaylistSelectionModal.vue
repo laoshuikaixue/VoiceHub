@@ -30,7 +30,7 @@
                 <Icon name="arrow-left" :size="20" />
               </button>
               <h3
-                class="text-xl font-black text-text-primary tracking-tight truncate max-w-[300px] sm:max-w-md"
+                class="text-xl font-bold text-text-primary tracking-tight truncate max-w-[300px] sm:max-w-md"
               >
                 {{ view === 'playlists' ? locale.selectPlaylist : selectedPlaylist?.name || locale.playlistDetails }}
               </h3>
@@ -64,7 +64,7 @@
               </div>
               <p class="text-text-tertiary font-medium mb-6">{{ error }}</p>
               <button
-                class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold transition-all active:scale-95 uppercase tracking-wider"
                 @click="retry"
               >
                 {{ locale.retry }}
@@ -200,19 +200,19 @@
                   <div v-else-if="getSimilarSong(song)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(song)?.played"
-                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-xs font-bold uppercase tracking-wider"
                     >
                   {{ requestLocale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(song)?.scheduled"
-                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-xs font-bold uppercase tracking-wider"
                     >
                   {{ requestLocale.scheduled }}
                     </span>
                     <span
                       v-else
-                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-xs font-bold uppercase tracking-wider"
                     >
                   {{ locale.exists }}
                     </span>
@@ -221,14 +221,14 @@
                       <button
                         v-if="getSimilarSong(song)?.played && isSuperAdmin"
                         :disabled="submitting"
-                        class="px-3 py-1.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                        class="px-3 py-1.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 uppercase tracking-wider"
                         @click.stop="selectSong(song)"
                       >
                 {{ submitting && selectedSongId === song.id ? '...' : requestLocale.continueSubmit }}
                       </button>
                       <button
                         v-else
-                        class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-wider"
                         :class="[
                           getSimilarSong(song)?.voted
                             ? 'bg-error-10 text-error border border-error-20'
@@ -249,7 +249,7 @@
                   <button
                     v-else
                     :disabled="submitting || songsLoadingForSimilar"
-                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                     @click.stop="selectSong(song)"
                   >
                 {{ submitting && selectedSongId === song.id ? requestLocale.submitting : requestLocale.chooseSubmit }}
@@ -261,7 +261,7 @@
               <div v-if="hasMore" class="pt-6 pb-2 flex justify-center">
                 <button
                   :disabled="moreLoading"
-                  class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
+                  class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-wider"
                   @click="loadMore"
                 >
                   <Icon v-if="moreLoading" name="loader" :size="16" class="animate-spin" />

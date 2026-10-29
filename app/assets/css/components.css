@@ -14,7 +14,11 @@
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-press);
   white-space: nowrap;
   user-select: none;
 }
@@ -358,7 +362,10 @@
   color: var(--btn-secondary-text);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-press);
 }
 
 .pagination-btn:hover:not(:disabled) {

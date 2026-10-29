@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="text-center">
-        <h3 class="text-xl font-black text-text-primary tracking-tight">
+        <h3 class="text-xl font-bold text-text-primary tracking-tight">
           {{ loadingSteps[currentLoadingStep] }}
         </h3>
         <p class="text-sm text-text-tertiary mt-2">{{ locale.loadingDesc }}</p>
@@ -31,10 +31,10 @@
         <X class="text-error" :size="48" />
       </div>
       <div class="text-center">
-        <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.loadFailed }}</h3>
+        <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.loadFailed }}</h3>
         <p class="text-sm text-text-tertiary mt-2 max-w-md">{{ error }}</p>
         <button
-          class="mt-6 px-8 py-3 bg-bg-secondary border border-border-secondary rounded-full text-sm font-black text-text-primary hover:bg-bg-tertiary transition-all flex items-center gap-2 mx-auto"
+          class="mt-6 px-8 py-3 bg-bg-secondary border border-border-secondary rounded-full text-sm font-bold text-text-primary hover:bg-bg-tertiary transition-all flex items-center gap-2 mx-auto"
           @click="refreshAllData"
         >
           <RefreshCw :size="16" />
@@ -48,7 +48,7 @@
       <!-- 顶部标题和筛选栏 -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 class="text-3xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+          <h2 class="text-3xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
           <p class="text-sm text-text-tertiary mt-1 font-medium">{{ locale.desc }}</p>
         </div>
         <div class="flex items-center gap-3">
@@ -63,7 +63,7 @@
             class="px-3 py-1.5 bg-primary-10 border border-primary-20 rounded-full flex items-center gap-2"
           >
             <div class="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span class="text-[10px] font-black text-primary uppercase tracking-widest"
+            <span class="text-xs font-bold text-primary uppercase tracking-wider"
               >{{ locale.realtimeMode }}</span
             >
           </div>
@@ -98,7 +98,7 @@
             <div
               v-if="stat.trend !== 0"
               :class="[
-                'flex items-center gap-1 text-[11px] font-black',
+                'flex items-center gap-1 text-xs font-bold',
                 stat.trendColorClass
               ]"
             >
@@ -106,15 +106,15 @@
               <ArrowUpRight v-else :size="12" />
               {{ Math.abs(stat.trend) }}%
             </div>
-            <div v-else class="text-[11px] font-black text-text-tertiary uppercase tracking-widest">
+            <div v-else class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
               {{ locale.stable }}
             </div>
           </div>
           <div class="mt-4">
-            <h4 class="text-3xl font-black text-text-primary tracking-tighter">
+            <h4 class="text-3xl font-bold text-text-primary tracking-tighter">
               {{ formatNumber(stat.value) }}
             </h4>
-            <p class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] mt-1">
+            <p class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em] mt-1">
               {{ stat.label }}
             </p>
           </div>
@@ -138,11 +138,11 @@
             @mouseleave="handleMouseLeave"
           >
             <div class="relative z-10">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.currentActiveUsers }}</span
               >
               <div class="flex items-baseline gap-2 mt-1">
-                <h3 class="text-5xl font-black text-text-primary">{{ realtimeStats.activeUsers }}</h3>
+                <h3 class="text-5xl font-bold text-text-primary">{{ realtimeStats.activeUsers }}</h3>
                 <span class="text-xs font-bold text-text-tertiary">{{ locale.onlineUnit }}</span>
               </div>
             </div>
@@ -156,11 +156,11 @@
             class="p-8 bg-bg-secondary-20 border border-border-secondary-40 rounded-3xl flex items-center justify-between relative overflow-hidden group"
           >
             <div class="relative z-10">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.todayRequests }}</span
               >
               <div class="flex items-baseline gap-2 mt-1">
-                <h3 class="text-5xl font-black text-success">
+                <h3 class="text-5xl font-bold text-success">
                   {{ realtimeStats.todayRequests }}
                 </h3>
                 <span class="text-xs font-bold text-text-tertiary">{{ locale.songUnit }}</span>
@@ -207,7 +207,7 @@
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
             <AppSpinner :size="48" />
-            <p class="text-xs font-black text-text-disabled uppercase tracking-widest">
+            <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
               {{ locale.loadingTrends }}
             </p>
           </div>
@@ -218,11 +218,11 @@
             <div class="flex items-center justify-center p-4 bg-error-10 rounded-2xl">
               <Activity class="text-error-50" :size="32" />
             </div>
-            <p class="text-xs font-black text-error uppercase tracking-widest">
+            <p class="text-xs font-bold text-error uppercase tracking-wider">
               {{ panelStates.trends.error }}
             </p>
             <button
-              class="px-6 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-[10px] font-black uppercase tracking-widest rounded-full transition-all"
+              class="px-6 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold uppercase tracking-wider rounded-full transition-all"
               @click="loadTrends"
             >
               {{ locale.retryNow }}
@@ -245,7 +245,7 @@
                   class="w-full bg-gradient-to-t from-primary-10 to-primary-40 rounded-t-xl group-hover:from-primary-30 group-hover:to-primary-60 transition-all border-x border-t border-primary-20 group-hover:border-primary-40 min-h-[4px]"
                 />
                 <div
-                  class="absolute left-1/2 -translate-x-1/2 -translate-y-full mb-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-10"
+                  class="absolute left-1/2 -translate-x-1/2 -translate-y-full mb-2 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-10"
                   :style="{
                     bottom: `${(item.count / Math.max(...trendData.map((d) => d.count), 1)) * 100}%`
                   }"
@@ -254,7 +254,7 @@
                 </div>
               </div>
               <span
-                class="text-[10px] font-black text-text-disabled group-hover:text-text-tertiary transition-colors uppercase tracking-widest"
+                class="text-xs font-bold text-text-disabled group-hover:text-text-tertiary transition-colors uppercase tracking-wider"
               >
                 {{ formatDateShort(item.date) }}
               </span>
@@ -278,14 +278,14 @@
             <div class="flex items-center gap-4">
               <div class="flex gap-2">
                 <button
-                  :class="`text-[10px] font-black uppercase tracking-widest transition-colors ${selectedSortBy === 'vote' ? 'text-primary' : 'text-text-disabled hover:text-text-tertiary'}`"
+                  :class="`text-xs font-bold uppercase tracking-wider transition-colors ${selectedSortBy === 'vote' ? 'text-primary' : 'text-text-disabled hover:text-text-tertiary'}`"
                   @click="handleSortChange('vote')"
                 >
                   {{ locale.likes }}
                 </button>
                 <span class="text-text-primary">|</span>
                 <button
-                  :class="`text-[10px] font-black uppercase tracking-widest transition-colors ${selectedSortBy === 'replay' ? 'text-primary' : 'text-text-disabled hover:text-text-tertiary'}`"
+                  :class="`text-xs font-bold uppercase tracking-wider transition-colors ${selectedSortBy === 'replay' ? 'text-primary' : 'text-text-disabled hover:text-text-tertiary'}`"
                   @click="handleSortChange('replay')"
                 >
                   {{ locale.replays }}
@@ -308,11 +308,11 @@
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
             <Music :size="32" class="text-error-20" />
-            <p class="text-[10px] font-black text-error uppercase tracking-widest">
+            <p class="text-xs font-bold text-error uppercase tracking-wider">
               {{ panelStates.topSongs.error }}
             </p>
             <button
-              class="px-4 py-2 bg-bg-tertiary text-[10px] font-black uppercase rounded-full hover:bg-bg-quaternary text-text-primary transition-colors"
+              class="px-4 py-2 bg-bg-tertiary text-xs font-bold uppercase rounded-full hover:bg-bg-quaternary text-text-primary transition-colors"
               @click="loadTopSongs"
             >
               {{ locale.retry }}
@@ -328,7 +328,7 @@
               class="p-4 bg-bg-primary-50 border border-border-secondary-40 rounded-2xl flex items-center gap-4 group hover:bg-bg-tertiary-30 transition-all"
             >
               <div
-                :class="`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
+                :class="`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
                   i === 0
                     ? 'bg-warning text-black shadow-lg shadow-[var(--warning-glow-20)]'
                     : i === 1
@@ -346,13 +346,13 @@
                 >
                   {{ song.title }}
                 </h4>
-                <p class="text-[10px] text-text-disabled font-medium truncate uppercase tracking-widest">
+                <p class="text-xs text-text-disabled font-medium truncate uppercase tracking-wider">
                   {{ song.artist }}
                 </p>
               </div>
               <div class="text-right">
-                <span class="text-xs font-black text-text-tertiary">{{ song.count }}</span>
-                <div class="text-[8px] font-black text-text-secondary uppercase">
+                <span class="text-xs font-bold text-text-tertiary">{{ song.count }}</span>
+                <div class="text-xs font-bold text-text-secondary uppercase">
                   {{ selectedSortBy === 'replay' ? locale.times : locale.likes }}
                 </div>
               </div>
@@ -360,7 +360,7 @@
           </div>
           <div v-else class="flex-1 flex flex-col items-center justify-center text-text-secondary">
             <Music :size="32" class="opacity-20 mb-2" />
-            <p class="text-xs font-bold uppercase tracking-widest">{{ locale.noData }}</p>
+            <p class="text-xs font-bold uppercase tracking-wider">{{ locale.noData }}</p>
           </div>
         </div>
       </div>
@@ -392,11 +392,11 @@
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
             <Users :size="32" class="text-error-20" />
-            <p class="text-[10px] font-black text-error uppercase tracking-widest">
+            <p class="text-xs font-bold text-error uppercase tracking-wider">
               {{ panelStates.activeUsers.error }}
             </p>
             <button
-              class="px-4 py-2 bg-bg-tertiary text-[10px] font-black uppercase rounded-full hover:bg-bg-quaternary text-text-primary transition-colors"
+              class="px-4 py-2 bg-bg-tertiary text-xs font-bold uppercase rounded-full hover:bg-bg-quaternary text-text-primary transition-colors"
               @click="loadActiveUsers"
             >
               {{ locale.retry }}
@@ -413,7 +413,7 @@
             >
               <div class="flex items-center gap-4 relative z-10">
                 <div
-                  class="w-12 h-12 rounded-2xl bg-bg-tertiary flex items-center justify-center font-black text-text-tertiary group-hover:text-text-primary transition-colors"
+                  class="w-12 h-12 rounded-2xl bg-bg-tertiary flex items-center justify-center font-bold text-text-tertiary group-hover:text-text-primary transition-colors"
                 >
                   {{ user.name.charAt(0) }}
                 </div>
@@ -425,10 +425,10 @@
                 </div>
                 <div class="text-right">
                   <span
-                    class="text-xl font-black text-text-secondary group-hover:text-info transition-colors"
+                    class="text-xl font-bold text-text-secondary group-hover:text-info transition-colors"
                     >{{ user.activityScore }}</span
                   >
-                  <p class="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                  <p class="text-xs font-bold text-text-secondary uppercase tracking-wider">
                     {{ locale.activity }}
                   </p>
                 </div>
@@ -444,7 +444,7 @@
           </div>
           <div v-else class="flex-1 flex flex-col items-center justify-center text-text-secondary">
             <Users :size="32" class="opacity-20 mb-2" />
-            <p class="text-xs font-bold uppercase tracking-widest">{{ locale.noActiveUsers }}</p>
+            <p class="text-xs font-bold uppercase tracking-wider">{{ locale.noActiveUsers }}</p>
           </div>
         </div>
 
@@ -476,11 +476,11 @@
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
             <Globe :size="32" class="text-error-20" />
-            <p class="text-[10px] font-black text-error uppercase tracking-widest">
+            <p class="text-xs font-bold text-error uppercase tracking-wider">
               {{ panelStates.semesterComparison.error }}
             </p>
             <button
-              class="px-4 py-2 bg-bg-tertiary text-[10px] font-black uppercase rounded-full hover:bg-bg-quaternary text-text-primary transition-colors"
+              class="px-4 py-2 bg-bg-tertiary text-xs font-bold uppercase rounded-full hover:bg-bg-quaternary text-text-primary transition-colors"
               @click="loadSemesterComparison"
             >
               {{ locale.retry }}
@@ -496,32 +496,32 @@
               :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-success-5 border-success-20 shadow-lg shadow-[var(--success-glow-5)]' : 'bg-bg-primary-20 border-border-secondary-60 opacity-60 hover:opacity-100'}`"
             >
               <div class="flex items-center justify-between mb-4">
-                <span class="text-xs font-black text-text-secondary uppercase tracking-widest">{{
+                <span class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{
                   sem.semester
                 }}</span>
                 <span
                   v-if="sem.isActive"
-                  class="px-2 py-0.5 bg-success-20 text-success rounded text-[8px] font-black uppercase"
+                  class="px-2 py-0.5 bg-success-20 text-success rounded text-xs font-bold uppercase"
                   >{{ locale.currentSemester }}</span
                 >
-                <span v-else class="text-[10px] font-black text-text-disabled">{{ locale.historyBaseline }}</span>
+                <span v-else class="text-xs font-bold text-text-disabled">{{ locale.historyBaseline }}</span>
               </div>
               <div class="grid grid-cols-3 gap-4">
                 <div>
-                  <h5 class="text-lg font-black text-text-primary">{{ sem.totalSongs }}</h5>
-                  <p class="text-[9px] font-black text-text-disabled uppercase tracking-tighter mt-1">
+                  <h5 class="text-lg font-bold text-text-primary">{{ sem.totalSongs }}</h5>
+                  <p class="text-xs font-bold text-text-disabled uppercase tracking-tighter mt-1">
                     {{ locale.totalSongs }}
                   </p>
                 </div>
                 <div>
-                  <h5 class="text-lg font-black text-text-primary">{{ sem.totalSchedules }}</h5>
-                  <p class="text-[9px] font-black text-text-disabled uppercase tracking-tighter mt-1">
+                  <h5 class="text-lg font-bold text-text-primary">{{ sem.totalSchedules }}</h5>
+                  <p class="text-xs font-bold text-text-disabled uppercase tracking-tighter mt-1">
                     {{ locale.totalSchedules }}
                   </p>
                 </div>
                 <div>
-                  <h5 class="text-lg font-black text-text-primary">{{ sem.totalRequests }}</h5>
-                  <p class="text-[9px] font-black text-text-disabled uppercase tracking-tighter mt-1">
+                  <h5 class="text-lg font-bold text-text-primary">{{ sem.totalRequests }}</h5>
+                  <p class="text-xs font-bold text-text-disabled uppercase tracking-tighter mt-1">
                     {{ locale.totalLikes }}
                   </p>
                 </div>
@@ -530,7 +530,7 @@
           </div>
           <div v-else class="flex-1 flex flex-col items-center justify-center text-text-secondary">
             <Globe :size="32" class="opacity-20 mb-2" />
-            <p class="text-xs font-bold uppercase tracking-widest">{{ locale.noComparisonData }}</p>
+            <p class="text-xs font-bold uppercase tracking-wider">{{ locale.noComparisonData }}</p>
           </div>
         </div>
       </div>
@@ -547,16 +547,16 @@
         @mouseleave="handleTooltipMouseLeave"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200"
+          class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 panel-enter"
         >
           <div
             class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary-10 to-transparent"
           >
             <div class="flex items-center justify-between mb-4">
-              <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.activeUserDetails }}</h4>
+              <h4 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.activeUserDetails }}</h4>
               <div class="flex items-center gap-2 px-2 py-1 bg-primary-20 rounded-full">
                 <div class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                <span class="text-[10px] font-black text-primary"
+                <span class="text-xs font-bold text-primary"
                   >{{ locale.onlineCount(realtimeStats.activeUsers) }}</span
                 >
               </div>
@@ -579,28 +579,28 @@
                 >
                 <div
                   v-else
-                  class="w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center font-black text-text-tertiary group-hover:text-primary transition-colors"
+                  class="w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center font-bold text-text-tertiary group-hover:text-primary transition-colors"
                 >
                   {{ user.name.charAt(0) }}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-xs font-bold text-text-primary truncate">{{ user.name }}</div>
-                  <div class="text-[10px] text-text-tertiary font-medium truncate">
+                  <div class="text-xs text-text-tertiary font-medium truncate">
                     @{{ user.username }}
                   </div>
                 </div>
-                <div class="text-[10px] font-black text-text-disabled bg-bg-secondary px-2 py-1 rounded-lg">
+                <div class="text-xs font-bold text-text-disabled bg-bg-secondary px-2 py-1 rounded-lg">
                   {{ user.lastActive }}
                 </div>
               </div>
             </div>
             <div v-else class="py-10 flex flex-col items-center justify-center text-text-disabled">
               <Users :size="32" class="opacity-20 mb-3" />
-              <p class="text-xs font-black uppercase tracking-widest">{{ locale.noOnlineUsers }}</p>
+              <p class="text-xs font-bold uppercase tracking-wider">{{ locale.noOnlineUsers }}</p>
             </div>
           </div>
           <div class="px-6 py-4 bg-bg-primary-50 flex items-center justify-between">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
               >{{ locale.syncingRealtime }}</span
             >
             <Activity :size="12" class="text-primary animate-pulse" />

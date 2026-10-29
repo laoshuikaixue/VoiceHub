@@ -38,10 +38,10 @@
                 </div>
               </div>
               <div class="min-w-0">
-                <h3 class="text-xl font-black text-text-primary tracking-tight truncate">
+                <h3 class="text-xl font-bold text-text-primary tracking-tight truncate">
                   {{ video?.title }}
                 </h3>
-                <p class="text-xs font-bold text-text-tertiary uppercase tracking-widest mt-1">
+                <p class="text-xs font-bold text-text-tertiary uppercase tracking-wider mt-1">
                   {{ locale.uploader }}{{ video?.artist }}
                 </p>
               </div>
@@ -65,7 +65,7 @@
               >
                 <Icon name="play" :size="32" class="opacity-20" />
               </div>
-              <p class="text-sm font-bold uppercase tracking-widest">{{ locale.empty }}</p>
+              <p class="text-sm font-bold uppercase tracking-wider">{{ locale.empty }}</p>
             </div>
 
             <div v-else class="program-list space-y-3">
@@ -81,7 +81,7 @@
               >
                 <!-- 剧集编号 -->
                 <div
-                  class="w-8 h-8 sm:w-12 sm:h-12 rounded-2xl bg-bg-tertiary flex items-center justify-center text-text-tertiary font-black text-xs sm:text-sm flex-shrink-0 mr-3 sm:mr-4 group-hover:text-text-secondary transition-colors"
+                  class="w-8 h-8 sm:w-12 sm:h-12 rounded-2xl bg-bg-tertiary flex items-center justify-center text-text-tertiary font-bold text-xs sm:text-sm flex-shrink-0 mr-3 sm:mr-4 group-hover:text-text-secondary transition-colors"
                 >
                   P{{ episode.page }}
                 </div>
@@ -94,7 +94,7 @@
                     {{ episode.part }}
                   </h4>
                   <div
-                    class="flex items-center gap-3 mt-1 text-[10px] text-text-tertiary font-bold uppercase tracking-wider"
+                    class="flex items-center gap-3 mt-1 text-xs text-text-tertiary font-bold uppercase tracking-wider"
                   >
                     <span class="flex items-center">
                       <Icon name="clock" :size="10" class="mr-1" />
@@ -121,7 +121,7 @@
                     <button
                       v-if="allowPlayedResubmit"
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs sm:text-xs font-bold disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectEpisode(episode)"
                     >
                       <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>
@@ -130,7 +130,7 @@
                     <!-- 已播放标签 -->
                     <div
                       v-else
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider"
                     >
                       {{ locale.played }}
                     </div>
@@ -139,7 +139,7 @@
                   <template v-else-if="getEpisodeStatus(episode).scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider"
                     >
                       {{ locale.scheduled }}
                     </div>
@@ -149,7 +149,7 @@
                     <div class="flex flex-col gap-2 items-center">
                       <!-- 已投稿标签 -->
                       <div
-                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-bg-tertiary text-text-tertiary text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-bg-tertiary text-text-tertiary text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider"
                       >
                         {{ locale.submitted }}
                       </div>
@@ -159,7 +159,7 @@
                         v-if="!isMyEpisode(episode)"
                         :disabled="getEpisodeStatus(episode).voted || submitting"
                         :class="[
-                          'w-full px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
+                          'w-full px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-xs font-bold shrink-0 uppercase tracking-wider transition-all active:scale-95',
                           getEpisodeStatus(episode).voted
                             ? 'bg-error-10 text-error border border-error-20 cursor-not-allowed'
                             : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-error'
@@ -182,7 +182,7 @@
                     <!-- 选择投稿按钮（未投稿） -->
                     <button
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs sm:text-xs font-bold disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectEpisode(episode)"
                     >
                       <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>

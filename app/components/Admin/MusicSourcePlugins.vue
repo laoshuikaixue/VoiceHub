@@ -6,13 +6,13 @@
           <ListMusic :size="16" />
         </div>
         <div class="min-w-0">
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ t.title }}</h3>
-          <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ snapshot ? t.snapshotHint : t.hotHint }}</p>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ t.title }}</h3>
+          <p class="text-xs text-text-tertiary mt-1 leading-relaxed">{{ snapshot ? t.snapshotHint : t.hotHint }}</p>
         </div>
       </div>
       <button
         :disabled="busy"
-        class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
+        class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
         @click="edit()"
       >
         <Plus :size="14" /> {{ t.add }}
@@ -23,13 +23,13 @@
       <AlertCircle class="text-error shrink-0 mt-0.5" :size="16" />
       <div class="min-w-0 space-y-0.5">
         <p class="text-xs font-bold text-text-secondary">{{ errorTitle }}</p>
-        <p class="text-[11px] text-text-tertiary leading-relaxed break-words">{{ error }}</p>
+        <p class="text-xs text-text-tertiary leading-relaxed break-words">{{ error }}</p>
       </div>
     </div>
 
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl space-y-4">
       <AppSpinner :size="40" />
-      <p class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ t.loading }}</p>
+      <p class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ t.loading }}</p>
     </div>
 
     <div v-else-if="!items.length" class="flex flex-col items-center justify-center py-16 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl space-y-5">
@@ -58,7 +58,7 @@
           @dragend="handleDragEnd"
         >
           <div class="flex items-center gap-3">
-            <span class="w-5 text-center text-[10px] font-black text-text-tertiary shrink-0">{{ index + 1 }}</span>
+            <span class="w-5 text-center text-xs font-bold text-text-tertiary shrink-0">{{ index + 1 }}</span>
             <div class="flex items-center justify-center text-text-disabled hover:text-text-primary shrink-0" :class="busy ? 'cursor-not-allowed' : 'cursor-move'">
               <GripVertical :size="14" />
             </div>
@@ -80,10 +80,10 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5 pl-8">
-            <span v-for="(badge, badgeIndex) in badges(item)" :key="badgeIndex" :title="badge.title" :class="['px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap', TONE_CLASS[badge.tone]]">{{ badge.text }}</span>
+            <span v-for="(badge, badgeIndex) in badges(item)" :key="badgeIndex" :title="badge.title" :class="['px-1.5 py-0.5 rounded text-xs font-bold border whitespace-nowrap', TONE_CLASS[badge.tone]]">{{ badge.text }}</span>
           </div>
 
-          <p class="pl-8 text-[10px] font-mono text-text-disabled break-all leading-relaxed">{{ displayUrl(item.scriptUrl) }}</p>
+          <p class="pl-8 text-xs font-mono text-text-disabled break-all leading-relaxed">{{ displayUrl(item.scriptUrl) }}</p>
 
           <div class="ml-8 flex flex-wrap items-center gap-1 p-1 rounded-xl border border-border-secondary-50 bg-bg-secondary-60">
             <button type="button" :title="t.up" :aria-label="t.up" :disabled="busy || index === 0" :class="ICON_BTN" @click="move(index, -1)">
@@ -115,41 +115,41 @@
         <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="!busy && (open = false)" />
         <form class="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-bg-secondary border border-border-secondary shadow-2xl p-6 space-y-5" @submit.prevent="save">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-black text-text-primary tracking-tight">{{ form.id ? t.edit : t.add }}</h3>
+            <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ form.id ? t.edit : t.add }}</h3>
             <button type="button" :disabled="busy" class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-50 transition-all disabled:opacity-50" @click="open = false">
               <X :size="18" />
             </button>
           </div>
 
           <label class="block space-y-1.5">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ t.name }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ t.name }}</span>
             <input v-model="form.name" maxlength="100" class="w-full px-3 py-2.5 rounded-lg bg-bg-primary border border-border-secondary text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
-            <span class="block text-[10px] text-text-tertiary leading-relaxed">{{ t.nameHint }}</span>
+            <span class="block text-xs text-text-tertiary leading-relaxed">{{ t.nameHint }}</span>
           </label>
           <label class="block space-y-1.5">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ t.url }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ t.url }}</span>
             <input v-model="form.scriptUrl" required type="url" class="w-full px-3 py-2.5 rounded-lg bg-bg-primary border border-border-secondary text-sm font-mono text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
           </label>
           <CustomSelect v-model="form.protocol" :options="protocolOptions" :label="t.protocol" />
           <CustomSelect v-model="form.catalog" :options="catalogOptions" :label="t.catalog" />
-          <p class="text-[10px] text-text-tertiary leading-relaxed">{{ t.catalogHint }}</p>
+          <p class="text-xs text-text-tertiary leading-relaxed">{{ t.catalogHint }}</p>
           <label class="block space-y-1.5">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ t.variables }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ t.variables }}</span>
             <textarea v-model="form.variablesText" rows="4" placeholder="{}" class="w-full px-3 py-2.5 rounded-lg bg-bg-primary border border-border-secondary text-sm font-mono text-text-primary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
-            <span class="block text-[10px] text-text-tertiary leading-relaxed">{{ t.variablesHint }}</span>
+            <span class="block text-xs text-text-tertiary leading-relaxed">{{ t.variablesHint }}</span>
           </label>
           <label class="block space-y-1.5">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ t.legacy }}</span>
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ t.legacy }}</span>
             <input v-model="form.legacyPlatformKey" maxlength="100" class="w-full px-3 py-2.5 rounded-lg bg-bg-primary border border-border-secondary text-sm font-mono text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
           </label>
 
-          <p v-if="error" role="alert" class="text-[11px] text-error leading-relaxed break-words">{{ error }}</p>
+          <p v-if="error" role="alert" class="text-xs text-error leading-relaxed break-words">{{ error }}</p>
 
           <div class="flex justify-end gap-3 pt-1">
-            <button type="button" :disabled="busy" class="px-4 py-2.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50" @click="open = false">
+            <button type="button" :disabled="busy" class="px-4 py-2.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50" @click="open = false">
               {{ t.cancel }}
             </button>
-            <button type="submit" :disabled="busy" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50">
+            <button type="submit" :disabled="busy" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50">
               <AppSpinner v-if="busy" :size="12" color="white" /> {{ snapshot ? t.saveDeploy : t.saveLoad }}
             </button>
           </div>
@@ -183,7 +183,7 @@ import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
 
-const BTN_BASE = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-text-tertiary transition-all disabled:opacity-40 disabled:cursor-not-allowed'
+const BTN_BASE = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-text-tertiary transition-all disabled:opacity-40 disabled:cursor-not-allowed'
 const ICON_BTN = 'flex items-center justify-center w-7 h-7 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-primary transition-all disabled:opacity-40 disabled:cursor-not-allowed'
 const TEXT_BTN = `${BTN_BASE} hover:text-primary hover:bg-bg-primary`
 const TEXT_DANGER_BTN = `${BTN_BASE} hover:text-error hover:bg-bg-primary`

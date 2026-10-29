@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-bg-primary flex items-center justify-center p-6">
+  <div class="min-h-[100dvh] bg-bg-primary flex items-center justify-center p-6">
     <div class="max-w-md w-full">
       <div
         class="bg-bg-secondary-40 border border-border-secondary rounded-3xl p-8 md:p-10 shadow-2xl text-center space-y-8"
@@ -22,7 +22,7 @@
 
         <!-- 错误标题与信息 -->
         <div class="space-y-3">
-          <h1 class="text-2xl font-black text-text-primary tracking-tight">{{ errorTitle }}</h1>
+          <h1 class="text-2xl font-bold text-text-primary tracking-tight">{{ errorTitle }}</h1>
           <p class="text-sm text-text-tertiary leading-relaxed">{{ errorMessage }}</p>
         </div>
 
@@ -31,7 +31,7 @@
           v-if="errorCode"
           class="p-4 bg-bg-primary-50 border border-border-secondary rounded-2xl space-y-2"
         >
-          <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest">{{ locale.errorCode }}</p>
+          <p class="text-xs text-text-disabled font-bold uppercase tracking-wider">{{ locale.errorCode }}</p>
           <code
             class="text-xs font-mono text-primary font-bold bg-primary-5 px-2 py-1 rounded-lg"
           >
@@ -43,14 +43,14 @@
         <div class="grid grid-cols-1 gap-3 pt-4">
           <NuxtLink
             to="/login"
-            class="flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+            class="flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           >
             <LogIn :size="18" />
             {{ primaryActionLabel }}
           </NuxtLink>
           <NuxtLink
             to="/"
-            class="flex items-center justify-center gap-2 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-sm font-black rounded-xl transition-all active:scale-95"
+            class="flex items-center justify-center gap-2 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-sm font-bold rounded-xl transition-all active:scale-95"
           >
             <Home :size="18" />
             {{ locale.backHome }}
@@ -58,7 +58,7 @@
         </div>
 
         <!-- 底部提示 -->
-        <p class="text-[10px] text-text-secondary font-medium uppercase tracking-widest pt-4">
+        <p class="text-xs text-text-secondary font-medium uppercase tracking-wider pt-4">
           {{ locale.contactAdmin }}
         </p>
       </div>

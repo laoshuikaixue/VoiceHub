@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ t.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ t.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">{{ t.description }}</p>
       </div>
       <div class="flex items-center gap-3">
@@ -16,7 +16,7 @@
         </button>
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           @click="saveConfig"
         >
           <template v-if="saving">
@@ -38,7 +38,7 @@
       class="flex flex-col items-center justify-center py-20 bg-bg-secondary-20 border border-border-secondary-50 rounded-2xl space-y-4"
     >
       <AppSpinner :size="40" />
-      <p class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ t.loading }}</p>
+      <p class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ t.loading }}</p>
     </div>
 
     <div v-else class="space-y-6">
@@ -46,17 +46,17 @@
       <!-- 平台开关 -->
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
             <ToggleLeft :size="16" class="text-warning" /> {{ t.switchTitle }}
           </h3>
           <button
-            class="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold rounded-lg border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all"
+            class="flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all"
             @click="resetEnabledPlatforms"
           >
             <RotateCcw :size="12" /> {{ t.reset }}
           </button>
         </div>
-        <p class="text-[10px] text-text-tertiary">{{ t.switchDesc }}</p>
+        <p class="text-xs text-text-tertiary">{{ t.switchDesc }}</p>
         <div class="grid grid-cols-2 gap-3">
           <div
             v-for="pf in managedPlatforms"
@@ -92,17 +92,17 @@
       <!-- 平台排序 -->
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
             <GripVertical :size="16" class="text-primary" /> {{ t.orderTitle }}
           </h3>
           <button
-            class="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold rounded-lg border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all"
+            class="flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all"
             @click="resetPlatformOrder"
           >
             <RotateCcw :size="12" /> {{ t.resetOrder }}
           </button>
         </div>
-        <p class="text-[10px] text-text-tertiary">{{ t.orderDesc }}</p>
+        <p class="text-xs text-text-tertiary">{{ t.orderDesc }}</p>
         <div class="space-y-2">
           <TransitionGroup name="platform-order" tag="div" class="space-y-2">
             <div
@@ -123,7 +123,7 @@
               @dragleave="handleDragLeave"
               @drop.stop.prevent="handleDrop($event, idx)"
             >
-              <span class="text-[10px] font-black text-text-tertiary w-5 text-center">{{ idx + 1 }}</span>
+              <span class="text-xs font-bold text-text-tertiary w-5 text-center">{{ idx + 1 }}</span>
               <div class="flex items-center justify-center text-text-disabled hover:text-text-primary">
                 <GripVertical :size="14" />
               </div>
@@ -131,7 +131,7 @@
                 <span class="text-xs font-medium text-text-primary">{{ getPlatformLabel(pf) }}</span>
                 <span
                   :class="[
-                    'text-[10px] px-1.5 py-0.5 rounded font-medium',
+                    'text-xs px-1.5 py-0.5 rounded font-medium',
                     enabledPlatforms.includes(pf)
                       ? 'bg-primary-5 text-primary'
                       : 'bg-bg-tertiary-70 text-text-tertiary'

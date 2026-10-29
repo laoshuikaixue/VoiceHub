@@ -256,7 +256,7 @@
               {{ text.cancel }}
             </button>
             <button
-              class="px-7 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-7 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               type="button"
               @click="handleConfirm"
             >

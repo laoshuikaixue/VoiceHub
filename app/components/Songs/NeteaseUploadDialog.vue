@@ -13,7 +13,7 @@
         >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-4 border-b border-border-secondary shrink-0">
-            <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">
+            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
               {{ locale.title }}
             </h3>
             <button
@@ -42,7 +42,7 @@
             <template v-else>
               <!-- 音质选择 -->
               <section class="space-y-3">
-                <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em] px-1"
+                <label class="text-xs font-bold uppercase text-text-disabled tracking-[0.2em] px-1"
                   >{{ locale.quality }}</label
                 >
                 <div class="grid grid-cols-2 gap-2">
@@ -70,7 +70,7 @@
                         class="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_var(--primary-50)]"
                       />
                     </div>
-                    <span class="text-[10px] text-text-tertiary relative z-10">{{
+                    <span class="text-xs text-text-tertiary relative z-10">{{
                       option.description
                     }}</span>
                   </button>
@@ -79,7 +79,7 @@
 
               <!-- 歌曲信息 -->
               <section class="space-y-3">
-                <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em] px-1"
+                <label class="text-xs font-bold uppercase text-text-disabled tracking-[0.2em] px-1"
                   >{{ locale.songInfo }}</label
                 >
                 <div class="bg-bg-primary border border-border-secondary rounded-2xl p-4 space-y-2">
@@ -104,7 +104,7 @@
                 class="space-y-3 pt-4 border-t border-border-secondary-50"
               >
                 <div
-                  class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
+                  class="flex items-center justify-between text-xs font-bold uppercase tracking-wider"
                 >
                   <span class="text-text-tertiary">{{ uploadStatus }}</span>
                   <span class="text-primary">{{ uploadProgress }}%</span>
@@ -121,7 +121,7 @@
                     />
                   </div>
                 </div>
-                <p v-if="uploadMessage" class="text-[10px] text-text-tertiary text-center">
+                <p v-if="uploadMessage" class="text-xs text-text-tertiary text-center">
                   {{ uploadMessage }}
                 </p>
               </section>

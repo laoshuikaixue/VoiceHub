@@ -1,41 +1,41 @@
 <template>
   <div
-    class="relative overflow-hidden p-6 bg-bg-secondary border border-border-secondary rounded-xl group hover:border-primary-30 transition-all duration-300 shadow-xl shadow-[0_20px_25px_var(--shadow-color)]"
+    class="relative overflow-hidden rounded-xl border border-border-secondary bg-bg-secondary p-4 shadow-xl shadow-[0_20px_25px_var(--shadow-color)] transition-colors duration-200 sm:p-6"
     :class="{ 'opacity-60 grayscale cursor-wait': isLoading }"
   >
     <!-- 背景装饰 -->
     <div
-      class="absolute -right-4 -top-4 w-24 h-24 bg-primary-hover-5 blur-3xl rounded-full group-hover:bg-primary-hover-10 transition-colors"
+      class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary-hover-5 blur-3xl transition-colors"
     />
 
     <div class="flex items-start justify-between relative z-10">
       <div class="space-y-4 flex-1">
         <div class="flex items-center gap-2">
           <div
-            class="p-2.5 rounded-lg bg-bg-primary border border-border-secondary group-hover:border-primary-30 group-hover:bg-primary-hover-5 transition-all duration-300"
+            class="rounded-lg border border-border-secondary bg-bg-primary p-2.5 transition-colors duration-200"
             :class="iconClass"
           >
             <component
               :is="iconComponent"
               :size="18"
-              class="text-text-tertiary group-hover:text-primary transition-colors"
+              class="text-text-tertiary transition-colors"
             />
           </div>
           <span
-            class="text-[10px] font-black text-text-disabled uppercase tracking-widest group-hover:text-text-tertiary transition-colors"
+            class="text-xs font-bold text-text-disabled uppercase tracking-wider transition-colors"
             >{{ label }}</span
           >
         </div>
 
         <div class="space-y-1">
           <div class="flex items-baseline gap-2">
-            <h3 class="text-3xl font-black text-text-primary tracking-tight">
+            <h3 class="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
               {{ formattedValue }}
             </h3>
             <div
               v-if="change !== undefined"
               :class="changeClass"
-              class="flex items-center gap-0.5 text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md border"
+              class="flex items-center gap-0.5 text-xs font-bold uppercase px-1.5 py-0.5 rounded-md border"
             >
               <TrendingUp v-if="change > 0" :size="10" />
               <TrendingDown v-else-if="change < 0" :size="10" />
@@ -45,7 +45,7 @@
           </div>
           <p
             v-if="subtitle"
-            class="text-[10px] font-bold text-text-disabled group-hover:text-text-tertiary transition-colors"
+            class="text-xs font-bold text-text-disabled transition-colors"
           >
             {{ subtitle }}
           </p>
@@ -53,7 +53,7 @@
       </div>
 
       <!-- 迷你趋势图 -->
-      <div v-if="trendData && trendData.length > 0" class="w-24 h-12 self-end mb-1">
+      <div v-if="trendData && trendData.length > 0" class="mb-1 hidden h-12 w-24 self-end sm:block">
         <svg class="w-full h-full drop-shadow-[0_0_8px_var(--primary-20)]" viewBox="0 0 100 20">
           <polyline
             :points="trendPoints"
@@ -62,7 +62,7 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            class="transition-all duration-500"
+            
           />
         </svg>
       </div>

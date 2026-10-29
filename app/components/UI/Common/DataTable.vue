@@ -11,7 +11,7 @@
             v-if="selectedRows.length > 0"
             class="flex items-center gap-2 px-3 py-1.5 bg-primary-hover-10 border border-primary-20 rounded-lg"
           >
-            <span class="text-[10px] font-black text-primary uppercase tracking-widest"
+            <span class="text-xs font-bold text-primary uppercase tracking-wider"
               >{{ formatLocale(locale.selectedItems, selectedRows.length) }}</span
             >
             <button
@@ -28,7 +28,7 @@
           <button
             v-if="refreshable"
             :disabled="loading"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary hover:text-text-primary text-xs font-bold uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
             @click="$emit('refresh')"
           >
             <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
@@ -45,10 +45,10 @@
       <!-- 加载状态 -->
       <div
         v-if="loading"
-        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg-primary-60 backdrop-blur-[2px] animate-in fade-in duration-300"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg-primary-60 backdrop-blur-[2px] fade-in"
       >
         <AppSpinner :size="40" class="mb-4" />
-        <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{
+        <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{
           resolvedLoadingText
         }}</span>
       </div>
@@ -71,7 +71,7 @@
                 :key="column.key"
                 :class="[
                   column.class,
-                  'p-4 text-[10px] font-black text-text-disabled uppercase tracking-widest'
+                  'p-4 text-xs font-bold text-text-disabled uppercase tracking-wider'
                 ]"
                 :style="{ width: column.width }"
               >
@@ -79,7 +79,7 @@
               </th>
               <th
                 v-if="hasActions"
-                class="p-4 text-[10px] font-black text-text-disabled uppercase tracking-widest text-right"
+                class="p-4 text-xs font-bold text-text-disabled uppercase tracking-wider text-right"
               >
                 {{ locale.actions }}
               </th>
@@ -91,7 +91,7 @@
                 <slot name="empty">
                   <div class="flex flex-col items-center gap-3 text-text-secondary">
                     <Database :size="40" stroke-width="1" />
-                    <span class="text-[10px] font-black uppercase tracking-widest"
+                    <span class="text-xs font-bold uppercase tracking-wider"
                       >{{ locale.noData }}</span
                     >
                   </div>
@@ -156,7 +156,7 @@
           <slot name="empty">
             <div class="flex flex-col items-center gap-3 text-text-secondary">
               <Database :size="40" stroke-width="1" />
-              <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.noData }}</span>
+              <span class="text-xs font-bold uppercase tracking-wider">{{ locale.noData }}</span>
             </div>
           </slot>
         </div>
@@ -178,7 +178,7 @@
                 >
               </div>
               <slot name="mobile-primary" :row="row" :index="index">
-                <span class="text-sm font-black text-text-primary">{{
+                <span class="text-sm font-bold text-text-primary">{{
                   formatCellValue(getNestedValue(row, columns[0]?.key), columns[0])
                 }}</span>
               </slot>
@@ -200,7 +200,7 @@
           </div>
           <div class="grid grid-cols-2 gap-y-3 gap-x-4">
             <div v-for="column in columns.slice(1)" :key="column.key" class="space-y-1">
-              <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest block">{{
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider block">{{
                 column.title
               }}</span>
               <div class="text-xs font-bold text-text-tertiary">

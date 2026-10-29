@@ -23,10 +23,10 @@
 
         <!-- 主内容区域 -->
         <main
-          class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-bg-primary text-text-primary"
+          class="flex-1 flex flex-col h-[100dvh] overflow-hidden lg:ml-64 relative bg-bg-primary text-text-primary"
         >
           <header
-            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border-secondary bg-bg-primary-60 backdrop-blur-xl z-30"
+            class="flex min-h-16 shrink-0 items-center justify-between border-b border-border-secondary bg-bg-primary-60 px-4 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl z-30 md:px-8"
           >
             <div class="flex items-center gap-3">
               <button
@@ -58,7 +58,7 @@
             <!-- 数据概览 -->
             <div
               v-if="activeTab === 'overview' && permissions.canAccessPage('overview')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminOverviewDashboard @navigate="handleNavigate" />
             </div>
@@ -66,7 +66,7 @@
             <!-- 歌曲管理 -->
             <div
               v-if="activeTab === 'songs' && permissions.canAccessPage('songs')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminSongManagement />
             </div>
@@ -74,7 +74,7 @@
             <!-- 排期管理 -->
             <div
               v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
+              class="panel-enter h-full"
             >
               <LazyAdminScheduleManager />
             </div>
@@ -82,7 +82,7 @@
             <!-- 打印排期 -->
             <div
               v-if="activeTab === 'print' && permissions.canAccessPage('print')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
+              class="panel-enter h-full"
             >
               <LazyAdminSchedulePrinter />
             </div>
@@ -90,7 +90,7 @@
             <!-- 数据分析 -->
             <div
               v-if="activeTab === 'data-analysis' && permissions.canAccessPage('data-analysis')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminDataAnalysisPanel />
             </div>
@@ -98,7 +98,7 @@
             <!-- 用户管理 -->
             <div
               v-if="activeTab === 'users' && permissions.canAccessPage('users')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminUserManager />
             </div>
@@ -106,7 +106,7 @@
             <!-- 消息管理 -->
             <div
               v-if="activeTab === 'notifications' && permissions.canAccessPage('notifications')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminNotificationSender />
             </div>
@@ -114,7 +114,7 @@
             <!-- 邮件与机器人推送配置 -->
             <div
               v-if="activeTab === 'smtp-config' && permissions.canAccessPage('smtp-config')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminSmtpManager />
             </div>
@@ -122,7 +122,7 @@
             <!-- 播出时段 -->
             <div
               v-if="activeTab === 'playtimes' && permissions.canAccessPage('playtimes')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminPlayTimeManager />
             </div>
@@ -130,7 +130,7 @@
             <!-- 投稿管理 -->
             <div
               v-if="activeTab === 'request-times' && permissions.canAccessPage('request-times')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminRequestTimeManager />
             </div>
@@ -138,7 +138,7 @@
             <!-- 学期管理 -->
             <div
               v-if="activeTab === 'semesters' && permissions.canAccessPage('semesters')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminSemesterManager />
             </div>
@@ -146,7 +146,7 @@
             <!-- 黑名单管理 -->
             <div
               v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminBlacklistManager />
             </div>
@@ -154,7 +154,7 @@
             <!-- 年级班级管理 -->
             <div
               v-if="activeTab === 'grade-class' && permissions.canAccessPage('grade-class')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminGradeClassManager />
             </div>
@@ -162,7 +162,7 @@
             <!-- 站点配置 -->
             <div
               v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminSiteConfigManager />
             </div>
@@ -170,7 +170,7 @@
             <!-- 音源控制 -->
             <div
               v-if="activeTab === 'music-source' && permissions.canAccessPage('music-source')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminMusicSourceController />
             </div>
@@ -178,7 +178,7 @@
             <!-- 数据库操作 -->
             <div
               v-if="activeTab === 'database' && permissions.canAccessPage('database')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminDatabaseManager />
             </div>
@@ -186,14 +186,14 @@
             <!-- API密钥管理 -->
             <div
               v-if="activeTab === 'api-keys' && permissions.canAccessPage('api-keys')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminApiKeyManager />
             </div>
             <!-- 卡密管理 -->
             <div
               v-if="activeTab === 'card-codes' && permissions.canAccessPage('card-codes')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminCardCodesManager />
             </div>
@@ -201,7 +201,7 @@
             <!-- 系统看板 -->
             <div
               v-if="activeTab === 'system-board' && permissions.canAccessPage('system-board')"
-              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              class="panel-enter"
             >
               <LazyAdminSystemBoard />
             </div>
@@ -327,6 +327,15 @@ const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
 }
 
+watch(sidebarOpen, (open) => {
+  if (import.meta.server) return
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+const handleSidebarKeydown = (event) => {
+  if (event.key === 'Escape' && sidebarOpen.value) closeSidebar()
+}
+
 const closeSidebar = () => {
   sidebarOpen.value = false
 }
@@ -387,6 +396,7 @@ const handleSwipe = () => {
 
 // 生命周期
 onMounted(async () => {
+  document.addEventListener('keydown', handleSidebarKeydown)
   // 初始化站点配置
   await initSiteConfig()
 
@@ -433,6 +443,7 @@ onMounted(async () => {
 
 // 组件卸载时清理事件监听器
 onUnmounted(() => {
+  document.removeEventListener('keydown', handleSidebarKeydown)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
 })
@@ -441,7 +452,7 @@ onUnmounted(() => {
 <style scoped>
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--panel-bg-deepest);
   color: var(--text-primary);
   position: relative;

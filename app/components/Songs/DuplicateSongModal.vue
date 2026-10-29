@@ -19,7 +19,7 @@
         <!-- 头部 -->
         <div class="p-8 pb-4 flex items-center justify-between">
           <div>
-            <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
+            <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
               <div
                 class="w-10 h-10 rounded-2xl bg-warning-10 flex items-center justify-center text-warning"
               >
@@ -63,23 +63,23 @@
             </div>
 
             <div class="flex-1 min-w-0 py-1">
-              <h4 class="text-base font-black text-text-primary truncate mb-1">{{ song.title }}</h4>
+              <h4 class="text-base font-bold text-text-primary truncate mb-1">{{ song.title }}</h4>
               <p
-                class="text-[10px] font-black uppercase tracking-widest text-text-tertiary truncate mb-3"
+                class="text-xs font-bold uppercase tracking-wider text-text-tertiary truncate mb-3"
               >
                 {{ song.artist }}
               </p>
 
               <div class="flex items-center gap-4">
                 <div
-                  class="flex items-center gap-1.5 text-[10px] font-black text-error uppercase tracking-widest"
+                  class="flex items-center gap-1.5 text-xs font-bold text-error uppercase tracking-wider"
                 >
                   <Icon name="heart" :size="12" class="fill-current" />
                   {{ getLocaleMessage('votes', song.voteCount || 0) }}
                 </div>
                 <div
                   :class="[
-                    'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border',
+                    'px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border',
                     song.played
                       ? 'bg-success-10 text-success border-success-20'
                       : 'bg-warning-10 text-warning border-warning-20'
@@ -88,7 +88,7 @@
                   {{ song.played ? locale.played : locale.pending }}
                 </div>
               </div>
-              <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest mt-2">
+              <p class="text-xs text-text-disabled font-bold uppercase tracking-wider mt-2">
                 {{ locale.requester }}{{ song.requester }}
               </p>
             </div>
@@ -98,14 +98,14 @@
         <!-- 底部按钮 -->
         <div class="p-8 pt-0 flex gap-3">
           <button
-            class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest active:scale-95"
+            class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider active:scale-95"
             @click="$emit('close')"
           >
             {{ locale.back }}
           </button>
           <button
             :disabled="liking || song.voted"
-            class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
+            class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-2xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
             @click="handleLike"
           >
             <Icon v-if="liking" name="loader" :size="16" class="animate-spin" />

@@ -26,8 +26,8 @@
                 <Download :size="20" />
               </div>
               <div class="min-w-0">
-                <h3 class="text-lg font-black text-text-primary tracking-tight">{{ locale.title }}</h3>
-                <p class="mt-0.5 text-[11px] font-bold text-text-tertiary truncate">{{ locale.desc }}</p>
+                <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ locale.title }}</h3>
+                <p class="mt-0.5 text-xs font-bold text-text-tertiary truncate">{{ locale.desc }}</p>
               </div>
             </div>
             <button
@@ -42,7 +42,7 @@
           <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             <!-- 筛选范围 -->
             <div class="space-y-3">
-              <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+              <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 {{ locale.scopeTitle }}
               </label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -87,18 +87,18 @@
             <!-- 导出字段 -->
             <div class="space-y-4">
               <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+                <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                   {{ locale.fieldTitle }}
                 </label>
                 <div class="flex items-center gap-2">
                   <button
-                    class="px-2 py-1 rounded-lg bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-secondary text-[10px] font-bold transition-colors"
+                    class="px-2 py-1 rounded-lg bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-secondary text-xs font-bold transition-colors"
                     @click="selectAllFields"
                   >
                     {{ locale.selectAll }}
                   </button>
                   <button
-                    class="px-2 py-1 rounded-lg bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-secondary text-[10px] font-bold transition-colors"
+                    class="px-2 py-1 rounded-lg bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-secondary text-xs font-bold transition-colors"
                     @click="clearFields"
                   >
                     {{ locale.clearAll }}
@@ -106,7 +106,7 @@
                 </div>
               </div>
               <div v-for="group in fieldGroups" :key="group.key" class="space-y-2">
-                <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ locale.groups[group.key] }}
                 </p>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -115,7 +115,7 @@
                     :key="fieldKey"
                     type="button"
                     :class="[
-                      'flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all text-left',
+                      'flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left',
                       selectedFields.includes(fieldKey)
                         ? 'bg-primary-10 border-primary-30 text-primary'
                         : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
@@ -132,7 +132,7 @@
 
           <!-- Footer -->
           <div class="flex items-center gap-3 p-6 border-t border-border-secondary-50">
-            <div class="flex items-center gap-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-text-tertiary uppercase tracking-wider">
               <span>{{ locale.columnCount(selectedFields.length) }}</span>
               <button
                 v-if="!isDefaultSelection"

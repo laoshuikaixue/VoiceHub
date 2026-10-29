@@ -2,7 +2,7 @@
 <template>
   <aside
     :class="[
-      'fixed inset-y-0 left-0 z-50 w-64 bg-bg-primary border-r border-border-secondary transform transition-transform duration-300 ease-in-out lg:translate-x-0',
+      'fixed inset-y-0 left-0 z-50 w-64 border-r border-border-secondary bg-bg-primary pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] transition-transform duration-300 ease-out transform lg:translate-x-0',
       isOpen ? 'translate-x-0' : '-translate-x-full'
     ]"
   >
@@ -11,14 +11,14 @@
       <div class="flex items-center px-2 mb-6 mt-2">
         <NuxtLink to="/" class="flex items-center gap-2.5 group">
           <!-- Logo 图标 -->
-          <div class="flex-shrink-0 group-hover:scale-110 transition-all duration-300">
+          <div class="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
             <img src="/assets/logo.png" alt="VoiceHub Logo" class="w-8 h-8 object-contain" >
           </div>
           <!-- 品牌文字 -->
           <div class="flex flex-col justify-center">
             <h1 class="font-bold text-lg text-text-primary leading-none tracking-tight">VoiceHub</h1>
             <p
-              class="text-[10px] text-text-tertiary mt-1.5 uppercase tracking-widest font-bold leading-none"
+              class="text-xs text-text-tertiary mt-1.5 uppercase tracking-wider font-bold leading-none"
             >
               {{ locale.console }}
             </p>
@@ -31,7 +31,7 @@
         <div v-for="(group, idx) in menuGroups" :key="idx" class="space-y-1">
           <template v-if="shouldShowGroup(group)">
             <!-- 分组标题 -->
-            <h3 class="px-3 text-[10px] font-bold text-text-disabled uppercase tracking-[0.2em] mb-2">
+            <h3 class="px-3 text-xs font-bold text-text-disabled uppercase tracking-[0.2em] mb-2">
               {{ group.section }}
             </h3>
             <!-- 菜单项列表 -->
@@ -39,7 +39,7 @@
               <button
                 v-if="permissions.canAccessPage(item.permissionId || item.id)"
                 :class="[
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-all group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-10 focus-visible:ring-inset',
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-colors group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-30 focus-visible:ring-inset',
                   activeTab === item.id
                     ? 'bg-primary-hover-10 text-primary border-primary-20'
                     : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-40 border-transparent'
@@ -88,18 +88,18 @@
           </div>
           <!-- 用户详细信息 -->
           <div class="flex-1 min-w-0">
-            <p class="text-xs font-black truncate text-text-primary">
+            <p class="text-xs font-bold truncate text-text-primary">
               {{ currentUser?.name || locale.adminFallback }}
             </p>
             <p
-              class="text-[10px] text-text-tertiary truncate uppercase tracking-wider font-medium mt-0.5"
+              class="text-xs text-text-tertiary truncate uppercase tracking-wider font-medium mt-0.5"
             >
               {{ getRoleDisplayName(currentUser?.role || 'ADMIN') }}
             </p>
           </div>
           <!-- 退出按钮 -->
           <button
-            class="flex items-center justify-center p-2 text-text-disabled hover:text-error hover:bg-error-10 rounded-lg transition-all"
+            class="flex items-center justify-center p-2 text-text-disabled hover:text-error hover:bg-error-10 rounded-lg transition-colors"
             :title="locale.logout"
             @click="$emit('logout')"
           >

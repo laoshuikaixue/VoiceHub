@@ -21,7 +21,7 @@
         >
           <div class="flex items-center justify-between border-b border-border-secondary-50 p-8 pb-4">
             <div>
-              <h3 class="flex items-center gap-3 text-xl font-black tracking-tight text-text-primary">
+              <h3 class="flex items-center gap-3 text-xl font-bold tracking-tight text-text-primary">
                 <div
                   class="flex h-10 w-10 items-center justify-center rounded-2xl bg-info-10 text-info"
                 >
@@ -48,7 +48,7 @@
             >
               <button
                 :class="[
-                  'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all',
+                  'rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all',
                   channel === 'qq'
                     ? 'bg-bg-secondary text-text-primary shadow'
                     : 'text-text-tertiary hover:text-text-secondary'
@@ -60,7 +60,7 @@
               </button>
               <button
                 :class="[
-                  'rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all',
+                  'rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all',
                   channel === 'wx'
                     ? 'bg-bg-secondary text-text-primary shadow'
                     : 'text-text-tertiary hover:text-text-secondary'
@@ -75,7 +75,7 @@
             <div class="flex min-h-[250px] w-full flex-col items-center justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
                 <AppSpinner :size="48" class="mb-4" />
-                <p class="text-[10px] font-bold uppercase tracking-widest">{{ locale.loadingQr }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider">{{ locale.loadingQr }}</p>
               </div>
 
               <div v-else-if="qrImg" class="group relative">
@@ -96,8 +96,8 @@
                 >
                   <div class="flex flex-col items-center text-text-primary">
                     <Icon name="refresh" :size="40" class="mb-3 text-text-tertiary" />
-                    <span class="text-xs font-black uppercase tracking-widest">{{ locale.qrExpired }}</span>
-                    <span class="mt-1 text-[10px] font-bold text-text-tertiary">{{ locale.clickRefresh }}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider">{{ locale.qrExpired }}</span>
+                    <span class="mt-1 text-xs font-bold text-text-tertiary">{{ locale.clickRefresh }}</span>
                   </div>
                 </div>
               </div>
@@ -106,7 +106,7 @@
                 <Icon name="alert-circle" :size="44" class="mb-4 text-error" />
                 <p class="text-sm font-bold text-text-primary">{{ errorMessage }}</p>
                 <button
-                  class="mt-5 rounded-2xl bg-info px-5 py-2 text-xs font-black text-text-primary transition hover:bg-info"
+                  class="mt-5 rounded-2xl bg-info px-5 py-2 text-xs font-bold text-text-primary transition hover:bg-info"
                   type="button"
                   @click="initLogin"
                 >
@@ -122,13 +122,13 @@
                 >
                   <p
                     v-if="status === 'expired'"
-                    class="text-xs font-black uppercase tracking-widest text-text-tertiary"
+                    class="text-xs font-bold uppercase tracking-wider text-text-tertiary"
                   >
                     {{ locale.expiredRefresh }}
                   </p>
                   <p
                     v-else-if="status === 'waiting'"
-                    class="text-xs font-black uppercase tracking-widest text-text-tertiary"
+                    class="text-xs font-bold uppercase tracking-wider text-text-tertiary"
                   >
                     {{
                       scanned
@@ -140,7 +140,7 @@
                   </p>
                   <p
                     v-else-if="status === 'success'"
-                    class="text-xs font-black uppercase tracking-widest text-success"
+                    class="text-xs font-bold uppercase tracking-wider text-success"
                   >
                     {{ locale.qqSuccess }}
                   </p>
@@ -150,7 +150,7 @@
 
             <div class="mt-8 w-full rounded-2xl border border-border-secondary-50 bg-bg-tertiary-30 p-4">
               <p
-                class="text-center text-[10px] font-black uppercase leading-relaxed tracking-[0.15em] text-text-tertiary"
+                class="text-center text-xs font-bold uppercase leading-relaxed tracking-[0.15em] text-text-tertiary"
               >
                 {{ channel === 'wx' ? locale.wxTip : locale.qqTip }}
               </p>

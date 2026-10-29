@@ -15,7 +15,7 @@
       <span class="flex min-w-0 flex-1 flex-col">
         <span
           v-if="label"
-          class="mb-0.5 text-[8px] font-black uppercase leading-none tracking-widest transition-colors"
+          class="mb-0.5 text-xs font-bold uppercase leading-none tracking-wider transition-colors"
           :class="isOpen ? 'text-primary' : 'text-text-disabled'"
         >
           {{ label }}
@@ -97,7 +97,7 @@
               <span
                 v-for="(weekday, index) in text.weekdays"
                 :key="`weekday-${index}`"
-                class="flex h-6 items-center justify-center text-[9px] font-black uppercase tracking-wider text-text-disabled"
+                class="flex h-6 items-center justify-center text-xs font-bold uppercase tracking-wider text-text-disabled"
               >
                 {{ weekday }}
               </span>
@@ -120,7 +120,7 @@
             <div class="mt-1.5 border-t border-border-secondary pt-1.5">
               <div class="flex gap-2">
                 <div class="flex min-w-0 flex-1 flex-col items-center">
-                  <span class="mb-1 text-[8px] font-black uppercase tracking-widest text-text-disabled">{{
+                  <span class="mb-1 text-xs font-bold uppercase tracking-wider text-text-disabled">{{
                     timeText.hour
                   }}</span>
                   <div ref="hourColRef" class="time-col">
@@ -139,7 +139,7 @@
                   </div>
                 </div>
                 <div class="flex min-w-0 flex-1 flex-col items-center">
-                  <span class="mb-1 text-[8px] font-black uppercase tracking-widest text-text-disabled">{{
+                  <span class="mb-1 text-xs font-bold uppercase tracking-wider text-text-disabled">{{
                     timeText.minute
                   }}</span>
                   <div ref="minuteColRef" class="time-col">
@@ -395,7 +395,7 @@ const minute = computed(() => (selectedTime.value ? selectedTime.value.minute : 
 const sizeClass = computed(() => {
   switch (props.size) {
     case 'xs':
-      return 'px-2 py-1 text-[10px]'
+      return 'px-2 py-1 text-xs'
     case 'md':
       return 'px-3 py-2.5 text-sm'
     case 'lg':
@@ -404,7 +404,7 @@ const sizeClass = computed(() => {
       return 'p-3 text-base'
     case 'sm':
     default:
-      return 'px-3 py-2 text-[11px]'
+      return 'px-3 py-2 text-xs'
   }
 })
 
