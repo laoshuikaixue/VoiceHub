@@ -1,4 +1,9 @@
 import { getTxSongPlayableInfo, upgradeTxAudioUrl } from '~~/server/utils/native_tx'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   getQqCookieDiagnostic,
   normalizeQqCookie,
@@ -14,6 +19,10 @@ const YUAFENG_TX_APIKEY = '3ff23523e47465224a3f48579acf41f241540ce04b6cc0b94164f
 const HELLOWORLD_TX_URL = 'https://a.aa.cab/qq.music'
 // QQ 已知无效占位音频，命中说明源返回的是错误录音
 const INVALID_QQ_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
+
+// 匿名取链按 IP 限流；已登录请求不受此限
+const ANONYMOUS_RESOLVE_LIMIT = 10
+const ANONYMOUS_RESOLVE_WINDOW_MS = 60 * 1000
 
 // 从任意 JSON/文本响应中防御式提取 QQ 音频直链
 const extractTxAudioUrl = (payload: unknown): string => {
@@ -102,6 +111,27 @@ const resolveTxWithHelloWorld = async (name: string) => {
 }
 
 export default defineEventHandler(async (event) => {
+  // 失效登录态已被中间件降级为匿名，与未登录同样计数
+  if (!event.context.user) {
+    const limitResult = await checkDistributedRateLimit(
+      `music_resolve_url_ip:${getClientIP(event)}`,
+      ANONYMOUS_RESOLVE_LIMIT,
+      ANONYMOUS_RESOLVE_WINDOW_MS
+    )
+    if (!limitResult.isAllowed) {
+      const waitSeconds = Math.max(
+        1,
+        Math.ceil((limitResult.resetTime - getServerTimestamp()) / 1000)
+      )
+      throw createApiError(
+        429,
+        SERVER_ERROR_CODES.AUTH_RATE_LIMITED_SECONDS,
+        `播放链接解析过于频繁，请等待 ${waitSeconds} 秒后再试`,
+        { params: [waitSeconds] }
+      )
+    }
+  }
+
   const body = await readBody(event)
   const platform = String(body?.platform || '').trim()
   const musicId = body?.musicId

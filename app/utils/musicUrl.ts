@@ -431,8 +431,11 @@ export async function getMusicUrlResult(
         return await requestBackendResolve('official-first')
       } catch (error: any) {
         console.warn('[musicUrl] QQ 官方登录态解析失败，降级第三方音源:', error?.message || error)
-        // 登录态过期是官方链路失败的常见原因，复验确认失效时直接清除本地登录态
-        await revalidateQqLoginAfterFailure()
+        // 被限流不是登录态过期，不能因此清除本地登录态；降级链继续尝试前端直连音源
+        const status = error?.statusCode ?? error?.status
+        if (status !== 429) {
+          await revalidateQqLoginAfterFailure()
+        }
       }
     }
 
