@@ -197,7 +197,8 @@
       :show="showCreateModal || showEditModal"
       :title="showCreateModal ? locale.create : locale.edit"
       size="lg"
-      @close="handleBackdropClick"
+      :close-on-overlay="false"
+      @close="closeModals"
     >
       <div class="space-y-5">
 

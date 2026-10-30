@@ -50,8 +50,13 @@
   </Teleport>
 </template>
 
+<script>
+// 模块级弹窗栈，多个实例共享以计算层级
+const modalStack = []
+</script>
+
 <script setup>
-import { computed, ref, useId, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useFocusTrap } from '~/composables/useFocusTrap'
 import { useLocale } from '~/utils/locale'
@@ -85,13 +90,13 @@ const resolvedCloseLabel = computed(
   () => props.closeLabel || common.value?.close || 'Close'
 )
 
-const modalStack = []
 const instanceId = Symbol('app-modal')
 const zIndex = ref(500)
 
 watch(
   () => props.show,
   (show) => {
+    if (import.meta.server) return
     if (show) {
       if (!modalStack.includes(instanceId)) modalStack.push(instanceId)
       zIndex.value = 500 + modalStack.indexOf(instanceId) * 10
@@ -102,6 +107,11 @@ watch(
   },
   { immediate: true }
 )
+
+onBeforeUnmount(() => {
+  const index = modalStack.indexOf(instanceId)
+  if (index >= 0) modalStack.splice(index, 1)
+})
 
 const close = () => {
   if (props.persistent) return

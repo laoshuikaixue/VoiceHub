@@ -271,7 +271,7 @@
       @close="closeDetails"
     >
       <p v-if="selectedBatch" class="mb-5 text-xs text-text-tertiary">
-        { formatDateTime(selectedBatch.createdAt) } · { locale.sender }：{ senderName(selectedBatch) }
+        {{ formatDateTime(selectedBatch.createdAt) }} · {{ locale.sender }}：{{ senderName(selectedBatch) }}
       </p>
 
       <div class="space-y-0">
@@ -583,7 +583,6 @@ const detailError = ref('')
 const detailStatus = ref('ALL')
 const detailStats = ref({ total: 0, read: 0, unread: 0 })
 const detailPagination = ref({ page: 1, limit: 20, total: 0, totalPages: 1 })
-const closeButton = ref(null)
 const editingBatch = ref(null)
 const editForm = ref({ title: '', content: '', important: false })
 const editSaving = ref(false)
@@ -594,8 +593,6 @@ const deleteLoading = ref(false)
 let requestVersion = 0
 let detailRequestVersion = 0
 let searchTimer = null
-let previousFocus = null
-let previousBodyOverflow = ''
 
 const detailFilterOptions = computed(() => [
   { value: 'ALL', label: locale.value.all, count: detailStats.value.total, icon: Users },
@@ -744,11 +741,7 @@ const openDetails = async (item) => {
   detailStatus.value = 'ALL'
   detailStats.value = { total: 0, read: 0, unread: 0 }
   detailPagination.value = { page: 1, limit: 20, total: 0, totalPages: 1 }
-  previousFocus = document.activeElement
-  previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
   await nextTick()
-  closeButton.value?.focus()
   loadDetails()
 }
 
@@ -757,8 +750,6 @@ const closeDetails = () => {
   selectedBatch.value = null
   recipients.value = []
   detailError.value = ''
-  document.body.style.overflow = previousBodyOverflow
-  nextTick(() => previousFocus?.focus?.())
 }
 
 const openEdit = async (item) => {
@@ -769,9 +760,6 @@ const openEdit = async (item) => {
     important: Boolean(item.important)
   }
   editError.value = ''
-  previousFocus = document.activeElement
-  previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
   await nextTick()
   editTitleInput.value?.focus()
 }
@@ -780,8 +768,6 @@ const closeEdit = () => {
   if (editSaving.value) return
   editingBatch.value = null
   editError.value = ''
-  document.body.style.overflow = previousBodyOverflow
-  nextTick(() => previousFocus?.focus?.())
 }
 
 const saveEdit = async () => {
@@ -915,8 +901,5 @@ onUnmounted(() => {
   if (searchTimer) clearTimeout(searchTimer)
   requestVersion += 1
   detailRequestVersion += 1
-  if (selectedBatch.value || editingBatch.value) {
-    document.body.style.overflow = previousBodyOverflow
-  }
 })
 </script>

@@ -356,7 +356,7 @@
       size="xl"
       @close="closeCreatedApiKey"
     >
-      <p class="mb-5 text-xs text-text-tertiary">{ locale.personalApiKey.createdDesc }</p>
+      <p class="mb-5 text-xs text-text-tertiary">{{ locale.personalApiKey.createdDesc }}</p>
 
       <div class="space-y-5">
 
