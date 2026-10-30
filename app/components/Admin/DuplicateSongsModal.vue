@@ -1,48 +1,18 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click.self="closeModal"
-      >
-        <div
-          class="w-full max-w-3xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        >
-          <!-- 头部 -->
-          <div class="p-6 pb-4 flex items-center justify-between gap-4 border-b border-border-secondary-50 shrink-0">
-            <div class="min-w-0">
-              <h3
-                class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3"
-              >
-                <span
-                  class="w-10 h-10 rounded-xl bg-primary-hover-10 flex items-center justify-center text-primary shrink-0"
-                >
-                  <Copy :size="20" />
-                </span>
-                {{ t('duplicateModal.title') }}
-              </h3>
-              <p v-if="groups.length" class="text-xs text-text-tertiary mt-2 ml-13">
-                {{ t('duplicateModal.subtitle', '', groups.length, songCount) }}
-              </p>
-            </div>
-            <button
-              class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all shrink-0"
-              @click="closeModal"
-            >
-              <X :size="20" />
-            </button>
-          </div>
+  <AppModal
+    :description="groups.length ? t('duplicateModal.subtitle', '', groups.length, songCount) : ''"
+    :show="show"
+    :title="t('duplicateModal.title')"
+    size="2xl"
+    @close="closeModal"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary">
+        <Copy :size="18" />
+      </span>
+    </template>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+
             <p
               v-if="groups.length"
               class="text-xs font-bold text-text-disabled mb-4 px-1 leading-relaxed"
@@ -159,29 +129,26 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 底部 -->
-          <div
-            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end shrink-0"
-          >
+    <template #footer>
+      <div class="flex items-center justify-end">
+
             <button
               class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
               @click="closeModal"
             >
               {{ commonLocale.close }}
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { Copy, X, Music, Heart, Edit2, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useLocaleText } from '~/composables/useLocaleText'
 import { getPlatformLabel } from '~/utils/platforms'
 import { getCoverThumbUrl } from '~/utils/url'

@@ -1,47 +1,22 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click.self="close"
+  <AppModal
+    :description="importResult ? locale.resultDesc : locale.desc"
+    :show="show"
+    :title="importResult ? locale.resultTitle : locale.title"
+    size="xl"
+    @close="close"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+        :class="importResult ? 'bg-success-10 text-success' : 'bg-primary-hover-10 text-primary'"
       >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
-        >
-          <!-- 结果展示视图 -->
-          <div
-            v-if="importResult"
-            class="flex flex-col flex-1 overflow-hidden panel-enter"
-          >
-            <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
-              <div>
-                <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-success-10 flex items-center justify-center text-success"
-                  >
-                    <Icon name="success" :size="20" />
-                  </div>
-                  {{ locale.resultTitle }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.resultDesc }}</p>
-              </div>
-              <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="close"
-              >
-                <Icon name="x" :size="20" />
-              </button>
-            </div>
+        <Icon :name="importResult ? 'success' : 'download'" :size="18" />
+      </span>
+    </template>
 
-            <div class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+    <div v-if="importResult" class="space-y-8">
+
               <div class="grid grid-cols-2 gap-4">
                 <div
                   class="p-6 bg-success-5 border border-success-20 rounded-2xl flex flex-col items-center gap-2"
@@ -87,41 +62,9 @@
                 <Icon name="success" :size="48" class="mb-4" />
                 <p class="text-sm font-bold uppercase tracking-wider">{{ locale.allSuccess }}</p>
               </div>
-            </div>
+    </div>
+    <div v-else class="space-y-6">
 
-            <div class="p-8 pt-4 border-t border-border-secondary-50 bg-bg-secondary-50">
-              <button
-                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider shadow-lg active:scale-95"
-                @click="close"
-              >
-                {{ locale.done }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 正常导入视图 -->
-          <div v-else class="flex flex-col flex-1 overflow-hidden">
-            <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
-              <div>
-                <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <Icon name="download" :size="20" />
-                  </div>
-                  {{ locale.title }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.desc }}</p>
-              </div>
-              <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="close"
-              >
-                <Icon name="x" :size="20" />
-              </button>
-            </div>
-
-            <div class="p-8 py-6 space-y-6 border-b border-border-secondary-50">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div class="space-y-2">
                   <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
@@ -259,8 +202,20 @@
             </div>
 
             <div
-              class="p-8 border-t border-border-secondary-50 bg-bg-secondary-50 flex flex-col md:flex-row gap-4 items-center justify-between"
-            >
+    </div>
+
+    <template #footer>
+      <div v-if="importResult">
+
+              <button
+                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider shadow-lg active:scale-95"
+                @click="close"
+              >
+                {{ locale.done }}
+              </button>
+      </div>
+      <div v-else class="flex flex-col items-center justify-between gap-4 md:flex-row">
+
               <div class="flex items-center gap-4 w-full md:w-auto">
                 <button
                   type="button"
@@ -295,17 +250,15 @@
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { getCoverThumbUrl } from '~/utils/url'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
