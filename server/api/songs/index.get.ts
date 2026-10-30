@@ -338,6 +338,18 @@ export default defineEventHandler(async (event) => {
         }
       }
       if (scope === 'mine' && user) list.push(`s."requesterId" = ${bind(user.id)}`)
+      // 专题筛选：'none' 只看日常投稿，数字只看指定专题
+      const topicFilter = String(query.topicId || '').trim()
+      if (topicFilter) {
+        if (topicFilter === 'none') {
+          list.push(`s."topicId" IS NULL`)
+        } else {
+          const topicIdNumber = Number(topicFilter)
+          if (Number.isInteger(topicIdNumber) && topicIdNumber > 0) {
+            list.push(`s."topicId" = ${bind(topicIdNumber)}`)
+          }
+        }
+      }
       // 我的重播申请：与列表 replayRequested 字段同口径，当前用户提交过申请即命中
       if (scope === 'replays' && user) {
         list.push(
@@ -399,7 +411,7 @@ export default defineEventHandler(async (event) => {
           ORDER BY song_id, created_at DESC
         )
         SELECT
-          s.id, s.title, s.artist, s.played, s.semester, s."createdAt",
+          s.id, s.title, s.artist, s.played, s.semester, s."topicId", s."createdAt",
           s."musicPlatform", s."musicId", s."submissionAnonymous",
           u.id AS "requesterId", u.name AS "requesterName",
           u.grade AS "requesterGrade", u.class AS "requesterClass",
@@ -437,6 +449,7 @@ export default defineEventHandler(async (event) => {
         played: row.played === true,
         playedAt: null,
         semester: row.semester || null,
+        topicId: row.topicId != null ? Number(row.topicId) : null,
         createdAt: row.createdAt,
         updatedAt: row.createdAt,
         requestedAt: formatDateTime(row.createdAt),
@@ -590,6 +603,7 @@ export default defineEventHandler(async (event) => {
         s.played,
         s."playedAt",
         s.semester,
+        s."topicId",
         s."createdAt",
         s."updatedAt",
         s.cover,
@@ -784,6 +798,7 @@ export default defineEventHandler(async (event) => {
         played: row.played === true,
         playedAt: row.playedAt || null,
         semester: row.semester || null,
+        topicId: row.topicId != null ? Number(row.topicId) : null,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         requestedAt: formatDateTime(row.createdAt),

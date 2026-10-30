@@ -35,6 +35,53 @@
 
           <!-- 表单主体 -->
           <div class="options-body px-7 pb-6 space-y-5 overflow-y-auto">
+            <!-- 专题投稿（站点有开放中的专题时显示） -->
+            <div v-if="topics.length > 0" class="options-section">
+              <div class="options-section-head">
+                <span class="options-section-title">
+                  <Icon :size="14" name="music" />
+                  <span>{{ text.topicSectionTitle }}</span>
+                </span>
+                <span :class="['options-tag', { 'options-tag-required': topicRequired }]">
+                  {{ topicRequired ? text.topicRequired : text.optional }}
+                </span>
+              </div>
+
+              <div class="options-topic-grid">
+                <button
+                  v-if="!topicRequired"
+                  type="button"
+                  class="options-topic-chip"
+                  :class="{ 'is-active': !localTopicId }"
+                  @click="selectTopic('')"
+                >
+                  <span class="options-topic-name">{{ text.dailySubmission }}</span>
+                  <span class="options-topic-meta">{{ text.dailyHint }}</span>
+                </button>
+                <button
+                  v-for="topic in topics"
+                  :key="topic.id"
+                  type="button"
+                  class="options-topic-chip"
+                  :class="{ 'is-active': String(topic.id) === localTopicId, 'is-disabled': topic.isFull }"
+                  :disabled="topic.isFull"
+                  @click="selectTopic(String(topic.id))"
+                >
+                  <span class="options-topic-name">{{ topic.name }}</span>
+                  <span class="options-topic-meta">
+                    {{ topic.isFull ? text.topicFull : topicMeta(topic) }}
+                  </span>
+                </button>
+              </div>
+
+              <p v-if="selectedTopic && topicDayList.length > 0" class="options-hint">
+                {{ text.topicDaysHint(topicDayListText) }}
+              </p>
+              <p v-if="selectedTopic && topicPlayTimeNames" class="options-hint">
+                {{ text.topicPlayTimesHint(topicPlayTimeNames) }}
+              </p>
+            </div>
+
             <!-- 一、播出日期 + 时段（仅在时段选择功能开启时显示） -->
             <div v-if="slotEnabled" class="options-section">
               <div class="options-section-head">
@@ -296,6 +343,21 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // 当前开放中的投稿专题（为空则不显示专题选择）
+  topics: {
+    type: Array,
+    default: () => []
+  },
+  // 初始专题 id（'' 表示日常投稿）
+  initialTopicId: {
+    type: [String, Number],
+    default: ''
+  },
+  // 站点是否把专题设为必选（必选时不出「日常投稿」，且必须选一个专题）
+  topicRequired: {
+    type: Boolean,
+    default: false
+  },
   // 全部启用的播出时段
   playTimes: {
     type: Array,
@@ -411,6 +473,7 @@ const emit = defineEmits([
 
 const localDate = ref('')
 const localTimeId = ref('')
+const localTopicId = ref('')
 const errorMessage = ref('')
 // 是否主动选中了下拉中的「手动输入券码」（选中后展开输入框）
 const manualCardCodeMode = ref(false)
@@ -488,9 +551,14 @@ const handleCardCodeSelect = (value) => {
   emit('select-my-card-code', code.toUpperCase())
 }
 
-/** 三段控件全部不可用时给出提示（例如留言、点歌券、时段均未开启） */
+/** 三段控件全部不可用时给出提示（例如留言、点歌券、时段、专题均未开启） */
 const isEmpty = computed(
-  () => !props.slotEnabled && !props.showNote && !props.showAnonymous && !props.showCardCode
+  () =>
+    !props.slotEnabled &&
+    !props.showNote &&
+    !props.showAnonymous &&
+    !props.showCardCode &&
+    (props.topics || []).length === 0
 )
 
 const cardCodeStatusClass = computed(() => ({
@@ -509,11 +577,45 @@ const slotAppliesToWeekday = (slot, weekday) => {
   return days === null || days.includes(weekday)
 }
 
+/** 当前专题允许的播出时段 ID；空数组表示该专题不限时段 */
+const topicPlayTimeIds = computed(() => {
+  const ids = selectedTopic.value?.playTimeIds
+  if (!Array.isArray(ids)) return []
+  return ids.map((id) => Number(id)).filter((id) => Number.isInteger(id))
+})
+
+const topicPlayTimeNames = computed(() => {
+  const allowed = topicPlayTimeIds.value
+  if (allowed.length === 0) return ''
+  return props.playTimes
+    .filter((slot) => allowed.includes(Number(slot.id)))
+    .map((slot) => slot.name)
+    .join('、')
+})
+
+/** 时段是否属于当前专题允许范围 */
+const slotAllowedByTopic = (slot) => {
+  const allowed = topicPlayTimeIds.value
+  return allowed.length === 0 || allowed.includes(Number(slot.id))
+}
+
 /** 按日期星期过滤可选时段。 */
 const availableTimes = computed(() => {
   const weekday = getWeekday(localDate.value)
-  return props.playTimes.filter((slot) => slotAppliesToWeekday(slot, weekday))
+  return props.playTimes.filter((slot) => slotAppliesToWeekday(slot, weekday) && slotAllowedByTopic(slot))
 })
+
+/** 切换专题后，把失效的时段换成该专题下第一个可用时段 */
+const syncTimeWithTopic = () => {
+  const allowed = topicPlayTimeIds.value
+  if (allowed.length === 0) return
+  if (localTimeId.value && allowed.includes(Number(localTimeId.value))) return
+  const weekday = getWeekday(localDate.value)
+  const next = props.playTimes.find(
+    (slot) => allowed.includes(Number(slot.id)) && slotAppliesToWeekday(slot, weekday)
+  )
+  localTimeId.value = next ? String(next.id) : ''
+}
 
 /** 时段下拉选项：id 统一转成字符串，与 localTimeId 的取值类型保持一致 */
 const timeOptions = computed(() =>
@@ -524,6 +626,54 @@ const timeOptions = computed(() =>
   }))
 )
 
+/** 当前选中的专题（空 = 日常投稿） */
+const selectedTopic = computed(
+  () => (props.topics || []).find((topic) => String(topic.id) === localTopicId.value) || null
+)
+
+/** 当前专题的专题日（今天及以后，已由接口过滤） */
+const topicDayList = computed(() => {
+  const days = selectedTopic.value?.topicDays
+  return Array.isArray(days) ? [...days].sort() : []
+})
+
+const formatTopicDay = (day) => {
+  const date = new Date(`${day}T00:00:00Z`)
+  if (Number.isNaN(date.getTime())) return day
+  return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`
+}
+
+const topicDayListText = computed(() => topicDayList.value.map(formatTopicDay).join('、'))
+
+/** 专题卡片副标题：剩余名额或「不限量」 */
+const topicMeta = (topic) => {
+  if (topic.maxSubmissions === null || topic.maxSubmissions === undefined) {
+    return props.text?.unlimitedQuota || '不限量'
+  }
+  const remaining = Number(topic.remaining ?? 0)
+  const template = props.text?.topicRemaining
+  if (typeof template === 'function') return template(remaining)
+  return `剩余 ${remaining} 首`
+}
+
+/** 选择专题后，把播出日期落到该专题的第一个专题日，避免用户误选非专题日 */
+const applyTopicDate = () => {
+  const days = topicDayList.value
+  if (days.length === 0) return
+  if (!days.includes(localDate.value)) {
+    localDate.value = days[0]
+  }
+}
+
+const selectTopic = (value) => {
+  localTopicId.value = value || ''
+  errorMessage.value = ''
+  if (localTopicId.value) {
+    applyTopicDate()
+    syncTimeWithTopic()
+  }
+}
+
 /** 打开时同步父组件的当前选择 */
 watch(
   () => props.show,
@@ -531,7 +681,17 @@ watch(
     if (!visible) return
     localDate.value = props.slotEnabled ? props.initialDate || '' : ''
     localTimeId.value = props.slotEnabled && props.initialTimeId ? String(props.initialTimeId) : ''
+    localTopicId.value = props.initialTopicId ? String(props.initialTopicId) : ''
     errorMessage.value = ''
+    // 站点「专题必选」且用户尚未选过专题时，预选第一个还没满的专题
+    if (props.topicRequired && !localTopicId.value) {
+      const first = (props.topics || []).find((topic) => !topic.isFull)
+      if (first) localTopicId.value = String(first.id)
+    }
+    if (localTopicId.value) {
+      applyTopicDate()
+      syncTimeWithTopic()
+    }
     // 打开时重置手动模式：由已保存券码是否在「我的点歌券」中决定
     manualCardCodeMode.value = false
   }
@@ -556,7 +716,7 @@ watch(localDate, () => {
     localTimeId.value = ''
     return
   }
-  if (!slotAppliesToWeekday(slot, getWeekday(localDate.value))) {
+  if (!slotAppliesToWeekday(slot, getWeekday(localDate.value)) || !slotAllowedByTopic(slot)) {
     localTimeId.value = ''
   }
 })
@@ -578,9 +738,32 @@ const handleConfirm = () => {
     errorMessage.value = props.text.timeRequiredError
     return
   }
+  // 站点把专题设为必选：必须选中一个专题
+  if (props.topicRequired && props.topics.length > 0 && !localTopicId.value) {
+    errorMessage.value = props.text.topicRequiredError
+    return
+  }
+  // 专题配置了专题日时，播出日期必须落在其中
+  const days = topicDayList.value
+  if (selectedTopic.value && days.length > 0 && !days.includes(localDate.value)) {
+    errorMessage.value = props.text.topicDayInvalid
+    return
+  }
+  // 专题限定了可投稿时段时，所选时段必须属于其中
+  const allowedTimes = topicPlayTimeIds.value
+  if (
+    selectedTopic.value &&
+    allowedTimes.length > 0 &&
+    localTimeId.value &&
+    !allowedTimes.includes(Number(localTimeId.value))
+  ) {
+    errorMessage.value = props.text.topicPlayTimeInvalid
+    return
+  }
   emit('confirm', {
     date: localDate.value || null,
-    timeId: localTimeId.value || null
+    timeId: localTimeId.value || null,
+    topicId: localTopicId.value || null
   })
   emit('update:show', false)
 }
@@ -591,6 +774,53 @@ const handleConfirm = () => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+/* 专题选择：日常投稿 + 各开放专题 */
+.options-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.options-topic-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-tertiary);
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.options-topic-chip:hover:not(.is-disabled) {
+  border-color: var(--primary);
+}
+
+.options-topic-chip.is-active {
+  border-color: var(--primary);
+  background: var(--primary-10);
+}
+
+.options-topic-chip.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.options-topic-name {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.options-topic-meta {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
 }
 
 /* 「投稿留言 / 点歌券」同属一组，组内不再画分割线 */

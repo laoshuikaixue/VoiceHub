@@ -143,6 +143,14 @@
               <LazyAdminSemesterManager />
             </div>
 
+            <!-- 专题投稿 -->
+            <div
+              v-if="activeTab === 'topics' && permissions.canAccessPage('topics')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSubmissionTopicManager />
+            </div>
+
             <!-- 黑名单管理 -->
             <div
               v-if="activeTab === 'blacklist' && permissions.canAccessPage('blacklist')"

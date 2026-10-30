@@ -1184,6 +1184,9 @@
       :mode="submissionOptionsMode"
       :slot-enabled="playTimeSelectionEnabled"
       :slot-required="playSlotRequired"
+      :topics="submissionTopics"
+      :initial-topic-id="preferredTopicId"
+      :topic-required="submissionTopicRequired"
       :play-times="enabledPlayTimes"
       :initial-date="preferredPlayDate"
       :initial-time-id="preferredPlayTimeId || defaultPlayTimeId"
@@ -1296,6 +1299,13 @@ const artist = ref('')
 const platform = ref('netease') // 占位值，平台配置加载后跟随后台排序的首选平台
 const platformTouched = ref(false) // 用户是否手动切换过平台，切换后不再覆盖其选择
 const preferredPlayTimeId = ref('')
+// 投稿专题（'' = 日常投稿）
+const preferredTopicId = ref('')
+// 当前开放中的专题列表（来自 /api/topics）
+const submissionTopics = ref([])
+// 站点总开关：专题投稿是否启用、是否必选
+const submissionTopicsEnabled = ref(false)
+const submissionTopicRequired = ref(false)
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
 const submissionAnonymous = ref(false)
@@ -2076,6 +2086,20 @@ const fetchPlayTimes = async () => {
   }
 }
 
+// 获取当前开放中的投稿专题（无专题时不显示选择区）
+const fetchSubmissionTopics = async () => {
+  try {
+    const response = await fetch('/api/topics')
+    if (!response.ok) return
+    const data = await response.json()
+    submissionTopics.value = data.topics || []
+    submissionTopicsEnabled.value = data.enabled === true
+    submissionTopicRequired.value = data.enabled === true && data.required === true
+  } catch (err) {
+    console.error('获取投稿专题失败:', err)
+  }
+}
+
 const fileInput = ref(null)
 
 const checkNeteaseLoginStatus = async () => {
@@ -2441,6 +2465,7 @@ onMounted(async () => {
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()
+  fetchSubmissionTopics()
   initSiteConfig()
   fetchSubmissionStatus()
   // 获取当前学期和所有学期选项
@@ -2557,6 +2582,7 @@ const validatePlaySlotSelection = (enforceRequired = true) => {
 const submissionOptionsAvailable = computed(
   () =>
     playTimeSelectionEnabled.value ||
+    submissionTopics.value.length > 0 ||
     enableSubmissionRemarks.value ||
     (allowAnonymousSubmission.value && !!user.value) ||
     cardCodeEnabled.value
@@ -2575,6 +2601,9 @@ const submissionOptionsSummary = computed(() => {
   const items = []
   if (playTimeSelectionEnabled.value) {
     items.push(text('submissionOptionItemSlot', '播出安排'))
+  }
+  if (submissionTopics.value.length > 0) {
+    items.push(text('submissionOptionItemTopic', '投稿专题'))
   }
   if (enableSubmissionRemarks.value) {
     items.push(text('submissionOptionItemNote', '投稿留言'))
@@ -2600,13 +2629,28 @@ const openSubmissionOptions = () => {
   todayPlayDate.value = getBeijingDateString()
   submissionOptionsMode.value = 'options'
   showSubmissionOptions.value = true
-  // 打开弹窗时刷新已派发券，保证下拉列表是最新的
+  // 打开弹窗时刷新已派发券与开放中的专题，保证列表最新
   fetchMyCardCodes()
+  fetchSubmissionTopics()
 }
 
 /** 后台开启「时段必选」但尚未选择时段 → 投稿时弹窗收集，确认后继续提交 */
 const requiresSlotSelection = computed(
   () => playTimeSelectionEnabled.value && playSlotRequired.value && !preferredPlayTimeId.value
+)
+
+/** 站点「专题必选」且尚未选择专题，且当前确实有可投专题 → 同样用弹窗收集 */
+const requiresTopicSelection = computed(
+  () =>
+    submissionTopicsEnabled.value &&
+    submissionTopicRequired.value &&
+    !preferredTopicId.value &&
+    submissionTopics.value.some((topic) => !topic.isFull)
+)
+
+/** 投稿前必须补全的选项（时段 / 专题任一未选都要先弹窗） */
+const requiresSubmissionOptions = computed(
+  () => requiresSlotSelection.value || requiresTopicSelection.value
 )
 
 const openRequiredSlotOptions = (pending) => {
@@ -2619,14 +2663,24 @@ const openRequiredSlotOptions = (pending) => {
 // 投稿选项弹窗的界面文案
 const submissionOptionsText = computed(() => {
   const requiredMode = submissionOptionsMode.value === 'required'
-  return {
-    // 标题随模式切换：强制选时段时强调时段，主动打开时强调「选项」
-    title: requiredMode
-      ? locale.value.playSlotModalTitle || '选择播出时段'
-      : locale.value.submissionOptionsTitle || '投稿选项',
-    subtitle: requiredMode
-      ? locale.value.playSlotModalSubtitle ||
+  // 强制模式下按「缺什么」决定标题：只缺专题时强调专题，否则强调时段
+  const requiredTitle =
+    requiresTopicSelection.value && requiresSlotSelection.value
+      ? locale.value.requiredOptionsTitle || '完善投稿选项'
+      : requiresTopicSelection.value
+        ? locale.value.topicRequiredTitle || '选择投稿专题'
+        : locale.value.playSlotModalTitle || '选择播出时段'
+  const requiredSubtitle =
+    requiresTopicSelection.value && !requiresSlotSelection.value
+      ? locale.value.topicRequiredHint ||
+        '站点已将专题设为必选，请先选择要投稿的专题'
+      : locale.value.playSlotModalSubtitle ||
         '时段必选；播出日期可选，留空则由后台排期安排播出日'
+  return {
+    // 标题随模式切换：强制补选时强调缺的那一项，主动打开时强调「选项」
+    title: requiredMode ? requiredTitle : locale.value.submissionOptionsTitle || '投稿选项',
+    subtitle: requiredMode
+      ? requiredSubtitle
       : locale.value.submissionOptionsSubtitle || '留言与点歌券会随本次投稿一并提交，均为选填',
     // 播出时段
     slotSectionTitle: locale.value.playSlotSectionTitle || '播出安排',
@@ -2642,6 +2696,28 @@ const submissionOptionsText = computed(() => {
       locale.value.playSlotDateOptionalHint || '未指定播出日期，具体播出日由后台排期决定',
     noSlotsForDate: locale.value.noSlotsForDate || '该日期没有开放的播出时段，请更换日期',
     timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
+    // 投稿专题
+    topicSectionTitle: locale.value.topicSectionTitle || '投稿专题',
+    dailySubmission: locale.value.dailySubmission || '日常投稿',
+    dailyHint: locale.value.dailyHint || '不指定专题',
+    topicRemaining: (count) =>
+      typeof locale.value.topicRemaining === 'function'
+        ? locale.value.topicRemaining(count)
+        : `剩余 ${count} 首`,
+    topicFull: locale.value.topicFull || '名额已满',
+    unlimitedQuota: locale.value.unlimitedQuota || '不限量',
+    topicDaysHint: (days) =>
+      typeof locale.value.topicDaysHint === 'function'
+        ? locale.value.topicDaysHint(days)
+        : `仅可选择专题日：${days}`,
+    topicDayInvalid: locale.value.topicDayInvalid || '请选择该专题的专题日',
+    topicPlayTimesHint: (names) =>
+      typeof locale.value.topicPlayTimesHint === 'function'
+        ? locale.value.topicPlayTimesHint(names)
+        : `该专题仅接收以下播出时段：${names}`,
+    topicPlayTimeInvalid: locale.value.topicPlayTimeInvalid || '请选择该专题允许的播出时段',
+    topicRequired: locale.value.topicRequired || '必选',
+    topicRequiredError: locale.value.topicRequiredError || '请选择投稿专题',
     // 投稿留言
     noteLabel: locale.value.submissionNote || '投稿留言',
     anonymousLabel: locale.value.anonymousSubmission || '匿名投稿',
@@ -2683,9 +2759,10 @@ const submissionOptionsText = computed(() => {
 })
 
 /** 保存弹窗选项并按模式继续投稿。 */
-const handlePlaySlotConfirm = async ({ date, timeId }) => {
+const handlePlaySlotConfirm = async ({ date, timeId, topicId }) => {
   preferredPlayTimeId.value = timeId ? String(timeId) : ''
   preferredPlayDate.value = date || ''
+  preferredTopicId.value = topicId ? String(topicId) : ''
   playSlotError.value = ''
 
   const pending = pendingPlaySlotSubmit.value
@@ -3594,7 +3671,7 @@ const submitSong = async (result, options = {}) => {
   }
 
   // 校验投稿日期与时段。
-  if (requiresSlotSelection.value && options.replayRequest !== true && !options.fromSlotModal) {
+  if (requiresSubmissionOptions.value && options.replayRequest !== true && !options.fromSlotModal) {
     // 记下本次投稿的卡片，弹窗关闭到请求返回期间按钮持续显示「处理中」
     submittingSongKey.value = getSearchResultKey(result)
     openRequiredSlotOptions({ result, options })
@@ -3742,6 +3819,7 @@ const submitSong = async (result, options = {}) => {
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
       preferredPlayDate: preferredPlayDate.value || null,
+      topicId: preferredTopicId.value ? parseInt(preferredTopicId.value) : null,
       cover: selectedCover.value,
       musicPlatform: actualMusicPlatform, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
@@ -3778,7 +3856,7 @@ const handleSubmit = async (fromSlotModal = false) => {
   if (submitting.value) return
 
   // 校验手动投稿日期与时段。
-  if (requiresSlotSelection.value && fromSlotModal !== true) {
+  if (requiresSubmissionOptions.value && fromSlotModal !== true) {
     openRequiredSlotOptions({ manual: true })
     return
   }
@@ -3813,6 +3891,7 @@ const handleSubmit = async (fromSlotModal = false) => {
       artist: artist.value,
       preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
       preferredPlayDate: preferredPlayDate.value || null,
+      topicId: preferredTopicId.value ? parseInt(preferredTopicId.value) : null,
       cover: selectedCover.value,
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
@@ -4148,7 +4227,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
   }
 
   // 播出时段：仅在后台开启「时段必选」且尚未选择时段时弹窗收集，确认后再继续提交
-  if (requiresSlotSelection.value && fromSlotModal !== true) {
+  if (requiresSubmissionOptions.value && fromSlotModal !== true) {
     openRequiredSlotOptions({ manualForm: true })
     return
   }
@@ -4247,6 +4326,7 @@ const resetForm = () => {
   artist.value = ''
   preferredPlayTimeId.value = ''
   preferredPlayDate.value = ''
+  preferredTopicId.value = ''
   playSlotError.value = ''
   searchResults.value = []
   restrictionCheckMap.value = new Map()

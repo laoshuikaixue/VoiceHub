@@ -425,3 +425,19 @@
 .platform-bilibili { color: #d96f9b; background: rgba(217, 111, 155, 0.14); }
 .platform-migu { color: #d97a2f; background: rgba(217, 122, 47, 0.14); }
 .platform-plugin { color: var(--text-tertiary); background: var(--bg-tertiary); }
+
+/* 专题标签：与音源标签同构，用主题色区分来自专题投稿的歌曲 */
+.topic-tag {
+  display: inline-block;
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: var(--primary);
+  background: var(--primary-10);
+}

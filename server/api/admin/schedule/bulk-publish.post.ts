@@ -18,6 +18,7 @@ import {
   restoreReplayRequestsToPending
 } from '~~/server/utils/scheduleReplayBinding'
 import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
+import { assertSongsScheduleDateAllowed } from '~~/server/utils/submission-topic'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -154,6 +155,12 @@ export default defineEventHandler(async (event) => {
         { playTimeId, items: resolvedItems },
         await loadSongTitleMap(Array.from(new Set(songIds)), tx),
         tx
+      )
+      // 专题歌曲只能排期到所属专题日
+      await assertSongsScheduleDateAllowed(
+        tx,
+        resolvedItems.map((item) => item.songId),
+        inputDateStr.slice(0, 10)
       )
 
       // 3. 删除该时间段内的所有排期（包括草稿和已发布）

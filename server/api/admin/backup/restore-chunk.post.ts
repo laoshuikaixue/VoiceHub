@@ -863,6 +863,8 @@ export default defineEventHandler(async (event) => {
             const fields = [
               'enablePlayTimeSelection',
               'playSlotRequired',
+              'enableSubmissionTopics',
+              'submissionTopicRequired',
               'instanceId',
               'defaultTheme',
               'enabledThemes',

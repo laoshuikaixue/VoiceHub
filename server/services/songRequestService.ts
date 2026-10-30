@@ -35,6 +35,7 @@ import {
 import { SERVER_ERROR_CODES, SONG_DURATION_MAX_SECONDS, SONG_DURATION_MIN_SECONDS, SUBMISSION_NOTE_MAX_LENGTH, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { normalizeForMatch } from '~~/server/utils/song-name-normalize'
 import { resolveSubmissionRestrictionPolicy } from '~~/server/utils/submission-restriction-policy'
+import { hasSubmittableTopic, validateTopicForSubmission } from '~~/server/utils/submission-topic'
 import { z } from 'zod'
 import { readSelection } from '~~/server/utils/music-source-plugins/resolver'
 
@@ -50,6 +51,11 @@ export type SongRequestOptions = {
    * 未提供时段时按「未指定时段」落库。
    */
   enforceRequiredPlaySlot?: boolean
+  /**
+   * 是否按站点设置强制要求选择投稿专题。
+   * 网页投稿表单为 true；机器人 / 开放 API 没有专题选择界面，传 false。
+   */
+  enforceRequiredTopic?: boolean
 }
 
 const songRequestBodySchema = z.object({
@@ -86,6 +92,11 @@ const songRequestBodySchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, '播出日期格式不正确，应为 YYYY-MM-DD')
     .optional()
     .nullable(),
+  // 投稿专题；null/空 = 日常投稿
+  topicId: z.preprocess(
+    (value) => value === null || value === undefined || value === '' ? null : Number(value),
+    z.number().int().positive('专题 ID 无效').nullable()
+  ).optional(),
   cardCode: z.string().trim().max(100, 'CARD_CODE_TOO_LONG').optional().nullable(),
   collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
 })
@@ -97,6 +108,7 @@ export async function requestSongForUser(
   options: SongRequestOptions = {}
 ) {
   const enforceRequiredPlaySlot = options.enforceRequiredPlaySlot !== false
+  const enforceRequiredTopic = options.enforceRequiredTopic !== false
   const parsedBody = songRequestBodySchema.safeParse(body || {})
   if (!parsedBody.success) {
     const issues = parsedBody.error.issues || []
@@ -458,6 +470,30 @@ export async function requestSongForUser(
       )
     }
 
+    // 专题投稿：可选启用的功能。关闭时不接受任何专题入参（防绕过开关写入）；
+    // 开启「专题必选」时，只要还有可投专题，网页投稿就必须选择专题。
+    const topicsEnabled = systemSettingsData?.enableSubmissionTopics === true
+    if (!topicsEnabled && requestBody.topicId) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.SONG_TOPIC_UNAVAILABLE,
+        '专题投稿功能当前未启用'
+      )
+    }
+    if (
+      topicsEnabled &&
+      systemSettingsData?.submissionTopicRequired === true &&
+      enforceRequiredTopic &&
+      !requestBody.topicId &&
+      (await hasSubmittableTopic(db, getServerDate()))
+    ) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.SONG_TOPIC_REQUIRED,
+        '请选择投稿专题'
+      )
+    }
+
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     const song = await db.transaction(async (tx) => {
@@ -603,6 +639,18 @@ export async function requestSongForUser(
 
       let finalMusicId = requestBody.musicId ? String(requestBody.musicId) : null
 
+      // 专题投稿：校验开放时段、名额与专题日（锁住专题行，避免并发越过名额）
+      let topicId: number | null = null
+      if (requestBody.topicId) {
+        const topic = await validateTopicForSubmission(tx, requestBody.topicId, getServerDate(), {
+          playDate,
+          // 专题可限定可投稿时段，未配置时该字段不起作用
+          playTimeId: requestBody.preferredPlayTimeId ?? null,
+          lock: true
+        })
+        topicId = topic.id
+      }
+
       if (isBilibili) {
         const bvId = finalMusicId?.split(':')[0]
         if (bvId) {
@@ -625,6 +673,7 @@ export async function requestSongForUser(
           requesterId: user.id,
           preferredPlayTimeId: preferredPlayTime?.id || null,
           preferredPlayDate: playDate,
+          topicId,
           semester: currentSemester,
           cover: requestBody.cover || null,
           musicPlatform: isBilibili ? 'bilibili' : requestBody.musicPlatform || null,

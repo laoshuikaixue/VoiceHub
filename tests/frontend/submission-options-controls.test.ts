@@ -104,7 +104,7 @@ test('手动点击事件不能被当作时段弹窗续跑标志', async () => {
   const pending: unknown[] = []
   const { context } = setup('app/components/Songs/RequestForm.vue', ['handleManualSubmit'], {
     title: ref('歌曲'), manualArtist: ref('歌手'), manualCover: ref(''), manualPlayUrl: ref(''),
-    requiresSlotSelection: ref(true), openRequiredSlotOptions: (value: unknown) => pending.push(value),
+    requiresSubmissionOptions: ref(true), openRequiredSlotOptions: (value: unknown) => pending.push(value),
     validatePlaySlotSelection: () => { throw new Error('不应跳过收集弹窗') }
   })
   await vm.runInContext("handleManualSubmit({ type: 'click' })", context)

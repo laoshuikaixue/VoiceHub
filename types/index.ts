@@ -189,3 +189,23 @@ export interface RequestTime {
   accepted: number
   past: boolean
 }
+
+// 后台专题管理页使用的专题视图（时间为后台输入的北京时间字符串）
+export interface SubmissionTopic {
+  id: number
+  name: string
+  description?: string | null
+  startTime: string
+  endTime: string
+  startTimeText?: string
+  endTimeText?: string
+  maxSubmissions: number | null
+  accepted: number
+  remaining: number | null
+  enabled: boolean
+  isOpen: boolean
+  topicDays: string[]
+  playTimeIds: number[]
+  createdAt?: string
+  updatedAt?: string
+}

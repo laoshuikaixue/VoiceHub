@@ -147,6 +147,15 @@
             class-name="w-full lg:w-40"
           />
           <CustomSelect
+            v-model="selectedTopic"
+            :label="locale.filters.topic"
+            :options="availableTopics"
+            label-key="name"
+            value-key="id"
+            :placeholder="locale.filters.selectTopic"
+            class-name="w-full lg:w-40"
+          />
+          <CustomSelect
             v-model="selectedPlayTime"
             :label="locale.filters.playTime"
             :options="availablePlayTimes"
@@ -353,12 +362,21 @@
                   class="text-text-disabled shrink-0"
                 >{{ formatDuration(song.durationSeconds) }}</span>
               </p>
-              <!-- 音源标识独立成行，避免歌手名过长时被挤掉 -->
-              <div v-if="song.musicPlatform" class="mt-1 flex">
+              <!-- 音源 / 专题标签独立成行，避免歌手名过长时被挤掉 -->
+              <div
+                v-if="song.musicPlatform || songTopicName(song)"
+                class="mt-1 flex flex-wrap items-center gap-1"
+              >
                 <span
+                  v-if="song.musicPlatform"
                   class="platform-tag px-1 whitespace-nowrap"
                   :class="'platform-' + platformTagClass(song.musicPlatform)"
                 >{{ platformLabel(song.musicPlatform) }}</span>
+                <span
+                  v-if="songTopicName(song)"
+                  class="topic-tag px-1"
+                  :title="locale.topicTagTitle"
+                >{{ songTopicName(song) }}</span>
               </div>
               <span
                 class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
@@ -1420,6 +1438,11 @@ const { playSong } = useSongPlayer()
 // 学期相关
 const selectedSemester = ref('all')
 const availableSemesters = ref([])
+// 专题筛选：'all' 全部 / 'none' 日常投稿 / 数字为专题 id
+const selectedTopic = ref('all')
+const availableTopics = ref([])
+// 专题 id → 名称，用于歌曲行上的专题标签
+const topicNameById = ref({})
 const selectedSemesterName = computed(() => {
   if (!selectedSemester.value || selectedSemester.value === 'all') return ''
   return availableSemesters.value.find((semester) => String(semester.id) === String(selectedSemester.value))?.name || ''
@@ -1583,6 +1606,12 @@ const platformLabel = (platform) => {
 }
 // 平台标签配色类名，插件音源统一走 plugin
 const platformTagClass = (platform) => (BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin')
+
+// 歌曲所属专题名称；无专题返回空串（模板里据此决定是否渲染标签）
+const songTopicName = (song) => {
+  if (!song?.topicId) return ''
+  return topicNameById.value[String(song.topicId)] || ''
+}
 const musicPlatformOptions = computed(() => {
   const list = [...getAvailablePlatforms()]
   for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {
@@ -1647,6 +1676,14 @@ const baseFilteredSongs = computed(() => {
   // 学期过滤
   if (selectedSemester.value && selectedSemester.value !== 'all') {
     filtered = filtered.filter((song) => song.semester === selectedSemesterName.value)
+  }
+
+  // 专题过滤
+  if (selectedTopic.value && selectedTopic.value !== 'all') {
+    filtered = filtered.filter((song) => {
+      if (selectedTopic.value === 'none') return !song.topicId
+      return String(song.topicId) === String(selectedTopic.value)
+    })
   }
 
   // 时段过滤
@@ -2970,7 +3007,7 @@ const handleClickOutside = (event) => {
 }
 
 // 监听器
-watch([searchQuery, statusFilter, poolFilter, sortOption, selectedSemester, selectedPlayTime], () => {
+watch([searchQuery, statusFilter, poolFilter, sortOption, selectedSemester, selectedTopic, selectedPlayTime], () => {
   currentPage.value = 1
 })
 
@@ -2991,6 +3028,25 @@ onMounted(async () => {
   await fetchCurrentSemester()
 
   availableSemesters.value = [{ id: 'all', name: locale.value.allSemesters }, ...(semesters.value || [])]
+
+  // 专题筛选项：全部 / 日常投稿 / 各专题
+  try {
+    const response = await fetch('/api/admin/topics')
+    if (response.ok) {
+      const data = await response.json()
+      const topicList = data.topics || []
+      topicNameById.value = Object.fromEntries(
+        topicList.map((topic) => [String(topic.id), topic.name])
+      )
+      availableTopics.value = [
+        { id: 'all', name: locale.value.allTopics || '全部专题' },
+        { id: 'none', name: locale.value.noTopic || '日常投稿' },
+        ...topicList.map((topic) => ({ id: String(topic.id), name: topic.name }))
+      ]
+    }
+  } catch (err) {
+    console.error('获取专题筛选项失败:', err)
+  }
 
   if (currentSemester.value) {
     selectedSemester.value = currentSemester.value.id

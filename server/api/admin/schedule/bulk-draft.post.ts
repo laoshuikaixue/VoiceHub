@@ -9,6 +9,7 @@ import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCode
 import { parseScheduleReplayRequestId, resolveScheduleReplayBindings, restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { assertSongsScheduleDateAllowed } from '~~/server/utils/submission-topic'
 
 const MAX_SCHEDULE_ITEMS = 1000
 
@@ -126,6 +127,12 @@ export default defineEventHandler(async (event) => {
       { playTimeId, items: resolvedItems },
       await loadSongTitleMap(songIds, tx),
       tx
+    )
+    // 专题歌曲只能排期到所属专题日
+    await assertSongsScheduleDateAllowed(
+      tx,
+      resolvedItems.map((item) => item.songId),
+      inputDateStr.slice(0, 10)
     )
 
     await tx.delete(schedules).where(and(...whereConditions))
