@@ -548,7 +548,7 @@
                 </p>
               </div>
             </label>
-          
+
       </div>
 
       <template #footer>
@@ -566,7 +566,7 @@
             >
               {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
             </button>
-          
+
         </div>
       </template>
     </AppModal>
@@ -1128,7 +1128,7 @@
                 {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
               </p>
             </div>
-          
+
       </div>
 
       <template #footer>
@@ -1154,7 +1154,7 @@
                     : locale.editModal.addSong
               }}
             </button>
-          
+
         </div>
       </template>
     </AppModal>
