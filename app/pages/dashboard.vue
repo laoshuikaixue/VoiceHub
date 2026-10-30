@@ -441,9 +441,10 @@ onMounted(async () => {
   })
 })
 
-// 组件卸载时清理事件监听器
+// 组件卸载时清理事件监听器和滚动锁
 onUnmounted(() => {
   document.removeEventListener('keydown', handleSidebarKeydown)
+  document.body.style.overflow = ''
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
 })

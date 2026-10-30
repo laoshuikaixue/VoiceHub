@@ -1,5 +1,6 @@
 import { db, songs, songReplayRequests, users } from '~/drizzle/db'
 import { desc, eq, sql, and } from 'drizzle-orm'
+import { formatDateTime } from '~/utils/timeUtils'
 import { buildNameToUsersMap, formatDisambiguatedNameFromMap } from '~~/server/utils/userDisplayName'
 
 export default defineEventHandler(async (event) => {
@@ -127,6 +128,7 @@ export default defineEventHandler(async (event) => {
       grade: d.user.grade,
       class: d.user.class,
       createdAt: d.createdAt,
+      requestedAt: formatDateTime(d.createdAt),
       status: d.status,
       preferredPlayTimeId: d.preferredPlayTimeId,
       submissionNote: d.submissionNote,
@@ -141,6 +143,7 @@ export default defineEventHandler(async (event) => {
     return {
       ...item.song,
       requesterId: latestRequest?.userId || null,
+      requestedAt: latestRequest ? formatDateTime(latestRequest.createdAt) : null,
       preferredPlayTimeId: latestRequest?.preferredPlayTimeId ?? item.song.preferredPlayTimeId ?? null,
       // 重播申请不包含期望播出日期，不沿用原始投稿那个已过期的日期
       preferredPlayDate: null,

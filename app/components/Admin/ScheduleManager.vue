@@ -1260,7 +1260,7 @@
               class="flex items-center gap-1.5 text-xs font-bold text-text-disabled uppercase tracking-wider"
             >
               <Clock class="w-2.5 h-2.5" />
-              {{ formatDate(req.createdAt) }}
+              {{ formatDate(req.requestedAt) }}
             </div>
           </div>
           <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-text-secondary">
