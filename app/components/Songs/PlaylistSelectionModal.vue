@@ -251,6 +251,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { getPlaylistTracks, getUserPlaylists } from '~/utils/neteaseApi'
 import {
   getQqPlaylistSongs,

@@ -616,6 +616,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { Music, X, User, RefreshCw, Trash2, Check, Plus, Loader2 } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'

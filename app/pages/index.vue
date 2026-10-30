@@ -841,6 +841,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import Icon from '~/components/UI/Icon.vue'

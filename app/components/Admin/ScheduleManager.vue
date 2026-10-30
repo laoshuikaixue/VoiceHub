@@ -1766,6 +1766,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch, inject } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   Search,
   Save,
