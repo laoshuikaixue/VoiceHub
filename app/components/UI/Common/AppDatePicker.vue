@@ -128,6 +128,15 @@
               </button>
               <span v-else />
               <button
+                v-if="multiple"
+                type="button"
+                class="date-foot-btn text-primary"
+                @click="close"
+              >
+                {{ text.done }}
+              </button>
+              <button
+                v-else
                 type="button"
                 class="date-foot-btn"
                 :class="todayDisabled ? 'cursor-not-allowed opacity-40' : ''"
@@ -181,9 +190,15 @@ import { getSyncedDate } from '~/composables/useSyncedTime'
 import { getBeijingDateString } from '~/utils/timeUtils'
 
 const props = defineProps({
+  // 单选传 YYYY-MM-DD 字符串；开 multiple 时传日期数组
   modelValue: {
-    type: String,
+    type: [String, Array],
     default: ''
+  },
+  // 多选模式：点日期只切换选中状态，由底部「完成」收起浮层
+  multiple: {
+    type: Boolean,
+    default: false
   },
   // 框内小标签（与 CustomSelect 的 label 同构）
   label: {
@@ -241,6 +256,9 @@ const emit = defineEmits(['update:modelValue', 'change'])
 
 const FALLBACK_TEXT = {
   placeholder: '选择日期',
+  multiplePlaceholder: '选择日期（可多选）',
+  selectedCount: (count) => `已选 ${count} 天`,
+  done: '完成',
   today: '今天',
   clear: '清除',
   prevMonth: '上一月',
@@ -306,7 +324,17 @@ const isOutOfRange = (iso) => {
   return false
 }
 
-const selectedDate = computed(() => parseISODate(props.modelValue))
+/** 多选模式下已选日期集合（单选模式为空） */
+const selectedList = computed(() => {
+  if (!props.multiple || !Array.isArray(props.modelValue)) return []
+  return [...new Set(props.modelValue.filter((item) => normalizeISODate(item)))]
+})
+const selectedSet = computed(() => new Set(selectedList.value))
+const selectedDate = computed(() =>
+  props.multiple
+    ? parseISODate(selectedList.value[selectedList.value.length - 1]) || null
+    : parseISODate(props.modelValue)
+)
 const todayDisabled = computed(() => isOutOfRange(todayISO.value))
 
 const sizeClass = computed(() => {
@@ -358,9 +386,18 @@ const valueTextClass = computed(() => {
   return [weight, displayText.value === placeholderText.value ? 'text-text-disabled' : 'text-text-secondary']
 })
 
-const placeholderText = computed(() => props.placeholder || text.value.placeholder)
+const placeholderText = computed(() => {
+  if (props.placeholder) return props.placeholder
+  return props.multiple ? text.value.multiplePlaceholder : text.value.placeholder
+})
 
 const displayText = computed(() => {
+  if (props.multiple) {
+    const count = selectedList.value.length
+    if (count === 0) return placeholderText.value
+    const template = text.value.selectedCount
+    return typeof template === 'function' ? template(count) : `${count}`
+  }
   const selected = selectedDate.value
   if (!selected) return placeholderText.value
   return `${selected.year}/${pad2(selected.month + 1)}/${pad2(selected.day)}`
@@ -380,7 +417,7 @@ const buildCell = (year, month, day, outside) => {
     day,
     outside,
     isToday: iso === todayISO.value,
-    isSelected: iso === normalizeISODate(props.modelValue),
+    isSelected: props.multiple ? selectedSet.value.has(iso) : iso === normalizeISODate(props.modelValue),
     disabled: isOutOfRange(iso)
   }
 }
@@ -547,6 +584,23 @@ const emitValue = (value) => {
 
 const selectDay = (cell) => {
   if (cell.disabled || !cell.iso) return
+
+  if (props.multiple) {
+    const next = new Set(selectedSet.value)
+    if (next.has(cell.iso)) next.delete(cell.iso)
+    else next.add(cell.iso)
+    // 多选不收起浮层，方便连续点多个日期；按日期升序回传
+    emitValue([...next].sort())
+    if (cell.outside) {
+      const parsed = parseISODate(cell.iso)
+      if (parsed) {
+        viewYear.value = parsed.year
+        viewMonth.value = parsed.month
+      }
+    }
+    return
+  }
+
   emitValue(cell.iso)
   if (cell.outside) {
     const parsed = parseISODate(cell.iso)
@@ -559,8 +613,8 @@ const selectDay = (cell) => {
 }
 
 const clear = () => {
-  emitValue('')
-  isOpen.value = false
+  emitValue(props.multiple ? [] : '')
+  if (!props.multiple) isOpen.value = false
 }
 
 const goToday = () => {

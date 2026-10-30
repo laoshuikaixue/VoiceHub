@@ -136,7 +136,8 @@ import {
   Lock,
   Ticket,
   GraduationCap,
-  Activity
+  Activity,
+  Layers
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
@@ -178,6 +179,7 @@ const menuGroups = computed(() => [
       { icon: CalendarDays, label: locale.value.menu?.schedule || '排班管理', id: 'schedule' },
       { icon: Printer, label: locale.value.menu?.print || '打印管理', id: 'print' },
       { icon: Music2, label: locale.value.menu?.songs || '点歌管理', id: 'songs' },
+      { icon: Layers, label: locale.value.menu?.topics || '专题投稿', id: 'topics' },
       {
         icon: BarChart3,
         label: locale.value.menu?.dataAnalysis || '数据分析',
