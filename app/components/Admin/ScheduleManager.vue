@@ -84,24 +84,15 @@
     </div>
 
     <!-- 手动日期选择弹窗 -->
-    <div
-      v-if="showManualDatePicker"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
+    <AppModal
+      :show="showManualDatePicker"
+      :title="locale.selectDate"
+      size="sm"
+      :close-on-overlay="false"
+      @close="showManualDatePicker = false"
     >
-      <div
-        class="bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
-        @click.stop
-      >
-        <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-          <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.selectDate }}</h3>
-          <button
-            class="text-text-tertiary hover:text-text-secondary transition-colors"
-            @click="showManualDatePicker = false"
-          >
-            <CloseIcon class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-6 space-y-6">
+      <div class="space-y-6">
+
           <AppDatePicker
             v-model="manualSelectedDate"
             size="lg"
@@ -122,9 +113,8 @@
               {{ locale.confirm }}
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </AppModal>
 
     <!-- 播出时段选择器 (如果启用) -->
     <div
@@ -1060,24 +1050,15 @@
     @close="showPlaylistExportDialog = false"
   />
 
-  <div
-    v-if="showMoveDateDialog"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
+  <AppModal
+    :show="showMoveDateDialog"
+    :title="locale.moveDateTitle"
+    size="sm"
+    :close-on-overlay="false"
+    @close="showMoveDateDialog = false"
   >
-    <div
-      class="bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
-      @click.stop
-    >
-      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.moveDateTitle }}</h3>
-        <button
-          class="text-text-tertiary hover:text-text-secondary transition-colors"
-          @click="showMoveDateDialog = false"
-        >
-          <CloseIcon class="w-5 h-5" />
-        </button>
-      </div>
-      <div class="p-6 space-y-4">
+    <div class="space-y-4">
+
           <div class="text-xs text-text-tertiary">{{ locale.currentDate(selectedDate) }}</div>
         <AppDatePicker
           v-model="moveTargetDate"
@@ -1113,28 +1094,18 @@
           {{ locale.nextStep }}
           </button>
         </div>
-      </div>
     </div>
-  </div>
+  </AppModal>
 
-  <div
-    v-if="showCopyDateDialog"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
+  <AppModal
+    :show="showCopyDateDialog"
+    :title="locale.copyDateTitle"
+    size="sm"
+    :close-on-overlay="false"
+    @close="showCopyDateDialog = false"
   >
-    <div
-      class="bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
-      @click.stop
-    >
-      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.copyDateTitle }}</h3>
-        <button
-          class="text-text-tertiary hover:text-text-secondary transition-colors"
-          @click="showCopyDateDialog = false"
-        >
-          <CloseIcon class="w-5 h-5" />
-        </button>
-      </div>
-      <div class="p-4 space-y-3">
+    <div class="space-y-3">
+
         <!-- 复制方式选择器 -->
         <div class="flex items-center gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
           <button
@@ -1254,40 +1225,18 @@
             {{ locale.nextStep }}
           </button>
         </div>
-      </div>
     </div>
-  </div>
+  </AppModal>
 
   <!-- 重播申请详情弹窗 -->
-  <div
-    v-if="showReplayModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
-    @click="closeReplayModal"
+  <AppModal
+    :show="showReplayModal"
+    :title="locale.replayDetailTitle(replayModalTitle)"
+    size="md"
+    @close="closeReplayModal"
   >
-    <div
-      class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-      @click.stop
-    >
-      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
-        {{ locale.replayDetailTitle(replayModalTitle) }}
-        </h3>
-        <div class="flex items-center gap-3">
-          <button
-            class="px-3 py-1.5 bg-error-10 hover:bg-error-20 text-error border border-error-20 rounded-lg text-xs font-bold transition-colors"
-            @click="(rejectReplayRequest(replayModalSongId), closeReplayModal())"
-          >
-          {{ locale.rejectRequest }}
-          </button>
-          <button
-            class="text-text-tertiary hover:text-text-secondary transition-colors"
-            @click="closeReplayModal"
-          >
-            <CloseIcon class="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-      <div class="p-0 overflow-y-auto max-h-[60vh]">
+    <div class="divide-y divide-panel-bg-dark-50">
+
         <div class="divide-y divide-panel-bg-dark-50">
           <div
             v-for="(req, idx) in replayModalRequests"
@@ -1319,9 +1268,17 @@
         <p class="text-xs font-bold uppercase tracking-wider">{{ locale.noReplayDetails }}</p>
           </div>
         </div>
-      </div>
     </div>
-  </div>
+
+    <template #footer>
+      <button
+        class="w-full px-3 py-2 bg-error-10 hover:bg-error-20 text-error border border-error-20 rounded-lg text-xs font-bold transition-colors"
+        @click="(rejectReplayRequest(replayModalSongId), closeReplayModal())"
+      >
+        {{ locale.rejectRequest }}
+      </button>
+    </template>
+  </AppModal>
 
   <SubmissionRemarkDialog
     :show="submissionRemarkDialog.show"
@@ -1343,25 +1300,14 @@
   />
 
   <!-- 自动排期弹窗 -->
-  <div
-    v-if="showAutoScheduleDialog"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
+  <AppModal
+    :show="showAutoScheduleDialog"
+    :title="locale.autoScheduleTitle"
+    size="lg"
+    @close="closeAutoScheduleDialog"
   >
-    <div
-      class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden mx-4"
-      @click.stop
-    >
-      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
-        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">{{ locale.autoScheduleTitle }}</h3>
-        <button
-          class="text-text-tertiary hover:text-text-secondary transition-colors"
-          @click="closeAutoScheduleDialog"
-        >
-          <CloseIcon class="w-5 h-5" />
-        </button>
-      </div>
+    <div class="space-y-4">
 
-      <div class="p-5 space-y-4">
         <!-- 输入区 -->
         <div v-if="!autoScheduleResult.songs.length" class="space-y-4">
           <div>
@@ -1745,9 +1691,8 @@
             </button>
           </div>
         </div>
-      </div>
     </div>
-  </div>
+  </AppModal>
 
   <!-- 上下文菜单 -->
   <div

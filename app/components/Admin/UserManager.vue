@@ -1105,48 +1105,21 @@
     />
 
     <!-- 用户详细信息模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="showUserDetailModal"
+      :title="locale.detail.title"
+      :description="locale.detail.desc"
+      size="2xl"
+      @close="closeUserDetailModal"
     >
-      <div
-        v-if="showUserDetailModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click="closeUserDetailModal"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <div>
-                <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <User :size="20" />
-                  </div>
-                  {{ locale.detail.title }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.detail.desc }}</p>
-              </div>
-              <button
-                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="closeUserDetailModal"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <User :size="18" />
+        </span>
+      </template>
 
-            <div
-              v-if="selectedUserDetail"
-              class="space-y-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"
-            >
+      <div class="space-y-8">
+
               <!-- 基本信息 -->
               <div class="space-y-4">
                 <div
@@ -1531,20 +1504,18 @@
                   />
                 </div>
               </div>
-            </div>
-
-            <div class="mt-8">
-              <button
-                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
-                @click="closeUserDetailModal"
-              >
-                {{ locale.actions.close }}
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
-    </Transition>
+
+      <template #footer>
+        <button
+          class="w-full px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
+          @click="closeUserDetailModal"
+        >
+          {{ locale.actions.close }}
+        </button>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 

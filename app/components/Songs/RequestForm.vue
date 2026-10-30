@@ -829,25 +829,16 @@
       @select="handleUserSelect"
     />
 
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showAudioMatchModal"
-          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-85 backdrop-blur-sm"
-        >
-          <div
-            class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
-            @click.stop
-          >
-            <div class="px-8 py-7 flex flex-col items-center text-center">
-              <div class="relative">
+    <AppModal
+      :show="showAudioMatchModal"
+      :title="locale.audioMatch"
+      :description="audioMatchStatus || (audioMatchError ? audioMatchError : locale.audioMatchHint)"
+      size="md"
+      @close="closeAudioMatchModal"
+    >
+      <div class="space-y-6">
+        <div class="flex flex-col items-center px-8 py-7 text-center">
+<div class="relative">
                 <div
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
                   :class="
@@ -865,16 +856,6 @@
                   class="absolute inset-0 rounded-full border-2 border-error animate-ping opacity-30"
                 />
               </div>
-
-              <h3 class="mt-6 text-xl font-bold text-text-primary tracking-tight">
-                {{ locale.audioMatch }}
-              </h3>
-
-              <p class="mt-2 text-sm text-text-tertiary max-w-[260px]">
-                {{
-                  audioMatchStatus || (audioMatchError ? audioMatchError : locale.audioMatchHint)
-                }}
-              </p>
 
               <div class="mt-8 flex items-center gap-4">
                 <button
@@ -957,10 +938,8 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </AppModal>
 
     <!-- 手动输入弹窗 -->
     <AppModal

@@ -317,47 +317,20 @@
     </div>
   </div>
 
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="showPlaylistModal"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="closePlaylistModal"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+  <AppModal
+    :show="showPlaylistModal"
+    :title="locale.addToPlaylist"
+    size="2xl"
+    @close="closePlaylistModal"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+        <Icon name="music" :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-8 pb-4">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-              >
-                <Icon name="music" :size="24" />
-              </div>
-              <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.addToPlaylist }}</h3>
-            </div>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-              type="button"
-              @click="closePlaylistModal"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
+    <div class="space-y-8">
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
             <div
               v-if="!isNeteaseLoggedIn"
               class="flex flex-col items-center justify-center py-20 text-center"
@@ -572,12 +545,11 @@
                 </div>
               </div>
             </div>
-          </div>
+    </div>
 
-          <!-- 底部操作栏 -->
-          <div v-if="isNeteaseLoggedIn" class="p-8 pt-0">
-            <div class="flex gap-3">
-              <button
+    <template v-if="isNeteaseLoggedIn" #footer>
+      <div class="flex w-full gap-3">
+<button
                 class="flex-1 px-6 py-4 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold transition-all active:scale-95 uppercase tracking-wider"
                 type="button"
                 @click="closePlaylistModal"
@@ -596,12 +568,9 @@
                 <Icon v-else name="plus" :size="16" />
                 <span>{{ playlistActionLoading ? locale.adding : locale.confirmAdd }}</span>
               </button>
-            </div>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 
   <Teleport to="body">
     <ConfirmDialog
