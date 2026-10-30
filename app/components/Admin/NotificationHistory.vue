@@ -264,60 +264,18 @@
       />
     </template>
 
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="selectedBatch"
-          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="notification-detail-title"
-          @click.self="closeDetails"
-          @keydown.esc="closeDetails"
-        >
-          <div
-            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
-          >
-            <header
-              class="flex shrink-0 items-start justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
-            >
-              <div class="min-w-0">
-                <p class="text-xs font-bold uppercase text-primary">
-                  {{ locale.detailsEyebrow }}
-                </p>
-                <h2
-                  id="notification-detail-title"
-                  class="mt-1 break-words text-lg font-bold text-text-primary-lighter"
-                >
-                  {{ selectedBatch.title || locale.untitled }}
-                </h2>
-                <p class="mt-1 text-xs text-text-tertiary">
-                  {{ formatDateTime(selectedBatch.createdAt) }}
-                </p>
-                <p class="mt-1 text-xs text-text-tertiary">
-                  {{ locale.sender }}：{{ senderName(selectedBatch) }}
-                </p>
-              </div>
-              <button
-                ref="closeButton"
-                type="button"
-                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-lighter"
-                :title="locale.close"
-                :aria-label="locale.close"
-                @click="closeDetails"
-              >
-                <X :size="19" />
-              </button>
-            </header>
+    <AppModal
+      :show="!!selectedBatch"
+      :title="selectedBatch?.title || locale.untitled"
+      size="2xl"
+      @close="closeDetails"
+    >
+      <p v-if="selectedBatch" class="mb-5 text-xs text-text-tertiary">
+        { formatDateTime(selectedBatch.createdAt) } · { locale.sender }：{ senderName(selectedBatch) }
+      </p>
 
-            <div class="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:p-8">
+      <div class="space-y-0">
+
               <p class="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-text-tertiary">
                 {{ selectedBatch.message }}
               </p>
@@ -450,58 +408,17 @@
                   @change="loadDetails"
                 />
               </template>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </AppModal>
 
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="editingBatch"
-          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="notification-edit-title"
-          @click.self="closeEdit"
-          @keydown.esc="closeEdit"
-        >
-          <form
-            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
-            @submit.prevent="saveEdit"
-          >
-            <header
-              class="flex shrink-0 items-center justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
-            >
-              <div>
-                <p class="text-xs font-bold uppercase text-success">
-                  {{ locale.editEyebrow }}
-                </p>
-                <h2 id="notification-edit-title" class="mt-1 text-lg font-bold text-text-primary-lighter">
-                  {{ locale.editNotification }}
-                </h2>
-              </div>
-              <button
-                type="button"
-                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-lighter disabled:cursor-wait disabled:opacity-50"
-                :disabled="editSaving"
-                :title="locale.close"
-                :aria-label="locale.close"
-                @click="closeEdit"
-              >
-                <X :size="19" />
-              </button>
-            </header>
+    <AppModal
+      :show="!!editingBatch"
+      :title="locale.editNotification"
+      size="2xl"
+      @close="closeEdit"
+    >
+      <form id="notification-edit-form" class="space-y-6" @submit.prevent="saveEdit">
 
-            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:p-8">
               <div>
                 <label
                   for="notification-edit-name"
@@ -568,11 +485,11 @@
               >
                 {{ editError }}
               </div>
-            </div>
+      </form>
 
-            <footer
-              class="flex shrink-0 flex-col-reverse gap-3 border-t border-panel-bg-dark-50 bg-panel-bg-deepest-50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
-            >
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
               <button
                 type="button"
                 :disabled="editSaving"
@@ -582,7 +499,7 @@
                 {{ locale.cancel }}
               </button>
               <button
-                type="submit"
+                type="submit" form="notification-edit-form"
                 :disabled="editSaving"
                 class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-8 text-xs font-bold text-white transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
               >
@@ -590,11 +507,9 @@
                 <Save v-else :size="15" />
                 {{ editSaving ? locale.saving : locale.save }}
               </button>
-            </footer>
-          </form>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
 
     <ConfirmDialog
       :show="Boolean(deletingBatch)"
@@ -616,6 +531,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   AlertCircle,
   CheckCircle2,

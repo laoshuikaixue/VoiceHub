@@ -350,24 +350,16 @@
       @cancel="cancelDeletePersonalApiKey"
     />
 
-    <Teleport to="body">
-      <Transition name="modal">
-        <div
-          v-if="createdApiKey"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
-        >
-          <div class="w-full max-w-xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-bold text-text-primary">{{ locale.personalApiKey.createdTitle }}</h3>
-                <p class="text-xs text-text-tertiary mt-1">{{ locale.personalApiKey.createdDesc }}</p>
-              </div>
-              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closeCreatedApiKey">
-                <X :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="!!createdApiKey"
+      :title="locale.personalApiKey.createdTitle"
+      size="xl"
+      @close="closeCreatedApiKey"
+    >
+      <p class="mb-5 text-xs text-text-tertiary">{ locale.personalApiKey.createdDesc }</p>
 
-            <div class="p-6 space-y-5">
+      <div class="space-y-5">
+
               <div class="flex items-start gap-3 rounded-2xl border border-warning-20 bg-warning-10 p-4 text-warning">
                 <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
                 <p class="text-xs font-bold leading-relaxed">
@@ -391,41 +383,33 @@
                   </button>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <div class="p-6 border-t border-border-secondary">
+      <template #footer>
+        <div class="w-full">
+
               <button
                 class="w-full py-3 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-bold rounded-xl transition-all"
                 @click="closeCreatedApiKey"
               >
                 {{ locale.personalApiKey.closeSaved }}
               </button>
-            </div>
-          </div>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
 
-    <Teleport to="body">
-      <Transition name="modal">
-        <div
-          v-if="showApiKeyLogsModal"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
-        >
-          <div class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-border-secondary flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-lg font-bold text-text-primary">{{ locale.personalApiKey.logsTitle }}</h3>
-                <p class="text-xs text-text-tertiary mt-1">
-                  {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
-                </p>
-              </div>
-              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closePersonalApiKeyLogs">
-                <X :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="showApiKeyLogsModal"
+      :title="locale.personalApiKey.logsTitle"
+      size="2xl"
+      @close="closePersonalApiKeyLogs"
+    >
+      <p class="mb-5 text-xs text-text-tertiary">
+        {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
+      </p>
 
-            <div class="p-6">
+      <div class="space-y-0">
+
               <div v-if="apiKeyLogsLoading" class="flex items-center justify-center gap-2 py-10 text-xs text-text-tertiary">
                 <RefreshCw :size="16" class="animate-spin" />
                 <span>{{ locale.personalApiKey.loadingLogs }}</span>
@@ -499,16 +483,15 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </AppModal>
+
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -526,8 +509,7 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  User,
-  X
+  User
 } from '@lucide/vue'
 import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
 import { useAuth } from '~/composables/useAuth'

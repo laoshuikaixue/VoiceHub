@@ -193,35 +193,14 @@
       @change="loadApiKeys"
     />
 
-    <!-- 模态框组 -->
-    <Transition name="modal">
-      <div
-        v-if="showCreateModal || showEditModal || showViewModal || showSuccessModal"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      >
-        <div
-          class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm"
-          @click="handleBackdropClick"
-        />
+    <AppModal
+      :show="showCreateModal || showEditModal"
+      :title="showCreateModal ? locale.create : locale.edit"
+      size="lg"
+      @close="handleBackdropClick"
+    >
+      <div class="space-y-5">
 
-        <!-- 创建/编辑模态框 -->
-        <div
-          v-if="showCreateModal || showEditModal"
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden panel-enter"
-        >
-          <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-            <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">
-              {{ showCreateModal ? locale.create : locale.edit }}
-            </h3>
-            <button
-              class="text-text-tertiary hover:text-text-primary transition-colors"
-              @click="closeModals"
-            >
-              <X :size="20" />
-            </button>
-          </div>
-
-          <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="space-y-1.5">
               <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-0.5"
                 >{{ locale.name }}</label
@@ -301,9 +280,11 @@
                 >{{ locale.enabled }}</span
               >
             </label>
-          </div>
+      </div>
 
-          <div class="p-6 border-t border-border-secondary flex gap-2 justify-end">
+      <template #footer>
+        <div class="flex justify-end gap-2">
+
             <button
               class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="closeModals"
@@ -317,27 +298,18 @@
             >
               {{ submitting ? locale.saving : showCreateModal ? locale.createKey : locale.saveChanges }}
             </button>
-          </div>
         </div>
+      </template>
+    </AppModal>
 
-        <!-- 成功模态框 -->
-        <div
-          v-if="showSuccessModal"
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden panel-enter"
-        >
-          <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-            <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">
-              {{ locale.createSuccessTitle }}
-            </h3>
-            <button
-              class="text-text-tertiary hover:text-text-primary transition-colors"
-              @click="closeModals"
-            >
-              <X :size="20" />
-            </button>
-          </div>
+    <AppModal
+      :show="showSuccessModal"
+      :title="locale.createSuccessTitle"
+      size="lg"
+      @close="handleBackdropClick"
+    >
+      <div class="space-y-6">
 
-          <div class="p-6 space-y-6">
             <div
               class="p-6 bg-success-10 border border-success-20 rounded-2xl flex flex-col items-center text-center"
             >
@@ -382,34 +354,29 @@
                 </p>
               </div>
             </div>
-          </div>
+      </div>
 
-          <div class="p-6 border-t border-border-secondary">
+      <template #footer>
+        <div class="w-full">
+
             <button
               class="w-full py-2.5 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-bold rounded-xl transition-all"
               @click="closeModals"
             >
               {{ locale.closeSaved }}
             </button>
-          </div>
         </div>
+      </template>
+    </AppModal>
 
-        <!-- 详情模态框 -->
-        <div
-          v-if="showViewModal && selectedApiKey"
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden panel-enter"
-        >
-          <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-            <h3 class="text-lg font-bold text-text-primary uppercase tracking-wider">{{ locale.details }}</h3>
-            <button
-              class="text-text-tertiary hover:text-text-primary transition-colors"
-              @click="closeModals"
-            >
-              <X :size="20" />
-            </button>
-          </div>
+    <AppModal
+      :show="showViewModal && !!selectedApiKey"
+      :title="locale.details"
+      size="2xl"
+      @close="handleBackdropClick"
+    >
+      <div class="space-y-8">
 
-          <div class="p-6 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
             <section class="space-y-4">
               <h5
                 class="text-xs font-bold text-text-disabled uppercase tracking-wider border-b border-border-secondary pb-2"
@@ -581,10 +548,8 @@
                 </div>
               </div>
             </section>
-          </div>
-        </div>
       </div>
-    </Transition>
+    </AppModal>
 
     <!-- 确认删除对话框 -->
     <ConfirmDialog
@@ -602,6 +567,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   Plus,
   Search,

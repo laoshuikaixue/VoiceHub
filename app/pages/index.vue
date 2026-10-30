@@ -752,51 +752,21 @@
     </div>
 
     <!-- 规则弹窗 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-150 ease-out"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showRules"
-          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-          @click.self="showRules = false"
-        >
-          <div
-            ref="rulesDialogRef"
-            aria-labelledby="home-rules-title"
-            aria-modal="true"
-            class="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
-            role="dialog"
-            tabindex="-1"
-          >
-            <div class="p-8 pb-4 flex items-center justify-between">
-              <div>
-                <h3 id="home-rules-title" class="flex items-center gap-3 text-lg font-bold tracking-tight text-text-primary">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <Icon name="bell" :size="20" />
-                  </div>
-                  {{ locale.rulesTitle }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
-              </div>
-              <button
-                aria-label="关闭"
-                class="rounded-xl bg-bg-tertiary-50 p-2.5 text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-                type="button"
-                @click="showRules = false"
-              >
-                <Icon name="x" :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="showRules"
+      :title="locale.rulesTitle"
+      :description="locale.rulesDesc"
+      size="lg"
+      @close="showRules = false"
+    >
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <Icon name="bell" :size="18" />
+        </span>
+      </template>
 
-            <div class="p-8 pt-4 space-y-8">
+      <div class="space-y-8">
+
               <div class="rules-group space-y-4">
                 <h4
                   class="text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-2"
@@ -851,20 +821,21 @@
                   </div>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <div class="p-8 pt-0">
+      <template #footer>
+        <div class="w-full">
+
               <button
                 class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider shadow-lg active:scale-95"
                 @click="showRules = false"
               >
                 {{ locale.gotIt }}
               </button>
-            </div>
-          </div>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 
@@ -875,7 +846,6 @@ import { useRoute, useRouter } from 'vue-router'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
-import { useFocusTrap } from '~/composables/useFocusTrap'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
@@ -948,12 +918,6 @@ const isRequestOpen = ref(true)
 // 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
-const rulesDialogRef = ref(null)
-useFocusTrap(rulesDialogRef, computed(() => showRules.value), {
-  onEscape: () => {
-    showRules.value = false
-  }
-})
 const showUserActions = ref(false)
 const showLanguageMenu = ref(false)
 const showThemeMenu = ref(false)

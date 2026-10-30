@@ -110,17 +110,13 @@
       </TransitionGroup>
     </div>
 
-    <Teleport to="body">
-      <div v-if="open" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="!busy && (open = false)" />
-        <form class="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-bg-secondary border border-border-secondary shadow-2xl p-6 space-y-5" @submit.prevent="save">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ form.id ? t.edit : t.add }}</h3>
-            <button type="button" :disabled="busy" class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-50 transition-all disabled:opacity-50" @click="open = false">
-              <X :size="18" />
-            </button>
-          </div>
-
+    <AppModal
+      :show="open"
+      :title="form.id ? t.edit : t.add"
+      size="lg"
+      @close="!busy && (open = false)"
+    >
+      <form id="music-source-plugin-form" class="space-y-5" @submit.prevent="save">
           <label class="block space-y-1.5">
             <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ t.name }}</span>
             <input v-model="form.name" maxlength="100" class="w-full px-3 py-2.5 rounded-lg bg-bg-primary border border-border-secondary text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
@@ -144,18 +140,20 @@
           </label>
 
           <p v-if="error" role="alert" class="text-xs text-error leading-relaxed break-words">{{ error }}</p>
+      </form>
 
-          <div class="flex justify-end gap-3 pt-1">
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
             <button type="button" :disabled="busy" class="px-4 py-2.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50" @click="open = false">
               {{ t.cancel }}
             </button>
-            <button type="submit" :disabled="busy" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50">
+            <button type="submit" form="music-source-plugin-form" :disabled="busy" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50">
               <AppSpinner v-if="busy" :size="12" color="white" /> {{ snapshot ? t.saveDeploy : t.saveLoad }}
             </button>
           </div>
-        </form>
-      </div>
-    </Teleport>
+      </template>
+    </AppModal>
 
     <ConfirmDialog
       v-model:show="showRemove"
@@ -173,7 +171,8 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { AlertCircle, ArrowDown, ArrowUp, FlaskConical, GripVertical, ListMusic, Pencil, Plus, RefreshCw, Trash2, X } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
+import { AlertCircle, ArrowDown, ArrowUp, FlaskConical, GripVertical, ListMusic, Pencil, Plus, RefreshCw, Trash2 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
