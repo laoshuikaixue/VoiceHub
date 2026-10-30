@@ -280,35 +280,25 @@
     </div>
 
     <!-- 删除确认模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :show="showDeleteDialog"
+      :title="locale.removeTitle"
+      size="md"
+      @close="showDeleteDialog = false"
     >
-      <div
-        v-if="showDeleteDialog"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden panel-enter"
-          @click.stop
-        >
-          <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
-            <div
-              class="w-16 h-16 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-2xl shadow-[var(--error-glow-10)]"
-            >
-              <Trash2 :size="28" />
-            </div>
-            <div class="space-y-2">
-              <h4 class="text-lg font-bold text-text-primary">{{ locale.removeTitle }}</h4>
-              <p class="text-xs text-text-tertiary leading-relaxed">
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-10 text-error">
+          <Trash2 :size="18" />
+        </span>
+      </template>
+
+      <p class="text-xs text-text-tertiary leading-relaxed">
                 {{ locale.removeMessage(deleteTargetItem?.value || '') }}
               </p>
-            </div>
-            <div class="flex gap-3 w-full pt-4">
+
+      <template #footer>
+        <div class="flex gap-3 w-full">
+
               <button
                 class="flex-1 px-4 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary text-xs font-bold rounded-lg transition-all uppercase tracking-wider"
                 @click="showDeleteDialog = false"
@@ -322,16 +312,16 @@
               >
                 {{ loading ? locale.deleting : locale.confirmRemove }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref, computed } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   ShieldAlert,

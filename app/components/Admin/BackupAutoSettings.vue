@@ -1,17 +1,12 @@
 <template>
-  <Teleport to="body">
-    <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="$emit('close')" />
-      <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl panel-enter">
-        <!-- 标题栏 -->
-        <div class="sticky top-0 z-10 bg-panel-bg-deepest-95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
-          <h3 class="text-lg font-bold text-text-primary-lighter tracking-tight">{{ locale.title }}</h3>
-          <button class="flex items-center justify-center p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light" @click="$emit('close')">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
+  <AppModal
+    :show="visible"
+    :title="locale.title"
+    size="xl"
+    @close="$emit('close')"
+  >
+    <div class="space-y-6">
 
-        <div class="px-6 py-5 space-y-6">
           <!-- 总开关 -->
           <div class="bg-panel-bg-darkest-50 border border-panel-bg-dark rounded-2xl p-5">
             <div class="flex items-center justify-between">
@@ -306,27 +301,28 @@ crontab -e
               </button>
             </div>
           </CollapsibleSection>
-        </div>
+    </div>
 
-        <!-- 底部操作栏 -->
-        <div class="sticky bottom-0 bg-panel-bg-darkest-95 backdrop-blur-sm px-6 py-4 border-t border-panel-bg-dark rounded-b-3xl flex gap-3 justify-end">
+    <template #footer>
+      <div class="flex justify-end gap-3">
+
           <button class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider" @click="$emit('close')">
             {{ locale.cancel }}
           </button>
           <button class="px-6 py-2 bg-primary hover:bg-primary text-white text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed" :disabled="saving" @click="saveAll">
             {{ saving ? '保存中...' : locale.saveAll }}
           </button>
-        </div>
       </div>
-    </div>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
+import { Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
 import InputField from '~/components/UI/Common/InputField.vue'
 import PasswordField from '~/components/UI/Common/PasswordField.vue'

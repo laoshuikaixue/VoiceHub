@@ -374,41 +374,14 @@
     </div>
 
     <!-- 添加/修改学期弹窗 -->
-    <div
-      v-if="showModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
+    <AppModal
+      :show="showModal"
+      :title="isEditing ? locale.editSemester : locale.add"
+      size="md"
+      @close="closeModal"
     >
-      <div
-        class="w-full max-w-md bg-bg-secondary rounded-2xl border border-border-secondary shadow-2xl overflow-hidden"
-        @click.stop
-      >
-        <div class="p-8 space-y-6">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xl font-bold text-text-primary tracking-tight">
-              {{ isEditing ? locale.editSemester : locale.add }}
-            </h3>
-            <button
-              class="p-2 text-text-tertiary hover:text-text-primary transition-colors"
-              @click="closeModal"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+      <div class="space-y-6">
 
-          <div class="space-y-6">
             <div class="space-y-2">
               <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.semesterName }}</label
@@ -460,9 +433,10 @@
               </p>
             </div>
           </div>
-        </div>
 
-        <div class="p-6 bg-bg-tertiary-50 border-t border-border-secondary flex gap-3 justify-end">
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
             class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors"
             @click="closeModal"
@@ -477,8 +451,8 @@
             {{ submitting ? (isEditing ? locale.saving : locale.creating) : (isEditing ? locale.saveChanges : locale.createSemester) }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 确认删除对话框 -->
     <ConfirmDialog
@@ -497,6 +471,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
