@@ -80,8 +80,8 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备份配置结构无效: ${parsed.error.issues[0]?.message || '未知错误'}`)
     }
     // 拦截指向云元数据/内部域名的备份目标，防止 SSRF
-    assertSafeOutboundUrl(config.methods?.s3?.endpoint, 'S3 endpoint')
-    assertSafeOutboundUrl(config.methods?.webdav?.url, 'WebDAV url')
+    await assertSafeOutboundUrl(config.methods?.s3?.endpoint, 'S3 endpoint')
+    await assertSafeOutboundUrl(config.methods?.webdav?.url, 'WebDAV url')
   }
 
   const [existing] = await db.select({

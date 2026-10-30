@@ -28,8 +28,8 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：endpoint, bucket, accessKey, secretKey')
   }
 
-  // 防 SSRF：拒绝指向云元数据/内部管理地址的目标
-  assertSafeOutboundUrl(endpoint, 'S3 endpoint')
+  // 防 SSRF：拒绝指向云元数据/内部管理地址的目标（含域名解析后的地址）
+  await assertSafeOutboundUrl(endpoint, 'S3 endpoint')
 
   const testKey = '.voicehub-test-connection'
 

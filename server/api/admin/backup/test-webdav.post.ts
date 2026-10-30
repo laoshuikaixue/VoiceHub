@@ -31,8 +31,8 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：url, username, password')
   }
 
-  // 防 SSRF：拒绝指向云元数据/内部管理地址的目标
-  assertSafeOutboundUrl(url, 'WebDAV url')
+  // 防 SSRF：拒绝指向云元数据/内部管理地址的目标（含域名解析后的地址）
+  await assertSafeOutboundUrl(url, 'WebDAV url')
 
   try {
     const baseUrl = url.replace(/\/$/, '')

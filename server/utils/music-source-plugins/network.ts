@@ -14,15 +14,35 @@ const ipv4CompatibleAddress = (bytes: number[]) => {
   return ipaddr.fromByteArray(bytes.slice(12), 'ipv4')
 }
 
+/** IPv4 映射与 IPv4 兼容的 IPv6 写法统一还原成 IPv4 后再判段 */
+const comparableAddress = (address: string): ipaddr.IPv4 | ipaddr.IPv6 => {
+  const ip = ipaddr.parse(address)
+  if (ip.kind() !== 'ipv6') return ip
+  const ipv6 = ip as ipaddr.IPv6
+  const embedded = ipv6.isIPv4MappedAddress() ? ipv6.toIPv4Address() : ipv4CompatibleAddress(ipv6.toByteArray())
+  return embedded && embedded.kind() === 'ipv4' ? (embedded as ipaddr.IPv4) : ipv6
+}
+
 export function publicAddress(address: string): boolean {
-  try {
-    let ip: ipaddr.IPv4 | ipaddr.IPv6 = ipaddr.parse(address)
-    if (ip.kind() === 'ipv6') {
-      const embedded = ip.isIPv4MappedAddress() ? ip.toIPv4Address() : ipv4CompatibleAddress(ip.toByteArray())
-      if (embedded && embedded.kind() === 'ipv4') ip = embedded
-    }
-    return ip.range() === 'unicast'
-  } catch { return false }
+  try { return comparableAddress(address).range() === 'unicast' } catch { return false }
+}
+
+// 任何场景都禁止服务端访问的地址段：云元数据端点落在链路本地段，其余段要么不可达要么为保留用途。
+// 与 publicAddress 的区别：私网/回环等地址在备份目标等场景允许，此处只拦绝对不可接受的段。
+const UNACCEPTABLE_RANGES: ReadonlySet<string> = new Set([
+  'linkLocal',
+  'multicast',
+  'broadcast',
+  'limitedBroadcast',
+  'unspecified',
+  'reserved',
+  'deprecated',
+  'benchmarking',
+  'as112'
+])
+
+export function unacceptableAddress(address: string): boolean {
+  try { return UNACCEPTABLE_RANGES.has(comparableAddress(address).range()) } catch { return true }
 }
 
 export function networkUrl(input: string): URL {
