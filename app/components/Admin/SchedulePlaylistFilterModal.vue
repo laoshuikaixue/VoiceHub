@@ -1,37 +1,11 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="close"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+  <AppModal
+    :show="show"
+    :title="locale.title"
+    size="md"
+    @close="close"
+  >
 
-        <div
-          class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-border-secondary-50">
-            <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ locale.title }}</h3>
-            <button
-              class="p-2 rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex items-center justify-center"
-              @click="close"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          </div>
-
-          <!-- Body -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-6">
             <!-- Default Playlists -->
             <div class="space-y-3">
               <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
@@ -132,10 +106,10 @@
                 </button>
               </div>
             </div>
-          </div>
 
-          <!-- Footer -->
-          <div class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center gap-3">
+    <template #footer>
+      <div class="flex items-center gap-3">
+
             <button
               class="flex-1 px-4 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-sm font-bold transition-all"
               @click="clearSelection"
@@ -153,11 +127,9 @@
               </span>
               <span v-else>{{ locale.applyFilter }}</span>
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
@@ -165,6 +137,7 @@ import { computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from '@lucide/vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps<{

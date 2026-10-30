@@ -1,42 +1,18 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="emit('close')"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+  <AppModal
+    :description="locale.scope(scopeText)"
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="emit('close')"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+        <FileSpreadsheet :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-border-secondary-50">
-            <div class="min-w-0">
-              <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ locale.title }}</h3>
-              <p class="mt-1 text-xs font-bold text-text-tertiary truncate">
-                {{ locale.scope(scopeText) }}
-              </p>
-            </div>
-            <button
-              class="p-2 rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex items-center justify-center shrink-0"
-              @click="emit('close')"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          </div>
 
-          <!-- Body -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-6">
             <div v-for="group in fieldGroups" :key="group.key" class="space-y-3">
               <div class="flex items-center justify-between">
                 <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
@@ -83,10 +59,10 @@
                 {{ locale.includeUnapprovedNotesHint }}
               </p>
             </div>
-          </div>
 
-          <!-- Footer -->
-          <div class="flex items-center gap-3 p-6 border-t border-border-secondary-50">
+    <template #footer>
+      <div class="flex items-center gap-3">
+
             <div class="flex items-center gap-1.5 text-xs font-bold text-text-tertiary uppercase tracking-wider">
               <span>{{ locale.columnCount(selectedFields.length) }}</span>
               <button
@@ -112,16 +88,15 @@
               <FileSpreadsheet class="w-3.5 h-3.5" />
               {{ locale.exportButton }}
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import { X, Check, FileSpreadsheet } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { formatDuration } from '~/utils/timeUtils'

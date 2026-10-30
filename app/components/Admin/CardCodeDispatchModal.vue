@@ -1,27 +1,12 @@
 <template>
-  <Teleport to="body">
-    <div v-if="modelValue" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="close" />
+  <AppModal
+    :description="locale.assignDesc"
+    :show="modelValue"
+    :title="locale.assignTitle"
+    size="xl"
+    @close="close"
+  >
 
-      <div class="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl">
-        <!-- 头部 -->
-        <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-panel-bg-dark bg-panel-bg-deepest-95 px-5 py-4 backdrop-blur-sm">
-          <div class="min-w-0">
-            <h3 class="truncate text-base font-bold text-text-primary-lighter">{{ locale.assignTitle }}</h3>
-            <p class="mt-0.5 truncate text-xs text-text-tertiary">{{ locale.assignDesc }}</p>
-          </div>
-          <button
-            type="button"
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-light"
-            :aria-label="locale.cancelSelection"
-            @click="close"
-          >
-            <X :size="18" />
-          </button>
-        </div>
-
-        <!-- 主体（可滚动） -->
-        <div class="space-y-5 overflow-y-auto px-5 py-5">
           <!-- 行内派发提示：该券状态不可直接派发 -->
           <p
             v-if="notice"
@@ -153,17 +138,15 @@
               </p>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Send, X } from '@lucide/vue'
+import { Send } from '@lucide/vue'
 import CardCodeRecipientPicker from '~/components/Admin/CardCodeRecipientPicker.vue'
 import CardCodeAvailablePicker from '~/components/Admin/CardCodeAvailablePicker.vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

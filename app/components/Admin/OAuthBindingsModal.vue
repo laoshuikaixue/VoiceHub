@@ -1,47 +1,18 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click="$emit('close')"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
-          @click.stop
-        >
-          <div
-            class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50"
-          >
-            <div>
-              <h3
-                class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3"
-              >
-                <div
-                  class="w-10 h-10 rounded-xl bg-success-10 flex items-center justify-center text-success"
-                >
-                  <Link :size="20" />
-                </div>
-                {{ locale.oauthBindingsTitle }}
-              </h3>
-              <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.oauthBindingsDesc }}</p>
-            </div>
-            <button
-              class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
-              @click="$emit('close')"
-            >
-              <X :size="20" />
-            </button>
-          </div>
+  <AppModal
+    :description="locale.oauthBindingsDesc"
+    :show="show"
+    :title="locale.oauthBindingsTitle"
+    size="xl"
+    @close="$emit('close')"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success-10 text-success">
+        <Link :size="18" />
+      </span>
+    </template>
 
-          <div class="flex-1 overflow-y-auto p-8 pt-6 custom-scrollbar">
+
             <div
               v-if="identities.length === 0"
               class="py-16 flex flex-col items-center justify-center gap-3 text-text-disabled"
@@ -152,16 +123,13 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
-import { Fingerprint, Link, ShieldCheck, X } from '@lucide/vue'
+import { Fingerprint, Link, ShieldCheck } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import AuthProvidersCasdoorIcon from '~/components/Auth/Providers/Casdoor/Icon.vue'
 import AuthProvidersGitHubIcon from '~/components/Auth/Providers/GitHub/Icon.vue'

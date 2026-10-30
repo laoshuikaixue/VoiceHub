@@ -1,45 +1,18 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="handleClose"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+  <AppModal
+    :description="locale.desc"
+    :show="show"
+    :title="locale.title"
+    size="xl"
+    @close="handleClose"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+        <Download :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-border-secondary-50">
-            <div class="min-w-0 flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-primary-10 flex items-center justify-center text-primary shrink-0">
-                <Download :size="20" />
-              </div>
-              <div class="min-w-0">
-                <h3 class="text-lg font-bold text-text-primary tracking-tight">{{ locale.title }}</h3>
-                <p class="mt-0.5 text-xs font-bold text-text-tertiary truncate">{{ locale.desc }}</p>
-              </div>
-            </div>
-            <button
-              class="p-2 rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex items-center justify-center shrink-0"
-              @click="handleClose"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          </div>
 
-          <!-- Body -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             <!-- 筛选范围 -->
             <div class="space-y-3">
               <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
@@ -128,10 +101,10 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Footer -->
-          <div class="flex items-center gap-3 p-6 border-t border-border-secondary-50">
+    <template #footer>
+      <div class="flex items-center gap-3">
+
             <div class="flex items-center gap-1.5 text-xs font-bold text-text-tertiary uppercase tracking-wider">
               <span>{{ locale.columnCount(selectedFields.length) }}</span>
               <button
@@ -159,16 +132,15 @@
               <FileSpreadsheet v-else class="w-3.5 h-3.5" />
               {{ exporting ? locale.exporting : locale.export }}
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Check, Download, FileSpreadsheet, X } from '@lucide/vue'
+import { Check, Download, FileSpreadsheet } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
