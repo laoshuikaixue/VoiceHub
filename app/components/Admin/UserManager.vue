@@ -592,45 +592,22 @@
     </div>
 
     <!-- 添加/编辑用户模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="showAddModal || !!editingUser"
+      :title="editingUser ? locale.form.editTitle : locale.form.createTitle"
+      :description="locale.form.desc"
+      size="lg"
+      @close="closeModal"
     >
-      <div
-        v-if="showAddModal || editingUser"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <div>
-                <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <UserPlus v-if="!editingUser" :size="20" />
-                    <Edit2 v-else :size="20" />
-                  </div>
-                  {{ editingUser ? locale.form.editTitle : locale.form.createTitle }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.form.desc }}</p>
-              </div>
-              <button
-                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="closeModal"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <UserPlus v-if="!editingUser" :size="18" />
+          <Edit2 v-else :size="18" />
+        </span>
+      </template>
 
-            <div class="space-y-5">
+      <div class="space-y-5">
+
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
@@ -762,9 +739,11 @@
                 <AlertCircle :size="16" />
                 {{ formError }}
               </div>
-            </div>
+      </div>
 
-            <div class="flex gap-3 mt-10">
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
                 class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
                 @click="closeModal"
@@ -780,43 +759,31 @@
                 <RefreshCw v-else class="animate-spin" :size="16" />
                 {{ saving ? locale.form.saving : editingUser ? locale.form.update : locale.form.create }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 重置密码模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="!!resetPasswordUser"
+      :title="locale.resetPasswordModal.title"
+      size="md"
+      @close="closeResetPassword"
     >
-      <div
-        v-if="resetPasswordUser"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8 text-center">
-            <div
-              class="w-20 h-20 bg-warning-10 rounded-2xl flex items-center justify-center text-warning mx-auto mb-6"
-            >
-              <Lock :size="32" />
-            </div>
-            <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.resetPasswordModal.title }}</h3>
-            <p class="text-xs text-text-tertiary mt-2 mb-8">
-              {{ locale.resetPasswordModal.descPrefix }}
-              <span class="text-text-primary font-bold">{{ resetPasswordUser.name }}</span>
-              {{ locale.resetPasswordModal.descSuffix }}
-            </p>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning-10 text-warning">
+          <Lock :size="18" />
+        </span>
+      </template>
 
-            <div class="space-y-4 text-left">
+      <p class="mb-5 text-xs text-text-tertiary">
+        {{ locale.resetPasswordModal.descPrefix }}
+        <span class="font-bold text-text-primary">{{ resetPasswordUser?.name }}</span>
+        {{ locale.resetPasswordModal.descSuffix }}
+      </p>
+
+      <div class="space-y-4 text-left">
+
               <div class="space-y-2">
                 <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                   >{{ locale.resetPasswordModal.newPassword }}</label
@@ -861,9 +828,11 @@
                 <AlertCircle :size="16" />
                 {{ passwordError }}
               </div>
-            </div>
+      </div>
 
-            <div class="flex gap-3 mt-8">
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
                 class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
                 @click="closeResetPassword"
@@ -879,53 +848,26 @@
                 <RefreshCw v-else class="animate-spin" :size="16" />
                 {{ resetting ? locale.resetPasswordModal.resetting : locale.resetPasswordModal.confirm }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 批量导入用户模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="showImportModal"
+      :title="locale.importModal.title"
+      :description="locale.importModal.desc"
+      size="2xl"
+      @close="closeImportModal"
     >
-      <div
-        v-if="showImportModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <div>
-                <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-success-10 flex items-center justify-center text-success"
-                  >
-                    <FileSpreadsheet :size="20" />
-                  </div>
-                  {{ locale.importModal.title }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">
-                  {{ locale.importModal.desc }}
-                </p>
-              </div>
-              <button
-                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="closeImportModal"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success-10 text-success">
+          <FileSpreadsheet :size="18" />
+        </span>
+      </template>
 
-            <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+      <div class="space-y-6">
+
               <div class="p-5 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-4">
                 <div class="flex items-center gap-2 text-text-secondary font-bold text-sm mb-2">
                   <Info :size="16" class="text-primary" />
@@ -1084,9 +1026,11 @@
                   </div>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <div class="flex gap-3 mt-8">
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
                 class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
                 @click="closeImportModal"
@@ -1102,11 +1046,9 @@
                 <RefreshCw v-else class="animate-spin" :size="16" />
                 {{ importLoading ? locale.importModal.importing : locale.importModal.confirm }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 删除确认对话框 -->
     <ConfirmDialog
@@ -1608,6 +1550,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAuth } from '~/composables/useAuth'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {

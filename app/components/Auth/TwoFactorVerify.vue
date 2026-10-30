@@ -1,27 +1,13 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
-        @click="$emit('cancel')"
-      >
-        <div 
-          class="w-full max-w-md bg-bg-primary border border-border-secondary rounded-2xl p-6 shadow-2xl space-y-6"
-          @click.stop
-        >
-          <div class="text-center space-y-2">
-            <h3 class="text-xl font-bold text-text-primary">{{ locale.title }}</h3>
-            <p class="text-sm text-text-tertiary">
-              {{ method === 'totp' ? locale.totpDesc : locale.emailDesc }}
-            </p>
-          </div>
+  <AppModal
+    :show="show"
+    :title="locale.title"
+    :description="method === 'totp' ? locale.totpDesc : locale.emailDesc"
+    size="md"
+    @close="$emit('cancel')"
+  >
+    <div class="space-y-4">
 
-          <div class="space-y-4">
             <!-- 邮箱输入 (仅 Email 模式) -->
             <div v-if="method === 'email'" class="space-y-2">
               <label class="block text-sm text-text-tertiary">
@@ -91,22 +77,13 @@
             >
               {{ method === 'totp' ? locale.switchToEmail : locale.switchToTotp }}
             </button>
-
-            <button
-              @click="$emit('cancel')"
-              class="w-full py-2 text-text-tertiary hover:text-text-secondary text-sm transition-colors"
-            >
-              {{ locale.backLogin }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { Loader2, AlertCircle } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

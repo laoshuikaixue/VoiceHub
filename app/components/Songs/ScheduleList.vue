@@ -625,28 +625,14 @@
     />
   </Teleport>
 
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="submissionNoteDialog.show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
-        @click="closeSubmissionNote"
-      >
-        <div class="submission-note-modal" @click.stop>
-          <div class="submission-note-header">
-            <h4>{{ locale.submissionNote }}</h4>
-            <button @click="closeSubmissionNote">
-              <Icon :size="14" name="close" />
-            </button>
-          </div>
-          <div class="submission-note-meta">
+  <AppModal
+    :show="submissionNoteDialog.show"
+    :title="locale.submissionNote"
+    size="md"
+    @close="closeSubmissionNote"
+  >
+    <div class="space-y-4">
+<div class="submission-note-meta">
             <span class="song-title-tag">{{ submissionNoteDialog.songTitle }}</span>
             <span :class="['visibility-tag', submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private']">
               {{ submissionNoteDialog.isPublic ? locale.publicNote : locale.privateNote }}
@@ -655,10 +641,8 @@
           <div class="submission-note-content-box">
             <p class="submission-note-content">{{ submissionNoteDialog.note }}</p>
           </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </AppModal>
 </template>
 
 <script setup>
