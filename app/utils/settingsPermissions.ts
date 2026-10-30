@@ -1,10 +1,10 @@
 /**
- * 系统设置中涉及用户数据、外部凭据与出站目标的字段：仅超级管理员可读写。
+ * 系统设置中涉及用户数据、外部凭据、站点展示与账号安全策略的字段：仅超级管理员可读写。
  *
- * 普通管理员可维护站点文案、投稿与播放运营、音源平台等配置；
+ * 普通管理员可维护投稿与播放运营、限额、卡密、音源平台等配置；
  * 下列字段能改登录链路与凭据（SMTP/OAuth/验证码/机器人令牌）、
  * 影响用户隐私与账号安全策略（学生信息、注册与条款、遥测）、
- * 或向所有页面注入脚本，一律归超级管理员。
+ * 向所有页面注入脚本，或控制站点对外展示与文案，一律归超级管理员。
  *
  * 服务端 index.post.ts 用它拒绝越权写入，index.ts 用它裁剪响应；
  * 后台表单提交前调用 stripSuperAdminOnlySettingFields，避免整表单被 403 挡住。
@@ -69,6 +69,22 @@ export const SUPER_ADMIN_ONLY_SETTING_FIELDS = [
   'astrbotPushMode',
   'astrbotBroadcastEnabled',
   'astrbotGroupTargets',
+  'astrbotPlatforms',
+  'astrbotWeeklyConfig',
+  'astrbotGroupEvents',
+  'astrbotGroupThrottle',
+  // 站点展示与文案（与站点配置页同属超管维护范围）
+  'siteTitle',
+  'siteDescription',
+  'siteLogoUrl',
+  'schoolLogoHomeUrl',
+  'schoolLogoPrintUrl',
+  'icpNumber',
+  'gonganNumber',
+  'showBeianIcon',
+  'submissionGuidelines',
+  'showBlacklistKeywords',
+  'submissionNoteRequiresApproval',
   // 全站统计代码：原样注入 SSR 页面
   'statisticsCode',
   'statisticsCodeEnabled',

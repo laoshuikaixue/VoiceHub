@@ -49,20 +49,17 @@ const MUST_BE_SUPER_ADMIN = [
   /^telemetryEnabled/,
   /^defaultTheme$/,
   /^enabledThemes$/,
-  /^astrbot(Enabled|Token|BaseUrl|PushMode|BroadcastEnabled|GroupTargets)$/
-]
-
-// 日常运营配置，不得被收权（防止边界被越推越宽）
-const MUST_STAY_WITH_ADMIN = [
   /^siteTitle$/,
   /^siteDescription$/,
   /^siteLogoUrl$/,
   /^schoolLogo/,
-  /^icpNumber$/,
-  /^gonganNumber$/,
-  /^showBeianIcon$/,
-  /^submissionGuidelines$/,
-  /^submissionNoteRequiresApproval$/,
+  /^(icpNumber|gonganNumber|showBeianIcon)$/,
+  /^(submissionGuidelines|showBlacklistKeywords|submissionNoteRequiresApproval)$/,
+  /^astrbot(Enabled|Token|BaseUrl|PushMode|BroadcastEnabled|GroupTargets|Platforms|WeeklyConfig|GroupEvents|GroupThrottle)$/
+]
+
+// 日常运营配置（有 ADMIN 可达的编辑入口），不得被收权
+const MUST_STAY_WITH_ADMIN = [
   /^submissionRestrictionScope$/,
   /^same(Song|Artist)RestrictionHours$/,
   /^enable(Submission|CardCode|Replay|Collaborative|Global|RequestTime|PlayTime|SubmissionLimit|SubmissionRestriction|SubmissionRemarks)/,
@@ -73,10 +70,8 @@ const MUST_STAY_WITH_ADMIN = [
   /^playSlotRequired$/,
   /^scheduleDays(Before|After)(Enabled)?$/,
   /^forceBlockAllRequests$/,
-  /^showBlacklistKeywords$/,
   /^enabledPlatforms$/,
-  /^platformOrder$/,
-  /^astrbot(Platforms|WeeklyConfig|GroupEvents|GroupThrottle)$/
+  /^platformOrder$/
 ]
 
 const isSuperAdminOnly = (field: string) =>
@@ -107,16 +102,18 @@ test('运营配置未被误收，普通管理员仍可维护', () => {
 
 test('剔除与命中函数按清单工作', () => {
   assert.deepEqual(
-    findSuperAdminOnlySettingFields({ siteTitle: 'x', smtpHost: 'smtp', astrbotToken: 't' }),
+    findSuperAdminOnlySettingFields({ dailySubmissionLimit: 5, smtpHost: 'smtp', astrbotToken: 't' }),
     ['smtpHost', 'astrbotToken']
   )
   const stripped = stripSuperAdminOnlySettingFields({
-    siteTitle: 'x',
+    dailySubmissionLimit: 5,
+    siteTitle: 'VoiceHub',
     smtpHost: 'smtp',
     hideStudentInfo: true,
     platformOrder: '[]'
   })
-  assert.deepEqual(Object.keys(stripped).sort(), ['platformOrder', 'siteTitle'])
+  // 站点文案与凭据类被剔除，限额与音源平台留给普通管理员
+  assert.deepEqual(Object.keys(stripped).sort(), ['dailySubmissionLimit', 'platformOrder'])
   assert.deepEqual(findSuperAdminOnlySettingFields(null), [])
 })
 
