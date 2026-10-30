@@ -1213,6 +1213,8 @@ export default defineEventHandler(async (event) => {
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
                           'playSlotRequired',
+                          'enableSubmissionTopics',
+                          'submissionTopicRequired',
                           'instanceId',
                           'defaultTheme',
                           'enabledThemes',

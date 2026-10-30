@@ -4,6 +4,7 @@ import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
+import { assertSongsScheduleDateAllowed } from '~~/server/utils/submission-topic'
 
 const parsePlayTimeId = (raw: unknown): number | null => {
   if (raw === undefined || raw === null || raw === '') return null
@@ -113,6 +114,15 @@ export default defineEventHandler(async (event) => {
           },
           new Map(sourceSchedules.map((s) => [s.songId, s.songTitle])),
           tx
+        )
+      }
+
+      // 专题歌曲只能迁移到所属专题日
+      if (fromDate !== toDate) {
+        await assertSongsScheduleDateAllowed(
+          tx,
+          sourceSchedules.map((s) => s.songId),
+          toDate
         )
       }
 

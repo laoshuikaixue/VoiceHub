@@ -290,6 +290,41 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+    if (body.enableSubmissionTopics !== undefined) {
+      if (typeof body.enableSubmissionTopics !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableSubmissionTopics 必须是布尔值'
+        })
+      }
+      updateData.enableSubmissionTopics = body.enableSubmissionTopics
+    }
+
+    if (body.submissionTopicRequired !== undefined) {
+      if (typeof body.submissionTopicRequired !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'submissionTopicRequired 必须是布尔值'
+        })
+      }
+      updateData.submissionTopicRequired = body.submissionTopicRequired
+    }
+
+    // 交叉校验：「专题必选」依赖「专题投稿」总开关
+    const mergedEnableSubmissionTopics = body.enableSubmissionTopics !== undefined
+      ? body.enableSubmissionTopics
+      : settings?.enableSubmissionTopics === true
+    const mergedSubmissionTopicRequired = body.submissionTopicRequired !== undefined
+      ? body.submissionTopicRequired
+      : settings?.submissionTopicRequired === true
+    if (mergedSubmissionTopicRequired && !mergedEnableSubmissionTopics) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '启用「专题必选」前需先开启「专题投稿」'
+      )
+    }
+
     if (body.siteTitle !== undefined) {
       updateData.siteTitle = body.siteTitle
     }

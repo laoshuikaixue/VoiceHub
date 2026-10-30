@@ -5,6 +5,7 @@ import { createSongSelectedNotification, createReplaySongSelectedNotification } 
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 import { fulfillReplayRequestsForSchedule, parseScheduleReplayRequestId, resolveScheduleReplayBindings } from '~~/server/utils/scheduleReplayBinding'
 import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
+import { assertSongsScheduleDateAllowed } from '~~/server/utils/submission-topic'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -99,6 +100,9 @@ export default defineEventHandler(async (event) => {
 
       // 直接使用输入的日期字符串，添加时间部分以避免时区问题
       const playDate = new Date(inputDateStr + 'T00:00:00.000Z')
+
+      // 专题歌曲只能排期到所属专题日
+      await assertSongsScheduleDateAllowed(tx, [body.songId], inputDateStr.slice(0, 10))
 
       // 创建排期
       const scheduleResult = await tx
