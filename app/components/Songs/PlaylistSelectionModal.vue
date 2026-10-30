@@ -1,50 +1,27 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="close"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
-
-        <div
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
+  <AppModal
+    :show="show"
+    :title="modalTitle"
+    size="xl"
+    @close="close"
+  >
+    <template #header="{ titleId }">
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          v-if="view === 'songs'"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+          type="button"
+          @click="backToPlaylists"
         >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-8 pb-4">
-            <div class="flex items-center gap-4">
-              <button
-                v-if="view === 'songs'"
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-                @click="backToPlaylists"
-              >
-                <Icon name="arrow-left" :size="20" />
-              </button>
-              <h3
-                class="text-xl font-bold text-text-primary tracking-tight truncate max-w-[300px] sm:max-w-md"
-              >
-                {{ view === 'playlists' ? locale.selectPlaylist : selectedPlaylist?.name || locale.playlistDetails }}
-              </h3>
-            </div>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-              @click="close"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
+          <Icon name="arrow-left" :size="18" />
+        </button>
+        <h2 :id="titleId" class="truncate text-lg font-bold tracking-tight text-text-primary">
+          {{ modalTitle }}
+        </h2>
+      </div>
+    </template>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+
             <div
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
@@ -269,11 +246,7 @@
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </AppModal>
 </template>
 
 <script setup>
@@ -608,6 +581,12 @@ const selectSong = (songData) => {
 const close = () => {
   emit('close')
 }
+
+const modalTitle = computed(() =>
+  view.value === 'playlists'
+    ? locale.value.selectPlaylist
+    : selectedPlaylist.value?.name || locale.value.playlistDetails
+)
 
 defineExpose({
   resetSubmissionState: () => {

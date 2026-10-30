@@ -37,7 +37,7 @@
             </button>
           </header>
 
-          <div :class="['app-modal__body', bodyClass]">
+          <div :class="['app-modal__body', bodyClass, { 'app-modal__body--flush': flushBody }]">
             <slot />
           </div>
 
@@ -71,7 +71,8 @@ const props = defineProps({
   hideClose: { type: Boolean, default: false },
   closeLabel: { type: String, default: '' },
   panelClass: { type: [String, Object, Array], default: '' },
-  bodyClass: { type: [String, Object, Array], default: '' }
+  bodyClass: { type: [String, Object, Array], default: '' },
+  flushBody: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:show', 'close'])
@@ -228,6 +229,10 @@ useFocusTrap(panelRef, computed(() => props.show), {
   overscroll-behavior: contain;
 }
 
+.app-modal__body--flush {
+  padding: 0;
+}
+
 .app-modal__footer {
   flex-shrink: 0;
   border-top: 1px solid var(--border-secondary);
@@ -289,6 +294,10 @@ useFocusTrap(panelRef, computed(() => props.show), {
   .app-modal__body {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .app-modal__body--flush {
+    padding: 0;
   }
 
   .app-modal__footer {

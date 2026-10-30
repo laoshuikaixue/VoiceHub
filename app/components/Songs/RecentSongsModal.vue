@@ -1,44 +1,18 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click.self="close"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
-        >
-          <!-- 头部 -->
-          <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
-            <div>
-              <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                <div
-                  class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                >
-                  <Icon name="history" :size="20" />
-                </div>
-                {{ locale.recentTitle }}
-              </h3>
-              <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.recentDesc }}</p>
-            </div>
-            <button
-              class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-              @click="close"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
+  <AppModal
+    :description="locale.recentDesc"
+    :show="show"
+    :title="locale.recentTitle"
+    size="xl"
+    @close="close"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary">
+        <Icon name="history" :size="18" />
+      </span>
+    </template>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+
             <div
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
@@ -198,29 +172,26 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 底部栏 -->
-          <div
-            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-end"
-          >
+    <template #footer>
+      <div class="flex items-center justify-end">
+
             <button
               class="px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
               @click="close"
             >
               {{ locale.close }}
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { getRecentSongs } from '~/utils/neteaseApi'
 import { getCoverThumbUrl } from '~/utils/url'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'

@@ -1,61 +1,17 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="close"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+  <AppModal
+    :show="show"
+    :title="video?.title || ''"
+    size="xl" :description="locale.uploader + (video?.artist || '')"
+    @close="close"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary">
+        <Icon name="play" :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-8 pb-4">
-            <div class="flex items-center gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-bg-tertiary">
-                <img
-                  v-if="video?.cover"
-                  :src="video.cover"
-                  :alt="video.title"
-                  class="w-full h-full object-cover"
-                  referrerpolicy="no-referrer"
-                >
-                <div
-                  v-else
-                  class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
-                >
-                  <Icon name="play" :size="24" />
-                </div>
-              </div>
-              <div class="min-w-0">
-                <h3 class="text-xl font-bold text-text-primary tracking-tight truncate">
-                  {{ video?.title }}
-                </h3>
-                <p class="text-xs font-bold text-text-tertiary uppercase tracking-wider mt-1">
-                  {{ locale.uploader }}{{ video?.artist }}
-                </p>
-              </div>
-            </div>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
-              @click="close"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
             <div
               v-if="episodes.length === 0"
               class="flex flex-col items-center justify-center py-12 text-text-tertiary"
@@ -192,15 +148,12 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'

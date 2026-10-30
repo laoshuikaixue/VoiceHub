@@ -1,31 +1,11 @@
 <template>
-  <Transition name="fade">
-    <div
-      v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
-      @click="closeDialog"
-    >
-      <Transition name="scale">
-        <div
-          v-if="show"
-          class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-4 border-b border-border-secondary shrink-0">
-            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
-              {{ locale.title }}
-            </h3>
-            <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
-              @click="closeDialog"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
+  <AppModal
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="closeDialog"
+  >
 
-          <!-- 内容区域 -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             <!-- 登录状态检查 -->
             <section v-if="!isLoggedIn" class="space-y-3">
               <div class="bg-warning-10 border border-warning-20 rounded-2xl p-4">
@@ -126,10 +106,10 @@
                 </p>
               </section>
             </template>
-          </div>
 
-          <!-- Footer -->
-          <div v-if="isLoggedIn" class="p-4 border-t border-border-secondary shrink-0 flex gap-3">
+    <template #footer>
+      <div v-if="isLoggedIn" class="flex gap-3">
+
             <button
               class="flex-1 py-3 px-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
               :disabled="uploading"
@@ -145,14 +125,13 @@
               {{ uploading ? locale.uploading : locale.startUpload }}
             </button>
           </div>
-        </div>
-      </Transition>
-    </div>
-  </Transition>
+    </template>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioQuality, QUALITY_OPTIONS } from '~/composables/useAudioQuality'
 import { useToast } from '~/composables/useToast'

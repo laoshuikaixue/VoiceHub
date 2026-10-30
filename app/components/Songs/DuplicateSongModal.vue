@@ -1,43 +1,19 @@
 <template>
-  <Transition
-    enter-active-class="transition duration-300 ease-out"
-    enter-from-class="opacity-0 scale-95"
-    enter-to-class="opacity-100 scale-100"
-    leave-active-class="transition duration-200 ease-in"
-    leave-from-class="opacity-100 scale-100"
-    leave-to-class="opacity-0 scale-95"
+  <AppModal
+    :description="locale.desc"
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="$emit('close')"
   >
-    <div
-      v-if="show"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      @click="$emit('close')"
-    >
-      <div
-        class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col"
-        @click.stop
-      >
-        <!-- 头部 -->
-        <div class="p-8 pb-4 flex items-center justify-between">
-          <div>
-            <h3 class="text-xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-2xl bg-warning-10 flex items-center justify-center text-warning"
-              >
-                <Icon name="alert-triangle" :size="20" />
-              </div>
-              {{ locale.title }}
-            </h3>
-            <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.desc }}</p>
-          </div>
-          <button
-            class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-            @click="$emit('close')"
-          >
-            <Icon name="x" :size="20" />
-          </button>
-        </div>
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning-10 text-warning">
+        <Icon name="alert-triangle" :size="18" />
+      </span>
+    </template>
 
-        <div class="p-8 pt-4 space-y-6">
+    <div class="space-y-6">
+
           <p class="text-sm text-text-tertiary leading-relaxed font-medium">
             {{ locale.tip }}
           </p>
@@ -93,10 +69,11 @@
               </p>
             </div>
           </div>
-        </div>
+    </div>
 
-        <!-- 底部按钮 -->
-        <div class="p-8 pt-0 flex gap-3">
+    <template #footer>
+      <div class="flex gap-3">
+
           <button
             class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider active:scale-95"
             @click="$emit('close')"
@@ -114,14 +91,15 @@
           </button>
         </div>
       </div>
-    </div>
-  </Transition>
+    </template>
+  </AppModal>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import type { Song } from '~/types'
 import { getCoverThumbUrl } from '~/utils/url'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 

@@ -1,46 +1,18 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-        @click="handleClose"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+  <AppModal
+    :description="locale.qqDesc"
+    :show="show"
+    :title="locale.qqTitle"
+    size="sm"
+    @close="handleClose"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-info-10 text-info">
+        <Icon name="music" :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-sm overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
-          @click.stop
-        >
-          <div class="flex items-center justify-between border-b border-border-secondary-50 p-8 pb-4">
-            <div>
-              <h3 class="flex items-center gap-3 text-xl font-bold tracking-tight text-text-primary">
-                <div
-                  class="flex h-10 w-10 items-center justify-center rounded-2xl bg-info-10 text-info"
-                >
-                  <Icon name="music" :size="20" />
-                </div>
-                {{ locale.qqTitle }}
-              </h3>
-              <p class="ml-13 mt-1 text-xs text-text-tertiary">{{ locale.qqDesc }}</p>
-            </div>
-            <button
-              class="rounded-2xl bg-bg-tertiary-50 p-3 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
-              type="button"
-              @click="handleClose"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
 
-          <div class="flex flex-col items-center p-8 pt-4">
             <!-- 登录渠道 Tab -->
             <div
               v-if="!status || status !== 'success'"
@@ -155,15 +127,12 @@
                 {{ channel === 'wx' ? locale.wxTip : locale.qqTip }}
               </p>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
