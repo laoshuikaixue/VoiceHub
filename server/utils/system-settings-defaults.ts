@@ -25,6 +25,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
   enablePlayTimeSelection: false,
   playSlotRequired: false,
+  enableSubmissionTopics: false,
+  submissionTopicRequired: false,
   siteTitle: 'VoiceHub',
   siteLogoUrl: '/favicon.ico',
   schoolLogoHomeUrl: null,

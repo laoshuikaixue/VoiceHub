@@ -39,6 +39,8 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/captcha/verify', methods: ['POST'] },
   { path: '/api/semesters/current', methods: GET_METHODS },
   { path: '/api/play-times', methods: GET_METHODS },
+  // 投稿页需要匿名展示当前开放中的专题
+  { path: '/api/topics', methods: GET_METHODS },
   { path: '/api/schedules/public', methods: GET_METHODS },
   { path: '/api/songs/count', methods: GET_METHODS },
   { path: '/api/songs/public', methods: GET_METHODS },
