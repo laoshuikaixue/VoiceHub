@@ -93,6 +93,43 @@ export const playTimes = pgTable(
   ],
 );
 
+// 专题投稿表（如毕业季专题）
+export const submissionTopics = pgTable('SubmissionTopic', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  // 专题投稿开放时段（UTC 存储）
+  startTime: timestamp('startTime').notNull(),
+  endTime: timestamp('endTime').notNull(),
+  // 收集数量上限；NULL = 不限量
+  maxSubmissions: integer('maxSubmissions'),
+  enabled: boolean('enabled').default(true).notNull(),
+}, (table) => [uniqueIndex('submission_topic_name_unique').on(table.name)]);
+
+// 专题日：专题歌曲只允许排期到这些日期（北京时间 YYYY-MM-DD）；未配置表示不限制
+export const submissionTopicDays = pgTable('SubmissionTopicDay', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  topicId: integer('topicId').notNull().references(() => submissionTopics.id, { onDelete: 'cascade' }),
+  date: date('date', { mode: 'string' }).notNull(),
+}, (table) => [
+  unique('submission_topic_day_unique').on(table.topicId, table.date),
+  index('submission_topic_day_topic_idx').on(table.topicId, table.date)
+]);
+
+// 专题可投稿的播出时段：为空表示不限制时段，配置后学生只能选其中时段
+export const submissionTopicPlayTimes = pgTable('SubmissionTopicPlayTime', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  topicId: integer('topicId').notNull().references(() => submissionTopics.id, { onDelete: 'cascade' }),
+  playTimeId: integer('playTimeId').notNull().references(() => playTimes.id, { onDelete: 'cascade' }),
+}, (table) => [
+  unique('submission_topic_play_time_unique').on(table.topicId, table.playTimeId),
+  index('submission_topic_play_time_topic_idx').on(table.topicId)
+]);
+
 // 年级班级配置表（选择器选项来源，优先于从用户提取）
 export const gradeClass = pgTable(
   'GradeClass',
@@ -134,12 +171,15 @@ export const songs = pgTable('Song', {
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
   // 用户选择的期望播出日期（北京时间 YYYY-MM-DD），与 preferredPlayTimeId 共同构成「日期 + 时段」
   preferredPlayDate: date('preferredPlayDate', { mode: 'string' }),
+  // 投稿专题；NULL = 日常投稿
+  topicId: integer('topicId').references(() => submissionTopics.id, { onDelete: 'set null' }),
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
   // 全站投稿总量限额只按 createdAt 窗口计数，缺少以 createdAt 为前导列的索引会退化成全表扫
   index('song_created_at_idx').on(table.createdAt),
-  index('song_requester_id_idx').on(table.requesterId)
+  index('song_requester_id_idx').on(table.requesterId),
+  index('song_topic_created_at_idx').on(table.topicId, table.createdAt)
 ]);
 
 // 插件配置与不可变历史分开保存，部署快照引用精确版本。
@@ -323,6 +363,10 @@ export const systemSettings = pgTable('SystemSettings', {
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
   // 点歌时播出日期+时段是否强制必选（全局总开关，依赖 enablePlayTimeSelection）
   playSlotRequired: boolean('playSlotRequired').default(false).notNull(),
+  // 专题投稿是否对学生开放（关闭后投稿端不出现专题选项，专题歌曲也不再受专题日约束）
+  enableSubmissionTopics: boolean('enableSubmissionTopics').default(false).notNull(),
+  // 投稿时必须选择专题（依赖 enableSubmissionTopics；有可投稿专题时才强制）
+  submissionTopicRequired: boolean('submissionTopicRequired').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),
   schoolLogoHomeUrl: text('schoolLogoHomeUrl'),

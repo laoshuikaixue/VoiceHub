@@ -1,0 +1,2 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "enableSubmissionTopics" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "SystemSettings" ADD COLUMN "submissionTopicRequired" boolean DEFAULT false NOT NULL;
