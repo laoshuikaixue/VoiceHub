@@ -87,24 +87,14 @@
     </div>
 
     <!-- 创建备份模态框 -->
-    <div
-      v-if="activeModal === 'backup'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'backup'"
+      :title="locale.backupTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.backupTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div class="space-y-2">
             <p class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
               {{ locale.selectContent }}
@@ -138,8 +128,11 @@
               {{ locale.backupHint }}
             </p>
           </div>
-        </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider"
             @click="activeModal = 'none'"
@@ -154,28 +147,18 @@
             {{ createLoading ? locale.exporting : locale.startExport }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 恢复备份模态框 -->
-    <div
-      v-if="activeModal === 'restore'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'restore'"
+      :title="locale.restoreTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.restoreTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div
             class="border-2 border-dashed border-border-secondary rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-success-50 hover:bg-success-5 transition-all cursor-pointer"
             @click="$refs.fileInput.click()"
@@ -273,8 +256,11 @@
               {{ locale.replaceWarning }}
             </p>
           </div>
-        </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider"
             @click="activeModal = 'none'"
@@ -289,28 +275,18 @@
             {{ uploadLoading ? restoreProgress || locale.restoring : locale.confirmRestore }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 重置序列模态框 -->
-    <div
-      v-if="activeModal === 'reset-seq'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'reset-seq'"
+      :title="locale.resetSequenceTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.resetSequenceTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div class="space-y-2">
             <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
               >{{ locale.selectTargetTable }}</label
@@ -339,8 +315,11 @@
               {{ locale.sequenceHelpDesc }}
             </p>
           </div>
-        </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider"
             @click="activeModal = 'none'"
@@ -355,28 +334,18 @@
             {{ sequenceLoading ? locale.resetting : locale.executeReset }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 重置数据库模态框 -->
-    <div
-      v-if="activeModal === 'reset-db'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'reset-db'"
+      :title="locale.dangerResetTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl panel-enter"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-bold text-error tracking-tight">{{ locale.dangerResetTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div
             class="p-6 bg-error-10 border border-error-20 rounded-2xl flex flex-col items-center text-center"
           >
@@ -431,9 +400,8 @@
               {{ resetLoading ? locale.resetting : locale.confirmResetDatabase }}
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </AppModal>
 
     <!-- 自动备份设置 -->
     <BackupAutoSettings
@@ -445,7 +413,8 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
+import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
 import { useToast } from '~/composables/useToast'

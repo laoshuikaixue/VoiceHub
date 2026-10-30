@@ -397,31 +397,14 @@
     </div>
 
     <!-- 添加/编辑模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :show="showAddForm || !!editingRequestTime"
+      :title="editingRequestTime ? locale.editTitle : locale.addTitle"
+      size="2xl"
+      @close="cancelForm"
     >
-      <div
-        v-if="showAddForm || editingRequestTime"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden"
-        >
-          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-text-primary">
-              {{ editingRequestTime ? locale.editTitle : locale.addTitle }}
-            </h3>
-            <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="cancelForm">
-              <X :size="20" />
-            </button>
-          </div>
+      <div class="space-y-6">
 
-          <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
             <div class="space-y-2">
               <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.name }}</label
@@ -517,9 +500,11 @@
               <AlertCircle :size="16" />
               {{ formError }}
             </div>
-          </div>
+      </div>
 
-          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelForm"
@@ -533,44 +518,39 @@
             >
               {{ formSubmitting ? locale.saving : locale.saveSettings }}
             </button>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 删除确认模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :show="showDeleteConfirm"
+      :title="deleteConfirmTitleText"
+      size="md"
+      @close="showDeleteConfirm = false"
     >
-      <div
-        v-if="showDeleteConfirm"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click.self="showDeleteConfirm = false"
-      >
-        <div
-          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden p-8"
-        >
-          <div class="flex flex-col items-center space-y-6">
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-10 text-error">
+          <Trash2 :size="18" />
+        </span>
+      </template>
+
+
             <div
               class="w-16 h-16 rounded-2xl bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-xl shadow-[var(--error-glow-10)]"
             >
               <Trash2 :size="28" />
             </div>
             <div class="text-center space-y-2 px-4">
-              <h4 class="text-lg font-bold text-text-primary">
-                {{ deleteConfirmTitleText }}
-              </h4>
               <p class="text-xs text-text-tertiary leading-relaxed">
                 {{ locale.deleteConfirmPrefix }}
                 <span class="text-text-secondary font-bold">{{ locale.disable }}</span> {{ locale.deleteConfirmSuffix }}
               </p>
             </div>
-            <div class="flex gap-3 w-full pt-4">
+
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
                 class="flex-1 px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-tertiary text-xs font-bold rounded-2xl transition-all"
                 @click="showDeleteConfirm = false"
@@ -584,11 +564,9 @@
               >
                 {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 说明部分 -->
     <div class="flex flex-col md:flex-row gap-6">
@@ -648,6 +626,7 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, reactive, ref, computed } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
@@ -666,7 +645,6 @@ import {
   Ban,
   CheckCircle2,
   XCircle,
-  X,
   BarChart3,
   Filter
 } from '@lucide/vue'

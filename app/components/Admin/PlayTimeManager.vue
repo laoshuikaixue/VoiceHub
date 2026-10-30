@@ -222,29 +222,14 @@
     </div>
 
     <!-- 添加/编辑弹窗 -->
-    <Transition name="modal">
-      <div
-        v-if="showAddForm || editingPlayTime"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      >
-        <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="cancelForm" />
-        <div
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <h3 class="text-xl font-bold text-text-primary tracking-tight">
-                {{ editingPlayTime ? locale.editTitle : locale.addTitle }}
-              </h3>
-              <button
-                class="flex items-center justify-center p-2 text-text-tertiary hover:text-text-primary transition-colors"
-                @click="cancelForm"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="showAddForm || !!editingPlayTime"
+      :title="editingPlayTime ? locale.editTitle : locale.addTitle"
+      size="lg"
+      @close="cancelForm"
+    >
+      <div class="space-y-6">
 
-            <div class="space-y-6">
               <div class="space-y-2">
                 <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.name }}</label
@@ -363,10 +348,11 @@
               >
                 {{ formError }}
               </div>
-            </div>
-          </div>
+      </div>
 
-          <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex justify-end gap-3">
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelForm"
@@ -380,37 +366,33 @@
             >
               {{ formSubmitting ? locale.saving : locale.saveSettings }}
             </button>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 删除确认弹窗 -->
-    <Transition name="modal">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
-          @click="showDeleteConfirm = false"
-        />
-        <div
-          class="relative w-full max-w-sm bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-        >
-          <div class="p-8">
-            <div class="flex flex-col items-center py-4 space-y-6">
-              <div
-                class="w-16 h-16 rounded-xl bg-error-10 text-error flex items-center justify-center border border-error-10 shadow-xl shadow-[var(--error-glow-5)]"
-              >
-                <AlertCircle :size="32" />
-              </div>
+    <AppModal
+      :show="showDeleteConfirm"
+      :title="deleteConfirmTitleText"
+      size="md"
+      @close="showDeleteConfirm = false"
+    >
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-10 text-error">
+          <AlertCircle :size="18" />
+        </span>
+      </template>
+
+
               <div class="text-center space-y-2 px-4">
-                <h4 class="text-lg font-bold text-text-primary">
-                  {{ deleteConfirmTitleText }}
-                </h4>
                 <p class="text-xs text-text-tertiary leading-relaxed">
                   {{ locale.deleteConfirmDesc }}
                 </p>
               </div>
-              <div class="flex gap-3 w-full pt-4">
+
+      <template #footer>
+        <div class="flex w-full gap-3">
+
                 <button
                   class="flex-1 px-4 py-3 bg-bg-primary border border-border-secondary text-text-tertiary text-xs font-bold rounded-lg transition-all hover:bg-bg-tertiary"
                   @click="showDeleteConfirm = false"
@@ -424,17 +406,16 @@
                 >
                   {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}
                 </button>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
@@ -451,7 +432,6 @@ import {
   Power,
   Info,
   AlertCircle,
-  X,
   AlignLeft,
   CalendarDays
 } from '@lucide/vue'
