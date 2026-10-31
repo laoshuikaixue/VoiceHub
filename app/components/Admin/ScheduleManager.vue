@@ -1726,7 +1726,7 @@
               <p>{{ locale.messages.excludedByPlayTime(autoSchedulePlacement.excludedByPlayTime) }}</p>
             </div>
           </div>
-          <!-- 期望日期是软偏好：只提示当天会优先安排多少首，不排除任何歌曲 -->
+          <!-- 期望日期是软偏好：只提示候选池中期望当天有多少首，不排除任何歌曲 -->
           <p
             v-if="autoScheduleDateHits > 0"
             class="px-3 py-2 rounded-xl bg-bg-tertiary/60 border border-border-secondary/60 text-[10px] leading-relaxed text-text-secondary"

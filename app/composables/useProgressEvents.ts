@@ -3,6 +3,8 @@ import { useProgress } from './useProgress'
 import { useAuth } from './useAuth'
 
 export const useProgressEvents = () => {
+  // serverless 部署：进度 SSE 已被服务端拦截，连接必然失败，不再发起
+  const { isServerless } = useRuntimeConfig().public
   const {
     percentage,
     message,
@@ -24,6 +26,10 @@ export const useProgressEvents = () => {
 
   // 连接到进度事件流
   const connect = async (id: string) => {
+    if (isServerless) {
+      setError('当前部署不支持实时进度推送')
+      return
+    }
     // 确保之前的连接已关闭
     disconnect()
 

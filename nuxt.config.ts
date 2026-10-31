@@ -1,5 +1,6 @@
 import wasm from 'vite-plugin-wasm'
 import { fileURLToPath } from 'url'
+import { isServerlessRuntime } from './server/utils/serverless-runtime'
 
 // 解析自定义 SEO 和 PWA 配置
 let customSeoConfig: { title?: string; shortName?: string; description?: string; logo?: string } =
@@ -616,6 +617,8 @@ export default defineNuxtConfig({
       siteLogo,
       siteDescription,
       isNetlify: process.env.NETLIFY === 'true',
+      // serverless 部署探测：客户端据此跳过 SSE 长连接与高频状态上报
+      isServerless: isServerlessRuntime(),
       sentry: {
         dsn: process.env.NUXT_PUBLIC_SENTRY_DSN || frontendSentryDsnDefault,
         environment:

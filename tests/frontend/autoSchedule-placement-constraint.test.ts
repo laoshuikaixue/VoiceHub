@@ -172,6 +172,30 @@ test('默认期望日期权重保持在低位，不会退化成保送', () => {
   assert.ok(DEFAULT_EXPECTED_DATE_WEIGHT <= 0.2, '默认权重不应高到接近必中')
 })
 
+test('权重上限守护：日期权重被拉到 1 也不会把非命中候选整体挤到后面', () => {
+  const list = [
+    mk(1, { preferredPlayDate: '2026-03-18' }),
+    mk(2),
+    mk(3, { preferredPlayDate: '2026-03-18' }),
+    mk(4),
+    mk(5)
+  ]
+  const RUNS = 400
+  let interleaved = 0
+  for (let i = 0; i < RUNS; i++) {
+    // 票数全同 => 热度跨度为 0，非命中组只靠随机分量拉开差距
+    const out = expectedDateWeightedOrder(list, '2026-03-18', 1)
+    const hitLast = out.map((s) => (s.preferredPlayDate === '2026-03-18' ? 1 : 0)).lastIndexOf(1)
+    const missFirst = out.map((s) => (s.preferredPlayDate === '2026-03-18' ? 0 : 1)).indexOf(1)
+    if (missFirst < hitLast) interleaved++
+  }
+  // 无上限守护时命中组恒占前两位，interleaved 为 0；守护后实测约 43%
+  assert.ok(
+    interleaved / RUNS > 0.2,
+    `命中组不应整体前置，实际两组交叠比例 ${((interleaved / RUNS) * 100).toFixed(1)}%`
+  )
+})
+
 // ---------------------------------------------------------- countExpectedDateHits
 
 test('countExpectedDateHits 只统计期望日期等于目标日期的歌曲', () => {
@@ -276,6 +300,28 @@ test('autoScheduleExhaustive 对期望日期同样只加权不保送', () => {
   assert.ok(allHits < RUNS, '穷举模式下也不能保证命中日期的歌曲全部入选')
 })
 
+test('同档抽样不推翻优先级：期望歌曲数达标优先于时长与日期命中', () => {
+  // 6 首 240s 设当天 + 14 首 200s 未设；目标 1600s、期望 8 首
+  // 同时满足“8 首”和“1600s”的方案只能由 8 首 200s 组成（零命中）；
+  // 5 首命中 + 2 首 = 7 首 / 1600s 时长更准但歌曲数不符，不应被抽为方案 1
+  const candidates: Candidate[] = []
+  for (let i = 1; i <= 6; i++) {
+    candidates.push(mk(i, { durationSeconds: 240, preferredPlayDate: '2026-03-18' }))
+  }
+  for (let i = 7; i <= 20; i++) {
+    candidates.push(mk(i, { durationSeconds: 200 }))
+  }
+  const RUNS = 120
+  for (let i = 0; i < RUNS; i++) {
+    const result = autoSchedule('middle', 1600 / 60, candidates, [], 1, 8, null, 0.8, {
+      targetDate: '2026-03-18',
+      targetPlayTimeId: null
+    }) as { songs: Candidate[]; absDiff: number }
+    assert.equal(result.songs.length, 8, `第 ${i + 1} 次返回 ${result.songs.length} 首，偏离期望的 8 首`)
+    assert.equal(result.absDiff, 0, '优先级打平的方案内不应牺牲时长精度')
+  }
+})
+
 test('autoSchedule 不会把带期望时段的歌曲排到其它时段', () => {
   const candidates = [
     mk(1, { preferredPlayTimeId: 2, durationSeconds: 300 }),
@@ -311,7 +357,8 @@ test('两首同长候选竞争时，命中期望日期的那首更容易被选�
     mk(1, { durationSeconds: 300 }),
     mk(2, { preferredPlayDate: '2026-03-18', durationSeconds: 300 })
   ]
-  const RUNS = 300
+  // 命中概率仅约 53.7%，300 次抽样会有 ~11% 负率低于 0.5，抽样数需足够
+  const RUNS = 2000
   let hitPicked = 0
   for (let i = 0; i < RUNS; i++) {
     const result = autoSchedule('middle', 5, candidates, [], 1, null, null, 0.8, {

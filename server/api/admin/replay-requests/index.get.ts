@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
         playedAt: songs.playedAt,
         semester: songs.semester,
         preferredPlayTimeId: songs.preferredPlayTimeId,
-        // 期望播出日期：自动排期时该歌曲只在对应日期参与排期
+        // 期望播出日期：自动排期的软偏好，命中当天时提高入选概率，不过滤候选
         preferredPlayDate: songs.preferredPlayDate,
         cover: songs.cover,
         playUrl: songs.playUrl,
