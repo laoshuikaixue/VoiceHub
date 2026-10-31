@@ -53,8 +53,3 @@ result
 # Tencent Cloud EdgeOne
 .edgeone/*
 .tef_dist/*
-
-bilibili-api-collect-main
-lx-music-desktop-dev
-SPlayer-dev
-Melotopia-HMOS-master
