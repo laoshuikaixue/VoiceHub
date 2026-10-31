@@ -33,6 +33,15 @@ input[type="range"]:not([class*="accent-"]) {
   accent-color: var(--accent-color);
 }
 
+/* 暗色主题下 date/time 输入框的日历/时钟图标刷白，与正文颜色一致 */
+:root[data-theme='ClassicDark'] input[type="date"]::-webkit-calendar-picker-indicator,
+:root[data-theme='ClassicDark'] input[type="time"]::-webkit-calendar-picker-indicator,
+:root[data-theme='ClassicDark'] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1);
+  cursor: pointer;
+  opacity: 1;
+}
+
 /* 流体背景与全局样式 */
 
 * {

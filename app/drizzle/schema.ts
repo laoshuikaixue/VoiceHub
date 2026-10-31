@@ -245,6 +245,26 @@ export const notifications = pgTable('Notification', {
   index('notification_batch_id_idx').on(table.batchId)
 ]);
 
+// 首页公告发布历史表：每次发布只记一条，不按用户展开
+export const announcementHistory = pgTable('AnnouncementHistory', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  title: text('title'),
+  content: text('content').notNull(),
+  // static = 静态一行展示，scroll = 横向滚动展示
+  displayMode: varchar('displayMode', { length: 16 }).default('static').notNull(),
+  // 滚动模式下滚动一轮所需秒数
+  scrollSpeed: integer('scrollSpeed').default(30).notNull(),
+  // 是否为当前正在首页展示的公告，编辑/删除需要据此同步 SystemSettings
+  isActive: boolean('isActive').default(false).notNull(),
+  senderId: integer('senderId'),
+  senderName: text('senderName'),
+  senderUsername: text('senderUsername'),
+  broadcastToGroups: boolean('broadcastToGroups').default(false).notNull()
+}, (table) => [
+  index('announcement_history_created_at_idx').on(table.createdAt)
+]);
+
 // 通知设置表
 export const notificationSettings = pgTable('NotificationSettings', {
   id: serial('id').primaryKey(),
@@ -329,6 +349,12 @@ export const systemSettings = pgTable('SystemSettings', {
   schoolLogoPrintUrl: text('schoolLogoPrintUrl'),
   siteDescription: text('siteDescription'),
   submissionGuidelines: text('submissionGuidelines'),
+  announcement: text('announcement'),
+  announcementTitle: text('announcementTitle'),
+  // 首页公告展示方式：static / scroll
+  announcementDisplayMode: varchar('announcementDisplayMode', { length: 16 }).default('static').notNull(),
+  // 滚动模式下一轮滚动所需秒数
+  announcementScrollSpeed: integer('announcementScrollSpeed').default(30).notNull(),
   icpNumber: text('icpNumber'),
   gonganNumber: text('gonganNumber'),
   showBeianIcon: boolean('showBeianIcon').default(false).notNull(),

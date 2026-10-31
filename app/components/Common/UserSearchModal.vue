@@ -63,7 +63,7 @@
             </div>
 
             <!-- 搜索结果 -->
-            <div class="user-list space-y-3 min-h-[300px]">
+            <div class="user-list space-y-3 min-h-[160px]">
               <div
                 v-if="users.length === 0 && !loading && hasSearched"
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
@@ -105,6 +105,9 @@
                   <div
                     class="text-[10px] font-black uppercase tracking-widest flex flex-wrap gap-2 mt-0.5 text-text-tertiary"
                   >
+                    <span v-if="user.username" class="flex items-center text-primary">
+                      @{{ user.username }}
+                    </span>
                     <span v-if="user.grade" class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
                       {{ user.grade }}
