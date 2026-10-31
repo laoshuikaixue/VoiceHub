@@ -5,6 +5,8 @@ export interface User {
   grade?: string | null
   class?: string | null
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'SONG_ADMIN'
+  // 后台权限码（含通配与 ! 拒绝项），由服务端按角色模板与用户覆盖解析后下发
+  perms?: string[]
   lastLoginAt?: Date | null
   lastLoginIp?: string | null
   forcePasswordChange?: boolean

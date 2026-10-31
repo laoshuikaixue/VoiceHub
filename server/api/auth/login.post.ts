@@ -15,7 +15,8 @@ import {
 } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
-import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { getRolePermissionTemplatesCached, resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { resolveEffectivePermissions } from '~~/app/utils/admin-permissions'
 import { verifyEsaCaptchaPass } from '~~/server/utils/esa-captcha-pass'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
@@ -246,6 +247,7 @@ export default defineEventHandler(async (event) => {
 
     const requirePasswordChange = await resolveRequirePasswordChange(user)
     const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+    const perms = resolveEffectivePermissions(user, await getRolePermissionTemplatesCached())
 
     return {
       success: true,
@@ -256,6 +258,7 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
+        perms,
         email: user.email,
         emailVerified: user.emailVerified,
         forcePasswordChange: user.forcePasswordChange,

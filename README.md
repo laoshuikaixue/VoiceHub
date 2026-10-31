@@ -1007,6 +1007,7 @@ VoiceHub/
 │       │   ├── lyricStripper.ts # 歌词清理
 │       │   ├── parseLrc.ts    # LRC格式解析
 │       │   └── qrc-parser.ts  # QRC格式解析
+│       ├── admin-permissions.ts # 后台权限码目录与有效权限解析（前后端共用）
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── cover-theme.ts    # 封面取色与歌词主题色（AMLL 调色板）
 │       ├── debounce.ts       # 防抖工具
@@ -1441,6 +1442,7 @@ VoiceHub/
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
+│   │   ├── admin-permission-routes.ts # 后台接口权限守卫表（/api/admin 准入唯一来源）
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
@@ -1500,7 +1502,6 @@ VoiceHub/
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── outbound-url.ts # 备份出站地址元数据/内部域名拦截
 │   │   ├── pagination.ts   # 分页参数解析与上限夹取
-│   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── play-slot.ts    # 播出时段适用星期与播出日期校验

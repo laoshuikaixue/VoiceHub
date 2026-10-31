@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import type { SystemSettings } from '~/drizzle/schema'
+import { ROLE_PERMISSION_TEMPLATES_DEFAULT } from '~~/app/utils/admin-permissions'
 
 /**
  * 统一读取系统设置，读取失败时返回 null，由调用方按安全默认值降级。
@@ -21,6 +22,19 @@ export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
   return settings && typeof settings.forcePasswordChangeOnFirstLogin === 'boolean'
     ? settings.forcePasswordChangeOnFirstLogin
     : false
+}
+
+/**
+ * 角色权限模板：配置缺失、类型非法或角色缺省时回落到代码内置模板，
+ * 保证权限读取故障不会把管理员锁在后台之外。
+ */
+export async function getRolePermissionTemplatesCached(): Promise<Record<string, unknown>> {
+  const settings = await getSystemSettingsCached()
+  const configured = settings?.rolePermissionTemplates
+  if (!configured || typeof configured !== 'object' || Array.isArray(configured)) {
+    return ROLE_PERMISSION_TEMPLATES_DEFAULT
+  }
+  return configured as Record<string, unknown>
 }
 
 export function computeRequirePasswordChange(

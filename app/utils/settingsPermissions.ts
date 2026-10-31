@@ -108,7 +108,9 @@ export const SUPER_ADMIN_ONLY_SETTING_FIELDS = [
   'telemetryEnabled',
   // 站点主题
   'defaultTheme',
-  'enabledThemes'
+  'enabledThemes',
+  // 角色权限模板：改写即可自我提权
+  'rolePermissionTemplates'
 ] as const
 
 export type SuperAdminOnlySettingField = (typeof SUPER_ADMIN_ONLY_SETTING_FIELDS)[number]

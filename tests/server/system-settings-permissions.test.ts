@@ -8,6 +8,11 @@ import {
   findSuperAdminOnlySettingFields,
   stripSuperAdminOnlySettingFields
 } from '../../app/utils/settingsPermissions.ts'
+import {
+  ROLE_PERMISSION_TEMPLATES_DEFAULT,
+  accessiblePages,
+  resolveEffectivePermissions
+} from '../../app/utils/admin-permissions.ts'
 
 // 系统设置权限边界：涉及用户数据与凭据的字段归超级管理员，运营配置留给普通管理员
 const read = (relative: string) => readFileSync(join(import.meta.dirname, relative), 'utf8')
@@ -18,7 +23,6 @@ const ENV_OAUTH_GET = read('../../server/api/admin/system-settings/env-oauth.get
 const ENV_OAUTH_IMPORT = read('../../server/api/admin/system-settings/env-oauth-import.post.ts')
 const CLEAR_BINDINGS = read('../../server/api/admin/system-settings/clear-aggregate-bindings.post.ts')
 const SCHEMA = read('../../app/drizzle/schema.ts')
-const USE_PERMISSIONS = read('../../app/composables/usePermissions.ts')
 const SITE_CONFIG_UI = read('../../app/components/Admin/SiteConfigManager.vue')
 
 const SUPER_ADMIN_FIELDS = new Set<string>(SUPER_ADMIN_ONLY_SETTING_FIELDS as readonly string[])
@@ -133,10 +137,10 @@ test('读写接口与子接口按角色把关', () => {
 })
 
 test('普通管理员界面不含站点配置与机器人配置入口，表单不提交超管字段', () => {
-  const adminPages = USE_PERMISSIONS.match(/if \(role === 'ADMIN'\) \{\s*return \[([\s\S]*?)\]/)?.[1] ?? ''
-  assert.ok(adminPages, '未找到 ADMIN 可访问页面列表')
+  const adminPages = accessiblePages(resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT))
+  assert.ok(adminPages.length, '未找到 ADMIN 可访问页面列表')
   for (const page of ['site-config', 'smtp-config', 'database', 'api-keys']) {
-    assert.doesNotMatch(adminPages, new RegExp(`'${page}'`), `普通管理员不应有 ${page} 入口`)
+    assert.ok(!adminPages.includes(page), `普通管理员不应有 ${page} 入口`)
   }
   assert.match(SITE_CONFIG_UI, /stripSuperAdminOnlySettingFields\(configToSave\)/)
 })

@@ -148,7 +148,8 @@ export default defineEventHandler(async (event) => {
                 'remark',
                 'avatarProvider',
                 'avatarProviderUserId',
-                'legalConsentVersion'
+                'legalConsentVersion',
+                'permissions'
               ]
               const dateFields = [
                 'createdAt',
@@ -168,6 +169,9 @@ export default defineEventHandler(async (event) => {
                     } else {
                       userData[field] = record[field]
                     }
+                  } else if (field === 'permissions') {
+                    // 仅接受权限码数组，非法值按「跟随角色模板」丢弃
+                    if (Array.isArray(record[field])) userData[field] = record[field]
                   } else {
                     userData[field] = record[field]
                   }
@@ -980,7 +984,8 @@ export default defineEventHandler(async (event) => {
               'legalConsentUpdatedDate',
               'legalConsentDocuments',
               'enabledPlatforms',
-              'platformOrder'
+              'platformOrder',
+              'rolePermissionTemplates'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
