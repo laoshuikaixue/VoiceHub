@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
@@ -59,6 +60,10 @@ export function sendProgressError(id: string, error: string) {
 
 // SSE端点处理程序
 export default defineEventHandler(async (event) => {
+  // serverless 实例内存隔离且函数定期回收，进度推送不可达，挂连接只会空耗函数时长
+  if (isServerlessRuntime()) {
+    throw createError({ statusCode: 410, message: '当前部署不支持 SSE 长连接' })
+  }
   // 获取进度ID和token
   const query = getQuery(event)
   const id = query.id as string

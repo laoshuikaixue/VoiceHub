@@ -2,13 +2,15 @@
  * 自动排期算法
  * 在候选池中选取总时长最接近目标的歌曲组合
  *
- * 策略：主路径按降序贪心 + 'under' 二次升序回填；辅路径随机采样；取 absDiff 更小的结果
+ * 策略：先跑一遍纯时长贪心作为质量基准，再用「热度 + 期望日期加权随机」采样多个方案，
+ * 最后在优先级维度打平的方案里、时长最好的一档（容差 30 秒）按期望日期命中数加权随机选一个。
+ * 期望播出日期只提高命中当天的入选概率，不保证入选，也不参与更高优先级维度的取舍。
  *
  * @param direction 'under' 总时长不超过目标，'over' 总时长不低于目标，'middle' 相差最小（中间放）
  * @param targetMinutes 目标总时长（分钟）
  * @param candidates 候选歌曲列表（需含 id 和 durationSeconds）
  * @param preSelected 用户已固定的歌曲（总是保留，算法仅对剩余候选补齐剩余时长）
- * @param plansCount 返回方案数，按 absDiff 升序排列（默认 1，仅返回最优）
+ * @param plansCount 返回方案数，按质量降序（首个方案在同档内随机抽取，时长可能略逊于其后方案）
  * @param targetSongCount 期望的最终歌曲数量（可选；启用后优先匹配歌曲数量，再比较时长）
  * @param targetRequesterCount 期望的不同投稿人数量（可选；启用后优先覆盖不同投稿人，再比较时长）
  */
@@ -30,7 +32,7 @@ export interface AutoScheduleCandidate {
   voteCount?: number | null
   // UI 标记：是否为固定歌曲
   isFixed?: boolean
-  /** 投稿时显式选择的期望播出日期（YYYY-MM-DD）：命中当天时优先安排，不作为排除条件 */
+  /** 投稿时显式选择的期望播出日期（YYYY-MM-DD）：命中当天时提高入选概率，不作为排除条件 */
   preferredPlayDate?: string | null
   /** 投稿时选择的期望播出时段 ID：硬约束，只能排到该时段 */
   preferredPlayTimeId?: number | null
@@ -38,10 +40,15 @@ export interface AutoScheduleCandidate {
 
 /** 自动排期约束。 */
 export interface AutoScheduleOptions {
-  /** 目标播出日期；命中候选优先安排。 */
+  /** 目标播出日期；命中候选按 expectedDateWeight 提高入选概率，但不确定入选。 */
   targetDate?: string | null
   /** 目标播出时段 ID；传入时启用硬约束。 */
   targetPlayTimeId?: number | null
+  /**
+   * 期望播出日期的权重（0~1），只提高命中当天的入选概率，默认 DEFAULT_EXPECTED_DATE_WEIGHT。
+   * 超出候选分数跨度时会被自动压低，避免退化为整体前置。
+   */
+  expectedDateWeight?: number
 }
 
 /** 期望落位过滤结果。 */
@@ -106,20 +113,56 @@ export function filterByExpectedPlacement(
   return { eligible, excludedByPlayTime }
 }
 
-/** 将命中目标日期的候选移到前面。 */
-export function preferExpectedDate<T extends AutoScheduleCandidate>(
+/**
+ * 期望播出日期加权随机排序（替代原来的「整体前置」）。
+ *
+ * 旧实现把命中当天的候选整体搬到队首，贪心装填时只要时长够就会全部入选，
+ * 等于「设了日期就 100% 排上」，会挤掉没设日期的投稿。
+ *
+ * 现在把命中当作一个加分项：
+ *   score = (1 - dateWeight) × [heatWeight × 热度 + (1 - heatWeight) × 随机] + dateWeight × 命中
+ * 命中当天只让排位更靠前，随机分量仍可能把其它歌曲顶到前面，因此入选是概率而不是保证。
+ *
+ * 加分幅度受候选自身分数跨度约束：命中项跨度为 dateWeight，非命中项跨度为 (1 - dateWeight) × spread，
+ * 前者一旦不小于后者，命中组就整体压到队首，重新变成「设了日期就占位」。上限取 spread / (2 + spread)，
+ * 即加分最多占非命中跨度的一半，两组分数始终交叠。
+ */
+export function expectedDateWeightedOrder<T extends AutoScheduleCandidate>(
   list: T[],
-  targetDate?: string | null
+  targetDate?: string | null,
+  dateWeight: number = DEFAULT_EXPECTED_DATE_WEIGHT,
+  heatWeight: number = DEFAULT_HEAT_WEIGHT
 ): T[] {
+  const n = list.length
+  if (n <= 1) return [...list]
+
   const date = normalizePreferredPlayDate(targetDate)
-  if (!date) return [...list]
-  const matched: T[] = []
-  const rest: T[] = []
-  for (const song of list) {
-    if (normalizePreferredPlayDate(song.preferredPlayDate) === date) matched.push(song)
-    else rest.push(song)
+  const hw = clampWeight(heatWeight, DEFAULT_HEAT_WEIGHT)
+  const heat = buildHeatMap(list)
+
+  let heatMin = 1
+  let heatMax = 0
+  for (const value of heat.values()) {
+    if (value < heatMin) heatMin = value
+    if (value > heatMax) heatMax = value
   }
-  return [...matched, ...rest]
+  // base 的跨度 = 热度跨度 × 热度权重 + 随机分量跨度
+  const spread = hw * (heatMax - heatMin) + (1 - hw)
+  const dw = Math.min(clampWeight(dateWeight, DEFAULT_EXPECTED_DATE_WEIGHT), spread / (2 + spread))
+
+  return [...list]
+    .map((item) => {
+      const base = hw * (heat.get(item.id) ?? 0.5) + (1 - hw) * Math.random()
+      const hit = date && normalizePreferredPlayDate(item.preferredPlayDate) === date ? 1 : 0
+      return { item, score: (1 - dw) * base + dw * hit }
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.item)
+}
+
+function clampWeight(value: number, fallback: number): number {
+  const num = Number(value)
+  return Number.isFinite(num) ? Math.min(1, Math.max(0, num)) : fallback
 }
 
 /** 统计方案命中目标日期的数量。 */
@@ -177,8 +220,6 @@ interface ResultCompareContext {
   fixedCount: number
   targetRequesterCount: number | null
   fixedRequesterSet: Set<string>
-  /** 目标播出日期（YYYY-MM-DD），用于优先选择命中期望日期的方案 */
-  targetDate: string | null
 }
 
 function distinctRequesterCount(
@@ -204,12 +245,8 @@ function compareResults(a: AutoScheduleResult, b: AutoScheduleResult, ctx: Resul
     if (aReqDiff !== bReqDiff) return aReqDiff - bReqDiff
   }
   if (a.absDiff !== b.absDiff) return a.absDiff - b.absDiff
-  // 同等时长方案优先命中期望日期。
-  if (ctx.targetDate) {
-    const aHits = countExpectedDateHits(a.songs, ctx.targetDate)
-    const bHits = countExpectedDateHits(b.songs, ctx.targetDate)
-    if (aHits !== bHits) return bHits - aHits
-  }
+  // 期望日期不在这里比较：同分方案若固定偏向命中日期，就等于「设了日期必中」。
+  // 日期只影响候选排序权重与同档方案的抽样权重。
   return a.absDiff - b.absDiff || b.songs.length - a.songs.length
 }
 
@@ -280,6 +317,14 @@ function prepareScheduleInput(
 export const DEFAULT_HEAT_WEIGHT = 0.8
 
 /**
+ * 默认期望日期权重：0.08 = 命中当天的候选「更容易」排上，而不是排定。
+ * 实测（20 首候选池、5 首设当天、随机时长、目标约 8 首）：权重 0 时命中组入选率 33.8%（等于随机基线），
+ * 0.08 约 58.6%，同档抽样还会进一步压制高权重的效果，因此默认压在低位。
+ * 只在命中当天给加成，其它日期不加也不减，未设日期的投稿照常参与随机竞争。
+ */
+export const DEFAULT_EXPECTED_DATE_WEIGHT = 0.08
+
+/**
  * 热度加权随机排序。
  *
  * 做法：把票数做**秩归一化**（最低票=0，最高票=1，同票同权），再对每首歌取
@@ -346,6 +391,79 @@ function planHeatScore(songs: AutoScheduleCandidate[], heatMap: Map<number, numb
   return songs.reduce((sum, song) => sum + (heatMap.get(song.id) ?? 0), 0)
 }
 
+/**
+ * 同一档的时长容差（秒）：30 秒不到一首歌的六分之一，排期感知不到，
+ * 但足以让「期望日期」在几个时长同样合格的方案之间产生选择空间。
+ */
+const DURATION_TIER_SECONDS = 30
+
+/** 档内每个命中当天歌曲的权重增量倍数：命中越多越容易被选中，但从不保证 */
+const DATE_HIT_PLAN_WEIGHT = 2
+
+/**
+ * 只比较时长之前的优先级维度：期望歌曲数偏差、期望投稿人数偏差。
+ * 返回 0 表示两方案在这些维度打平，才允许放进同一档比时长。
+ */
+function comparePriorityKeys(
+  a: AutoScheduleResult,
+  b: AutoScheduleResult,
+  ctx: ResultCompareContext
+): number {
+  if (ctx.targetSongCount !== null) {
+    const aDiff = Math.abs(a.songs.length + ctx.fixedCount - ctx.targetSongCount)
+    const bDiff = Math.abs(b.songs.length + ctx.fixedCount - ctx.targetSongCount)
+    if (aDiff !== bDiff) return aDiff - bDiff
+  }
+  if (ctx.targetRequesterCount !== null) {
+    const aDiff = Math.abs(distinctRequesterCount(a.songs, ctx) - ctx.targetRequesterCount)
+    const bDiff = Math.abs(distinctRequesterCount(b.songs, ctx) - ctx.targetRequesterCount)
+    if (aDiff !== bDiff) return aDiff - bDiff
+  }
+  return 0
+}
+
+/**
+ * 在时长最好的一档方案里按日期命中数加权随机挑一个。
+ *
+ * 只按 absDiff 排序取第一名，会让「时长最优的确定性方案」永远胜出，
+ * 期望日期权重形同虚设；按档内加权随机，既保住时长精度（容差内），
+ * 又让命中当天的方案更容易被抽中而不是必然被抽中。
+ *
+ * 档的范围限定为与 plans[0] 优先级打平的方案（plans 已按 compareResults 排序，该集合是前缀）：
+ * 若只按 absDiff 划档，时长更准但歌曲数/投稿人数不达标的方案会被抽来顶替第一名，
+ * 等于推翻 compareResults 已经定下的优先级。
+ */
+function pickPlanInBestTier(
+  plans: AutoScheduleResult[],
+  ctx: ResultCompareContext,
+  options: { targetDate: string | null; dateWeight: number }
+): AutoScheduleResult | null {
+  const head = plans[0]
+  if (!head) return null
+  if (options.dateWeight <= 0 || !options.targetDate) return head
+
+  let end = 1
+  while (end < plans.length && comparePriorityKeys(plans[end]!, head, ctx) === 0) end++
+  const tied = plans.slice(0, end)
+
+  // 组内已按 absDiff 升序，head 即该优先级档内的时长最优方案
+  const bestDiff = head.absDiff
+  const tier = tied.filter((plan) => plan.absDiff - bestDiff <= DURATION_TIER_SECONDS)
+  if (tier.length <= 1) return head
+
+  const weighted = tier.map((plan) => ({
+    plan,
+    weight: 1 + options.dateWeight * DATE_HIT_PLAN_WEIGHT * countExpectedDateHits(plan.songs, options.targetDate)
+  }))
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0)
+  let roll = Math.random() * total
+  for (const item of weighted) {
+    roll -= item.weight
+    if (roll <= 0) return item.plan
+  }
+  return weighted[weighted.length - 1]!.plan
+}
+
 export function autoSchedule(
   direction: AutoScheduleDirection,
   targetMinutes: number,
@@ -365,12 +483,15 @@ export function autoSchedule(
   const normalizedTargetSongCount = normalizeTargetSongCount(targetSongCount)
   const normalizedTargetRequesterCount = normalizeTargetSongCount(targetRequesterCount)
   const targetDate = normalizePreferredPlayDate(options?.targetDate)
+  const expectedDateWeight = clampWeight(
+    options?.expectedDateWeight ?? DEFAULT_EXPECTED_DATE_WEIGHT,
+    DEFAULT_EXPECTED_DATE_WEIGHT
+  )
   const compareCtx: ResultCompareContext = {
     targetSongCount: normalizedTargetSongCount,
     fixedCount: preSelected.length,
     targetRequesterCount: normalizedTargetRequesterCount,
-    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean)),
-    targetDate
+    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean))
   }
   const targetAdditionalCount = normalizedTargetSongCount === null
     ? null
@@ -476,12 +597,11 @@ export function autoSchedule(
   // 设置投稿人目标时分散排序，优先覆盖不同投稿人
   const diversifiedDescending = diversifyOrder(sortedDescending, normalizedTargetRequesterCount)
   const diversifiedAscending = diversifyOrder(sortedAscending, normalizedTargetRequesterCount)
-  // 期望日期优先：命中目标日期的歌曲排在最前，保证「可能的情况下」优先安排到当天
-  const preferredDescending = preferExpectedDate(diversifiedDescending, targetDate)
-  const preferredAscending = preferExpectedDate(diversifiedAscending, targetDate)
+  // 确定性路径只按时长排序：它是时长质量基准，不掺日期偏好。
+  // 期望日期不再进入排序前置，避免「设了日期就必然占位」；日期只通过加权随机与方案选择提高入选概率。
   const sortedByDuration = normalizedTargetSongCount !== null && direction === 'under'
-    ? preferredAscending
-    : preferredDescending
+    ? diversifiedAscending
+    : diversifiedDescending
 
   // 生成方案
   const plans: AutoScheduleResult[] = []
@@ -495,28 +615,29 @@ export function autoSchedule(
     }
   }
 
-  // 确定性路径
+  // 确定性路径：纯时长贪心，保证总有一个时长最优的基准方案
   if (direction === 'middle') {
-    addUnique(runGreedy(normalizedTargetSongCount !== null ? preferredAscending : preferredDescending, 'under'))
-    addUnique(runGreedy(preferredDescending, 'over'))
+    addUnique(runGreedy(normalizedTargetSongCount !== null ? diversifiedAscending : diversifiedDescending, 'under'))
+    addUnique(runGreedy(diversifiedDescending, 'over'))
   } else {
     addUnique(runGreedy(sortedByDuration, direction))
   }
 
-  // 随机路径：每次用「热度加权随机」生成不同方案
-  //   score = 热度权重 × 热度 + (1-热度权重) × 随机 → 高热度更容易靠前，但相邻名次经常互换
-  // 生成比 plansCount 多一些以保留筛选空间
+  // 随机路径：每次用「热度 + 期望日期加权随机」生成不同方案
+  //   score = (1-日期权重) × [热度权重 × 热度 + (1-热度权重) × 随机] + 日期权重 × 命中当天
+  // 命中当天更容易靠前，但不保证入选；未设日期的投稿照常参与随机竞争
+  // 至少收集 12 个方案：单方案时只跑一两次随机，结果质量全看运气（降序贪心常留下几十秒空隙）
   const maxIter = Math.max(50, plansCount * 5)
-  for (let i = 0; i < maxIter && plans.length < plansCount * 3; i++) {
-    // 第一个随机方案用纯随机兜底，保证方案之间有足够差异；其余按热度加权
+  const maxPlans = Math.max(12, plansCount * 3)
+  for (let i = 0; i < maxIter && plans.length < maxPlans; i++) {
+    // 第一个随机方案用纯随机兜底，保证方案之间有足够差异；其余按热度与日期加权
     const ordered =
       i === 0
         ? shuffleList(availableCandidates)
-        : heatWeightedOrder(availableCandidates, heatWeight)
+        : expectedDateWeightedOrder(availableCandidates, targetDate, expectedDateWeight, heatWeight)
     const dir = direction === 'middle' ? (i % 2 === 0 ? 'under' : 'over') : direction
-    // 期望日期命中的歌曲始终前置，保证随机方案也优先安排到当天
     const diversified = diversifyOrder(ordered, normalizedTargetRequesterCount)
-    addUnique(runGreedy(preferExpectedDate(diversified, targetDate), dir))
+    addUnique(runGreedy(diversified, dir))
   }
 
   // 按质量排序：首数偏差 → 投稿人偏差 → 时长偏差 → 歌曲数 → 热度（同等优秀时更热的优先）
@@ -526,9 +647,17 @@ export function autoSchedule(
     return planHeatScore(b.songs, heatMap) - planHeatScore(a.songs, heatMap)
   })
 
+  // 优先级维度打平且时长相近的方案算同一档，档内按期望日期命中数加权随机挑一个；热度只影响方案生成与同分排序。
+  // 少了这一步，时长最优的确定性方案会稳定胜出，日期权重就完全不起作用。
+  const chosen = pickPlanInBestTier(plans, compareCtx, {
+    targetDate,
+    dateWeight: expectedDateWeight
+  })
+  const orderedPlans = chosen ? [chosen, ...plans.filter((plan) => plan !== chosen)] : plans
+
   // 合并固定歌曲并截取
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
-  const finalPlans = plans
+  const finalPlans = orderedPlans
     .slice(0, plansCount)
     .map((p) => ({ ...p, songs: [...fixedSongs, ...p.songs] }))
 
@@ -574,26 +703,27 @@ export function autoScheduleExhaustive(
     targetSongCount: normalizedTargetSongCount,
     fixedCount: preSelected.length,
     targetRequesterCount: normalizedTargetRequesterCount,
-    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean)),
-    targetDate
+    fixedRequesterSet: new Set(preSelected.map((s) => s.requester).filter(Boolean))
   }
+  const expectedDateWeight = clampWeight(
+    options?.expectedDateWeight ?? DEFAULT_EXPECTED_DATE_WEIGHT,
+    DEFAULT_EXPECTED_DATE_WEIGHT
+  )
 
   // 将时长收窄为 number 类型，消除后续的非空断言
   type DurationCandidate = Omit<AutoScheduleCandidate, 'durationSeconds'> & { durationSeconds: number }
 
   const remainingTarget = Math.max(0, targetSeconds - preSelectedSeconds)
   // 按时长降序排列，大歌曲优先，利于剪枝；启用热度时同长度热度高者在前；设置投稿人目标时分散排序
-  // 期望日期命中的歌曲前置：DFS 优先探索包含它们的分支，更容易产出「安排到当天」的方案
-  const sorted = preferExpectedDate(
-    diversifyOrder(
-      [...(availableCandidates as DurationCandidate[])].sort(
-        (a, b) =>
-          b.durationSeconds - a.durationSeconds ||
-          (heatEnabled ? (b.voteCount || 0) - (a.voteCount || 0) : 0)
-      ),
-      normalizedTargetRequesterCount
+  // 穷举要遍历组合，期望日期不参与排序：否则命中当天的分支会被优先探索、在节点截断时挤掉其它投稿，
+  // 退化成「设了日期就必中」。日期只在方案比较里作为同档次的次级优先项。
+  const sorted = diversifyOrder(
+    [...(availableCandidates as DurationCandidate[])].sort(
+      (a, b) =>
+        b.durationSeconds - a.durationSeconds ||
+        (heatEnabled ? (b.voteCount || 0) - (a.voteCount || 0) : 0)
     ),
-    targetDate
+    normalizedTargetRequesterCount
   )
   const n = sorted.length
 
@@ -607,7 +737,9 @@ export function autoScheduleExhaustive(
   const seenKeys = new Set<string>()
   let nodeCount = 0
   const maxNodes = 100000
-  const maxSolutions = plansCount * 3
+  // 至少保留 12 个方案：DFS 顺序固定，只留 3 个的话同档抽样没有多样性，
+  // 期望日期命中多寡就退化成「由遍历顺序决定」
+  const maxSolutions = Math.max(12, plansCount * 3)
   // worstAbs 记录当前已收录方案中最差的 absDiff，作为剪枝阈值
   // 初始值 Infinity 确保首个方案能被正确记录并更新该值（0 会导致找到完美解后后续方案被全部过滤）
   let worstAbs = Infinity
@@ -705,8 +837,13 @@ export function autoScheduleExhaustive(
     return base !== 0 ? base : heatTiebreak(a, b)
   })
 
+  // 与贪心算法保持一致：优先级打平的方案里，时长最好的一档按期望日期命中数加权随机挑一个，
+  // 避免「同分时固定偏向命中日期」变成变相保送。
+  const chosen = pickPlanInBestTier(solutions, compareCtx, { targetDate, dateWeight: expectedDateWeight })
+  const orderedSolutions = chosen ? [chosen, ...solutions.filter((plan) => plan !== chosen)] : solutions
+
   const fixedSongs = preSelected.map((s) => ({ ...s, isFixed: true }))
-  const finalPlans = solutions.slice(0, plansCount).map((p) => ({
+  const finalPlans = orderedSolutions.slice(0, plansCount).map((p) => ({
     ...p,
     songs: [...fixedSongs, ...p.songs]
   }))

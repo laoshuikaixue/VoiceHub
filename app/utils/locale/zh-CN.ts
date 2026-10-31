@@ -3251,7 +3251,7 @@ export const admin = {
       excludedByPlayTime: (count: number) =>
         `${count} 首歌曲指定了其它播出时段，已按硬约束排除在本次自动排期之外`,
       preferredDateHits: (count: number) =>
-        `${count} 首歌曲的期望播出日期是当天，将优先安排`
+        `${count} 首歌曲的期望播出日期是当天，入选概率会相应提高（不保证排上）`
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
