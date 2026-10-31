@@ -13,13 +13,17 @@ const VOLUME_STORAGE_KEY = 'voicehub_player_volume'
 
 const clampVolume = (value: number): number => Math.max(0, Math.min(1, value))
 
+/** 响度幂指数：听感每降 10 dB 响度减半，半分位约 -10 dB */
+const VOLUME_LOUDNESS_EXPONENT = 1.66
+
 /** 将感知音量位置转换为线性增益 */
 export const volumePositionToGain = (position: number): number =>
-  Math.max(0, Math.min(1, position)) ** 3
+  // 位置按 1% 取整，避免步进累积的浮点尾差在静音附近留下极小增益
+  (Math.round(clampVolume(position) * 100) / 100) ** VOLUME_LOUDNESS_EXPONENT
 
 /** 将线性增益转换为感知音量位置，保留已有存档的实际响度 */
 export const volumeGainToPosition = (gain: number): number =>
-  Math.cbrt(Math.max(0, Math.min(1, gain)))
+  clampVolume(gain) ** (1 / VOLUME_LOUDNESS_EXPONENT)
 
 const readStoredVolume = (): number => {
   if (!import.meta.client) return 1
