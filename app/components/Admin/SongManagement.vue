@@ -2083,7 +2083,7 @@ const confirmPlaybackChange = async () => {
     const songIds = [...playbackConfirmSongIds.value]
     const updated = await executePlaybackChange(songIds, playbackConfirmMode.value === 'unplayed')
     if (updated === null) return
-    selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
+    // 选中状态统一由 executePlaybackChange 内的 refreshSongs() 清空
     showNotification(
       updated > 0
         ? getNestedMessage(

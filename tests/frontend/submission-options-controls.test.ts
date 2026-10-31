@@ -180,8 +180,6 @@ test('播放状态操作先打开二次确认，确认执行期间不会重复�
       loading: shared.loading,
       playbackConfirmSongIds: ref([1]),
       playbackConfirmMode: ref('played'),
-      selectedSongs: ref([1]),
-      songs: ref([{ id: 1 }]),
       showPlaybackConfirm: shared.showPlaybackConfirm,
       executePlaybackChange: async () => {
         calls += 1
