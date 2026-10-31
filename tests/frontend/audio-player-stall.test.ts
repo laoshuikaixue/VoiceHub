@@ -30,13 +30,13 @@ function fixture(overrides = {}) {
   const state = { switches: 0 }
   const song = ref({ id: 1, musicPlatform: 'netease' })
   const context = load([
-    'PLAYBACK_STALL_TIMEOUT_MS', 'stallTimer', 'clearStallWatch', 'armStallWatch', 'checkPlaybackStall',
+    'isSourceRecoveryCurrent', 'PLAYBACK_STALL_TIMEOUT_MS', 'stallTimer', 'clearStallWatch', 'armStallWatch', 'checkPlaybackStall',
     'handleNetworkStall', 'handleCanPlay', 'handleLoadStart'
   ], {
     setTimeout: (callback, ms) => { assert.equal(ms, 8000); timers.set(++nextTimer, callback); return nextTimer },
     clearTimeout: (id) => timers.delete(id),
     audioPlayer: ref({ readyState: 1, paused: false }),
-    activeSong: song, getScrobblePlaybackIdentity: (value) => value?.id,
+    activeSong: song, getPreviewSongKey: (value) => value?.id, sourceRecoveryEpoch: 0,
     isFallbackHandling: ref(false), isClosing: ref(false), isClosed: ref(false),
     control: { isPlaying: ref(true), isLoadingTrack: ref(true), onCanPlay() {}, onLoadStart() {} },
     navigator: { onLine: true },

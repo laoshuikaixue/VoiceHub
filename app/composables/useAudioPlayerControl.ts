@@ -3,7 +3,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useLyrics } from '~/composables/useLyrics'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
-import type { MusicTrackMeta } from '~/utils/musicUrl'
+import type { MusicUrlResolveOptions } from '~/utils/musicUrl'
 
 /**
  * 音量持久化：仅记录最后一次非 0 音量，静音属于瞬时状态不落盘，
@@ -299,9 +299,10 @@ export const useAudioPlayerControl = () => {
             songUrlOrSong.sourceInfo?.type === 'voice' ||
             (songUrlOrSong.sourceInfo?.source === 'netease-backup' &&
               songUrlOrSong.sourceInfo?.type === 'voice')
-          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+          const options: MusicUrlResolveOptions = isPodcast
             ? { unblock: false }
             : {}
+          options.preferPlatformResolve = true
           options.musicInfo = {
             name: songUrlOrSong.title,
             artist: songUrlOrSong.artist,
@@ -491,11 +492,7 @@ export const useAudioPlayerControl = () => {
     platform: string,
     musicId: string,
     playUrl: string | null = null,
-    options?: {
-      unblock?: boolean
-      quality?: number
-      musicInfo?: MusicTrackMeta
-    }
+    options?: MusicUrlResolveOptions
   ): Promise<string | null> => {
     try {
       const { getMusicUrl: coreGetMusicUrl } = await import('~/utils/musicUrl')

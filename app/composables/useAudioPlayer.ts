@@ -188,6 +188,8 @@ export function useAudioPlayer() {
             preferPlatformResolve: true,
             musicInfo: { name: song.title, artist: song.artist, album: song.album || undefined, rawItem: song }
           })
+        } else if (!url) {
+          url = song.playUrl?.trim() || null
         }
       } catch (error) {
         resolutionError = error
