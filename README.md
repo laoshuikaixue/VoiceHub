@@ -1287,10 +1287,12 @@ VoiceHub/
 │   │   │   │   ├── playlist-songs.post.ts # 获取QQ音乐歌单内歌曲
 │   │   │   │   ├── playlists.post.ts # 获取用户创建与收藏的歌单
 │   │   │   │   └── resolve-mid.get.ts # QQ数字songId解析为字母songmid
-│   │   │   └── search/              # 搜索API
-│   │   │       ├── mg.get.ts        # 咪咕音乐搜索
-│   │   │       ├── tx.get.ts        # 腾讯音乐搜索
-│   │   │       └── wy.get.ts        # 网易云音乐搜索
+│   │   │   ├── search/              # 搜索API
+│   │   │   │   ├── mg.get.ts        # 咪咕音乐搜索
+│   │   │   │   ├── tx.get.ts        # 腾讯音乐搜索
+│   │   │   │   └── wy.get.ts        # 网易云音乐搜索
+│   │   │   └── wy/                   # 网易云音源代理API
+│   │   │       └── url.post.ts      # ikun 网易云备用源服务端代理取链
 │   │   ├── platform-config/  # 平台管理公开API
 │   │   │   └── index.get.ts      # 获取平台启用与排序配置
 │   │   ├── notifications/  # 通知系统API

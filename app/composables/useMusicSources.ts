@@ -1710,6 +1710,8 @@ export const useMusicSources = () => {
       }
     } else if (source.id === 'ygking-qq') {
       throw new Error('Ygking QQ 音乐仅支持播放链接获取')
+    } else if (source.id === 'netease-ikun') {
+      throw new Error('ikun 网易云仅支持播放链接获取')
     } else {
       // 网易云备用API
       url = `${source.baseUrl}/song/detail?ids=${ids}`
@@ -1925,8 +1927,9 @@ export const useMusicSources = () => {
         // 网易云音乐平台（默认）
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
         const gdStudioSource = enabledSources.find((source) => source.id === 'netease-gdstudio')
+        const ikunSource = enabledSources.find((source) => source.id === 'netease-ikun')
 
-        const orderedSources = [neteaseSource, gdStudioSource]
+        const orderedSources = [neteaseSource, gdStudioSource, ikunSource]
 
         for (const source of orderedSources) {
           if (source) {
@@ -1984,6 +1987,17 @@ export const useMusicSources = () => {
               timeout: source.timeout || 10000
             })
             if (response?.url) {
+              url = String(response.url)
+            }
+          } else if (source.id === 'netease-ikun') {
+            // 上游未开放浏览器跨域，统一经后端代理取链
+            const level = mapQualityToLevel(Number.isNaN(requestedQuality) ? 4 : requestedQuality)
+            const response: any = await $fetch(source.baseUrl, {
+              method: 'POST',
+              body: { musicId: idParam, level },
+              timeout: source.timeout || 10000
+            })
+            if (response?.success && response.url) {
               url = String(response.url)
             }
           } else if (source.id.startsWith('meting-')) {

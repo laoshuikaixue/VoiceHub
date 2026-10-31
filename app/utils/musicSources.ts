@@ -163,6 +163,14 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       timeout: 10000
     },
     {
+      id: 'netease-ikun',
+      name: 'ikun 网易云备用源',
+      baseUrl: '/api/native-api/wy/url',
+      priority: 6,
+      enabled: true,
+      timeout: 10000
+    },
+    {
       id: 'meting-1',
       name: 'Meting API 网易云备用源1',
       baseUrl: 'https://api.qijieya.cn/meting/',
