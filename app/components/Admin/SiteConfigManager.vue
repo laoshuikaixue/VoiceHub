@@ -253,8 +253,17 @@
               :placeholder="locale.customCssPlaceholder"
               :class="[inputClass, 'font-mono text-xs resize-y']"
               :disabled="!formData.customCssEnabled"
+              :maxlength="CUSTOM_CSS_MAX_LENGTH"
             />
-            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.customCssHint }}</p>
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.customCssHint }}</p>
+              <p
+                class="text-[10px] font-mono shrink-0 whitespace-nowrap mt-1"
+                :class="customCssLength >= CUSTOM_CSS_MAX_LENGTH ? 'text-warning' : 'text-text-tertiary'"
+              >
+                {{ customCssLength }} / {{ CUSTOM_CSS_MAX_LENGTH }}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -1123,6 +1132,7 @@ import {
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
+import { CUSTOM_CSS_MAX_LENGTH, trimCustomCss } from '~/utils/custom-css-policy'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -1131,6 +1141,8 @@ const { siteConfig: locale, theme: themeLocale } = useLocale()
 const { isSuperAdmin } = usePermissions()
 const { localize: localizeServerError } = useServerErrors()
 const themeOptions = computed(() => THEMES.map((value) => ({ value, label: themeLocale.value?.[value] || value })))
+
+const customCssLength = computed(() => trimCustomCss(formData.value.customCss).length)
 
 const setDefaultTheme = (theme) => {
   formData.value.defaultTheme = theme
@@ -1694,8 +1706,11 @@ const saveConfig = async () => {
     const schoolLogoHomeLightUrl = schoolLogoHomeDarkUrl
       ? (formData.value.schoolLogoHomeLightUrl || '').trim()
       : ''
+    // 与服务端口径一致：仅在启用时提交，且提交 trim 后的值，避免刷新前显示与库不一致
+    const customCssDraft = trimCustomCss(formData.value.customCss)
     const configToSave = {
       ...formData.value,
+      ...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),
       legalConsentDocuments: JSON.stringify(formData.value.legalConsentDocuments),
       esaCaptchaScenes: JSON.stringify(formData.value.esaCaptchaScenes),
       schoolLogoHomeUrl: joinThemeLogoUrl(
@@ -1737,6 +1752,8 @@ const saveConfig = async () => {
       : stripSuperAdminOnlySettingFields(configToSave)
     delete requestPayload.schoolLogoHomeDarkUrl
     delete requestPayload.schoolLogoHomeLightUrl
+    // 关闭开关时不提交该键：库里遗留的超限值不应让整表单被接口拒绝
+    if (!formData.value.customCssEnabled) delete requestPayload.customCss
 
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
@@ -1770,6 +1787,7 @@ const saveConfig = async () => {
       ...formData.value,
       siteTitle: configToSave.siteTitle,
       siteLogoUrl: configToSave.siteLogoUrl,
+      ...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),
       legalConsentUpdatedDate:
         savedSettings && typeof savedSettings.legalConsentUpdatedDate === 'string'
           ? savedSettings.legalConsentUpdatedDate

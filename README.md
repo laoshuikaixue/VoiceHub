@@ -1036,6 +1036,7 @@ VoiceHub/
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
 │       ├── password-policy.ts # 统一密码策略
 │       ├── settingsPermissions.ts # 系统设置中仅超级管理员可读写字段清单
+│       ├── custom-css-policy.ts # 自定义 CSS 长度上限、</style> 识别与注入前清洗（前后端共用）
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
 │       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）

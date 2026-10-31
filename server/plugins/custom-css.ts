@@ -1,5 +1,5 @@
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
-import { sanitizeCustomCss } from '~~/server/utils/custom-css'
+import { sanitizeCustomCss } from '~/utils/custom-css-policy'
 
 /**
  * 自定义 CSS 注入
