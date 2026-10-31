@@ -84,7 +84,6 @@ export const useLyricSettings = () => {
 
   // 全屏播放器元素开关
   const fullscreenPlayerElements = useState('fullscreen-elements', () => ({
-    copyLyric: true,
     lyricOffset: true,
     lyricSettings: true
   }))
