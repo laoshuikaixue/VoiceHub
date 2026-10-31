@@ -3,7 +3,7 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.pageTitle }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.pageTitle }}</h2>
         <p class="text-xs text-text-tertiary mt-1 font-medium">
           {{ locale.pageDescription }}
         </p>
@@ -18,7 +18,7 @@
         </button>
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveConfig"
         >
           <template v-if="saving">
@@ -40,7 +40,7 @@
       <!-- 基础信息 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+          class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4"
         >
           <Globe :size="16" class="text-primary" /> {{ locale.basicInfo }}
         </h3>
@@ -78,7 +78,7 @@
             >
               <div>
                 <p class="text-xs font-bold text-text-primary">{{ locale.showBeianIcon }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.showBeianIconDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.showBeianIconDesc }}</p>
               </div>
               <input
                 v-model="formData.showBeianIcon"
@@ -102,7 +102,7 @@
             >
               <div>
                 <p class="text-xs font-bold text-text-primary">{{ locale.statisticsCodeEnabled }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.statisticsCodeEnabledDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.statisticsCodeEnabledDesc }}</p>
               </div>
               <input
                 v-model="formData.statisticsCodeEnabled"
@@ -120,7 +120,7 @@
               :class="[inputClass, 'font-mono text-xs resize-y']"
               :disabled="!formData.statisticsCodeEnabled"
             />
-            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.statisticsCodeHint }}</p>
+            <p class="text-xs text-text-tertiary mt-1 leading-relaxed">{{ locale.statisticsCodeHint }}</p>
           </div>
         </div>
       </section>
@@ -128,7 +128,7 @@
       <!-- 视觉识别 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+          class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4"
         >
           <ImageIcon :size="16" class="text-info" /> {{ locale.visualIdentity }}
         </h3>
@@ -175,11 +175,11 @@
 
       <!-- 主题设置 -->
       <section v-if="isSuperAdmin" :class="cardClass">
-        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4">
+        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4">
           <Palette :size="16" class="text-primary" /> {{ locale.themeSettings }}
         </h3>
         <div class="space-y-3">
-          <p class="text-[10px] text-text-tertiary">{{ locale.themeSettingsDesc }}</p>
+          <p class="text-xs text-text-tertiary">{{ locale.themeSettingsDesc }}</p>
           <div
             v-for="option in themeOptions"
             :key="option.value"
@@ -187,7 +187,7 @@
           >
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs font-bold text-text-primary">{{ option.label }}</p>
-              <p v-if="option.value === 'System'" class="mt-0.5 text-[10px] text-text-tertiary">
+              <p v-if="option.value === 'System'" class="mt-0.5 text-xs text-text-tertiary">
                 {{ locale.systemThemeHint }}
               </p>
             </div>
@@ -218,14 +218,53 @@
               />
             </button>
           </div>
-          <p class="text-[10px] text-text-tertiary">{{ locale.defaultThemeDesc }}</p>
+          <p class="text-xs text-text-tertiary">{{ locale.defaultThemeDesc }}</p>
+
+          <div class="mt-4 rounded-xl border border-border-secondary bg-bg-primary-50 p-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-text-primary">{{ locale.accentColor }}</p>
+                <p class="mt-0.5 text-xs text-text-tertiary">{{ locale.accentColorDesc }}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  :value="accentColorPreview"
+                  :aria-label="locale.accentColor"
+                  class="h-8 w-10 cursor-pointer rounded-lg border border-border-secondary bg-transparent p-0.5"
+                  type="color"
+                  @input="formData.accentColor = $event.target.value"
+                >
+                <button
+                  type="button"
+                  class="rounded-lg border border-border-secondary px-2.5 py-1.5 text-xs font-bold text-text-tertiary transition-colors hover:border-border-tertiary hover:text-text-primary"
+                  @click="resetAccentColor"
+                >
+                  {{ locale.accentColorReset }}
+                </button>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <input
+                v-model="formData.accentColor"
+                :aria-invalid="accentColorValid ? 'false' : 'true'"
+                :class="[inputClass, accentColorValid ? '' : 'border-error']"
+                maxlength="7"
+                placeholder="#3b82f6"
+                type="text"
+              >
+            </div>
+            <p v-if="!accentColorValid" class="mt-2 text-xs text-error">
+              {{ locale.accentColorInvalid }}
+            </p>
+            <p v-else class="mt-2 text-xs text-text-tertiary">{{ locale.accentColorHint }}</p>
+          </div>
         </div>
       </section>
 
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+          class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4"
         >
           <Settings2 :size="16" class="text-warning" /> {{ locale.submissionLogic }}
         </h3>
@@ -235,7 +274,7 @@
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.enableCollaborative }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCollaborativeDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5">{{ locale.enableCollaborativeDesc }}</p>
             </div>
             <input
               v-model="formData.enableCollaborativeSubmission"
@@ -248,7 +287,7 @@
             <div class="flex items-center justify-between p-3">
               <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.enableRemarks }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableRemarksDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.enableRemarksDesc }}</p>
               </div>
               <input
                 v-model="formData.enableSubmissionRemarks"
@@ -266,7 +305,7 @@
               >
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.submissionNoteRequiresApproval }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.submissionNoteRequiresApprovalDesc }}</p>
+                  <p class="text-xs text-text-tertiary mt-0.5">{{ locale.submissionNoteRequiresApprovalDesc }}</p>
                 </div>
                 <input
                   v-model="formData.submissionNoteRequiresApproval"
@@ -282,7 +321,7 @@
             <div class="flex items-center justify-between p-3">
               <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeRequests }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
               </div>
               <input
                 v-model="formData.enableCardCodeRequests"
@@ -300,7 +339,7 @@
               >
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.requireCardCodeForRequests }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
+                  <p class="text-xs text-text-tertiary mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
                 </div>
                 <input
                   v-model="formData.requireCardCodeForRequests"
@@ -316,7 +355,7 @@
               >
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeLimitBypass }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-0.5">
+                  <p class="text-xs text-text-tertiary mt-0.5">
                     {{ locale.enableCardCodeLimitBypassDesc }}
                   </p>
                 </div>
@@ -335,7 +374,7 @@
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.enableReplay }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableReplayDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5">{{ locale.enableReplayDesc }}</p>
             </div>
             <input
               v-model="formData.enableReplayRequests"
@@ -350,7 +389,7 @@
             >
               <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.enableLimit }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableLimitDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.enableLimitDesc }}</p>
               </div>
               <input
                 v-model="formData.enableSubmissionLimit"
@@ -366,7 +405,7 @@
               <div class="grid grid-cols-3 gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
                 <button
                   :class="[
-                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    'py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                     activeLimitTab === 'daily'
                       ? 'bg-bg-tertiary text-primary shadow-sm'
                       : 'text-text-disabled hover:text-text-tertiary'
@@ -378,7 +417,7 @@
                 </button>
                 <button
                   :class="[
-                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    'py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                     activeLimitTab === 'weekly'
                       ? 'bg-bg-tertiary text-primary shadow-sm'
                       : 'text-text-disabled hover:text-text-tertiary'
@@ -390,7 +429,7 @@
                 </button>
                 <button
                   :class="[
-                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    'py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                     activeLimitTab === 'monthly'
                       ? 'bg-bg-tertiary text-primary shadow-sm'
                       : 'text-text-disabled hover:text-text-tertiary'
@@ -413,7 +452,7 @@
                     :class="[inputClass, 'disabled:cursor-not-allowed disabled:opacity-50']"
                   />
                   <span
-                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary uppercase"
                     >{{ locale.limitUnit }}</span
                   >
                 </div>
@@ -425,7 +464,7 @@
             <div class="flex items-center justify-between p-3">
               <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.enableGlobalLimit }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">
+                <p class="text-xs text-text-tertiary mt-0.5">
                   {{ locale.enableGlobalLimitDesc }}
                 </p>
               </div>
@@ -451,12 +490,12 @@
                     :class="[inputClass, 'placeholder:text-text-disabled']"
                   />
                   <span
-                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary uppercase"
                     >{{ locale.globalLimitUnit }}</span
                   >
                 </div>
               </div>
-              <p class="text-[10px] text-text-tertiary leading-relaxed">
+              <p class="text-xs text-text-tertiary leading-relaxed">
                 {{ locale.globalLimitHint }}
               </p>
             </div>
@@ -467,13 +506,13 @@
       <!-- 排期可见范围设置 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+          class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4"
         >
           <CalendarRange :size="16" class="text-warning" /> {{ locale.scheduleVisibility }}
         </h3>
         <div class="space-y-4">
           <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
-            <p class="text-[10px] text-text-tertiary leading-relaxed">
+            <p class="text-xs text-text-tertiary leading-relaxed">
               {{ locale.scheduleVisibilityDesc }}
             </p>
 
@@ -505,10 +544,10 @@
                     max="730"
                     :class="inputClass"
                   />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase">{{ locale.daysUnit }}</span>
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary uppercase">{{ locale.daysUnit }}</span>
                 </div>
               </div>
-              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysBeforeEnabledDesc }}</p>
+              <p class="text-xs text-text-tertiary px-1">{{ locale.daysBeforeEnabledDesc }}</p>
 
               <div class="flex items-center gap-3 p-3 bg-bg-primary border border-border-secondary rounded-xl">
                 <label class="flex items-center gap-2 shrink-0 cursor-pointer">
@@ -537,10 +576,10 @@
                     max="730"
                     :class="inputClass"
                   />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase">{{ locale.daysUnit }}</span>
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary uppercase">{{ locale.daysUnit }}</span>
                 </div>
               </div>
-              <p class="text-[10px] text-text-tertiary px-1">{{ locale.daysAfterEnabledDesc }}</p>
+              <p class="text-xs text-text-tertiary px-1">{{ locale.daysAfterEnabledDesc }}</p>
             </div>
           </div>
         </div>
@@ -549,7 +588,7 @@
       <!-- 安全与隐私设置 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+          class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4"
         >
           <Shield :size="16" class="text-error" /> {{ locale.securityPrivacy }}
         </h3>
@@ -558,7 +597,7 @@
             <div class="flex items-center justify-between p-3">
               <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.captchaEnabled }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.captchaEnabledDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.captchaEnabledDesc }}</p>
               </div>
               <input
                 id="captcha-enabled"
@@ -621,7 +660,7 @@
                     :placeholder="locale.captchaMaxFailuresPlaceholder"
                     class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
                   />
-                  <p class="text-[10px] text-text-tertiary mt-1">
+                  <p class="text-xs text-text-tertiary mt-1">
                     {{ locale.captchaMaxFailuresDesc }}
                   </p>
                 </div>
@@ -648,7 +687,7 @@
                       :placeholder="locale.turnstileSecretKeyPlaceholder"
                       class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:cursor-not-allowed disabled:opacity-50"
                     />
-                    <p class="text-[10px] text-text-tertiary mt-1">
+                    <p class="text-xs text-text-tertiary mt-1">
                       {{ locale.turnstileSecretKeyDesc }}
                     </p>
                   </div>
@@ -680,8 +719,8 @@
                     </div>
                     <div class="space-y-2">
                       <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
-                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaHost }}</span>
-                        <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.esaCaptchaSceneId }}</span>
+                        <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.esaCaptchaHost }}</span>
+                        <span class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.esaCaptchaSceneId }}</span>
                         <span aria-hidden="true" />
                       </div>
                       <div
@@ -714,11 +753,11 @@
                       </div>
                     </div>
                     <!-- 域名路径供管理员粘到 ESA 控制台「需验签的接口」，不需协议与域名 -->
-                    <p class="text-[10px] text-text-tertiary leading-relaxed mt-2">
+                    <p class="text-xs text-text-tertiary leading-relaxed mt-2">
                       {{ locale.esaCaptchaScenesDesc }}
                     </p>
-                    <code class="block mt-1 text-[10px] text-text-tertiary">{{ ESA_CAPTCHA_VERIFY_PATH }}</code>
-                    <p v-if="esaCaptchaStaleDetected" class="text-[10px] text-warning leading-relaxed mt-2">
+                    <code class="block mt-1 text-xs text-text-tertiary">{{ ESA_CAPTCHA_VERIFY_PATH }}</code>
+                    <p v-if="esaCaptchaStaleDetected" class="text-xs text-warning leading-relaxed mt-2">
                       {{ locale.esaCaptchaStaleNotice }}
                     </p>
                   </div>
@@ -747,22 +786,22 @@
                       </label>
                     </div>
                   </div>
-                  <p class="text-[10px] text-text-tertiary leading-relaxed">
+                  <p class="text-xs text-text-tertiary leading-relaxed">
                     {{ locale.esaCaptchaDesc }}
                   </p>
 
                   <!-- ESA 连通性测试：走一次真实人机验证，确认规则、公共接口与凭证签发是否可用 -->
                   <div class="pt-1">
                     <label class="block text-xs font-bold text-text-tertiary">{{ locale.esaCaptchaTest }}</label>
-                    <p class="text-[10px] text-text-tertiary leading-relaxed mt-1">{{ locale.esaCaptchaTestDesc }}</p>
-                    <p v-if="esaTestUnsaved" class="text-[10px] text-warning leading-relaxed mt-1">{{ locale.esaCaptchaTestUnsaved }}</p>
+                    <p class="text-xs text-text-tertiary leading-relaxed mt-1">{{ locale.esaCaptchaTestDesc }}</p>
+                    <p v-if="esaTestUnsaved" class="text-xs text-warning leading-relaxed mt-1">{{ locale.esaCaptchaTestUnsaved }}</p>
 
                     <div
                       v-if="!esaTestReady"
                       class="mt-2 flex items-start gap-2 rounded-lg border border-border-secondary bg-bg-secondary px-3 py-2"
                     >
                       <AlertCircle :size="14" class="mt-0.5 shrink-0 text-text-tertiary" />
-                      <span class="text-[10px] text-text-tertiary leading-relaxed">{{ locale.esaCaptchaTestNotReady }}</span>
+                      <span class="text-xs text-text-tertiary leading-relaxed">{{ locale.esaCaptchaTestNotReady }}</span>
                     </div>
 
                     <template v-else>
@@ -794,7 +833,7 @@
                       <AppSpinner v-if="esaTestState === 'waiting' || esaTestState === 'testing'" :size="14" class="mt-0.5 shrink-0" />
                       <CircleCheck v-else-if="esaTestState === 'success'" :size="14" class="mt-0.5 shrink-0" />
                       <AlertCircle v-else :size="14" class="mt-0.5 shrink-0" />
-                      <span class="text-[10px] leading-relaxed">{{ esaTestDetail }}</span>
+                      <span class="text-xs leading-relaxed">{{ esaTestDetail }}</span>
                     </div>
                   </div>
                 </div>
@@ -805,7 +844,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.forcePasswordChangeOnFirstLogin }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.forcePasswordChangeOnFirstLoginDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.forcePasswordChangeOnFirstLoginDesc }}</p>
             </div>
             <input
               id="force-password-change-first-login"
@@ -820,7 +859,7 @@
             <div class="flex items-center justify-between p-3">
               <div class="pr-4">
                 <p class="text-xs font-bold text-text-primary">{{ locale.allowRegister }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegisterDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegisterDesc }}</p>
               </div>
               <input
                 id="allow-register"
@@ -840,7 +879,7 @@
               >
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresApproval }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresApprovalDesc }}</p>
+                  <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresApprovalDesc }}</p>
                 </div>
                 <input
                   id="register-requires-approval"
@@ -854,8 +893,8 @@
               <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.registerEmailRequired }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerEmailRequiredDesc }}</p>
-                  <p v-if="!formData.smtpEnabled" class="text-[10px] text-warning mt-1 leading-relaxed">{{ locale.registerEmailSmtpRequired }}</p>
+                  <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerEmailRequiredDesc }}</p>
+                  <p v-if="!formData.smtpEnabled" class="text-xs text-warning mt-1 leading-relaxed">{{ locale.registerEmailSmtpRequired }}</p>
                 </div>
                 <input
                   id="register-email-required"
@@ -869,7 +908,7 @@
               <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
                 <div class="pr-4">
                   <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresGradeClass }}</p>
-                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresGradeClassDesc }}</p>
+                  <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresGradeClassDesc }}</p>
                 </div>
                 <input
                   id="register-requires-grade-class"
@@ -885,7 +924,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.showBlacklistKeywords }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.showBlacklistKeywordsDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.showBlacklistKeywordsDesc }}</p>
             </div>
             <input
               id="show-keywords"
@@ -898,7 +937,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.hideStudentInfo }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.hideStudentInfoDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.hideStudentInfoDesc }}</p>
             </div>
             <input
               id="hide-students"
@@ -911,7 +950,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.allowAnonymousSubmission }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowAnonymousSubmissionDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowAnonymousSubmissionDesc }}</p>
             </div>
             <input
               id="allow-anonymous-submission"
@@ -924,7 +963,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.telemetryEnabled }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">
                 {{ locale.telemetryEnabledDesc }} <strong class="text-text-tertiary">{{ locale.telemetryPrivacy }}</strong>
               </p>
             </div>
@@ -940,7 +979,7 @@
             class="p-4 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-primary shrink-0 mt-0.5" :size="14" />
-            <p class="text-[10px] text-text-tertiary leading-normal">
+            <p class="text-xs text-text-tertiary leading-normal">
               {{ locale.configWarning }}
             </p>
           </div>
@@ -953,14 +992,14 @@
       >
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
           <h3
-            class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
+            class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2"
           >
             <FileText :size="16" class="text-success" /> {{ locale.submissionGuidelines }}
           </h3>
           <div class="flex gap-1 bg-bg-primary rounded-lg p-1">
             <button
               :class="[
-                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                'px-3 py-1.5 text-xs font-bold rounded-md transition-all uppercase tracking-wider',
                 editMode === 'edit'
                   ? 'bg-primary-hover text-text-primary shadow-sm'
                   : 'text-text-tertiary hover:text-text-secondary'
@@ -971,7 +1010,7 @@
             </button>
             <button
               :class="[
-                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                'px-3 py-1.5 text-xs font-bold rounded-md transition-all uppercase tracking-wider',
                 editMode === 'preview'
                   ? 'bg-primary-hover text-text-primary shadow-sm'
                   : 'text-text-tertiary hover:text-text-secondary'
@@ -1000,8 +1039,8 @@
       <section class="lg:col-span-2 legal-consent-panel">
         <div class="legal-consent-header">
           <div class="legal-consent-heading">
-            <h3 class="text-sm font-black text-text-primary flex items-center gap-2"><FileText :size="16" class="text-primary" /> {{ locale.legalConsentTitle }}</h3>
-            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.legalConsentDesc }}</p>
+            <h3 class="text-sm font-bold text-text-primary flex items-center gap-2"><FileText :size="16" class="text-primary" /> {{ locale.legalConsentTitle }}</h3>
+            <p class="text-xs text-text-tertiary mt-1 leading-relaxed">{{ locale.legalConsentDesc }}</p>
           </div>
           <label class="legal-enable-control"><span :class="{ 'is-enabled': formData.legalConsentEnabled }">{{ formData.legalConsentEnabled ? (locale.legalConsentEnabledLabel || '已启用') : (locale.legalConsentDisabledLabel || '未启用') }}</span><span class="legal-toggle"><input v-model="formData.legalConsentEnabled" type="checkbox"><i /></span></label>
         </div>
@@ -1027,12 +1066,12 @@
             <p class="legal-setting-hint">{{ locale.legalConsentUpdatedDateHint }}</p>
           </div>
         </div>
-        <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-[10px] text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
+        <div class="legal-documents-toolbar"><div><h4 class="text-xs font-bold text-text-primary">{{ locale.legalConsentDocuments }}</h4><p class="text-xs text-text-tertiary mt-1">{{ locale.legalConsentDocumentsDesc }}</p></div><button type="button" class="legal-add-button" @click="formData.legalConsentDocuments.push({ name: '', slug: '', content: '' })"><FileText :size="14" /> {{ locale.legalConsentAdd }}</button></div>
         <div v-for="(doc, index) in formData.legalConsentDocuments" :key="index" class="legal-document-card">
           <div class="legal-document-header"><div class="legal-document-title"><span class="legal-document-icon"><FileText :size="17" /></span><div><strong>{{ doc.name || locale.legalConsentUntitled }}</strong><span>/legal/{{ doc.slug || locale.legalConsentSlugPlaceholder }}</span></div></div><button type="button" class="legal-delete-button" :aria-label="locale.delete" @click="removeLegalDocument(index)"><Trash2 :size="16" /></button></div>
           <div class="legal-document-fields"><div><label :class="labelClass">{{ locale.legalConsentName }}</label><input v-model="doc.name" :placeholder="locale.legalConsentNamePlaceholder" :class="inputClass"></div><div><label :class="labelClass">{{ locale.legalConsentSlug }}</label><div class="legal-slug-input"><span>/legal/</span><input v-model="doc.slug" :placeholder="locale.legalConsentSlugPlaceholder" :class="[inputClass, 'rounded-l-none']"></div></div></div>
           <div>
-            <div class="flex items-center justify-between mb-2"><label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">{{ locale.legalConsentContent }}</label><div class="flex gap-1 bg-bg-primary rounded-lg p-1"><button type="button" :class="['px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider', (legalDocEditModes[index] || 'edit') === 'edit' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'edit'">{{ locale.guidelinesEdit }}</button><button type="button" :class="['px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider', legalDocEditModes[index] === 'preview' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'preview'">{{ locale.guidelinesPreview }}</button></div></div>
+            <div class="flex items-center justify-between mb-2"><label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">{{ locale.legalConsentContent }}</label><div class="flex gap-1 bg-bg-primary rounded-lg p-1"><button type="button" :class="['px-3 py-1.5 text-xs font-bold rounded-md transition-all uppercase tracking-wider', (legalDocEditModes[index] || 'edit') === 'edit' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'edit'">{{ locale.guidelinesEdit }}</button><button type="button" :class="['px-3 py-1.5 text-xs font-bold rounded-md transition-all uppercase tracking-wider', legalDocEditModes[index] === 'preview' ? 'bg-primary-hover text-text-primary shadow-sm' : 'text-text-tertiary hover:text-text-secondary']" @click="legalDocEditModes[index] = 'preview'">{{ locale.guidelinesPreview }}</button></div></div>
             <textarea v-if="(legalDocEditModes[index] || 'edit') === 'edit'" v-model="doc.content" :placeholder="locale.legalConsentContentPlaceholder" :rows="7" :class="[inputClass, 'font-mono text-xs leading-relaxed resize-y']" />
             <div v-else class="guidelines-preview markdown-body w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-secondary leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto" v-html="renderedLegalDoc(doc)" />
           </div>
@@ -1046,7 +1085,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   Globe,
   ImageIcon,
@@ -1083,7 +1122,7 @@ import {
   resolveEsaCaptchaSceneId
 } from '~/utils/esaCaptcha'
 import { usePermissions } from '~/composables/usePermissions'
-import { THEMES } from '~/composables/useTheme'
+import { THEMES, applyAccentColor, normalizeHexColor } from '~/composables/useTheme'
 import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
@@ -1167,7 +1206,7 @@ const renderedPreview = computed(() => renderMarkdown(formData.value.submissionG
 // 样式类常量
 const inputClass =
   'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
-const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
+const labelClass = 'text-xs font-bold text-text-disabled uppercase tracking-wider px-1 block mb-2'
 const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 
@@ -1454,10 +1493,31 @@ const formData = ref({
   customOAuthEmailField: '',
   customOAuthAvatarField: '',
   defaultTheme: 'System',
-  enabledThemes: [...THEMES]
+  enabledThemes: [...THEMES],
+  accentColor: ''
 })
 
+const accentColorValid = computed(() => !formData.value.accentColor || !!normalizeHexColor(formData.value.accentColor))
+const accentColorPreview = computed(() => normalizeHexColor(formData.value.accentColor) || '#3b82f6')
+const resetAccentColor = () => {
+  formData.value.accentColor = ''
+  applyAccentColor(null)
+}
+watch(
+  () => formData.value.accentColor,
+  (value) => {
+    const normalized = normalizeHexColor(value)
+    if (!value) applyAccentColor(null)
+    else if (normalized) applyAccentColor(normalized)
+  }
+)
+
 const originalData = ref({})
+
+// 离开页面时撤销未保存的强调色预览
+onBeforeUnmount(() => {
+  applyAccentColor(originalData.value.accentColor || null)
+})
 
 // 当前限额类型和值的快捷访问
 const activeLimitTab = ref('daily')
@@ -1622,7 +1682,8 @@ const loadConfig = async () => {
       customOAuthEmailField: data.customOAuthEmailField || '',
       customOAuthAvatarField: data.customOAuthAvatarField || '',
       defaultTheme: data.defaultTheme || 'System',
-      enabledThemes: parseJsonArray(data.enabledThemes, [...THEMES])
+      enabledThemes: parseJsonArray(data.enabledThemes, [...THEMES]),
+      accentColor: normalizeHexColor(data.accentColor) || ''
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
@@ -1638,6 +1699,10 @@ const loadConfig = async () => {
 const saveConfig = async () => {
   try {
     if (isSuperAdmin.value) {
+      if (!accentColorValid.value) {
+        showNotification(locale.value?.accentColorInvalid || '请输入合法的 HEX 颜色', 'error')
+        return
+      }
       if (!formData.value.enabledThemes.includes(formData.value.defaultTheme)) {
         showNotification(locale.value?.defaultThemeMustBeEnabled || '默认主题必须处于启用状态', 'error')
         return
@@ -1685,7 +1750,8 @@ const saveConfig = async () => {
       ...(isSuperAdmin.value
         ? {
             defaultTheme: formData.value.defaultTheme,
-            enabledThemes: JSON.stringify(formData.value.enabledThemes)
+            enabledThemes: JSON.stringify(formData.value.enabledThemes),
+            accentColor: normalizeHexColor(formData.value.accentColor)
           }
         : {})
     }

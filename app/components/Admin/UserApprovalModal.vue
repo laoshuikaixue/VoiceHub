@@ -1,35 +1,34 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal-fade">
-      <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" @click.self="closeModal">
-        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-border-secondary shadow-2xl">
-          <!-- 头部 -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-border-secondary">
-            <h3 class="text-lg font-black text-text-primary flex items-center gap-2">
-              <ClipboardCheck :size="18" />
-              {{ locale.approval.title }}
-            </h3>
-            <button type="button" class="flex items-center justify-center p-1.5 text-text-tertiary hover:text-text-primary transition-colors" @click="closeModal">
-              <X :size="18" />
-            </button>
-          </div>
+  <AppModal
+    :show="show"
+    :title="locale.approval.title"
+    size="md"
+    @close="closeModal"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary"
+      >
+        <ClipboardCheck :size="18" />
+      </span>
+    </template>
 
-          <div class="px-6 py-5 space-y-4">
+
             <!-- 注册基本信息 -->
             <div class="grid grid-cols-2 gap-3">
               <div class="bg-bg-secondary-40 rounded-xl px-4 py-3">
-                <p class="text-[11px] font-black uppercase tracking-widest text-text-tertiary">{{ locale.approval.username }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-text-tertiary">{{ locale.approval.username }}</p>
                 <p class="text-sm font-bold text-text-primary mt-1 break-all">@{{ user?.username || '-' }}</p>
               </div>
               <div class="bg-bg-secondary-40 rounded-xl px-4 py-3">
-                <p class="text-[11px] font-black uppercase tracking-widest text-text-tertiary">{{ locale.approval.registeredAt }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-text-tertiary">{{ locale.approval.registeredAt }}</p>
                 <p class="text-sm font-bold text-text-primary mt-1">{{ formatDate(user?.createdAt) }}</p>
               </div>
             </div>
 
             <!-- 注册备注（只读展示） -->
             <div class="bg-bg-secondary-40 rounded-xl px-4 py-3">
-              <p class="text-[11px] font-black uppercase tracking-widest text-text-tertiary">{{ locale.approval.remark }}</p>
+              <p class="text-xs font-bold uppercase tracking-wider text-text-tertiary">{{ locale.approval.remark }}</p>
               <p class="text-sm font-bold text-text-primary mt-1 whitespace-pre-wrap break-all">{{ user?.remark || locale.approval.emptyRemark }}</p>
             </div>
 
@@ -83,10 +82,10 @@
             </div>
 
             <div v-if="error" class="text-xs text-error font-bold">{{ error }}</div>
-          </div>
 
-          <!-- 底部操作 -->
-          <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-secondary">
+    <template #footer>
+      <div class="flex items-center justify-end gap-2">
+
             <button
               type="button"
               :disabled="loading"
@@ -113,11 +112,10 @@
               {{ locale.approval.approve }}
             </button>
           </div>
-        </div>
-      </div>
-    </Transition>
+    </template>
+  </AppModal>
 
-    <ConfirmDialog
+  <ConfirmDialog
       :show="showRejectConfirm"
       :title="locale.approval.title"
       :message="locale.approval.confirmReject"
@@ -125,14 +123,14 @@
       :confirm-text="locale.approval.reject"
       :loading="loading"
       @confirm="confirmReject"
-      @close="showRejectConfirm = false"
-    />
-  </Teleport>
+    @close="showRejectConfirm = false"
+  />
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { ClipboardCheck, RefreshCw, X } from '@lucide/vue'
+import { ClipboardCheck, RefreshCw } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
@@ -279,15 +277,3 @@ const confirmReject = async () => {
   }
 }
 </script>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-</style>

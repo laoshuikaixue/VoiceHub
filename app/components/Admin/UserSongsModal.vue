@@ -1,49 +1,12 @@
 <template>
-  <transition
-    enter-active-class="transition ease-out duration-200"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="transition ease-in duration-150"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
+  <AppModal
+    :show="show"
+    :title="locale.title"
+    flush-body
+    size="2xl"
+    @close="$emit('close')"
   >
-    <div
-      v-if="show"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-      @click="handleOverlayClick"
-    >
-      <!-- 遮罩层 -->
-      <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
-      <!-- 模态框面板 -->
-      <transition
-        enter-active-class="transition ease-out duration-300"
-        enter-from-class="opacity-0 scale-95 translate-y-4"
-        enter-to-class="opacity-100 scale-100 translate-y-0"
-        leave-active-class="transition ease-in duration-200"
-        leave-from-class="opacity-100 scale-100 translate-y-0"
-        leave-to-class="opacity-0 scale-95 translate-y-4"
-      >
-        <div
-          v-if="show"
-          class="relative w-full max-w-4xl max-h-[85vh] flex flex-col bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div
-            class="flex items-center justify-between px-6 py-4 border-b border-border-secondary bg-bg-secondary"
-          >
-            <h3 class="text-lg font-semibold text-text-primary">{{ locale.title }}</h3>
-            <button
-              class="flex items-center justify-center p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
-              @click="$emit('close')"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
-
-          <!-- 主体内容 -->
-          <div class="flex-1 flex flex-col min-h-0 overflow-hidden bg-bg-secondary">
             <!-- 加载状态 -->
             <div v-if="loading" class="flex-1 flex flex-col items-center justify-center">
               <LoadingState :message="locale.loading" spinner-type="circle" />
@@ -172,7 +135,7 @@
                       <h5 class="text-sm font-medium text-text-primary truncate">{{ song.title }}</h5>
                       <span
                         v-if="song.semester"
-                        class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-bg-tertiary text-text-tertiary border border-border-tertiary"
+                        class="px-1.5 py-0.5 rounded text-xs font-medium bg-bg-tertiary text-text-tertiary border border-border-tertiary"
                       >
                         {{ song.semester }}
                       </span>
@@ -219,7 +182,7 @@
                     <!-- Submitter Info (if available) -->
                     <div v-if="song.requester" class="hidden sm:block text-right min-w-[80px]">
                       <div class="text-xs text-text-secondary">{{ song.requester.name }}</div>
-                      <div class="text-[10px] text-text-tertiary">
+                      <div class="text-xs text-text-tertiary">
                         {{ song.requester.grade }}{{ song.requester.class }}
                       </div>
                     </div>
@@ -241,17 +204,14 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </transition>
-    </div>
-  </transition>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useSemesters } from '~/composables/useSemesters'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useLocale } from '~/utils/locale'

@@ -106,7 +106,8 @@ export const SUPER_ADMIN_ONLY_SETTING_FIELDS = [
   'telemetryEnabled',
   // 站点主题
   'defaultTheme',
-  'enabledThemes'
+  'enabledThemes',
+  'accentColor'
 ] as const
 
 export type SuperAdminOnlySettingField = (typeof SUPER_ADMIN_ONLY_SETTING_FIELDS)[number]

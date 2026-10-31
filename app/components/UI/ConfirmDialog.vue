@@ -1,79 +1,72 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
-        @click="handleOverlayClick"
-      >
+  <AppModal
+    :close-on-esc="!loading"
+    :close-on-overlay="closeOnOverlay && !loading"
+    :persistent="loading"
+    :show="show"
+    :title="resolvedTitle"
+    hide-close
+    size="sm"
+    @update:show="handleCancel"
+  >
+    <template #header="{ titleId }">
+      <div class="flex w-full flex-col items-center text-center">
         <div
-          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
-          @click.stop
+          class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border transition-colors"
+          :class="iconClasses"
         >
-          <!-- 内容 -->
-          <div class="flex flex-col items-center p-8 text-center">
-            <!-- 图标 -->
-            <div
-              class="w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 transition-colors border"
-              :class="iconClasses"
-            >
-              <Icon :name="iconName" :size="40" />
-            </div>
-
-            <!-- 文字内容 -->
-            <div class="space-y-2 mb-8">
-              <h4 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h4>
-              <p class="text-sm text-text-tertiary leading-relaxed font-medium whitespace-pre-line break-all">
-                {{ message }}
-              </p>
-              
-              <!-- 可选的输入框 -->
-              <div v-if="showInput" class="pt-4 w-full">
-                <input
-                  v-model="inputValue"
-                  :type="inputType"
-                  :placeholder="inputPlaceholder"
-                  class="w-full bg-bg-tertiary-50 border border-border-tertiary-50 rounded-xl px-4 py-3 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
-                  @keyup.enter="handleConfirm"
-                />
-              </div>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="flex gap-3 w-full">
-              <button
-                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="loading"
-                @click="handleCancel"
-              >
-                {{ resolvedCancelText }}
-              </button>
-              <button
-                class="flex-[2] px-6 py-4 text-text-primary text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="confirmBtnClasses"
-                :disabled="loading || (showInput && !inputValue)"
-                @click="handleConfirm"
-              >
-                <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
-                {{ loading ? locale.processing : resolvedConfirmText }}
-              </button>
-            </div>
-          </div>
+          <Icon :name="iconName" :size="24" />
         </div>
+        <h4 :id="titleId" class="text-lg font-bold tracking-tight text-text-primary">
+          {{ resolvedTitle }}
+        </h4>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+
+    <div class="space-y-4 text-center">
+      <p class="whitespace-pre-line break-words text-sm font-medium leading-relaxed text-text-tertiary">
+        {{ message }}
+      </p>
+
+      <div v-if="showInput">
+        <input
+          v-model="inputValue"
+          :type="inputType"
+          :placeholder="inputPlaceholder"
+          class="w-full rounded-xl border border-border-tertiary-50 bg-bg-tertiary-50 px-4 py-3 text-base text-text-primary transition-colors placeholder:text-text-disabled focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          @keyup.enter="handleConfirm"
+        >
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex w-full gap-3">
+        <button
+          class="flex-1 rounded-xl bg-bg-tertiary px-5 py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-quaternary disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="loading"
+          type="button"
+          @click="handleCancel"
+        >
+          {{ resolvedCancelText }}
+        </button>
+        <button
+          class="flex flex-[2] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-text-primary shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          :class="confirmBtnClasses"
+          :disabled="loading || (showInput && !inputValue)"
+          type="button"
+          @click="handleConfirm"
+        >
+          <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
+          {{ loading ? locale.processing : resolvedConfirmText }}
+        </button>
+      </div>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from './Icon.vue'
 import { useLocale } from '~/utils/locale'
 
@@ -154,12 +147,6 @@ const handleCancel = () => {
   emit('update:show', false)
 }
 
-const handleOverlayClick = () => {
-  if (props.closeOnOverlay && !props.loading) {
-    handleCancel()
-  }
-}
-
 const iconName = computed(() => {
   switch (props.type) {
     case 'danger':
@@ -202,5 +189,3 @@ const confirmBtnClasses = computed(() => {
   }
 })
 </script>
-
-<style scoped></style>

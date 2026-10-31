@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col space-y-8 pb-12 lg:pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
+    class="flex flex-col space-y-8 pb-12 lg:pb-20 panel-enter"
   >
     <div class="flex flex-col space-y-2">
       <h2 class="text-2xl font-bold tracking-tight text-text-primary">{{ locale.title }}</h2>
@@ -38,7 +38,7 @@
           <div class="space-y-5 pr-2">
             <!-- 纸张大小 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.paperSize }}</label
               >
               <CustomSelect
@@ -51,7 +51,7 @@
 
             <!-- 页面方向 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.orientation }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -82,7 +82,7 @@
 
             <!-- 排版样式 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.layoutStyle }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -113,7 +113,7 @@
 
             <!-- 列表分栏（仅纵向经典列表） -->
             <div v-if="showListColumns" class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.listColumns }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -144,7 +144,7 @@
 
             <!-- 日期范围 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.dateRange }}</label
               >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -168,7 +168,7 @@
                   v-for="range in dateRanges"
                   :key="range.value"
                   :class="[
-                    'px-2 py-1 text-[10px] rounded-md transition-colors border',
+                    'px-2 py-1 text-xs rounded-md transition-colors border',
                     settings.dateRangePreset === range.value
                       ? 'bg-primary-hover-20 border-primary-50 text-primary'
                       : 'bg-bg-tertiary-50 border-border-secondary text-text-tertiary hover:bg-bg-tertiary'
@@ -182,7 +182,7 @@
 
             <!-- 显示内容 -->
             <div class="space-y-3">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.displayContent }}</label
               >
               <div class="grid grid-cols-1 gap-2.5">
@@ -243,7 +243,7 @@
 
             <!-- 备注 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.remark }}</label
               >
               <textarea
@@ -255,7 +255,7 @@
 
             <!-- 导出方案 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-wider"
                 >{{ locale.exportPresets }}</label
               >
               <div class="flex gap-2">
@@ -306,7 +306,7 @@
                     @click="applyPreset(preset)"
                   >
                     <div class="text-xs font-bold text-text-secondary truncate">{{ preset.name }}</div>
-                    <div class="text-[10px] text-text-tertiary truncate">
+                    <div class="text-xs text-text-tertiary truncate">
                       {{ presetSummary(preset) }}
                     </div>
                   </button>

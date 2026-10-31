@@ -1,32 +1,14 @@
 <template>
-  <Transition name="fade">
-    <div
-      v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
-      @click="closeDialog"
-    >
-      <Transition name="scale">
-        <div
-          v-if="show"
-          class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-4 border-b border-border-secondary shrink-0">
-            <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.title }}</h3>
-            <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
-              @click="closeDialog"
-            >
-              <CloseIcon class="w-5 h-5" />
-            </button>
-          </div>
+  <AppModal
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="closeDialog"
+  >
 
-          <!-- 内容区域 -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             <!-- 音质选择 -->
             <section class="space-y-3">
-              <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em] px-1"
+              <label class="text-xs font-bold uppercase text-text-disabled tracking-[0.2em] px-1"
                 >{{ locale.quality }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -52,7 +34,7 @@
                       class="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_var(--primary-50)]"
                     />
                   </div>
-                  <span class="text-[10px] text-text-tertiary relative z-10">{{
+                  <span class="text-xs text-text-tertiary relative z-10">{{
                     option.description
                   }}</span>
                 </button>
@@ -64,7 +46,7 @@
               <section v-if="selectedSongs.size > 0" class="space-y-3 overflow-hidden">
                 <div class="flex items-center gap-2 px-1">
                   <Settings2 class="w-3 h-3 text-text-tertiary" />
-                  <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em]"
+                  <label class="text-xs font-bold uppercase text-text-disabled tracking-[0.2em]"
                     >{{ locale.advancedOptions }}</label
                   >
                 </div>
@@ -74,7 +56,7 @@
                   <div v-if="selectedSongs.size > 1" class="flex items-center justify-between">
                     <div class="flex flex-col">
                       <span class="text-xs font-bold text-text-primary">{{ locale.mergeIntoOne }}</span>
-                      <span class="text-[10px] text-text-tertiary">{{ locale.mergeDesc }}</span>
+                      <span class="text-xs text-text-tertiary">{{ locale.mergeDesc }}</span>
                     </div>
                     <button
                       class="w-10 h-6 rounded-full transition-colors relative"
@@ -98,17 +80,17 @@
                         <span class="text-xs font-bold text-text-primary">{{ locale.normalizeAudio }}</span>
                         <span
                           v-if="normalizeAudio"
-                          class="text-[10px] bg-primary-10 text-primary px-1.5 py-0.5 rounded border border-primary-20"
+                          class="text-xs bg-primary-10 text-primary px-1.5 py-0.5 rounded border border-primary-20"
                           >Peak {{ targetDb }}dB</span
                         >
                       </div>
-                      <span class="text-[10px] text-text-tertiary"
+                      <span class="text-xs text-text-tertiary"
                         >{{ locale.normalizeDesc }}</span
                       >
                     </div>
                     <div class="flex items-center gap-3">
                       <button
-                        class="text-[10px] text-primary hover:text-primary transition-colors flex items-center gap-1"
+                        class="text-xs text-primary hover:text-primary transition-colors flex items-center gap-1"
                         :title="locale.saveDbPresetTitle"
                         @click="saveDbPreset"
                       >
@@ -153,7 +135,7 @@
                     <div class="flex items-center justify-between">
                       <div class="flex flex-col">
                         <span class="text-xs font-bold text-text-primary">{{ locale.exportFormat }}</span>
-                        <span class="text-[10px] text-text-tertiary">
+                        <span class="text-xs text-text-tertiary">
                           {{
                             shouldMergeSongs
                               ? locale.mergeNeedsFormat
@@ -183,7 +165,7 @@
                       <div class="flex gap-2">
                         <button
                           :disabled="!shouldUseExportFormat"
-                          class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
+                          class="flex-1 py-1.5 px-3 rounded-lg border text-xs font-bold transition-all"
                           :class="[
                             exportFormat === 'mp3'
                               ? 'bg-primary-hover-10 border-primary text-primary'
@@ -196,7 +178,7 @@
                         </button>
                         <button
                           :disabled="!shouldUseExportFormat"
-                          class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
+                          class="flex-1 py-1.5 px-3 rounded-lg border text-xs font-bold transition-all"
                           :class="[
                             exportFormat === 'wav'
                               ? 'bg-primary-hover-10 border-primary text-primary'
@@ -218,7 +200,7 @@
                           <span class="text-xs font-bold text-text-primary">{{ locale.customFilename }}</span>
                         </div>
                         <button
-                          class="text-[10px] text-primary hover:text-primary transition-colors flex items-center gap-1"
+                          class="text-xs text-primary hover:text-primary transition-colors flex items-center gap-1"
                           :class="{ 'opacity-50 cursor-not-allowed': !customFilename }"
                           :title="locale.saveAsDefaultPreset"
                           @click="saveFilenamePreset"
@@ -237,14 +219,14 @@
                         <!-- 快速插入占位符按钮 -->
                         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                           <button
-                            class="px-1.5 py-0.5 rounded bg-bg-tertiary text-[9px] text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-colors"
+                            class="px-1.5 py-0.5 rounded bg-bg-tertiary text-xs text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-colors"
                             :title="locale.insertAllSongs"
                             @click="insertPlaceholder('{songs}')"
                           >
                             {songs}
                           </button>
                           <button
-                            class="px-1.5 py-0.5 rounded bg-bg-tertiary text-[9px] text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-colors"
+                            class="px-1.5 py-0.5 rounded bg-bg-tertiary text-xs text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-colors"
                             :title="locale.insertDate"
                             @click="insertPlaceholder('{date}')"
                           >
@@ -252,7 +234,7 @@
                           </button>
                         </div>
                       </div>
-                      <p class="text-[9px] text-text-disabled">
+                      <p class="text-xs text-text-disabled">
                         {{ locale.placeholders }}
                         <code
                           class="bg-bg-tertiary px-1 rounded text-text-tertiary cursor-pointer hover:text-primary"
@@ -277,12 +259,12 @@
             <section class="space-y-3">
               <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-3">
-                  <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em]"
+                  <label class="text-xs font-bold uppercase text-text-disabled tracking-[0.2em]"
                     >{{ locale.songList }}</label
                   >
                   <div
                     v-if="estimatedTotalDuration.count > 0"
-                    class="flex items-center gap-1.5 text-[10px] text-primary font-bold bg-primary-10 px-2 py-0.5 rounded-full border border-primary-20"
+                    class="flex items-center gap-1.5 text-xs text-primary font-bold bg-primary-10 px-2 py-0.5 rounded-full border border-primary-20"
                   >
                     <Clock class="w-3 h-3" />
                     <span>{{ getLocaleText('estimatedDuration', '', formatDuration(estimatedTotalDuration.total)) }}</span>
@@ -291,7 +273,7 @@
                 <div class="flex items-center gap-2">
                   <button
                     v-if="selectedSongs.size > 0"
-                    class="text-[10px] font-bold text-info hover:text-info transition-colors flex items-center gap-1"
+                    class="text-xs font-bold text-info hover:text-info transition-colors flex items-center gap-1"
                     :disabled="estimatingDuration"
                     :title="locale.estimateSelectedTitle"
                     @click="estimateSelectedDurations"
@@ -302,7 +284,7 @@
                   </button>
                   <button
                     v-if="selectedSongs.size > 0"
-                    class="text-[10px] font-bold text-text-tertiary hover:text-text-secondary transition-colors flex items-center gap-1"
+                    class="text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors flex items-center gap-1"
                     :title="locale.preloadSelectedTitle"
                     @click="preloadSelectedSongs"
                   >
@@ -310,7 +292,7 @@
                     {{ locale.preloadSelected }}
                   </button>
                   <button
-                    class="text-[10px] font-bold text-primary-80 hover:text-primary transition-colors"
+                    class="text-xs font-bold text-primary-80 hover:text-primary transition-colors"
                     @click="toggleSelectAll"
                   >
                     {{ isAllSelected ? locale.deselectAll : locale.selectAll }}
@@ -373,7 +355,7 @@
                         class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-success-10 border border-success-20"
                       >
                         <Check class="w-2 h-2 text-success" />
-                        <span class="text-[9px] font-mono text-success">{{
+                        <span class="text-xs font-mono text-success">{{
                           formatDuration(getUsablePreload(song.song.id, selectedQuality).duration)
                         }}</span>
                       </div>
@@ -382,7 +364,7 @@
                         v-else-if="song.song.durationSeconds > 0"
                         class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bg-tertiary border border-border-secondary"
                       >
-                        <span class="text-[9px] font-mono text-text-secondary">{{
+                        <span class="text-xs font-mono text-text-secondary">{{
                           formatDuration(song.song.durationSeconds)
                         }}</span>
                       </div>
@@ -392,16 +374,16 @@
                         class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-info-10 border border-info-20"
                       >
                         <Clock class="w-2 h-2 text-info" />
-                        <span class="text-[9px] font-mono text-info">{{
+                        <span class="text-xs font-mono text-info">{{
                           formatDuration(estimatedDurations.get(song.song.id).durationSeconds)
                         }}</span>
                       </div>
                     </div>
-                    <p class="text-[10px] text-text-tertiary truncate">{{ song.song.artist }}</p>
+                    <p class="text-xs text-text-tertiary truncate">{{ song.song.artist }}</p>
                   </div>
 
                   <div class="flex items-center gap-3">
-                    <div class="text-[9px] font-mono text-text-disabled uppercase">
+                    <div class="text-xs font-mono text-text-disabled uppercase">
                       {{ getPlatformShortName(getSongPlatform(song.song)) }}
                     </div>
 
@@ -425,7 +407,7 @@
                   </div>
                 </div>
 
-                <div v-if="songs.length === 0" class="p-8 text-center text-text-disabled text-[10px]">
+                <div v-if="songs.length === 0" class="p-8 text-center text-text-disabled text-xs">
                   {{ locale.emptySongs }}
                 </div>
               </div>
@@ -437,7 +419,7 @@
               class="space-y-3 pt-4 border-t border-border-secondary-50"
             >
               <div
-                class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
+                class="flex items-center justify-between text-xs font-bold uppercase tracking-wider"
               >
                 <span class="text-text-tertiary">{{
                   currentTaskType === 'merge' ? locale.processProgress : locale.downloadProgress
@@ -458,7 +440,7 @@
                   />
                 </div>
               </div>
-              <div class="text-[10px] text-text-tertiary truncate">
+              <div class="text-xs text-text-tertiary truncate">
                 <template v-if="downloading">
                   <span v-if="processingStatus" class="text-primary animate-pulse">{{
                     processingStatus
@@ -477,7 +459,7 @@
                 v-if="downloadErrors.length > 0"
                 class="bg-error-5 border border-error-10 rounded-xl p-3 space-y-2"
               >
-                <div class="text-[10px] font-bold text-error flex items-center gap-2">
+                <div class="text-xs font-bold text-error flex items-center gap-2">
                   <AlertTriangle class="w-3 h-3" />
                   {{ getLocaleText('downloadFailedCount', '', downloadErrors.length) }}
                 </div>
@@ -485,20 +467,18 @@
                   <div
                     v-for="error in downloadErrors"
                     :key="error.id"
-                    class="text-[9px] text-error-70 truncate"
+                    class="text-xs text-error-70 truncate"
                   >
                     {{ error.title }} - {{ error.error }}
                   </div>
                 </div>
               </div>
             </section>
-          </div>
 
-          <!-- 底部按钮 -->
-          <div
-            class="p-4 border-t border-border-secondary bg-bg-secondary-50 flex items-center justify-between shrink-0"
-          >
-            <div class="text-[11px] font-black text-text-tertiary uppercase tracking-widest">
+    <template #footer>
+      <div class="flex items-center justify-between gap-2">
+
+            <div class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
               {{ getLocaleText('selectedSongsCount', '', selectedSongs.size) }}
             </div>
             <div class="flex items-center gap-2">
@@ -536,14 +516,13 @@
               </button>
             </div>
           </div>
-        </div>
-      </Transition>
-    </div>
-  </Transition>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch, reactive, onUnmounted } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrlResult } from '~/utils/musicUrl'
 import { persistQqMusicCookie } from '~/utils/qqCookie'

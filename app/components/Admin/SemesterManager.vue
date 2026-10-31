@@ -3,13 +3,13 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">
           {{ locale.desc }}
         </p>
       </div>
       <button
-        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
         @click="openModal"
       >
         <svg
@@ -50,18 +50,18 @@
               points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
             />
           </svg>
-          <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
+          <h3 class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em]">
             {{ locale.currentActive }}
           </h3>
         </div>
 
         <div
           v-if="currentSemester"
-          class="relative bg-gradient-to-br from-primary to-primary-hover rounded-3xl p-10 shadow-2xl shadow-[var(--primary-glow)] overflow-hidden group"
+          class="relative bg-gradient-to-br from-primary to-primary-hover rounded-2xl p-10 shadow-2xl shadow-[var(--primary-glow)] overflow-hidden group"
         >
           <div class="relative z-10 space-y-6">
             <div
-              class="w-16 h-16 rounded-3xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
+              class="w-16 h-16 rounded-2xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -79,7 +79,7 @@
               </svg>
             </div>
             <div class="space-y-2">
-              <h4 class="text-3xl font-black text-text-primary tracking-tight leading-tight">
+              <h4 class="text-3xl font-bold text-text-primary tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
               <div class="flex items-center gap-2 text-text-primary-80 font-bold text-xs">
@@ -104,7 +104,7 @@
             </div>
             <div class="pt-4">
               <span
-                class="px-4 py-2 bg-bg-secondary-20 text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
+                class="px-4 py-2 bg-bg-secondary-20 text-text-primary text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg"
               >
                 {{ locale.inProgress }}
               </span>
@@ -134,7 +134,7 @@
 
         <div
           v-else
-          class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
+          class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-2xl p-20 flex flex-col items-center justify-center text-center gap-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -153,12 +153,12 @@
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           <p class="text-sm font-bold text-text-disabled">{{ locale.noCurrent }}</p>
-          <button class="text-xs text-primary font-black hover:underline" @click="openModal">
+          <button class="text-xs text-primary font-bold hover:underline" @click="openModal">
             {{ locale.createNow }}
           </button>
         </div>
 
-        <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-3xl flex items-start gap-4">
+        <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-2xl flex items-start gap-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -177,7 +177,7 @@
           </svg>
           <div class="space-y-1">
             <p class="text-xs font-bold text-text-tertiary">{{ locale.switchTitle }}</p>
-            <p class="text-[11px] text-text-disabled leading-relaxed">
+            <p class="text-xs text-text-disabled leading-relaxed">
               {{ locale.switchDesc }}
             </p>
           </div>
@@ -204,17 +204,17 @@
               <path d="M3 3v5h5" />
               <path d="M12 7v5l4 2" />
             </svg>
-            <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
+            <h3 class="text-xs font-bold text-text-disabled uppercase tracking-[0.2em]">
               {{ locale.historyTitle }}
             </h3>
           </div>
-          <span class="text-[10px] font-black text-text-secondary">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
+          <span class="text-xs font-bold text-text-secondary">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
         </div>
 
         <div class="space-y-4">
           <div
             v-if="loading && semesters.length === 0"
-            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-2xl"
           >
             <p class="text-xs font-bold text-text-disabled">{{ locale.loading }}</p>
           </div>
@@ -222,7 +222,7 @@
           <div
             v-for="sem in sortedSemesters"
             :key="sem.id"
-            class="group flex items-center justify-between p-6 rounded-[2rem] border transition-all"
+            class="group flex items-center justify-between p-6 rounded-2xl border transition-all"
             :class="
               sem.isActive
                 ? 'bg-primary-hover-5 border-primary-30'
@@ -263,7 +263,7 @@
                 >
                   {{ sem.name }}
                 </h5>
-                <p class="text-[10px] text-text-disabled font-medium uppercase tracking-widest mt-0.5">
+                <p class="text-xs text-text-disabled font-medium uppercase tracking-wider mt-0.5">
                   {{ getLocaleMessage('createdAt', formatDate(sem.createdAt)) }}
                 </p>
               </div>
@@ -288,12 +288,12 @@
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.currentSemester }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider">{{ locale.currentSemester }}</span>
               </div>
               <button
                 v-else
                 :disabled="loading"
-                class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black rounded-xl border border-border-tertiary transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-xs font-bold rounded-xl border border-border-tertiary transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="setActive(sem.id)"
               >
                 <svg
@@ -365,7 +365,7 @@
 
           <div
             v-if="semesters.length === 0 && !loading"
-            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-2xl"
           >
             <p class="text-xs font-bold text-text-disabled">{{ locale.empty }}</p>
           </div>
@@ -374,43 +374,16 @@
     </div>
 
     <!-- 添加/修改学期弹窗 -->
-    <div
-      v-if="showModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
+    <AppModal
+      :show="showModal"
+      :title="isEditing ? locale.editSemester : locale.add"
+      size="md"
+      @close="closeModal"
     >
-      <div
-        class="w-full max-w-md bg-bg-secondary rounded-3xl border border-border-secondary shadow-2xl overflow-hidden"
-        @click.stop
-      >
-        <div class="p-8 space-y-6">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary tracking-tight">
-              {{ isEditing ? locale.editSemester : locale.add }}
-            </h3>
-            <button
-              class="p-2 text-text-tertiary hover:text-text-primary transition-colors"
-              @click="closeModal"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+      <div class="space-y-6">
 
-          <div class="space-y-6">
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.semesterName }}</label
               >
               <input
@@ -432,7 +405,7 @@
                   class="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
                   >{{ locale.setAsActive }}</span
                 >
-                <p class="text-[10px] text-text-disabled font-medium">
+                <p class="text-xs text-text-disabled font-medium">
                   {{ locale.setAsActiveHint }}
                 </p>
               </div>
@@ -455,14 +428,15 @@
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p class="text-[10px] text-text-tertiary leading-normal">
+              <p class="text-xs text-text-tertiary leading-normal">
                 {{ locale.namingTip }}
               </p>
             </div>
           </div>
-        </div>
 
-        <div class="p-6 bg-bg-tertiary-50 border-t border-border-secondary flex gap-3 justify-end">
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
             class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors"
             @click="closeModal"
@@ -471,14 +445,14 @@
           </button>
           <button
             :disabled="submitting || !semesterForm.name.trim()"
-            class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:bg-primary-hover disabled:opacity-50 text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
+            class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:bg-primary-hover disabled:opacity-50 text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95"
             @click="handleSubmit"
           >
             {{ submitting ? (isEditing ? locale.saving : locale.creating) : (isEditing ? locale.saveChanges : locale.createSemester) }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 确认删除对话框 -->
     <ConfirmDialog
@@ -497,6 +471,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

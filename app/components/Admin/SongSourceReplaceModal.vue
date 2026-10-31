@@ -1,56 +1,26 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click.self="closeModal"
+  <AppModal
+    :description="t('sourceReplace.subtitle')"
+    :show="show"
+    :title="t('sourceReplace.title')"
+    size="2xl"
+    @close="closeModal"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary sm:h-10 sm:w-10 sm:rounded-xl"
       >
-        <div
-          class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
-        >
-          <!-- 头部 -->
-          <div
-            class="p-6 pb-4 flex items-start justify-between gap-4 border-b border-border-secondary-50 shrink-0"
-          >
-            <div class="min-w-0">
-              <h3
-                class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3"
-              >
-                <span
-                  class="w-10 h-10 rounded-xl bg-primary-hover-10 flex items-center justify-center text-primary shrink-0"
-                >
-                  <ArrowLeftRight :size="20" />
-                </span>
-                {{ t('sourceReplace.title') }}
-              </h3>
-              <p class="text-xs text-text-tertiary mt-2 ml-13">
-                {{ t('sourceReplace.subtitle') }}
-              </p>
-            </div>
-            <button
-              class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all shrink-0"
-              @click="closeModal"
-            >
-              <X :size="20" />
-            </button>
-          </div>
+        <ArrowLeftRight :size="18" />
+      </span>
+    </template>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-4">
-            <!-- 当前音源 -->
+    <div class="space-y-3 sm:space-y-4">
+      <!-- 当前音源 -->
             <div
-              class="rounded-xl border border-border-secondary-60 bg-bg-primary-30 p-4 flex items-center gap-3"
+              class="flex items-center gap-3 rounded-lg bg-bg-primary-30 p-3 sm:rounded-xl sm:border sm:border-border-secondary-60 sm:p-4"
             >
               <div
-                class="w-10 h-10 rounded-lg bg-bg-tertiary-40 border border-border-tertiary-30 flex items-center justify-center overflow-hidden shrink-0"
+                class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-tertiary-30 bg-bg-tertiary-40 sm:h-10 sm:w-10"
               >
                 <img
                   v-if="song.cover"
@@ -61,10 +31,10 @@
                 <Music v-else :size="16" class="text-text-disabled" />
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ t('sourceReplace.currentSource') }}
                 </p>
-                <p class="text-sm font-bold text-text-primary truncate mt-0.5">
+                <p class="mt-0.5 truncate text-sm font-bold text-text-primary">
                   {{ song.title }}
                   <span class="text-text-tertiary font-medium">· {{ song.artist }}</span>
                 </p>
@@ -72,13 +42,13 @@
               <div class="shrink-0 text-right">
                 <span
                   v-if="song.musicPlatform"
-                  class="inline-block px-2 py-1 text-[10px] font-black rounded-md bg-bg-tertiary text-text-secondary"
+                  class="inline-block px-2 py-1 text-xs font-bold rounded-md bg-bg-tertiary text-text-secondary"
                 >
                   {{ platformLabel(song.musicPlatform) }}
                 </span>
                 <p
                   v-if="song.musicId"
-                  class="text-[10px] text-text-tertiary font-mono mt-1 truncate max-w-[180px]"
+                  class="text-xs text-text-tertiary font-mono mt-1 truncate max-w-[180px]"
                 >
                   {{ song.musicId }}
                 </p>
@@ -98,7 +68,7 @@
                     type="text"
                     maxlength="120"
                     :placeholder="t('sourceReplace.searchPlaceholder')"
-                    class="w-full bg-bg-primary border rounded-lg pl-11 pr-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
+                    class="w-full rounded-lg border bg-bg-primary py-2.5 pl-10 pr-3 text-base text-text-primary transition-all focus:outline-none sm:py-3 sm:pl-11 sm:pr-4 sm:text-sm"
                     :class="
                       keywordError
                         ? 'border-error-60 focus:border-error'
@@ -109,7 +79,7 @@
                 </div>
                 <button
                   type="button"
-                  class="px-5 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all shrink-0 flex items-center gap-2"
+                  class="flex shrink-0 items-center gap-2 rounded-lg bg-primary-hover px-3 py-2.5 text-xs font-bold text-text-primary transition-colors hover:bg-primary sm:px-5 sm:py-3"
                   @click="runSearch"
                 >
                   <Loader2 v-if="activeIsLoading" :size="14" class="animate-spin" />
@@ -117,7 +87,7 @@
                   {{ activeIsLoading ? t('sourceReplace.searching') : t('sourceReplace.search') }}
                 </button>
               </div>
-              <p class="text-[10px] text-text-disabled font-medium px-1">
+              <p class="text-xs text-text-disabled font-medium px-1">
                 {{
                   keywordError
                     ? t('sourceReplace.keywordsRequired')
@@ -127,46 +97,30 @@
             </div>
 
             <!-- 平台选项卡 -->
-            <div class="flex flex-wrap items-center gap-2">
+            <div
+              class="scrollbar-hide flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+            >
               <button
+                v-for="tab in platformTabs"
+                :key="tab.key"
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all"
+                class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-colors sm:px-3"
                 :class="
-                  activeTab === 'all'
+                  activeTab === tab.key
                     ? 'border-primary-30 bg-primary-10 text-primary'
                     : 'border-border-secondary-60 bg-bg-primary-30 text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
                 "
-                @click="switchTab('all')"
+                @click="switchTab(tab.key)"
               >
-                {{ t('sourceReplace.all') }}
-                <span v-if="allResults.length" class="opacity-70">({{ allResults.length }})</span>
-              </button>
-              <button
-                v-for="platform in availablePlatforms"
-                :key="platform"
-                type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all"
-                :class="
-                  activeTab === platform
-                    ? 'border-primary-30 bg-primary-10 text-primary'
-                    : 'border-border-secondary-60 bg-bg-primary-30 text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
-                "
-                @click="switchTab(platform)"
-              >
-                {{ platformLabel(platform) }}
-                <span v-if="platformCount(platform)" class="opacity-70"
-                  >({{ platformCount(platform) }})</span
-                >
-                <Loader2
-                  v-if="platformStates[platform] === 'loading'"
-                  :size="12"
-                  class="animate-spin"
-                />
+                {{ tab.label }}
+                <span v-if="tab.count" class="opacity-70">({{ tab.count }})</span>
+                <Loader2 v-if="tab.loading" :size="12" class="animate-spin" />
                 <span
-                  v-if="platform === song.musicPlatform"
-                  class="px-1 py-0.5 rounded bg-bg-tertiary text-text-disabled text-[9px]"
-                  >{{ t('sourceReplace.current') }}</span
+                  v-if="tab.current"
+                  class="rounded bg-bg-tertiary px-1 py-0.5 text-xs text-text-disabled"
                 >
+                  {{ t('sourceReplace.current') }}
+                </span>
               </button>
             </div>
 
@@ -175,7 +129,7 @@
               <span
                 v-for="platform in failedPlatforms"
                 :key="platform"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning-10 text-warning text-[10px] font-bold"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning-10 text-warning text-xs font-bold"
                 :title="platformErrors[platform]"
               >
                 <AlertCircle :size="12" />
@@ -186,28 +140,32 @@
             <!-- 加载状态 -->
             <div
               v-if="activeIsLoading && visibleResults.length === 0"
-              class="flex flex-col items-center justify-center py-16 text-text-disabled"
+              class="flex flex-col items-center justify-center py-12 text-text-disabled sm:py-16"
             >
               <AppSpinner :size="36" />
               <p class="text-sm font-bold mt-4">{{ t('sourceReplace.searching') }}</p>
             </div>
 
             <!-- 搜索结果 -->
-            <div v-else-if="visibleResults.length" class="space-y-2">
-              <button
+            <div v-else-if="visibleResults.length" :aria-label="t('sourceReplace.title')" class="space-y-2" role="listbox">
+              <div
                 v-for="item in visibleResults"
                 :key="item.key"
-                type="button"
-                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all"
+                class="flex w-full cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors sm:rounded-xl sm:px-4 sm:py-3"
                 :class="
                   selectedKey === item.key
                     ? 'border-primary-30 bg-primary-10'
                     : 'border-border-secondary-60 bg-bg-primary-30 hover:border-border-tertiary hover:bg-bg-secondary-40'
                 "
+                :aria-selected="selectedKey === item.key"
+                role="option"
+                tabindex="0"
                 @click="selectResult(item)"
+                @keydown.enter.prevent="selectResult(item)"
+                @keydown.space.prevent="selectResult(item)"
               >
                 <div
-                  class="w-12 h-12 rounded-lg bg-bg-tertiary-40 border border-border-tertiary-30 flex items-center justify-center overflow-hidden shrink-0 relative group/preview"
+                  class="group/preview relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-tertiary-30 bg-bg-tertiary-40 sm:h-12 sm:w-12"
                 >
                   <img
                     v-if="item.cover"
@@ -218,11 +176,11 @@
                   <Music v-else :size="18" class="text-text-disabled" />
                   <button
                     type="button"
-                    class="absolute inset-0 flex items-center justify-center bg-bg-primary-50 text-text-primary transition-opacity"
+                    class="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-bg-primary-70 text-text-primary transition-opacity"
                     :class="
                       isPreviewing(item)
                         ? 'opacity-100'
-                        : 'opacity-0 group-hover/preview:opacity-100'
+                        : 'opacity-100 sm:opacity-0 sm:group-hover/preview:opacity-100'
                     "
                     :title="
                       isPreviewing(item)
@@ -231,8 +189,8 @@
                     "
                     @click.stop="togglePreview(item)"
                   >
-                    <Pause v-if="isPreviewing(item)" :size="18" class="fill-current" />
-                    <Play v-else :size="18" class="fill-current" />
+                    <Pause v-if="isPreviewing(item)" :size="11" class="fill-current" />
+                    <Play v-else :size="11" class="fill-current" />
                   </button>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -242,28 +200,28 @@
                     }}</span>
                     <span
                       :class="[
-                        'shrink-0 px-1.5 py-0.5 text-[9px] font-black rounded uppercase tracking-wider',
+                        'shrink-0 px-1.5 py-0.5 text-xs font-bold rounded uppercase tracking-wider',
                         matchClass(item)
                       ]"
                     >
                       {{ matchLabel(item) }}
                     </span>
                   </div>
-                  <p class="text-[11px] text-text-tertiary truncate mt-1">
+                  <p class="text-xs text-text-tertiary truncate mt-1">
                     {{ item.artist }}
                     <template v-if="item.album"> · {{ item.album }}</template>
                   </p>
                 </div>
                 <div class="shrink-0 flex flex-col items-end gap-1">
                   <span
-                    class="px-1.5 py-0.5 text-[9px] font-black rounded bg-bg-tertiary text-text-secondary uppercase tracking-wider"
+                    class="px-1.5 py-0.5 text-xs font-bold rounded bg-bg-tertiary text-text-secondary uppercase tracking-wider"
                   >
                     {{ platformLabel(item.musicPlatform) }}
                   </span>
-                  <span class="text-[10px] text-text-tertiary">{{ durationText(item) }}</span>
+                  <span class="text-xs text-text-tertiary">{{ durationText(item) }}</span>
                 </div>
                 <span
-                  class="w-5 h-5 rounded-full border flex items-center justify-center shrink-0"
+                  class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border sm:h-5 sm:w-5"
                   :class="
                     selectedKey === item.key
                       ? 'bg-primary border-primary text-text-primary'
@@ -272,28 +230,26 @@
                 >
                   <Check :size="12" />
                 </span>
-              </button>
+              </div>
             </div>
 
             <!-- 空状态 -->
             <div
               v-else-if="!activeIsLoading"
-              class="flex flex-col items-center justify-center py-16 text-text-disabled"
+              class="flex flex-col items-center justify-center py-10 text-text-disabled sm:py-16"
             >
-              <Music :size="48" class="mb-4 opacity-20" />
+              <Music :size="40" class="mb-3 opacity-20 sm:mb-4 sm:h-12 sm:w-12" />
               <p class="text-sm font-bold">
                 {{ hasSearched ? t('sourceReplace.empty') : t('sourceReplace.selectHint') }}
               </p>
-              <p v-if="hasSearched" class="text-[11px] mt-2 max-w-sm text-center leading-relaxed">
+              <p v-if="hasSearched" class="text-xs mt-2 max-w-sm text-center leading-relaxed">
                 {{ t('sourceReplace.emptyHint') }}
               </p>
             </div>
           </div>
 
-          <!-- 底部 -->
-          <div
-            class="p-5 border-t border-border-secondary-50 bg-bg-secondary-50 flex flex-col sm:flex-row sm:items-center gap-3 shrink-0"
-          >
+    <template #footer>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div class="min-w-0 flex-1">
               <template v-if="selected">
                 <div class="flex flex-wrap items-center gap-3 min-w-0">
@@ -310,7 +266,7 @@
                   </div>
                   <div class="min-w-0">
                     <p class="text-xs font-bold text-text-primary truncate">{{ selected.title }}</p>
-                    <p class="text-[10px] text-text-tertiary truncate">
+                    <p class="text-xs text-text-tertiary truncate">
                       {{ selected.artist }} · {{ platformLabel(selected.musicPlatform) }}
                     </p>
                   </div>
@@ -322,24 +278,24 @@
                     />
                   </div>
                 </div>
-                <p class="text-[10px] text-text-disabled mt-1 truncate">
+                <p class="text-xs text-text-disabled mt-1 truncate">
                   {{ t('sourceReplace.selectedHint') }}
                 </p>
               </template>
-              <p v-else class="text-[11px] text-text-tertiary">
+              <p v-else class="text-xs text-text-tertiary">
                 {{ t('sourceReplace.selectHint') }}
               </p>
             </div>
             <div class="flex items-center justify-end gap-3 shrink-0">
               <button
-                class="px-5 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
+                class="px-4 py-2.5 text-xs font-bold text-text-tertiary transition-colors hover:text-text-secondary sm:px-5"
                 @click="closeModal"
               >
                 {{ t('sourceReplace.cancel') }}
               </button>
               <button
                 :disabled="!selected || applying"
-                class="px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                class="flex items-center gap-2 rounded-lg bg-primary-hover px-5 py-2.5 text-xs font-bold text-text-primary transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
                 @click="applySelection"
               >
                 <Loader2 v-if="applying" :size="14" class="animate-spin" />
@@ -347,11 +303,9 @@
                 {{ applying ? t('sourceReplace.applying') : t('sourceReplace.apply') }}
               </button>
             </div>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
@@ -364,10 +318,10 @@ import {
   Music,
   Pause,
   Play,
-  Search,
-  X
+  Search
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
@@ -375,7 +329,7 @@ import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { getPlatformLabel } from '~/utils/platforms'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
 import { getCoverThumbUrl } from '~/utils/url'
@@ -397,6 +351,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'apply'])
 
+
 const { admin, siteConfig, currentLocale } = useLocale()
 const { t } = useLocaleText(computed(() => admin.value?.songManagement || {}))
 const { localize: localizeServerError } = useServerErrors()
@@ -405,13 +360,12 @@ const musicSources = useMusicSources()
 const { playSong } = useSongPlayer()
 const audioPlayer = useAudioPlayer()
 
-const platformLabel = (platform) => {
-  if (!platform) return ''
-  const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
-  return (
-    plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
-  )
-}
+const platformLabel = (platform) =>
+  getPlatformLabel(platform, {
+    siteConfig: siteConfig.value,
+    currentLocale: currentLocale.value,
+    pluginPlatforms: pluginPlatforms.value
+  })
 
 const keywords = ref('')
 const keywordError = ref(false)
@@ -497,6 +451,17 @@ const pageOptions = computed(() => {
 })
 
 const platformCount = (platform) => (platformResults.value[platform] || []).length
+
+const platformTabs = computed(() => [
+  { key: 'all', label: t('sourceReplace.all'), count: allResults.value.length },
+  ...availablePlatforms.value.map((platform) => ({
+    key: platform,
+    label: platformLabel(platform),
+    count: platformCount(platform),
+    loading: platformStates.value[platform] === 'loading',
+    current: platform === props.song.musicPlatform
+  }))
+])
 
 const closeModal = () => {
   stopPreview()

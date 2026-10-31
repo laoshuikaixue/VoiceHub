@@ -3,35 +3,35 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">
           {{ showArchived ? formatMessage(locale.archivedSubtitle, archivedCount) : formatMessage(locale.subtitle, totalUsers) }}
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
-          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-[var(--primary-glow)]"
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all uppercase tracking-wider active:scale-95 shadow-lg shadow-[var(--primary-glow)]"
           @click="showAddModal = true"
         >
           <UserPlus :size="14" />
           {{ locale.add }}
         </button>
         <button
-          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-bold rounded-lg transition-all uppercase tracking-wider"
           @click="showImportModal = true"
         >
           <FileSpreadsheet class="text-success" :size="14" />
           {{ locale.import }}
         </button>
         <button
-          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-bold rounded-lg transition-all uppercase tracking-wider"
           @click="openExportModal"
         >
           <Download class="text-primary" :size="14" />
           {{ locale.export }}
         </button>
         <button
-          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-bold rounded-lg transition-all uppercase tracking-wider"
           @click="showBatchUpdateModal = true"
         >
           <Layers class="text-info" :size="14" />
@@ -42,9 +42,9 @@
 
     <!-- Filter Bar -->
     <div
-      class="bg-bg-secondary-40 border border-border-secondary-60 rounded-xl p-3 flex flex-col lg:flex-row gap-3 items-center"
+      class="flex flex-col items-stretch gap-3 rounded-xl border border-border-secondary-60 bg-bg-secondary-40 p-3 xl:flex-row xl:items-center"
     >
-      <div class="relative flex-1 w-full group">
+      <div class="group relative w-full xl:flex-1">
         <Search
           class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
           :size="16"
@@ -57,7 +57,7 @@
         >
       </div>
       <div
-        class="flex items-center gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar no-scrollbar"
+        class="grid w-full grid-cols-2 gap-2 xl:flex xl:w-auto xl:items-center"
       >
         <!-- 角色筛选 -->
         <CustomSelect
@@ -67,7 +67,7 @@
           :placeholder="locale.allRoles"
           label-key="displayName"
           value-key="name"
-          class-name="flex-1 lg:w-40 min-w-[120px]"
+          class-name="min-w-0 w-full xl:w-40"
         />
 
         <!-- 状态筛选 -->
@@ -78,7 +78,7 @@
           :placeholder="locale.allStatus"
           label-key="label"
           value-key="value"
-          class-name="flex-1 lg:w-32 min-w-[100px]"
+          class-name="min-w-0 w-full xl:w-32"
         />
 
         <!-- 排序 -->
@@ -89,14 +89,17 @@
           :placeholder="locale.sortPlaceholder"
           label-key="label"
           value-key="value"
-          class-name="flex-1 lg:w-40 min-w-[140px]"
+          class-name="min-w-0 w-full xl:w-40"
         />
 
         <button
-          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all shadow-sm flex items-center justify-center"
+          :aria-label="common.refreshData"
+          :title="common.refreshData"
+          class="flex w-full items-center justify-center gap-2 rounded-lg border border-border-secondary bg-bg-primary p-3 text-text-disabled shadow-sm transition-colors hover:text-primary xl:w-auto"
           @click="loadUsers(1)"
         >
           <RefreshCw :size="14" />
+          <span class="text-xs font-bold xl:hidden">{{ common.refreshData }}</span>
         </button>
       </div>
     </div>
@@ -107,8 +110,8 @@
       >
         <div class="p-4 border-b border-border-secondary-60 flex items-center justify-between gap-3">
           <div>
-            <h3 class="text-sm font-black text-text-primary tracking-tight">{{ locale.organization.title }}</h3>
-            <p class="text-[10px] text-text-disabled mt-1">
+            <h3 class="text-sm font-bold text-text-primary tracking-tight">{{ locale.organization.title }}</h3>
+            <p class="text-xs text-text-disabled mt-1">
               {{ formatMessage(locale.organization.subtitle, treeUsers.length) }}
             </p>
           </div>
@@ -126,11 +129,11 @@
           class="mx-4 mt-4 p-3 bg-primary-10 border border-primary-20 rounded-lg flex items-center justify-between gap-3"
         >
           <div class="min-w-0">
-            <p class="text-[10px] font-black text-primary uppercase tracking-widest">{{ locale.organization.currentScope }}</p>
+            <p class="text-xs font-bold text-primary uppercase tracking-wider">{{ locale.organization.currentScope }}</p>
             <p class="text-xs font-bold text-text-primary truncate">{{ activeOrgFilterLabel }}</p>
           </div>
           <button
-            class="text-[10px] font-black text-primary hover:text-text-primary transition-colors shrink-0"
+            class="text-xs font-bold text-primary hover:text-text-primary transition-colors shrink-0"
             @click="clearTreeFilter"
           >
             {{ locale.organization.clear }}
@@ -139,7 +142,7 @@
 
         <div v-if="treeLoading" class="py-12 flex flex-col items-center justify-center text-text-disabled">
           <RefreshCw :size="22" class="animate-spin mb-3" />
-          <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.organization.loading }}</span>
+          <span class="text-xs font-bold uppercase tracking-wider">{{ locale.organization.loading }}</span>
         </div>
 
         <div
@@ -161,7 +164,7 @@
                 <ChevronRight v-else :size="13" />
               </button>
               <button
-                class="tree-label font-black text-text-primary"
+                class="tree-label font-bold text-text-primary"
                 :class="isStageFilterActive(stage.label) ? 'tree-label-active' : ''"
                 @click="handleStageClick(stage)"
               >
@@ -234,7 +237,7 @@
       <div class="space-y-4 min-w-0">
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-text-tertiary">
         <AppSpinner :size="32" class="mb-4" />
-        <div class="text-xs font-black uppercase tracking-widest">{{ locale.loading }}</div>
+        <div class="text-xs font-bold uppercase tracking-wider">{{ locale.loading }}</div>
       </div>
 
       <div
@@ -246,7 +249,7 @@
         >
           <Search :size="32" />
         </div>
-        <div class="text-sm font-black text-text-tertiary uppercase tracking-widest">
+        <div class="text-sm font-bold text-text-tertiary uppercase tracking-wider">
           {{ searchQuery ? locale.emptySearch : locale.empty }}
         </div>
       </div>
@@ -254,19 +257,19 @@
       <template v-else>
         <!-- 桌面端表格 -->
         <div
-          class="hidden lg:block bg-bg-secondary-20 border border-border-secondary-50 rounded-xl overflow-hidden shadow-lg custom-scrollbar"
+          class="hidden lg:block bg-bg-secondary-20 border border-border-secondary-50 rounded-xl overflow-x-auto overflow-y-hidden shadow-lg custom-scrollbar"
         >
           <table class="w-full">
             <thead>
               <tr
-                class="bg-bg-secondary-60 border-b border-border-secondary text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                class="bg-bg-secondary-60 border-b border-border-secondary text-xs font-bold text-text-disabled uppercase tracking-wider"
               >
-                <th class="px-6 py-5 text-left">{{ locale.table.userDetails }}</th>
-                <th class="px-6 py-5 text-left">{{ locale.table.role }}</th>
-                <th class="px-6 py-5 text-left">{{ locale.table.status }}</th>
-                <th class="px-6 py-5 text-center">{{ locale.table.class }}</th>
-                <th class="px-6 py-5 text-left">{{ locale.table.lastActivity }}</th>
-                <th class="px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
+                <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.userDetails }}</th>
+                <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.role }}</th>
+                <th class="whitespace-nowrap px-6 py-5 text-left">{{ locale.table.status }}</th>
+                <th class="hidden whitespace-nowrap px-6 py-5 text-center xl:table-cell">{{ locale.table.class }}</th>
+                <th class="hidden whitespace-nowrap px-6 py-5 text-left 2xl:table-cell">{{ locale.table.lastActivity }}</th>
+                <th class="whitespace-nowrap px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-panel-bg-dark-40">
@@ -286,13 +289,13 @@
                     >
                     <div
                       v-else
-                      class="w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center font-black text-text-tertiary group-hover:text-text-secondary transition-colors border border-border-tertiary-50"
+                      class="w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center font-bold text-text-tertiary group-hover:text-text-secondary transition-colors border border-border-tertiary-50"
                     >
                       {{ getUserInitial(user) }}
                     </div>
                     <div>
-                      <p class="font-black text-text-primary">{{ getUserDisplayName(user) }}</p>
-                      <p class="text-[10px] text-text-disabled font-mono mt-0.5">
+                      <p class="whitespace-nowrap font-bold text-text-primary">{{ getUserDisplayName(user) }}</p>
+                      <p class="text-xs text-text-disabled font-mono mt-0.5">
                         ID: {{ user.username }}
                       </p>
                     </div>
@@ -301,29 +304,29 @@
                 <td class="px-6 py-5">
                   <span
                     v-if="user.role === 'SUPER_ADMIN'"
-                    class="px-2 py-0.5 bg-warning-10 text-warning text-[10px] font-black rounded border border-warning-20 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-warning-10 text-warning text-xs font-bold rounded border border-warning-20 uppercase tracking-wider"
                     >{{ getRoleName('SUPER_ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'ADMIN'"
-                    class="px-2 py-0.5 bg-primary-10 text-primary text-[10px] font-black rounded border border-primary-20 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-primary-10 text-primary text-xs font-bold rounded border border-primary-20 uppercase tracking-wider"
                     >{{ getRoleName('ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
-                    class="px-2 py-0.5 bg-info-10 text-info text-[10px] font-black rounded border border-info-20 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-info-10 text-info text-xs font-bold rounded border border-info-20 uppercase tracking-wider"
                     >{{ getRoleName('SONG_ADMIN') }}</span
                   >
                   <span
                     v-else
-                    class="px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded border border-border-tertiary-50 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-xs font-bold rounded border border-border-tertiary-50 uppercase tracking-wider"
                     >{{ getRoleName('USER') }}</span
                   >
                 </td>
                 <td class="px-6 py-5">
                   <div
                     v-if="user.status === 'active'"
-                    class="flex items-center gap-1.5 text-success font-black uppercase text-[10px] tracking-widest"
+                    class="flex items-center gap-1.5 whitespace-nowrap text-success font-bold uppercase text-xs tracking-wider"
                   >
                     <div
                       class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success-50)]"
@@ -332,7 +335,7 @@
                   </div>
                   <div
                     v-else-if="user.status === 'pending'"
-                    class="flex items-center gap-1.5 text-info font-black uppercase text-[10px] tracking-widest"
+                    class="flex items-center gap-1.5 whitespace-nowrap text-info font-bold uppercase text-xs tracking-wider"
                   >
                     <div
                       class="w-1.5 h-1.5 rounded-full bg-info shadow-[0_0_8px_var(--info-50)]"
@@ -341,38 +344,38 @@
                   </div>
                   <div
                     v-else-if="user.status === 'withdrawn'"
-                    class="flex items-center gap-1.5 text-error font-black uppercase text-[10px] tracking-widest"
+                    class="flex items-center gap-1.5 whitespace-nowrap text-error font-bold uppercase text-xs tracking-wider"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-error" />
                     {{ getStatusName('withdrawn') }}
                   </div>
                   <div
                     v-else-if="user.status === 'graduate'"
-                    class="flex items-center gap-1.5 text-warning font-black uppercase text-[10px] tracking-widest"
+                    class="flex items-center gap-1.5 whitespace-nowrap text-warning font-bold uppercase text-xs tracking-wider"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-warning" />
                     {{ getStatusName('graduate') }}
                   </div>
                   <div
                     v-else
-                    class="flex items-center gap-1.5 text-text-tertiary font-black uppercase text-[10px] tracking-widest"
+                    class="flex items-center gap-1.5 whitespace-nowrap text-text-tertiary font-bold uppercase text-xs tracking-wider"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-bg-quaternary" />
                     {{ getStatusName('disabled') }}
                   </div>
                 </td>
-                <td class="px-6 py-5 text-center font-bold text-text-tertiary">
+                <td class="hidden px-6 py-5 text-center font-bold text-text-tertiary xl:table-cell">
                   {{ user.grade || '-' }} {{ user.class || '-' }}
                 </td>
-                <td class="px-6 py-5">
+                <td class="hidden px-6 py-5 2xl:table-cell">
                   <p class="text-text-tertiary font-bold">{{ formatDate(user.lastLogin) }}</p>
-                  <p class="text-[11px] text-text-secondary font-mono mt-1 flex items-center gap-1">
+                  <p class="text-xs text-text-secondary font-mono mt-1 flex items-center gap-1">
                     <MapPin :size="10" /> {{ user.lastLoginIp || '-' }}
                   </p>
                 </td>
                 <td class="px-6 py-5 text-right pr-10">
                   <div
-                    class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons"
+                    class="flex items-center justify-end gap-1.5 opacity-100 transition-opacity action-buttons"
                   >
                     <button
                       :disabled="!canManageUser(user)"
@@ -438,19 +441,19 @@
                 >
                 <div
                   v-else
-                  class="w-12 h-12 rounded-lg bg-bg-tertiary flex items-center justify-center font-black text-lg text-text-tertiary border border-border-tertiary"
+                  class="w-12 h-12 rounded-lg bg-bg-tertiary flex items-center justify-center font-bold text-lg text-text-tertiary border border-border-tertiary"
                 >
                   {{ getUserInitial(user) }}
                 </div>
                 <div>
-                  <h4 class="text-base font-black text-text-primary">{{ getUserDisplayName(user) }}</h4>
+                  <h4 class="text-base font-bold text-text-primary">{{ getUserDisplayName(user) }}</h4>
                   <p class="text-xs text-text-tertiary font-mono">@{{ user.username }}</p>
                 </div>
               </div>
               <div class="text-right">
                 <div
                   v-if="user.status === 'active'"
-                  class="flex items-center gap-1.5 text-success font-black uppercase text-[10px] tracking-widest"
+                  class="flex items-center gap-1.5 whitespace-nowrap text-success font-bold uppercase text-xs tracking-wider"
                 >
                   <div
                     class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success-50)]"
@@ -459,66 +462,66 @@
                 </div>
                 <div
                   v-else-if="user.status === 'pending'"
-                  class="flex items-center gap-1.5 text-info font-black uppercase text-[10px] tracking-widest"
+                  class="flex items-center gap-1.5 whitespace-nowrap text-info font-bold uppercase text-xs tracking-wider"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-info" />
                   {{ getStatusName('pending') }}
                 </div>
                 <div
                   v-else-if="user.status === 'withdrawn'"
-                  class="flex items-center gap-1.5 text-error font-black uppercase text-[10px] tracking-widest"
+                  class="flex items-center gap-1.5 whitespace-nowrap text-error font-bold uppercase text-xs tracking-wider"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-error" />
                   {{ getStatusName('withdrawn') }}
                 </div>
                 <div
                   v-else-if="user.status === 'graduate'"
-                  class="flex items-center gap-1.5 text-warning font-black uppercase text-[10px] tracking-widest"
+                  class="flex items-center gap-1.5 whitespace-nowrap text-warning font-bold uppercase text-xs tracking-wider"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-warning" />
                   {{ getStatusName('graduate') }}
                 </div>
                 <div
                   v-else
-                  class="flex items-center gap-1.5 text-text-tertiary font-black uppercase text-[10px] tracking-widest"
+                  class="flex items-center gap-1.5 whitespace-nowrap text-text-tertiary font-bold uppercase text-xs tracking-wider"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-bg-quaternary" />
                   {{ getStatusName('disabled') }}
                 </div>
-                <p class="text-[10px] font-black text-text-secondary uppercase mt-1">{{ locale.mobile.accountStatus }}</p>
+                <p class="text-xs font-bold text-text-secondary uppercase mt-1">{{ locale.mobile.accountStatus }}</p>
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4 py-4 border-y border-border-secondary-50">
               <div class="space-y-1">
-                <p class="text-[9px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ locale.mobile.roleLevel }}
                 </p>
                 <div>
                   <span
                     v-if="user.role === 'SUPER_ADMIN'"
-                    class="px-2 py-0.5 bg-warning-10 text-warning text-[10px] font-black rounded border border-warning-20 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-warning-10 text-warning text-xs font-bold rounded border border-warning-20 uppercase tracking-wider"
                     >{{ getRoleName('SUPER_ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'ADMIN'"
-                    class="px-2 py-0.5 bg-primary-10 text-primary text-[10px] font-black rounded border border-primary-20 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-primary-10 text-primary text-xs font-bold rounded border border-primary-20 uppercase tracking-wider"
                     >{{ getRoleName('ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
-                    class="px-2 py-0.5 bg-info-10 text-info text-[10px] font-black rounded border border-info-20 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-info-10 text-info text-xs font-bold rounded border border-info-20 uppercase tracking-wider"
                     >{{ getRoleName('SONG_ADMIN') }}</span
                   >
                   <span
                     v-else
-                    class="px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded border border-border-tertiary-50 uppercase tracking-widest"
+                    class="whitespace-nowrap px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-xs font-bold rounded border border-border-tertiary-50 uppercase tracking-wider"
                     >{{ getRoleName('USER') }}</span
                   >
                 </div>
               </div>
               <div class="space-y-1 text-right">
-                <p class="text-[9px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ locale.mobile.class }}
                 </p>
                 <p class="text-xs font-bold text-text-secondary">
@@ -526,43 +529,43 @@
                 </p>
               </div>
               <div class="space-y-1">
-                <p class="text-[9px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ locale.mobile.recentActivity }}
                 </p>
                 <p class="text-xs font-bold text-text-tertiary">{{ formatDate(user.lastLogin) }}</p>
               </div>
               <div class="space-y-1 text-right">
-                <p class="text-[9px] font-black text-text-disabled uppercase tracking-widest">
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">
                   {{ locale.mobile.lastLoginIp }}
                 </p>
-                <p class="text-[11px] font-mono text-text-disabled">{{ user.lastLoginIp || '-' }}</p>
+                <p class="text-xs font-mono text-text-disabled">{{ user.lastLoginIp || '-' }}</p>
               </div>
             </div>
 
             <div class="flex gap-2 action-buttons">
               <button
                 :disabled="!canManageUser(user)"
-                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-primary-hover active:text-text-primary transition-colors disabled:opacity-20 action-btn"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider active:bg-primary-hover active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="editUser(user)"
               >
                 <Edit2 :size="12" /> {{ locale.actions.edit }}
               </button>
               <button
                 v-if="user.status === 'pending'"
-                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider active:bg-info active:text-text-primary transition-colors action-btn"
                 @click="openApproval(user)"
               >
                 <ClipboardCheck :size="12" /> {{ locale.actions.approve }}
               </button>
               <button
-                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider active:bg-info active:text-text-primary transition-colors action-btn"
                 @click="viewUserSongs(user)"
               >
                 <Music :size="12" /> {{ locale.actions.records }}
               </button>
               <button
                 :disabled="!canManageUser(user)"
-                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-warning active:text-text-primary transition-colors disabled:opacity-20 action-btn"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider active:bg-warning active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="resetPassword(user)"
               >
                 <Lock :size="12" /> {{ locale.actions.reset }}
@@ -589,48 +592,25 @@
     </div>
 
     <!-- 添加/编辑用户模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="showAddModal || !!editingUser"
+      :title="editingUser ? locale.form.editTitle : locale.form.createTitle"
+      :description="locale.form.desc"
+      size="lg"
+      @close="closeModal"
     >
-      <div
-        v-if="showAddModal || editingUser"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <UserPlus v-if="!editingUser" :size="20" />
-                    <Edit2 v-else :size="20" />
-                  </div>
-                  {{ editingUser ? locale.form.editTitle : locale.form.createTitle }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.form.desc }}</p>
-              </div>
-              <button
-                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="closeModal"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <UserPlus v-if="!editingUser" :size="18" />
+          <Edit2 v-else :size="18" />
+        </span>
+      </template>
 
-            <div class="space-y-5">
+      <div class="space-y-5">
+
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                     >{{ locale.form.name }}</label
                   >
                   <div class="relative group">
@@ -648,7 +628,7 @@
                   </div>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                     >{{ locale.form.username }}</label
                   >
                   <div class="relative group">
@@ -668,7 +648,7 @@
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">
+                <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1">
                   {{ editingUser ? locale.form.newPassword : locale.form.initialPassword }}
                 </label>
                 <div class="relative group">
@@ -688,7 +668,7 @@
 
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                     >{{ locale.form.role }}</label
                   >
                   <CustomSelect
@@ -700,7 +680,7 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                     >{{ locale.form.status }}</label
                   >
                   <CustomSelect
@@ -715,7 +695,7 @@
 
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                     >{{ locale.form.grade }}</label
                   >
                   <div class="relative group">
@@ -733,7 +713,7 @@
                   </div>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                     >{{ locale.form.class }}</label
                   >
                   <div class="relative group">
@@ -759,63 +739,53 @@
                 <AlertCircle :size="16" />
                 {{ formError }}
               </div>
-            </div>
+      </div>
 
-            <div class="flex gap-3 mt-10">
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
-                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
+                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
                 @click="closeModal"
               >
                 {{ locale.form.cancel }}
               </button>
               <button
                 :disabled="saving"
-                class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] active:scale-95"
+                class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] active:scale-95"
                 @click="saveUser"
               >
                 <Save v-if="!saving" :size="16" />
                 <RefreshCw v-else class="animate-spin" :size="16" />
                 {{ saving ? locale.form.saving : editingUser ? locale.form.update : locale.form.create }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 重置密码模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="!!resetPasswordUser"
+      :title="locale.resetPasswordModal.title"
+      size="md"
+      @close="closeResetPassword"
     >
-      <div
-        v-if="resetPasswordUser"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8 text-center">
-            <div
-              class="w-20 h-20 bg-warning-10 rounded-[2rem] flex items-center justify-center text-warning mx-auto mb-6"
-            >
-              <Lock :size="32" />
-            </div>
-            <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.resetPasswordModal.title }}</h3>
-            <p class="text-xs text-text-tertiary mt-2 mb-8">
-              {{ locale.resetPasswordModal.descPrefix }}
-              <span class="text-text-primary font-bold">{{ resetPasswordUser.name }}</span>
-              {{ locale.resetPasswordModal.descSuffix }}
-            </p>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning-10 text-warning">
+          <Lock :size="18" />
+        </span>
+      </template>
 
-            <div class="space-y-4 text-left">
+      <p class="mb-5 text-xs text-text-tertiary">
+        {{ locale.resetPasswordModal.descPrefix }}
+        <span class="font-bold text-text-primary">{{ resetPasswordUser?.name }}</span>
+        {{ locale.resetPasswordModal.descSuffix }}
+      </p>
+
+      <div class="space-y-4 text-left">
+
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                   >{{ locale.resetPasswordModal.newPassword }}</label
                 >
                 <div class="relative group">
@@ -833,7 +803,7 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                   >{{ locale.resetPasswordModal.confirmPassword }}</label
                 >
                 <div class="relative group">
@@ -858,72 +828,47 @@
                 <AlertCircle :size="16" />
                 {{ passwordError }}
               </div>
-            </div>
+      </div>
 
-            <div class="flex gap-3 mt-8">
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
-                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
+                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
                 @click="closeResetPassword"
               >
                 {{ locale.resetPasswordModal.cancel }}
               </button>
               <button
                 :disabled="resetting"
-                class="flex-[2] px-6 py-4 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--warning-glow-20)] active:scale-95"
+                class="flex-[2] px-6 py-4 bg-warning hover:bg-warning text-text-primary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--warning-glow-20)] active:scale-95"
                 @click="confirmResetPassword"
               >
                 <Save v-if="!resetting" :size="16" />
                 <RefreshCw v-else class="animate-spin" :size="16" />
                 {{ resetting ? locale.resetPasswordModal.resetting : locale.resetPasswordModal.confirm }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 批量导入用户模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="showImportModal"
+      :title="locale.importModal.title"
+      :description="locale.importModal.desc"
+      size="2xl"
+      @close="closeImportModal"
     >
-      <div
-        v-if="showImportModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-success-10 flex items-center justify-center text-success"
-                  >
-                    <FileSpreadsheet :size="20" />
-                  </div>
-                  {{ locale.importModal.title }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">
-                  {{ locale.importModal.desc }}
-                </p>
-              </div>
-              <button
-                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="closeImportModal"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success-10 text-success">
+          <FileSpreadsheet :size="18" />
+        </span>
+      </template>
 
-            <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-              <div class="p-5 bg-bg-primary-50 border border-border-secondary-50 rounded-3xl space-y-4">
+      <div class="space-y-6">
+
+              <div class="p-5 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-4">
                 <div class="flex items-center gap-2 text-text-secondary font-bold text-sm mb-2">
                   <Info :size="16" class="text-primary" />
                   {{ locale.importModal.instructionsTitle }}
@@ -934,7 +879,7 @@
                 </p>
 
                 <div class="overflow-hidden rounded-2xl border border-border-secondary-80">
-                  <table class="w-full text-[10px] text-left">
+                  <table class="w-full text-xs text-left">
                     <thead class="bg-bg-secondary text-text-tertiary uppercase tracking-tighter">
                       <tr>
                         <th class="px-3 py-2 border-b border-border-secondary">{{ locale.importModal.sampleHeaders.name }}</th>
@@ -960,7 +905,7 @@
 
                 <div class="flex items-center justify-between gap-4">
                   <div
-                    class="p-3 bg-primary-5 border border-primary-10 rounded-2xl text-[10px] text-primary-80 leading-relaxed flex-1"
+                    class="p-3 bg-primary-5 border border-primary-10 rounded-2xl text-xs text-primary-80 leading-relaxed flex-1"
                   >
                     <strong>{{ locale.importModal.supportedRoles }}</strong>
                     <span v-if="isSuperAdmin"
@@ -976,7 +921,7 @@
                       :size="16"
                       class="text-success group-hover:scale-110 transition-transform"
                     />
-                    <span class="text-[10px] font-black text-success uppercase tracking-widest"
+                    <span class="text-xs font-bold text-success uppercase tracking-wider"
                       >{{ locale.importModal.downloadTemplate }}</span
                     >
                   </button>
@@ -984,7 +929,7 @@
               </div>
 
               <div class="space-y-3">
-                <label class="block text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+                <label class="block text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                   >{{ locale.importModal.chooseFile }}</label
                 >
                 <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
@@ -997,7 +942,7 @@
                     @change="handleFileUpload"
                   >
                   <div
-                    class="w-full py-10 border-2 border-dashed border-border-secondary group-hover:border-success-50 group-hover:bg-success-5 rounded-3xl transition-all flex flex-col items-center justify-center gap-3"
+                    class="w-full py-10 border-2 border-dashed border-border-secondary group-hover:border-success-50 group-hover:bg-success-5 rounded-2xl transition-all flex flex-col items-center justify-center gap-3"
                   >
                     <div
                       class="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-disabled group-hover:text-success transition-colors"
@@ -1023,11 +968,11 @@
               <!-- 进度条 -->
               <div
                 v-if="importProgressText"
-                class="p-5 bg-success-5 border border-success-20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                class="p-5 bg-success-5 border border-success-20 rounded-2xl space-y-3 panel-enter"
               >
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-black text-success uppercase tracking-widest">{{ importProgressText }}</span>
-                  <span class="text-xs font-black text-success">{{ importProgress }}%</span>
+                  <span class="text-xs font-bold text-success uppercase tracking-wider">{{ importProgressText }}</span>
+                  <span class="text-xs font-bold text-success">{{ importProgress }}%</span>
                 </div>
                 <div class="h-2 bg-bg-secondary rounded-full overflow-hidden">
                   <div
@@ -1039,11 +984,11 @@
 
               <div v-if="previewData.length > 0" class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
-                  <label class="text-xs font-black text-text-tertiary uppercase tracking-widest"
+                  <label class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
                     >{{ formatMessage(locale.importModal.previewData, previewData.length) }}</label
                   >
                 </div>
-                <div class="overflow-hidden rounded-3xl border border-border-secondary bg-bg-primary-30">
+                <div class="overflow-hidden rounded-2xl border border-border-secondary bg-bg-primary-30">
                   <table class="w-full text-xs text-left">
                     <thead class="bg-bg-secondary-50 text-text-tertiary">
                       <tr>
@@ -1063,7 +1008,7 @@
                         <td class="px-4 py-3">{{ row.username }}</td>
                         <td class="px-4 py-3">
                           <span
-                            class="px-2 py-0.5 bg-bg-tertiary rounded-md text-[10px] text-text-tertiary uppercase"
+                            class="px-2 py-0.5 bg-bg-tertiary rounded-md text-xs text-text-tertiary uppercase"
                             >{{ row.role }}</span
                           >
                         </td>
@@ -1075,35 +1020,35 @@
                   </table>
                   <div
                     v-if="previewData.length > 5"
-                    class="p-3 text-center border-t border-border-secondary text-[10px] text-text-tertiary font-medium"
+                    class="p-3 text-center border-t border-border-secondary text-xs text-text-tertiary font-medium"
                   >
                     {{ formatMessage(locale.importModal.moreRecords, previewData.length - 5) }}
                   </div>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <div class="flex gap-3 mt-8">
+      <template #footer>
+        <div class="flex w-full gap-3">
+
               <button
-                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
+                class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider"
                 @click="closeImportModal"
               >
                 {{ locale.importModal.cancel }}
               </button>
               <button
                 :disabled="importLoading || previewData.length === 0"
-                class="flex-[2] px-6 py-4 bg-success hover:bg-success text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--success-glow-20)] active:scale-95"
+                class="flex-[2] px-6 py-4 bg-success hover:bg-success text-text-primary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--success-glow-20)] active:scale-95"
                 @click="importUsers"
               >
                 <Save v-if="!importLoading" :size="16" />
                 <RefreshCw v-else class="animate-spin" :size="16" />
                 {{ importLoading ? locale.importModal.importing : locale.importModal.confirm }}
               </button>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 删除确认对话框 -->
     <ConfirmDialog
@@ -1160,71 +1105,44 @@
     />
 
     <!-- 用户详细信息模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
+    <AppModal
+      :show="showUserDetailModal"
+      :title="locale.detail.title"
+      :description="locale.detail.desc"
+      size="2xl"
+      @close="closeUserDetailModal"
     >
-      <div
-        v-if="showUserDetailModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-        @click="closeUserDetailModal"
-      >
-        <div
-          class="bg-bg-secondary border border-border-secondary w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl"
-          @click.stop
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <User :size="20" />
-                  </div>
-                  {{ locale.detail.title }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.detail.desc }}</p>
-              </div>
-              <button
-                class="flex items-center justify-center p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="closeUserDetailModal"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <User :size="18" />
+        </span>
+      </template>
 
-            <div
-              v-if="selectedUserDetail"
-              class="space-y-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"
-            >
+      <div class="space-y-8">
+
               <!-- 基本信息 -->
               <div class="space-y-4">
                 <div
-                  class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  class="flex items-center gap-2 text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                 >
                   <Info :size="14" class="text-primary" />
                   {{ locale.detail.basicInfo }}
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-1">
-                    <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                    <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                       {{ locale.detail.userId }}
                     </div>
                     <div class="text-sm font-bold text-text-secondary">{{ selectedUserDetail.id }}</div>
                   </div>
                   <div class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-1">
-                    <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                    <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                       {{ locale.detail.name }}
                     </div>
                     <div class="text-sm font-bold text-text-secondary">{{ selectedUserDetail.name }}</div>
                   </div>
                   <div class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-1">
-                    <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                    <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                       {{ locale.detail.username }}
                     </div>
                     <div class="text-sm font-bold text-text-secondary">
@@ -1232,13 +1150,13 @@
                     </div>
                   </div>
                   <div class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-1">
-                    <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                    <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                       {{ locale.detail.role }}
                     </div>
                     <div>
                       <span
                         :class="[
-                          'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest',
+                          'px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider',
                           getRoleClass(selectedUserDetail.role)
                         ]"
                       >
@@ -1247,7 +1165,7 @@
                     </div>
                   </div>
                   <div class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-1">
-                    <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                    <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                       {{ locale.detail.grade }}
                     </div>
                     <div class="text-sm font-bold text-text-secondary">
@@ -1255,7 +1173,7 @@
                     </div>
                   </div>
                   <div class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-1">
-                    <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                    <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                       {{ locale.detail.class }}
                     </div>
                     <div class="text-sm font-bold text-text-secondary">
@@ -1268,7 +1186,7 @@
               <!-- 账户状态 -->
               <div class="space-y-4">
                 <div
-                  class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+                  class="flex items-center gap-2 text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                 >
                   <Shield :size="14" class="text-success" />
                   {{ locale.detail.status }}
@@ -1278,7 +1196,7 @@
                     class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
-                      <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                      <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                         {{ locale.detail.passwordStatus }}
                       </div>
                       <div
@@ -1321,7 +1239,7 @@
                     class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
-                      <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                      <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                         {{ locale.detail.meowBinding }}
                       </div>
                       <div
@@ -1355,7 +1273,7 @@
                     class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
-                      <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                      <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                         {{ locale.detail.emailBinding }}
                       </div>
                       <div
@@ -1397,7 +1315,7 @@
                     @click="openOAuthBindingsModal"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
-                      <div class="text-[10px] font-black text-text-disabled uppercase tracking-tighter">
+                      <div class="text-xs font-bold text-text-disabled uppercase tracking-tighter">
                         {{ locale.detail.oauthBinding }}
                       </div>
                       <div
@@ -1439,7 +1357,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="space-y-4">
                   <div
-                    class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    class="flex items-center gap-2 text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                   >
                     <Clock :size="14" class="text-info" />
                     {{ locale.detail.loginInfo }}
@@ -1465,7 +1383,7 @@
                 </div>
                 <div class="space-y-4">
                   <div
-                    class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    class="flex items-center gap-2 text-xs font-bold text-text-tertiary uppercase tracking-wider ml-1"
                   >
                     <Calendar :size="14" class="text-warning" />
                     {{ locale.detail.timeRecords }}
@@ -1495,7 +1413,7 @@
               <div class="space-y-4">
                 <div class="flex items-center justify-between ml-1">
                   <div
-                    class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest"
+                    class="flex items-center gap-2 text-xs font-bold text-text-tertiary uppercase tracking-wider"
                   >
                     <History :size="14" class="text-success" />
                     {{ locale.detail.statusLogs }}
@@ -1507,14 +1425,14 @@
                   class="py-12 flex flex-col items-center justify-center text-text-disabled gap-3"
                 >
                   <RefreshCw :size="24" class="animate-spin" />
-                  <span class="text-[10px] font-black uppercase tracking-widest"
+                  <span class="text-xs font-bold uppercase tracking-wider"
                     >{{ locale.detail.loadingLogs }}</span
                   >
                 </div>
 
                 <div
                   v-else-if="statusLogs.length === 0"
-                  class="py-12 text-center bg-bg-primary-30 border border-border-secondary-50 rounded-3xl"
+                  class="py-12 text-center bg-bg-primary-30 border border-border-secondary-50 rounded-2xl"
                 >
                   <p class="text-xs text-text-disabled">{{ locale.detail.noLogs }}</p>
                 </div>
@@ -1534,7 +1452,7 @@
                           <div class="flex items-center gap-2">
                             <span
                               :class="[
-                                'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter',
+                                'px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-tighter',
                                 getStatusClass(log.oldStatus)
                               ]"
                             >
@@ -1543,14 +1461,14 @@
                             <ArrowRight :size="12" class="text-text-secondary" />
                             <span
                               :class="[
-                                'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter',
+                                'px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-tighter',
                                 getStatusClass(log.newStatus)
                               ]"
                             >
                               {{ log.newStatusDisplay }}
                             </span>
                           </div>
-                          <span class="text-[10px] text-text-disabled font-medium">{{
+                          <span class="text-xs text-text-disabled font-medium">{{
                             formatStatusLogDate(log.createdAt)
                           }}</span>
                         </div>
@@ -1563,7 +1481,7 @@
                           {{ log.reason }}
                         </div>
 
-                        <div class="flex items-center gap-2 text-[10px]">
+                        <div class="flex items-center gap-2 text-xs">
                           <div
                             class="w-4 h-4 rounded-full bg-bg-tertiary flex items-center justify-center text-text-tertiary"
                           >
@@ -1586,25 +1504,24 @@
                   />
                 </div>
               </div>
-            </div>
-
-            <div class="mt-8">
-              <button
-                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
-                @click="closeUserDetailModal"
-              >
-                {{ locale.actions.close }}
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
-    </Transition>
+
+      <template #footer>
+        <button
+          class="w-full px-6 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
+          @click="closeUserDetailModal"
+        >
+          {{ locale.actions.close }}
+        </button>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAuth } from '~/composables/useAuth'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
@@ -1668,9 +1585,9 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
-import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
+import { formatDateTime, getBeijingTime, getRelativeTimeParts } from '~/utils/timeUtils'
 
-const { admin, currentLocale } = useLocale()
+const { admin, common, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.userManager || {})
 const formatMessage = (value, ...args) => {
   if (typeof value === 'function') return value(...args)
@@ -2113,16 +2030,13 @@ watch(currentPage, (newPage) => {
 const formatDate = (dateString) => {
   const timeLocale = locale.value?.time || {}
   if (!dateString) return timeLocale.never || ''
-  const date = new Date(dateString)
-  const now = getSyncedDate()
-  const diff = now - date
-
-  if (diff < 60000) return timeLocale.justNow || ''
-  if (diff < 3600000) return formatMessage(timeLocale.minutesAgo, Math.floor(diff / 60000))
-  if (diff < 86400000) return formatMessage(timeLocale.hoursAgo, Math.floor(diff / 3600000))
-  if (diff < 86400000 * 7) return formatMessage(timeLocale.daysAgo, Math.floor(diff / 86400000))
-
-  return date.toLocaleDateString(currentLocale.value)
+  const parts = getRelativeTimeParts(dateString)
+  if (!parts) return timeLocale.never || ''
+  if (parts.unit === 'justNow') return timeLocale.justNow || ''
+  if (parts.unit === 'minutes') return formatMessage(timeLocale.minutesAgo, parts.value)
+  if (parts.unit === 'hours') return formatMessage(timeLocale.hoursAgo, parts.value)
+  if (parts.value < 7) return formatMessage(timeLocale.daysAgo, parts.value)
+  return formatDateTime(new Date(dateString), 'YYYY/M/D')
 }
 
 const getRoleClass = (role) => {

@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <!-- 头部 -->
     <div>
-      <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+      <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
       <p class="text-sm text-text-tertiary mt-1">{{ locale.desc }}</p>
     </div>
 
@@ -36,7 +36,7 @@
           <button
             type="button"
             :disabled="adding || !gradeInput.trim() || !classInput.trim()"
-            class="w-full sm:w-auto px-6 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-lg transition-all hover:opacity-90 active:scale-95 uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            class="w-full sm:w-auto px-6 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-lg transition-all hover:opacity-90 active:scale-95 uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             @click="handleAdd"
           >
             <Plus v-if="!adding" :size="14" />
@@ -48,7 +48,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 border-t border-border-secondary pt-4">
         <div>
-          <p class="text-sm font-black text-text-primary mb-2">{{ locale.batchTitle }}</p>
+          <p class="text-sm font-bold text-text-primary mb-2">{{ locale.batchTitle }}</p>
           <div class="flex flex-col sm:flex-row gap-3">
             <div class="flex-1">
               <input
@@ -70,7 +70,7 @@
               <button
                 type="button"
                 :disabled="batchAdding || !batchGradeInput.trim() || !batchClassInput.trim()"
-                class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 @click="handleBatchAdd"
               >
                 <Sparkles v-if="!batchAdding" :size="14" />
@@ -81,12 +81,12 @@
           </div>
         </div>
         <div class="lg:border-l lg:border-border-secondary lg:pl-5">
-          <p class="text-sm font-black text-text-primary mb-2">{{ locale.initTitle }}</p>
+          <p class="text-sm font-bold text-text-primary mb-2">{{ locale.initTitle }}</p>
           <p class="text-xs text-text-tertiary mb-3">{{ locale.initDesc }}</p>
           <button
             type="button"
             :disabled="initLoading"
-            class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             @click="handleInitialize"
           >
             <Users v-if="!initLoading" :size="14" />
@@ -99,25 +99,25 @@
 
       <!-- 使用说明 -->
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-5">
-        <p class="text-xs font-black text-text-primary uppercase tracking-widest mb-3 flex items-center gap-1.5">
+        <p class="text-xs font-bold text-text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <Info :size="13" class="text-text-tertiary" />
           {{ locale.guideTitle }}
         </p>
         <ul class="space-y-2.5 text-xs text-text-tertiary leading-relaxed">
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">1</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-xs font-bold flex items-center justify-center">1</span>
             {{ locale.guideSingle }}
           </li>
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">2</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-xs font-bold flex items-center justify-center">2</span>
             {{ locale.guideBatchLine1 }}
           </li>
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">3</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-xs font-bold flex items-center justify-center">3</span>
             {{ locale.guideBatchLine2 }}
           </li>
           <li class="flex gap-2">
-            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-[10px] font-black flex items-center justify-center">4</span>
+            <span class="shrink-0 w-4 h-4 mt-0.5 rounded bg-primary-10 text-primary text-xs font-bold flex items-center justify-center">4</span>
             {{ locale.guideDedup }}
           </li>
         </ul>
@@ -154,11 +154,11 @@
         <div class="flex items-center justify-between px-5 py-3.5 border-b border-border-secondary">
           <div class="flex items-center gap-2.5">
             <GraduationCap :size="18" class="text-primary" />
-            <span class="text-sm font-black text-text-primary">{{ group.grade }}</span>
-            <span class="text-[10px] font-bold text-text-tertiary px-2 py-0.5 rounded-full bg-bg-primary">
+            <span class="text-sm font-bold text-text-primary">{{ group.grade }}</span>
+            <span class="text-xs font-bold text-text-tertiary px-2 py-0.5 rounded-full bg-bg-primary">
               {{ locale.classCount(group.items.length) }}
             </span>
-            <span class="text-[10px] font-bold text-text-tertiary px-2 py-0.5 rounded-full bg-bg-primary flex items-center gap-1">
+            <span class="text-xs font-bold text-text-tertiary px-2 py-0.5 rounded-full bg-bg-primary flex items-center gap-1">
               <Users :size="10" />
               {{ locale.personCount(groupTotalUsers(group)) }}
             </span>
@@ -181,7 +181,7 @@
             class="group/chip flex items-center gap-1.5 pl-3.5 pr-2 py-1.5 rounded-lg bg-bg-primary border border-border-secondary text-sm font-bold text-text-primary"
           >
             <span>{{ item.class }}</span>
-            <span v-if="item.userCount > 0" class="text-[11px] font-bold text-text-tertiary">
+            <span v-if="item.userCount > 0" class="text-xs font-bold text-text-tertiary">
               {{ locale.personCount(item.userCount) }}
             </span>
             <button

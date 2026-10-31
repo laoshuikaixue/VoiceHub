@@ -1,50 +1,27 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-        @click.self="close"
-      >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
-
-        <div
-          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
+  <AppModal
+    :show="show"
+    :title="modalTitle"
+    size="xl"
+    @close="close"
+  >
+    <template #header="{ titleId }">
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          v-if="view === 'songs'"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+          type="button"
+          @click="backToPlaylists"
         >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-8 pb-4">
-            <div class="flex items-center gap-4">
-              <button
-                v-if="view === 'songs'"
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-                @click="backToPlaylists"
-              >
-                <Icon name="arrow-left" :size="20" />
-              </button>
-              <h3
-                class="text-xl font-black text-text-primary tracking-tight truncate max-w-[300px] sm:max-w-md"
-              >
-                {{ view === 'playlists' ? locale.selectPlaylist : selectedPlaylist?.name || locale.playlistDetails }}
-              </h3>
-            </div>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-              @click="close"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
+          <Icon name="arrow-left" :size="18" />
+        </button>
+        <h2 :id="titleId" class="truncate text-lg font-bold tracking-tight text-text-primary">
+          {{ modalTitle }}
+        </h2>
+      </div>
+    </template>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+
             <div
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
@@ -64,7 +41,7 @@
               </div>
               <p class="text-text-tertiary font-medium mb-6">{{ error }}</p>
               <button
-                class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold transition-all active:scale-95 uppercase tracking-wider"
                 @click="retry"
               >
                 {{ locale.retry }}
@@ -78,7 +55,7 @@
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-2xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="music" :size="32" class="opacity-20" />
                 </div>
@@ -89,7 +66,7 @@
                 v-for="playlist in playlists"
                 v-else
                 :key="playlist.id"
-                class="group flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-3xl hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all cursor-pointer"
+                class="group flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-2xl hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all cursor-pointer"
                 @click="selectPlaylist(playlist)"
               >
                 <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-tertiary mr-4 flex-shrink-0">
@@ -140,7 +117,7 @@
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-2xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="music" :size="32" class="opacity-20" />
                 </div>
@@ -151,7 +128,7 @@
                 v-for="song in songs"
                 v-else
                 :key="song.id"
-                class="group flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-3xl hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all"
+                class="group flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-2xl hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all"
               >
                 <!-- 封面与播放叠加层 -->
                 <div
@@ -200,19 +177,19 @@
                   <div v-else-if="getSimilarSong(song)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(song)?.played"
-                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-xs font-bold uppercase tracking-wider"
                     >
                   {{ requestLocale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(song)?.scheduled"
-                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-xs font-bold uppercase tracking-wider"
                     >
                   {{ requestLocale.scheduled }}
                     </span>
                     <span
                       v-else
-                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-xs font-bold uppercase tracking-wider"
                     >
                   {{ locale.exists }}
                     </span>
@@ -221,14 +198,14 @@
                       <button
                         v-if="getSimilarSong(song)?.played && isSuperAdmin"
                         :disabled="submitting"
-                        class="px-3 py-1.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                        class="px-3 py-1.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 uppercase tracking-wider"
                         @click.stop="selectSong(song)"
                       >
                 {{ submitting && selectedSongId === song.id ? '...' : requestLocale.continueSubmit }}
                       </button>
                       <button
                         v-else
-                        class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-wider"
                         :class="[
                           getSimilarSong(song)?.voted
                             ? 'bg-error-10 text-error border border-error-20'
@@ -249,7 +226,7 @@
                   <button
                     v-else
                     :disabled="submitting || songsLoadingForSimilar"
-                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                     @click.stop="selectSong(song)"
                   >
                 {{ submitting && selectedSongId === song.id ? requestLocale.submitting : requestLocale.chooseSubmit }}
@@ -261,7 +238,7 @@
               <div v-if="hasMore" class="pt-6 pb-2 flex justify-center">
                 <button
                   :disabled="moreLoading"
-                  class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
+                  class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-wider"
                   @click="loadMore"
                 >
                   <Icon v-if="moreLoading" name="loader" :size="16" class="animate-spin" />
@@ -269,15 +246,12 @@
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { getPlaylistTracks, getUserPlaylists } from '~/utils/neteaseApi'
 import {
   getQqPlaylistSongs,
@@ -608,6 +582,12 @@ const selectSong = (songData) => {
 const close = () => {
   emit('close')
 }
+
+const modalTitle = computed(() =>
+  view.value === 'playlists'
+    ? locale.value.selectPlaylist
+    : selectedPlaylist.value?.name || locale.value.playlistDetails
+)
 
 defineExpose({
   resetSubmissionState: () => {

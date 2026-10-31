@@ -38,6 +38,19 @@ export const PLATFORM_NAME_FALLBACK_EN = {
 /**
  * 获取平台本地化显示名（优先 siteConfig 词典，回退到硬编码值）
  */
+export const getPlatformTagClass = (platform: string): string =>
+  (BUILTIN_PLATFORMS as readonly string[]).includes(platform) ? platform : 'plugin'
+
+/** 解析平台显示名：插件显示名优先，其次站点词典与内置回退值 */
+export const getPlatformLabel = (
+  platform: string,
+  options: { siteConfig?: any; currentLocale?: string; pluginPlatforms?: Array<{ platform: string; displayName?: string }> } = {}
+): string => {
+  if (!platform) return ''
+  const plugin = options.pluginPlatforms?.find((item) => item.platform === platform)
+  return plugin?.displayName || getPlatformDisplayName(platform, options.siteConfig, options.currentLocale || 'zh-CN')
+}
+
 export const getPlatformDisplayName = (key: string, siteConfig: any, currentLocale: string): string => {
   const nameKey = PLATFORM_NAME_KEYS[key as keyof typeof PLATFORM_NAME_KEYS]
   if (nameKey && siteConfig?.[nameKey]) {

@@ -139,13 +139,15 @@ onMounted(async () => {
 <style scoped>
 .auth-layout {
   width: 100%;
-  min-height: 100vh;
   min-height: 100dvh;
   background: var(--panel-bg-deepest);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(20px + env(safe-area-inset-left, 0px));
+  padding-right: calc(20px + env(safe-area-inset-right, 0px));
   box-sizing: border-box;
   overflow-y: auto;
 }
@@ -164,7 +166,7 @@ onMounted(async () => {
 }
 
 .info-section {
-  background: linear-gradient(135deg, var(--color-indigo-hover) 0%, var(--color-collab-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   padding: 60px 40px;
   display: flex;
   align-items: center;
@@ -369,7 +371,10 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .auth-layout {
-    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
   }
 
   .auth-container {

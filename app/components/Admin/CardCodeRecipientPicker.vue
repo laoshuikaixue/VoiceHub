@@ -33,14 +33,14 @@
     <!-- 搜索命中：直接勾选，不受树层级限制 -->
     <div v-if="keyword.trim()" class="rounded-xl border border-border-secondary bg-bg-primary">
       <div class="flex items-center justify-between gap-2 border-b border-border-secondary px-3 py-2">
-        <p class="text-[11px] font-bold text-text-tertiary">
+        <p class="text-xs font-bold text-text-tertiary">
           <AppSpinner v-if="searching" :size="13" class="mr-1 align-middle" />
           {{ searching ? locale.assignSearching : getMessage('assignSearchResultCount', searchResults.length) }}
         </p>
         <button
           v-if="searchResults.length"
           type="button"
-          class="text-[11px] font-bold text-primary hover:text-primary-hover"
+          class="text-xs font-bold text-primary hover:text-primary-hover"
           @click="selectAllSearchResults"
         >
           {{ locale.assignSelectAllResults }}
@@ -55,14 +55,14 @@
           @click="toggleUser(user)"
         >
           <span
-            class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
+            class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold"
             :class="isSelected(user.id) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
           >
             {{ isSelected(user.id) ? '✓' : '' }}
           </span>
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm text-text-primary">{{ user.name || user.username }}</span>
-            <span class="block truncate text-[11px] text-text-tertiary">
+            <span class="block truncate text-xs text-text-tertiary">
               @{{ user.username }}
               <template v-if="user.grade || user.class"> · {{ [user.grade, user.class].filter(Boolean).join(' · ') }}</template>
             </span>
@@ -77,12 +77,12 @@
     <!-- 组织树：年级 → 班级 → 用户 -->
     <div v-else class="rounded-xl border border-border-secondary bg-bg-primary">
       <div class="flex items-center justify-between gap-2 border-b border-border-secondary px-3 py-2">
-        <p class="text-[11px] font-bold text-text-tertiary">
+        <p class="text-xs font-bold text-text-tertiary">
           {{ getMessage('assignTreeSummary', treeTotal, modelValue.length) }}
         </p>
         <button
           type="button"
-          class="flex items-center gap-1 text-[11px] font-bold text-text-tertiary hover:text-text-primary"
+          class="flex items-center gap-1 text-xs font-bold text-text-tertiary hover:text-text-primary"
           :disabled="treeLoading"
           @click="fetchTree"
         >
@@ -118,17 +118,17 @@
               @click="toggleGrade(grade.value)"
             >
               <span class="truncate text-sm font-bold text-text-primary sm:text-[13px]">{{ gradeLabel(grade.value) }}</span>
-              <span class="shrink-0 text-[11px] font-black text-text-tertiary">{{ grade.userCount }}</span>
+              <span class="shrink-0 text-xs font-bold text-text-tertiary">{{ grade.userCount }}</span>
               <span
                 v-if="gradeSelectedCount(grade) > 0"
-                class="shrink-0 rounded-full bg-primary-10 px-1.5 py-0.5 text-[10px] font-black text-primary"
+                class="shrink-0 rounded-full bg-primary-10 px-1.5 py-0.5 text-xs font-bold text-primary"
               >
                 {{ getMessage('assignPickedCount', gradeSelectedCount(grade)) }}
               </span>
             </button>
             <button
               type="button"
-              class="flex min-h-[36px] shrink-0 items-center rounded-lg px-2 text-[11px] font-bold text-text-tertiary transition-colors hover:bg-bg-tertiary-50 hover:text-primary"
+              class="flex min-h-[36px] shrink-0 items-center rounded-lg px-2 text-xs font-bold text-text-tertiary transition-colors hover:bg-bg-tertiary-50 hover:text-primary"
               @click="selectWholeGrade(grade)"
             >
               {{ locale.assignSelectWholeGrade }}
@@ -154,17 +154,17 @@
                   @click="toggleClass(grade.value, cls.value)"
                 >
                   <span class="truncate text-[13px] font-bold text-text-secondary">{{ className(cls.value) }}</span>
-                  <span class="shrink-0 text-[11px] font-black text-text-tertiary">{{ cls.userCount }}</span>
+                  <span class="shrink-0 text-xs font-bold text-text-tertiary">{{ cls.userCount }}</span>
                   <span
                     v-if="classSelectedCount(grade.value, cls.value) > 0"
-                    class="shrink-0 rounded-full bg-primary-10 px-1.5 py-0.5 text-[10px] font-black text-primary"
+                    class="shrink-0 rounded-full bg-primary-10 px-1.5 py-0.5 text-xs font-bold text-primary"
                   >
                     {{ getMessage('assignPickedCount', classSelectedCount(grade.value, cls.value)) }}
                   </span>
                 </button>
                 <button
                   type="button"
-                  class="flex min-h-[36px] shrink-0 items-center rounded-lg px-2 text-[11px] font-bold text-text-tertiary transition-colors hover:bg-bg-tertiary-50 hover:text-primary"
+                  class="flex min-h-[36px] shrink-0 items-center rounded-lg px-2 text-xs font-bold text-text-tertiary transition-colors hover:bg-bg-tertiary-50 hover:text-primary"
                   @click="selectWholeClass(grade.value, cls.value)"
                 >
                   {{ locale.assignSelectWholeClass }}
@@ -173,7 +173,7 @@
 
               <!-- 班级用户 -->
               <div v-if="expandedClasses.has(classKey(grade.value, cls.value))" class="ml-4 border-l border-border-secondary pl-2 pb-1">
-                <p v-if="classLoading[classKey(grade.value, cls.value)]" class="px-2 py-3 text-[11px] text-text-tertiary">
+                <p v-if="classLoading[classKey(grade.value, cls.value)]" class="px-2 py-3 text-xs text-text-tertiary">
                   {{ locale.assignPreviewLoading }}
                 </p>
                 <template v-else>
@@ -185,7 +185,7 @@
                     @click="toggleUser(user)"
                   >
                     <span
-                      class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
+                      class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold"
                       :class="isSelected(user.id) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
                     >
                       {{ isSelected(user.id) ? '✓' : '' }}
@@ -193,11 +193,11 @@
                     <span class="min-w-0 flex-1 truncate text-[13px] text-text-secondary">
                       {{ user.name || user.username }}
                     </span>
-                    <span class="shrink-0 truncate text-[11px] text-text-tertiary">@{{ user.username }}</span>
+                    <span class="shrink-0 truncate text-xs text-text-tertiary">@{{ user.username }}</span>
                   </button>
                   <p
                     v-if="!(classUsers[classKey(grade.value, cls.value)] || []).length"
-                    class="px-2 py-3 text-[11px] text-text-tertiary"
+                    class="px-2 py-3 text-xs text-text-tertiary"
                   >
                     {{ locale.assignTreeClassEmpty }}
                   </p>
@@ -211,14 +211,14 @@
 
     <!-- 已选用户 -->
     <div v-if="modelValue.length" class="rounded-xl border border-info-20 bg-info-10 p-2.5">
-      <p class="mb-2 text-[11px] font-black text-info">
+      <p class="mb-2 text-xs font-bold text-info">
         {{ getMessage('assignPickedSummary', modelValue.length) }}
       </p>
       <div class="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
         <span
           v-for="user in modelValue"
           :key="user.id"
-          class="inline-flex max-w-full items-center gap-1 rounded-full border border-info-20 bg-bg-primary px-2 py-1 text-[11px] font-bold text-text-secondary"
+          class="inline-flex max-w-full items-center gap-1 rounded-full border border-info-20 bg-bg-primary px-2 py-1 text-xs font-bold text-text-secondary"
         >
           <span class="truncate">{{ user.name || user.username }}</span>
           <button type="button" class="shrink-0 text-text-tertiary hover:text-error" @click="removeUser(user.id)">

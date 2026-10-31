@@ -2,7 +2,7 @@
   <div class="max-w-[1200px] mx-auto space-y-8 pb-20 px-2">
     <!-- 页面标题 -->
     <div class="space-y-1">
-      <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+      <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
       <p class="text-xs text-text-tertiary font-medium">
         {{ locale.desc }}
       </p>
@@ -36,7 +36,7 @@
             </div>
             <span
               v-if="card.isDanger"
-              class="px-2 py-0.5 bg-error-10 text-error text-[9px] font-black uppercase tracking-widest border border-error-20 rounded"
+              class="px-2 py-0.5 bg-error-10 text-error text-xs font-bold uppercase tracking-wider border border-error-20 rounded"
               >{{ locale.highRisk }}</span
             >
           </div>
@@ -52,7 +52,7 @@
 
           <button
             :disabled="isLoading(card.id)"
-            class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
+            class="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
             :class="
               card.isDanger
                 ? 'bg-bg-primary border border-error-30 text-error hover:bg-error hover:text-text-primary hover:border-error shadow-lg shadow-[var(--error-glow-5)]'
@@ -79,34 +79,24 @@
     <div class="bg-primary-hover-5 border border-primary-10 rounded-xl p-5 flex items-start gap-4">
       <AlertCircle class="text-primary shrink-0 mt-0.5 w-[18px] h-[18px]" />
       <div class="space-y-1">
-        <p class="text-[11px] font-bold text-text-secondary">{{ locale.maintenanceTitle }}</p>
-        <p class="text-[10px] text-text-tertiary leading-relaxed">
+        <p class="text-xs font-bold text-text-secondary">{{ locale.maintenanceTitle }}</p>
+        <p class="text-xs text-text-tertiary leading-relaxed">
           {{ locale.maintenanceDesc }}
         </p>
       </div>
     </div>
 
     <!-- 创建备份模态框 -->
-    <div
-      v-if="activeModal === 'backup'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'backup'"
+      :title="locale.backupTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.backupTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div class="space-y-2">
-            <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+            <p class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
               {{ locale.selectContent }}
             </p>
             <div class="space-y-2">
@@ -128,54 +118,47 @@
                   >
                     {{ item.label }}
                   </p>
-                  <p class="text-[10px] text-text-disabled font-medium mt-0.5">{{ item.desc }}</p>
+                  <p class="text-xs text-text-disabled font-medium mt-0.5">{{ item.desc }}</p>
                 </div>
               </label>
             </div>
           </div>
           <div class="p-3 bg-primary-5 border border-primary-10 rounded-xl">
-            <p class="text-[10px] text-text-tertiary text-center italic">
+            <p class="text-xs text-text-tertiary text-center italic">
               {{ locale.backupHint }}
             </p>
           </div>
-        </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
-            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
+            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider"
             @click="activeModal = 'none'"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="createLoading"
-            class="px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
             @click="createBackup"
           >
             {{ createLoading ? locale.exporting : locale.startExport }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 恢复备份模态框 -->
-    <div
-      v-if="activeModal === 'restore'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'restore'"
+      :title="locale.restoreTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.restoreTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div
             class="border-2 border-dashed border-border-secondary rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-success-50 hover:bg-success-5 transition-all cursor-pointer"
             @click="$refs.fileInput.click()"
@@ -188,7 +171,7 @@
             <h5 class="text-sm font-bold text-text-secondary">
               {{ selectedFile ? selectedFile.name : locale.selectFile }}
             </h5>
-            <p class="text-[10px] text-text-disabled font-bold uppercase mt-1 tracking-widest">
+            <p class="text-xs text-text-disabled font-bold uppercase mt-1 tracking-wider">
               {{ locale.fileHint }}
             </p>
             <input
@@ -201,7 +184,7 @@
           </div>
 
           <div class="space-y-3">
-            <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+            <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
               >{{ locale.restoreMode }}</label
             >
             <div class="grid grid-cols-2 gap-3">
@@ -222,7 +205,7 @@
                 >
                   {{ locale.restoreModes?.merge?.title ?? '合并恢复' }}
                 </h6>
-                <p class="text-[9px] text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}</p>
+                <p class="text-xs text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}</p>
               </button>
               <button
                 :class="[
@@ -241,7 +224,7 @@
                 >
                   {{ locale.restoreModes?.replace?.title ?? '覆盖恢复' }}
                 </h6>
-                <p class="text-[9px] text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}</p>
+                <p class="text-xs text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}</p>
               </button>
             </div>
           </div>
@@ -258,7 +241,7 @@
               >
               <div>
                 <p class="text-xs font-bold text-text-primary">{{ locale.overwriteSuperAdmin }}</p>
-                <p class="text-[10px] text-text-tertiary mt-1">
+                <p class="text-xs text-text-tertiary mt-1">
                   {{ locale.overwriteSuperAdminDesc }}
                 </p>
               </div>
@@ -269,50 +252,43 @@
             class="p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-warning shrink-0 mt-0.5 w-4 h-4" />
-            <p class="text-[10px] text-text-tertiary leading-normal font-medium">
+            <p class="text-xs text-text-tertiary leading-normal font-medium">
               {{ locale.replaceWarning }}
             </p>
           </div>
-        </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
-            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
+            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider"
             @click="activeModal = 'none'"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="uploadLoading || !selectedFile"
-            class="px-8 py-2 bg-success hover:bg-success text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-8 py-2 bg-success hover:bg-success text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
             @click="restoreBackup"
           >
             {{ uploadLoading ? restoreProgress || locale.restoring : locale.confirmRestore }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 重置序列模态框 -->
-    <div
-      v-if="activeModal === 'reset-seq'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'reset-seq'"
+      :title="locale.resetSequenceTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.resetSequenceTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div class="space-y-2">
-            <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+            <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
               >{{ locale.selectTargetTable }}</label
             >
             <CustomSelect
@@ -331,57 +307,50 @@
               >
                 <AlertCircle class="w-4 h-4" />
               </div>
-              <h6 class="text-xs font-bold text-text-secondary uppercase tracking-widest">
+              <h6 class="text-xs font-bold text-text-secondary uppercase tracking-wider">
                 {{ locale.sequenceHelpTitle }}
               </h6>
             </div>
-            <p class="text-[11px] text-text-tertiary leading-relaxed font-medium">
+            <p class="text-xs text-text-tertiary leading-relaxed font-medium">
               {{ locale.sequenceHelpDesc }}
             </p>
           </div>
-        </div>
-        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
           <button
-            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
+            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-wider"
             @click="activeModal = 'none'"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="sequenceLoading || !sequenceForm.table"
-            class="px-8 py-2 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-8 py-2 bg-warning hover:bg-warning text-text-primary text-xs font-bold rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
             @click="resetSequence"
           >
             {{ sequenceLoading ? locale.resetting : locale.executeReset }}
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppModal>
 
     <!-- 重置数据库模态框 -->
-    <div
-      v-if="activeModal === 'reset-db'"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    <AppModal
+      :show="activeModal === 'reset-db'"
+      :title="locale.dangerResetTitle"
+      size="lg"
+      @close="activeModal = 'none'"
     >
-      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
-      <div
-        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-      >
-        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
-          <h3 class="text-xl font-black text-error tracking-tight">{{ locale.dangerResetTitle }}</h3>
-          <button
-            class="flex items-center justify-center p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
-            @click="activeModal = 'none'"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
+      <div class="space-y-6">
+
           <div
             class="p-6 bg-error-10 border border-error-20 rounded-2xl flex flex-col items-center text-center"
           >
             <Trash2 class="text-error mb-4 w-12 h-12" />
-            <h4 class="text-lg font-black text-error tracking-tight">
+            <h4 class="text-lg font-bold text-error tracking-tight">
               {{ locale.dangerResetHeading }}
             </h4>
             <p class="text-xs text-text-tertiary mt-2 font-medium leading-relaxed">
@@ -394,12 +363,12 @@
 
           <div class="space-y-3">
             <label
-              class="text-[11px] font-black text-error-80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
+              class="text-xs font-bold text-error-80 uppercase tracking-wider px-1 flex items-center justify-center gap-2"
             >
               {{ locale.confirmCodeLabel }}
             </label>
             <div
-              class="bg-bg-primary border border-error-30 rounded-xl px-4 py-3 font-mono text-[10px] text-error text-center select-all"
+              class="bg-bg-primary border border-error-30 rounded-xl px-4 py-3 font-mono text-xs text-error text-center select-all"
             >
               {{ CONFIRM_CODE }}
             </div>
@@ -413,14 +382,14 @@
 
           <div class="grid grid-cols-2 gap-3 pt-2">
             <button
-              class="py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-tertiary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+              class="py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all uppercase tracking-wider"
               @click="activeModal = 'none'"
             >
               {{ locale.cancel }}
             </button>
             <button
               :disabled="resetConfirmText !== CONFIRM_CODE || resetLoading"
-              class="py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg disabled:bg-bg-tertiary disabled:text-text-disabled disabled:cursor-not-allowed disabled:border-border-tertiary"
+              class="py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg disabled:bg-bg-tertiary disabled:text-text-disabled disabled:cursor-not-allowed disabled:border-border-tertiary"
               :class="
                 resetConfirmText === CONFIRM_CODE
                   ? 'bg-error hover:bg-error text-text-primary shadow-[var(--error-glow-20)] active:scale-95'
@@ -431,9 +400,8 @@
               {{ resetLoading ? locale.resetting : locale.confirmResetDatabase }}
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </AppModal>
 
     <!-- 自动备份设置 -->
     <BackupAutoSettings
@@ -445,7 +413,8 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
+import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
 import { useToast } from '~/composables/useToast'

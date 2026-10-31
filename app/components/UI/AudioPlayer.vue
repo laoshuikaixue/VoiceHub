@@ -73,13 +73,13 @@
 
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls" data-player-no-drag>
-            <button class="mobile-control-btn" @click.stop="handleTogglePlay">
-              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="white" />
+            <button :aria-label="sync.globalAudioPlayer.scheduleWaiting.value ? audioPlayerLocale.scheduleWaiting : audioPlayerLocale.playPause" class="mobile-control-btn" type="button" @click.stop="handleTogglePlay">
+              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" color="var(--text-primary)" />
               <Icon
                 v-else
                 :name="control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value ? 'pause' : 'play'"
                 :size="24"
-                color="white"
+                color="var(--text-primary)"
               />
             </button>
             <button
@@ -93,7 +93,7 @@
               <Pin v-if="isFloating" :size="18" color="var(--overlay-60)" />
               <Move v-else :size="18" color="var(--overlay-60)" />
             </button>
-            <button class="mobile-control-btn" @click.stop="stopPlaying">
+            <button aria-label="关闭播放器" class="mobile-control-btn" type="button" @click.stop="stopPlaying">
               <Icon name="close" :size="20" color="var(--overlay-60)" />
             </button>
           </div>
@@ -113,15 +113,17 @@
           </button>
 
           <!-- PC端右上角关闭按钮 -->
-          <div
+          <button
             v-if="!isMobile"
+            aria-label="关闭播放器"
             class="close-button"
             data-player-no-drag
             title="关闭播放器"
+            type="button"
             @click="stopPlaying"
           >
             <span class="music-icon">×</span>
-          </div>
+          </button>
         </div>
 
         <!-- 媒体控制区域 (PC端显示) -->
@@ -131,8 +133,15 @@
             <!-- 进度条 -->
             <div
               ref="progressBar"
+              :aria-label="'播放进度'"
+              :aria-valuemax="100"
+              :aria-valuemin="0"
+              :aria-valuenow="Math.round(control.progress.value)"
               class="progress-bar"
+              role="slider"
+              tabindex="0"
               @click="handleSeekToPosition"
+              @keydown="handleProgressKeydown"
               @mousedown="handleStartDrag"
               @touchstart="handleStartTouchDrag"
             >
@@ -142,16 +151,26 @@
             <!-- 时间和音质显示 -->
             <div class="time-details-and-audio-q">
               <span class="current-time">{{ formatTime(control.currentTime.value) }}</span>
-              <div class="audio-quality" title="音质设置" @click="toggleQualitySettings">
+              <button
+                :aria-expanded="showQualitySettings"
+                aria-haspopup="listbox"
+                aria-label="音质设置"
+                class="audio-quality"
+                title="音质设置"
+                type="button"
+                @click="toggleQualitySettings"
+              >
                 <span>{{ currentQualityText }}</span>
-              </div>
-              <span
+              </button>
+              <button
+                :aria-label="timeDisplayMode === 'remaining' ? '显示总时长' : '显示剩余时长'"
                 :title="timeDisplayMode === 'remaining' ? '点击显示总时长' : '点击显示剩余时长'"
                 class="remaining-time clickable-time"
+                type="button"
                 @click="toggleTimeDisplayMode"
               >
                 {{ rightTimeText }}
-              </span>
+              </button>
             </div>
           </div>
 
@@ -159,49 +178,60 @@
           <div class="controls-frame">
             <!-- 左侧播放模式切换 -->
             <div class="left-actions-group">
-              <span
-                class="lyrics-btn music-icon"
+              <button
+                :aria-label="playModeTitle"
                 :class="{ active: control.playMode.value !== 'off' }"
                 :title="playModeTitle"
+                class="lyrics-btn music-icon"
+                type="button"
                 @click="cyclePlayMode"
               >
                 <Icon :name="playModeIcon" size="20" />
-              </span>
+              </button>
             </div>
 
             <!-- 中央播放控制 -->
             <div class="center-controls">
               <!-- 上一首 -->
-              <span
+              <button
+                aria-label="上一首"
                 :class="{ disabled: !sync.globalAudioPlayer.hasPrevious.value }"
+                :disabled="!sync.globalAudioPlayer.hasPrevious.value"
                 class="control-btn music-icon"
                 title="上一首"
+                type="button"
                 @click="handlePrevious"
               >
                 <Icon name="skip-back" size="26" />
-              </span>
+              </button>
 
               <!-- 播放/暂停 -->
-              <span
+              <button
+                :aria-label="sync.globalAudioPlayer.scheduleWaiting.value ? audioPlayerLocale.scheduleWaiting : audioPlayerLocale.playPause"
                 :class="{ disabled: control.hasError.value || control.isLoadingTrack.value }"
+                :disabled="control.hasError.value || control.isLoadingTrack.value"
                 class="play-pause-btn music-icon"
                 :title="sync.globalAudioPlayer.scheduleWaiting.value ? audioPlayerLocale.scheduleWaiting : audioPlayerLocale.playPause"
+                type="button"
                 @click="handleTogglePlay"
               >
-                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" color="white" />
+                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" color="var(--text-primary)" />
                 <Icon v-else-if="control.isPlaying.value || sync.globalAudioPlayer.scheduleWaiting.value" name="pause" size="24" />
                 <Icon v-else name="play" size="24" />
-              </span>
+              </button>
 
               <!-- 下一首 -->
-              <span
+              <button
+                aria-label="下一首"
                 :class="{ disabled: !sync.globalAudioPlayer.hasNext.value }"
+                :disabled="!sync.globalAudioPlayer.hasNext.value"
                 class="control-btn music-icon"
                 title="下一首"
+                type="button"
                 @click="handleNext"
               >
                 <Icon name="skip-forward" size="26" />
-              </span>
+              </button>
             </div>
 
             <!-- 右侧操作区域 -->
@@ -214,16 +244,19 @@
 
         <!-- 音质选择下拉菜单 -->
         <Transition name="quality-dropdown">
-          <div v-if="showQualitySettings" class="quality-dropdown" data-player-no-drag>
-            <div
+          <div v-if="showQualitySettings" class="quality-dropdown" data-player-no-drag role="listbox">
+            <button
               v-for="option in currentPlatformOptions"
               :key="option.value"
+              :aria-selected="isCurrentQuality(option.value)"
               :class="{ active: isCurrentQuality(option.value) }"
               class="quality-option"
+              role="option"
+              type="button"
               @click="selectQuality(option.value)"
             >
               <span class="sf-pro">{{ option.label }}</span>
-            </div>
+            </button>
           </div>
         </Transition>
 
@@ -1343,6 +1376,21 @@ const handleStartTouchDrag = (event) => {
   control.startTouchDrag(event, progressBarElement)
 }
 
+const handleProgressKeydown = (event) => {
+  const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
+  if (!keys.includes(event.key)) return
+  const duration = control.duration.value || 0
+  if (!duration) return
+  event.preventDefault()
+  const step = event.shiftKey ? 10 : 2
+  let next = control.currentTime.value
+  if (event.key === 'ArrowLeft') next = Math.max(0, next - step)
+  if (event.key === 'ArrowRight') next = Math.min(duration, next + step)
+  if (event.key === 'Home') next = 0
+  if (event.key === 'End') next = Math.max(0, duration - 0.5)
+  control.seek(next)
+}
+
 const handleSeekToPosition = (event) => {
   if (!ensureAudioPlayerRef()) {
     console.error('[AudioPlayer] 音频播放器引用验证失败，无法跳转位置')
@@ -2225,34 +2273,10 @@ const getFirstChar = (text) => {
 
 <style scoped>
 /* 导入 SF Pro 字体 - 使用官方 CDN */
-@import url('https://cdn.jsdelivr.net/npm/sf-font@1.0.0/stylesheet.min.css');
-
 /* 全局字体平滑优化 */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* 呼吸光效动画 */
-@keyframes breathing-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 8px 32px var(--mask-30),
-      0 4px 16px var(--mask-20),
-      inset 0 1px 0 var(--overlay-20),
-      inset 0 -1px 0 var(--mask-10),
-      0 0 0 1px var(--overlay-10);
-  }
-  50% {
-    box-shadow:
-      0 12px 48px var(--mask-40),
-      0 6px 24px var(--mask-30),
-      inset 0 1px 0 var(--overlay-30),
-      inset 0 -1px 0 var(--mask-15),
-      0 0 0 1px var(--overlay-15),
-      0 0 40px var(--overlay-8);
-  }
 }
 
 /* 微妙的光晕脉动 */
@@ -2280,11 +2304,11 @@ const getFirstChar = (text) => {
 
 /* 背景遮罩动画 */
 .overlay-animation-enter-active {
-  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity var(--duration-slow) var(--ease-out);
 }
 
 .overlay-animation-leave-active {
-  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.6, 1);
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .overlay-animation-enter-from,
@@ -2293,11 +2317,18 @@ const getFirstChar = (text) => {
 }
 
 /* 播放器进入/退出动画（基于 Transition 类） */
-.player-animation-enter-active,
+.player-animation-enter-active {
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    opacity var(--duration-slow) var(--ease-out);
+  will-change: transform, opacity;
+  transform-origin: center bottom;
+}
+
 .player-animation-leave-active {
   transition:
-    transform 0.5s cubic-bezier(0.4, 0, 0.6, 1),
-    opacity 0.5s cubic-bezier(0.4, 0, 0.6, 1);
+    transform var(--duration-normal) var(--ease-out),
+    opacity var(--duration-normal) var(--ease-out);
   will-change: transform, opacity;
   transform-origin: center bottom;
 }
@@ -2506,7 +2537,7 @@ const getFirstChar = (text) => {
   background: var(--audio-player-bar-bg);
   padding: 10px 7px 10px 13px;
   width: 400px;
-  height: 165px;
+  height: 172px;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   border: 1px solid var(--overlay-20);
@@ -2522,8 +2553,10 @@ const getFirstChar = (text) => {
   font-family:
     'SF Pro Display', 'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial,
     Helvetica, sans-serif;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  animation: breathing-glow 4s ease-in-out infinite;
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    opacity var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .music-widget:hover {
@@ -2614,7 +2647,7 @@ const getFirstChar = (text) => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-collab-hover) 100%);
-  color: var(--text-primary);
+  color: #fff;
   font-size: 18px;
   font-weight: 600;
   font-family:
@@ -2690,7 +2723,13 @@ const getFirstChar = (text) => {
   backdrop-filter: blur(34px);
   -webkit-backdrop-filter: blur(34px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   border: none;
 }
 
@@ -2723,7 +2762,13 @@ const getFirstChar = (text) => {
   backdrop-filter: blur(34px);
   -webkit-backdrop-filter: blur(34px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   border: none;
 }
 
@@ -2742,7 +2787,7 @@ const getFirstChar = (text) => {
   margin-right: 4px;
   row-gap: 8px;
   flex: 1;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 /* 进度条和时间区域 */
@@ -2769,7 +2814,13 @@ const getFirstChar = (text) => {
   -webkit-backdrop-filter: blur(15px);
   cursor: pointer;
   position: relative;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .ios-progress-bar:hover {
@@ -2820,7 +2871,13 @@ const getFirstChar = (text) => {
 /* 可点击时间样式 */
 .clickable-time {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   user-select: none;
 }
 
@@ -2849,7 +2906,13 @@ const getFirstChar = (text) => {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .audio-quality-badge:hover {
@@ -2873,7 +2936,13 @@ const getFirstChar = (text) => {
   border: none;
   color: var(--text-primary-60);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2990,7 +3059,13 @@ const getFirstChar = (text) => {
 /* 歌词滑动动画 */
 .lyrics-slide-enter-active,
 .lyrics-slide-leave-active {
-  transition: all 0.3s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   transform-origin: top;
 }
 
@@ -3122,7 +3197,13 @@ const getFirstChar = (text) => {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .audio-quality:hover {
@@ -3151,7 +3232,13 @@ const getFirstChar = (text) => {
   text-align: center;
   color: var(--text-primary-60);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .lyrics-btn:hover {
@@ -3165,7 +3252,13 @@ const getFirstChar = (text) => {
   font-size: 24px;
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3190,7 +3283,13 @@ const getFirstChar = (text) => {
   font-size: 37px;
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3253,10 +3352,15 @@ const getFirstChar = (text) => {
 }
 
 .quality-option {
+  width: 100%;
   padding: 8px 16px;
+  text-align: left;
   color: var(--overlay-70);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
   font-size: 12px;
   font-weight: 500;
   border-radius: 8px;
@@ -3313,11 +3417,15 @@ const getFirstChar = (text) => {
 
 /* 音质下拉动画 - 向上弹出优化 */
 .quality-dropdown-enter-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.6, 1);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .quality-dropdown-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.6, 1);
+  transition:
+    opacity var(--duration-press) var(--ease-out),
+    transform var(--duration-press) var(--ease-out);
 }
 
 .quality-dropdown-enter-from,

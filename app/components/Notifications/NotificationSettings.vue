@@ -14,7 +14,7 @@
         <span class="text-xs text-error font-medium">{{ error }}</span>
       </div>
       <button
-        class="px-3 py-1 bg-error text-text-primary text-[10px] font-black uppercase rounded-lg hover:bg-error transition-all"
+        class="px-3 py-1 bg-error text-text-primary text-xs font-bold uppercase rounded-lg hover:bg-error transition-all"
         @click="fetchSettings"
       >
         {{ locale.retry }}
@@ -25,7 +25,7 @@
       <div :class="itemClass">
         <div class="flex-1">
           <h3 class="text-sm font-bold text-text-primary">{{ locale.songSelectedTitle }}</h3>
-          <p class="text-[11px] text-text-tertiary mt-0.5">{{ locale.songSelectedDesc }}</p>
+          <p class="text-xs text-text-tertiary mt-0.5">{{ locale.songSelectedDesc }}</p>
         </div>
         <div class="shrink-0">
           <input
@@ -40,7 +40,7 @@
       <div :class="itemClass">
         <div class="flex-1">
           <h3 class="text-sm font-bold text-text-primary">{{ locale.songPlayedTitle }}</h3>
-          <p class="text-[11px] text-text-tertiary mt-0.5">{{ locale.songPlayedDesc }}</p>
+          <p class="text-xs text-text-tertiary mt-0.5">{{ locale.songPlayedDesc }}</p>
         </div>
         <div class="shrink-0">
           <input
@@ -55,7 +55,7 @@
       <div :class="itemClass">
         <div class="flex-1">
           <h3 class="text-sm font-bold text-text-primary">{{ locale.songVotedTitle }}</h3>
-          <p class="text-[11px] text-text-tertiary mt-0.5">{{ locale.songVotedDesc }}</p>
+          <p class="text-xs text-text-tertiary mt-0.5">{{ locale.songVotedDesc }}</p>
         </div>
         <div class="shrink-0">
           <input
@@ -72,7 +72,7 @@
         class="p-4 bg-bg-primary-50 border border-border-secondary rounded-2xl space-y-3"
       >
         <div class="flex items-center justify-between">
-          <h3 class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ locale.voteThresholdTitle }}</h3>
+          <h3 class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ locale.voteThresholdTitle }}</h3>
           <span class="text-xs font-bold text-primary"
             >{{ formatLocaleValue(locale.voteThresholdText, localSettings.songVotedThreshold) }}</span
           >
@@ -86,7 +86,7 @@
           class="w-full h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer"
           @change="saveSettings"
         >
-        <div class="flex justify-between text-[10px] font-black text-text-secondary">
+        <div class="flex justify-between text-xs font-bold text-text-secondary">
           <span>1</span>
           <span>10</span>
         </div>
@@ -95,7 +95,7 @@
       <div :class="itemClass">
         <div class="flex-1">
           <h3 class="text-sm font-bold text-text-primary">{{ locale.systemTitle }}</h3>
-          <p class="text-[11px] text-text-tertiary mt-0.5">{{ locale.systemDesc }}</p>
+          <p class="text-xs text-text-tertiary mt-0.5">{{ locale.systemDesc }}</p>
         </div>
         <div class="shrink-0">
           <input
@@ -111,7 +111,7 @@
         <div class="flex items-center justify-between">
           <div class="flex-1">
             <h3 class="text-sm font-bold text-text-primary">{{ locale.refreshTitle }}</h3>
-            <p class="text-[11px] text-text-tertiary mt-0.5">{{ locale.refreshDesc }}</p>
+            <p class="text-xs text-text-tertiary mt-0.5">{{ locale.refreshDesc }}</p>
           </div>
           <span class="text-xs font-bold text-primary">{{
             formatRefreshInterval(localSettings.refreshInterval)
@@ -126,7 +126,7 @@
           class="w-full h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer"
           @change="saveSettings"
         >
-        <div class="flex justify-between text-[10px] font-black text-text-secondary">
+        <div class="flex justify-between text-xs font-bold text-text-secondary">
           <span>10s</span>
           <span>5m</span>
         </div>

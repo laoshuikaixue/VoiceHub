@@ -1216,6 +1216,7 @@ export default defineEventHandler(async (event) => {
                           'instanceId',
                           'defaultTheme',
                           'enabledThemes',
+                          'accentColor',
                           'telemetryEnabled',
                           'siteTitle',
                           'siteLogoUrl',
@@ -1342,6 +1343,13 @@ export default defineEventHandler(async (event) => {
                             throw createApiError(400, SERVER_ERROR_CODES.THEME_INVALID_LIST, '主题配置必须同时包含默认主题和启用主题列表')
                           }
                           systemSettingsData.enabledThemes = JSON.stringify(validateThemeConfig(systemSettingsData.defaultTheme, systemSettingsData.enabledThemes))
+                        }
+                        if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'accentColor')) {
+                          const accent = systemSettingsData.accentColor
+                          if (accent !== null && accent !== '' && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(accent))) {
+                            throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'accentColor 必须是 #RGB 或 #RRGGBB 格式')
+                          }
+                          systemSettingsData.accentColor = accent ? String(accent).toLowerCase() : null
                         }
                         for (const field of ['scheduleDaysBeforeEnabled', 'scheduleDaysAfterEnabled']) {
                           if (Object.prototype.hasOwnProperty.call(systemSettingsData, field) && systemSettingsData[field] !== null && typeof systemSettingsData[field] !== 'boolean') {

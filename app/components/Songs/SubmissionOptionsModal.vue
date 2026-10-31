@@ -1,40 +1,19 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-bg-primary-85 backdrop-blur-sm"
-        @click.self="handleCancel"
-      >
-        <div
-          class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-        >
-          <!-- 头部 -->
-          <div class="px-7 pt-7 pb-5 flex items-start gap-4">
-            <div
-              class="w-11 h-11 shrink-0 rounded-2xl bg-primary-10 text-primary flex items-center justify-center"
-            >
-              <Icon :size="22" :name="mode === 'required' ? 'clock' : 'settings'" />
-            </div>
-            <div class="min-w-0">
-              <h3 class="text-lg font-bold text-text-primary tracking-tight">
-                {{ text.title }}
-              </h3>
-              <p class="mt-1 text-xs text-text-tertiary leading-relaxed">
-                {{ text.subtitle }}
-              </p>
-            </div>
-          </div>
+  <AppModal
+    :description="text.subtitle"
+    :show="show"
+    :title="text.title"
+    size="lg"
+    @close="handleCancel"
+  >
+    <template #icon>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+        <Icon :size="18" :name="mode === 'required' ? 'clock' : 'settings'" />
+      </span>
+    </template>
 
-          <!-- 表单主体 -->
-          <div class="options-body px-7 pb-6 space-y-5 overflow-y-auto">
+    <div class="space-y-5">
+
             <!-- 一、播出日期 + 时段（仅在时段选择功能开启时显示） -->
             <div v-if="slotEnabled" class="options-section">
               <div class="options-section-head">
@@ -242,12 +221,11 @@
 
             <!-- 错误提示 -->
             <p v-if="errorMessage" class="options-hint is-error">{{ errorMessage }}</p>
-          </div>
+    </div>
 
-          <!-- 底部操作 -->
-          <div
-            class="px-7 py-5 bg-bg-secondary-50 border-t border-border-secondary-50 flex items-center justify-end gap-3"
-          >
+    <template #footer>
+      <div class="flex items-center justify-end gap-3">
+
             <button
               class="px-5 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-all"
               type="button"
@@ -256,21 +234,20 @@
               {{ text.cancel }}
             </button>
             <button
-              class="px-7 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-7 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               type="button"
               @click="handleConfirm"
             >
               {{ text.confirm }}
             </button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'

@@ -1,25 +1,33 @@
 <template>
   <div ref="containerRef" class="relative" :class="className">
   <div
-    class="flex items-center gap-2 bg-bg-primary border rounded-lg transition-all select-none"
+    :aria-activedescendant="activeDescendant"
+    :aria-controls="listboxId"
+    :aria-expanded="isOpen"
+    :aria-haspopup="'listbox'"
+    :aria-disabled="disabled ? 'true' : undefined"
     :class="[
       sizeClass,
-      disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
       isOpen
         ? 'border-primary-50 bg-primary-hover-5 shadow-lg'
         : 'border-border-secondary hover:border-border-tertiary'
     ]"
+    :tabindex="disabled ? -1 : 0"
+    class="flex select-none items-center gap-2 rounded-lg border bg-bg-primary transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    role="combobox"
     @click="toggleDropdown"
+    @keydown="handleKeydown"
   >
     <div class="flex flex-col flex-1 min-w-0">
       <span
         v-if="label"
-        class="text-[8px] font-black uppercase tracking-widest leading-none mb-0.5 transition-colors"
+        class="mb-0.5 text-xs font-semibold uppercase leading-none tracking-wider text-text-disabled transition-colors"
         :class="isOpen ? 'text-primary' : 'text-text-disabled'"
       >
         {{ label }}
       </span>
-      <span class="font-bold text-text-secondary truncate">{{ displayLabel }}</span>
+      <span class="truncate font-semibold text-text-secondary">{{ displayLabel }}</span>
     </div>
       <div class="transition-transform duration-200" :class="{ 'rotate-180': isOpen }">
         <ChevronDown :size="12" :class="isOpen ? 'text-primary' : 'text-text-secondary'" />
@@ -27,32 +35,33 @@
     </div>
 
     <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-100 ease-out"
-        enter-from-class="transform scale-95 opacity-0"
-        enter-to-class="transform scale-100 opacity-100"
-        leave-active-class="transition duration-75 ease-in"
-        leave-from-class="transform scale-100 opacity-100"
-        leave-to-class="transform scale-95 opacity-0"
-      >
+      <Transition name="select-pop">
         <div
           v-if="isOpen"
           ref="dropdownRef"
+          :id="listboxId"
           :style="[dropdownStyle, { zIndex }]"
-          class="fixed p-1 bg-bg-primary border border-border-secondary rounded-lg shadow-2xl backdrop-blur-xl"
+          class="fixed rounded-lg border border-border-secondary bg-bg-primary p-1 shadow-2xl backdrop-blur-xl"
+          role="listbox"
         >
-          <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
+          <div class="custom-scrollbar max-h-[220px] overflow-y-auto">
             <button
-              v-for="option in normalizedOptions"
+              v-for="(option, index) in normalizedOptions"
+              :id="optionId(index)"
               :key="option.value"
-              type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
+              :aria-selected="isSelected(option) ? 'true' : 'false'"
               :class="[
                 isSelected(option)
                   ? 'bg-primary-hover-10 text-primary'
-                  : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-40'
+                  : 'text-text-tertiary hover:bg-bg-tertiary-40 hover:text-text-primary',
+                highlightedIndex === index ? 'bg-bg-tertiary-40 text-text-primary' : ''
               ]"
+              :data-index="index"
+              class="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold transition-colors"
+              role="option"
+              type="button"
               @click="selectOption(option)"
+              @mouseenter="highlightedIndex = index"
             >
               <span class="truncate">{{ option.label }}</span>
               <Icon v-if="isSelected(option)" name="check" :size="12" class="shrink-0" />
@@ -65,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, useId, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 import { usePopupZIndex } from '~/composables/useZIndex'
@@ -109,6 +118,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'update:value', 'change'])
 
 const isOpen = ref(false)
+const highlightedIndex = ref(-1)
+const listboxId = `custom-select-list-${useId()}`
 const containerRef = ref(null)
 const dropdownRef = ref(null)
 const dropdownStyle = ref({})
@@ -122,7 +133,7 @@ const resolvedPlaceholder = computed(() => props.placeholder || locale.value?.se
 const sizeClass = computed(() => {
   switch (props.size) {
     case 'xs':
-      return 'px-2 py-1 text-[10px]'
+      return 'px-2 py-1 text-xs'
     case 'md':
       return 'px-3 py-2.5 text-sm'
     case 'lg':
@@ -131,7 +142,7 @@ const sizeClass = computed(() => {
       return 'p-3 text-base'
     case 'sm':
     default:
-      return 'px-3 py-2 text-[11px]'
+      return 'px-3 py-2 text-xs'
   }
 })
 
@@ -202,12 +213,12 @@ const updatePosition = () => {
   const spaceAbove = rect.top
 
   let top = rect.bottom + 4
-  let transformOrigin = 'origin-top'
+  let transformOrigin = 'top'
 
   // 如果底部空间不足，并且顶部空间更充足或者能完全放下弹层，则向上展开
   if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
     top = rect.top - dropdownHeight - 4
-    transformOrigin = 'origin-bottom'
+    transformOrigin = 'bottom'
   }
 
   dropdownStyle.value = {
@@ -219,18 +230,96 @@ const updatePosition = () => {
   }
 }
 
+const optionId = (index) => `${listboxId}-option-${index}`
+
+const activeDescendant = computed(() =>
+  isOpen.value && highlightedIndex.value >= 0 ? optionId(highlightedIndex.value) : undefined
+)
+
+const scrollHighlightedIntoView = async () => {
+  await nextTick()
+  const target = dropdownRef.value?.querySelector(
+    `[data-index="${highlightedIndex.value}"]`
+  )
+  target?.scrollIntoView({ block: 'nearest' })
+}
+
+const openDropdown = async () => {
+  if (props.disabled || isOpen.value) return
+  isOpen.value = true
+  const selectedIndex = normalizedOptions.value.findIndex((option) => isSelected(option))
+  highlightedIndex.value = selectedIndex >= 0 ? selectedIndex : 0
+  await nextTick()
+  updatePosition()
+  requestAnimationFrame(updatePosition)
+  scrollHighlightedIntoView()
+}
+
+const closeDropdown = (restoreFocus = false) => {
+  if (!isOpen.value) return
+  isOpen.value = false
+  highlightedIndex.value = -1
+  if (restoreFocus) containerRef.value?.querySelector('[role="combobox"]')?.focus()
+}
+
+const moveHighlight = (delta) => {
+  const total = normalizedOptions.value.length
+  if (total === 0) return
+  highlightedIndex.value = (highlightedIndex.value + delta + total) % total
+  scrollHighlightedIntoView()
+}
+
+const handleKeydown = (event) => {
+  if (props.disabled) return
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault()
+      if (!isOpen.value) openDropdown()
+      else moveHighlight(1)
+      break
+    case 'ArrowUp':
+      event.preventDefault()
+      if (!isOpen.value) openDropdown()
+      else moveHighlight(-1)
+      break
+    case 'Home':
+      if (!isOpen.value) return
+      event.preventDefault()
+      highlightedIndex.value = 0
+      scrollHighlightedIntoView()
+      break
+    case 'End':
+      if (!isOpen.value) return
+      event.preventDefault()
+      highlightedIndex.value = normalizedOptions.value.length - 1
+      scrollHighlightedIntoView()
+      break
+    case 'Enter':
+    case ' ':
+      event.preventDefault()
+      if (!isOpen.value) openDropdown()
+      else {
+        const option = normalizedOptions.value[highlightedIndex.value]
+        if (option) selectOption(option)
+      }
+      break
+    case 'Escape':
+      if (!isOpen.value) return
+      event.preventDefault()
+      closeDropdown(true)
+      break
+    case 'Tab':
+      closeDropdown()
+      break
+  }
+}
+
 const toggleDropdown = async () => {
   if (props.disabled) return
   if (isOpen.value) {
-    isOpen.value = false
+    closeDropdown()
   } else {
-    isOpen.value = true
-    // 等待下拉框渲染以便获取其实际高度
-    await nextTick()
-    // 此时元素已存在于 DOM 中，但可能尚未完全重绘，因此先触发一次计算
-    // 并通过 requestAnimationFrame 再次触发，确保计算出正确的高度
-    updatePosition()
-    requestAnimationFrame(updatePosition)
+    await openDropdown()
   }
 }
 
@@ -253,7 +342,7 @@ const selectOption = (option) => {
   emit('update:modelValue', option.value)
   emit('update:value', option.value)
   emit('change', option.value)
-  isOpen.value = false
+  closeDropdown(true)
 }
 
 const handleClickOutside = (event) => {
@@ -262,7 +351,7 @@ const handleClickOutside = (event) => {
   const isClickInDropdown = dropdownRef.value && dropdownRef.value.contains(event.target)
 
   if (!isClickInContainer && !isClickInDropdown) {
-    isOpen.value = false
+    closeDropdown()
   }
 }
 
@@ -296,6 +385,24 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.select-pop-enter-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.select-pop-leave-active {
+  transition:
+    opacity var(--duration-press) var(--ease-out),
+    transform var(--duration-press) var(--ease-out);
+}
+
+.select-pop-enter-from,
+.select-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }

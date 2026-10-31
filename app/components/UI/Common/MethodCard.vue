@@ -8,7 +8,7 @@
         </div>
         <div class="min-w-0">
           <p :class="['text-sm font-bold truncate', masterOff ? 'text-text-disabled' : 'text-text-secondary']">{{ name }}</p>
-          <p class="text-[11px] text-text-disabled truncate">{{ desc }}</p>
+          <p class="text-xs text-text-disabled truncate">{{ desc }}</p>
         </div>
       </div>
       <button

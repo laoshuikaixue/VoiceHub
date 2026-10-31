@@ -1,18 +1,18 @@
 <template>
-  <div class="max-w-[1200px] mx-auto space-y-8 pb-20 px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+  <div class="max-w-[1200px] mx-auto space-y-8 pb-20 px-2 panel-enter">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div class="space-y-1">
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary font-medium">{{ locale.desc }}</p>
       </div>
 
       <div class="flex items-center gap-3">
-        <span class="text-[11px] text-text-disabled font-medium">
+        <span class="text-xs text-text-disabled font-medium">
           {{ locale.lastUpdated(lastRefreshText) }}
         </span>
         <button
           :class="[
-            'flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider border transition-all',
+            'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all',
             autoRefresh
               ? 'bg-primary-10 text-primary border-primary-20'
               : 'bg-bg-primary-40 text-text-tertiary border-border-secondary hover:text-text-primary'
@@ -23,7 +23,7 @@
           {{ locale.autoRefresh }}
         </button>
         <button
-          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
           :disabled="loading"
           @click="loadAll"
         >
@@ -47,7 +47,7 @@
           </h3>
           <span
             :class="[
-              'px-2.5 py-1 text-[10px] font-black uppercase rounded-full border',
+              'px-2.5 py-1 text-xs font-bold uppercase rounded-full border',
               processState.ok
                 ? 'bg-success-10 text-success border-success-20'
                 : 'bg-warning-10 text-warning border-warning-20'
@@ -59,15 +59,15 @@
 
         <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
           <div v-for="(row, index) in processRows" :key="index" class="min-w-0">
-            <dt class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ row.label }}</dt>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-text-disabled">{{ row.label }}</dt>
             <dd class="text-xs font-bold text-text-primary truncate" :title="row.value">{{ row.value }}</dd>
           </div>
         </dl>
 
         <div class="space-y-2 pt-2 border-t border-border-secondary">
           <div v-for="(item, index) in memoryRows" :key="index" class="flex items-center justify-between">
-            <span class="text-[11px] text-text-tertiary font-medium">{{ item.label }}</span>
-            <span class="text-[11px] font-bold text-text-primary">{{ item.value }}</span>
+            <span class="text-xs text-text-tertiary font-medium">{{ item.label }}</span>
+            <span class="text-xs font-bold text-text-primary">{{ item.value }}</span>
           </div>
         </div>
       </section>
@@ -80,7 +80,7 @@
           </h3>
           <span
             :class="[
-              'px-2.5 py-1 text-[10px] font-black uppercase rounded-full border',
+              'px-2.5 py-1 text-xs font-bold uppercase rounded-full border',
               database?.connected
                 ? 'bg-success-10 text-success border-success-20'
                 : 'bg-error-10 text-error border-error-20'
@@ -92,13 +92,13 @@
 
         <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
           <div v-for="(row, index) in databaseRows" :key="index" class="min-w-0">
-            <dt class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ row.label }}</dt>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-text-disabled">{{ row.label }}</dt>
             <dd class="text-xs font-bold text-text-primary truncate" :title="row.value">{{ row.value }}</dd>
           </div>
         </dl>
 
         <div v-if="database?.pool" class="space-y-1.5 pt-2 border-t border-border-secondary">
-          <div class="flex items-center justify-between text-[11px]">
+          <div class="flex items-center justify-between text-xs">
             <span class="text-text-tertiary font-medium">{{ locale.poolUsage }}</span>
             <span class="font-bold text-text-primary">
               {{ locale.poolValue(database.pool.totalConnections, database.pool.maxConnections) }}
@@ -113,7 +113,7 @@
           </div>
         </div>
 
-        <p v-if="database?.error" class="text-[11px] text-error break-all leading-relaxed">
+        <p v-if="database?.error" class="text-xs text-error break-all leading-relaxed">
           {{ database.error }}
         </p>
       </section>
@@ -126,7 +126,7 @@
           <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
             <Table2 :size="16" class="text-warning" /> {{ locale.tablesTitle }}
           </h3>
-          <span class="text-[11px] text-text-tertiary font-medium">
+          <span class="text-xs text-text-tertiary font-medium">
             {{ locale.tablesTotal(snapshot?.tables?.totalTables ?? 0, snapshot?.tables?.totalRows ?? 0) }}
           </span>
         </header>
@@ -154,7 +154,7 @@
             <span class="text-xs font-bold text-text-primary tabular-nums">{{ formatRows(table.rows) }}</span>
           </div>
         </div>
-        <p class="text-[10px] text-text-disabled leading-relaxed">{{ locale.tablesHint }}</p>
+        <p class="text-xs text-text-disabled leading-relaxed">{{ locale.tablesHint }}</p>
       </section>
 
       <!-- 生效配置 -->
@@ -163,7 +163,7 @@
           <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
             <SlidersHorizontal :size="16" class="text-info" /> {{ locale.settingsTitle }}
           </h3>
-          <span class="text-[11px] text-text-tertiary font-medium">
+          <span class="text-xs text-text-tertiary font-medium">
             {{ locale.settingsReadAt(snapshot?.system?.serverTimeAt || '-') }}
           </span>
         </header>
@@ -177,10 +177,10 @@
             :key="index"
             class="flex items-center justify-between gap-2 py-1.5 min-w-0 border-b border-border-secondary last:border-0"
           >
-            <span class="text-[11px] text-text-tertiary font-medium min-w-0 truncate" :title="item.label">{{ item.label }}</span>
+            <span class="text-xs text-text-tertiary font-medium min-w-0 truncate" :title="item.label">{{ item.label }}</span>
             <span
               :class="[
-                'text-[11px] font-bold text-right shrink-0 max-w-[60%] truncate',
+                'text-xs font-bold text-right shrink-0 max-w-[60%] truncate',
                 item.kind === 'on'
                   ? 'text-success'
                   : item.kind === 'off'
@@ -203,7 +203,7 @@
           <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
             <Activity :size="16" class="text-error" /> {{ locale.eventsTitle }}
           </h3>
-          <span v-if="runtimeMeta" class="text-[10px] text-text-disabled font-medium">
+          <span v-if="runtimeMeta" class="text-xs text-text-disabled font-medium">
             {{ locale.bufferUsage(runtimeMeta.size, runtimeMeta.bufferSize) }}
           </span>
         </div>
@@ -216,7 +216,7 @@
             <CustomSelect v-model="eventSource" :options="sourceOptions" />
           </div>
           <button
-            class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-error-20 text-error hover:bg-error hover:text-text-primary transition-all disabled:opacity-50"
+            class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-bg-primary-40 border border-error-20 text-error hover:bg-error hover:text-text-primary transition-all disabled:opacity-50"
             :disabled="clearing"
             @click="clearRuntimeEvents"
           >
@@ -226,8 +226,8 @@
         </div>
       </header>
 
-      <p class="text-[10px] text-text-disabled leading-relaxed">{{ locale.eventsHint }}</p>
-      <p v-if="eventsTruncated" class="text-[10px] text-warning font-medium leading-relaxed">
+      <p class="text-xs text-text-disabled leading-relaxed">{{ locale.eventsHint }}</p>
+      <p v-if="eventsTruncated" class="text-xs text-warning font-medium leading-relaxed">
         {{ locale.eventsTruncated(eventQuery.limit) }}
       </p>
 
@@ -248,13 +248,13 @@
           />
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-[10px] font-mono text-text-disabled shrink-0">{{ item.at }}</span>
-              <span class="text-[10px] font-black uppercase tracking-wider text-text-tertiary">
+              <span class="text-xs font-mono text-text-disabled shrink-0">{{ item.at }}</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-text-tertiary">
                 {{ sourceLabel(item) }}
               </span>
               <span class="text-xs text-text-primary break-all leading-relaxed">{{ localizeEventMessage(item) }}</span>
             </div>
-            <p v-if="item.detail" class="mt-1 text-[11px] text-text-tertiary break-all leading-relaxed">
+            <p v-if="item.detail" class="mt-1 text-xs text-text-tertiary break-all leading-relaxed">
               {{ item.detail }}
             </p>
           </div>
