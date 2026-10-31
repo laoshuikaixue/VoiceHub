@@ -568,6 +568,9 @@ export const SONG_DURATION_MAX_SECONDS = 7200
 // 与机器人端点前置校验共用同一个数值
 export const SUBMISSION_NOTE_MAX_LENGTH = 300
 
+// 自定义 CSS 长度上限：整段内联进每个 SSR 页面，过大直接拖慢首屏
+export const CUSTOM_CSS_MAX_LENGTH = 64 * 1024
+
 // 主题白名单（主题管理校验用；新增主题需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/composables/useTheme.ts）
 export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const
 export const DEFAULT_THEMES = [...THEMES]

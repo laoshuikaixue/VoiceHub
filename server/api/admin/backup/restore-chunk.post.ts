@@ -973,6 +973,8 @@ export default defineEventHandler(async (event) => {
               'autoBackupConfig',
               'statisticsCodeEnabled',
               'statisticsCode',
+              'customCssEnabled',
+              'customCss',
               'legalConsentEnabled',
               'legalConsentDisplayMode',
               'legalConsentUpdatedDate',
