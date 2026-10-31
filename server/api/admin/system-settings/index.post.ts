@@ -14,6 +14,7 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'
 import {
   SERVER_ERROR_CODES,
   MUSIC_SOURCE_PLATFORMS,
@@ -329,6 +330,29 @@ export default defineEventHandler(async (event) => {
       updateData.statisticsCode = body.statisticsCode
     }
 
+    if (body.customCss !== undefined) {
+      if (body.customCss !== null && typeof body.customCss !== 'string') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCss 必须是字符串或 null')
+      }
+      const css = trimCustomCss(body.customCss)
+      if (css.length > CUSTOM_CSS_MAX_LENGTH) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_TOO_LONG,
+          `自定义 CSS 不能超过 ${CUSTOM_CSS_MAX_LENGTH} 个字符`,
+          { params: [CUSTOM_CSS_MAX_LENGTH] }
+        )
+      }
+      if (containsStyleCloser(css)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_STYLE_CLOSER,
+          '自定义 CSS 不允许包含 </style>'
+        )
+      }
+      updateData.customCss = css || null
+    }
+
     if (body.legalConsentEnabled !== undefined) {
       if (typeof body.legalConsentEnabled !== 'boolean') throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款确认开关必须是布尔值')
       updateData.legalConsentEnabled = body.legalConsentEnabled
@@ -387,6 +411,13 @@ export default defineEventHandler(async (event) => {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCodeEnabled 必须是布尔值')
       }
       updateData.statisticsCodeEnabled = body.statisticsCodeEnabled
+    }
+
+    if (body.customCssEnabled !== undefined) {
+      if (typeof body.customCssEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCssEnabled 必须是布尔值')
+      }
+      updateData.customCssEnabled = body.customCssEnabled
     }
 
     if (body.showBeianIcon !== undefined) {

@@ -1036,6 +1036,7 @@ VoiceHub/
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
 │       ├── password-policy.ts # 统一密码策略
 │       ├── settingsPermissions.ts # 系统设置中仅超级管理员可读写字段清单
+│       ├── custom-css-policy.ts # 自定义CSS安全策略
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
 │       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
@@ -1423,6 +1424,7 @@ VoiceHub/
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
+│   │   ├── custom-css.ts   # 自定义 CSS 注入插件
 │   │   └── statistics-code.ts # 站点统计代码注入插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务

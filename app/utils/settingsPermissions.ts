@@ -85,9 +85,11 @@ export const SUPER_ADMIN_ONLY_SETTING_FIELDS = [
   'submissionGuidelines',
   'showBlacklistKeywords',
   'submissionNoteRequiresApproval',
-  // 全站统计代码：原样注入 SSR 页面
+  // 全站统计代码与自定义 CSS：原样注入 SSR 页面
   'statisticsCode',
   'statisticsCodeEnabled',
+  'customCss',
+  'customCssEnabled',
   // 注册与口令策略
   'allowRegister',
   'registerRequiresApproval',

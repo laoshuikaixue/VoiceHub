@@ -222,6 +222,52 @@
         </div>
       </section>
 
+      <!-- 自定义样式 -->
+      <section v-if="isSuperAdmin" :class="cardClass">
+        <h3
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+        >
+          <Brush :size="16" class="text-primary" /> {{ locale.customCssSection }}
+        </h3>
+        <div class="space-y-4">
+          <div class="pt-2">
+            <div
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
+            >
+              <div>
+                <p class="text-xs font-bold text-text-primary">{{ locale.customCssEnabled }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.customCssEnabledDesc }}</p>
+              </div>
+              <input
+                v-model="formData.customCssEnabled"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+          </div>
+          <div>
+            <label :class="labelClass">{{ locale.customCss }}</label>
+            <textarea
+              v-model="formData.customCss"
+              :rows="8"
+              :placeholder="locale.customCssPlaceholder"
+              :class="[inputClass, 'font-mono text-xs resize-y']"
+              :disabled="!formData.customCssEnabled"
+              :maxlength="CUSTOM_CSS_MAX_LENGTH"
+            />
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.customCssHint }}</p>
+              <p
+                class="text-[10px] font-mono shrink-0 whitespace-nowrap mt-1"
+                :class="customCssLength >= CUSTOM_CSS_MAX_LENGTH ? 'text-warning' : 'text-text-tertiary'"
+              >
+                {{ customCssLength }} / {{ CUSTOM_CSS_MAX_LENGTH }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
@@ -1060,6 +1106,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Palette,
+  Brush,
   Star,
   Plus,
   CalendarRange
@@ -1085,6 +1132,7 @@ import {
 import { usePermissions } from '~/composables/usePermissions'
 import { THEMES } from '~/composables/useTheme'
 import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
+import { CUSTOM_CSS_MAX_LENGTH, trimCustomCss } from '~/utils/custom-css-policy'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -1093,6 +1141,8 @@ const { siteConfig: locale, theme: themeLocale } = useLocale()
 const { isSuperAdmin } = usePermissions()
 const { localize: localizeServerError } = useServerErrors()
 const themeOptions = computed(() => THEMES.map((value) => ({ value, label: themeLocale.value?.[value] || value })))
+
+const customCssLength = computed(() => trimCustomCss(formData.value.customCss).length)
 
 const setDefaultTheme = (theme) => {
   formData.value.defaultTheme = theme
@@ -1377,6 +1427,8 @@ const formData = ref({
   gonganNumber: '',
   statisticsCode: '',
   statisticsCodeEnabled: false,
+  customCss: '',
+  customCssEnabled: false,
   legalConsentEnabled: false,
   legalConsentDisplayMode: 'modal',
   legalConsentUpdatedDate: '',
@@ -1545,6 +1597,8 @@ const loadConfig = async () => {
       gonganNumber: data.gonganNumber || '',
       statisticsCode: data.statisticsCode || '',
       statisticsCodeEnabled: !!data.statisticsCodeEnabled,
+      customCss: data.customCss || '',
+      customCssEnabled: !!data.customCssEnabled,
       legalConsentEnabled: !!data.legalConsentEnabled,
       legalConsentDisplayMode: ['modal', 'checkbox'].includes(data.legalConsentDisplayMode) ? data.legalConsentDisplayMode : 'modal',
       legalConsentUpdatedDate: data.legalConsentUpdatedDate || '',
@@ -1652,8 +1706,11 @@ const saveConfig = async () => {
     const schoolLogoHomeLightUrl = schoolLogoHomeDarkUrl
       ? (formData.value.schoolLogoHomeLightUrl || '').trim()
       : ''
+    // 与服务端口径一致：仅在启用时提交，且提交 trim 后的值，避免刷新前显示与库不一致
+    const customCssDraft = trimCustomCss(formData.value.customCss)
     const configToSave = {
       ...formData.value,
+      ...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),
       legalConsentDocuments: JSON.stringify(formData.value.legalConsentDocuments),
       esaCaptchaScenes: JSON.stringify(formData.value.esaCaptchaScenes),
       schoolLogoHomeUrl: joinThemeLogoUrl(
@@ -1695,6 +1752,8 @@ const saveConfig = async () => {
       : stripSuperAdminOnlySettingFields(configToSave)
     delete requestPayload.schoolLogoHomeDarkUrl
     delete requestPayload.schoolLogoHomeLightUrl
+    // 关闭开关时不提交该键：库里遗留的超限值不应让整表单被接口拒绝
+    if (!formData.value.customCssEnabled) delete requestPayload.customCss
 
     const response = await fetch('/api/admin/system-settings', {
       method: 'POST',
@@ -1728,6 +1787,7 @@ const saveConfig = async () => {
       ...formData.value,
       siteTitle: configToSave.siteTitle,
       siteLogoUrl: configToSave.siteLogoUrl,
+      ...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),
       legalConsentUpdatedDate:
         savedSettings && typeof savedSettings.legalConsentUpdatedDate === 'string'
           ? savedSettings.legalConsentUpdatedDate

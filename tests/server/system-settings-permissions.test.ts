@@ -39,6 +39,7 @@ const MUST_BE_SUPER_ADMIN = [
   /^turnstile/,
   /^esa/,
   /^statisticsCode/,
+  /^customCss/,
   /^legalConsent/,
   /^hideStudentInfo/,
   /^allowAnonymousSubmission/,
