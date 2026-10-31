@@ -327,6 +327,7 @@ import { getBilibiliUrl, getCoverThumbUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { PLATFORM_AUTHORIZED_PLATFORMS } from '~/utils/platforms'
 import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { isPreviewClipDuration } from '~/utils/preview-duration'
 import { useTheme } from '~/composables/useTheme'
@@ -768,58 +769,90 @@ const isInvalidTencentAudio = (duration, url) => {
   return isKnownInvalidQqAudioUrl(url)
 }
 
-// 可能返回试听片段的平台；B 站与语音条目不参与判定
-const PREVIEW_CHECK_PLATFORMS = ['netease', 'netease-podcast', 'tencent', 'migu']
-
+// 受授权控制的音源可能只返回试听片段；B 站与语音条目不参与判定
 const isPreviewAudio = (duration) => {
   const song = activeSong.value
-  if (!song || !PREVIEW_CHECK_PLATFORMS.includes(song.musicPlatform)) return false
+  if (!song || !PLATFORM_AUTHORIZED_PLATFORMS.includes(song.musicPlatform)) return false
   if (song.sourceInfo?.type === 'voice') return false
   const expected = normalizeSongDurationSeconds(song.duration ?? song.durationSeconds)
   return isPreviewClipDuration(duration, expected)
 }
 
+const getPreviewSongKey = (song) =>
+  song?.id ? `${song.id}:${song.musicPlatform}:${song.musicId}` : ''
+
 let previewWarnedSongKey = ''
-const notifyPreviewOnly = () => {
-  const song = activeSong.value
+const notifyPreviewOnly = (song) => {
   if (!song?.id) return
-  const key = `${song.id}:${song.musicPlatform}:${song.musicId}`
+  const key = getPreviewSongKey(song)
   if (previewWarnedSongKey === key) return
   previewWarnedSongKey = key
   window.$showNotification?.(audioPlayerLocale.value.previewOnly, 'warning')
 }
 
-let durationFixInFlight = false
-const PREVIEW_SWITCH_TIMEOUT_MS = 15000
-// 实际时长异常（无效音频或试听片段）时切换到其它音源，换源失败或超时则提示仅试听
+// 换源后新源可能仍是试听片段：等它加载出时长后再判一次
+const PREVIEW_RECHECK_TIMEOUT_MS = 3000
+const notifyIfStillPreview = async (element) => {
+  if (!element) return
+  const songKey = getPreviewSongKey(activeSong.value)
+  if (!songKey) return
+
+  if (!(element.duration > 0)) {
+    await new Promise((resolve) => {
+      const timer = setTimeout(resolve, PREVIEW_RECHECK_TIMEOUT_MS)
+      element.addEventListener(
+        'loadedmetadata',
+        () => {
+          clearTimeout(timer)
+          resolve()
+        },
+        { once: true }
+      )
+    })
+  }
+
+  if (getPreviewSongKey(activeSong.value) !== songKey) return
+  if (isPreviewAudio(element.duration)) notifyPreviewOnly(activeSong.value)
+}
+
+// 换源只允许同时进行一轮；超时仅放弃等待，换源本身继续执行到出结果
+let badDurationFixPromise = null
+const BAD_DURATION_FIX_TIMEOUT_MS = 15000
+// 实际时长异常（无效音频或试听片段）时切换到其它音源，超时后交给后台结果处理提示
 const maybeSwitchForBadDuration = async (duration) => {
-  if (isFallbackHandling.value || durationFixInFlight) return false
+  if (isFallbackHandling.value || badDurationFixPromise) return false
   const needsFix =
     isInvalidTencentAudio(duration, audioPlayer.value?.currentSrc || audioPlayer.value?.src) ||
     isPreviewAudio(duration)
   if (!needsFix) return false
 
-  durationFixInFlight = true
-  try {
-    let timedOut = false
-    const switched = await Promise.race([
-      trySwitchPlaybackSource(),
-      new Promise((resolve) => {
-        setTimeout(() => {
-          timedOut = true
-          resolve(false)
-        }, PREVIEW_SWITCH_TIMEOUT_MS)
-      })
-    ])
-    if (switched) return true
-    if (isPreviewAudio(duration)) {
-      if (timedOut) console.warn('[AudioPlayer] 换源超时，保留当前试听片段')
-      notifyPreviewOnly()
-    }
-    return false
-  } finally {
-    durationFixInFlight = false
-  }
+  // 自动换源不弹“已切换备用音源”，只在最终仍为试听片段时提示
+  badDurationFixPromise = trySwitchPlaybackSource({ silent: true })
+    .then((switched) => {
+      if (switched) {
+        void notifyIfStillPreview(audioPlayer.value)
+        return true
+      }
+      if (isPreviewAudio(duration)) notifyPreviewOnly(activeSong.value)
+      return false
+    })
+    .finally(() => {
+      badDurationFixPromise = null
+    })
+
+  let timedOut = false
+  const switched = await Promise.race([
+    badDurationFixPromise,
+    new Promise((resolve) => {
+      setTimeout(() => {
+        timedOut = true
+        resolve(false)
+      }, BAD_DURATION_FIX_TIMEOUT_MS)
+    })
+  ])
+  if (switched) return true
+  if (timedOut) console.warn('[AudioPlayer] 换源超时，保留当前播放并等待后台结果')
+  return false
 }
 
 const getNeteaseScrobbleSongId = (song) => {

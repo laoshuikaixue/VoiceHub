@@ -5,13 +5,14 @@ import { join } from 'node:path'
 import { stripTypeScriptTypes } from 'node:module'
 import { networkUrl } from '../../server/utils/music-source-plugins/network.ts'
 
-// 匿名取链限流边界：只约束未登录请求，且不改变前端登录态复验判定
+// 取链接口的限流边界与取链优先级：只约束未登录请求，不改变前端登录态复验判定
 const read = (relative: string) => readFileSync(join(import.meta.dirname, relative), 'utf8')
 
 const RESOLVE_URL = read('../../server/api/music/resolve-url.post.ts')
 const MUSIC_URL = read('../../app/utils/musicUrl.ts')
 const LIMITER = read('../../server/utils/music-resolve-rate-limit.ts')
 const NETEASE_URL = read('../../server/api/native-api/wy/url.post.ts')
+const PLAYER = read('../../app/composables/useAudioPlayer.ts')
 
 test('限流仅作用于匿名请求且在解析工作之前', () => {
   assert.match(LIMITER, /const ANONYMOUS_RESOLVE_LIMIT = 10/)
@@ -36,6 +37,20 @@ test('被限流不得清除本地 QQ 登录态', () => {
   assert.ok(branch, '未找到官方链路降级分支')
   assert.match(branch, /status !== 429/)
   assert.match(branch, /await revalidateQqLoginAfterFailure\(\)/)
+})
+
+test('有登录态时的官方链路只保留一处分支', () => {
+  // 旧实现的非 VIP 兜底分支引用已删除的 isQqVip，会导致运行时 ReferenceError
+  assert.doesNotMatch(MUSIC_URL, /isQqVip/, '不得引用已删除的 isQqVip')
+  const gates = MUSIC_URL.match(/if \(qqMusicCookie && !excludedSources\.has\('qq-official'\)/g) || []
+  assert.equal(gates.length, 1, '有登录态即走官方链路的分支只应有一处')
+})
+
+test('忽略调用方播放链接须由播放链路显式声明', () => {
+  // 默认仍遵循「调用方给了播放链接就优先使用」，避免后台自定义链接被默默覆盖
+  assert.match(MUSIC_URL, /options\?\.preferPlatformResolve === true/)
+  assert.match(MUSIC_URL, /preferPlatformResolve\?: boolean/)
+  assert.match(PLAYER, /preferPlatformResolve: true|options\.preferPlatformResolve = true/)
 })
 
 const codes = new Proxy({}, { get: (_target, key) => key })

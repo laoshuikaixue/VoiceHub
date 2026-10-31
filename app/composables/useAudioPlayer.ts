@@ -3,7 +3,7 @@ import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useLocale } from '~/utils/locale'
-import type { MusicTrackMeta } from '~/utils/musicUrl'
+import type { MusicUrlResolveOptions } from '~/utils/musicUrl'
 import {
   createSchedulePlaybackState, findScheduleItem, reconcileSchedulePlayback,
   samePlaybackSource, sameScheduleSource, scheduleNeighborIndex, selectScheduleItem,
@@ -185,6 +185,7 @@ export function useAudioPlayer() {
           const { getMusicUrl } = await import('~/utils/musicUrl')
           // 平台歌曲优先按当前登录态重新取链，取链失败时由 getMusicUrl 回退 playUrl
           url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, {
+            preferPlatformResolve: true,
             musicInfo: { name: song.title, artist: song.artist, album: song.album || undefined, rawItem: song }
           })
         }
@@ -368,9 +369,8 @@ export function useAudioPlayer() {
             nextSong.sourceInfo?.type === 'voice' ||
             (nextSong.sourceInfo?.source === 'netease-backup' &&
               nextSong.sourceInfo?.type === 'voice')
-          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
-            ? { unblock: false }
-            : {}
+          const options: MusicUrlResolveOptions = isPodcast ? { unblock: false } : {}
+          options.preferPlatformResolve = true
           options.musicInfo = {
             name: nextSong.title,
             artist: nextSong.artist,
@@ -462,9 +462,8 @@ export function useAudioPlayer() {
             prevSong.sourceInfo?.type === 'voice' ||
             (prevSong.sourceInfo?.source === 'netease-backup' &&
               prevSong.sourceInfo?.type === 'voice')
-          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
-            ? { unblock: false }
-            : {}
+          const options: MusicUrlResolveOptions = isPodcast ? { unblock: false } : {}
+          options.preferPlatformResolve = true
           options.musicInfo = {
             name: prevSong.title,
             artist: prevSong.artist,
@@ -601,9 +600,8 @@ export function useAudioPlayer() {
         nextSong.sourceInfo?.type === 'voice' ||
         (nextSong.sourceInfo?.source === 'netease-backup' &&
           nextSong.sourceInfo?.type === 'voice')
-      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
-        ? { unblock: false }
-        : {}
+      const options: MusicUrlResolveOptions = isPodcast ? { unblock: false } : {}
+      options.preferPlatformResolve = true
       options.musicInfo = {
         name: nextSong.title,
         artist: nextSong.artist,
