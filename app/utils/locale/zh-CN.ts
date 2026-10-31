@@ -58,6 +58,15 @@ export const siteConfig = {
   statisticsCodeHint:
     '将注入到所有页面的 <head> 中，支持任意 HTML/JS 统计代码。保存后约 1 分钟内生效。',
 
+  // 自定义样式
+  customCssSection: '自定义样式',
+  customCssEnabled: '启用自定义 CSS',
+  customCssEnabledDesc: '开启后才会把下方 CSS 注入全站页面',
+  customCss: '自定义 CSS',
+  customCssPlaceholder: ':root[data-theme] { --primary: #e11d48; }',
+  customCssHint:
+    '作为最后一个 <style> 注入所有页面的 <head>。主题变量写在 :root[data-theme="…"] 上，权重高于单独的 :root，覆盖须用同级的 :root[data-theme]；改普通元素样式不受此限制。上限 65536 字符，内容不得包含 </style>。保存后约 1 分钟内生效。',
+
   // 视觉识别
   themeSettings: '主题设置',
   themeSettingsDesc: '为每个主题单独设置启用状态，并使用星标指定默认主题。',

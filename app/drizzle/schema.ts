@@ -476,6 +476,10 @@ export const systemSettings = pgTable('SystemSettings', {
   // 站点统计代码（任意站点统计平台的 HTML/JS 片段，注入 SSR 页面 <head>）
   statisticsCodeEnabled: boolean('statisticsCodeEnabled').default(false).notNull(),
   statisticsCode: text('statisticsCode'),
+
+  // 自定义 CSS（全站样式表，注入 SSR 页面 <head> 末尾，优先级高于内置主题）
+  customCssEnabled: boolean('customCssEnabled').default(false).notNull(),
+  customCss: text('customCss'),
   legalConsentEnabled: boolean('legalConsentEnabled').default(false).notNull(),
   legalConsentDisplayMode: text('legalConsentDisplayMode').default('modal').notNull(),
   legalConsentUpdatedDate: text('legalConsentUpdatedDate'),

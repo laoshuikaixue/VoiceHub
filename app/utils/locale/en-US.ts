@@ -57,6 +57,14 @@ export const siteConfig = {
   statisticsCodeHint:
     'Injected into the <head> of every page. Supports any HTML/JS statistics code. Takes effect within about 1 minute after saving.',
 
+  customCssSection: 'Custom Styles',
+  customCssEnabled: 'Enable Custom CSS',
+  customCssEnabledDesc: 'Only injects the CSS below into all pages when enabled',
+  customCss: 'Custom CSS',
+  customCssPlaceholder: ':root[data-theme] { --primary: #e11d48; }',
+  customCssHint:
+    'Injected as the last <style> in the <head> of every page. Theme variables live on :root[data-theme="..."], which outweighs a bare :root, so override them with the matching :root[data-theme] selector; plain element styles need no such care. Max 65536 characters; </style> is not allowed. Takes effect within about 1 minute after saving.',
+
   themeSettings: 'Theme Settings',
   themeSettingsDesc: 'Control each theme separately and use the star to choose the default theme.',
   setDefaultTheme: 'Set as default theme',

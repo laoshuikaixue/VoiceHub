@@ -19,6 +19,7 @@ import {
   MUSIC_SOURCE_PLATFORMS,
   DEFAULT_THEMES,
   CAPTCHA_PROVIDERS,
+  CUSTOM_CSS_MAX_LENGTH,
   ALIYUN_ESA_CAPTCHA_REGIONS
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
@@ -329,6 +330,25 @@ export default defineEventHandler(async (event) => {
       updateData.statisticsCode = body.statisticsCode
     }
 
+    if (body.customCss !== undefined) {
+      if (body.customCss !== null && typeof body.customCss !== 'string') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCss 必须是字符串或 null')
+      }
+      const css = body.customCss || ''
+      if (css.length > CUSTOM_CSS_MAX_LENGTH) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          `自定义 CSS 不能超过 ${CUSTOM_CSS_MAX_LENGTH} 个字符`
+        )
+      }
+      // 出现 </style> 会提前闭合样式标签，使后续内容按 HTML 解析
+      if (/<\s*\/\s*style[\s>]/i.test(css)) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '自定义 CSS 不允许包含 </style>')
+      }
+      updateData.customCss = css.trim() || null
+    }
+
     if (body.legalConsentEnabled !== undefined) {
       if (typeof body.legalConsentEnabled !== 'boolean') throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款确认开关必须是布尔值')
       updateData.legalConsentEnabled = body.legalConsentEnabled
@@ -387,6 +407,13 @@ export default defineEventHandler(async (event) => {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCodeEnabled 必须是布尔值')
       }
       updateData.statisticsCodeEnabled = body.statisticsCodeEnabled
+    }
+
+    if (body.customCssEnabled !== undefined) {
+      if (typeof body.customCssEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCssEnabled 必须是布尔值')
+      }
+      updateData.customCssEnabled = body.customCssEnabled
     }
 
     if (body.showBeianIcon !== undefined) {

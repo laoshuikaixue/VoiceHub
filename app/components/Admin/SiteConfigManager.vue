@@ -222,6 +222,43 @@
         </div>
       </section>
 
+      <!-- 自定义样式 -->
+      <section v-if="isSuperAdmin" :class="cardClass">
+        <h3
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+        >
+          <Brush :size="16" class="text-primary" /> {{ locale.customCssSection }}
+        </h3>
+        <div class="space-y-4">
+          <div class="pt-2">
+            <div
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
+            >
+              <div>
+                <p class="text-xs font-bold text-text-primary">{{ locale.customCssEnabled }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.customCssEnabledDesc }}</p>
+              </div>
+              <input
+                v-model="formData.customCssEnabled"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+          </div>
+          <div>
+            <label :class="labelClass">{{ locale.customCss }}</label>
+            <textarea
+              v-model="formData.customCss"
+              :rows="8"
+              :placeholder="locale.customCssPlaceholder"
+              :class="[inputClass, 'font-mono text-xs resize-y']"
+              :disabled="!formData.customCssEnabled"
+            />
+            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.customCssHint }}</p>
+          </div>
+        </div>
+      </section>
+
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
@@ -1060,6 +1097,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Palette,
+  Brush,
   Star,
   Plus,
   CalendarRange
@@ -1377,6 +1415,8 @@ const formData = ref({
   gonganNumber: '',
   statisticsCode: '',
   statisticsCodeEnabled: false,
+  customCss: '',
+  customCssEnabled: false,
   legalConsentEnabled: false,
   legalConsentDisplayMode: 'modal',
   legalConsentUpdatedDate: '',
@@ -1545,6 +1585,8 @@ const loadConfig = async () => {
       gonganNumber: data.gonganNumber || '',
       statisticsCode: data.statisticsCode || '',
       statisticsCodeEnabled: !!data.statisticsCodeEnabled,
+      customCss: data.customCss || '',
+      customCssEnabled: !!data.customCssEnabled,
       legalConsentEnabled: !!data.legalConsentEnabled,
       legalConsentDisplayMode: ['modal', 'checkbox'].includes(data.legalConsentDisplayMode) ? data.legalConsentDisplayMode : 'modal',
       legalConsentUpdatedDate: data.legalConsentUpdatedDate || '',
