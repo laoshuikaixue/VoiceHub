@@ -2983,6 +2983,7 @@ export const admin = {
     replay: 'Replay',
     crossSemester: 'Cross-semester',
     requesterPrefix: 'Requester: ',
+    anonymousRequester: 'Anonymous',
     replayRequestsPrefix: 'Replay requests: ',
     popularityPrefix: 'Popularity: ',
     replayCount: (count: number) => `${count} people`,

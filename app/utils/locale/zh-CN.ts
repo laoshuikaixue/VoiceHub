@@ -2904,6 +2904,7 @@ export const admin = {
     replay: '重播',
     crossSemester: '跨学期',
     requesterPrefix: '投稿人：',
+    anonymousRequester: '匿名投稿',
     replayRequestsPrefix: '申请重播：',
     popularityPrefix: '热度：',
     replayCount: (count: number) => `${count}人`,
