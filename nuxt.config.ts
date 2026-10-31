@@ -841,7 +841,7 @@ export default defineNuxtConfig({
       ? {
           vercel: {
             functions: {
-              maxDuration: 60
+              maxDuration: 30
             }
           }
         }

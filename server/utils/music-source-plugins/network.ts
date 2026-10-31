@@ -79,6 +79,13 @@ export interface NetworkOptions {
   signal: AbortSignal
 }
 
+declare module 'node:http' {
+  interface IncomingMessage {
+    /** openNetwork 走完重定向链后的终点 URL，供 serverless 302 直跳使用 */
+    finalUrl?: string
+  }
+}
+
 /** 连接固定到已校验的 DNS 结果，重定向每跳重新校验。 */
 export async function openNetwork(input: string, options: NetworkOptions): Promise<IncomingMessage> {
   let url = networkUrl(input)
@@ -105,7 +112,10 @@ export async function openNetwork(input: string, options: NetworkOptions): Promi
       request.on('error', reject)
       request.end(body)
     })
-    if (![301, 302, 303, 307, 308].includes(response.statusCode || 0) || !response.headers.location) return response
+    if (![301, 302, 303, 307, 308].includes(response.statusCode || 0) || !response.headers.location) {
+      response.finalUrl = url.href
+      return response
+    }
     response.destroy()
     if (hop === MUSIC_PLUGIN_LIMITS.redirects) throw pluginError('PLUGIN_NETWORK_BLOCKED')
     const next = networkUrl(new URL(response.headers.location, url).href)
@@ -116,6 +126,27 @@ export async function openNetwork(input: string, options: NetworkOptions): Promi
     url = next
   }
   throw pluginError('PLUGIN_NETWORK_BLOCKED')
+}
+
+/**
+ * 走完重定向链解析终点 URL 后即断开，不读取响应体。
+ * HEAD 结果仅在 2xx/416 时可直接采信，其余（含 403/405 等拒绝码）回退 GET 探测；拿不到终点返回 null
+ */
+export async function probeFinalUrl(input: string, options: NetworkOptions): Promise<{ url: string; status: number } | null> {
+  const attempt = async (method: string) => {
+    const response = await openNetwork(input, { ...options, method })
+    const final = response.finalUrl || input
+    const status = response.statusCode || 0
+    response.destroy()
+    return { url: final, status }
+  }
+  try {
+    const head = await attempt('HEAD')
+    if ((head.status >= 200 && head.status < 300) || head.status === 416) return head
+    return await attempt('GET')
+  } catch {
+    try { return await attempt('GET') } catch { return null }
+  }
 }
 
 export async function requestNetwork(input: string, options: NetworkOptions, limit: number = MUSIC_PLUGIN_LIMITS.responseBytes) {
