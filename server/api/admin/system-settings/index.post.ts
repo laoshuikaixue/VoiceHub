@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
-import { findSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
+import { findSuperAdminOnlySettingFields, stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
@@ -1497,7 +1497,8 @@ export default defineEventHandler(async (event) => {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)
     }
 
-    return maskSystemSettingsSecrets(settings)
+    const masked = maskSystemSettingsSecrets(settings)
+    return user.role === 'SUPER_ADMIN' ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {
     console.error('更新系统设置失败:', error)
 
