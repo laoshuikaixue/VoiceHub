@@ -22,11 +22,11 @@ const CUSTOM_CSS_KEYS = [
 
 test('自定义 CSS 属于超管专属字段，普通管理员提交时被剔除', () => {
   const stripped = stripSuperAdminOnlySettingFields({
-    siteTitle: 'x',
+    enabledPlatforms: ['netease'],
     customCss: 'body{}',
     customCssEnabled: true
   })
-  assert.deepEqual(Object.keys(stripped), ['siteTitle'])
+  assert.deepEqual(Object.keys(stripped), ['enabledPlatforms'])
 })
 
 test('写入校验限制长度并拒绝提前闭合的 style 标签', () => {
