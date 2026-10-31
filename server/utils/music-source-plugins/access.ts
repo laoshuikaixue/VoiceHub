@@ -14,7 +14,7 @@ function isLoopbackHostname(hostname: string): boolean {
 export async function pluginAccess(event: H3Event, admin = false) {
   const user = event.context.user
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '请先登录')
-  if (admin && user.role !== 'SUPER_ADMIN') throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '需要超级管理员权限')
+  // 后台角色准入由守卫表决定，这里只保留同源校验与限流
   if (admin && !['GET', 'HEAD'].includes(event.method)) {
     const origin = getRequestHeader(event, 'origin')
     // 与 api-cors 中间件保持一致：Fetch Metadata 由浏览器生成，同源请求不应被反代改写的 Host/端口误伤

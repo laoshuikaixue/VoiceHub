@@ -6,22 +6,7 @@ import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
   const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能查看系统设置'
-    })
-  }
 
   try {
     // 系统设置包含敏感配置，始终从数据库读取。

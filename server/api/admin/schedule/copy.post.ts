@@ -5,14 +5,6 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
-
   const startTime = Date.now()
   const clientIP = getClientIP(event)
 

@@ -41,11 +41,7 @@ async function notifyRejected(name: string | null, email: string | null, reason:
 
 // 注册审核：approve 通过（可修改注册信息），reject 拒绝（删除账户并记录理由与用户快照）
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
   const operator = event.context.user
-  if (!operator || !['ADMIN', 'SUPER_ADMIN'].includes(operator.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
 
   const userId = getRouterParam(event, 'id')
   const body = await readBody(event)

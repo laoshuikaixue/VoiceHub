@@ -2,15 +2,6 @@ import { db, eq } from '~/drizzle/db'
 import { schedules } from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
-  // 验证用户认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
-
   try {
     const body = await readBody(event)
     const scheduleUpdates = body.schedules

@@ -9,15 +9,6 @@ import { buildUserFilterConditions } from '~~/server/utils/user-filter'
 // role/status 保留原始枚举值交由前端按界面语言本地化，实际生成 .xlsx 由前端完成。
 export default defineEventHandler(async (event) => {
   try {
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以导出用户列表'
-      })
-    }
-
     const query = getQuery(event)
     const whereClause = buildUserFilterConditions(query)
 

@@ -42,32 +42,14 @@ function endpointFiles(dir: URL, base = ''): string[] {
   return found
 }
 
-// 源码里出现的角色名单（含校验用全角色名单），按集合解析避免误判白名单顺序
-function roleSetsIn(source: string): string[][] {
-  return [...source.matchAll(/\[[^\[\]]*\]/g)]
-    .map((match) => [...match[0].matchAll(/['"](USER|SONG_ADMIN|ADMIN|SUPER_ADMIN)['"]/g)].map((role) => role[1]))
-    .filter((roles) => roles.length)
+// 重构前每个端点的放行角色集合，冻结在夹具里（端点源码的内联判定已被删除，无法再从源码推导）
+interface BaselineEntry {
+  file: string
+  roles: string[]
 }
-
-function sameSet(a: string[], b: readonly string[]): boolean {
-  return a.length === b.length && b.every((role) => a.includes(role))
-}
-
-// 重构前每个端点的实际放行角色：接口内判定优先，无判定时由 /api/admin 中间件兜底
-function expectedRoles(source: string): readonly string[] {
-  if (/pluginAccess\(event,\s*true/.test(source)) return SUPER
-  if (/verifySuperAdminAuth/.test(source)) return SUPER
-  if (/requireSongAdmin\(/.test(source)) return CONSOLE
-  if (/canSendSystemNotification/.test(source)) return MANAGER
-
-  const sets = roleSetsIn(source)
-  if (sets.some((roles) => sameSet(roles, CONSOLE))) return CONSOLE
-  if (sets.some((roles) => sameSet(roles, MANAGER))) return MANAGER
-
-  if (/\.role\s*!==\s*['"]SUPER_ADMIN['"]/.test(source)) return SUPER
-  if (/verifyAdminAuth/.test(source)) return MANAGER
-  return CONSOLE
-}
+const BASELINE = JSON.parse(
+  readFileSync(new URL('../fixtures/admin-endpoint-roles.json', import.meta.url), 'utf8')
+).endpoints as Record<string, BaselineEntry>
 
 function toPathname(rel: string): { pathname: string; methods: readonly string[] } {
   const suffixMatch = rel.match(/\.(get|post|put|patch|delete)\.ts$/)
@@ -90,24 +72,37 @@ function allowedRoles(pathname: string, method: string): string[] {
   })
 }
 
-test('守卫表覆盖全部后台端点与角色结论，与重构前逐项一致', () => {
-  const files = endpointFiles(ADMIN_API_DIR)
-  // 端点扫描失效时禁止空跑通过
-  assert.ok(files.length > 100, `后台端点扫描异常: ${files.length}`)
+test('守卫表逐端点还原夹具冻结的重构前角色结论', () => {
+  const keys = Object.keys(BASELINE)
+  // 夹具异常或端点大幅减少时禁止空跑通过
+  assert.ok(keys.length > 100, `基线夹具条目异常: ${keys.length}`)
 
   const mismatches: string[] = []
-  for (const rel of files) {
-    const source = readFileSync(new URL(`file://${decodeURIComponent(ADMIN_API_DIR.pathname)}/${rel}`), 'utf8')
-    const expected = expectedRoles(source)
-    const { pathname, methods } = toPathname(rel)
-    for (const method of methods) {
-      const actual = allowedRoles(pathname, method)
-      if (actual.join(',') !== expected.join(',')) {
-        mismatches.push(`${method} ${pathname} (${rel}) 期望 ${expected.join('|')} 实际 ${actual.join('|') || '无'}`)
-      }
+  for (const [key, entry] of Object.entries(BASELINE)) {
+    const separator = key.indexOf(' ')
+    const method = key.slice(0, separator)
+    const pathname = key.slice(separator + 1)
+    const actual = allowedRoles(pathname, method)
+    if (actual.join(',') !== entry.roles.join(',')) {
+      mismatches.push(`${key} (${entry.file}) 期望 ${entry.roles.join('|')} 实际 ${actual.join('|') || '无'}`)
     }
   }
-  assert.deepEqual(mismatches, [], `后台守卫表与重构前不一致:\n${mismatches.join('\n')}`)
+  assert.deepEqual(mismatches, [], `后台守卫表与基线夹具不一致:\n${mismatches.join('\n')}`)
+})
+
+test('每个现存后台端点的每个方法都由守卫表显式登记，不依赖退化规则', () => {
+  const files = endpointFiles(ADMIN_API_DIR)
+  assert.ok(files.length > 100, `后台端点扫描异常: ${files.length}`)
+
+  const unregistered: string[] = []
+  for (const rel of files) {
+    const { pathname, methods } = toPathname(rel)
+    for (const method of methods) {
+      const guard = resolveAdminRouteGuard(pathname, method)
+      if (!guard || guard.fallback) unregistered.push(`${method} ${pathname} (${rel})`)
+    }
+  }
+  assert.deepEqual(unregistered, [], `存在未登记的后台端点方法:\n${unregistered.join('\n')}`)
 })
 
 test('守卫表引用的权限码都在目录内，模板码同样受目录约束', () => {
@@ -200,4 +195,51 @@ test('后台页面入口与重构前一致，仅补充普通管理员与歌曲�
     assert.ok(accessiblePages(perms).includes('password'), `${role} 应有修改密码入口`)
   }
   assert.deepEqual(accessiblePages(resolveEffectivePermissions({ role: 'USER' }, null)), [])
+})
+
+test('显式授予的权限码可直接越过角色模板，后台闸门只看解析后的权限', () => {
+  const denied = allowedRoles('/api/admin/users', 'GET')
+  assert.deepEqual(denied, [...MANAGER])
+
+  // 普通用户被单独授予用户列表权限后应可通过；重构前端点内联名单会把它拒成 500
+  const granted = resolveEffectivePermissions(
+    { role: 'USER', permissions: ['users:read', PRIV_ADMIN_CONSOLE] },
+    ROLE_PERMISSION_TEMPLATES_DEFAULT
+  )
+  const guard = resolveAdminRouteGuard('/api/admin/users', 'GET')
+  assert.ok(guard && !guard.deny)
+  assert.ok(hasAllPermissions(granted, guard!.all) && hasAnyPermission(granted, guard!.any))
+
+  // 只给业务码、不给后台闸门码仍应拒绝
+  const noConsole = resolveEffectivePermissions({ role: 'USER', permissions: ['users:read'] }, null)
+  assert.equal(hasAllPermissions(noConsole, guard!.all), false)
+})
+
+// 端点闸门已全部收归守卫表，以下是仅存的数据级角色判定（保护超管实体、配置字段分区、按角色脱敏）
+const DATA_LEVEL_ROLE_CHECKS: Record<string, number> = {
+  'backup/restore-chunk.post.ts': 1,
+  'backup/restore.post.ts': 1,
+  'schedule/song-pool.get.ts': 1,
+  'system-settings/index.post.ts': 1,
+  'system-settings/index.ts': 1,
+  'users/[id]/reset-password.post.ts': 1,
+  'users/[id].delete.ts': 1,
+  'users/[id].put.ts': 3,
+  'users/batch-grade-update.post.ts': 1,
+  'users/batch-status.put.ts': 2,
+  'users/batch-update.post.ts': 1,
+  'users/batch.post.ts': 1,
+  'users/index.post.ts': 2
+}
+
+test('后台端点不再自行判定访问者角色，新增内联闸门会被此条拦下', () => {
+  const ROLE_READ = /(user|currentUser|operator|actor|adminUser)\??\.\s*role\b/
+  const actual: Record<string, number> = {}
+  for (const rel of endpointFiles(ADMIN_API_DIR)) {
+    const count = readFileSync(new URL(`../../server/api/admin/${rel}`, import.meta.url), 'utf8')
+      .split('\n')
+      .filter((line) => ROLE_READ.test(line)).length
+    if (count) actual[rel] = count
+  }
+  assert.deepEqual(actual, DATA_LEVEL_ROLE_CHECKS, '后台端点出现新的访问者角色判定，应改为守卫表登记')
 })

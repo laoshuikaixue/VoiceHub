@@ -1,22 +1,8 @@
 import { db, users, userIdentities } from '~/drizzle/db'
 import { eq, or, like, inArray } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 
-export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
-  }
-
-  if (user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以清除聚合登录绑定'
-    })
-  }
-
+export default defineEventHandler(async () => {
   const result = await db.transaction(async (tx) => {
     // 1. 查询所有聚合登录相关的身份
     const targetIdentities = await tx.query.userIdentities.findMany({

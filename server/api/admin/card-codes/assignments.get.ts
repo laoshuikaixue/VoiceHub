@@ -4,12 +4,9 @@ import { and, count, desc, eq, gte, ilike, lte, or } from 'drizzle-orm'
 import { formatDateTime, getBeijingEndOfDay, getBeijingStartOfDay, parseToBeijingTime } from '~/utils/timeUtils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
 /** 按用户、状态与北京日期查询派发记录。 */
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
   const query = getQuery(event)
   const parseDayBoundary = (value: unknown, field: string): Date | null => {
     if (value === undefined || value === '') return null

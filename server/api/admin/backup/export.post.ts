@@ -36,14 +36,7 @@ import path from 'path'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
     const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以导出备份'
-      })
-    }
 
     const body = await readBody(event)
     const { tables = 'all' } = body

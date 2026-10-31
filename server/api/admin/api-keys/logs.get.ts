@@ -6,15 +6,6 @@ import { resolvePagination } from '~~/server/utils/pagination'
  * GET /api/admin/api-keys/logs
  */
 export default defineEventHandler(async (event) => {
-  // 检查用户权限 - 只有超级管理员可以查看 API 日志
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以查看 API 日志'
-    })
-  }
-
   const query = getQuery(event)
   const { page, limit } = resolvePagination(query.page, query.limit, 50, 500)
   const apiKeyId = query.apiKeyId as string

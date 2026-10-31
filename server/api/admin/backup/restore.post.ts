@@ -46,12 +46,8 @@ import { restoreCardCodeAssignmentRecord, syncRestoredCardCodeAssignment } from 
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
     const user = event.context.user
     if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '需要登录')
-    if (user.role !== 'SUPER_ADMIN') {
-      throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以恢复备份')
-    }
 
     let backupData: any
     let mode = 'merge'

@@ -44,9 +44,6 @@ export const shouldCheckImportantNotification = (
 ): boolean =>
   authenticated && Number.isInteger(userId) && Number(userId) > 0 && !requirePasswordChange
 
-export const canSendSystemNotification = (role?: string): boolean =>
-  role === 'ADMIN' || role === 'SUPER_ADMIN'
-
 export const resolveImportantFlag = (value: unknown): boolean | null => {
   if (value === undefined) return false
   return typeof value === 'boolean' ? value : null

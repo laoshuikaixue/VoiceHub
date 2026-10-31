@@ -6,14 +6,7 @@ import formidable from 'formidable'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
     const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以上传备份文件'
-      })
-    }
 
     // 创建备份目录
     const backupDir = path.join(process.cwd(), 'backups')

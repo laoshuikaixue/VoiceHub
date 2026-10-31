@@ -2,14 +2,11 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, asc, eq, ilike, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { UNSET_KEY } from '~~/server/utils/recipient-tree'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
 /** 按姓名与年级班级查询接收人及组织统计。 */
 const MAX_PREVIEW_COUNT = 2000
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
   const query = getQuery(event)
   const keyword = typeof query.q === 'string' ? query.q.trim() : ''
   const grade = typeof query.grade === 'string' ? query.grade.trim() : ''

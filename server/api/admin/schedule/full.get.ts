@@ -17,23 +17,6 @@ import {
 import { parseScheduleDateQuery } from '~~/server/utils/schedule-date-query'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户身份验证和权限
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有歌曲管理员及以上权限才能访问完整排期数据'
-    })
-  }
-
   const query = getQuery(event)
   const { date, playTimeId, includeDrafts = 'true' } = query
   const dateRange = parseScheduleDateQuery(date)

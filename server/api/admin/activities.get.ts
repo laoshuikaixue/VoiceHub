@@ -5,15 +5,6 @@ import { desc, eq } from 'drizzle-orm'
 import { resolvePagination } from '~~/server/utils/pagination'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
-
   const query = getQuery(event)
   const { limit } = resolvePagination(undefined, query.limit, 10, 100)
 

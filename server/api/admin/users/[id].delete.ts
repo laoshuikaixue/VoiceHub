@@ -9,9 +9,6 @@ import { getServerDate } from '~~/server/utils/serverTime'
 export default defineEventHandler(async (event) => {
   const actor = event.context.user
   if (!actor) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '需要登录')
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(actor.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
   const userId = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(userId) || userId <= 0) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '用户 ID 无效')

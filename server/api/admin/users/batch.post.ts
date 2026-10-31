@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 interface UserData {
@@ -25,14 +25,7 @@ const normalizeOptionalText = (value: unknown) => {
 }
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
 
   const body = await readBody(event)
 

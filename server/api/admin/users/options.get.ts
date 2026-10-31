@@ -7,16 +7,6 @@ import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/u
 
 export default defineEventHandler(async (event) => {
   try {
-    // 检查用户是否为管理员
-    const user = event.context.user
-
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有系统管理员可以访问此选项'
-      })
-    }
-
     // 归档筛选：archived=1 仅查已归档（graduate/withdrawn）；archived=0 排除已归档；缺省不限制
     const query = getQuery(event)
     const archivedFilter = resolveArchivedFilter(query.archived)

@@ -6,14 +6,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
   const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
 
   try {
     const body = await readBody(event)

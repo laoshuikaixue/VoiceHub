@@ -4,15 +4,6 @@ import { songBlacklists } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
-
   const id = parseInt(getRouterParam(event, 'id'))
   if (!id) {
     throw createError({

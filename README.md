@@ -1515,7 +1515,6 @@ VoiceHub/
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── card-code-backup.ts # 点歌券与派发流水恢复
 │   │   ├── recipient-tree.ts # 派发接收人年级班级树构建
-│   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
 │   │   ├── song-name-normalize.ts # 歌曲名称标准化匹配工具
 │   │   ├── song-type-resolver.ts # 歌曲类型（语种/曲风）解析工具

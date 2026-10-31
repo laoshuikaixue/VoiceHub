@@ -40,12 +40,8 @@ import { restoreCardCodeAssignmentRecord, syncRestoredCardCodeAssignment } from 
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
   const user = event.context.user
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '需要登录')
-  if (user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以恢复备份')
-  }
 
   const body = await readBody(event)
   const {

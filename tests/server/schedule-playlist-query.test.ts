@@ -9,6 +9,14 @@ import { Socket } from 'node:net'
 import { createEvent, type H3Event } from 'h3'
 import type { SQL } from 'drizzle-orm'
 import { PgDialect } from 'drizzle-orm/pg-core'
+import {
+  PRIV_ADMIN_CONSOLE,
+  ROLE_PERMISSION_TEMPLATES_DEFAULT,
+  hasAllPermissions,
+  hasAnyPermission,
+  resolveEffectivePermissions
+} from '../../app/utils/admin-permissions.ts'
+import { resolveAdminRouteGuard } from '../../server/utils/admin-permission-routes.ts'
 
 type FixtureRow = Record<string, unknown>
 type FixtureSelection = Record<string, unknown>
@@ -318,11 +326,15 @@ test('管理接口不传日期时保留默认包含草稿，空播放链接返�
   assert.equal(result.data.schedules[0].song.playUrl, null)
 })
 
-test('管理接口仍拒绝匿名和普通用户', async () => {
-  await assert.rejects(() => adminHandler(eventFor()), (error: unknown) =>
-    error instanceof Error && 'statusCode' in error && error.statusCode === 401)
-  await assert.rejects(() => adminHandler(eventFor({}, 'USER')), (error: unknown) =>
-    error instanceof Error && 'statusCode' in error && error.statusCode === 403)
+test('管理播放表接口准入由守卫表把关，与重构前角色名单一致', () => {
+  const guard = resolveAdminRouteGuard('/api/admin/schedule/full', 'GET')
+  assert.ok(guard && !guard.deny, '播放表接口缺少守卫登记')
+  const allowed = ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN']
+  for (const role of ['USER', ...allowed]) {
+    const perms = resolveEffectivePermissions({ role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+    const pass = hasAllPermissions(perms, [PRIV_ADMIN_CONSOLE]) && hasAnyPermission(perms, guard!.any)
+    assert.equal(pass, allowed.includes(role), `${role} 访问播放表接口的结论与重构前不一致`)
+  }
 })
 
 test('UTC、上海和洛杉矶服务器时区下两个接口生成相同日期边界', async () => {

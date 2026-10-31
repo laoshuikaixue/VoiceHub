@@ -11,8 +11,12 @@ import {
 import {
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
   accessiblePages,
-  resolveEffectivePermissions
+  hasAllPermissions,
+  hasAnyPermission,
+  resolveEffectivePermissions,
+  PRIV_ADMIN_CONSOLE
 } from '../../app/utils/admin-permissions.ts'
+import { resolveAdminRouteGuard } from '../../server/utils/admin-permission-routes.ts'
 
 // 系统设置权限边界：涉及用户数据与凭据的字段归超级管理员，运营配置留给普通管理员
 const read = (relative: string) => readFileSync(join(import.meta.dirname, relative), 'utf8')
@@ -122,17 +126,30 @@ test('剔除与命中函数按清单工作', () => {
   assert.deepEqual(findSuperAdminOnlySettingFields(null), [])
 })
 
-test('读写接口与子接口按角色把关', () => {
+test('读写接口字段分区按角色把关，子接口准入由守卫表收归超级管理员', () => {
   assert.match(INDEX_POST, /user\.role !== 'SUPER_ADMIN'[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
   assert.match(INDEX_POST, /statusCode: 403/)
   assert.match(INDEX_GET, /stripSuperAdminOnlySettingFields\(masked\)/)
-  for (const [name, source] of [
-    ['env-oauth.get', ENV_OAUTH_GET],
-    ['env-oauth-import', ENV_OAUTH_IMPORT],
-    ['clear-aggregate-bindings', CLEAR_BINDINGS]
+  assert.doesNotMatch(ENV_OAUTH_GET, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, 'env-oauth.get 不应再放行普通管理员')
+  assert.doesNotMatch(ENV_OAUTH_IMPORT, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/)
+  assert.doesNotMatch(CLEAR_BINDINGS, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/)
+  for (const [pathname, method] of [
+    ['/api/admin/system-settings/env-oauth', 'GET'],
+    ['/api/admin/system-settings/env-oauth-import', 'POST'],
+    ['/api/admin/system-settings/clear-aggregate-bindings', 'POST']
   ] as const) {
-    assert.match(source, /user\.role !== 'SUPER_ADMIN'/, `${name} 应仅限超级管理员`)
-    assert.doesNotMatch(source, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, `${name} 不应再放行普通管理员`)
+    const guard = resolveAdminRouteGuard(pathname, method)
+    assert.ok(guard && !guard.deny, `${pathname} 缺少守卫登记`)
+    assert.ok(guard && guard.any.includes('system-settings:secrets'), `${pathname} 应限定凭据权限码`)
+    for (const role of ['USER', 'SONG_ADMIN', 'ADMIN']) {
+      const perms = resolveEffectivePermissions({ role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+      assert.ok(
+        !(hasAllPermissions(perms, [PRIV_ADMIN_CONSOLE]) && hasAnyPermission(perms, guard!.any)),
+        `${role} 不应访问 ${pathname}`
+      )
+    }
+    const superPerms = resolveEffectivePermissions({ role: 'SUPER_ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+    assert.ok(hasAnyPermission(superPerms, guard!.any), `SUPER_ADMIN 应可访问 ${pathname}`)
   }
 })
 
