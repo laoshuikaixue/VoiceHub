@@ -89,7 +89,30 @@ export default defineEventHandler(async (event) => {
   let durationSeconds: number | null = null
 
   try {
-    if (platform === 'netease' || platform === 'netease-podcast') {
+    if (platform === 'netease') {
+      // 时长取歌曲详情 dt；song/url 的 time 在无播放权益时是试听片段长度。
+      const response: any = await $fetch('/api/api-enhanced/netease/song/detail', {
+        params: { ids: musicId },
+        timeout: 10000
+      })
+
+      if (response?.songs?.[0]?.dt) {
+        const timeMs = response.songs[0].dt
+        if (typeof timeMs === 'number' && timeMs > 0) {
+          durationSeconds = Math.floor(timeMs / 1000)
+        }
+      }
+
+      if (!durationSeconds) {
+        return {
+          success: false,
+          songId,
+          durationSeconds: null,
+          message: '网易云 API 未返回有效时长'
+        }
+      }
+    } else if (platform === 'netease-podcast') {
+      // 播客节目 ID 不走 song/detail，只能取播放地址时长。
       const response: any = await $fetch('/api/api-enhanced/netease/song/url/v1', {
         params: { id: musicId, level: 'standard' },
         timeout: 10000
@@ -209,8 +232,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 网易云固定返回 30 秒时通常是试听片段，不作为歌曲完整时长。
-    if ((platform === 'netease' || platform === 'netease-podcast') && durationSeconds === 30) {
+    // 播客节目只能取播放地址时长，固定 30 秒视为试听片段。
+    if (platform === 'netease-podcast' && durationSeconds === 30) {
       return {
         success: false,
         songId,

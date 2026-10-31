@@ -3331,6 +3331,10 @@ export const admin = {
       candidateDurationsSkipped: 'No candidate songs need duration refresh',
       confirmAutoScheduleApplied: (count, duration) =>
         `Auto-scheduled ${count} song(s), total ${duration}`,
+      suspiciousDurationTitle: (count) => `${count} song(s) have suspicious duration`,
+      suspiciousDurationDesc: (seconds) =>
+        `Duration ≤ ${seconds}s may be a preview clip; refetch corrects it from source metadata.`,
+      suspiciousDurationAction: 'Refetch',
       allDurationsProgressTotal: '{0} song(s)',
       allDurationsProgressWithCount: '{0}/{1} ({2} ok, {3} fail)',
       candidateDurationsProgressTotal: '{0} song(s)',

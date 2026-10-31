@@ -253,6 +253,33 @@
             </div>
           </div>
 
+          <!-- 时长疑似试听片段提示 -->
+          <div
+            v-if="suspiciousPendingSongs.length > 0"
+            class="flex flex-col gap-2 px-3 py-2.5 rounded-xl bg-warning-10 border border-warning-20 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-start gap-2">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
+              <div class="text-[11px] leading-relaxed text-text-secondary">
+                <p class="font-bold text-text-primary">
+                  {{ locale.messages.suspiciousDurationTitle(suspiciousPendingSongs.length) }}
+                </p>
+                <p>{{ locale.messages.suspiciousDurationDesc(SUSPICIOUS_DURATION_SECONDS) }}</p>
+              </div>
+            </div>
+            <button
+              class="shrink-0 px-3 py-1.5 rounded-lg bg-warning-10 hover:bg-warning-20 border border-warning-20 text-[10px] font-bold text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="refreshingAllDurations.running"
+              @click="refreshAllDurations('pending')"
+            >
+              <RefreshCcw
+                class="w-3 h-3 inline-block mr-1"
+                :class="{ 'animate-spin': refreshingAllDurations.running }"
+              />
+              {{ locale.messages.suspiciousDurationAction }}
+            </button>
+          </div>
+
           <!-- 筛选区 - 移动端折叠 -->
           <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl shadow-xl">
             <div
@@ -1716,6 +1743,33 @@
             {{ locale.availableCount(autoSchedulePlacement.eligible.length) }}
           </div>
 
+          <!-- 候选歌曲时长疑似试听片段提示 -->
+          <div
+            v-if="suspiciousAutoCandidates.length > 0"
+            class="flex flex-col gap-2 px-3 py-2.5 rounded-xl bg-warning-10 border border-warning-20 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-start gap-2">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
+              <div class="text-[10px] leading-relaxed text-text-secondary">
+                <p class="font-bold text-text-primary">
+                  {{ locale.messages.suspiciousDurationTitle(suspiciousAutoCandidates.length) }}
+                </p>
+                <p>{{ locale.messages.suspiciousDurationDesc(SUSPICIOUS_DURATION_SECONDS) }}</p>
+              </div>
+            </div>
+            <button
+              class="shrink-0 px-3 py-1.5 rounded-lg bg-warning-10 hover:bg-warning-20 border border-warning-20 text-[10px] font-bold text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="refreshingAutoCandidates.running"
+              @click="refreshAutoCandidateDurations()"
+            >
+              <RefreshCcw
+                class="w-3 h-3 inline-block mr-1"
+                :class="{ 'animate-spin': refreshingAutoCandidates.running }"
+              />
+              {{ locale.messages.suspiciousDurationAction }}
+            </button>
+          </div>
+
           <!-- 期望时段约束提示 -->
           <div
             v-if="autoSchedulePlacement.excludedByPlayTime > 0"
@@ -2040,6 +2094,7 @@ import {
 } from '~/utils/autoSchedule'
 import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
+import { SUSPICIOUS_DURATION_SECONDS, isSuspiciousSongDuration } from '~/utils/song-duration'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
@@ -2052,6 +2107,9 @@ const locale = computed(() => {
     ...base,
     messages: {
       confirmAutoScheduleApplied: (count, duration) => `已自动排期 ${count} 首歌曲，合计 ${duration}`,
+      suspiciousDurationTitle: (count) => `发现 ${count} 首歌曲时长疑似试听片段`,
+      suspiciousDurationDesc: (seconds) => `时长不超过 ${seconds} 秒，可能只获取到试听片段；重新获取会按音源元数据校正。`,
+      suspiciousDurationAction: '批量重新获取',
       ...(base.messages || {})
     },
     errors: {
@@ -4420,6 +4478,18 @@ const autoSchedulePlacement = computed(() =>
 // 候选池中期望日期命中当天的歌曲数，用于提示「更容易排上」
 const autoScheduleDateHits = computed(() =>
   countExpectedDateHits(autoSchedulePlacement.value.eligible, autoScheduleOptions.value.targetDate)
+)
+
+// 待排库中时长疑似试听片段的歌曲
+const suspiciousPendingSongs = computed(() =>
+  songs.value.filter((song) => isSuspiciousSongDuration(song.durationSeconds))
+)
+
+// 自动排期候选中时长疑似试听片段的歌曲
+const suspiciousAutoCandidates = computed(() =>
+  autoSchedulePlacement.value.eligible.filter((song) =>
+    isSuspiciousSongDuration(song.durationSeconds)
+  )
 )
 
 const buildPreSelected = () => autoScheduleFixedSongs.value

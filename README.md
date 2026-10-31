@@ -1024,6 +1024,7 @@ VoiceHub/
 │       ├── playerLayout.ts    # 播放器布局模式与自由拖拽坐标解析
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
+│       ├── song-duration.ts   # 疑似试听片段时长判定
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── neteaseCatalog.ts  # 网易云曲库播放响应的歌曲、音质与试听标记核验
