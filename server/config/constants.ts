@@ -460,14 +460,6 @@ export const SORT_CONSTANTS = {
   SONG_SORT_FIELDS: ['createdAt', 'title', 'artist', 'playedAt', 'votes'] as const
 } as const
 
-// 权限常量
-export const PERMISSIONS = {
-  SCHEDULES_READ: 'schedules:read',
-  SONGS_READ: 'songs:read',
-  SONGS_REQUEST: 'songs:request',
-  ADMIN_ACCESS: 'admin:access'
-} as const
-
 // 用户角色常量
 export const USER_ROLES = {
   USER: 'USER',

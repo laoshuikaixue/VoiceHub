@@ -1,6 +1,7 @@
 import { getCookie, getHeader, setCookie, getRequestURL, getRequestHeader } from 'h3'
 import { JWTEnhanced } from './jwt-enhanced'
 import { db, eq, users } from '~/drizzle/db'
+import { MANAGER_ROLES } from '~~/app/utils/admin-permissions'
 
 interface AuthResult {
   success: boolean
@@ -19,7 +20,7 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
     if (event.context?.user) {
       const user = event.context.user
       // 检查用户角色
-      if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      if (!MANAGER_ROLES.includes(user.role)) {
         return {
           success: false,
           message: '权限不足，需要管理员权限'
@@ -116,7 +117,7 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
     }
 
     // 检查用户角色
-    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+    if (!MANAGER_ROLES.includes(user.role)) {
       return {
         success: false,
         message: '权限不足，需要管理员权限'
