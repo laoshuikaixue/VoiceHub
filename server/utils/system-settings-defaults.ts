@@ -33,6 +33,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
 6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
 7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
 8. 最终解释权归广播站所有`,
+  announcement: null,
+  announcementTitle: null,
+  announcementDisplayMode: 'static',
+  announcementScrollSpeed: 30,
   icpNumber: null,
   gonganNumber: null,
   showBeianIcon: false,
@@ -133,6 +137,10 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'schoolLogoPrintUrl',
   'siteDescription',
   'submissionGuidelines',
+  'announcement',
+  'announcementTitle',
+  'announcementDisplayMode',
+  'announcementScrollSpeed',
   'legalConsentEnabled',
   'legalConsentDisplayMode',
   'legalConsentUpdatedDate',

@@ -18,7 +18,17 @@ export const siteConfig = {
   showBeianIconDesc: 'Show the filing icon before the public security filing number',
   siteDescription: 'Site Description',
   siteDescriptionPlaceholder: 'Enter the site description',
+  announcement: 'Site Announcement',
+  announcementPlaceholder: 'Enter announcement content; leave empty to hide the banner',
+  announcementHint: 'When set, the announcement banner appears below the homepage tabs; leave empty to hide.',
   statisticsCode: 'Site Statistics Code',
+  customCssSection: 'Custom Styles',
+  customCssEnabled: 'Enable Custom CSS',
+  customCssEnabledDesc: 'Only injects the CSS below into all pages when enabled',
+  customCss: 'Custom CSS',
+  customCssPlaceholder: ':root[data-theme] { --primary: #e11d48; }',
+  customCssHint:
+    'Injected as the last <style> in the <head> of every page. Theme variables live on :root[data-theme="..."], which outweighs a bare :root, so override them with the matching :root[data-theme] selector; plain element styles need no such care. Max 65536 characters; </style> is not allowed. Takes effect within about 1 minute after saving.',
   legalConsentTitle: 'Login Terms Confirmation',
   legalConsentDesc: 'Require users to read and agree to terms before login.',
   legalConsentDisplayMode: 'Display mode',
@@ -56,14 +66,6 @@ export const siteConfig = {
     'Paste your statistics snippet (e.g. Baidu Analytics, 51.la, Clarity, Google Analytics)',
   statisticsCodeHint:
     'Injected into the <head> of every page. Supports any HTML/JS statistics code. Takes effect within about 1 minute after saving.',
-
-  customCssSection: 'Custom Styles',
-  customCssEnabled: 'Enable Custom CSS',
-  customCssEnabledDesc: 'Only injects the CSS below into all pages when enabled',
-  customCss: 'Custom CSS',
-  customCssPlaceholder: ':root[data-theme] { --primary: #e11d48; }',
-  customCssHint:
-    'Injected as the last <style> in the <head> of every page. Theme variables live on :root[data-theme="..."], which outweighs a bare :root, so override them with the matching :root[data-theme] selector; plain element styles need no such care. Max 65536 characters; </style> is not allowed. Takes effect within about 1 minute after saving.',
 
   themeSettings: 'Theme Settings',
   themeSettingsDesc: 'Control each theme separately and use the star to choose the default theme.',
@@ -1352,9 +1354,6 @@ export const pages = {
       lyrics: 'Lyrics',
       comments: 'Comments',
       settings: 'Lyrics settings',
-      copyLyric: 'Copy lyrics',
-      copiedLyric: 'Lyrics copied',
-      copyLyricFailed: 'Copy failed',
       amStyleLyrics: 'Apple Music style lyrics',
       fontSize: 'Font size',
       lyricOffset: 'Lyric offset (ms)',
@@ -1515,7 +1514,6 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     slowNetworkRetry: 'The current link loads too slowly. Switching to a fallback source.',
     slowNetworkFailed: 'The playback link loads too slowly. Check your connection and retry.',
-    previewOnly: 'Only a preview clip is available for this song. Tried switching sources.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     networkOffline: 'Network disconnected. Check your connection and try again.',
     scheduleSyncFailed: 'Queue update failed. The current queue was retained.',
@@ -1922,17 +1920,35 @@ export const pages = {
       cardCodeLockedOrUnavailable: 'This request card is locked or unavailable',
       cardCodeRequiredForSite: 'This site requires a valid request card to submit songs',
       cardCodeTooLong: 'Request card code cannot exceed 100 characters',
-      submissionOptions: 'More options',
+      submissionOptions: 'Settings',
       submissionOptionsTitle: 'Submission options',
       submissionOptionsSubtitle:
         'Your note and request card are submitted with this request; both are optional',
       submissionOptionsEmptyHint: 'No configurable submission options are available on this site',
       playSlotSectionTitle: 'Broadcast schedule',
       submissionOptionsSummary: 'Submission settings include: {0}',
+      submissionOptionsApplied: 'Set',
       submissionOptionItemSlot: 'Broadcast schedule',
       submissionOptionItemNote: 'Submission note',
       submissionOptionItemAnonymous: 'Anonymous submission',
       submissionOptionItemCardCode: 'Request card',
+      onBehalfTitle: 'Submit for User',
+      onBehalfPick: 'Select User',
+      onBehalfChange: 'Change',
+      onBehalfHint: 'Admins can submit on behalf of a user; the request belongs to them',
+      onBehalfUsername: 'Username',
+      onBehalfId: 'User ID',
+      onBehalfGrade: 'Grade',
+      onBehalfClass: 'Class',
+      onBehalfEmail: 'Email',
+      onBehalfStatusActive: 'Active',
+      onBehalfStatusDisabled: 'Disabled',
+      roleLabels: {
+        USER: 'User',
+        ADMIN: 'Admin',
+        SONG_ADMIN: 'Song Admin',
+        SUPER_ADMIN: 'Super Admin'
+      },
       cardCodeMyCodes: 'My request cards',
       cardCodeSelectLabel: 'Select a request card',
       cardCodeSelectPlaceholder: 'Pick from my request cards, or enter a code manually',
@@ -1963,6 +1979,8 @@ export const pages = {
         playFailed: 'Playback failed. Please try again later',
         songSelectedMaybeLimited: 'Song selected, but full playback may be unavailable',
         duplicateSong: 'This song is already in the list. Please support it by liking it!',
+        duplicateSubmitWarning: (title: string) =>
+          `"${title}" has already been submitted. This will be a duplicate.`,
         blacklistedSong: (reasons: string) => `This song cannot be requested: ${reasons}`,
         submitFailed: 'Submission failed. Please try again later',
         likeSuccess: 'Liked!',
@@ -2480,6 +2498,9 @@ export const admin = {
   },
   songManagement: {
     title: 'Song Management',
+    tabs: {
+      normal: 'Normal'
+    },
     stats: {
       total: 'Total',
       played: 'Played',
@@ -2707,10 +2728,6 @@ export const admin = {
       deselectAll: 'Deselect All',
       deleteCache: 'Delete Cache',
       preloadSong: 'Preload this song',
-      durationMismatchTip: (actual: string, recorded: string) =>
-        `Actual duration ${actual} differs from the saved ${recorded}. Please check.`,
-      preloadDurationMismatchCount: (count: number) =>
-        `${count} songs differ from the saved duration. Please check.`,
       emptySongs: 'No songs',
       processProgress: 'Processing Progress',
       downloadProgress: 'Download Progress',
@@ -2991,7 +3008,6 @@ export const admin = {
     replay: 'Replay',
     crossSemester: 'Cross-semester',
     requesterPrefix: 'Requester: ',
-    anonymousRequester: 'Anonymous',
     replayRequestsPrefix: 'Replay requests: ',
     popularityPrefix: 'Popularity: ',
     replayCount: (count: number) => `${count} people`,
@@ -3335,10 +3351,6 @@ export const admin = {
       candidateDurationsSkipped: 'No candidate songs need duration refresh',
       confirmAutoScheduleApplied: (count, duration) =>
         `Auto-scheduled ${count} song(s), total ${duration}`,
-      suspiciousDurationTitle: (count) => `${count} song(s) have suspicious duration`,
-      suspiciousDurationDesc: (seconds) =>
-        `Duration ≤ ${seconds}s may be a preview clip; refetch corrects it from source metadata.`,
-      suspiciousDurationAction: 'Refetch',
       allDurationsProgressTotal: '{0} song(s)',
       allDurationsProgressWithCount: '{0}/{1} ({2} ok, {3} fail)',
       candidateDurationsProgressTotal: '{0} song(s)',
@@ -3350,7 +3362,7 @@ export const admin = {
       excludedByPlayTime: (count: number) =>
         `${count} song(s) specify a different play time slot and were excluded as a hard constraint`,
       preferredDateHits: (count: number) =>
-        `${count} song(s) prefer today and are more likely to be picked (not guaranteed)`
+        `${count} song(s) prefer today and will be scheduled first`
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',
@@ -4085,11 +4097,44 @@ export const admin = {
   notificationSender: {
     title: 'Send Notifications',
     desc: 'Instantly push announcements, activity updates, or important reminders to selected groups',
+    publishType: 'Publish Type',
+    publishTypes: {
+      announcement: 'Publish Announcement',
+      notification: 'Send Notification'
+    },
+    historyTypes: {
+      notification: 'Notifications',
+      announcement: 'Site Announcements'
+    },
+    announcementContent: 'Announcement Content',
+    announcementPlaceholder: 'Enter the homepage announcement, Markdown is supported...',
+    announcementPreviewHint: 'This is how the announcement looks on the homepage.',
+    clearAnnouncement: 'Clear banner',
+    confirmClearAnnouncement: 'Confirm clear',
     notificationTitle: 'Notification Title',
     titlePlaceholder: 'Enter notification title',
     notificationContent: 'Notification Content',
     contentPlaceholder: 'Enter notification details...',
     markdownHint: 'Markdown is supported and rendered safely in the preview.',
+    announcementTitleLabel: 'Announcement Title',
+    announcementTitlePlaceholder: 'Enter the homepage announcement title',
+    optional: 'Optional',
+    announcementTitleOptionalHint:
+      'Optional. Leave empty to show the content only; in scrolling mode the title scrolls inline.',
+    announcementContentRequired: 'Announcement content is required',
+    displayMode: 'Display Mode',
+    displayModes: {
+      static: 'Static',
+      scroll: 'Scrolling'
+    },
+    displayModeHint:
+      'Static keeps the announcement on a single line; scrolling loops the content horizontally.',
+    scrollSpeed: 'Scroll Speed',
+    scrollSpeedHint:
+      'Seconds needed for one full scroll cycle; a smaller value scrolls faster (8 - 120 seconds).',
+    announcementTitleContentRequired: 'Announcement title and content are required',
+    announcementTitleTooLong: (max: number) => `Announcement title cannot exceed ${max} characters`,
+    announcementContentTooLong: (max: number) => `Announcement content cannot exceed ${max} characters`,
     importantToggleTitle: 'Important Pop-up',
     importantToggleDescription: 'Shown in a pop-up after sign-in and marked as read when closed',
     groupForwardToggleTitle: 'Also forward to groups',
@@ -4113,7 +4158,7 @@ export const admin = {
     noUsersSelected: 'No users selected',
     send: 'Send',
     sending: 'Sending...',
-    previewTitle: 'Notification Preview',
+    previewTitle: 'Preview',
     previewSender: 'Administrator',
     senderLabel: 'Sender',
     previewTitlePlaceholder: 'Notification title',
@@ -4137,7 +4182,9 @@ export const admin = {
       selectUsers: 'Select users'
     },
     messages: {
-      sendSuccess: (count: number) => `Notification sent to ${count} users`
+      sendSuccess: (count: number) => `Notification sent to ${count} users`,
+      announcementSuccess: 'Announcement published, the homepage banner is updated',
+      announcementCleared: 'Announcement cleared, the homepage banner is removed'
     },
     errors: {
       adminOnly: 'Only admins can send system notifications',
@@ -4155,6 +4202,38 @@ export const admin = {
     history: {
       title: 'Sending History',
       description: 'Each send appears once; open its details to review recipient read status',
+      announcementTitle: 'Announcement History',
+      announcementDescription: 'Each announcement publish appears once with its sender and group forward status',
+      announcementEmptyDescription: 'Publish an announcement from the left panel and it will be listed here.',
+      announcementHistoryTitle: 'Homepage Announcement History',
+      announcementHistoryDescription:
+        'Each publish appears once; preview the homepage result, edit the content, or delete the record',
+      announcementEmpty: 'No announcements published yet',
+      announcementColumn: 'Announcement',
+      announcementUntitled: 'Untitled announcement',
+      displayModeLabel: 'Display Mode',
+      activeLabel: 'Live',
+      previewAction: 'Preview',
+      previewEyebrow: 'Homepage Announcement Preview',
+      previewFooterHint:
+        'This is how the announcement appears in the homepage bar; scrolling mode loops the content horizontally.',
+      scrollSpeedValue: (seconds: number) => `${seconds}s / cycle`,
+      editAnnouncement: 'Edit Announcement',
+      editAnnouncementTitleLabel: 'Announcement Title',
+      editAnnouncementTitlePlaceholder: 'Enter the homepage announcement title',
+      editAnnouncementContent: 'Announcement Content',
+      editAnnouncementContentPlaceholder: 'Enter the Markdown announcement content',
+      deleteAnnouncement: 'Delete Announcement',
+      deleteAnnouncementConfirmation: (title: string, active: boolean) =>
+        active
+          ? `Delete “${title}”? It is currently live on the homepage, so the homepage announcement bar will be removed as well. This cannot be undone.`
+          : `Delete “${title}”? This cannot be undone.`,
+      announcementUpdateSuccess: 'Announcement updated',
+      announcementUpdateFailed: 'Failed to update the announcement, please retry',
+      announcementDeleteSuccess: 'Announcement record deleted',
+      announcementDeleteFailed: 'Failed to delete the announcement record, please retry',
+      announcementItemName: 'announcement records',
+      announcementTotal: (count: number) => `${count} announcement records in total`,
       refresh: 'Refresh',
       refreshing: 'Refreshing...',
       searchPlaceholder: 'Search notification title or content',
@@ -4171,6 +4250,7 @@ export const admin = {
       read: 'Read',
       unread: 'Unread',
       notification: 'Notification',
+      groupForwarded: 'Forwarded to groups',
       sender: 'Sender',
       systemSender: 'System',
       recipient: 'Recipient',
@@ -5428,8 +5508,6 @@ export const serverErrors = {
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',
-  SETTINGS_CUSTOM_CSS_TOO_LONG: 'Custom CSS cannot exceed {0} characters',
-  SETTINGS_CUSTOM_CSS_STYLE_CLOSER: 'Custom CSS cannot contain </style>; it closes the tag early',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING:
     'Configure grade and class options before enabling this setting',
   SETTINGS_CAPTCHA_PROVIDER_INVALID:
@@ -5679,7 +5757,6 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
   BACKUP_DISABLED: 'Auto backup is disabled',
   MUSIC_SOURCE_PLATFORM_DISABLED: 'Platform "{0}" is disabled. Available platforms: {1}',
-  MUSIC_URL_RESOLVE_FAILED: 'Failed to resolve the playback URL. Please try again later.',
   QQ_COMMENT_FETCH_FAILED: 'Failed to load QQ Music comments. Please try again later.',
   PLUGIN_INVALID_CONFIG: 'Invalid source plugin configuration',
   PLUGIN_CONFIG_CONFLICT: 'Configuration changed. Refresh and try again.',

@@ -24,7 +24,18 @@ export const siteConfig = {
   showBeianIconDesc: '在公安联网备案号前显示备案图标',
   siteDescription: '站点描述',
   siteDescriptionPlaceholder: '请输入站点描述',
+  announcement: '站点公告',
+  announcementPlaceholder: '输入公告内容，留空则不显示公告栏',
+  announcementHint: '设置后将在首页选项卡下方显示公告栏，留空则不显示。',
   statisticsCode: '站点统计代码',
+  // 自定义样式
+  customCssSection: '自定义样式',
+  customCssEnabled: '启用自定义 CSS',
+  customCssEnabledDesc: '开启后才会把下方 CSS 注入全站页面',
+  customCss: '自定义 CSS',
+  customCssPlaceholder: ':root[data-theme] { --primary: #e11d48; }',
+  customCssHint:
+    '作为最后一个 <style> 注入所有页面的 <head>。主题变量写在 :root[data-theme="…"] 上，权重高于单独的 :root，覆盖须用同级的 :root[data-theme]；改普通元素样式不受此限制。上限 65536 字符，内容不得包含 </style>。保存后约 1 分钟内生效。',
   legalConsentTitle: '登录条款确认',
   legalConsentDesc: '控制登录页面是否要求用户先阅读并同意条款。',
   legalConsentDisplayMode: '展示形式',
@@ -57,15 +68,6 @@ export const siteConfig = {
   statisticsCodePlaceholder: '粘贴统计代码片段（如百度统计、51.la、Clarity、Google Analytics 等）',
   statisticsCodeHint:
     '将注入到所有页面的 <head> 中，支持任意 HTML/JS 统计代码。保存后约 1 分钟内生效。',
-
-  // 自定义样式
-  customCssSection: '自定义样式',
-  customCssEnabled: '启用自定义 CSS',
-  customCssEnabledDesc: '开启后才会把下方 CSS 注入全站页面',
-  customCss: '自定义 CSS',
-  customCssPlaceholder: ':root[data-theme] { --primary: #e11d48; }',
-  customCssHint:
-    '作为最后一个 <style> 注入所有页面的 <head>。主题变量写在 :root[data-theme="…"] 上，权重高于单独的 :root，覆盖须用同级的 :root[data-theme]；改普通元素样式不受此限制。上限 65536 字符，内容不得包含 </style>。保存后约 1 分钟内生效。',
 
   // 视觉识别
   themeSettings: '主题设置',
@@ -1318,9 +1320,6 @@ export const pages = {
       lyrics: '歌词',
       comments: '评论',
       settings: '歌词设置',
-      copyLyric: '复制歌词',
-      copiedLyric: '歌词已复制',
-      copyLyricFailed: '复制失败',
       amStyleLyrics: 'AM 风格歌词',
       fontSize: '字体大小',
       lyricOffset: '歌词偏移 (ms)',
@@ -1478,7 +1477,6 @@ export const pages = {
     fallbackSource: '当前播放链接无效，已切换备用音源',
     slowNetworkRetry: '当前播放链接加载过慢，正在切换备用音源',
     slowNetworkFailed: '播放链接加载过慢，请检查网络后重试',
-    previewOnly: '该歌曲当前只能获取到试听片段，已尝试切换音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
     networkOffline: '网络连接已断开，请检查网络后重试',
     scheduleSyncFailed: '播放队列更新失败，当前队列已保留',
@@ -1873,16 +1871,34 @@ export const pages = {
       cardCodeLockedOrUnavailable: '点歌券已被锁定或不可用',
       cardCodeRequiredForSite: '本站点已启用仅点歌券投稿，请提供有效点歌券',
       cardCodeTooLong: '点歌券不能超过100个字符',
-      submissionOptions: '更多选项',
+      submissionOptions: '投稿设置',
       submissionOptionsTitle: '投稿选项',
       submissionOptionsSubtitle: '留言与点歌券会随本次投稿一并提交，均为选填',
       submissionOptionsEmptyHint: '当前站点未开放可配置的投稿选项',
       playSlotSectionTitle: '播出安排',
       submissionOptionsSummary: '投稿设置包含：{0}',
+      submissionOptionsApplied: '已设置',
       submissionOptionItemSlot: '播出安排',
       submissionOptionItemNote: '投稿留言',
       submissionOptionItemAnonymous: '匿名投稿',
       submissionOptionItemCardCode: '点歌券',
+      onBehalfTitle: '代他人投稿',
+      onBehalfPick: '选择用户',
+      onBehalfChange: '更换',
+      onBehalfHint: '管理员可代普通用户提交，稿件归属到所选用户',
+      onBehalfUsername: '用户名',
+      onBehalfId: '用户 ID',
+      onBehalfGrade: '年级',
+      onBehalfClass: '班级',
+      onBehalfEmail: '邮箱',
+      onBehalfStatusActive: '账户正常',
+      onBehalfStatusDisabled: '账户已禁用',
+      roleLabels: {
+        USER: '普通用户',
+        ADMIN: '管理员',
+        SONG_ADMIN: '歌曲管理员',
+        SUPER_ADMIN: '超级管理员'
+      },
       cardCodeMyCodes: '我的点歌券',
       cardCodeSelectLabel: '选择点歌券',
       cardCodeSelectPlaceholder: '从我的点歌券中选择，或手动输入券码',
@@ -1911,6 +1927,7 @@ export const pages = {
         playFailed: '播放失败，请稍后重试',
         songSelectedMaybeLimited: '已选择歌曲，但可能无法播放完整版本',
         duplicateSong: '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+        duplicateSubmitWarning: (title: string) => `《${title}》已有人投稿，本次为重复投稿`,
         blacklistedSong: (reasons: string) => `该歌曲无法点歌: ${reasons}`,
         submitFailed: '投稿失败，请稍后重试',
         likeSuccess: '点赞成功！',
@@ -2419,6 +2436,9 @@ export const admin = {
   },
   songManagement: {
     title: '歌曲管理',
+    tabs: {
+      normal: '普通'
+    },
     stats: {
       total: '总计',
       played: '已播放',
@@ -2639,10 +2659,6 @@ export const admin = {
       deselectAll: '取消全选',
       deleteCache: '删除缓存',
       preloadSong: '预下载此歌曲',
-      durationMismatchTip: (actual: string, recorded: string) =>
-        `实测时长 ${actual}，系统记录 ${recorded}，请检查时长`,
-      preloadDurationMismatchCount: (count: number) =>
-        `${count} 首歌曲实测时长与系统记录不一致，请检查`,
       emptySongs: '暂无歌曲',
       processProgress: '处理进度',
       downloadProgress: '下载进度',
@@ -2912,7 +2928,6 @@ export const admin = {
     replay: '重播',
     crossSemester: '跨学期',
     requesterPrefix: '投稿人：',
-    anonymousRequester: '匿名投稿',
     replayRequestsPrefix: '申请重播：',
     popularityPrefix: '热度：',
     replayCount: (count: number) => `${count}人`,
@@ -3249,10 +3264,6 @@ export const admin = {
       candidateDurationsSkipped: '当前无候选歌曲可刷新时长',
       confirmAutoScheduleApplied: (count, duration) =>
         `已自动排期 ${count} 首歌曲，合计 ${duration}`,
-      suspiciousDurationTitle: (count) => `发现 ${count} 首歌曲时长疑似试听片段`,
-      suspiciousDurationDesc: (seconds) =>
-        `时长不超过 ${seconds} 秒，可能只获取到试听片段；重新获取会按音源元数据校正。`,
-      suspiciousDurationAction: '批量重新获取',
       allDurationsProgressTotal: '{0} 首歌',
       allDurationsProgressWithCount: '{0}/{1}（成功{2} 失败{3}）',
       candidateDurationsProgressTotal: '{0} 首歌',
@@ -3264,7 +3275,7 @@ export const admin = {
       excludedByPlayTime: (count: number) =>
         `${count} 首歌曲指定了其它播出时段，已按硬约束排除在本次自动排期之外`,
       preferredDateHits: (count: number) =>
-        `${count} 首歌曲的期望播出日期是当天，入选概率会相应提高（不保证排上）`
+        `${count} 首歌曲的期望播出日期是当天，将优先安排`
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
@@ -3955,11 +3966,41 @@ export const admin = {
   notificationSender: {
     title: '向用户发送通知',
     desc: '即时推送系统公告、活动信息或重要提醒至指定群体',
+    publishType: '发布类型',
+    publishTypes: {
+      announcement: '发布公告',
+      notification: '发通知信息'
+    },
+    historyTypes: {
+      notification: '通知',
+      announcement: '首页公告'
+    },
+    announcementContent: '公告内容',
+    announcementPlaceholder: '请输入首页公告内容，支持 Markdown 格式...',
+    announcementPreviewHint: '这是公告在首页上的实际展示效果，可先在此确认排版。',
+    clearAnnouncement: '清空公告栏',
+    confirmClearAnnouncement: '确认清空',
     notificationTitle: '通知标题',
     titlePlaceholder: '请输入通知标题',
     notificationContent: '通知内容',
     contentPlaceholder: '请输入通知详情内容...',
     markdownHint: '支持 Markdown 格式，将按右侧预览安全渲染。',
+    announcementTitleLabel: '公告标题',
+    announcementTitlePlaceholder: '请输入首页公告标题',
+    optional: '选填',
+    announcementTitleOptionalHint: '选填。不填则首页公告栏只显示内容；滚动展示时标题会并入滚动内容。',
+    announcementContentRequired: '公告内容不能为空',
+    displayMode: '展示方式',
+    displayModes: {
+      static: '静态显示',
+      scroll: '滚动显示'
+    },
+    displayModeHint: '静态显示固定展示一行；滚动显示会让内容在公告栏里横向循环滚动。',
+    scrollSpeed: '滚动速度',
+    scrollSpeedHint: '数字表示内容滚动一轮需要的秒数，数值越小滚得越快（8 - 120 秒）。',
+    announcementTitleContentRequired: '公告标题和内容不能为空',
+    announcementTitleTooLong: (max: number) => `公告标题不能超过 ${max} 个字符`,
+    announcementContentTooLong: (max: number) => `公告内容不能超过 ${max} 个字符`,
     importantToggleTitle: '重要通知弹窗提醒',
     importantToggleDescription: '用户登录后将立即弹窗展示，关闭后标记为已读',
     groupForwardToggleTitle: '同时转发到群聊',
@@ -3981,9 +4022,9 @@ export const admin = {
     selectedUsers: (count: number) => `已选择用户 (${count})`,
     clearAll: '清空全部',
     noUsersSelected: '未选择任何用户',
-    send: '发送通知',
+    send: '发送',
     sending: '发送中...',
-    previewTitle: '通知预览',
+    previewTitle: '预览',
     previewSender: '管理员',
     senderLabel: '发送人',
     previewTitlePlaceholder: '通知标题',
@@ -4006,7 +4047,9 @@ export const admin = {
       selectUsers: '请选择用户'
     },
     messages: {
-      sendSuccess: (count: number) => `成功发送通知给 ${count} 名用户`
+      sendSuccess: (count: number) => `成功发送通知给 ${count} 名用户`,
+      announcementSuccess: '公告已发布，首页公告栏已更新',
+      announcementCleared: '公告已清空，首页公告栏已移除'
     },
     errors: {
       adminOnly: '只有管理员可以发送系统通知',
@@ -4024,6 +4067,36 @@ export const admin = {
     history: {
       title: '发送历史',
       description: '每次发送归为一条记录，用户已读情况可在明细中查看',
+      announcementTitle: '公告发布历史',
+      announcementDescription: '每次发布公告归为一条记录，展示发布人与群聊转发情况',
+      announcementEmptyDescription: '在左侧选择「发布公告」并发送后，发布记录会显示在这里。',
+      announcementHistoryTitle: '首页公告发布历史',
+      announcementHistoryDescription: '每次发布归为一条记录，可预览首页效果、修改内容或删除记录',
+      announcementEmpty: '暂无公告发布记录',
+      announcementColumn: '公告',
+      announcementUntitled: '无标题公告',
+      displayModeLabel: '展示方式',
+      activeLabel: '展示中',
+      previewAction: '预览',
+      previewEyebrow: '首页公告预览',
+      previewFooterHint: '以上为公告在首页公告栏中的实际展示样式，滚动模式下内容会横向循环滚动。',
+      scrollSpeedValue: (seconds: number) => `${seconds} 秒/轮`,
+      editAnnouncement: '修改公告',
+      editAnnouncementTitleLabel: '公告标题',
+      editAnnouncementTitlePlaceholder: '请输入首页公告标题',
+      editAnnouncementContent: '公告内容',
+      editAnnouncementContentPlaceholder: '请输入 Markdown 公告内容',
+      deleteAnnouncement: '删除公告记录',
+      deleteAnnouncementConfirmation: (title: string, active: boolean) =>
+        active
+          ? `确定删除“${title}”吗？这条公告正在首页展示，删除后首页公告栏会被一并移除，且无法恢复。`
+          : `确定删除“${title}”吗？删除后无法恢复。`,
+      announcementUpdateSuccess: '公告已修改',
+      announcementUpdateFailed: '修改公告失败，请重试',
+      announcementDeleteSuccess: '公告记录已删除',
+      announcementDeleteFailed: '删除公告记录失败，请重试',
+      announcementItemName: '条公告记录',
+      announcementTotal: (count: number) => `共 ${count} 条公告记录`,
       refresh: '刷新',
       refreshing: '刷新中...',
       searchPlaceholder: '搜索通知标题或正文',
@@ -4040,6 +4113,7 @@ export const admin = {
       read: '已读',
       unread: '未读',
       notification: '通知',
+      groupForwarded: '已转发群聊',
       sender: '发送人',
       systemSender: '系统',
       recipient: '接收用户',
@@ -5255,8 +5329,6 @@ export const serverErrors = {
   THEME_INVALID_LIST: '启用的主题列表无效',
   THEME_INVALID_DEFAULT: '默认主题必须有效且处于启用状态',
   THEME_SYSTEM_REQUIRES_CLASSIC: '跟随系统时必须同时启用经典深色和经典浅色',
-  SETTINGS_CUSTOM_CSS_TOO_LONG: '自定义 CSS 不能超过 {0} 个字符',
-  SETTINGS_CUSTOM_CSS_STYLE_CLOSER: '自定义 CSS 不能包含 </style>，否则样式标签会被提前闭合',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING: '请先在年级班级管理中配置年级班级，再启用该选项',
   SETTINGS_CAPTCHA_PROVIDER_INVALID:
     '验证类型必须是图形验证码、Cloudflare Turnstile 或阿里云 ESA AI 验证码',
@@ -5474,7 +5546,6 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
   BACKUP_DISABLED: '自动备份未启用',
   MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
-  MUSIC_URL_RESOLVE_FAILED: '播放链接解析失败，请稍后重试',
   QQ_COMMENT_FETCH_FAILED: 'QQ 音乐评论获取失败，请稍后重试',
   PLUGIN_INVALID_CONFIG: '音源插件配置无效',
   PLUGIN_CONFIG_CONFLICT: '配置已被修改，请刷新后重试',
