@@ -501,9 +501,9 @@ export const useAudioPlayerControl = () => {
     } catch (error) {
       console.error('获取音乐URL错误:', error)
       if (error instanceof TypeError && (error as any).message?.includes('fetch')) {
-        throw new Error('网络连接失败，请检查网络连接')
+        throw new Error('网络连接失败，请检查网络连接', { cause: error })
       } else if ((error as any).name === 'AbortError') {
-        throw new Error('请求超时，请稍后重试')
+        throw new Error('请求超时，请稍后重试', { cause: error })
       }
       throw error
     }

@@ -556,11 +556,6 @@ const resetNeteaseScrobbleState = () => {
   neteaseScrobblePlayEpoch.value++
 }
 
-const getScrobblePlaybackIdentity = (song) => {
-  if (!song) return null
-  return [song.musicPlatform || '', song.musicId || '', song.id || ''].join(':')
-}
-
 const getPreviewSongKey = (song) =>
   song?.id ? `${song.id}:${song.musicPlatform}:${song.musicId}:${song.schedulePlaybackKey ?? ''}` : ''
 
@@ -824,7 +819,7 @@ const notifyIfStillPreview = async (element, songKey, epoch) => {
       const finish = () => {
         clearTimeout(timer)
         element.removeEventListener('loadedmetadata', finish)
-        resolve()
+        resolve(undefined)
       }
       const timer = setTimeout(finish, PREVIEW_RECHECK_TIMEOUT_MS)
       element.addEventListener('loadedmetadata', finish, { once: true })
