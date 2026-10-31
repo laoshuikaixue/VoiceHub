@@ -10,7 +10,14 @@ import {
   normalizeTxMusicId,
   txHeaders
 } from '~~/server/utils/native_tx'
-import { fetchSongDuration } from '~~/server/utils/songDurationFetcher'
+import {
+  MAX_PLAUSIBLE_SONG_SECONDS,
+  MIN_PLAUSIBLE_SONG_SECONDS,
+  fetchNeteasePodcastSeconds,
+  fetchNeteaseSongSeconds,
+  fetchSongDuration,
+  isNeteasePreviewLength
+} from '~~/server/utils/songDurationFetcher'
 
 export default defineEventHandler(async (event) => {
   requireSongAdmin(event)
@@ -90,18 +97,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     if (platform === 'netease') {
-      // 时长取歌曲详情 dt；song/url 的 time 在无播放权益时是试听片段长度。
-      const response: any = await $fetch('/api/api-enhanced/netease/song/detail', {
-        params: { ids: musicId },
-        timeout: 10000
-      })
-
-      if (response?.songs?.[0]?.dt) {
-        const timeMs = response.songs[0].dt
-        if (typeof timeMs === 'number' && timeMs > 0) {
-          durationSeconds = Math.floor(timeMs / 1000)
-        }
-      }
+      durationSeconds = await fetchNeteaseSongSeconds(musicId)
 
       if (!durationSeconds) {
         return {
@@ -112,18 +108,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     } else if (platform === 'netease-podcast') {
-      // 播客节目 ID 不走 song/detail，只能取播放地址时长。
-      const response: any = await $fetch('/api/api-enhanced/netease/song/url/v1', {
-        params: { id: musicId, level: 'standard' },
-        timeout: 10000
-      })
-
-      if (response?.code === 200 && Array.isArray(response.data) && response.data.length > 0) {
-        const timeMs = response.data[0]?.time
-        if (typeof timeMs === 'number' && timeMs > 0) {
-          durationSeconds = Math.floor(timeMs / 1000)
-        }
-      }
+      durationSeconds = await fetchNeteasePodcastSeconds(musicId)
 
       if (!durationSeconds) {
         return {
@@ -233,7 +218,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 播客节目只能取播放地址时长，固定 30 秒视为试听片段。
-    if (platform === 'netease-podcast' && durationSeconds === 30) {
+    if (platform === 'netease-podcast' && isNeteasePreviewLength(durationSeconds)) {
       return {
         success: false,
         songId,
@@ -242,14 +227,17 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 校验时长范围（合理的歌曲时长：30秒~1小时）
-    if (durationSeconds < 30 || durationSeconds > 3600) {
+    // 校验时长范围（合理的歌曲时长：30 秒~1 小时）
+    if (
+      durationSeconds < MIN_PLAUSIBLE_SONG_SECONDS ||
+      durationSeconds > MAX_PLAUSIBLE_SONG_SECONDS
+    ) {
       console.warn(`[时长刷新] 歌曲 #${songId} 时长异常：${durationSeconds}s，跳过写入`)
       return {
         success: false,
         songId,
         durationSeconds: null,
-        message: `获取到的时长 ${durationSeconds}s 超出合理范围（30秒~1小时），未写入`
+        message: `获取到的时长 ${durationSeconds}s 超出合理范围（${MIN_PLAUSIBLE_SONG_SECONDS} 秒~${MAX_PLAUSIBLE_SONG_SECONDS / 3600} 小时），未写入`
       }
     }
 
