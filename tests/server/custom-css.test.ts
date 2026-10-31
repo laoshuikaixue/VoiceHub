@@ -2,13 +2,18 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { stripSuperAdminOnlySettingFields } from '../../app/utils/settingsPermissions.ts'
-import { sanitizeCustomCss } from '../../server/utils/custom-css.ts'
-import { CUSTOM_CSS_MAX_LENGTH } from '../../server/config/constants.ts'
+import {
+  CUSTOM_CSS_MAX_LENGTH,
+  containsStyleCloser,
+  sanitizeCustomCss,
+  trimCustomCss
+} from '../../app/utils/custom-css-policy.ts'
 
 const read = (url: string) => readFileSync(new URL(url, import.meta.url), 'utf8')
 
 const INDEX_POST = read('../../server/api/admin/system-settings/index.post.ts')
 const PLUGIN = read('../../server/plugins/custom-css.ts')
+const COMPONENT = read('../../app/components/Admin/SiteConfigManager.vue')
 const ZH_LOCALE = read('../../app/utils/locale/zh-CN.ts')
 const EN_LOCALE = read('../../app/utils/locale/en-US.ts')
 
@@ -38,22 +43,34 @@ test('注入清洗剔除提前闭合的 style 标签', () => {
   // 一次剔除后两侧残留会拼出新的 </style>（仍是闭合标签），须反复剔除直至稳定
   assert.equal(sanitizeCustomCss('</sty</stylele>'), '>')
   assert.equal(sanitizeCustomCss('</style</style>'), '>')
-  // 标签名内的空格与大小写同样被识别
-  assert.equal(sanitizeCustomCss('a<!--</ STYLE >b'), 'a<!-- >b')
   for (const css of ['</sty</stylele>', '</style</style>', 'a<!--</ STYLE >b']) {
     assert.doesNotMatch(sanitizeCustomCss(css), /<\s*\/\s*style/i)
   }
 })
 
-test('注入清洗截断到长度上限', () => {
-  const long = 'x'.repeat(CUSTOM_CSS_MAX_LENGTH + 1000)
-  assert.equal(sanitizeCustomCss(long).length, CUSTOM_CSS_MAX_LENGTH)
+test('注入清洗截断到长度上限且不撕裂代理对', () => {
+  assert.equal(sanitizeCustomCss('x'.repeat(CUSTOM_CSS_MAX_LENGTH + 1000)).length, CUSTOM_CSS_MAX_LENGTH)
+  const splitPair = 'x'.repeat(CUSTOM_CSS_MAX_LENGTH - 1) + '😀'
+  const cut = sanitizeCustomCss(splitPair)
+  assert.equal(cut.length, CUSTOM_CSS_MAX_LENGTH - 1)
+  assert.doesNotMatch(cut, /[\uD800-\uDBFF]$/, '截断点残留孤立高位代理项')
   assert.equal(sanitizeCustomCss('a{}'), 'a{}')
-  assert.equal(sanitizeCustomCss(undefined as unknown as string), '')
+  assert.equal(sanitizeCustomCss(undefined), '')
+  assert.equal(sanitizeCustomCss(42), '')
 })
 
-test('注入插件复用清洗并追加到 head 末尾', () => {
-  assert.match(PLUGIN, /import \{ sanitizeCustomCss \} from '~~\/server\/utils\/custom-css'/)
+test('闭合标签识别与清洗同一口径', () => {
+  assert.equal(containsStyleCloser('body{color:red}</style><script>'), true)
+  assert.equal(containsStyleCloser('a<!--</ STYLE >b'), true)
+  assert.equal(containsStyleCloser('</sty'), false)
+  assert.equal(containsStyleCloser('.style-name{color:red}'), false)
+  assert.equal(containsStyleCloser(null), false)
+  assert.equal(trimCustomCss('  a{}  '), 'a{}')
+  assert.equal(trimCustomCss(null), '')
+})
+
+test('注入插件复用共享清洗并追加到 head 末尾', () => {
+  assert.match(PLUGIN, /import \{ sanitizeCustomCss \} from '~\/utils\/custom-css-policy'/)
   assert.match(PLUGIN, /const safeCss = sanitizeCustomCss\(css\)/)
   assert.match(PLUGIN, /html\.head\.push\(`<style data-custom-css>\$\{safeCss\}<\/style>`\)/)
   assert.match(PLUGIN, /hook\('render:html'/)
@@ -61,11 +78,45 @@ test('注入插件复用清洗并追加到 head 末尾', () => {
   assert.match(PLUGIN, /if \(enabled && safeCss\.trim\(\) && Array\.isArray\(html\.head\)\)/)
 })
 
-test('保存校验限长并拒绝提前闭合标签，使用专属错误码', () => {
-  assert.match(INDEX_POST, /css\.length > CUSTOM_CSS_MAX_LENGTH/)
-  assert.match(INDEX_POST, /SERVER_ERROR_CODES\.SETTINGS_CUSTOM_CSS_TOO_LONG/)
-  assert.match(INDEX_POST, /SERVER_ERROR_CODES\.SETTINGS_CUSTOM_CSS_STYLE_CLOSER/)
-  assert.match(INDEX_POST, /\{ params: \[CUSTOM_CSS_MAX_LENGTH\] \}/)
+test('保存校验走共享模块并返回专属错误码与参数', () => {
+  for (const snippet of [
+    `import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'`,
+    'const css = trimCustomCss(body.customCss)',
+    'if (css.length > CUSTOM_CSS_MAX_LENGTH) {',
+    'if (containsStyleCloser(css)) {',
+    'updateData.customCss = css || null',
+    'SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_TOO_LONG',
+    'SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_STYLE_CLOSER',
+    '{ params: [CUSTOM_CSS_MAX_LENGTH] }'
+  ]) {
+    assert.ok(INDEX_POST.includes(snippet), `保存接口缺少写法：${snippet}`)
+  }
+})
+
+test('开关关闭时前端不提交 CSS，避免残值校验阻塞整表单', () => {
+  for (const snippet of [
+    'const customCssDraft = trimCustomCss(formData.value.customCss)',
+    '...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),',
+    'if (!formData.value.customCssEnabled) delete requestPayload.customCss'
+  ]) {
+    assert.ok(COMPONENT.includes(snippet), `SiteConfigManager 缺少写法：${snippet}`)
+  }
+  // formData 仍带着库中的 CSS，条件展开不足以挡住该键，必须显式删键
+  assert.ok(
+    COMPONENT.split('...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),').length - 1 >= 2,
+    '保存成功后未按同一口径回填 customCss'
+  )
+})
+
+test('前端输入框上限取自共享常量，与服务端一致', () => {
+  for (const snippet of [
+    `import { CUSTOM_CSS_MAX_LENGTH, trimCustomCss } from '~/utils/custom-css-policy'`,
+    ':maxlength="CUSTOM_CSS_MAX_LENGTH"',
+    'const customCssLength = computed(() => trimCustomCss(formData.value.customCss).length)',
+    '{{ customCssLength }} / {{ CUSTOM_CSS_MAX_LENGTH }}'
+  ]) {
+    assert.ok(COMPONENT.includes(snippet), `SiteConfigManager 缺少写法：${snippet}`)
+  }
 })
 
 test('错误码在中英词典中键完全对齐', () => {

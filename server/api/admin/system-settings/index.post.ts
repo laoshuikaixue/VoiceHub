@@ -14,12 +14,12 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'
 import {
   SERVER_ERROR_CODES,
   MUSIC_SOURCE_PLATFORMS,
   DEFAULT_THEMES,
   CAPTCHA_PROVIDERS,
-  CUSTOM_CSS_MAX_LENGTH,
   ALIYUN_ESA_CAPTCHA_REGIONS
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
@@ -334,7 +334,7 @@ export default defineEventHandler(async (event) => {
       if (body.customCss !== null && typeof body.customCss !== 'string') {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCss 必须是字符串或 null')
       }
-      const css = body.customCss || ''
+      const css = trimCustomCss(body.customCss)
       if (css.length > CUSTOM_CSS_MAX_LENGTH) {
         throw createApiError(
           400,
@@ -343,15 +343,14 @@ export default defineEventHandler(async (event) => {
           { params: [CUSTOM_CSS_MAX_LENGTH] }
         )
       }
-      // 出现 </style> 会提前闭合样式标签，使后续内容按 HTML 解析
-      if (/<\s*\/\s*style[\s>]/i.test(css)) {
+      if (containsStyleCloser(css)) {
         throw createApiError(
           400,
           SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_STYLE_CLOSER,
           '自定义 CSS 不允许包含 </style>'
         )
       }
-      updateData.customCss = css.trim() || null
+      updateData.customCss = css || null
     }
 
     if (body.legalConsentEnabled !== undefined) {
