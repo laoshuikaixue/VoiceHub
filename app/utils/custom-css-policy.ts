@@ -7,9 +7,10 @@
 // 后台提示文案 siteConfig.customCssHint（zh/en）中的数值与此常量一致，由测试校验
 export const CUSTOM_CSS_MAX_LENGTH = 64 * 1024
 
-// 出现 </style> 会提前闭合样式标签，使后续内容按 HTML 解析
-const STYLE_CLOSER_PATTERN = /<\s*\/\s*style[\s>]/i
+// `<style>` 是 raw-text 元素，标签名后的空白、/ 或 > 都会提前闭合标签，使后续内容按 HTML 解析
+// 判定与清洗共用同一前缀：凡是注入时会被剔除的文本，保存时一律拒绝，保证存下的内容与生效内容一致
 const STYLE_CLOSER_PREFIX = /<\s*\/\s*style/gi
+const STYLE_CLOSER_PATTERN = /<\s*\/\s*style/i
 const HIGH_SURROGATE_TAIL = /[\uD800-\uDBFF]$/
 
 export function containsStyleCloser(css: unknown): boolean {

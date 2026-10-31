@@ -59,11 +59,34 @@ test('注入清洗截断到长度上限且不撕裂代理对', () => {
   assert.equal(sanitizeCustomCss(42), '')
 })
 
+// 以下 5 种写法经 headless Chrome 153 实测会提前闭合 <style>
+const CLOSER_VARIANTS = [
+  'a{color:red}</style><b>x</b>',
+  'a{color:red}</style/><b>x</b>',
+  'a{color:red}</STYLE   ><b>x</b>',
+  'a{color:red}</style\t/><b>x</b>',
+  'a{color:red}</style\n/><b>x</b>'
+]
+// 浏览器不闭合、但清洗会剔除该前缀的写法，同样在保存时拒绝，避免存下的文本被静默改写
+const MUTATED_VARIANTS = [
+  'a{color:red}</style" foo><b>x</b>',
+  'a{color:red}</style'
+]
+const CLEAN_VARIANTS = [
+  'a::before{content:"<b>"}',
+  '.style-name{color:red}',
+  '</sty'
+]
+
 test('闭合标签识别与清洗同一口径', () => {
-  assert.equal(containsStyleCloser('body{color:red}</style><script>'), true)
-  assert.equal(containsStyleCloser('a<!--</ STYLE >b'), true)
-  assert.equal(containsStyleCloser('</sty'), false)
-  assert.equal(containsStyleCloser('.style-name{color:red}'), false)
+  for (const css of [...CLOSER_VARIANTS, ...MUTATED_VARIANTS]) {
+    assert.equal(containsStyleCloser(css), true, `漏判会被清洗的写法：${JSON.stringify(css)}`)
+    assert.doesNotMatch(sanitizeCustomCss(css), /<\s*\/\s*style/i)
+  }
+  for (const css of CLEAN_VARIANTS) {
+    assert.equal(containsStyleCloser(css), false, `误判合法写法：${JSON.stringify(css)}`)
+    assert.equal(sanitizeCustomCss(css), css)
+  }
   assert.equal(containsStyleCloser(null), false)
   assert.equal(trimCustomCss('  a{}  '), 'a{}')
   assert.equal(trimCustomCss(null), '')
