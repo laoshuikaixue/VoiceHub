@@ -1493,6 +1493,7 @@ VoiceHub/
 │   │   │   ├── tickets.ts   # 加密凭证签发与校验
 │   │   │   └── types.ts     # 插件类型定义
 │   │   ├── native_common.ts # 原生API通用工具
+│   │   ├── music-resolve-rate-limit.ts # 匿名播放取链共享限流
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
@@ -1500,7 +1501,7 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
-│   │   ├── outbound-url.ts # 备份出站地址元数据/内部域名拦截
+│   │   ├── outbound-url.ts # 备份出站地址校验、DNS 固定与重定向拦截
 │   │   ├── pagination.ts   # 分页参数解析与上限夹取
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化

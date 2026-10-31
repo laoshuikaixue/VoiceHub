@@ -1,5 +1,7 @@
 import { isIP } from 'node:net'
 import { lookup } from 'node:dns/promises'
+import http from 'node:http'
+import https from 'node:https'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { publicAddress, unacceptableAddress } from '~~/server/utils/music-source-plugins/network'
@@ -95,4 +97,66 @@ export async function assertSafeOutboundUrl(rawUrl: unknown, field = 'url'): Pro
     resolved.map((item) => item.address),
     field
   )
+}
+
+/** 备份请求在实际建连时复核 DNS，并拒绝重定向。 */
+export async function fetchSafeOutbound(
+  input: string,
+  options: {
+    method: string
+    headers?: Record<string, string>
+    body?: string | Uint8Array
+    signal?: AbortSignal
+  }
+): Promise<Response> {
+  await assertSafeOutboundUrl(input)
+  const url = new URL(input)
+  const signal = options.signal ?? AbortSignal.timeout(120_000)
+  signal.throwIfAborted()
+  const response = await new Promise<http.IncomingMessage>((resolve, reject) => {
+    const request = (url.protocol === 'https:' ? https : http).request(url, {
+      method: options.method,
+      headers: { 'accept-encoding': 'identity', ...options.headers },
+      signal,
+      agent: false,
+      lookup: ((host: string, settings: { all?: boolean }, callback: (...args: any[]) => void) => {
+        lookup(host, { all: true, verbatim: true }).then((addresses) => {
+          signal.throwIfAborted()
+          if (!addresses.length) throw new Error('备份目标 DNS 未返回地址')
+          assertResolvedOutboundAddresses(addresses.map((item) => item.address))
+          if (settings?.all) callback(null, addresses)
+          else callback(null, addresses[0].address, addresses[0].family)
+        }).catch(callback)
+      }) as NonNullable<http.RequestOptions['lookup']>
+    }, resolve)
+    request.on('error', reject)
+    request.end(options.body)
+  })
+
+  try {
+    const status = response.statusCode || 502
+    if (status >= 300 && status < 400 && status !== 304) {
+      throw new Error('备份目标发生重定向，请配置最终地址')
+    }
+    const chunks: Buffer[] = []
+    let size = 0
+    for await (const chunk of response) {
+      size += chunk.length
+      if (size > 1024 * 1024) throw new Error('备份目标响应超过大小限制')
+      chunks.push(Buffer.from(chunk))
+    }
+    signal.throwIfAborted()
+    const headers = new Headers()
+    for (const [name, value] of Object.entries(response.headers)) {
+      if (Array.isArray(value)) value.forEach((item) => headers.append(name, item))
+      else if (value !== undefined) headers.set(name, value)
+    }
+    return new Response([204, 205, 304].includes(status) ? null : new Uint8Array(Buffer.concat(chunks)), {
+      status,
+      statusText: response.statusMessage,
+      headers
+    })
+  } finally {
+    response.destroy()
+  }
 }

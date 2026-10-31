@@ -29,6 +29,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
+import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 
@@ -209,7 +210,7 @@ async function ensureWebDAVDir(baseUrl: string, auth: string, dirPath: string): 
 
   for (const segment of segments) {
     currentPath += `/${segment}`
-    const response = await fetch(currentPath, {
+    const response = await fetchSafeOutbound(currentPath, {
       method: 'MKCOL',
       headers: { Authorization: `Basic ${auth}` },
       signal: AbortSignal.timeout(UPLOAD_TIMEOUT)
@@ -234,7 +235,7 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
   await ensureWebDAVDir(baseUrl, auth, dirPath)
 
   const filePath = dirPath ? `${baseUrl}/${dirPath}/${filename}` : `${baseUrl}/${filename}`
-  const response = await fetch(filePath, {
+  const response = await fetchSafeOutbound(filePath, {
     method: 'PUT',
     headers: {
       'Authorization': `Basic ${auth}`,
