@@ -208,6 +208,14 @@
 
               <!-- 歌词设置工具栏 -->
               <div v-if="activePanel === 'lyrics'" class="lyric-toolbar">
+                <div
+                  v-if="hasLyricsForCopy"
+                  class="toolbar-btn"
+                  :title="locale.copyLyric"
+                  @click="copyLyrics"
+                >
+                  <Copy :size="20" />
+                </div>
                 <Popover placement="top-end" :offset="12">
                   <template #trigger>
                     <div class="toolbar-btn" :title="locale.settings">
@@ -425,6 +433,9 @@ import Popover from '~/components/UI/Common/Popover.vue'
 import VolumeControl from '~/components/UI/AudioPlayer/VolumeControl.vue'
 import SongComments from '~/components/UI/SongComments.vue'
 import { useLocale } from '~/utils/locale'
+import { useToast } from '~/composables/useToast'
+import { getLineRomanization, getLineText } from '~/utils/lyric/lyricText'
+import { Copy } from '@lucide/vue'
 
 const props = defineProps({
   isVisible: {
@@ -440,6 +451,7 @@ const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
 const lyricSettings = useLyricSettings()
 const { ui } = useLocale()
+const { showToast } = useToast()
 const locale = computed(() => ui.value?.lyricsModal || {})
 
 // 背景渲染器
@@ -509,6 +521,34 @@ const currentLyricLine = computed(() => {
   const lyric = audioPlayerControl.lyrics.currentLyrics.value?.[index]
   return lyric?.content?.trim() || ''
 })
+
+/** 可复制歌词行：与渲染层共用同一份共享歌词状态 */
+const hasLyricsForCopy = computed(() => (lyricManager.lyrics.value?.length ?? 0) > 0)
+
+/**
+ * 复制整首歌词为纯文本
+ * 内容跟随当前显示设置：翻译、音译按开关附加，背景和声行不参与
+ */
+const copyLyrics = async () => {
+  const parts = []
+  for (const line of lyricManager.lyrics.value ?? []) {
+    if (line.isBG) continue
+    const text = getLineText(line).trim()
+    if (!text) continue
+    const translated = lyricSettings.showTranslation.value ? line.translatedLyric?.trim() || '' : ''
+    const roma = lyricSettings.showRoma.value ? getLineRomanization(line).trim() : ''
+    // 音译是否排在翻译前由 swapTranRoma 决定，与歌词渲染保持一致
+    const subLines = lyricSettings.swapTranRoma.value ? [roma, translated] : [translated, roma]
+    parts.push(text, ...subLines.filter(Boolean))
+  }
+  if (!parts.length) return
+  try {
+    await navigator.clipboard.writeText(parts.join('\n'))
+    showToast(locale.value.copiedLyric, 'success')
+  } catch {
+    showToast(locale.value.copyLyricFailed, 'error')
+  }
+}
 
 const canShowComments = computed(() => {
   const song = currentSong.value
@@ -1968,6 +2008,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 0.5rem;
 }
 
 .toolbar-btn {

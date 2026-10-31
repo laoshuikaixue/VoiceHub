@@ -2,7 +2,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
-import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
+import { assertSafeOutboundUrl, fetchSafeOutbound } from '~~/server/utils/outbound-url'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
 function normalizePath(p: string): string {
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
       let currentPath = baseUrl
       for (const segment of segments) {
         currentPath += `/${segment}`
-        const res = await fetch(currentPath, {
+        const res = await fetchSafeOutbound(currentPath, {
           method: 'MKCOL',
           headers: { Authorization: `Basic ${auth}` }
         })
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     const testUrl = dir ? `${baseUrl}/${dir}/.voicehub-test-connection` : `${baseUrl}/.voicehub-test-connection`
 
     // 写入测试文件
-    const putRes = await fetch(testUrl, {
+    const putRes = await fetchSafeOutbound(testUrl, {
       method: 'PUT',
       headers: {
         Authorization: `Basic ${auth}`,
@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 清理测试文件
-    await fetch(testUrl, {
+    await fetchSafeOutbound(testUrl, {
       method: 'DELETE',
       headers: { Authorization: `Basic ${auth}` }
     }).catch(() => {})

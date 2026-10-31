@@ -1025,6 +1025,7 @@ VoiceHub/
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── preview-duration.ts # 播放地址时长与歌曲时长比对（试听片段检测）
+│       ├── song-duration.ts   # 疑似试听片段时长判定
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── neteaseCatalog.ts  # 网易云曲库播放响应的歌曲、音质与试听标记核验
@@ -1494,6 +1495,7 @@ VoiceHub/
 │   │   │   ├── tickets.ts   # 加密凭证签发与校验
 │   │   │   └── types.ts     # 插件类型定义
 │   │   ├── native_common.ts # 原生API通用工具
+│   │   ├── music-resolve-rate-limit.ts # 匿名播放取链共享限流
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
@@ -1501,7 +1503,7 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
-│   │   ├── outbound-url.ts # 备份出站地址元数据/内部域名拦截
+│   │   ├── outbound-url.ts # 备份出站地址校验、DNS 固定与重定向拦截
 │   │   ├── pagination.ts   # 分页参数解析与上限夹取
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化

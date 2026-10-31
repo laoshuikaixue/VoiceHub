@@ -119,3 +119,22 @@ test('读取抛错时不缓存，且不留下挂起的 in-flight', async () => {
   await assert.rejects(read(), /db down/)
   assert.deepEqual(await read(), { value: 2 })
 })
+
+test('读取函数同步抛错后释放 in-flight，并允许并发重试', async () => {
+  let loads = 0
+  const read = createTtlCache(
+    () => {
+      loads += 1
+      if (loads === 1) throw new Error('同步读取失败')
+      return Promise.resolve({ value: loads })
+    },
+    { value: 0 },
+    1000
+  )
+
+  const failed = await Promise.allSettled([read(), read()])
+  assert.ok(failed.every((result) => result.status === 'rejected'))
+  assert.equal(loads, 1)
+  assert.deepEqual(await Promise.all([read(), read()]), [{ value: 2 }, { value: 2 }])
+  assert.equal(loads, 2)
+})

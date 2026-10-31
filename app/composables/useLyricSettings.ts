@@ -69,11 +69,8 @@ export const useLyricSettings = () => {
   )
   const enableQQMusicLyric = useState('lyric-enable-qm', () => true)
   const enableOnlineTTMLLyric = useState('lyric-enable-ttml', () => true)
-  // AMLL TTML DB Server 配置
-  const amllDbServer = useState(
-    'lyric-amll-db-server',
-    () => 'https://amlldb.bikonoo.com/ncm-lyrics/%s.ttml'
-  )
+  // AMLL TTML 镜像模板，留空走官方接口；填写时 %s 为歌曲 ID（必需），%p 为平台目录（可选）
+  const amllDbServer = useState('lyric-amll-db-server', () => '')
   const localLyricQQMusicMatch = useState('lyric-local-qm-match', () => true)
   const localLyricPath = useState<string[]>('lyric-local-path', () => [])
 

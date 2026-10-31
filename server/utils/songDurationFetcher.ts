@@ -4,6 +4,39 @@ import {
   txHeaders
 } from '~~/server/utils/native_tx'
 
+/** 合理歌曲时长区间（秒），超出说明取到的不是完整音频 */
+export const MIN_PLAUSIBLE_SONG_SECONDS = 30
+export const MAX_PLAUSIBLE_SONG_SECONDS = 3600
+
+const isPlausibleSongSeconds = (seconds: number) =>
+  seconds >= MIN_PLAUSIBLE_SONG_SECONDS && seconds <= MAX_PLAUSIBLE_SONG_SECONDS
+
+/** 固定 30 秒视为试听片段 */
+export const isNeteasePreviewLength = (seconds: number) => seconds === 30
+
+/** 网易云歌曲时长（秒）：取歌曲详情 dt；song/url 的 time 在无播放权益时是试听片段长度 */
+export async function fetchNeteaseSongSeconds(musicId: string): Promise<number | null> {
+  const response: any = await $fetch('/api/api-enhanced/netease/song/detail', {
+    params: { ids: musicId },
+    timeout: 10000
+  })
+  const timeMs = response?.songs?.[0]?.dt
+  if (typeof timeMs !== 'number' || timeMs <= 0) return null
+  return Math.floor(timeMs / 1000)
+}
+
+/** 网易云播客节目时长（秒）：节目 ID 不走 song/detail，只能取播放地址时长 */
+export async function fetchNeteasePodcastSeconds(musicId: string): Promise<number | null> {
+  const response: any = await $fetch('/api/api-enhanced/netease/song/url/v1', {
+    params: { id: musicId, level: 'standard' },
+    timeout: 10000
+  })
+  if (response?.code !== 200 || !Array.isArray(response?.data)) return null
+  const timeMs = response.data[0]?.time
+  if (typeof timeMs !== 'number' || timeMs <= 0) return null
+  return Math.floor(timeMs / 1000)
+}
+
 /**
  * 按平台获取歌曲时长（秒）
  * 返回 null 表示获取失败
@@ -12,18 +45,15 @@ export async function fetchSongDuration(platform: string, musicId: string): Prom
   if (!platform || !musicId) return null
 
   try {
-    if (platform === 'netease' || platform === 'netease-podcast') {
-      const response: any = await $fetch('/api/api-enhanced/netease/song/url/v1', {
-        params: { id: musicId, level: 'standard' },
-        timeout: 10000
-      })
-      const timeMs = response?.data?.[0]?.time
-      if (typeof timeMs === 'number' && timeMs > 0) {
-        const seconds = Math.floor(timeMs / 1000)
-        // 网易云固定返回 30 秒时通常是试听片段，不作为歌曲完整时长。
-        if (seconds >= 30 && seconds <= 3600 && seconds !== 30) return seconds
-      }
-      return null
+    if (platform === 'netease') {
+      const seconds = await fetchNeteaseSongSeconds(musicId)
+      return seconds !== null && isPlausibleSongSeconds(seconds) ? seconds : null
+    }
+
+    if (platform === 'netease-podcast') {
+      const seconds = await fetchNeteasePodcastSeconds(musicId)
+      if (seconds === null || isNeteasePreviewLength(seconds)) return null
+      return isPlausibleSongSeconds(seconds) ? seconds : null
     }
 
     if (platform === 'tencent') {
@@ -38,7 +68,7 @@ export async function fetchSongDuration(platform: string, musicId: string): Prom
       const interval = result?.req?.data?.track_info?.interval
       if (typeof interval === 'number' && interval > 0) {
         const seconds = Math.floor(interval)
-        if (seconds >= 30 && seconds <= 3600) return seconds
+        if (isPlausibleSongSeconds(seconds)) return seconds
       }
       return null
     }
@@ -51,7 +81,7 @@ export async function fetchSongDuration(platform: string, musicId: string): Prom
       const duration = info?.data?.[0]?.duration
       if (typeof duration === 'number' && duration > 0) {
         const seconds = Math.floor(duration)
-        if (seconds >= 30 && seconds <= 3600) return seconds
+        if (isPlausibleSongSeconds(seconds)) return seconds
       }
       return null
     }
@@ -70,7 +100,7 @@ export async function fetchSongDuration(platform: string, musicId: string): Prom
       const duration = viewResp?.data?.pages?.[pageIdx]?.duration
       if (typeof duration === 'number' && duration > 0) {
         const seconds = Math.floor(duration)
-        if (seconds >= 30 && seconds <= 3600) return seconds
+        if (isPlausibleSongSeconds(seconds)) return seconds
       }
       return null
     }

@@ -7,6 +7,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 /** 备份配置结构校验 */
 const backupConfigSchema = z.object({
@@ -109,7 +110,7 @@ export default defineEventHandler(async (event) => {
       .set({
         autoBackupEnabled: enabled,
         autoBackupConfig: finalConfig ? JSON.stringify(finalConfig) : null,
-        updatedAt: new Date()
+        updatedAt: getServerDate()
       })
       .where(eq(systemSettings.id, existing.id))
   }

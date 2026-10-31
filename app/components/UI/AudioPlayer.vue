@@ -715,7 +715,7 @@ const clearStallWatch = () => {
 }
 
 const armStallWatch = () => {
-  clearStallWatch()
+  if (stallTimer !== null) return
   stallTimer = setTimeout(checkPlaybackStall, PLAYBACK_STALL_TIMEOUT_MS)
 }
 
@@ -728,7 +728,9 @@ const checkPlaybackStall = async () => {
   if (element.paused && !control.isPlaying.value && !control.isLoadingTrack.value) return
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return
 
+  const playbackIdentity = getScrobblePlaybackIdentity(activeSong.value)
   const switched = await trySwitchPlaybackSource({ silent: true })
+  if (playbackIdentity !== getScrobblePlaybackIdentity(activeSong.value) || isClosing.value || isClosed.value) return
   if (switched) {
     if (window.$showNotification) {
       window.$showNotification(audioPlayerLocale.value.slowNetworkRetry, 'warning')
@@ -738,6 +740,7 @@ const checkPlaybackStall = async () => {
   if (window.$showNotification) {
     window.$showNotification(audioPlayerLocale.value.slowNetworkFailed, 'warning')
   }
+  await handleError(new Error('音频加载超时'), { skipSourceSwitch: true })
 }
 
 const normalizeSongDurationSeconds = (value) => {
@@ -1123,7 +1126,7 @@ const handleLoaded = async () => {
   }, 100)
 }
 
-const handleError = async (error) => {
+const handleError = async (error, options = { skipSourceSwitch: false }) => {
   clearStallWatch()
   // 忽略主动清空 src 或关闭播放器导致的错误
   const audioEl = audioPlayer.value
@@ -1162,9 +1165,9 @@ const handleError = async (error) => {
     markPlaybackUrlInvalid(failedSrc)
   }
 
-  const switchedSource = await trySwitchPlaybackSource()
-  if (switchedSource) {
-    return
+  if (!options.skipSourceSwitch) {
+    const switchedSource = await trySwitchPlaybackSource()
+    if (switchedSource) return
   }
 
   // 连续失败保护：对任意平台的歌曲在列表播放模式下都计入连续失败计数
@@ -1287,6 +1290,7 @@ const handleEnded = () => {
 
 const handleLoadStart = () => {
   control.onLoadStart()
+  clearStallWatch()
   armStallWatch()
 }
 
@@ -1295,8 +1299,7 @@ const handleCanPlay = () => {
   control.onCanPlay()
 }
 
-// 长时缓冲不足（waiting/stalled）时重新计时，网络恢复后由 canplay 清除
-// 不依赖 isPlaying：播放器状态可能滞后，卡住判定统一由 checkPlaybackStall 决定
+// 首次缓冲不足时开始计时，重复事件不推迟超时。
 const handleNetworkStall = () => {
   armStallWatch()
 }

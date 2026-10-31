@@ -122,6 +122,7 @@ test('读写接口与子接口按角色把关', () => {
   assert.match(INDEX_POST, /user\.role !== 'SUPER_ADMIN'[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
   assert.match(INDEX_POST, /statusCode: 403/)
   assert.match(INDEX_GET, /stripSuperAdminOnlySettingFields\(masked\)/)
+  assert.match(INDEX_POST, /stripSuperAdminOnlySettingFields\(masked\)/)
   for (const [name, source] of [
     ['env-oauth.get', ENV_OAUTH_GET],
     ['env-oauth-import', ENV_OAUTH_IMPORT],
@@ -129,6 +130,18 @@ test('读写接口与子接口按角色把关', () => {
   ] as const) {
     assert.match(source, /user\.role !== 'SUPER_ADMIN'/, `${name} 应仅限超级管理员`)
     assert.doesNotMatch(source, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, `${name} 不应再放行普通管理员`)
+  }
+})
+
+test('保存设置的响应与读取接口一致，普通管理员无法通过保存运营字段读取超管配置', () => {
+  const settings = { dailySubmissionLimit: 7, smtpHost: 'smtp.private', customOAuthClientId: 'private-client',
+    astrbotGroupTargets: '["private-group"]', legalConsentDocuments: 'private-documents' }
+  for (const source of [INDEX_GET, INDEX_POST]) {
+    const expression = source.match(/return user\.role === 'SUPER_ADMIN'[^\r\n]*/)?.[0]
+    assert.ok(expression)
+    const respond = new Function('user', 'masked', 'stripSuperAdminOnlySettingFields', expression)
+    assert.deepEqual(respond({ role: 'ADMIN' }, settings, stripSuperAdminOnlySettingFields), { dailySubmissionLimit: 7 })
+    assert.deepEqual(respond({ role: 'SUPER_ADMIN' }, settings, stripSuperAdminOnlySettingFields), settings)
   }
 })
 

@@ -33,6 +33,20 @@ const lyricCache = new Map<string, Promise<any>>()
 const lyricProgressSubscribers = new Map<string, Set<LyricProgressCallback>>()
 const LYRIC_CACHE_TTL = 60 * 1000
 
+/** AMLL 官方 TTML 接口：按平台 ID 查询，返回 JSON 中的 lyrics 文本 */
+const AMLL_OFFICIAL_API = 'https://api.amll.dev/v1/lyrics/get'
+
+/** 解析官方接口响应，取 data.lyrics；格式异常或未收录时返回空串 */
+const parseOfficialAmllResponse = (raw: unknown): string => {
+  if (typeof raw !== 'string' || !raw.trim()) return ''
+  try {
+    const lyrics = JSON.parse(raw)?.data?.lyrics
+    return typeof lyrics === 'string' ? lyrics : ''
+  } catch {
+    return ''
+  }
+}
+
 // 服务器位置检测（模块级单例，避免多次实例化导致重复请求）
 const globalIsServerInChina = ref<boolean | null>(null)
 let locationCheckPromise: Promise<void> | null = null
@@ -704,27 +718,38 @@ export const useMusicSources = () => {
         const fetchAMLL = async () => {
           // 锁定 TTML 来源时无视总开关
           if (!settings.enableOnlineTTMLLyric.value && priority !== 'ttml') return
+          if (platform !== 'netease' && platform !== 'tencent') return
+
+          // 配置镜像模板时走镜像（%s 为歌曲 ID，%p 可选，替换为平台目录），留空走官方接口
+          const mirror = settings.amllDbServer.value?.trim() || ''
+          // 模板缺 %s 时无法拼出地址，视为未配置
+          const useMirror = mirror.includes('%s')
+          const official = !useMirror
+          let url: string
+          if (useMirror) {
+            const dir = platform === 'netease' ? 'ncm-lyrics' : 'qq-lyrics'
+            url = mirror.replace('%p', dir).replace('%s', encodeURIComponent(id.toString()))
+          } else {
+            const key = platform === 'netease' ? 'ncmMusicId' : 'qqMusicId'
+            url = `${AMLL_OFFICIAL_API}?${key}=${encodeURIComponent(id.toString())}`
+          }
 
           try {
-            let url: string
-            if (platform === 'tencent') {
-              url = `https://amlldb.bikonoo.com/lyrics/qq-lyrics/${id}`
-            } else if (platform === 'netease') {
-              const serverUrl = settings.amllDbServer.value
-              if (!serverUrl) return
-              url = serverUrl.replace('%s', id.toString())
-            } else {
-              return
-            }
-
-            const ttml = await $fetch(url, { responseType: 'text' })
-            if (ttml && typeof ttml === 'string' && ttml.includes('<tt')) {
+            const raw = await $fetch<string>(url, { responseType: 'text', timeout: 8000 })
+            const ttml = official ? parseOfficialAmllResponse(raw) : raw
+            if (ttml && ttml.includes('<tt')) {
               if ((resultData.lrc || resultData.yrc) && !validateTtml(ttml)) return
               resultData.ttml = ttml
               hasResult = true
               if (!progressive || ttmlValidated) emitProgress('amll')
             }
-          } catch {}
+          } catch (error: any) {
+            // 未收录返回 404，按无歌词处理，不当作异常
+            const status = error?.statusCode ?? error?.response?.status
+            if (status !== 404) {
+              console.warn('[getLyrics] AMLL TTML 获取失败:', error?.message || error)
+            }
+          }
         }
 
         const fetchQM = async () => {

@@ -1318,6 +1318,9 @@ export const pages = {
       lyrics: '歌词',
       comments: '评论',
       settings: '歌词设置',
+      copyLyric: '复制歌词',
+      copiedLyric: '歌词已复制',
+      copyLyricFailed: '复制失败',
       amStyleLyrics: 'AM 风格歌词',
       fontSize: '字体大小',
       lyricOffset: '歌词偏移 (ms)',
@@ -3246,6 +3249,10 @@ export const admin = {
       candidateDurationsSkipped: '当前无候选歌曲可刷新时长',
       confirmAutoScheduleApplied: (count, duration) =>
         `已自动排期 ${count} 首歌曲，合计 ${duration}`,
+      suspiciousDurationTitle: (count) => `发现 ${count} 首歌曲时长疑似试听片段`,
+      suspiciousDurationDesc: (seconds) =>
+        `时长不超过 ${seconds} 秒，可能只获取到试听片段；重新获取会按音源元数据校正。`,
+      suspiciousDurationAction: '批量重新获取',
       allDurationsProgressTotal: '{0} 首歌',
       allDurationsProgressWithCount: '{0}/{1}（成功{2} 失败{3}）',
       candidateDurationsProgressTotal: '{0} 首歌',
@@ -5467,6 +5474,7 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
   BACKUP_DISABLED: '自动备份未启用',
   MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
+  MUSIC_URL_RESOLVE_FAILED: '播放链接解析失败，请稍后重试',
   QQ_COMMENT_FETCH_FAILED: 'QQ 音乐评论获取失败，请稍后重试',
   PLUGIN_INVALID_CONFIG: '音源插件配置无效',
   PLUGIN_CONFIG_CONFLICT: '配置已被修改，请刷新后重试',

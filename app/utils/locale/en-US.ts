@@ -1352,6 +1352,9 @@ export const pages = {
       lyrics: 'Lyrics',
       comments: 'Comments',
       settings: 'Lyrics settings',
+      copyLyric: 'Copy lyrics',
+      copiedLyric: 'Lyrics copied',
+      copyLyricFailed: 'Copy failed',
       amStyleLyrics: 'Apple Music style lyrics',
       fontSize: 'Font size',
       lyricOffset: 'Lyric offset (ms)',
@@ -3332,6 +3335,10 @@ export const admin = {
       candidateDurationsSkipped: 'No candidate songs need duration refresh',
       confirmAutoScheduleApplied: (count, duration) =>
         `Auto-scheduled ${count} song(s), total ${duration}`,
+      suspiciousDurationTitle: (count) => `${count} song(s) have suspicious duration`,
+      suspiciousDurationDesc: (seconds) =>
+        `Duration ≤ ${seconds}s may be a preview clip; refetch corrects it from source metadata.`,
+      suspiciousDurationAction: 'Refetch',
       allDurationsProgressTotal: '{0} song(s)',
       allDurationsProgressWithCount: '{0}/{1} ({2} ok, {3} fail)',
       candidateDurationsProgressTotal: '{0} song(s)',
@@ -5672,6 +5679,7 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
   BACKUP_DISABLED: 'Auto backup is disabled',
   MUSIC_SOURCE_PLATFORM_DISABLED: 'Platform "{0}" is disabled. Available platforms: {1}',
+  MUSIC_URL_RESOLVE_FAILED: 'Failed to resolve the playback URL. Please try again later.',
   QQ_COMMENT_FETCH_FAILED: 'Failed to load QQ Music comments. Please try again later.',
   PLUGIN_INVALID_CONFIG: 'Invalid source plugin configuration',
   PLUGIN_CONFIG_CONFLICT: 'Configuration changed. Refresh and try again.',
