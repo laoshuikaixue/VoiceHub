@@ -2083,7 +2083,7 @@ const confirmPlaybackChange = async () => {
     const songIds = [...playbackConfirmSongIds.value]
     const updated = await executePlaybackChange(songIds, playbackConfirmMode.value === 'unplayed')
     if (updated === null) return
-    selectedSongs.value = songIds.filter((id) => songs.value.some((song) => song.id === id))
+    // refreshSongs() 已清空选中，这里不再按仍在列表里的歌曲恢复，否则批量按钮上的数量不归零
     showNotification(
       updated > 0
         ? getNestedMessage(
