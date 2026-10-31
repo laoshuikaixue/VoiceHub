@@ -4404,7 +4404,7 @@ const autoScheduleCandidates = computed(() => {
   return base
 })
 
-// 自动排期按期望时段过滤，按期望日期排序。
+// 自动排期按期望时段过滤，期望日期作为软偏好提高入选概率。
 const autoScheduleOptions = computed(() => ({
   targetDate: selectedDate.value,
   targetPlayTimeId: selectedPlayTime.value
@@ -4417,7 +4417,7 @@ const autoSchedulePlacement = computed(() =>
   filterByExpectedPlacement(autoScheduleCandidates.value, autoScheduleOptions.value)
 )
 
-// 候选池中期望日期命中当天的歌曲数，仅用于提示优先安排
+// 候选池中期望日期命中当天的歌曲数，用于提示「更容易排上」
 const autoScheduleDateHits = computed(() =>
   countExpectedDateHits(autoSchedulePlacement.value.eligible, autoScheduleOptions.value.targetDate)
 )
