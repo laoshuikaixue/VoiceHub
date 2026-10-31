@@ -119,13 +119,14 @@ export async function fetchSafeOutbound(
       headers: { 'accept-encoding': 'identity', ...options.headers },
       signal,
       agent: false,
-      lookup: ((host: string, settings: { all?: boolean }, callback: (...args: any[]) => void) => {
+      lookup: ((host: string, settings: { all?: boolean }, callback: (...args: unknown[]) => void) => {
         lookup(host, { all: true, verbatim: true }).then((addresses) => {
           signal.throwIfAborted()
-          if (!addresses.length) throw new Error('备份目标 DNS 未返回地址')
+          const address = addresses[0]
+          if (!address) throw new Error('备份目标 DNS 未返回地址')
           assertResolvedOutboundAddresses(addresses.map((item) => item.address))
           if (settings?.all) callback(null, addresses)
-          else callback(null, addresses[0].address, addresses[0].family)
+          else callback(null, address.address, address.family)
         }).catch(callback)
       }) as NonNullable<http.RequestOptions['lookup']>
     }, resolve)

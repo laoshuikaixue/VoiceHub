@@ -296,7 +296,7 @@ async function doEmailSend(config: AutoBackupConfig['methods']['email'], data: s
     await transporter.sendMail({
       from: `"${settings.smtpFromName || 'VoiceHub'}" <${settings.smtpFromEmail || settings.smtpUsername}>`,
       to: config.recipient,
-      subject: `VoiceHub 自动备份 - ${new Date().toISOString()}`,
+      subject: `VoiceHub 自动备份 - ${getServerDate().toISOString()}`,
       text: '数据库自动备份文件见附件。',
       attachments: [{
         filename,
@@ -505,7 +505,8 @@ export async function cleanupOldHistory(retentionDays: number = 30): Promise<num
     return count
   }
 
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
+  const cutoff = getServerDate()
+  cutoff.setTime(cutoff.getTime() - retentionDays * 24 * 60 * 60 * 1000)
   const result = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(backupHistory)
