@@ -3329,7 +3329,7 @@ export const admin = {
       excludedByPlayTime: (count: number) =>
         `${count} song(s) specify a different play time slot and were excluded as a hard constraint`,
       preferredDateHits: (count: number) =>
-        `${count} song(s) prefer today and will be scheduled first`
+        `${count} song(s) prefer today and are more likely to be picked (not guaranteed)`
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',

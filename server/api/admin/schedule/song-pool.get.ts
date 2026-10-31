@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
       requesterGrade: requesterUser?.grade || null,
       requesterClass: requesterUser?.class || null,
       preferredPlayTimeId: song.preferredPlayTimeId,
-      // 期望播出日期：自动排期时该歌曲只在对应日期参与排期
+      // 期望播出日期：自动排期的软偏好，命中当天时提高入选概率，不过滤候选
       preferredPlayDate: song.preferredPlayDate,
       cover: song.cover,
       semester: song.semester,

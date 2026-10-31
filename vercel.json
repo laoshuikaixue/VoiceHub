@@ -1,15 +1,4 @@
 {
   "buildCommand": "node scripts/deploy.js",
-  "installCommand": "pnpm install --frozen-lockfile || pnpm install",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    }
-  ]
+  "installCommand": "pnpm install --frozen-lockfile || pnpm install"
 }

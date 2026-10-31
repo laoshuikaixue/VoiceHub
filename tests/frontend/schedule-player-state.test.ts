@@ -41,7 +41,7 @@ const result = await build({
 const module = { exports: {} as { useAudioPlayer: typeof useAudioPlayer; useAudioPlayerControl: typeof useAudioPlayerControl; useAudioPlayerSync: typeof useAudioPlayerSync; useSchedulePlaylistSync: typeof useSchedulePlaylistSync; notifySchedulePlaylistChanged: typeof notifySchedulePlaylistChanged } }
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports)
 const authUser = ref<{ id: number; role: string } | null>({ id: 1, role: 'SUPER_ADMIN' })
-Object.assign(globalThis, { window: { navigator: { userAgent: '播放器测试' }, $showNotification() {} }, __resolveScheduleTestMusic: async () => '/audio/resolved.wav', __scheduleSyncTestAuth: { user: authUser, getAuthConfig: () => ({}) } })
+Object.assign(globalThis, { window: { navigator: { userAgent: '播放器测试' }, $showNotification() {} }, useRuntimeConfig: () => ({ public: { isServerless: false } }), __resolveScheduleTestMusic: async () => '/audio/resolved.wav', __scheduleSyncTestAuth: { user: authUser, getAuthConfig: () => ({}) } })
 const player = module.exports.useAudioPlayer()
 const control = module.exports.useAudioPlayerControl()
 const sync = module.exports.useAudioPlayerSync()
