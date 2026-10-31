@@ -5415,6 +5415,8 @@ export const serverErrors = {
   THEME_INVALID_LIST: 'The enabled theme list is invalid',
   THEME_INVALID_DEFAULT: 'The default theme must be enabled and valid',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'Follow System requires both Classic Dark and Classic Light',
+  SETTINGS_CUSTOM_CSS_TOO_LONG: 'Custom CSS cannot exceed {0} characters',
+  SETTINGS_CUSTOM_CSS_STYLE_CLOSER: 'Custom CSS cannot contain </style>; it closes the tag early',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING:
     'Configure grade and class options before enabling this setting',
   SETTINGS_CAPTCHA_PROVIDER_INVALID:

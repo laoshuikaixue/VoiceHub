@@ -1,4 +1,5 @@
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { sanitizeCustomCss } from '~~/server/utils/custom-css'
 
 /**
  * 自定义 CSS 注入
@@ -6,6 +7,7 @@ import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
  * 因此可直接覆盖主题 CSS 变量与 UnoCSS 原子类。仅在整页加载时触发，客户端路由切换不重复注入。
  * 采用模块级 TTL 缓存 + in-flight 去重（与统计代码注入同一口径），避免渲染热路径每次查库。
  * 读取失败时按关闭降级且不写缓存，下个请求重试。
+ * 备份恢复等旁路写入不经过保存接口校验，注入前一律过 sanitizeCustomCss 兜底。
  */
 const CACHE_TTL_MS = 60 * 1000 // 60 秒
 
@@ -52,8 +54,7 @@ export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('render:html', async (html: { head: string[] }) => {
     try {
       const { enabled, css } = await getCustomCssConfig()
-      // 备份恢复等旁路写入不经过保存校验，注入前兜底剔除提前闭合的标签
-      const safeCss = css.replace(/<\s*\/\s*style/gi, '')
+      const safeCss = sanitizeCustomCss(css)
       if (enabled && safeCss.trim() && Array.isArray(html.head)) {
         html.head.push(`<style data-custom-css>${safeCss}</style>`)
       }

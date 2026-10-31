@@ -338,13 +338,18 @@ export default defineEventHandler(async (event) => {
       if (css.length > CUSTOM_CSS_MAX_LENGTH) {
         throw createApiError(
           400,
-          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
-          `自定义 CSS 不能超过 ${CUSTOM_CSS_MAX_LENGTH} 个字符`
+          SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_TOO_LONG,
+          `自定义 CSS 不能超过 ${CUSTOM_CSS_MAX_LENGTH} 个字符`,
+          { params: [CUSTOM_CSS_MAX_LENGTH] }
         )
       }
       // 出现 </style> 会提前闭合样式标签，使后续内容按 HTML 解析
       if (/<\s*\/\s*style[\s>]/i.test(css)) {
-        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '自定义 CSS 不允许包含 </style>')
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_STYLE_CLOSER,
+          '自定义 CSS 不允许包含 </style>'
+        )
       }
       updateData.customCss = css.trim() || null
     }

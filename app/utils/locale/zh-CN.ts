@@ -5242,6 +5242,8 @@ export const serverErrors = {
   THEME_INVALID_LIST: '启用的主题列表无效',
   THEME_INVALID_DEFAULT: '默认主题必须有效且处于启用状态',
   THEME_SYSTEM_REQUIRES_CLASSIC: '跟随系统时必须同时启用经典深色和经典浅色',
+  SETTINGS_CUSTOM_CSS_TOO_LONG: '自定义 CSS 不能超过 {0} 个字符',
+  SETTINGS_CUSTOM_CSS_STYLE_CLOSER: '自定义 CSS 不能包含 </style>，否则样式标签会被提前闭合',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING: '请先在年级班级管理中配置年级班级，再启用该选项',
   SETTINGS_CAPTCHA_PROVIDER_INVALID:
     '验证类型必须是图形验证码、Cloudflare Turnstile 或阿里云 ESA AI 验证码',
