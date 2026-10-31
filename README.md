@@ -923,8 +923,6 @@ VoiceHub/
 │   │   ├── usePermissions.ts   # 权限管理hooks
 │   │   ├── usePasswordStrength.ts # 密码强度检测hooks
 │   │   ├── usePlayerLayout.ts  # 播放器布局（固定底部/自由拖拽）偏好hooks
-│   │   ├── useProgress.ts      # 进度管理hooks
-│   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSafeLocale.ts    # 安全 i18n 文本包装hooks
 │   │   ├── useScrollMemory.ts  # 页面滚动位置记忆hooks
@@ -1346,9 +1344,6 @@ VoiceHub/
 │   │   │   └── index.ts             # 播放时间管理
 │   │   ├── request-times/  # 点歌时间API
 │   │   │   └── index.ts             # 点歌时间管理
-│   │   ├── progress/       # 进度条API
-│   │   │   ├── events.ts            # 进度事件
-│   │   │   └── id.ts                # 进度ID管理
 │   │   ├── proxy/          # 代理服务API
 │   │   │   └── image.get.ts         # 图片代理（解决HTTP/HTTPS混合内容及跨域问题）
 │   │   ├── semesters/      # 学期API
@@ -1541,6 +1536,7 @@ VoiceHub/
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── system-event-buffer.ts # 系统看板进程内运行事件环形缓冲
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
+│   │   ├── ttl-cache.ts  # 模块级 TTL 缓存
 │   │   ├── userDisplayName.ts # 同名用户消歧统一口径（仅在读用户参与统计）
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
