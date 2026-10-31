@@ -756,6 +756,7 @@ VoiceHub/
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定
 │   │   ├── Admin/             # 管理员功能组件
+│   │   │   ├── AnnouncementHistory.vue # 首页公告发布历史（预览/编辑/删除）
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
@@ -861,6 +862,7 @@ VoiceHub/
 │   │   │   │   ├── CustomSelect.vue   # 自定义选择器
 │   │   │   │   ├── DataTable.vue      # 通用数据表格组件
 │   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
+│   │   │   │   ├── ImageUploadInput.vue # 图片上传输入框（输出 Base64）
 │   │   │   │   ├── InputField.vue     # 通用输入框组件
 │   │   │   │   ├── LoadingState.vue   # 加载状态组件
 │   │   │   │   ├── MethodCard.vue     # 可展开卡片组件
@@ -923,6 +925,8 @@ VoiceHub/
 │   │   ├── usePermissions.ts   # 权限管理hooks
 │   │   ├── usePasswordStrength.ts # 密码强度检测hooks
 │   │   ├── usePlayerLayout.ts  # 播放器布局（固定底部/自由拖拽）偏好hooks
+│   │   ├── useProgress.ts      # 上传进度会话状态hooks
+│   │   ├── useProgressEvents.ts # 上传进度 SSE 订阅hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSafeLocale.ts    # 安全 i18n 文本包装hooks
 │   │   ├── useScrollMemory.ts  # 页面滚动位置记忆hooks
@@ -1126,6 +1130,12 @@ VoiceHub/
 │   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
 │   │   │   ├── notifications/       # 管理员通知API
+│   │   │   │   ├── announcement-history/ # 公告历史明细API
+│   │   │   │   │   ├── [id].delete.ts # 删除公告历史
+│   │   │   │   │   └── [id].put.ts # 更新公告历史
+│   │   │   │   ├── announcement-history.get.ts # 查询首页公告发布历史
+│   │   │   │   ├── announcement.delete.ts # 清除首页公告
+│   │   │   │   ├── announcement.post.ts # 发布首页公告
 │   │   │   │   ├── history/         # 通知批次明细API
 │   │   │   │   │   ├── [batchId].delete.ts # 删除通知批次
 │   │   │   │   │   ├── [batchId].get.ts # 查询批次用户已读明细
@@ -1297,6 +1307,9 @@ VoiceHub/
 │   │   │       └── url.post.ts      # ikun 网易云备用源服务端代理取链
 │   │   ├── platform-config/  # 平台管理公开API
 │   │   │   └── index.get.ts      # 获取平台启用与排序配置
+│   │   ├── progress/       # 上传进度API
+│   │   │   ├── events.ts            # 上传进度 SSE 推送
+│   │   │   └── id.ts                # 生成上传进度会话 ID
 │   │   ├── notifications/  # 通知系统API
 │   │   │   ├── astrbot/             # AstrBot 绑定码、状态、解绑与测试推送
 │   │   │   │   ├── bind-code.post.ts # 发放指定平台的绑定码
@@ -1406,6 +1419,8 @@ VoiceHub/
 │   │       ├── social-accounts/     # 社交账号管理
 │   │       │   ├── meow.delete.ts   # 删除MeoW绑定
 │   │       │   └── meow.post.ts     # MeoW账号操作
+│   │       ├── submit-target/       # 代投稿用户资料查询
+│   │       │   └── [id].get.ts     # 获取被代投稿用户资料
 │   │       ├── search.get.ts        # 搜索用户
 │   │       └── social-accounts.get.ts # 获取社交账号
 │   ├── card-codes/         # 点歌券相关
