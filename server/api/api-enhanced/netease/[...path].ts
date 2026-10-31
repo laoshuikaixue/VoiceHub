@@ -10,6 +10,8 @@ const neteaseEnhancedApiPromise = import('@neteasecloudmusicapienhanced/api').th
 const NETEASE_CALL_TIMEOUT_MS = 12000
 // xeapi 公钥预热同样可能挂起，且模块级 promise 被所有请求共用，必须单独封顶
 const NETEASE_CONFIG_TIMEOUT_MS = 5000
+// 整体截止时间到期的机器可读标记，用于识别此类预期失败
+const NETEASE_UPSTREAM_TIMEOUT_CODE = 'NETEASE_UPSTREAM_TIMEOUT'
 
 async function withDeadline<T>(task: Promise<T>, ms: number, endpoint: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -19,6 +21,7 @@ async function withDeadline<T>(task: Promise<T>, ms: number, endpoint: string): 
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(createError({
           statusCode: 504,
+          statusMessage: NETEASE_UPSTREAM_TIMEOUT_CODE,
           message: `网易云接口 ${endpoint} 调用超时`
         })), ms)
       })
@@ -177,10 +180,15 @@ export default defineEventHandler(async (event) => {
     const upstream = error?.body ?? null
     const upstreamMessage = upstream?.msg || upstream?.message || error?.message
     console.warn(`[Netease] ${endpointPath} 调用失败: ${error?.status || 500} ${upstreamMessage}`)
-    throw createError({
+    const wrapped = createError({
       statusCode: error?.statusCode || error?.status || 500,
       message: upstreamMessage || '网易云接口调用失败',
       data: { endpoint: endpointPath, upstream }
     })
+    // 截止时间到期的标记需要透传，否则重包后 Sentry 过滤无法识别
+    if (error?.statusMessage === NETEASE_UPSTREAM_TIMEOUT_CODE) {
+      wrapped.statusMessage = NETEASE_UPSTREAM_TIMEOUT_CODE
+    }
+    throw wrapped
   }
 })

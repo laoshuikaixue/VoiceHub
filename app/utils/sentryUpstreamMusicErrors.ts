@@ -10,6 +10,9 @@ export const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
   'qq 歌词接口返回',
   // B 站上游接口波动/风控（如 412 Precondition Failed），URL 由 ofetch 拼入错误消息
   'api.bilibili.com',
+  // 网易云代理接口超时：504 错误带标记，服务端 $fetch 失败则按请求路径识别
+  'NETEASE_UPSTREAM_TIMEOUT',
+  '/api/api-enhanced/netease',
   'The operation was aborted due to timeout',
   'request timed out',
   'timeout exceeded',
@@ -44,6 +47,11 @@ type SentryLikeEvent = {
   message?: unknown
   request?: {
     url?: unknown
+  }
+  contexts?: {
+    request?: {
+      url?: unknown
+    }
   }
   extra?: Record<string, unknown>
   exception?: {
@@ -116,6 +124,9 @@ export const getSentryEventSearchText = (
 
   return [
     event.message,
+    // 服务端 SDK 把 scope 的 request 上下文挂在 event.contexts.request
+    event.request?.url,
+    event.contexts?.request?.url,
     logEntry.message,
     ...(Array.isArray(logEntry.params) ? logEntry.params : []),
     // console 集成把原始参数放在 extra.arguments，只有这里能看到错误的 code 与 cause
