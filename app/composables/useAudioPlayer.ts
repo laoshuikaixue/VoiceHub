@@ -178,11 +178,12 @@ export function useAudioPlayer() {
       }
       const item = currentPlaylist.value[target]
       const song = item.song
-      let url = song.musicUrl || song.playUrl || null
+      let url = song.musicUrl || null
       let resolutionError: unknown
       try {
         if (!url && !isBilibiliSong(song) && song.musicPlatform && song.musicId) {
           const { getMusicUrl } = await import('~/utils/musicUrl')
+          // 平台歌曲优先按当前登录态重新取链，取链失败时由 getMusicUrl 回退 playUrl
           url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, {
             musicInfo: { name: song.title, artist: song.artist, album: song.album || undefined, rawItem: song }
           })

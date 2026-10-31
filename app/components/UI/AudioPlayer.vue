@@ -328,6 +328,7 @@ import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
+import { isPreviewClipDuration } from '~/utils/preview-duration'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
@@ -749,7 +750,9 @@ const isInvalidTencentAudio = (duration, url) => {
   if (activeSong.value?.musicPlatform !== 'tencent') return false
 
   const numericDuration = Number(duration)
-  const expectedDuration = normalizeSongDurationSeconds(activeSong.value?.duration)
+  const expectedDuration = normalizeSongDurationSeconds(
+    activeSong.value?.duration ?? activeSong.value?.durationSeconds
+  )
   if (
     expectedDuration >= MIN_VALID_QQ_AUDIO_DURATION &&
     Number.isFinite(numericDuration) &&
@@ -760,6 +763,60 @@ const isInvalidTencentAudio = (duration, url) => {
   }
 
   return isKnownInvalidQqAudioUrl(url)
+}
+
+// 可能返回试听片段的平台；B 站与语音条目不参与判定
+const PREVIEW_CHECK_PLATFORMS = ['netease', 'netease-podcast', 'tencent', 'migu']
+
+const isPreviewAudio = (duration) => {
+  const song = activeSong.value
+  if (!song || !PREVIEW_CHECK_PLATFORMS.includes(song.musicPlatform)) return false
+  if (song.sourceInfo?.type === 'voice') return false
+  const expected = normalizeSongDurationSeconds(song.duration ?? song.durationSeconds)
+  return isPreviewClipDuration(duration, expected)
+}
+
+let previewWarnedSongKey = ''
+const notifyPreviewOnly = () => {
+  const song = activeSong.value
+  if (!song?.id) return
+  const key = `${song.id}:${song.musicPlatform}:${song.musicId}`
+  if (previewWarnedSongKey === key) return
+  previewWarnedSongKey = key
+  window.$showNotification?.(audioPlayerLocale.value.previewOnly, 'warning')
+}
+
+let durationFixInFlight = false
+const PREVIEW_SWITCH_TIMEOUT_MS = 15000
+// 实际时长异常（无效音频或试听片段）时切换到其它音源，换源失败或超时则提示仅试听
+const maybeSwitchForBadDuration = async (duration) => {
+  if (isFallbackHandling.value || durationFixInFlight) return false
+  const needsFix =
+    isInvalidTencentAudio(duration, audioPlayer.value?.currentSrc || audioPlayer.value?.src) ||
+    isPreviewAudio(duration)
+  if (!needsFix) return false
+
+  durationFixInFlight = true
+  try {
+    let timedOut = false
+    const switched = await Promise.race([
+      trySwitchPlaybackSource(),
+      new Promise((resolve) => {
+        setTimeout(() => {
+          timedOut = true
+          resolve(false)
+        }, PREVIEW_SWITCH_TIMEOUT_MS)
+      })
+    ])
+    if (switched) return true
+    if (isPreviewAudio(duration)) {
+      if (timedOut) console.warn('[AudioPlayer] 换源超时，保留当前试听片段')
+      notifyPreviewOnly()
+    }
+    return false
+  } finally {
+    durationFixInFlight = false
+  }
 }
 
 const getNeteaseScrobbleSongId = (song) => {
@@ -972,31 +1029,15 @@ watch(
 const handleDurationChange = async () => {
   if (!audioPlayer.value || isFallbackHandling.value) return
 
-  if (
-    isInvalidTencentAudio(
-      audioPlayer.value.duration,
-      audioPlayer.value.currentSrc || audioPlayer.value.src
-    )
-  ) {
-    const switchedSource = await trySwitchPlaybackSource()
-    if (switchedSource) return
-  }
+  await maybeSwitchForBadDuration(audioPlayer.value.duration)
 }
 
 const handleLoaded = async () => {
   if (!audioPlayer.value) return
 
-  if (
-    !isFallbackHandling.value &&
-    isInvalidTencentAudio(
-      audioPlayer.value.duration,
-      audioPlayer.value.currentSrc || audioPlayer.value.src
-    )
-  ) {
-    const switchedSource = await trySwitchPlaybackSource()
-    if (switchedSource) {
-      return
-    }
+  const switchedSource = await maybeSwitchForBadDuration(audioPlayer.value.duration)
+  if (switchedSource) {
+    return
   }
 
   control.onLoaded(audioPlayer.value.duration)

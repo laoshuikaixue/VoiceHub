@@ -1512,6 +1512,7 @@ export const pages = {
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     slowNetworkRetry: 'The current link loads too slowly. Switching to a fallback source.',
     slowNetworkFailed: 'The playback link loads too slowly. Check your connection and retry.',
+    previewOnly: 'Only a preview clip is available for this song. Tried switching sources.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
     networkOffline: 'Network disconnected. Check your connection and try again.',
     scheduleSyncFailed: 'Queue update failed. The current queue was retained.',

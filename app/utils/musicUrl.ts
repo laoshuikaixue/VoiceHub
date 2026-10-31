@@ -384,9 +384,6 @@ export async function getMusicUrlResult(
       typeof window !== 'undefined'
         ? window.localStorage.getItem('qq_music_cookie') || undefined
         : undefined
-    // VIP 状态由登录校验接口写入（qq_music_vip），仅 VIP 才值得优先走官方链路
-    const isQqVip =
-      typeof window !== 'undefined' && window.localStorage.getItem('qq_music_vip') === '1'
     const requestBackendResolve = async (
       strategy: 'official-first' | 'fallback' | 'aggregator' = 'fallback'
     ) => {
@@ -425,8 +422,8 @@ export async function getMusicUrlResult(
       throw new Error(response?.message || 'QQ音乐播放链接解析失败')
     }
 
-    // VIP 登录态：优先后端用用户 Cookie 走官方链路换取直链，失败再降级第三方音源
-    if (qqMusicCookie && isQqVip && !excludedSources.has('qq-official')) {
+    // 有登录态就优先后端用用户 Cookie 走官方链路，权限不足时上游会拒绝并继续降级第三方
+    if (qqMusicCookie && !excludedSources.has('qq-official')) {
       try {
         return await requestBackendResolve('official-first')
       } catch (error: any) {
@@ -749,12 +746,29 @@ export async function getMusicUrlResult(
   throw new Error('vkeys API返回的播放链接无效')
 }
 
+const TRUSTED_URL_PLATFORMS = new Set(['netease', 'netease-podcast', 'tencent', 'migu'])
+
 export async function getMusicUrl(
   platform: string,
   musicId: string | number,
   playUrl?: string,
   options?: MusicUrlResolveOptions
 ): Promise<string | null> {
-  const result = await getMusicUrlResult(platform, musicId, playUrl, options)
-  return result.url
+  const providedUrl = String(playUrl || '').trim()
+  // 平台歌曲按当前登录态重新取链：库里的 playUrl 可能是历史试听或失效链接
+  const ignoreProvided =
+    Boolean(providedUrl) && !options?.ignoreProvidedUrl && TRUSTED_URL_PLATFORMS.has(platform)
+  try {
+    const result = await getMusicUrlResult(
+      platform,
+      musicId,
+      ignoreProvided ? undefined : playUrl,
+      options
+    )
+    if (result.url) return result.url
+  } catch (error) {
+    if (!ignoreProvided) throw error
+    console.warn('[musicUrl] 平台取链失败，回退歌曲自带播放链接:', (error as Error)?.message)
+  }
+  return ignoreProvided ? providedUrl : null
 }

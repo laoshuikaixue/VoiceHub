@@ -29,7 +29,8 @@ test('超限返回可本地化的 429', () => {
 })
 
 test('被限流不得清除本地 QQ 登录态', () => {
-  const branch = MUSIC_URL.match(/if \(qqMusicCookie && isQqVip[\s\S]*?\n {4}\}/)?.[0] ?? ''
+  // 条件随实现改为「有登录态即尝试官方」，429 仍不得触发登录态复验/清理
+  const branch = MUSIC_URL.match(/if \(qqMusicCookie && !excludedSources\.has\('qq-official'\)[\s\S]*?\n {4}\}/)?.[0] ?? ''
   assert.ok(branch, '未找到官方链路降级分支')
   assert.match(branch, /status !== 429/)
   assert.match(branch, /await revalidateQqLoginAfterFailure\(\)/)
