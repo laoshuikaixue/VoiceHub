@@ -1,4 +1,5 @@
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { createTtlCache } from '~~/server/utils/ttl-cache'
 
 /**
  * 站点统计代码注入
@@ -6,51 +7,26 @@ import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
  * 支持任意统计平台（百度统计、51.la、Microsoft Clarity、Google Analytics 等）的 HTML/JS 片段。
  * 仅在整页加载（SSR / 首次hydration）时触发，客户端路由切换不会重复执行。
  *
- * 采用模块级 TTL 缓存复用统一设置读取封装（getSystemSettingsCached），
+ * 采用 createTtlCache 复用统一设置读取封装（getSystemSettingsCached），
  * 避免在渲染热路径上每次请求都查询数据库。
  * 读取失败时按关闭降级且不写缓存，下个请求重试。
  */
 const CACHE_TTL_MS = 60 * 1000 // 60 秒
 
-let cache: {
-  enabled: boolean
-  code: string
-} | null = null
-
-let cacheFetchedAt = 0
-let inFlight: Promise<{ enabled: boolean; code: string }> | null = null
-
-async function getStatisticsCodeConfig(): Promise<{
-  enabled: boolean
-  code: string
-}> {
-  const now = Date.now()
-  if (cache && now - cacheFetchedAt < CACHE_TTL_MS) {
-    return cache
-  }
-
-  if (!inFlight) {
-    inFlight = (async () => {
-      try {
-        const settings = await getSystemSettingsCached()
-        // getSystemSettingsCached 读取失败时返回 null（不抛错），按关闭降级且不写缓存，下个请求重试
-        if (!settings) {
-          return { enabled: false, code: '' }
-        }
-        cache = {
-          enabled: !!settings.statisticsCodeEnabled,
-          code: settings.statisticsCode || ''
-        }
-        cacheFetchedAt = Date.now()
-        return cache
-      } finally {
-        inFlight = null
-      }
-    })()
-  }
-
-  return inFlight
-}
+const getStatisticsCodeConfig = createTtlCache(
+  async () => {
+    const settings = await getSystemSettingsCached()
+    if (!settings) {
+      return null
+    }
+    return {
+      enabled: !!settings.statisticsCodeEnabled,
+      code: settings.statisticsCode || ''
+    }
+  },
+  { enabled: false, code: '' },
+  CACHE_TTL_MS
+)
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('render:html', async (html: { head: string[] }) => {
