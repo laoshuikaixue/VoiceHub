@@ -1,4 +1,5 @@
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { sanitizeCustomCss } from '~/utils/custom-css-policy'
 
 /**
@@ -23,7 +24,7 @@ async function getCustomCssConfig(): Promise<{
   enabled: boolean
   css: string
 }> {
-  const now = Date.now()
+  const now = getServerTimestamp()
   if (cache && now - cacheFetchedAt < CACHE_TTL_MS) {
     return cache
   }
@@ -39,7 +40,7 @@ async function getCustomCssConfig(): Promise<{
           enabled: !!settings.customCssEnabled,
           css: settings.customCss || ''
         }
-        cacheFetchedAt = Date.now()
+        cacheFetchedAt = getServerTimestamp()
         return cache
       } finally {
         inFlight = null
