@@ -1085,7 +1085,7 @@ const handleLoaded = async () => {
   }, 100)
 }
 
-const handleError = async (error, options = {}) => {
+const handleError = async (error, options = { skipSourceSwitch: false }) => {
   clearStallWatch()
   // 忽略主动清空 src 或关闭播放器导致的错误
   const audioEl = audioPlayer.value
