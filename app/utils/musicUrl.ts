@@ -4,6 +4,7 @@ import { useChkszSource } from '~/composables/useChkszSource'
 import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 import { isPluginPlatform } from '~/utils/pluginPlatform'
+import { PLATFORM_AUTHORIZED_PLATFORMS } from '~/utils/platforms'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { persistQqMusicCookie, clearQqMusicLoginState, QQ_MUSIC_COOKIE_KEY } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
@@ -24,6 +25,8 @@ export type MusicUrlResolveOptions = {
   mediaId?: string
   excludeSources?: string[]
   ignoreProvidedUrl?: boolean
+  /** 播放链路传入：受授权控制的音源忽略调用方带来的链接，按当前登录态重新取链 */
+  preferPlatformResolve?: boolean
   musicInfo?: MusicTrackMeta
   songId?: number
   selectionToken?: string
@@ -384,9 +387,6 @@ export async function getMusicUrlResult(
       typeof window !== 'undefined'
         ? window.localStorage.getItem('qq_music_cookie') || undefined
         : undefined
-    // VIP 状态由登录校验接口写入（qq_music_vip），仅 VIP 才值得优先走官方链路
-    const isQqVip =
-      typeof window !== 'undefined' && window.localStorage.getItem('qq_music_vip') === '1'
     const requestBackendResolve = async (
       strategy: 'official-first' | 'fallback' | 'aggregator' = 'fallback'
     ) => {
@@ -425,8 +425,8 @@ export async function getMusicUrlResult(
       throw new Error(response?.message || 'QQ音乐播放链接解析失败')
     }
 
-    // VIP 登录态：优先后端用用户 Cookie 走官方链路换取直链，失败再降级第三方音源
-    if (qqMusicCookie && isQqVip && !excludedSources.has('qq-official')) {
+    // 有登录态就优先后端用用户 Cookie 走官方链路，权限不足时上游会拒绝并继续降级第三方
+    if (qqMusicCookie && !excludedSources.has('qq-official')) {
       try {
         return await requestBackendResolve('official-first')
       } catch (error: any) {
@@ -547,15 +547,6 @@ export async function getMusicUrlResult(
         } catch {
           // 该音质请求失败，继续尝试下一个音质候选
         }
-      }
-    }
-
-    // 非 VIP 登录态：官方链路作为最后兜底
-    if (qqMusicCookie && !isQqVip && !excludedSources.has('qq-official')) {
-      try {
-        return await requestBackendResolve('official-first')
-      } catch (error: any) {
-        console.warn('[musicUrl] QQ 官方链路兜底失败:', error?.message || error)
       }
     }
 
@@ -755,6 +746,24 @@ export async function getMusicUrl(
   playUrl?: string,
   options?: MusicUrlResolveOptions
 ): Promise<string | null> {
-  const result = await getMusicUrlResult(platform, musicId, playUrl, options)
-  return result.url
+  const providedUrl = String(playUrl || '').trim()
+  // 播放链路要求按当前登录态重新取链：库里的 playUrl 可能是历史试听或失效链接
+  const resolveFirst =
+    options?.preferPlatformResolve === true &&
+    !options?.ignoreProvidedUrl &&
+    providedUrl !== '' &&
+    PLATFORM_AUTHORIZED_PLATFORMS.includes(platform)
+  try {
+    const result = await getMusicUrlResult(
+      platform,
+      musicId,
+      resolveFirst ? undefined : playUrl,
+      options
+    )
+    if (result.url) return result.url
+  } catch (error) {
+    if (!resolveFirst) throw error
+    console.warn('[musicUrl] 平台取链失败，回退歌曲自带播放链接:', (error as Error)?.message)
+  }
+  return resolveFirst ? providedUrl : null
 }

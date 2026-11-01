@@ -1027,6 +1027,8 @@ VoiceHub/
 │       ├── playerLayout.ts    # 播放器布局模式与自由拖拽坐标解析
 │       ├── blacklist.ts       # 歌曲类型黑名单候选值共享（语种/曲风）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
+│       ├── preview-duration.ts # 播放地址时长与歌曲时长比对（试听片段检测）
+│       ├── song-duration.ts   # 疑似试听片段时长判定
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── neteaseCatalog.ts  # 网易云曲库播放响应的歌曲、音质与试听标记核验
@@ -1295,10 +1297,12 @@ VoiceHub/
 │   │   │   │   ├── playlist-songs.post.ts # 获取QQ音乐歌单内歌曲
 │   │   │   │   ├── playlists.post.ts # 获取用户创建与收藏的歌单
 │   │   │   │   └── resolve-mid.get.ts # QQ数字songId解析为字母songmid
-│   │   │   └── search/              # 搜索API
-│   │   │       ├── mg.get.ts        # 咪咕音乐搜索
-│   │   │       ├── tx.get.ts        # 腾讯音乐搜索
-│   │   │       └── wy.get.ts        # 网易云音乐搜索
+│   │   │   ├── search/              # 搜索API
+│   │   │   │   ├── mg.get.ts        # 咪咕音乐搜索
+│   │   │   │   ├── tx.get.ts        # 腾讯音乐搜索
+│   │   │   │   └── wy.get.ts        # 网易云音乐搜索
+│   │   │   └── wy/                   # 网易云音源代理API
+│   │   │       └── url.post.ts      # ikun 网易云备用源服务端代理取链
 │   │   ├── platform-config/  # 平台管理公开API
 │   │   │   └── index.get.ts      # 获取平台启用与排序配置
 │   │   ├── notifications/  # 通知系统API
@@ -1502,6 +1506,7 @@ VoiceHub/
 │   │   │   ├── tickets.ts   # 加密凭证签发与校验
 │   │   │   └── types.ts     # 插件类型定义
 │   │   ├── native_common.ts # 原生API通用工具
+│   │   ├── music-resolve-rate-limit.ts # 匿名播放取链共享限流
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
@@ -1509,7 +1514,7 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
-│   │   ├── outbound-url.ts # 备份出站地址元数据/内部域名拦截
+│   │   ├── outbound-url.ts # 备份出站地址校验、DNS 固定与重定向拦截
 │   │   ├── pagination.ts   # 分页参数解析与上限夹取
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装

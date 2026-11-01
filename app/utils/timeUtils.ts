@@ -114,8 +114,12 @@ export function getBeijingDateString(date?: Date): string {
  */
 export function getBeijingWeekday(dateString: string): number | null {
   if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null
-  const parsed = dayjs.tz(dateString, BEIJING_TIMEZONE)
-  return parsed.isValid() ? parsed.day() : null
+  try {
+    const parsed = dayjs.tz(dateString, BEIJING_TIMEZONE)
+    return parsed.isValid() && parsed.format('YYYY-MM-DD') === dateString ? parsed.day() : null
+  } catch {
+    return null
+  }
 }
 
 /** 星期数字（0=周日 … 6=周六）→ 中文标签 */

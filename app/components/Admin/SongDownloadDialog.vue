@@ -367,9 +367,23 @@
                   >
                     <div class="flex items-center gap-2">
                       <p class="text-xs font-bold text-text-secondary truncate">{{ song.song.title }}</p>
+                      <!-- 预下载实测时长与系统记录不一致标记 -->
+                      <div
+                        v-if="isPreloadDurationMismatch(song.song)"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-error-10 border border-error-20"
+                        :title="getDurationMismatchTip(song.song)"
+                      >
+                        <AlertTriangle class="w-2 h-2 text-error" />
+                        <span class="text-[9px] font-mono text-error">{{
+                          formatDuration(getPreloadedDuration(song.song.id))
+                        }}</span>
+                        <span class="text-[9px] font-mono text-text-tertiary"
+                          >≠ {{ formatDuration(song.song.durationSeconds) }}</span
+                        >
+                      </div>
                       <!-- 预下载标记（精确时长） -->
                       <div
-                        v-if="getUsablePreload(song.song.id, selectedQuality)"
+                        v-else-if="getUsablePreload(song.song.id, selectedQuality)"
                         class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-success-10 border border-success-20"
                       >
                         <Check class="w-2 h-2 text-success" />
@@ -654,6 +668,8 @@ const ESTIMATE_DURATION_CONCURRENCY = 3
 const DOWNLOAD_URL_RETRY_LIMIT = 3
 const AUDIO_METADATA_TIMEOUT_MS = 10000
 const NETEASE_PREVIEW_DURATION_SECONDS = 30
+// 系统记录时长取自音源元数据且向下取整，与音频实际解码时长存在秒级正常偏差
+const PRELOAD_DURATION_TOLERANCE_SECONDS = 3
 const PCM_BYTES_PER_SECOND = 44100 * 2 * 4
 const FAST_MERGE_MIN_BUDGET_BYTES = 96 * 1024 * 1024
 const FAST_MERGE_MEMORY_RATIO = 0.04
@@ -920,6 +936,25 @@ const getUsablePreload = (songId, quality) => {
   return cached
 }
 
+const getPreloadedDuration = (songId) =>
+  getUsablePreload(songId, selectedQuality.value)?.duration || 0
+
+// 预下载实测时长与系统记录时长偏差超出容差时标记为不一致
+const isPreloadDurationMismatch = (song) => {
+  const recorded = Math.floor(Number(song?.durationSeconds) || 0)
+  const measured = Math.floor(Number(getPreloadedDuration(song?.id)) || 0)
+  if (recorded <= 0 || measured <= 0) return false
+  return Math.abs(measured - recorded) > PRELOAD_DURATION_TOLERANCE_SECONDS
+}
+
+const getDurationMismatchTip = (song) =>
+  getLocaleText(
+    'durationMismatchTip',
+    '',
+    formatDuration(getPreloadedDuration(song?.id)),
+    formatDuration(song?.durationSeconds)
+  )
+
 // 预下载单首歌曲
 const preloadSong = async (song) => {
   if (getUsablePreload(song.id, selectedQuality.value)) return
@@ -1016,6 +1051,14 @@ const preloadSelectedSongs = async () => {
   }
 
   await Promise.all(workers)
+
+  const mismatchCount = songsToLoad.filter((item) => isPreloadDurationMismatch(item.song)).length
+  if (mismatchCount > 0 && window.$showNotification) {
+    window.$showNotification(
+      getLocaleText('preloadDurationMismatchCount', '', mismatchCount),
+      'warning'
+    )
+  }
 }
 
 const removePreloaded = (songId) => {

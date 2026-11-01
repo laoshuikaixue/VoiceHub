@@ -931,7 +931,17 @@ const loadSchedules = async () => {
       ...getAuthConfig()
     })
     // API直接返回排期数组，不是包装在schedules属性中
-    schedules.value = Array.isArray(data) ? data : []
+    const list = Array.isArray(data) ? data : []
+    // 打印排期会对外分发，匿名投稿即使管理员视角接口返回真实姓名，也必须以「匿名投稿」呈现，避免泄露投稿人
+    const anonymousLabel = locale.value?.anonymousRequester
+    list.forEach((schedule) => {
+      const song = schedule?.song
+      if (song?.submissionAnonymous === true) {
+        song.requester = anonymousLabel
+        song.collaborators = []
+      }
+    })
+    schedules.value = list
 
     // 如果没有数据，显示提示
     if (schedules.value.length === 0) {

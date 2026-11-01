@@ -20,19 +20,19 @@ export function createTtlCache<T>(
     }
 
     if (!pending) {
-      pending = (async () => {
-        try {
-          const value = await load()
+      pending = Promise.resolve()
+        .then(load)
+        .then((value) => {
           if (value === null) {
             return fallback
           }
           cached = value
           expiresAt = getServerTimestamp() + ttlMs
           return value
-        } finally {
+        })
+        .finally(() => {
           pending = null
-        }
-      })()
+        })
     }
 
     return pending

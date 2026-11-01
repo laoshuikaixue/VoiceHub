@@ -253,6 +253,33 @@
             </div>
           </div>
 
+          <!-- 时长疑似试听片段提示 -->
+          <div
+            v-if="suspiciousPendingSongs.length > 0"
+            class="flex flex-col gap-2 px-3 py-2.5 rounded-xl bg-warning-10 border border-warning-20 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-start gap-2">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
+              <div class="text-[10px] leading-relaxed text-text-secondary">
+                <p class="font-bold text-text-primary">
+                  {{ locale.messages.suspiciousDurationTitle(suspiciousPendingSongs.length) }}
+                </p>
+                <p>{{ locale.messages.suspiciousDurationDesc(SUSPICIOUS_DURATION_SECONDS) }}</p>
+              </div>
+            </div>
+            <button
+              class="shrink-0 px-3 py-1.5 rounded-lg bg-warning-10 hover:bg-warning-20 border border-warning-20 text-[10px] font-bold text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="refreshingAllDurations.running"
+              @click="refreshAllDurations('suspicious')"
+            >
+              <RefreshCcw
+                class="w-3 h-3 inline-block mr-1"
+                :class="{ 'animate-spin': refreshingAllDurations.running }"
+              />
+              {{ locale.messages.suspiciousDurationAction }}
+            </button>
+          </div>
+
           <!-- 筛选区 - 移动端折叠 -->
           <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl shadow-xl">
             <div
@@ -1716,6 +1743,33 @@
             {{ locale.availableCount(autoSchedulePlacement.eligible.length) }}
           </div>
 
+          <!-- 候选歌曲时长疑似试听片段提示 -->
+          <div
+            v-if="suspiciousAutoCandidates.length > 0"
+            class="flex flex-col gap-2 px-3 py-2.5 rounded-xl bg-warning-10 border border-warning-20 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-start gap-2">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-px text-warning" />
+              <div class="text-[10px] leading-relaxed text-text-secondary">
+                <p class="font-bold text-text-primary">
+                  {{ locale.messages.suspiciousDurationTitle(suspiciousAutoCandidates.length) }}
+                </p>
+                <p>{{ locale.messages.suspiciousDurationDesc(SUSPICIOUS_DURATION_SECONDS) }}</p>
+              </div>
+            </div>
+            <button
+              class="shrink-0 px-3 py-1.5 rounded-lg bg-warning-10 hover:bg-warning-20 border border-warning-20 text-[10px] font-bold text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="refreshingAutoCandidates.running"
+              @click="refreshAutoCandidateDurations()"
+            >
+              <RefreshCcw
+                class="w-3 h-3 inline-block mr-1"
+                :class="{ 'animate-spin': refreshingAutoCandidates.running }"
+              />
+              {{ locale.messages.suspiciousDurationAction }}
+            </button>
+          </div>
+
           <!-- 期望时段约束提示 -->
           <div
             v-if="autoSchedulePlacement.excludedByPlayTime > 0"
@@ -2040,6 +2094,7 @@ import {
 } from '~/utils/autoSchedule'
 import { countSchedulesWithPlayTime } from '~/utils/schedulePlayTime'
 import { getMusicUrlResult, isKnownInvalidQqAudioUrl } from '~/utils/musicUrl'
+import { SUSPICIOUS_DURATION_SECONDS, isSuspiciousSongDuration } from '~/utils/song-duration'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
@@ -2052,6 +2107,9 @@ const locale = computed(() => {
     ...base,
     messages: {
       confirmAutoScheduleApplied: (count, duration) => `已自动排期 ${count} 首歌曲，合计 ${duration}`,
+      suspiciousDurationTitle: (count) => `发现 ${count} 首歌曲时长疑似试听片段`,
+      suspiciousDurationDesc: (seconds) => `时长不超过 ${seconds} 秒，可能只获取到试听片段；重新获取会按音源元数据校正。`,
+      suspiciousDurationAction: '批量重新获取',
       ...(base.messages || {})
     },
     errors: {
@@ -2297,6 +2355,45 @@ const durationRefreshStatus = ref({})
 // 批量刷新时长状态
 const refreshingAllDurations = ref({ running: false, progress: '', done: 0, total: 0 })
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
+
+// 疑似时长刷新后仍是短时长，说明元数据本身就是短音频：记录下来不再提示，时长变化后重新提示
+const CONFIRMED_DURATIONS_KEY = 'voicehub_confirmed_song_durations'
+const confirmedDurations = ref({})
+if (import.meta.client) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONFIRMED_DURATIONS_KEY) || 'null')
+    if (saved && typeof saved === 'object') confirmedDurations.value = saved
+  } catch {
+    // 非法数据忽略，回退空表
+  }
+}
+const persistConfirmedDurations = () => {
+  if (!import.meta.client) return
+  try {
+    localStorage.setItem(CONFIRMED_DURATIONS_KEY, JSON.stringify(confirmedDurations.value))
+  } catch {
+    // 存储失败忽略
+  }
+}
+// 记录刷新得到的权威时长：仍是疑似短片段的写入确认表，恢复正常时长的移除
+const markDurationRefreshed = (songId, durationSeconds) => {
+  const key = String(songId)
+  const seconds = Number(durationSeconds)
+  const suspicious = isSuspiciousSongDuration(seconds)
+  const previous = confirmedDurations.value[key]
+  if (suspicious ? previous === seconds : previous === undefined) return
+
+  const next = {}
+  for (const [id, value] of Object.entries(confirmedDurations.value)) {
+    if (id !== key) next[id] = value
+  }
+  if (suspicious) next[key] = seconds
+  confirmedDurations.value = next
+  persistConfirmedDurations()
+}
+const isDurationConfirmed = (song) =>
+  confirmedDurations.value[song.id] === Number(song.durationSeconds)
+
 // 行内编辑歌曲时长状态
 const editingDuration = ref({})
 const editingDurationValue = ref('')
@@ -4113,7 +4210,7 @@ let refreshAllAbortController = null
 let refreshAutoCandidatesAbortController = null
 
 // 批量刷新歌曲时长
-// source: 'pending' = 待排库（默认），'scheduled' = 播放顺序
+// source: 'pending' = 待排库当前页（默认），'scheduled' = 播放顺序，'suspicious' = 疑似试听片段的待排歌曲
 const refreshAllDurations = async (source = 'pending') => {
   // 中止上次未完成的批量刷新
   refreshAllAbortController?.abort()
@@ -4127,6 +4224,14 @@ const refreshAllDurations = async (source = 'pending') => {
     for (const schedule of localScheduledSongs.value) {
       const song = schedule.song
       if (song?.musicPlatform && song?.musicId && !seen.has(song.id)) {
+        seen.add(song.id)
+        targets.push(song)
+      }
+    }
+  } else if (source === 'suspicious') {
+    const seen = new Set()
+    for (const song of suspiciousPendingSongs.value) {
+      if (song.musicPlatform && song.musicId && !seen.has(song.id)) {
         seen.add(song.id)
         targets.push(song)
       }
@@ -4178,6 +4283,7 @@ const refreshAllDurations = async (source = 'pending') => {
       for (const poolItem of songPool.value) {
         if (poolItem.songId === song.id) poolItem.durationSeconds = dur
       }
+      markDurationRefreshed(song.id, dur)
       // 标记成功（颜色统一在全部完成后清除）
       durationRefreshStatus.value[song.id] = 'success'
       successCount++
@@ -4287,6 +4393,7 @@ const refreshAutoCandidateDurations = async () => {
       for (const p of songPool.value) {
         if (p.songId === song.id) { p.durationSeconds = dur; break }
       }
+      markDurationRefreshed(song.id, dur)
       durationRefreshStatus.value[song.id] = 'success'
       successCount++
     } else {
@@ -4420,6 +4527,24 @@ const autoSchedulePlacement = computed(() =>
 // 候选池中期望日期命中当天的歌曲数，用于提示「更容易排上」
 const autoScheduleDateHits = computed(() =>
   countExpectedDateHits(autoSchedulePlacement.value.eligible, autoScheduleOptions.value.targetDate)
+)
+
+// 待排库中时长疑似试听片段且可重新获取的歌曲，范围与「批量重新获取」一致（当前筛选下全部页码）
+const suspiciousPendingSongs = computed(() =>
+  allUnscheduledSongs.value.filter(
+    (song) =>
+      song.musicPlatform &&
+      song.musicId &&
+      isSuspiciousSongDuration(song.durationSeconds) &&
+      !isDurationConfirmed(song)
+  )
+)
+
+// 自动排期候选中时长疑似试听片段的歌曲
+const suspiciousAutoCandidates = computed(() =>
+  autoSchedulePlacement.value.eligible.filter(
+    (song) => isSuspiciousSongDuration(song.durationSeconds) && !isDurationConfirmed(song)
+  )
 )
 
 const buildPreSelected = () => autoScheduleFixedSongs.value

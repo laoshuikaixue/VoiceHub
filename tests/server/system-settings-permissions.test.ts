@@ -153,6 +153,18 @@ test('读写接口字段分区按角色把关，子接口准入由守卫表收�
   }
 })
 
+test('保存设置的响应与读取接口一致，普通管理员无法通过保存运营字段读取超管配置', () => {
+  const settings = { dailySubmissionLimit: 7, smtpHost: 'smtp.private', customOAuthClientId: 'private-client',
+    astrbotGroupTargets: '["private-group"]', legalConsentDocuments: 'private-documents' }
+  for (const source of [INDEX_GET, INDEX_POST]) {
+    const expression = source.match(/return user\.role === 'SUPER_ADMIN'[^\r\n]*/)?.[0]
+    assert.ok(expression)
+    const respond = new Function('user', 'masked', 'stripSuperAdminOnlySettingFields', expression)
+    assert.deepEqual(respond({ role: 'ADMIN' }, settings, stripSuperAdminOnlySettingFields), { dailySubmissionLimit: 7 })
+    assert.deepEqual(respond({ role: 'SUPER_ADMIN' }, settings, stripSuperAdminOnlySettingFields), settings)
+  }
+})
+
 test('普通管理员界面不含站点配置与机器人配置入口，表单不提交超管字段', () => {
   const adminPages = accessiblePages(resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT))
   assert.ok(adminPages.length, '未找到 ADMIN 可访问页面列表')

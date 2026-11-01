@@ -7,6 +7,7 @@ import {
   apiKeyPermissions,
   apiLogs,
   cardCodeRedeemLogs,
+  cardCodeAssignments,
   cardCodes,
   collaborationLogs,
   emailTemplates,
@@ -29,6 +30,9 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
+import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { maskSystemSettingsSecrets, omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 
@@ -113,9 +117,9 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
   const backupData = {
     metadata: {
       version: '1.0',
-      timestamp: new Date().toISOString(),
+      timestamp: getServerDate().toISOString(),
       backupType: 'auto',
-      description: `自动备份 - ${new Date().toISOString()}`,
+      description: `自动备份 - ${getServerDate().toISOString()}`,
       tables: [] as Array<{ name: string; description: string; recordCount: number }>,
       totalRecords: 0
     },
@@ -136,6 +140,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     songBlacklist: { query: () => db.select().from(songBlacklists), description: '歌曲黑名单' },
     votes: { query: () => db.select().from(votes), description: '投票数据' },
     cardCodes: { query: () => db.select().from(cardCodes), description: '点歌券数据' },
+    cardCodeAssignments: { query: () => db.select().from(cardCodeAssignments), description: '点歌券派发记录' },
     cardCodeRedeemLogs: { query: () => db.select().from(cardCodeRedeemLogs), description: '点歌券日志' },
     songCollaborators: { query: () => db.select().from(songCollaborators), description: '联合投稿人' },
     collaborationLogs: { query: () => db.select().from(collaborationLogs), description: '联合投稿审计日志' },
@@ -149,16 +154,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     systemSettings: {
       query: async () => {
         const rows = await db.select().from(systemSettings)
-        // 脱敏：移除敏感凭据字段，避免备份文件泄露密钥
-        const SENSITIVE_FIELDS = [
-          'smtpPassword', 'oauthStateSecret', 'githubClientSecret',
-          'casdoorClientSecret', 'googleClientSecret', 'customOAuthClientSecret',
-          'turnstileSecretKey', 'aggregateOAuthAppKey', 'autoBackupConfig'
-        ]
-        return rows.map(row => {
-          const entries = Object.entries(row).filter(([k]) => !SENSITIVE_FIELDS.includes(k))
-          return Object.fromEntries(entries)
-        })
+        return rows.map(row => omitMaskedSystemSettingsSecrets(maskSystemSettingsSecrets(row)))
       },
       description: '系统设置（已脱敏）'
     }
@@ -180,7 +176,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
 
   backupData.metadata.totalRecords = totalRecords
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const timestamp = getServerDate().toISOString().replace(/[:.]/g, '-')
   const filename = `auto-backup-${timestamp}.json`
 
   return { json: JSON.stringify(backupData, null, 2), filename, metadata: backupData.metadata }
@@ -209,7 +205,7 @@ async function ensureWebDAVDir(baseUrl: string, auth: string, dirPath: string): 
 
   for (const segment of segments) {
     currentPath += `/${segment}`
-    const response = await fetch(currentPath, {
+    const response = await fetchSafeOutbound(currentPath, {
       method: 'MKCOL',
       headers: { Authorization: `Basic ${auth}` },
       signal: AbortSignal.timeout(UPLOAD_TIMEOUT)
@@ -234,7 +230,7 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
   await ensureWebDAVDir(baseUrl, auth, dirPath)
 
   const filePath = dirPath ? `${baseUrl}/${dirPath}/${filename}` : `${baseUrl}/${filename}`
-  const response = await fetch(filePath, {
+  const response = await fetchSafeOutbound(filePath, {
     method: 'PUT',
     headers: {
       'Authorization': `Basic ${auth}`,
@@ -260,7 +256,7 @@ async function doTelegramSend(config: AutoBackupConfig['methods']['telegram'], d
   const blob = new Blob([data], { type: 'application/json' })
   formData.append('chat_id', config.chatId)
   formData.append('document', blob, filename)
-  formData.append('caption', `VoiceHub Auto Backup - ${new Date().toISOString()}`)
+  formData.append('caption', `VoiceHub Auto Backup - ${getServerDate().toISOString()}`)
 
   const response = await fetch(`https://api.telegram.org/bot${config.botToken}/sendDocument`, {
     method: 'POST',
@@ -300,7 +296,7 @@ async function doEmailSend(config: AutoBackupConfig['methods']['email'], data: s
     await transporter.sendMail({
       from: `"${settings.smtpFromName || 'VoiceHub'}" <${settings.smtpFromEmail || settings.smtpUsername}>`,
       to: config.recipient,
-      subject: `VoiceHub 自动备份 - ${new Date().toISOString()}`,
+      subject: `VoiceHub 自动备份 - ${getServerDate().toISOString()}`,
       text: '数据库自动备份文件见附件。',
       attachments: [{
         filename,
@@ -509,7 +505,8 @@ export async function cleanupOldHistory(retentionDays: number = 30): Promise<num
     return count
   }
 
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
+  const cutoff = getServerDate()
+  cutoff.setTime(cutoff.getTime() - retentionDays * 24 * 60 * 60 * 1000)
   const result = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(backupHistory)

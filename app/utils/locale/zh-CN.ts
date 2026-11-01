@@ -1476,6 +1476,7 @@ export const pages = {
     fallbackSource: '当前播放链接无效，已切换备用音源',
     slowNetworkRetry: '当前播放链接加载过慢，正在切换备用音源',
     slowNetworkFailed: '播放链接加载过慢，请检查网络后重试',
+    previewOnly: '该歌曲当前只能获取到试听片段，已尝试切换音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
     networkOffline: '网络连接已断开，请检查网络后重试',
     scheduleSyncFailed: '播放队列更新失败，当前队列已保留',
@@ -2703,6 +2704,10 @@ export const admin = {
       deselectAll: '取消全选',
       deleteCache: '删除缓存',
       preloadSong: '预下载此歌曲',
+      durationMismatchTip: (actual: string, recorded: string) =>
+        `实测时长 ${actual}，系统记录 ${recorded}，请检查时长`,
+      preloadDurationMismatchCount: (count: number) =>
+        `${count} 首歌曲实测时长与系统记录不一致，请检查`,
       emptySongs: '暂无歌曲',
       processProgress: '处理进度',
       downloadProgress: '下载进度',
@@ -2972,6 +2977,7 @@ export const admin = {
     replay: '重播',
     crossSemester: '跨学期',
     requesterPrefix: '投稿人：',
+    anonymousRequester: '匿名投稿',
     replayRequestsPrefix: '申请重播：',
     popularityPrefix: '热度：',
     replayCount: (count: number) => `${count}人`,
@@ -3308,6 +3314,10 @@ export const admin = {
       candidateDurationsSkipped: '当前无候选歌曲可刷新时长',
       confirmAutoScheduleApplied: (count, duration) =>
         `已自动排期 ${count} 首歌曲，合计 ${duration}`,
+      suspiciousDurationTitle: (count) => `发现 ${count} 首歌曲时长疑似试听片段`,
+      suspiciousDurationDesc: (seconds) =>
+        `时长不超过 ${seconds} 秒，可能只获取到试听片段；重新获取会按音源元数据校正。`,
+      suspiciousDurationAction: '批量重新获取',
       allDurationsProgressTotal: '{0} 首歌',
       allDurationsProgressWithCount: '{0}/{1}（成功{2} 失败{3}）',
       candidateDurationsProgressTotal: '{0} 首歌',
@@ -5530,6 +5540,7 @@ export const serverErrors = {
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
   BACKUP_DISABLED: '自动备份未启用',
   MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
+  MUSIC_URL_RESOLVE_FAILED: '播放链接解析失败，请稍后重试',
   QQ_COMMENT_FETCH_FAILED: 'QQ 音乐评论获取失败，请稍后重试',
   PLUGIN_INVALID_CONFIG: '音源插件配置无效',
   PLUGIN_CONFIG_CONFLICT: '配置已被修改，请刷新后重试',

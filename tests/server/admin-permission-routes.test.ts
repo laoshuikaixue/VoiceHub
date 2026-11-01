@@ -220,7 +220,8 @@ const DATA_LEVEL_ROLE_CHECKS: Record<string, number> = {
   'backup/restore-chunk.post.ts': 1,
   'backup/restore.post.ts': 1,
   'schedule/song-pool.get.ts': 1,
-  'system-settings/index.post.ts': 1,
+  // 提交字段的超管校验 + 保存响应的字段分区（防止普通管理员从保存返回值读到超管配置）
+  'system-settings/index.post.ts': 2,
   'system-settings/index.ts': 1,
   'users/[id]/reset-password.post.ts': 1,
   'users/[id].delete.ts': 1,

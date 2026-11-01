@@ -124,9 +124,16 @@
             </div>
 
             <div v-else class="song-list space-y-1.5">
+              <template v-for="(song, index) in displaySongs" :key="song.songmid">
+                <div
+                  v-if="discHeaderAt(index)"
+                  class="flex items-center gap-2 pt-2.5 pb-1 text-[10px] font-black uppercase tracking-widest text-text-tertiary"
+                >
+                  <Icon name="disc" :size="12" />
+                  <span>{{ discHeaderAt(index) }}</span>
+                  <span class="flex-1 h-px bg-bg-quaternary" />
+                </div>
               <div
-                v-for="(song, index) in filteredSongs"
-                :key="song.songmid"
                 class="group flex items-center p-2 sm:p-3 rounded-2xl transition-all"
                 :class="[
                   isCurrentSong(song)
@@ -248,6 +255,7 @@
                   </template>
                 </div>
               </div>
+              </template>
             </div>
           </div>
         </div>
@@ -298,6 +306,18 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { getCoverThumbUrl } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { normalizeForMatch as normalizeStr } from '~/utils/song-name-normalize'
+
+/**
+ * 解析网易云 cd 字段，取值形如 "01"、"CD2"、"1 名称"
+ * cd 缺失时归为第 1 组
+ */
+const parseDisc = (cd) => {
+  const match = String(cd ?? '').trim().match(/^(?:cd|disc)?\s*(\d+)\s*(.*)$/i)
+  if (!match) return { disc: 1, discTitle: '' }
+  // 剔除碟名前的分隔符，避免 "2/2" 这类值拼出 "CD 2 · /2"
+  const discTitle = match[2].replace(/^[\s/\-·]+/, '')
+  return { disc: Number(match[1]) || 1, discTitle }
+}
 
 const props = defineProps({
   show: Boolean,
@@ -388,6 +408,23 @@ const filteredSongs = computed(() => {
   )
 })
 
+/** 多 CD 专辑才分组展示，单 CD 保持接口原始顺序 */
+const showDiscHeaders = computed(() => new Set(filteredSongs.value.map(s => s.disc)).size > 1)
+
+/** 多 CD 时按 CD 号、组内曲序排序，保证同组曲目相邻 */
+const displaySongs = computed(() => {
+  if (!showDiscHeaders.value) return filteredSongs.value
+  return [...filteredSongs.value].sort((a, b) => a.disc - b.disc || a.trackNumber - b.trackNumber)
+})
+
+/** 第 index 条前需要插入的分组标题，无需插入时返回空串 */
+const discHeaderAt = (index) => {
+  if (!showDiscHeaders.value) return ''
+  const song = displaySongs.value[index]
+  if (index > 0 && displaySongs.value[index - 1].disc === song.disc) return ''
+  return song.discTitle ? `CD ${song.disc} · ${song.discTitle}` : `CD ${song.disc}`
+}
+
 // 监听显示状态和专辑ID变化，加载专辑详情
 watch(
   [() => props.show, () => props.albumId],
@@ -448,6 +485,7 @@ const loadAlbumDetails = async () => {
         songs.value = response.songs.map((item, i) => {
           const singerName = item.ar?.map(a => a?.name).filter(Boolean).join('/') || locale.value.unknownArtist
           const durationMs = item.dt || 0
+          const { disc, discTitle } = parseDisc(item.cd)
           return {
             songmid: item.id,
             name: item.name,
@@ -458,6 +496,8 @@ const loadAlbumDetails = async () => {
             interval: formatTime(Math.floor(durationMs / 1000)),
             duration: durationMs / 1000,
             trackNumber: item.no || i + 1,
+            disc,
+            discTitle,
             source: 'netease'
           }
         })

@@ -85,12 +85,10 @@ export const useSongPlayer = () => {
     try {
       let url = null
 
-      // 如果有手动填入的 playUrl，优先使用它（统一处理所有平台）
-      if (song.playUrl && song.playUrl.trim()) {
-        url = song.playUrl.trim()
-      } else if (!isBilibiliSong(song)) {
-        // 如果不是哔哩哔哩歌曲且没有手动 playUrl，通过 API 获取 URL
+      // 平台歌曲按登录态取链，自定义链接由统一解析器兜底。
+      if (!isBilibiliSong(song)) {
         url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, {
+          preferPlatformResolve: true,
           musicInfo: {
             name: song.title,
             artist: song.artist,
@@ -98,6 +96,8 @@ export const useSongPlayer = () => {
             rawItem: song
           }
         })
+      } else if (song.playUrl && song.playUrl.trim()) {
+        url = song.playUrl.trim()
       }
       // 如果是哔哩哔哩歌曲且没有手动 playUrl，url 保持为 null，播放器会处理
 

@@ -1,4 +1,6 @@
 import { createHash, createHmac } from 'crypto'
+import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 /** S3 请求超时（毫秒） */
 const S3_TIMEOUT = 120_000
@@ -33,7 +35,7 @@ export async function uploadToS3(
   const url = new URL(endpoint)
   const host = url.host
   const service = 's3'
-  const now = new Date()
+  const now = getServerDate()
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
   const dateStamp = amzDate.slice(0, 8)
 
@@ -60,7 +62,7 @@ export async function uploadToS3(
   const authorization = `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
 
   // 发送请求
-  const response = await fetch(`${endpoint.replace(/\/$/, '')}/${bucket}/${key}`, {
+  const response = await fetchSafeOutbound(`${endpoint.replace(/\/$/, '')}/${bucket}/${key}`, {
     method: 'PUT',
     headers: {
       'Content-Type': contentType,
@@ -92,7 +94,7 @@ export async function deleteFromS3(
   const url = new URL(endpoint)
   const host = url.host
   const service = 's3'
-  const now = new Date()
+  const now = getServerDate()
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
   const dateStamp = amzDate.slice(0, 8)
 
@@ -107,7 +109,7 @@ export async function deleteFromS3(
   const signature = hmacSha256(signingKey, stringToSign).toString('hex')
   const authorization = `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
 
-  const response = await fetch(`${endpoint.replace(/\/$/, '')}/${bucket}/${key}`, {
+  const response = await fetchSafeOutbound(`${endpoint.replace(/\/$/, '')}/${bucket}/${key}`, {
     method: 'DELETE',
     headers: {
       'Host': host,

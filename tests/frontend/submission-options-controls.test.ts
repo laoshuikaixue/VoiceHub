@@ -11,6 +11,14 @@ const { parse, compileScript } = require('vue/compiler-sfc')
 const root = new URL('../../', import.meta.url)
 const clock = () => new Date('2026-10-26T16:45:12.000Z')
 
+test('播出日期拒绝日历溢出，保留有效闰日与北京星期', () => {
+  for (const value of ['2026-02-29', '2026-02-31', '2026-04-31', '2026-13-01', '2026-00-01', '2026-01-00']) {
+    assert.equal(getBeijingWeekday(value), null, value)
+  }
+  assert.equal(getBeijingWeekday('2028-02-29'), 2)
+  assert.equal(getBeijingWeekday('2026-10-31'), 6)
+})
+
 function setup(file: string, names: string[], globals: Record<string, unknown>) {
   const source = readFileSync(new URL(file, root), 'utf8')
   const { descriptor } = parse(source)

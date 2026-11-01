@@ -44,11 +44,14 @@ test('空凭据字段保持原值', () => {
 })
 
 test('自动备份产物剔除凭据字段', () => {
-  const sensitive = AUTO_BACKUP.match(/const SENSITIVE_FIELDS = \[([\s\S]*?)\]/)?.[1] ?? ''
-  assert.ok(sensitive, '自动备份缺少敏感字段清单')
-  for (const field of ['smtpPassword', 'oauthStateSecret', 'aggregateOAuthAppKey', 'autoBackupConfig']) {
-    assert.match(sensitive, new RegExp(`'${field}'`), `自动备份应剔除 ${field}`)
+  assert.match(AUTO_BACKUP, /omitMaskedSystemSettingsSecrets\(maskSystemSettingsSecrets\(row\)\)/)
+  const settings = { siteTitle: 'VoiceHub', smtpPassword: 'smtp', astrbotToken: 'bot', oauthStateSecret: 'state',
+    aggregateOAuthAppKey: 'app', autoBackupConfig: 'backup' }
+  const cleaned = omitMaskedSystemSettingsSecrets(maskSystemSettingsSecrets(settings))
+  for (const field of ['smtpPassword', 'astrbotToken', 'oauthStateSecret', 'aggregateOAuthAppKey', 'autoBackupConfig']) {
+    assert.ok(!(field in cleaned), field)
   }
+  assert.equal(cleaned.siteTitle, 'VoiceHub')
 })
 
 test('手动导出保持全量系统设置', () => {

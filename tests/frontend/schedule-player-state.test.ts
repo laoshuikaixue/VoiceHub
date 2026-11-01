@@ -4,20 +4,28 @@ import { build } from 'esbuild'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { createRenderer, ref } from 'vue'
 import type { useAudioPlayer } from '../../app/composables/useAudioPlayer'
 import type { useAudioPlayerControl } from '../../app/composables/useAudioPlayerControl'
 import type { useAudioPlayerSync } from '../../app/composables/useAudioPlayerSync'
+import type { useSongPlayer } from '../../app/composables/useSongPlayer'
 import type { useSchedulePlaylistSync, notifySchedulePlaylistChanged } from '../../app/composables/useSchedulePlaylistSync'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const require = createRequire(import.meta.url)
+const musicUrlSource = readFileSync(new URL('../../app/utils/musicUrl.ts', import.meta.url), 'utf8')
+const musicUrlWrapper = musicUrlSource.slice(musicUrlSource.indexOf('export async function getMusicUrl('))
 const dependencies: Record<string, string> = {
   '~/utils/locale': "export const useLocale = () => ({ audioPlayer: { value: { consecutiveFailures: '连续失败', networkOffline: '断网', nextFailed: '下一首失败', previousFailed: '上一首失败', scheduleSyncFailed: '队列更新失败', scheduleSyncAuthChanged: '身份变化' } } })",
   '~/composables/useMusicSources': 'export const useMusicSources = () => ({ getLyrics: async () => null })',
   '~/composables/useLyricSettings': "export const useLyricSettings = () => ({ lyricPriority: { value: 'auto' } })",
   '~/utils/bilibiliSource': "export const isBilibiliSong = song => song.musicPlatform === 'bilibili'",
-  '~/utils/musicUrl': 'export const getMusicUrl = (...args) => globalThis.__resolveScheduleTestMusic(...args)',
+  '~/utils/musicUrl': `import { PLATFORM_AUTHORIZED_PLATFORMS } from '~/utils/platforms';
+    const getMusicUrlResult = async (...args) => ({ url: args[2]?.trim() && !args[3]?.ignoreProvidedUrl
+      ? args[2].trim() : await globalThis.__resolveScheduleTestMusic(...args) });
+    ${musicUrlWrapper}`,
+  '~/composables/useToast': 'export const useToast = () => ({ showToast() {} })',
   '~/composables/useAudioQuality': 'export const useAudioQuality = () => ({})',
   '~/composables/useLyrics': 'export const useLyrics = () => ({ clearLyrics() {}, fetchLyrics: async () => null })',
   '~/composables/useMusicWebSocket': 'export const useMusicWebSocket = () => ({})',
@@ -25,20 +33,20 @@ const dependencies: Record<string, string> = {
   '~/composables/useLocaleText': "export const useServerErrors = () => ({ localize: (_error, fallback) => fallback || '服务端错误' })"
 }
 const result = await build({
-  stdin: { contents: "export { useAudioPlayer } from './app/composables/useAudioPlayer'; export { useAudioPlayerControl } from './app/composables/useAudioPlayerControl'; export { useAudioPlayerSync } from './app/composables/useAudioPlayerSync'; export { useSchedulePlaylistSync, notifySchedulePlaylistChanged } from './app/composables/useSchedulePlaylistSync'", resolveDir: root },
+  stdin: { contents: "export { useAudioPlayer } from './app/composables/useAudioPlayer'; export { useAudioPlayerControl } from './app/composables/useAudioPlayerControl'; export { useAudioPlayerSync } from './app/composables/useAudioPlayerSync'; export { useSongPlayer } from './app/composables/useSongPlayer'; export { useSchedulePlaylistSync, notifySchedulePlaylistChanged } from './app/composables/useSchedulePlaylistSync'", resolveDir: root },
   bundle: true, platform: 'node', format: 'cjs', packages: 'external', write: false,
   define: { 'import.meta.client': 'false', 'import.meta.server': 'false' },
   plugins: [{ name: '播放器外部依赖', setup(builder) {
-    builder.onResolve({ filter: /^(~\/|\.\/use(?:Auth|LocaleText)$)/ }, (args) => {
+    builder.onResolve({ filter: /^(~\/|\.\/use(?:Auth|LocaleText|Toast)$)/ }, (args) => {
       const path = args.path.startsWith('./') ? '~/composables/' + args.path.slice(2) : args.path
       return path in dependencies
         ? { path, namespace: 'fixture' }
         : { path: resolve(root, 'app', path.slice(2) + '.ts') }
     })
-    builder.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({ contents: dependencies[args.path], loader: 'js' }))
+    builder.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({ contents: dependencies[args.path], loader: 'ts' }))
   }}]
 })
-const module = { exports: {} as { useAudioPlayer: typeof useAudioPlayer; useAudioPlayerControl: typeof useAudioPlayerControl; useAudioPlayerSync: typeof useAudioPlayerSync; useSchedulePlaylistSync: typeof useSchedulePlaylistSync; notifySchedulePlaylistChanged: typeof notifySchedulePlaylistChanged } }
+const module = { exports: {} as { useAudioPlayer: typeof useAudioPlayer; useAudioPlayerControl: typeof useAudioPlayerControl; useAudioPlayerSync: typeof useAudioPlayerSync; useSongPlayer: typeof useSongPlayer; useSchedulePlaylistSync: typeof useSchedulePlaylistSync; notifySchedulePlaylistChanged: typeof notifySchedulePlaylistChanged } }
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports)
 const authUser = ref<{ id: number; role: string } | null>({ id: 1, role: 'SUPER_ADMIN' })
 Object.assign(globalThis, { window: { navigator: { userAgent: '播放器测试' }, $showNotification() {} }, useRuntimeConfig: () => ({ public: { isServerless: false } }), __resolveScheduleTestMusic: async () => '/audio/resolved.wav', __scheduleSyncTestAuth: { user: authUser, getAuthConfig: () => ({}) } })
@@ -588,3 +596,83 @@ test('本页队列读取失败保留队列并本地化提示，不重试或提�
     assert.deepEqual(notices, ['队列更新失败'])
   } finally { app.unmount(); player.stopSong() }
 })
+
+test('首次点击平台歌曲先重新取链，失败后才使用旧链接', async () => {
+  const entry = module.exports.useSongPlayer()
+  const calls: unknown[][] = []
+  const song = { id: 1001, title: '平台歌曲', artist: '测试', musicPlatform: 'tencent', musicId: 'mid',
+    playUrl: 'https://audio.example/preview.mp3' }
+  player.stopSong()
+  Object.assign(globalThis, { __resolveScheduleTestMusic: async (...args: unknown[]) => {
+    calls.push(args)
+    return 'https://audio.example/full.mp3'
+  } })
+  await entry.playSong(song)
+  assert.equal(player.getCurrentSong().value?.musicUrl, 'https://audio.example/full.mp3')
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0][2], undefined)
+  assert.equal((calls[0][3] as { preferPlatformResolve: boolean }).preferPlatformResolve, true)
+
+  player.stopSong()
+  Object.assign(globalThis, { __resolveScheduleTestMusic: async () => { throw new Error('平台暂不可用') } })
+  await entry.playSong(song)
+  assert.equal(player.getCurrentSong().value?.musicUrl, song.playUrl)
+  player.stopSong()
+})
+
+test('首次点击自定义链接、B站和插件链接保持直接播放', async () => {
+  const entry = module.exports.useSongPlayer()
+  Object.assign(globalThis, { __resolveScheduleTestMusic: async () => { throw new Error('不应重新取链') } })
+  for (const musicPlatform of [undefined, 'unknown', 'bilibili', 'plugin:test']) {
+    player.stopSong()
+    const song = { id: 1002, title: '自定义链接', artist: '测试', musicPlatform,
+      playUrl: ' https://audio.example/custom.mp3 ' }
+    await entry.playSong(song)
+    assert.equal(player.getCurrentSong().value?.musicUrl, song.playUrl.trim())
+  }
+  player.stopSong()
+})
+
+test('控制器直接加载平台歌曲也优先按登录态取链', async () => {
+  const calls: unknown[][] = []
+  Object.assign(globalThis, { __resolveScheduleTestMusic: async (...args: unknown[]) => {
+    calls.push(args)
+    return 'https://audio.example/full.mp3'
+  } })
+  class AudioFixture extends EventTarget {
+    src = ''
+    volume = 1
+    readyState = 4
+    pause() {}
+    load() { queueMicrotask(() => this.dispatchEvent(new Event('canplay'))) }
+    play() { return Promise.resolve() }
+  }
+  const audio = new AudioFixture()
+  control.setAudioPlayerRef(audio as unknown as HTMLAudioElement)
+  try {
+    assert.equal(await control.loadSong({ id: 1003, title: '直接起播', artist: '测试', musicPlatform: 'netease',
+      musicId: '123', playUrl: 'https://audio.example/old.mp3' }), true)
+    assert.equal(audio.src, 'https://audio.example/full.mp3')
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0][2], undefined)
+    assert.equal((calls[0][3] as { preferPlatformResolve: boolean }).preferPlatformResolve, true)
+  } finally { control.setAudioPlayerRef(null); player.stopSong() }
+})
+
+for (const direction of [1, -1] as const) {
+  test(`排期${direction === 1 ? '下一首' : '上一首'}保留纯自定义链接与B站链接`, async () => {
+    Object.assign(globalThis, { __resolveScheduleTestMusic: async () => { throw new Error('不应解析自定义链接') } })
+    for (const musicPlatform of [undefined, 'unknown', 'bilibili']) {
+      const first = item(1)
+      const custom = { ...item(2), song: { id: 2, title: '自定义歌曲', artist: '测试', musicPlatform,
+        musicId: null, playUrl: ' https://audio.example/custom.mp3 ' } }
+      const queue = direction === 1 ? [first, custom] : [custom, first]
+      player.stopSong()
+      player.playScheduleSong(first.song, queue, source, direction === 1 ? 0 : 1)
+      assert.equal(await (direction === 1 ? player.playNext() : player.playPrevious()), true)
+      assert.equal(player.getCurrentSong().value?.id, 2)
+      assert.equal(player.getCurrentSong().value?.musicUrl, custom.song.playUrl.trim())
+    }
+    player.stopSong()
+  })
+}

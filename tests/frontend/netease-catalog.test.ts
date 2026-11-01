@@ -96,7 +96,6 @@ async function bundleModule<T>(entry: string, fetcher: (request: Request) => unk
     './usePlatformConfig': 'export const usePlatformConfig=()=>({enabledPlatforms:{value:["netease","tencent","bilibili"]}})',
     './useLocaleText': 'export const useServerErrors=()=>({localize:()=>"错误"});export const useLocaleText=()=>({t:(key,fallback,requested,actual)=>`请求${requested}，当前音质：${actual}`})',
     '~/utils/locale': 'export const useLocale=()=>({audioPlayer:{value:{}},ui:{value:{audioQuality:{unknown:"音质未知",levels:{standard:"标准",higher:"较高",exhigh:"HQ极高",hires:"Hi-Res"},options:{standard:{label:"标准"},neteaseHq:{label:"HQ极高"},neteaseHiRes:{label:"Hi-Res"}}}}}})',
-    '~/utils/platforms': 'export const getPlatformDisplayName=()=>"网易云"',
     '~/utils/pluginPlatform': 'export const getPluginId=()=>{};export const getPluginQuality=x=>x;export const isPluginPlatform=()=>false;export const LEGACY_PLUGIN_PLATFORM_PREFIX="musicfree:";export const PLUGIN_PLATFORM_PREFIX="plugin:"',
     '~/utils/neteaseApi': 'export const getLoginStatus=async()=>({})',
     ...overrides

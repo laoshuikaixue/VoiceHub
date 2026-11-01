@@ -9,6 +9,14 @@ import { LEGACY_PLUGIN_PLATFORM_PREFIX, PLUGIN_PLATFORM_PREFIX, getPluginId } fr
 // 受管理员控制的“内置”音源：可被启用/禁用、排序（音源管理后台），也是入库配置的白名单
 export const BUILTIN_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
 
+// 播放直链由平台授权决定的音源（不含 B 站视频音轨，加上网易云播客）：
+// 库里存的链接可能只是试听片段或已失效，播放时需按当前登录态重新取链
+// 新增内置音源时无需改动，B 站以外的音源默认参与
+export const PLATFORM_AUTHORIZED_PLATFORMS: readonly string[] = [
+  ...BUILTIN_PLATFORMS.filter((platform) => platform !== 'bilibili'),
+  'netease-podcast'
+]
+
 // 平台显示名键 → 国际化文案键（按 siteConfig 段）
 export const PLATFORM_NAME_KEYS = {
   netease: 'platformNetease',
