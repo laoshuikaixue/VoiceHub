@@ -4,10 +4,13 @@ import {
   ADMIN_CONSOLE_ROLES,
   MANAGER_ROLES,
   PAGE_PERMISSIONS,
+  PRIV_GRANT,
+  PRIV_ROLE_TEMPLATE,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
   canAccessAdminConsole,
   canAccessAdminPage,
   hasAnyPermission,
+  hasPermission,
   resolveEffectivePermissions
 } from '~/utils/admin-permissions'
 
@@ -51,6 +54,10 @@ export const usePermissions = () => {
   // 检查是否可以打印排期
   const canPrintSchedule = computed(() => hasAnyPermission(perms.value, ['schedule:read']))
 
+  // 授权能力：编辑角色模板（权限矩阵）/ 按用户显式授权
+  const canManageRoleTemplates = computed(() => hasPermission(perms.value, PRIV_ROLE_TEMPLATE))
+  const canGrantPermissions = computed(() => hasPermission(perms.value, PRIV_GRANT))
+
   return {
     // 权限码
     perms,
@@ -70,6 +77,8 @@ export const usePermissions = () => {
 
     // 功能权限
     canPrintSchedule,
+    canManageRoleTemplates,
+    canGrantPermissions,
 
     // 用户管理权限
     canManageUserRole

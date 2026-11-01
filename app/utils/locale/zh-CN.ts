@@ -760,7 +760,8 @@ export const pages = {
       database: '数据库操作',
       'api-keys': 'API密钥管理',
       'card-codes': '点歌券管理',
-      'system-board': '系统看板'
+      'system-board': '系统看板',
+      permissions: '权限矩阵'
     },
     roles: {
       USER: '普通用户',
@@ -2165,6 +2166,7 @@ export const admin = {
       siteConfig: '站点配置',
       database: '数据库操作',
       systemBoard: '系统看板',
+      permissions: '权限矩阵',
       password: '修改密码'
     },
     roles: {
@@ -2173,6 +2175,72 @@ export const admin = {
       ADMIN: '管理员',
       SUPER_ADMIN: '超级管理员'
     }
+  },
+  permissionMatrix: {
+    title: '权限矩阵',
+    desc: '按角色维护权限码模板；用户显式授权在角色模板之上叠加，显式拒绝优先',
+    code: '权限码',
+    holders: '持有者',
+    protectedBadge: '站点级',
+    changed: '与内置默认模板不同',
+    save: '保存模板',
+    saving: '保存中',
+    resetDefault: '恢复内置默认',
+    loading: '加载权限矩阵…',
+    superAdminNote:
+      '站点级权限（后台准入、模板编辑、按用户授权）受安全阀保护：不能撤销自己的站点级权限，也不能将其移出最后一个持有者。',
+    activeHolders: '后台活跃用户',
+    explicitGrantUsers: '显式授权用户',
+    customizedRoles: '已自定义角色',
+    unsavedRoles: '未保存角色',
+    saved: '角色权限模板已保存',
+    resetHint: '已填入内置默认，保存后生效',
+    loadFailed: '加载权限矩阵失败',
+    saveFailed: '保存角色权限模板失败',
+    domainFallback: '{0}',
+    domains: {
+      priv: '站点级能力',
+      activities: '活动',
+      songs: '点歌',
+      schedule: '排期',
+      stats: '统计',
+      'play-times': '播出时段',
+      'request-times': '投稿时段',
+      semesters: '学期',
+      'card-codes': '点歌券',
+      'replay-requests': '重播申请',
+      users: '用户',
+      'grade-class': '年级班级',
+      blacklist: '黑名单',
+      'system-settings': '系统设置',
+      notifications: '通知',
+      smtp: '推送服务',
+      'email-templates': '邮件模板',
+      'system-board': '系统看板',
+      'api-keys': 'API 密钥',
+      backup: '备份',
+      database: '数据库',
+      'music-source-plugins': '音源插件',
+      page: '后台页面入口'
+    }
+  },
+  userPermissions: {
+    title: '显式授权',
+    loading: '加载权限配置…',
+    followTemplate: '跟随角色模板',
+    followTemplateDesc: '关闭后可为该用户单独授予或拒绝权限码，角色模板仍然生效',
+    grantCount: '显式授予 {0}',
+    denyCount: '显式拒绝 {0}',
+    effectiveCount: '有效权限 {0}',
+    fromTemplate: '模板',
+    protectedBadge: '站点级',
+    cannotGrant: '自己没有该权限码，无法授予或拒绝',
+    cancel: '取消',
+    save: '保存授权',
+    saving: '保存中',
+    saved: '用户显式授权已保存',
+    loadFailed: '加载用户权限配置失败',
+    saveFailed: '保存用户显式授权失败'
   },
   systemBoard: {
     title: '系统看板',
@@ -4615,6 +4683,7 @@ export const admin = {
       edit: '编辑',
       editUser: '编辑用户',
       viewSongs: '查看歌曲',
+      permissions: '显式授权',
       records: '记录',
       reset: '重置',
       resetPassword: '重置密码',

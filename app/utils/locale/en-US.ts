@@ -782,7 +782,8 @@ export const pages = {
       database: 'Database Operations',
       'api-keys': 'API Key Management',
       'card-codes': 'Card Codes',
-      'system-board': 'System Board'
+      'system-board': 'System Board',
+      permissions: 'Permissions'
     },
     roles: {
       USER: 'User',
@@ -2220,6 +2221,7 @@ export const admin = {
       siteConfig: 'Site Config',
       database: 'Database',
       systemBoard: 'System Board',
+      permissions: 'Permissions',
       password: 'Change Password'
     },
     roles: {
@@ -2228,6 +2230,72 @@ export const admin = {
       ADMIN: 'Admin',
       SUPER_ADMIN: 'Super Admin'
     }
+  },
+  permissionMatrix: {
+    title: 'Permissions',
+    desc: 'Role templates of permission codes. Per-user grants are added on top of the role template; explicit denies win.',
+    code: 'Code',
+    holders: 'Holders',
+    protectedBadge: 'Site',
+    changed: 'Differs from built-in default',
+    save: 'Save',
+    saving: 'Saving',
+    resetDefault: 'Restore defaults',
+    loading: 'Loading permission matrix…',
+    superAdminNote:
+      'Site-level capabilities (console access, template editing, per-user grants) are guarded: you cannot revoke your own, nor remove one from its last holder.',
+    activeHolders: 'Active Admins',
+    explicitGrantUsers: 'Explicit Grants',
+    customizedRoles: 'Customized',
+    unsavedRoles: 'Unsaved',
+    saved: 'Role templates saved',
+    resetHint: 'Built-in defaults loaded; save to apply',
+    loadFailed: 'Failed to load permission matrix',
+    saveFailed: 'Failed to save role templates',
+    domainFallback: '{0}',
+    domains: {
+      priv: 'Site Capabilities',
+      activities: 'Activities',
+      songs: 'Songs',
+      schedule: 'Schedule',
+      stats: 'Statistics',
+      'play-times': 'Play Times',
+      'request-times': 'Request Times',
+      semesters: 'Semesters',
+      'card-codes': 'Request Cards',
+      'replay-requests': 'Replay Requests',
+      users: 'Users',
+      'grade-class': 'Grade / Class',
+      blacklist: 'Blacklist',
+      'system-settings': 'System Settings',
+      notifications: 'Notifications',
+      smtp: 'Mail Service',
+      'email-templates': 'Email Templates',
+      'system-board': 'System Board',
+      'api-keys': 'API Keys',
+      backup: 'Backup',
+      database: 'Database',
+      'music-source-plugins': 'Source Plugins',
+      page: 'Admin Pages'
+    }
+  },
+  userPermissions: {
+    title: 'Explicit Grants',
+    loading: 'Loading permissions…',
+    followTemplate: 'Follow role template',
+    followTemplateDesc: 'Turn off to grant or deny codes for this user only; the role template still applies.',
+    grantCount: 'Granted {0}',
+    denyCount: 'Denied {0}',
+    effectiveCount: 'Effective {0}',
+    fromTemplate: 'Role',
+    protectedBadge: 'Site',
+    cannotGrant: 'You do not hold this code, so it cannot be granted or denied',
+    cancel: 'Cancel',
+    save: 'Save grants',
+    saving: 'Saving',
+    saved: 'Explicit grants saved',
+    loadFailed: 'Failed to load user permissions',
+    saveFailed: 'Failed to save explicit grants'
   },
   systemBoard: {
     title: 'System Board',
@@ -4767,6 +4835,7 @@ export const admin = {
       edit: 'Edit',
       editUser: 'Edit User',
       viewSongs: 'View Songs',
+      permissions: 'Grants',
       records: 'Records',
       reset: 'Reset',
       resetPassword: 'Reset Password',

@@ -205,6 +205,14 @@
             >
               <LazyAdminSystemBoard />
             </div>
+
+            <!-- 权限矩阵 -->
+            <div
+              v-if="activeTab === 'permissions' && permissions.canAccessPage('permissions')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminPermissionMatrix />
+            </div>
           </div>
         </main>
       </div>

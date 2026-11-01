@@ -777,6 +777,7 @@ VoiceHub/
 │   │   │   ├── OAuthBindingsModal.vue # OAuth 绑定详情弹窗
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
+│   │   │   ├── PermissionMatrix.vue  # 权限矩阵页（角色模板编辑 + 安全阀提示）
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
 │   │   │   ├── RequestTimeManager.vue # 投稿开放时段 & 重复投稿限制管理
 │   │   │   ├── ScheduleForm.vue       # 排期表单
@@ -799,6 +800,7 @@ VoiceHub/
 │   │   │   ├── UserApprovalModal.vue  # 用户注册审核弹窗
 │   │   │   ├── UserExportModal.vue    # 用户导出弹窗
 │   │   │   ├── GradeClassManager.vue  # 年级班级配置管理
+│   │   │   ├── UserPermissionsModal.vue # 按用户显式授权弹窗
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
 │   │   ├── AMLL/              # Apple Music-Like Lyrics组件
@@ -1131,6 +1133,9 @@ VoiceHub/
 │   │   │   │   │   └── [batchId].put.ts # 修改通知批次
 │   │   │   │   ├── history.get.ts   # 查询按发送批次归类的通知历史
 │   │   │   │   └── send.post.ts     # 发送通知
+│   │   │   ├── permissions/         # 权限矩阵API
+│   │   │   │   ├── matrix.get.ts    # 读取角色权限模板与持有者统计
+│   │   │   │   └── matrix.put.ts    # 保存角色权限模板（安全阀校验）
 │   │   │   ├── play-times/          # 播放时间管理API
 │   │   │   │   ├── [id].ts          # 播放时间操作
 │   │   │   │   ├── index.post.ts    # 创建播放时间
@@ -1195,6 +1200,8 @@ VoiceHub/
 │   │   │   │   └── runtime-clear.post.ts # 清空运行事件缓冲
 │   │   │   └── users/               # 用户管理API
 │   │   │       ├── [id]/            # 用户详情操作子目录
+│   │   │       │   ├── permissions.get.ts # 读取用户显式授权与有效权限
+│   │   │       │   ├── permissions.put.ts # 设置用户显式授权（越权与安全阀校验）
 │   │   │       │   ├── reset-password.post.ts # 重置用户密码
 │   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
 │   │   │       │   ├── status-logs.get.ts # 获取用户状态变更日志
@@ -1476,6 +1483,8 @@ VoiceHub/
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
+│   │   ├── permission-admin.ts # 权限矩阵数据层（持有者统计、模板读写、策略结果转 API 错误）
+│   │   ├── permission-policy.ts # 权限模板/显式授权校验与安全阀纯策略
 │   │   ├── jwt-enhanced.ts # JWT工具
 │   │   ├── log-manager.ts  # 日志管理工具
 │   │   ├── music-source-plugins/ # LX Music 与 MusicFree 音源插件运行时、沙箱与凭证管理

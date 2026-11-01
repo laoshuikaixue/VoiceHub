@@ -398,6 +398,14 @@
                       <Music :size="13" />
                     </button>
                     <button
+                      v-if="canGrantPermissions"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors action-btn flex items-center justify-center"
+                      :title="locale.actions.permissions"
+                      @click="openPermissionsModal(user)"
+                    >
+                      <ShieldCheck :size="13" />
+                    </button>
+                    <button
                       :disabled="!canManageUser(user)"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-warning transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn flex items-center justify-center"
                       :title="locale.actions.resetPassword"
@@ -1144,6 +1152,14 @@
       @close="closeUserSongsModal"
     />
 
+    <!-- 用户显式授权模态框 -->
+    <UserPermissionsModal
+      :show="showPermissionsModal"
+      :user="permissionUser"
+      @close="closePermissionsModal"
+      @saved="loadUsers"
+    />
+
 <!-- 用户注册审核模态框 -->
     <UserApprovalModal
       :show="showApprovalModal"
@@ -1606,6 +1622,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Check,
@@ -1647,6 +1664,7 @@ import {
   Upload,
   UserCog,
   ShieldAlert,
+  ShieldCheck,
   Calendar,
   Clock3,
   Hash,
@@ -1658,6 +1676,7 @@ import {
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
+import UserPermissionsModal from '~/components/Admin/UserPermissionsModal.vue'
 import OAuthBindingsModal from '~/components/Admin/OAuthBindingsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import UserExportModal from '~/components/Admin/UserExportModal.vue'
@@ -1807,6 +1826,9 @@ const deleting = ref(false)
 
 // 用户歌曲模态框状态
 const showUserSongsModal = ref(false)
+// 显式授权弹窗状态
+const showPermissionsModal = ref(false)
+const permissionUser = ref(null)
 const selectedUserId = ref(null)
 
 // 头像加载错误状态管理
@@ -1851,6 +1873,7 @@ const passwordForm = ref({
 
 // 服务
 const auth = useAuth()
+const { canGrantPermissions } = usePermissions()
 const { localize } = useServerErrors()
 
 // 判断是否为当前登录用户
@@ -2223,6 +2246,16 @@ const viewUserSongs = (user) => {
 const closeUserSongsModal = () => {
   showUserSongsModal.value = false
   selectedUserId.value = null
+}
+
+const openPermissionsModal = (user) => {
+  permissionUser.value = user
+  showPermissionsModal.value = true
+}
+
+const closePermissionsModal = () => {
+  showPermissionsModal.value = false
+  permissionUser.value = null
 }
 
 const showUserDetail = (user, event) => {
