@@ -28,7 +28,7 @@
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableRequest }}</span
           >
-          <button :disabled="!(can('request-times:write') || can('system-settings:write'))"
+          <button :disabled="(!(can('request-times:write') || can('system-settings:write'))) || !settingsLoaded"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enableRequest ? 'bg-primary-hover' : 'bg-bg-tertiary'
@@ -48,7 +48,7 @@
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableTimeLimit }}</span
           >
-          <button :disabled="!(can('request-times:write') || can('system-settings:write'))"
+          <button :disabled="(!(can('request-times:write') || can('system-settings:write'))) || !settingsLoaded"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enableRequestTimeLimitation ? 'bg-primary-hover' : 'bg-bg-tertiary'
@@ -68,7 +68,7 @@
             >{{ locale.enableRestriction }}</span
           >
           <button
-            :disabled="(restrictionSaving) || !(can('request-times:write') || can('system-settings:write'))"
+            :disabled="((restrictionSaving) || !(can('request-times:write') || can('system-settings:write'))) || !settingsLoaded"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enableSubmissionRestriction ? 'bg-primary-hover' : 'bg-bg-tertiary',
@@ -306,7 +306,7 @@
           </div>
         </div>
         <button
-          :disabled="(restrictionSaving) || !(can('request-times:write') || can('system-settings:write'))"
+          :disabled="((restrictionSaving) || !(can('request-times:write') || can('system-settings:write'))) || !settingsLoaded"
           class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveRestrictionSettings"
         >
@@ -652,6 +652,7 @@ import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 
 import AppDateTimePicker from '~/components/UI/Common/AppDateTimePicker.vue'
 import {
@@ -677,6 +678,8 @@ const { can } = usePermissions()
 const canRead = computed(() => can('request-times:read'))
 const canWrite = computed(() => can('request-times:write'))
 const toast = useToast()
+const { localize: localizeServerError } = useServerErrors()
+const settingsLoaded = ref(false)
 const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.requestTimeManager || {}
@@ -834,20 +837,16 @@ const fetchSystemSettings = async () => {
   if (!can('request-times:read') && !can('system-settings:read')) return
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings/request-times', {
-      headers: { 'Content-Type': 'application/json' },
-      ...authConfig
-    })
-    if (!response.ok) return
-    const data = await response.json()
+    const data = await $fetch('/api/admin/system-settings/request-times', authConfig)
     enableRequestTimeLimitation.value = data.enableRequestTimeLimitation
     enableRequest.value = !data.forceBlockAllRequests
     enableSubmissionRestriction.value = !!data.enableSubmissionRestriction
     submissionRestrictionScope.value = data.submissionRestrictionScope || 'all'
     sameSongRestrictionHours.value = data.sameSongRestrictionHours ?? null
     sameArtistRestrictionHours.value = data.sameArtistRestrictionHours ?? null
+    settingsLoaded.value = true
   } catch (err) {
-    console.error('获取系统设置失败:', getThrownMessage(err))
+    error.value = localizeServerError(err, locale.value.errors.fetchFailed)
   }
 }
 
@@ -868,6 +867,7 @@ const fetchRequestTimeHit = async () => {
 }
 
 const toggleGlobalRequest = async () => {
+  if (!settingsLoaded.value) return
   if (!can('request-times:write') && !can('system-settings:write')) return
   enableRequest.value = !enableRequest.value
   await updateSystemSettings()
@@ -875,6 +875,7 @@ const toggleGlobalRequest = async () => {
 }
 
 const toggleTimeLimitation = async () => {
+  if (!settingsLoaded.value) return
   if (!can('request-times:write') && !can('system-settings:write')) return
   enableRequestTimeLimitation.value = !enableRequestTimeLimitation.value
   await updateSystemSettings()
@@ -882,6 +883,7 @@ const toggleTimeLimitation = async () => {
 }
 
 const updateSystemSettings = async () => {
+  if (!settingsLoaded.value) return
   if (!can('request-times:write') && !can('system-settings:write')) return
   try {
     const authConfig = getAuthConfig()
@@ -911,6 +913,7 @@ const normalizeRestrictionHours = (key) => {
 }
 
 const toggleRestriction = async () => {
+  if (!settingsLoaded.value) return
   if (!can('request-times:write') && !can('system-settings:write')) return
   enableSubmissionRestriction.value = !enableSubmissionRestriction.value
   // 关闭时清空时长，与服务端交叉校验保持一致
@@ -923,6 +926,7 @@ const toggleRestriction = async () => {
 }
 
 const saveRestrictionSettings = async () => {
+  if (!settingsLoaded.value) return
   if (!can('request-times:write') && !can('system-settings:write')) return
   normalizeRestrictionHours('sameSong')
   normalizeRestrictionHours('sameArtist')
@@ -944,6 +948,7 @@ const saveRestrictionSettings = async () => {
 }
 
 const submitRestrictionSettings = async (body) => {
+  if (!settingsLoaded.value) return
   if (!can('request-times:write') && !can('system-settings:write')) return
   restrictionSaving.value = true
   try {

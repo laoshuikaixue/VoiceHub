@@ -48,8 +48,8 @@ test('administrator loads and saves four platform toggles alongside existing set
 test('SMTP 与 AstrBot 使用独立的局部保存按钮', () => {
   assert.match(admin, /@click="saveConfig"/)
   assert.match(admin, /@click="saveAstrbotConfig"/)
-  assert.match(admin, /:disabled="saving"[\s\S]*@click="saveConfig"/)
-  assert.match(admin, /:disabled="astrbotSaving"[\s\S]*@click="saveAstrbotConfig"/)
+  assert.match(admin, /:disabled="[^"\n]*saving[^"\n]*"[\s\S]*@click="saveConfig"/)
+  assert.match(admin, /:disabled="[^"\n]*astrbotSaving[^"\n]*"[\s\S]*@click="saveAstrbotConfig"/)
   assert.doesNotMatch(admin.slice(0, admin.indexOf('<div class="grid grid-cols-1 xl:grid-cols-12')), /@click="saveConfig"/)
 })
 

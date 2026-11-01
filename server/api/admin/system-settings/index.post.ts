@@ -1483,13 +1483,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    if (Object.keys(updateData).some((field) => field.startsWith('smtp'))) try {
-      const { SmtpService } = await import('~~/server/services/smtpService')
-      // 强制刷新：早退检查会导致修改授权码后单例仍持有旧凭据
-      await SmtpService.getInstance().initializeSmtpConfig(true)
-      console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
-    } catch (smtpError) {
-      console.warn('[SMTP] SMTP配置重载失败:', smtpError)
+    if (Object.keys(updateData).some((field) => field.startsWith('smtp'))) {
+      try {
+        const { SmtpService } = await import('~~/server/services/smtpService')
+        await SmtpService.getInstance().initializeSmtpConfig(true)
+        console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
+      } catch (smtpError) {
+        console.warn('[SMTP] SMTP配置重载失败:', smtpError)
+      }
     }
 
     const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)

@@ -53,8 +53,15 @@ async function component(name: string, codes: string[]) {
   const deps: Record<string, any> = {
     ...Vue, ...bot, ...group, ...weekly, ...permissions,
     onMounted: (fn: () => unknown) => mounted.push(fn), onUnmounted: noop,
-    usePermissions: () => ({ can, canAccessPage: (page: string) => permissions.canAccessAdminPage(perms, page) }),
-    useAuth: () => ({ user: Vue.ref({ id: 9, role: 'TEST', perms }), getAuthConfig: () => ({}) }),
+    usePermissions: () => ({
+      can, canAccessPage: (page: string) => permissions.canAccessAdminPage(perms, page),
+      canUsePage: (page: string) => permissions.canUseAdminPage(perms, page),
+      canAccessAdmin: Vue.computed(() => permissions.canAccessAdminConsole(perms)),
+      getUserPages: Vue.computed(() => permissions.accessiblePages(perms).filter(page => page !== 'password'))
+    }),
+    useAuth: () => ({ user: Vue.ref({ id: 9, role: 'TEST', perms }), isAuthenticated: Vue.ref(true), getAuthConfig: () => ({}) }),
+    useSiteConfig: () => ({ siteTitle: Vue.ref('VoiceHub'), initSiteConfig: async () => {} }),
+    useScrollMemory: noop, definePageMeta: noop, provide: noop, navigateTo: noop,
     useLocale: () => ({ ...messages, currentLocale: Vue.ref('zh-CN') }), useSafeLocale, useLocaleText: localeText,
     formatLocale: text, getThrownMessage: (error: any) => error.message,
     useServerErrors: () => ({ localize: (_: unknown, fallback = '错误') => fallback }),
@@ -67,9 +74,10 @@ async function component(name: string, codes: string[]) {
     defineProps: () => ({ refreshKey: 0 }), defineEmits: () => noop,
     $fetch: fetchData,
     fetch: async (path: string, options: any) => ({ ok: true, json: () => fetchData(path, options) }),
-    window: { $showNotification: noop }, renderMarkdown: (value: string) => value
+    window: { $showNotification: noop, addEventListener: noop, innerWidth: 1280 },
+    document: { addEventListener: noop, title: '' }, renderMarkdown: (value: string) => value
   }
-  const file = `app/components/Admin/${name}.vue`
+  const file = name === 'Dashboard' ? 'app/pages/dashboard.vue' : `app/components/Admin/${name}.vue`
   const { descriptor } = parse(readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8'))
   const compiled = compileScript(descriptor, { id: name })
   const bindings = compiled.bindings
@@ -77,8 +85,9 @@ async function component(name: string, codes: string[]) {
     .flatMap((node: any) => node.specifiers.map((item: any) => item.local.name))
   for (const key of imported) if (/^[A-Z]/.test(key) && !(key in deps)) deps[key] = stub
   const script = descriptor.scriptSetup.content.replace(/^import[\s\S]*?from\s*['"][^'"]+['"]\s*;?\r?$/gm, '')
-  const parameters = Object.entries(deps).filter(([key]) => /^[A-Za-z_$][\w$]*$/.test(key) && key !== 'default')
-  const values = new Function(...parameters.map(([key]) => key), `${script}; return { ${Object.keys(bindings).join(',')} }`)(...parameters.map(([, value]) => value))
+  const parameters = Object.entries(deps).filter(([key]) => /^[A-Za-z_$][\w$]*$/.test(key) && key !== 'default' && (!(key in bindings) || imported.includes(key)))
+  const exposed = Object.keys(bindings).filter(key => !['props', 'props-aliased'].includes(bindings[key]))
+  const values = new Function(...parameters.map(([key]) => key), `${script}; return { ${exposed.join(',')} }`)(...parameters.map(([, value]) => value))
   for (const hook of mounted) await hook()
   await new Promise<void>((resolve) => setImmediate(resolve))
   const render = new Function('Vue', compile(descriptor.template.content, { mode: 'function' }).code)(Vue)
@@ -147,4 +156,31 @@ test('概览按数据权限加载面板，数据库只读账号不能打开维�
   assert.deepEqual(database.requests, ['GET /api/admin/database/status'])
   for (const card of ['backup', 'restore', 'reset-db', 'reset-seq', 'auto-backup']) database.values.openModal(card)
   assert.equal(database.values.activeModal.value, 'none')
+})
+
+test('通知只读账号仅查看历史，通知操作员的用户选择不依赖完整用户管理权限', async () => {
+  const readonly = await component('NotificationSender', ['notifications:read'])
+  assert.deepEqual(readonly.requests, [])
+  await readonly.values.sendNotification()
+  assert.deepEqual(readonly.requests, [])
+  const history = await component('NotificationHistory', ['notifications:read'])
+  assert.deepEqual(history.denied, [])
+  assert.deepEqual(history.requests, ['GET /api/admin/notifications/history'])
+  const operator = await component('NotificationSender', ['notifications:write'])
+  await operator.values.searchUsers('同学')
+  assert.deepEqual(operator.denied, [])
+  assert.ok(operator.requests.includes('GET /api/admin/recipients'))
+  assert.equal(operator.requests.some(path => path.includes('/api/admin/users')), false)
+})
+
+test('控制台自动选择可用功能，没有模块或仅有页面码时显示明确提示', async () => {
+  const smtp = await component('Dashboard', ['smtp:write'])
+  assert.equal(smtp.values.activeTab.value, 'smtp-config')
+  const empty = await component('Dashboard', [])
+  assert.equal(empty.values.activeTab.value, null)
+  assert.match(empty.html, /尚未分配可用模块/)
+  const pageOnly = await component('Dashboard', ['page:users'])
+  assert.equal(pageOnly.values.activeTab.value, 'users')
+  assert.match(pageOnly.html, /缺少模块权限/)
+  assert.deepEqual(pageOnly.requests, [])
 })

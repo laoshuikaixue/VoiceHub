@@ -15,7 +15,7 @@
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableSelection }}</span
           >
-          <button :disabled="!(can('play-times:write') || can('system-settings:write'))"
+          <button :disabled="(!(can('play-times:write') || can('system-settings:write'))) || !settingsLoaded"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enablePlayTimeSelection ? 'bg-primary-hover' : 'bg-bg-tertiary'
@@ -43,7 +43,7 @@
               enablePlayTimeSelection ? '' : 'opacity-40 cursor-not-allowed',
               playSlotRequired ? 'bg-primary-hover' : 'bg-bg-tertiary'
             ]"
-            :disabled="(!enablePlayTimeSelection) || !(can('play-times:write') || can('system-settings:write'))"
+            :disabled="((!enablePlayTimeSelection) || !(can('play-times:write') || can('system-settings:write'))) || !settingsLoaded"
             @click="toggleSlotRequired"
           >
             <div
@@ -461,6 +461,7 @@ const { getAuthConfig } = useAuth()
 const { can } = usePermissions()
 const canRead = computed(() => can('play-times:read'))
 const canWrite = computed(() => can('play-times:write'))
+const settingsLoaded = ref(false)
 const { showToast: showNotification } = useToast()
 const { localize: localizeServerError } = useServerErrors()
 const { admin } = useLocale()
@@ -619,13 +620,15 @@ const fetchSystemSettings = async () => {
     })
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
     playSlotRequired.value = data.playSlotRequired || false
+    settingsLoaded.value = true
   } catch (err) {
-    console.error('获取系统设置失败:', getErrorMessage(err))
+    error.value = localizeServerError(err, locale.value.errors.fetchFailed)
   }
 }
 
 // 切换全局启用状态。
 const toggleGlobalEnabled = async () => {
+  if (!settingsLoaded.value) return
   if (!can('play-times:write') && !can('system-settings:write')) return
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
   const nextEnabled = !prev.enabled
@@ -636,6 +639,7 @@ const toggleGlobalEnabled = async () => {
 
 // 切换「时段必选」总开关（仅在总开关开启时可用）
 const toggleSlotRequired = async () => {
+  if (!settingsLoaded.value) return
   if (!can('play-times:write') && !can('system-settings:write')) return
   if (!enablePlayTimeSelection.value) return
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
@@ -645,6 +649,7 @@ const toggleSlotRequired = async () => {
 
 // 保存两个开关：两者相互约束，同一请求提交完整组合
 const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
+  if (!settingsLoaded.value) return
   if (!can('play-times:write') && !can('system-settings:write')) return
 
   try {
