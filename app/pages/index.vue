@@ -221,14 +221,12 @@
           </div>
           <div class="announcement-content">
             <div v-if="announcementIsScroll" class="announcement-marquee">
-              <div class="announcement-marquee-track" :style="announcementMarqueeStyle">
+              <div
+                ref="announcementMarqueeTrack"
+                class="announcement-marquee-track"
+                :style="announcementMarqueeStyle"
+              >
                 <div class="announcement-marquee-item">
-                  <span v-if="siteAnnouncementTitle" class="announcement-inline-title">
-                    {{ siteAnnouncementTitle }}
-                  </span>
-                  <div class="announcement-text is-inline markdown-body" v-html="renderedAnnouncement" />
-                </div>
-                <div class="announcement-marquee-item" aria-hidden="true">
                   <span v-if="siteAnnouncementTitle" class="announcement-inline-title">
                     {{ siteAnnouncementTitle }}
                   </span>
@@ -237,10 +235,15 @@
               </div>
             </div>
             <template v-else>
-              <p v-if="siteAnnouncementTitle" class="announcement-title">
-                {{ siteAnnouncementTitle }}
-              </p>
-              <div class="announcement-text markdown-body" v-html="renderedAnnouncement" />
+              <div
+                class="announcement-static"
+                :style="{ textAlign: siteAnnouncementAlignment }"
+              >
+                <p v-if="siteAnnouncementTitle" class="announcement-title">
+                  {{ siteAnnouncementTitle }}
+                </p>
+                <div class="announcement-text markdown-body" v-html="renderedAnnouncement" />
+              </div>
             </template>
           </div>
         </div>
@@ -910,6 +913,7 @@ const {
   announcementTitle: siteAnnouncementTitle,
   announcementDisplayMode: siteAnnouncementDisplayMode,
   announcementScrollSpeed: siteAnnouncementScrollSpeed,
+  announcementAlignment: siteAnnouncementAlignment,
   icp: icpNumber,
   schoolLogoHomeDisplayUrl
 } = useSiteConfig()
@@ -917,11 +921,38 @@ const {
 // 将投稿须知 Markdown 渲染为安全 HTML
 const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 const renderedAnnouncement = computed(() => renderMarkdown(siteAnnouncement.value || ''))
-// 公告展示方式：静态单行 / 横向滚动；滚动时长由后台设置的秒数决定
+// 公告展示方式：静态单行 / 横向滚动；滚动时长按内容宽度等比计算，保证速度稳定
 const announcementIsScroll = computed(() => siteAnnouncementDisplayMode.value === 'scroll')
-const announcementMarqueeStyle = computed(() => ({
-  animationDuration: `${siteAnnouncementScrollSpeed.value}s`
-}))
+const announcementMarqueeTrack = ref(null)
+const announcementMarqueeDuration = ref(0)
+
+const computeMarqueeDuration = () => {
+  const track = announcementMarqueeTrack.value
+  if (!track) return
+  const trackWidth = track.offsetWidth || 0
+  const speed = Number(siteAnnouncementScrollSpeed.value) || 30
+  // 以 500px 宽度为基准，按内容宽度等比放大时长，数值越大滚得越慢
+  announcementMarqueeDuration.value = Math.max(6, (trackWidth / 500) * speed)
+}
+
+const announcementMarqueeStyle = computed(() =>
+  announcementMarqueeDuration.value
+    ? { animationDuration: `${announcementMarqueeDuration.value}s` }
+    : {}
+)
+
+const onAnnouncementResize = () => computeMarqueeDuration()
+watch(
+  [siteAnnouncement, siteAnnouncementTitle, siteAnnouncementDisplayMode, siteAnnouncementScrollSpeed],
+  () => nextTick(computeMarqueeDuration)
+)
+onMounted(() => {
+  nextTick(computeMarqueeDuration)
+  window.addEventListener('resize', onAnnouncementResize)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', onAnnouncementResize)
+})
 
 const auth = useAuth()
 const { showToast } = useToast()
@@ -2668,7 +2699,7 @@ if (
   color: var(--text-secondary);
 }
 
-/* 滚动展示：整行内容横向跑马灯，时长由后台「滚动速度」控制 */
+/* 滚动展示：单条内容从右边缘滑入、向左完整滚出，时长由「滚动速度」按内容宽度换算 */
 .announcement-marquee {
   overflow: hidden;
   width: 100%;
@@ -2684,11 +2715,13 @@ if (
   display: flex;
   align-items: center;
   width: max-content;
+  /* 起始把内容推到容器右边缘外，配合 translateX(-100%) 实现「从右进、向左出」 */
+  padding-left: 100%;
   animation-name: announcement-scroll;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
-/* 滚动模式没有单独标题行，标题并进滚动内容 */
+/* 滚动模式没有单独标题行，标题并进滚动内容；右侧留白形成两次滚动间的间隔 */
 .announcement-marquee-item {
   display: flex;
   align-items: center;
@@ -2708,7 +2741,7 @@ if (
   max-height: none;
   white-space: nowrap;
 }
-/* 滚动模式下所有 Markdown 结构都压成一行 */
+/* 滚动模式下所有 Markdown 结构压成一行，但保留加粗、行内代码等视觉样式 */
 .announcement-text.is-inline :deep(*) {
   display: inline;
   margin: 0;
@@ -2717,12 +2750,23 @@ if (
   line-height: inherit;
   white-space: nowrap;
 }
+.announcement-text.is-inline :deep(strong),
+.announcement-text.is-inline :deep(b) {
+  font-weight: 700;
+}
+.announcement-text.is-inline :deep(code) {
+  padding: 0.1em 0.35em;
+  background: var(--bg-tertiary, rgba(0, 0, 0, 0.1));
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+}
 @keyframes announcement-scroll {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -16,6 +16,9 @@ const MAX_SCROLL_SPEED = 120
 
 const normalizeDisplayMode = (value: unknown) => (value === 'scroll' ? 'scroll' : 'static')
 
+const normalizeAlignment = (value: unknown) =>
+  value === 'center' || value === 'right' ? value : 'left'
+
 const normalizeScrollSpeed = (value: unknown) => {
   const parsed = Number(value)
   if (!Number.isFinite(parsed)) return 30
@@ -74,6 +77,7 @@ export default defineEventHandler(async (event) => {
   const broadcastToGroups = body?.broadcast === true
   const displayMode = normalizeDisplayMode(body?.displayMode)
   const scrollSpeed = normalizeScrollSpeed(body?.scrollSpeed)
+  const alignment = normalizeAlignment(body?.alignment)
   const sender = createNotificationSenderSnapshot(user)
 
   const [existing] = await db.select({ id: systemSettings.id }).from(systemSettings).limit(1)
@@ -85,6 +89,7 @@ export default defineEventHandler(async (event) => {
         announcement: content,
         announcementDisplayMode: displayMode,
         announcementScrollSpeed: scrollSpeed,
+        announcementAlignment: alignment,
         updatedAt: new Date()
       })
       .where(eq(systemSettings.id, existing.id))
@@ -93,7 +98,8 @@ export default defineEventHandler(async (event) => {
       announcementTitle: title || null,
       announcement: content,
       announcementDisplayMode: displayMode,
-      announcementScrollSpeed: scrollSpeed
+      announcementScrollSpeed: scrollSpeed,
+      announcementAlignment: alignment
     })
   }
 
@@ -107,6 +113,7 @@ export default defineEventHandler(async (event) => {
     content,
     displayMode,
     scrollSpeed,
+    alignment,
     isActive: true,
     senderId: sender.senderId,
     senderName: sender.senderName,
@@ -129,6 +136,7 @@ export default defineEventHandler(async (event) => {
     content,
     displayMode,
     scrollSpeed,
+    alignment,
     broadcastToGroups
   }
 })

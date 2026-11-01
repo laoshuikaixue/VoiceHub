@@ -50,6 +50,7 @@ const siteConfig = ref({
   announcementTitle: '',
   announcementDisplayMode: 'static',
   announcementScrollSpeed: 30,
+  announcementAlignment: 'left',
   icpNumber: '',
   gonganNumber: '',
   captchaEnabled: false,
@@ -209,6 +210,10 @@ export const useSiteConfig = () => {
     if (!Number.isFinite(speed)) return 30
     return Math.min(120, Math.max(8, speed))
   })
+  const announcementAlignment = computed(() => {
+    const value = siteConfig.value.announcementAlignment
+    return value === 'center' || value === 'right' ? value : 'left'
+  })
   const icp = computed(() => siteConfig.value.icpNumber || '')
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
   const showBeianIcon = computed(() => siteConfig.value.showBeianIcon || false)
@@ -333,6 +338,7 @@ export const useSiteConfig = () => {
     announcementTitle,
     announcementDisplayMode,
     announcementScrollSpeed,
+    announcementAlignment,
     icp,
     gonganNumber,
     showBeianIcon,

@@ -55,6 +55,7 @@ export default defineEventHandler(async (event) => {
         content: row.content,
         displayMode: row.displayMode,
         scrollSpeed: row.scrollSpeed,
+        alignment: row.alignment,
         isActive: row.isActive,
         senderId: row.senderId,
         senderName: row.senderName,

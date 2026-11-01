@@ -14,6 +14,9 @@ const MAX_SCROLL_SPEED = 120
 
 const normalizeDisplayMode = (value: unknown) => (value === 'scroll' ? 'scroll' : 'static')
 
+const normalizeAlignment = (value: unknown) =>
+  value === 'center' || value === 'right' ? value : 'left'
+
 const normalizeScrollSpeed = (value: unknown) => {
   const parsed = Number(value)
   if (!Number.isFinite(parsed)) return 30
@@ -70,6 +73,7 @@ export default defineEventHandler(async (event) => {
 
   const displayMode = normalizeDisplayMode(body?.displayMode)
   const scrollSpeed = normalizeScrollSpeed(body?.scrollSpeed)
+  const alignment = normalizeAlignment(body?.alignment)
 
   const [record] = await db
     .select()
@@ -83,7 +87,7 @@ export default defineEventHandler(async (event) => {
 
   await db
     .update(announcementHistory)
-    .set({ title: title || null, content, displayMode, scrollSpeed })
+    .set({ title: title || null, content, displayMode, scrollSpeed, alignment })
     .where(eq(announcementHistory.id, rawId))
 
   if (record.isActive) {
@@ -96,6 +100,7 @@ export default defineEventHandler(async (event) => {
           announcement: content,
           announcementDisplayMode: displayMode,
           announcementScrollSpeed: scrollSpeed,
+          announcementAlignment: alignment,
           updatedAt: new Date()
         })
         .where(eq(systemSettings.id, existing.id))
@@ -110,6 +115,7 @@ export default defineEventHandler(async (event) => {
       content,
       displayMode,
       scrollSpeed,
+      alignment,
       isActive: record.isActive
     }
   }

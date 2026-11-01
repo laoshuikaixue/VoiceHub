@@ -1327,6 +1327,7 @@ export default defineEventHandler(async (event) => {
                           'announcementTitle',
                           'announcementDisplayMode',
                           'announcementScrollSpeed',
+                          'announcementAlignment',
                           'customCssEnabled',
                           'customCss',
                           'legalConsentEnabled',

@@ -129,6 +129,33 @@
                 </p>
               </div>
 
+              <div
+                v-if="form.displayMode === 'static'"
+                class="space-y-3 rounded-2xl bg-bg-primary p-4"
+              >
+                <span class="text-[11px] font-black text-text-tertiary">{{ locale.alignment }}</span>
+                <div class="flex gap-2">
+                  <button
+                    v-for="opt in alignmentOptions"
+                    :key="opt.id"
+                    :class="[
+                      'flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-black transition-all',
+                      form.alignment === opt.id
+                        ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-[var(--primary-glow)]'
+                        : 'bg-bg-secondary-30 border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
+                    ]"
+                    type="button"
+                    @click="form.alignment = opt.id"
+                  >
+                    <component :is="opt.icon" :size="14" />
+                    {{ opt.label }}
+                  </button>
+                </div>
+                <p class="text-[10px] font-medium leading-relaxed text-text-disabled">
+                  {{ locale.alignmentHint }}
+                </p>
+              </div>
+
               <p class="px-1 text-[10px] font-medium text-text-disabled">
                 {{ locale.displayModeHint }}
               </p>
@@ -522,8 +549,11 @@
                 <div class="announcement-preview-icon">
                   <Icon name="bell-ring" :size="16" />
                 </div>
-                <div class="min-w-0 flex-1">
-                  <!-- 滚动模式没有单独标题行，标题直接并进滚动内容 -->
+                <div
+                  class="min-w-0 flex-1"
+                  :style="form.displayMode === 'static' ? { textAlign: form.alignment } : {}"
+                >
+                  <!-- 滚动模式没有单独标题行，标题直接并进内容 -->
                   <p
                     v-if="form.title && form.displayMode === 'static'"
                     class="announcement-preview-title"
@@ -532,8 +562,7 @@
                   </p>
                   <div
                     v-if="form.content"
-                    class="announcement-preview-text"
-                    :class="form.displayMode === 'scroll' ? 'is-inline' : ''"
+                    class="announcement-preview-text markdown-body"
                   >
                     <span
                       v-if="form.title && form.displayMode === 'scroll'"
@@ -541,7 +570,7 @@
                     >
                       {{ form.title }}
                     </span>
-                    <div class="markdown-body" v-html="previewContent" />
+                    <div v-html="previewContent" />
                   </div>
                   <p v-else class="text-sm italic leading-relaxed text-text-disabled">
                     {{ locale.previewContentPlaceholder }}
@@ -708,6 +737,8 @@ import {
   Trash2,
   Loader2,
   AlignLeft,
+  AlignCenter,
+  AlignRight,
   MoveHorizontal
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -750,6 +781,8 @@ const form = ref({
   // 公告展示方式：static=静态一行，scroll=横向滚动
   displayMode: 'static',
   scrollSpeed: 30,
+  // 静态展示时的对齐方式：left / center / right
+  alignment: 'left',
   scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'
   grade: '',
   classGrade: '',
@@ -806,6 +839,13 @@ const setPublishType = (type) => {
 const displayModeOptions = computed(() => [
   { id: 'static', label: getNestedMessage('displayModes', 'static'), icon: AlignLeft },
   { id: 'scroll', label: getNestedMessage('displayModes', 'scroll'), icon: MoveHorizontal }
+])
+
+// 静态展示对齐方式：左 / 居中 / 右
+const alignmentOptions = computed(() => [
+  { id: 'left', label: getNestedMessage('alignments', 'left'), icon: AlignLeft },
+  { id: 'center', label: getNestedMessage('alignments', 'center'), icon: AlignCenter },
+  { id: 'right', label: getNestedMessage('alignments', 'right'), icon: AlignRight }
 ])
 
 // 发送历史分类
@@ -1057,6 +1097,7 @@ const sendNotification = async () => {
           content: form.value.content,
           displayMode: form.value.displayMode,
           scrollSpeed: form.value.scrollSpeed,
+          alignment: form.value.alignment,
           broadcast: form.value.broadcast
         },
         ...getAuthConfig()
@@ -1215,22 +1256,14 @@ onUnmounted(() => {
   max-height: 14rem;
   overflow-y: auto;
 }
+.announcement-preview-text :deep(p) {
+  margin: 0;
+}
+.announcement-preview-text :deep(p:not(:first-child)) {
+  margin-top: 0.4em;
+}
 .announcement-preview-inline-title {
   margin-right: 0.5rem;
-  font-weight: 800;
-  color: var(--primary);
-}
-/* 滚动模式在首页是一行跑马灯，预览也压成单行 */
-.announcement-preview-text.is-inline :deep(*) {
-  display: inline;
-  margin: 0;
-  padding: 0;
-  font-size: inherit;
-  line-height: inherit;
-}
-.announcement-preview-text.is-inline .announcement-preview-inline-title {
-  display: inline;
-  font-size: inherit;
   font-weight: 800;
   color: var(--primary);
 }

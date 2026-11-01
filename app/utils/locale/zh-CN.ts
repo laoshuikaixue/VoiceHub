@@ -3987,6 +3987,13 @@ export const admin = {
     displayModeHint: '静态显示固定展示一行；滚动显示会让内容在公告栏里横向循环滚动。',
     scrollSpeed: '滚动速度',
     scrollSpeedHint: '数字表示内容滚动一轮需要的秒数，数值越小滚得越快（8 - 120 秒）。',
+    alignment: '对齐方式',
+    alignments: {
+      left: '左对齐',
+      center: '居中',
+      right: '右对齐'
+    },
+    alignmentHint: '静态展示时内容在公告栏内的对齐方式。',
     announcementTitleContentRequired: '公告标题和内容不能为空',
     announcementTitleTooLong: (max: number) => `公告标题不能超过 ${max} 个字符`,
     announcementContentTooLong: (max: number) => `公告内容不能超过 ${max} 个字符`,
@@ -4065,7 +4072,16 @@ export const admin = {
       announcementColumn: '公告',
       announcementUntitled: '无标题公告',
       displayModeLabel: '展示方式',
+      alignment: '对齐方式',
+      alignments: {
+        left: '左对齐',
+        center: '居中',
+        right: '右对齐'
+      },
       activeLabel: '展示中',
+      setActive: '设为展示',
+      setActiveSuccess: '已切换为当前展示公告',
+      setActiveFailed: '切换展示公告失败，请重试',
       previewAction: '预览',
       previewEyebrow: '首页公告预览',
       previewFooterHint: '以上为公告在首页公告栏中的实际展示样式，滚动模式下内容会横向循环滚动。',

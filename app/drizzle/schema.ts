@@ -255,6 +255,8 @@ export const announcementHistory = pgTable('AnnouncementHistory', {
   displayMode: varchar('displayMode', { length: 16 }).default('static').notNull(),
   // 滚动模式下滚动一轮所需秒数
   scrollSpeed: integer('scrollSpeed').default(30).notNull(),
+  // 静态展示时的对齐方式：left / center / right
+  alignment: varchar('alignment', { length: 8 }).default('left').notNull(),
   // 是否为当前正在首页展示的公告，编辑/删除需要据此同步 SystemSettings
   isActive: boolean('isActive').default(false).notNull(),
   senderId: integer('senderId'),
@@ -355,6 +357,8 @@ export const systemSettings = pgTable('SystemSettings', {
   announcementDisplayMode: varchar('announcementDisplayMode', { length: 16 }).default('static').notNull(),
   // 滚动模式下一轮滚动所需秒数
   announcementScrollSpeed: integer('announcementScrollSpeed').default(30).notNull(),
+  // 静态展示时的对齐方式：left / center / right
+  announcementAlignment: varchar('announcementAlignment', { length: 8 }).default('left').notNull(),
   icpNumber: text('icpNumber'),
   gonganNumber: text('gonganNumber'),
   showBeianIcon: boolean('showBeianIcon').default(false).notNull(),

@@ -121,6 +121,18 @@
               <td class="px-5 py-4 text-right align-top">
                 <div class="inline-flex items-center gap-2">
                   <button
+                    v-if="!item.isActive"
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
+                    :title="locale.setActive"
+                    :aria-label="locale.setActive"
+                    :disabled="activatingId === item.id"
+                    @click="activateAnnouncement(item)"
+                  >
+                    <Radio v-if="activatingId !== item.id" :size="15" />
+                    <Loader2 v-else :size="15" class="animate-spin" />
+                  </button>
+                  <button
                     type="button"
                     class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
                     :title="locale.previewAction"
@@ -198,7 +210,18 @@
             </span>
           </div>
 
-          <div class="mt-4 grid grid-cols-3 gap-2">
+          <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <button
+              v-if="!item.isActive"
+              type="button"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light disabled:opacity-50"
+              :disabled="activatingId === item.id"
+              @click="activateAnnouncement(item)"
+            >
+              <Radio v-if="activatingId !== item.id" :size="14" />
+              <Loader2 v-else :size="14" class="animate-spin" />
+              {{ locale.setActive }}
+            </button>
             <button
               type="button"
               class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
@@ -302,10 +325,7 @@
                   >
                     {{ previewItem.title }}
                   </p>
-                  <div
-                    class="markdown-body announcement-card-text"
-                    :class="previewItem.displayMode === 'scroll' ? 'is-inline' : ''"
-                  >
+                  <div class="markdown-body announcement-card-text">
                     <span
                       v-if="previewItem.title && previewItem.displayMode === 'scroll'"
                       class="announcement-card-inline-title"
@@ -487,6 +507,29 @@
                 </p>
               </div>
 
+              <div v-if="editForm.displayMode === 'static'">
+                <p class="mb-2 text-xs font-bold text-text-secondary">
+                  {{ locale.alignment }}
+                </p>
+                <div class="inline-flex max-w-full items-center gap-1 rounded-lg border border-panel-bg-dark bg-panel-bg-darkest p-1">
+                  <button
+                    v-for="option in alignmentOptions"
+                    :key="option.value"
+                    type="button"
+                    class="inline-flex min-h-9 items-center gap-2 rounded-md px-3 text-xs font-bold transition-colors"
+                    :class="
+                      editForm.alignment === option.value
+                        ? 'bg-panel-bg-dark text-text-primary-lighter'
+                        : 'text-text-tertiary hover:text-text-secondary'
+                    "
+                    @click="editForm.alignment = option.value"
+                  >
+                    <component :is="option.icon" :size="14" />
+                    {{ option.label }}
+                  </button>
+                </div>
+              </div>
+
               <div v-if="editForm.content.trim()">
                 <p class="mb-2 text-xs font-bold text-text-secondary">{{ locale.preview }}</p>
                 <div
@@ -558,6 +601,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   AlertCircle,
   AlignLeft,
+  AlignCenter,
+  AlignRight,
   Eye,
   History,
   Inbox,
@@ -599,12 +644,13 @@ const pagination = ref({ page: 1, limit: 20, total: 0, totalPages: 1 })
 const previewItem = ref(null)
 const closeButton = ref(null)
 const editingItem = ref(null)
-const editForm = ref({ title: '', content: '', displayMode: 'static', scrollSpeed: 30 })
+const editForm = ref({ title: '', content: '', displayMode: 'static', scrollSpeed: 30, alignment: 'left' })
 const editSaving = ref(false)
 const editError = ref('')
 const editTitleInput = ref(null)
 const deletingItem = ref(null)
 const deleteLoading = ref(false)
+const activatingId = ref(null)
 let requestVersion = 0
 let previousFocus = null
 let previousBodyOverflow = ''
@@ -612,6 +658,12 @@ let previousBodyOverflow = ''
 const displayModeOptions = computed(() => [
   { value: 'static', label: locale.value.displayModes?.static || '', icon: AlignLeft },
   { value: 'scroll', label: locale.value.displayModes?.scroll || '', icon: MoveHorizontal }
+])
+
+const alignmentOptions = computed(() => [
+  { value: 'left', label: locale.value.alignments?.left || '', icon: AlignLeft },
+  { value: 'center', label: locale.value.alignments?.center || '', icon: AlignCenter },
+  { value: 'right', label: locale.value.alignments?.right || '', icon: AlignRight }
 ])
 
 const loadHistory = async () => {
@@ -671,7 +723,8 @@ const openEdit = async (item) => {
     title: item.title || '',
     content: item.content || '',
     displayMode: item.displayMode === 'scroll' ? 'scroll' : 'static',
-    scrollSpeed: Number(item.scrollSpeed) || 30
+    scrollSpeed: Number(item.scrollSpeed) || 30,
+    alignment: ['left', 'center', 'right'].includes(item.alignment) ? item.alignment : 'left'
   }
   editError.value = ''
   previousFocus = document.activeElement
@@ -720,7 +773,8 @@ const saveEdit = async () => {
           title,
           content,
           displayMode: editForm.value.displayMode,
-          scrollSpeed: editForm.value.scrollSpeed
+          scrollSpeed: editForm.value.scrollSpeed,
+          alignment: editForm.value.alignment
         },
         ...getAuthConfig()
       }
@@ -736,6 +790,24 @@ const saveEdit = async () => {
   }
 
   if (saved) closeEdit()
+}
+
+// 把某条历史公告设为当前展示中的公告
+const activateAnnouncement = async (item) => {
+  if (!item?.id || activatingId.value) return
+  activatingId.value = item.id
+  try {
+    await $fetch(
+      `/api/admin/notifications/announcement-history/${encodeURIComponent(item.id)}/activate`,
+      { method: 'POST', ...getAuthConfig() }
+    )
+    await loadHistory()
+    showToast(locale.value.setActiveSuccess, 'success')
+  } catch (err) {
+    showToast(localizeServerError(err, locale.value.setActiveFailed), 'error')
+  } finally {
+    activatingId.value = null
+  }
 }
 
 const requestDelete = (item) => {
@@ -849,20 +921,15 @@ onUnmounted(() => {
   line-height: 1.6;
   color: var(--text-primary);
 }
+.announcement-card-text :deep(p) {
+  margin: 0;
+}
+.announcement-card-text :deep(p:not(:first-child)) {
+  margin-top: 0.4em;
+}
 .announcement-card-inline-title {
   margin-right: 0.5rem;
   font-weight: 800;
   color: var(--primary);
-}
-/* 滚动模式在首页是一行跑马灯，预览时同样压成单行更贴近实际效果 */
-.announcement-card-text.is-inline :deep(*) {
-  display: inline;
-  margin: 0;
-  padding: 0;
-  font-size: inherit;
-  line-height: inherit;
-}
-.announcement-card-text.is-inline :deep(li:not(:first-child))::before {
-  content: ' · ';
 }
 </style>
