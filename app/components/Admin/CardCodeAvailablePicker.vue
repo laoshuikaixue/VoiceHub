@@ -32,14 +32,14 @@
 
     <div class="rounded-xl border border-border-secondary bg-bg-primary">
       <div class="flex items-center justify-between gap-2 border-b border-border-secondary px-3 py-2">
-        <p class="text-[11px] font-bold text-text-tertiary">
+        <p class="text-xs font-bold text-text-tertiary">
           <AppSpinner v-if="loading" :size="13" class="mr-1 align-middle" />
           {{ loading ? locale.assignCodeLoading : getMessage('assignCodeSummary', modelValue.length, total) }}
         </p>
         <button
           v-if="codes.length"
           type="button"
-          class="text-[11px] font-bold text-primary hover:text-primary-hover"
+          class="text-xs font-bold text-primary hover:text-primary-hover"
           @click="selectAll"
         >
           {{ locale.assignSelectAllCodes }}
@@ -55,22 +55,22 @@
           @click="toggle(item.id)"
         >
           <span
-            class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-black"
+            class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold"
             :class="isSelected(item.id) ? 'border-primary bg-primary text-text-primary' : 'border-border-tertiary'"
           >
             {{ isSelected(item.id) ? '✓' : '' }}
           </span>
           <span class="min-w-0 flex-1">
             <span class="block truncate font-mono text-[13px] text-text-primary">{{ item.code }}</span>
-            <span v-if="item.note" class="block truncate text-[11px] text-text-tertiary">{{ item.note }}</span>
+            <span v-if="item.note" class="block truncate text-xs text-text-tertiary">{{ item.note }}</span>
           </span>
           <span
             v-if="isPresetOnly(item.id)"
-            class="shrink-0 rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-[10px] font-bold text-warning"
+            class="shrink-0 rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-xs font-bold text-warning"
           >
             {{ locale.assignCodePresetTag }}
           </span>
-          <span class="shrink-0 text-[10px] text-text-tertiary">{{ formatDate(item.createdAt) }}</span>
+          <span class="shrink-0 text-xs text-text-tertiary">{{ formatDate(item.createdAt) }}</span>
         </button>
 
         <p v-if="!loading && !codes.length" class="px-3 py-6 text-center text-xs text-text-tertiary">

@@ -1,14 +1,14 @@
 <template>
   <section :class="cardClass">
     <h3
-      class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
+      class="text-sm font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 border-b border-border-secondary pb-4"
     >
       <Shield :size="16" class="text-success" /> {{ locale.title }}
     </h3>
 
     <div class="flex items-start gap-3 p-4 bg-primary-5 border border-primary-10 rounded-xl">
       <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
-      <p class="text-[10px] text-text-tertiary leading-relaxed">
+      <p class="text-xs text-text-tertiary leading-relaxed">
         {{
           locale.runtimeConfigNotice ||
           'OAuth 运行时配置已迁移到后台。环境变量仅用于兼容旧部署和一键导入，导入后以此页面保存的配置为准。'
@@ -19,11 +19,11 @@
     <!-- 基础配置 -->
     <div class="space-y-4 mb-6 pb-6 border-b border-border-secondary">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ locale.baseSettings }}</h4>
+        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ locale.baseSettings }}</h4>
         <button
           v-if="envData.hasBaseConfig"
           type="button"
-          class="text-[10px] px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-xs px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
           @click="importEnvData('base')"
         >
           <Download :size="12" />
@@ -35,12 +35,12 @@
         <div class="flex items-center justify-between p-3">
           <div class="pr-4">
             <p class="text-xs font-bold text-text-primary">{{ locale.allowRegistration }}</p>
-            <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegistrationDesc }}</p>
+            <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegistrationDesc }}</p>
           </div>
           <div class="flex items-center gap-2">
             <span
               :class="[
-                'text-[10px] font-bold',
+                'text-xs font-bold',
                 formData.allowOAuthRegistration ? 'text-success' : 'text-text-tertiary'
               ]"
             >
@@ -61,7 +61,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ locale.oauthRegisterRequiresApproval }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.oauthRegisterRequiresApprovalDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ locale.oauthRegisterRequiresApprovalDesc }}</p>
             </div>
             <input
               v-model="formData.oauthRegisterRequiresApproval"
@@ -74,7 +74,7 @@
           <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
             <div class="pr-4">
               <p class="text-xs font-bold text-text-primary">{{ siteLocale.registerRequiresGradeClass }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ siteLocale.registerRequiresGradeClassDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">{{ siteLocale.registerRequiresGradeClassDesc }}</p>
             </div>
             <input
               v-model="formData.registerRequiresGradeClass"
@@ -87,7 +87,7 @@
 
       <div>
         <label :class="labelClass">{{ locale.redirectUri }}</label>
-        <p class="text-[10px] text-text-disabled px-1 mb-2">
+        <p class="text-xs text-text-disabled px-1 mb-2">
           {{ locale.redirectExample }} <code class="bg-bg-primary px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
         </p>
         <input
@@ -100,7 +100,7 @@
 
       <div>
         <label :class="labelClass">{{ locale.stateSecret }}</label>
-        <p class="text-[10px] text-text-disabled px-1 mb-2">{{ locale.stateSecretDesc }}</p>
+        <p class="text-xs text-text-disabled px-1 mb-2">{{ locale.stateSecretDesc }}</p>
         <div class="flex gap-2">
           <input
             v-model="formData.oauthStateSecret"
@@ -168,7 +168,7 @@
             :placeholder="locale.aggregateLoginTypePlaceholder || '请选择至少一种登录方式'"
             multiple
           />
-          <p class="text-[10px] text-text-disabled px-1 mt-2">
+          <p class="text-xs text-text-disabled px-1 mt-2">
             {{
               locale.aggregateLoginTypeDesc ||
               '请选择当前聚合登录服务已接入并开通的登录方式；启用服务商尚未支持的平台会导致授权失败。每种登录方式会独立记录账号绑定关系。'
@@ -183,7 +183,7 @@
             placeholder="https://example.com/connect.php"
             :class="inputClass"
           />
-          <p class="text-[10px] text-text-disabled px-1 mt-2">
+          <p class="text-xs text-text-disabled px-1 mt-2">
             {{
               locale.aggregateEndpointDesc ||
               '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。'
@@ -199,7 +199,7 @@
               <p class="text-xs font-bold text-error">
                 {{ locale.clearBindingsTitle || '清除所有聚合登录绑定' }}
               </p>
-              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+              <p class="text-xs text-text-tertiary mt-0.5 leading-relaxed">
                 {{
                   locale.clearBindingsDesc ||
                   '更换聚合登录提供商时使用，将清除系统中所有用户的聚合登录绑定关系并要求其重新绑定。'
@@ -223,11 +223,11 @@
     <!-- Custom OAuth2 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ locale.customOAuth }}</h4>
+        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ locale.customOAuth }}</h4>
         <div class="flex items-center gap-2">
           <span
             :class="[
-              'text-[10px] font-bold',
+              'text-xs font-bold',
               formData.customOAuthEnabled ? 'text-success' : 'text-error'
             ]"
           >
@@ -384,7 +384,7 @@
       class="mt-6 p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
     >
       <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
-      <div class="text-[10px] text-text-tertiary leading-relaxed space-y-1">
+      <div class="text-xs text-text-tertiary leading-relaxed space-y-1">
         <p>
           {{ locale.brokerHintPrefix }}
           <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-primary hover:underline">VoiceHub-Auth-Broker</a>
@@ -441,7 +441,7 @@ const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
   'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
-const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
+const labelClass = 'text-xs font-bold text-text-disabled uppercase tracking-wider px-1 block mb-2'
 const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 const showSecrets = ref({

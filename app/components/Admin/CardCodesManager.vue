@@ -23,7 +23,7 @@
 
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
-        <h2 class="text-lg font-black">{{ locale.title }}</h2>
+        <h2 class="text-lg font-bold">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1 font-medium">
           {{ locale.desc }}
         </p>
@@ -54,10 +54,10 @@
 
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
       <div v-for="item in stats" :key="item.label" class="rounded-2xl border border-border-secondary bg-bg-secondary-50 p-4">
-        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">{{ item.label }}</p>
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-text-tertiary">{{ item.label }}</p>
         <div class="mt-2 flex items-end justify-between gap-2">
-          <span class="text-2xl font-black text-text-primary">{{ item.value }}</span>
-          <span :class="['text-[10px] font-bold px-2 py-1 rounded-full', item.badgeClass]">{{ item.hint }}</span>
+          <span class="text-2xl font-bold text-text-primary">{{ item.value }}</span>
+          <span :class="['text-xs font-bold px-2 py-1 rounded-full', item.badgeClass]">{{ item.hint }}</span>
         </div>
       </div>
     </div>
@@ -98,7 +98,7 @@
         </div>
 
         <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-primary-20 bg-primary-5 p-3">
-          <span class="text-xs font-black text-primary">{{ getLocaleMessage('selectedItems', selectedIds.length) }}</span>
+          <span class="text-xs font-bold text-primary">{{ getLocaleMessage('selectedItems', selectedIds.length) }}</span>
           <CustomSelect
             v-model="bulkStatus"
             :options="bulkStatusOptions"
@@ -170,14 +170,14 @@
                   </div>
                 </td>
                 <td class="px-3 py-3 align-top">
-                  <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', statusMeta(item.status).class]">
+                  <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-[0.2em]', statusMeta(item.status).class]">
                     {{ statusMeta(item.status).label }}
                   </span>
-                  <p v-if="item.lockedAt || item.redeemedAt" class="mt-1 text-[10px] text-text-tertiary leading-relaxed">
+                  <p v-if="item.lockedAt || item.redeemedAt" class="mt-1 text-xs text-text-tertiary leading-relaxed">
                     <span v-if="item.lockedAt">{{ getLocaleMessage('lockedAt', formatDate(item.lockedAt)) }}</span>
                     <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ getLocaleMessage('redeemedAt', formatDate(item.redeemedAt)) }}</span>
                   </p>
-                  <p v-if="item.assignedTo" class="mt-1 text-[10px] text-info leading-relaxed">
+                  <p v-if="item.assignedTo" class="mt-1 text-xs text-info leading-relaxed">
                     {{ locale.assignmentAssignee }}: {{ item.assigneeName || item.assigneeUsername || item.assignedTo }}
                     <span v-if="item.assignedAt" class="block text-text-tertiary">{{ formatDate(item.assignedAt) }}</span>
                   </p>
@@ -190,27 +190,27 @@
                       :placeholder="locale.note"
                       class="w-full resize-none rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
                     />
-                    <button class="text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary transition-colors" @click="saveNote(item)">
+                    <button class="text-xs font-bold uppercase tracking-[0.2em] text-primary hover:text-primary transition-colors" @click="saveNote(item)">
                       {{ locale.saveNote }}
                     </button>
                   </div>
                 </td>
-                <td class="px-3 py-3 align-top text-[11px] text-text-tertiary leading-relaxed">
+                <td class="px-3 py-3 align-top text-xs text-text-tertiary leading-relaxed">
                   <p>{{ getLocaleMessage('createdAt', formatDate(item.createdAt)) }}</p>
                   <p>{{ getLocaleMessage('updatedAt', formatDate(item.updatedAt)) }}</p>
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'AVAILABLE')">{{ locale.available }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'LOCKED')">{{ locale.locked }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'INVALID')">{{ locale.invalid }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-xs font-bold text-text-secondary disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'AVAILABLE')">{{ locale.available }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-xs font-bold text-warning disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'LOCKED')">{{ locale.locked }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-xs font-bold text-success disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-xs font-bold text-error disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'INVALID')">{{ locale.invalid }}</button>
                     <!-- 禁用态的按钮不会派发鼠标事件，title 挂在外层 span 才能可靠悬停显示 -->
                     <span
                       :title="item.status === 'AVAILABLE' ? (locale.dispatchRowHint || '派发这张点歌券给指定用户') : dispatchDisabledReason(item)"
                     >
                       <button
-                        class="rounded-lg border border-primary-30 bg-primary-10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:border-primary-50 hover:bg-primary-20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-primary-30 disabled:hover:bg-primary-10"
+                        class="rounded-lg border border-primary-30 bg-primary-10 px-2.5 py-1.5 text-xs font-bold text-primary transition-colors hover:border-primary-50 hover:bg-primary-20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-primary-30 disabled:hover:bg-primary-10"
                         :disabled="item.status !== 'AVAILABLE'"
                         @click="openDispatchForCode(item)"
                       >
@@ -240,8 +240,8 @@
         <div class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-4 space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <h3 class="text-sm font-black text-text-primary">{{ locale.createTitle }}</h3>
-              <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.createDesc }}</p>
+              <h3 class="text-sm font-bold text-text-primary">{{ locale.createTitle }}</h3>
+              <p class="mt-1 text-xs text-text-tertiary">{{ locale.createDesc }}</p>
             </div>
             <div class="inline-flex shrink-0 rounded-xl border border-border-secondary bg-bg-primary p-1">
               <button
@@ -270,31 +270,31 @@
 
           <div v-else class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.generateCount }}</label>
+              <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.generateCount }}</label>
               <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.prefix }}</label>
+              <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.prefix }}</label>
               <input v-model="generateForm.prefix" type="text" :placeholder="locale.prefixPlaceholder" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.randomLength }}</label>
+              <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.randomLength }}</label>
               <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.charset }}</label>
+              <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.charset }}</label>
               <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
           </div>
 
           <div>
-            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
+            <label class="mb-1.5 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
             <input v-model="createNote" type="text" :placeholder="locale.bulkNotePlaceholder" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40">
           </div>
 
           <div class="flex flex-wrap gap-2">
             <button
-              class="flex items-center gap-2 rounded-xl bg-primary-hover px-3.5 py-2 text-xs font-black text-text-primary hover:bg-primary transition-colors disabled:opacity-50"
+              class="flex items-center gap-2 rounded-xl bg-primary-hover px-3.5 py-2 text-xs font-bold text-text-primary hover:bg-primary transition-colors disabled:opacity-50"
               :disabled="saving"
               @click="createCodes"
             >
@@ -312,8 +312,8 @@
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="text-xs font-black text-text-primary">{{ getLocaleMessage('lastGeneratedTitle', lastGeneratedCodes.length) }}</p>
-                <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.lastGeneratedDesc }}</p>
+                <p class="text-xs font-bold text-text-primary">{{ getLocaleMessage('lastGeneratedTitle', lastGeneratedCodes.length) }}</p>
+                <p class="mt-1 text-xs text-text-tertiary">{{ locale.lastGeneratedDesc }}</p>
               </div>
               <button
                 class="flex items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary hover:border-border-tertiary hover:text-text-primary transition-colors"
@@ -329,7 +329,7 @@
         </div>
 
         <div class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-4 space-y-3">
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
           <ul class="space-y-2 text-[12px] leading-relaxed text-text-tertiary">
             <li v-for="tip in locale.quickTips" :key="tip" class="flex items-start gap-2">
               <span class="shrink-0 text-text-disabled">·</span>
@@ -345,8 +345,8 @@
     <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.assignmentsTitle }}</h3>
-          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.assignmentsDesc }}</p>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-[0.24em]">{{ locale.assignmentsTitle }}</h3>
+          <p class="mt-1 text-xs text-text-tertiary">{{ locale.assignmentsDesc }}</p>
         </div>
         <button
           class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary"
@@ -358,7 +358,7 @@
 
       <div class="grid grid-cols-1 gap-3 xl:grid-cols-4">
         <div class="xl:col-span-2">
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
           <input
             v-model="assignmentFilters.q"
             type="text"
@@ -368,7 +368,7 @@
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignmentStatus }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.assignmentStatus }}</label>
           <CustomSelect
             v-model="assignmentFilters.status"
             :options="assignmentStatusOptions"
@@ -381,7 +381,7 @@
         </div>
         <div class="flex items-end gap-2">
           <button
-            class="rounded-xl bg-primary-hover px-4 py-2.5 text-xs font-black text-text-primary hover:bg-primary transition-colors"
+            class="rounded-xl bg-primary-hover px-4 py-2.5 text-xs font-bold text-text-primary hover:bg-primary transition-colors"
             @click="fetchAssignments(1)"
           >
             {{ locale.queryLogs }}
@@ -399,11 +399,11 @@
         <span
           v-for="chip in assignmentStatsChips"
           :key="chip.key"
-          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-black tracking-[0.2em]"
+          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-[0.2em]"
           :class="chip.class"
         >
           {{ chip.label }}
-          <span class="text-[11px]">{{ chip.value }}</span>
+          <span class="text-xs">{{ chip.value }}</span>
         </span>
       </div>
 
@@ -434,13 +434,13 @@
               <td class="px-3 py-3 text-text-tertiary">{{ item.id }}</td>
               <td class="px-3 py-3 font-mono text-text-primary break-all">{{ item.codeSnapshot }}</td>
               <td class="px-3 py-3">
-                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', assignmentStatusMeta(item.status).class]">
+                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-[0.2em]', assignmentStatusMeta(item.status).class]">
                   {{ assignmentStatusMeta(item.status).label }}
                 </span>
-                <p v-if="item.failureReason" class="mt-1 text-[10px] text-error leading-relaxed">
+                <p v-if="item.failureReason" class="mt-1 text-xs text-error leading-relaxed">
                   {{ locale.assignmentFailureReason }}: {{ localizeAssignmentFailure(item) }}
                 </p>
-                <p v-if="item.notifyStatus === 'FAILED' && item.notifyError" class="mt-1 text-[10px] text-warning leading-relaxed">
+                <p v-if="item.notifyStatus === 'FAILED' && item.notifyError" class="mt-1 text-xs text-warning leading-relaxed">
                   {{ locale.notifyFailedButAssigned }}
                 </p>
               </td>
@@ -454,12 +454,12 @@
               <td class="px-3 py-3">
                 <button
                   v-if="item.status === 'ASSIGNED'"
-                  class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning"
+                  class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-xs font-bold text-warning"
                   @click="recycleAssignment(item)"
                 >
                   {{ locale.assignmentRecycle }}
                 </button>
-                <span v-else class="text-[11px] text-text-disabled">—</span>
+                <span v-else class="text-xs text-text-disabled">—</span>
               </td>
             </tr>
             <tr v-if="!assignments.length">
@@ -481,8 +481,8 @@
     <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.redeemLogsTitle }}</h3>
-          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.redeemLogsDesc }}</p>
+          <h3 class="text-sm font-bold text-text-primary uppercase tracking-[0.24em]">{{ locale.redeemLogsTitle }}</h3>
+          <p class="mt-1 text-xs text-text-tertiary">{{ locale.redeemLogsDesc }}</p>
         </div>
         <button
           class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary"
@@ -494,7 +494,7 @@
 
       <div class="grid grid-cols-1 gap-3 xl:grid-cols-6">
         <div class="xl:col-span-2">
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
           <input
             v-model="logFilters.q"
             type="text"
@@ -504,7 +504,7 @@
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.source }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.source }}</label>
           <CustomSelect
             v-model="logFilters.source"
             :options="logSourceOptions"
@@ -515,7 +515,7 @@
           />
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.redeemer }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.redeemer }}</label>
           <input
             v-model="logFilters.redeemer"
             type="text"
@@ -524,7 +524,7 @@
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.startDate }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.startDate }}</label>
           <AppDatePicker
             v-model="logFilters.startDate"
             size="md"
@@ -533,7 +533,7 @@
           />
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.endDate }}</label>
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-text-tertiary">{{ locale.endDate }}</label>
           <AppDatePicker
             v-model="logFilters.endDate"
             size="md"
@@ -545,7 +545,7 @@
 
       <div class="flex flex-wrap gap-2">
         <button
-          class="rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary hover:bg-primary transition-colors"
+          class="rounded-xl bg-primary-hover px-4 py-2 text-xs font-bold text-text-primary hover:bg-primary transition-colors"
           @click="fetchRedeemLogs"
         >
           {{ locale.queryLogs }}
@@ -584,7 +584,7 @@
               <td class="px-3 py-3 text-text-tertiary">{{ item.id }}</td>
               <td class="px-3 py-3 font-mono text-text-primary break-all">{{ item.code || item.codeSnapshot }}</td>
               <td class="px-3 py-3">
-                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', logSourceMeta(item.source).class]">
+                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold tracking-[0.2em]', logSourceMeta(item.source).class]">
                   {{ logSourceMeta(item.source).label }}
                 </span>
               </td>

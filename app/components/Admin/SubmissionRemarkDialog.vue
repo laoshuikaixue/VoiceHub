@@ -1,39 +1,23 @@
 <template>
-  <Transition
-    enter-active-class="transition duration-300 ease-out"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="transition duration-200 ease-in"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
+  <AppModal
+    :description="songTitle"
+    :show="show"
+    :title="locale.title"
+    size="lg"
+    @close="close"
   >
-    <div
-      v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      @click="close"
-    >
-      <div
-        class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-        @click.stop
-      >
-        <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-          <h3 class="text-xl font-black text-text-primary">{{ locale.title }}</h3>
-          <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="close">
-            <X :size="20" />
-          </button>
-        </div>
-        <div class="p-8 space-y-4">
+    <div class="space-y-4">
+
           <div class="flex items-center gap-3">
-            <p class="text-xs text-text-tertiary font-medium">{{ songTitle }}</p>
             <span
               v-if="noteStatus === 'pending'"
-              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-warning-10 text-warning border-warning-20"
+              class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border bg-warning-10 text-warning border-warning-20"
             >
               {{ locale.statusPending }}
             </span>
             <span
               v-else-if="noteStatus === 'rejected'"
-              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-error-10 text-error border-error-20"
+              class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border bg-error-10 text-error border-error-20"
             >
               {{ locale.statusRejected }}
             </span>
@@ -53,7 +37,7 @@
               />
               <span
                 :class="[
-                  'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border transition-colors',
+                  'px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border transition-colors',
                   isPublic
                     ? 'bg-primary-10 text-primary border-primary-20 group-hover:bg-primary-20'
                     : 'bg-warning-10 text-warning border-warning-20 group-hover:bg-warning-20'
@@ -61,7 +45,7 @@
               >
                 {{ isPublic ? locale.publicRemark : locale.adminOnly }}
               </span>
-              <span v-if="isUpdatingPublic" class="text-[10px] text-text-tertiary animate-pulse">{{ locale.updating }}</span>
+              <span v-if="isUpdatingPublic" class="text-xs text-text-tertiary animate-pulse">{{ locale.updating }}</span>
             </label>
           </div>
           <div class="bg-bg-primary-50 border border-border-secondary-50 rounded-xl p-4">
@@ -76,7 +60,7 @@
               v-if="noteStatus === 'pending'"
               type="button"
               :disabled="isUpdatingPublic"
-              class="px-4 py-2 rounded-lg bg-error-10 text-error border border-error-20 hover:bg-error-20 transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40"
+              class="px-4 py-2 rounded-lg bg-error-10 text-error border border-error-20 hover:bg-error-20 transition-colors text-xs font-bold uppercase tracking-wider disabled:opacity-40"
               @click="$emit('reject')"
             >
               {{ locale.rejectButton }}
@@ -84,21 +68,19 @@
             <button
               type="button"
               :disabled="isUpdatingPublic"
-              class="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 transition-opacity text-xs font-black uppercase tracking-widest disabled:opacity-40"
+              class="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 transition-opacity text-xs font-bold uppercase tracking-wider disabled:opacity-40"
               @click="$emit('approve')"
             >
               {{ locale.approveButton }}
             </button>
           </div>
-        </div>
-      </div>
     </div>
-  </Transition>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { X } from '@lucide/vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useLocale } from '~/utils/locale'
 
 defineProps({

@@ -579,6 +579,7 @@ export default defineNuxtConfig({
     '~/assets/css/variables.css',
     '~/assets/css/components.css',
     '~/assets/css/main.css',
+    '~/assets/css/tokens.css',
     '~/assets/css/transitions.css',
     '~/assets/css/mobile-admin.css',
     '~/assets/css/print-fix.css',
@@ -668,7 +669,7 @@ export default defineNuxtConfig({
         {
           name: 'viewport',
           content:
-            'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+            'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content'
         },
         {
           name: 'description',
@@ -686,7 +687,8 @@ export default defineNuxtConfig({
         { name: 'twitter:description', content: siteDescription },
         { name: 'twitter:image', content: absoluteLogo },
         // 移动端优化
-        { name: 'theme-color', content: '#111111' },
+        { name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#fafafa' },
+        { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#111111' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-title', content: siteShortName },

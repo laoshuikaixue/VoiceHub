@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-bg-primary text-text-primary pb-24">
+  <div class="min-h-[100dvh] bg-bg-primary text-text-primary pb-24">
     <!-- 顶部导航栏 -->
     <div
       class="sticky top-0 z-30 bg-bg-primary-80 backdrop-blur-xl border-b border-border-secondary-50 px-4 py-4 mb-8"
@@ -13,8 +13,8 @@
             <ArrowLeft :size="20" />
           </button>
           <div>
-            <h1 class="text-xl font-black text-text-primary tracking-tight">{{ locale.title }}</h1>
-            <p class="text-[10px] text-text-tertiary font-medium uppercase tracking-widest mt-0.5">
+            <h1 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h1>
+            <p class="text-xs text-text-tertiary font-medium uppercase tracking-wider mt-0.5">
               {{ locale.subtitle }}
             </p>
           </div>
@@ -29,7 +29,7 @@
           <section :class="sectionClass" class="flex flex-col items-center text-center">
             <div class="relative group">
               <div
-                class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-text-primary text-4xl font-black shadow-2xl shadow-[var(--primary-glow)] mb-6 group-hover:scale-105 transition-transform duration-500"
+                class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-text-primary text-4xl font-bold shadow-2xl shadow-[var(--primary-glow)] mb-6 group-hover:scale-105 transition-transform duration-500"
               >
                 <img
                   v-if="auth.user.value?.avatar && !avatarError"
@@ -47,7 +47,7 @@
             </div>
 
             <div class="space-y-2">
-              <h2 class="text-2xl font-black text-text-primary tracking-tight">
+              <h2 class="text-2xl font-bold text-text-primary tracking-tight">
                 {{ auth.user.value?.name || auth.user.value?.username }}
               </h2>
               <p class="text-sm font-medium text-text-tertiary">@{{ auth.user.value?.username }}</p>
@@ -55,19 +55,19 @@
 
             <div class="flex flex-wrap justify-center gap-2 mt-6">
               <span
-                class="px-3 py-1 bg-primary-10 border border-primary-20 text-primary text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-primary-10 border border-primary-20 text-primary text-xs font-bold uppercase tracking-wider rounded-full"
               >
                 {{ roleName }}
               </span>
               <span
                 v-if="auth.user.value?.grade"
-                class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-xs font-bold uppercase tracking-wider rounded-full"
               >
                 {{ auth.user.value?.grade }}
               </span>
               <span
                 v-if="auth.user.value?.class"
-                class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-xs font-bold uppercase tracking-wider rounded-full"
               >
                 {{ auth.user.value?.class }}
               </span>
@@ -84,7 +84,7 @@
                 <LinkIcon :size="20" class="text-info" />
               </div>
               <div>
-                <h2 class="text-base font-black text-text-primary">{{ locale.oauthBinding }}</h2>
+                <h2 class="text-base font-bold text-text-primary">{{ locale.oauthBinding }}</h2>
                 <p class="text-xs text-text-tertiary mt-0.5">{{ locale.oauthBindingDesc }}</p>
               </div>
             </div>
@@ -102,7 +102,7 @@
                   <KeyRound :size="20" class="text-success" />
                 </div>
                 <div>
-                  <h2 class="text-base font-black text-text-primary">{{ locale.personalApiKey.title }}</h2>
+                  <h2 class="text-base font-bold text-text-primary">{{ locale.personalApiKey.title }}</h2>
                   <p class="text-xs text-text-tertiary mt-0.5">{{ locale.personalApiKey.desc }}</p>
                 </div>
               </div>
@@ -142,9 +142,9 @@
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="text-sm font-black text-text-primary">{{ key.name }}</h3>
+                      <h3 class="text-sm font-bold text-text-primary">{{ key.name }}</h3>
                       <span
-                        class="px-2 py-0.5 rounded text-[10px] font-black border"
+                        class="px-2 py-0.5 rounded text-xs font-bold border"
                         :class="getApiKeyStatusClass(key.status)"
                       >
                         {{ getApiKeyStatusLabel(key.status) }}
@@ -165,19 +165,19 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.keyPrefix }}</p>
+                    <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.personalApiKey.keyPrefix }}</p>
                     <p class="font-mono text-xs text-primary">{{ key.keyPrefix }}...</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.createdAt }}</p>
+                    <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.personalApiKey.createdAt }}</p>
                     <p class="text-xs text-text-tertiary">{{ formatDate(key.createdAt) }}</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.lastUsedAt }}</p>
+                    <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.personalApiKey.lastUsedAt }}</p>
                     <p class="text-xs text-text-tertiary">{{ key.lastUsedAt ? formatDate(key.lastUsedAt) : locale.personalApiKey.neverUsed }}</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.usageCount }}</p>
+                    <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.personalApiKey.usageCount }}</p>
                     <button
                       class="text-xs font-bold text-success hover:text-success-hover transition-colors disabled:cursor-default disabled:opacity-60"
                       @click="openPersonalApiKeyLogs(key)"
@@ -186,7 +186,7 @@
                     </button>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.expiresAt }}</p>
+                    <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.personalApiKey.expiresAt }}</p>
                     <p class="text-xs text-text-tertiary">{{ key.expiresAt ? formatDate(key.expiresAt) : locale.personalApiKey.neverExpires }}</p>
                   </div>
                 </div>
@@ -201,14 +201,14 @@
                 <ListMusic :size="20" class="text-warning" />
               </div>
               <div>
-                <h2 class="text-base font-black text-text-primary">{{ locale.musicSource.title }}</h2>
+                <h2 class="text-base font-bold text-text-primary">{{ locale.musicSource.title }}</h2>
                 <p class="text-xs text-text-tertiary mt-0.5">{{ locale.musicSource.desc }}</p>
               </div>
             </div>
 
             <div class="max-w-xl space-y-4">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest" for="chksz-apikey-input">
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider" for="chksz-apikey-input">
                   {{ locale.musicSource.keyLabel }}
                 </label>
                 <div class="flex items-stretch gap-2">
@@ -289,7 +289,7 @@
                 <Lock :size="20" class="text-primary" />
               </div>
               <div>
-                <h2 class="text-base font-black text-text-primary">{{ locale.changePassword }}</h2>
+                <h2 class="text-base font-bold text-text-primary">{{ locale.changePassword }}</h2>
                 <p class="text-xs text-text-tertiary mt-0.5">{{ locale.changePasswordDesc }}</p>
               </div>
             </div>
@@ -309,7 +309,7 @@
               <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-info-10 rounded-xl flex items-center justify-center"><Monitor :size="20" class="text-info" /></div>
                 <div>
-                  <h2 class="text-base font-black text-text-primary">{{ locale.sessions.title }}</h2>
+                  <h2 class="text-base font-bold text-text-primary">{{ locale.sessions.title }}</h2>
                   <p class="text-xs text-text-tertiary mt-0.5">{{ locale.sessions.desc }}</p>
                 </div>
               </div>
@@ -324,7 +324,7 @@
                 <div class="flex items-start gap-3 min-w-0">
                   <div class="w-10 h-10 shrink-0 rounded-xl bg-bg-tertiary flex items-center justify-center text-text-secondary"><Monitor :size="19" /></div>
                   <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2"><p class="text-sm font-black text-text-primary">{{ session.browser }} · {{ session.operatingSystem }}</p><span v-if="session.current" class="px-2 py-0.5 rounded-full bg-success-10 text-success text-[10px] font-bold">{{ locale.sessions.current }}</span></div>
+                    <div class="flex flex-wrap items-center gap-2"><p class="text-sm font-bold text-text-primary">{{ session.browser }} · {{ session.operatingSystem }}</p><span v-if="session.current" class="px-2 py-0.5 rounded-full bg-success-10 text-success text-xs font-bold">{{ locale.sessions.current }}</span></div>
                     <p class="text-xs text-text-tertiary mt-1">{{ locale.sessions.ip }}: {{ session.ipAddress || '-' }} · {{ locale.sessions.loginMethod }}: {{ getSessionMethod(session.loginMethod) }}</p>
                     <p class="text-xs text-text-tertiary mt-1">{{ locale.sessions.lastActive }}: {{ formatDate(session.lastActiveAt) }} · {{ locale.sessions.expiresAt }}: {{ formatDate(session.expiresAt) }}</p>
                   </div>
@@ -350,24 +350,16 @@
       @cancel="cancelDeletePersonalApiKey"
     />
 
-    <Teleport to="body">
-      <Transition name="modal">
-        <div
-          v-if="createdApiKey"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
-        >
-          <div class="w-full max-w-xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-border-secondary flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-black text-text-primary">{{ locale.personalApiKey.createdTitle }}</h3>
-                <p class="text-xs text-text-tertiary mt-1">{{ locale.personalApiKey.createdDesc }}</p>
-              </div>
-              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closeCreatedApiKey">
-                <X :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="!!createdApiKey"
+      :title="locale.personalApiKey.createdTitle"
+      size="xl"
+      @close="closeCreatedApiKey"
+    >
+      <p class="mb-5 text-xs text-text-tertiary">{{ locale.personalApiKey.createdDesc }}</p>
 
-            <div class="p-6 space-y-5">
+      <div class="space-y-5">
+
               <div class="flex items-start gap-3 rounded-2xl border border-warning-20 bg-warning-10 p-4 text-warning">
                 <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
                 <p class="text-xs font-bold leading-relaxed">
@@ -376,7 +368,7 @@
               </div>
 
               <div class="space-y-2">
-                <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.fullKey }}</p>
+                <p class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ locale.personalApiKey.fullKey }}</p>
                 <div class="flex items-stretch gap-2">
                   <div class="flex-1 min-w-0 rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 font-mono text-xs text-primary break-all select-all">
                     {{ createdApiKey.apiKey }}
@@ -391,41 +383,33 @@
                   </button>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <div class="p-6 border-t border-border-secondary">
+      <template #footer>
+        <div class="w-full">
+
               <button
-                class="w-full py-3 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-black rounded-xl transition-all"
+                class="w-full py-3 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-bold rounded-xl transition-all"
                 @click="closeCreatedApiKey"
               >
                 {{ locale.personalApiKey.closeSaved }}
               </button>
-            </div>
-          </div>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
 
-    <Teleport to="body">
-      <Transition name="modal">
-        <div
-          v-if="showApiKeyLogsModal"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
-        >
-          <div class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-border-secondary flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-lg font-black text-text-primary">{{ locale.personalApiKey.logsTitle }}</h3>
-                <p class="text-xs text-text-tertiary mt-1">
-                  {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
-                </p>
-              </div>
-              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closePersonalApiKeyLogs">
-                <X :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="showApiKeyLogsModal"
+      :title="locale.personalApiKey.logsTitle"
+      size="2xl"
+      @close="closePersonalApiKeyLogs"
+    >
+      <p class="mb-5 text-xs text-text-tertiary">
+        {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
+      </p>
 
-            <div class="p-6">
+      <div class="space-y-0">
+
               <div v-if="apiKeyLogsLoading" class="flex items-center justify-center gap-2 py-10 text-xs text-text-tertiary">
                 <RefreshCw :size="16" class="animate-spin" />
                 <span>{{ locale.personalApiKey.loadingLogs }}</span>
@@ -441,7 +425,7 @@
                   <div class="max-h-[60vh] overflow-auto">
                     <table class="min-w-full text-left">
                       <thead class="sticky top-0 bg-bg-primary-95 backdrop-blur border-b border-border-secondary">
-                        <tr class="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                        <tr class="text-xs font-bold uppercase tracking-wider text-text-tertiary">
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.time }}</th>
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.method }}</th>
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.endpoint }}</th>
@@ -456,7 +440,7 @@
                           <td class="px-4 py-3 text-xs text-text-tertiary whitespace-nowrap">{{ formatDate(log.createdAt) }}</td>
                           <td class="px-4 py-3">
                             <span
-                              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border"
+                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border"
                               :class="getApiMethodClass(log.method)"
                             >
                               {{ log.method }}
@@ -499,16 +483,15 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </AppModal>
+
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -526,8 +509,7 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  User,
-  X
+  User
 } from '@lucide/vue'
 import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
 import { useAuth } from '~/composables/useAuth'
@@ -712,7 +694,7 @@ const getSessionMethod = (method) => {
 }
 
 // 样式类常量
-const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 md:p-8 shadow-2xl'
 
 const userInitials = computed(() => {
   const name = auth.user.value?.name || auth.user.value?.username || 'U'

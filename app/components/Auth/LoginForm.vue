@@ -188,11 +188,11 @@
             />
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]"
+            <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
               >{{ locale.passwordStrength }}</span
             >
             <span
-              class="text-[10px] font-black uppercase tracking-widest"
+              class="text-xs font-bold uppercase tracking-wider"
               :class="passwordStrength.textColorClass"
             >
               {{ passwordStrength.text }}

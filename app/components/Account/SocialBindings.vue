@@ -5,7 +5,7 @@
         <Share2 :size="20" class="text-primary" />
       </div>
       <div>
-        <h2 class="text-base font-black text-text-primary">{{ locale.title }}</h2>
+        <h2 class="text-base font-bold text-text-primary">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-0.5">{{ locale.desc }}</p>
       </div>
     </div>
@@ -30,7 +30,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p
-                  class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1"
+                  class="text-xs text-text-disabled font-bold uppercase tracking-wider mb-1"
                 >
                   {{ locale.currentEmail }}
                 </p>
@@ -38,7 +38,7 @@
               </div>
               <div
                 :class="[
-                  'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
+                  'px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider',
                   emailVerified
                     ? 'bg-success-10 text-success'
                     : 'bg-warning-10 text-warning'
@@ -76,7 +76,7 @@
               class="p-3 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
             >
               <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
-              <p class="text-[11px] text-text-tertiary leading-relaxed">
+              <p class="text-xs text-text-tertiary leading-relaxed">
                 {{ locale.emailCodeSentTip }}
               </p>
             </div>
@@ -88,7 +88,7 @@
                 maxlength="6"
                 :placeholder="locale.emailCodePlaceholder"
                 :class="[
-                  'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center text-text-primary placeholder:text-text-tertiary focus:outline-none transition-all',
+                  'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-bold tracking-[0.5em] text-center text-text-primary placeholder:text-text-tertiary focus:outline-none transition-all',
                   emailCodeError
                     ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                     : 'border-border-secondary focus:border-primary-30'
@@ -99,7 +99,7 @@
               <div class="grid grid-cols-2 gap-2">
                 <button
                   :disabled="bindingEmail || emailCode.length !== 6"
-                  class="px-4 py-2.5 bg-primary hover:bg-primary-hover text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                  class="px-4 py-2.5 bg-primary hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                   @click="verifyEmailCode"
                 >
                   {{ bindingEmail ? locale.verifying : locale.confirmVerify }}
@@ -113,7 +113,7 @@
                 </button>
               </div>
               <button
-                class="w-full py-2 text-text-tertiary hover:text-text-secondary text-[10px] font-black uppercase tracking-widest transition-all"
+                class="w-full py-2 text-text-tertiary hover:text-text-secondary text-xs font-bold uppercase tracking-wider transition-all"
                 @click="changeEmail"
               >
                 {{ locale.changeEmailAddress }}
@@ -131,7 +131,7 @@
             </button>
             <button
               :disabled="unbindingEmail"
-              class="flex-1 py-2.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all"
+              class="flex-1 py-2.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-bold rounded-xl transition-all"
               @click="unbindEmail"
             >
               {{ unbindingEmail ? locale.unbinding : locale.unbindEmail }}
@@ -159,16 +159,16 @@
             <div class="flex items-center justify-between">
               <div>
                 <p
-                  class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1"
+                  class="text-xs text-text-disabled font-bold uppercase tracking-wider mb-1"
                 >
                   {{ locale.currentBoundId }}
                 </p>
-                <p class="text-sm font-black text-primary tracking-tight">
+                <p class="text-sm font-bold text-primary tracking-tight">
                   {{ meowUserIdBound }}
                 </p>
               </div>
               <div
-                class="px-2 py-0.5 bg-primary text-white rounded-full text-[10px] font-black uppercase tracking-wider"
+                class="px-2 py-0.5 bg-primary text-white rounded-full text-xs font-bold uppercase tracking-wider"
               >
                 {{ locale.connected }}
               </div>
@@ -192,7 +192,7 @@
               >
               <button
                 :disabled="!meowUserId || binding"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] whitespace-nowrap"
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] whitespace-nowrap"
                 @click="sendVerificationCode"
               >
                 {{ binding ? locale.sending : locale.sendCode }}
@@ -205,7 +205,7 @@
                 class="p-3 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
               >
                 <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
-                <p class="text-[11px] text-text-tertiary leading-relaxed">
+                <p class="text-xs text-text-tertiary leading-relaxed">
                   {{ locale.meowCodeSentPrefix }}
                   <span class="font-bold text-text-primary">{{ meowUserId }}</span
                   >{{ locale.meowCodeSentSuffix }}
@@ -219,7 +219,7 @@
                   maxlength="6"
                   :placeholder="locale.codePlaceholder"
                   :class="[
-                    'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center text-text-primary placeholder:text-text-tertiary focus:outline-none transition-all',
+                    'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-bold tracking-[0.5em] text-center text-text-primary placeholder:text-text-tertiary focus:outline-none transition-all',
                     verificationCodeError
                       ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                       : 'border-border-secondary focus:border-primary-30'
@@ -230,7 +230,7 @@
                 <div class="grid grid-cols-2 gap-2">
                   <button
                     :disabled="binding || verificationCode.length !== 6"
-                    class="px-4 py-2.5 bg-primary hover:bg-primary-hover text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                    class="px-4 py-2.5 bg-primary hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                     @click="verifyAndBind"
                   >
                     {{ binding ? locale.verifying : locale.confirmBind }}
@@ -250,7 +250,7 @@
           <!-- 已绑定状态 -->
           <div v-else class="pt-2">
             <button
-              class="w-full py-2.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all"
+              class="w-full py-2.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-bold rounded-xl transition-all"
               @click="showUnbindConfirm"
             >
               {{ locale.unbindMeow }}
@@ -265,18 +265,18 @@
             <div class="w-9 h-9 shrink-0 rounded-xl bg-primary-10 border border-primary-20 flex items-center justify-center">
               <MessageCircle :size="17" class="w-[17px] h-[17px] shrink-0 text-primary" />
             </div>
-            <h3 class="text-sm font-black text-text-primary truncate">{{ locale.astrbot.platforms[platform] }}</h3>
+            <h3 class="text-sm font-bold text-text-primary truncate">{{ locale.astrbot.platforms[platform] }}</h3>
           </div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-bg-tertiary text-text-tertiary shrink-0">
+          <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-bg-tertiary text-text-tertiary shrink-0">
             {{ platformStatus[platform].bound ? locale.astrbot.bound : locale.astrbot.unbound }}
           </span>
         </div>
         <p class="text-xs text-text-tertiary leading-relaxed">{{ locale.astrbot.desc }}</p>
         <div v-if="platformStatus[platform].bound" class="space-y-3">
           <div class="rounded-xl border border-primary-20 bg-primary-5 p-3">
-            <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1">{{ locale.astrbot.boundUser }}</p>
-            <p class="text-sm font-black text-text-primary truncate">{{ platformStatus[platform].boundUser || locale.astrbot.bound }}</p>
-            <p v-if="platformStatus[platform].boundAt" class="text-[11px] text-text-tertiary mt-1">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
+            <p class="text-xs text-text-disabled font-bold uppercase tracking-wider mb-1">{{ locale.astrbot.boundUser }}</p>
+            <p class="text-sm font-bold text-text-primary truncate">{{ platformStatus[platform].boundUser || locale.astrbot.bound }}</p>
+            <p v-if="platformStatus[platform].boundAt" class="text-xs text-text-tertiary mt-1">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-bg-tertiary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50" @click="testAstrbot(platform)"><Send :size="13" />{{ locale.astrbot.test }}</button>
@@ -284,7 +284,7 @@
           </div>
         </div>
         <div v-else class="space-y-3">
-          <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all disabled:opacity-50" @click="createAstrbotCode(platform)"><KeyRound :size="13" />{{ astrbotBusy[platform] ? locale.pleaseWait : locale.astrbot.generate }}</button>
+          <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all disabled:opacity-50" @click="createAstrbotCode(platform)"><KeyRound :size="13" />{{ astrbotBusy[platform] ? locale.pleaseWait : locale.astrbot.generate }}</button>
           <div v-if="astrbotCodes[platform]" class="p-3 rounded-xl border border-border-secondary bg-bg-primary space-y-2">
             <p class="text-xs text-text-tertiary">{{ locale.astrbot.instruction }}</p>
             <code class="block font-mono text-lg font-bold text-primary select-all break-all">{{ astrbotCodes[platform].code }}</code>

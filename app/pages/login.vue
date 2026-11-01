@@ -13,7 +13,7 @@
               class="school-logo"
             />
           </div>
-          <h1 class="form-title">{{ siteTitle ? siteTitle + ' | VoiceHub' : 'VoiceHub' }}</h1>
+          <h1 class="form-title">{{ siteTitle && siteTitle !== 'VoiceHub' ? siteTitle + ' | VoiceHub' : 'VoiceHub' }}</h1>
           <div class="header-divider" />
         </div>
         <ClientOnly>
@@ -64,13 +64,16 @@ onMounted(async () => {
 
 <style scoped>
 .auth-layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(20px + env(safe-area-inset-left, 0px));
+  padding-right: calc(20px + env(safe-area-inset-right, 0px));
   /* 响应式尺寸变量 */
   --color-brand-logo-size: clamp(48px, 8vw, 96px);
   --school-logo-size: clamp(96px, 16vw, 160px);
@@ -281,7 +284,10 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .auth-layout {
-    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
   }
 
   .auth-container {

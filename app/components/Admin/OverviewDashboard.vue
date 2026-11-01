@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+  <div class="space-y-8 panel-enter">
     <!-- 统计卡片网格 -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 gap-4 sm:gap-6 xl:grid-cols-4">
       <div
         v-for="(stat, i) in statCards"
         :key="i"
@@ -27,7 +27,7 @@
           <div
             v-if="stat.trend"
             :class="[
-              'flex items-center gap-1 text-[11px] font-bold',
+              'flex items-center gap-1 text-xs font-bold',
               stat.trendDown ? 'text-error' : 'text-success'
             ]"
           >
@@ -43,10 +43,10 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-12 xl:gap-8">
       <!-- 最近活动 -->
       <div
-        class="lg:col-span-5 bg-bg-secondary-40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
+        class="bg-bg-secondary-40 lg:col-span-1 xl:col-span-5 border border-border-secondary rounded-2xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
       >
         <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -101,7 +101,7 @@
                 <p class="text-xs text-text-tertiary truncate mt-1">{{ activity.description }}</p>
                 <div class="flex items-center gap-1.5 mt-2">
                   <Clock :size="10" class="text-text-disabled" />
-                  <span class="text-[10px] text-text-disabled font-medium uppercase tracking-wider">{{
+                  <span class="text-xs text-text-disabled font-medium uppercase tracking-wider">{{
                     formatTime(activity.createdAt)
                   }}</span>
                 </div>
@@ -113,7 +113,7 @@
 
       <!-- 系统状态 -->
       <div
-        class="lg:col-span-4 bg-bg-secondary-40 border border-border-secondary rounded-xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
+        class="bg-bg-secondary-40 lg:col-span-1 xl:col-span-4 border border-border-secondary rounded-xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
       >
         <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -121,7 +121,7 @@
           </h3>
           <span
             :class="[
-              'px-3 py-1 text-[10px] font-black uppercase rounded-full border',
+              'px-3 py-1 text-xs font-bold uppercase rounded-full border',
               systemStatus.online
                 ? 'bg-success-10 text-success border-success-20'
                 : 'bg-error-10 text-error border-error-20'
@@ -151,7 +151,7 @@
           </div>
         </div>
         <div class="mt-auto border-t border-border-secondary px-6 py-4 flex flex-col items-center justify-center gap-1 text-center">
-          <span class="text-[10px] font-medium uppercase tracking-[0.3em] text-text-disabled">
+          <span class="text-xs font-medium uppercase tracking-[0.3em] text-text-disabled">
             {{ locale.instanceId }}
           </span>
           <button
@@ -168,7 +168,7 @@
 
       <!-- 快速操作 -->
       <div
-        class="lg:col-span-3 bg-bg-secondary-40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
+        class="bg-bg-secondary-40 lg:col-span-2 xl:col-span-3 border border-border-secondary rounded-2xl overflow-hidden flex flex-col shadow-lg shadow-[0_10px_15px_var(--shadow-color)]"
       >
         <div class="px-6 py-5 border-b border-border-secondary">
           <h3 class="text-lg font-bold flex items-center gap-2">

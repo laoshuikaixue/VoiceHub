@@ -5,7 +5,6 @@
         v-if="showBootLoading"
         :message="bootMessage"
         :progress="bootProgress"
-        title="Loading..."
       />
     </Transition>
 
@@ -36,7 +35,7 @@
                   :aria-expanded="showThemeMenu"
                   @click="toggleThemeMenu"
                 >
-                  <Icon name="gift" :size="19" />
+                  <Icon name="palette" :size="19" />
                 </button>
 
                 <Transition name="dropdown-fade">
@@ -157,27 +156,42 @@
       <!-- 中间主体内容区域 -->
       <div class="content-area">
         <!-- 选项卡区域-->
-        <div class="tabs-row">
+        <div aria-label="页面切换" class="tabs-row" role="tablist">
           <div
+            :aria-selected="activeTab === 'schedule'"
             :class="{ active: activeTab === 'schedule' }"
+            :tabindex="activeTab === 'schedule' ? 0 : -1"
             class="section-tab"
+            data-tab="schedule"
+            role="tab"
             @click="handleTabClick('schedule')"
+            @keydown="handleTabKeydown"
           >
             <Icon class="tab-icon" name="calendar" :size="20" />
             <span class="tab-text">{{ locale.tabs.schedule }}</span>
           </div>
           <div
+            :aria-selected="activeTab === 'songs'"
             :class="{ active: activeTab === 'songs' }"
+            :tabindex="activeTab === 'songs' ? 0 : -1"
             class="section-tab"
+            data-tab="songs"
+            role="tab"
             @click="handleTabClick('songs')"
+            @keydown="handleTabKeydown"
           >
             <Icon class="tab-icon" name="music" :size="20" />
             <span class="tab-text">{{ locale.tabs.songs }}</span>
           </div>
           <div
+            :aria-selected="activeTab === 'request'"
             :class="{ active: activeTab === 'request' }"
+            :tabindex="activeTab === 'request' ? 0 : -1"
             class="section-tab"
+            data-tab="request"
+            role="tab"
             @click="handleTabClick('request')"
+            @keydown="handleTabKeydown"
           >
             <Icon class="tab-icon" name="search" :size="20" />
             <span class="tab-text">{{ locale.tabs.request }}</span>
@@ -185,10 +199,14 @@
           <ClientOnly>
             <div
               ref="notificationTabRef"
+              :aria-selected="activeTab === 'notification'"
               :class="{ active: activeTab === 'notification', disabled: !isClientAuthenticated }"
+              :tabindex="activeTab === 'notification' ? 0 : -1"
               class="section-tab"
               data-tab="notification"
+              role="tab"
               @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
+              @keydown="handleTabKeydown"
             >
               <div class="icon-wrapper">
                 <Icon class="tab-icon" name="message-circle" :size="20" />
@@ -215,7 +233,11 @@
         </div>
 
         <!-- 内容区域 -->
-        <div class="tab-content-container">
+        <div
+          :aria-label="locale.tabs[activeTab]"
+          class="tab-content-container"
+          role="tabpanel"
+        >
           <ClientOnly>
             <!-- 播出排期内容 -->
             <div v-if="activeTab === 'schedule'" key="schedule" class="tab-pane schedule-tab-pane">
@@ -334,7 +356,7 @@
                       <Icon :size="15" name="check" />
                       <span>{{ locale.markAllRead }}</span>
                     </button>
-                    <button class="settings-icon" @click="toggleNotificationSettings">
+                    <button :aria-label="locale.notificationSettingsLabel" :title="locale.notificationSettingsLabel" class="settings-icon" type="button" @click="toggleNotificationSettings">
                       <svg
                         fill="none"
                         height="20"
@@ -730,70 +752,47 @@
     </div>
 
     <!-- 规则弹窗 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showRules"
-          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-          @click.self="showRules = false"
-        >
-          <div
-            class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
-          >
-            <div class="p-8 pb-4 flex items-center justify-between">
-              <div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                  >
-                    <Icon name="bell" :size="20" />
-                  </div>
-                  {{ locale.rulesTitle }}
-                </h3>
-                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
-              </div>
-              <button
-                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
-                @click="showRules = false"
-              >
-                <Icon name="x" :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="showRules"
+      :title="locale.rulesTitle"
+      :description="locale.rulesDesc"
+      size="lg"
+      @close="showRules = false"
+    >
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <Icon name="bell" :size="18" />
+        </span>
+      </template>
 
-            <div class="p-8 pt-4 space-y-8">
+      <div class="space-y-8">
+
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
+                  class="text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-2"
                 >
                   <Icon name="message-circle" :size="12" />
                   {{ locale.submissionGuidelines }}
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
+                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary-50 p-6 rounded-2xl border border-border-secondary-50"
                   v-html="renderedGuidelines"
                 />
                 <div
                   v-else
-                  class="space-y-3 bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
+                  class="space-y-3 bg-bg-primary-50 p-6 rounded-2xl border border-border-secondary-50"
                 >
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
-                    <span class="text-primary font-black">01</span>
+                    <span class="text-primary font-bold">01</span>
                     <p>{{ locale.defaultRules[0] }}</p>
                   </div>
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
-                    <span class="text-primary font-black">02</span>
+                    <span class="text-primary font-bold">02</span>
                     <p>{{ locale.defaultRules[1] }}</p>
                   </div>
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
-                    <span class="text-primary font-black">03</span>
+                    <span class="text-primary font-bold">03</span>
                     <p>{{ locale.defaultRules[2] }}</p>
                   </div>
                 </div>
@@ -801,13 +800,13 @@
 
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
+                  class="text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-2"
                 >
                   <Icon name="calendar" :size="12" />
                   {{ locale.playbackTime }}
                 </h4>
                 <div
-                  class="bg-primary-hover-10 border border-primary-20 p-6 rounded-3xl flex items-center gap-4"
+                  class="bg-primary-hover-10 border border-primary-20 p-6 rounded-2xl flex items-center gap-4"
                 >
                   <div
                     class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-[var(--primary-glow-40)]"
@@ -815,32 +814,34 @@
                     <Icon name="clock" :size="24" />
                   </div>
                   <div>
-                    <p class="text-sm font-black text-text-primary">{{ locale.playbackTimeDesc }}</p>
-                    <p class="text-[10px] text-text-tertiary font-bold uppercase tracking-widest mt-0.5">
+                    <p class="text-sm font-bold text-text-primary">{{ locale.playbackTimeDesc }}</p>
+                    <p class="text-xs text-text-tertiary font-bold uppercase tracking-wider mt-0.5">
                       PLAYBACK TIME
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <div class="p-8 pt-0">
+      <template #footer>
+        <div class="w-full">
+
               <button
-                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
+                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-2xl transition-all uppercase tracking-wider shadow-lg active:scale-95"
                 @click="showRules = false"
               >
                 {{ locale.gotIt }}
               </button>
-            </div>
-          </div>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import Icon from '~/components/UI/Icon.vue'
@@ -1504,10 +1505,11 @@ const applyHomeData = () => {
     try {
       applyThemeConfig(
         d.config.defaultTheme,
-        typeof d.config.enabledThemes === 'string' ? JSON.parse(d.config.enabledThemes) : d.config.enabledThemes
+        typeof d.config.enabledThemes === 'string' ? JSON.parse(d.config.enabledThemes) : d.config.enabledThemes,
+        d.config.accentColor
       )
     } catch {
-      applyThemeConfig('System', null)
+      applyThemeConfig('System', null, null)
     }
   }
 
@@ -1982,7 +1984,30 @@ const vRipple = {
   }
 }
 
-// 处理标签点击事件，添加动画效果
+// 标签键盘导航：左右方向键切换，Home/End 跳转首尾
+const handleTabKeydown = (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    event.currentTarget.click()
+    return
+  }
+  const navigationKeys = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
+  if (!navigationKeys.includes(event.key)) return
+  event.preventDefault()
+  const tablist = event.currentTarget.closest('[role="tablist"]')
+  const tabs = Array.from(tablist?.querySelectorAll('[role="tab"]:not(.disabled)') || [])
+  const currentIndex = tabs.indexOf(event.currentTarget)
+  if (currentIndex < 0 || tabs.length === 0) return
+  let nextIndex = currentIndex
+  if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length
+  if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length
+  if (event.key === 'Home') nextIndex = 0
+  if (event.key === 'End') nextIndex = tabs.length - 1
+  const nextTab = tabs[nextIndex]
+  nextTab.focus()
+  nextTab.click()
+}
+
 const handleTabClick = (tab) => {
   activeTab.value = tab
 }
@@ -2055,7 +2080,8 @@ if (
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* 确保至少占满视口 */
+  min-height: 100dvh; /* 确保至少占满可视区域 */
+  overflow-x: clip;
 }
 
 .main-content {
@@ -2091,15 +2117,17 @@ if (
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  margin-top: -2rem;
+  margin-bottom: 1.25rem;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .logo-section {
   display: flex;
   align-items: center;
   gap: 20px;
-  min-height: 160px;
+  min-height: 96px;
 }
 
 .logo-link {
@@ -2108,7 +2136,7 @@ if (
 }
 
 .logo-image {
-  width: 150px;
+  width: 120px;
   height: auto;
   object-fit: contain;
 }
@@ -2123,7 +2151,7 @@ if (
 /* 横线样式 */
 .logo-divider {
   width: 2px;
-  height: 100px;
+  height: 64px;
   background: linear-gradient(
     to bottom,
     var(--overlay-30),
@@ -2135,8 +2163,8 @@ if (
 
 /* 学校logo样式 */
 .school-logo {
-  max-width: 200px;
-  max-height: 80px;
+  max-width: 180px;
+  max-height: 64px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -3277,43 +3305,6 @@ if (
   border-color: var(--error-20);
 }
 
-.notification-actions-bar {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--overlay-8);
-}
-
-.action-button-large {
-  flex: 1;
-  background: var(--overlay-5);
-  border: 1px solid var(--overlay-10);
-  color: var(--text-primary);
-  padding: 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-button-large:hover:not(.disabled) {
-  background: var(--overlay-10);
-}
-
-.action-button-large.danger {
-  color: var(--color-error);
-}
-
-.action-button-large.danger:hover {
-  background: var(--error-10);
-}
-
-.action-button-large.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* 分页控件样式 */
 .notification-pagination {
   padding: 15px 0;
@@ -3478,44 +3469,48 @@ if (
 /* 底部操作区*/
 .notification-actions-bar {
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 15px 0;
-  border-top: 1px solid var(--overlay-10);
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--overlay-8);
 }
 
 .action-button-large {
-  background-color: var(--overlay-10);
-  border: none;
-  color: var(--light);
-  padding: 8px 16px;
-  border-radius: 6px;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid var(--overlay-12);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
-.action-button-large:hover {
-  background-color: var(--overlay-20);
+.action-button-large:hover:not(.disabled) {
+  background: var(--overlay-6);
+  color: var(--text-primary);
 }
 
 .action-button-large.danger {
+  border-color: var(--error-20);
   color: var(--color-error);
 }
 
 .action-button-large.danger:hover {
-  background-color: var(--error-20);
+  background: var(--error-10);
 }
 
 .action-button-large.disabled {
-  background-color: var(--overlay-5);
+  border-color: var(--overlay-8);
   color: var(--overlay-30);
   cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.action-button-large.disabled:hover {
-  background-color: var(--overlay-5);
+  opacity: 0.6;
 }
 
 /* ==================== 移动端设置==================== */
@@ -3608,13 +3603,13 @@ if (
   }
 
   .language-switcher-trigger {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .theme-switcher-trigger {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .language-dropdown {
@@ -3642,30 +3637,27 @@ if (
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
-    background: var(--overlay-8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: white;
-    border: 1px solid var(--overlay-10);
-    box-shadow: 0 4px 12px var(--mask-10);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--color-accent);
+    color: #ffffff;
+    border: 1px solid var(--color-accent);
+    box-shadow: 0 4px 12px var(--primary-20);
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      transform var(--transition-fast),
+      box-shadow var(--transition-fast);
     flex-shrink: 0; /* 防止空间不足时按钮被压缩导致文字换行 */
     white-space: nowrap;
   }
 
   .login-options .login-btn :deep(.icon) {
-    color: var(--color-accent-light);
+    color: #ffffff;
   }
 
   .login-options .login-btn:active {
     transform: scale(0.95);
     background: var(--overlay-15);
     border-color: var(--primary-40);
-  }
-
-  /* Footer 间距优化 */
-  :deep(.site-footer) {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
   /* 内容区域 - 全宽无边框*/
@@ -3705,7 +3697,7 @@ if (
     border: none;
     border-radius: 0;
     padding: 0; /* 移除固定内边距，改用 flex 居中 */
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--text-muted); /* text-text-tertiary */
     display: flex;
@@ -3714,21 +3706,26 @@ if (
     justify-content: center; /* 垂直居中内容 */
     gap: 4px;
     position: relative;
-    transition: all 0.2s ease;
+    transition:
+      background-color var(--transition-fast),
+      color var(--transition-fast),
+      transform var(--transition-fast);
   }
 
   .section-tab .tab-icon {
     display: block;
     margin-bottom: 2px;
-    transition: all 0.2s ease;
+    transition:
+      color var(--transition-fast),
+      transform var(--transition-fast);
     color: currentColor;
   }
 
   .section-tab .tab-text {
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    transition: all 0.2s ease;
+    transition: color var(--transition-fast);
   }
 
   .section-tab.active {
@@ -3768,7 +3765,7 @@ if (
 
   @keyframes dot-pop-in {
     0% {
-      transform: scale(0);
+      transform: scale(0.8);
       opacity: 0;
     }
     100% {
@@ -3825,7 +3822,7 @@ if (
     border-radius: 0;
     padding: 0 6px calc(80px + env(safe-area-inset-bottom, 0px));
     margin: 0;
-    min-height: calc(100vh - 120px);
+    min-height: calc(100dvh - 120px);
   }
 
   .tab-pane {
@@ -3911,7 +3908,7 @@ if (
     gap: 0.65rem 0.35rem;
   }
 
-  .notification-title {
+  .notification-header .notification-title {
     grid-column: 1;
     grid-row: 1;
     max-width: 90px;

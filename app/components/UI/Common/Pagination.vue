@@ -1,7 +1,7 @@
 <template>
   <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 pt-4">
     <!-- 分页信息 -->
-    <div class="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] order-2 sm:order-1">
+    <div class="text-xs font-bold text-text-secondary uppercase tracking-[0.2em] order-2 sm:order-1">
       {{ formatLocale(locale.info, currentPage, totalPages) }}
       <span v-if="totalItems !== null"> ({{ formatLocale(locale.totalItems, totalItems, displayItemName) }})</span>
     </div>
@@ -34,7 +34,7 @@
           v-for="page in displayedPages"
           :key="page"
           :class="[
-            'w-10 h-10 rounded-lg text-xs font-black transition-all shadow-lg',
+            'w-10 h-10 rounded-lg text-xs font-bold transition-all shadow-lg',
             currentPage === page
               ? 'bg-primary-hover text-text-primary shadow-[var(--primary-glow)]'
               : 'border border-border-secondary text-text-secondary hover:text-primary hover:border-primary-30 shadow-none'
@@ -71,13 +71,13 @@
           <input
             v-model="jumpPageInput"
             type="text"
-            class="w-12 h-10 bg-bg-primary border border-border-secondary rounded-lg text-center text-xs font-black text-text-secondary focus:outline-none focus:border-primary-50 transition-all"
+            class="w-12 h-10 bg-bg-primary border border-border-secondary rounded-lg text-center text-xs font-bold text-text-secondary focus:outline-none focus:border-primary-50 transition-all"
             :placeholder="locale.pagePlaceholder"
             @keyup.enter="handleJump"
           >
         </div>
         <button
-          class="ml-2 px-3 h-10 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+          class="ml-2 px-3 h-10 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-xs font-bold uppercase tracking-wider rounded-lg transition-all"
           @click="handleJump"
         >
           {{ locale.jump }}

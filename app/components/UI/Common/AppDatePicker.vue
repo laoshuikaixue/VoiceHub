@@ -15,7 +15,7 @@
       <span class="flex min-w-0 flex-1 flex-col">
         <span
           v-if="label"
-          class="mb-0.5 text-[8px] font-black uppercase leading-none tracking-widest transition-colors"
+          class="mb-0.5 text-xs font-bold uppercase leading-none tracking-wider transition-colors"
           :class="isOpen ? 'text-primary' : 'text-text-disabled'"
         >
           {{ label }}
@@ -97,7 +97,7 @@
               <span
                 v-for="(weekday, index) in text.weekdays"
                 :key="`weekday-${index}`"
-                class="flex h-6 items-center justify-center text-[9px] font-black uppercase tracking-wider text-text-disabled"
+                class="flex h-6 items-center justify-center text-xs font-bold uppercase tracking-wider text-text-disabled"
               >
                 {{ weekday }}
               </span>
@@ -312,7 +312,7 @@ const todayDisabled = computed(() => isOutOfRange(todayISO.value))
 const sizeClass = computed(() => {
   switch (props.size) {
     case 'xs':
-      return 'px-2 py-1 text-[10px]'
+      return 'px-2 py-1 text-xs'
     case 'md':
       return 'px-3 py-2.5 text-sm'
     case 'lg':
@@ -321,7 +321,7 @@ const sizeClass = computed(() => {
       return 'p-3 text-base'
     case 'sm':
     default:
-      return 'px-3 py-2 text-[11px]'
+      return 'px-3 py-2 text-xs'
   }
 })
 

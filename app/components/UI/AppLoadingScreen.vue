@@ -80,14 +80,14 @@ const ringOffset = computed(() => circumference - (circumference * safeProgress.
 
 const phaseLabel = computed(() => {
   const p = safeProgress.value
-  if (p >= 100) return 'COMPLETE PHASE'
-  if (p >= 88) return 'FINALIZING PHASE'
-  if (p >= 82) return 'FALLBACK PHASE'
-  if (p >= 68) return 'CONTENT PHASE'
-  if (p >= 58) return 'SLOW NETWORK PHASE'
-  if (p >= 46) return 'AUTH PHASE'
-  if (p >= 28) return 'CONFIG PHASE'
-  return 'START PHASE'
+  if (p >= 100) return locale.value.phases?.complete || 'Ready'
+  if (p >= 88) return locale.value.phases?.finalizing || 'Finalizing'
+  if (p >= 82) return locale.value.phases?.fallback || 'Using fallback data'
+  if (p >= 68) return locale.value.phases?.content || 'Loading content'
+  if (p >= 58) return locale.value.phases?.slow || 'Slow network'
+  if (p >= 46) return locale.value.phases?.auth || 'Checking session'
+  if (p >= 28) return locale.value.phases?.config || 'Reading site config'
+  return locale.value.phases?.start || 'Starting'
 })
 
 const isAccelerating = ref(false)

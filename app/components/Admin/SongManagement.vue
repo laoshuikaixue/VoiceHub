@@ -4,22 +4,22 @@
     <div class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
         <div class="space-y-1">
-          <h2 class="text-3xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+          <h2 class="text-3xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
           <div class="flex items-center gap-6 mt-4">
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.stats.total }}</span
               >
               <span class="text-sm font-bold text-text-secondary">{{ baseFilteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.stats.played }}</span
               >
               <span class="text-sm font-bold text-success">{{ playedCount }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                 >{{ locale.stats.pending }}</span
               >
               <span class="text-sm font-bold text-primary">{{ pendingCount }}</span>
@@ -42,7 +42,7 @@
               class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchMarkPlayed"
                 :disabled="loading || batchMarking"
               >
@@ -51,7 +51,7 @@
                 }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchMarkUnplayed"
                 :disabled="loading || batchMarking"
               >
@@ -74,7 +74,7 @@
               class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="openDownloadDialog"
               >
                 <Download :size="14" class="text-success-70" /> {{ locale.actions.download }} ({{
@@ -82,13 +82,13 @@
                 }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-warning text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-warning text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchReject"
               >
                 <X :size="14" /> {{ locale.actions.batchReject }} ({{ selectedSongs.length }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-xs font-bold rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-wider"
                 @click="batchDelete"
               >
                 <Trash2 :size="14" class="text-error-70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
@@ -122,9 +122,9 @@
 
       <!-- 过滤器栏 -->
       <div
-        class="bg-bg-secondary-30 border border-border-secondary-60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
+        class="flex flex-col gap-4 rounded-xl border border-border-secondary-60 bg-bg-secondary-30 p-4 xl:flex-row xl:items-center"
       >
-        <div class="relative flex-1 group w-full lg:w-auto">
+        <div class="group relative w-full xl:flex-1">
           <Search
             class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
             :size="18"
@@ -136,7 +136,7 @@
             class="w-full bg-bg-primary-50 border border-border-secondary-80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary text-text-primary"
           />
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:flex lg:items-center gap-3 w-full lg:w-auto">
+        <div class="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 xl:flex xl:w-auto xl:items-center">
           <CustomSelect
             v-model="selectedSemester"
             :label="locale.filters.semester"
@@ -144,7 +144,7 @@
             label-key="name"
             value-key="id"
             :placeholder="locale.filters.selectSemester"
-            class-name="w-full lg:w-40"
+            class-name="min-w-0 w-full xl:w-40"
           />
           <CustomSelect
             v-model="selectedPlayTime"
@@ -153,12 +153,12 @@
             label-key="name"
             value-key="id"
             :placeholder="locale.filters.selectPlayTime"
-            class-name="w-full lg:w-40"
+            class-name="min-w-0 w-full xl:w-40"
           />
           <AppDatePicker
             v-model="selectedPlayDate"
             :label="locale.filters.playDate"
-            class-name="w-full lg:w-40"
+            class-name="min-w-0 w-full xl:w-40"
             rounded="lg"
             size="sm"
           />
@@ -167,7 +167,7 @@
             :label="locale.filters.status"
             :options="statusOptions"
             :placeholder="locale.filters.selectStatus"
-            class-name="w-full lg:w-32"
+            class-name="min-w-0 w-full xl:w-32"
           />
           <CustomSelect
             v-if="isAdmin"
@@ -175,14 +175,14 @@
             :label="locale.filters.pool"
             :options="poolOptions"
             :placeholder="locale.filters.selectPool"
-            class-name="w-full lg:w-32"
+            class-name="min-w-0 w-full xl:w-32"
           />
           <CustomSelect
             v-model="sortOption"
             :label="locale.filters.sort"
             :options="sortOptions"
             :placeholder="locale.filters.selectSort"
-            class-name="w-full lg:w-36 col-span-2 md:col-span-4 lg:col-span-1"
+            class-name="min-w-0 w-full xl:w-36"
           />
         </div>
       </div>
@@ -199,299 +199,187 @@
       >
         <div class="flex flex-col items-center gap-3">
           <AppSpinner :size="32" />
-          <span class="text-xs font-bold text-text-tertiary tracking-widest uppercase">{{ locale.loading }}</span>
+          <span class="text-xs font-bold text-text-tertiary tracking-wider uppercase">{{ locale.loading }}</span>
         </div>
       </div>
 
-      <!-- 表头 -->
-      <div
-        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-border-secondary-60 bg-bg-secondary-40"
-      >
-        <div class="col-span-1 flex items-center">
-          <input
-            type="checkbox"
-            :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
-            @change="toggleSelectAll"
-          />
-        </div>
-        <div class="col-span-4 text-[10px] font-black text-text-disabled uppercase tracking-widest">
-          {{ locale.table.songInfo }}
-        </div>
-        <div class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest">
-          {{ locale.table.requester }}
-        </div>
-        <div
-          class="col-span-1 text-[10px] font-black text-text-disabled uppercase tracking-widest text-center"
-        >
-          {{ locale.table.stats }}
-        </div>
-        <div
-          class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest text-center"
-        >
-          {{ locale.table.status }}
-        </div>
-        <div
-          class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest text-right pr-4"
-        >
-          {{ locale.table.actions }}
-        </div>
-      </div>
-
-      <!-- 移动端批量操作栏 -->
+      <!-- 批量选择 -->
       <div
         v-if="filteredSongs.length > 0"
-        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-border-secondary-60 bg-bg-secondary-40"
+        class="flex items-center justify-between gap-3 border-b border-border-secondary-60 bg-bg-secondary-40 px-4 py-3"
       >
-        <label class="flex items-center gap-2 text-xs font-bold text-text-secondary cursor-pointer py-1">
+        <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-text-secondary">
           <input
-            type="checkbox"
             :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
+            class="h-5 w-5 cursor-pointer rounded-lg border-2 border-border-secondary bg-bg-primary"
+            type="checkbox"
             @change="toggleSelectAll"
           >
           {{ locale.table.selectPage }}
         </label>
-        <span v-if="selectedSongs.length > 0" class="text-xs text-primary font-bold">{{ getLocaleMessage('selectedItems', selectedSongs.length) }}</span>
+        <span v-if="selectedSongs.length > 0" class="text-xs font-bold text-primary">
+          {{ getLocaleMessage('selectedItems', selectedSongs.length) }}
+        </span>
       </div>
 
       <!-- 空状态 -->
       <div
         v-if="filteredSongs.length === 0 && !loading"
-        class="py-20 flex flex-col items-center justify-center text-text-tertiary"
+        class="flex flex-col items-center justify-center py-20 text-text-tertiary"
       >
-        <Music :size="48" class="text-text-primary mb-4" />
-        <p class="text-sm font-bold">{{ searchQuery ? locale.empty.search : locale.empty.default }}</p>
+        <Music :size="48" class="mb-4 text-text-primary" />
+        <p class="text-sm font-bold">
+          {{ searchQuery ? locale.empty.search : locale.empty.default }}
+        </p>
       </div>
 
-      <!-- 列表内容 -->
-      <div v-else class="divide-y divide-panel-bg-dark-40">
-        <div
+      <!-- 歌曲列表 -->
+      <div v-else class="grid grid-cols-1 gap-2 p-3 xl:grid-cols-2">
+        <SongCard
           v-for="song in paginatedSongs"
           :key="song.id"
-          :class="[
-            'flex flex-col lg:grid lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all lg:items-center group relative',
-            selectedSongs.includes(song.id) ? 'bg-primary-hover-5' : 'hover:bg-bg-tertiary-20'
-          ]"
+          :selected="selectedSongs.includes(song.id)"
+          :song="song"
+          @play="playSong(song)"
         >
-          <div class="hidden lg:flex col-span-1 items-center">
+          <template #leading>
             <input
-              type="checkbox"
               :checked="selectedSongs.includes(song.id)"
-              class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
+              class="h-5 w-5 cursor-pointer rounded-lg border-2 border-border-secondary bg-bg-primary"
+              type="checkbox"
               @change="toggleSelectSong(song.id)"
-            />
-          </div>
+            >
+          </template>
 
-          <div class="col-span-12 lg:col-span-4 flex items-center gap-3 lg:gap-4 w-full">
-            <label
-              class="lg:hidden flex items-center justify-center p-2 -ml-2 shrink-0 cursor-pointer"
+          <template #badges>
+            <button
+              v-if="song.hasSubmissionNote && song.submissionNote"
+              class="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-primary-30 bg-primary-10 text-primary transition-all hover:bg-primary-20"
+              :title="locale.actions.viewRemark"
+              type="button"
+              @click.stop="openSubmissionRemark(song)"
             >
-              <input
-                type="checkbox"
-                :checked="selectedSongs.includes(song.id)"
-                class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
-                @change="toggleSelectSong(song.id)"
-              />
-            </label>
-            <div
-              :class="[
-                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-bg-tertiary-40 border-border-tertiary-30 group-hover:border-border-tertiary cursor-pointer hover:opacity-80',
-                selectedSongs.includes(song.id) ? 'border-primary-50' : ''
-              ]"
-              @click.stop="playSong(song)"
-            >
-              <img
-                v-if="song.cover"
-                :src="getCoverThumbUrl(song.cover)"
-                class="w-full h-full object-cover"
-                referrerpolicy="no-referrer"
-              />
-              <Music v-else :size="20" class="text-text-disabled" />
-            </div>
-            <div class="min-w-0">
-              <h4
+              <MessageSquare :size="12" />
+            </button>
+          </template>
+
+          <template #meta>
+            <div class="admin-song-meta">
+              <span
                 :class="[
-                  'font-bold transition-colors flex items-center',
-                  selectedSongs.includes(song.id)
-                    ? 'text-primary'
-                    : 'text-text-primary group-hover:text-primary'
+                  'flex-shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-bold',
+                  song.played
+                    ? 'bg-success-10 text-success'
+                    : song.scheduled
+                      ? 'bg-primary-10 text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary'
                 ]"
               >
-                <span
-                  v-if="isBilibiliSong(song)"
-                  class="truncate flex items-center gap-1 text-left"
-                >
-                  {{ song.title }}
+                {{ getStatusText(song) }}
+              </span>
+              <span v-if="song.user?.username" class="text-text-disabled">@{{ song.user.username }}</span>
+              <template v-if="song.submissionCount != null && song.playCount != null">
+                <span>
+                  {{ locale.table.submitStat(song.submissionCount) }}
                 </span>
-                <span v-else class="truncate">{{ song.title }}</span>
-                <button
-                  v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all"
-                  :title="locale.actions.viewRemark"
-                  @click.stop="openSubmissionRemark(song)"
-                >
-                  <MessageSquare :size="12" />
-                </button>
-                <span
-                  v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 text-xs text-primary-80 truncate max-w-[200px] cursor-pointer hover:text-primary transition-colors font-normal"
-                  :title="locale.actions.viewRemark"
-                  @click.stop="openSubmissionRemark(song)"
-                >
-                  {{
-                    song.submissionNote.length > 25
-                      ? song.submissionNote.substring(0, 25) + '...'
-                      : song.submissionNote
-                  }}
+                <span class="text-text-disabled">·</span>
+                <span>
+                  {{ locale.table.playStat(song.playCount) }}
                 </span>
-              </h4>
-              <p class="text-xs text-text-tertiary font-medium truncate mt-0.5 flex items-center gap-1.5">
-                <span class="truncate min-w-0">{{ song.artist }}</span>
-                <span
-                  v-if="song.durationSeconds"
-                  class="text-text-disabled shrink-0"
-                >{{ formatDuration(song.durationSeconds) }}</span>
-              </p>
-              <!-- 音源标识独立成行，避免歌手名过长时被挤掉 -->
-              <div v-if="song.musicPlatform" class="mt-1 flex">
-                <span
-                  class="platform-tag px-1 whitespace-nowrap"
-                  :class="'platform-' + platformTagClass(song.musicPlatform)"
-                >{{ platformLabel(song.musicPlatform) }}</span>
-              </div>
+              </template>
+              <span v-if="song.preferredPlayTimeId || song.preferredPlayDate" class="text-primary">
+                {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
+              </span>
+              <span v-if="song.requestedAt" class="text-text-disabled">
+                · {{ formatDate(song.requestedAt) }}
+              </span>
               <span
-                class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
-                >{{ formatDate(song.requestedAt) }}</span
+                v-if="song.hasSubmissionNote && song.submissionNote"
+                class="max-w-[220px] cursor-pointer truncate text-primary-80 transition-colors hover:text-primary"
+                :title="locale.actions.viewRemark"
+                @click.stop="openSubmissionRemark(song)"
               >
+                {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
+              </span>
             </div>
-          </div>
+          </template>
 
-          <!-- Mobile Bottom Section -->
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 w-full lg:contents mt-1 lg:mt-0"
-          >
-            <!-- Left side: Requester, Votes, Status -->
-            <div class="flex items-center gap-3 lg:contents">
-              <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
-                <span class="text-xs font-bold text-text-tertiary truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
-                <span v-if="song.user" class="text-[10px] font-bold text-text-disabled truncate max-w-[100px]"
-                  >@{{ song.user.username }}</span
-                >
-                <!-- 该投稿人累计投稿数与已播放数 -->
-                <span
-                  v-if="song.submissionCount != null && song.playCount != null"
-                  class="text-[10px] font-bold text-text-disabled mt-0.5 whitespace-nowrap"
-                >{{ locale.table.submitStat(song.submissionCount) }} · {{ locale.table.playStat(song.playCount) }}</span
-                >
-                <span
-                  v-if="song.preferredPlayTimeId || song.preferredPlayDate"
-                  class="text-[10px] font-bold text-primary mt-1"
-                >
-                  {{ getLocaleMessage('preferredPlayTime', formatPlaySlotDisplay(song)) }}
-                </span>
-                <span
-                  class="hidden lg:inline text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-60"
-                  >{{ formatDate(song.requestedAt) }}</span
-                >
-              </div>
-
-              <div class="col-span-3 lg:col-span-1 text-center shrink-0">
-                <button
-                  :disabled="!(song.voteCount > 0)"
-                  :class="[
-                    'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
-                    song.voteCount > 0
-                      ? 'bg-color-pink-alpha-10 text-color-pink hover:bg-color-pink-alpha-10 cursor-pointer'
-                      : 'bg-bg-primary-30 text-text-secondary cursor-default'
-                  ]"
-                  @click="showVoters(song.id)"
-                >
-                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink-alpha-20' : ''" />
-                  {{ song.voteCount || 0 }}
-                </button>
-              </div>
-
-              <div class="col-span-3 lg:col-span-2 text-center shrink-0">
-                <span
-                  :class="[
-                    'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
-                    song.played
-                      ? 'bg-success-10 text-success'
-                      : song.scheduled
-                        ? 'bg-primary-10 text-primary'
-                        : 'bg-bg-tertiary text-text-tertiary'
-                  ]"
-                >
-                  {{ getStatusText(song) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Right side: Actions -->
-            <div
-              class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
-            >
+          <template #actions>
+            <div class="admin-song-actions">
               <button
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                :disabled="!(song.voteCount > 0)"
+                :class="[
+                  'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-colors',
+                  song.voteCount > 0
+                    ? 'bg-color-pink-alpha-10 text-color-pink'
+                    : 'bg-bg-primary-30 text-text-secondary'
+                ]"
+                type="button"
+                @click="showVoters(song.id)"
+              >
+                <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink-alpha-20' : ''" />
+                {{ song.voteCount || 0 }}
+              </button>
+              <button
+                class="admin-song-icon-btn text-primary"
                 :title="locale.actions.edit"
+                type="button"
                 @click="editSong(song)"
               >
                 <Edit2 :size="14" />
               </button>
-
               <button
                 v-if="!song.played"
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-success"
                 :title="locale.actions.markPlayed"
+                type="button"
                 @click="markAsPlayed(song.id)"
               >
                 <Check :size="14" />
               </button>
               <button
                 v-else
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-text-tertiary"
                 :title="locale.actions.markUnplayed"
+                type="button"
                 @click="markAsUnplayed(song.id)"
               >
                 <RotateCcw :size="14" />
               </button>
-
               <button
                 v-if="isAdmin"
-                :disabled="poolPendingIds.has(song.id)"
                 :class="[
-                  'flex items-center justify-center p-2 rounded-xl transition-all border',
-                  song.inPool
-                    ? 'bg-error-10 text-error border-error-20 hover:bg-error hover:text-text-primary'
-                    : 'bg-bg-tertiary-50 text-info border-border-tertiary-30 hover:bg-info hover:text-text-primary',
-                  poolPendingIds.has(song.id) ? 'opacity-50 cursor-wait' : ''
+                  'admin-song-icon-btn',
+                  song.inPool ? 'text-error' : 'text-info'
                 ]"
+                :disabled="poolPendingIds.has(song.id)"
                 :title="song.inPool ? locale.actions.removeFromPool : locale.actions.addToPool"
+                type="button"
                 @click="toggleSongPool(song)"
               >
                 <Loader2 v-if="poolPendingIds.has(song.id)" :size="14" class="animate-spin" />
                 <FolderMinus v-else-if="song.inPool" :size="14" />
                 <FolderPlus v-else :size="14" />
               </button>
-
               <button
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-warning"
                 :title="locale.actions.reject"
+                type="button"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
-                class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
+                class="admin-song-icon-btn text-error"
                 :title="locale.actions.deleteSong"
+                type="button"
                 @click="deleteSong(song.id)"
               >
                 <Trash2 :size="14" />
               </button>
             </div>
-          </div>
-        </div>
+          </template>
+        </SongCard>
       </div>
     </div>
 
@@ -518,7 +406,7 @@
       >
         <div class="flex items-center justify-between">
           <div class="px-3 flex flex-col">
-            <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
+            <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ locale.selected }}</span>
             <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
           </div>
           <div class="flex items-center gap-2">
@@ -527,21 +415,21 @@
               @click="openDownloadDialog"
             >
               <Download :size="16" class="mb-1" />
-              <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
+              <span class="text-xs font-bold">{{ locale.actions.download }}</span>
             </button>
             <button
               class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-warning rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
               @click="batchReject"
             >
               <X :size="16" class="mb-1" />
-              <span class="text-[9px] font-bold">{{ locale.actions.batchReject }}</span>
+              <span class="text-xs font-bold">{{ locale.actions.batchReject }}</span>
             </button>
             <button
               class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
               @click="batchDelete"
             >
               <Trash2 :size="16" class="mb-1" />
-              <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
+              <span class="text-xs font-bold">{{ locale.actions.delete }}</span>
             </button>
           </div>
         </div>
@@ -553,7 +441,7 @@
             :disabled="loading || batchMarking"
           >
             <Check :size="16" />
-            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkPlayed }}</span>
+            <span class="text-xs font-bold">{{ locale.actions.batchMarkPlayed }}</span>
           </button>
           <button
             class="flex-1 flex items-center justify-center gap-2 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
@@ -561,7 +449,7 @@
             :disabled="loading || batchMarking"
           >
             <RotateCcw :size="16" />
-            <span class="text-[10px] font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
+            <span class="text-xs font-bold">{{ locale.actions.batchMarkUnplayed }}</span>
           </button>
         </div>
       </div>
@@ -607,35 +495,16 @@
     />
 
     <!-- 驳回歌曲对话框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :close-on-esc="!rejectLoading"
+      :close-on-overlay="!rejectLoading"
+      :persistent="rejectLoading"
+      :show="showRejectDialog"
+      :title="isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title"
+      size="md"
+      @close="cancelReject"
     >
-      <div
-        v-if="showRejectDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
-      >
-        <div
-          class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-          @click.stop
-        >
-          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary">
-              {{ isBatchReject ? locale.rejectDialog.batchTitle : locale.rejectDialog.title }}
-            </h3>
-            <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
-              @click="cancelReject"
-            >
-              <X :size="20" />
-            </button>
-          </div>
-
-          <div class="p-8 space-y-6">
+      <div class="space-y-6">
             <div class="p-5 bg-bg-primary border border-border-secondary rounded-lg flex items-center gap-4">
               <div
                 class="w-10 h-10 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-10"
@@ -653,7 +522,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.rejectDialog.reason }}</label
               >
               <textarea
@@ -674,14 +543,16 @@
                   class="text-xs font-bold text-text-secondary group-hover:text-error transition-colors"
                   >{{ isBatchReject ? locale.rejectDialog.batchAddToBlacklist : locale.rejectDialog.addToBlacklist }}</span
                 >
-                <p class="text-[10px] text-text-disabled font-medium">
+                <p class="text-xs text-text-disabled font-medium">
                   {{ locale.rejectDialog.blacklistHint }}
                 </p>
               </div>
             </label>
-          </div>
 
-          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelReject"
@@ -690,15 +561,15 @@
             </button>
             <button
               :disabled="rejectLoading"
-              class="px-8 py-2.5 bg-error hover:bg-error text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-error hover:bg-error text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               @click="confirmReject"
             >
               {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
             </button>
-          </div>
+
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 投票人员弹窗 -->
     <VotersModal :show="showVotersModal" :song-id="selectedSongId" @close="closeVotersModal" />
@@ -720,38 +591,17 @@
     />
 
     <!-- 编辑/添加歌曲模态框 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
+    <AppModal
+      :persistent="showEditModal ? editLoading : addLoading"
+      :show="showEditModal || showAddSongModal"
+      :title="showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle"
+      size="xl"
+      @close="handleEditOverlayClick"
     >
-      <div
-        v-if="showEditModal || showAddSongModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm overflow-y-auto"
-      >
-        <div
-          class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden my-auto"
-          @click.stop
-        >
-          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-text-primary">
-              {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
-            </h3>
-            <button
-              class="text-text-tertiary hover:text-text-secondary transition-colors"
-              @click="showEditModal ? cancelEditSong() : cancelAddSong()"
-            >
-              <X :size="20" />
-            </button>
-          </div>
-
-          <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+      <div class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.titleLabel }}</label
                 >
                 <input
@@ -770,7 +620,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.artistLabel }}</label
                 >
                 <input
@@ -791,7 +641,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.requester }}</label
               >
               <div class="relative user-search-container">
@@ -841,7 +691,7 @@
                   >
                     <div class="flex flex-col">
                       <span class="text-sm font-bold text-text-primary">{{ user.name }}</span>
-                      <span class="text-[10px] text-text-tertiary">@{{ user.username }}</span>
+                      <span class="text-xs text-text-tertiary">@{{ user.username }}</span>
                     </div>
                     <Check
                       v-if="
@@ -859,7 +709,7 @@
                 v-if="showEditModal ? selectedEditUser : selectedUser"
                 class="flex items-center gap-2 mt-2 px-1"
               >
-                <span class="text-[10px] font-bold text-primary"
+                <span class="text-xs font-bold text-primary"
                   >{{ locale.editModal.selectedUser((showEditModal ? selectedEditUser : selectedUser).name) }}
                   <template v-if="(showEditModal ? selectedEditUser : selectedUser).username">
                     (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})
@@ -875,7 +725,7 @@
             </div>
 
             <div v-if="showEditModal" class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.collaborators }}</label
               >
               <div class="space-y-3 user-search-container">
@@ -921,13 +771,13 @@
                     >
                       <div class="flex flex-col">
                         <span class="text-sm font-bold text-text-primary">{{ user.name }}</span>
-                        <span class="text-[10px] text-text-tertiary">@{{ user.username }}</span>
+                        <span class="text-xs text-text-tertiary">@{{ user.username }}</span>
                       </div>
                       <Plus :size="14" class="text-primary opacity-70 group-hover:opacity-100" />
                     </div>
                   </div>
                 </div>
-                <p class="text-[10px] text-text-disabled font-medium px-1">
+                <p class="text-xs text-text-disabled font-medium px-1">
                   {{ locale.editModal.collaboratorHint }}
                 </p>
               </div>
@@ -935,7 +785,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.filters.semester }}</label
                 >
                 <CustomSelect
@@ -956,7 +806,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.preferredPlayTime }}</label
                 >
                 <CustomSelect
@@ -991,12 +841,12 @@
 
             <div v-if="showEditModal" class="space-y-3">
               <div class="flex items-center justify-between gap-3 px-1">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider"
                   >{{ locale.editModal.submissionNote }}</label
                 >
                 <button
                   :disabled="!canClearEditSubmissionNote && !submissionNoteClearRequested"
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black tracking-widest uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold tracking-wider uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   :class="
                     submissionNoteClearRequested
                       ? 'border-border-tertiary bg-bg-primary text-text-secondary hover:border-border-tertiary'
@@ -1037,7 +887,7 @@
                     :class="submissionNoteClearRequested ? 'text-text-tertiary' : 'text-text-secondary group-hover:text-primary'"
                     >{{ locale.editModal.publicNote }}</span
                   >
-                  <p class="text-[10px] text-text-disabled font-medium">
+                  <p class="text-xs text-text-disabled font-medium">
                     {{ locale.editModal.publicNoteHint }}
                   </p>
                 </div>
@@ -1053,7 +903,7 @@
                     class="text-xs font-bold text-text-secondary group-hover:text-primary"
                     >{{ locale.editModal.anonymousSubmission }}</span
                   >
-                  <p class="text-[10px] text-text-disabled font-medium">
+                  <p class="text-xs text-text-disabled font-medium">
                     {{ locale.editModal.anonymousSubmissionHint }}
                   </p>
                 </div>
@@ -1080,7 +930,7 @@
                     <span class="text-xs font-bold text-text-secondary group-hover:text-warning transition-colors"
                       >{{ locale.editModal.notifyAfterClear }}</span
                     >
-                    <p class="text-[10px] text-text-disabled font-medium">
+                    <p class="text-xs text-text-disabled font-medium">
                       {{ locale.editModal.notifyAfterClearHint }}
                     </p>
                   </div>
@@ -1088,13 +938,13 @@
               </div>
             </div>
             <div class="flex items-center justify-between gap-3 pt-4 border-t border-border-secondary-50">
-              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+              <span class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
                 {{ locale.sourceReplace.sectionTitle }}
               </span>
               <button
                 v-if="showEditModal"
                 type="button"
-                class="flex items-center gap-2 px-4 py-2 bg-primary-10 hover:bg-primary-20 text-primary text-[11px] font-black rounded-lg border border-primary-20 transition-all active:scale-95"
+                class="flex items-center gap-2 px-4 py-2 bg-primary-10 hover:bg-primary-20 text-primary text-xs font-bold rounded-lg border border-primary-20 transition-all active:scale-95"
                 @click="openSourceReplaceModal"
               >
                 <ArrowLeftRight :size="14" />
@@ -1103,7 +953,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1">
                   {{ locale.editModal.musicPlatform }}
                 </label>
                 <CustomSelect
@@ -1120,7 +970,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.editModal.musicId }}</label
                 >
                 <input
@@ -1141,7 +991,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.duration }}</label
               >
               <div class="flex gap-2">
@@ -1179,13 +1029,13 @@
                   {{ locale.editModal.refreshDuration }}
                 </button>
               </div>
-              <p class="text-[10px] text-text-disabled font-medium px-1">
+              <p class="text-xs text-text-disabled font-medium px-1">
                 {{ locale.editModal.durationHint }}
               </p>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.coverUrl }}</label
               >
               <div class="flex gap-2">
@@ -1224,7 +1074,7 @@
                   (showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -1233,7 +1083,7 @@
                   !(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editCoverValidation.error : addCoverValidation.error }}
@@ -1241,7 +1091,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+              <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                 >{{ locale.editModal.playUrl }}</label
               >
               <input
@@ -1263,7 +1113,7 @@
                   (showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -1272,15 +1122,17 @@
                   !(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
+                class="text-xs text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
               </p>
             </div>
-          </div>
 
-          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"
@@ -1289,7 +1141,7 @@
             </button>
             <button
               :disabled="showEditModal ? editLoading : !canSubmitAddForm || addLoading"
-              class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               @click="showEditModal ? saveEditSong() : saveAddSong()"
             >
               {{
@@ -1302,10 +1154,10 @@
                     : locale.editModal.addSong
               }}
             </button>
-          </div>
+
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <SongSourceReplaceModal
       :show="showSourceReplaceModal"
@@ -1320,6 +1172,7 @@
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import VotersModal from '~/components/Admin/VotersModal.vue'
+import SongCard from './SongCard.vue'
 import DuplicateSongsModal from '~/components/Admin/DuplicateSongsModal.vue'
 import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SongSourceReplaceModal from '~/components/Admin/SongSourceReplaceModal.vue'
@@ -1328,6 +1181,7 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   Search,
   Plus,
@@ -1341,12 +1195,6 @@ import {
   Music,
   Heart,
   Download,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  ExternalLink,
   MessageSquare,
   FolderPlus,
   FolderMinus,
@@ -1361,11 +1209,10 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
-import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { getPlatformLabel } from '~/utils/platforms'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
-import { validateUrl, getCoverThumbUrl } from '~/utils/url'
-import { formatDuration, getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
+import { validateUrl } from '~/utils/url'
+import { getBeijingDateString, getBeijingWeekday, getRelativeTimeParts } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
@@ -1560,7 +1407,6 @@ const notifyOnSubmissionNoteClear = ref(true)
 // 添加歌曲相关
 const showAddSongModal = ref(false)
 const addLoading = ref(false)
-const searchLoading = ref(false)
 const addForm = ref({
   title: '',
   artist: '',
@@ -1576,13 +1422,12 @@ const addForm = ref({
 
 // 平台选项：内置平台按后台排序，插件音源使用插件显示名
 const { getAvailablePlatforms, loadPlatformConfig, pluginPlatforms } = usePlatformConfig()
-const platformLabel = (platform) => {
-  if (!platform) return ''
-  const plugin = pluginPlatforms.value.find((item) => item.platform === platform)
-  return plugin?.displayName || getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
-}
-// 平台标签配色类名，插件音源统一走 plugin
-const platformTagClass = (platform) => (BUILTIN_PLATFORMS.includes(platform) ? platform : 'plugin')
+const platformLabel = (platform) =>
+  getPlatformLabel(platform, {
+    siteConfig: siteConfig.value,
+    currentLocale: currentLocale.value,
+    pluginPlatforms: pluginPlatforms.value
+  })
 const musicPlatformOptions = computed(() => {
   const list = [...getAvailablePlatforms()]
   for (const value of [editForm.value.musicPlatform, addForm.value.musicPlatform]) {
@@ -1816,14 +1661,12 @@ const canClearEditSubmissionNote = computed(() => {
 // 方法
 // 入参为服务端转好北京时间的 requestedAt（"YYYY/M/D H:mm:ss"）
 const formatDate = (dateString) => {
-  const date = dayjs(dateString, 'YYYY/M/D H:mm:ss').toDate()
-  const now = getSyncedDate()
-  const diff = now - date
-
-  if (diff < 60000) return getNestedMessage('timeAgo', 'justNow')
-  if (diff < 3600000) return getNestedMessage('timeAgo', 'minutes', Math.floor(diff / 60000))
-  if (diff < 86400000) return getNestedMessage('timeAgo', 'hours', Math.floor(diff / 3600000))
-  return getNestedMessage('timeAgo', 'days', Math.floor(diff / 86400000))
+  const parts = getRelativeTimeParts(dateString, { beijingWallClock: true })
+  if (!parts) return ''
+  if (parts.unit === 'justNow') return getNestedMessage('timeAgo', 'justNow')
+  if (parts.unit === 'minutes') return getNestedMessage('timeAgo', 'minutes', parts.value)
+  if (parts.unit === 'hours') return getNestedMessage('timeAgo', 'hours', parts.value)
+  return getNestedMessage('timeAgo', 'days', parts.value)
 }
 
 const getPlayTimeName = (playTimeId) => {
@@ -2783,6 +2626,12 @@ const saveAddSong = async () => {
   } finally {
     addLoading.value = false
   }
+}
+
+const handleEditOverlayClick = () => {
+  if (showEditModal.value ? editLoading.value : addLoading.value) return
+  if (showEditModal.value) cancelEditSong()
+  else cancelAddSong()
 }
 
 const cancelAddSong = () => {

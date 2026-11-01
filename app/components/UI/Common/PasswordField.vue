@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-1.5">
-    <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ label }}</label>
+    <label class="text-xs font-bold text-text-disabled uppercase tracking-wider">{{ label }}</label>
     <div class="relative">
       <input
         :value="modelValue"

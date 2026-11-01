@@ -34,7 +34,7 @@
     </div>
 
     <!-- 开启流程 -->
-    <div v-if="showSetup" class="bg-bg-primary-30 rounded-xl border border-border-secondary p-6 space-y-6 animate-in fade-in slide-in-from-top-4">
+    <div v-if="showSetup" class="bg-bg-primary-30 rounded-xl border border-border-secondary p-6 space-y-6 panel-enter">
       <div class="flex items-start justify-between">
         <div>
           <h4 class="font-bold text-text-primary mb-1">{{ locale.setupTitle }}</h4>
@@ -84,7 +84,7 @@
                 type="text"
                 :placeholder="locale.codePlaceholder"
                 maxlength="6"
-                class="flex-1 bg-bg-secondary border border-border-secondary rounded-lg px-4 py-2 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-center tracking-widest"
+                class="flex-1 bg-bg-secondary border border-border-secondary rounded-lg px-4 py-2 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-center tracking-wider"
                 @keyup.enter="enable2FA"
               />
               <button

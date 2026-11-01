@@ -21,11 +21,19 @@
 
     <!-- 移动端投稿须知 -->
     <div class="rules-section mobile-only-rules">
-      <h3 class="rules-title">
-        <Icon :size="16" class="rules-icon" name="bell" />
-        {{ locale.guidelinesTitle }}
-      </h3>
-      <div class="rules-content">
+      <button
+        :aria-expanded="showMobileGuidelines"
+        class="rules-toggle"
+        type="button"
+        @click="showMobileGuidelines = !showMobileGuidelines"
+      >
+        <span class="rules-title">
+          <Icon :size="16" class="rules-icon" name="bell" />
+          {{ locale.guidelinesTitle }}
+        </span>
+        <Icon :name="showMobileGuidelines ? 'chevron-up' : 'chevron-down'" :size="18" />
+      </button>
+      <div v-show="showMobileGuidelines" class="rules-content">
         <div
           v-if="submissionGuidelines"
           class="guidelines-content markdown-body"
@@ -821,25 +829,16 @@
       @select="handleUserSelect"
     />
 
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showAudioMatchModal"
-          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-85 backdrop-blur-sm"
-        >
-          <div
-            class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
-            @click.stop
-          >
-            <div class="px-8 py-7 flex flex-col items-center text-center">
-              <div class="relative">
+    <AppModal
+      :show="showAudioMatchModal"
+      :title="locale.audioMatch"
+      :description="audioMatchStatus || (audioMatchError ? audioMatchError : locale.audioMatchHint)"
+      size="md"
+      @close="closeAudioMatchModal"
+    >
+      <div class="space-y-6">
+        <div class="flex flex-col items-center px-8 py-7 text-center">
+<div class="relative">
                 <div
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
                   :class="
@@ -857,16 +856,6 @@
                   class="absolute inset-0 rounded-full border-2 border-error animate-ping opacity-30"
                 />
               </div>
-
-              <h3 class="mt-6 text-xl font-bold text-text-primary tracking-tight">
-                {{ locale.audioMatch }}
-              </h3>
-
-              <p class="mt-2 text-sm text-text-tertiary max-w-[260px]">
-                {{
-                  audioMatchStatus || (audioMatchError ? audioMatchError : locale.audioMatchHint)
-                }}
-              </p>
 
               <div class="mt-8 flex items-center gap-4">
                 <button
@@ -940,7 +929,7 @@
                         <p class="truncate text-xs text-text-tertiary mt-0.5">{{ match.artist }}</p>
                       </div>
                       <div class="shrink-0 text-right">
-                        <span class="text-[11px] font-mono text-primary">
+                        <span class="text-xs font-mono text-primary">
                           {{ (match.startTime / 1000).toFixed(1) }}s
                         </span>
                       </div>
@@ -949,59 +938,29 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </AppModal>
 
     <!-- 手动输入弹窗 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0 scale-95"
-        enter-to-class="opacity-100 scale-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100 scale-100"
-        leave-to-class="opacity-0 scale-95"
-      >
-        <div
-          v-if="showManualModal"
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-80 backdrop-blur-sm"
-          @click.self="showManualModal = false"
-        >
-          <div
-            class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-            @click.stop
-          >
-            <!-- Header -->
-            <div
-              class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between shrink-0"
-            >
-              <div class="flex items-center gap-4">
-                <div
-                  class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-                >
-                  <Edit3 :size="24" />
-                </div>
-                <h3 class="text-xl font-black text-text-primary tracking-tight">
-                  {{ locale.manualTitle }}
-                </h3>
-              </div>
-              <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-                @click="showManualModal = false"
-              >
-                <X class="w-5 h-5" />
-              </button>
-            </div>
+    <AppModal
+      :show="showManualModal"
+      :title="locale.manualTitle"
+      size="2xl"
+      @close="showManualModal = false"
+    >
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-10 text-primary">
+          <Edit3 :size="18" />
+        </span>
+      </template>
 
-            <!-- Body -->
-            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div class="space-y-6">
+
               <div class="grid grid-cols-1 gap-6">
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
                   <label
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.songName }}</label
                   >
                   <div class="relative group">
@@ -1021,7 +980,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-artist"
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.artistName }}</label
                   >
                   <input
@@ -1038,7 +997,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-cover"
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.coverUrl }}</label
                   >
                   <div class="relative group">
@@ -1069,13 +1028,13 @@
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!coverValidation.valid"
-                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
+                        class="text-xs font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
+                        class="text-xs font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1087,7 +1046,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-play-url"
-                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                    class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.playUrl }}</label
                   >
                   <div class="relative group">
@@ -1118,13 +1077,13 @@
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!playUrlValidation.valid"
-                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
+                        class="text-xs font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
+                        class="text-xs font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1132,12 +1091,11 @@
                   </Transition>
                 </div>
               </div>
-            </div>
+      </div>
 
-            <!-- Footer -->
-            <div
-              class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end shrink-0"
-            >
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
               <button
                 class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-all"
                 type="button"
@@ -1147,17 +1105,16 @@
               </button>
               <button
                 :disabled="!canSubmitFromSearch || !canSubmitManualForm || submitting"
-                class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
+                class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                 type="button"
                 @click="handleManualSubmit"
               >
                 {{ submitting ? locale.submitting : locale.confirmSubmit }}
               </button>
-            </div>
-          </div>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
+
     <!-- 隐藏的文件输入框 -->
     <input
       ref="fileInput"
@@ -1211,6 +1168,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { X, Lock, Loader2, Check, Edit3, Music, Play } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useThemeImage } from '~/composables/useThemeImage'
@@ -1254,6 +1212,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['request', 'vote'])
+const showMobileGuidelines = ref(false)
+
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const { t: callLocale } = useLocaleText(locale)
@@ -4570,7 +4530,7 @@ defineExpose({
   color: var(--text-primary);
   display: flex;
   gap: 2rem;
-  height: calc(100vh - 160px);
+  height: calc(100dvh - 160px);
   min-height: 650px;
 }
 
@@ -6740,7 +6700,30 @@ defineExpose({
     border-radius: 18px;
   }
 
+  .rules-toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: none;
+    color: inherit;
+    padding: 0;
+    text-align: left;
+  }
+
+  .rules-toggle .rules-title {
+    margin-bottom: 0;
+  }
+
+  .rules-toggle + .rules-content {
+    margin-top: 1.25rem;
+  }
+
   .rules-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 15px;
     font-weight: 700;
     color: var(--overlay-90);

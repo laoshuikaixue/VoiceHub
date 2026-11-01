@@ -1,0 +1,81 @@
+/* 设计令牌：字号、间距、圆角、动效。主题文件只负责颜色覆盖。 */
+:root {
+  /* 字号阶梯 */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+
+  /* 字重 */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* 间距（4px 基准） */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  --spacing-4xl: 40px;
+  --spacing-5xl: 48px;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* 阴影层级 */
+  --elevation-1: 0 1px 2px var(--mask-8);
+  --elevation-2: 0 4px 12px var(--mask-12);
+  --elevation-3: 0 16px 40px var(--mask-30);
+
+  /* 动效曲线 */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* 动效时长 */
+  --duration-press: 120ms;
+  --duration-fast: 160ms;
+  --duration-normal: 200ms;
+  --duration-slow: 240ms;
+
+  /* 兼容既有变量 */
+  --transition-press: var(--duration-press) var(--ease-out);
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-normal: var(--duration-fast) var(--ease-out);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+
+  /* 层级 */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-press: 0s;
+    --duration-fast: 0s;
+    --duration-normal: 0s;
+    --duration-slow: 0s;
+    --transition-fast: 0s;
+    --transition-normal: 0s;
+    --transition-slow: 0s;
+  }
+}

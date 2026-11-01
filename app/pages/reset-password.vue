@@ -4,6 +4,7 @@
       <div class="auth-container">
       <div class="form-section">
         <div class="form-header">
+          <img alt="VoiceHub Logo" class="form-logo" :src="getLogo()">
           <h1 class="form-title">{{ locale.title }}</h1>
           <p class="form-subtitle">{{ locale.subtitle }}</p>
           <div class="header-divider" />
@@ -67,8 +68,8 @@
                 />
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]">{{ locale.passwordStrength }}</span>
-                <span class="text-[10px] font-black uppercase tracking-widest" :class="passwordStrength.textColorClass">
+                <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{{ locale.passwordStrength }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider" :class="passwordStrength.textColorClass">
                   {{ passwordStrength.text }}
                 </span>
               </div>
@@ -142,11 +143,13 @@ import { ref, computed, onMounted } from 'vue'
 
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 import { PASSWORD_MIN_LENGTH } from '~/utils/password-policy'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const route = useRoute()
 const { pages } = useLocale()
+const { getLogo } = useThemeImage()
 const locale = computed(() => pages.value?.resetPassword || {})
 
 const token = computed(() => route.query.token || '')
@@ -211,13 +214,16 @@ const handleSubmit = async () => {
 
 <style scoped>
 .auth-layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(20px + env(safe-area-inset-left, 0px));
+  padding-right: calc(20px + env(safe-area-inset-right, 0px));
 }
 
 .auth-main {
@@ -252,6 +258,15 @@ const handleSubmit = async () => {
 .form-header {
   text-align: center;
   margin-bottom: 32px;
+}
+
+.form-logo {
+  display: block;
+  width: auto;
+  max-width: 120px;
+  max-height: 40px;
+  margin: 0 auto 14px;
+  object-fit: contain;
 }
 
 .form-title {
@@ -511,7 +526,10 @@ const handleSubmit = async () => {
 
 @media (max-width: 768px) {
   .auth-layout {
-    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
   }
   .auth-container {
     border-radius: 16px;

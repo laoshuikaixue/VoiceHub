@@ -4,7 +4,7 @@
       'fixed inset-0 z-[9999] bg-bg-primary-80 backdrop-blur-md': fullScreen,
       'min-h-[200px] py-12': !fullScreen
     }"
-    class="flex flex-col items-center justify-center animate-in fade-in duration-300"
+    class="flex flex-col items-center justify-center fade-in"
   >
     <div class="flex flex-col items-center text-center max-w-md w-full px-6">
       <!-- 加载动画 -->
@@ -50,8 +50,8 @@
 
       <!-- 加载文本 -->
       <div class="w-full space-y-2">
-        <h3 v-if="title" class="text-xl font-black text-text-primary tracking-tight">{{ title }}</h3>
-        <p class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ displayMessage }}</p>
+        <h3 v-if="title" class="text-xl font-bold text-text-primary tracking-tight">{{ title }}</h3>
+        <p class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ displayMessage }}</p>
 
         <!-- 进度条 -->
         <div v-if="showProgress" class="mt-8 space-y-2">
@@ -62,10 +62,10 @@
             />
           </div>
           <div class="flex justify-between items-center px-1">
-            <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
+            <span class="text-xs font-bold text-text-disabled uppercase tracking-wider"
               >{{ locale.progress }}</span
             >
-            <span class="text-[10px] font-black text-primary tracking-widest"
+            <span class="text-xs font-bold text-primary tracking-wider"
               >{{ progress }}%</span
             >
           </div>
@@ -99,11 +99,11 @@
                 v-else
                 class="flex items-center justify-center w-6 h-6 bg-bg-secondary border border-border-secondary rounded-lg"
               >
-                <span class="text-[10px] font-black text-text-disabled">{{ index + 1 }}</span>
+                <span class="text-xs font-bold text-text-disabled">{{ index + 1 }}</span>
               </div>
             </div>
             <span
-              class="text-[10px] font-black uppercase tracking-widest transition-colors"
+              class="text-xs font-bold uppercase tracking-wider transition-colors"
               :class="index === currentStep ? 'text-text-primary' : 'text-text-disabled'"
             >
               {{ step }}
@@ -115,7 +115,7 @@
       <!-- 取消按钮 -->
       <button
         v-if="showCancel && onCancel"
-        class="mt-10 px-6 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+        class="mt-10 px-6 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary hover:text-text-primary text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
         @click="onCancel"
       >
         {{ locale.cancel }}

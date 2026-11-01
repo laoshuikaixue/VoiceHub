@@ -32,7 +32,7 @@
             }}</span>
             <span
               v-if="getIdentitiesByProvider(provider).length === 0"
-              class="text-[11px] text-text-tertiary mt-0.5"
+              class="text-xs text-text-tertiary mt-0.5"
               >{{ locale.unbound }}</span
             >
             <div
@@ -65,21 +65,21 @@
                   }}</span>
                   <span
                     v-if="identity.isAvatarSource"
-                    class="text-[10px] font-bold text-success bg-success-10 border border-success-20 px-2 py-0.5 rounded-full w-fit mt-1"
+                    class="text-xs font-bold text-success bg-success-10 border border-success-20 px-2 py-0.5 rounded-full w-fit mt-1"
                     >{{ locale.currentAvatar }}</span
                   >
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <button
                     v-if="!identity.isAvatarSource"
-                    class="px-2.5 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-[11px] font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50"
+                    class="px-2.5 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50"
                     :disabled="avatarLoadingId === identity.id || actionLoading"
                     @click="setAsAvatar(identity)"
                   >
                     {{ avatarLoadingId === identity.id ? locale.processing : locale.setAsAvatar }}
                   </button>
                   <button
-                    class="px-2.5 py-1.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-[11px] font-bold rounded-lg transition-all disabled:opacity-50"
+                    class="px-2.5 py-1.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                     :disabled="actionLoading"
                     @click="confirmUnbind(provider, identity)"
                   >
@@ -93,7 +93,7 @@
 
         <button
           v-if="getIdentitiesByProvider(provider).length === 0"
-          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
+          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click="handleBind(provider)"
         >
@@ -126,7 +126,7 @@
                 :class="{ 'rotate-180': isWebAuthnExpanded }"
               />
             </div>
-            <span class="text-[11px] text-text-tertiary mt-0.5"
+            <span class="text-xs text-text-tertiary mt-0.5"
               >{{ locale.boundDevices }} {{ webauthnIdentities.length }} {{ locale.devices }}</span
             >
           </div>
@@ -134,7 +134,7 @@
 
         <button
           v-if="isWebAuthnSupported"
-          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
+          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click.stop="handleWebAuthnRegister"
         >
@@ -145,7 +145,7 @@
           class="flex items-center gap-1 text-warning bg-warning-10 px-3 py-1.5 rounded-lg border border-warning-20"
         >
           <AlertTriangle :size="12" />
-          <span class="text-[10px] font-medium">{{ locale.httpsRequired }}</span>
+          <span class="text-xs font-medium">{{ locale.httpsRequired }}</span>
         </div>
       </div>
 
@@ -185,7 +185,7 @@
                   </button>
                 </div>
 
-                <span class="text-[10px] text-text-disabled"
+                <span class="text-xs text-text-disabled"
                   >{{ locale.addedAt }} {{ new Date(cred.createdAt).toLocaleString(currentLocale.value, {
                     year: 'numeric', 
                     month: '2-digit', 

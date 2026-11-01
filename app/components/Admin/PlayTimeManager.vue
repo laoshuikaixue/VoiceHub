@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">
           {{ locale.desc }}
         </p>
@@ -12,7 +12,7 @@
         <div
           class="bg-bg-secondary-40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
         >
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+          <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
             >{{ locale.enableSelection }}</span
           >
           <button
@@ -34,7 +34,7 @@
           class="bg-bg-secondary-40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
           :title="locale.requireSlotDesc"
         >
-          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+          <span class="text-xs font-bold text-text-tertiary uppercase tracking-wider"
             >{{ locale.requireSlot }}</span
           >
           <button
@@ -55,7 +55,7 @@
           </button>
         </div>
         <button
-          class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           @click="openAddForm"
         >
           <Plus :size="14" /> {{ locale.add }}
@@ -68,7 +68,7 @@
       <Info class="text-primary shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-text-secondary">{{ locale.aboutTitle }}</p>
-        <p class="text-[11px] text-text-tertiary leading-relaxed">
+        <p class="text-xs text-text-tertiary leading-relaxed">
           {{ locale.aboutDesc }}
         </p>
       </div>
@@ -80,7 +80,7 @@
       class="flex flex-col items-center justify-center py-20 space-y-4 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl"
     >
       <AppSpinner :size="40" />
-      <p class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ locale.loading }}</p>
+      <p class="text-xs font-bold text-text-tertiary uppercase tracking-wider">{{ locale.loading }}</p>
     </div>
 
     <!-- 错误状态 -->
@@ -91,7 +91,7 @@
       <AlertCircle class="text-error shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-text-secondary">{{ locale.fetchFailed }}</p>
-        <p class="text-[11px] text-text-tertiary leading-relaxed">{{ error }}</p>
+        <p class="text-xs text-text-tertiary leading-relaxed">{{ error }}</p>
       </div>
     </div>
 
@@ -132,13 +132,13 @@
             <div class="flex items-center gap-2">
               <span
                 v-if="playTime.isDefault"
-                class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border bg-primary-10 text-primary border-primary-20"
+                class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border bg-primary-10 text-primary border-primary-20"
               >
                 {{ locale.defaultBadge }}
               </span>
               <span
                 :class="[
-                  'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
+                  'px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider border transition-all',
                   playTime.enabled
                     ? 'bg-success-10 text-success border-success-20'
                     : 'bg-bg-tertiary-50 text-text-disabled border-border-tertiary-50'
@@ -155,12 +155,12 @@
           <div class="space-y-4">
             <div>
               <h4
-                class="text-lg font-black text-text-primary group-hover:text-primary transition-colors"
+                class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors"
               >
                 {{ playTime.name }}
               </h4>
               <div
-                class="flex items-center gap-2 mt-1.5 text-primary-80 font-black tracking-tighter"
+                class="flex items-center gap-2 mt-1.5 text-primary-80 font-bold tracking-tighter"
               >
                 <span class="text-xl">{{ playTime.startTime || locale.unlimited }}</span>
                 <div class="w-4 h-[2px] bg-bg-tertiary" />
@@ -174,7 +174,7 @@
                 v-for="day in weekdayChips(playTime.weekdays)"
                 :key="day.value"
                 :class="[
-                  'px-1.5 py-0.5 rounded text-[9px] font-black border transition-all',
+                  'px-1.5 py-0.5 rounded text-xs font-bold border transition-all',
                   day.active
                     ? 'bg-primary-10 text-primary border-primary-20'
                     : 'bg-bg-tertiary-50 text-text-disabled border-border-tertiary-50'
@@ -206,7 +206,7 @@
             </div>
             <button
               :class="[
-                'flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                 playTime.enabled
                   ? 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'
                   : 'bg-success text-text-primary shadow-lg shadow-[var(--success-glow-20)]'
@@ -222,31 +222,16 @@
     </div>
 
     <!-- 添加/编辑弹窗 -->
-    <Transition name="modal">
-      <div
-        v-if="showAddForm || editingPlayTime"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      >
-        <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="cancelForm" />
-        <div
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-        >
-          <div class="p-8">
-            <div class="flex items-center justify-between mb-8">
-              <h3 class="text-xl font-black text-text-primary tracking-tight">
-                {{ editingPlayTime ? locale.editTitle : locale.addTitle }}
-              </h3>
-              <button
-                class="flex items-center justify-center p-2 text-text-tertiary hover:text-text-primary transition-colors"
-                @click="cancelForm"
-              >
-                <X :size="20" />
-              </button>
-            </div>
+    <AppModal
+      :show="showAddForm || !!editingPlayTime"
+      :title="editingPlayTime ? locale.editTitle : locale.addTitle"
+      size="lg"
+      @close="cancelForm"
+    >
+      <div class="space-y-6">
 
-            <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                   >{{ locale.name }}</label
                 >
                 <input
@@ -259,7 +244,7 @@
 
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                  <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.startTimeOptional }}</label
                   >
                   <AppTimePicker
@@ -268,10 +253,10 @@
                     size="md"
                     rounded="lg"
                   />
-                  <p class="text-[9px] text-text-disabled px-1">{{ locale.startTimeHint }}</p>
+                  <p class="text-xs text-text-disabled px-1">{{ locale.startTimeHint }}</p>
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
+                  <label class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1"
                     >{{ locale.endTimeOptional }}</label
                   >
                   <AppTimePicker
@@ -280,13 +265,13 @@
                     size="md"
                     rounded="lg"
                   />
-                  <p class="text-[9px] text-text-disabled px-1">{{ locale.endTimeHint }}</p>
+                  <p class="text-xs text-text-disabled px-1">{{ locale.endTimeHint }}</p>
                 </div>
               </div>
 
               <div class="space-y-2">
                 <label
-                  class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 flex items-center gap-2"
+                  class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1 flex items-center gap-2"
                 >
                   <CalendarDays :size="10" /> {{ locale.weekdaysTitle }}
                 </label>
@@ -296,7 +281,7 @@
                     :key="day.value"
                     type="button"
                     :class="[
-                      'px-3 py-2 rounded-lg text-xs font-black border transition-all',
+                      'px-3 py-2 rounded-lg text-xs font-bold border transition-all',
                       formData.weekdays.includes(day.value)
                         ? 'bg-primary-hover-10 text-primary border-primary-30'
                         : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary'
@@ -306,12 +291,12 @@
                     {{ day.label }}
                   </button>
                 </div>
-                <p class="text-[9px] text-text-disabled px-1">{{ locale.weekdaysHint }}</p>
+                <p class="text-xs text-text-disabled px-1">{{ locale.weekdaysHint }}</p>
               </div>
 
               <div class="space-y-2">
                 <label
-                  class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 flex items-center gap-2"
+                  class="text-xs font-bold text-text-disabled uppercase tracking-wider px-1 flex items-center gap-2"
                 >
                   <AlignLeft :size="10" /> {{ locale.descriptionOptional }}
                 </label>
@@ -351,7 +336,7 @@
                     class="block text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
                     >{{ locale.defaultSlot }}</span
                   >
-                  <span class="mt-1 block text-[10px] leading-relaxed text-text-tertiary">{{
+                  <span class="mt-1 block text-xs leading-relaxed text-text-tertiary">{{
                     locale.defaultSlotHint
                   }}</span>
                 </span>
@@ -359,14 +344,15 @@
 
               <div
                 v-if="formError"
-                class="bg-error-10 border border-error-20 rounded-lg p-3 text-[11px] text-error"
+                class="bg-error-10 border border-error-20 rounded-lg p-3 text-xs text-error"
               >
                 {{ formError }}
               </div>
-            </div>
-          </div>
+      </div>
 
-          <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex justify-end gap-3">
+      <template #footer>
+        <div class="flex justify-end gap-3">
+
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelForm"
@@ -375,66 +361,61 @@
             </button>
             <button
               :disabled="formSubmitting"
-              class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg transition-all active:scale-95"
+              class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-bold rounded-lg shadow-lg transition-all active:scale-95"
               @click="savePlayTime"
             >
               {{ formSubmitting ? locale.saving : locale.saveSettings }}
             </button>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
 
     <!-- 删除确认弹窗 -->
-    <Transition name="modal">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
-          @click="showDeleteConfirm = false"
-        />
-        <div
-          class="relative w-full max-w-sm bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
-        >
-          <div class="p-8">
-            <div class="flex flex-col items-center py-4 space-y-6">
-              <div
-                class="w-16 h-16 rounded-xl bg-error-10 text-error flex items-center justify-center border border-error-10 shadow-xl shadow-[var(--error-glow-5)]"
-              >
-                <AlertCircle :size="32" />
-              </div>
+    <AppModal
+      :show="showDeleteConfirm"
+      :title="deleteConfirmTitleText"
+      size="md"
+      @close="showDeleteConfirm = false"
+    >
+      <template #icon>
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-10 text-error">
+          <AlertCircle :size="18" />
+        </span>
+      </template>
+
+
               <div class="text-center space-y-2 px-4">
-                <h4 class="text-lg font-bold text-text-primary">
-                  {{ deleteConfirmTitleText }}
-                </h4>
                 <p class="text-xs text-text-tertiary leading-relaxed">
                   {{ locale.deleteConfirmDesc }}
                 </p>
               </div>
-              <div class="flex gap-3 w-full pt-4">
+
+      <template #footer>
+        <div class="flex w-full gap-3">
+
                 <button
-                  class="flex-1 px-4 py-3 bg-bg-primary border border-border-secondary text-text-tertiary text-xs font-black rounded-lg transition-all hover:bg-bg-tertiary"
+                  class="flex-1 px-4 py-3 bg-bg-primary border border-border-secondary text-text-tertiary text-xs font-bold rounded-lg transition-all hover:bg-bg-tertiary"
                   @click="showDeleteConfirm = false"
                 >
                   {{ locale.cancel }}
                 </button>
                 <button
                   :disabled="deleteInProgress"
-                  class="flex-1 px-4 py-3 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95"
+                  class="flex-1 px-4 py-3 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-bold rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95"
                   @click="deletePlayTime"
                 >
                   {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}
                 </button>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </AppModal>
+
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
@@ -451,7 +432,6 @@ import {
   Power,
   Info,
   AlertCircle,
-  X,
   AlignLeft,
   CalendarDays
 } from '@lucide/vue'

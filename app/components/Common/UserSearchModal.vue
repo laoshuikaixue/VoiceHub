@@ -1,44 +1,19 @@
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6"
-        @click.self="close"
+  <AppModal
+    :show="show"
+    :title="resolvedTitle"
+    size="lg"
+    @close="close"
+  >
+    <template #icon>
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-hover-10 text-primary"
       >
-        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
+        <Icon name="user" :size="18" />
+      </span>
+    </template>
 
-        <div
-          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-          @click.stop
-        >
-          <!-- 头部 -->
-          <div class="flex items-center justify-between p-8 pb-4">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
-              >
-                <Icon name="user" :size="24" />
-              </div>
-              <h3 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
-            </div>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
-              @click="close"
-            >
-              <Icon name="x" :size="20" />
-            </button>
-          </div>
 
-          <!-- 主体 -->
-          <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
             <!-- 搜索输入框 -->
             <div class="relative mb-6 group">
               <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -69,11 +44,11 @@
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-2xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="search" :size="32" class="opacity-20" />
                 </div>
-                <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noMatchingUsers }}</p>
+                <p class="text-sm font-bold uppercase tracking-wider">{{ locale.noMatchingUsers }}</p>
               </div>
 
               <div
@@ -90,7 +65,7 @@
                 <!-- 头像 -->
                 <div
                   :class="[
-                    'w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black mr-4 transition-colors',
+                    'w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold mr-4 transition-colors',
                     isSelected(user) ? 'bg-primary-hover text-text-primary' : 'bg-bg-tertiary text-text-tertiary'
                   ]"
                 >
@@ -103,7 +78,7 @@
                     {{ user.name }}
                   </div>
                   <div
-                    class="text-[10px] font-black uppercase tracking-widest flex flex-wrap gap-2 mt-0.5 text-text-tertiary"
+                    class="text-xs font-bold uppercase tracking-wider flex flex-wrap gap-2 mt-0.5 text-text-tertiary"
                   >
                     <span v-if="user.grade" class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
@@ -131,41 +106,37 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 底部操作栏 -->
-          <div class="p-8 pt-0">
-            <div class="flex items-center justify-between gap-4">
-              <div class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
+    <template #footer>
+            <div class="flex w-full items-center justify-between gap-4">
+              <div class="text-xs font-bold text-text-tertiary uppercase tracking-wider">
                 <span v-if="selectedUsers.length > 0" class="text-primary">
                   {{ formatLocale(locale.selectedUsers, selectedUsers.length) }}
                 </span>
               </div>
               <div class="flex gap-3">
                 <button
-                  class="px-6 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                  class="px-6 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold transition-all active:scale-95 uppercase tracking-wider"
                   @click="close"
                 >
                   {{ locale.cancel }}
                 </button>
                 <button
                   :disabled="selectedUsers.length === 0"
-                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
+                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold disabled:opacity-50 transition-all active:scale-95 uppercase tracking-wider shadow-lg shadow-[var(--primary-glow)]"
                   @click="confirm"
                 >
                   {{ locale.confirm }}
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 

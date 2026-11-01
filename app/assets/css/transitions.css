@@ -1,36 +1,36 @@
 /* 页面过渡动画 */
 
-/* 通用页面过渡 */
-.page-enter-active,
+/* 通用页面过渡：进入 200ms，离开 160ms */
+.page-enter-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
 .page-leave-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.98);
+  transform: translateY(6px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-20px) scale(1.02);
+  transform: translateY(-4px);
 }
 
 .page-view {
   width: 100%;
   min-width: 0;
-  animation: page-view-enter 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: page-view-enter var(--duration-slow) var(--ease-out);
   /* will-change 声明 transform/filter 会使本元素成为 fixed 定位包含块，导致未 Teleport 的弹窗遮罩错位，仅保留 opacity */
   will-change: opacity;
 }
 
-.page-view[data-route='index'] {
-  animation-duration: 0.75s;
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  animation-name: page-view-index-enter;
-}
-
-/* 强制改密页必须立即稳定居中，避免路由重定向时出现位移。 */
 .page-view[data-route='change-password'] {
   min-height: 100dvh;
   animation: none !important;
@@ -41,66 +41,25 @@
 }
 
 @keyframes page-view-enter {
-  0% {
+  from {
     opacity: 0;
-    transform: translateY(20px) scale(0.98);
+    transform: translateY(8px);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
-}
-
-@keyframes page-view-index-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(30px) scale(0.96);
-    filter: blur(6px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@keyframes page-view-mobile-enter {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-/* 首页特殊过渡 */
-.page-enter-active[data-route='index'],
-.page-leave-active[data-route='index'] {
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.page-enter-from[data-route='index'] {
-  opacity: 0;
-  transform: translateY(30px) scale(0.96);
-  filter: blur(6px);
-}
-
-.page-leave-to[data-route='index'] {
-  opacity: 0;
-  transform: translateY(-30px) scale(1.04);
-  filter: blur(6px);
 }
 
 /* 布局过渡 */
 .layout-enter-active,
 .layout-leave-active {
-  transition: all 0.3s ease-in-out;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .layout-enter-from,
 .layout-leave-to {
   opacity: 0;
-  transform: scale(0.98);
 }
 
 /* 加载动画 */
@@ -117,64 +76,42 @@
   z-index: 9999;
 }
 
-.loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 3px solid var(--overlay-10);
-  border-top: 3px solid var(--color-indigo);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 特殊效果：从首页到后台的滑动效果 */
+/* 后台到首页的横向位移 */
 .slide-left-enter-active,
-.slide-left-leave-active {
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
   position: absolute;
   width: 100%;
 }
 
 .slide-left-enter-from {
-  transform: translateX(100%);
+  transform: translateX(32px);
   opacity: 0;
 }
 
 .slide-left-leave-to {
-  transform: translateX(-100%);
+  transform: translateX(-32px);
   opacity: 0;
 }
 
-/* 特殊效果：从后台到首页的滑动效果 */
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  position: absolute;
-  width: 100%;
-}
-
 .slide-right-enter-from {
-  transform: translateX(-100%);
+  transform: translateX(-32px);
   opacity: 0;
 }
 
 .slide-right-leave-to {
-  transform: translateX(100%);
+  transform: translateX(32px);
   opacity: 0;
 }
 
-/* 淡入淡出效果 */
+/* 淡入淡出 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: all 0.4s ease-in-out;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .fade-enter-from,
@@ -182,46 +119,43 @@
   opacity: 0;
 }
 
-/* 缩放效果 */
-.scale-enter-active,
+/* 缩放进入 */
+.scale-enter-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
 .scale-leave-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    opacity var(--duration-press) var(--ease-out),
+    transform var(--duration-press) var(--ease-out);
 }
 
-.scale-enter-from {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
+.scale-enter-from,
 .scale-leave-to {
   opacity: 0;
-  transform: scale(1.1);
+  transform: scale(0.96);
 }
 
 /* 移动端优化 */
 @media (max-width: 768px) {
   .page-enter-active,
-  .page-leave-active {
-    transition-duration: 0.3s;
-  }
-
-  .page-view,
-  .page-view[data-route='index'] {
-    animation-duration: 0.3s;
-    animation-name: page-view-mobile-enter;
-    will-change: opacity;
-  }
-
+  .page-leave-active,
   .slide-left-enter-active,
   .slide-left-leave-active,
   .slide-right-enter-active,
   .slide-right-leave-active {
-    transition-duration: 0.3s;
+    transition-duration: var(--duration-fast);
+  }
+
+  .page-view {
+    animation-duration: var(--duration-fast);
   }
 
   .page-enter-from,
   .page-leave-to {
-    transform: translateY(15px) scale(0.99);
+    transform: translateY(4px);
   }
 }
 
@@ -239,27 +173,31 @@
   .scale-leave-active,
   .fade-enter-active,
   .fade-leave-active {
-    transition-duration: 0.1s;
+    transition-duration: 100ms;
   }
 
   .page-enter-from,
-  .page-leave-to {
+  .page-leave-to,
+  .slide-left-enter-from,
+  .slide-left-leave-to,
+  .slide-right-enter-from,
+  .slide-right-leave-to,
+  .scale-enter-from,
+  .scale-leave-to {
     transform: none;
-    filter: none;
   }
 
-  .page-view,
-  .page-view[data-route='index'] {
-    animation-duration: 0.1s;
+  .page-view {
+    animation-duration: 100ms;
     animation-name: page-view-reduced-enter;
   }
 }
 
 @keyframes page-view-reduced-enter {
-  0% {
+  from {
     opacity: 0;
   }
-  100% {
+  to {
     opacity: 1;
   }
 }

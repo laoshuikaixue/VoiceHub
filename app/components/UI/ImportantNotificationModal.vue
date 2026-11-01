@@ -49,7 +49,7 @@
                 <span class="text-xs font-bold text-warning-light">{{ locale.label }}</span>
                 <h2
                   :id="titleId"
-                  class="mt-1 break-words text-xl font-black text-text-primary-lighter sm:text-2xl"
+                  class="mt-1 break-words text-xl font-bold text-text-primary-lighter sm:text-2xl"
                 >
                   {{ notification.title || locale.label }}
                 </h2>
@@ -94,7 +94,7 @@
               ref="closeButtonRef"
               type="button"
               :disabled="closing"
-              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-panel-bg-deepest disabled:cursor-wait disabled:opacity-60"
+              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-xs font-bold text-white transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-panel-bg-deepest disabled:cursor-wait disabled:opacity-60"
               @click="markAsReadAndClose"
             >
               <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />

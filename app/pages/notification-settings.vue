@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-bg-primary text-text-primary pb-24">
+  <div class="min-h-[100dvh] bg-bg-primary text-text-primary pb-24">
     <!-- 顶部导航栏 -->
     <div
       class="sticky top-0 z-30 bg-bg-primary-80 backdrop-blur-xl border-b border-border-secondary-50 px-4 py-4 mb-8"
@@ -13,8 +13,8 @@
             <ArrowLeft :size="20" />
           </button>
           <div>
-            <h1 class="text-xl font-black text-text-primary tracking-tight">{{ locale.title }}</h1>
-            <p class="text-[10px] text-text-tertiary font-medium uppercase tracking-widest mt-0.5">
+            <h1 class="text-xl font-bold text-text-primary tracking-tight">{{ locale.title }}</h1>
+            <p class="text-xs text-text-tertiary font-medium uppercase tracking-wider mt-0.5">
               {{ locale.subtitle }}
             </p>
           </div>
@@ -22,7 +22,7 @@
 
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           @click="saveSettings"
         >
           <template v-if="saving"> <Loader2 :size="14" class="animate-spin" /> {{ locale.saving }} </template>
@@ -45,7 +45,7 @@
               <Bell :size="20" class="text-primary" />
             </div>
             <div>
-              <h2 class="text-base font-black text-text-primary">{{ locale.inAppTitle }}</h2>
+              <h2 class="text-base font-bold text-text-primary">{{ locale.inAppTitle }}</h2>
               <p class="text-xs text-text-tertiary mt-0.5">{{ locale.inAppDesc }}</p>
             </div>
           </div>
@@ -55,7 +55,7 @@
             <div :class="itemClass">
               <div class="flex-1">
                 <h3 class="text-sm font-bold text-text-primary">{{ locale.songSelectedTitle }}</h3>
-                <p class="text-[11px] text-text-tertiary mt-1">{{ locale.songSelectedDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.songSelectedDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -70,7 +70,7 @@
             <div :class="itemClass">
               <div class="flex-1">
                 <h3 class="text-sm font-bold text-text-primary">{{ locale.songPlayedTitle }}</h3>
-                <p class="text-[11px] text-text-tertiary mt-1">{{ locale.songPlayedDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.songPlayedDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -85,7 +85,7 @@
             <div :class="itemClass">
               <div class="flex-1">
                 <h3 class="text-sm font-bold text-text-primary">{{ locale.songVotedTitle }}</h3>
-                <p class="text-[11px] text-text-tertiary mt-1">{{ locale.songVotedDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.songVotedDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -100,7 +100,7 @@
             <div :class="itemClass">
               <div class="flex-1">
                 <h3 class="text-sm font-bold text-text-primary">{{ locale.systemTitle }}</h3>
-                <p class="text-[11px] text-text-tertiary mt-1">{{ locale.systemDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.systemDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -115,7 +115,7 @@
             <div :class="[itemClass, 'md:col-span-1']">
               <div class="flex-1">
                 <h3 class="text-sm font-bold text-text-primary">{{ locale.voteThresholdTitle }}</h3>
-                <p class="text-[11px] text-text-tertiary mt-1">{{ locale.voteThresholdDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.voteThresholdDesc }}</p>
               </div>
               <div class="flex items-center gap-2">
                 <input
@@ -125,7 +125,7 @@
                   min="1"
                   class="w-16 bg-bg-primary border border-border-secondary rounded-lg px-2 py-1.5 text-xs text-text-primary text-center focus:outline-none focus:border-primary-30"
                 >
-                <span class="text-[10px] font-black text-text-disabled uppercase">{{ locale.voteUnit }}</span>
+                <span class="text-xs font-bold text-text-disabled uppercase">{{ locale.voteUnit }}</span>
               </div>
             </div>
 
@@ -133,7 +133,7 @@
             <div :class="[itemClass, 'md:col-span-1']">
               <div class="flex-1">
                 <h3 class="text-sm font-bold text-text-primary">{{ locale.refreshTitle }}</h3>
-                <p class="text-[11px] text-text-tertiary mt-1">{{ locale.refreshDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.refreshDesc }}</p>
               </div>
               <div class="flex items-center gap-3">
                 <input
@@ -144,7 +144,7 @@
                   step="30"
                   class="w-24 h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer"
                 >
-                <span class="text-[11px] font-bold text-primary min-w-[40px] text-right"
+                <span class="text-xs font-bold text-primary min-w-[40px] text-right"
                   >{{ localSettings.refreshInterval }}s</span
                 >
               </div>
@@ -170,7 +170,7 @@ const { pages } = useLocale()
 const locale = computed(() => pages.value?.notificationSettings || {})
 
 // 样式类常量
-const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 md:p-8 shadow-2xl'
 const cardClass =
   'bg-bg-primary-40 border border-border-secondary-50 rounded-2xl p-5 transition-all hover:border-border-tertiary-50'
 const itemClass =

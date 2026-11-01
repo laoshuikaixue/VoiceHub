@@ -17,10 +17,167 @@ let systemQuery: MediaQueryList | null = null
 let systemChangeHandler: ((event: MediaQueryListEvent) => void) | null = null
 const enabledThemes = ref<Theme[]>([...THEMES])
 let siteDefault: Theme = 'System'
+let siteAccent: string | null = null
+
+const ACCENT_VARS = [
+  '--primary',
+  '--primary-hover',
+  '--primary-light',
+  '--primary-border',
+  '--accent-color',
+  '--color-accent',
+  '--color-accent-light',
+  '--color-accent-hover',
+  '--color-accent-light-hover',
+  '--color-accent-lighter',
+  '--color-accent-glow',
+  '--primary-glow',
+  '--primary-glow-5',
+  '--primary-glow-10',
+  '--primary-glow-20',
+  '--primary-glow-40',
+  '--primary-5',
+  '--primary-10',
+  '--primary-15',
+  '--primary-18',
+  '--primary-20',
+  '--primary-25',
+  '--primary-30',
+  '--primary-35',
+  '--primary-40',
+  '--primary-50',
+  '--primary-60',
+  '--primary-80',
+  '--primary-hover-5',
+  '--primary-hover-10',
+  '--primary-hover-20',
+  '--primary-hover-30',
+  '--color-accent-alpha-10',
+  '--color-accent-alpha-12',
+  '--color-accent-alpha-15',
+  '--color-accent-alpha-18',
+  '--color-accent-alpha-20',
+  '--color-accent-alpha-22',
+  '--color-accent-alpha-25',
+  '--color-accent-alpha-30',
+  '--color-accent-alpha-40',
+  '--color-accent-alpha-50',
+  '--color-accent-alpha-60',
+  '--color-accent-alpha-65',
+  '--color-accent-alpha-80',
+  '--title-divider-bg',
+  '--text-link',
+  '--text-link-hover',
+  '--panel-border-active',
+  '--panel-border-brand',
+  '--status-info-border',
+  '--selection-bg',
+  '--like-btn-border',
+  '--like-btn-hover-bg',
+  '--user-manager-tree-active-bg',
+  '--requestform-audio-match-hover-border',
+  '--requestform-audio-match-hover-border-light',
+  '--requestform-login-btn-hover-shadow',
+  '--requestform-login-btn-hover-shadow-lg',
+  '--schedule-list-title-shadow',
+  '--data-analysis-scroll-thumb',
+]
+
+/** 归一化 HEX 颜色为 #rrggbb，非法值返回 null */
+export function normalizeHexColor(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const input = value.trim()
+  const short = /^#([0-9a-fA-F]{3})$/.exec(input)
+  if (short) {
+    const [r, g, b] = short[1]!.split('')
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase()
+  }
+  return /^#[0-9a-fA-F]{6}$/.test(input) ? input.toLowerCase() : null
+}
+
+/** 应用站点强调色；传入空值恢复主题默认色 */
+export function applyAccentColor(value: unknown) {
+  if (import.meta.server) return
+  siteAccent = normalizeHexColor(value)
+  const root = document.documentElement
+  if (!siteAccent) {
+    for (const name of ACCENT_VARS) root.style.removeProperty(name)
+    return
+  }
+
+  const hex = siteAccent
+  const hover = `color-mix(in srgb, ${hex} 86%, #000)`
+  const alpha = (percent: number) => `color-mix(in srgb, ${hex} ${percent}%, transparent)`
+  const values: Record<string, string> = {
+    '--primary': hex,
+    '--primary-hover': hover,
+    '--primary-light': alpha(10),
+    '--primary-border': alpha(20),
+    '--accent-color': hex,
+    '--color-accent': hex,
+    '--color-accent-light': `color-mix(in srgb, ${hex} 88%, #fff)`,
+    '--color-accent-hover': hover,
+    '--color-accent-light-hover': `color-mix(in srgb, ${hover} 88%, #fff)`,
+    '--color-accent-lighter': `color-mix(in srgb, ${hex} 70%, #fff)`,
+    '--color-accent-glow': alpha(40),
+    '--primary-glow': alpha(15),
+    '--primary-glow-5': alpha(5),
+    '--primary-glow-10': alpha(10),
+    '--primary-glow-20': alpha(20),
+    '--primary-glow-40': alpha(30),
+    '--primary-5': alpha(5),
+    '--primary-10': alpha(10),
+    '--primary-15': alpha(15),
+    '--primary-18': alpha(18),
+    '--primary-20': alpha(20),
+    '--primary-25': alpha(25),
+    '--primary-30': alpha(30),
+    '--primary-35': alpha(35),
+    '--primary-40': alpha(40),
+    '--primary-50': alpha(50),
+    '--primary-60': alpha(60),
+    '--primary-80': alpha(80),
+    '--primary-hover-5': `color-mix(in srgb, ${hover} 5%, transparent)`,
+    '--primary-hover-10': `color-mix(in srgb, ${hover} 10%, transparent)`,
+    '--primary-hover-20': `color-mix(in srgb, ${hover} 20%, transparent)`,
+    '--primary-hover-30': `color-mix(in srgb, ${hover} 30%, transparent)`,
+    '--color-accent-alpha-10': alpha(8),
+    '--color-accent-alpha-12': alpha(12),
+    '--color-accent-alpha-15': alpha(15),
+    '--color-accent-alpha-18': alpha(18),
+    '--color-accent-alpha-20': alpha(16),
+    '--color-accent-alpha-22': alpha(22),
+    '--color-accent-alpha-25': alpha(25),
+    '--color-accent-alpha-30': alpha(25),
+    '--color-accent-alpha-40': alpha(30),
+    '--color-accent-alpha-50': alpha(40),
+    '--color-accent-alpha-60': alpha(50),
+    '--color-accent-alpha-65': alpha(65),
+    '--color-accent-alpha-80': alpha(60),
+    '--title-divider-bg': hex,
+    '--text-link': hex,
+    '--text-link-hover': hover,
+    '--panel-border-active': hex,
+    '--panel-border-brand': hex,
+    '--status-info-border': hex,
+    '--selection-bg': alpha(25),
+    '--like-btn-border': alpha(45),
+    '--like-btn-hover-bg': alpha(6),
+    '--user-manager-tree-active-bg': alpha(16),
+    '--requestform-audio-match-hover-border': alpha(35),
+    '--requestform-audio-match-hover-border-light': alpha(22),
+    '--requestform-login-btn-hover-shadow': alpha(35),
+    '--requestform-login-btn-hover-shadow-lg': alpha(45),
+    '--schedule-list-title-shadow': alpha(30),
+    '--data-analysis-scroll-thumb': alpha(30),
+  }
+  for (const [name, value] of Object.entries(values)) root.style.setProperty(name, value)
+}
 
 function applyTheme(t: Theme) {
   current!.value = t
   document.documentElement.setAttribute('data-theme', t)
+  applyAccentColor(siteAccent)
 }
 
 /** 注册系统配色偏好监听：系统切换时自动应用对应经典主题 */
@@ -121,8 +278,13 @@ export function useTheme() {
 }
 
 /** 应用服务端主题策略；用户已保存的主题优先于站点默认主题。 */
-export function applyThemeConfig(defaultTheme: unknown, configuredThemes: unknown) {
+export function applyThemeConfig(
+  defaultTheme: unknown,
+  configuredThemes: unknown,
+  accentColor: unknown = null
+) {
   if (import.meta.server) return
+  applyAccentColor(accentColor)
   if (!current || !selected) {
     console.warn('applyThemeConfig: useTheme 尚未初始化，主题配置暂不生效')
     return

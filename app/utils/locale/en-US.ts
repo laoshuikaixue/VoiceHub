@@ -67,6 +67,11 @@ export const siteConfig = {
 
   themeSettings: 'Theme Settings',
   themeSettingsDesc: 'Control each theme separately and use the star to choose the default theme.',
+  accentColor: 'Site Accent Color',
+  accentColorDesc: 'Overrides buttons, links, and selected states across themes. Leave empty to use the theme default.',
+  accentColorReset: 'Use theme default',
+  accentColorHint: 'Supports #RGB or #RRGGBB.',
+  accentColorInvalid: 'Enter a valid HEX color, e.g. #3b82f6.',
   setDefaultTheme: 'Set as default theme',
   enableTheme: 'Enable theme',
   disableTheme: 'Disable theme',
@@ -373,6 +378,7 @@ export const common = {
   confirm: 'Confirm',
   close: 'Close',
   retry: 'Retry',
+  loading: 'Loading',
   edit: 'Edit',
   delete: 'Delete',
   actions: 'Actions',
@@ -841,6 +847,7 @@ export const pages = {
     loginRequiredDesc: 'You need to log in to view notifications',
     loginNow: 'Log In Now',
     notificationCenter: 'Notification Center',
+    notificationSettingsLabel: 'Notification settings',
     unreadOverview: 'Unread overview',
     unreadCountSummary: (count: number) => `${count} unread notification${count === 1 ? '' : 's'}`,
     viewUnreadNotifications: 'View unread',
@@ -1300,7 +1307,17 @@ export const pages = {
     },
     appLoadingScreen: {
       ariaLabel: 'VoiceHub is loading',
-      message: 'Syncing schedules, songs, and user status'
+      message: 'Syncing schedules, songs, and user status',
+      phases: {
+        start: 'Starting',
+        config: 'Reading site config',
+        auth: 'Checking session',
+        slow: 'Slow network',
+        content: 'Loading content',
+        fallback: 'Using fallback data',
+        finalizing: 'Finalizing',
+        complete: 'Ready'
+      }
     }
   },
   ui: {

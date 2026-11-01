@@ -4,7 +4,7 @@
       <div>
         <div class="flex items-center gap-2">
           <History :size="18" class="text-primary" />
-          <h3 class="text-lg font-black text-text-primary-lighter">{{ locale.title }}</h3>
+          <h3 class="text-lg font-bold text-text-primary-lighter">{{ locale.title }}</h3>
         </div>
         <p class="mt-1 text-xs text-text-tertiary">{{ locale.description }}</p>
       </div>
@@ -119,7 +119,7 @@
     <template v-else>
       <div class="mt-6 hidden overflow-x-auto rounded-lg border border-panel-bg-dark md:block">
         <table class="w-full min-w-[760px] border-collapse text-left">
-          <thead class="bg-panel-bg-deepest-80 text-[10px] font-black uppercase text-text-disabled">
+          <thead class="bg-panel-bg-deepest-80 text-xs font-bold uppercase text-text-disabled">
             <tr>
               <th class="px-5 py-3">{{ locale.notification }}</th>
               <th class="px-5 py-3">{{ locale.type }}</th>
@@ -141,7 +141,7 @@
               </td>
               <td class="px-5 py-4 align-top">
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-bold"
+                  class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-bold"
                   :class="
                     item.important
                       ? 'border-warning-20 bg-warning-10 text-warning-light'
@@ -209,7 +209,7 @@
               </p>
             </div>
             <span
-              class="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-bold"
+              class="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold"
               :class="item.important ? 'text-warning-light' : 'text-text-tertiary'"
             >
               <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
@@ -264,60 +264,18 @@
       />
     </template>
 
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="selectedBatch"
-          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="notification-detail-title"
-          @click.self="closeDetails"
-          @keydown.esc="closeDetails"
-        >
-          <div
-            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
-          >
-            <header
-              class="flex shrink-0 items-start justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
-            >
-              <div class="min-w-0">
-                <p class="text-[10px] font-black uppercase text-primary">
-                  {{ locale.detailsEyebrow }}
-                </p>
-                <h2
-                  id="notification-detail-title"
-                  class="mt-1 break-words text-lg font-black text-text-primary-lighter"
-                >
-                  {{ selectedBatch.title || locale.untitled }}
-                </h2>
-                <p class="mt-1 text-xs text-text-tertiary">
-                  {{ formatDateTime(selectedBatch.createdAt) }}
-                </p>
-                <p class="mt-1 text-xs text-text-tertiary">
-                  {{ locale.sender }}：{{ senderName(selectedBatch) }}
-                </p>
-              </div>
-              <button
-                ref="closeButton"
-                type="button"
-                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-lighter"
-                :title="locale.close"
-                :aria-label="locale.close"
-                @click="closeDetails"
-              >
-                <X :size="19" />
-              </button>
-            </header>
+    <AppModal
+      :show="!!selectedBatch"
+      :title="selectedBatch?.title || locale.untitled"
+      size="2xl"
+      @close="closeDetails"
+    >
+      <p v-if="selectedBatch" class="mb-5 text-xs text-text-tertiary">
+        {{ formatDateTime(selectedBatch.createdAt) }} · {{ locale.sender }}：{{ senderName(selectedBatch) }}
+      </p>
 
-            <div class="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:p-8">
+      <div class="space-y-0">
+
               <p class="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-text-tertiary">
                 {{ selectedBatch.message }}
               </p>
@@ -343,7 +301,7 @@
                   <component :is="option.icon" :size="14" />
                   {{ option.label }}
                   <span
-                    class="min-w-6 rounded bg-panel-bg-deepest px-1.5 py-0.5 text-center text-[10px] text-text-muted"
+                    class="min-w-6 rounded bg-panel-bg-deepest px-1.5 py-0.5 text-center text-xs text-text-muted"
                   >
                     {{ option.count }}
                   </span>
@@ -383,7 +341,7 @@
               <template v-else>
                 <div class="mt-5 hidden overflow-x-auto rounded-lg border border-panel-bg-dark sm:block">
                   <table class="w-full min-w-[620px] border-collapse text-left">
-                    <thead class="bg-panel-bg-darkest-60 text-[10px] font-black uppercase text-text-tertiary">
+                    <thead class="bg-panel-bg-darkest-60 text-xs font-bold uppercase text-text-tertiary">
                       <tr>
                         <th class="px-4 py-3">{{ locale.recipient }}</th>
                         <th class="px-4 py-3">{{ locale.status }}</th>
@@ -394,7 +352,7 @@
                       <tr v-for="item in recipients" :key="item.id">
                         <td class="px-4 py-3">
                           <p class="text-xs font-bold text-text-secondary">{{ recipientName(item) }}</p>
-                          <p class="mt-1 text-[10px] text-text-disabled">{{ recipientMeta(item) }}</p>
+                          <p class="mt-1 text-xs text-text-disabled">{{ recipientMeta(item) }}</p>
                         </td>
                         <td class="px-4 py-3">
                           <span
@@ -421,7 +379,7 @@
                         <p class="break-words text-xs font-bold text-text-secondary">
                           {{ recipientName(item) }}
                         </p>
-                        <p class="mt-1 break-words text-[10px] text-text-disabled">
+                        <p class="mt-1 break-words text-xs text-text-disabled">
                           {{ recipientMeta(item) }}
                         </p>
                       </div>
@@ -434,7 +392,7 @@
                         {{ item.read ? locale.read : locale.unread }}
                       </span>
                     </div>
-                    <p class="mt-3 text-[10px] text-text-disabled">
+                    <p class="mt-3 text-xs text-text-disabled">
                       {{ locale.readAt }}：{{
                         item.readAt ? formatDateTime(item.readAt) : locale.notRead
                       }}
@@ -450,58 +408,17 @@
                   @change="loadDetails"
                 />
               </template>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      </div>
+    </AppModal>
 
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition duration-300 ease-out"
-        enter-from-class="opacity-0"
-        enter-to-class="opacity-100"
-        leave-active-class="transition duration-200 ease-in"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="editingBatch"
-          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="notification-edit-title"
-          @click.self="closeEdit"
-          @keydown.esc="closeEdit"
-        >
-          <form
-            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
-            @submit.prevent="saveEdit"
-          >
-            <header
-              class="flex shrink-0 items-center justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
-            >
-              <div>
-                <p class="text-[10px] font-black uppercase text-success">
-                  {{ locale.editEyebrow }}
-                </p>
-                <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-text-primary-lighter">
-                  {{ locale.editNotification }}
-                </h2>
-              </div>
-              <button
-                type="button"
-                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-lighter disabled:cursor-wait disabled:opacity-50"
-                :disabled="editSaving"
-                :title="locale.close"
-                :aria-label="locale.close"
-                @click="closeEdit"
-              >
-                <X :size="19" />
-              </button>
-            </header>
+    <AppModal
+      :show="!!editingBatch"
+      :title="locale.editNotification"
+      size="2xl"
+      @close="closeEdit"
+    >
+      <form id="notification-edit-form" class="space-y-6" @submit.prevent="saveEdit">
 
-            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:p-8">
               <div>
                 <label
                   for="notification-edit-name"
@@ -525,7 +442,7 @@
                   <label for="notification-edit-content" class="text-xs font-bold text-text-secondary">
                     {{ locale.editContent }}
                   </label>
-                  <span class="text-[10px] font-bold text-text-disabled">Markdown</span>
+                  <span class="text-xs font-bold text-text-disabled">Markdown</span>
                 </div>
                 <textarea
                   id="notification-edit-content"
@@ -547,7 +464,7 @@
                   <span class="block text-xs font-bold text-text-primary-light">{{
                     locale.editImportant
                   }}</span>
-                  <span class="mt-1 block text-[10px] leading-relaxed text-text-tertiary">
+                  <span class="mt-1 block text-xs leading-relaxed text-text-tertiary">
                     {{ locale.editImportantDescription }}
                   </span>
                 </span>
@@ -568,11 +485,11 @@
               >
                 {{ editError }}
               </div>
-            </div>
+      </form>
 
-            <footer
-              class="flex shrink-0 flex-col-reverse gap-3 border-t border-panel-bg-dark-50 bg-panel-bg-deepest-50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
-            >
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
               <button
                 type="button"
                 :disabled="editSaving"
@@ -582,19 +499,17 @@
                 {{ locale.cancel }}
               </button>
               <button
-                type="submit"
+                type="submit" form="notification-edit-form"
                 :disabled="editSaving"
-                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-8 text-xs font-black text-white transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-8 text-xs font-bold text-white transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
               >
                 <Loader2 v-if="editSaving" :size="15" class="animate-spin" />
                 <Save v-else :size="15" />
                 {{ editSaving ? locale.saving : locale.save }}
               </button>
-            </footer>
-          </form>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+    </AppModal>
 
     <ConfirmDialog
       :show="Boolean(deletingBatch)"
@@ -616,6 +531,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import AppModal from '~/components/UI/Common/AppModal.vue'
 import {
   AlertCircle,
   CheckCircle2,
@@ -667,7 +583,6 @@ const detailError = ref('')
 const detailStatus = ref('ALL')
 const detailStats = ref({ total: 0, read: 0, unread: 0 })
 const detailPagination = ref({ page: 1, limit: 20, total: 0, totalPages: 1 })
-const closeButton = ref(null)
 const editingBatch = ref(null)
 const editForm = ref({ title: '', content: '', important: false })
 const editSaving = ref(false)
@@ -678,8 +593,6 @@ const deleteLoading = ref(false)
 let requestVersion = 0
 let detailRequestVersion = 0
 let searchTimer = null
-let previousFocus = null
-let previousBodyOverflow = ''
 
 const detailFilterOptions = computed(() => [
   { value: 'ALL', label: locale.value.all, count: detailStats.value.total, icon: Users },
@@ -828,11 +741,7 @@ const openDetails = async (item) => {
   detailStatus.value = 'ALL'
   detailStats.value = { total: 0, read: 0, unread: 0 }
   detailPagination.value = { page: 1, limit: 20, total: 0, totalPages: 1 }
-  previousFocus = document.activeElement
-  previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
   await nextTick()
-  closeButton.value?.focus()
   loadDetails()
 }
 
@@ -841,8 +750,6 @@ const closeDetails = () => {
   selectedBatch.value = null
   recipients.value = []
   detailError.value = ''
-  document.body.style.overflow = previousBodyOverflow
-  nextTick(() => previousFocus?.focus?.())
 }
 
 const openEdit = async (item) => {
@@ -853,9 +760,6 @@ const openEdit = async (item) => {
     important: Boolean(item.important)
   }
   editError.value = ''
-  previousFocus = document.activeElement
-  previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
   await nextTick()
   editTitleInput.value?.focus()
 }
@@ -864,8 +768,6 @@ const closeEdit = () => {
   if (editSaving.value) return
   editingBatch.value = null
   editError.value = ''
-  document.body.style.overflow = previousBodyOverflow
-  nextTick(() => previousFocus?.focus?.())
 }
 
 const saveEdit = async () => {
@@ -999,8 +901,5 @@ onUnmounted(() => {
   if (searchTimer) clearTimeout(searchTimer)
   requestVersion += 1
   detailRequestVersion += 1
-  if (selectedBatch.value || editingBatch.value) {
-    document.body.style.overflow = previousBodyOverflow
-  }
 })
 </script>

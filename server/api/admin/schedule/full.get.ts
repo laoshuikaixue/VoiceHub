@@ -9,6 +9,7 @@ import {
   songReplayRequests
 } from '~/drizzle/schema'
 import { and, asc, count, countDistinct, eq, gte, lt, inArray, desc } from 'drizzle-orm'
+import { formatDateTime } from '~/utils/timeUtils'
 import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import {
   buildNameToUsersMap,
@@ -244,7 +245,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取重播申请元数据（按 ID 索引，展示时排期按 replayRequestId 取对应记录）
-    const replayMetadataByIdMap = new Map<number, { submissionNote: string | null; submissionNotePublic: boolean; submissionNotePublicStatus: string | null; preferredPlayTimeId: number | null }>()
+    const replayMetadataByIdMap = new Map<number, { createdAt: Date; submissionNote: string | null; submissionNotePublic: boolean; submissionNotePublicStatus: string | null; preferredPlayTimeId: number | null }>()
     if (songIds.length > 0) {
       const replayMetaData = await db
         .select()
@@ -258,6 +259,7 @@ export default defineEventHandler(async (event) => {
 
       for (const row of replayMetaData) {
         replayMetadataByIdMap.set(row.id, {
+          createdAt: row.createdAt,
           submissionNote: row.submissionNote,
           submissionNotePublic: row.submissionNotePublic,
           submissionNotePublicStatus: row.submissionNotePublicStatus,
@@ -348,6 +350,7 @@ export default defineEventHandler(async (event) => {
             playUrl: schedule.songPlayUrl || null,
             semester: schedule.songSemester || null,
             createdAt: schedule.songCreatedAt,
+            requestedAt: formatDateTime(replayMeta?.createdAt ?? schedule.songCreatedAt),
             submissionNote: hasReplayMeta ? replayMeta.submissionNote : null,
             submissionNotePublic: hasReplayMeta ? replayMeta.submissionNotePublic : false,
             submissionNotePublicStatus: hasReplayMeta ? (replayMeta.submissionNotePublicStatus || null) : null,
