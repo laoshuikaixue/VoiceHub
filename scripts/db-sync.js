@@ -369,7 +369,9 @@ async function checkSchemaConsistency(sql) {
       'autoBackupEnabled',
       'autoBackupConfig',
       'astrbotEnabled',
-      'astrbotPlatforms'
+      'astrbotPlatforms',
+      'customCssEnabled',
+      'customCss'
     ],
     AstrbotOutbox: ['targetOwners', 'claimToken'],
     PasswordAuditLog: [
