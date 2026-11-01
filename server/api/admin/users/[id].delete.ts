@@ -5,6 +5,7 @@ import { and, asc, eq, inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { assertProtectedCodesAfterAccountChange } from '~~/server/utils/permission-admin'
 
 export default defineEventHandler(async (event) => {
   const actor = event.context.user
@@ -14,6 +15,16 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '用户 ID 无效')
   }
   try {
+    // 事务外先做安全阀检查，避免在事务里再取一次连接
+    const [existing] = await db
+      .select({ id: users.id, status: users.status })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+    if (existing?.status === 'active') {
+      await assertProtectedCodesAfterAccountChange(userId, null, actor.id)
+    }
+
     await db.transaction(async (tx) => {
       const [target] = await tx.select().from(users).where(eq(users.id, userId)).limit(1).for('update')
       if (!target) throw createApiError(404, SERVER_ERROR_CODES.USER_NOT_FOUND, '用户不存在')

@@ -6,6 +6,7 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { assertProtectedCodesAfterAccountChanges } from '~~/server/utils/permission-admin'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -83,7 +84,8 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         username: users.username,
         status: users.status,
-        role: users.role
+        role: users.role,
+        permissions: users.permissions
       })
       .from(users)
       .where(inArray(users.id, validUserIds))
@@ -150,6 +152,16 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
+
+    // 站点级能力安全阀：整批状态变更一起对比持有者，避免一次批量停用清空能力
+    await assertProtectedCodesAfterAccountChanges(
+      usersToUpdate.map((target) => ({
+        targetId: target.id,
+        nextRow:
+          status === 'active' ? { id: target.id, role: target.role, permissions: target.permissions } : null
+      })),
+      user.id
+    )
 
     const currentTime = getBeijingTime()
     const results = []

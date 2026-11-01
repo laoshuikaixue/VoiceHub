@@ -2243,7 +2243,7 @@ export const admin = {
     resetDefault: 'Restore defaults',
     loading: 'Loading permission matrix…',
     superAdminNote:
-      'Site-level capabilities (console access, template editing, per-user grants) are guarded: you cannot revoke your own, nor remove one from its last holder.',
+      'Site-level capabilities (console access, template editing, per-user grants) are guarded: you cannot revoke your own console access, and no capability may be left without a holder.',
     activeHolders: 'Active Admins',
     explicitGrantUsers: 'Explicit Grants',
     customizedRoles: 'Customized',

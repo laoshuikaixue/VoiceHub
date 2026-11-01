@@ -5,12 +5,11 @@ import { eq } from 'drizzle-orm'
 import { getRolePermissionTemplatesCached } from '~~/server/utils/system-settings-helper'
 import {
   assertGrantsWithinOperator,
-  assertProtectedCodesSurvive,
-  loadPermissionHolderRows,
+  assertProtectedCodesAfterAccountChange,
   normalizeSubmittedGrants
 } from '~~/server/utils/permission-admin'
-import { collectCodeHolders, type PermissionHolderRow } from '~~/server/utils/permission-policy'
-import { PROTECTED_PRIV_CODES, normalizePermissionTokens, splitGrantTokens } from '~~/app/utils/admin-permissions'
+import type { PermissionHolderRow } from '~~/server/utils/permission-policy'
+import { normalizePermissionTokens, splitGrantTokens } from '~~/app/utils/admin-permissions'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 
@@ -56,18 +55,9 @@ export default defineEventHandler(async (event) => {
     if (nextTokens) assertGrantsWithinOperator(nextTokens, operatorPerms ?? [])
 
     const currentTemplates = await getRolePermissionTemplatesCached()
-    const rows = await loadPermissionHolderRows()
-    const nextRow: PermissionHolderRow = { id: target.id, role: targetRole, permissions: nextTokens }
-    const nextRows =
-      target.status === 'active'
-        ? [...rows.filter((row) => row.id !== target.id), nextRow]
-        : rows.filter((row) => row.id !== target.id)
-
-    assertProtectedCodesSurvive(
-      collectCodeHolders(rows, currentTemplates, PROTECTED_PRIV_CODES),
-      collectCodeHolders(nextRows, currentTemplates, PROTECTED_PRIV_CODES),
-      operatorId
-    )
+    const nextRow: PermissionHolderRow | null =
+      target.status === 'active' ? { id: target.id, role: targetRole, permissions: nextTokens } : null
+    await assertProtectedCodesAfterAccountChange(target.id, nextRow, operatorId)
 
     await db.update(users).set({ permissions: nextTokens }).where(eq(users.id, target.id))
 

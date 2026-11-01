@@ -11,6 +11,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { assertProtectedCodesAfterAccountChange } from '~~/server/utils/permission-admin'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -152,6 +153,17 @@ export default defineEventHandler(async (event) => {
     // 待审核用户不得通过编辑接口直接置为 active（须走注册审核流程）
     if (targetUser.status === 'pending' && status === 'active') {
       throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
+    }
+
+    // 站点级能力安全阀：降级角色或停用账号会让该账号退出持有者集合，可能让能力无人可用
+    const { permissions: targetPermissions } = targetUser
+    const nextStatus = status && status !== targetUser.status ? status : targetUser.status
+    if (validRole !== targetUser.role || nextStatus !== targetUser.status) {
+      await assertProtectedCodesAfterAccountChange(
+        userIdNum,
+        nextStatus === 'active' ? { id: userIdNum, role: validRole, permissions: targetPermissions } : null,
+        user.id
+      )
     }
 
     // 准备更新数据

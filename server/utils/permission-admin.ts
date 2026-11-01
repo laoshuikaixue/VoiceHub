@@ -14,10 +14,11 @@ import {
   collectCodeHolders,
   findGrantsBeyondOperator,
   findProtectedCodeLoss,
+  findProtectedLossAfterReplacements,
   validateExplicitGrants,
   validateRoleTemplates
 } from './permission-policy'
-import type { PermissionCodeHolders, PermissionHolderRow, PolicyViolation } from './permission-policy'
+import type { AccountChange, PermissionCodeHolders, PermissionHolderRow, PolicyViolation } from './permission-policy'
 import {
   ADMIN_CONSOLE_ROLES,
   PROTECTED_PRIV_CODES,
@@ -76,7 +77,7 @@ export function assertGrantsWithinOperator(tokens: readonly string[], operatorPe
   }
 }
 
-// 安全阀：操作者不得自锁，站点级能力不得失去最后一个持有者
+// 安全阀：操作者不得丢掉后台准入，站点级能力不得失去最后一个持有者
 export function assertProtectedCodesSurvive(
   before: PermissionCodeHolders,
   after: PermissionCodeHolders,
@@ -84,6 +85,29 @@ export function assertProtectedCodesSurvive(
 ): void {
   const loss = findProtectedCodeLoss(before, after, operatorId)
   if (loss) rethrow(loss)
+}
+
+/**
+ * 删除/停用/降级后台账号前的安全阀：nextRow 为 null 表示账号退出持有者集合。
+ * 账号消失后，它独占的站点级能力就再没有账号能恢复。
+ */
+export async function assertProtectedCodesAfterAccountChanges(
+  changes: readonly AccountChange[],
+  operatorId: number
+): Promise<void> {
+  if (!changes.length) return
+  const rows = await loadPermissionHolderRows()
+  const templates = await getRolePermissionTemplatesCached()
+  const loss = findProtectedLossAfterReplacements(rows, templates, changes, operatorId)
+  if (loss) rethrow(loss)
+}
+
+export async function assertProtectedCodesAfterAccountChange(
+  targetId: number,
+  nextRow: PermissionHolderRow | null,
+  operatorId: number
+): Promise<void> {
+  await assertProtectedCodesAfterAccountChanges([{ targetId, nextRow }], operatorId)
 }
 
 // 权限矩阵页数据：模板现状、内置默认、活跃用户持有者数与角色分布

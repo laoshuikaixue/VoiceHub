@@ -149,7 +149,7 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { usePermissions } from '~/composables/usePermissions'
-import { hasPermission } from '~/utils/admin-permissions'
+import { ADMIN_PERMISSION_CODES, hasPermission } from '~/utils/admin-permissions'
 
 const props = defineProps({
   show: {
@@ -186,9 +186,14 @@ const effectiveTokens = computed(() => (follow.value ? templateTokens.value : [.
 
 const grantSummary = computed(() => getLocaleMessage('grantCount', explicitGrants.value.length))
 const denySummary = computed(() => getLocaleMessage('denyCount', explicitDenies.value.length))
-const effectiveSummary = computed(() => getLocaleMessage('effectiveCount', effectiveTokens.value.length))
+// 有效权限按判定口径统计（显式拒绝会抵消同码授予），不能直接数 token 长度
+const effectiveSummary = computed(
+  () => getLocaleMessage('effectiveCount', ADMIN_PERMISSION_CODES.filter((code) => holds(code)).length)
+)
 
-const holds = (code) => hasPermission(effectiveTokens.value, code)
+function holds(code) {
+  return hasPermission(effectiveTokens.value, code)
+}
 const fromTemplate = (code) => hasPermission(templateTokens.value, code)
 const isProtected = (code) => (detail.value?.protectedCodes || []).includes(code)
 const canGrant = (code) => hasPermission(operatorPerms.value, code)

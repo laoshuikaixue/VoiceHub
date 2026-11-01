@@ -2188,7 +2188,7 @@ export const admin = {
     resetDefault: '恢复内置默认',
     loading: '加载权限矩阵…',
     superAdminNote:
-      '站点级权限（后台准入、模板编辑、按用户授权）受安全阀保护：不能撤销自己的站点级权限，也不能将其移出最后一个持有者。',
+      '站点级权限（后台准入、模板编辑、按用户授权）受安全阀保护：不能撤销自己的后台准入，也不能让任何站点级权限失去全部持有者。',
     activeHolders: '后台活跃用户',
     explicitGrantUsers: '显式授权用户',
     customizedRoles: '已自定义角色',

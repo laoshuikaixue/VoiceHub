@@ -17,6 +17,8 @@ import {
   collectCodeHolders,
   findGrantsBeyondOperator,
   findProtectedCodeLoss,
+  findProtectedLossAfterReplacement,
+  findProtectedLossAfterReplacements,
   validateExplicitGrants,
   validateRoleTemplates,
   type PolicyResult
@@ -139,9 +141,12 @@ test('越权授权识别：只能授出自己持有的码，通配按持有口�
   assert.deepEqual(findGrantsBeyondOperator(['!users:read'], ['songs:write']), ['!users:read'])
 })
 
-test('安全阀：操作者撤销自己持有的站点级能力被拒（自锁保护）', () => {
-  const beforeTemplates = { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE] }
-  const afterTemplates = { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE], ADMIN: [PRIV_ADMIN_CONSOLE] }
+test('安全阀：操作者撤销自己的后台入口被拒（自锁保护）', () => {
+  const beforeTemplates = {
+    SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE],
+    ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE]
+  }
+  const afterTemplates = { SUPER_ADMIN: [PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE] }
   const rows = [SUPER, ADMIN]
   const loss = findProtectedCodeLoss(
     collectCodeHolders(rows, beforeTemplates, PROTECTED_PRIV_CODES),
@@ -150,12 +155,42 @@ test('安全阀：操作者撤销自己持有的站点级能力被拒（自锁�
   )
   assert.equal(loss?.code, SERVER_ERROR_CODES.PERMISSION_SELF_LOCKOUT)
   assert.equal(loss?.status, 403)
+  // 交出 priv:role-template 有人接手不算违规，但丢掉后台入口一律拦住
+  assert.deepEqual(loss?.params, [PRIV_ADMIN_CONSOLE])
+})
+
+test('安全阀：交出站点级能力后仍有人持有则放行，无人接手才算最后一个持有者', () => {
+  const rows = [SUPER, ADMIN]
+  const before = collectCodeHolders(
+    rows,
+    { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE] },
+    PROTECTED_PRIV_CODES
+  )
+  // 超管把模板编辑能力交给普通管理员，自己的后台入口不变
+  const handedOver = collectCodeHolders(
+    rows,
+    { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE], ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE] },
+    PROTECTED_PRIV_CODES
+  )
+  assert.equal(findProtectedCodeLoss(before, handedOver, SUPER.id), null)
+
+  // 同一能力没有任何账号接手 → 全站失去该能力
+  const orphaned = collectCodeHolders(
+    rows,
+    { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE], ADMIN: [PRIV_ADMIN_CONSOLE] },
+    PROTECTED_PRIV_CODES
+  )
+  const loss = findProtectedCodeLoss(before, orphaned, SUPER.id)
+  assert.equal(loss?.code, SERVER_ERROR_CODES.PERMISSION_LAST_HOLDER_PROTECTED)
   assert.deepEqual(loss?.params, [PRIV_ROLE_TEMPLATE])
 })
 
 test('安全阀：站点级能力失去最后一个持有者被拒，即便操作者并不持有', () => {
-  const beforeTemplates = { SUPER_ADMIN: [PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE] }
-  const afterTemplates = { SUPER_ADMIN: [], ADMIN: [PRIV_ADMIN_CONSOLE] }
+  const beforeTemplates = {
+    SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE],
+    ADMIN: [PRIV_ADMIN_CONSOLE]
+  }
+  const afterTemplates = { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE], ADMIN: [PRIV_ADMIN_CONSOLE] }
   const rows = [SUPER, ADMIN]
   const loss = findProtectedCodeLoss(
     collectCodeHolders(rows, beforeTemplates, PROTECTED_PRIV_CODES),
@@ -168,11 +203,8 @@ test('安全阀：站点级能力失去最后一个持有者被拒，即便操�
 
 test('安全阀：能力转移或扩散给他人时放行，从未有人持有也不拦', () => {
   const rows = [SUPER, ADMIN]
-  const before = collectCodeHolders(
-    rows,
-    { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE] },
-    PROTECTED_PRIV_CODES
-  )
+  const beforeTemplates = { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE] }
+  const before = collectCodeHolders(rows, beforeTemplates, PROTECTED_PRIV_CODES)
   const after = collectCodeHolders(
     rows,
     { SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE], ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE] },
@@ -190,13 +222,103 @@ test('安全阀：能力转移或扩散给他人时放行，从未有人持有�
   assert.equal(findProtectedCodeLoss(collectCodeHolders([], null, PROTECTED_PRIV_CODES), empty, SUPER.id), null)
 })
 
+test('账号变更安全阀：删除或降级导致最后一个持有者消失被拒', () => {
+  const rows = [SUPER, ADMIN, SONG_ADMIN]
+  // 站点级能力分布：priv:role-template 只剩歌曲管理员一人持有
+  const matrixTemplates = {
+    SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_GRANT],
+    ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_GRANT],
+    SONG_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE],
+    USER: []
+  }
+
+  // 唯一持有 priv:role-template 的歌曲管理员被降级为 USER，且操作者本人不持有该码
+  const demote = findProtectedLossAfterReplacement(
+    rows,
+    matrixTemplates,
+    SONG_ADMIN.id,
+    { id: SONG_ADMIN.id, role: 'USER', permissions: null },
+    ADMIN.id
+  )
+  assert.equal(demote?.code, SERVER_ERROR_CODES.PERMISSION_LAST_HOLDER_PROTECTED)
+  assert.equal(demote?.status, 403)
+  assert.deepEqual(demote?.params, [PRIV_ROLE_TEMPLATE])
+
+  // 同一账号被删除（退出持有者集合）同样被拒
+  const removed = findProtectedLossAfterReplacement(rows, matrixTemplates, SONG_ADMIN.id, null, ADMIN.id)
+  assert.equal(removed?.code, SERVER_ERROR_CODES.PERMISSION_LAST_HOLDER_PROTECTED)
+
+  // 降级后仍以显式授权保留该能力，并且仍进得了后台：放行
+  const kept = findProtectedLossAfterReplacement(
+    rows,
+    matrixTemplates,
+    SONG_ADMIN.id,
+    { id: SONG_ADMIN.id, role: 'USER', permissions: [PRIV_ADMIN_CONSOLE, PRIV_ROLE_TEMPLATE] },
+    ADMIN.id
+  )
+  assert.equal(kept, null)
+
+  // 降级后只剩 priv:role-template：进不了后台的账号用不上站点级能力，视为失去
+  const demoteWithoutConsole = findProtectedLossAfterReplacement(
+    rows,
+    matrixTemplates,
+    SONG_ADMIN.id,
+    { id: SONG_ADMIN.id, role: 'USER', permissions: [PRIV_ROLE_TEMPLATE] },
+    ADMIN.id
+  )
+  assert.equal(demoteWithoutConsole?.code, SERVER_ERROR_CODES.PERMISSION_LAST_HOLDER_PROTECTED)
+  assert.deepEqual(demoteWithoutConsole?.params, [PRIV_ROLE_TEMPLATE])
+
+  // 变更的是操作者自己：按自锁拒绝
+  const self = findProtectedLossAfterReplacement(rows, matrixTemplates, ADMIN.id, null, ADMIN.id)
+  assert.equal(self?.code, SERVER_ERROR_CODES.PERMISSION_SELF_LOCKOUT)
+  assert.deepEqual(self?.params, [PRIV_ADMIN_CONSOLE])
+})
+
+test('批量账号变更按整批结果判定：逐个放行但一起清空仍被拒', () => {
+  const templates = {
+    SUPER_ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_GRANT],
+    ADMIN: [PRIV_ADMIN_CONSOLE, PRIV_GRANT],
+    SONG_ADMIN: [PRIV_ADMIN_CONSOLE],
+    USER: []
+  }
+  const rows = [SUPER, ADMIN, SONG_ADMIN]
+  const changes = [
+    { targetId: SUPER.id, nextRow: null },
+    { targetId: ADMIN.id, nextRow: null }
+  ]
+  // 单独停用一个，priv:grant 仍有他人持有
+  assert.equal(findProtectedLossAfterReplacements(rows, templates, [changes[0]!], SONG_ADMIN.id), null)
+  assert.equal(findProtectedLossAfterReplacements(rows, templates, [changes[1]!], SONG_ADMIN.id), null)
+
+  // 一次批量停用把两个持有者一起移出
+  const loss = findProtectedLossAfterReplacements(rows, templates, changes, SONG_ADMIN.id)
+  assert.equal(loss?.code, SERVER_ERROR_CODES.PERMISSION_LAST_HOLDER_PROTECTED)
+  assert.deepEqual(loss?.params, [PRIV_GRANT])
+})
+
 test('持有者统计按有效权限计算：显式授予与显式拒绝都生效', () => {
-  const templates = { ADMIN: ['songs:write'], SONG_ADMIN: ['songs:write'] }
+  const templates = {
+    ADMIN: [PRIV_ADMIN_CONSOLE, 'songs:write'],
+    SONG_ADMIN: [PRIV_ADMIN_CONSOLE, 'songs:write']
+  }
   const rows = [{ ...ADMIN, permissions: ['users:read'] }, { ...SONG_ADMIN, permissions: ['!songs:write'] }]
   const holders = collectCodeHolders(rows, templates, ['songs:write', 'users:read'])
   assert.deepEqual(holders['songs:write'], [ADMIN.id], '显式拒绝应移除持有')
   assert.deepEqual(holders['users:read'], [ADMIN.id], '显式授予应新增持有')
   assert.deepEqual(collectCodeHolders([ADMIN], templates, ['songs:write'])['songs:write'], [ADMIN.id])
+})
+
+test('持有者统计只算进得了后台的账号', () => {
+  const templates = { SONG_ADMIN: [PRIV_ROLE_TEMPLATE] }
+  const row = { ...SONG_ADMIN, permissions: null }
+  assert.deepEqual(collectCodeHolders([row], templates, [PRIV_ROLE_TEMPLATE])[PRIV_ROLE_TEMPLATE], [])
+  // 补上后台入口后同一账号就是该能力的持有者
+  const reachable = { ...SONG_ADMIN, permissions: [PRIV_ADMIN_CONSOLE] }
+  assert.deepEqual(
+    collectCodeHolders([reachable], templates, [PRIV_ROLE_TEMPLATE])[PRIV_ROLE_TEMPLATE],
+    [SONG_ADMIN.id]
+  )
 })
 
 test('权限码分组：站点级能力在最前，其余按目录顺序且不重不漏', () => {

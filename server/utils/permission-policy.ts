@@ -1,15 +1,17 @@
 /**
  * 权限矩阵与按用户授权的纯策略（无数据库依赖，前后端判定口径一致）。
  *
- * 站点级能力（PROTECTED_PRIV_CODES）不允许被移出最后一个持有者，也不允许操作者撤销自己的持有，
- * 避免一次误操作把全站锁在无人可再授权的状态。
+ * 站点级能力（PROTECTED_PRIV_CODES）不允许被移出最后一个持有者；priv:admin-console 还额外不允许
+ * 从操作者本人身上撤掉，避免一次误操作把全站锁在无人可再授权的状态。
  * 授权人只能授予自己已持有的码，防止普通管理员通过按用户授权提权。
  */
 import {
   ADMIN_PERMISSION_CODES,
+  PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
   ROLE_TEMPLATE_KEYS,
+  canAccessAdminConsole,
   hasPermission,
   isValidPermissionToken,
   normalizePermissionTokens,
@@ -42,7 +44,8 @@ const fail = (code: string, message: string, params?: string[]): PolicyResult<ne
   violation: { status: 400, code, message, params }
 })
 
-// 每个码的持有者用户 ID：有效权限 = 角色模板 ∪ 显式授予，显式拒绝优先
+// 每个码的持有者用户 ID：有效权限 = 角色模板 ∪ 显式授予，显式拒绝优先。
+// 持有者必须是"真的能用上"的账号：进不了后台的账号（如降级后只剩显式授权）无法再执行任何站点级操作，不计入。
 export function collectCodeHolders(
   rows: readonly PermissionHolderRow[],
   templates: Record<string, unknown> | null,
@@ -51,6 +54,7 @@ export function collectCodeHolders(
   const holders: PermissionCodeHolders = Object.fromEntries(codes.map((code) => [code, [] as number[]]))
   for (const row of rows) {
     const perms = resolveEffectivePermissions(row, templates)
+    if (!canAccessAdminConsole(perms)) continue
     for (const code of codes) {
       if (hasPermission(perms, code)) holders[code]!.push(row.id)
     }
@@ -124,9 +128,43 @@ export function findGrantsBeyondOperator(
 }
 
 /**
+ * 账号变更（删除/停用/降级）前后的站点级能力对比。
+ * nextRow 为 null 表示该账号从持有者集合中移除（已删除或不再是活跃后台账号）。
+ */
+export interface AccountChange {
+  targetId: number
+  nextRow: PermissionHolderRow | null
+}
+
+export function findProtectedLossAfterReplacements(
+  rows: readonly PermissionHolderRow[],
+  templates: Record<string, unknown> | null,
+  changes: readonly AccountChange[],
+  operatorId: number
+): PolicyViolation | null {
+  const before = collectCodeHolders(rows, templates, PROTECTED_PRIV_CODES)
+  const changedIds = new Set(changes.map((change) => change.targetId))
+  const remaining = rows.filter((row) => !changedIds.has(row.id))
+  const nextRows = changes.map((change) => change.nextRow).filter((row): row is PermissionHolderRow => row !== null)
+  const after = collectCodeHolders([...remaining, ...nextRows], templates, PROTECTED_PRIV_CODES)
+  return findProtectedCodeLoss(before, after, operatorId)
+}
+
+export function findProtectedLossAfterReplacement(
+  rows: readonly PermissionHolderRow[],
+  templates: Record<string, unknown> | null,
+  targetId: number,
+  nextRow: PermissionHolderRow | null,
+  operatorId: number
+): PolicyViolation | null {
+  return findProtectedLossAfterReplacements(rows, templates, [{ targetId, nextRow }], operatorId)
+}
+
+/**
  * 安全阀：比较变更前后的站点级能力持有者。
- * - 操作者失去自己原本持有的站点级能力 → 拒绝（自锁后无人能改回来）
+ * - 操作者失去 priv:admin-console → 拒绝；后台入口是所有站点级能力的载体，自己出去后就再也改不回来
  * - 某站点级能力从有持有者变成零持有者 → 拒绝（全站失去该能力）
+ * 交出 priv:role-template / priv:grant 但仍有他人持有时放行，这是把能力交还给超管的唯一路径。
  */
 export function findProtectedCodeLoss(
   before: PermissionCodeHolders,
@@ -136,7 +174,8 @@ export function findProtectedCodeLoss(
   for (const code of PROTECTED_PRIV_CODES) {
     const prevHolders = before[code] ?? []
     const nextHolders = after[code] ?? []
-    if (prevHolders.includes(operatorId) && !nextHolders.includes(operatorId)) {
+    const operatorLost = prevHolders.includes(operatorId) && !nextHolders.includes(operatorId)
+    if (operatorLost && code === PRIV_ADMIN_CONSOLE) {
       return {
         status: 403,
         code: SERVER_ERROR_CODES.PERMISSION_SELF_LOCKOUT,
