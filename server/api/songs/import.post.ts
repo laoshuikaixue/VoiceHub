@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { defineEventHandler, createError, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, semesters, songBlacklists } from '~/drizzle/schema'
@@ -175,7 +176,7 @@ export default defineEventHandler(async (event) => {
   // 批量插入
   if (songsToInsert.length > 0) {
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    const isAdmin = hasAdminPermission(user, 'songs:bypass-limits')
     const activeGlobalLimits = isAdmin
       ? []
       : getActiveGlobalSubmissionLimits(systemSettingsData)

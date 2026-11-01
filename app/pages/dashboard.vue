@@ -38,13 +38,23 @@
               <h1 class="text-xl font-bold tracking-tight">{{ getPageTitle() }}</h1>
             </div>
             <div class="flex items-center gap-4">
-              <!-- 这里可以添加顶部操作按钮 -->
+              <p v-if="activeTab" class="hidden md:block text-xs text-text-tertiary">{{ locale.permissionHint }}</p>
             </div>
           </header>
 
           <div
             class="flex-1 custom-scrollbar p-4 md:p-8 overflow-y-auto"
           >
+            <div
+              v-if="!activeTab || !permissions.canUsePage(activeTab)"
+              role="status"
+              class="max-w-xl mx-auto mt-16 p-8 rounded-2xl border border-border-secondary bg-bg-secondary text-center space-y-3"
+            >
+              <h2 class="text-lg font-bold">{{ activeTab ? locale.moduleUnavailable : locale.noModules }}</h2>
+              <p class="text-sm text-text-tertiary">{{ activeTab ? locale.moduleUnavailableHint : locale.noModulesHint }}</p>
+              <NuxtLink to="/" class="inline-flex px-4 py-2 rounded-lg bg-bg-tertiary text-sm text-text-secondary">{{ locale.backHome }}</NuxtLink>
+            </div>
+            <template v-else>
             <!-- 移动端返回顶部按钮 -->
             <button
               v-if="showBackToTop"
@@ -205,6 +215,15 @@
             >
               <LazyAdminSystemBoard />
             </div>
+
+            <!-- 权限矩阵 -->
+            <div
+              v-if="activeTab === 'permissions' && permissions.canAccessPage('permissions')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminPermissionMatrix />
+            </div>
+            </template>
           </div>
         </main>
       </div>
@@ -234,7 +253,7 @@ definePageMeta({
 })
 
 // 响应式数据
-const activeTab = ref('overview')
+const activeTab = ref(null)
 
 // 各面板滚动位置独立记忆与恢复
 useScrollMemory(() => activeTab.value)
@@ -259,6 +278,12 @@ provide('registerBeforeNavigate', registerBeforeNavigate)
 // 服务
 let auth = null
 const permissions = usePermissions()
+
+watch(permissions.getUserPages, (pages) => {
+  if (!pages.includes(activeTab.value)) {
+    activeTab.value = pages.find((page) => permissions.canUsePage(page)) || pages[0] || null
+  }
+}, { immediate: true })
 
 // 方法
 const getPageTitle = () => {
@@ -308,7 +333,7 @@ const handleLogout = async () => {
 
 // 导航方法
 const handleNavigate = async (tab) => {
-  if (activeTab.value === tab) return
+  if (activeTab.value === tab || !permissions.canAccessPage(tab) || tab === 'password') return
 
   // 检查是否有拦截
   for (const hook of beforeNavigateHooks.value) {

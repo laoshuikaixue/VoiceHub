@@ -141,7 +141,7 @@
           >
             <!-- 超级管理员提示 -->
             <div
-              v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')"
+              v-if="canBypassLimits"
               class="admin-notice-horizontal"
             >
               <span class="admin-icon">👑</span>
@@ -547,7 +547,7 @@
 
                         <!-- 管理员或未开启重复投稿限制时可直接重复投稿；否则普通用户仅可申请重播已播放歌曲。 -->
                         <button
-                          v-if="auth.isAdmin.value || (siteConfigLoaded && !enableSubmissionRestriction)"
+                          v-if="canBypassLimits.value || (siteConfigLoaded && !enableSubmissionRestriction)"
                           :disabled="
                             !canSubmitFromSearch ||
                             isSongBlockedByRestriction(result) ||
@@ -1218,6 +1218,7 @@ import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
@@ -1282,6 +1283,8 @@ const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.va
 
 // 用户认证
 const auth = useAuth()
+const { can } = usePermissions()
+const canBypassLimits = computed(() => can('songs:bypass-limits'))
 const user = computed(() => auth.user.value)
 
 // 学期管理
@@ -3562,7 +3565,7 @@ const submitSong = async (result, options = {}) => {
   // 重播申请需要定位到本学期内已播放的原歌曲；多P 视频按完整 musicId 精确匹配，其余平台由 getSimilarSong 归一化回退
   if (
     options.replayRequest === true &&
-    !auth.isAdmin.value &&
+    !canBypassLimits.value &&
     auth.isAuthenticated.value &&
     songService.songs.value &&
     songService.songs.value.length > 0 &&
@@ -3586,7 +3589,7 @@ const submitSong = async (result, options = {}) => {
   }
 
   // 能否投稿由服务端预检结论决定（区分本学期查重与排期冷却窗口两种模式，且已随开关关闭放行）
-  if (!auth.isAdmin.value && isSongBlockedByRestriction(result)) {
+  if (!canBypassLimits.value && isSongBlockedByRestriction(result)) {
     if (window.$showNotification) {
       window.$showNotification(getRestrictionMessage(getRestrictionReason(result)), 'warning')
     }
@@ -3676,7 +3679,7 @@ const submitSong = async (result, options = {}) => {
   }
 
   // 管理员不受黑名单限制
-  if (!auth.isAdmin.value) {
+  if (!canBypassLimits.value) {
     try {
       // 检查黑名单
       const blacklistCheck = await $fetch('/api/blacklist/check', {
@@ -4177,7 +4180,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
   error.value = ''
 
   // 管理员不受黑名单限制
-  if (!auth.isAdmin.value) {
+  if (!canBypassLimits.value) {
     try {
       // 检查黑名单
       const blacklistCheck = await $fetch('/api/blacklist/check', {
@@ -4302,7 +4305,7 @@ const fetchSubmissionStatus = async () => {
 // 检查投稿限额
 const checkSubmissionLimit = () => {
   // 超级管理员不受投稿限制
-  if (user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')) {
+  if (canBypassLimits.value) {
     return { canSubmit: true, message: '' }
   }
 
@@ -4446,7 +4449,7 @@ const canSubmitFromSearch = computed(() => {
 })
 
 const isSongBlockedByRestriction = (result) => {
-  if (auth.isAdmin.value) return false
+  if (canBypassLimits.value) return false
   if (restrictionChecking.value) return false
   const songTitle = result.song || result.title
   const songArtist = result.singer || result.artist

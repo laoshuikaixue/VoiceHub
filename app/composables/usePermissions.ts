@@ -1,115 +1,70 @@
 import { computed } from 'vue'
 import { useAuth } from './useAuth'
+import {
+  ADMIN_CONSOLE_ROLES,
+  MANAGER_ROLES,
+  PAGE_PERMISSIONS,
+  PRIV_GRANT,
+  PRIV_ROLE_TEMPLATE,
+  canAccessAdminConsole,
+  canAccessAdminPage,
+  canUseAdminPage,
+  hasPermission,
+} from '~/utils/admin-permissions'
 
 export const usePermissions = () => {
   const auth = useAuth()
 
-  // 检查用户是否可以访问后台
-  const canAccessAdmin = computed(() => {
-    if (!auth.user.value) return false
-    const role = auth.user.value.role
-    return ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(role)
+  // 权限码由认证接口下发；未取得权限时不展示管理能力。
+  const perms = computed(() => {
+    const current = auth.user.value as any
+    if (!current) return []
+    if (Array.isArray(current.perms)) return current.perms
+    return []
   })
+
+  // 检查用户是否可以访问后台
+  const canAccessAdmin = computed(() => canAccessAdminConsole(perms.value))
 
   // 检查用户是否可以访问指定页面
-  const canAccessPage = (page: string): boolean => {
-    if (!auth.user.value) return false
+  const canAccessPage = (page: string): boolean => canAccessAdminPage(perms.value, page)
+  const canUsePage = (page: string): boolean => canUseAdminPage(perms.value, page)
+  const can = (code: string): boolean => canAccessAdmin.value && hasPermission(perms.value, code)
 
-    const role = auth.user.value.role
+  // 获取用户可访问的页面列表（修改密码不属于后台页面）
+  const getUserPages = computed(() =>
+    Object.keys(PAGE_PERMISSIONS).filter((page) => page !== 'password' && canAccessAdminPage(perms.value, page))
+  )
 
-    // 超级管理员可以访问所有页面
-    if (role === 'SUPER_ADMIN') return true
-
-    // 管理员可以访问的页面
-    if (role === 'ADMIN') {
-      return ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source'].includes(page)
-    }
-
-    // 歌曲管理员可以访问的页面
-    if (role === 'SONG_ADMIN') {
-      return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'].includes(page)
-    }
-
-    return false
-  }
-
-  // 获取用户可访问的页面列表
-  const getUserPages = computed(() => {
-    if (!auth.user.value) return []
-
-    const role = auth.user.value.role
-
-    switch (role) {
-      case 'SUPER_ADMIN':
-        return [
-          'overview',
-          'schedule',
-          'print',
-          'songs',
-          'users',
-          'grade-class',
-          'notifications',
-          'smtp-config',
-          'playtimes',
-          'request-times',
-          'semesters',
-          'blacklist',
-          'site-config',
-          'database',
-          'api-keys',
-          'data-analysis',
-          'music-source',
-          'system-board'
-        ]
-      case 'ADMIN':
-        return ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source']
-      case 'SONG_ADMIN':
-        return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes']
-      default:
-        return []
-    }
-  })
-
-  // 角色检查
+  // 角色检查：用于身份展示，能力判断一律走权限码
   const isUser = computed(() => auth.user.value?.role === 'USER')
   const isSongAdmin = computed(() => auth.user.value?.role === 'SONG_ADMIN')
   const isAdmin = computed(() => auth.user.value?.role === 'ADMIN')
   const isSuperAdmin = computed(() => auth.user.value?.role === 'SUPER_ADMIN')
 
-  // 权限组合检查
-  const isAdminOrAbove = computed(() => {
-    const role = auth.user.value?.role
-    return ['ADMIN', 'SUPER_ADMIN'].includes(role)
-  })
+  const isAdminOrAbove = computed(() => MANAGER_ROLES.includes(auth.user.value?.role || ''))
+  const isSongAdminOrAbove = computed(() => ADMIN_CONSOLE_ROLES.includes(auth.user.value?.role || ''))
 
-  const isSongAdminOrAbove = computed(() => {
-    const role = auth.user.value?.role
-    return ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(role)
-  })
-
-  // 检查是否可以管理用户角色
-  const canManageUserRole = (targetRole: string): boolean => {
-    if (!auth.user.value) return false
-
-    // 只有超级管理员可以分配角色
-    if (auth.user.value.role === 'SUPER_ADMIN') {
-      return ['USER', 'SONG_ADMIN', 'ADMIN'].includes(targetRole)
-    }
-
-    return false
-  }
+  // 角色分配受独立权限码与受保护角色约束。
+  const canManageUserRole = (targetRole: string): boolean =>
+    targetRole !== 'SUPER_ADMIN' && can('users:assign-role')
 
   // 检查是否可以打印排期
-  const canPrintSchedule = computed(() => {
-    if (!auth.user.value) return false
-    const role = auth.user.value.role
-    return ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(role)
-  })
+  const canPrintSchedule = computed(() => can('schedule:read'))
+
+  // 授权能力：编辑角色模板（权限矩阵）/ 按用户显式授权
+  const canManageRoleTemplates = computed(() => can(PRIV_ROLE_TEMPLATE))
+  const canGrantPermissions = computed(() => can(PRIV_GRANT))
 
   return {
+    // 权限码
+    perms,
+    can,
+
     // 页面访问权限
     canAccessAdmin,
     canAccessPage,
+    canUsePage,
     getUserPages,
 
     // 角色检查
@@ -122,6 +77,8 @@ export const usePermissions = () => {
 
     // 功能权限
     canPrintSchedule,
+    canManageRoleTemplates,
+    canGrantPermissions,
 
     // 用户管理权限
     canManageUserRole

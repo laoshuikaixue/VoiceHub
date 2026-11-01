@@ -96,7 +96,7 @@
 
         <div class="xl:col-span-2">
           <button
-            :disabled="!newItem.value || loading"
+            :disabled="(!newItem.value || loading) || !can('blacklist:write')"
             class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
             @click="addBlacklistItem"
           >
@@ -204,8 +204,8 @@
               class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-border-secondary-50"
             >
               <button
-                :disabled="loading"
-                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                :disabled="(loading) || !can('blacklist:write')"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="[
                   item.isActive
                     ? 'bg-bg-tertiary text-text-tertiary hover:text-warning hover:bg-warning-5 hover:border-warning-10 border border-transparent'
@@ -217,8 +217,8 @@
                 {{ item.isActive ? locale.disable : locale.enable }}
               </button>
               <button
-                :disabled="loading"
-                class="flex items-center justify-center p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95"
+                :disabled="(loading) || !can('blacklist:delete')"
+                class="flex items-center justify-center p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="deleteItem(item)"
               >
                 <Trash2 :size="16" />
@@ -316,7 +316,7 @@
                 {{ locale.cancel }}
               </button>
               <button
-                :disabled="loading"
+                :disabled="(loading) || !can('blacklist:delete')"
                 class="flex-1 px-4 py-4 bg-error hover:bg-error text-text-primary text-[10px] font-black rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
                 @click="confirmDelete"
               >
@@ -331,6 +331,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { onMounted, reactive, ref, computed } from 'vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
@@ -360,6 +361,8 @@ import {
   BLACKLIST_GENRE_LABEL_EN
 } from '~/utils/blacklist'
 import { useLocale } from '~/utils/locale'
+
+const { can } = usePermissions()
 
 const { showToast: showNotification } = useToast()
 const { admin, currentLocale } = useLocale()
@@ -512,6 +515,7 @@ const loadBlacklist = async () => {
 
 // 添加黑名单项
 const addBlacklistItem = async () => {
+  if (!can('blacklist:write')) return
   if (!newItem.value.trim()) return
 
   loading.value = true
@@ -549,6 +553,7 @@ const addBlacklistItem = async () => {
 
 // 切换项目状态
 const toggleItemStatus = async (item) => {
+  if (!can('blacklist:write')) return
   loading.value = true
   error.value = ''
 
@@ -574,12 +579,14 @@ const toggleItemStatus = async (item) => {
 
 // 删除项目
 const deleteItem = (item) => {
+  if (!can('blacklist:delete')) return
   deleteTargetItem.value = item
   showDeleteDialog.value = true
 }
 
 // 确认删除
 const confirmDelete = async () => {
+  if (!can('blacklist:delete')) return
   if (!deleteTargetItem.value) return
 
   loading.value = true

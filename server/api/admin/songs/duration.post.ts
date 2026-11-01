@@ -2,7 +2,6 @@ import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
@@ -20,8 +19,6 @@ import {
 } from '~~/server/utils/songDurationFetcher'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
   const body = await readBody(event)
 
   // 新增歌曲场景：未传 songId 时按平台+音乐ID获取时长，仅返回不写入

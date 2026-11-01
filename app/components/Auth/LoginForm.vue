@@ -501,6 +501,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLegalConsentPrompt } from '~/composables/useLegalConsentPrompt'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -687,6 +688,7 @@ const bindConfirmMessage = computed(() => {
 const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
+const { canAccessAdmin } = usePermissions()
 const { ensureLegalConsent, ensureLegalConsentForRegister } = useLegalConsentPrompt()
 
 // 只允许站内绝对路径，避免登录参数被用于开放重定向。
@@ -762,7 +764,7 @@ const redirectAfterLogin = async () => {
   if (auth.user.value?.requirePasswordChange) {
     return navigateTo('/change-password')
   }
-  return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+  return navigateTo(getSafeRedirect(canAccessAdmin.value ? '/dashboard' : '/'))
 }
 
 const handle2FASuccess = async () => {

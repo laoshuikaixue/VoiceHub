@@ -3,7 +3,6 @@ import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import {
   CARD_CODE_DISPATCH_LIMITS,
   assignCardCodesToUsers,
@@ -13,7 +12,6 @@ import {
 
 /** 向指定用户派发库存券或新生成券。 */
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
   const user = event.context.user!
 
   const body = (await readBody(event)) || {}

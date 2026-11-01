@@ -7,12 +7,6 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 const MAX_BATCH_SIZE = 500
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有权限访问')
-  }
-
   const body = await readBody(event)
 
   // 批量模式：items 数组，已存在的组合跳过，返回新增/跳过数量

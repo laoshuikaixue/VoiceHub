@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useAuth } from './useAuth'
+import { usePermissions } from './usePermissions'
 import { useServerErrors } from './useLocaleText'
 import { useLocale } from '~/utils/locale'
 import { formatDateTime } from '~/utils/timeUtils'
@@ -7,7 +8,8 @@ import { notifySchedulePlaylistChanged } from './useSchedulePlaylistSync'
 import type { PlayTime, SystemSettings } from '~/types'
 
 export const useAdmin = () => {
-  const { getAuthConfig, isAdmin } = useAuth()
+  const { getAuthConfig } = useAuth()
+  const { can } = usePermissions()
   const { composableErrors } = useLocale()
   const { localize: localizeServerError } = useServerErrors()
   const action = (key: keyof typeof composableErrors.value.actions) =>
@@ -27,7 +29,7 @@ export const useAdmin = () => {
     playTimeId?: number | null,
     sequence: number = 1
   ) => {
-    if (!isAdmin.value) {
+    if (!can('schedule:write')) {
       error.value = adminOnly('createSchedule')
       return null
     }
@@ -47,7 +49,7 @@ export const useAdmin = () => {
       notifySchedulePlaylistChanged({ dates: [formatDateTime(playDate, 'YYYY-MM-DD')] })
       return data
     } catch (err: any) {
-      error.value = err.message || failed('createSchedule')
+      error.value = localizeServerError(err, failed('createSchedule'))
       throw err
     } finally {
       loading.value = false
@@ -56,7 +58,7 @@ export const useAdmin = () => {
 
   // 移除排期
   const removeSchedule = async (scheduleId: number) => {
-    if (!isAdmin.value) {
+    if (!can('schedule:write')) {
       error.value = adminOnly('removeSchedule')
       return { success: false, message: error.value } as const
     }
@@ -89,7 +91,7 @@ export const useAdmin = () => {
       )
       return response
     } catch (err: any) {
-      const errorMessage = err.data?.message || err.message || failed('removeSchedule')
+      const errorMessage = err.data?.message || localizeServerError(err, failed('removeSchedule'))
       error.value = errorMessage
       console.error('移除排期错误:', err)
       return { success: false, message: errorMessage } as const
@@ -100,7 +102,7 @@ export const useAdmin = () => {
 
   // 更新排期顺序；条目可携带 playDate，用于将队列刷新收窄到受影响日期
   const updateScheduleSequence = async (schedules: Array<{ id: number; sequence: number; playDate?: string }>) => {
-    if (!isAdmin.value) {
+    if (!can('schedule:write')) {
       error.value = adminOnly('updateScheduleSequence')
       return null
     }
@@ -121,7 +123,7 @@ export const useAdmin = () => {
       notifySchedulePlaylistChanged(dates.length ? { dates } : {})
       return data
     } catch (err: any) {
-      error.value = err.message || failed('updateScheduleSequence')
+      error.value = localizeServerError(err, failed('updateScheduleSequence'))
       throw err
     } finally {
       loading.value = false
@@ -130,7 +132,7 @@ export const useAdmin = () => {
 
   // 标记歌曲已播放
   const markSongAsPlayed = async (songId: number) => {
-    if (!isAdmin.value) {
+    if (!can('songs:write')) {
       error.value = adminOnly('markPlayed')
       return null
     }
@@ -149,7 +151,7 @@ export const useAdmin = () => {
 
       return data
     } catch (err: any) {
-      error.value = err.message || failed('markPlayed')
+      error.value = localizeServerError(err, failed('markPlayed'))
       throw err
     } finally {
       loading.value = false
@@ -170,7 +172,7 @@ export const useAdmin = () => {
       userIds?: number[]
     }
   }) => {
-    if (!isAdmin.value) {
+    if (!can('notifications:write')) {
       error.value = adminOnly('sendNotification')
       return null
     }
@@ -198,7 +200,7 @@ export const useAdmin = () => {
 
   // 获取系统设置
   const getSystemSettings = async () => {
-    if (!isAdmin.value) {
+    if (!can('system-settings:read')) {
       error.value = adminOnly('getSystemSettings')
       return null
     }
@@ -215,7 +217,7 @@ export const useAdmin = () => {
 
       return data as SystemSettings
     } catch (err: any) {
-      error.value = err.message || failed('getSystemSettings')
+      error.value = localizeServerError(err, failed('getSystemSettings'))
       throw err
     } finally {
       loading.value = false
@@ -224,7 +226,7 @@ export const useAdmin = () => {
 
   // 更新系统设置
   const updateSystemSettings = async (settings: Partial<SystemSettings>) => {
-    if (!isAdmin.value) {
+    if (!can('system-settings:write')) {
       error.value = adminOnly('updateSystemSettings')
       return null
     }
@@ -244,7 +246,7 @@ export const useAdmin = () => {
 
       return data as SystemSettings
     } catch (err: any) {
-      error.value = err.message || failed('updateSystemSettings')
+      error.value = localizeServerError(err, failed('updateSystemSettings'))
       throw err
     } finally {
       loading.value = false
@@ -253,7 +255,7 @@ export const useAdmin = () => {
 
   // 获取所有播放时段
   const getPlayTimes = async () => {
-    if (!isAdmin.value) {
+    if (!can('play-times:read')) {
       error.value = adminOnly('getPlayTimes')
       return null
     }
@@ -271,7 +273,7 @@ export const useAdmin = () => {
 
       return data as PlayTime[]
     } catch (err: any) {
-      error.value = err.message || failed('getPlayTimes')
+      error.value = localizeServerError(err, failed('getPlayTimes'))
       throw err
     } finally {
       loading.value = false
@@ -280,7 +282,7 @@ export const useAdmin = () => {
 
   // 创建播放时段
   const createPlayTime = async (playTimeData: Partial<PlayTime>) => {
-    if (!isAdmin.value) {
+    if (!can('play-times:write')) {
       error.value = adminOnly('createPlayTime')
       return null
     }
@@ -300,7 +302,7 @@ export const useAdmin = () => {
 
       return data as PlayTime
     } catch (err: any) {
-      error.value = err.message || failed('createPlayTime')
+      error.value = localizeServerError(err, failed('createPlayTime'))
       throw err
     } finally {
       loading.value = false
@@ -309,7 +311,7 @@ export const useAdmin = () => {
 
   // 更新播放时段
   const updatePlayTime = async (id: number, playTimeData: Partial<PlayTime>) => {
-    if (!isAdmin.value) {
+    if (!can('play-times:write')) {
       error.value = adminOnly('updatePlayTime')
       return null
     }
@@ -329,7 +331,7 @@ export const useAdmin = () => {
 
       return data as PlayTime
     } catch (err: any) {
-      error.value = err.message || failed('updatePlayTime')
+      error.value = localizeServerError(err, failed('updatePlayTime'))
       throw err
     } finally {
       loading.value = false
@@ -338,7 +340,7 @@ export const useAdmin = () => {
 
   // 删除播放时段
   const deletePlayTime = async (id: number) => {
-    if (!isAdmin.value) {
+    if (!can('play-times:write')) {
       error.value = adminOnly('deletePlayTime')
       return null
     }
@@ -357,7 +359,7 @@ export const useAdmin = () => {
 
       return data
     } catch (err: any) {
-      error.value = err.message || failed('deletePlayTime')
+      error.value = localizeServerError(err, failed('deletePlayTime'))
       throw err
     } finally {
       loading.value = false
@@ -366,7 +368,7 @@ export const useAdmin = () => {
 
   // 删除歌曲
   const deleteSong = async (songId: number) => {
-    if (!isAdmin.value) {
+    if (!can('songs:delete')) {
       error.value = adminOnly('deleteSong')
       return null
     }
@@ -386,7 +388,7 @@ export const useAdmin = () => {
 
       return data
     } catch (err: any) {
-      error.value = err.message || failed('deleteSong')
+      error.value = localizeServerError(err, failed('deleteSong'))
       throw err
     } finally {
       loading.value = false
@@ -395,7 +397,7 @@ export const useAdmin = () => {
 
   // 更新歌曲
   const updateSong = async (songId: number, songData: any) => {
-    if (!isAdmin.value) {
+    if (!can('songs:write')) {
       error.value = adminOnly('updateSong')
       return null
     }
@@ -415,7 +417,7 @@ export const useAdmin = () => {
 
       return data
     } catch (err: any) {
-      error.value = err.message || failed('updateSong')
+      error.value = localizeServerError(err, failed('updateSong'))
       throw err
     } finally {
       loading.value = false
@@ -424,7 +426,7 @@ export const useAdmin = () => {
 
   // 添加歌曲
   const addSong = async (songData: any) => {
-    if (!isAdmin.value) {
+    if (!can('songs:write')) {
       error.value = adminOnly('addSong')
       return null
     }
@@ -444,7 +446,7 @@ export const useAdmin = () => {
 
       return data
     } catch (err: any) {
-      error.value = err.message || failed('addSong')
+      error.value = localizeServerError(err, failed('addSong'))
       throw err
     } finally {
       loading.value = false

@@ -2,11 +2,8 @@ import { defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, scheduleSongPool, users, votes } from '~/drizzle/schema'
 import { inArray, count } from 'drizzle-orm'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
   const isSuperAdmin = event.context.user?.role === 'SUPER_ADMIN'
 
   const poolRows = await db.select().from(scheduleSongPool).orderBy(scheduleSongPool.createdAt)

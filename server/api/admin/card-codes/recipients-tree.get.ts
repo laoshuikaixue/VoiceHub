@@ -3,12 +3,9 @@ import { users } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
 import { smartSort } from '~~/server/utils/grade-class-core'
 import { UNSET_KEY } from '~~/server/utils/recipient-tree'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 
 /** 查询接收人组织树，空年级或班级归入 UNSET_KEY。 */
-export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
+export default defineEventHandler(async () => {
   // 按年级与班级聚合人数
   const rows = await db
     .select({

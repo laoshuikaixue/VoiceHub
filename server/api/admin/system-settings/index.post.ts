@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -33,6 +34,7 @@ import {
 } from '~~/server/utils/astrbot-group'
 import { ASTRBOT_PLATFORMS } from '~~/server/utils/astrbot-platforms'
 import { ESA_CAPTCHA_ENDPOINTS, parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
+import { invalidScopeFields, isAdminSettingsScope, pickScopeSettings } from '~~/server/utils/admin-settings-scope'
 
 /**
  * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
@@ -176,40 +178,29 @@ const validatePlatformArray = (fieldName: string, value: unknown, requireUnique 
 }
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
   const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能更新系统设置'
-    })
-  }
 
   try {
     const body = await readBody(event)
+    const scope = event.context.adminSettingsScope
+    if (isAdminSettingsScope(scope) && (invalidScopeFields(scope, body).length || !Object.keys(body).length)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '提交了该模块以外的配置字段')
+    }
+    if (body && Object.prototype.hasOwnProperty.call(body, 'rolePermissionTemplates')) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '角色权限模板须通过权限矩阵修改')
+    }
 
-    // 用户数据、凭据与出站目标类配置仅超级管理员可修改
-    if (user.role !== 'SUPER_ADMIN') {
+    // 通用配置接口的敏感字段须持有独立权限；模块接口已限定字段范围。
+    if (!isAdminSettingsScope(scope) && !hasAdminPermission(user, 'system-settings:secrets')) {
       const rejectedFields = findSuperAdminOnlySettingFields(body)
       if (rejectedFields.length > 0) {
-        console.warn('[SystemSettings] 普通管理员提交超管专属配置已拒绝:', rejectedFields.join(', '))
-        throw createError({
-          statusCode: 403,
-          message: '只有超级管理员可以修改用户数据与凭据相关的配置'
-        })
+        console.warn('[SystemSettings] 提交未授权敏感配置已拒绝:', rejectedFields.join(', '))
+        throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有修改敏感配置的权限')
       }
     }
 
     // 验证请求体
-    const updateData: any = {}
+    let updateData: any = {}
 
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
@@ -1456,6 +1447,10 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionRestriction = true
     }
 
+    if (isAdminSettingsScope(scope)) {
+      updateData = pickScopeSettings(scope, updateData)
+    }
+
     if (!settings) {
       const newSettingsResult = await db
         .insert(systemSettings)
@@ -1488,17 +1483,19 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    try {
-      const { SmtpService } = await import('~~/server/services/smtpService')
-      // 强制刷新：早退检查会导致修改授权码后单例仍持有旧凭据
-      await SmtpService.getInstance().initializeSmtpConfig(true)
-      console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
-    } catch (smtpError) {
-      console.warn('[SMTP] SMTP配置重载失败:', smtpError)
+    if (Object.keys(updateData).some((field) => field.startsWith('smtp'))) {
+      try {
+        const { SmtpService } = await import('~~/server/services/smtpService')
+        await SmtpService.getInstance().initializeSmtpConfig(true)
+        console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
+      } catch (smtpError) {
+        console.warn('[SMTP] SMTP配置重载失败:', smtpError)
+      }
     }
 
-    const masked = maskSystemSettingsSecrets(settings)
-    return user.role === 'SUPER_ADMIN' ? masked : stripSuperAdminOnlySettingFields(masked)
+    const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)
+    return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {
     console.error('更新系统设置失败:', error)
 

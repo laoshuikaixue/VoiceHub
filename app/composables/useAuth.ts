@@ -1,5 +1,7 @@
 import { navigateTo, useState } from '#app'
-import type { User } from '~/types'
+import { computed } from 'vue'
+import { canAccessAdminConsole } from '~/utils/admin-permissions'
+import type { User } from '~~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
 import { useServerErrors } from '~/composables/useLocaleText'
 
@@ -22,7 +24,7 @@ export const useAuth = () => {
   const user = useState<User | null>('user', () => null)
   const token = useState<string | null>('token', () => null)
   const isAuthenticated = useState<boolean>('isAuthenticated', () => false)
-  const isAdmin = useState<boolean>('isAdmin', () => false)
+  const isAdmin = computed(() => canAccessAdminConsole(user.value?.perms ?? []))
   const loading = useState<boolean>('loading', () => false)
   const { localize: localizeServerError } = useServerErrors()
   const lastAuthVerifiedAt = useState<number>('lastAuthVerifiedAt', () => 0)
@@ -31,7 +33,6 @@ export const useAuth = () => {
     user.value = null
     token.value = null
     isAuthenticated.value = false
-    isAdmin.value = false
     lastAuthVerifiedAt.value = 0
   }
 
@@ -39,7 +40,6 @@ export const useAuth = () => {
     token.value = 'cookie-based'
     user.value = loggedInUser
     isAuthenticated.value = true
-    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
     lastAuthVerifiedAt.value = Date.now()
   }
 

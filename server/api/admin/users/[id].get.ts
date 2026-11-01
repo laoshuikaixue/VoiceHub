@@ -6,14 +6,6 @@ import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 import { maskIdentitiesSecrets } from '~~/server/utils/identity-secrets'
 
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
-
   const userId = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(userId) || userId <= 0) {
     throw createError({

@@ -3,14 +3,6 @@ import { cardCodes, users } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
-
   try {
     const query = getQuery(event)
     const status = typeof query.status === 'string' ? query.status.trim().toUpperCase() : ''

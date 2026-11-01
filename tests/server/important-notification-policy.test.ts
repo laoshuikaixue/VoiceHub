@@ -1,7 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  canSendSystemNotification,
   createNotificationSenderSnapshot,
   createNotificationReadUpdate,
   createNotificationUserDeleteUpdate,
@@ -44,13 +43,6 @@ test('只有后台手工发送的通知需要在用户删除后保留历史', ()
   assert.equal(shouldRetainNotificationHistory('SYSTEM_NOTICE', 'ADMIN_MANUAL'), true)
   assert.equal(shouldRetainNotificationHistory('SYSTEM_NOTICE', 'SYSTEM'), false)
   assert.equal(shouldRetainNotificationHistory('SONG_PLAYED', 'SYSTEM'), false)
-})
-
-test('只有管理员角色可以发送系统通知', () => {
-  assert.equal(canSendSystemNotification('ADMIN'), true)
-  assert.equal(canSendSystemNotification('SUPER_ADMIN'), true)
-  assert.equal(canSendSystemNotification('SONG_ADMIN'), false)
-  assert.equal(canSendSystemNotification('USER'), false)
 })
 
 test('important 只接受布尔值，缺省值为 false', () => {

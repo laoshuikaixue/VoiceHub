@@ -1,17 +1,7 @@
-import { verifyAdminAuth } from '~~/server/utils/auth'
 import { databaseManager } from '~~/server/utils/database-manager'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
-    const authResult = await verifyAdminAuth(event)
-
-    if (!authResult.success) {
-      throw createError({
-        statusCode: 401,
-        message: authResult.message
-      })
-    }
-
     const cleanedCount = await databaseManager.cleanupExpiredSessions()
 
     databaseManager.clearHealthCheckCache()

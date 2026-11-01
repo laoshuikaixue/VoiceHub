@@ -1,20 +1,10 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { isTelemetryEnabled } from '~~/server/utils/telemetry'
 
-export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (
-    !currentUser ||
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)
-  ) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
-
+export default defineEventHandler(async () => {
   try {
     const instanceId = await getInstanceId()
     const telemetryEnabled = await isTelemetryEnabled()
@@ -34,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
     // 获取系统信息
     const systemInfo = {
-      timestamp: new Date().toISOString(),
+      timestamp: getServerDate().toISOString(),
       uptime: process.uptime(),
       nodeVersion: process.version,
       platform: process.platform,

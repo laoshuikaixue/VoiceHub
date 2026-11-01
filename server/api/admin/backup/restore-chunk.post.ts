@@ -1,3 +1,5 @@
+import { normalizeSubmittedTemplates } from '~~/server/utils/permission-admin'
+import { normalizePermissionTokens } from '~~/app/utils/admin-permissions'
 import { defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
@@ -40,12 +42,8 @@ import { restoreCardCodeAssignmentRecord, syncRestoredCardCodeAssignment } from 
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
   const user = event.context.user
   if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '需要登录')
-  if (user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以恢复备份')
-  }
 
   const body = await readBody(event)
   const {
@@ -148,7 +146,8 @@ export default defineEventHandler(async (event) => {
                 'remark',
                 'avatarProvider',
                 'avatarProviderUserId',
-                'legalConsentVersion'
+                'legalConsentVersion',
+                'permissions'
               ]
               const dateFields = [
                 'createdAt',
@@ -168,6 +167,9 @@ export default defineEventHandler(async (event) => {
                     } else {
                       userData[field] = record[field]
                     }
+                  } else if (field === 'permissions') {
+                    // 仅接受权限码数组，非法值按「跟随角色模板」丢弃
+                    userData[field] = Array.isArray(record[field]) ? normalizePermissionTokens(record[field]) : null
                   } else {
                     userData[field] = record[field]
                   }
@@ -980,10 +982,14 @@ export default defineEventHandler(async (event) => {
               'legalConsentUpdatedDate',
               'legalConsentDocuments',
               'enabledPlatforms',
-              'platformOrder'
+              'platformOrder',
+              'rolePermissionTemplates'
             ]
             fields.forEach((field) => {
-              if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]
+              if (record.hasOwnProperty(field)) {
+                systemSettingsData[field] = field === 'rolePermissionTemplates' && record[field] !== null
+                  ? normalizeSubmittedTemplates(record[field]) : record[field]
+              }
             })
             if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
               if (!Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || !Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {
@@ -1927,6 +1933,8 @@ export default defineEventHandler(async (event) => {
           .where(eq(systemSettings.id, restoredSettings[0].id))
         stats.warnings.push('SMTP 未配置，已剥离 registerEmailRequired，避免注册邮箱流程不可用')
       }
+      const { SmtpService } = await import('~~/server/services/smtpService')
+      await SmtpService.getInstance().initializeSmtpConfig(true)
     } catch (settingsError: any) {
       console.error('恢复后设置一致性校验失败:', settingsError)
     }

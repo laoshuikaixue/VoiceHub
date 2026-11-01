@@ -6,8 +6,8 @@
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
-      <button
-        class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-[var(--primary-glow)] active:scale-95"
+      <button :disabled="!can('api-keys:write')"
+        class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-[var(--primary-glow)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="openCreateModal"
       >
         <Plus :size="14" /> {{ locale.create }}
@@ -79,8 +79,8 @@
       <p class="text-xs text-text-tertiary mt-2 max-w-xs leading-relaxed">
         {{ locale.emptyDesc }}
       </p>
-      <button
-        class="mt-8 flex items-center gap-2 px-6 py-3 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-2xl transition-all"
+      <button :disabled="!can('api-keys:write')"
+        class="mt-8 flex items-center gap-2 px-6 py-3 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         @click="openCreateModal"
       >
         <Plus :size="16" /> {{ locale.createFirst }}
@@ -129,16 +129,16 @@
               <Eye v-else :size="14" />
             </button>
             <button
-              class="p-2 text-text-tertiary hover:text-warning transition-colors"
-              :disabled="loadingViewId !== null || loadingEditId !== null"
+              class="p-2 text-text-tertiary hover:text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="(loadingViewId !== null || loadingEditId !== null) || !can('api-keys:write')"
               @click="editApiKey(apiKey)"
             >
               <RefreshCw v-if="loadingEditId === apiKey.id" :size="14" class="animate-spin" />
               <Edit2 v-else :size="14" />
             </button>
             <button
-              class="flex items-center justify-center p-2 text-text-tertiary hover:text-error transition-colors"
-              :disabled="loadingViewId !== null || loadingEditId !== null"
+              class="flex items-center justify-center p-2 text-text-tertiary hover:text-error transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="(loadingViewId !== null || loadingEditId !== null) || !can('api-keys:write')"
               @click="deleteApiKey(apiKey)"
             >
               <Trash2 :size="14" />
@@ -311,7 +311,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="submitting"
+              :disabled="(submitting) || !can('api-keys:write')"
               class="px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] disabled:opacity-50 transition-all"
               @click="showCreateModal ? createApiKey() : updateApiKey()"
             >
@@ -601,6 +601,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import {
   Plus,
@@ -626,6 +627,8 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+
+const { can } = usePermissions()
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
@@ -840,11 +843,13 @@ const loadApiKeys = async () => {
 }
 
 const openCreateModal = () => {
+  if (!can('api-keys:write')) return
   resetForm()
   showCreateModal.value = true
 }
 
 const createApiKey = async () => {
+  if (!can('api-keys:write')) return
   if (!form.name) return toast.error(getLocaleText('nameRequired'))
   if (form.permissions.length === 0) return toast.error(getLocaleText('permissionRequired'))
 
@@ -880,6 +885,7 @@ const createApiKey = async () => {
 }
 
 const updateApiKey = async () => {
+  if (!can('api-keys:write')) return
   if (!selectedApiKey.value) return
   if (!form.name) return toast.error(getLocaleText('nameRequired'))
   if (form.permissions.length === 0) return toast.error(getLocaleText('permissionRequired'))
@@ -914,6 +920,7 @@ const updateApiKey = async () => {
 }
 
 const deleteApiKey = (apiKey) => {
+  if (!can('api-keys:write')) return
   pendingDeleteApiKey.value = apiKey
   confirmDialogConfig.value = {
     title: getLocaleText('confirmDeleteTitle'),
@@ -926,6 +933,7 @@ const deleteApiKey = (apiKey) => {
 }
 
 const confirmDelete = async () => {
+  if (!can('api-keys:write')) return
   if (!pendingDeleteApiKey.value) return
 
   try {
@@ -970,6 +978,7 @@ const viewApiKey = async (apiKey) => {
 }
 
 const editApiKey = async (apiKey) => {
+  if (!can('api-keys:write')) return
   if (loadingEditId.value !== null || loadingViewId.value !== null) return
   loadingEditId.value = apiKey.id
   try {

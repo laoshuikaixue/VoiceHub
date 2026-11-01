@@ -21,20 +21,21 @@ export const useUserFilters = () => {
   const lastError = useState<string>('admin-all-users-error', () => '')
 
   // 用于存放轻量级后端返回的全局可选项（年级、班级关联）
-  const cachedOptions = useState<{ grades: string[], classes: { grade: string | null, class: string }[] }>('admin-users-options', () => ({ grades: [], classes: [] }))
+  const cachedOptions = useState<{ grades: string[], classes: { grade: string | null, class: string }[], roles: { name: string, displayName: string }[] }>('admin-users-options', () => ({ grades: [], classes: [], roles: [] }))
   const optionsLoaded = useState<boolean>('admin-users-options-loaded', () => false)
 
   const fetchOptions = async () => {
     if (optionsLoaded.value) return
 
     try {
-      const res = await $fetch<{ success: boolean, grades: string[], classes: { grade: string | null, class: string }[] }>('/api/admin/users/options', {
+    const res = await $fetch<{ success: boolean, grades: string[], classes: { grade: string | null, class: string }[], roles?: { name: string, displayName: string }[] }>('/api/admin/users/options', {
         ...auth.getAuthConfig()
       })
       if (res.success) {
         cachedOptions.value = {
           grades: res.grades || [],
-          classes: res.classes || []
+          classes: res.classes || [],
+          roles: res.roles || []
         }
         optionsLoaded.value = true
       }
@@ -142,7 +143,7 @@ export const useUserFilters = () => {
     isLoaded.value = false
     lastError.value = ''
     optionsLoaded.value = false
-    cachedOptions.value = { grades: [], classes: [] }
+    cachedOptions.value = { grades: [], classes: [], roles: [] }
   }
 
   return {
@@ -154,6 +155,7 @@ export const useUserFilters = () => {
     getAvailableGrades,
     getAvailableClasses,
     availableGrades,
+    roleOptions: computed(() => cachedOptions.value.roles),
     resetUserFilters
   }
 }

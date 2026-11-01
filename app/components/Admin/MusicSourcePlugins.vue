@@ -1,5 +1,5 @@
 <template>
-  <section v-if="user?.role === 'SUPER_ADMIN'" class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
+  <section v-if="canReadPlugins" class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-border-secondary pb-4">
       <div class="flex items-start gap-3 min-w-0">
         <div class="flex items-center justify-center w-9 h-9 rounded-xl bg-bg-primary border border-border-secondary text-primary shrink-0">
@@ -11,7 +11,7 @@
         </div>
       </div>
       <button
-        :disabled="busy"
+        :disabled="!canWritePlugins || busy"
         class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
         @click="edit()"
       >
@@ -44,7 +44,7 @@
         <div
           v-for="(item, index) in items"
           :key="item.id"
-          :draggable="!busy"
+          :draggable="canWritePlugins && !busy"
           :class="[
             'flex flex-col gap-2 p-3 border rounded-xl transition-all',
             item.enabled ? 'border-border-secondary bg-bg-secondary-40' : 'border-border-secondary-40 bg-bg-secondary-60 opacity-60',
@@ -71,7 +71,7 @@
               role="switch"
               :aria-checked="item.enabled"
               :aria-label="item.enabled ? t.enabled : t.disabled"
-              :disabled="busy"
+              :disabled="!canWritePlugins || busy"
               :class="['relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-all disabled:opacity-50', item.enabled ? 'bg-primary' : 'bg-bg-tertiary-70']"
               @click="toggle(item)"
             >
@@ -86,23 +86,23 @@
           <p class="pl-8 text-[10px] font-mono text-text-disabled break-all leading-relaxed">{{ displayUrl(item.scriptUrl) }}</p>
 
           <div class="ml-8 flex flex-wrap items-center gap-1 p-1 rounded-xl border border-border-secondary-50 bg-bg-secondary-60">
-            <button type="button" :title="t.up" :aria-label="t.up" :disabled="busy || index === 0" :class="ICON_BTN" @click="move(index, -1)">
+            <button type="button" :title="t.up" :aria-label="t.up" :disabled="!canWritePlugins || busy || index === 0" :class="ICON_BTN" @click="move(index, -1)">
               <ArrowUp :size="12" />
             </button>
-            <button type="button" :title="t.down" :aria-label="t.down" :disabled="busy || index === items.length - 1" :class="ICON_BTN" @click="move(index, 1)">
+            <button type="button" :title="t.down" :aria-label="t.down" :disabled="!canWritePlugins || busy || index === items.length - 1" :class="ICON_BTN" @click="move(index, 1)">
               <ArrowDown :size="12" />
             </button>
             <span class="w-px h-4 bg-border-secondary-50 mx-0.5 shrink-0" />
-            <button type="button" :disabled="busy" :class="TEXT_BTN" @click="edit(item)">
+            <button type="button" :disabled="!canWritePlugins || busy" :class="TEXT_BTN" @click="edit(item)">
               <Pencil :size="12" /> {{ t.edit }}
             </button>
-            <button type="button" :disabled="busy || !item.activeRevision" :class="TEXT_BTN" @click="test(item)">
+            <button type="button" :disabled="!canWritePlugins || busy || !item.activeRevision" :class="TEXT_BTN" @click="test(item)">
               <FlaskConical :size="12" /> {{ t.test }}
             </button>
-            <button v-if="!snapshot" type="button" :disabled="busy" :class="TEXT_BTN" @click="refresh(item)">
+            <button v-if="!snapshot" type="button" :disabled="!canWritePlugins || busy" :class="TEXT_BTN" @click="refresh(item)">
               <RefreshCw :size="12" /> {{ t.refresh }}
             </button>
-            <button type="button" :disabled="busy" :class="TEXT_DANGER_BTN" @click="askRemove(item)">
+            <button type="button" :disabled="!canWritePlugins || busy" :class="TEXT_DANGER_BTN" @click="askRemove(item)">
               <Trash2 :size="12" /> {{ t.remove }}
             </button>
           </div>
@@ -116,7 +116,7 @@
         <form class="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-bg-secondary border border-border-secondary shadow-2xl p-6 space-y-5" @submit.prevent="save">
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-black text-text-primary tracking-tight">{{ form.id ? t.edit : t.add }}</h3>
-            <button type="button" :disabled="busy" class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-50 transition-all disabled:opacity-50" @click="open = false">
+            <button type="button" :disabled="!canWritePlugins || busy" class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-50 transition-all disabled:opacity-50" @click="open = false">
               <X :size="18" />
             </button>
           </div>
@@ -146,10 +146,10 @@
           <p v-if="error" role="alert" class="text-[11px] text-error leading-relaxed break-words">{{ error }}</p>
 
           <div class="flex justify-end gap-3 pt-1">
-            <button type="button" :disabled="busy" class="px-4 py-2.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50" @click="open = false">
+            <button type="button" :disabled="!canWritePlugins || busy" class="px-4 py-2.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50" @click="open = false">
               {{ t.cancel }}
             </button>
-            <button type="submit" :disabled="busy" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50">
+            <button type="submit" :disabled="!canWritePlugins || busy" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50">
               <AppSpinner v-if="busy" :size="12" color="white" /> {{ snapshot ? t.saveDeploy : t.saveLoad }}
             </button>
           </div>
@@ -177,7 +177,7 @@ import { AlertCircle, ArrowDown, ArrowUp, FlaskConical, GripVertical, ListMusic,
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useServerErrors } from '~/composables/useLocaleText'
@@ -194,7 +194,9 @@ const TONE_CLASS = {
   neutral: 'bg-bg-tertiary-70 text-text-tertiary border-border-tertiary-50'
 }
 
-const { user } = useAuth()
+const { can } = usePermissions()
+const canReadPlugins = computed(() => can('music-source-plugins:read'))
+const canWritePlugins = computed(() => can('music-source-plugins:write'))
 const { admin, serverErrors } = useLocale()
 const t = computed(() => useSafeLocale(admin.value.musicSourcePlugins))
 const { localize } = useServerErrors()
@@ -302,7 +304,7 @@ async function load() {
   finally { loading.value = false }
 }
 async function mutate(action, id = '') {
-  if (busy.value) return
+  if (busy.value || !canWritePlugins.value) return
   busy.value = true
   errorKind.value = 'action'
   error.value = ''
@@ -316,6 +318,7 @@ async function mutate(action, id = '') {
   finally { busy.value = false; pendingId.value = '' }
 }
 function edit(item) {
+  if (!canWritePlugins.value) return
   error.value = ''
   form.value = item ? { ...item, catalog: item.catalog || '', variablesText: '' } : { name: '', scriptUrl: '', protocol: 'auto', catalog: '', variablesText: '', legacyPlatformKey: '' }
   open.value = true
@@ -347,7 +350,7 @@ function reorder(from, to) {
 const move = (index, delta) => reorder(index, index + delta)
 const resetDrag = () => { draggedIndex = -1; dragOverIndex.value = -1 }
 function handleDragStart(event, index) {
-  if (busy.value) return
+  if (busy.value || !canWritePlugins.value) return
   draggedIndex = index
   lastPointerY = event.clientY
   startAutoScroll()
@@ -374,6 +377,7 @@ function handleDrop(event, index) {
   if (from !== -1) reorder(from, index)
 }
 function askRemove(item) {
+  if (!canWritePlugins.value) return
   error.value = ''
   removeTarget.value = item
   showRemove.value = true
@@ -392,7 +396,7 @@ async function confirmRemove() {
     removing.value = false
   }
 }
-onMounted(() => { if (user.value?.role === 'SUPER_ADMIN') load(); else loading.value = false })
+onMounted(() => { if (canReadPlugins.value) load(); else loading.value = false })
 onBeforeUnmount(stopAutoScroll)
 </script>
 

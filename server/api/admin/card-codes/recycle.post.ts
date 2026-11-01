@@ -1,11 +1,9 @@
 import { CARD_CODE_DISPATCH_LIMITS, recycleCardCodeAssignments } from '~~/server/services/cardCodeAssignmentService'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 /** 回收派发券到可用池。 */
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
   const user = event.context.user!
 
   const body = (await readBody(event)) || {}

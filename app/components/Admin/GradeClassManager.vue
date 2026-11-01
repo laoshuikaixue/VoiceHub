@@ -35,7 +35,7 @@
         <div class="flex items-end">
           <button
             type="button"
-            :disabled="adding || !gradeInput.trim() || !classInput.trim()"
+            :disabled="(adding || !gradeInput.trim() || !classInput.trim()) || !can('grade-class:write')"
             class="w-full sm:w-auto px-6 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-lg transition-all hover:opacity-90 active:scale-95 uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             @click="handleAdd"
           >
@@ -69,7 +69,7 @@
             <div class="flex items-end">
               <button
                 type="button"
-                :disabled="batchAdding || !batchGradeInput.trim() || !batchClassInput.trim()"
+                :disabled="(batchAdding || !batchGradeInput.trim() || !batchClassInput.trim()) || !can('grade-class:write')"
                 class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 @click="handleBatchAdd"
               >
@@ -85,7 +85,7 @@
           <p class="text-xs text-text-tertiary mb-3">{{ locale.initDesc }}</p>
           <button
             type="button"
-            :disabled="initLoading"
+            :disabled="(initLoading) || !can('grade-class:write')"
             class="w-full sm:w-auto px-6 py-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors text-xs font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             @click="handleInitialize"
           >
@@ -163,9 +163,9 @@
               {{ locale.personCount(groupTotalUsers(group)) }}
             </span>
           </div>
-          <button
+          <button :disabled="!can('grade-class:delete')"
             type="button"
-            class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-error hover:bg-error-10 transition-colors"
+            class="flex items-center justify-center p-2 rounded-lg text-text-tertiary hover:text-error hover:bg-error-10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :title="locale.deleteGradeButton"
             @click="openDeleteGradeConfirm(group)"
           >
@@ -184,9 +184,9 @@
             <span v-if="item.userCount > 0" class="text-[11px] font-bold text-text-tertiary">
               {{ locale.personCount(item.userCount) }}
             </span>
-            <button
+            <button :disabled="!can('grade-class:delete')"
               type="button"
-              class="flex items-center justify-center p-0.5 rounded text-text-tertiary opacity-60 group-hover/chip:opacity-100 hover:text-error hover:bg-error-10 transition-all"
+              class="flex items-center justify-center p-0.5 rounded text-text-tertiary opacity-60 group-hover/chip:opacity-100 hover:text-error hover:bg-error-10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :title="locale.deleteButton"
               @click="openDeleteConfirm(item)"
             >
@@ -227,6 +227,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { ref, computed, onMounted } from 'vue'
 import { Plus, RefreshCw, Trash2, GraduationCap, Sparkles, X, Users, Info } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
@@ -234,6 +235,8 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
 import { parseClassInput } from '~/utils/grade-class-input'
+
+const { can } = usePermissions()
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.gradeClass || {})
@@ -298,6 +301,7 @@ const loadItems = async () => {
 }
 
 const handleAdd = async () => {
+  if (!can('grade-class:write')) return
   const grade = gradeInput.value.trim()
   const studentClass = classInput.value.trim()
   if (!grade || !studentClass) return
@@ -327,6 +331,7 @@ const handleAdd = async () => {
 }
 
 const handleBatchAdd = async () => {
+  if (!can('grade-class:write')) return
   const grades = batchGradeInput.value
     .split(/[,，\n;；]/)
     .map((item) => item.trim())
@@ -376,6 +381,7 @@ const handleBatchAdd = async () => {
 }
 
 const handleInitialize = async () => {
+  if (!can('grade-class:write')) return
   initLoading.value = true
   try {
     const response = await $fetch('/api/admin/grade-class/initialize', {
@@ -397,11 +403,13 @@ const handleInitialize = async () => {
 }
 
 const openDeleteConfirm = (item) => {
+  if (!can('grade-class:delete')) return
   targetItem.value = item
   showDeleteConfirm.value = true
 }
 
 const confirmDelete = async () => {
+  if (!can('grade-class:delete')) return
   if (!targetItem.value) return
   deleting.value = true
   try {
@@ -422,11 +430,13 @@ const confirmDelete = async () => {
 }
 
 const openDeleteGradeConfirm = (group) => {
+  if (!can('grade-class:delete')) return
   targetGrade.value = group.grade
   showGradeDeleteConfirm.value = true
 }
 
 const confirmDeleteGrade = async () => {
+  if (!can('grade-class:delete')) return
   if (!targetGrade.value) return
   deleting.value = true
   try {

@@ -220,8 +220,10 @@ import {
 import packageJson from '~~/package.json'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { usePermissions } from '~/composables/usePermissions'
 
 const emit = defineEmits(['navigate'])
+const { can, canAccessPage } = usePermissions()
 const { success: showSuccess, error: showError } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.overview || {}))
@@ -332,6 +334,7 @@ const getActivityStyle = (type) => {
 }
 
 const loadStats = async () => {
+  if (!can('stats:read')) return
   try {
     const response = await $fetch('/api/admin/stats', {
       ...useAuth().getAuthConfig()
@@ -343,6 +346,7 @@ const loadStats = async () => {
 }
 
 const loadSystemStatus = async () => {
+  if (!can('system:read')) return
   try {
     const response = await $fetch('/api/system/status')
     systemStatus.value.online = response?.status === 'ok'
@@ -397,6 +401,7 @@ const copyInstanceId = async () => {
 }
 
 const loadRecentActivities = async () => {
+  if (!can('activities:read')) return
   loadingActivities.value = true
   try {
     const response = await $fetch('/api/admin/activities', {

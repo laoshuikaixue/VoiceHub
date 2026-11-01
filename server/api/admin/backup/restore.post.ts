@@ -1,3 +1,5 @@
+import { normalizeSubmittedTemplates } from '~~/server/utils/permission-admin'
+import { normalizePermissionTokens } from '~~/app/utils/admin-permissions'
 import { defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
 import { pluginClearOrder, restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
@@ -46,12 +48,8 @@ import { restoreCardCodeAssignmentRecord, syncRestoredCardCodeAssignment } from 
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
     const user = event.context.user
     if (!user) throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '需要登录')
-    if (user.role !== 'SUPER_ADMIN') {
-      throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以恢复备份')
-    }
 
     let backupData: any
     let mode = 'merge'
@@ -381,7 +379,8 @@ export default defineEventHandler(async (event) => {
                             'remark',
                             'avatarProvider',
                             'avatarProviderUserId',
-                            'legalConsentVersion'
+                            'legalConsentVersion',
+                            'permissions'
                           ]
 
                           // 处理日期字段
@@ -409,6 +408,9 @@ export default defineEventHandler(async (event) => {
                                 } else {
                                   userData[field] = record[field]
                                 }
+                              } else if (field === 'permissions') {
+                                // 仅接受权限码数组，非法值按「跟随角色模板」丢弃
+                                userData[field] = Array.isArray(record[field]) ? normalizePermissionTokens(record[field]) : null
                               } else {
                                 userData[field] = record[field]
                               }
@@ -1330,13 +1332,15 @@ export default defineEventHandler(async (event) => {
                           'legalConsentUpdatedDate',
                           'legalConsentDocuments',
                           'enabledPlatforms',
-                          'platformOrder'
+                          'platformOrder',
+                          'rolePermissionTemplates'
                         ]
 
                         // 只添加备份数据中存在的字段
                         systemSettingsFields.forEach((field) => {
                           if (record.hasOwnProperty(field)) {
-                            systemSettingsData[field] = record[field]
+                            systemSettingsData[field] = field === 'rolePermissionTemplates' && record[field] !== null
+                              ? normalizeSubmittedTemplates(record[field]) : record[field]
                           }
                         })
                         if (Object.prototype.hasOwnProperty.call(systemSettingsData, 'defaultTheme') || Object.prototype.hasOwnProperty.call(systemSettingsData, 'enabledThemes')) {

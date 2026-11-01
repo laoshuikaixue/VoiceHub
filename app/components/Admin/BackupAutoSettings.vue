@@ -62,7 +62,7 @@
                     <button
                       class="flex-1 py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                       :class="testing === 's3' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
-                      :disabled="testing !== null"
+                      :disabled="(testing !== null) || !(can('backup:write'))"
                       @click="testConnection('s3')"
                     >
                       {{ testing === 's3' ? '测试中...' : locale.methods.s3.testConnection }}
@@ -90,7 +90,7 @@
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                     :class="testing === 'webdav' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
-                    :disabled="testing !== null"
+                    :disabled="(testing !== null) || !(can('backup:write'))"
                     @click="testConnection('webdav')"
                   >
                     {{ testing === 'webdav' ? '测试中...' : locale.methods.webdav.testConnection }}
@@ -113,7 +113,7 @@
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                     :class="testing === 'telegram' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
-                    :disabled="testing !== null"
+                    :disabled="(testing !== null) || !(can('backup:write'))"
                     @click="testConnection('telegram')"
                   >
                     {{ testing === 'telegram' ? '发送中...' : locale.methods.telegram.testSend }}
@@ -139,7 +139,7 @@
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                     :class="testing === 'email' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
-                    :disabled="testing !== null"
+                    :disabled="(testing !== null) || !(can('backup:write'))"
                     @click="testConnection('email')"
                   >
                     {{ testing === 'email' ? '发送中...' : locale.methods.email.testSend }}
@@ -298,7 +298,7 @@ crontab -e
             <div v-if="historyRecords.length > 0" class="flex justify-end pt-2">
               <button
                 class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-text-tertiary hover:text-error bg-panel-bg-darkest-50 border border-panel-bg-dark hover:border-error-20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                :disabled="clearingHistory"
+                :disabled="(clearingHistory) || !(can('backup:write'))"
                 @click="clearHistory"
               >
                 <Trash2 class="w-3.5 h-3.5" />
@@ -313,7 +313,7 @@ crontab -e
           <button class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest" @click="$emit('close')">
             {{ locale.cancel }}
           </button>
-          <button class="px-6 py-2 bg-primary hover:bg-primary text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" :disabled="saving" @click="saveAll">
+          <button class="px-6 py-2 bg-primary hover:bg-primary text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" :disabled="(saving) || !(can('backup:write'))" @click="saveAll">
             {{ saving ? '保存中...' : locale.saveAll }}
           </button>
         </div>
@@ -323,6 +323,7 @@ crontab -e
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, reactive, ref, watch } from 'vue'
 import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
@@ -331,6 +332,8 @@ import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
 import InputField from '~/components/UI/Common/InputField.vue'
 import PasswordField from '~/components/UI/Common/PasswordField.vue'
 import MethodCard from '~/components/UI/Common/MethodCard.vue'
+
+const { can } = usePermissions()
 
 const props = defineProps({
   visible: { type: Boolean, default: false }
@@ -486,6 +489,7 @@ const loadHistory = async () => {
 }
 
 const clearHistory = async () => {
+  if (!(can('backup:write'))) return
   clearingHistory.value = true
   try {
     const result = await $fetch('/api/admin/backup/history-clear', { method: 'POST' })
@@ -522,6 +526,7 @@ const copyCronCommand = () => {
 }
 
 const testConnection = async (type) => {
+  if (!(can('backup:write'))) return
   if (testing.value) return
   const testLabels = {
     s3: locale.value?.methods?.s3?.testConnection || '测试连接',
@@ -554,6 +559,7 @@ const testConnection = async (type) => {
 }
 
 const saveAll = async () => {
+  if (!(can('backup:write'))) return
   saving.value = true
   try {
     const config = {

@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import {
   schedules,
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
   if (
     !isRequester &&
     !isCollaborator &&
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+    !hasAdminPermission(user, 'songs:delete')
   ) {
     throw createApiError(403, 'SONG_WITHDRAW_OWN_ONLY', '只能撤回自己的投稿或退出联合投稿')
   }
@@ -87,7 +88,7 @@ export default defineEventHandler(async (event) => {
   if (
     isCollaborator &&
     !isRequester &&
-    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+    !hasAdminPermission(user, 'songs:delete')
   ) {
     await db.delete(songCollaborators).where(eq(songCollaborators.id, collaboratorRecord.id))
 

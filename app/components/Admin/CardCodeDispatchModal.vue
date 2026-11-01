@@ -115,7 +115,7 @@
             <button
               type="button"
               class="flex items-center gap-2 rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary transition-colors hover:bg-primary disabled:opacity-50"
-              :disabled="assigning || !canSubmit"
+              :disabled="(assigning || !canSubmit) || !(can('card-codes:assign'))"
               @click="submit"
             >
               <AppSpinner v-if="assigning" :size="14" color="white" />
@@ -160,6 +160,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, ref, watch } from 'vue'
 import { Send, X } from '@lucide/vue'
 import CardCodeRecipientPicker from '~/components/Admin/CardCodeRecipientPicker.vue'
@@ -168,6 +169,8 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
+
+const { can } = usePermissions()
 
 const props = defineProps({
   modelValue: {
@@ -243,6 +246,7 @@ watch(
 const close = () => emit('update:modelValue', false)
 
 const submit = async () => {
+  if (!(can('card-codes:assign'))) return
   if (assigning.value) return
   if (!resolvedRecipientCount.value) {
     showToast(locale.value?.assignNoUser || '请先选择接收用户', 'warning')

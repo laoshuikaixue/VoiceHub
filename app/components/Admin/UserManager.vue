@@ -11,6 +11,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-[var(--primary-glow)]"
+          :disabled="!can('users:write')"
           @click="showAddModal = true"
         >
           <UserPlus :size="14" />
@@ -18,6 +19,7 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          :disabled="!can('users:write')"
           @click="showImportModal = true"
         >
           <FileSpreadsheet class="text-success" :size="14" />
@@ -25,6 +27,7 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          :disabled="!can('users:export')"
           @click="openExportModal"
         >
           <Download class="text-primary" :size="14" />
@@ -32,6 +35,7 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          :disabled="!can('users:write')"
           @click="showBatchUpdateModal = true"
         >
           <Layers class="text-info" :size="14" />
@@ -375,7 +379,7 @@
                     class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons"
                   >
                     <button
-                      :disabled="!canManageUser(user)"
+                      :disabled="!canManageUser(user) && !canManageUser(user, 'users:assign-role')"
                       class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.editUser"
                       @click="editUser(user)"
@@ -383,22 +387,30 @@
                       <Edit2 :size="13" />
                     </button>
                     <button
-                      v-if="user.status === 'pending'"
+                      v-if="user.status === 'pending' && can('users:approve')"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
                       :title="locale.actions.approve"
                       @click="openApproval(user)"
                     >
                       <ClipboardCheck :size="13" />
                     </button>
-                    <button
-                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
+                    <button :disabled="!can('users:read-songs')"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       :title="locale.actions.viewSongs"
                       @click="viewUserSongs(user)"
                     >
                       <Music :size="13" />
                     </button>
                     <button
-                      :disabled="!canManageUser(user)"
+                      v-if="canGrantPermissions && !isSelf(user) && (isSuperAdmin || user.role !== 'SUPER_ADMIN')"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors action-btn flex items-center justify-center"
+                      :title="locale.actions.permissions"
+                      @click="openPermissionsModal(user)"
+                    >
+                      <ShieldCheck :size="13" />
+                    </button>
+                    <button
+                      :disabled="!canManageUser(user, 'users:reset-password')"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-warning transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn flex items-center justify-center"
                       :title="locale.actions.resetPassword"
                       @click="resetPassword(user)"
@@ -406,7 +418,7 @@
                       <Lock :size="13" />
                     </button>
                     <button
-                      :disabled="!canManageUser(user)"
+                      :disabled="!canManageUser(user, 'users:delete')"
                       class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.deleteUser"
                       @click="confirmDeleteUser(user)"
@@ -541,34 +553,34 @@
 
             <div class="flex gap-2 action-buttons">
               <button
-                :disabled="!canManageUser(user)"
+                :disabled="!canManageUser(user) && !canManageUser(user, 'users:assign-role')"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-primary-hover active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="editUser(user)"
               >
                 <Edit2 :size="12" /> {{ locale.actions.edit }}
               </button>
               <button
-                v-if="user.status === 'pending'"
+                v-if="user.status === 'pending' && can('users:approve')"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
                 @click="openApproval(user)"
               >
                 <ClipboardCheck :size="12" /> {{ locale.actions.approve }}
               </button>
-              <button
-                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
+              <button :disabled="!can('users:read-songs')"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="viewUserSongs(user)"
               >
                 <Music :size="12" /> {{ locale.actions.records }}
               </button>
               <button
-                :disabled="!canManageUser(user)"
+                :disabled="!canManageUser(user, 'users:reset-password')"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-warning active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="resetPassword(user)"
               >
                 <Lock :size="12" /> {{ locale.actions.reset }}
               </button>
               <button
-                :disabled="!canManageUser(user)"
+                :disabled="!canManageUser(user, 'users:delete')"
                 class="flex items-center justify-center px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary active:bg-error active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="confirmDeleteUser(user)"
               >
@@ -640,6 +652,7 @@
                     />
                     <input
                       v-model="userForm.name"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.namePlaceholder"
@@ -658,6 +671,7 @@
                     />
                     <input
                       v-model="userForm.username"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.usernamePlaceholder"
@@ -681,6 +695,7 @@
                     autocomplete="new-password"
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                     :placeholder="locale.form.passwordPlaceholder"
+                    :disabled="!!editingUser && (!can('users:reset-password') || !can('users:write'))"
                     type="password"
                   >
                 </div>
@@ -693,6 +708,7 @@
                   >
                   <CustomSelect
                     v-model="userForm.role"
+                    :disabled="!can('users:assign-role')"
                     :options="availableRoles"
                     label-key="displayName"
                     value-key="name"
@@ -705,6 +721,7 @@
                   >
                   <CustomSelect
                     v-model="userForm.status"
+                      :disabled="!!editingUser && !can('users:write')"
                     :options="userStatusOptions"
                     label-key="label"
                     value-key="value"
@@ -725,6 +742,7 @@
                     />
                     <input
                       v-model="userForm.grade"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.gradePlaceholder"
@@ -743,6 +761,7 @@
                     />
                     <input
                       v-model="userForm.class"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.classPlaceholder"
@@ -1142,6 +1161,14 @@
       :show="showUserSongsModal"
       :user-id="selectedUserId"
       @close="closeUserSongsModal"
+    />
+
+    <!-- 用户显式授权模态框 -->
+    <UserPermissionsModal
+      :show="showPermissionsModal"
+      :user="permissionUser"
+      @close="closePermissionsModal"
+      @saved="loadUsers"
     />
 
 <!-- 用户注册审核模态框 -->
@@ -1606,6 +1633,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
+import { canAssignRole } from '~/utils/admin-permissions'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Check,
@@ -1647,6 +1676,7 @@ import {
   Upload,
   UserCog,
   ShieldAlert,
+  ShieldCheck,
   Calendar,
   Clock3,
   Hash,
@@ -1658,6 +1688,7 @@ import {
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
+import UserPermissionsModal from '~/components/Admin/UserPermissionsModal.vue'
 import OAuthBindingsModal from '~/components/Admin/OAuthBindingsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import UserExportModal from '~/components/Admin/UserExportModal.vue'
@@ -1737,12 +1768,20 @@ const currentSort = computed({
 })
 
 // 硬编码角色定义
-const allRoles = computed(() => [
-  { name: 'USER', displayName: getRoleName('USER') },
-  { name: 'SONG_ADMIN', displayName: getRoleName('SONG_ADMIN') },
-  { name: 'ADMIN', displayName: getRoleName('ADMIN') },
-  { name: 'SUPER_ADMIN', displayName: getRoleName('SUPER_ADMIN') }
-])
+const allRoles = computed(() => {
+  if (roleOptions.value.length) {
+    return roleOptions.value.map((role) => ({
+      ...role,
+      displayName: getRoleName(role.name) === role.name ? role.displayName || role.name : getRoleName(role.name)
+    }))
+  }
+  return [
+    { name: 'USER', displayName: getRoleName('USER') },
+    { name: 'SONG_ADMIN', displayName: getRoleName('SONG_ADMIN') },
+    { name: 'ADMIN', displayName: getRoleName('ADMIN') },
+    { name: 'SUPER_ADMIN', displayName: getRoleName('SUPER_ADMIN') }
+  ]
+})
 
 // 筛选选项
 const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '全部角色' }, ...allRoles.value])
@@ -1799,6 +1838,7 @@ const showExportModal = ref(false)
 const exporting = ref(false)
 const gradeOptions = ref([])
 const classOptions = ref([])
+const roleOptions = ref([])
 
 // 删除确认状态
 const showDeleteModal = ref(false)
@@ -1807,6 +1847,9 @@ const deleting = ref(false)
 
 // 用户歌曲模态框状态
 const showUserSongsModal = ref(false)
+// 显式授权弹窗状态
+const showPermissionsModal = ref(false)
+const permissionUser = ref(null)
 const selectedUserId = ref(null)
 
 // 头像加载错误状态管理
@@ -1851,6 +1894,7 @@ const passwordForm = ref({
 
 // 服务
 const auth = useAuth()
+const { can, canGrantPermissions } = usePermissions()
 const { localize } = useServerErrors()
 
 // 判断是否为当前登录用户
@@ -1863,30 +1907,19 @@ const isSuperAdmin = computed(() => {
   return auth.user.value?.role === 'SUPER_ADMIN'
 })
 
-// 普通管理员身份
-const isAdmin = computed(() => {
-  return auth.user.value?.role === 'ADMIN'
-})
-
 // 是否允许对目标用户执行管理操作（编辑/重置密码/删除），与后端越级保护一致
-const canManageUser = (user) => {
-  if (!user || isSelf(user)) return false
+const canManageUser = (user, action = 'users:write') => {
+  if (!user || user.id === 1 || isSelf(user) || !can(action)) return false
   // 普通管理员不能操作超级管理员
   return isSuperAdmin.value || user.role !== 'SUPER_ADMIN'
 }
 
 const availableRoles = computed(() => {
-  let roles
-  if (isSuperAdmin.value) {
-    // 超级管理员可以分配除自己以外的所有角色
-    roles = allRoles.value.filter((role) => role.name !== 'SUPER_ADMIN')
-  } else if (isAdmin.value) {
-    // 管理员只能分配用户和歌曲管理员角色（与后端用户接口的角色限制一致）
-    roles = allRoles.value.filter((role) => ['USER', 'SONG_ADMIN'].includes(role.name))
-  } else {
-    // 其他角色不能分配角色，返回空数组
-    return []
-  }
+  let roles = allRoles.value.filter((role) =>
+    role.name === 'USER' ||
+    (role.name !== 'SUPER_ADMIN' &&
+      canAssignRole(auth.user.value, role.name, allRoles.value.map((item) => item.name)))
+  )
   // 保留目标用户当前角色，避免当前值不在选项中时下拉显示裸值
   const currentRole = editingUser.value?.role
   if (currentRole && !roles.some((role) => role.name === currentRole)) {
@@ -2153,6 +2186,7 @@ const getStatusDisplayName = (status) => {
 }
 
 const editUser = (user) => {
+  if (!canManageUser(user) && !canManageUser(user, 'users:assign-role')) return
   // 禁止编辑自身
   if (isSelf(user)) {
     if (window.$showNotification) {
@@ -2216,6 +2250,7 @@ const confirmDeleteUser = (user) => {
 }
 
 const viewUserSongs = (user) => {
+  if (!can('users:read-songs')) return
   selectedUserId.value = user.id
   showUserSongsModal.value = true
 }
@@ -2223,6 +2258,16 @@ const viewUserSongs = (user) => {
 const closeUserSongsModal = () => {
   showUserSongsModal.value = false
   selectedUserId.value = null
+}
+
+const openPermissionsModal = (user) => {
+  permissionUser.value = user
+  showPermissionsModal.value = true
+}
+
+const closePermissionsModal = () => {
+  showPermissionsModal.value = false
+  permissionUser.value = null
 }
 
 const showUserDetail = (user, event) => {
@@ -2268,6 +2313,7 @@ const closeDeleteModal = () => {
 }
 
 const confirmDelete = async () => {
+  if (!can('users:delete')) return
   if (!deletingUser.value) return
 
   deleting.value = true
@@ -2448,6 +2494,7 @@ const openTreeUser = async (treeUser) => {
 }
 
 const saveUser = async () => {
+  if (!can('users:write') && !(editingUser.value && can('users:assign-role'))) return
   // 保护：禁止保存针对自身的更改
   if (editingUser.value && isSelf(editingUser.value)) {
     formError.value = locale.value.notifications.selfEditForbidden
@@ -2483,7 +2530,7 @@ const saveUser = async () => {
     if (editingUser.value) {
       await $fetch(`/api/admin/users/${editingUser.value.id}`, {
         method: 'PUT',
-        body: userData,
+        body: can('users:write') ? userData : { role: userForm.value.role },
         ...auth.getAuthConfig()
       })
     } else {
@@ -2515,6 +2562,7 @@ const saveUser = async () => {
 }
 
 const confirmResetPassword = async () => {
+  if (!can('users:reset-password')) return
   // 保护：禁止重置自身密码
   if (resetPasswordUser.value && isSelf(resetPasswordUser.value)) {
     passwordError.value = locale.value.notifications.selfResetForbidden
@@ -2612,6 +2660,7 @@ const loadUserTree = async () => {
     // 供导出模态框的年级/班级筛选下拉使用
     gradeOptions.value = response.grades || []
     classOptions.value = response.classes || []
+    roleOptions.value = response.roles || []
     expandDefaultTreeNodes()
   } catch (error) {
     console.error('加载组织结构失败:', error)
@@ -2967,6 +3016,7 @@ const formatImportErrors = (errors) => {
 
 // 批量导入用户
 const importUsers = async () => {
+  if (!can('users:write')) return
   if (previewData.value.length === 0) return
 
   importLoading.value = true

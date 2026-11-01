@@ -43,8 +43,8 @@
         >
           <Download :size="14" /> {{ exporting ? locale.exporting : exportButtonText }}
         </button>
-        <button
-          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-secondary bg-bg-secondary text-text-secondary text-xs font-bold hover:border-border-tertiary transition-all"
+        <button :disabled="!can('card-codes:assign')"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-secondary bg-bg-secondary text-text-secondary text-xs font-bold hover:border-border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           @click="openDispatchFromSelection"
         >
           <Send :size="14" /> {{ locale.dispatchCoupon || '派发点歌券' }}
@@ -107,14 +107,14 @@
             class-name="w-32"
           />
           <button
-            class="px-3 py-2 rounded-lg bg-primary-hover text-text-primary text-xs font-bold hover:bg-primary transition-colors"
-            :disabled="saving"
+            class="px-3 py-2 rounded-lg bg-primary-hover text-text-primary text-xs font-bold hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="(saving) || !can('card-codes:write')"
             @click="applyBulkStatus"
           >
             {{ locale.applyBulk }}
           </button>
-          <button
-            class="px-3 py-2 rounded-lg bg-primary text-text-primary text-xs font-bold hover:bg-primary-hover transition-colors"
+          <button :disabled="!can('card-codes:assign')"
+            class="px-3 py-2 rounded-lg bg-primary text-text-primary text-xs font-bold hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             @click="openDispatchFromSelection"
           >
             {{ locale.dispatchSelected }}
@@ -190,7 +190,7 @@
                       :placeholder="locale.note"
                       class="w-full resize-none rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
                     />
-                    <button class="text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary transition-colors" @click="saveNote(item)">
+                    <button :disabled="!can('card-codes:write')" class="text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed" @click="saveNote(item)">
                       {{ locale.saveNote }}
                     </button>
                   </div>
@@ -201,17 +201,17 @@
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'AVAILABLE')">{{ locale.available }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'LOCKED')">{{ locale.locked }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error disabled:cursor-not-allowed disabled:opacity-50" :disabled="saving" @click="requestStatusUpdate([item.id], 'INVALID')">{{ locale.invalid }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary disabled:cursor-not-allowed disabled:opacity-50" :disabled="(saving) || !can('card-codes:write')" @click="requestStatusUpdate([item.id], 'AVAILABLE')">{{ locale.available }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning disabled:cursor-not-allowed disabled:opacity-50" :disabled="(saving) || !can('card-codes:write')" @click="requestStatusUpdate([item.id], 'LOCKED')">{{ locale.locked }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success disabled:cursor-not-allowed disabled:opacity-50" :disabled="(saving) || !can('card-codes:write')" @click="requestStatusUpdate([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error disabled:cursor-not-allowed disabled:opacity-50" :disabled="(saving) || !can('card-codes:write')" @click="requestStatusUpdate([item.id], 'INVALID')">{{ locale.invalid }}</button>
                     <!-- 禁用态的按钮不会派发鼠标事件，title 挂在外层 span 才能可靠悬停显示 -->
                     <span
                       :title="item.status === 'AVAILABLE' ? (locale.dispatchRowHint || '派发这张点歌券给指定用户') : dispatchDisabledReason(item)"
                     >
                       <button
                         class="rounded-lg border border-primary-30 bg-primary-10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:border-primary-50 hover:bg-primary-20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-primary-30 disabled:hover:bg-primary-10"
-                        :disabled="item.status !== 'AVAILABLE'"
+                        :disabled="(item.status !== 'AVAILABLE') || !can('card-codes:assign')"
                         @click="openDispatchForCode(item)"
                       >
                         {{ locale.dispatch }}
@@ -295,13 +295,13 @@
           <div class="flex flex-wrap gap-2">
             <button
               class="flex items-center gap-2 rounded-xl bg-primary-hover px-3.5 py-2 text-xs font-black text-text-primary hover:bg-primary transition-colors disabled:opacity-50"
-              :disabled="saving"
+              :disabled="(saving) || !can('card-codes:write')"
               @click="createCodes"
             >
               <AppSpinner v-if="saving" :size="14" color="white" />
               <Plus v-else :size="14" /> {{ locale.createCardCode }}
             </button>
-            <button class="rounded-xl border border-border-secondary bg-bg-primary px-3.5 py-2 text-xs font-bold text-text-secondary" @click="fillDemoCodes">
+            <button :disabled="!can('card-codes:write')" class="rounded-xl border border-border-secondary bg-bg-primary px-3.5 py-2 text-xs font-bold text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed" @click="fillDemoCodes">
               {{ locale.fillDemo }}
             </button>
           </div>
@@ -452,9 +452,9 @@
               </td>
               <td class="px-3 py-3 text-text-tertiary">{{ formatDate(item.assignedAt) }}</td>
               <td class="px-3 py-3">
-                <button
+                <button :disabled="!can('card-codes:assign')"
                   v-if="item.status === 'ASSIGNED'"
-                  class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning"
+                  class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="recycleAssignment(item)"
                 >
                   {{ locale.assignmentRecycle }}
@@ -619,6 +619,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, onMounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search, Send } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -631,6 +632,8 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { formatDateTime, parseUtcTimestamp } from '~/utils/timeUtils'
+
+const { can } = usePermissions()
 
 const { showToast } = useToast()
 const { admin } = useLocale()
@@ -722,6 +725,7 @@ const dispatchDisabledReason = (item) => {
 
 /** 预选可用点歌券 */
 const openDispatchFromSelection = () => {
+  if (!can('card-codes:assign')) return
   dispatchCoupons.value = selectedAvailableCodes.value
   dispatchNotice.value = selectedAvailableCodes.value.length
     ? ''
@@ -731,6 +735,7 @@ const openDispatchFromSelection = () => {
 
 /** 派发指定可用点歌券 */
 const openDispatchForCode = (item) => {
+  if (!can('card-codes:assign')) return
   if (!item) return
   if (item.status !== 'AVAILABLE') {
     showToast(dispatchDisabledReason(item), 'warning')
@@ -973,6 +978,7 @@ const runGenericConfirm = async () => {
 
 /** 回收已派发的点歌券 */
 const recycleAssignment = (item) => {
+  if (!can('card-codes:assign')) return
   const code = item.codeSnapshot || ''
   askConfirm(
     locale.value?.assignmentRecycleConfirm?.(code) || `确定回收点歌券 ${code} 吗？`,
@@ -1117,6 +1123,7 @@ const exportCodes = async () => {
 }
 
 const requestStatusUpdate = (ids, status) => {
+  if (!can('card-codes:write')) return
   const normalized = [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))]
   if (!normalized.length || saving.value) return
   statusConfirmIds.value = normalized
@@ -1171,6 +1178,7 @@ const confirmStatusUpdate = async () => {
 }
 
 const saveNote = async (item) => {
+  if (!can('card-codes:write')) return
   saving.value = true
   try {
     await $fetch('/api/admin/card-codes/update', {
@@ -1188,11 +1196,13 @@ const saveNote = async (item) => {
 }
 
 const applyBulkStatus = async () => {
+  if (!can('card-codes:write')) return
   if (!selectedIds.value.length) return
   requestStatusUpdate(selectedIds.value, bulkStatus.value)
 }
 
 const createCodes = async () => {
+  if (!can('card-codes:write')) return
   saving.value = true
   try {
     let body = { note: createNote.value.trim() }
@@ -1242,6 +1252,7 @@ const createCodes = async () => {
 const createFormCount = computed(() => generateForm.value.count)
 
 const fillDemoCodes = () => {
+  if (!can('card-codes:write')) return
   createMode.value = 'manual'
   manualCodes.value = ['DEMO-2026-A001', 'DEMO-2026-A002', 'DEMO-2026-A003'].join('\n')
   createNote.value = getLocaleMessage('demoNote')

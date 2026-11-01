@@ -1,6 +1,10 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import type { SystemSettings } from '~/drizzle/schema'
+import { ROLE_PERMISSION_TEMPLATES_DEFAULT } from '~~/app/utils/admin-permissions'
+import { validateRoleTemplates } from './permission-policy'
+import { createApiError } from './apiError'
+import { SERVER_ERROR_CODES } from '../config/constants'
 
 /**
  * 统一读取系统设置，读取失败时返回 null，由调用方按安全默认值降级。
@@ -21,6 +25,33 @@ export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
   return settings && typeof settings.forcePasswordChangeOnFirstLogin === 'boolean'
     ? settings.forcePasswordChangeOnFirstLogin
     : false
+}
+
+/**
+ * 未配置时使用内置模板；读取失败时抛错，不恢复已撤销的权限。
+ */
+export async function getRolePermissionTemplatesCached(
+  executor: Pick<typeof db, 'select'> = db
+): Promise<Record<string, unknown>> {
+  let configured: unknown
+  try {
+    const [row] = await executor
+      .select({ rolePermissionTemplates: systemSettings.rolePermissionTemplates })
+      .from(systemSettings)
+      .limit(1)
+    configured = row?.rolePermissionTemplates
+  } catch (error) {
+    console.error('[SystemSettings] 读取权限模板失败:', error)
+    throw error
+  }
+  if (configured === null || configured === undefined) {
+    return ROLE_PERMISSION_TEMPLATES_DEFAULT
+  }
+  const result = validateRoleTemplates(configured)
+  if (!result.ok) {
+    throw createApiError(503, SERVER_ERROR_CODES.AUTH_DATABASE_UNAVAILABLE, '权限配置不可用')
+  }
+  return result.value
 }
 
 export function computeRequirePasswordChange(

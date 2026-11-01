@@ -53,23 +53,6 @@ export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)
 
   try {
-    // 检查用户认证和权限
-    const user = event.context.user
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权访问'
-      })
-    }
-
-    if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
-    }
-
     const body = await readBody(event)
 
     // 输入验证
