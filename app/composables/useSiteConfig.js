@@ -46,6 +46,10 @@ const siteConfig = ref({
   schoolLogoPrintUrl: '',
   siteDescription: '',
   submissionGuidelines: '',
+  announcement: '',
+  announcementTitle: '',
+  announcementDisplayMode: 'static',
+  announcementScrollSpeed: 30,
   icpNumber: '',
   gonganNumber: '',
   captchaEnabled: false,
@@ -137,6 +141,10 @@ export const useSiteConfig = () => {
         schoolLogoPrintUrl: '',
         siteDescription: '校园广播站点歌系统 - 让你的声音被听见',
         submissionGuidelines: defaultSubmissionGuidelines,
+        announcement: '',
+        announcementTitle: '',
+        announcementDisplayMode: 'static',
+        announcementScrollSpeed: 30,
         icpNumber: '',
         gonganNumber: '',
         enableReplayRequests: false,
@@ -191,6 +199,16 @@ export const useSiteConfig = () => {
   const guidelines = computed(
     () => siteConfig.value.submissionGuidelines || defaultSubmissionGuidelines
   )
+  const announcement = computed(() => siteConfig.value.announcement || '')
+  const announcementTitle = computed(() => siteConfig.value.announcementTitle || '')
+  const announcementDisplayMode = computed(() =>
+    siteConfig.value.announcementDisplayMode === 'scroll' ? 'scroll' : 'static'
+  )
+  const announcementScrollSpeed = computed(() => {
+    const speed = Number(siteConfig.value.announcementScrollSpeed)
+    if (!Number.isFinite(speed)) return 30
+    return Math.min(120, Math.max(8, speed))
+  })
   const icp = computed(() => siteConfig.value.icpNumber || '')
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
   const showBeianIcon = computed(() => siteConfig.value.showBeianIcon || false)
@@ -311,6 +329,10 @@ export const useSiteConfig = () => {
     schoolLogoPrintDisplayUrl,
     description,
     guidelines,
+    announcement,
+    announcementTitle,
+    announcementDisplayMode,
+    announcementScrollSpeed,
     icp,
     gonganNumber,
     showBeianIcon,

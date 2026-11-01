@@ -96,22 +96,25 @@ export default defineEventHandler(async (event) => {
     }
 
     // 创建歌曲
-    const newSongResult = await db
-      .insert(songs)
-      .values({
-        title: title.trim(),
-        artist: artist.trim(),
-        requesterId,
-        semester: semester || null,
-        preferredPlayTimeId: preferredPlayTimeId || null,
-        musicPlatform: musicPlatform || null,
-        musicId: musicId || null,
-        musicSourceData,
-        durationSeconds: durationSeconds ? Number(durationSeconds) : null,
-        cover: cover || null,
-        playUrl: playUrl || null
-      })
-      .returning()
+    const newSongResult = await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(songs)
+        .values({
+          title: title.trim(),
+          artist: artist.trim(),
+          requesterId,
+          semester: semester || null,
+          preferredPlayTimeId: preferredPlayTimeId || null,
+          musicPlatform: musicPlatform || null,
+          musicId: musicId || null,
+          musicSourceData,
+          durationSeconds: durationSeconds ? Number(durationSeconds) : null,
+          cover: cover || null,
+          playUrl: playUrl || null
+        })
+        .returning()
+      return inserted
+    })
 
     const newSong = newSongResult[0]
 

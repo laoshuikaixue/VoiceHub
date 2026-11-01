@@ -414,6 +414,27 @@
       "when": 1793369051712,
       "tag": "20261030140411_add_custom_css",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793451620033,
+      "tag": "20261031130020_add_announcement",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1793455416245,
+      "tag": "20261031140336_add_announcement_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1793459324945,
+      "tag": "20261031150844_add_announcement_display_and_title",
+      "breakpoints": true
     }
   ]
 }

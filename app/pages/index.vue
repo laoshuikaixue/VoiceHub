@@ -214,6 +214,37 @@
           </ClientOnly>
         </div>
 
+        <!-- 站点公告栏 -->
+        <div v-if="siteAnnouncement" class="announcement-bar">
+          <div class="announcement-icon">
+            <Icon name="bell-ring" :size="16" />
+          </div>
+          <div class="announcement-content">
+            <div v-if="announcementIsScroll" class="announcement-marquee">
+              <div class="announcement-marquee-track" :style="announcementMarqueeStyle">
+                <div class="announcement-marquee-item">
+                  <span v-if="siteAnnouncementTitle" class="announcement-inline-title">
+                    {{ siteAnnouncementTitle }}
+                  </span>
+                  <div class="announcement-text is-inline markdown-body" v-html="renderedAnnouncement" />
+                </div>
+                <div class="announcement-marquee-item" aria-hidden="true">
+                  <span v-if="siteAnnouncementTitle" class="announcement-inline-title">
+                    {{ siteAnnouncementTitle }}
+                  </span>
+                  <div class="announcement-text is-inline markdown-body" v-html="renderedAnnouncement" />
+                </div>
+              </div>
+            </div>
+            <template v-else>
+              <p v-if="siteAnnouncementTitle" class="announcement-title">
+                {{ siteAnnouncementTitle }}
+              </p>
+              <div class="announcement-text markdown-body" v-html="renderedAnnouncement" />
+            </template>
+          </div>
+        </div>
+
         <!-- 内容区域 -->
         <div class="tab-content-container">
           <ClientOnly>
@@ -875,12 +906,22 @@ const {
   siteTitle,
   description: siteDescription,
   guidelines: submissionGuidelines,
+  announcement: siteAnnouncement,
+  announcementTitle: siteAnnouncementTitle,
+  announcementDisplayMode: siteAnnouncementDisplayMode,
+  announcementScrollSpeed: siteAnnouncementScrollSpeed,
   icp: icpNumber,
   schoolLogoHomeDisplayUrl
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
 const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
+const renderedAnnouncement = computed(() => renderMarkdown(siteAnnouncement.value || ''))
+// 公告展示方式：静态单行 / 横向滚动；滚动时长由后台设置的秒数决定
+const announcementIsScroll = computed(() => siteAnnouncementDisplayMode.value === 'scroll')
+const announcementMarqueeStyle = computed(() => ({
+  animationDuration: `${siteAnnouncementScrollSpeed.value}s`
+}))
 
 const auth = useAuth()
 const { showToast } = useToast()
@@ -2547,6 +2588,147 @@ if (
 
 .tabs-row::-webkit-scrollbar {
   display: none;
+}
+
+/* 站点公告栏 */
+.announcement-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--primary-light, rgba(59, 130, 246, 0.1));
+  border: 1px solid var(--primary-border, rgba(59, 130, 246, 0.25));
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  margin: 0.75rem 0;
+  overflow: hidden;
+}
+.announcement-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--primary);
+}
+.announcement-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.announcement-title {
+  margin: 0 0 2px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.announcement-text {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  max-height: 4.5rem;
+  overflow: hidden;
+}
+/* 公告支持 Markdown，段落压成单行排版，避免把公告栏撑高 */
+.announcement-text :deep(p) {
+  display: inline;
+  margin: 0;
+}
+.announcement-text :deep(p:not(:first-child))::before {
+  content: ' ';
+}
+.announcement-text :deep(h1),
+.announcement-text :deep(h2),
+.announcement-text :deep(h3),
+.announcement-text :deep(h4) {
+  display: inline;
+  margin: 0;
+  font-size: 0.875rem;
+}
+.announcement-text :deep(h1)::after,
+.announcement-text :deep(h2)::after,
+.announcement-text :deep(h3)::after,
+.announcement-text :deep(h4)::after {
+  content: ' ';
+}
+.announcement-text :deep(ul),
+.announcement-text :deep(ol) {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.announcement-text :deep(li) {
+  display: inline;
+}
+.announcement-text :deep(li:not(:first-child))::before {
+  content: ' · ';
+  color: var(--text-secondary);
+}
+
+/* 滚动展示：整行内容横向跑马灯，时长由后台「滚动速度」控制 */
+.announcement-marquee {
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+}
+.announcement-marquee-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation-name: announcement-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+/* 滚动模式没有单独标题行，标题并进滚动内容 */
+.announcement-marquee-item {
+  display: flex;
+  align-items: center;
+  padding-right: 3rem;
+}
+.announcement-inline-title {
+  margin-right: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.announcement-marquee:hover .announcement-marquee-track {
+  animation-play-state: paused;
+}
+.announcement-marquee-track .announcement-text {
+  max-height: none;
+  white-space: nowrap;
+}
+/* 滚动模式下所有 Markdown 结构都压成一行 */
+.announcement-text.is-inline :deep(*) {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+@keyframes announcement-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .announcement-marquee-track {
+    animation: none;
+  }
 }
 
 .section-tab {
