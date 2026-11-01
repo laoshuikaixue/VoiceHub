@@ -4,6 +4,8 @@ import { users, gradeClass } from '~/drizzle/schema'
 import { and, count, inArray, ne, notInArray } from 'drizzle-orm'
 import { smartSort } from '~~/server/utils/grade-class-core'
 import { ARCHIVED_USER_STATUSES, resolveArchivedFilter } from '~~/server/utils/user-archive'
+import { getRolePermissionTemplatesCached } from '~~/server/utils/system-settings-helper'
+import { getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -38,6 +40,7 @@ export default defineEventHandler(async (event) => {
       .from(users)
       .where(inArray(users.status, [...ARCHIVED_USER_STATUSES]))
     const archivedCount = archivedCountResult[0]?.count || 0
+    const roleTemplates = await getRolePermissionTemplatesCached()
 
     // 年级班级选项：配置优先；未配置时回退到全部用户聚合（含 withdrawn/graduate 与仅有班级项），
     // 与组织结构树口径一致，避免筛选下拉缺项
@@ -81,7 +84,8 @@ export default defineEventHandler(async (event) => {
       grades,
       classes,
       treeUsers,
-      archivedCount
+      archivedCount,
+      roles: getRoleTemplateKeys(roleTemplates).map((name) => ({ name, displayName: name }))
     }
   } catch (error) {
     console.error('获取用户筛选选项失败:', error)

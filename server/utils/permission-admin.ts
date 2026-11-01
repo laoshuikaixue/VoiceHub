@@ -36,7 +36,7 @@ import {
   PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
-  ROLE_TEMPLATE_KEYS,
+  getRoleTemplateKeys,
   groupPermissionCodes,
   hasAllPermissions,
   hasAnyPermission,
@@ -266,18 +266,18 @@ export async function buildPermissionMatrix() {
 
   const configuredRoles =
     configured && typeof configured === 'object' && !Array.isArray(configured)
-      ? Object.keys(configured).filter((role) => ROLE_TEMPLATE_KEYS.includes(role))
+      ? Object.keys(configured).filter((role) => getRoleTemplateKeys(configured).includes(role))
       : []
 
   return {
     groups: groupPermissionCodes(),
-    roles: [...ROLE_TEMPLATE_KEYS],
+    roles: getRoleTemplateKeys(templates),
     protectedCodes: [...PROTECTED_PRIV_CODES],
     templates: Object.fromEntries(
-      ROLE_TEMPLATE_KEYS.map((role) => [role, normalizePermissionTokens(templates[role] ?? [])])
+      getRoleTemplateKeys(templates).map((role) => [role, normalizePermissionTokens(templates[role] ?? [])])
     ) as Record<string, string[]>,
     defaults: Object.fromEntries(
-      ROLE_TEMPLATE_KEYS.map((role) => [role, [...(ROLE_PERMISSION_TEMPLATES_DEFAULT[role] ?? [])]])
+      getRoleTemplateKeys(templates).map((role) => [role, [...(ROLE_PERMISSION_TEMPLATES_DEFAULT[role] ?? [])]])
     ) as Record<string, string[]>,
     customizedRoles: configuredRoles,
     codeHolders: Object.fromEntries(

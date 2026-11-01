@@ -642,3 +642,27 @@ test('角色模板中的拒绝项保持优先，用户显式授予不能覆盖',
   assert.equal(permissions.isPermissionDenied(effective, 'songs:write'), true)
   assert.equal(hasPermission(effective, 'songs:write'), false)
 })
+
+test('动态角色可由权限模板定义、校验并解析', () => {
+  const custom = { ...defaults, CONTENT_EDITOR: ['priv:admin-console', 'songs:read', 'page:songs'] }
+  const result = policy.validateRoleTemplates({
+    CONTENT_EDITOR: ['priv:admin-console', 'songs:read', 'page:songs']
+  })
+  assert.equal(result.ok, true)
+  assert.ok(permissions.getRoleTemplateKeys(custom).includes('CONTENT_EDITOR'))
+  const effective = resolveEffectivePermissions({ role: 'CONTENT_EDITOR' }, custom)
+  assert.equal(hasPermission(effective, 'songs:read'), true)
+  assert.equal(hasPermission(effective, 'songs:write'), false)
+})
+
+test('动态角色键拒绝非法格式并支持安全角色分配范围', () => {
+  assert.equal(permissions.isValidRoleKey('CONTENT_EDITOR'), true)
+  assert.equal(permissions.isValidRoleKey('content-editor'), false)
+  assert.equal(permissions.isValidRoleKey('A'), false)
+  const operator = { role: 'ADMIN', perms: [consoleCode, 'users:assign-role'] }
+  assert.equal(
+    permissions.canAssignRole(operator, 'CONTENT_EDITOR', ['USER', 'CONTENT_EDITOR']),
+    true
+  )
+  assert.equal(permissions.canAssignRole(operator, 'SUPER_ADMIN', ['USER', 'SUPER_ADMIN']), false)
+})

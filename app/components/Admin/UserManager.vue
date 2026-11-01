@@ -1763,12 +1763,20 @@ const currentSort = computed({
 })
 
 // 硬编码角色定义
-const allRoles = computed(() => [
-  { name: 'USER', displayName: getRoleName('USER') },
-  { name: 'SONG_ADMIN', displayName: getRoleName('SONG_ADMIN') },
-  { name: 'ADMIN', displayName: getRoleName('ADMIN') },
-  { name: 'SUPER_ADMIN', displayName: getRoleName('SUPER_ADMIN') }
-])
+const allRoles = computed(() => {
+  if (roleOptions.value.length) {
+    return roleOptions.value.map((role) => ({
+      ...role,
+      displayName: getRoleName(role.name) === role.name ? role.displayName || role.name : getRoleName(role.name)
+    }))
+  }
+  return [
+    { name: 'USER', displayName: getRoleName('USER') },
+    { name: 'SONG_ADMIN', displayName: getRoleName('SONG_ADMIN') },
+    { name: 'ADMIN', displayName: getRoleName('ADMIN') },
+    { name: 'SUPER_ADMIN', displayName: getRoleName('SUPER_ADMIN') }
+  ]
+})
 
 // 筛选选项
 const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '全部角色' }, ...allRoles.value])
@@ -1825,6 +1833,7 @@ const showExportModal = ref(false)
 const exporting = ref(false)
 const gradeOptions = ref([])
 const classOptions = ref([])
+const roleOptions = ref([])
 
 // 删除确认状态
 const showDeleteModal = ref(false)
@@ -1902,7 +1911,10 @@ const canManageUser = (user, action = 'users:write') => {
 
 const availableRoles = computed(() => {
   let roles = allRoles.value.filter((role) =>
-    role.name === 'USER' || (role.name !== 'SUPER_ADMIN' && canAssignRole(auth.user.value, role.name)))
+    role.name === 'USER' ||
+    (role.name !== 'SUPER_ADMIN' &&
+      canAssignRole(auth.user.value, role.name, allRoles.value.map((item) => item.name)))
+  )
   // 保留目标用户当前角色，避免当前值不在选项中时下拉显示裸值
   const currentRole = editingUser.value?.role
   if (currentRole && !roles.some((role) => role.name === currentRole)) {
@@ -2641,6 +2653,7 @@ const loadUserTree = async () => {
     // 供导出模态框的年级/班级筛选下拉使用
     gradeOptions.value = response.grades || []
     classOptions.value = response.classes || []
+    roleOptions.value = response.roles || []
     expandDefaultTreeNodes()
   } catch (error) {
     console.error('加载组织结构失败:', error)

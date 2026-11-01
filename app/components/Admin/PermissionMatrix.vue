@@ -7,6 +7,20 @@
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
       <div class="flex items-center gap-2">
+        <input
+          v-model="newRoleKey"
+          class="w-36 px-3 py-2 text-xs rounded-xl border border-border-secondary bg-bg-primary text-text-primary"
+          :placeholder="locale.roleKeyPlaceholder"
+          :disabled="!loaded || saving || !can('priv:role-template')"
+          @keyup.enter="addRole"
+        >
+        <button
+          class="px-3 py-2 text-xs font-bold rounded-xl border border-border-secondary text-text-secondary hover:text-text-primary disabled:opacity-50"
+          :disabled="!loaded || saving || !can('priv:role-template')"
+          @click="addRole"
+        >
+          {{ locale.addRole }}
+        </button>
         <button
           class="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border border-border-secondary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-all disabled:opacity-50"
           :disabled="!loaded || saving"
@@ -160,6 +174,7 @@ const saved = ref({})
 const draft = ref({})
 const loaded = ref(false)
 const saving = ref(false)
+const newRoleKey = ref('')
 
 const roleLabels = computed(() => admin.value?.sidebar?.roles || {})
 
@@ -185,6 +200,25 @@ const dirtyRoles = computed(() =>
   )
 )
 const dirty = computed(() => dirtyRoles.value.length > 0)
+
+const addRole = () => {
+  const role = newRoleKey.value.trim().toUpperCase()
+  if (!/^[A-Z][A-Z0-9_]{1,31}$/.test(role)) {
+    showToast(locale.value.invalidRoleKey, 'error')
+    return
+  }
+  if (roles.value.includes(role)) {
+    showToast(locale.value.roleExists, 'error')
+    return
+  }
+  roles.value = [...roles.value, role]
+  matrix.value.roles = roles.value
+  matrix.value.templates[role] = []
+  matrix.value.defaults[role] = []
+  saved.value[role] = []
+  draft.value[role] = []
+  newRoleKey.value = ''
+}
 
 const metrics = computed(() => [
   { label: locale.value.activeHolders, value: matrix.value.holderTotal },

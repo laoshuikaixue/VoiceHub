@@ -7,7 +7,6 @@ import {
   PRIV_GRANT,
   PRIV_ROLE_TEMPLATE,
   canAccessAdminConsole,
-  canAssignRole,
   canAccessAdminPage,
   hasPermission,
 } from '~/utils/admin-permissions'
@@ -46,7 +45,7 @@ export const usePermissions = () => {
 
   // 角色分配受独立权限码与受保护角色约束。
   const canManageUserRole = (targetRole: string): boolean =>
-    targetRole !== 'SUPER_ADMIN' && canAssignRole(auth.user.value, targetRole)
+    targetRole !== 'SUPER_ADMIN' && can('users:assign-role')
 
   // 检查是否可以打印排期
   const canPrintSchedule = computed(() => can('schedule:read'))

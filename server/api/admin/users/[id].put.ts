@@ -16,7 +16,7 @@ import {
   assertProtectedCodesAfterAccountChange,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
-import { ROLE_TEMPLATE_KEYS, canAssignRole, hasAdminPermission } from '~~/app/utils/admin-permissions'
+import { canAssignRole, getRoleTemplateKeys, hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
       // 角色权限控制
       let validRole = targetUser.role
       if (role) {
-        if (!ROLE_TEMPLATE_KEYS.includes(role)) {
+        if (!getRoleTemplateKeys(templates).includes(role)) {
           throw createError({
             statusCode: 400,
             message: '无效的用户角色'
@@ -125,7 +125,7 @@ export default defineEventHandler(async (event) => {
       }
 
       if (role && role !== targetUser.role) {
-        if (!canAssignRole(user, role)) {
+        if (!canAssignRole(user, role, getRoleTemplateKeys(templates))) {
           throw createApiError(
             403,
             SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION,

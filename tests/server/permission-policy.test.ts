@@ -104,13 +104,13 @@ test('角色模板校验：缺省角色回落内置模板，输出覆盖全部�
   assert.deepEqual(value.SUPER_ADMIN, [...(ROLE_PERMISSION_TEMPLATES_DEFAULT.SUPER_ADMIN ?? [])])
 })
 
-test('角色模板校验：结构非法、未知角色与目录外码一律 400', () => {
+test('角色模板校验：结构非法、非法角色键与目录外码一律 400', () => {
   for (const input of [null, undefined, [], 'ADMIN', 42]) {
     expectViolation(validateRoleTemplates(input), SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID)
   }
   assert.deepEqual(
-    expectViolation(validateRoleTemplates({ OPERATOR: ['songs:write'] }), SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID),
-    ['OPERATOR']
+    expectViolation(validateRoleTemplates({ 'operator-role': ['songs:write'] }), SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID),
+    ['operator-role']
   )
   expectViolation(validateRoleTemplates({ ADMIN: 'songs:write' }), SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID)
   assert.deepEqual(

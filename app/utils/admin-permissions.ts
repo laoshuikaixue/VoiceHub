@@ -284,6 +284,19 @@ export function isValidPermissionToken(token: unknown): boolean {
 // 可配置权限模板的角色，顺序与展示顺序一致
 export const ROLE_TEMPLATE_KEYS: readonly string[] = Object.keys(ROLE_PERMISSION_TEMPLATES_DEFAULT)
 
+export const ROLE_KEY_PATTERN = /^[A-Z][A-Z0-9_]{1,31}$/
+
+export function isValidRoleKey(role: unknown): role is string {
+  return typeof role === 'string' && ROLE_KEY_PATTERN.test(role)
+}
+
+export function getRoleTemplateKeys(templates?: Record<string, unknown> | null): string[] {
+  const custom = templates && typeof templates === 'object' && !Array.isArray(templates)
+    ? Object.keys(templates).filter((role) => isValidRoleKey(role))
+    : []
+  return [...new Set([...ROLE_TEMPLATE_KEYS, ...custom])]
+}
+
 // 把已归一化的码拆成显式授予与显式拒绝两组，供授权界面分栏展示
 export function splitGrantTokens(tokens: unknown): { grants: string[]; denies: string[] } {
   const normalized = normalizePermissionTokens(tokens)
@@ -395,12 +408,13 @@ export function hasAdminPermission(
 
 export function canAssignRole(
   user: { role?: string; perms?: readonly string[] } | null | undefined,
-  role: string
+  role: string,
+  availableRoles: readonly string[] = ROLE_TEMPLATE_KEYS
 ): boolean {
   return (
     hasAdminPermission(user, 'users:assign-role') &&
-    ROLE_TEMPLATE_KEYS.includes(role) &&
-    (user?.role === 'SUPER_ADMIN' || role === 'USER' || role === 'SONG_ADMIN')
+    availableRoles.includes(role) &&
+    role !== 'SUPER_ADMIN'
   )
 }
 

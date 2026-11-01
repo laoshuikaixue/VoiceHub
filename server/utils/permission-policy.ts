@@ -11,7 +11,8 @@ import {
   PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
-  ROLE_TEMPLATE_KEYS,
+  getRoleTemplateKeys,
+  isValidRoleKey,
   canAccessAdminConsole,
   hasPermission,
   isValidPermissionToken,
@@ -72,12 +73,12 @@ export function validateRoleTemplates(input: unknown): PolicyResult<Record<strin
     return fail(SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID, '权限模板格式非法')
   }
   const source = input as Record<string, unknown>
-  const unknownRoles = Object.keys(source).filter((role) => !ROLE_TEMPLATE_KEYS.includes(role))
+  const unknownRoles = Object.keys(source).filter((role) => !isValidRoleKey(role))
   if (unknownRoles.length) {
     return fail(SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID, '存在不可配置的角色', unknownRoles)
   }
   const result: Record<string, string[]> = {}
-  for (const role of ROLE_TEMPLATE_KEYS) {
+  for (const role of getRoleTemplateKeys(source)) {
     const value = source[role]
     if (value === undefined) {
       result[role] = [...(ROLE_PERMISSION_TEMPLATES_DEFAULT[role] ?? [])]
@@ -150,7 +151,7 @@ export function findRoleTemplateChangesBeyondOperator(
   after: Record<string, unknown>,
   operatorPerms: readonly string[]
 ): string[] {
-  return ROLE_TEMPLATE_KEYS.flatMap((role) =>
+  return getRoleTemplateKeys({ ...before, ...after }).flatMap((role) =>
     findGrantChangesBeyondOperator(
       resolveRoleTemplate(role, before),
       resolveRoleTemplate(role, after),

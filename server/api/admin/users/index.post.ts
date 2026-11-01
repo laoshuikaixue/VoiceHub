@@ -1,5 +1,5 @@
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { canAssignRole } from '~~/app/utils/admin-permissions'
+import { canAssignRole, getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
 import {
   assertAccountPermissionExpansion,
   withPermissionTransaction
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
 
       let validRole = 'USER'
       if (body.role && body.role !== 'USER') {
-        if (!canAssignRole(user, body.role)) {
+        if (!getRoleTemplateKeys(templates).includes(body.role) || !canAssignRole(user, body.role, getRoleTemplateKeys(templates))) {
           throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有分配该角色的权限')
         }
         validRole = body.role
