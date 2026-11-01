@@ -435,6 +435,13 @@
       "when": 1793459324945,
       "tag": "20261031150844_add_announcement_display_and_title",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1793509220080,
+      "tag": "20261101050020_add_announcement_alignment",
+      "breakpoints": true
     }
   ]
 }
