@@ -513,8 +513,9 @@ export function isPermissionDenied(perms: readonly string[], code: string): bool
 export function hasPermission(perms: readonly string[], code: string): boolean {
   if (!Array.isArray(perms) || !code) return false
   if (isPermissionDenied(perms, code)) return false
+  const dependencies = PERMISSION_READ_DEPENDENCIES[code]
   return perms.some((token) => !token.startsWith('!') && matchesToken(token, code)) ||
-    (PERMISSION_READ_DEPENDENCIES[code] ?? []).some((action) => hasPermission(perms, action))
+    (Array.isArray(dependencies) && dependencies.some((action) => hasPermission(perms, action)))
 }
 
 export function hasAnyPermission(perms: readonly string[], codes: readonly string[]): boolean {
@@ -532,7 +533,7 @@ export function canAccessAdminConsole(perms: readonly string[]): boolean {
 
 export function canAccessAdminPage(perms: readonly string[], page: string): boolean {
   const codes = PAGE_PERMISSIONS[page]
-  if (!codes || !canAccessAdminConsole(perms) || isPermissionDenied(perms, `page:${page}`)) return false
+  if (!Array.isArray(codes) || !canAccessAdminConsole(perms) || isPermissionDenied(perms, `page:${page}`)) return false
   return hasAnyPermission(perms, codes) ||
     (ADMIN_PAGE_CAPABILITIES[page]?.some((code) => hasPermission(perms, code)) ?? false)
 }

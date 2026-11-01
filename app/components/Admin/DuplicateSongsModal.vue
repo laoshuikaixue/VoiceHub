@@ -182,7 +182,6 @@
 
 <script setup>
 import { usePermissions } from '~/composables/usePermissions'
-const { can } = usePermissions()
 import { computed } from 'vue'
 import { Copy, X, Music, Heart, Edit2, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
@@ -190,6 +189,8 @@ import { useLocaleText } from '~/composables/useLocaleText'
 import { getPlatformDisplayName } from '~/utils/platforms'
 import { getCoverThumbUrl } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
+
+const { can } = usePermissions()
 
 const props = defineProps({
   show: {

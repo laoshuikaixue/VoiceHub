@@ -200,7 +200,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证请求体
-    const updateData: any = {}
+    let updateData: any = {}
 
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
@@ -1448,7 +1448,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (isAdminSettingsScope(scope)) {
-      for (const field of invalidScopeFields(scope, updateData)) delete updateData[field]
+      updateData = pickScopeSettings(scope, updateData)
     }
 
     if (!settings) {

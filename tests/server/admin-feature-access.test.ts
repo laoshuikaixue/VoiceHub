@@ -59,6 +59,10 @@ test('后台闸门、页面拒绝和数据读取拒绝均不能被自动关联�
   assert.equal(permissions.canUseAdminPage(deniedRead, 'smtp-config'), false)
   assert.equal(permissions.canUseAdminPage(role('page:smtp-config'), 'smtp-config'), false)
   assert.equal(permissions.canUseAdminPage(role('smtp:write'), 'unknown'), false)
+  for (const unknown of ['__proto__', 'constructor', 'toString']) {
+    assert.equal(permissions.hasPermission(role('smtp:write'), unknown), false)
+    assert.equal(permissions.canUseAdminPage(role('smtp:write'), unknown), false)
+  }
 })
 
 test('授权边界包含操作间接提供的读取权限，拒绝读取者不能恢复他人的读取', () => {
@@ -210,6 +214,22 @@ test('仅分配角色的接口路径不允许修改资料、状态或密码，�
   assert.equal(response.success, true)
   assert.deepEqual(saved, [{ role: 'TEST' }])
   assert.deepEqual(checks, ['protected', 'expansion'])
+})
+
+test('分配角色的替代准入仅匹配用户 ID，不能放行批量状态或其他用户管理接口', () => {
+  const perms = role('users:assign-role')
+  for (const [path, method, allowed] of [
+    ['/api/admin/users/7', 'PUT', true],
+    ['/api/admin/users/batch-status', 'PUT', false],
+    ['/api/admin/users/7/status', 'PUT', false],
+    ['/api/admin/users/batch-update', 'POST', false],
+    ['/api/admin/users/7/reset-password', 'POST', false],
+    ['/api/admin/users/7', 'DELETE', false],
+    ['/api/admin/users/7abc', 'PUT', false]
+  ] as const) {
+    const guard = resolvePermissionRouteGuard(path, method)!
+    assert.equal(!guard.deny && permissions.hasAllPermissions(perms, guard.all) && permissions.hasAnyPermission(perms, guard.any), allowed, `${method} ${path}`)
+  }
 })
 
 test('SMTP 测试接口仅使用隔离实例，关闭测试传输器且不改写全局服务', async () => {

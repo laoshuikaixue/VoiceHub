@@ -2,7 +2,7 @@
  * 后台接口权限守卫表（唯一权威实现）。
  *
  * `/api/admin/**` 的准入只由本表决定：命中规则要求「站点级 priv:admin-console + 规则内任一域码」。
- * `p` 是相对 /api/admin/ 的路径模式，`*` 匹配单段，`**` 匹配一段或多段；字面段更多的规则优先。
+ * `p` 是相对 /api/admin/ 的路径模式，`*` 匹配单段，`**` 匹配一段或多段，`:id` 仅匹配正整数；字面段更多的规则优先。
  * 未登记的后台接口默认拒绝并记录日志。
  * 表与 server/api/admin 下的端点逐一对应，由 tests/server/admin-permission-routes.test.ts 校验等价性。
  */
@@ -77,7 +77,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'users/*', m: GET_METHODS, any: ['users:read'] },
   { p: 'users/**', m: GET_METHODS, any: ['users:read'] },
   { p: 'users', m: WRITE_METHODS, any: ['users:write'] },
-  { p: 'users/*', m: ['PUT'], any: ['users:write', 'users:assign-role'] },
+  { p: 'users/:id', m: ['PUT'], any: ['users:write', 'users:assign-role'] },
   { p: 'users/*', m: WRITE_METHODS, any: ['users:write'] },
   { p: 'users/**', m: WRITE_METHODS, any: ['users:write'] },
   { p: 'grade-class', m: GET_METHODS, any: ['grade-class:read'] },
@@ -196,6 +196,7 @@ function matchesPattern(pattern: readonly string[], segments: readonly string[])
     return false
   }
   if (!segments.length) return false
+  if (head === ':id') return /^[1-9]\d*$/.test(segments[0]!) && matchesPattern(rest, segments.slice(1))
   if (head !== '*' && head !== segments[0]) return false
   return matchesPattern(rest, segments.slice(1))
 }

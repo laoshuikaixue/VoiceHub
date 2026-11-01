@@ -777,7 +777,7 @@ VoiceHub/
 │   │   │   ├── OAuthBindingsModal.vue # OAuth 绑定详情弹窗
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
-│   │   │   ├── PermissionMatrix.vue  # 权限矩阵页（角色模板编辑 + 安全阀提示）
+│   │   │   ├── PermissionMatrix.vue  # 权限矩阵页
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
 │   │   │   ├── RequestTimeManager.vue # 投稿开放时段 & 重复投稿限制管理
 │   │   │   ├── ScheduleForm.vue       # 排期表单
@@ -1009,14 +1009,14 @@ VoiceHub/
 │       │   ├── lyricStripper.ts # 歌词清理
 │       │   ├── parseLrc.ts    # LRC格式解析
 │       │   └── qrc-parser.ts  # QRC格式解析
-│       ├── admin-permissions.ts # 后台权限码目录与有效权限解析（前后端共用）
+│       ├── admin-permissions.ts # 后台权限码目录与有效权限解析
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── cover-theme.ts    # 封面取色与歌词主题色（AMLL 调色板）
 │       ├── debounce.ts       # 防抖工具
 │       ├── esaCaptcha.ts     # 阿里云 ESA AI验证码区域与服务端节点共享常量
 │       ├── grade-class-input.ts # 年级班级批量输入解析
 │       ├── gradeClassWeights.js # 年级排序权重
-│       ├── invalidPlaybackUrls.ts # 播放端确认无效的地址登记（换源时跳过坏链）
+│       ├── invalidPlaybackUrls.ts # 播放端确认无效的地址登记
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
@@ -1455,7 +1455,7 @@ VoiceHub/
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
-│   │   ├── admin-permission-routes.ts # 后台接口权限守卫表（/api/admin 准入唯一来源）
+│   │   ├── admin-permission-routes.ts # 后台接口权限守卫表
 │   │   ├── admin-settings-scope.ts # 模块配置权限与字段白名单
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
@@ -1490,7 +1490,7 @@ VoiceHub/
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
-│   │   ├── permission-admin.ts # 权限矩阵数据层（持有者统计、模板读写、策略结果转 API 错误）
+│   │   ├── permission-admin.ts # 权限矩阵数据层
 │   │   ├── permission-policy.ts # 权限模板/显式授权校验与安全阀纯策略
 │   │   ├── jwt-enhanced.ts # JWT工具
 │   │   ├── log-manager.ts  # 日志管理工具
