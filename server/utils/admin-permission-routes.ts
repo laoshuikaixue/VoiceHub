@@ -65,6 +65,8 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
 
   // 人员
   { p: 'users/export', m: GET_METHODS, any: ['users:export'] },
+  { p: 'users/*/permissions', m: GET_METHODS, any: ['priv:grant'] },
+  { p: 'users/*/permissions', m: WRITE_METHODS, any: ['priv:grant'] },
   { p: 'users/*/songs', m: GET_METHODS, any: ['users:read-songs'] },
   { p: 'users/*/approval', m: WRITE_METHODS, any: ['users:approve'] },
   { p: 'users/*/reset-password', m: WRITE_METHODS, any: ['users:reset-password'] },
@@ -115,6 +117,10 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'system-board', m: GET_METHODS, any: ['system-board:read'] },
   { p: 'system-board/*', m: GET_METHODS, any: ['system-board:read'] },
   { p: 'system-board/*', m: WRITE_METHODS, any: ['system-board:write'] },
+
+  // 权限管理：角色权限模板（权限矩阵页）
+  { p: 'permissions/matrix', m: GET_METHODS, any: ['priv:role-template'] },
+  { p: 'permissions/matrix', m: WRITE_METHODS, any: ['priv:role-template'] },
 
   // 基础设施
   { p: 'api-keys', m: GET_METHODS, any: ['api-keys:read'] },

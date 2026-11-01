@@ -5517,5 +5517,12 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_DELETE_FAILED: '删除通知失败',
   PLAY_TIME_DEFAULT_REQUIRES_ENABLED: '已停用的播出时段不能设为默认时段',
   PLAY_TIME_DEFAULT_CONFLICT: '默认播出时段正在被其他操作修改，请重试',
+  PERMISSION_TEMPLATE_INVALID: '角色权限模板格式非法',
+  PERMISSION_GRANT_INVALID: '显式授权格式非法',
+  PERMISSION_GRANT_EXCEEDS_SELF: '只能授予自己持有的权限码：{0}',
+  PERMISSION_GRANT_TARGET_FORBIDDEN: '超级管理员的显式授权仅可由超级管理员修改',
+  PERMISSION_LAST_HOLDER_PROTECTED: '不能移除站点级权限 {0} 的最后一个持有者',
+  PERMISSION_SELF_LOCKOUT: '不能撤销自己的站点级权限 {0}',
+  PERMISSION_SELF_EDIT_FORBIDDEN: '不能修改自己的显式授权',
   SYSTEM_BOARD_FAILED: '系统看板数据异常，请稍后重试'
 } as const

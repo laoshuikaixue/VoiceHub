@@ -11,6 +11,17 @@ export const PERMISSION_ALL = '*'
 
 // 站点级：进入后台控制台。所有 /api/admin 接口都先要求它，再要求域动作码
 export const PRIV_ADMIN_CONSOLE = 'priv:admin-console'
+// 站点级：编辑角色权限模板（权限矩阵页）
+export const PRIV_ROLE_TEMPLATE = 'priv:role-template'
+// 站点级：按用户显式授权/拒权
+export const PRIV_GRANT = 'priv:grant'
+
+// 安全阀保护的站点级能力：移出其最后一个持有者会把站点锁死在无人可再授权的状态
+export const PROTECTED_PRIV_CODES: readonly string[] = [
+  PRIV_ADMIN_CONSOLE,
+  PRIV_ROLE_TEMPLATE,
+  PRIV_GRANT
+]
 
 // 角色分组：可进入后台的角色 / 管理员及以上的角色
 export const ADMIN_CONSOLE_ROLES: readonly string[] = ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN']
@@ -19,6 +30,8 @@ export const MANAGER_ROLES: readonly string[] = ['ADMIN', 'SUPER_ADMIN']
 // 权限码目录：与 server/utils/admin-permission-routes.ts 的接口守卫一一对应
 export const ADMIN_PERMISSION_CODES: readonly string[] = [
   PRIV_ADMIN_CONSOLE,
+  PRIV_ROLE_TEMPLATE,
+  PRIV_GRANT,
   // 概览与内容
   'activities:read',
   'songs:read',
@@ -101,6 +114,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'page:site-config',
   'page:database',
   'page:system-board',
+  'page:permissions',
   'page:password'
 ]
 
@@ -237,6 +251,7 @@ export const ADMIN_PAGE_IDS: readonly string[] = [
   'site-config',
   'database',
   'system-board',
+  'permissions',
   'password'
 ]
 
@@ -249,6 +264,43 @@ function isPermissionToken(token: unknown): token is string {
   const body = token.startsWith('!') ? token.slice(1) : token
   if (!body) return false
   return body === PERMISSION_ALL || DOMAIN_WILDCARD_SET.has(body) || PERMISSION_CODE_SET.has(body)
+}
+
+// 供授权接口校验提交值：目录外的码要报错而不是静默丢弃
+export function isValidPermissionToken(token: unknown): boolean {
+  return isPermissionToken(token)
+}
+
+// 可配置权限模板的角色，顺序与展示顺序一致
+export const ROLE_TEMPLATE_KEYS: readonly string[] = Object.keys(ROLE_PERMISSION_TEMPLATES_DEFAULT)
+
+// 把已归一化的码拆成显式授予与显式拒绝两组，供授权界面分栏展示
+export function splitGrantTokens(tokens: unknown): { grants: string[]; denies: string[] } {
+  const normalized = normalizePermissionTokens(tokens)
+  return {
+    grants: normalized.filter((token) => !token.startsWith('!')),
+    denies: normalized.filter((token) => token.startsWith('!')).map((token) => token.slice(1))
+  }
+}
+
+// 权限码按域分组（`priv:` 站点级能力在前），供权限矩阵展示
+export function groupPermissionCodes(
+  codes: readonly string[] = ADMIN_PERMISSION_CODES
+): { domain: string; codes: string[] }[] {
+  const groups = new Map<string, string[]>()
+  for (const code of codes) {
+    const domain = code.split(':')[0]!
+    const list = groups.get(domain)
+    if (list) list.push(code)
+    else groups.set(domain, [code])
+  }
+  return [...groups.entries()]
+    .map(([domain, list]) => ({ domain, codes: list }))
+    .sort((a, b) => {
+      if (a.domain === 'priv') return -1
+      if (b.domain === 'priv') return 1
+      return codes.indexOf(`${a.domain}:read`) - codes.indexOf(`${b.domain}:read`)
+    })
 }
 
 // 归一化：去重、剔除空值与目录外的码，保持原始顺序

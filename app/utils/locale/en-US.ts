@@ -5722,5 +5722,12 @@ export const serverErrors = {
   NOTIFICATION_HISTORY_DELETE_FAILED: 'Failed to delete notification',
   PLAY_TIME_DEFAULT_REQUIRES_ENABLED: 'A disabled play time slot cannot be set as the default',
   PLAY_TIME_DEFAULT_CONFLICT: 'The default play time slot is being updated elsewhere, please retry',
+  PERMISSION_TEMPLATE_INVALID: 'Invalid role permission template',
+  PERMISSION_GRANT_INVALID: 'Invalid explicit permission grants',
+  PERMISSION_GRANT_EXCEEDS_SELF: 'You can only grant codes you hold: {0}',
+  PERMISSION_GRANT_TARGET_FORBIDDEN: 'Only a super admin can change explicit grants of a super admin',
+  PERMISSION_LAST_HOLDER_PROTECTED: 'Cannot remove {0} from its last holder',
+  PERMISSION_SELF_LOCKOUT: 'Cannot revoke your own site-level capability {0}',
+  PERMISSION_SELF_EDIT_FORBIDDEN: 'Cannot edit your own explicit grants',
   SYSTEM_BOARD_FAILED: 'System board data is unavailable. Please retry later.'
 } as const
