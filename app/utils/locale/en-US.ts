@@ -2241,6 +2241,8 @@ export const admin = {
     changed: 'Differs from built-in default',
     save: 'Save',
     addRole: 'Add role',
+    roleName: 'Role name',
+    roleNameHint: 'Use 2–32 letters, digits, or underscores, starting with a letter. Configure permissions and save after confirming.',
     roleKeyPlaceholder: 'Role key, e.g. CONTENT_EDITOR',
     invalidRoleKey: 'Use 2-32 uppercase letters, digits, or underscores',
     roleExists: 'Role key already exists',

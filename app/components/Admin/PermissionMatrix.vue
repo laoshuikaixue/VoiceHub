@@ -6,23 +6,20 @@
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
-      <div class="flex items-center gap-2">
-        <input
-          v-model="newRoleKey"
-          class="w-36 px-3 py-2 text-xs rounded-xl border border-border-secondary bg-bg-primary text-text-primary"
-          :placeholder="locale.roleKeyPlaceholder"
-          :disabled="!loaded || saving || !can('priv:role-template')"
-          @keyup.enter="addRole"
-        >
+      <div class="flex flex-wrap items-center gap-2">
         <button
-          class="px-3 py-2 text-xs font-bold rounded-xl border border-border-secondary text-text-secondary hover:text-text-primary disabled:opacity-50"
+          ref="addRoleButton"
+          type="button"
+          class="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-bg-secondary border border-border-secondary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!loaded || saving || !can('priv:role-template')"
-          @click="addRole"
+          @click="openAddRole"
         >
+          <Plus :size="14" />
           {{ locale.addRole }}
         </button>
         <button
-          class="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border border-border-secondary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-all disabled:opacity-50"
+          type="button"
+          class="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-bg-secondary border border-border-secondary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!loaded || saving"
           @click="resetToDefault"
         >
@@ -135,21 +132,98 @@
 
       <p class="text-[11px] text-text-tertiary">{{ locale.superAdminNote }}</p>
     </template>
+
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="showAddRole"
+          class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
+          @click.self="closeAddRole"
+          @keydown.esc.stop.prevent="closeAddRole"
+          @keydown.tab="trapRoleDialogFocus"
+        >
+          <form
+            ref="roleDialog"
+            class="w-full max-w-md rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            :aria-labelledby="roleDialogTitleId"
+            @submit.prevent="addRole"
+          >
+            <div class="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-secondary-50">
+              <h3 :id="roleDialogTitleId" class="text-lg font-black text-text-primary">
+                {{ locale.addRole }}
+              </h3>
+              <button
+                type="button"
+                class="flex items-center justify-center rounded-xl p-2 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-all"
+                :aria-label="common.close"
+                @click="closeAddRole"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+            <div class="px-6 py-5 space-y-2">
+              <InputField
+                ref="roleInput"
+                v-model="newRoleKey"
+                :label="locale.roleName"
+                :placeholder="locale.roleKeyPlaceholder"
+                :error="roleErrorKey ? locale[roleErrorKey] : ''"
+                :aria-describedby="roleHintId"
+                maxlength="32"
+                autocomplete="off"
+                autocapitalize="characters"
+                :spellcheck="false"
+                @update:model-value="roleErrorKey = ''"
+              />
+              <p :id="roleHintId" class="text-[11px] text-text-tertiary leading-relaxed">
+                {{ locale.roleNameHint }}
+              </p>
+            </div>
+            <div class="flex justify-end gap-2 px-6 py-4 border-t border-border-secondary-50">
+              <button
+                type="button"
+                class="px-4 py-2.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold transition-all"
+                @click="closeAddRole"
+              >
+                {{ common.cancel }}
+              </button>
+              <button
+                type="submit"
+                class="px-5 py-2.5 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!newRoleKey.trim() || saving || !can('priv:role-template')"
+              >
+                {{ common.confirm }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { RotateCcw, Save } from '@lucide/vue'
+import { computed, nextTick, onMounted, ref, useId } from 'vue'
+import { Plus, RotateCcw, Save, X } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import InputField from '~/components/UI/Common/InputField.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { hasPermission, toggleExplicitPermission } from '~/utils/admin-permissions'
+import { hasPermission, isValidRoleKey, toggleExplicitPermission } from '~/utils/admin-permissions'
 import { usePermissions } from '~/composables/usePermissions'
 import { useAuth } from '~/composables/useAuth'
 
-const { admin } = useLocale()
+const { admin, common } = useLocale()
 const locale = computed(() => admin.value?.permissionMatrix || {})
 const { msg: getLocaleMessage } = useLocaleText(locale)
 const { showToast } = useToast()
@@ -175,6 +249,13 @@ const draft = ref({})
 const loaded = ref(false)
 const saving = ref(false)
 const newRoleKey = ref('')
+const showAddRole = ref(false)
+const roleErrorKey = ref('')
+const roleInput = ref(null)
+const roleDialog = ref(null)
+const addRoleButton = ref(null)
+const roleDialogTitleId = useId()
+const roleHintId = useId()
 
 const roleLabels = computed(() => admin.value?.sidebar?.roles || {})
 
@@ -196,28 +277,59 @@ const differsFromDefault = (code) =>
 
 const dirtyRoles = computed(() =>
   matrix.value.roles.filter(
-    (role) => (draft.value[role] || []).join(',') !== (saved.value[role] || []).join(',')
+    (role) => !Object.prototype.hasOwnProperty.call(saved.value, role) ||
+      (draft.value[role] || []).join(',') !== (saved.value[role] || []).join(',')
   )
 )
 const dirty = computed(() => dirtyRoles.value.length > 0)
 
+const openAddRole = async () => {
+  if (!loaded.value || saving.value || !can('priv:role-template')) return
+  newRoleKey.value = ''
+  roleErrorKey.value = ''
+  showAddRole.value = true
+  await nextTick()
+  roleInput.value?.focus()
+}
+
+const closeAddRole = async () => {
+  showAddRole.value = false
+  await nextTick()
+  addRoleButton.value?.focus()
+}
+
+const trapRoleDialogFocus = (event) => {
+  const controls = roleDialog.value?.querySelectorAll('button:not(:disabled), input:not(:disabled)')
+  if (!controls?.length) return
+  const first = controls[0]
+  const last = controls[controls.length - 1]
+  if (event.shiftKey && event.target === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && event.target === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
 const addRole = () => {
+  if (!showAddRole.value || saving.value || !can('priv:role-template')) return
   const role = newRoleKey.value.trim().toUpperCase()
-  if (!/^[A-Z][A-Z0-9_]{1,31}$/.test(role)) {
-    showToast(locale.value.invalidRoleKey, 'error')
+  if (!isValidRoleKey(role)) {
+    roleErrorKey.value = 'invalidRoleKey'
     return
   }
   if (roles.value.includes(role)) {
-    showToast(locale.value.roleExists, 'error')
+    roleErrorKey.value = 'roleExists'
     return
   }
   roles.value = [...roles.value, role]
   matrix.value.roles = roles.value
   matrix.value.templates[role] = []
   matrix.value.defaults[role] = []
-  saved.value[role] = []
   draft.value[role] = []
   newRoleKey.value = ''
+  closeAddRole()
 }
 
 const metrics = computed(() => [

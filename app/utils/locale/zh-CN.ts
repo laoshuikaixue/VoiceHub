@@ -2186,6 +2186,8 @@ export const admin = {
     changed: '与内置默认模板不同',
     save: '保存模板',
     addRole: '新增角色',
+    roleName: '角色名称',
+    roleNameHint: '使用 2–32 位字母、数字或下划线，以字母开头；确认后配置权限并保存。',
     roleKeyPlaceholder: '角色键，例如 CONTENT_EDITOR',
     invalidRoleKey: '角色键须为大写字母、数字或下划线，长度 2-32 位',
     roleExists: '角色键已存在',
