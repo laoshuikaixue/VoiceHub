@@ -38,6 +38,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'songs:write',
   'songs:review',
   'songs:delete',
+  'songs:bypass-limits',
   'schedule:read',
   'schedule:write',
   'stats:read',
@@ -52,6 +53,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'card-codes:write',
   'card-codes:assign',
   'card-codes:delete',
+  'card-codes:bypass-disabled',
   'replay-requests:read',
   'replay-requests:write',
   // 人员
@@ -60,6 +62,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'users:delete',
   'users:approve',
   'users:reset-password',
+  'users:assign-role',
   'users:export',
   'users:read-songs',
   'grade-class:read',
@@ -91,6 +94,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'database:read',
   'database:maintenance',
   'database:reset',
+  'system:read',
   'music-source-plugins:read',
   'music-source-plugins:write',
   // 后台页面可见性：接口准入与入口显示是两件事，
@@ -135,6 +139,8 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'songs:write',
     'songs:review',
     'songs:delete',
+    'songs:bypass-limits',
+    'system:read',
     'schedule:read',
     'schedule:write',
     'stats:read',
@@ -171,6 +177,8 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'songs:write',
     'songs:review',
     'songs:delete',
+    'songs:bypass-limits',
+    'system:read',
     'schedule:read',
     'schedule:write',
     'stats:read',
@@ -189,10 +197,12 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'replay-requests:write',
     'users:read-songs',
     'users:read',
+    'card-codes:bypass-disabled',
     'users:write',
     'users:delete',
     'users:approve',
     'users:reset-password',
+    'users:assign-role',
     'users:export',
     'grade-class:read',
     'grade-class:write',
@@ -351,9 +361,81 @@ function matchesToken(token: string, code: string): boolean {
   return token === code
 }
 
+// 将一个授权令牌展开为权限目录中的具体权限码，供授权边界校验使用。
+export function expandPermissionToken(
+  token: string,
+  codes: readonly string[] = ADMIN_PERMISSION_CODES
+): string[] {
+  const body = token.startsWith('!') ? token.slice(1) : token
+  if (body === PERMISSION_ALL) return [...codes]
+  if (body.endsWith(':*')) return codes.filter((code) => code.startsWith(body.slice(0, -1)))
+  return codes.includes(body) ? [body] : []
+}
+
+// 只有操作者实际持有令牌覆盖的全部具体权限，才允许授出该令牌。
+export function canGrantPermissionToken(
+  token: string,
+  operatorPerms: readonly string[],
+  codes: readonly string[] = ADMIN_PERMISSION_CODES
+): boolean {
+  const body = token.startsWith('!') ? token.slice(1) : token
+  if ((body === PERMISSION_ALL || body.endsWith(':*')) && !hasPermission(operatorPerms, body))
+    return false
+  const expanded = expandPermissionToken(token, codes)
+  return expanded.length > 0 && expanded.every((code) => hasPermission(operatorPerms, code))
+}
+
+export function hasAdminPermission(
+  user: { perms?: readonly string[] } | null | undefined,
+  code: string
+): boolean {
+  const perms = user?.perms ?? []
+  return hasPermission(perms, PRIV_ADMIN_CONSOLE) && hasPermission(perms, code)
+}
+
+export function canAssignRole(
+  user: { role?: string; perms?: readonly string[] } | null | undefined,
+  role: string
+): boolean {
+  return (
+    hasAdminPermission(user, 'users:assign-role') &&
+    ROLE_TEMPLATE_KEYS.includes(role) &&
+    (user?.role === 'SUPER_ADMIN' || role === 'USER' || role === 'SONG_ADMIN')
+  )
+}
+
+// 将用户级通配拒绝拆成具体拒绝，允许逐项恢复用户权限。
+export function toggleExplicitPermission(
+  template: readonly string[],
+  explicit: readonly string[],
+  code: string
+): string[] {
+  const granted = hasPermission([...template, ...explicit], code)
+  let next = explicit.filter((token) => token !== code && token !== `!${code}`)
+  if (!granted) {
+    next = next.flatMap((token) =>
+      token.startsWith('!') && expandPermissionToken(token).includes(code)
+        ? expandPermissionToken(token)
+            .filter((item) => item !== code)
+            .map((item) => `!${item}`)
+        : [token]
+    )
+  }
+  const inherited = hasPermission([...template, ...next], code)
+  if (granted) return inherited ? [...next, `!${code}`] : next
+  return inherited ? next : [...next, code]
+}
+
+export function isPermissionDenied(perms: readonly string[], code: string): boolean {
+  return (
+    Array.isArray(perms) &&
+    perms.some((token) => token.startsWith('!') && matchesToken(token.slice(1), code))
+  )
+}
+
 export function hasPermission(perms: readonly string[], code: string): boolean {
   if (!Array.isArray(perms) || !code) return false
-  if (perms.some((token) => token.startsWith('!') && matchesToken(token.slice(1), code))) return false
+  if (isPermissionDenied(perms, code)) return false
   return perms.some((token) => !token.startsWith('!') && matchesToken(token, code))
 }
 

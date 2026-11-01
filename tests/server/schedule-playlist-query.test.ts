@@ -128,7 +128,7 @@ function eventFor(query: Record<string, string | string[]> = {}, role?: string) 
   request.url = `/api/test?${params}`
   request.method = 'GET'
   const event = createEvent(request, new ServerResponse(request))
-  if (role) event.context.user = { id: 7, role }
+  if (role) event.context.user = { id: 7, role, perms: resolveEffectivePermissions({ role }) }
   return event
 }
 

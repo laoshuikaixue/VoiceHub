@@ -3,7 +3,7 @@
  *
  * `/api/admin/**` 的准入只由本表决定：命中规则要求「站点级 priv:admin-console + 规则内任一域码」。
  * `p` 是相对 /api/admin/ 的路径模式，`*` 匹配单段，`**` 匹配一段或多段；字面段更多的规则优先。
- * 未登记路由的缺省策略：读操作退化为仅 priv:admin-console，写操作一律拒绝并打日志。
+ * 未登记的后台接口默认拒绝并记录日志。
  * 表与 server/api/admin 下的端点逐一对应，由 tests/server/admin-permission-routes.test.ts 校验等价性。
  */
 import { PRIV_ADMIN_CONSOLE } from '../../app/utils/admin-permissions.ts'
@@ -112,6 +112,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'email-templates', m: GET_METHODS, any: ['email-templates:read'] },
   { p: 'email-templates/*', m: GET_METHODS, any: ['email-templates:read'] },
   { p: 'email-templates/*', m: ['DELETE'], any: ['email-templates:delete'] },
+  { p: 'email-templates', m: ['DELETE'], any: ['email-templates:delete'] },
   { p: 'email-templates', m: WRITE_METHODS, any: ['email-templates:write'] },
   { p: 'email-templates/*', m: WRITE_METHODS, any: ['email-templates:write'] },
   { p: 'system-board', m: GET_METHODS, any: ['system-board:read'] },
@@ -129,6 +130,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'api-keys/*', m: WRITE_METHODS, any: ['api-keys:write'] },
   { p: 'backup/restore', m: WRITE_METHODS, any: ['backup:restore'] },
   { p: 'backup/restore-chunk', m: WRITE_METHODS, any: ['backup:restore'] },
+  { p: 'backup/clear', m: WRITE_METHODS, any: ['database:reset'] },
   { p: 'backup', m: GET_METHODS, any: ['backup:read'] },
   { p: 'backup/*', m: GET_METHODS, any: ['backup:read'] },
   { p: 'backup/**', m: GET_METHODS, any: ['backup:read'] },
@@ -159,6 +161,15 @@ export interface AdminRouteGuard {
   /** 是否命中缺省策略 */
   fallback: boolean
 }
+
+// `/api/admin/**` 之外仍存在少量历史管理员接口，也必须进入同一套权限判定。
+export const LEGACY_PERMISSION_ROUTE_RULES: readonly AdminRouteRule[] = [
+  { p: '/api/songs/add', m: ['POST'], any: ['songs:write'] },
+  { p: '/api/songs/*/update', m: ['PUT'], any: ['songs:write'] },
+  { p: '/api/songs/*/voters', m: GET_METHODS, any: ['songs:read'] },
+  { p: '/api/system/reconnect', m: ['POST'], any: ['database:read'] },
+  { p: '/api/system/status', m: GET_METHODS, any: ['system:read'] }
+]
 
 const ADMIN_API_PREFIX = '/api/admin'
 
@@ -208,14 +219,29 @@ export function isAdminApiPath(pathname: string): boolean {
 export function resolveAdminRouteGuard(pathname: string, method: string): AdminRouteGuard | null {
   if (!isAdminApiPath(pathname)) return null
 
-  const isRead = method.toUpperCase() === 'GET' || method.toUpperCase() === 'HEAD'
   const rule = findRule(pathSegments(pathname), method)
   if (rule) {
     return { all: [PRIV_ADMIN_CONSOLE], any: rule.any, deny: false, fallback: false }
   }
 
-  // 未登记：读操作退回站点级闸门，写操作默认拒绝
-  return isRead
-    ? { all: [PRIV_ADMIN_CONSOLE], any: [PRIV_ADMIN_CONSOLE], deny: false, fallback: true }
-    : { all: [PRIV_ADMIN_CONSOLE], any: [], deny: true, fallback: true }
+  return { all: [PRIV_ADMIN_CONSOLE], any: [], deny: true, fallback: true }
+}
+
+function findLegacyRule(pathname: string, method: string): AdminRouteRule | null {
+  const segments = pathname.split('/').filter(Boolean)
+  const matched = LEGACY_PERMISSION_ROUTE_RULES.filter((rule) => {
+    if (!matchesPattern(rule.p.split('/').filter(Boolean), segments)) return false
+    return !rule.m || rule.m.includes(method.toUpperCase() as HttpMethod)
+  })
+  if (!matched.length) return null
+  matched.sort((a, b) => specificity(b) - specificity(a))
+  return matched[0]
+}
+
+export function resolvePermissionRouteGuard(pathname: string, method: string): AdminRouteGuard | null {
+  const adminGuard = resolveAdminRouteGuard(pathname, method)
+  if (adminGuard) return adminGuard
+  const rule = findLegacyRule(pathname, method)
+  if (!rule) return null
+  return { all: [PRIV_ADMIN_CONSOLE], any: rule.any, deny: false, fallback: false }
 }

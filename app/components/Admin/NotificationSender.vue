@@ -542,12 +542,15 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '~/components/UI/Icon.vue'
 import NotificationHistory from '~/components/Admin/NotificationHistory.vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'
 
-const { user: authUser, isAdmin, getAuthConfig } = useAuth()
+const { user: authUser, getAuthConfig } = useAuth()
+const { can } = usePermissions()
+const canSend = computed(() => can('notifications:write'))
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
@@ -797,7 +800,7 @@ const scopeDescription = computed(() => {
 
 // 发送通知
 const sendNotification = async () => {
-  if (!isAdmin.value) {
+  if (!canSend.value) {
     error.value = getNestedMessage('errors', 'adminOnly')
     return
   }

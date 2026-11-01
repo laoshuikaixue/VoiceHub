@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { passwordAuditLogs, users } from '~/drizzle/schema'
 import { and, eq, sql } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 
 interface PasswordAuditContext {
@@ -16,6 +16,7 @@ interface UpdateUserPasswordOptions {
   forceReset?: boolean
   expectedTokenVersion?: number
   auditContext?: PasswordAuditContext
+  executor?: Pick<typeof db, 'update' | 'insert'>
 }
 
 /**
@@ -34,8 +35,8 @@ export async function updateUserPassword(
   const hashedNewPassword = await bcrypt.hash(newPassword, 12)
 
   // 2. 更新数据库
-  const passwordChangedAt = getBeijingTime()
-  const updated = await db.transaction(async (tx) => {
+  const passwordChangedAt = getServerDate()
+  const writePassword = async (tx: Pick<typeof db, 'update'>) => {
     const result = await tx
       .update(users)
       .set({
@@ -63,12 +64,15 @@ export async function updateUserPassword(
     }
 
     return updatedUser
-  })
+  }
+  const updated = options.executor
+    ? await writePassword(options.executor)
+    : await db.transaction(writePassword)
 
   // 3. 审计日志在事务外写入，失败不影响密码修改主流程
   if (options.auditContext) {
     try {
-      await db.insert(passwordAuditLogs).values({
+      await (options.executor ?? db).insert(passwordAuditLogs).values({
         userId,
         actorId: options.auditContext.actorId ?? null,
         action: options.auditContext.action,

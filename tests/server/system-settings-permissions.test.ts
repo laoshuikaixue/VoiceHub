@@ -10,6 +10,7 @@ import {
 } from '../../app/utils/settingsPermissions.ts'
 import {
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
+  hasAdminPermission,
   accessiblePages,
   hasAllPermissions,
   hasAnyPermission,
@@ -126,8 +127,8 @@ test('剔除与命中函数按清单工作', () => {
   assert.deepEqual(findSuperAdminOnlySettingFields(null), [])
 })
 
-test('读写接口字段分区按角色把关，子接口准入由守卫表收归超级管理员', () => {
-  assert.match(INDEX_POST, /user\.role !== 'SUPER_ADMIN'[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
+test('读写接口字段分区按权限码把关，默认角色与子接口守卫保持一致', () => {
+  assert.match(INDEX_POST, /!hasAdminPermission\(user, 'system-settings:secrets'\)[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
   assert.match(INDEX_POST, /statusCode: 403/)
   assert.match(INDEX_GET, /stripSuperAdminOnlySettingFields\(masked\)/)
   assert.doesNotMatch(ENV_OAUTH_GET, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, 'env-oauth.get 不应再放行普通管理员')
@@ -157,11 +158,11 @@ test('保存设置的响应与读取接口一致，普通管理员无法通过�
   const settings = { dailySubmissionLimit: 7, smtpHost: 'smtp.private', customOAuthClientId: 'private-client',
     astrbotGroupTargets: '["private-group"]', legalConsentDocuments: 'private-documents' }
   for (const source of [INDEX_GET, INDEX_POST]) {
-    const expression = source.match(/return user\.role === 'SUPER_ADMIN'[^\r\n]*/)?.[0]
+    const expression = source.match(/return hasAdminPermission[^\r\n]*/)?.[0]
     assert.ok(expression)
-    const respond = new Function('user', 'masked', 'stripSuperAdminOnlySettingFields', expression)
-    assert.deepEqual(respond({ role: 'ADMIN' }, settings, stripSuperAdminOnlySettingFields), { dailySubmissionLimit: 7 })
-    assert.deepEqual(respond({ role: 'SUPER_ADMIN' }, settings, stripSuperAdminOnlySettingFields), settings)
+    const respond = new Function('user', 'masked', 'stripSuperAdminOnlySettingFields', 'hasAdminPermission', expression)
+    assert.deepEqual(respond({ perms: resolveEffectivePermissions({ role: 'ADMIN' }) }, settings, stripSuperAdminOnlySettingFields, hasAdminPermission), { dailySubmissionLimit: 7 })
+    assert.deepEqual(respond({ perms: ['*'] }, settings, stripSuperAdminOnlySettingFields, hasAdminPermission), settings)
   }
 })
 

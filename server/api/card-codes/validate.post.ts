@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -76,7 +77,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, 'CARD_CODE_REQUIRED', 'Request card is required')
   }
 
-  const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+  const isAdmin = hasAdminPermission(user, 'card-codes:bypass-disabled')
   const settings = await getSystemSettingsCached()
   // 点歌券验证仅在启用点歌券时开放
   const enabled = settings?.enableCardCodeRequests === true

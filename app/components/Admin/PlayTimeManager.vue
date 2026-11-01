@@ -436,6 +436,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
@@ -456,7 +457,10 @@ import {
   CalendarDays
 } from '@lucide/vue'
 
-const { getAuthConfig, isAdmin } = useAuth()
+const { getAuthConfig } = useAuth()
+const { can } = usePermissions()
+const canRead = computed(() => can('play-times:read'))
+const canWrite = computed(() => can('play-times:write'))
 const { showToast: showNotification } = useToast()
 const { localize: localizeServerError } = useServerErrors()
 const { admin } = useLocale()
@@ -549,7 +553,7 @@ onMounted(async () => {
 
 // 获取播出时段列表
 const fetchPlayTimes = async () => {
-  if (!isAdmin.value) {
+  if (!canRead.value) {
     error.value = locale.value.errors.adminOnly
     return
   }
@@ -606,7 +610,7 @@ const fetchPlayTimes = async () => {
 
 // 获取系统设置
 const fetchSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!can('system-settings:read')) return
 
   try {
     const authConfig = getAuthConfig()
@@ -622,6 +626,7 @@ const fetchSystemSettings = async () => {
 
 // 切换全局启用状态。
 const toggleGlobalEnabled = async () => {
+  if (!can('system-settings:write')) return
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
   const nextEnabled = !prev.enabled
   enablePlayTimeSelection.value = nextEnabled
@@ -631,6 +636,7 @@ const toggleGlobalEnabled = async () => {
 
 // 切换「时段必选」总开关（仅在总开关开启时可用）
 const toggleSlotRequired = async () => {
+  if (!can('system-settings:write')) return
   if (!enablePlayTimeSelection.value) return
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
   playSlotRequired.value = !prev.required
@@ -639,7 +645,7 @@ const toggleSlotRequired = async () => {
 
 // 保存两个开关：两者相互约束，同一请求提交完整组合
 const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
-  if (!isAdmin.value) return
+  if (!can('system-settings:write')) return
 
   try {
     const authConfig = getAuthConfig()
@@ -664,6 +670,7 @@ const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
 
 // 打开添加表单
 const openAddForm = () => {
+  if (!canWrite.value) return
   showAddForm.value = true
   Object.assign(formData, {
     id: 0,
@@ -695,7 +702,7 @@ const editPlayTime = (playTime: PlayTime) => {
 
 // 切换播出时段状态
 const togglePlayTimeStatus = async (playTime: PlayTime) => {
-  if (!isAdmin.value) return
+  if (!canWrite.value) return
 
   try {
     const authConfig = getAuthConfig()
@@ -730,7 +737,7 @@ const confirmDelete = (playTime: PlayTime) => {
 
 // 删除播出时段
 const deletePlayTime = async () => {
-  if (!playTimeToDelete.value || !isAdmin.value) return
+  if (!playTimeToDelete.value || !canWrite.value) return
 
   deleteInProgress.value = true
 
@@ -756,6 +763,7 @@ const deletePlayTime = async () => {
 
 // 保存播出时段
 const savePlayTime = async () => {
+  if (!canWrite.value) return
   formError.value = ''
 
   // 时间验证（仅当两个时间都有填写时才进行比较）

@@ -13,11 +13,6 @@ export default defineEventHandler(async (event) => {
       throw createApiError(401, 'SONG_LOGIN_REQUIRED_VIEW_VOTERS', '需要登录才能查看投票人员')
     }
 
-    // 检查管理员权限
-    if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createApiError(403, 'SONG_VOTERS_ADMIN_ONLY', '只有管理员才能查看投票人员列表')
-    }
-
     // 获取歌曲ID
     const songId = parseInt(getRouterParam(event, 'id') || '0')
 

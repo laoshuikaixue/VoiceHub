@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import test from 'node:test'
 import {
   ADMIN_PAGE_IDS,
@@ -28,13 +29,13 @@ const MANAGER = ['ADMIN', 'SUPER_ADMIN']
 const CONSOLE = ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN']
 
 function endpointFiles(dir: URL, base = ''): string[] {
-  const localDir = decodeURIComponent(dir.pathname)
+  const localDir = fileURLToPath(dir)
   const found: string[] = []
   for (const name of readdirSync(localDir)) {
     const abs = `${localDir}/${name}`
     const rel = base ? `${base}/${name}` : name
     if (statSync(abs).isDirectory()) {
-      found.push(...endpointFiles(new URL(`file://${abs}`), rel))
+      found.push(...endpointFiles(pathToFileURL(`${abs}/`), rel))
     } else if (name.endsWith('.ts') && readFileSync(abs, 'utf8').includes('export default defineEventHandler')) {
       found.push(rel)
     }
@@ -123,14 +124,15 @@ test('守卫表引用的权限码都在目录内，模板码同样受目录约�
   assert.deepEqual(unknown, [], `存在目录外的权限码:\n${unknown.join('\n')}`)
 })
 
-test('未登记的后台写操作一律拒绝，读操作退化为站点级闸门', () => {
+test('未登记的后台读写操作均拒绝', () => {
   const write = resolveAdminRouteGuard('/api/admin/some-new-domain', 'POST')
   assert.equal(write?.deny, true)
   assert.equal(write?.fallback, true)
 
   const read = resolveAdminRouteGuard('/api/admin/some-new-domain', 'GET')
   assert.deepEqual(read?.all, [PRIV_ADMIN_CONSOLE])
-  assert.equal(allowedRoles('/api/admin/some-new-domain', 'GET').join(','), CONSOLE.join(','))
+  assert.equal(read?.deny, true)
+  assert.deepEqual(allowedRoles('/api/admin/some-new-domain', 'GET'), [])
   assert.equal(resolveAdminRouteGuard('/api/songs/public', 'GET'), null)
 })
 
@@ -221,16 +223,12 @@ const DATA_LEVEL_ROLE_CHECKS: Record<string, number> = {
   'backup/restore.post.ts': 1,
   'schedule/song-pool.get.ts': 1,
   // 提交字段的超管校验 + 保存响应的字段分区（防止普通管理员从保存返回值读到超管配置）
-  'system-settings/index.post.ts': 2,
-  'system-settings/index.ts': 1,
   'users/[id]/reset-password.post.ts': 1,
   'users/[id].delete.ts': 1,
-  'users/[id].put.ts': 3,
+  'users/[id].put.ts': 1,
   'users/batch-grade-update.post.ts': 1,
   'users/batch-status.put.ts': 2,
-  'users/batch-update.post.ts': 1,
-  'users/batch.post.ts': 1,
-  'users/index.post.ts': 2
+  'users/batch-update.post.ts': 2,
 }
 
 test('后台端点不再自行判定访问者角色，新增内联闸门会被此条拦下', () => {

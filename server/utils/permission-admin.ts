@@ -5,40 +5,166 @@
  */
 import { db } from '~/drizzle/db'
 import { systemSettings, users } from '~/drizzle/schema'
-import { and, count, eq, inArray, isNotNull, or } from 'drizzle-orm'
+import { count, eq, sql } from 'drizzle-orm'
+import { getRequestURL, type H3Event } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
-import { getRolePermissionTemplatesCached, getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import {
+  getRolePermissionTemplatesCached,
+  getSystemSettingsCached
+} from '~~/server/utils/system-settings-helper'
 import {
   collectCodeHolders,
+  findAddedPermissionsBeyondOperator,
   findGrantsBeyondOperator,
+  findGrantChangesBeyondOperator,
+  findRoleTemplateChangesBeyondOperator,
   findProtectedCodeLoss,
   findProtectedLossAfterReplacements,
   validateExplicitGrants,
   validateRoleTemplates
 } from './permission-policy'
-import type { AccountChange, PermissionCodeHolders, PermissionHolderRow, PolicyViolation } from './permission-policy'
+import type {
+  AccountChange,
+  PermissionCodeHolders,
+  PermissionHolderRow,
+  PolicyViolation
+} from './permission-policy'
 import {
-  ADMIN_CONSOLE_ROLES,
+  ADMIN_PERMISSION_CODES,
+  PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
   ROLE_TEMPLATE_KEYS,
   groupPermissionCodes,
+  hasAllPermissions,
+  hasAnyPermission,
+  hasPermission,
+  resolveEffectivePermissions,
   normalizePermissionTokens
 } from '~~/app/utils/admin-permissions'
+import { resolvePermissionRouteGuard } from './admin-permission-routes'
 
-// 只有活跃用户才算持有者：停用账号无法进入后台，其权限随账号复活自动生效，不计入安全阀
-export async function loadPermissionHolderRows(): Promise<PermissionHolderRow[]> {
-  return db
+export type PermissionTransaction = Pick<
+  typeof db,
+  'select' | 'update' | 'insert' | 'delete' | 'execute'
+>
+
+// 所有权限与账号变更共用事务锁；锁内刷新操作者，防止等待期间撤权后继续写入。
+export async function withPermissionTransaction<T>(
+  event: H3Event,
+  callback: (tx: PermissionTransaction, templates: Record<string, unknown>) => Promise<T>
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(19830, 1)`)
+    const templates = await getRolePermissionTemplatesCached(tx)
+    const [operator] = await tx
+      .select({
+        id: users.id,
+        role: users.role,
+        status: users.status,
+        permissions: users.permissions,
+        tokenVersion: users.tokenVersion,
+        forcePasswordChange: users.forcePasswordChange
+      })
+      .from(users)
+      .where(eq(users.id, event.context.user.id))
+      .limit(1)
+    const perms = resolveEffectivePermissions(operator, templates)
+    const guard = resolvePermissionRouteGuard(getRequestURL(event).pathname, event.method)
+    if (
+      !operator ||
+      operator.status !== 'active' ||
+      operator.forcePasswordChange ||
+      (operator.tokenVersion ?? 0) !== (event.context.user.tokenVersion ?? 0) ||
+      !hasPermission(perms, PRIV_ADMIN_CONSOLE) ||
+      !guard ||
+      guard.deny ||
+      !hasAllPermissions(perms, guard.all) ||
+      !hasAnyPermission(perms, guard.any)
+    ) {
+      throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '权限不足')
+    }
+    Object.assign(event.context.user, { role: operator.role, perms })
+    return callback(tx, templates)
+  })
+}
+
+// 只有活跃用户才算持有者：停用账号无法进入后台，其权限随账号复活自动生效，不计入安全阀。
+// 所有角色都可能通过模板或显式授权获得后台权限，不能按角色提前过滤。
+export async function loadPermissionHolderRows(
+  executor: Pick<typeof db, 'select'> = db
+): Promise<PermissionHolderRow[]> {
+  const query = executor
     .select({ id: users.id, role: users.role, permissions: users.permissions })
     .from(users)
-    .where(
-      and(
-        eq(users.status, 'active'),
-        or(isNotNull(users.permissions), inArray(users.role, [...ADMIN_CONSOLE_ROLES]))
-      )
+    .where(eq(users.status, 'active'))
+  return query
+}
+
+// 角色模板的权限变更受操作者权限范围约束。
+export function assertRoleTemplateExpansionWithinOperator(
+  before: Record<string, unknown> | null | undefined,
+  after: Record<string, string[]>,
+  operatorPerms: readonly string[]
+): void {
+  const violations = findRoleTemplateChangesBeyondOperator(before, after, operatorPerms)
+  if (violations.length) {
+    throw createApiError(
+      403,
+      SERVER_ERROR_CODES.PERMISSION_GRANT_EXCEEDS_SELF,
+      '角色模板不能新增操作者未持有的权限码',
+      { params: [violations.join(', ')] }
     )
+  }
+}
+
+export function assertGrantChangesWithinOperator(
+  before: unknown,
+  after: unknown,
+  operatorPerms: readonly string[]
+): void {
+  const beyond = findGrantChangesBeyondOperator(before, after, operatorPerms)
+  if (beyond.length) {
+    throw createApiError(
+      403,
+      SERVER_ERROR_CODES.PERMISSION_GRANT_EXCEEDS_SELF,
+      '只能修改自己持有的权限码',
+      { params: [beyond.join(', ')] }
+    )
+  }
+}
+
+export function assertAccountPermissionExpansion(
+  before: { role: string; permissions: unknown; status: string } | null,
+  after: { role: string; permissions: unknown; status: string },
+  templates: Record<string, unknown>,
+  operatorPerms: readonly string[]
+): void {
+  const previous = before?.status === 'active' ? resolveEffectivePermissions(before, templates) : []
+  const next = after.status === 'active' ? resolveEffectivePermissions(after, templates) : []
+  const beyond = findAddedPermissionsBeyondOperator(previous, next, operatorPerms)
+  if (beyond.length) {
+    throw createApiError(
+      403,
+      SERVER_ERROR_CODES.PERMISSION_GRANT_EXCEEDS_SELF,
+      '不能通过账号变更授出自己未持有的权限',
+      { params: [beyond.join(', ')] }
+    )
+  }
+}
+
+export function assertAccountCredentialsWithinOperator(
+  target: { role: string; permissions: unknown },
+  templates: Record<string, unknown>,
+  operatorPerms: readonly string[]
+): void {
+  const targetPerms = resolveEffectivePermissions(target, templates)
+  assertGrantsWithinOperator(
+    ADMIN_PERMISSION_CODES.filter((code) => hasPermission(targetPerms, code)),
+    operatorPerms
+  )
 }
 
 function rethrow(violation: PolicyViolation): never {
@@ -65,7 +191,10 @@ export function normalizeSubmittedGrants(value: unknown): string[] | null {
 }
 
 // 授权人只能授出自己已持有的码（含通配形态）
-export function assertGrantsWithinOperator(tokens: readonly string[], operatorPerms: readonly string[]): void {
+export function assertGrantsWithinOperator(
+  tokens: readonly string[],
+  operatorPerms: readonly string[]
+): void {
   const beyond = findGrantsBeyondOperator(tokens, operatorPerms)
   if (beyond.length) {
     throw createApiError(
@@ -93,11 +222,12 @@ export function assertProtectedCodesSurvive(
  */
 export async function assertProtectedCodesAfterAccountChanges(
   changes: readonly AccountChange[],
-  operatorId: number
+  operatorId: number,
+  executor: PermissionTransaction,
+  templates: Record<string, unknown>
 ): Promise<void> {
   if (!changes.length) return
-  const rows = await loadPermissionHolderRows()
-  const templates = await getRolePermissionTemplatesCached()
+  const rows = await loadPermissionHolderRows(executor)
   const loss = findProtectedLossAfterReplacements(rows, templates, changes, operatorId)
   if (loss) rethrow(loss)
 }
@@ -105,9 +235,16 @@ export async function assertProtectedCodesAfterAccountChanges(
 export async function assertProtectedCodesAfterAccountChange(
   targetId: number,
   nextRow: PermissionHolderRow | null,
-  operatorId: number
+  operatorId: number,
+  executor: PermissionTransaction,
+  templates: Record<string, unknown>
 ): Promise<void> {
-  await assertProtectedCodesAfterAccountChanges([{ targetId, nextRow }], operatorId)
+  await assertProtectedCodesAfterAccountChanges(
+    [{ targetId, nextRow }],
+    operatorId,
+    executor,
+    templates
+  )
 }
 
 // 权限矩阵页数据：模板现状、内置默认、活跃用户持有者数与角色分布
@@ -143,22 +280,31 @@ export async function buildPermissionMatrix() {
       ROLE_TEMPLATE_KEYS.map((role) => [role, [...(ROLE_PERMISSION_TEMPLATES_DEFAULT[role] ?? [])]])
     ) as Record<string, string[]>,
     customizedRoles: configuredRoles,
-    codeHolders: Object.fromEntries(Object.entries(holders).map(([code, ids]) => [code, ids.length])),
-    explicitGrantUsers: rows.filter((row) => row.permissions !== null && row.permissions !== undefined).length,
+    codeHolders: Object.fromEntries(
+      Object.entries(holders).map(([code, ids]) => [code, ids.length])
+    ),
+    explicitGrantUsers: rows.filter(
+      (row) => row.permissions !== null && row.permissions !== undefined
+    ).length,
     holdersByRole,
-    holderTotal: rows.length
+    holderTotal: holders[PRIV_ADMIN_CONSOLE]?.length ?? 0
   }
 }
 
 // 写回角色权限模板（无配置行时按系统设置默认值补建，与系统设置接口一致的建行方式）
-export async function saveRolePermissionTemplates(templates: Record<string, string[]>) {
-  const existing = await db.select({ id: systemSettings.id }).from(systemSettings).limit(1)
+export async function saveRolePermissionTemplates(
+  templates: Record<string, string[]>,
+  executor: PermissionTransaction
+) {
+  const existing = await executor.select({ id: systemSettings.id }).from(systemSettings).limit(1)
   if (existing.length) {
-    await db
+    await executor
       .update(systemSettings)
       .set({ rolePermissionTemplates: templates })
       .where(eq(systemSettings.id, existing[0]!.id))
     return
   }
-  await db.insert(systemSettings).values({ ...SYSTEM_SETTINGS_DEFAULTS, rolePermissionTemplates: templates })
+  await executor
+    .insert(systemSettings)
+    .values({ ...SYSTEM_SETTINGS_DEFAULTS, rolePermissionTemplates: templates })
 }

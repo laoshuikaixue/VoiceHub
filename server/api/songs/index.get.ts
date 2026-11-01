@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import type { H3Event } from 'h3'
 import { client } from '~/drizzle/db'
@@ -306,7 +307,7 @@ export default defineEventHandler(async (event) => {
     const requestedPage = parseInt(String(query.page || ''), 10)
     const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
     const user = event.context.user || null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = Boolean(user && hasAdminPermission(user, 'songs:read'))
 
     const params: any[] = [user?.id ?? null]
     const addParam = (value: any) => {
@@ -886,7 +887,7 @@ export default defineEventHandler(async (event) => {
         )
         const fallbackPage = Math.max(parseInt(String(fallbackQuery.page || ''), 10) || 1, 1)
         const fallbackUser = event.context.user || null
-        const fallbackIsAdmin = Boolean(fallbackUser && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(fallbackUser.role))
+        const fallbackIsAdmin = Boolean(fallbackUser && hasAdminPermission(fallbackUser, 'songs:read'))
         return await loadBasicSongs(client, fallbackSemester, fallbackGrade, fallbackSearch, fallbackUser, fallbackIsAdmin, {
           scope: fallbackScope,
           sortBy: fallbackSortBy,

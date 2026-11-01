@@ -80,7 +80,7 @@
                           : 'bg-bg-primary border-border-secondary-50',
                         canGrant(code) ? 'cursor-pointer hover:border-border-tertiary' : 'opacity-50 cursor-not-allowed'
                       ]"
-                      :title="canGrant(code) ? '' : locale.cannotGrant"
+                      :title="isPermissionDenied(templateTokens, code) ? locale.templateDenied : canGrant(code) ? '' : locale.cannotGrant"
                     >
                       <input
                         type="checkbox"
@@ -149,7 +149,7 @@ import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { usePermissions } from '~/composables/usePermissions'
-import { ADMIN_PERMISSION_CODES, hasPermission } from '~/utils/admin-permissions'
+import { ADMIN_PERMISSION_CODES, hasPermission, isPermissionDenied, toggleExplicitPermission } from '~/utils/admin-permissions'
 
 const props = defineProps({
   show: {
@@ -196,19 +196,14 @@ function holds(code) {
 }
 const fromTemplate = (code) => hasPermission(templateTokens.value, code)
 const isProtected = (code) => (detail.value?.protectedCodes || []).includes(code)
-const canGrant = (code) => hasPermission(operatorPerms.value, code)
+const canGrant = (code) => hasPermission(operatorPerms.value, code) && !isPermissionDenied(templateTokens.value, code)
 
 // 域名中文标签与权限矩阵页共用同一分区，避免词典重复
 const roleDomains = computed(() => admin.value?.permissionMatrix?.domains || {})
 const domainLabel = (domain) => roleDomains.value[domain] || domain
 
 const toggle = (code) => {
-  const withoutCode = explicit.value.filter((token) => token !== code && token !== `!${code}`)
-  if (hasPermission([...templateTokens.value, ...withoutCode], code)) {
-    explicit.value = [...withoutCode, `!${code}`]
-  } else {
-    explicit.value = [...withoutCode, code]
-  }
+  explicit.value = toggleExplicitPermission(templateTokens.value, explicit.value, code)
 }
 
 const load = async () => {

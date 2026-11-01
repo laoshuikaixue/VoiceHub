@@ -290,7 +290,7 @@
 
     <!-- 重复投稿限制面板 -->
     <div
-      v-if="isAdmin"
+      v-if="canWrite"
       class="bg-bg-secondary-20 border border-border-secondary rounded-3xl p-8 space-y-6"
     >
       <div class="flex items-center justify-between border-b border-border-secondary-50 pb-4">
@@ -649,6 +649,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, reactive, ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import type { RequestTime } from '~/types'
@@ -671,7 +672,10 @@ import {
   Filter
 } from '@lucide/vue'
 
-const { getAuthConfig, isAdmin } = useAuth()
+const { getAuthConfig } = useAuth()
+const { can } = usePermissions()
+const canRead = computed(() => can('request-times:read'))
+const canWrite = computed(() => can('request-times:write'))
 const toast = useToast()
 const { admin } = useLocale()
 const locale = computed(() => {
@@ -782,7 +786,7 @@ onUnmounted(() => {
 })
 
 const fetchRequestTimes = async () => {
-  if (!isAdmin.value) {
+  if (!canRead.value) {
     error.value = locale.value.errors.adminOnly
     return
   }
@@ -827,7 +831,7 @@ const fetchRequestTimes = async () => {
 }
 
 const fetchSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!can('system-settings:read')) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
@@ -848,7 +852,7 @@ const fetchSystemSettings = async () => {
 }
 
 const fetchRequestTimeHit = async () => {
-  if (!isAdmin.value) return
+  if (!canRead.value) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/request-times', {
@@ -864,19 +868,21 @@ const fetchRequestTimeHit = async () => {
 }
 
 const toggleGlobalRequest = async () => {
+  if (!can('system-settings:write')) return
   enableRequest.value = !enableRequest.value
   await updateSystemSettings()
   await fetchRequestTimeHit()
 }
 
 const toggleTimeLimitation = async () => {
+  if (!can('system-settings:write')) return
   enableRequestTimeLimitation.value = !enableRequestTimeLimitation.value
   await updateSystemSettings()
   await fetchRequestTimeHit()
 }
 
 const updateSystemSettings = async () => {
-  if (!isAdmin.value) return
+  if (!can('system-settings:write')) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch('/api/admin/system-settings', {
@@ -905,6 +911,7 @@ const normalizeRestrictionHours = (key: 'sameSong' | 'sameArtist') => {
 }
 
 const toggleRestriction = async () => {
+  if (!can('system-settings:write')) return
   enableSubmissionRestriction.value = !enableSubmissionRestriction.value
   // 关闭时清空时长，与服务端交叉校验保持一致
   if (!enableSubmissionRestriction.value) {
@@ -916,6 +923,7 @@ const toggleRestriction = async () => {
 }
 
 const saveRestrictionSettings = async () => {
+  if (!can('system-settings:write')) return
   normalizeRestrictionHours('sameSong')
   normalizeRestrictionHours('sameArtist')
 
@@ -936,7 +944,7 @@ const saveRestrictionSettings = async () => {
 }
 
 const submitRestrictionSettings = async (body: any) => {
-  if (!isAdmin.value) return
+  if (!can('system-settings:write')) return
   restrictionSaving.value = true
   try {
     const authConfig = getAuthConfig()
@@ -977,7 +985,7 @@ const editRequestTime = (RequestTime: RequestTime) => {
 }
 
 const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
-  if (!isAdmin.value) return
+  if (!canWrite.value) return
   try {
     const authConfig = getAuthConfig()
     const response = await fetch(`/api/admin/request-times/${RequestTime.id}`, {
@@ -1003,7 +1011,7 @@ const confirmDelete = (RequestTime: RequestTime) => {
 }
 
 const deleteRequestTime = async () => {
-  if (!RequestTimeToDelete.value || !isAdmin.value) return
+  if (!RequestTimeToDelete.value || !canWrite.value) return
   deleteInProgress.value = true
   try {
     const authConfig = getAuthConfig()
@@ -1027,6 +1035,7 @@ const deleteRequestTime = async () => {
 }
 
 const saveRequestTime = async () => {
+  if (!canWrite.value) return
   formError.value = ''
   if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
     formError.value = locale.value.errors.startBeforeEnd

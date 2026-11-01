@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { maskSystemSettingsSecrets } from './secretMask'
@@ -55,9 +56,9 @@ export default defineEventHandler(async (event) => {
       settings = newSettingsResult[0]
     }
 
-    const masked = maskSystemSettingsSecrets(settings)
+    const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
     // 普通管理员不回传超管专属配置（凭据、隐私与账号安全策略）
-    return user.role === 'SUPER_ADMIN' ? masked : stripSuperAdminOnlySettingFields(masked)
+    return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {
     console.error('获取系统设置失败:', error)
     throw createError({

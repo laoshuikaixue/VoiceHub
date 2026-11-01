@@ -109,7 +109,7 @@
                     type="checkbox"
                     class="w-3.5 h-3.5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                     :checked="holds(role, code)"
-                    :disabled="saving"
+                    :disabled="saving || !can(code)"
                     @change="toggle(role, code)"
                   >
                 </label>
@@ -131,12 +131,16 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { ADMIN_PERMISSION_CODES, hasPermission } from '~/utils/admin-permissions'
+import { hasPermission, toggleExplicitPermission } from '~/utils/admin-permissions'
+import { usePermissions } from '~/composables/usePermissions'
+import { useAuth } from '~/composables/useAuth'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.permissionMatrix || {})
 const { msg: getLocaleMessage } = useLocaleText(locale)
 const { showToast } = useToast()
+const { can } = usePermissions()
+const { refreshUser } = useAuth()
 const { localize: localizeServerError } = useServerErrors()
 
 const roles = ref([])
@@ -189,25 +193,9 @@ const metrics = computed(() => [
   { label: locale.value.unsavedRoles, value: dirtyRoles.value.length }
 ])
 
-// 通配列首次编辑时展开为等价的显式清单，避免勾选框无法表达 *
-const expandWildcards = (role) => {
-  const tokens = draft.value[role] || []
-  if (!tokens.includes('*')) return
-  const denies = tokens.filter((token) => token.startsWith('!'))
-  draft.value[role] = [...ADMIN_PERMISSION_CODES, ...denies]
-}
-
 const toggle = (role, code) => {
-  expandWildcards(role)
-  const tokens = draft.value[role] || []
-  if (hasPermission(tokens, code)) {
-    const next = tokens.filter((token) => token !== code && token !== `!${code}`)
-    // 通配符仍覆盖该码时补一条显式拒绝，保证取消勾选确实生效
-    if (hasPermission(next, code)) next.push(`!${code}`)
-    draft.value[role] = next
-  } else {
-    draft.value[role] = [...tokens.filter((token) => token !== `!${code}`), code]
-  }
+  if (!can(code)) return
+  draft.value[role] = toggleExplicitPermission([], draft.value[role] || [], code)
 }
 
 const resetToDefault = () => {
@@ -242,6 +230,7 @@ const save = async () => {
       body: { templates: draft.value }
     })
     applyMatrix(res.matrix)
+    await refreshUser()
     showToast(getLocaleMessage('saved'), 'success')
   } catch (error) {
     showToast(localizeServerError(error, getLocaleMessage('saveFailed')), 'error')

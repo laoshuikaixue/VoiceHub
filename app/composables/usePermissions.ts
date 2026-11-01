@@ -6,23 +6,21 @@ import {
   PAGE_PERMISSIONS,
   PRIV_GRANT,
   PRIV_ROLE_TEMPLATE,
-  ROLE_PERMISSION_TEMPLATES_DEFAULT,
   canAccessAdminConsole,
+  canAssignRole,
   canAccessAdminPage,
-  hasAnyPermission,
   hasPermission,
-  resolveEffectivePermissions
 } from '~/utils/admin-permissions'
 
 export const usePermissions = () => {
   const auth = useAuth()
 
-  // 权限码由 /api/auth/verify 与登录接口下发；缺失时按角色默认模板回落，避免登录首屏无权限
+  // 权限码由认证接口下发；未取得权限时不展示管理能力。
   const perms = computed(() => {
     const current = auth.user.value as any
     if (!current) return []
     if (Array.isArray(current.perms)) return current.perms
-    return resolveEffectivePermissions({ role: current.role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+    return []
   })
 
   // 检查用户是否可以访问后台
@@ -30,6 +28,7 @@ export const usePermissions = () => {
 
   // 检查用户是否可以访问指定页面
   const canAccessPage = (page: string): boolean => canAccessAdminPage(perms.value, page)
+  const can = (code: string): boolean => canAccessAdmin.value && hasPermission(perms.value, code)
 
   // 获取用户可访问的页面列表（修改密码不属于后台页面）
   const getUserPages = computed(() =>
@@ -45,22 +44,21 @@ export const usePermissions = () => {
   const isAdminOrAbove = computed(() => MANAGER_ROLES.includes(auth.user.value?.role || ''))
   const isSongAdminOrAbove = computed(() => ADMIN_CONSOLE_ROLES.includes(auth.user.value?.role || ''))
 
-  // 分配角色尚无独立权限码，保持仅超级管理员可分配
-  const canManageUserRole = (targetRole: string): boolean => {
-    if (auth.user.value?.role !== 'SUPER_ADMIN') return false
-    return ['USER', 'SONG_ADMIN', 'ADMIN'].includes(targetRole)
-  }
+  // 角色分配受独立权限码与受保护角色约束。
+  const canManageUserRole = (targetRole: string): boolean =>
+    targetRole !== 'SUPER_ADMIN' && canAssignRole(auth.user.value, targetRole)
 
   // 检查是否可以打印排期
-  const canPrintSchedule = computed(() => hasAnyPermission(perms.value, ['schedule:read']))
+  const canPrintSchedule = computed(() => can('schedule:read'))
 
   // 授权能力：编辑角色模板（权限矩阵）/ 按用户显式授权
-  const canManageRoleTemplates = computed(() => hasPermission(perms.value, PRIV_ROLE_TEMPLATE))
-  const canGrantPermissions = computed(() => hasPermission(perms.value, PRIV_GRANT))
+  const canManageRoleTemplates = computed(() => can(PRIV_ROLE_TEMPLATE))
+  const canGrantPermissions = computed(() => can(PRIV_GRANT))
 
   return {
     // 权限码
     perms,
+    can,
 
     // 页面访问权限
     canAccessAdmin,

@@ -11,6 +11,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-[var(--primary-glow)]"
+          :disabled="!can('users:write')"
           @click="showAddModal = true"
         >
           <UserPlus :size="14" />
@@ -18,6 +19,7 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          :disabled="!can('users:write')"
           @click="showImportModal = true"
         >
           <FileSpreadsheet class="text-success" :size="14" />
@@ -25,6 +27,7 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          :disabled="!can('users:export')"
           @click="openExportModal"
         >
           <Download class="text-primary" :size="14" />
@@ -32,6 +35,7 @@
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary text-text-secondary text-xs font-black rounded-lg transition-all uppercase tracking-widest"
+          :disabled="!can('users:write')"
           @click="showBatchUpdateModal = true"
         >
           <Layers class="text-info" :size="14" />
@@ -383,7 +387,7 @@
                       <Edit2 :size="13" />
                     </button>
                     <button
-                      v-if="user.status === 'pending'"
+                      v-if="user.status === 'pending' && can('users:approve')"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
                       :title="locale.actions.approve"
                       @click="openApproval(user)"
@@ -398,7 +402,7 @@
                       <Music :size="13" />
                     </button>
                     <button
-                      v-if="canGrantPermissions"
+                      v-if="canGrantPermissions && !isSelf(user) && (isSuperAdmin || user.role !== 'SUPER_ADMIN')"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors action-btn flex items-center justify-center"
                       :title="locale.actions.permissions"
                       @click="openPermissionsModal(user)"
@@ -406,7 +410,7 @@
                       <ShieldCheck :size="13" />
                     </button>
                     <button
-                      :disabled="!canManageUser(user)"
+                      :disabled="!canManageUser(user, 'users:reset-password')"
                       class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-warning transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn flex items-center justify-center"
                       :title="locale.actions.resetPassword"
                       @click="resetPassword(user)"
@@ -414,7 +418,7 @@
                       <Lock :size="13" />
                     </button>
                     <button
-                      :disabled="!canManageUser(user)"
+                      :disabled="!canManageUser(user, 'users:delete')"
                       class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.deleteUser"
                       @click="confirmDeleteUser(user)"
@@ -556,7 +560,7 @@
                 <Edit2 :size="12" /> {{ locale.actions.edit }}
               </button>
               <button
-                v-if="user.status === 'pending'"
+                v-if="user.status === 'pending' && can('users:approve')"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
                 @click="openApproval(user)"
               >
@@ -569,14 +573,14 @@
                 <Music :size="12" /> {{ locale.actions.records }}
               </button>
               <button
-                :disabled="!canManageUser(user)"
+                :disabled="!canManageUser(user, 'users:reset-password')"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-warning active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="resetPassword(user)"
               >
                 <Lock :size="12" /> {{ locale.actions.reset }}
               </button>
               <button
-                :disabled="!canManageUser(user)"
+                :disabled="!canManageUser(user, 'users:delete')"
                 class="flex items-center justify-center px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary active:bg-error active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="confirmDeleteUser(user)"
               >
@@ -689,6 +693,7 @@
                     autocomplete="new-password"
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                     :placeholder="locale.form.passwordPlaceholder"
+                    :disabled="!!editingUser && !can('users:reset-password')"
                     type="password"
                   >
                 </div>
@@ -701,6 +706,7 @@
                   >
                   <CustomSelect
                     v-model="userForm.role"
+                    :disabled="!can('users:assign-role')"
                     :options="availableRoles"
                     label-key="displayName"
                     value-key="name"
@@ -1623,6 +1629,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
+import { canAssignRole } from '~/utils/admin-permissions'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Check,
@@ -1873,7 +1880,7 @@ const passwordForm = ref({
 
 // 服务
 const auth = useAuth()
-const { canGrantPermissions } = usePermissions()
+const { can, canGrantPermissions } = usePermissions()
 const { localize } = useServerErrors()
 
 // 判断是否为当前登录用户
@@ -1886,30 +1893,16 @@ const isSuperAdmin = computed(() => {
   return auth.user.value?.role === 'SUPER_ADMIN'
 })
 
-// 普通管理员身份
-const isAdmin = computed(() => {
-  return auth.user.value?.role === 'ADMIN'
-})
-
 // 是否允许对目标用户执行管理操作（编辑/重置密码/删除），与后端越级保护一致
-const canManageUser = (user) => {
-  if (!user || isSelf(user)) return false
+const canManageUser = (user, action = 'users:write') => {
+  if (!user || user.id === 1 || isSelf(user) || !can(action)) return false
   // 普通管理员不能操作超级管理员
   return isSuperAdmin.value || user.role !== 'SUPER_ADMIN'
 }
 
 const availableRoles = computed(() => {
-  let roles
-  if (isSuperAdmin.value) {
-    // 超级管理员可以分配除自己以外的所有角色
-    roles = allRoles.value.filter((role) => role.name !== 'SUPER_ADMIN')
-  } else if (isAdmin.value) {
-    // 管理员只能分配用户和歌曲管理员角色（与后端用户接口的角色限制一致）
-    roles = allRoles.value.filter((role) => ['USER', 'SONG_ADMIN'].includes(role.name))
-  } else {
-    // 其他角色不能分配角色，返回空数组
-    return []
-  }
+  let roles = allRoles.value.filter((role) =>
+    role.name === 'USER' || (role.name !== 'SUPER_ADMIN' && canAssignRole(auth.user.value, role.name)))
   // 保留目标用户当前角色，避免当前值不在选项中时下拉显示裸值
   const currentRole = editingUser.value?.role
   if (currentRole && !roles.some((role) => role.name === currentRole)) {
@@ -2301,6 +2294,7 @@ const closeDeleteModal = () => {
 }
 
 const confirmDelete = async () => {
+  if (!can('users:delete')) return
   if (!deletingUser.value) return
 
   deleting.value = true
@@ -2481,6 +2475,7 @@ const openTreeUser = async (treeUser) => {
 }
 
 const saveUser = async () => {
+  if (!can('users:write')) return
   // 保护：禁止保存针对自身的更改
   if (editingUser.value && isSelf(editingUser.value)) {
     formError.value = locale.value.notifications.selfEditForbidden
@@ -2548,6 +2543,7 @@ const saveUser = async () => {
 }
 
 const confirmResetPassword = async () => {
+  if (!can('users:reset-password')) return
   // 保护：禁止重置自身密码
   if (resetPasswordUser.value && isSelf(resetPasswordUser.value)) {
     passwordError.value = locale.value.notifications.selfResetForbidden
@@ -3000,6 +2996,7 @@ const formatImportErrors = (errors) => {
 
 // 批量导入用户
 const importUsers = async () => {
+  if (!can('users:write')) return
   if (previewData.value.length === 0) return
 
   importLoading.value = true

@@ -1,15 +1,8 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { databaseManager } from '~~/server/utils/database-manager'
 
-export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
-
+export default defineEventHandler(async () => {
   try {
     console.log('[Reconnect API] 收到强制重连请求')
 
@@ -24,7 +17,7 @@ export default defineEventHandler(async (event) => {
         message: '数据库连接正常',
         connectionStatus,
         poolStatus,
-        timestamp: new Date().toISOString()
+        timestamp: getServerDate().toISOString()
       }
     } else {
       console.log('[Reconnect API] 数据库连接异常')
@@ -33,7 +26,7 @@ export default defineEventHandler(async (event) => {
         message: '数据库连接异常',
         connectionStatus,
         poolStatus,
-        timestamp: new Date().toISOString()
+        timestamp: getServerDate().toISOString()
       }
     }
   } catch (error) {
@@ -42,7 +35,7 @@ export default defineEventHandler(async (event) => {
       success: false,
       message: '重连过程中出错: ' + error.message,
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: getServerDate().toISOString()
     }
   }
 })

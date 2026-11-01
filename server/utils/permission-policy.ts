@@ -7,6 +7,7 @@
  */
 import {
   ADMIN_PERMISSION_CODES,
+  canGrantPermissionToken,
   PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
@@ -15,6 +16,7 @@ import {
   hasPermission,
   isValidPermissionToken,
   normalizePermissionTokens,
+  resolveRoleTemplate,
   resolveEffectivePermissions
 } from '../../app/utils/admin-permissions.ts'
 import { SERVER_ERROR_CODES } from '../config/constants.ts'
@@ -51,7 +53,9 @@ export function collectCodeHolders(
   templates: Record<string, unknown> | null,
   codes: readonly string[] = ADMIN_PERMISSION_CODES
 ): PermissionCodeHolders {
-  const holders: PermissionCodeHolders = Object.fromEntries(codes.map((code) => [code, [] as number[]]))
+  const holders: PermissionCodeHolders = Object.fromEntries(
+    codes.map((code) => [code, [] as number[]])
+  )
   for (const row of rows) {
     const perms = resolveEffectivePermissions(row, templates)
     if (!canAccessAdminConsole(perms)) continue
@@ -70,11 +74,7 @@ export function validateRoleTemplates(input: unknown): PolicyResult<Record<strin
   const source = input as Record<string, unknown>
   const unknownRoles = Object.keys(source).filter((role) => !ROLE_TEMPLATE_KEYS.includes(role))
   if (unknownRoles.length) {
-    return fail(
-      SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID,
-      '存在不可配置的角色',
-      unknownRoles
-    )
+    return fail(SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID, '存在不可配置的角色', unknownRoles)
   }
   const result: Record<string, string[]> = {}
   for (const role of ROLE_TEMPLATE_KEYS) {
@@ -86,7 +86,9 @@ export function validateRoleTemplates(input: unknown): PolicyResult<Record<strin
     if (!Array.isArray(value)) {
       return fail(SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID, `${role} 的模板必须是权限码数组`)
     }
-    const invalid = value.filter((token) => !isValidPermissionToken(typeof token === 'string' ? token.trim() : token))
+    const invalid = value.filter(
+      (token) => !isValidPermissionToken(typeof token === 'string' ? token.trim() : token)
+    )
     if (invalid.length) {
       return fail(
         SERVER_ERROR_CODES.PERMISSION_TEMPLATE_INVALID,
@@ -105,7 +107,9 @@ export function validateExplicitGrants(input: unknown): PolicyResult<string[] | 
   if (!Array.isArray(input)) {
     return fail(SERVER_ERROR_CODES.PERMISSION_GRANT_INVALID, '显式授权必须是权限码数组或 null')
   }
-  const invalid = input.filter((token) => !isValidPermissionToken(typeof token === 'string' ? token.trim() : token))
+  const invalid = input.filter(
+    (token) => !isValidPermissionToken(typeof token === 'string' ? token.trim() : token)
+  )
   if (invalid.length) {
     return fail(
       SERVER_ERROR_CODES.PERMISSION_GRANT_INVALID,
@@ -121,10 +125,51 @@ export function findGrantsBeyondOperator(
   tokens: readonly string[],
   operatorPerms: readonly string[]
 ): string[] {
-  return tokens.filter((token) => {
-    const body = token.startsWith('!') ? token.slice(1) : token
-    return !hasPermission(operatorPerms, body)
-  })
+  return tokens.filter(
+    (token) => !canGrantPermissionToken(token, operatorPerms, ADMIN_PERMISSION_CODES)
+  )
+}
+
+// 新增和移除拒绝项都会改变权限，恢复模板也必须校验变更范围。
+export function findGrantChangesBeyondOperator(
+  before: unknown,
+  after: unknown,
+  operatorPerms: readonly string[]
+): string[] {
+  const previous = normalizePermissionTokens(before)
+  const next = normalizePermissionTokens(after)
+  const changed = [
+    ...previous.filter((token) => !next.includes(token)),
+    ...next.filter((token) => !previous.includes(token))
+  ]
+  return findGrantsBeyondOperator(changed, operatorPerms)
+}
+
+export function findRoleTemplateChangesBeyondOperator(
+  before: Record<string, unknown> | null | undefined,
+  after: Record<string, unknown>,
+  operatorPerms: readonly string[]
+): string[] {
+  return ROLE_TEMPLATE_KEYS.flatMap((role) =>
+    findGrantChangesBeyondOperator(
+      resolveRoleTemplate(role, before),
+      resolveRoleTemplate(role, after),
+      operatorPerms
+    ).map((token) => `${role}:${token}`)
+  )
+}
+
+export function findAddedPermissionsBeyondOperator(
+  before: readonly string[],
+  after: readonly string[],
+  operatorPerms: readonly string[]
+): string[] {
+  return ADMIN_PERMISSION_CODES.filter(
+    (code) =>
+      !hasPermission(before, code) &&
+      hasPermission(after, code) &&
+      !hasPermission(operatorPerms, code)
+  )
 }
 
 /**
@@ -145,7 +190,9 @@ export function findProtectedLossAfterReplacements(
   const before = collectCodeHolders(rows, templates, PROTECTED_PRIV_CODES)
   const changedIds = new Set(changes.map((change) => change.targetId))
   const remaining = rows.filter((row) => !changedIds.has(row.id))
-  const nextRows = changes.map((change) => change.nextRow).filter((row): row is PermissionHolderRow => row !== null)
+  const nextRows = changes
+    .map((change) => change.nextRow)
+    .filter((row): row is PermissionHolderRow => row !== null)
   const after = collectCodeHolders([...remaining, ...nextRows], templates, PROTECTED_PRIV_CODES)
   return findProtectedCodeLoss(before, after, operatorId)
 }

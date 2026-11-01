@@ -12,7 +12,7 @@ import {
   shouldBlockDuringPasswordChange,
   shouldBypassPublicApiAuthentication
 } from '../utils/auth-route-policy'
-import { isAdminApiPath, resolveAdminRouteGuard } from '../utils/admin-permission-routes'
+import { resolvePermissionRouteGuard } from '../utils/admin-permission-routes'
 import {
   hasAllPermissions,
   hasAnyPermission,
@@ -296,6 +296,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+    const perms = resolveEffectivePermissions(user, await getRolePermissionTemplatesCached())
     event.context.user = {
       id: user.id,
       username: user.username,
@@ -303,6 +304,7 @@ export default defineEventHandler(async (event) => {
       grade: user.grade,
       class: user.class,
       role: user.role,
+      perms,
       status: user.status,
       passwordChangedAt: user.passwordChangedAt,
       forcePasswordChange: user.forcePasswordChange,
@@ -326,26 +328,21 @@ export default defineEventHandler(async (event) => {
     }
 
     // 后台准入由集中守卫表决定：站点级闸门码 + 域动作码，未登记的写操作默认拒绝。
-    if (isAdminApiPath(pathname)) {
-      const templates = await getRolePermissionTemplatesCached()
-      const perms = resolveEffectivePermissions(user, templates)
-      event.context.user.perms = perms
-
-      const guard = resolveAdminRouteGuard(pathname, method)
+    const routeGuard = resolvePermissionRouteGuard(pathname, method)
+    if (routeGuard) {
       const denied =
-        !guard ||
-        guard.deny ||
-        !hasAllPermissions(perms, guard.all) ||
-        !hasAnyPermission(perms, guard.any)
+        routeGuard.deny ||
+        !hasAllPermissions(perms, routeGuard.all) ||
+        !hasAnyPermission(perms, routeGuard.any)
 
       if (denied) {
-        if (guard?.fallback) {
+        if (routeGuard.fallback) {
           console.warn(`[Auth] 后台路由缺少权限守卫登记: ${method} ${pathname}`)
         }
         return sendError(
           event,
           createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '权限不足', {
-            required: guard?.any ?? []
+            required: routeGuard.any
           })
         )
       }

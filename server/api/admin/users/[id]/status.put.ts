@@ -1,83 +1,102 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
-import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { getServerDate } from '~~/server/utils/serverTime'
+import {
+  assertAccountPermissionExpansion,
+  assertProtectedCodesAfterAccountChange,
+  withPermissionTransaction
+} from '~~/server/utils/permission-admin'
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = event.context.user
-
-    const userId = getRouterParam(event, 'id')
     const body = await readBody(event)
-    const { status, reason } = body
+    return await withPermissionTransaction(event, async (tx, templates) => {
+      const user = event.context.user
 
-    // 验证必填字段
-    if (!status || !['active', 'withdrawn', 'graduate'].includes(status)) {
-      throw createError({
-        statusCode: 400,
-        message: '状态必须为 active, withdrawn 或 graduate'
-      })
-    }
+      const userId = getRouterParam(event, 'id')
 
-    if (!reason || reason.trim().length === 0) {
-      throw createError({
-        statusCode: 400,
-        message: '变更原因为必填项'
-      })
-    }
+      const { status, reason } = body
 
-    // 检查用户是否存在
-    const existingUser = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-        status: users.status,
-        role: users.role
-      })
-      .from(users)
-      .where(eq(users.id, parseInt(userId)))
-      .limit(1)
+      // 验证必填字段
+      if (!status || !['active', 'withdrawn', 'graduate'].includes(status)) {
+        throw createError({
+          statusCode: 400,
+          message: '状态必须为 active, withdrawn 或 graduate'
+        })
+      }
 
-    if (existingUser.length === 0) {
-      throw createError({
-        statusCode: 404,
-        message: '用户不存在'
-      })
-    }
+      if (!reason || reason.trim().length === 0) {
+        throw createError({
+          statusCode: 400,
+          message: '变更原因为必填项'
+        })
+      }
 
-    const targetUser = existingUser[0]
+      // 检查用户是否存在
+      const existingUser = await tx
+        .select({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          status: users.status,
+          role: users.role,
+          permissions: users.permissions
+        })
+        .from(users)
+        .where(eq(users.id, parseInt(userId)))
+        .limit(1)
 
-    // 待审核用户不得通过状态接口直接置为 active（须走注册审核流程）
-    if (targetUser.status === 'pending' && status === 'active') {
-      throw createApiError(400, SERVER_ERROR_CODES.USER_NOT_PENDING, '待审核用户需通过注册审核流程处理')
-    }
+      if (existingUser.length === 0) {
+        throw createError({
+          statusCode: 404,
+          message: '用户不存在'
+        })
+      }
 
-    // 检查是否为学生用户
-    if (targetUser.role !== 'USER') {
-      throw createError({
-        statusCode: 400,
-        message: '只能修改学生用户的状态'
-      })
-    }
+      const targetUser = existingUser[0]
 
-    // 检查状态是否有变化
-    if (targetUser.status === status) {
-      throw createError({
-        statusCode: 400,
-        message: '用户状态未发生变化'
-      })
-    }
+      // 待审核用户不得通过状态接口直接置为 active（须走注册审核流程）
+      if (targetUser.status === 'pending' && status === 'active') {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.USER_NOT_PENDING,
+          '待审核用户需通过注册审核流程处理'
+        )
+      }
 
-    const currentTime = getBeijingTime()
-    const oldStatus = targetUser.status
+      // 检查是否为学生用户
+      if (targetUser.role !== 'USER') {
+        throw createError({
+          statusCode: 400,
+          message: '只能修改学生用户的状态'
+        })
+      }
 
-    // 开始事务
-    await db.transaction(async (tx) => {
+      // 检查状态是否有变化
+      if (targetUser.status === status) {
+        throw createError({
+          statusCode: 400,
+          message: '用户状态未发生变化'
+        })
+      }
+
+      const currentTime = getServerDate()
+      const oldStatus = targetUser.status
+
+      const nextState = { ...targetUser, status }
+      assertAccountPermissionExpansion(targetUser, nextState, templates, user.perms ?? [])
+      await assertProtectedCodesAfterAccountChange(
+        targetUser.id,
+        status === 'active' ? nextState : null,
+        user.id,
+        tx,
+        templates
+      )
+      // 更新账号与状态日志共用权限事务。
       // 更新用户状态
       await tx
         .update(users)
@@ -97,19 +116,19 @@ export default defineEventHandler(async (event) => {
         operatorId: user.id,
         createdAt: currentTime
       })
-    })
 
-    return {
-      success: true,
-      message: `用户状态已更新为${getStatusText(status)}`,
-      data: {
-        userId: parseInt(userId),
-        oldStatus,
-        newStatus: status,
-        changedAt: currentTime,
-        changedBy: user.name
+      return {
+        success: true,
+        message: `用户状态已更新为${getStatusText(status)}`,
+        data: {
+          userId: parseInt(userId),
+          oldStatus,
+          newStatus: status,
+          changedAt: currentTime,
+          changedBy: user.name
+        }
       }
-    }
+    })
   } catch (error) {
     console.error('更新用户状态失败:', error)
 

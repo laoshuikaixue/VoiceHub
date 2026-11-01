@@ -25,7 +25,8 @@ import {
 } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString, getWeekdayLabel } from '~/utils/timeUtils'
-import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getRolePermissionTemplatesCached, getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { hasAdminPermission, resolveEffectivePermissions } from '~~/app/utils/admin-permissions'
 import { getServerDate } from '~~/server/utils/serverTime'
 import {
   getWeekdayOfDateString,
@@ -41,6 +42,7 @@ import { readSelection } from '~~/server/utils/music-source-plugins/resolver'
 type SongRequestUser = {
   id: number
   role: string
+  perms?: string[]
 }
 
 export type SongRequestOptions = {
@@ -126,7 +128,18 @@ export async function requestSongForUser(
     const currentSemester = await getCurrentSemesterName()
 
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    let permissionUser = user
+    if (!Array.isArray(user.perms)) {
+      const [storedUser] = await db.select({
+        id: users.id, role: users.role, permissions: users.permissions, status: users.status
+      }).from(users).where(eq(users.id, user.id)).limit(1)
+      if (!storedUser || storedUser.status !== 'active') {
+        throw createApiError(401, SERVER_ERROR_CODES.AUTH_UNAUTHORIZED, '账号不可用')
+      }
+      permissionUser = { ...storedUser,
+        perms: resolveEffectivePermissions(storedUser, await getRolePermissionTemplatesCached()) }
+    }
+    const isAdmin = hasAdminPermission(permissionUser, 'songs:bypass-limits')
     const restrictionPolicy = resolveSubmissionRestrictionPolicy(systemSettingsData)
     const semesterRestrictionOn = restrictionPolicy.mode === 'semester' && !isAdmin
 

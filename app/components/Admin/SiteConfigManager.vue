@@ -174,7 +174,7 @@
       </section>
 
       <!-- 主题设置 -->
-      <section v-if="isSuperAdmin" :class="cardClass">
+      <section v-if="canManageSensitiveSettings" :class="cardClass">
         <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4">
           <Palette :size="16" class="text-primary" /> {{ locale.themeSettings }}
         </h3>
@@ -223,7 +223,7 @@
       </section>
 
       <!-- 自定义样式 -->
-      <section v-if="isSuperAdmin" :class="cardClass">
+      <section v-if="canManageSensitiveSettings" :class="cardClass">
         <h3
           class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
         >
@@ -1138,7 +1138,8 @@ import OAuthConfigManager from './OAuthConfigManager.vue'
 const { showToast: showNotification } = useToast()
 const { refreshSiteConfig, captchaEnabled, captchaProvider, esaCaptchaScenes } = useSiteConfig()
 const { siteConfig: locale, theme: themeLocale } = useLocale()
-const { isSuperAdmin } = usePermissions()
+const { can } = usePermissions()
+const canManageSensitiveSettings = computed(() => can('system-settings:secrets'))
 const { localize: localizeServerError } = useServerErrors()
 const themeOptions = computed(() => THEMES.map((value) => ({ value, label: themeLocale.value?.[value] || value })))
 
@@ -1691,7 +1692,7 @@ const loadConfig = async () => {
 // 保存配置
 const saveConfig = async () => {
   try {
-    if (isSuperAdmin.value) {
+    if (canManageSensitiveSettings.value) {
       if (!formData.value.enabledThemes.includes(formData.value.defaultTheme)) {
         showNotification(locale.value?.defaultThemeMustBeEnabled || '默认主题必须处于启用状态', 'error')
         return
@@ -1739,7 +1740,7 @@ const saveConfig = async () => {
       globalMonthlySubmissionLimit: normalizeGlobalSubmissionLimit(
         formData.value.globalMonthlySubmissionLimit
       ),
-      ...(isSuperAdmin.value
+      ...(canManageSensitiveSettings.value
         ? {
             defaultTheme: formData.value.defaultTheme,
             enabledThemes: JSON.stringify(formData.value.enabledThemes)
@@ -1747,7 +1748,7 @@ const saveConfig = async () => {
         : {})
     }
     // 超管专属字段不提交，避免普通管理员保存整表单被接口拒绝
-    const requestPayload = isSuperAdmin.value
+    const requestPayload = canManageSensitiveSettings.value
       ? { ...configToSave }
       : stripSuperAdminOnlySettingFields(configToSave)
     delete requestPayload.schoolLogoHomeDarkUrl

@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -180,9 +181,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     const body = await readBody(event)
+    if (body && Object.prototype.hasOwnProperty.call(body, 'rolePermissionTemplates')) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '角色权限模板须通过权限矩阵修改')
+    }
 
     // 用户数据、凭据与出站目标类配置仅超级管理员可修改
-    if (user.role !== 'SUPER_ADMIN') {
+    if (!hasAdminPermission(user, 'system-settings:secrets')) {
       const rejectedFields = findSuperAdminOnlySettingFields(body)
       if (rejectedFields.length > 0) {
         console.warn('[SystemSettings] 普通管理员提交超管专属配置已拒绝:', rejectedFields.join(', '))
@@ -1482,8 +1486,8 @@ export default defineEventHandler(async (event) => {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)
     }
 
-    const masked = maskSystemSettingsSecrets(settings)
-    return user.role === 'SUPER_ADMIN' ? masked : stripSuperAdminOnlySettingFields(masked)
+    const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {
     console.error('更新系统设置失败:', error)
 

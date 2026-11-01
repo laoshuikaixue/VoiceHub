@@ -133,7 +133,8 @@ export default defineEventHandler(async (event) => {
         tokenVersion: users.tokenVersion,
         status: users.status,
         email: users.email,
-        emailVerified: users.emailVerified
+        emailVerified: users.emailVerified,
+        permissions: users.permissions
       })
       .from(users)
       .where(eq(users.username, body.username))
