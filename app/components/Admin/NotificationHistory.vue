@@ -172,18 +172,18 @@
                   >
                     <Eye :size="15" />
                   </button>
-                  <button
+                  <button :disabled="!(can('notifications:write'))"
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light disabled:opacity-50 disabled:cursor-not-allowed"
                     :title="locale.edit"
                     :aria-label="locale.edit"
                     @click="openEdit(item)"
                   >
                     <Pencil :size="15" />
                   </button>
-                  <button
+                  <button :disabled="!(can('notifications:delete'))"
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light disabled:opacity-50 disabled:cursor-not-allowed"
                     :title="locale.delete"
                     :aria-label="locale.delete"
                     @click="requestDelete(item)"
@@ -235,17 +235,17 @@
               <Eye :size="14" />
               {{ locale.view }}
             </button>
-            <button
+            <button :disabled="!(can('notifications:write'))"
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light disabled:opacity-50 disabled:cursor-not-allowed"
               @click="openEdit(item)"
             >
               <Pencil :size="14" />
               {{ locale.edit }}
             </button>
-            <button
+            <button :disabled="!(can('notifications:delete'))"
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light disabled:opacity-50 disabled:cursor-not-allowed"
               @click="requestDelete(item)"
             >
               <Trash2 :size="14" />
@@ -615,6 +615,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   AlertCircle,
@@ -641,6 +642,8 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import { useToast } from '~/composables/useToast'
 import { renderMarkdown } from '~/utils/markdown'
 import { useLocale } from '~/utils/locale'
+
+const { can } = usePermissions()
 
 const props = defineProps({
   refreshKey: {
@@ -846,6 +849,7 @@ const closeDetails = () => {
 }
 
 const openEdit = async (item) => {
+  if (!(can('notifications:write'))) return
   editingBatch.value = item
   editForm.value = {
     title: item.title || '',
@@ -869,6 +873,7 @@ const closeEdit = () => {
 }
 
 const saveEdit = async () => {
+  if (!(can('notifications:write'))) return
   if (!editingBatch.value?.batchId || editSaving.value) return
 
   const title = editForm.value.title.trim()
@@ -917,6 +922,7 @@ const saveEdit = async () => {
 }
 
 const requestDelete = (item) => {
+  if (!(can('notifications:delete'))) return
   deletingBatch.value = item
 }
 
@@ -930,6 +936,7 @@ const handleDeleteDialogVisibility = (show) => {
 }
 
 const confirmDelete = async () => {
+  if (!(can('notifications:delete'))) return
   if (!deletingBatch.value?.batchId || deleteLoading.value) return
 
   deleteLoading.value = true

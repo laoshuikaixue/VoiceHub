@@ -209,6 +209,28 @@ export class SmtpService {
 
   private constructor() {}
 
+  static createTestInstance(config: Record<string, any>): SmtpService {
+    const service = new SmtpService()
+    service.smtpConfig = {
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: config.smtpSecure,
+      auth: { user: config.smtpUsername, pass: config.smtpPassword },
+      fromEmail: config.smtpFromEmail,
+      fromName: config.smtpFromName
+    }
+    service.transporter = nodemailer.createTransport({
+      host: service.smtpConfig.host,
+      port: service.smtpConfig.port,
+      secure: service.smtpConfig.secure,
+      auth: service.smtpConfig.auth,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
+    })
+    return service
+  }
+
   static getInstance(): SmtpService {
     if (!SmtpService.instance) {
       SmtpService.instance = new SmtpService()

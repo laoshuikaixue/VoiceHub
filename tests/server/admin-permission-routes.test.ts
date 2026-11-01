@@ -176,21 +176,21 @@ test('普通用户模板不含后台闸门码，无法访问任何后台接口',
   assert.deepEqual(allowedRoles('/api/admin/stats', 'GET'), [...CONSOLE])
 })
 
-// 重构前 canAccessPage 硬编码的页面入口清单（侧边栏与 tab 渲染的唯一依据），页面码必须逐项还原
-const UI_PAGES_BEFORE_REFACTOR: Record<string, readonly string[]> = {
+// 内置角色保留既有入口，并显示其业务权限对应的模块。
+const DEFAULT_UI_PAGES: Record<string, readonly string[]> = {
   SONG_ADMIN: ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'],
-  ADMIN: ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source'],
+  ADMIN: ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source', 'notifications', 'smtp-config', 'blacklist', 'site-config', 'database'],
   SUPER_ADMIN: ADMIN_PAGE_IDS
 }
 
-test('后台页面入口与重构前一致，仅补充普通管理员与歌曲管理员的修改密码页', () => {
-  for (const [role, expected] of Object.entries(UI_PAGES_BEFORE_REFACTOR)) {
+test('内置角色页面入口包含其已授予的业务模块', () => {
+  for (const [role, expected] of Object.entries(DEFAULT_UI_PAGES)) {
     const perms = resolveEffectivePermissions({ role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
     const actual = accessiblePages(perms).filter((page) => page !== 'password')
     const expectedPages = expected
       .filter((page) => page !== 'password')
       .sort((a, b) => ADMIN_PAGE_IDS.indexOf(a) - ADMIN_PAGE_IDS.indexOf(b))
-    assert.deepEqual(actual, expectedPages, `${role} 页面入口与重构前不一致`)
+    assert.deepEqual(actual, expectedPages, `${role} 页面入口与模板能力不一致`)
   }
   for (const role of ['ADMIN', 'SONG_ADMIN']) {
     const perms = resolveEffectivePermissions({ role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)

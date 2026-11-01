@@ -5,6 +5,7 @@ import { maskSystemSettingsSecrets } from './secretMask'
 import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { isAdminSettingsScope, pickScopeSettings } from '~~/server/utils/admin-settings-scope'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -57,6 +58,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    const scope = event.context.adminSettingsScope
+    if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)
     // 普通管理员不回传超管专属配置（凭据、隐私与账号安全策略）
     return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {

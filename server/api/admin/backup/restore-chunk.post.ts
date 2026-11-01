@@ -1933,6 +1933,8 @@ export default defineEventHandler(async (event) => {
           .where(eq(systemSettings.id, restoredSettings[0].id))
         stats.warnings.push('SMTP 未配置，已剥离 registerEmailRequired，避免注册邮箱流程不可用')
       }
+      const { SmtpService } = await import('~~/server/services/smtpService')
+      await SmtpService.getInstance().initializeSmtpConfig(true)
     } catch (settingsError: any) {
       console.error('恢复后设置一致性校验失败:', settingsError)
     }

@@ -8,10 +8,10 @@
           {{ locale.desc }}
         </p>
       </div>
-      <div class="flex items-center gap-3">
+      <div v-if="can('smtp:write')" class="flex items-center gap-3">
         <button
           class="flex items-center gap-2 px-6 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50"
-          :disabled="reloading"
+          :disabled="(reloading) || !can('smtp:write')"
           @click="reloadSmtpConfig"
         >
           <RotateCw :size="14" :class="reloading ? 'animate-spin' : ''" />
@@ -22,9 +22,9 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
       <!-- 左侧栏：SMTP 设置与测试 -->
-      <div class="xl:col-span-4 space-y-8">
+      <div v-if="can('smtp:read')" class="xl:col-span-4 space-y-8">
         <!-- SMTP 核心设置 -->
-        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+        <fieldset :disabled="!can('smtp:write') || !configLoaded" class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <div class="flex items-center justify-between">
             <h3
               class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
@@ -72,6 +72,7 @@
                   >{{ locale.secure }}</label
                 >
                 <CustomSelect
+                  :disabled="!can('smtp:write') || !configLoaded"
                   :model-value="config.smtpSecure ? secureOptionLabels.ssl : secureOptionLabels.none"
                   :options="[secureOptionLabels.ssl, secureOptionLabels.none]"
                   class="w-full"
@@ -134,16 +135,16 @@
           <div class="flex justify-end border-t border-border-secondary pt-5">
             <button
               class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="saving"
+              :disabled="(saving) || !can('smtp:write')"
               @click="saveConfig"
             >
               <Save :size="14" /> {{ saving ? locale.saving : locale.save }}
             </button>
           </div>
-        </section>
+        </fieldset>
 
         <!-- SMTP 测试模块 -->
-        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+        <section v-if="can('smtp:test')" class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <h3
             class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
           >
@@ -165,7 +166,7 @@
                 >
                 <button
                   class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
-                  :disabled="testing || !testEmail || !config.smtpEnabled"
+                  :disabled="(testing || !testEmail || !config.smtpEnabled) || !can('smtp:test')"
                   @click="sendTestEmail"
                 >
                   <Check v-if="testResult?.success" :size="14" class="text-success" />
@@ -199,11 +200,11 @@
       </div>
 
       <!-- 右侧栏：模板编辑器 -->
-      <div class="xl:col-span-8">
+      <div v-if="can('email-templates:read')" class="xl:col-span-8">
         <EmailTemplateManager />
       </div>
     </div>
-    <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+    <fieldset v-if="can('astrbot:read')" :disabled="!can('astrbot:write') || !astrbotLoaded" class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-2 min-w-0">
           <Bot :size="16" class="text-primary shrink-0" />
@@ -326,11 +327,11 @@
               <input v-model.trim="target.umo" type="text" :placeholder="astrbotLocale.groupTargetPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
               <CustomSelect v-model="target.platform" class="w-full" :options="groupPlatformOptions" />
               <input v-model.trim="target.label" type="text" :placeholder="astrbotLocale.groupLabelPlaceholder" class="w-full bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30">
-              <button type="button" class="flex items-center justify-center w-10 h-10 rounded-xl text-text-tertiary hover:text-error hover:bg-error-10 transition-colors" :title="astrbotLocale.groupRemove" :aria-label="astrbotLocale.groupRemove" @click="removeGroupTarget(index)">
+              <button :disabled="!can('astrbot:write')" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl text-text-tertiary hover:text-error hover:bg-error-10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" :title="astrbotLocale.groupRemove" :aria-label="astrbotLocale.groupRemove" @click="removeGroupTarget(index)">
                 <Trash2 :size="15" />
               </button>
             </div>
-            <button type="button" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold border border-border-secondary rounded-xl text-text-secondary hover:text-primary hover:border-primary-30 transition-colors" @click="addGroupTarget">
+            <button :disabled="!can('astrbot:write')" type="button" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold border border-border-secondary rounded-xl text-text-secondary hover:text-primary hover:border-primary-30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" @click="addGroupTarget">
               <Plus :size="14" /> {{ astrbotLocale.groupAdd }}
             </button>
           </div>
@@ -368,19 +369,21 @@
         </div>
 
         <div class="flex justify-end border-t border-border-secondary pt-5">
-          <button :disabled="astrbotSaving" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" @click="saveAstrbotConfig">
+          <button :disabled="(astrbotSaving) || !can('astrbot:write')" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" @click="saveAstrbotConfig">
             <Save :size="14" /> {{ astrbotSaving ? astrbotLocale.saving : astrbotLocale.save }}
           </button>
         </div>
       </div>
       <div v-else class="flex justify-center py-8">
-        <AppSpinner :size="20" />
+        <p v-if="astrbotLoadError" role="alert" class="text-xs text-error">{{ astrbotLoadError }}</p>
+        <AppSpinner v-else :size="20" />
       </div>
-    </section>
+    </fieldset>
   </div>
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
@@ -392,12 +395,16 @@ import { ASTRBOT_GROUP_EVENT_KEYS, DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT
 import { ASTRBOT_WEEKLY_BOOLEAN_KEYS, ASTRBOT_WEEKLY_LAYOUTS, DEFAULT_ASTRBOT_WEEKLY_CONFIG } from '~~/server/utils/astrbot-weekly-config'
 import { Bot, Server, Save, Check, Send, CheckCircle, XCircle, RotateCw, Plus, Trash2 } from '@lucide/vue'
 
+const { can } = usePermissions()
+
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.smtpManager || {})
 const astrbotLocale = computed(() => admin.value?.astrbotManager || {})
 const { localize: localizeServerError } = useServerErrors()
 const astrbotLoaded = ref(false)
+const astrbotLoadError = ref('')
+const configLoaded = ref(false)
 const astrbotSaving = ref(false)
 const astrbotTokenConfigured = ref(false)
 const astrbotTokenInput = ref('')
@@ -415,8 +422,10 @@ const astrbotGroupThrottle = ref({ ...DEFAULT_ASTRBOT_GROUP_THROTTLE })
 // 平台归属必须由管理员指定：UMO 前缀是 AstrBot 平台实例 ID，无法反推适配器。
 const groupPlatformOptions = computed(() => platformKeys.map(value => ({ value, label: astrbotLocale.value.platforms?.[value] || value })))
 
-const addGroupTarget = () => { astrbotGroupTargets.value.push({ umo: '', platform: 'qq', label: '' }) }
-const removeGroupTarget = (index) => { astrbotGroupTargets.value.splice(index, 1) }
+const addGroupTarget = () => {
+  if (!can('astrbot:write')) return astrbotGroupTargets.value.push({ umo: '', platform: 'qq', label: '' }) }
+const removeGroupTarget = (index) => {
+  if (!can('astrbot:write')) return astrbotGroupTargets.value.splice(index, 1) }
 // 空行是管理员点「添加」后还没填的占位，提交前剔除，否则会被服务端判为非法。
 const filledGroupTargets = computed(() => astrbotGroupTargets.value
   .filter(target => (target.umo || '').trim())
@@ -437,8 +446,9 @@ const weeklyColumnOptions = computed(() => [
 ])
 
 const loadAstrbotConfig = async () => {
+  if (!can('astrbot:read')) return
   try {
-    const response = await $fetch('/api/admin/system-settings')
+    const response = await $fetch('/api/admin/system-settings/astrbot')
     astrbotPlatforms.value = Object.fromEntries(platformKeys.map(platform => [platform, response.astrbotPlatforms?.[platform] === true]))
     astrbotWeeklyConfig.value = {
       ...weeklyDefaults,
@@ -472,11 +482,13 @@ const loadAstrbotConfig = async () => {
     astrbotTokenInput.value = ''
     astrbotLoaded.value = true
   } catch (err) {
-    showNotification(localizeServerError(err, astrbotLocale.value.loadFailed), 'error')
+    astrbotLoadError.value = localizeServerError(err, astrbotLocale.value.loadFailed)
+    showNotification(astrbotLoadError.value, 'error')
   }
 }
 
 const saveAstrbotConfig = async () => {
+  if (!can('astrbot:write')) return
   astrbotSaving.value = true
   try {
     const body = {
@@ -489,7 +501,7 @@ const saveAstrbotConfig = async () => {
     }
     // 不回传掩码；空输入表示保留已有密钥。
     if (astrbotTokenInput.value) body.astrbotToken = astrbotTokenInput.value
-    await $fetch('/api/admin/system-settings', { method: 'POST', body })
+    await $fetch('/api/admin/system-settings/astrbot', { method: 'POST', body })
     showNotification(astrbotLocale.value.saved, 'success')
     await loadAstrbotConfig()
   } catch (err) {
@@ -554,8 +566,9 @@ const localizeSmtpResult = (response) => ({
 
 // 加载配置
 const loadConfig = async () => {
+  if (!can('smtp:read')) return
   try {
-    const response = await $fetch('/api/admin/system-settings')
+    const response = await $fetch('/api/admin/system-settings/smtp')
 
     config.value = {
       smtpEnabled: response.smtpEnabled || false,
@@ -570,6 +583,7 @@ const loadConfig = async () => {
 
     // 保存原始配置用于重置
     originalConfig.value = { ...config.value }
+    configLoaded.value = true
   } catch (error) {
     console.error('加载SMTP配置失败:', error)
     showNotification(getLocaleMessage('loadFailed'), 'error')
@@ -578,6 +592,7 @@ const loadConfig = async () => {
 
 // 保存配置
 const saveConfig = async () => {
+  if (!can('smtp:write')) return
   if (config.value.smtpEnabled) {
     // 验证必填字段
     if (!config.value.smtpHost || !config.value.smtpUsername || !config.value.smtpPassword) {
@@ -588,7 +603,7 @@ const saveConfig = async () => {
 
   saving.value = true
   try {
-    await $fetch('/api/admin/system-settings', {
+    await $fetch('/api/admin/system-settings/smtp', {
       method: 'POST',
       body: config.value
     })
@@ -597,7 +612,7 @@ const saveConfig = async () => {
     showNotification(getLocaleMessage('saveSuccess'), 'success')
   } catch (error) {
     console.error('保存SMTP配置失败:', error)
-    showNotification(getLocalizedServerMessage(error.data?.message) || getLocaleMessage('saveFailed'), 'error')
+    showNotification(localizeServerError(error, getLocaleMessage('saveFailed')), 'error')
   } finally {
     saving.value = false
   }
@@ -611,6 +626,7 @@ const resetConfig = () => {
 }
 
 const reloadSmtpConfig = async () => {
+  if (!can('smtp:write')) return
   reloading.value = true
   try {
     const response = await $fetch('/api/admin/smtp/reload', {
@@ -633,6 +649,7 @@ const reloadSmtpConfig = async () => {
 
 // 测试连接
 const testConnection = async () => {
+  if (!can('smtp:test')) return
   if (!config.value.smtpEnabled || !config.value.smtpHost) {
     showNotification(getLocaleMessage('serverRequired'), 'error')
     return
@@ -662,6 +679,7 @@ const testConnection = async () => {
 
 // 发送测试邮件
 const sendTestEmail = async () => {
+  if (!can('smtp:test')) return
   if (!testEmail.value) {
     showNotification(getLocaleMessage('testEmailRequired'), 'error')
     return

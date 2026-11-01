@@ -740,6 +740,12 @@ export const pages = {
     }
   },
   dashboard: {
+    noModules: '尚未分配可用模块',
+    noModulesHint: '请联系管理员分配功能权限。',
+    moduleUnavailable: '缺少模块权限',
+    moduleUnavailableHint: '当前仅有页面入口，或必要的读取权限已被拒绝。请联系管理员调整权限。',
+    backHome: '返回首页',
+    permissionHint: '无权限的操作已禁用。',
     backToTop: '返回顶部',
     fallbackTitle: '管理后台',
     defaultSiteTitle: '校园广播站点歌系统',
@@ -2179,7 +2185,7 @@ export const admin = {
   },
   permissionMatrix: {
     title: '权限矩阵',
-    desc: '按角色维护权限码模板；用户显式授权在角色模板之上叠加，显式拒绝优先',
+    desc: '业务权限自动显示模块入口；操作权限包含本模块必要读取，显式拒绝优先。修改 SMTP 可影响账号邮件，请仅授予可信人员。',
     code: '权限码',
     holders: '持有者',
     protectedBadge: '站点级',
@@ -2222,6 +2228,8 @@ export const admin = {
       'system-settings': '系统设置',
       notifications: '通知',
       smtp: '推送服务',
+      astrbot: '机器人推送',
+      'music-source': '内置音源',
       'email-templates': '邮件模板',
       system: '系统状态',
       'system-board': '系统看板',
@@ -4400,6 +4408,10 @@ export const admin = {
     },
   },
   databaseManager: {
+    statusTitle: '数据库状态',
+    refreshStatus: '刷新状态',
+    statusConnected: '连接正常',
+    statusDisconnected: '连接异常',
     title: '数据库操作',
     desc: '执行系统底层维护任务，包括备份、恢复及全局数据重置',
     highRisk: '高风险操作',

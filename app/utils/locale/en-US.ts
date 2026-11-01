@@ -762,6 +762,12 @@ export const pages = {
     }
   },
   dashboard: {
+    noModules: 'No modules assigned',
+    noModulesHint: 'Ask an administrator to assign feature permissions.',
+    moduleUnavailable: 'Module access unavailable',
+    moduleUnavailableHint: 'Only the page entry is granted, or required read access is denied. Ask an administrator to update your permissions.',
+    backHome: 'Back home',
+    permissionHint: 'Actions without permission are disabled.',
     backToTop: 'Back to Top',
     fallbackTitle: 'Admin Dashboard',
     defaultSiteTitle: 'Campus Radio Song Request System',
@@ -2234,7 +2240,7 @@ export const admin = {
   },
   permissionMatrix: {
     title: 'Permissions',
-    desc: 'Role templates of permission codes. Per-user grants are added on top of the role template; explicit denies win.',
+    desc: 'Feature permissions show module entries. Actions include required module reads; explicit denials take priority. Grant SMTP editing only to trusted staff because it affects account emails.',
     code: 'Code',
     holders: 'Holders',
     protectedBadge: 'Site',
@@ -2277,6 +2283,8 @@ export const admin = {
       'system-settings': 'System Settings',
       notifications: 'Notifications',
       smtp: 'Mail Service',
+      astrbot: 'Bot push',
+      'music-source': 'Built-in sources',
       'email-templates': 'Email Templates',
       system: 'System Status',
       'system-board': 'System Board',
@@ -4538,6 +4546,10 @@ export const admin = {
     },
   },
   databaseManager: {
+    statusTitle: 'Database status',
+    refreshStatus: 'Refresh',
+    statusConnected: 'Connected',
+    statusDisconnected: 'Connection failed',
     title: 'Database Operations',
     desc: 'Run low-level maintenance tasks, including backup, restore, and global data reset',
     highRisk: 'High Risk',

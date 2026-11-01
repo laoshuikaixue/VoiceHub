@@ -7,6 +7,7 @@
  * 表与 server/api/admin 下的端点逐一对应，由 tests/server/admin-permission-routes.test.ts 校验等价性。
  */
 import { PRIV_ADMIN_CONSOLE } from '../../app/utils/admin-permissions.ts'
+import { ADMIN_SETTINGS_SCOPES } from './admin-settings-scope.ts'
 
 type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -64,6 +65,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'card-codes/*', m: WRITE_METHODS, any: ['card-codes:write'] },
 
   // 人员
+  { p: 'recipients', m: GET_METHODS, any: ['notifications:write', 'songs:write', 'card-codes:assign'] },
   { p: 'users/export', m: GET_METHODS, any: ['users:export'] },
   { p: 'users/*/permissions', m: GET_METHODS, any: ['priv:grant'] },
   { p: 'users/*/permissions', m: WRITE_METHODS, any: ['priv:grant'] },
@@ -75,6 +77,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'users/*', m: GET_METHODS, any: ['users:read'] },
   { p: 'users/**', m: GET_METHODS, any: ['users:read'] },
   { p: 'users', m: WRITE_METHODS, any: ['users:write'] },
+  { p: 'users/*', m: ['PUT'], any: ['users:write', 'users:assign-role'] },
   { p: 'users/*', m: WRITE_METHODS, any: ['users:write'] },
   { p: 'users/**', m: WRITE_METHODS, any: ['users:write'] },
   { p: 'grade-class', m: GET_METHODS, any: ['grade-class:read'] },
@@ -89,6 +92,10 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'blacklist/*', m: WRITE_METHODS, any: ['blacklist:write'] },
 
   // 系统配置
+  ...Object.entries(ADMIN_SETTINGS_SCOPES).flatMap(([scope, config]) => [
+    { p: `system-settings/${scope}`, m: GET_METHODS, any: config.read },
+    { p: `system-settings/${scope}`, m: ['POST'] as readonly HttpMethod[], any: config.write }
+  ]),
   { p: 'system-settings/env-oauth', m: GET_METHODS, any: ['system-settings:secrets'] },
   { p: 'system-settings/env-oauth-import', m: WRITE_METHODS, any: ['system-settings:secrets'] },
   { p: 'system-settings/clear-aggregate-bindings', m: WRITE_METHODS, any: ['system-settings:secrets'] },

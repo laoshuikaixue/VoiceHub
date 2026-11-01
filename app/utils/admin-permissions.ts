@@ -78,8 +78,11 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'notifications:read',
   'notifications:write',
   'notifications:delete',
+  'smtp:read',
   'smtp:write',
   'smtp:test',
+  'astrbot:read',
+  'astrbot:write',
   'email-templates:read',
   'email-templates:write',
   'email-templates:delete',
@@ -95,10 +98,11 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'database:maintenance',
   'database:reset',
   'system:read',
+  'music-source:read',
+  'music-source:write',
   'music-source-plugins:read',
   'music-source-plugins:write',
-  // 后台页面可见性：接口准入与入口显示是两件事，
-  // 普通管理员能调用的接口（站点配置、通知、黑名单等）不一定有入口
+  // 页面码可单独显示入口；显式拒绝页面码可隐藏业务能力派生的入口。
   'page:overview',
   'page:schedule',
   'page:print',
@@ -129,7 +133,7 @@ const DOMAIN_WILDCARD_SET: ReadonlySet<string> = new Set(
   ADMIN_PERMISSION_CODES.map((code) => `${code.split(':')[0]}:*`)
 )
 
-// 角色默认模板：与重构前的接口守卫等级等价，改动会由等价性测试失败
+// 角色默认模板；页面入口由业务能力和页面码共同决定。
 export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]> = {
   USER: [],
   SONG_ADMIN: [
@@ -222,6 +226,8 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'email-templates:delete',
     'database:read',
     'database:maintenance',
+    'music-source:read',
+    'music-source:write',
     // 页面入口：站点配置、通知、黑名单、数据库、API 密钥、系统看板不在普通管理员界面
     'page:overview',
     'page:schedule',
@@ -268,6 +274,55 @@ export const ADMIN_PAGE_IDS: readonly string[] = [
 export const PAGE_PERMISSIONS: Record<string, readonly string[]> = Object.fromEntries(
   ADMIN_PAGE_IDS.map((page) => [page, [`page:${page}`]])
 )
+
+// 仅包含完成功能所需的数据读取，不隐含其他写入、凭据或站点级能力。
+export const PERMISSION_READ_DEPENDENCIES: Record<string, readonly string[]> = {
+  'songs:read': ['songs:write', 'songs:review', 'songs:delete', 'schedule:read', 'schedule:write'],
+  'schedule:read': ['schedule:write'],
+  'play-times:read': ['play-times:write'],
+  'request-times:read': ['request-times:write'],
+  'semesters:read': ['semesters:write', 'semesters:delete'],
+  'card-codes:read': ['card-codes:write', 'card-codes:assign', 'card-codes:delete'],
+  'replay-requests:read': ['replay-requests:write'],
+  'users:read': ['users:write', 'users:delete', 'users:approve', 'users:reset-password', 'users:assign-role', 'users:export', PRIV_GRANT],
+  'grade-class:read': ['grade-class:write', 'grade-class:delete'],
+  'blacklist:read': ['blacklist:write', 'blacklist:delete'],
+  'system-settings:read': ['system-settings:write', 'system-settings:secrets'],
+  'notifications:read': ['notifications:write', 'notifications:delete'],
+  'smtp:read': ['smtp:write', 'smtp:test'],
+  'astrbot:read': ['astrbot:write'],
+  'email-templates:read': ['email-templates:write', 'email-templates:delete'],
+  'system-board:read': ['system-board:write'],
+  'api-keys:read': ['api-keys:write'],
+  'backup:read': ['backup:write'],
+  'database:read': ['database:maintenance', 'database:reset'],
+  'music-source:read': ['music-source:write'],
+  'music-source-plugins:read': ['music-source-plugins:write']
+}
+
+export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
+  overview: ['stats:read', 'activities:read', 'system:read'],
+  schedule: ['schedule:read', 'replay-requests:read'],
+  print: ['schedule:read'],
+  songs: ['songs:read'],
+  'data-analysis': ['stats:read'],
+  users: ['users:read'],
+  'grade-class': ['grade-class:read'],
+  'api-keys': ['api-keys:read'],
+  notifications: ['notifications:read'],
+  'smtp-config': ['smtp:read', 'astrbot:read', 'email-templates:read'],
+  playtimes: ['play-times:read'],
+  'request-times': ['request-times:read'],
+  semesters: ['semesters:read'],
+  blacklist: ['blacklist:read'],
+  'card-codes': ['card-codes:read'],
+  'music-source': ['music-source:read', 'music-source-plugins:read', 'system-settings:read'],
+  'site-config': ['system-settings:read'],
+  database: ['database:read', 'backup:read', 'backup:restore'],
+  'system-board': ['system-board:read'],
+  permissions: [PRIV_ROLE_TEMPLATE],
+  password: []
+}
 
 function isPermissionToken(token: unknown): token is string {
   if (typeof token !== 'string' || !token) return false
@@ -395,7 +450,15 @@ export function canGrantPermissionToken(
   if ((body === PERMISSION_ALL || body.endsWith(':*')) && !hasPermission(operatorPerms, body))
     return false
   const expanded = expandPermissionToken(token, codes)
-  return expanded.length > 0 && expanded.every((code) => hasPermission(operatorPerms, code))
+  const required = new Set(expanded)
+  let previousSize = 0
+  while (previousSize !== required.size) {
+    previousSize = required.size
+    for (const [read, actions] of Object.entries(PERMISSION_READ_DEPENDENCIES)) {
+      if (actions.some((code) => required.has(code))) required.add(read)
+    }
+  }
+  return expanded.length > 0 && [...required].every((code) => hasPermission(operatorPerms, code))
 }
 
 export function hasAdminPermission(
@@ -450,7 +513,8 @@ export function isPermissionDenied(perms: readonly string[], code: string): bool
 export function hasPermission(perms: readonly string[], code: string): boolean {
   if (!Array.isArray(perms) || !code) return false
   if (isPermissionDenied(perms, code)) return false
-  return perms.some((token) => !token.startsWith('!') && matchesToken(token, code))
+  return perms.some((token) => !token.startsWith('!') && matchesToken(token, code)) ||
+    (PERMISSION_READ_DEPENDENCIES[code] ?? []).some((action) => hasPermission(perms, action))
 }
 
 export function hasAnyPermission(perms: readonly string[], codes: readonly string[]): boolean {
@@ -468,8 +532,14 @@ export function canAccessAdminConsole(perms: readonly string[]): boolean {
 
 export function canAccessAdminPage(perms: readonly string[], page: string): boolean {
   const codes = PAGE_PERMISSIONS[page]
-  if (!codes) return false
-  return hasAnyPermission(perms, codes)
+  if (!codes || !canAccessAdminConsole(perms) || isPermissionDenied(perms, `page:${page}`)) return false
+  return hasAnyPermission(perms, codes) ||
+    (ADMIN_PAGE_CAPABILITIES[page]?.some((code) => hasPermission(perms, code)) ?? false)
+}
+
+export function canUseAdminPage(perms: readonly string[], page: string): boolean {
+  const capabilities = ADMIN_PAGE_CAPABILITIES[page]
+  return canAccessAdminPage(perms, page) && !!capabilities && hasAnyPermission(perms, capabilities)
 }
 
 // 有效权限可访问的后台页面 ID，顺序与 ADMIN_PAGE_IDS 一致

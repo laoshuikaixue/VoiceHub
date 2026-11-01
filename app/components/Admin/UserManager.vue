@@ -379,7 +379,7 @@
                     class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all action-buttons"
                   >
                     <button
-                      :disabled="!canManageUser(user)"
+                      :disabled="!canManageUser(user) && !canManageUser(user, 'users:assign-role')"
                       class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       :title="locale.actions.editUser"
                       @click="editUser(user)"
@@ -394,8 +394,8 @@
                     >
                       <ClipboardCheck :size="13" />
                     </button>
-                    <button
-                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center"
+                    <button :disabled="!can('users:read-songs')"
+                      class="p-2 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-info transition-colors action-btn flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       :title="locale.actions.viewSongs"
                       @click="viewUserSongs(user)"
                     >
@@ -553,7 +553,7 @@
 
             <div class="flex gap-2 action-buttons">
               <button
-                :disabled="!canManageUser(user)"
+                :disabled="!canManageUser(user) && !canManageUser(user, 'users:assign-role')"
                 class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-primary-hover active:text-text-primary transition-colors disabled:opacity-20 action-btn"
                 @click="editUser(user)"
               >
@@ -566,8 +566,8 @@
               >
                 <ClipboardCheck :size="12" /> {{ locale.actions.approve }}
               </button>
-              <button
-                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn"
+              <button :disabled="!can('users:read-songs')"
+                class="flex-1 py-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-info active:text-text-primary transition-colors action-btn disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="viewUserSongs(user)"
               >
                 <Music :size="12" /> {{ locale.actions.records }}
@@ -652,6 +652,7 @@
                     />
                     <input
                       v-model="userForm.name"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.namePlaceholder"
@@ -670,6 +671,7 @@
                     />
                     <input
                       v-model="userForm.username"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.usernamePlaceholder"
@@ -693,7 +695,7 @@
                     autocomplete="new-password"
                     class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                     :placeholder="locale.form.passwordPlaceholder"
-                    :disabled="!!editingUser && !can('users:reset-password')"
+                    :disabled="!!editingUser && (!can('users:reset-password') || !can('users:write'))"
                     type="password"
                   >
                 </div>
@@ -719,6 +721,7 @@
                   >
                   <CustomSelect
                     v-model="userForm.status"
+                      :disabled="!!editingUser && !can('users:write')"
                     :options="userStatusOptions"
                     label-key="label"
                     value-key="value"
@@ -739,6 +742,7 @@
                     />
                     <input
                       v-model="userForm.grade"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.gradePlaceholder"
@@ -757,6 +761,7 @@
                     />
                     <input
                       v-model="userForm.class"
+                      :disabled="!!editingUser && !can('users:write')"
                       autocomplete="off"
                       class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       :placeholder="locale.form.classPlaceholder"
@@ -2181,6 +2186,7 @@ const getStatusDisplayName = (status) => {
 }
 
 const editUser = (user) => {
+  if (!canManageUser(user) && !canManageUser(user, 'users:assign-role')) return
   // 禁止编辑自身
   if (isSelf(user)) {
     if (window.$showNotification) {
@@ -2244,6 +2250,7 @@ const confirmDeleteUser = (user) => {
 }
 
 const viewUserSongs = (user) => {
+  if (!can('users:read-songs')) return
   selectedUserId.value = user.id
   showUserSongsModal.value = true
 }
@@ -2487,7 +2494,7 @@ const openTreeUser = async (treeUser) => {
 }
 
 const saveUser = async () => {
-  if (!can('users:write')) return
+  if (!can('users:write') && !(editingUser.value && can('users:assign-role'))) return
   // 保护：禁止保存针对自身的更改
   if (editingUser.value && isSelf(editingUser.value)) {
     formError.value = locale.value.notifications.selfEditForbidden
@@ -2523,7 +2530,7 @@ const saveUser = async () => {
     if (editingUser.value) {
       await $fetch(`/api/admin/users/${editingUser.value.id}`, {
         method: 'PUT',
-        body: userData,
+        body: can('users:write') ? userData : { role: userForm.value.role },
         ...auth.getAuthConfig()
       })
     } else {

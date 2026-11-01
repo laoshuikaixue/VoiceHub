@@ -1171,6 +1171,7 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建学期
 │   │   │   │   └── set-active.post.ts # 设置活跃学期
 │   │   │   ├── smtp/                # SMTP邮件服务API
+│   │   │   ├── recipients.get.ts    # 功能操作使用的轻量接收人查询
 │   │   │   │   ├── reload.post.ts   # 重新加载SMTP配置
 │   │   │   │   ├── test-connection.post.ts # 测试SMTP连接
 │   │   │   │   └── test-email.post.ts # 发送测试邮件
@@ -1191,6 +1192,7 @@ VoiceHub/
 │   │   │   │   ├── trends.get.ts    # 趋势分析
 │   │   │   │   └── user-engagement.get.ts # 用户参与度统计
 │   │   │   ├── system-settings/     # 系统设置API
+│   │   │   │   ├── [scope].ts       # 按模块隔离的配置读取与更新
 │   │   │   │   ├── env-oauth-import.post.ts # 导入环境变量OAuth配置
 │   │   │   │   ├── env-oauth.get.ts # 获取环境变量OAuth配置
 │   │   │   │   ├── index.post.ts    # 更新系统设置
@@ -1454,6 +1456,7 @@ VoiceHub/
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── admin-permission-routes.ts # 后台接口权限守卫表（/api/admin 准入唯一来源）
+│   │   ├── admin-settings-scope.ts # 模块配置权限与字段白名单
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
@@ -1547,6 +1550,7 @@ VoiceHub/
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── submission-restriction-policy.ts # 重复投稿限制模式判定
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── smtp-test-config.ts # SMTP 测试配置与保存密码的目标约束
 │   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── system-event-buffer.ts # 系统看板进程内运行事件环形缓冲
 │   │   ├── theme-config.ts # 主题配置校验与解析工具

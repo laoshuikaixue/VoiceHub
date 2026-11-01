@@ -8,6 +8,7 @@ import {
   PRIV_ROLE_TEMPLATE,
   canAccessAdminConsole,
   canAccessAdminPage,
+  canUseAdminPage,
   hasPermission,
 } from '~/utils/admin-permissions'
 
@@ -27,6 +28,7 @@ export const usePermissions = () => {
 
   // 检查用户是否可以访问指定页面
   const canAccessPage = (page: string): boolean => canAccessAdminPage(perms.value, page)
+  const canUsePage = (page: string): boolean => canUseAdminPage(perms.value, page)
   const can = (code: string): boolean => canAccessAdmin.value && hasPermission(perms.value, code)
 
   // 获取用户可访问的页面列表（修改密码不属于后台页面）
@@ -62,6 +64,7 @@ export const usePermissions = () => {
     // 页面访问权限
     canAccessAdmin,
     canAccessPage,
+    canUsePage,
     getUserPages,
 
     // 角色检查

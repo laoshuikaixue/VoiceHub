@@ -48,15 +48,9 @@ export default defineEventHandler(async (event) => {
       }
 
       const { name, username, password, role, grade, class: userClass, status } = body || {}
-      const normalizedName = normalizeRequiredText(name)
-      const normalizedUsername = normalizeRequiredText(username)
-
-      // 验证必填字段
-      if (!normalizedName || !normalizedUsername) {
-        throw createError({
-          statusCode: 400,
-          message: '姓名和用户名为必填项'
-        })
+      const roleOnly = !hasAdminPermission(user, 'users:write')
+      if (roleOnly && (!body || !role || Object.keys(body).some((key) => key !== 'role'))) {
+        throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只能修改用户角色')
       }
 
       // 检查用户是否存在
@@ -70,6 +64,11 @@ export default defineEventHandler(async (event) => {
       }
 
       const targetUser = existingUser[0]!
+      const normalizedName = roleOnly ? targetUser.name : normalizeRequiredText(name)
+      const normalizedUsername = roleOnly ? targetUser.username : normalizeRequiredText(username)
+      if (!normalizedName || !normalizedUsername) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '姓名和用户名为必填项')
+      }
 
       // 1. 禁止修改系统初始超级管理员 (ID: 1)
       if (targetUser.id === 1) {
@@ -175,7 +174,7 @@ export default defineEventHandler(async (event) => {
       )
 
       // 准备更新数据
-      const updateData = {
+      const updateData = roleOnly ? { role: validRole } : {
         name: normalizedName,
         username: normalizedUsername,
         role: validRole,

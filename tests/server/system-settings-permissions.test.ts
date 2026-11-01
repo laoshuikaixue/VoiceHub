@@ -129,7 +129,7 @@ test('剔除与命中函数按清单工作', () => {
 
 test('读写接口字段分区按权限码把关，默认角色与子接口守卫保持一致', () => {
   assert.match(INDEX_POST, /!hasAdminPermission\(user, 'system-settings:secrets'\)[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
-  assert.match(INDEX_POST, /statusCode: 403/)
+  assert.match(INDEX_POST, /createApiError\(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION/)
   assert.match(INDEX_GET, /stripSuperAdminOnlySettingFields\(masked\)/)
   assert.doesNotMatch(ENV_OAUTH_GET, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, 'env-oauth.get 不应再放行普通管理员')
   assert.doesNotMatch(ENV_OAUTH_IMPORT, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/)
@@ -166,11 +166,15 @@ test('保存设置的响应与读取接口一致，普通管理员无法通过�
   }
 })
 
-test('普通管理员界面不含站点配置与机器人配置入口，表单不提交超管字段', () => {
+test('普通管理员可见业务配置入口，但仍不能管理机器人凭据与超管字段', () => {
   const adminPages = accessiblePages(resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT))
   assert.ok(adminPages.length, '未找到 ADMIN 可访问页面列表')
-  for (const page of ['site-config', 'smtp-config', 'database', 'api-keys']) {
+  for (const page of ['api-keys', 'system-board', 'permissions']) {
     assert.ok(!adminPages.includes(page), `普通管理员不应有 ${page} 入口`)
   }
+  for (const page of ['site-config', 'smtp-config', 'database']) assert.ok(adminPages.includes(page))
+  const adminPerms = resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+  assert.equal(hasAdminPermission({ perms: adminPerms }, 'astrbot:read'), false)
+  assert.equal(hasAdminPermission({ perms: adminPerms }, 'system-settings:secrets'), false)
   assert.match(SITE_CONFIG_UI, /stripSuperAdminOnlySettingFields\(configToSave\)/)
 })

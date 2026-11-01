@@ -8,6 +8,15 @@
       </p>
     </div>
 
+    <div v-if="can('database:read')" class="p-5 rounded-xl border border-border-secondary bg-bg-secondary space-y-2">
+      <div class="flex items-center justify-between gap-4">
+        <h3 class="text-sm font-bold">{{ locale.statusTitle }}</h3>
+        <button :disabled="statusLoading" class="px-3 py-2 bg-bg-tertiary rounded-lg text-xs disabled:opacity-50" @click="loadDatabaseStatus">{{ locale.refreshStatus }}</button>
+      </div>
+      <p v-if="statusError" role="alert" class="text-xs text-error">{{ statusError }}</p>
+      <p v-else-if="databaseStatus" class="text-sm text-text-secondary">{{ databaseStatus.success ? locale.statusConnected : locale.statusDisconnected }} · {{ databaseStatus.responseTime }} ms</p>
+    </div>
+
     <!-- 操作卡片网格 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
@@ -51,7 +60,7 @@
           </div>
 
           <button
-            :disabled="isLoading(card.id)"
+            :disabled="isLoading(card.id) || !canOpenCard(card.id)"
             class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
             :class="
               card.isDanger
@@ -147,7 +156,7 @@
             {{ locale.cancel }}
           </button>
           <button
-            :disabled="createLoading"
+            :disabled="createLoading || !can('backup:write')"
             class="px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="createBackup"
           >
@@ -231,6 +240,7 @@
                     ? 'bg-bg-primary border-success-30'
                     : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                 ]"
+                :disabled="!can('database:reset')"
                 @click="restoreForm.mode = 'replace'"
               >
                 <h6
@@ -282,7 +292,7 @@
             {{ locale.cancel }}
           </button>
           <button
-            :disabled="uploadLoading || !selectedFile"
+            :disabled="(uploadLoading || !selectedFile) || !can('backup:restore')"
             class="px-8 py-2 bg-success hover:bg-success text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="restoreBackup"
           >
@@ -348,7 +358,7 @@
             {{ locale.cancel }}
           </button>
           <button
-            :disabled="sequenceLoading || !sequenceForm.table"
+            :disabled="(sequenceLoading || !sequenceForm.table) || !can('database:maintenance')"
             class="px-8 py-2 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="resetSequence"
           >
@@ -419,7 +429,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="resetConfirmText !== CONFIRM_CODE || resetLoading"
+              :disabled="(resetConfirmText !== CONFIRM_CODE || resetLoading) || !can('database:reset')"
               class="py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg disabled:bg-bg-tertiary disabled:text-text-disabled disabled:cursor-not-allowed disabled:border-border-tertiary"
               :class="
                 resetConfirmText === CONFIRM_CODE
@@ -444,7 +454,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { usePermissions } from '~/composables/usePermissions'
+import { computed, onMounted, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
@@ -452,10 +463,34 @@ import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 import { useLocale } from '~/utils/locale'
 
+const { can } = usePermissions()
+
 const { showToast: showNotification } = useToast()
 const auth = useAuth()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager || {})
+const { localize } = useServerErrors()
+const databaseStatus = ref(null)
+const statusLoading = ref(false)
+const statusError = ref('')
+const cardPermissions = {
+  backup: 'backup:write', restore: 'backup:restore', 'reset-seq': 'database:maintenance',
+  'reset-db': 'database:reset', 'auto-backup': 'backup:read'
+}
+const canOpenCard = (id) => can(cardPermissions[id])
+const loadDatabaseStatus = async () => {
+  if (!can('database:read')) return
+  statusLoading.value = true
+  statusError.value = ''
+  try {
+    databaseStatus.value = await $fetch('/api/admin/database/status')
+  } catch (error) {
+    statusError.value = localize(error)
+  } finally {
+    statusLoading.value = false
+  }
+}
+onMounted(loadDatabaseStatus)
 const defaultTableOptions = [
   { label: '重置所有表', value: 'all' },
   { label: '歌曲表', value: 'Song' },
@@ -595,6 +630,7 @@ const isLoading = (id) => {
 }
 
 const openModal = (id) => {
+  if (!canOpenCard(id)) return
   activeModal.value = id
   if (id === 'reset-db') {
     resetConfirmText.value = ''
@@ -641,6 +677,7 @@ const handleFileDrop = async (event) => {
 
 // API 操作
 const createBackup = async () => {
+  if (!can('backup:write')) return
   createLoading.value = true
   try {
     let tables = 'all'
@@ -710,6 +747,7 @@ const createBackup = async () => {
 }
 
 const restoreBackup = async () => {
+  if (!can('backup:restore')) return
   if (!selectedFile.value) return showNotification(getMessage('selectBackupFile'), 'error')
 
   uploadLoading.value = true
@@ -742,6 +780,7 @@ const restoreBackup = async () => {
     let temporaryPreservedUserId = null
 
     if (restoreForm.value.mode === 'replace') {
+      if (!can('database:reset')) return
       restoreProgress.value = getProgressMessage('clearingData')
       const clearResult = await $fetch('/api/admin/backup/clear', {
         method: 'POST',
@@ -847,23 +886,6 @@ const restoreBackup = async () => {
       }
     }
 
-    restoreProgress.value = getProgressMessage('fixingSequence')
-    const sequenceResult = await $fetch('/api/admin/fix-sequence', {
-      method: 'POST',
-      body: { table: 'all' }
-    })
-    if (!sequenceResult.success) {
-      throw new Error(sequenceResult.message || sequenceResult.error || getErrorMessage('fixSequenceFailed'))
-    }
-
-    restoreProgress.value = getProgressMessage('reloadingSmtp')
-    const smtpReloadResult = await $fetch('/api/admin/smtp/reload', {
-      method: 'POST'
-    })
-    if (!smtpReloadResult.success) {
-      throw new Error(smtpReloadResult.message || getErrorMessage('smtpReloadFailed'))
-    }
-
     const shouldFinalizeTempUser =
       restoreForm.value.mode === 'replace' &&
       restoreForm.value.overwriteSuperAdmin &&
@@ -912,6 +934,7 @@ const restoreBackup = async () => {
 }
 
 const resetSequence = async () => {
+  if (!can('database:maintenance')) return
   if (!sequenceForm.value.table) return
   sequenceLoading.value = true
   try {
@@ -934,6 +957,7 @@ const resetSequence = async () => {
 }
 
 const resetDatabase = async () => {
+  if (!can('database:reset')) return
   if (resetConfirmText.value !== CONFIRM_CODE) return
   resetLoading.value = true
   try {

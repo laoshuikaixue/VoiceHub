@@ -15,7 +15,7 @@
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableSelection }}</span
           >
-          <button
+          <button :disabled="!(can('play-times:write') || can('system-settings:write'))"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enablePlayTimeSelection ? 'bg-primary-hover' : 'bg-bg-tertiary'
@@ -43,7 +43,7 @@
               enablePlayTimeSelection ? '' : 'opacity-40 cursor-not-allowed',
               playSlotRequired ? 'bg-primary-hover' : 'bg-bg-tertiary'
             ]"
-            :disabled="!enablePlayTimeSelection"
+            :disabled="(!enablePlayTimeSelection) || !(can('play-times:write') || can('system-settings:write'))"
             @click="toggleSlotRequired"
           >
             <div
@@ -54,8 +54,8 @@
             />
           </button>
         </div>
-        <button
-          class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
+        <button :disabled="!(can('play-times:write'))"
+          class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="openAddForm"
         >
           <Plus :size="14" /> {{ locale.add }}
@@ -191,20 +191,20 @@
 
           <div class="mt-8 pt-6 border-t border-border-secondary-50 flex items-center justify-between">
             <div class="flex gap-2">
-              <button
-                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
+              <button :disabled="!(can('play-times:write'))"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="editPlayTime(playTime)"
               >
                 <Edit2 :size="14" />
               </button>
-              <button
-                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-error hover:border-error-30 transition-all"
+              <button :disabled="!can('play-times:write')"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-error hover:border-error-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="confirmDelete(playTime)"
               >
                 <Trash2 :size="14" />
               </button>
             </div>
-            <button
+            <button :disabled="!can('play-times:write')"
               :class="[
                 'flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                 playTime.enabled
@@ -374,7 +374,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="formSubmitting"
+              :disabled="(formSubmitting) || !can('play-times:write')"
               class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg transition-all active:scale-95"
               @click="savePlayTime"
             >
@@ -418,7 +418,7 @@
                   {{ locale.cancel }}
                 </button>
                 <button
-                  :disabled="deleteInProgress"
+                  :disabled="(deleteInProgress) || !can('play-times:write')"
                   class="flex-1 px-4 py-3 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95"
                   @click="deletePlayTime"
                 >
@@ -433,14 +433,14 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
-import type { PlayTime } from '~/types'
+
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import AppTimePicker from '~/components/UI/Common/AppTimePicker.vue'
 import {
@@ -475,12 +475,12 @@ const locale = computed(() => {
   })
 })
 
-const playTimes = ref<PlayTime[]>([])
+const playTimes = ref([])
 const loading = ref(false)
 const error = ref('')
 const showAddForm = ref(false)
-const editingPlayTime = ref<PlayTime | null>(null)
-const playTimeToDelete = ref<PlayTime | null>(null)
+const editingPlayTime = ref(null)
+const playTimeToDelete = ref(null)
 const showDeleteConfirm = ref(false)
 const formSubmitting = ref(false)
 const deleteInProgress = ref(false)
@@ -502,7 +502,7 @@ const weekdayOptions = computed(() => {
 })
 
 // 卡片上的星期展示：配置了星期则高亮显示，未配置则全部置灰（表示每天均可选）
-const weekdayChips = (weekdays: number[] | null | undefined) => {
+const weekdayChips = (weekdays) => {
   const days = Array.isArray(weekdays) && weekdays.length > 0 ? weekdays : null
   const labels = locale.value.weekdaysShort || ['日', '一', '二', '三', '四', '五', '六']
   return [0, 1, 2, 3, 4, 5, 6].map((value) => ({
@@ -513,7 +513,7 @@ const weekdayChips = (weekdays: number[] | null | undefined) => {
 }
 
 // 勾选/取消适用星期
-const toggleWeekday = (value: number) => {
+const toggleWeekday = (value) => {
   const index = formData.weekdays.indexOf(value)
   if (index >= 0) {
     formData.weekdays.splice(index, 1)
@@ -532,7 +532,7 @@ const formData = reactive({
   description: '',
   enabled: true,
   // 适用星期（0=周日…6=周六），空数组 = 每天均可选
-  weekdays: [] as number[],
+  weekdays: []            ,
   // 默认播出时段：用户投稿未选择时段时自动预选
   isDefault: false
 })
@@ -568,7 +568,7 @@ const fetchPlayTimes = async () => {
     })
 
     // 自定义排序：先按启用状态排序，然后有时间的排在前面，没有时间的排在后面
-    playTimes.value = data.sort((a: PlayTime, b: PlayTime) => {
+    playTimes.value = data.sort((a, b) => {
       // 默认时段排最前，便于识别
       if (a.isDefault !== b.isDefault) {
         return a.isDefault ? -1 : 1
@@ -601,7 +601,7 @@ const fetchPlayTimes = async () => {
       // 最后按名称排序
       return a.name.localeCompare(b.name)
     })
-  } catch (err: any) {
+  } catch (err) {
     error.value = localizeServerError(err, locale.value.errors.fetchPlayTimesFailed)
   } finally {
     loading.value = false
@@ -610,23 +610,23 @@ const fetchPlayTimes = async () => {
 
 // 获取系统设置
 const fetchSystemSettings = async () => {
-  if (!can('system-settings:read')) return
+  if (!can('play-times:read') && !can('system-settings:read')) return
 
   try {
     const authConfig = getAuthConfig()
-    const data = await $fetch('/api/admin/system-settings', {
+    const data = await $fetch('/api/admin/system-settings/play-times', {
       ...authConfig
     })
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
     playSlotRequired.value = data.playSlotRequired || false
-  } catch (err: any) {
+  } catch (err) {
     console.error('获取系统设置失败:', getErrorMessage(err))
   }
 }
 
 // 切换全局启用状态。
 const toggleGlobalEnabled = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('play-times:write') && !can('system-settings:write')) return
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
   const nextEnabled = !prev.enabled
   enablePlayTimeSelection.value = nextEnabled
@@ -636,7 +636,7 @@ const toggleGlobalEnabled = async () => {
 
 // 切换「时段必选」总开关（仅在总开关开启时可用）
 const toggleSlotRequired = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('play-times:write') && !can('system-settings:write')) return
   if (!enablePlayTimeSelection.value) return
   const prev = { enabled: enablePlayTimeSelection.value, required: playSlotRequired.value }
   playSlotRequired.value = !prev.required
@@ -645,11 +645,11 @@ const toggleSlotRequired = async () => {
 
 // 保存两个开关：两者相互约束，同一请求提交完整组合
 const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
-  if (!can('system-settings:write')) return
+  if (!can('play-times:write') && !can('system-settings:write')) return
 
   try {
     const authConfig = getAuthConfig()
-    await $fetch('/api/admin/system-settings', {
+    await $fetch('/api/admin/system-settings/play-times', {
       method: 'POST',
       body: {
         enablePlayTimeSelection: enablePlayTimeSelection.value,
@@ -659,7 +659,7 @@ const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
     })
 
     showNotification(successMessage, 'success')
-  } catch (err: any) {
+  } catch (err) {
     error.value = getErrorMessage(err) || failMessage
     showNotification(error.value, 'error')
     // 保存失败回滚两个开关状态
@@ -670,6 +670,7 @@ const savePlayTimeFlags = async (prev, successMessage, failMessage) => {
 
 // 打开添加表单
 const openAddForm = () => {
+  if (!(can('play-times:write'))) return
   if (!canWrite.value) return
   showAddForm.value = true
   Object.assign(formData, {
@@ -685,7 +686,8 @@ const openAddForm = () => {
 }
 
 // 编辑播出时段
-const editPlayTime = (playTime: PlayTime) => {
+const editPlayTime = (playTime) => {
+  if (!(can('play-times:write'))) return
   editingPlayTime.value = playTime
   Object.assign(formData, {
     id: playTime.id,
@@ -701,12 +703,12 @@ const editPlayTime = (playTime: PlayTime) => {
 }
 
 // 切换播出时段状态
-const togglePlayTimeStatus = async (playTime: PlayTime) => {
+const togglePlayTimeStatus = async (playTime) => {
   if (!canWrite.value) return
 
   try {
     const authConfig = getAuthConfig()
-    const updated: any = await $fetch(`/api/admin/play-times/${playTime.id}`, {
+    const updated = await $fetch(`/api/admin/play-times/${playTime.id}`, {
       method: 'PATCH',
       body: {
         enabled: !playTime.enabled
@@ -723,14 +725,14 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
         ? locale.value?.messages?.playTimeDisabled || 'Play time disabled'
         : locale.value?.messages?.playTimeEnabled || 'Play time enabled'
     showNotification(message, 'success')
-  } catch (err: any) {
+  } catch (err) {
     error.value = localizeServerError(err, locale.value.errors.updatePlayTimeStatusFailed)
     showNotification(error.value, 'error')
   }
 }
 
 // 确认删除
-const confirmDelete = (playTime: PlayTime) => {
+const confirmDelete = (playTime) => {
   playTimeToDelete.value = playTime
   showDeleteConfirm.value = true
 }
@@ -753,7 +755,7 @@ const deletePlayTime = async () => {
     showDeleteConfirm.value = false
     playTimeToDelete.value = null
     showNotification(locale.value?.messages?.playTimeDeleted || 'Play time deleted', 'success')
-  } catch (err: any) {
+  } catch (err) {
     error.value = localizeServerError(err, locale.value.errors.deletePlayTimeFailed)
     showNotification(error.value, 'error')
   } finally {
@@ -821,7 +823,7 @@ const savePlayTime = async () => {
         : (locale.value?.messages?.playTimeCreated || 'Play time created'),
       'success'
     )
-  } catch (err: any) {
+  } catch (err) {
     formError.value = localizeServerError(err, locale.value.errors.savePlayTimeFailed)
     showNotification(formError.value, 'error')
   } finally {

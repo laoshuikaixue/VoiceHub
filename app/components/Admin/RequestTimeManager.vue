@@ -28,7 +28,7 @@
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableRequest }}</span
           >
-          <button
+          <button :disabled="!(can('request-times:write') || can('system-settings:write'))"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enableRequest ? 'bg-primary-hover' : 'bg-bg-tertiary'
@@ -48,7 +48,7 @@
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableTimeLimit }}</span
           >
-          <button
+          <button :disabled="!(can('request-times:write') || can('system-settings:write'))"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enableRequestTimeLimitation ? 'bg-primary-hover' : 'bg-bg-tertiary'
@@ -68,7 +68,7 @@
             >{{ locale.enableRestriction }}</span
           >
           <button
-            :disabled="restrictionSaving"
+            :disabled="(restrictionSaving) || !(can('request-times:write') || can('system-settings:write'))"
             :class="[
               'relative w-10 h-5 rounded-full transition-colors',
               enableSubmissionRestriction ? 'bg-primary-hover' : 'bg-bg-tertiary',
@@ -99,8 +99,8 @@
     <!-- 主要内容区域 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- 添加时段按钮卡片 -->
-      <button
-        class="group relative h-full min-h-[220px] bg-bg-secondary-20 border-2 border-dashed border-border-secondary rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-primary-hover-5 hover:border-primary-40 transition-all active:scale-95"
+      <button :disabled="!(can('request-times:write'))"
+        class="group relative h-full min-h-[220px] bg-bg-secondary-20 border-2 border-dashed border-border-secondary rounded-3xl flex flex-col items-center justify-center gap-4 hover:bg-primary-hover-5 hover:border-primary-40 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="showAddForm = true"
       >
         <div
@@ -228,21 +228,21 @@
 
           <div class="pt-6 border-t border-border-secondary-50 flex items-center justify-between">
             <div class="flex gap-2">
-              <button
+              <button :disabled="!(can('request-times:write'))"
                 v-show="!slot.past"
-                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="editRequestTime(slot)"
               >
                 <Edit2 :size="14" />
               </button>
-              <button
-                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error hover:border-error-30 transition-all"
+              <button :disabled="!can('request-times:write')"
+                class="flex items-center justify-center p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-tertiary hover:text-error hover:border-error-30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="confirmDelete(slot)"
               >
                 <Trash2 :size="14" />
               </button>
             </div>
-            <button
+            <button :disabled="!can('request-times:write')"
               v-show="!slot.past"
               :class="[
                 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
@@ -306,7 +306,7 @@
           </div>
         </div>
         <button
-          :disabled="restrictionSaving"
+          :disabled="(restrictionSaving) || !(can('request-times:write') || can('system-settings:write'))"
           class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveRestrictionSettings"
         >
@@ -527,7 +527,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="formSubmitting"
+              :disabled="(formSubmitting) || !can('request-times:write')"
               class="px-10 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50"
               @click="saveRequestTime"
             >
@@ -578,7 +578,7 @@
                 {{ locale.keepTime }}
               </button>
               <button
-                :disabled="deleteInProgress"
+                :disabled="(deleteInProgress) || !can('request-times:write')"
                 class="flex-1 px-4 py-3 bg-error hover:bg-error text-text-primary text-xs font-black rounded-2xl shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 disabled:opacity-50"
                 @click="deleteRequestTime"
               >
@@ -646,13 +646,13 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { onMounted, onUnmounted, reactive, ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-import type { RequestTime } from '~/types'
+
 import AppDateTimePicker from '~/components/UI/Common/AppDateTimePicker.vue'
 import {
   Plus,
@@ -690,12 +690,12 @@ const locale = computed(() => {
 })
 const getErrorMessage = (key, ...args) => formatLocale(locale.value?.errors?.[key], ...args)
 
-const requestTimes = ref<RequestTime[]>([])
+const requestTimes = ref([])
 const loading = ref(false)
 const error = ref('')
 const showAddForm = ref(false)
-const editingRequestTime = ref<RequestTime | null>(null)
-const RequestTimeToDelete = ref<RequestTime | null>(null)
+const editingRequestTime = ref(null)
+const RequestTimeToDelete = ref(null)
 const showDeleteConfirm = ref(false)
 const formSubmitting = ref(false)
 const deleteInProgress = ref(false)
@@ -708,11 +708,11 @@ const hitRequestTime = ref(false)
 const enableRequest = ref(true)
 const enableSubmissionRestriction = ref(false)
 const submissionRestrictionScope = ref('all')
-const sameSongRestrictionHours = ref<number | null>(null)
-const sameArtistRestrictionHours = ref<number | null>(null)
+const sameSongRestrictionHours = ref(null)
+const sameArtistRestrictionHours = ref(null)
 const restrictionSaving = ref(false)
 
-let refreshInterval: any = null
+let refreshInterval = null
 
 const formData = reactive({
   id: 0,
@@ -727,13 +727,13 @@ const formData = reactive({
 // 统计数据
 const stats = computed(() => {
   const activeSlots = requestTimes.value.filter((s) => s.enabled && !s.past)
-  
+
   // 检查是否有不限容量的活跃时段
   const hasUnlimitedActiveSlot = activeSlots.some((s) => !s.expected || s.expected === 0)
-  
+
   const totalExpectedActive = activeSlots.reduce((acc, s) => acc + (s.expected || 0), 0)
   const totalAcceptedActive = activeSlots.reduce((acc, s) => acc + s.accepted, 0)
-  
+
   // 累计已接收可以统计所有的（包括过去的），也可以只统计活跃的。通常累计是历史总计，但也可以分历史和当前。
   // 原逻辑是统计所有 requestTimes 的 accepted。保持原逻辑。
   const totalAcceptedAll = requestTimes.value.reduce((acc, s) => acc + s.accepted, 0)
@@ -761,9 +761,9 @@ const stats = computed(() => {
     },
     {
       label: locale.value?.stats?.remainingCapacity || 'Remaining capacity',
-      value: activeSlots.length === 0 
+      value: activeSlots.length === 0
         ? (locale.value?.none || 'None')
-        : (hasUnlimitedActiveSlot 
+        : (hasUnlimitedActiveSlot
             ? (locale.value?.unlimited || 'Unlimited')
             : Math.max(0, totalExpectedActive - totalAcceptedActive).toString()),
       icon: Filter,
@@ -810,7 +810,7 @@ const fetchRequestTimes = async () => {
 
     const data = await response.json()
 
-    requestTimes.value = data.sort((a: RequestTime, b: RequestTime) => {
+    requestTimes.value = data.sort((a, b) => {
       if (a.past !== b.past) return a.past ? 1 : -1
       if (a.enabled !== b.enabled) return a.enabled ? -1 : 1
       const aHasTime = !!(a.startTime || a.endTime)
@@ -823,7 +823,7 @@ const fetchRequestTimes = async () => {
       }
       return a.name.localeCompare(b.name)
     })
-  } catch (err: any) {
+  } catch (err) {
     error.value = getThrownMessage(err) || locale.value.errors.fetchFailed
   } finally {
     loading.value = false
@@ -831,10 +831,10 @@ const fetchRequestTimes = async () => {
 }
 
 const fetchSystemSettings = async () => {
-  if (!can('system-settings:read')) return
+  if (!can('request-times:read') && !can('system-settings:read')) return
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
+    const response = await fetch('/api/admin/system-settings/request-times', {
       headers: { 'Content-Type': 'application/json' },
       ...authConfig
     })
@@ -846,7 +846,7 @@ const fetchSystemSettings = async () => {
     submissionRestrictionScope.value = data.submissionRestrictionScope || 'all'
     sameSongRestrictionHours.value = data.sameSongRestrictionHours ?? null
     sameArtistRestrictionHours.value = data.sameArtistRestrictionHours ?? null
-  } catch (err: any) {
+  } catch (err) {
     console.error('获取系统设置失败:', getThrownMessage(err))
   }
 }
@@ -862,30 +862,30 @@ const fetchRequestTimeHit = async () => {
     if (!response.ok) return
     const data = await response.json()
     hitRequestTime.value = data.hit
-  } catch (err: any) {
+  } catch (err) {
     console.error('获取投稿开放状态失败:', getThrownMessage(err))
   }
 }
 
 const toggleGlobalRequest = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('request-times:write') && !can('system-settings:write')) return
   enableRequest.value = !enableRequest.value
   await updateSystemSettings()
   await fetchRequestTimeHit()
 }
 
 const toggleTimeLimitation = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('request-times:write') && !can('system-settings:write')) return
   enableRequestTimeLimitation.value = !enableRequestTimeLimitation.value
   await updateSystemSettings()
   await fetchRequestTimeHit()
 }
 
 const updateSystemSettings = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('request-times:write') && !can('system-settings:write')) return
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
+    const response = await fetch('/api/admin/system-settings/request-times', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -898,12 +898,12 @@ const updateSystemSettings = async () => {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || getErrorMessage('updateSystemSettingsFailedWithStatus', response.status))
     }
-  } catch (err: any) {
+  } catch (err) {
     error.value = getThrownMessage(err) || locale.value.errors.updateSystemSettingsFailed
   }
 }
 
-const normalizeRestrictionHours = (key: 'sameSong' | 'sameArtist') => {
+const normalizeRestrictionHours = (key) => {
   const target = key === 'sameSong' ? sameSongRestrictionHours : sameArtistRestrictionHours
   if (typeof target.value === 'number' && (Number.isNaN(target.value) || target.value < 1 || target.value > 720 || !Number.isInteger(target.value))) {
     target.value = null
@@ -911,7 +911,7 @@ const normalizeRestrictionHours = (key: 'sameSong' | 'sameArtist') => {
 }
 
 const toggleRestriction = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('request-times:write') && !can('system-settings:write')) return
   enableSubmissionRestriction.value = !enableSubmissionRestriction.value
   // 关闭时清空时长，与服务端交叉校验保持一致
   if (!enableSubmissionRestriction.value) {
@@ -923,7 +923,7 @@ const toggleRestriction = async () => {
 }
 
 const saveRestrictionSettings = async () => {
-  if (!can('system-settings:write')) return
+  if (!can('request-times:write') && !can('system-settings:write')) return
   normalizeRestrictionHours('sameSong')
   normalizeRestrictionHours('sameArtist')
 
@@ -943,12 +943,12 @@ const saveRestrictionSettings = async () => {
   }
 }
 
-const submitRestrictionSettings = async (body: any) => {
-  if (!can('system-settings:write')) return
+const submitRestrictionSettings = async (body) => {
+  if (!can('request-times:write') && !can('system-settings:write')) return
   restrictionSaving.value = true
   try {
     const authConfig = getAuthConfig()
-    const response = await fetch('/api/admin/system-settings', {
+    const response = await fetch('/api/admin/system-settings/request-times', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -971,7 +971,8 @@ const submitRestrictionSettings = async (body: any) => {
   }
 }
 
-const editRequestTime = (RequestTime: RequestTime) => {
+const editRequestTime = (RequestTime) => {
+  if (!(can('request-times:write'))) return
   editingRequestTime.value = RequestTime
   Object.assign(formData, {
     id: RequestTime.id,
@@ -984,7 +985,7 @@ const editRequestTime = (RequestTime: RequestTime) => {
   })
 }
 
-const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
+const toggleRequestTimeStatus = async (RequestTime) => {
   if (!canWrite.value) return
   try {
     const authConfig = getAuthConfig()
@@ -1000,12 +1001,12 @@ const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
-  } catch (err: any) {
+  } catch (err) {
     error.value = getThrownMessage(err) || locale.value.errors.updateStatusFailed
   }
 }
 
-const confirmDelete = (RequestTime: RequestTime) => {
+const confirmDelete = (RequestTime) => {
   RequestTimeToDelete.value = RequestTime
   showDeleteConfirm.value = true
 }
@@ -1027,7 +1028,7 @@ const deleteRequestTime = async () => {
     await fetchRequestTimeHit()
     showDeleteConfirm.value = false
     RequestTimeToDelete.value = null
-  } catch (err: any) {
+  } catch (err) {
     error.value = getThrownMessage(err) || locale.value.errors.deleteFailed
   } finally {
     deleteInProgress.value = false
@@ -1083,7 +1084,7 @@ const saveRequestTime = async () => {
     await fetchRequestTimes()
     await fetchRequestTimeHit()
     cancelForm()
-  } catch (err: any) {
+  } catch (err) {
     formError.value = getThrownMessage(err) || locale.value.errors.saveFailed
   } finally {
     formSubmitting.value = false

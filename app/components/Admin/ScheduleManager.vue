@@ -220,7 +220,7 @@
               <button
                 class="hidden lg:flex p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-info hover:border-info-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                 v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+                :disabled="(filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0) || !can('schedule:write')"
                 :title="locale.addCurrentPage"
                 @click="moveAllToPool"
               >
@@ -228,7 +228,7 @@
               </button>
               <button
                 class="hidden lg:flex items-center justify-center gap-1 p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
-                :disabled="refreshingAllDurations.running"
+                :disabled="(refreshingAllDurations.running) || !can('songs:write')"
                 :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
                 @click="refreshAllDurations"
               >
@@ -269,7 +269,7 @@
             </div>
             <button
               class="shrink-0 px-3 py-1.5 rounded-lg bg-warning-10 hover:bg-warning-20 border border-warning-20 text-[10px] font-bold text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="refreshingAllDurations.running"
+              :disabled="(refreshingAllDurations.running) || !can('songs:write')"
               @click="refreshAllDurations('suspicious')"
             >
               <RefreshCcw
@@ -518,9 +518,9 @@
                     </button>
 
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
-                    <button
+                    <button :disabled="!can('replay-requests:write')"
                       v-if="activeTab === 'replay'"
-                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors flex items-center justify-center"
+                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
@@ -531,7 +531,7 @@
                     <button
                       v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
                       class="hidden lg:flex p-1.5 rounded-lg bg-info-10 border border-info-20 text-info hover:bg-info-20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-info-10"
-                      :disabled="poolSongIds.has(song.id)"
+                      :disabled="(poolSongIds.has(song.id)) || !can('schedule:write')"
                       :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
                       @click.stop="addSingleToPool(song.id)"
                     >
@@ -539,9 +539,9 @@
                     </button>
 
                     <!-- 备选池：移除按钮（桌面） -->
-                    <button
+                    <button :disabled="!can('schedule:write')"
                       v-if="activeTab === 'pool'"
-                      class="hidden lg:flex p-1.5 rounded-lg bg-error-10 border border-error-20 text-error hover:bg-error-20 transition-colors"
+                      class="hidden lg:flex p-1.5 rounded-lg bg-error-10 border border-error-20 text-error hover:bg-error-20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       :title="locale.removeFromPool"
                       @click.stop="removeFromPool(song.songId)"
                     >
@@ -552,7 +552,7 @@
                     <button
                       class="flex items-center justify-center lg:hidden p-2 rounded-full bg-info-10 text-info hover:bg-info-20 active:scale-95 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                       v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-                      :disabled="poolSongIds.has(song.id)"
+                      :disabled="(poolSongIds.has(song.id)) || !can('schedule:write')"
                       :title="poolSongIds.has(song.id) ? locale.alreadyInPool : locale.addSingleToPool"
                       @click.stop="addSingleToPool(song.id)"
                     >
@@ -560,8 +560,8 @@
                     </button>
 
                     <!-- 备选池：加入排期按钮 -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
+                    <button :disabled="!can('schedule:write')"
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       v-if="activeTab === 'pool'"
                       :title="locale.addToSchedule"
                       @click.stop="addSongToSchedule(song)"
@@ -570,8 +570,8 @@
                     </button>
 
                     <!-- 备选池：移除按钮（移动端） -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0"
+                    <button :disabled="!can('schedule:write')"
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       v-if="activeTab === 'pool'"
                       :title="locale.removeFromPool"
                       @click.stop="removeFromPool(song.songId)"
@@ -580,8 +580,8 @@
                     </button>
 
                     <!-- 非备选池：加入排期按钮（移动端） -->
-                    <button
-                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
+                    <button :disabled="!can('schedule:write')"
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       v-if="activeTab !== 'pool'"
                       :title="locale.addToSchedule"
                       @click.stop="addSongToSchedule(song)"
@@ -591,9 +591,9 @@
 
                     <!-- 刷新时长按钮 -->
                     <button
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary transition-colors"
+                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       :title="locale.refreshDuration"
-                      :disabled="refreshingDuration[song.id]"
+                      :disabled="(refreshingDuration[song.id]) || !can('songs:write')"
                       @click.stop="refreshDuration(song)"
                     >
                       <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[song.id] }" />
@@ -715,7 +715,7 @@
         </div>
 
         <!-- 右侧：播放列表（播放顺序） -->
-        <div
+        <div v-if="can('schedule:read')"
           v-show="mobileTab === 'scheduled' || isDesktop"
           :class="[
             'lg:col-span-8 flex flex-col space-y-4',
@@ -737,9 +737,9 @@
             >
               <div class="flex gap-1">
                 <button
-                  :disabled="
+                  :disabled="(
                     !hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts
-                  "
+                  ) || !can('schedule:write')"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="saveDraft"
                 >
@@ -772,7 +772,7 @@
                   >
                 </button>
                 <button
-                  :disabled="localScheduledSongs.length === 0"
+                  :disabled="(localScheduledSongs.length === 0) || !can('songs:write')"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-success rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="markAllAsPlayed"
                 >
@@ -783,7 +783,7 @@
                   >
                 </button>
                 <button
-                  :disabled="refreshingAllDurations.running"
+                  :disabled="(refreshingAllDurations.running) || !can('songs:write')"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="refreshAllDurations('scheduled')"
                 >
@@ -801,7 +801,7 @@
                   >
                 </button>
                 <button
-                  :disabled="autoScheduleCandidates.length === 0"
+                  :disabled="(autoScheduleCandidates.length === 0) || !can('schedule:write')"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openAutoScheduleDialog"
                 >
@@ -811,8 +811,8 @@
                     >{{ locale.autoSchedule }}</span
                   >
                 </button>
-                <button
-                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative"
+                <button :disabled="!can('schedule:write')"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openMoveDateDialog"
                 >
                   <ArrowRight class="w-3.5 h-3.5" />
@@ -821,8 +821,8 @@
                     >{{ locale.moveDate }}</span
                   >
                 </button>
-                <button
-                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative"
+                <button :disabled="!can('schedule:write')"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openCopyDateDialog"
                 >
                   <Copy class="w-3.5 h-3.5" />
@@ -832,7 +832,7 @@
                   >
                 </button>
                 <button
-                  :disabled="localScheduledSongs.length === 0"
+                  :disabled="(localScheduledSongs.length === 0) || !can('schedule:write')"
                   class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-error rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="clearScheduleList"
                 >
@@ -845,14 +845,14 @@
               </div>
               <div class="h-6 w-[1px] bg-bg-tertiary mx-1" />
               <button
-                :disabled="!canPublish"
+                :disabled="(!canPublish) || !can('schedule:write')"
                 class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-[10px] font-black rounded-xl border border-success-20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="publishSchedule"
               >
                 <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
               </button>
               <button
-                :disabled="!hasChanges"
+                :disabled="(!hasChanges) || !can('schedule:write')"
                 class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
               >
@@ -1051,9 +1051,9 @@
                   </div>
 
                   <div class="flex items-center gap-2">
-                    <button
+                    <button :disabled="!can('schedule:write')"
                       v-if="schedule.isDraft"
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-success-10 hover:bg-success-20 text-success border border-success-20 transition-colors"
+                      class="flex items-center justify-center p-1.5 rounded-lg bg-success-10 hover:bg-success-20 text-success border border-success-20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       :title="locale.publishThisDraft"
                       @click="publishSingleDraft(schedule)"
                     >
@@ -1061,8 +1061,8 @@
                     </button>
 
                     <!-- 移动端删除按钮 -->
-                    <button
-                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0 flex items-center justify-center"
+                    <button :disabled="!can('schedule:write')"
+                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       @click.stop="removeSongFromSchedule(schedule)"
                     >
                       <Minus class="w-5 h-5" />
@@ -1070,12 +1070,12 @@
 
                     <!-- 刷新时长按钮 -->
                     <button
-                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary hover:border-primary-30 transition-all duration-200"
+                      class="flex items-center justify-center p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary hover:border-primary-30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       :class="{
                         'bg-primary-10 border-primary-30 text-primary shadow-[0_0_0_3px_var(--primary-glow)]': refreshingDuration[schedule.song.id]
                       }"
                       :title="locale.refreshDuration"
-                      :disabled="refreshingDuration[schedule.song.id]"
+                      :disabled="(refreshingDuration[schedule.song.id]) || !can('songs:write')"
                       @click.stop="refreshDuration(schedule.song)"
                     >
                       <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }" />
@@ -1121,32 +1121,32 @@
           <FileSpreadsheet class="w-4 h-4" />
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.exportPlaylistShort }}</span>
         </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all"
+        <button :disabled="!can('schedule:write')"
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :title="locale.saveDraft"
           @click="saveDraft"
         >
           <Save class="w-4 h-4" />
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.saveDraftShort }}</span>
         </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-success rounded-lg active:scale-95 transition-all"
+        <button :disabled="!can('songs:write')"
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-success rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :title="locale.markAllPlayed"
           @click="markAllAsPlayed"
         >
           <CheckCircle2 class="w-4 h-4" />
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.markAllPlayedShort }}</span>
         </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all"
+        <button :disabled="!can('schedule:write')"
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :title="locale.moveDate"
           @click="openMoveDateDialog"
         >
           <ArrowRight class="w-4 h-4" />
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.moveDateShort }}</span>
         </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
+        <button :disabled="!can('schedule:write')"
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :title="locale.copyDate"
           @click="openCopyDateDialog"
         >
@@ -1155,7 +1155,7 @@
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-error rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="localScheduledSongs.length === 0"
+          :disabled="(localScheduledSongs.length === 0) || !can('schedule:write')"
           :title="locale.clearList"
           @click="clearScheduleList"
         >
@@ -1165,7 +1165,7 @@
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-info rounded-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
-          :disabled="filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0"
+          :disabled="(filteredUnscheduledSongs.filter((song) => !poolSongIds.has(song.id)).length === 0) || !can('schedule:write')"
           :title="locale.addCurrentPage"
           @click="moveAllToPool"
         >
@@ -1174,7 +1174,7 @@
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!canPublish"
+          :disabled="(!canPublish) || !can('schedule:write')"
           :title="locale.publishOnly"
           @click="publishSchedule"
         >
@@ -1183,15 +1183,15 @@
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="refreshingAllDurations.running"
+          :disabled="(refreshingAllDurations.running) || !can('songs:write')"
           :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
           @click="refreshAllDurations"
         >
           <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': refreshingAllDurations.running }" />
           <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.refreshPageDurationsShort }}</span>
         </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all"
+        <button :disabled="!can('schedule:write')"
+          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :title="locale.autoSchedule"
           @click="openAutoScheduleDialog"
         >
@@ -1203,7 +1203,7 @@
 
     <!-- 主要操作 -->
     <button
-      :disabled="!hasChanges"
+      :disabled="(!hasChanges) || !can('schedule:write')"
       class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
       @click="saveSequence"
     >
@@ -1288,8 +1288,8 @@
           >
           {{ locale.cancel }}
           </button>
-          <button
-            class="flex-1 py-3 bg-info hover:bg-info text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--info-glow-20)] transition-colors uppercase tracking-wider"
+          <button :disabled="!can('schedule:write')"
+            class="flex-1 py-3 bg-info hover:bg-info text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--info-glow-20)] transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
             @click="confirmMoveDate"
           >
           {{ locale.nextStep }}
@@ -1429,8 +1429,8 @@
           >
             {{ locale.cancel }}
           </button>
-          <button
-            class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider"
+          <button :disabled="!can('schedule:write')"
+            class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
             @click="confirmCopyDate"
           >
             {{ locale.nextStep }}
@@ -1455,8 +1455,8 @@
         {{ locale.replayDetailTitle(replayModalTitle) }}
         </h3>
         <div class="flex items-center gap-3">
-          <button
-            class="px-3 py-1.5 bg-error-10 hover:bg-error-20 text-error border border-error-20 rounded-lg text-xs font-bold transition-colors"
+          <button :disabled="!can('replay-requests:write')"
+            class="px-3 py-1.5 bg-error-10 hover:bg-error-20 text-error border border-error-20 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             @click="(rejectReplayRequest(replayModalSongId), closeReplayModal())"
           >
           {{ locale.rejectRequest }}
@@ -1631,7 +1631,7 @@
               </span>
             </div>
             <button
-              :disabled="refreshingAutoCandidates.running"
+              :disabled="(refreshingAutoCandidates.running) || !can('songs:write')"
               class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               :title="locale.refreshCandidateDurations"
               @click="refreshAutoCandidateDurations"
@@ -1759,7 +1759,7 @@
             </div>
             <button
               class="shrink-0 px-3 py-1.5 rounded-lg bg-warning-10 hover:bg-warning-20 border border-warning-20 text-[10px] font-bold text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="refreshingAutoCandidates.running"
+              :disabled="(refreshingAutoCandidates.running) || !can('songs:write')"
               @click="refreshAutoCandidateDurations()"
             >
               <RefreshCcw
@@ -1796,7 +1796,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoSchedulePlacement.eligible.length === 0 || autoScheduleRunning"
+              :disabled="(!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || autoSchedulePlacement.eligible.length === 0 || autoScheduleRunning) || !can('schedule:write')"
               class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               @click="runAutoSchedule"
             >
@@ -1946,8 +1946,8 @@
             >
               {{ locale.tryAgain }}
             </button>
-            <button
-              class="flex-1 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider"
+            <button :disabled="!can('schedule:write')"
+              class="flex-1 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
               @click="confirmAutoSchedule"
             >
               {{ locale.confirmApply }}
@@ -1981,31 +1981,31 @@
         <button
           v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
           class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-          :disabled="poolSongIds.has(contextMenuSong.id)"
+          :disabled="(poolSongIds.has(contextMenuSong.id)) || !can('schedule:write')"
           @click="addSingleToPool(contextMenuSong.id); contextMenuOpen = false"
         >
           <FolderPlus class="w-3 h-3" />
           <span>{{ locale.addSingleToPool }}</span>
         </button>
-        <button
+        <button :disabled="!can('schedule:write')"
           v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay' || activeTab === 'pool'"
-          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          class="hidden lg:flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
         >
           <PlaySquare class="w-3 h-3" />
           <span>{{ locale.addToSchedule }}</span>
         </button>
       </template>
-      <button
-        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+      <button :disabled="!can('songs:write')"
+        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         @click="openSourceReplace"
       >
         <ArrowLeftRight class="w-3 h-3" />
         <span>{{ locale.replaceSource }}</span>
       </button>
       <template v-if="contextMenuSide === 'right'">
-        <button
-          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors"
+        <button :disabled="!can('schedule:write')"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           @click="removeSongFromSchedule(contextMenuSong); contextMenuOpen = false"
         >
           <Trash2 class="w-3 h-3" />
@@ -2025,6 +2025,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch, inject } from 'vue'
 import {
   Search,
@@ -2098,6 +2099,8 @@ import { SUSPICIOUS_DURATION_SECONDS, isSuspiciousSongDuration } from '~/utils/s
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
+
+const { can } = usePermissions()
 
 const { admin } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
@@ -2216,7 +2219,7 @@ const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
 const searchQuery = ref('')
 const selectedGrade = ref('')
-const activeTab = ref('normal')
+const activeTab = ref(can('songs:read') ? 'normal' : 'replay')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
 const scheduleTabs = computed(() => [
@@ -2224,7 +2227,7 @@ const scheduleTabs = computed(() => [
   { id: 'replay', label: locale.value?.tabs?.replay || '重播申请' },
   { id: 'all', label: locale.value?.tabs?.all || '所有' },
   { id: 'pool', label: locale.value?.tabs?.pool || locale.value?.poolList || '备选池' }
-])
+].filter(tab => tab.id === 'replay' ? can('replay-requests:read') : tab.id === 'pool' ? can('schedule:read') : can('songs:read')))
 
 // 歌单过滤状态
 const showPlaylistFilterModal = ref(false)
@@ -2429,6 +2432,7 @@ const parseDurationInput = (value) => {
 
 // 开始编辑歌曲时长
 const startEditDuration = (song) => {
+  if (!can('songs:write')) return
   if (editingDuration.value[song.id]) return
   editingDuration.value[song.id] = true
   editingDurationValue.value = song.durationSeconds == null
@@ -2447,6 +2451,7 @@ const startEditDuration = (song) => {
 
 // 保存编辑的歌曲时长
 const saveDurationEdit = async (song) => {
+  if (!can('songs:write')) return
   if (!editingDuration.value[song.id] || durationSaveInFlight.has(song.id)) return
   durationSaveInFlight.add(song.id)
 
@@ -2585,6 +2590,7 @@ const closeContextMenu = () => { contextMenuOpen.value = false }
 const showSourceReplaceModal = ref(false)
 const sourceReplaceSong = ref(null)
 const openSourceReplace = () => {
+  if (!can('songs:write')) return
   const song = contextMenuSide.value === 'right' ? contextMenuSong.value?.song : contextMenuSong.value
   contextMenuOpen.value = false
   if (!song?.id) return
@@ -3740,6 +3746,7 @@ watch(selectedFilterPlayTime, () => {
 
 // 加载重播申请
 const fetchReplayRequests = async () => {
+  if (!can('replay-requests:read')) return
   try {
     // 与歌曲列表一致，按当前选中学期过滤；选择"全部"时不传学期参数
     const selectedSemesterOption = availableSemesters.value.find((item) => String(item.id) === String(selectedSemester.value))
@@ -3757,6 +3764,7 @@ const fetchReplayRequests = async () => {
 
 // 加载备选池
 const fetchSongPool = async () => {
+  if (!can('schedule:read')) return
   poolLoading.value = true
   try {
     const data = await $fetch('/api/admin/schedule/song-pool', {
@@ -3773,6 +3781,7 @@ const fetchSongPool = async () => {
 
 // 从待排库批量移入备选池
 const moveAllToPool = async () => {
+  if (!can('schedule:write')) return
   const pageSongs = filteredUnscheduledSongs.value.filter((song) => !poolSongIds.value.has(song.id))
   const pendingSongIds = pageSongs.map((s) => s.id)
   if (pendingSongIds.length === 0) return
@@ -3827,6 +3836,7 @@ const moveAllToPool = async () => {
 
 // 单首加入备选池
 const addSingleToPool = async (songId) => {
+  if (!can('schedule:write')) return
   try {
     const result = await $fetch('/api/admin/schedule/song-pool', {
       method: 'POST',
@@ -3855,6 +3865,7 @@ const addSingleToPool = async (songId) => {
 
 // 从备选池移除
 const removeFromPool = async (songId) => {
+  if (!can('schedule:write')) return
   try {
     await $fetch('/api/admin/schedule/song-pool', {
       method: 'DELETE',
@@ -3877,6 +3888,7 @@ const removeFromPool = async (songId) => {
 
 // 拒绝重播申请
 const rejectReplayRequest = async (songId) => {
+  if (!can('replay-requests:write')) return
   confirmDialogTitle.value = locale.value.confirmations.rejectReplayTitle
   confirmDialogMessage.value = locale.value.confirmations.rejectReplayMessage
   confirmDialogType.value = 'warning'
@@ -3922,7 +3934,7 @@ const loadData = async () => {
     // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
     // 并行加载数据
     await Promise.all([
-      songsService.fetchSongs({ semester, forceRefresh: true }),
+      can('songs:read') ? songsService.fetchSongs({ semester, forceRefresh: true }) : Promise.resolve(),
       songsService.fetchPublicSchedules(false, undefined, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表
@@ -4111,6 +4123,7 @@ const runConcurrent = async (items, concurrency = 3, onProgress, onItemComplete)
 }
 
 const requestSongDuration = async (song, signal) => {
+  if (!can('songs:write')) return { success: false, durationSeconds: song.durationSeconds }
   const clientDuration = await resolveClientAudioDuration(song, signal)
   if (clientDuration != null) {
     return await $fetch('/api/admin/songs/duration', {
@@ -4131,6 +4144,7 @@ const requestSongDuration = async (song, signal) => {
 
 // 刷新歌曲时长
 const refreshDuration = async (song) => {
+  if (!can('songs:write')) return
   const songId = song.id
   if (!song.musicPlatform || !song.musicId) {
     if (window.$showNotification) {
@@ -4212,6 +4226,7 @@ let refreshAutoCandidatesAbortController = null
 // 批量刷新歌曲时长
 // source: 'pending' = 待排库当前页（默认），'scheduled' = 播放顺序，'suspicious' = 疑似试听片段的待排歌曲
 const refreshAllDurations = async (source = 'pending') => {
+  if (!can('songs:write')) return
   // 中止上次未完成的批量刷新
   refreshAllAbortController?.abort()
   refreshAllAbortController = new AbortController()
@@ -4347,6 +4362,7 @@ const refreshAllDurations = async (source = 'pending') => {
 
 // 刷新自动排期候选歌曲的时长
 const refreshAutoCandidateDurations = async () => {
+  if (!can('songs:write')) return
   // 中止上次未完成的刷新
   refreshAutoCandidatesAbortController?.abort()
   refreshAutoCandidatesAbortController = new AbortController()
@@ -4461,6 +4477,7 @@ const handleAutoScheduleEscape = (e) => {
 
 // 打开/关闭/重置时保留用户上次的排期配置（由 localStorage 记忆）
 const openAutoScheduleDialog = () => {
+  if (!can('schedule:write')) return
   cancelAutoScheduleRun()
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
@@ -4643,6 +4660,7 @@ const autoScheduleRunningText = computed(() => {
 })
 
 const runAutoSchedule = async () => {
+  if (!can('schedule:write')) return
   if (autoScheduleRunning.value) return
   const runId = ++autoScheduleRunId
   autoScheduleRunning.value = true
@@ -4740,6 +4758,7 @@ const goToNextPlan = () => {
 }
 
 const confirmAutoSchedule = () => {
+  if (!can('schedule:write')) return
   const candidateIds = autoScheduleResult.value.candidateIds || new Set()
   // 固定歌曲不在候选池中，不能按候选 id 过滤，否则会被当成失效候选丢弃
   const confirmed = autoScheduleResult.value.songs.filter(
@@ -4812,7 +4831,7 @@ const getPlayTimeName = (playTimeId) => {
 // 加载学期列表
 const loadSemesters = async () => {
   try {
-    await semesterService.fetchSemesters()
+    await semesterService.fetchSemesterOptions()
     await semesterService.fetchCurrentSemester()
 
     // 构建学期列表，包含"全部"选项和各个学期
@@ -4915,6 +4934,7 @@ watch(selectedPlayTime, () => {
 
 // 拖拽方法
 const dragStart = (event, song) => {
+  if (!can('schedule:write')) return
   event.dataTransfer.setData(
     'text/plain',
     JSON.stringify({
@@ -4930,6 +4950,7 @@ const dragStart = (event, song) => {
 }
 
 const dragScheduleStart = (event, schedule) => {
+  if (!can('schedule:write')) return
   event.dataTransfer.setData(
     'text/plain',
     JSON.stringify({
@@ -4985,6 +5006,7 @@ const handleDraggableDragLeave = (event) => {
 }
 
 const dropToSequence = async (event) => {
+  if (!can('schedule:write')) return
   event.preventDefault()
   dragOverIndex.value = -1
   isSequenceOver.value = false
@@ -5004,6 +5026,7 @@ const dropToSequence = async (event) => {
 }
 
 const dropReorder = async (event, dropIndex) => {
+  if (!can('schedule:write')) return
   event.preventDefault()
   dragOverIndex.value = -1
 
@@ -5181,6 +5204,7 @@ const insertSongToScheduleAt = (event, dropIndex) => {
 
 // 添加歌曲到排期（点击方式）
 const addSongToSchedule = (song) => {
+  if (!can('schedule:write')) return
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
   if (existingIndex !== -1) return
   if (!canAddToSchedule(song)) return
@@ -5205,6 +5229,7 @@ const addSongToSchedule = (song) => {
 
 // 从排期移除歌曲（点击方式）
 const removeSongFromSchedule = (schedule) => {
+  if (!can('schedule:write')) return
   const index = localScheduledSongs.value.findIndex((s) => s.id === schedule.id)
 
   if (index !== -1) {
@@ -5227,6 +5252,7 @@ const removeSongFromSchedule = (schedule) => {
 
 // 处理拖回待排区域
 const handleReturnToDraggable = async (event) => {
+  if (!can('schedule:write')) return
   try {
     const data = event.dataTransfer.getData('text/plain')
     if (!data) return
@@ -5265,6 +5291,7 @@ const handleReturnToDraggable = async (event) => {
 
 // 标记全部已播放
 const markAllAsPlayed = async () => {
+  if (!can('songs:write')) return
   if (localScheduledSongs.value.length === 0) return
 
   confirmDialogTitle.value = locale.value.confirmations.markAllPlayedTitle
@@ -5304,6 +5331,7 @@ const markAllAsPlayed = async () => {
 
 // 清空排期列表
 const clearScheduleList = () => {
+  if (!can('schedule:write')) return
   if (localScheduledSongs.value.length === 0) return
 
   confirmDialogTitle.value = locale.value.confirmations.clearListTitle
@@ -5329,6 +5357,7 @@ const clearScheduleList = () => {
 
 // 保存并发布
 const saveSequence = async () => {
+  if (!can('schedule:write')) return
   try {
     await publishSchedule()
   } catch (err) {
@@ -5337,6 +5366,7 @@ const saveSequence = async () => {
 }
 
 const openMoveDateDialog = () => {
+  if (!can('schedule:write')) return
   if (hasChanges.value) {
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages.saveBeforeMove, 'warning')
@@ -5351,6 +5381,7 @@ const openMoveDateDialog = () => {
 }
 
 const openCopyDateDialog = () => {
+  if (!can('schedule:write')) return
   if (hasChanges.value) {
     if (window.$showNotification) {
       window.$showNotification(locale.value.messages.saveBeforeCopy, 'warning')
@@ -5374,6 +5405,7 @@ const switchCopyMode = (mode) => {
 }
 
 const confirmMoveDate = async () => {
+  if (!can('schedule:write')) return
   const targetDate = moveTargetDate.value.trim()
   const sourcePlayTimeId = moveSourcePlayTime.value || ''
   const targetPlayTimeId = moveTargetPlayTime.value || ''
@@ -5528,6 +5560,7 @@ const confirmMoveDate = async () => {
 }
 
 const confirmCopyDate = async () => {
+  if (!can('schedule:write')) return
   if (copyMode.value === 'single') {
     const sourceDate = copyFromStart.value.trim()
     const targetDate = copySingleTargetDate.value.trim()
@@ -5828,6 +5861,7 @@ const confirmCopyDate = async () => {
 
 // 加载草稿列表（使用新的综合API）
 const loadDrafts = async () => {
+  if (!can('schedule:read')) return
   try {
     const response = await $fetch('/api/admin/schedule/full', {
       ...auth.getAuthConfig(),
@@ -5911,6 +5945,7 @@ const saveDraftConfirmed = async () => {
 
 // 保存草稿入口：未选播出时段且当天已有带时段排期时先弹危险确认
 const saveDraft = async () => {
+  if (!can('schedule:write')) return
   const warningCount = getUnspecifiedPlayTimeWarningCount()
   if (localScheduledSongs.value.length > 0 && warningCount > 0) {
     confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
@@ -5929,6 +5964,7 @@ const saveDraft = async () => {
 
 // 发布排期（需要确认）
 const publishSchedule = async () => {
+  if (!can('schedule:write')) return
   try {
     const warningCount = getUnspecifiedPlayTimeWarningCount()
     if (localScheduledSongs.value.length > 0 && warningCount > 0) {
@@ -6016,6 +6052,7 @@ const publishScheduleConfirmed = async () => {
 
 // 发布单个草稿（需要确认）
 const publishSingleDraft = async (draft) => {
+  if (!can('schedule:write')) return
   try {
     confirmDialogTitle.value = locale.value.confirmations.publishDraftTitle
     confirmDialogMessage.value = callLocale(

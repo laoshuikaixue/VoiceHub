@@ -17,7 +17,7 @@
           <RotateCcw :size="14" /> {{ locale.reset }}
         </button>
         <button
-          :disabled="loading || saving"
+          :disabled="(loading || saving) || !can('system-settings:write')"
           class="flex items-center gap-2 px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveConfig"
         >
@@ -1691,6 +1691,7 @@ const loadConfig = async () => {
 
 // 保存配置
 const saveConfig = async () => {
+  if (!can('system-settings:write')) return
   try {
     if (canManageSensitiveSettings.value) {
       if (!formData.value.enabledThemes.includes(formData.value.defaultTheme)) {
