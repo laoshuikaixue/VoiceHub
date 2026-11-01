@@ -2,11 +2,11 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import {
   assertProtectedCodesSurvive,
   buildPermissionMatrix,
-  collectCodeHolders,
   loadPermissionHolderRows,
   normalizeSubmittedTemplates,
   saveRolePermissionTemplates
 } from '~~/server/utils/permission-admin'
+import { collectCodeHolders } from '~~/server/utils/permission-policy'
 import { PROTECTED_PRIV_CODES } from '~~/app/utils/admin-permissions'
 import { getRolePermissionTemplatesCached } from '~~/server/utils/system-settings-helper'
 

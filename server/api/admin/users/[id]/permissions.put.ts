@@ -6,11 +6,10 @@ import { getRolePermissionTemplatesCached } from '~~/server/utils/system-setting
 import {
   assertGrantsWithinOperator,
   assertProtectedCodesSurvive,
-  collectCodeHolders,
   loadPermissionHolderRows,
-  normalizeSubmittedGrants,
-  type PermissionHolderRow
+  normalizeSubmittedGrants
 } from '~~/server/utils/permission-admin'
+import { collectCodeHolders, type PermissionHolderRow } from '~~/server/utils/permission-policy'
 import { PROTECTED_PRIV_CODES, normalizePermissionTokens, splitGrantTokens } from '~~/app/utils/admin-permissions'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
