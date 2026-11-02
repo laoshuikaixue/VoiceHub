@@ -147,6 +147,13 @@
       ],
       "via": "role !== 'SUPER_ADMIN'"
     },
+    "POST /api/admin/backup/test-github": {
+      "file": "backup/test-github.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
     "POST /api/admin/backup/test-s3": {
       "file": "backup/test-s3.post.ts",
       "roles": [

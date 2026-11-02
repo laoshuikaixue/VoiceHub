@@ -4590,6 +4590,22 @@ export const admin = {
           pathPlaceholder: 'voicehub-backups/',
           testConnection: '测试连接'
         },
+        github: {
+          name: 'GitHub 仓库',
+          desc: '以提交方式写入指定 Git 仓库',
+          privateHint: '仓库需设为私有；令牌仅需对该仓库开放 Contents 写权限。Gitea 未实现 Git Data API 写入端点，暂不支持。',
+          apiBase: 'API 地址',
+          apiBasePlaceholder: 'https://api.github.com',
+          repo: '仓库',
+          repoPlaceholder: 'owner/repo',
+          branch: '分支',
+          branchPlaceholder: 'main',
+          path: '仓库目录',
+          pathPlaceholder: 'voicehub-backups/',
+          token: '访问令牌',
+          tokenPlaceholder: '请输入访问令牌',
+          testConnection: '测试连接'
+        },
         telegram: {
           name: 'Telegram Bot',
           desc: '通过 Bot 将备份文件发送至聊天',

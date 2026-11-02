@@ -12,6 +12,7 @@ const OUTBOUND_URL = read('../../server/utils/outbound-url.ts')
 const AUTO_CONFIG_PUT = read('../../server/api/admin/backup/auto-config.put.ts')
 const TEST_S3 = read('../../server/api/admin/backup/test-s3.post.ts')
 const TEST_WEBDAV = read('../../server/api/admin/backup/test-webdav.post.ts')
+const TEST_GITHUB = read('../../server/api/admin/backup/test-github.post.ts')
 
 test('链路本地/组播/保留段被绝对禁止', () => {
   for (const address of [
@@ -73,9 +74,11 @@ test('地址复核同时覆盖私网开关', () => {
 test('全部调用点等待异步校验', () => {
   assert.match(AUTO_CONFIG_PUT, /await assertSafeOutboundUrl\(config\.methods\?\.s3\?\.endpoint/)
   assert.match(AUTO_CONFIG_PUT, /await assertSafeOutboundUrl\(config\.methods\?\.webdav\?\.url/)
+  assert.match(AUTO_CONFIG_PUT, /await assertSafeOutboundUrl\(github\.apiBase/)
   assert.match(TEST_S3, /await assertSafeOutboundUrl\(endpoint/)
   assert.match(TEST_WEBDAV, /await assertSafeOutboundUrl\(url/)
-  for (const source of [AUTO_CONFIG_PUT, TEST_S3, TEST_WEBDAV]) {
+  assert.match(TEST_GITHUB, /await assertSafeOutboundUrl\(apiBase/)
+  for (const source of [AUTO_CONFIG_PUT, TEST_S3, TEST_WEBDAV, TEST_GITHUB]) {
     assert.doesNotMatch(source, /^\s*assertSafeOutboundUrl\(/m, '存在未 await 的调用')
   }
 })

@@ -98,6 +98,40 @@
                 </div>
               </MethodCard>
 
+              <!-- GitHub 仓库 -->
+              <MethodCard
+                :enabled="masterEnabled && methods.github.enabled"
+                :master-off="!masterEnabled"
+                :name="locale.methods.github.name"
+                :desc="locale.methods.github.desc"
+                @toggle="methods.github.enabled = $event"
+              >
+                <template #icon><GitBranch class="w-5 h-5" /></template>
+                <div class="space-y-3">
+                  <div class="p-3 bg-warning-10 border border-warning-10 rounded-xl flex items-start gap-2.5">
+                    <AlertTriangle class="text-warning shrink-0 mt-0.5 w-3.5 h-3.5" />
+                    <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.methods.github.privateHint }}</p>
+                  </div>
+                  <InputField :label="locale.methods.github.apiBase" :placeholder="locale.methods.github.apiBasePlaceholder" v-model="methods.github.apiBase" />
+                  <div class="grid grid-cols-2 gap-3">
+                    <InputField :label="locale.methods.github.repo" :placeholder="locale.methods.github.repoPlaceholder" v-model="methods.github.repo" />
+                    <InputField :label="locale.methods.github.branch" :placeholder="locale.methods.github.branchPlaceholder" v-model="methods.github.branch" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <InputField :label="locale.methods.github.path" :placeholder="locale.methods.github.pathPlaceholder" v-model="methods.github.path" />
+                    <PasswordField :label="locale.methods.github.token" :placeholder="locale.methods.github.tokenPlaceholder" v-model="methods.github.token" />
+                  </div>
+                  <button
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    :class="testing === 'github' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
+                    :disabled="(testing !== null) || !(can('backup:write'))"
+                    @click="testConnection('github')"
+                  >
+                    {{ testing === 'github' ? '测试中...' : locale.methods.github.testConnection }}
+                  </button>
+                </div>
+              </MethodCard>
+
               <!-- Telegram -->
               <MethodCard
                 :enabled="masterEnabled && methods.telegram.enabled"
@@ -325,7 +359,7 @@ crontab -e
 <script setup>
 import { usePermissions } from '~/composables/usePermissions'
 import { computed, reactive, ref, watch } from 'vue'
-import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
+import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, GitBranch, AlertTriangle, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
 import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
@@ -374,6 +408,14 @@ const methods = reactive({
     password: '',
     path: 'voicehub-backups/'
   },
+  github: {
+    enabled: false,
+    apiBase: 'https://api.github.com',
+    repo: '',
+    branch: 'main',
+    path: 'voicehub-backups/',
+    token: ''
+  },
   telegram: {
     enabled: false,
     botToken: '',
@@ -415,7 +457,7 @@ const loadConfig = async () => {
         const cfg = data.config
         configuredSecrets.value = cfg.configuredSecrets || {}
         if (cfg.methods) {
-          for (const key of ['s3', 'webdav', 'telegram', 'email']) {
+          for (const key of ['s3', 'webdav', 'github', 'telegram', 'email']) {
             if (cfg.methods[key]) {
               Object.assign(methods[key], cfg.methods[key])
             }
@@ -424,6 +466,7 @@ const loadConfig = async () => {
         // 已配置的密钥填入哨兵值，用户可选中删除
         if (configuredSecrets.value.s3SecretKey) methods.s3.secretKey = SECRET_SENTINEL
         if (configuredSecrets.value.webdavPassword) methods.webdav.password = SECRET_SENTINEL
+        if (configuredSecrets.value.githubToken) methods.github.token = SECRET_SENTINEL
         if (configuredSecrets.value.telegramBotToken) methods.telegram.botToken = SECRET_SENTINEL
       }
     }
@@ -531,6 +574,7 @@ const testConnection = async (type) => {
   const testLabels = {
     s3: locale.value?.methods?.s3?.testConnection || '测试连接',
     webdav: locale.value?.methods?.webdav?.testConnection || '测试连接',
+    github: locale.value?.methods?.github?.testConnection || '测试连接',
     telegram: locale.value?.methods?.telegram?.testSend || '测试发送',
     email: locale.value?.methods?.email?.testSend || '测试发送'
   }
@@ -540,6 +584,7 @@ const testConnection = async (type) => {
     // 哨兵值不发送，由后端从已存储配置中获取真实密钥
     if (type === 's3' && payload.secretKey === SECRET_SENTINEL) delete payload.secretKey
     if (type === 'webdav' && payload.password === SECRET_SENTINEL) delete payload.password
+    if (type === 'github' && payload.token === SECRET_SENTINEL) delete payload.token
     if (type === 'telegram' && payload.botToken === SECRET_SENTINEL) delete payload.botToken
 
     const result = await $fetch(`/api/admin/backup/test-${type}`, {
@@ -566,15 +611,17 @@ const saveAll = async () => {
       methods: {
         s3: { ...methods.s3 },
         webdav: { ...methods.webdav },
+        github: { ...methods.github },
         telegram: { ...methods.telegram },
         email: { ...methods.email }
       }
     }
     // 空值或哨兵值不覆盖已有密钥
-    for (const key of ['s3', 'webdav', 'telegram']) {
+    for (const key of ['s3', 'webdav', 'github', 'telegram']) {
       const m = config.methods[key]
       if (key === 's3' && (!m.secretKey || m.secretKey === SECRET_SENTINEL)) delete m.secretKey
       if (key === 'webdav' && (!m.password || m.password === SECRET_SENTINEL)) delete m.password
+      if (key === 'github' && (!m.token || m.token === SECRET_SENTINEL)) delete m.token
       if (key === 'telegram' && (!m.botToken || m.botToken === SECRET_SENTINEL)) delete m.botToken
     }
 

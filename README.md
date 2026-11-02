@@ -1077,6 +1077,7 @@ VoiceHub/
 │   │   │   │   ├── restore-chunk.post.ts # 恢复备份分片
 │   │   │   │   ├── restore.post.ts  # 恢复备份
 │   │   │   │   ├── test-email.post.ts  # 测试邮件发送
+│   │   │   │   ├── test-github.post.ts # 测试 Git 仓库连接
 │   │   │   │   ├── test-s3.post.ts     # 测试 S3 连接
 │   │   │   │   ├── test-telegram.post.ts # 测试 Telegram Bot
 │   │   │   │   ├── test-webdav.post.ts  # 测试 WebDAV 连接
@@ -1482,6 +1483,7 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
+│   │   ├── githubGitClient.ts # GitHub 兼容 Git Data API 备份客户端
 │   │   ├── grade-class-core.ts # 年级班级选项纯函数
 │   │   ├── grade-class-options.ts # 年级班级选项提取工具
 │   │   ├── identity-secrets.ts # 身份响应脱敏（TOTP 共享密钥不回传）

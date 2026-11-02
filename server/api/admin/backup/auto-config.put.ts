@@ -7,6 +7,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
+import { buildRepoFilePath, parseGitRepo } from '~~/server/utils/githubGitClient'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 /** 备份配置结构校验 */
@@ -28,6 +29,14 @@ const backupConfigSchema = z.object({
       password: z.string().optional(),
       path: z.string()
     }),
+    github: z.object({
+      enabled: z.boolean(),
+      apiBase: z.string(),
+      repo: z.string(),
+      branch: z.string(),
+      path: z.string(),
+      token: z.string().optional()
+    }),
     telegram: z.object({
       enabled: z.boolean(),
       botToken: z.string().optional(),
@@ -44,6 +53,7 @@ const backupConfigSchema = z.object({
 const SECRET_FIELDS: Record<string, string[]> = {
   s3: ['secretKey'],
   webdav: ['password'],
+  github: ['token'],
   telegram: ['botToken']
 }
 
@@ -78,6 +88,17 @@ export default defineEventHandler(async (event) => {
     // 拦截指向云元数据/内部域名的备份目标，防止 SSRF
     await assertSafeOutboundUrl(config.methods?.s3?.endpoint, 'S3 endpoint')
     await assertSafeOutboundUrl(config.methods?.webdav?.url, 'WebDAV url')
+    const github = config.methods?.github
+    if (github?.enabled) {
+      await assertSafeOutboundUrl(github.apiBase, 'GitHub API 地址')
+      // 仓库与目录写错会让定时备份整月静默失败，保存时即拒绝
+      try {
+        parseGitRepo(github.repo)
+        buildRepoFilePath(github.path, 'probe.json')
+      } catch (error: any) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, error.message)
+      }
+    }
   }
 
   const [existing] = await db.select({

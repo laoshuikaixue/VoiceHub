@@ -4740,6 +4740,22 @@ export const admin = {
           pathPlaceholder: 'voicehub-backups/',
           testConnection: 'Test Connection'
         },
+        github: {
+          name: 'GitHub Repo',
+          desc: 'Commit backup file into a Git repository',
+          privateHint: 'Use a private repo. The token only needs Contents write access on it. Gitea is unsupported (no Git Data API write endpoints).',
+          apiBase: 'API Base URL',
+          apiBasePlaceholder: 'https://api.github.com',
+          repo: 'Repository',
+          repoPlaceholder: 'owner/repo',
+          branch: 'Branch',
+          branchPlaceholder: 'main',
+          path: 'Repo Path',
+          pathPlaceholder: 'voicehub-backups/',
+          token: 'Access Token',
+          tokenPlaceholder: 'Enter access token',
+          testConnection: 'Test Connection'
+        },
         telegram: {
           name: 'Telegram Bot',
           desc: 'Send backup files to a chat via Bot',
