@@ -113,6 +113,7 @@
                     <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.methods.github.privateHint }}</p>
                   </div>
                   <InputField :label="locale.methods.github.apiBase" :placeholder="locale.methods.github.apiBasePlaceholder" v-model="methods.github.apiBase" />
+                  <CustomSelect :label="locale.methods.github.mode" v-model="methods.github.apiMode" :options="githubModeOptions" />
                   <div class="grid grid-cols-2 gap-3">
                     <InputField :label="locale.methods.github.repo" :placeholder="locale.methods.github.repoPlaceholder" v-model="methods.github.repo" />
                     <InputField :label="locale.methods.github.branch" :placeholder="locale.methods.github.branchPlaceholder" v-model="methods.github.branch" />
@@ -407,6 +408,7 @@ import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
 import InputField from '~/components/UI/Common/InputField.vue'
 import PasswordField from '~/components/UI/Common/PasswordField.vue'
 import MethodCard from '~/components/UI/Common/MethodCard.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const { can } = usePermissions()
 
@@ -464,7 +466,8 @@ const methods = reactive({
     repo: '',
     branch: 'main',
     path: 'voicehub-backups/',
-    token: ''
+    token: '',
+    apiMode: 'github'
   },
   telegram: {
     enabled: false,
@@ -476,6 +479,11 @@ const methods = reactive({
     recipient: ''
   }
 })
+
+const githubModeOptions = computed(() => [
+  { value: 'github', label: locale.value?.methods?.github?.modeGithub || 'GitHub / GHES' },
+  { value: 'gitea', label: locale.value?.methods?.github?.modeGitea || 'Gitea' }
+])
 
 // 触发方式
 const activeTriggerMethod = ref('curl')

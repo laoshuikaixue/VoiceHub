@@ -1,14 +1,21 @@
 import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
+import { DEFAULT_GIT_API_MODE, GIT_API_MODES, type GitApiMode } from '~~/server/config/constants'
 
-/** Git Data API 请求超时（毫秒） */
+/** Git 请求超时（毫秒） */
 const GIT_TIMEOUT = 120_000
 
-/** 目标仓库；apiBase 为站点 API 根地址（GitHub 为 https://api.github.com，GHES 为 https://host/api/v3） */
+/** 目标仓库；apiBase 为站点 API 根地址（GitHub 为 https://api.github.com，GHES 为 https://host/api/v3，Gitea 为 https://host/api/v1） */
 export interface GitRepoTarget {
   apiBase: string
   repo: string
   branch: string
   token: string
+  apiMode?: GitApiMode
+}
+
+/** 未知或缺失的模式一律回退 GitHub 口径，避免脏配置改变写路径 */
+export function normalizeGitApiMode(mode: unknown): GitApiMode {
+  return GIT_API_MODES.includes(mode as GitApiMode) ? mode as GitApiMode : DEFAULT_GIT_API_MODE
 }
 
 const NAME_SEGMENT = /^[A-Za-z0-9._-]+$/
@@ -115,7 +122,7 @@ function repoPathOf(target: GitRepoTarget): string {
 }
 
 /** 读取仓库信息并确定目标分支；empty 表示仓库尚无任何提交 */
-async function inspectRepo(target: GitRepoTarget): Promise<{ repoPath: string; branch: string; empty: boolean }> {
+async function inspectRepo(target: GitRepoTarget): Promise<{ repoPath: string; branch: string; empty: boolean; apiMode: GitApiMode; repo: any }> {
   const repoPath = repoPathOf(target)
   const repo = await requestGitApi(target, 'GET', repoPath)
   const branch = (target.branch || '').trim() || String((repo as { default_branch?: unknown }).default_branch || '')
@@ -123,12 +130,34 @@ async function inspectRepo(target: GitRepoTarget): Promise<{ repoPath: string; b
   if (!BRANCH_SEGMENT.test(branch) || branch.includes('..')) {
     throw new Error('分支名仅支持字母、数字、点、斜杠、下划线和短横线')
   }
-  return { repoPath, branch, empty: (repo as { size?: number }).size === 0 }
+  return { repoPath, branch, empty: (repo as { size?: number }).size === 0, apiMode: normalizeGitApiMode(target.apiMode), repo }
 }
 
 /**
- * 提交单个文件到目标分支，走 Git Data API（文件正文直接写入 tree 条目）。
- * 要求站点实现 GitHub 写侧端点（GitHub / GHES）；Gitea 仅提供读侧 Git Data API。
+ * Gitea 口径写入：PUT /repos/{o}/{r}/contents/{path} 单文件提交（正文 base64）。
+ * 文件名为时间戳唯一，按新建处理；分支不存在时由站点报错，不做静默建分支。
+ */
+async function commitBackupFileViaContents(
+  target: GitRepoTarget,
+  repoPath: string,
+  branch: string,
+  filePath: string,
+  content: string,
+  message: string
+): Promise<void> {
+  const pathInUrl = filePath.split('/').map(encodeURIComponent).join('/')
+  const result = await requestGitApi(target, 'PUT', `${repoPath}/contents/${pathInUrl}`, {
+    message,
+    branch,
+    content: Buffer.from(content, 'utf8').toString('base64')
+  })
+  if (!result?.commit?.sha && !result?.content?.sha) throw new Error('未获取到站点返回的提交')
+}
+
+/**
+ * 提交单个文件到目标分支。
+ * github 模式走 Git Data API（文件正文写入 tree 条目，需站点实现写侧端点，GitHub / GHES 支持）；
+ * gitea 模式未实现 Git Data API 写端点，改走 Contents API。
  */
 export async function commitBackupFile(
   target: GitRepoTarget,
@@ -136,7 +165,12 @@ export async function commitBackupFile(
   content: string,
   message: string
 ): Promise<void> {
-  const { repoPath, branch, empty } = await inspectRepo(target)
+  const { repoPath, branch, empty, apiMode } = await inspectRepo(target)
+
+  if (apiMode === 'gitea') {
+    await commitBackupFileViaContents(target, repoPath, branch, filePath, content, message)
+    return
+  }
 
   let headSha = ''
   try {
@@ -183,7 +217,20 @@ export async function commitBackupFile(
 
 /** 校验地址、令牌、仓库与分支，并确认令牌具备写权限 */
 export async function checkGitRepoAccess(target: GitRepoTarget): Promise<void> {
-  const { repoPath, branch, empty } = await inspectRepo(target)
+  const { repoPath, branch, empty, apiMode, repo } = await inspectRepo(target)
+
+  if (apiMode === 'gitea') {
+    // Gitea 没有游离 tree 之类的只读写探测端点：分支用列提交确认，写权限按站点返回的 push 许可判定
+    if (!empty) {
+      const query = new URLSearchParams({ sha: branch, limit: '1' })
+      await requestGitApi(target, 'GET', `${repoPath}/commits?${query.toString()}`)
+    }
+    if ((repo as { permissions?: Record<string, boolean> })?.permissions?.push === false) {
+      throw new Error('令牌没有该仓库的推送权限')
+    }
+    return
+  }
+
   try {
     await requestGitApi(target, 'GET', `${repoPath}/git/ref/heads/${branch}`)
   } catch (error: any) {
@@ -222,19 +269,33 @@ function normalizeRepoDir(dir: string): string {
     .join('/')
 }
 
+/** GitHub 的 commit.tree 是对象，Gitea 的是树 SHA 字符串 */
+function headTreeOf(item: any): string {
+  const tree = item?.commit?.tree
+  return typeof tree === 'string' ? tree : String(tree?.sha || '')
+}
+
 /** 读取分支上的备份提交列表，全程只发 GET 请求 */
 export async function listBackupCommits(
   target: GitRepoTarget,
   dir: string,
   limit = 30
 ): Promise<GitBackupHistory> {
-  const { repoPath, branch, empty } = await inspectRepo(target)
+  const { repoPath, branch, empty, apiMode } = await inspectRepo(target)
   if (empty) return { branch, scannedCommits: 0, entries: [] }
 
-  const perPage = Math.min(100, Math.max(1, Math.trunc(limit) || 1))
-  const query = new URLSearchParams({ sha: branch, per_page: String(perPage) })
+  const pageSize = Math.min(100, Math.max(1, Math.trunc(limit) || 1))
   const dirPath = normalizeRepoDir(dir)
+  // GitHub 用 per_page / recursive=1，Gitea 用 limit / recursive=true；Gitea 带 path 过滤时会忽略 limit
+  const sizeParam = apiMode === 'gitea' ? 'limit' : 'per_page'
+  const query = new URLSearchParams({ sha: branch, [sizeParam]: String(pageSize) })
   if (dirPath) query.set('path', dirPath)
+  if (apiMode === 'gitea') {
+    // Gitea 默认返回每条提交的 diff 统计与受影响文件，响应体易超出出站 1 MB 上限
+    query.set('stat', 'false')
+    query.set('verification', 'false')
+    query.set('files', 'false')
+  }
   const commits = await requestGitApi(target, 'GET', `${repoPath}/commits?${query.toString()}`)
   const list = Array.isArray(commits) ? commits : []
   if (!list.length) return { branch, scannedCommits: 0, entries: [] }
@@ -242,9 +303,10 @@ export async function listBackupCommits(
   // 用最新树补齐文件大小
   const sizeByPath = new Map<string, number>()
   const sizeByBaseName = new Map<string, number>()
-  const headTree = String(list[0]?.commit?.tree?.sha || '')
+  const headTree = headTreeOf(list[0])
   if (headTree) {
-    const tree = await requestGitApi(target, 'GET', `${repoPath}/git/trees/${headTree}?recursive=1`)
+    const recursive = apiMode === 'gitea' ? 'true' : '1'
+    const tree = await requestGitApi(target, 'GET', `${repoPath}/git/trees/${headTree}?recursive=${recursive}`)
     for (const item of (Array.isArray(tree?.tree) ? tree.tree : [])) {
       if (item?.type !== 'blob' || typeof item.size !== 'number') continue
       const path = String(item.path || '')

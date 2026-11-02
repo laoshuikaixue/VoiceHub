@@ -20,8 +20,10 @@ const outbound = compile(read('server/utils/outbound-url.ts'), {
   isIP, lookup, http, https, createApiError: wrapApiError, SERVER_ERROR_CODES: codes, publicAddress, unacceptableAddress
 }, 'fetchSafeOutbound, assertSafeOutboundUrl')
 const gitClient = compile(read('server/utils/githubGitClient.ts'), {
-  fetchSafeOutbound: outbound.fetchSafeOutbound
-}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits')
+  fetchSafeOutbound: outbound.fetchSafeOutbound,
+  GIT_API_MODES: ['github', 'gitea'],
+  DEFAULT_GIT_API_MODE: 'github'
+}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits, normalizeGitApiMode')
 
 async function listen(t, handler) {
   const server = http.createServer(handler)
@@ -36,7 +38,7 @@ async function listen(t, handler) {
 }
 
 /** 极简 GitHub 兼容 Git Data API 替身，记录请求顺序与请求体 */
-async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [] } = {}) {
+async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [], push = true } = {}) {
   const requests = []
   const ref = { sha: headSha }
   const base = await listen(t, async (req, res) => {
@@ -50,7 +52,11 @@ async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, 
       res.end(JSON.stringify(data))
     }
     if (req.method === 'GET' && /^\/api\/repos\/[^/]+\/[^/]+$/.test(req.url)) {
-      return json(200, { default_branch: 'main', size: empty ? 0 : 12 })
+      return json(200, { default_branch: 'main', size: empty ? 0 : 12, permissions: { admin: push, push, pull: true } })
+    }
+    // Contents API 写文件（Gitea 唯一可用的写入端点）
+    if (req.method === 'PUT' && /\/api\/repos\/[^/]+\/[^/]+\/contents\//.test(req.url)) {
+      return json(200, { content: { sha: 'blob-sha', path: decodeURIComponent(req.url.split('/contents/')[1]) }, commit: { sha: 'contents-commit' } })
     }
     // 提交列表（历史读取）
     if (req.method === 'GET' && /\/api\/repos\/[^/]+\/[^/]+\/commits\?/.test(req.url)) {
@@ -255,4 +261,75 @@ test('令牌缺少读权限时报告原因，不返回空列表', async (t) => {
     gitClient.listBackupCommits(target(`${forbidden}/api`), 'voicehub-backups/', 30),
     /403.*令牌权限不足或触发速率限制/
   )
+})
+
+test('Gitea 模式写入只发一次 Contents PUT，正文 base64 且带分支', async (t) => {
+  const { base, requests } = await mockGit(t)
+  await gitClient.commitBackupFile(target(base, { apiMode: 'gitea' }), 'voicehub-backups/auto.json', '{"data":1}', 'VoiceHub 自动备份 auto.json')
+
+  assert.deepEqual(requests.map((r) => `${r.method} ${r.url}`), [
+    'GET /api/repos/voicehub/backups',
+    'PUT /api/repos/voicehub/backups/contents/voicehub-backups/auto.json'
+  ])
+  const put = requests[1].body
+  assert.equal(put.branch, 'main')
+  assert.equal(put.message, 'VoiceHub 自动备份 auto.json')
+  assert.equal(Buffer.from(put.content, 'base64').toString('utf8'), '{"data":1}')
+})
+
+test('Gitea 连接测试用列提交探分支，不做游离 tree 探测', async (t) => {
+  const { base, requests } = await mockGit(t, { headSha: 'old-commit' })
+  await gitClient.checkGitRepoAccess(target(base, { apiMode: 'gitea' }))
+  assert.deepEqual(requests.map((r) => `${r.method} ${r.url}`), [
+    'GET /api/repos/voicehub/backups',
+    'GET /api/repos/voicehub/backups/commits?sha=main&limit=1'
+  ])
+})
+
+test('Gitea 令牌无推送权限时报错，不误报连接成功', async (t) => {
+  const { base } = await mockGit(t, { headSha: 'old-commit', push: false })
+  await assert.rejects(
+    gitClient.checkGitRepoAccess(target(base, { apiMode: 'gitea' })),
+    /令牌没有该仓库的推送权限/
+  )
+})
+
+test('历史读取按模式切换分页与递归参数，并兼容 tree 为字符串', async (t) => {
+  const giteaCommits = [{
+    sha: 'g1',
+    commit: {
+      message: 'VoiceHub 自动备份 auto-9.json',
+      author: { name: 'bot', date: '2026-11-02T10:00:00Z' },
+      tree: 'plain-tree'
+    }
+  }]
+  const gitea = await mockGit(t, {
+    commits: giteaCommits,
+    blobs: [{ type: 'blob', path: 'voicehub-backups/auto-9.json', size: 4096 }]
+  })
+  const history = await gitClient.listBackupCommits(target(gitea.base, { apiMode: 'gitea' }), 'voicehub-backups/', 30)
+  assert.deepEqual(gitea.requests.map((r) => r.url), [
+    '/api/repos/voicehub/backups',
+    '/api/repos/voicehub/backups/commits?sha=main&limit=30&path=voicehub-backups&stat=false&verification=false&files=false',
+    '/api/repos/voicehub/backups/git/trees/plain-tree?recursive=true'
+  ])
+  assert.deepEqual(history.entries, [{
+    filename: 'auto-9.json',
+    commitSha: 'g1',
+    committedAt: '2026-11-02T10:00:00Z',
+    author: 'bot',
+    size: 4096
+  }])
+
+  // GitHub 口径仍用 per_page 与 recursive=1
+  const github = await mockGit(t, { commits: giteaCommits, blobs: [{ type: 'blob', path: 'voicehub-backups/auto-9.json', size: 4096 }] })
+  await gitClient.listBackupCommits(target(github.base), 'voicehub-backups/', 30)
+  assert.equal(github.requests[1].url, '/api/repos/voicehub/backups/commits?sha=main&per_page=30&path=voicehub-backups')
+  assert.equal(github.requests[2].url, '/api/repos/voicehub/backups/git/trees/plain-tree?recursive=1')
+})
+
+test('未知 apiMode 回退 GitHub 口径，不改走 Contents API', async () => {
+  assert.equal(gitClient.normalizeGitApiMode('gitea'), 'gitea')
+  assert.equal(gitClient.normalizeGitApiMode('Gitea'), 'github')
+  assert.equal(gitClient.normalizeGitApiMode(undefined), 'github')
 })

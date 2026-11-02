@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { z } from 'zod'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { GIT_API_MODES, SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -35,7 +35,8 @@ const backupConfigSchema = z.object({
       repo: z.string(),
       branch: z.string(),
       path: z.string(),
-      token: z.string().optional()
+      token: z.string().optional(),
+      apiMode: z.enum(GIT_API_MODES).optional()
     }),
     telegram: z.object({
       enabled: z.boolean(),

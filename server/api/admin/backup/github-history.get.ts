@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const history = await listBackupCommits(
-      { apiBase: github.apiBase, repo: github.repo, branch: github.branch, token: github.token },
+      { apiBase: github.apiBase, repo: github.repo, branch: github.branch, token: github.token, apiMode: github.apiMode },
       github.path,
       limit
     )

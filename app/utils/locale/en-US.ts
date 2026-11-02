@@ -4743,9 +4743,12 @@ export const admin = {
         github: {
           name: 'GitHub Repo',
           desc: 'Commit backup file into a Git repository',
-          privateHint: 'Use a private repo. The token only needs Contents read and write access on it. Gitea is unsupported (no Git Data API write endpoints).',
+          privateHint: 'Use a private repo. The token needs Contents read and write access on GitHub, or push access on Gitea.',
           apiBase: 'API Base URL',
           apiBasePlaceholder: 'https://api.github.com',
+          mode: 'API Mode',
+          modeGithub: 'GitHub / GHES',
+          modeGitea: 'Gitea',
           repo: 'Repository',
           repoPlaceholder: 'owner/repo',
           branch: 'Branch',

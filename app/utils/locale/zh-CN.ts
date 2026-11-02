@@ -4593,9 +4593,12 @@ export const admin = {
         github: {
           name: 'GitHub 仓库',
           desc: '以提交方式写入指定 Git 仓库',
-          privateHint: '仓库需设为私有；令牌仅需对该仓库开放 Contents 读写权限。Gitea 未实现 Git Data API 写入端点，暂不支持。',
+          privateHint: '仓库需设为私有；GitHub 令牌需对该仓库开放 Contents 读写权限，Gitea 令牌需有推送权限。',
           apiBase: 'API 地址',
           apiBasePlaceholder: 'https://api.github.com',
+          mode: 'API 模式',
+          modeGithub: 'GitHub / GHES',
+          modeGitea: 'Gitea',
           repo: '仓库',
           repoPlaceholder: 'owner/repo',
           branch: '分支',

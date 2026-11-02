@@ -28,7 +28,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, type GitApiMode } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
 import { buildRepoFilePath, commitBackupFile } from '~~/server/utils/githubGitClient'
 import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
@@ -82,6 +82,7 @@ export interface AutoBackupConfig {
       branch: string
       path: string
       token: string
+      apiMode?: GitApiMode
     }
     telegram: {
       enabled: boolean
