@@ -1071,6 +1071,7 @@ VoiceHub/
 │   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
+│   │   │   │   ├── github-history.get.ts # 读取 Git 仓库备份提交历史
 │   │   │   │   ├── history.get.ts   # 获取备份历史
 │   │   │   │   ├── history-clear.post.ts # 清空备份历史记录
 │   │   │   │   ├── list.get.ts      # 获取备份列表

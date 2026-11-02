@@ -4593,7 +4593,7 @@ export const admin = {
         github: {
           name: 'GitHub 仓库',
           desc: '以提交方式写入指定 Git 仓库',
-          privateHint: '仓库需设为私有；令牌仅需对该仓库开放 Contents 写权限。Gitea 未实现 Git Data API 写入端点，暂不支持。',
+          privateHint: '仓库需设为私有；令牌仅需对该仓库开放 Contents 读写权限。Gitea 未实现 Git Data API 写入端点，暂不支持。',
           apiBase: 'API 地址',
           apiBasePlaceholder: 'https://api.github.com',
           repo: '仓库',
@@ -4604,7 +4604,12 @@ export const admin = {
           pathPlaceholder: 'voicehub-backups/',
           token: '访问令牌',
           tokenPlaceholder: '请输入访问令牌',
-          testConnection: '测试连接'
+          testConnection: '测试连接',
+          viewHistory: '查看仓库备份',
+          historyLoading: '读取中...',
+          historyEmpty: '仓库中没有备份提交',
+          historyBranch: '分支',
+          historyRemoved: '已不在最新提交'
         },
         telegram: {
           name: 'Telegram Bot',

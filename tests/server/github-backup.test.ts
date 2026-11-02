@@ -21,7 +21,7 @@ const outbound = compile(read('server/utils/outbound-url.ts'), {
 }, 'fetchSafeOutbound, assertSafeOutboundUrl')
 const gitClient = compile(read('server/utils/githubGitClient.ts'), {
   fetchSafeOutbound: outbound.fetchSafeOutbound
-}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess')
+}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits')
 
 async function listen(t, handler) {
   const server = http.createServer(handler)
@@ -36,7 +36,7 @@ async function listen(t, handler) {
 }
 
 /** 极简 GitHub 兼容 Git Data API 替身，记录请求顺序与请求体 */
-async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false } = {}) {
+async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [] } = {}) {
   const requests = []
   const ref = { sha: headSha }
   const base = await listen(t, async (req, res) => {
@@ -51,6 +51,14 @@ async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false }
     }
     if (req.method === 'GET' && /^\/api\/repos\/[^/]+\/[^/]+$/.test(req.url)) {
       return json(200, { default_branch: 'main', size: empty ? 0 : 12 })
+    }
+    // 提交列表（历史读取）
+    if (req.method === 'GET' && /\/api\/repos\/[^/]+\/[^/]+\/commits\?/.test(req.url)) {
+      return json(200, commits)
+    }
+    // 树对象列举（补齐文件大小）
+    if (req.method === 'GET' && req.url.includes('/git/trees/')) {
+      return json(200, { tree: blobs })
     }
     if (req.method === 'GET' && req.url.includes('/git/ref/heads/')) {
       // 替身仓库仅存在 main 分支
@@ -166,7 +174,85 @@ test('连接测试校验仓库、分支并探测写权限', async (t) => {
   assert.equal(requests[2].body.base_tree, undefined)
 })
 
+test('API 地址无法连接时给出中文说明', async () => {
+  await assert.rejects(
+    gitClient.listBackupCommits(target('http://127.0.0.1:1'), 'voicehub-backups/', 30),
+    /无法连接 Git 仓库 API/
+  )
+})
+
 test('缺少 API 地址或令牌时拒绝发起请求', async () => {
   await assert.rejects(gitClient.commitBackupFile({ apiBase: '', repo: 'a/b', branch: 'main', token: 't' }, 'a.json', '{}', 'm'), /未配置 Git API 地址/)
   await assert.rejects(gitClient.commitBackupFile({ apiBase: 'https://api.github.com', repo: 'a/b', branch: 'main', token: '' }, 'a.json', '{}', 'm'), /未配置访问令牌/)
+})
+
+const backupCommit = (sha: string, filename: string, date = '2026-11-02T10:00:00Z') => ({
+  sha,
+  commit: {
+    message: `VoiceHub 自动备份 ${filename}`,
+    author: { name: 'voicehub-bot', date },
+    tree: { sha: `${sha}-tree` }
+  }
+})
+
+test('历史读取按提交信息解析备份文件并用最新树补大小，全程只发 GET', async (t) => {
+  const { base, requests } = await mockGit(t, {
+    headSha: 'newest',
+    commits: [
+      backupCommit('c3', 'auto-3.json'),
+      { sha: 'c2', commit: { message: '手动提交说明', author: { name: 'me', date: 'x' }, tree: { sha: 'c2-tree' } } },
+      backupCommit('c1', 'auto-1.json', '2026-11-01T09:00:00Z')
+    ],
+    blobs: [
+      { type: 'blob', path: 'voicehub-backups/auto-3.json', size: 2048 },
+      { type: 'blob', path: 'voicehub-backups/README.md', size: 12 },
+      { type: 'tree', path: 'voicehub-backups' }
+    ]
+  })
+  const history = await gitClient.listBackupCommits(target(base), 'voicehub-backups/', 30)
+
+  assert.equal(history.branch, 'main')
+  assert.equal(history.scannedCommits, 3)
+  assert.deepEqual(history.entries, [
+    { filename: 'auto-3.json', commitSha: 'c3', committedAt: '2026-11-02T10:00:00Z', author: 'voicehub-bot', size: 2048 },
+    // 已被后续提交删除的文件仍留在历史里，大小给 null
+    { filename: 'auto-1.json', commitSha: 'c1', committedAt: '2026-11-01T09:00:00Z', author: 'voicehub-bot', size: null }
+  ])
+  assert.deepEqual(requests.map((r) => r.method), ['GET', 'GET', 'GET'])
+  assert.deepEqual(requests.map((r) => r.url), [
+    '/api/repos/voicehub/backups',
+    '/api/repos/voicehub/backups/commits?sha=main&per_page=30&path=voicehub-backups',
+    '/api/repos/voicehub/backups/git/trees/c3-tree?recursive=1'
+  ])
+  assert.equal(requests[0].auth, 'Bearer pat-1')
+})
+
+test('空仓库历史为空且不再发起后续请求', async (t) => {
+  const { base, requests } = await mockGit(t, { empty: true })
+  const history = await gitClient.listBackupCommits(target(base), 'voicehub-backups/', 30)
+  assert.deepEqual(history, { branch: 'main', scannedCommits: 0, entries: [] })
+  assert.deepEqual(requests.map((r) => r.url), ['/api/repos/voicehub/backups'])
+})
+
+test('分支与目录参与查询，条数上限夹到 1..100', async (t) => {
+  const wide = await mockGit(t, { commits: [backupCommit('c1', 'auto-1.json')] })
+  await gitClient.listBackupCommits(target(wide.base, { branch: 'release/backup' }), '', 500)
+  assert.equal(wide.requests[1].url, '/api/repos/voicehub/backups/commits?sha=release%2Fbackup&per_page=100')
+  // 目录留空则不带 path，直接读仓库根
+  assert.equal(wide.requests.length, 3)
+
+  const zero = await mockGit(t, { commits: [backupCommit('c1', 'auto-1.json')] })
+  await gitClient.listBackupCommits(target(zero.base, { branch: '' }), 'voicehub-backups/', 0)
+  assert.equal(zero.requests[1].url, '/api/repos/voicehub/backups/commits?sha=main&per_page=1&path=voicehub-backups')
+})
+
+test('令牌缺少读权限时报告原因，不返回空列表', async (t) => {
+  const forbidden = await listen(t, (_req, res) => {
+    res.writeHead(403, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ message: 'Resource not accessible by integration' }))
+  })
+  await assert.rejects(
+    gitClient.listBackupCommits(target(`${forbidden}/api`), 'voicehub-backups/', 30),
+    /403.*令牌权限不足或触发速率限制/
+  )
 })

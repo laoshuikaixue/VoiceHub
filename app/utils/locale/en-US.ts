@@ -4743,7 +4743,7 @@ export const admin = {
         github: {
           name: 'GitHub Repo',
           desc: 'Commit backup file into a Git repository',
-          privateHint: 'Use a private repo. The token only needs Contents write access on it. Gitea is unsupported (no Git Data API write endpoints).',
+          privateHint: 'Use a private repo. The token only needs Contents read and write access on it. Gitea is unsupported (no Git Data API write endpoints).',
           apiBase: 'API Base URL',
           apiBasePlaceholder: 'https://api.github.com',
           repo: 'Repository',
@@ -4754,7 +4754,12 @@ export const admin = {
           pathPlaceholder: 'voicehub-backups/',
           token: 'Access Token',
           tokenPlaceholder: 'Enter access token',
-          testConnection: 'Test Connection'
+          testConnection: 'Test Connection',
+          viewHistory: 'View Backups',
+          historyLoading: 'Loading...',
+          historyEmpty: 'No backup commits in this repo',
+          historyBranch: 'Branch',
+          historyRemoved: 'Not in latest commit'
         },
         telegram: {
           name: 'Telegram Bot',

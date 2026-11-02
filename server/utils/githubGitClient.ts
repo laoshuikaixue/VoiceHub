@@ -78,16 +78,23 @@ async function requestGitApi<T = any>(
   if (!target.token) throw new Error('未配置访问令牌')
 
   const body = payload === undefined ? undefined : JSON.stringify(payload)
-  const response = await fetchSafeOutbound(`${base}${path}`, {
-    method,
-    headers: {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${target.token}`,
-      ...(body ? { 'Content-Type': 'application/json' } : {})
-    },
-    body,
-    signal: AbortSignal.timeout(GIT_TIMEOUT)
-  })
+  let response: Awaited<ReturnType<typeof fetchSafeOutbound>>
+  try {
+    response = await fetchSafeOutbound(`${base}${path}`, {
+      method,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${target.token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {})
+      },
+      body,
+      signal: AbortSignal.timeout(GIT_TIMEOUT)
+    })
+  } catch (error: any) {
+    // SSRF 拦截等带状态码的错误原样抛出，保留本地化错误码
+    if (error?.status || error?.statusCode) throw error
+    throw new Error(`无法连接 Git 仓库 API：${error?.message || '请求失败'}`, { cause: error })
+  }
 
   const text = await response.text().catch(() => '')
   if (!response.ok) {
@@ -186,4 +193,81 @@ export async function checkGitRepoAccess(target: GitRepoTarget): Promise<void> {
   await requestGitApi(target, 'POST', `${repoPath}/git/trees`, {
     tree: [{ path: '.voicehub-write-probe', mode: '100644', type: 'blob', content: 'VoiceHub connection test' }]
   })
+}
+
+/** 仓库内的单个备份提交 */
+export interface GitBackupEntry {
+  filename: string
+  commitSha: string
+  /** UTC ISO 字符串 */
+  committedAt: string
+  author: string
+  /** 分支最新树中的字节数；null 表示文件已不在最新提交里 */
+  size: number | null
+}
+
+export interface GitBackupHistory {
+  branch: string
+  scannedCommits: number
+  entries: GitBackupEntry[]
+}
+
+const BACKUP_COMMIT_MESSAGE = /^VoiceHub 自动备份 (.+\.json)$/
+
+/** 去掉首尾斜杠、空段与上跳段，得到仓库内目录前缀 */
+function normalizeRepoDir(dir: string): string {
+  return (dir || '').split('/')
+    .map((segment) => segment.trim())
+    .filter((segment) => segment && segment !== '.' && segment !== '..')
+    .join('/')
+}
+
+/** 读取分支上的备份提交列表，全程只发 GET 请求 */
+export async function listBackupCommits(
+  target: GitRepoTarget,
+  dir: string,
+  limit = 30
+): Promise<GitBackupHistory> {
+  const { repoPath, branch, empty } = await inspectRepo(target)
+  if (empty) return { branch, scannedCommits: 0, entries: [] }
+
+  const perPage = Math.min(100, Math.max(1, Math.trunc(limit) || 1))
+  const query = new URLSearchParams({ sha: branch, per_page: String(perPage) })
+  const dirPath = normalizeRepoDir(dir)
+  if (dirPath) query.set('path', dirPath)
+  const commits = await requestGitApi(target, 'GET', `${repoPath}/commits?${query.toString()}`)
+  const list = Array.isArray(commits) ? commits : []
+  if (!list.length) return { branch, scannedCommits: 0, entries: [] }
+
+  // 用最新树补齐文件大小
+  const sizeByPath = new Map<string, number>()
+  const sizeByBaseName = new Map<string, number>()
+  const headTree = String(list[0]?.commit?.tree?.sha || '')
+  if (headTree) {
+    const tree = await requestGitApi(target, 'GET', `${repoPath}/git/trees/${headTree}?recursive=1`)
+    for (const item of (Array.isArray(tree?.tree) ? tree.tree : [])) {
+      if (item?.type !== 'blob' || typeof item.size !== 'number') continue
+      const path = String(item.path || '')
+      sizeByPath.set(path, item.size)
+      const baseName = path.split('/').pop() || path
+      if (!sizeByBaseName.has(baseName)) sizeByBaseName.set(baseName, item.size)
+    }
+  }
+
+  const entries: GitBackupEntry[] = []
+  for (const item of list) {
+    const message = String(item?.commit?.message || '').split('\n')[0].trim()
+    const matched = BACKUP_COMMIT_MESSAGE.exec(message)
+    if (!matched) continue
+    const filename = matched[1]
+    const fullPath = dirPath ? `${dirPath}/${filename}` : filename
+    entries.push({
+      filename,
+      commitSha: String(item?.sha || ''),
+      committedAt: String(item?.commit?.author?.date || ''),
+      author: String(item?.commit?.author?.name || ''),
+      size: sizeByPath.get(fullPath) ?? sizeByBaseName.get(filename) ?? null
+    })
+  }
+  return { branch, scannedCommits: list.length, entries }
 }

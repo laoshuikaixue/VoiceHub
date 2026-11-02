@@ -129,6 +129,46 @@
                   >
                     {{ testing === 'github' ? '测试中...' : locale.methods.github.testConnection }}
                   </button>
+
+                  <!-- 仓库备份历史 -->
+                  <div class="pt-1 space-y-2">
+                    <button
+                      class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                      :class="ghHistoryLoading ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
+                      :disabled="ghHistoryLoading || !(can('backup:read'))"
+                      @click="loadGithubHistory"
+                    >
+                      {{ ghHistoryLoading ? locale.methods.github.historyLoading : locale.methods.github.viewHistory }}
+                    </button>
+
+                    <p v-if="ghHistoryError" class="text-[11px] text-error leading-relaxed break-words">{{ ghHistoryError }}</p>
+                    <p v-else-if="ghHistoryLoaded && ghHistory.length === 0" class="text-[11px] text-text-disabled">
+                      {{ locale.methods.github.historyEmpty }}
+                    </p>
+                    <div v-else-if="ghHistory.length" class="space-y-1.5">
+                      <p class="text-[10px] text-text-disabled">
+                        {{ locale.methods.github.historyBranch }} {{ ghHistoryBranch }} · {{ ghHistory.length }} / {{ ghHistoryScanned }}
+                      </p>
+                      <div class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                        <div
+                          v-for="item in ghHistory"
+                          :key="item.commitSha"
+                          class="flex items-start justify-between gap-2 bg-panel-bg-dark border border-panel-bg-dark-50 rounded-lg px-2.5 py-1.5"
+                        >
+                          <div class="min-w-0">
+                            <p class="text-[11px] text-text-secondary truncate" :title="item.filename">{{ item.filename }}</p>
+                            <p class="text-[10px] text-text-disabled">
+                              {{ item.committedAtBeijing }} · {{ item.commitSha.slice(0, 7) }}
+                              <span v-if="item.size === null"> · {{ locale.methods.github.historyRemoved }}</span>
+                            </p>
+                          </div>
+                          <span class="text-[11px] text-text-tertiary shrink-0 tabular-nums">
+                            {{ item.size === null ? '—' : formatSize(item.size) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </MethodCard>
 
@@ -361,6 +401,7 @@ import { usePermissions } from '~/composables/usePermissions'
 import { computed, reactive, ref, watch } from 'vue'
 import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, GitBranch, AlertTriangle, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { useToast } from '~/composables/useToast'
 import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
 import InputField from '~/components/UI/Common/InputField.vue'
@@ -376,6 +417,7 @@ const props = defineProps({
 defineEmits(['close'])
 
 const { showToast } = useToast()
+const { localize: localizeServerError } = useServerErrors()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager?.autoBackup || {})
 
@@ -386,6 +428,14 @@ const configuredSecrets = ref({})
 const historyLoading = ref(false)
 const clearingHistory = ref(false)
 const historyRecords = ref([])
+
+// Git 仓库备份历史
+const ghHistory = ref([])
+const ghHistoryBranch = ref('')
+const ghHistoryScanned = ref(0)
+const ghHistoryLoading = ref(false)
+const ghHistoryLoaded = ref(false)
+const ghHistoryError = ref('')
 
 // 总开关
 const masterEnabled = ref(false)
@@ -482,6 +532,9 @@ watch(() => props.visible, (val) => {
   if (val) {
     loadConfig()
     loadHistory()
+    ghHistory.value = []
+    ghHistoryLoaded.value = false
+    ghHistoryError.value = ''
   }
 })
 
@@ -600,6 +653,31 @@ const testConnection = async (type) => {
     showToast(err?.data?.message || err?.message || '测试失败', 'error')
   } finally {
     testing.value = null
+  }
+}
+
+// 读取 Git 仓库分支上的备份提交
+const loadGithubHistory = async () => {
+  if (!(can('backup:read'))) return
+  if (ghHistoryLoading.value) return
+  ghHistoryLoading.value = true
+  ghHistoryError.value = ''
+  try {
+    const result = await $fetch('/api/admin/backup/github-history', { query: { limit: 30 } })
+    if (result.success) {
+      ghHistory.value = result.data?.entries || []
+      ghHistoryBranch.value = result.data?.branch || ''
+      ghHistoryScanned.value = result.data?.scannedCommits || 0
+    } else {
+      ghHistory.value = []
+      ghHistoryError.value = result.message || '读取仓库备份历史失败'
+    }
+  } catch (err) {
+    ghHistory.value = []
+    ghHistoryError.value = localizeServerError(err, '读取仓库备份历史失败')
+  } finally {
+    ghHistoryLoaded.value = true
+    ghHistoryLoading.value = false
   }
 }
 
