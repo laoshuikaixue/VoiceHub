@@ -767,7 +767,6 @@ export const pages = {
     moduleUnavailable: 'Module access unavailable',
     moduleUnavailableHint: 'Only the page entry is granted, or required read access is denied. Ask an administrator to update your permissions.',
     backHome: 'Back home',
-    permissionHint: 'Actions without permission are disabled.',
     backToTop: 'Back to Top',
     fallbackTitle: 'Admin Dashboard',
     defaultSiteTitle: 'Campus Radio Song Request System',
