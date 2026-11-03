@@ -147,7 +147,6 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'backup/*', m: WRITE_METHODS, any: ['backup:write'] },
   { p: 'backup/**', m: WRITE_METHODS, any: ['backup:write'] },
   { p: 'db-status', m: GET_METHODS, any: ['database:read'] },
-  { p: 'database/status', m: GET_METHODS, any: ['database:read'] },
   { p: 'database/performance', m: GET_METHODS, any: ['database:read'] },
   { p: 'database/pool-status', m: GET_METHODS, any: ['database:read'] },
   { p: 'database/cleanup', m: WRITE_METHODS, any: ['database:maintenance'] },

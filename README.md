@@ -1112,8 +1112,7 @@ VoiceHub/
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
 │   │   │   │   ├── performance.get.ts # 数据库性能监控
 │   │   │   │   ├── pool-status.get.ts # 连接池状态
-│   │   │   │   ├── reset.post.ts    # 重置数据库
-│   │   │   │   └── status.get.ts    # 数据库状态
+│   │   │   │   └── reset.post.ts    # 重置数据库
 │   │   │   ├── music-source-plugins/ # 音源插件配置、启停、排序与验证
 │   │   │   │   ├── [id].delete.ts   # 移除音源插件
 │   │   │   │   ├── [id].put.ts      # 更新音源插件

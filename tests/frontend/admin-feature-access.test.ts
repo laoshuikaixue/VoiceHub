@@ -153,7 +153,7 @@ test('概览按数据权限加载面板，数据库只读账号不能打开维�
   assert.deepEqual(overview.requests, ['GET /api/admin/activities'])
   assert.deepEqual(overview.denied, [])
   const database = await component('DatabaseManager', ['database:read'])
-  assert.deepEqual(database.requests, ['GET /api/admin/database/status'])
+  assert.deepEqual(database.requests, [])
   for (const card of ['backup', 'restore', 'reset-db', 'reset-seq', 'auto-backup']) database.values.openModal(card)
   assert.equal(database.values.activeModal.value, 'none')
 })

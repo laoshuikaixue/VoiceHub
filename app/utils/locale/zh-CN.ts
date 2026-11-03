@@ -4407,10 +4407,6 @@ export const admin = {
     },
   },
   databaseManager: {
-    statusTitle: '数据库状态',
-    refreshStatus: '刷新状态',
-    statusConnected: '连接正常',
-    statusDisconnected: '连接异常',
     title: '数据库操作',
     desc: '执行系统底层维护任务，包括备份、恢复及全局数据重置',
     highRisk: '高风险操作',

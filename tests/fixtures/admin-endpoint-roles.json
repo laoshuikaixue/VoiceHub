@@ -367,14 +367,6 @@
       ],
       "via": "role !== 'SUPER_ADMIN'"
     },
-    "GET /api/admin/database/status": {
-      "file": "database/status.get.ts",
-      "roles": [
-        "ADMIN",
-        "SUPER_ADMIN"
-      ],
-      "via": "verifyAdminAuth"
-    },
     "GET /api/admin/db-status": {
       "file": "db-status.get.ts",
       "roles": [

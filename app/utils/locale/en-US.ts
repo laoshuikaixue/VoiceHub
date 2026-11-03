@@ -4545,10 +4545,6 @@ export const admin = {
     },
   },
   databaseManager: {
-    statusTitle: 'Database status',
-    refreshStatus: 'Refresh',
-    statusConnected: 'Connected',
-    statusDisconnected: 'Connection failed',
     title: 'Database Operations',
     desc: 'Run low-level maintenance tasks, including backup, restore, and global data reset',
     highRisk: 'High Risk',

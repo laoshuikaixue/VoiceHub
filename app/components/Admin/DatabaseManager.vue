@@ -8,15 +8,6 @@
       </p>
     </div>
 
-    <div v-if="can('database:read')" class="p-5 rounded-xl border border-border-secondary bg-bg-secondary space-y-2">
-      <div class="flex items-center justify-between gap-4">
-        <h3 class="text-sm font-bold">{{ locale.statusTitle }}</h3>
-        <button :disabled="statusLoading" class="px-3 py-2 bg-bg-tertiary rounded-lg text-xs disabled:opacity-50" @click="loadDatabaseStatus">{{ locale.refreshStatus }}</button>
-      </div>
-      <p v-if="statusError" role="alert" class="text-xs text-error">{{ statusError }}</p>
-      <p v-else-if="databaseStatus" class="text-sm text-text-secondary">{{ databaseStatus.success ? locale.statusConnected : locale.statusDisconnected }} · {{ databaseStatus.responseTime }} ms</p>
-    </div>
-
     <!-- 操作卡片网格 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
@@ -524,7 +515,7 @@
 
 <script setup>
 import { usePermissions } from '~/composables/usePermissions'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
@@ -539,27 +530,11 @@ const auth = useAuth()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager || {})
 const { localize } = useServerErrors()
-const databaseStatus = ref(null)
-const statusLoading = ref(false)
-const statusError = ref('')
 const cardPermissions = {
   backup: 'backup:write', restore: 'backup:restore', 'reset-seq': 'database:maintenance',
   'reset-db': 'database:reset', 'auto-backup': 'backup:read'
 }
 const canOpenCard = (id) => can(cardPermissions[id])
-const loadDatabaseStatus = async () => {
-  if (!can('database:read')) return
-  statusLoading.value = true
-  statusError.value = ''
-  try {
-    databaseStatus.value = await $fetch('/api/admin/database/status')
-  } catch (error) {
-    statusError.value = localize(error)
-  } finally {
-    statusLoading.value = false
-  }
-}
-onMounted(loadDatabaseStatus)
 const defaultTableOptions = [
   { label: '重置所有表', value: 'all' },
   { label: '歌曲表', value: 'Song' },
