@@ -632,3 +632,8 @@ export const SYSTEM_BOARD_EVENT_LEVELS = ['error', 'warn', 'info'] as const
 export type SystemBoardEventLevel = (typeof SYSTEM_BOARD_EVENT_LEVELS)[number]
 export const SYSTEM_BOARD_EVENT_SOURCES = ['runtime', 'apiError', 'passwordAudit'] as const
 export type SystemBoardEventSource = (typeof SYSTEM_BOARD_EVENT_SOURCES)[number]
+
+// Git 仓库备份的 API 口径：github 走 Git Data API 写提交，gitea 只有 Contents API 可写
+export const GIT_API_MODES = ['github', 'gitea'] as const
+export type GitApiMode = (typeof GIT_API_MODES)[number]
+export const DEFAULT_GIT_API_MODE: GitApiMode = 'github'

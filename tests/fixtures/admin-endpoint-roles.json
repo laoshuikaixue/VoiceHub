@@ -105,6 +105,20 @@
       ],
       "via": "role !== 'SUPER_ADMIN'"
     },
+    "GET /api/admin/backup/github-file": {
+      "file": "backup/github-file.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/github-history": {
+      "file": "backup/github-history.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
     "POST /api/admin/backup/history-clear": {
       "file": "backup/history-clear.post.ts",
       "roles": [
@@ -142,6 +156,13 @@
     },
     "POST /api/admin/backup/test-email": {
       "file": "backup/test-email.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/test-github": {
+      "file": "backup/test-github.post.ts",
       "roles": [
         "SUPER_ADMIN"
       ],

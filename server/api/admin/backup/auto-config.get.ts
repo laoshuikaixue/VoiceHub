@@ -27,6 +27,10 @@ function sanitizeConfig(config: any) {
     configuredSecrets.webdavPassword = !!sanitized.methods.webdav.password
     sanitized.methods.webdav.password = ''
   }
+  if (sanitized.methods?.github) {
+    configuredSecrets.githubToken = !!sanitized.methods.github.token
+    sanitized.methods.github.token = ''
+  }
   if (sanitized.methods?.telegram) {
     configuredSecrets.telegramBotToken = !!sanitized.methods.telegram.botToken
     sanitized.methods.telegram.botToken = ''

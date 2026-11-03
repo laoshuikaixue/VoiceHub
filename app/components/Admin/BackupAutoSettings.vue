@@ -98,6 +98,81 @@
                 </div>
               </MethodCard>
 
+              <!-- GitHub 仓库 -->
+              <MethodCard
+                :enabled="masterEnabled && methods.github.enabled"
+                :master-off="!masterEnabled"
+                :name="locale.methods.github.name"
+                :desc="locale.methods.github.desc"
+                @toggle="methods.github.enabled = $event"
+              >
+                <template #icon><GitBranch class="w-5 h-5" /></template>
+                <div class="space-y-3">
+                  <div class="p-3 bg-warning-10 border border-warning-10 rounded-xl flex items-start gap-2.5">
+                    <AlertTriangle class="text-warning shrink-0 mt-0.5 w-3.5 h-3.5" />
+                    <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.methods.github.privateHint }}</p>
+                  </div>
+                  <InputField :label="locale.methods.github.apiBase" :placeholder="locale.methods.github.apiBasePlaceholder" v-model="methods.github.apiBase" />
+                  <CustomSelect :label="locale.methods.github.mode" v-model="methods.github.apiMode" :options="githubModeOptions" />
+                  <div class="grid grid-cols-2 gap-3">
+                    <InputField :label="locale.methods.github.repo" :placeholder="locale.methods.github.repoPlaceholder" v-model="methods.github.repo" />
+                    <InputField :label="locale.methods.github.branch" :placeholder="locale.methods.github.branchPlaceholder" v-model="methods.github.branch" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <InputField :label="locale.methods.github.path" :placeholder="locale.methods.github.pathPlaceholder" v-model="methods.github.path" />
+                    <PasswordField :label="locale.methods.github.token" :placeholder="locale.methods.github.tokenPlaceholder" v-model="methods.github.token" />
+                  </div>
+                  <button
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    :class="testing === 'github' ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
+                    :disabled="(testing !== null) || !(can('backup:write'))"
+                    @click="testConnection('github')"
+                  >
+                    {{ testing === 'github' ? '测试中...' : locale.methods.github.testConnection }}
+                  </button>
+
+                  <!-- 仓库备份历史 -->
+                  <div class="pt-1 space-y-2">
+                    <button
+                      class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                      :class="ghHistoryLoading ? 'bg-panel-bg-compact text-text-secondary' : 'bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light'"
+                      :disabled="ghHistoryLoading || !(can('backup:read'))"
+                      @click="loadGithubHistory"
+                    >
+                      {{ ghHistoryLoading ? locale.methods.github.historyLoading : locale.methods.github.viewHistory }}
+                    </button>
+
+                    <p v-if="ghHistoryError" class="text-[11px] text-error leading-relaxed break-words">{{ ghHistoryError }}</p>
+                    <p v-else-if="ghHistoryLoaded && ghHistory.length === 0" class="text-[11px] text-text-disabled">
+                      {{ locale.methods.github.historyEmpty }}
+                    </p>
+                    <div v-else-if="ghHistory.length" class="space-y-1.5">
+                      <p class="text-[10px] text-text-disabled">
+                        {{ locale.methods.github.historyBranch }} {{ ghHistoryBranch }} · {{ ghHistory.length }} / {{ ghHistoryScanned }}
+                      </p>
+                      <div class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                        <div
+                          v-for="item in ghHistory"
+                          :key="item.commitSha"
+                          class="flex items-start justify-between gap-2 bg-panel-bg-dark border border-panel-bg-dark-50 rounded-lg px-2.5 py-1.5"
+                        >
+                          <div class="min-w-0">
+                            <p class="text-[11px] text-text-secondary truncate" :title="item.filename">{{ item.filename }}</p>
+                            <p class="text-[10px] text-text-disabled">
+                              {{ item.committedAtBeijing }} · {{ item.commitSha.slice(0, 7) }}
+                              <span v-if="item.size === null"> · {{ locale.methods.github.historySizeUnknown }}</span>
+                            </p>
+                          </div>
+                          <span class="text-[11px] text-text-tertiary shrink-0 tabular-nums">
+                            {{ item.size === null ? '—' : formatSize(item.size) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </MethodCard>
+
               <!-- Telegram -->
               <MethodCard
                 :enabled="masterEnabled && methods.telegram.enabled"
@@ -325,13 +400,15 @@ crontab -e
 <script setup>
 import { usePermissions } from '~/composables/usePermissions'
 import { computed, reactive, ref, watch } from 'vue'
-import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
+import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, GitBranch, AlertTriangle, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { useToast } from '~/composables/useToast'
 import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
 import InputField from '~/components/UI/Common/InputField.vue'
 import PasswordField from '~/components/UI/Common/PasswordField.vue'
 import MethodCard from '~/components/UI/Common/MethodCard.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 const { can } = usePermissions()
 
@@ -342,6 +419,7 @@ const props = defineProps({
 defineEmits(['close'])
 
 const { showToast } = useToast()
+const { localize: localizeServerError } = useServerErrors()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager?.autoBackup || {})
 
@@ -352,6 +430,14 @@ const configuredSecrets = ref({})
 const historyLoading = ref(false)
 const clearingHistory = ref(false)
 const historyRecords = ref([])
+
+// Git 仓库备份历史
+const ghHistory = ref([])
+const ghHistoryBranch = ref('')
+const ghHistoryScanned = ref(0)
+const ghHistoryLoading = ref(false)
+const ghHistoryLoaded = ref(false)
+const ghHistoryError = ref('')
 
 // 总开关
 const masterEnabled = ref(false)
@@ -374,6 +460,15 @@ const methods = reactive({
     password: '',
     path: 'voicehub-backups/'
   },
+  github: {
+    enabled: false,
+    apiBase: 'https://api.github.com',
+    repo: '',
+    branch: 'main',
+    path: 'voicehub-backups/',
+    token: '',
+    apiMode: 'github'
+  },
   telegram: {
     enabled: false,
     botToken: '',
@@ -384,6 +479,11 @@ const methods = reactive({
     recipient: ''
   }
 })
+
+const githubModeOptions = computed(() => [
+  { value: 'github', label: locale.value?.methods?.github?.modeGithub || 'GitHub / GHES' },
+  { value: 'gitea', label: locale.value?.methods?.github?.modeGitea || 'Gitea' }
+])
 
 // 触发方式
 const activeTriggerMethod = ref('curl')
@@ -415,7 +515,7 @@ const loadConfig = async () => {
         const cfg = data.config
         configuredSecrets.value = cfg.configuredSecrets || {}
         if (cfg.methods) {
-          for (const key of ['s3', 'webdav', 'telegram', 'email']) {
+          for (const key of ['s3', 'webdav', 'github', 'telegram', 'email']) {
             if (cfg.methods[key]) {
               Object.assign(methods[key], cfg.methods[key])
             }
@@ -424,6 +524,7 @@ const loadConfig = async () => {
         // 已配置的密钥填入哨兵值，用户可选中删除
         if (configuredSecrets.value.s3SecretKey) methods.s3.secretKey = SECRET_SENTINEL
         if (configuredSecrets.value.webdavPassword) methods.webdav.password = SECRET_SENTINEL
+        if (configuredSecrets.value.githubToken) methods.github.token = SECRET_SENTINEL
         if (configuredSecrets.value.telegramBotToken) methods.telegram.botToken = SECRET_SENTINEL
       }
     }
@@ -439,6 +540,9 @@ watch(() => props.visible, (val) => {
   if (val) {
     loadConfig()
     loadHistory()
+    ghHistory.value = []
+    ghHistoryLoaded.value = false
+    ghHistoryError.value = ''
   }
 })
 
@@ -531,6 +635,7 @@ const testConnection = async (type) => {
   const testLabels = {
     s3: locale.value?.methods?.s3?.testConnection || '测试连接',
     webdav: locale.value?.methods?.webdav?.testConnection || '测试连接',
+    github: locale.value?.methods?.github?.testConnection || '测试连接',
     telegram: locale.value?.methods?.telegram?.testSend || '测试发送',
     email: locale.value?.methods?.email?.testSend || '测试发送'
   }
@@ -540,6 +645,7 @@ const testConnection = async (type) => {
     // 哨兵值不发送，由后端从已存储配置中获取真实密钥
     if (type === 's3' && payload.secretKey === SECRET_SENTINEL) delete payload.secretKey
     if (type === 'webdav' && payload.password === SECRET_SENTINEL) delete payload.password
+    if (type === 'github' && payload.token === SECRET_SENTINEL) delete payload.token
     if (type === 'telegram' && payload.botToken === SECRET_SENTINEL) delete payload.botToken
 
     const result = await $fetch(`/api/admin/backup/test-${type}`, {
@@ -558,6 +664,26 @@ const testConnection = async (type) => {
   }
 }
 
+// 读取 Git 仓库分支上的备份提交
+const loadGithubHistory = async () => {
+  if (!(can('backup:read'))) return
+  if (ghHistoryLoading.value) return
+  ghHistoryLoading.value = true
+  ghHistoryError.value = ''
+  try {
+    const result = await $fetch('/api/admin/backup/github-history', { query: { limit: 30 } })
+    ghHistory.value = result.data?.entries || []
+    ghHistoryBranch.value = result.data?.branch || ''
+    ghHistoryScanned.value = result.data?.scannedCommits || 0
+  } catch (err) {
+    ghHistory.value = []
+    ghHistoryError.value = localizeServerError(err, locale.value.methods.github.historyFailed)
+  } finally {
+    ghHistoryLoaded.value = true
+    ghHistoryLoading.value = false
+  }
+}
+
 const saveAll = async () => {
   if (!(can('backup:write'))) return
   saving.value = true
@@ -566,15 +692,17 @@ const saveAll = async () => {
       methods: {
         s3: { ...methods.s3 },
         webdav: { ...methods.webdav },
+        github: { ...methods.github },
         telegram: { ...methods.telegram },
         email: { ...methods.email }
       }
     }
     // 空值或哨兵值不覆盖已有密钥
-    for (const key of ['s3', 'webdav', 'telegram']) {
+    for (const key of ['s3', 'webdav', 'github', 'telegram']) {
       const m = config.methods[key]
       if (key === 's3' && (!m.secretKey || m.secretKey === SECRET_SENTINEL)) delete m.secretKey
       if (key === 'webdav' && (!m.password || m.password === SECRET_SENTINEL)) delete m.password
+      if (key === 'github' && (!m.token || m.token === SECRET_SENTINEL)) delete m.token
       if (key === 'telegram' && (!m.botToken || m.botToken === SECRET_SENTINEL)) delete m.botToken
     }
 
