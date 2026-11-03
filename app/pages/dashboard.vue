@@ -37,9 +37,6 @@
               </button>
               <h1 class="text-xl font-bold tracking-tight">{{ getPageTitle() }}</h1>
             </div>
-            <div class="flex items-center gap-4">
-              <p v-if="activeTab" class="hidden md:block text-xs text-text-tertiary">{{ locale.permissionHint }}</p>
-            </div>
           </header>
 
           <div

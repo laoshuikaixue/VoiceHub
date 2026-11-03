@@ -745,7 +745,6 @@ export const pages = {
     moduleUnavailable: '缺少模块权限',
     moduleUnavailableHint: '当前仅有页面入口，或必要的读取权限已被拒绝。请联系管理员调整权限。',
     backHome: '返回首页',
-    permissionHint: '无权限的操作已禁用。',
     backToTop: '返回顶部',
     fallbackTitle: '管理后台',
     defaultSiteTitle: '校园广播站点歌系统',
