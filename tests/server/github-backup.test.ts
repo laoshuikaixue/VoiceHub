@@ -6,7 +6,9 @@ import https from 'node:https'
 import { isIP } from 'node:net'
 import { lookup } from 'node:dns/promises'
 import test from 'node:test'
+import { z } from 'zod'
 import { publicAddress, unacceptableAddress } from '../../server/utils/music-source-plugins/network.ts'
+import { isSafeBackupFilename } from '../../server/utils/backup-filename.ts'
 
 const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8')
 const codes = new Proxy({}, { get: (_target, key) => key })
@@ -23,7 +25,15 @@ const gitClient = compile(read('server/utils/githubGitClient.ts'), {
   fetchSafeOutbound: outbound.fetchSafeOutbound,
   GIT_API_MODES: ['github', 'gitea'],
   DEFAULT_GIT_API_MODE: 'github'
-}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits, normalizeGitApiMode, fetchRepoFileContent')
+}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits, normalizeGitApiMode, fetchRepoFileContent, buildBackupCommitMessage, parseBackupCommitFilename, isValidCommitSha, GIT_BACKUP_COMMIT_PREFIX')
+
+/** 编译以 export default defineEventHandler 写法实现的接口，返回事件处理函数 */
+const endpoint = (file: string, globals: Record<string, unknown>) => {
+  const code = stripTypeScriptTypes(read(file))
+    .replace(/^import[\s\S]*?from ['"][^'"]+['"]\r?$/gm, '')
+    .replace('export default defineEventHandler', 'return defineEventHandler')
+  return new Function(...Object.keys(globals), code)(...Object.values(globals))
+}
 
 async function listen(t, handler) {
   const server = http.createServer(handler)
@@ -38,7 +48,7 @@ async function listen(t, handler) {
 }
 
 /** 极简 GitHub 兼容 Git Data API 替身，记录请求顺序与请求体 */
-async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [], push = true, files = {} } = {}) {
+async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [], push = true, files = {}, patchStatus = 0, treeStatus = 0 } = {}) {
   const requests = []
   const ref = { sha: headSha }
   const base = await listen(t, async (req, res) => {
@@ -73,7 +83,7 @@ async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, 
     }
     // 树对象列举（补齐文件大小）
     if (req.method === 'GET' && req.url.includes('/git/trees/')) {
-      return json(200, { tree: blobs })
+      return treeStatus ? json(treeStatus, { message: 'Tree unavailable' }) : json(200, { tree: blobs })
     }
     if (req.method === 'GET' && req.url.includes('/git/ref/heads/')) {
       // 替身仓库仅存在 main 分支
@@ -84,6 +94,7 @@ async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, 
     if (req.method === 'POST' && req.url.endsWith('/git/trees')) return json(201, { sha: 'new-tree' })
     if (req.method === 'POST' && req.url.endsWith('/git/commits')) return json(201, { sha: 'new-commit' })
     if (req.method === 'PATCH' && req.url.includes('/git/refs/heads/')) {
+      if (patchStatus) return json(patchStatus, { message: 'Update is not a fast forward' })
       ref.sha = JSON.parse(body).sha
       return json(200, { ref: req.url.slice('/api'.length) })
     }
@@ -204,7 +215,7 @@ test('缺少 API 地址或令牌时拒绝发起请求', async () => {
 const backupCommit = (sha: string, filename: string, date = '2026-11-02T10:00:00Z') => ({
   sha,
   commit: {
-    message: `VoiceHub 自动备份 ${filename}`,
+    message: gitClient.buildBackupCommitMessage(filename),
     author: { name: 'voicehub-bot', date },
     tree: { sha: `${sha}-tree` }
   }
@@ -396,6 +407,245 @@ test('备份正文读取显式放宽响应上限，其余请求维持 1 MB', asy
   await assert.rejects(() => outbound.fetchSafeOutbound(base, { method: 'GET' }), /超过大小限制/)
   const response = await outbound.fetchSafeOutbound(base, { method: 'GET', maxBytes: 4 * 1024 * 1024 })
   assert.equal((await response.text()).length, big.length)
+})
+
+test('备份提交信息由单一常量生成并能被历史解析还原', () => {
+  const message = gitClient.buildBackupCommitMessage('auto-backup-1730000000.json')
+  assert.equal(message, `${gitClient.GIT_BACKUP_COMMIT_PREFIX} auto-backup-1730000000.json`)
+  assert.equal(gitClient.parseBackupCommitFilename(`${message}\n\n由自动备份任务提交`), 'auto-backup-1730000000.json')
+  assert.equal(gitClient.parseBackupCommitFilename('手动提交说明'), null)
+  assert.equal(gitClient.parseBackupCommitFilename('VoiceHub 自动备份 notes.txt'), null)
+})
+
+test('分支被并发推进时 409 报错，不覆盖他人提交', async (t) => {
+  const { base, requests, ref } = await mockGit(t, { headSha: 'old-commit', patchStatus: 409 })
+  await assert.rejects(
+    () => gitClient.commitBackupFile(target(base), 'auto.json', '{}', 'msg'),
+    /409.*分支已被其他提交更新/
+  )
+  assert.equal(ref.sha, 'old-commit')
+  assert.equal(requests.some((item) => item.method === 'POST' && item.url.endsWith('/git/refs')), false)
+})
+
+test('读取仓库树失败时历史仍可用，文件大小降级为未知', async (t) => {
+  const { base, requests } = await mockGit(t, { commits: [backupCommit('c1', 'auto-1.json')], treeStatus: 500 })
+  const history = await gitClient.listBackupCommits(target(base), 'voicehub-backups/', 30)
+  assert.deepEqual(history.entries, [{
+    filename: 'auto-1.json',
+    commitSha: 'c1',
+    committedAt: '2026-11-02T10:00:00Z',
+    author: 'voicehub-bot',
+    size: null
+  }])
+  assert.deepEqual(requests.map((item) => item.method), ['GET', 'GET', 'GET'])
+})
+
+test('触发速率限制时给出可定位提示', async (t) => {
+  const limited = await listen(t, (_req, res) => {
+    res.writeHead(429, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ message: 'You have exceeded a secondary rate limit' }))
+  })
+  await assert.rejects(
+    () => gitClient.listBackupCommits(target(`${limited}/api`), 'voicehub-backups/', 30),
+    /429.*速率限制/
+  )
+})
+
+test('按提交号读取历史版本，非法提交号回退分支最新内容', async (t) => {
+  const sha = 'ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12'
+  const repo = await mockGit(t, { files: { 'voicehub-backups/auto-backup-1.json': '{"v":1}' } })
+  await gitClient.fetchRepoFileContent(target(repo.base), 'voicehub-backups/', 'auto-backup-1.json', sha)
+  assert.equal(repo.requests[1].url, `/api/repos/voicehub/backups/contents/voicehub-backups/auto-backup-1.json?ref=${sha}`)
+
+  await gitClient.fetchRepoFileContent(target(repo.base), 'voicehub-backups/', 'auto-backup-1.json', 'main OR 1=1')
+  assert.equal(repo.requests[3].url, '/api/repos/voicehub/backups/contents/voicehub-backups/auto-backup-1.json?ref=main')
+
+  assert.equal(gitClient.isValidCommitSha('abc1234'), true)
+  assert.equal(gitClient.isValidCommitSha('a'.repeat(41)), false)
+  assert.equal(gitClient.isValidCommitSha(undefined), false)
+  assert.equal(gitClient.isValidCommitSha(['abc1234']), false)
+})
+
+const savedGithub = {
+  enabled: true,
+  apiBase: 'https://git.example.com/api/v1',
+  repo: 'voicehub/backups',
+  branch: 'main',
+  path: 'voicehub-backups/',
+  token: 'saved-pat'
+}
+
+const loadCredentials = (methods: Record<string, any>) => compile(read('server/utils/backup-test-credentials.ts'), {
+  getAutoBackupConfig: async () => ({ methods }),
+  createApiError: wrapApiError,
+  SERVER_ERROR_CODES: codes
+}, 'resolveBackupTestParams').resolveBackupTestParams
+
+test('未提交密钥时复用已存密钥，但要求出站目标与已存配置一致', async () => {
+  const resolve = loadCredentials({ github: savedGithub })
+  const merged = await resolve('github', { apiBase: 'https://git.example.com/api/v1/', repo: 'voicehub/backups' })
+  assert.equal(merged.token, 'saved-pat')
+  assert.equal(merged.branch, 'main')
+  assert.equal(merged.path, 'voicehub-backups/')
+
+  const error = await resolve('github', { apiBase: 'http://127.0.0.1:8080', repo: 'voicehub/backups' }).catch((item: any) => item)
+  assert.equal(error.statusCode, 400)
+  assert.equal(error.data.code, 'COMMON_INVALID_PARAMS')
+})
+
+test('提交新密钥时允许指定任意目标，不复用已存密钥', async () => {
+  const resolve = loadCredentials({ github: savedGithub })
+  const params = await resolve('github', { apiBase: 'https://other.example.com/api/v1', repo: 'a/b', token: 'fresh-pat' })
+  assert.equal(params.token, 'fresh-pat')
+  assert.equal(params.apiBase, 'https://other.example.com/api/v1')
+})
+
+test('S3 与 WebDAV 同样拒绝改目标后复用已存密钥', async () => {
+  const resolve = loadCredentials({
+    s3: { enabled: true, endpoint: 'https://s3.example.com', bucket: 'b', region: 'auto', accessKey: 'ak', secretKey: 'sk' },
+    webdav: { enabled: true, url: 'https://dav.example.com/dav', username: 'u', password: 'p', path: 'x' }
+  })
+  const s3 = await resolve('s3', { endpoint: 'https://s3.example.com', bucket: 'b', accessKey: 'ak' })
+  assert.equal(s3.secretKey, 'sk')
+  assert.equal(s3.region, 'auto')
+
+  const webdav = await resolve('webdav', { username: 'u' })
+  assert.equal(webdav.url, 'https://dav.example.com/dav')
+  assert.equal(webdav.password, 'p')
+
+  const error = await resolve('webdav', { url: 'http://127.0.0.1:9' }).catch((item: any) => item)
+  assert.equal(error.statusCode, 400)
+})
+
+test('test-github 接口在目标被改动时拒绝复用已存令牌，不发起出站请求', async () => {
+  const calls: string[] = []
+  const handler = endpoint('server/api/admin/backup/test-github.post.ts', {
+    defineEventHandler: (fn: any) => fn,
+    readBody: async (event: any) => event.body,
+    createApiError: wrapApiError,
+    SERVER_ERROR_CODES: codes,
+    resolveBackupTestParams: loadCredentials({ github: savedGithub }),
+    checkGitRepoAccess: async (params: any) => { calls.push(params.apiBase) },
+    normalizeGitApiMode: (mode: any) => mode || 'github',
+    assertSafeOutboundUrl: async () => {}
+  })
+
+  const error = await handler({ body: { apiBase: 'http://127.0.0.1:9999', repo: 'voicehub/backups' } }).catch((item: any) => item)
+  assert.equal(error.statusCode, 400)
+  assert.deepEqual(calls, [])
+
+  const ok = await handler({ body: { apiBase: 'https://git.example.com/api/v1', repo: 'voicehub/backups' } })
+  assert.equal(ok.success, true)
+  assert.deepEqual(calls, ['https://git.example.com/api/v1'])
+})
+
+test('github-history 接口失败时抛错误码，不再返回 200 包裹的失败体', async () => {
+  const build = (listImpl: any) => endpoint('server/api/admin/backup/github-history.get.ts', {
+    defineEventHandler: (fn: any) => fn,
+    getQuery: () => ({}),
+    createApiError: wrapApiError,
+    SERVER_ERROR_CODES: codes,
+    getAutoBackupConfig: async () => ({ methods: { github: savedGithub } }),
+    assertSafeOutboundUrl: async () => {},
+    listBackupCommits: listImpl,
+    formatDateTime: () => '2026/11/2 18:00:00',
+    parseUtcTimestamp: (value: any) => value
+  })
+
+  const failed = await build(async () => { throw Object.assign(new Error('上游拒绝'), { status: 403 }) })({})
+    .catch((item: any) => item)
+  assert.equal(failed.statusCode, 502)
+  assert.equal(failed.data.code, 'COMMON_INSUFFICIENT_PERMISSION')
+
+  const missing = await build(async () => { throw Object.assign(new Error('没有该分支'), { status: 404 }) })({})
+    .catch((item: any) => item)
+  assert.equal(missing.statusCode, 404)
+  assert.equal(missing.data.code, 'COMMON_TARGET_NOT_FOUND')
+
+  const ok = await build(async () => ({
+    branch: 'main',
+    scannedCommits: 1,
+    entries: [{ filename: 'auto-backup-1.json', commitSha: 'abcdef1', committedAt: '2026-11-02T10:00:00Z', author: 'bot', size: null }]
+  }))({})
+  assert.equal(ok.success, true)
+  assert.equal(ok.data.entries[0].committedAtBeijing, '2026/11/2 18:00:00')
+})
+
+test('github-file 接口拒绝非法提交号，合法提交号透传给读取', async () => {
+  const seen: any[][] = []
+  const handler = endpoint('server/api/admin/backup/github-file.get.ts', {
+    defineEventHandler: (fn: any) => fn,
+    getQuery: (event: any) => event.query,
+    setHeader: () => {},
+    createApiError: wrapApiError,
+    SERVER_ERROR_CODES: codes,
+    getAutoBackupConfig: async () => ({ methods: { github: savedGithub } }),
+    assertSafeOutboundUrl: async () => {},
+    fetchRepoFileContent: async (...args: any[]) => { seen.push(args); return '{"data":1}' },
+    isValidCommitSha: gitClient.isValidCommitSha,
+    isSafeBackupFilename
+  })
+
+  const error = await handler({ query: { filename: 'auto-backup-1.json', sha: 'bad sha' } }).catch((item: any) => item)
+  assert.equal(error.statusCode, 400)
+  assert.deepEqual(seen, [])
+
+  const content = await handler({ query: { filename: 'auto-backup-1.json', sha: 'abcdef1' } })
+  assert.equal(content, '{"data":1}')
+  assert.equal(seen[0][3], 'abcdef1')
+
+  await handler({ query: { filename: 'auto-backup-1.json' } })
+  assert.equal(seen[1][3], '')
+})
+
+test('启用 Git 备份但缺 API 地址时保存被拒；令牌留空保留已存值', async () => {
+  const build = (existingConfig: string | null) => {
+    const writes: any[] = []
+    const handler = endpoint('server/api/admin/backup/auto-config.put.ts', {
+      defineEventHandler: (fn: any) => fn,
+      readBody: async (event: any) => event.body,
+      z,
+      createApiError: wrapApiError,
+      GIT_API_MODES: ['github', 'gitea'],
+      SERVER_ERROR_CODES: codes,
+      db: {
+        select: () => ({ from: () => ({ limit: async () => (existingConfig === null ? [] : [{ id: 1, autoBackupConfig: existingConfig }]) }) }),
+        insert: () => ({ values: async (value: any) => { writes.push(value) } }),
+        update: () => ({ set: (value: any) => ({ where: async () => { writes.push(value) } }) })
+      },
+      systemSettings: { id: 'id', autoBackupConfig: 'autoBackupConfig', updatedAt: 'updatedAt' },
+      eq: () => null,
+      SYSTEM_SETTINGS_DEFAULTS: {},
+      assertSafeOutboundUrl: async () => {},
+      buildRepoFilePath: gitClient.buildRepoFilePath,
+      parseGitRepo: gitClient.parseGitRepo,
+      getServerDate: () => new Date('2026-11-03T00:00:00Z')
+    })
+    return { handler, writes }
+  }
+  const methods = (github: Record<string, any>) => ({
+    s3: { enabled: false, endpoint: '', bucket: '', region: '', pathPrefix: '', accessKey: '' },
+    webdav: { enabled: false, url: '', username: '', path: '' },
+    github,
+    telegram: { enabled: false, chatId: '' },
+    email: { enabled: false, recipient: '' }
+  })
+
+  const missing = build(null)
+  const error = await missing.handler({ body: { enabled: true, config: { methods: methods({ enabled: true, apiBase: '', repo: 'voicehub/backups', branch: 'main', path: 'x/' }) } } }).catch((item: any) => item)
+  assert.equal(error.statusCode, 400)
+  assert.deepEqual(missing.writes, [])
+
+  const stored = JSON.stringify({ methods: { github: savedGithub } })
+  const keep = build(stored)
+  await keep.handler({
+    body: {
+      enabled: true,
+      config: { methods: methods({ enabled: true, apiBase: 'https://git.example.com/api/v1', repo: 'voicehub/backups', branch: 'main', path: 'x/' }) }
+    }
+  })
+  const saved = JSON.parse(keep.writes[0].autoBackupConfig)
+  assert.equal(saved.methods.github.token, 'saved-pat')
 })
 
 async function listenWithBody(t, body) {

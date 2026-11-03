@@ -30,7 +30,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES, type GitApiMode } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
-import { buildRepoFilePath, commitBackupFile } from '~~/server/utils/githubGitClient'
+import { buildBackupCommitMessage, buildRepoFilePath, commitBackupFile } from '~~/server/utils/githubGitClient'
 import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { maskSystemSettingsSecrets, omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
@@ -260,7 +260,7 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
 /** 提交备份文件到 Git 仓库分支 */
 async function doGithubUpload(config: AutoBackupConfig['methods']['github'], data: string, filename: string): Promise<void> {
   const filePath = buildRepoFilePath(config.path, filename)
-  await commitBackupFile(config, filePath, data, `VoiceHub 自动备份 ${filename}`)
+  await commitBackupFile(config, filePath, data, buildBackupCommitMessage(filename))
   console.log(`Git 仓库提交完成: ${filePath}`)
 }
 

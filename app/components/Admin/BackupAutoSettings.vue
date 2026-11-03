@@ -160,7 +160,7 @@
                             <p class="text-[11px] text-text-secondary truncate" :title="item.filename">{{ item.filename }}</p>
                             <p class="text-[10px] text-text-disabled">
                               {{ item.committedAtBeijing }} · {{ item.commitSha.slice(0, 7) }}
-                              <span v-if="item.size === null"> · {{ locale.methods.github.historyRemoved }}</span>
+                              <span v-if="item.size === null"> · {{ locale.methods.github.historySizeUnknown }}</span>
                             </p>
                           </div>
                           <span class="text-[11px] text-text-tertiary shrink-0 tabular-nums">
@@ -672,17 +672,12 @@ const loadGithubHistory = async () => {
   ghHistoryError.value = ''
   try {
     const result = await $fetch('/api/admin/backup/github-history', { query: { limit: 30 } })
-    if (result.success) {
-      ghHistory.value = result.data?.entries || []
-      ghHistoryBranch.value = result.data?.branch || ''
-      ghHistoryScanned.value = result.data?.scannedCommits || 0
-    } else {
-      ghHistory.value = []
-      ghHistoryError.value = result.message || '读取仓库备份历史失败'
-    }
+    ghHistory.value = result.data?.entries || []
+    ghHistoryBranch.value = result.data?.branch || ''
+    ghHistoryScanned.value = result.data?.scannedCommits || 0
   } catch (err) {
     ghHistory.value = []
-    ghHistoryError.value = localizeServerError(err, '读取仓库备份历史失败')
+    ghHistoryError.value = localizeServerError(err, locale.value.methods.github.historyFailed)
   } finally {
     ghHistoryLoaded.value = true
     ghHistoryLoading.value = false

@@ -91,6 +91,10 @@ export default defineEventHandler(async (event) => {
     await assertSafeOutboundUrl(config.methods?.webdav?.url, 'WebDAV url')
     const github = config.methods?.github
     if (github?.enabled) {
+      // 启用时缺地址会让定时备份整月静默失败，不能拖到执行时才报错
+      if (!github.apiBase?.trim() || !github.repo?.trim()) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用 Git 仓库备份必须填写 API 地址与仓库')
+      }
       await assertSafeOutboundUrl(github.apiBase, 'GitHub API 地址')
       // 仓库与目录写错会让定时备份整月静默失败，保存时即拒绝
       try {

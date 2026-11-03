@@ -18,24 +18,35 @@ export default defineEventHandler(async (event) => {
   const rawLimit = Number(getQuery(event).limit)
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 30
 
+  let history
   try {
-    const history = await listBackupCommits(
+    history = await listBackupCommits(
       { apiBase: github.apiBase, repo: github.repo, branch: github.branch, token: github.token, apiMode: github.apiMode },
       github.path,
       limit
     )
-    return {
-      success: true,
-      data: {
-        ...history,
-        repo: github.repo,
-        entries: history.entries.map((entry) => ({
-          ...entry,
-          committedAtBeijing: entry.committedAt ? formatDateTime(parseUtcTimestamp(entry.committedAt)) : ''
-        }))
-      }
-    }
   } catch (error: any) {
-    return { success: false, message: error?.message || '读取 Git 仓库备份历史失败' }
+    // 已带错误码的错误（如 SSRF 拦截）原样抛出
+    if (error?.data?.code) throw error
+    const status = Number(error?.status)
+    const code = (status === 401 || status === 403)
+      ? SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION
+      : status === 404
+        ? SERVER_ERROR_CODES.COMMON_TARGET_NOT_FOUND
+        : SERVER_ERROR_CODES.BACKUP_FAILED
+    console.warn('[Backup] 读取 Git 仓库备份历史失败:', error?.message || error)
+    throw createApiError(status === 404 ? 404 : 502, code, error?.message || '读取 Git 仓库备份历史失败')
+  }
+
+  return {
+    success: true,
+    data: {
+      ...history,
+      repo: github.repo,
+      entries: history.entries.map((entry) => ({
+        ...entry,
+        committedAtBeijing: entry.committedAt ? formatDateTime(parseUtcTimestamp(entry.committedAt)) : ''
+      }))
+    }
   }
 })

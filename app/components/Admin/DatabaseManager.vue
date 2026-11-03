@@ -264,7 +264,7 @@
                     </p>
                   </div>
                   <button
-                    :disabled="!can('backup:restore') || !!repoFileLoading || item.size === null"
+                    :disabled="!can('backup:restore') || !!repoFileLoading || !item.commitSha"
                     class="shrink-0 px-3 py-1.5 border border-border-secondary rounded-lg text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:border-border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     @click="selectRepoBackup(item)"
                   >
@@ -783,17 +783,12 @@ const loadRepoBackups = async () => {
   repoBackupError.value = ''
   try {
     const result = await $fetch('/api/admin/backup/github-history', { query: { limit: 30 } })
-    if (result.success) {
-      repoBackups.value = result.data?.entries || []
-      repoBackupBranch.value = result.data?.branch || ''
-    } else {
-      repoBackups.value = []
-      repoBackupError.value = getMessage('repoHistoryFailed')
-      console.error('读取仓库备份列表失败:', result.message)
-    }
+    repoBackups.value = result.data?.entries || []
+    repoBackupBranch.value = result.data?.branch || ''
   } catch (error) {
     repoBackups.value = []
-    repoBackupError.value = localize(error)
+    repoBackupError.value = localize(error, getMessage('repoHistoryFailed'))
+    console.error('读取仓库备份列表失败:', error)
   } finally {
     repoBackupLoaded.value = true
     repoBackupLoading.value = false
@@ -805,7 +800,7 @@ const selectRepoBackup = async (item) => {
   repoFileLoading.value = item.filename
   try {
     const text = await $fetch('/api/admin/backup/github-file', {
-      query: { filename: item.filename },
+      query: { filename: item.filename, sha: item.commitSha },
       responseType: 'text'
     })
     const file = new File([text], item.filename, { type: 'application/json' })

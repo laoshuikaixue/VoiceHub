@@ -7,6 +7,33 @@ const GIT_TIMEOUT = 120_000
 /** 读取备份文件正文的响应上限；GitHub Contents raw 端点支持到 100 MB，此处按整库备份留足余量 */
 const BACKUP_FILE_MAX_BYTES = 64 * 1024 * 1024
 
+/** 补齐文件大小用的递归树响应上限；仓库条目过多时按未知大小降级，不影响提交列表 */
+const TREE_MAX_BYTES = 8 * 1024 * 1024
+
+/** 可作为读取版本的提交号：完整或缩写 SHA */
+const COMMIT_SHA = /^[0-9a-f]{7,40}$/i
+
+/** 备份提交信息前缀；写入与历史解析共用本常量，避免两侧字面量漂移 */
+export const GIT_BACKUP_COMMIT_PREFIX = 'VoiceHub 自动备份'
+
+const BACKUP_COMMIT_MESSAGE = new RegExp(`^${GIT_BACKUP_COMMIT_PREFIX} (.+\\.json)$`)
+
+/** 生成备份提交信息 */
+export function buildBackupCommitMessage(filename: string): string {
+  return `${GIT_BACKUP_COMMIT_PREFIX} ${filename}`
+}
+
+/** 从提交信息首行解析备份文件名，非备份提交返回 null */
+export function parseBackupCommitFilename(message: unknown): string | null {
+  const matched = BACKUP_COMMIT_MESSAGE.exec(String(message || '').split('\n')[0].trim())
+  return matched ? matched[1] : null
+}
+
+/** 只接受 SHA 形态的读取版本，避免把任意字符串填进 ref */
+export function isValidCommitSha(value: unknown): boolean {
+  return typeof value === 'string' && COMMIT_SHA.test(value.trim())
+}
+
 /** 目标仓库；apiBase 为站点 API 根地址（GitHub 为 https://api.github.com，GHES 为 https://host/api/v3，Gitea 为 https://host/api/v1） */
 export interface GitRepoTarget {
   apiBase: string
@@ -66,7 +93,9 @@ const STATUS_HINTS: Record<number, string> = {
   403: '令牌权限不足或触发速率限制',
   404: '仓库或分支不存在',
   409: '分支已被其他提交更新，请重试',
-  422: '提交内容校验失败'
+  413: '提交内容超过站点请求体上限',
+  422: '提交内容校验失败',
+  429: '触发平台速率限制，请稍后重试'
 }
 
 function describeFailure(text: string, status: number): string {
@@ -122,9 +151,10 @@ async function requestGitApi<T = any>(
   target: GitRepoTarget,
   method: string,
   path: string,
-  payload?: unknown
+  payload?: unknown,
+  options: { maxBytes?: number } = {}
 ): Promise<T> {
-  const response = await sendGitRequest(target, method, path, { payload })
+  const response = await sendGitRequest(target, method, path, { payload, ...options })
   const text = await response.text().catch(() => '')
   return (text ? JSON.parse(text) : {}) as T
 }
@@ -135,19 +165,21 @@ function encodeRepoPath(filePath: string): string {
 }
 
 /**
- * 读取分支上单个文件的正文。
+ * 读取单个文件的正文，默认取分支最新内容，传入合法提交号时取该提交的版本。
  * github 走 Contents API 的 raw 媒体类型（默认 JSON 形态对超过 1 MB 的文件不返回 content），
  * gitea 走 raw 下载端点；两者都按备份正文体积放宽响应上限。
  */
 export async function fetchRepoFileContent(
   target: GitRepoTarget,
   dir: string,
-  filename: string
+  filename: string,
+  commitSha?: string
 ): Promise<string> {
   const { branch, apiMode } = await inspectRepo(target)
   const repoPath = repoPathOf(target)
   const filePath = buildRepoFilePath(dir, filename)
-  const query = new URLSearchParams({ ref: branch })
+  const ref = isValidCommitSha(commitSha) ? String(commitSha).trim() : branch
+  const query = new URLSearchParams({ ref })
   const path = apiMode === 'gitea'
     ? `${repoPath}/raw/${encodeRepoPath(filePath)}?${query.toString()}`
     : `${repoPath}/contents/${encodeRepoPath(filePath)}?${query.toString()}`
@@ -306,8 +338,6 @@ export interface GitBackupHistory {
   entries: GitBackupEntry[]
 }
 
-const BACKUP_COMMIT_MESSAGE = /^VoiceHub 自动备份 (.+\.json)$/
-
 /** 去掉首尾斜杠、空段与上跳段，得到仓库内目录前缀 */
 function normalizeRepoDir(dir: string): string {
   return (dir || '').split('/')
@@ -353,22 +383,31 @@ export async function listBackupCommits(
   const headTree = headTreeOf(list[0])
   if (headTree) {
     const recursive = apiMode === 'gitea' ? 'true' : '1'
-    const tree = await requestGitApi(target, 'GET', `${repoPath}/git/trees/${headTree}?recursive=${recursive}`)
-    for (const item of (Array.isArray(tree?.tree) ? tree.tree : [])) {
-      if (item?.type !== 'blob' || typeof item.size !== 'number') continue
-      const path = String(item.path || '')
-      sizeByPath.set(path, item.size)
-      const baseName = path.split('/').pop() || path
-      if (!sizeByBaseName.has(baseName)) sizeByBaseName.set(baseName, item.size)
+    try {
+      const tree = await requestGitApi(
+        target,
+        'GET',
+        `${repoPath}/git/trees/${headTree}?recursive=${recursive}`,
+        undefined,
+        { maxBytes: TREE_MAX_BYTES }
+      )
+      for (const item of (Array.isArray(tree?.tree) ? tree.tree : [])) {
+        if (item?.type !== 'blob' || typeof item.size !== 'number') continue
+        const path = String(item.path || '')
+        sizeByPath.set(path, item.size)
+        const baseName = path.split('/').pop() || path
+        if (!sizeByBaseName.has(baseName)) sizeByBaseName.set(baseName, item.size)
+      }
+    } catch (error: any) {
+      // 大小仅用于展示，读树失败时整列表仍可用
+      console.warn('[GitBackup] 读取仓库树失败，文件大小按未知处理:', error?.message || error)
     }
   }
 
   const entries: GitBackupEntry[] = []
   for (const item of list) {
-    const message = String(item?.commit?.message || '').split('\n')[0].trim()
-    const matched = BACKUP_COMMIT_MESSAGE.exec(message)
-    if (!matched) continue
-    const filename = matched[1]
+    const filename = parseBackupCommitFilename(item?.commit?.message)
+    if (!filename) continue
     const fullPath = dirPath ? `${dirPath}/${filename}` : filename
     entries.push({
       filename,

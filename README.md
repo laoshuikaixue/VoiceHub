@@ -1478,6 +1478,7 @@ VoiceHub/
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
 │   │   ├── backup-filename.ts # 备份文件名白名单与路径遍历校验
+│   │   ├── backup-test-credentials.ts # 备份连接测试取参，复用已存密钥时校验目标一致
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储

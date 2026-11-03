@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { resolveBackupTestParams } from '~~/server/utils/backup-test-credentials'
 import { assertSafeOutboundUrl, fetchSafeOutbound } from '~~/server/utils/outbound-url'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
@@ -11,16 +11,8 @@ function normalizePath(p: string): string {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  let { url, username, password, path: dirPath } = body
-
-  // 密码为空时从已保存配置中获取
-  if (!password) {
-    const config = await getAutoBackupConfig()
-    password = config?.methods?.webdav?.password || ''
-    username = username || config?.methods?.webdav?.username || ''
-    url = url || config?.methods?.webdav?.url || ''
-    dirPath = dirPath || config?.methods?.webdav?.path || ''
-  }
+  // 未提交密码时复用已保存密码，此时 url 必须与已保存配置一致
+  const { url, username, password, path: dirPath } = await resolveBackupTestParams('webdav', body)
 
   if (!url || !username || !password) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：url, username, password')

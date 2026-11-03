@@ -4772,7 +4772,8 @@ export const admin = {
           historyLoading: 'Loading...',
           historyEmpty: 'No backup commits in this repo',
           historyBranch: 'Branch',
-          historyRemoved: 'Not in latest commit'
+          historySizeUnknown: 'Size unknown',
+          historyFailed: 'Failed to read repo backup history'
         },
         telegram: {
           name: 'Telegram Bot',

@@ -2,22 +2,13 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3, deleteFromS3 } from '~~/server/utils/s3Client'
-import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { resolveBackupTestParams } from '~~/server/utils/backup-test-credentials'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  let { endpoint, bucket, region, accessKey, secretKey } = body
-
-  // 密钥为空时从已保存配置中获取
-  if (!secretKey) {
-    const config = await getAutoBackupConfig()
-    secretKey = config?.methods?.s3?.secretKey || ''
-    accessKey = accessKey || config?.methods?.s3?.accessKey || ''
-    endpoint = endpoint || config?.methods?.s3?.endpoint || ''
-    bucket = bucket || config?.methods?.s3?.bucket || ''
-    region = region || config?.methods?.s3?.region || 'auto'
-  }
+  // 未提交密钥时复用已保存密钥，此时 endpoint 必须与已保存配置一致
+  const { endpoint, bucket, region, accessKey, secretKey } = await resolveBackupTestParams('s3', body)
 
   if (!endpoint || !bucket || !accessKey || !secretKey) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：endpoint, bucket, accessKey, secretKey')

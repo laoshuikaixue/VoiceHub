@@ -4622,7 +4622,8 @@ export const admin = {
           historyLoading: '读取中...',
           historyEmpty: '仓库中没有备份提交',
           historyBranch: '分支',
-          historyRemoved: '已不在最新提交'
+          historySizeUnknown: '大小未知',
+          historyFailed: '读取仓库备份历史失败'
         },
         telegram: {
           name: 'Telegram Bot',

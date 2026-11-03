@@ -1,23 +1,14 @@
 import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { resolveBackupTestParams } from '~~/server/utils/backup-test-credentials'
 import { checkGitRepoAccess, normalizeGitApiMode } from '~~/server/utils/githubGitClient'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  let { apiBase, repo, branch, token, apiMode } = body
-
-  // 令牌为空时从已保存配置中获取
-  if (!token) {
-    const config = await getAutoBackupConfig()
-    token = config?.methods?.github?.token || ''
-    apiBase = apiBase || config?.methods?.github?.apiBase || ''
-    repo = repo || config?.methods?.github?.repo || ''
-    branch = branch || config?.methods?.github?.branch || ''
-    apiMode = apiMode || config?.methods?.github?.apiMode
-  }
+  // 未提交令牌时复用已保存令牌，此时 API 地址必须与已保存配置一致
+  const { apiBase, repo, branch, token, apiMode } = await resolveBackupTestParams('github', body)
 
   if (!apiBase || !repo || !token) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：apiBase, repo, token')
