@@ -4,6 +4,9 @@ import { DEFAULT_GIT_API_MODE, GIT_API_MODES, type GitApiMode } from '~~/server/
 /** Git 请求超时（毫秒） */
 const GIT_TIMEOUT = 120_000
 
+/** 读取备份文件正文的响应上限；GitHub Contents raw 端点支持到 100 MB，此处按整库备份留足余量 */
+const BACKUP_FILE_MAX_BYTES = 64 * 1024 * 1024
+
 /** 目标仓库；apiBase 为站点 API 根地址（GitHub 为 https://api.github.com，GHES 为 https://host/api/v3，Gitea 为 https://host/api/v1） */
 export interface GitRepoTarget {
   apiBase: string
@@ -74,45 +77,90 @@ function describeFailure(text: string, status: number): string {
   return [STATUS_HINTS[status], message].filter(Boolean).join('：')
 }
 
+async function sendGitRequest(
+  target: GitRepoTarget,
+  method: string,
+  path: string,
+  options: { payload?: unknown; accept?: string; maxBytes?: number; action?: string } = {}
+): Promise<Awaited<ReturnType<typeof fetchSafeOutbound>>> {
+  const base = (target.apiBase || '').trim().replace(/\/+$/, '')
+  if (!base) throw new Error('未配置 Git API 地址')
+  if (!target.token) throw new Error('未配置访问令牌')
+
+  const body = options.payload === undefined ? undefined : JSON.stringify(options.payload)
+  let response: Awaited<ReturnType<typeof fetchSafeOutbound>>
+  try {
+    response = await fetchSafeOutbound(`${base}${path}`, {
+      method,
+      headers: {
+        'Accept': options.accept || 'application/json',
+        'Authorization': `Bearer ${target.token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {})
+      },
+      body,
+      signal: AbortSignal.timeout(GIT_TIMEOUT),
+      ...(options.maxBytes ? { maxBytes: options.maxBytes } : {})
+    })
+  } catch (error: any) {
+    // SSRF 拦截等带状态码的错误原样抛出，保留本地化错误码
+    if (error?.status || error?.statusCode) throw error
+    throw new Error(`${options.action || '无法连接 Git 仓库 API'}：${error?.message || '请求失败'}`, { cause: error })
+  }
+
+  if (!response.ok) {
+    const detail = describeFailure(await response.text().catch(() => ''), response.status)
+    const error = new Error(
+      `${options.action || 'Git'} ${method} ${path} 失败 (${response.status})${detail ? `：${detail}` : ''}`
+    ) as Error & { status?: number }
+    error.status = response.status
+    throw error
+  }
+  return response
+}
+
 async function requestGitApi<T = any>(
   target: GitRepoTarget,
   method: string,
   path: string,
   payload?: unknown
 ): Promise<T> {
-  const base = (target.apiBase || '').trim().replace(/\/+$/, '')
-  if (!base) throw new Error('未配置 Git API 地址')
-  if (!target.token) throw new Error('未配置访问令牌')
-
-  const body = payload === undefined ? undefined : JSON.stringify(payload)
-  let response: Awaited<ReturnType<typeof fetchSafeOutbound>>
-  try {
-    response = await fetchSafeOutbound(`${base}${path}`, {
-      method,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${target.token}`,
-        ...(body ? { 'Content-Type': 'application/json' } : {})
-      },
-      body,
-      signal: AbortSignal.timeout(GIT_TIMEOUT)
-    })
-  } catch (error: any) {
-    // SSRF 拦截等带状态码的错误原样抛出，保留本地化错误码
-    if (error?.status || error?.statusCode) throw error
-    throw new Error(`无法连接 Git 仓库 API：${error?.message || '请求失败'}`, { cause: error })
-  }
-
+  const response = await sendGitRequest(target, method, path, { payload })
   const text = await response.text().catch(() => '')
-  if (!response.ok) {
-    const detail = describeFailure(text, response.status)
-    const error = new Error(
-      `Git ${method} ${path} 失败 (${response.status})${detail ? `：${detail}` : ''}`
-    ) as Error & { status?: number }
-    error.status = response.status
-    throw error
-  }
   return (text ? JSON.parse(text) : {}) as T
+}
+
+/** 仓库内路径转 URL 段，逐段编码 */
+function encodeRepoPath(filePath: string): string {
+  return filePath.split('/').map(encodeURIComponent).join('/')
+}
+
+/**
+ * 读取分支上单个文件的正文。
+ * github 走 Contents API 的 raw 媒体类型（默认 JSON 形态对超过 1 MB 的文件不返回 content），
+ * gitea 走 raw 下载端点；两者都按备份正文体积放宽响应上限。
+ */
+export async function fetchRepoFileContent(
+  target: GitRepoTarget,
+  dir: string,
+  filename: string
+): Promise<string> {
+  const { branch, apiMode } = await inspectRepo(target)
+  const repoPath = repoPathOf(target)
+  const filePath = buildRepoFilePath(dir, filename)
+  const query = new URLSearchParams({ ref: branch })
+  const path = apiMode === 'gitea'
+    ? `${repoPath}/raw/${encodeRepoPath(filePath)}?${query.toString()}`
+    : `${repoPath}/contents/${encodeRepoPath(filePath)}?${query.toString()}`
+  const accept = apiMode === 'gitea' ? 'text/plain' : 'application/vnd.github.raw+json'
+
+  const response = await sendGitRequest(target, 'GET', path, {
+    accept,
+    maxBytes: BACKUP_FILE_MAX_BYTES,
+    action: '读取仓库备份文件'
+  })
+  const text = await response.text().catch(() => '')
+  if (!text.trim()) throw new Error('仓库备份文件内容为空')
+  return text
 }
 
 /** 仓库路径前缀 */
@@ -145,8 +193,7 @@ async function commitBackupFileViaContents(
   content: string,
   message: string
 ): Promise<void> {
-  const pathInUrl = filePath.split('/').map(encodeURIComponent).join('/')
-  const result = await requestGitApi(target, 'PUT', `${repoPath}/contents/${pathInUrl}`, {
+  const result = await requestGitApi(target, 'PUT', `${repoPath}/contents/${encodeRepoPath(filePath)}`, {
     message,
     branch,
     content: Buffer.from(content, 'utf8').toString('base64')

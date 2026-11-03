@@ -23,7 +23,7 @@ const gitClient = compile(read('server/utils/githubGitClient.ts'), {
   fetchSafeOutbound: outbound.fetchSafeOutbound,
   GIT_API_MODES: ['github', 'gitea'],
   DEFAULT_GIT_API_MODE: 'github'
-}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits, normalizeGitApiMode')
+}, 'parseGitRepo, buildRepoFilePath, commitBackupFile, checkGitRepoAccess, listBackupCommits, normalizeGitApiMode, fetchRepoFileContent')
 
 async function listen(t, handler) {
   const server = http.createServer(handler)
@@ -38,18 +38,22 @@ async function listen(t, handler) {
 }
 
 /** 极简 GitHub 兼容 Git Data API 替身，记录请求顺序与请求体 */
-async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [], push = true } = {}) {
+async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, commits = [], blobs = [], push = true, files = {} } = {}) {
   const requests = []
   const ref = { sha: headSha }
   const base = await listen(t, async (req, res) => {
     const chunks = []
     for await (const chunk of req) chunks.push(chunk)
     const body = Buffer.concat(chunks).toString()
-    if (req.url) requests.push({ method: req.method, url: req.url, auth: req.headers.authorization, body: body ? JSON.parse(body) : null })
+    if (req.url) requests.push({ method: req.method, url: req.url, auth: req.headers.authorization, accept: req.headers.accept, body: body ? JSON.parse(body) : null })
 
     const json = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(data))
+    }
+    const raw = (content) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(content)
     }
     if (req.method === 'GET' && /^\/api\/repos\/[^/]+\/[^/]+$/.test(req.url)) {
       return json(200, { default_branch: 'main', size: empty ? 0 : 12, permissions: { admin: push, push, pull: true } })
@@ -57,6 +61,11 @@ async function mockGit(t, { headSha = '', treeSha = 'head-tree', empty = false, 
     // Contents API 写文件（Gitea 唯一可用的写入端点）
     if (req.method === 'PUT' && /\/api\/repos\/[^/]+\/[^/]+\/contents\//.test(req.url)) {
       return json(200, { content: { sha: 'blob-sha', path: decodeURIComponent(req.url.split('/contents/')[1]) }, commit: { sha: 'contents-commit' } })
+    }
+    // 备份文件正文：GitHub 走 contents + raw 媒体类型，Gitea 走 raw 下载端点
+    if (req.method === 'GET' && /\/api\/repos\/[^/]+\/[^/]+\/(contents|raw)\//.test(req.url)) {
+      const key = decodeURIComponent(req.url.split(/\/(?:contents|raw)\//)[1].split('?')[0])
+      return files[key] === undefined ? json(404, { message: 'Not Found' }) : raw(files[key])
     }
     // 提交列表（历史读取）
     if (req.method === 'GET' && /\/api\/repos\/[^/]+\/[^/]+\/commits\?/.test(req.url)) {
@@ -333,3 +342,72 @@ test('未知 apiMode 回退 GitHub 口径，不改走 Contents API', async () =>
   assert.equal(gitClient.normalizeGitApiMode('Gitea'), 'github')
   assert.equal(gitClient.normalizeGitApiMode(undefined), 'github')
 })
+
+test('GitHub 口径按 contents raw 媒体类型读取备份正文', async (t) => {
+  const repo = await mockGit(t, { files: { 'voicehub-backups/auto-backup-1.json': '{"metadata":{},"data":{}}' } })
+  const text = await gitClient.fetchRepoFileContent(target(repo.base), 'voicehub-backups/', 'auto-backup-1.json')
+  assert.equal(text, '{"metadata":{},"data":{}}')
+  assert.deepEqual(repo.requests.map((r) => r.url), [
+    '/api/repos/voicehub/backups',
+    '/api/repos/voicehub/backups/contents/voicehub-backups/auto-backup-1.json?ref=main'
+  ])
+  assert.match(repo.requests[1].accept, /vnd\.github\.raw/)
+})
+
+test('Gitea 口径走 raw 下载端点读取备份正文', async (t) => {
+  const repo = await mockGit(t, { files: { 'voicehub-backups/auto-backup-2.json': '{"data":2}' } })
+  const text = await gitClient.fetchRepoFileContent(target(repo.base, { apiMode: 'gitea' }), 'voicehub-backups/', 'auto-backup-2.json')
+  assert.equal(text, '{"data":2}')
+  assert.deepEqual(repo.requests.map((r) => r.url), [
+    '/api/repos/voicehub/backups',
+    '/api/repos/voicehub/backups/raw/voicehub-backups/auto-backup-2.json?ref=main'
+  ])
+  assert.equal(repo.requests[1].accept, 'text/plain')
+})
+
+test('目录上跳被拒，仓库缺文件按 404 报错', async (t) => {
+  const repo = await mockGit(t, { files: {} })
+  await assert.rejects(
+    () => gitClient.fetchRepoFileContent(target(repo.base), 'voicehub-backups/', 'missing.json'),
+    /失败 \(404\)/
+  )
+  await assert.rejects(
+    () => gitClient.fetchRepoFileContent(target(repo.base), '../etc', 'passwd.json'),
+    /\.\./
+  )
+})
+
+test('备份正文读取显式放宽响应上限，其余请求维持 1 MB', async (t) => {
+  const seen = []
+  const spyClient = compile(read('server/utils/githubGitClient.ts'), {
+    GIT_API_MODES: ['github', 'gitea'],
+    DEFAULT_GIT_API_MODE: 'github',
+    fetchSafeOutbound: async (url, options) => {
+      seen.push({ url, maxBytes: options.maxBytes, accept: options.headers.Accept })
+      return { ok: true, status: 200, text: async () => '{"default_branch":"main","size":12}' }
+    }
+  }, 'fetchRepoFileContent, listBackupCommits')
+  await spyClient.fetchRepoFileContent(target('http://127.0.0.1:1'), 'voicehub-backups/', 'auto-backup-1.json')
+  assert.equal(seen[0].maxBytes, undefined, '仓库信息读取不应放宽上限')
+  assert.ok(seen[1].maxBytes > 1024 * 1024, '备份正文读取应显式放宽上限')
+
+  const big = 'x'.repeat(1024 * 1024 + 16)
+  const base = await listenWithBody(t, big)
+  await assert.rejects(() => outbound.fetchSafeOutbound(base, { method: 'GET' }), /超过大小限制/)
+  const response = await outbound.fetchSafeOutbound(base, { method: 'GET', maxBytes: 4 * 1024 * 1024 })
+  assert.equal((await response.text()).length, big.length)
+})
+
+async function listenWithBody(t, body) {
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(body)
+  })
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  t.after(async () => {
+    server.closeAllConnections()
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+  })
+  const address = server.address()
+  return `http://127.0.0.1:${address.port}`
+}

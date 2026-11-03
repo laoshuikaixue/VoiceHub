@@ -105,6 +105,13 @@
       ],
       "via": "role !== 'SUPER_ADMIN'"
     },
+    "GET /api/admin/backup/github-file": {
+      "file": "backup/github-file.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
     "GET /api/admin/backup/github-history": {
       "file": "backup/github-history.get.ts",
       "roles": [

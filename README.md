@@ -1071,6 +1071,7 @@ VoiceHub/
 │   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
+│   │   │   │   ├── github-file.get.ts # 读取 Git 仓库备份文件正文（恢复用）
 │   │   │   │   ├── github-history.get.ts # 读取 Git 仓库备份提交历史
 │   │   │   │   ├── history.get.ts   # 获取备份历史
 │   │   │   │   ├── history-clear.post.ts # 清空备份历史记录
@@ -1484,7 +1485,7 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
-│   │   ├── githubGitClient.ts # Git 仓库备份客户端（GitHub/GHES 走 Git Data API，Gitea 走 Contents API）
+│   │   ├── githubGitClient.ts # Git 仓库备份客户端（GitHub/GHES 走 Git Data API，Gitea 走 Contents API；含备份正文读取）
 │   │   ├── grade-class-core.ts # 年级班级选项纯函数
 │   │   ├── grade-class-options.ts # 年级班级选项提取工具
 │   │   ├── identity-secrets.ts # 身份响应脱敏（TOTP 共享密钥不回传）
