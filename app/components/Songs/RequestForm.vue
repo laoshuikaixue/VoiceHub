@@ -547,7 +547,7 @@
 
                         <!-- 管理员或未开启重复投稿限制时可直接重复投稿；否则普通用户仅可申请重播已播放歌曲。 -->
                         <button
-                          v-if="canBypassLimits.value || (siteConfigLoaded && !enableSubmissionRestriction)"
+                          v-if="canBypassLimits || (siteConfigLoaded && !enableSubmissionRestriction)"
                           :disabled="
                             !canSubmitFromSearch ||
                             isSongBlockedByRestriction(result) ||
