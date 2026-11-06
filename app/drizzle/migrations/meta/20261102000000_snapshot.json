@@ -1,116 +1,9 @@
 {
-  "id": "3472b3e5-cf1f-4f23-939d-dd4f40631bcf",
-  "prevId": "050a9d15-d89c-46f9-ac53-e1802a9fd1ac",
+  "id": "51558bb4-ce1e-4c8e-a4f3-4673aa1c5aaa",
+  "prevId": "fd038e2e-970d-4e0e-b44d-75cfd32a302e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.AnnouncementHistory": {
-      "name": "AnnouncementHistory",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "displayMode": {
-          "name": "displayMode",
-          "type": "varchar(16)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'static'"
-        },
-        "scrollSpeed": {
-          "name": "scrollSpeed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 30
-        },
-        "alignment": {
-          "name": "alignment",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'left'"
-        },
-        "isActive": {
-          "name": "isActive",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "senderId": {
-          "name": "senderId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "senderName": {
-          "name": "senderName",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "senderUsername": {
-          "name": "senderUsername",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "broadcastToGroups": {
-          "name": "broadcastToGroups",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        }
-      },
-      "indexes": {
-        "announcement_history_created_at_idx": {
-          "name": "announcement_history_created_at_idx",
-          "columns": [
-            {
-              "expression": "createdAt",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.api_key_permissions": {
       "name": "api_key_permissions",
       "schema": "",
@@ -3252,39 +3145,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "announcement": {
-          "name": "announcement",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "announcementTitle": {
-          "name": "announcementTitle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "announcementDisplayMode": {
-          "name": "announcementDisplayMode",
-          "type": "varchar(16)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'static'"
-        },
-        "announcementScrollSpeed": {
-          "name": "announcementScrollSpeed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 30
-        },
-        "announcementAlignment": {
-          "name": "announcementAlignment",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'left'"
-        },
         "icpNumber": {
           "name": "icpNumber",
           "type": "text",
@@ -4004,6 +3864,45 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'[\"netease\",\"tencent\",\"bilibili\",\"migu\"]'"
+        },
+        "rolePermissionTemplates": {
+          "name": "rolePermissionTemplates",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "announcement": {
+          "name": "announcement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "announcementTitle": {
+          "name": "announcementTitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "announcementDisplayMode": {
+          "name": "announcementDisplayMode",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'static'"
+        },
+        "announcementScrollSpeed": {
+          "name": "announcementScrollSpeed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 30
+        },
+        "announcementAlignment": {
+          "name": "announcementAlignment",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'left'"
         }
       },
       "indexes": {},
@@ -4331,6 +4230,12 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "permissions": {
+          "name": "permissions",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -4422,6 +4327,113 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.AnnouncementHistory": {
+      "name": "AnnouncementHistory",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "displayMode": {
+          "name": "displayMode",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'static'"
+        },
+        "scrollSpeed": {
+          "name": "scrollSpeed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 30
+        },
+        "alignment": {
+          "name": "alignment",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'left'"
+        },
+        "isActive": {
+          "name": "isActive",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "senderId": {
+          "name": "senderId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "senderName": {
+          "name": "senderName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "senderUsername": {
+          "name": "senderUsername",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "broadcastToGroups": {
+          "name": "broadcastToGroups",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "announcement_history_created_at_idx": {
+          "name": "announcement_history_created_at_idx",
+          "columns": [
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
