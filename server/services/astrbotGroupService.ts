@@ -19,6 +19,7 @@ import type { AstrbotGroupEventKey, AstrbotGroupThrottle } from '~~/server/utils
 import { chunkAstrbotTargets } from '~~/server/utils/astrbot-payload'
 import { sanitizeAstrbotErrorDetail } from '~~/server/utils/astrbot-error-telemetry'
 import { ASTRBOT_OUTBOX_MAX_ATTEMPTS, isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
+import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 import { postAstrbotNotification } from '~~/server/services/astrbotNotificationService'
 
 /**
@@ -82,7 +83,21 @@ export async function enqueueAstrbotGroupEvent(
       astrbotGroupEvents: settings.eventSettings
     }, eventKey)
     if (!umos.length) return 0
-    return await queueToGroups(umos, title, safeContent, eventKey, settings.throttle)
+    const count = await queueToGroups(umos, title, safeContent, eventKey, settings.throttle)
+    // 仅在 serverless 部署且合并窗口为 0 时，入队后同步冲刷一次：
+    //  - serverless 无常驻定时器，不冲刷则群消息永远卡在队列表发不出去；
+    //  - 合并窗口为 0 ⇒ notifyAfter=入队时刻，刚写入的条目立即可被领取投递，
+    //    否则带未来的 notifyAfter 在 serverless 上无定时器兜底会丢失。
+    // 非 serverless（自托管）仍由后台 15s 定时器统一冲刷，保持原有合并/节流行；
+    // pull 模式 flushAstrbotGroupOutbox 内部早返回，此处调用为 no-op。
+    if (count > 0 && isServerlessRuntime() && settings.throttle.mergeWindowSeconds === 0) {
+      try {
+        await flushAstrbotGroupOutbox()
+      } catch (flushError) {
+        console.error(`AstrBot 群事件即时投递失败（${eventKey}）:`, flushError)
+      }
+    }
+    return count
   } catch (error) {
     console.error(`AstrBot 群事件入队失败（${eventKey}）:`, error)
     return 0
