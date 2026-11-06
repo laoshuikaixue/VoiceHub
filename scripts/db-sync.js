@@ -259,7 +259,7 @@ async function ensureUpstreamColumns(sql) {
   for (const [tableName, columnName, definition] of additions) {
     if (!(await tableExists(sql, tableName))) continue
     if (await columnExists(sql, tableName, columnName)) continue
-    await sql`${sql.raw(`ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${columnName}" ${definition}`)}`
+    await sql.unsafe(`ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${columnName}" ${definition}`)
     warn(`已补齐缺失字段 ${tableName}.${columnName}`)
   }
 }
