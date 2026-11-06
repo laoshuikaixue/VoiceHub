@@ -12,14 +12,6 @@ const parseIds = (body: any): number[] => {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
-  }
-  if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({ statusCode: 403, message: '权限不足' })
-  }
-
   const body = await readBody(event).catch(() => ({})) ?? {}
   const ids = parseIds(body)
   if (!ids.length) {

@@ -51,7 +51,7 @@
           </div>
 
           <button
-            :disabled="isLoading(card.id)"
+            :disabled="isLoading(card.id) || !canOpenCard(card.id)"
             class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
             :class="
               card.isDanger
@@ -147,7 +147,7 @@
             {{ locale.cancel }}
           </button>
           <button
-            :disabled="createLoading"
+            :disabled="createLoading || !can('backup:write')"
             class="px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="createBackup"
           >
@@ -176,7 +176,33 @@
           </button>
         </div>
         <div class="p-8 space-y-6">
+          <div v-if="repoBackupAvailable" class="grid grid-cols-2 gap-3">
+            <button
+              :class="[
+                'px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all',
+                restoreSource === 'local'
+                  ? 'bg-bg-primary border-success-30 text-success'
+                  : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary'
+              ]"
+              @click="switchRestoreSource('local')"
+            >
+              {{ locale.restoreSourceLocal }}
+            </button>
+            <button
+              :class="[
+                'px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all',
+                restoreSource === 'repo'
+                  ? 'bg-bg-primary border-success-30 text-success'
+                  : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary'
+              ]"
+              @click="switchRestoreSource('repo')"
+            >
+              {{ locale.restoreSourceRepo }}
+            </button>
+          </div>
+
           <div
+            v-if="restoreSource === 'local'"
             class="border-2 border-dashed border-border-secondary rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-success-50 hover:bg-success-5 transition-all cursor-pointer"
             @click="$refs.fileInput.click()"
             @dragover.prevent
@@ -198,6 +224,49 @@
               type="file"
               @change="handleFileSelect"
             >
+          </div>
+
+          <div v-else class="space-y-3">
+            <button
+              :disabled="repoBackupLoading"
+              class="w-full px-4 py-2 border border-border-secondary rounded-xl text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:border-border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="loadRepoBackups"
+            >
+              {{ repoBackupLoading ? locale.repoListLoading : (repoBackupLoaded ? locale.repoListReload : locale.repoList) }}
+            </button>
+            <p v-if="repoBackupError" class="text-[11px] text-error leading-normal break-words">{{ repoBackupError }}</p>
+            <p v-else-if="repoBackupLoaded && !repoBackups.length" class="text-[10px] text-text-disabled">
+              {{ locale.repoListEmpty }}
+            </p>
+            <div v-else-if="repoBackups.length" class="space-y-1.5">
+              <p class="text-[10px] text-text-disabled">
+                {{ locale.repoBranch }} {{ repoBackupBranch }}
+              </p>
+              <div class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                <div
+                  v-for="item in repoBackups"
+                  :key="item.commitSha"
+                  class="flex items-center justify-between gap-2 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2"
+                >
+                  <div class="min-w-0">
+                    <p class="text-[11px] text-text-secondary truncate" :title="item.filename">{{ item.filename }}</p>
+                    <p class="text-[10px] text-text-disabled">
+                      {{ item.committedAtBeijing }} · {{ item.size === null ? '—' : formatBackupSize(item.size) }}
+                    </p>
+                  </div>
+                  <button
+                    :disabled="!can('backup:restore') || !!repoFileLoading || !item.commitSha"
+                    class="shrink-0 px-3 py-1.5 border border-border-secondary rounded-lg text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:border-border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    @click="selectRepoBackup(item)"
+                  >
+                    {{ repoFileLoading === item.filename ? locale.repoFileLoading : locale.repoSelect }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-if="selectedFile" class="text-[10px] text-success leading-normal break-words">
+              {{ locale.repoPicked }} {{ selectedFile.name }}
+            </p>
           </div>
 
           <div class="space-y-3">
@@ -231,6 +300,7 @@
                     ? 'bg-bg-primary border-success-30'
                     : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                 ]"
+                :disabled="!can('database:reset')"
                 @click="restoreForm.mode = 'replace'"
               >
                 <h6
@@ -282,7 +352,7 @@
             {{ locale.cancel }}
           </button>
           <button
-            :disabled="uploadLoading || !selectedFile"
+            :disabled="(uploadLoading || !selectedFile) || !can('backup:restore')"
             class="px-8 py-2 bg-success hover:bg-success text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="restoreBackup"
           >
@@ -348,7 +418,7 @@
             {{ locale.cancel }}
           </button>
           <button
-            :disabled="sequenceLoading || !sequenceForm.table"
+            :disabled="(sequenceLoading || !sequenceForm.table) || !can('database:maintenance')"
             class="px-8 py-2 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="resetSequence"
           >
@@ -419,7 +489,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              :disabled="resetConfirmText !== CONFIRM_CODE || resetLoading"
+              :disabled="(resetConfirmText !== CONFIRM_CODE || resetLoading) || !can('database:reset')"
               class="py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg disabled:bg-bg-tertiary disabled:text-text-disabled disabled:cursor-not-allowed disabled:border-border-tertiary"
               :class="
                 resetConfirmText === CONFIRM_CODE
@@ -444,6 +514,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -452,10 +523,18 @@ import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 import { useLocale } from '~/utils/locale'
 
+const { can } = usePermissions()
+
 const { showToast: showNotification } = useToast()
 const auth = useAuth()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager || {})
+const { localize } = useServerErrors()
+const cardPermissions = {
+  backup: 'backup:write', restore: 'backup:restore', 'reset-seq': 'database:maintenance',
+  'reset-db': 'database:reset', 'auto-backup': 'backup:read'
+}
+const canOpenCard = (id) => can(cardPermissions[id])
 const defaultTableOptions = [
   { label: '重置所有表', value: 'all' },
   { label: '歌曲表', value: 'Song' },
@@ -503,6 +582,15 @@ const selectedFile = ref(null)
 const resetConfirmText = ref('')
 const restoreProgress = ref('')
 const hasSuperAdminInBackup = ref(false)
+// 恢复来源：local 本地文件，repo 已配置的 Git 仓库
+const restoreSource = ref('local')
+const repoBackupAvailable = ref(false)
+const repoBackups = ref([])
+const repoBackupBranch = ref('')
+const repoBackupLoading = ref(false)
+const repoBackupLoaded = ref(false)
+const repoBackupError = ref('')
+const repoFileLoading = ref('')
 const CONFIRM_CODE = 'CONFIRM-DATABASE-RESET-OPERATION'
 
 // 卡片配置
@@ -595,10 +683,12 @@ const isLoading = (id) => {
 }
 
 const openModal = (id) => {
+  if (!canOpenCard(id)) return
   activeModal.value = id
   if (id === 'reset-db') {
     resetConfirmText.value = ''
   }
+  if (id === 'restore') loadRepoBackupCapability()
 }
 
 // 文件处理
@@ -639,8 +729,76 @@ const handleFileDrop = async (event) => {
   }
 }
 
+const formatBackupSize = (bytes) => {
+  if (!bytes) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+// 仓库备份需已启用且凭据齐备才提供「从仓库恢复」
+const loadRepoBackupCapability = async () => {
+  restoreSource.value = 'local'
+  repoBackupAvailable.value = false
+  if (!can('backup:read')) return
+  try {
+    const result = await $fetch('/api/admin/backup/auto-config')
+    const github = result?.data?.config?.methods?.github
+    repoBackupAvailable.value = !!(
+      github?.enabled && github?.apiBase && github?.repo && result?.data?.config?.configuredSecrets?.githubToken
+    )
+  } catch {
+    repoBackupAvailable.value = false
+  }
+}
+
+const loadRepoBackups = async () => {
+  if (!can('backup:read') || repoBackupLoading.value) return
+  repoBackupLoading.value = true
+  repoBackupError.value = ''
+  try {
+    const result = await $fetch('/api/admin/backup/github-history', { query: { limit: 30 } })
+    repoBackups.value = result.data?.entries || []
+    repoBackupBranch.value = result.data?.branch || ''
+  } catch (error) {
+    repoBackups.value = []
+    repoBackupError.value = localize(error, getMessage('repoHistoryFailed'))
+    console.error('读取仓库备份列表失败:', error)
+  } finally {
+    repoBackupLoaded.value = true
+    repoBackupLoading.value = false
+  }
+}
+
+const selectRepoBackup = async (item) => {
+  if (!can('backup:restore') || repoFileLoading.value) return
+  repoFileLoading.value = item.filename
+  try {
+    const text = await $fetch('/api/admin/backup/github-file', {
+      query: { filename: item.filename, sha: item.commitSha },
+      responseType: 'text'
+    })
+    const file = new File([text], item.filename, { type: 'application/json' })
+    selectedFile.value = file
+    await parseBackupSuperAdmin(file)
+  } catch (error) {
+    showNotification(localize(error), 'error')
+  } finally {
+    repoFileLoading.value = ''
+  }
+}
+
+const switchRestoreSource = (source) => {
+  if (restoreSource.value === source) return
+  restoreSource.value = source
+  selectedFile.value = null
+  hasSuperAdminInBackup.value = false
+  restoreForm.value.overwriteSuperAdmin = false
+}
+
 // API 操作
 const createBackup = async () => {
+  if (!can('backup:write')) return
   createLoading.value = true
   try {
     let tables = 'all'
@@ -710,6 +868,7 @@ const createBackup = async () => {
 }
 
 const restoreBackup = async () => {
+  if (!can('backup:restore')) return
   if (!selectedFile.value) return showNotification(getMessage('selectBackupFile'), 'error')
 
   uploadLoading.value = true
@@ -742,6 +901,7 @@ const restoreBackup = async () => {
     let temporaryPreservedUserId = null
 
     if (restoreForm.value.mode === 'replace') {
+      if (!can('database:reset')) return
       restoreProgress.value = getProgressMessage('clearingData')
       const clearResult = await $fetch('/api/admin/backup/clear', {
         method: 'POST',
@@ -847,23 +1007,6 @@ const restoreBackup = async () => {
       }
     }
 
-    restoreProgress.value = getProgressMessage('fixingSequence')
-    const sequenceResult = await $fetch('/api/admin/fix-sequence', {
-      method: 'POST',
-      body: { table: 'all' }
-    })
-    if (!sequenceResult.success) {
-      throw new Error(sequenceResult.message || sequenceResult.error || getErrorMessage('fixSequenceFailed'))
-    }
-
-    restoreProgress.value = getProgressMessage('reloadingSmtp')
-    const smtpReloadResult = await $fetch('/api/admin/smtp/reload', {
-      method: 'POST'
-    })
-    if (!smtpReloadResult.success) {
-      throw new Error(smtpReloadResult.message || getErrorMessage('smtpReloadFailed'))
-    }
-
     const shouldFinalizeTempUser =
       restoreForm.value.mode === 'replace' &&
       restoreForm.value.overwriteSuperAdmin &&
@@ -912,6 +1055,7 @@ const restoreBackup = async () => {
 }
 
 const resetSequence = async () => {
+  if (!can('database:maintenance')) return
   if (!sequenceForm.value.table) return
   sequenceLoading.value = true
   try {
@@ -934,6 +1078,7 @@ const resetSequence = async () => {
 }
 
 const resetDatabase = async () => {
+  if (!can('database:reset')) return
   if (resetConfirmText.value !== CONFIRM_CODE) return
   resetLoading.value = true
   try {

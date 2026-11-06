@@ -57,21 +57,6 @@ export default defineEventHandler(async (event) => {
     // 使用认证中间件提供的用户信息
     const currentUser = event.context.user
 
-    if (!currentUser) {
-      throw createError({
-        statusCode: 401,
-        message: 'Authentication required'
-      })
-    }
-
-    // 检查权限 - 只有管理员和超级管理员可以执行批量更新
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-      throw createError({
-        statusCode: 403,
-        message: 'Insufficient permissions'
-      })
-    }
-
     // 验证用户ID是否存在
     const existingUsers = await db
       .select({

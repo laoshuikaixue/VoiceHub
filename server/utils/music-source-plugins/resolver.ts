@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { schedules, songCollaborators, songs, musicSourcePlugins } from '~/drizzle/schema'
@@ -45,8 +46,8 @@ export function readSelection(token: string, userId: number, platform?: string, 
 }
 
 // 无选择票据时按歌曲 ID 解析，可见性与播放列表保持一致：已正式发布排期、本人投稿/协作者、或歌曲管理角色
-async function resolvableBySongId(songId: number, user: { id: number; role: string }) {
-  if (['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) return true
+async function resolvableBySongId(songId: number, user: { id: number; role: string; perms?: string[] }) {
+  if ((hasAdminPermission(user, 'songs:read') || hasAdminPermission(user, 'schedule:read'))) return true
   const [own] = await db.select({ id: songs.id }).from(songs).where(and(eq(songs.id, songId), eq(songs.requesterId, user.id))).limit(1)
   if (own) return true
   const [collab] = await db.select({ id: songCollaborators.id }).from(songCollaborators).where(and(eq(songCollaborators.songId, songId), eq(songCollaborators.userId, user.id))).limit(1)
@@ -55,7 +56,7 @@ async function resolvableBySongId(songId: number, user: { id: number; role: stri
   return !!published
 }
 
-export async function requestTrack(body: any, user: { id: number; role: string }): Promise<PluginTrack> {
+export async function requestTrack(body: any, user: { id: number; role: string; perms?: string[] }): Promise<PluginTrack> {
   if (body.selectionToken) return readSelection(body.selectionToken, user.id)
   if (body.songId) {
     if (!Number.isSafeInteger(Number(body.songId)) || Number(body.songId) < 1) throw pluginError('PLUGIN_INVALID_CONFIG', 400)

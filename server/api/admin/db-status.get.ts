@@ -3,15 +3,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { count, sql } from 'drizzle-orm'
 
-export default defineEventHandler(async (event) => {
-  const currentUser = event.context.user
-  if (!currentUser || !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
-
+export default defineEventHandler(async () => {
   try {
     const status = {
       connected: false,

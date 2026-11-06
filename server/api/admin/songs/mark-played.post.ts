@@ -16,24 +16,6 @@ const markPlayedSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能标记歌曲'
-    })
-  }
-
-  // 检查是否是管理员
-  if (!['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员可以标记歌曲为已播放'
-    })
-  }
-
   const body = await readBody(event)
   const validatedDataResult = markPlayedSchema.safeParse(body)
 
@@ -84,7 +66,6 @@ export default defineEventHandler(async (event) => {
       const transition = isUnmark ? restoreCardCodeAfterScheduleRemoval : redeemCardCodeForSchedule
       await transition(tx, { songId: song.id, cardCodeId: song.cardCodeId, operatorId, at: getServerDate(), cancelPlayback: isUnmark })
     }
-
 
     if (updatedSongIds.length > 0) {
       if (!isUnmark) {

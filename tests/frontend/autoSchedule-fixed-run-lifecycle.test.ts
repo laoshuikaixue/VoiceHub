@@ -83,6 +83,7 @@ function createScheduleRun(requestSongDuration) {
   }
 
   const context = vm.createContext({
+    can: () => true,
     computed,
     ref,
     AbortController,

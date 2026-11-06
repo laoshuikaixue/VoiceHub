@@ -144,6 +144,7 @@
                     <button
                       class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                       :title="t('actions.edit')"
+                      :disabled="!can('songs:write')"
                       @click="emit('edit-song', song)"
                     >
                       <Edit2 :size="14" />
@@ -151,6 +152,7 @@
                     <button
                       class="flex items-center justify-center p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                       :title="t('actions.deleteSong')"
+                      :disabled="!can('songs:delete')"
                       @click="emit('delete-song', song.id)"
                     >
                       <Trash2 :size="14" />
@@ -179,6 +181,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed } from 'vue'
 import { Copy, X, Music, Heart, Edit2, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
@@ -186,6 +189,8 @@ import { useLocaleText } from '~/composables/useLocaleText'
 import { getPlatformDisplayName } from '~/utils/platforms'
 import { getCoverThumbUrl } from '~/utils/url'
 import { formatDuration } from '~/utils/timeUtils'
+
+const { can } = usePermissions()
 
 const props = defineProps({
   show: {

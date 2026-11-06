@@ -8,7 +8,6 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
-  canSendSystemNotification,
   NOTIFICATION_CONTENT_MAX_LENGTH,
   NOTIFICATION_TITLE_MAX_LENGTH,
   resolveImportantFlag
@@ -42,18 +41,6 @@ async function forwardSystemNoticeToGroups(enabled: boolean, title: string, cont
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
-
-  if (!user) {
-    throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '需要登录才能发送通知')
-  }
-
-  if (!canSendSystemNotification(user.role)) {
-    throw createApiError(
-      403,
-      SERVER_ERROR_CODES.NOTIFICATION_ADMIN_REQUIRED,
-      '只有管理员可以发送系统通知'
-    )
-  }
 
   const body = await readBody<Record<string, unknown> | null>(event)
   const sender = {

@@ -217,7 +217,7 @@
           </div>
           <button
             class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-error-20 text-error hover:bg-error hover:text-text-primary transition-all disabled:opacity-50"
-            :disabled="clearing"
+            :disabled="(clearing) || !can('system-board:write')"
             @click="clearRuntimeEvents"
           >
             <Trash2 :size="14" />
@@ -265,6 +265,7 @@
 </template>
 
 <script setup>
+import { usePermissions } from '~/composables/usePermissions'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   Activity,
@@ -283,6 +284,8 @@ import packageJson from '~~/package.json'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+
+const { can } = usePermissions()
 
 const REFRESH_INTERVAL_MS = 10_000
 
@@ -563,6 +566,7 @@ const loadAll = async () => {
 }
 
 const clearRuntimeEvents = async () => {
+  if (!can('system-board:write')) return
   clearing.value = true
   try {
     await $fetch('/api/admin/system-board/runtime-clear', {

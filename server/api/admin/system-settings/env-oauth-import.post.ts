@@ -9,22 +9,6 @@ import {
 } from '~~/server/utils/oauth-providers'
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以导入环境配置'
-    })
-  }
-
   const body = await readBody(event)
   const provider = typeof body.provider === 'string' ? body.provider : ''
 

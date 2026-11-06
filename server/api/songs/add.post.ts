@@ -17,11 +17,6 @@ export default defineEventHandler(async (event) => {
       throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
     }
 
-    // 检查权限
-    if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
-    }
-
     // 获取请求体
     const body = await readBody(event)
     const musicSourceData = body.selectionToken

@@ -8,6 +8,16 @@ import {
   findSuperAdminOnlySettingFields,
   stripSuperAdminOnlySettingFields
 } from '../../app/utils/settingsPermissions.ts'
+import {
+  ROLE_PERMISSION_TEMPLATES_DEFAULT,
+  hasAdminPermission,
+  accessiblePages,
+  hasAllPermissions,
+  hasAnyPermission,
+  resolveEffectivePermissions,
+  PRIV_ADMIN_CONSOLE
+} from '../../app/utils/admin-permissions.ts'
+import { resolveAdminRouteGuard } from '../../server/utils/admin-permission-routes.ts'
 
 // 系统设置权限边界：涉及用户数据与凭据的字段归超级管理员，运营配置留给普通管理员
 const read = (relative: string) => readFileSync(join(import.meta.dirname, relative), 'utf8')
@@ -18,7 +28,6 @@ const ENV_OAUTH_GET = read('../../server/api/admin/system-settings/env-oauth.get
 const ENV_OAUTH_IMPORT = read('../../server/api/admin/system-settings/env-oauth-import.post.ts')
 const CLEAR_BINDINGS = read('../../server/api/admin/system-settings/clear-aggregate-bindings.post.ts')
 const SCHEMA = read('../../app/drizzle/schema.ts')
-const USE_PERMISSIONS = read('../../app/composables/usePermissions.ts')
 const SITE_CONFIG_UI = read('../../app/components/Admin/SiteConfigManager.vue')
 
 const SUPER_ADMIN_FIELDS = new Set<string>(SUPER_ADMIN_ONLY_SETTING_FIELDS as readonly string[])
@@ -118,18 +127,30 @@ test('剔除与命中函数按清单工作', () => {
   assert.deepEqual(findSuperAdminOnlySettingFields(null), [])
 })
 
-test('读写接口与子接口按角色把关', () => {
-  assert.match(INDEX_POST, /user\.role !== 'SUPER_ADMIN'[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
-  assert.match(INDEX_POST, /statusCode: 403/)
+test('读写接口字段分区按权限码把关，默认角色与子接口守卫保持一致', () => {
+  assert.match(INDEX_POST, /!hasAdminPermission\(user, 'system-settings:secrets'\)[\s\S]*findSuperAdminOnlySettingFields\(body\)/)
+  assert.match(INDEX_POST, /createApiError\(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION/)
   assert.match(INDEX_GET, /stripSuperAdminOnlySettingFields\(masked\)/)
-  assert.match(INDEX_POST, /stripSuperAdminOnlySettingFields\(masked\)/)
-  for (const [name, source] of [
-    ['env-oauth.get', ENV_OAUTH_GET],
-    ['env-oauth-import', ENV_OAUTH_IMPORT],
-    ['clear-aggregate-bindings', CLEAR_BINDINGS]
+  assert.doesNotMatch(ENV_OAUTH_GET, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, 'env-oauth.get 不应再放行普通管理员')
+  assert.doesNotMatch(ENV_OAUTH_IMPORT, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/)
+  assert.doesNotMatch(CLEAR_BINDINGS, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/)
+  for (const [pathname, method] of [
+    ['/api/admin/system-settings/env-oauth', 'GET'],
+    ['/api/admin/system-settings/env-oauth-import', 'POST'],
+    ['/api/admin/system-settings/clear-aggregate-bindings', 'POST']
   ] as const) {
-    assert.match(source, /user\.role !== 'SUPER_ADMIN'/, `${name} 应仅限超级管理员`)
-    assert.doesNotMatch(source, /\['ADMIN', 'SUPER_ADMIN'\]\.includes/, `${name} 不应再放行普通管理员`)
+    const guard = resolveAdminRouteGuard(pathname, method)
+    assert.ok(guard && !guard.deny, `${pathname} 缺少守卫登记`)
+    assert.ok(guard && guard.any.includes('system-settings:secrets'), `${pathname} 应限定凭据权限码`)
+    for (const role of ['USER', 'SONG_ADMIN', 'ADMIN']) {
+      const perms = resolveEffectivePermissions({ role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+      assert.ok(
+        !(hasAllPermissions(perms, [PRIV_ADMIN_CONSOLE]) && hasAnyPermission(perms, guard!.any)),
+        `${role} 不应访问 ${pathname}`
+      )
+    }
+    const superPerms = resolveEffectivePermissions({ role: 'SUPER_ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+    assert.ok(hasAnyPermission(superPerms, guard!.any), `SUPER_ADMIN 应可访问 ${pathname}`)
   }
 })
 
@@ -137,19 +158,23 @@ test('保存设置的响应与读取接口一致，普通管理员无法通过�
   const settings = { dailySubmissionLimit: 7, smtpHost: 'smtp.private', customOAuthClientId: 'private-client',
     astrbotGroupTargets: '["private-group"]', legalConsentDocuments: 'private-documents' }
   for (const source of [INDEX_GET, INDEX_POST]) {
-    const expression = source.match(/return user\.role === 'SUPER_ADMIN'[^\r\n]*/)?.[0]
+    const expression = source.match(/return hasAdminPermission[^\r\n]*/)?.[0]
     assert.ok(expression)
-    const respond = new Function('user', 'masked', 'stripSuperAdminOnlySettingFields', expression)
-    assert.deepEqual(respond({ role: 'ADMIN' }, settings, stripSuperAdminOnlySettingFields), { dailySubmissionLimit: 7 })
-    assert.deepEqual(respond({ role: 'SUPER_ADMIN' }, settings, stripSuperAdminOnlySettingFields), settings)
+    const respond = new Function('user', 'masked', 'stripSuperAdminOnlySettingFields', 'hasAdminPermission', expression)
+    assert.deepEqual(respond({ perms: resolveEffectivePermissions({ role: 'ADMIN' }) }, settings, stripSuperAdminOnlySettingFields, hasAdminPermission), { dailySubmissionLimit: 7 })
+    assert.deepEqual(respond({ perms: ['*'] }, settings, stripSuperAdminOnlySettingFields, hasAdminPermission), settings)
   }
 })
 
-test('普通管理员界面不含站点配置与机器人配置入口，表单不提交超管字段', () => {
-  const adminPages = USE_PERMISSIONS.match(/if \(role === 'ADMIN'\) \{\s*return \[([\s\S]*?)\]/)?.[1] ?? ''
-  assert.ok(adminPages, '未找到 ADMIN 可访问页面列表')
-  for (const page of ['site-config', 'smtp-config', 'database', 'api-keys']) {
-    assert.doesNotMatch(adminPages, new RegExp(`'${page}'`), `普通管理员不应有 ${page} 入口`)
+test('普通管理员可见业务配置入口，但仍不能管理机器人凭据与超管字段', () => {
+  const adminPages = accessiblePages(resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT))
+  assert.ok(adminPages.length, '未找到 ADMIN 可访问页面列表')
+  for (const page of ['api-keys', 'system-board', 'permissions']) {
+    assert.ok(!adminPages.includes(page), `普通管理员不应有 ${page} 入口`)
   }
+  for (const page of ['site-config', 'smtp-config', 'database']) assert.ok(adminPages.includes(page))
+  const adminPerms = resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+  assert.equal(hasAdminPermission({ perms: adminPerms }, 'astrbot:read'), false)
+  assert.equal(hasAdminPermission({ perms: adminPerms }, 'system-settings:secrets'), false)
   assert.match(SITE_CONFIG_UI, /stripSuperAdminOnlySettingFields\(configToSave\)/)
 })

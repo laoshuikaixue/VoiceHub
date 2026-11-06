@@ -4,9 +4,9 @@ import { announcementHistory, systemSettings } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
-  canSendSystemNotification,
   NOTIFICATION_CONTENT_MAX_LENGTH
 } from '~~/server/utils/important-notification-policy'
+import { hasAdminPermission } from '~/utils/admin-permissions'
 
 const ANNOUNCEMENT_TITLE_MAX_LENGTH = 120
 const MIN_SCROLL_SPEED = 8
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '请先登录后修改公告')
   }
 
-  if (!canSendSystemNotification(user.role)) {
+  if (!hasAdminPermission(user, 'notifications:write')) {
     throw createApiError(
       403,
       SERVER_ERROR_CODES.NOTIFICATION_ADMIN_REQUIRED,

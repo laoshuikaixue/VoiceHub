@@ -396,6 +396,14 @@ export const SERVER_ERROR_CODES = {
   // 播出时段
   PLAY_TIME_DEFAULT_REQUIRES_ENABLED: 'PLAY_TIME_DEFAULT_REQUIRES_ENABLED',
   PLAY_TIME_DEFAULT_CONFLICT: 'PLAY_TIME_DEFAULT_CONFLICT',
+  // 权限矩阵与按用户授权
+  PERMISSION_TEMPLATE_INVALID: 'PERMISSION_TEMPLATE_INVALID',
+  PERMISSION_GRANT_INVALID: 'PERMISSION_GRANT_INVALID',
+  PERMISSION_GRANT_EXCEEDS_SELF: 'PERMISSION_GRANT_EXCEEDS_SELF',
+  PERMISSION_GRANT_TARGET_FORBIDDEN: 'PERMISSION_GRANT_TARGET_FORBIDDEN',
+  PERMISSION_LAST_HOLDER_PROTECTED: 'PERMISSION_LAST_HOLDER_PROTECTED',
+  PERMISSION_SELF_LOCKOUT: 'PERMISSION_SELF_LOCKOUT',
+  PERMISSION_SELF_EDIT_FORBIDDEN: 'PERMISSION_SELF_EDIT_FORBIDDEN',
   SYSTEM_BOARD_FAILED: 'SYSTEM_BOARD_FAILED'
   // 认证（AUTH_*）、歌曲（SONG_*）、用户（USER_*）等分组在 B2 转换时逐步补充
 } as const
@@ -459,14 +467,6 @@ export const SORT_CONSTANTS = {
 
   // 歌曲排序字段
   SONG_SORT_FIELDS: ['createdAt', 'title', 'artist', 'playedAt', 'votes'] as const
-} as const
-
-// 权限常量
-export const PERMISSIONS = {
-  SCHEDULES_READ: 'schedules:read',
-  SONGS_READ: 'songs:read',
-  SONGS_REQUEST: 'songs:request',
-  ADMIN_ACCESS: 'admin:access'
 } as const
 
 // 用户角色常量
@@ -632,3 +632,8 @@ export const SYSTEM_BOARD_EVENT_LEVELS = ['error', 'warn', 'info'] as const
 export type SystemBoardEventLevel = (typeof SYSTEM_BOARD_EVENT_LEVELS)[number]
 export const SYSTEM_BOARD_EVENT_SOURCES = ['runtime', 'apiError', 'passwordAudit'] as const
 export type SystemBoardEventSource = (typeof SYSTEM_BOARD_EVENT_SOURCES)[number]
+
+// Git 仓库备份的 API 口径：github 走 Git Data API 写提交，gitea 只有 Contents API 可写
+export const GIT_API_MODES = ['github', 'gitea'] as const
+export type GitApiMode = (typeof GIT_API_MODES)[number]
+export const DEFAULT_GIT_API_MODE: GitApiMode = 'github'

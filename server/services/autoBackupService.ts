@@ -28,8 +28,9 @@ import {
   votes
 } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, type GitApiMode } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
+import { buildBackupCommitMessage, buildRepoFilePath, commitBackupFile } from '~~/server/utils/githubGitClient'
 import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { maskSystemSettingsSecrets, omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
@@ -73,6 +74,15 @@ export interface AutoBackupConfig {
       username: string
       password: string
       path: string
+    }
+    github: {
+      enabled: boolean
+      apiBase: string
+      repo: string
+      branch: string
+      path: string
+      token: string
+      apiMode?: GitApiMode
     }
     telegram: {
       enabled: boolean
@@ -247,6 +257,13 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
   console.log(`WebDAV 上传完成: ${filename}`)
 }
 
+/** 提交备份文件到 Git 仓库分支 */
+async function doGithubUpload(config: AutoBackupConfig['methods']['github'], data: string, filename: string): Promise<void> {
+  const filePath = buildRepoFilePath(config.path, filename)
+  await commitBackupFile(config, filePath, data, buildBackupCommitMessage(filename))
+  console.log(`Git 仓库提交完成: ${filePath}`)
+}
+
 /** 导出 ensureWebDAVDir 供测试端点使用 */
 export { ensureWebDAVDir }
 
@@ -336,11 +353,13 @@ export async function prepareBackup(triggeredBy: string = 'api'): Promise<{
   const methods = [
     { key: 's3' as const, name: 'S3', fn: () => doS3Upload(config.methods.s3, json, filename) },
     { key: 'webdav' as const, name: 'WebDAV', fn: () => doWebDAVUpload(config.methods.webdav, json, filename) },
+    { key: 'github' as const, name: 'GitHub', fn: () => doGithubUpload(config.methods.github, json, filename) },
     { key: 'telegram' as const, name: 'Telegram', fn: () => doTelegramSend(config.methods.telegram, json, filename) },
     { key: 'email' as const, name: 'Email', fn: () => doEmailSend(config.methods.email, json, filename) }
   ]
 
-  const enabledMethods = methods.filter(({ key }) => config.methods[key].enabled)
+  // 旧配置可能缺少新增方式，按未启用处理
+  const enabledMethods = methods.filter(({ key }) => config.methods[key]?.enabled)
 
   if (enabledMethods.length === 0) {
     throw createApiError(400, SERVER_ERROR_CODES.NO_BACKUP_METHOD_ENABLED, '没有启用任何备份方式')

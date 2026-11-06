@@ -1,7 +1,14 @@
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { canAssignRole, getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
+import {
+  assertAccountPermissionExpansion,
+  withPermissionTransaction
+} from '~~/server/utils/permission-admin'
+import { createApiError } from '~~/server/utils/apiError'
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 interface UserData {
@@ -25,14 +32,7 @@ const normalizeOptionalText = (value: unknown) => {
 }
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
 
   const body = await readBody(event)
 
@@ -173,44 +173,51 @@ export default defineEventHandler(async (event) => {
       }
     }
     await Promise.all(
-      Array.from({ length: Math.min(BCRYPT_CONCURRENCY, usersToInsertData.length) }, () => hashWorker())
+      Array.from({ length: Math.min(BCRYPT_CONCURRENCY, usersToInsertData.length) }, () =>
+        hashWorker()
+      )
     )
 
-    // 5. 准备批量插入的数据
-    const insertValues = usersToInsertData.map((userData, idx) => {
-      // 角色权限控制
-      let validRole = 'USER' // 默认角色
-      if (userData.role) {
-        const rolePermissions: Record<string, string[]> = {
-          SUPER_ADMIN: ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'],
-          ADMIN: ['USER', 'SONG_ADMIN']
-        }
-        const allowedRoles = rolePermissions[user.role]
-        if (allowedRoles?.includes(userData.role)) {
+    await withPermissionTransaction(event, async (tx, templates) => {
+      // 5. 准备批量插入的数据
+      const insertValues = usersToInsertData.map((userData, idx) => {
+        // 角色权限控制
+        let validRole = 'USER' // 默认角色
+        if (userData.role && userData.role !== 'USER') {
+          if (!getRoleTemplateKeys(templates).includes(userData.role) || !canAssignRole(user, userData.role, getRoleTemplateKeys(templates))) {
+            throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有分配该角色的权限')
+          }
           validRole = userData.role
         }
-      }
 
-      // 状态验证
-      let validStatus = 'active'
-      if (userData.status && ['active', 'withdrawn', 'graduate'].includes(userData.status)) {
-        validStatus = userData.status
-      }
+        // 状态验证
+        let validStatus = 'active'
+        if (userData.status && ['active', 'withdrawn', 'graduate'].includes(userData.status)) {
+          validStatus = userData.status
+        }
 
-      return {
-        name: userData.name,
-        username: userData.username,
-        password: hashedPasswords[idx]!,
-        role: validRole,
-        status: validStatus as 'active' | 'withdrawn' | 'graduate',
-        grade: userData.grade,
-        class: userData.class
-      }
+        assertAccountPermissionExpansion(
+          null,
+          { role: validRole, status: validStatus, permissions: null },
+          templates,
+          user.perms ?? []
+        )
+
+        return {
+          name: userData.name,
+          username: userData.username,
+          password: hashedPasswords[idx]!,
+          role: validRole,
+          status: validStatus as 'active' | 'withdrawn' | 'graduate',
+          grade: userData.grade,
+          class: userData.class
+        }
+      })
+
+      // 6. 执行批量插入
+      await tx.insert(users).values(insertValues)
+      results.created += insertValues.length
     })
-
-    // 6. 执行批量插入
-    await db.insert(users).values(insertValues)
-    results.created += insertValues.length
   } catch (error: any) {
     console.error(`批量插入用户失败:`, error)
     // 如果批量插入整体失败，则全部标记为失败

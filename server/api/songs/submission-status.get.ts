@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { requestTimes } from '~/drizzle/schema'
 import { and, eq, gt, lte } from 'drizzle-orm'
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const systemSettingsData = await getSystemSettingsCached()
 
     // 超级管理员、管理员、歌曲管理员不受投稿限制
-    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+    const isAdmin = hasAdminPermission(user, 'songs:bypass-limits')
 
     // 基础返回结构
     const status: any = {

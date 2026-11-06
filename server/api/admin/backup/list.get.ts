@@ -4,16 +4,8 @@ import path from 'path'
 import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 import { BACKUP_FILE_PREFIXES } from '~~/server/utils/backup-filename'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
-    // 验证管理员权限
-    const user = event.context.user
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '只有超级管理员可以查看备份文件'
-      })
-    }
 
     // 检测运行环境（与连接池等处共用一份判定）
     const isServerless = isServerlessRuntime()

@@ -18,9 +18,11 @@ import otplib from 'otplib'
 import { createApiError } from '~~/server/utils/apiError'
 import {
   computeRequirePasswordChange,
+  getRolePermissionTemplatesCached,
   resolveRequirePasswordChange
 } from '~~/server/utils/system-settings-helper'
 import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { resolveEffectivePermissions } from '~~/app/utils/admin-permissions'
 import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 import { syncOAuthIdentityAvatar } from '~~/server/utils/oauth-identity'
 
@@ -268,6 +270,7 @@ export default defineEventHandler(async (event) => {
 
   const requirePasswordChange = await resolveRequirePasswordChange(user)
   const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+  const perms = resolveEffectivePermissions(user, await getRolePermissionTemplatesCached())
 
   return {
     success: true,
@@ -278,6 +281,7 @@ export default defineEventHandler(async (event) => {
       grade: user.grade,
       class: user.class,
       role: user.role,
+      perms,
       email: user.email,
       emailVerified: user.emailVerified,
       forcePasswordChange: user.forcePasswordChange,

@@ -326,7 +326,7 @@
             id="send-email-code-button"
             type="button"
             class="code-btn"
-            :disabled="loginTermsBlocked || sendingCode || codeCountdown > 0"
+            :disabled="legalConsentEntryBlocked || sendingCode || codeCountdown > 0"
             @click="sendEmailCode"
           >
             {{ codeCountdown > 0 ? locale.codeCountdown(codeCountdown) : locale.sendCode }}
@@ -401,8 +401,8 @@
 
       <button
         id="auth-submit-button"
-        :disabled="loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')"
-        :class="['submit-btn', { 'is-disabled': loading || captchaPending || (loginTermsBlocked && legalConsentDisplayMode !== 'modal') }]"
+        :disabled="loading || captchaPending || legalConsentEntryBlocked"
+        :class="['submit-btn', { 'is-disabled': loading || captchaPending || legalConsentEntryBlocked }]"
         type="submit"
       >
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
@@ -456,19 +456,19 @@
       </div>
     </form>
 
-    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
+    <AuthOAuthQuickLogin v-if="!isBindMode && !showRegisterMode" :disabled="legalConsentEntryBlocked" />
 
     <div v-if="!isBindMode && !showRegisterMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button v-if="isWebAuthnSupported" type="button" class="webauthn-btn" :disabled="loading || (loginTermsBlocked && legalConsentDisplayMode !== 'modal')" @click="handleWebAuthnLogin">
+      <button v-if="isWebAuthnSupported" type="button" class="webauthn-btn" :disabled="loading || legalConsentEntryBlocked" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
     </div>
 
-    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="loginTermsBlocked && legalConsentDisplayMode !== 'modal'" />
+    <AuthOAuthButtons v-if="!isBindMode && !showRegisterMode" :disabled="legalConsentEntryBlocked" />
 
     <div class="form-footer">
       <p class="help-text">{{ locale.platformNote }}</p>
@@ -501,6 +501,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLegalConsentPrompt } from '~/composables/useLegalConsentPrompt'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -616,6 +617,8 @@ const password = ref('')
 const loginTermsAccepted = ref(false)
 const legalConsentActive = computed(() => legalConsentEnabled.value && legalConsentDocuments.value.length > 0 && (!isBindMode.value || showCreateMode.value))
 const loginTermsBlocked = computed(() => legalConsentActive.value && !loginTermsAccepted.value)
+// 认证入口（含发码按钮）的条款拦截：复选框模式未勾选即禁用；弹窗模式改为提交时弹窗确认，不拦截入口
+const legalConsentEntryBlocked = computed(() => loginTermsBlocked.value && legalConsentDisplayMode.value !== 'modal')
 const confirmPassword = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -687,6 +690,7 @@ const bindConfirmMessage = computed(() => {
 const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
+const { canAccessAdmin } = usePermissions()
 const { ensureLegalConsent, ensureLegalConsentForRegister } = useLegalConsentPrompt()
 
 // 只允许站内绝对路径，避免登录参数被用于开放重定向。
@@ -762,7 +766,7 @@ const redirectAfterLogin = async () => {
   if (auth.user.value?.requirePasswordChange) {
     return navigateTo('/change-password')
   }
-  return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+  return navigateTo(getSafeRedirect(canAccessAdmin.value ? '/dashboard' : '/'))
 }
 
 const handle2FASuccess = async () => {

@@ -1,4 +1,5 @@
 import { useAuth } from '~/composables/useAuth'
+import { usePermissions } from '~/composables/usePermissions'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const { isAuthenticated, initAuth, user } = useAuth()
@@ -34,5 +35,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     // 保存目标路径用于登录后重定向
     const redirect = to.fullPath
     return navigateTo(`/login?redirect=${encodeURIComponent(redirect)}`)
+  }
+
+  // 后台入口按权限码放行，普通用户直接访问 /dashboard 回首页
+  if (isAuthenticated.value && to.path.startsWith('/dashboard')) {
+    const { canAccessAdmin } = usePermissions()
+    if (!canAccessAdmin.value) {
+      return navigateTo('/')
+    }
   }
 })

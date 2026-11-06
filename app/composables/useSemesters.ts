@@ -340,6 +340,7 @@ export function useSemesters() {
       const data = await response.json()
       if (data.success) {
         semesters.value = data.data
+        currentSemester.value = semesters.value.find((semester) => semester.isActive) || null
       }
     } catch (err: any) {
       console.error('获取学期选项失败:', err)

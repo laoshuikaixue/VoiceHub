@@ -1,0 +1,1328 @@
+{
+  "_meta": {
+    "generatedFrom": "1d5dd20bf9eb7659af9c87efb75a2559f21002cf",
+    "generatedAt": "2026-10-31",
+    "note": "重构前每个后台端点的放行角色集合（由端点内联判定推导，[param] 归一为 42，index 省略）；P2 删除内联判定后以此为唯一基线"
+  },
+  "endpoints": {
+    "GET /api/admin/activities": {
+      "file": "activities.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/api-keys/42": {
+      "file": "api-keys/[id].delete.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/api-keys/42": {
+      "file": "api-keys/[id].get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "PUT /api/admin/api-keys/42": {
+      "file": "api-keys/[id].put.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/api-keys": {
+      "file": "api-keys/index.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/api-keys": {
+      "file": "api-keys/index.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/api-keys/logs": {
+      "file": "api-keys/logs.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/auto-config": {
+      "file": "backup/auto-config.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "PUT /api/admin/backup/auto-config": {
+      "file": "backup/auto-config.put.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/clear": {
+      "file": "backup/clear.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "DELETE /api/admin/backup/delete/42": {
+      "file": "backup/delete/[filename].delete.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/download/42": {
+      "file": "backup/download/[filename].get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/download": {
+      "file": "backup/download.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/export": {
+      "file": "backup/export.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/github-file": {
+      "file": "backup/github-file.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/github-history": {
+      "file": "backup/github-history.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/history-clear": {
+      "file": "backup/history-clear.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/history": {
+      "file": "backup/history.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/backup/list": {
+      "file": "backup/list.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/restore-chunk": {
+      "file": "backup/restore-chunk.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/restore": {
+      "file": "backup/restore.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/test-email": {
+      "file": "backup/test-email.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/test-github": {
+      "file": "backup/test-github.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/test-s3": {
+      "file": "backup/test-s3.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/test-telegram": {
+      "file": "backup/test-telegram.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/test-webdav": {
+      "file": "backup/test-webdav.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/backup/upload": {
+      "file": "backup/upload.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "DELETE /api/admin/blacklist/42": {
+      "file": "blacklist/[id].delete.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/blacklist/42": {
+      "file": "blacklist/[id].patch.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/blacklist": {
+      "file": "blacklist/index.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/blacklist": {
+      "file": "blacklist/index.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/card-codes/42": {
+      "file": "card-codes/[id].put.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/card-codes/assign": {
+      "file": "card-codes/assign.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "GET /api/admin/card-codes/assignments": {
+      "file": "card-codes/assignments.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/card-codes/create": {
+      "file": "card-codes/create.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/card-codes/delete": {
+      "file": "card-codes/delete.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/card-codes/export": {
+      "file": "card-codes/export.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/card-codes": {
+      "file": "card-codes/index.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/card-codes/recipients-tree": {
+      "file": "card-codes/recipients-tree.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "GET /api/admin/card-codes/recipients": {
+      "file": "card-codes/recipients.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/card-codes/recycle": {
+      "file": "card-codes/recycle.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "GET /api/admin/card-codes/redeem-logs": {
+      "file": "card-codes/redeem-logs.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/card-codes/update": {
+      "file": "card-codes/update.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/database/cleanup": {
+      "file": "database/cleanup.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "verifyAdminAuth"
+    },
+    "GET /api/admin/database/performance": {
+      "file": "database/performance.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "verifyAdminAuth"
+    },
+    "GET /api/admin/database/pool-status": {
+      "file": "database/pool-status.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "verifyAdminAuth"
+    },
+    "POST /api/admin/database/reset": {
+      "file": "database/reset.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/db-status": {
+      "file": "db-status.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/email-templates": {
+      "file": "email-templates/index.delete.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/email-templates": {
+      "file": "email-templates/index.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/email-templates": {
+      "file": "email-templates/index.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/email-templates/preview": {
+      "file": "email-templates/preview.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/fix-sequence": {
+      "file": "fix-sequence.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/grade-class/42": {
+      "file": "grade-class/[id].delete.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/grade-class/by-grade": {
+      "file": "grade-class/by-grade.delete.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/grade-class": {
+      "file": "grade-class/index.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/grade-class": {
+      "file": "grade-class/index.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/grade-class/initialize": {
+      "file": "grade-class/initialize.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/music-source-plugins/42/enabled": {
+      "file": "music-source-plugins/[id]/enabled.patch.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "POST /api/admin/music-source-plugins/42/refresh": {
+      "file": "music-source-plugins/[id]/refresh.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "POST /api/admin/music-source-plugins/42/test": {
+      "file": "music-source-plugins/[id]/test.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "DELETE /api/admin/music-source-plugins/42": {
+      "file": "music-source-plugins/[id].delete.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "PUT /api/admin/music-source-plugins/42": {
+      "file": "music-source-plugins/[id].put.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "GET /api/admin/music-source-plugins": {
+      "file": "music-source-plugins/index.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "POST /api/admin/music-source-plugins": {
+      "file": "music-source-plugins/index.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "PUT /api/admin/music-source-plugins/order": {
+      "file": "music-source-plugins/order.put.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "pluginAccess(只读以外的写路径 helper)"
+    },
+    "DELETE /api/admin/notifications/history/42": {
+      "file": "notifications/history/[batchId].delete.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "canSendSystemNotification"
+    },
+    "GET /api/admin/notifications/history/42": {
+      "file": "notifications/history/[batchId].get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "canSendSystemNotification"
+    },
+    "PUT /api/admin/notifications/history/42": {
+      "file": "notifications/history/[batchId].put.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "canSendSystemNotification"
+    },
+    "GET /api/admin/notifications/history": {
+      "file": "notifications/history.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "canSendSystemNotification"
+    },
+    "POST /api/admin/notifications/send": {
+      "file": "notifications/send.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "canSendSystemNotification"
+    },
+    "GET /api/admin/play-times/42": {
+      "file": "play-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "HEAD /api/admin/play-times/42": {
+      "file": "play-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/play-times/42": {
+      "file": "play-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/play-times/42": {
+      "file": "play-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/play-times/42": {
+      "file": "play-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/play-times/42": {
+      "file": "play-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/play-times": {
+      "file": "play-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/play-times": {
+      "file": "play-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "HEAD /api/admin/play-times": {
+      "file": "play-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/play-times": {
+      "file": "play-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/play-times": {
+      "file": "play-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/play-times": {
+      "file": "play-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/replay-requests": {
+      "file": "replay-requests/index.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/replay-requests/reject": {
+      "file": "replay-requests/reject.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/request-times/42": {
+      "file": "request-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "HEAD /api/admin/request-times/42": {
+      "file": "request-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/request-times/42": {
+      "file": "request-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/request-times/42": {
+      "file": "request-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/request-times/42": {
+      "file": "request-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/request-times/42": {
+      "file": "request-times/[id].ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/request-times": {
+      "file": "request-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/request-times": {
+      "file": "request-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "HEAD /api/admin/request-times": {
+      "file": "request-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/request-times": {
+      "file": "request-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/request-times": {
+      "file": "request-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/request-times": {
+      "file": "request-times/index.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/bulk-draft": {
+      "file": "schedule/bulk-draft.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/schedule/bulk-publish": {
+      "file": "schedule/bulk-publish.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/copy": {
+      "file": "schedule/copy.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/draft": {
+      "file": "schedule/draft.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/schedule/full": {
+      "file": "schedule/full.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/move-date": {
+      "file": "schedule/move-date.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/publish": {
+      "file": "schedule/publish.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/remove-all-date": {
+      "file": "schedule/remove-all-date.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/schedule/remove": {
+      "file": "schedule/remove.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/schedule/sequence": {
+      "file": "schedule/sequence.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/schedule/song-pool": {
+      "file": "schedule/song-pool.delete.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "GET /api/admin/schedule/song-pool": {
+      "file": "schedule/song-pool.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/schedule/song-pool": {
+      "file": "schedule/song-pool.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/schedule": {
+      "file": "schedule.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/semesters/42": {
+      "file": "semesters/[id].delete.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/semesters/42": {
+      "file": "semesters/[id].put.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/semesters": {
+      "file": "semesters/index.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/semesters": {
+      "file": "semesters/index.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/semesters/set-active": {
+      "file": "semesters/set-active.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/smtp/reload": {
+      "file": "smtp/reload.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/smtp/test-connection": {
+      "file": "smtp/test-connection.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/smtp/test-email": {
+      "file": "smtp/test-email.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/songs/batch-reject": {
+      "file": "songs/batch-reject.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/songs/cover": {
+      "file": "songs/cover.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/songs/delete": {
+      "file": "songs/delete.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/songs/duration": {
+      "file": "songs/duration.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "requireSongAdmin"
+    },
+    "POST /api/admin/songs/mark-played": {
+      "file": "songs/mark-played.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/songs/reject": {
+      "file": "songs/reject.post.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats/active-users": {
+      "file": "stats/active-users.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats/realtime": {
+      "file": "stats/realtime.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats/semester-comparison": {
+      "file": "stats/semester-comparison.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats/top-songs": {
+      "file": "stats/top-songs.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats/trends": {
+      "file": "stats/trends.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats/user-engagement": {
+      "file": "stats/user-engagement.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/stats": {
+      "file": "stats.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/system-board/events": {
+      "file": "system-board/events.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/system-board": {
+      "file": "system-board/index.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/system-board/runtime-clear": {
+      "file": "system-board/runtime-clear.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/system-settings/clear-aggregate-bindings": {
+      "file": "system-settings/clear-aggregate-bindings.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/system-settings/env-oauth-import": {
+      "file": "system-settings/env-oauth-import.post.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "GET /api/admin/system-settings/env-oauth": {
+      "file": "system-settings/env-oauth.get.ts",
+      "roles": [
+        "SUPER_ADMIN"
+      ],
+      "via": "role !== 'SUPER_ADMIN'"
+    },
+    "POST /api/admin/system-settings": {
+      "file": "system-settings/index.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/system-settings": {
+      "file": "system-settings/index.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "HEAD /api/admin/system-settings": {
+      "file": "system-settings/index.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/system-settings": {
+      "file": "system-settings/index.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PATCH /api/admin/system-settings": {
+      "file": "system-settings/index.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/system-settings": {
+      "file": "system-settings/index.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/users/42/approval": {
+      "file": "users/[id]/approval.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/users/42/reset-password": {
+      "file": "users/[id]/reset-password.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users/42/songs": {
+      "file": "users/[id]/songs.get.ts",
+      "roles": [
+        "SONG_ADMIN",
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['SONG_ADMIN','ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users/42/status-logs": {
+      "file": "users/[id]/status-logs.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/users/42/status": {
+      "file": "users/[id]/status.put.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "DELETE /api/admin/users/42": {
+      "file": "users/[id].delete.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users/42": {
+      "file": "users/[id].get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/users/42": {
+      "file": "users/[id].put.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/users/batch-grade-update": {
+      "file": "users/batch-grade-update.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "PUT /api/admin/users/batch-status": {
+      "file": "users/batch-status.put.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/users/batch-update": {
+      "file": "users/batch-update.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/users/batch": {
+      "file": "users/batch.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users/export": {
+      "file": "users/export.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users": {
+      "file": "users/index.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "POST /api/admin/users": {
+      "file": "users/index.post.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users/options": {
+      "file": "users/options.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    },
+    "GET /api/admin/users/status-logs": {
+      "file": "users/status-logs.get.ts",
+      "roles": [
+        "ADMIN",
+        "SUPER_ADMIN"
+      ],
+      "via": "内联角色名单 ['ADMIN','SUPER_ADMIN']"
+    }
+  }
+}

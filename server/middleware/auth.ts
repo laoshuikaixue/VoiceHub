@@ -6,12 +6,18 @@ import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
-import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
+import { getRolePermissionTemplatesCached, resolveRequirePasswordChange } from '../utils/system-settings-helper'
 import {
   isPublicApiPath,
   shouldBlockDuringPasswordChange,
   shouldBypassPublicApiAuthentication
 } from '../utils/auth-route-policy'
+import { resolvePermissionRouteGuard } from '../utils/admin-permission-routes'
+import {
+  hasAllPermissions,
+  hasAnyPermission,
+  resolveEffectivePermissions
+} from '~~/app/utils/admin-permissions'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
 import { BOT_ROUTES, SERVER_ERROR_CODES } from '../config/constants'
@@ -151,7 +157,8 @@ export default defineEventHandler(async (event) => {
         tokenVersion: users.tokenVersion,
         email: users.email,
         emailVerified: users.emailVerified,
-        legalConsentVersion: users.legalConsentVersion
+        legalConsentVersion: users.legalConsentVersion,
+        permissions: users.permissions
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -289,6 +296,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+    const perms = resolveEffectivePermissions(user, await getRolePermissionTemplatesCached())
     event.context.user = {
       id: user.id,
       username: user.username,
@@ -296,6 +304,7 @@ export default defineEventHandler(async (event) => {
       grade: user.grade,
       class: user.class,
       role: user.role,
+      perms,
       status: user.status,
       passwordChangedAt: user.passwordChangedAt,
       forcePasswordChange: user.forcePasswordChange,
@@ -318,18 +327,25 @@ export default defineEventHandler(async (event) => {
       )
     }
 
-    // 检查管理员专用路由
-    if (
-      pathname.startsWith('/api/admin') &&
-      !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
-    ) {
-      return sendError(
-        event,
-        createError({
-          statusCode: 403,
-          message: '需要管理员权限'
-        })
-      )
+    // 后台准入由集中守卫表决定：站点级闸门码 + 域动作码，未登记的写操作默认拒绝。
+    const routeGuard = resolvePermissionRouteGuard(pathname, method)
+    if (routeGuard) {
+      const denied =
+        routeGuard.deny ||
+        !hasAllPermissions(perms, routeGuard.all) ||
+        !hasAnyPermission(perms, routeGuard.any)
+
+      if (denied) {
+        if (routeGuard.fallback) {
+          console.warn(`[Auth] 后台路由缺少权限守卫登记: ${method} ${pathname}`)
+        }
+        return sendError(
+          event,
+          createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '权限不足', {
+            required: routeGuard.any
+          })
+        )
+      }
     }
   } catch (error: any) {
     // 仅令牌校验失败才视为登录态失效；数据库瞬断等异常不得误清合法会话 Cookie。

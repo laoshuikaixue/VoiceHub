@@ -1,12 +1,13 @@
 import { defineEventHandler, readBody } from 'h3'
 import { z } from 'zod'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { GIT_API_MODES, SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
+import { buildRepoFilePath, parseGitRepo } from '~~/server/utils/githubGitClient'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 /** 备份配置结构校验 */
@@ -28,6 +29,15 @@ const backupConfigSchema = z.object({
       password: z.string().optional(),
       path: z.string()
     }),
+    github: z.object({
+      enabled: z.boolean(),
+      apiBase: z.string(),
+      repo: z.string(),
+      branch: z.string(),
+      path: z.string(),
+      token: z.string().optional(),
+      apiMode: z.enum(GIT_API_MODES).optional()
+    }),
     telegram: z.object({
       enabled: z.boolean(),
       botToken: z.string().optional(),
@@ -44,6 +54,7 @@ const backupConfigSchema = z.object({
 const SECRET_FIELDS: Record<string, string[]> = {
   s3: ['secretKey'],
   webdav: ['password'],
+  github: ['token'],
   telegram: ['botToken']
 }
 
@@ -62,11 +73,6 @@ function mergeSecrets(incoming: any, existing: any): any {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以修改自动备份配置')
-  }
-
   const body = await readBody(event)
   const { enabled, config } = body
 
@@ -83,6 +89,21 @@ export default defineEventHandler(async (event) => {
     // 拦截指向云元数据/内部域名的备份目标，防止 SSRF
     await assertSafeOutboundUrl(config.methods?.s3?.endpoint, 'S3 endpoint')
     await assertSafeOutboundUrl(config.methods?.webdav?.url, 'WebDAV url')
+    const github = config.methods?.github
+    if (github?.enabled) {
+      // 启用时缺地址会让定时备份整月静默失败，不能拖到执行时才报错
+      if (!github.apiBase?.trim() || !github.repo?.trim()) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '启用 Git 仓库备份必须填写 API 地址与仓库')
+      }
+      await assertSafeOutboundUrl(github.apiBase, 'GitHub API 地址')
+      // 仓库与目录写错会让定时备份整月静默失败，保存时即拒绝
+      try {
+        parseGitRepo(github.repo)
+        buildRepoFilePath(github.path, 'probe.json')
+      } catch (error: any) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, error.message)
+      }
+    }
   }
 
   const [existing] = await db.select({

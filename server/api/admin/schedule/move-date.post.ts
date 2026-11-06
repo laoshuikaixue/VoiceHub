@@ -12,14 +12,6 @@ const parsePlayTimeId = (raw: unknown): number | null => {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要歌曲管理员及以上权限'
-    })
-  }
-
   const body = await readBody(event)
   const fromDate = typeof body?.fromDate === 'string' ? body.fromDate.trim() : ''
   const toDate = typeof body?.toDate === 'string' ? body.toDate.trim() : ''

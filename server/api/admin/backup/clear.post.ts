@@ -29,14 +29,7 @@ import { and, eq, inArray, isNull, ne, notInArray, or } from 'drizzle-orm'
 import { pluginClearOrder } from '~~/server/utils/music-source-plugins/backup'
 
 export default defineEventHandler(async (event) => {
-  // 验证管理员权限
   const user = event.context.user
-  if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({
-      statusCode: 403,
-      message: '只有超级管理员可以清空数据库'
-    })
-  }
 
   try {
     const body = await readBody(event)

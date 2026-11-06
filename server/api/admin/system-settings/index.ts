@@ -1,27 +1,14 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { maskSystemSettingsSecrets } from './secretMask'
 import { stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { isAdminSettingsScope, pickScopeSettings } from '~~/server/utils/admin-settings-scope'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证和权限
   const user = event.context.user
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
-  }
-
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '只有管理员才能查看系统设置'
-    })
-  }
 
   try {
     // 系统设置包含敏感配置，始终从数据库读取。
@@ -70,9 +57,11 @@ export default defineEventHandler(async (event) => {
       settings = newSettingsResult[0]
     }
 
-    const masked = maskSystemSettingsSecrets(settings)
+    const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    const scope = event.context.adminSettingsScope
+    if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)
     // 普通管理员不回传超管专属配置（凭据、隐私与账号安全策略）
-    return user.role === 'SUPER_ADMIN' ? masked : stripSuperAdminOnlySettingFields(masked)
+    return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {
     console.error('获取系统设置失败:', error)
     throw createError({

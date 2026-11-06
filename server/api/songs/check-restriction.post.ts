@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { db, schedules, semesters, songs } from '~/drizzle/db'
 import { and, eq, gte, gt, lte, or } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
     return respond(allowedChecks)
   }
 
-  const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
+  const isAdmin = hasAdminPermission(user, 'songs:bypass-limits')
 
   const settings = await getSystemSettingsCached()
   const restrictionPolicy = resolveSubmissionRestrictionPolicy(settings)

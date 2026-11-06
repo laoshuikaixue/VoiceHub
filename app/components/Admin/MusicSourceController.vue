@@ -6,16 +6,16 @@
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ t.title }}</h2>
         <p class="text-xs text-text-tertiary mt-1">{{ t.description }}</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div v-if="canReadPlatforms" class="flex items-center gap-3">
         <button
-          :disabled="loading || saving"
+          :disabled="loading || saving || !canWritePlatforms || !configLoaded"
           class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
           @click="resetForm"
         >
           <RotateCcw :size="14" /> {{ t.reset }}
         </button>
         <button
-          :disabled="loading || saving"
+          :disabled="loading || saving || !canWritePlatforms || !configLoaded"
           class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           @click="saveConfig"
         >
@@ -32,6 +32,7 @@
       </div>
     </div>
 
+    <MusicSourcePlugins />
     <!-- 加载状态 -->
     <div
       v-if="loading"
@@ -41,10 +42,9 @@
       <p class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ t.loading }}</p>
     </div>
 
-    <div v-else class="space-y-6">
-      <MusicSourcePlugins />
+    <div v-else-if="canReadPlatforms" class="space-y-6">
       <!-- 平台开关 -->
-      <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
+      <fieldset :disabled="!canWritePlatforms || !configLoaded" class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
           <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
             <ToggleLeft :size="16" class="text-warning" /> {{ t.switchTitle }}
@@ -87,10 +87,10 @@
             </button>
           </div>
         </div>
-      </div>
+      </fieldset>
 
       <!-- 平台排序 -->
-      <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
+      <fieldset :disabled="!canWritePlatforms || !configLoaded" class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-5">
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
           <h3 class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
             <GripVertical :size="16" class="text-primary" /> {{ t.orderTitle }}
@@ -115,7 +115,7 @@
                   ? 'border-border-secondary bg-bg-secondary-40'
                   : 'border-border-tertiary bg-bg-secondary-70 opacity-60'
               ]"
-              draggable="true"
+              :draggable="canWritePlatforms && configLoaded"
               @dragstart="handleDragStart($event, idx)"
               @dragend="handleDragEnd($event)"
               @dragover.prevent
@@ -143,7 +143,7 @@
             </div>
           </TransitionGroup>
         </div>
-      </div>
+      </fieldset>
     </div>
   </div>
 </template>
@@ -160,6 +160,7 @@ import {
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import MusicSourcePlugins from '~/components/Admin/MusicSourcePlugins.vue'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
+import { usePermissions } from '~/composables/usePermissions'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
@@ -168,6 +169,10 @@ import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 const { admin, siteConfig, currentLocale } = useLocale()
 const { refreshPlatformConfig } = usePlatformConfig()
 const { localize } = useServerErrors()
+const { can } = usePermissions()
+const canReadPlatforms = computed(() => can('music-source:read') || can('system-settings:read'))
+const canWritePlatforms = computed(() => can('music-source:write') || can('system-settings:write'))
+const configLoaded = ref(false)
 
 const showNotification = (msg, type) => {
   if (window.$showNotification) {
@@ -294,11 +299,13 @@ const resetPlatformOrder = () => {
 }
 
 const loadConfig = async () => {
+  if (!canReadPlatforms.value) { loading.value = false; return }
   try {
     loading.value = true
-    const data = await $fetch('/api/admin/system-settings', { credentials: 'include' })
+    const data = await $fetch('/api/admin/system-settings/music-source', { credentials: 'include' })
     enabledPlatforms.value = parsePlatformArray(data.enabledPlatforms, false)
     platformOrder.value = parsePlatformArray(data.platformOrder, true)
+    configLoaded.value = true
   } catch (error) {
     console.error('加载音源配置失败:', error)
     showNotification(t.value.fetchFailed || '加载配置失败', 'error')
@@ -311,6 +318,7 @@ const loadConfig = async () => {
 
 // 保存配置
 const saveConfig = async () => {
+  if (!canWritePlatforms.value || !configLoaded.value) return
   try {
     saving.value = true
     const configToSave = {
@@ -318,7 +326,7 @@ const saveConfig = async () => {
       platformOrder: JSON.stringify(platformOrder.value)
     }
 
-    await $fetch('/api/admin/system-settings', {
+    await $fetch('/api/admin/system-settings/music-source', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

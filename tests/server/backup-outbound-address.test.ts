@@ -12,6 +12,9 @@ const OUTBOUND_URL = read('../../server/utils/outbound-url.ts')
 const AUTO_CONFIG_PUT = read('../../server/api/admin/backup/auto-config.put.ts')
 const TEST_S3 = read('../../server/api/admin/backup/test-s3.post.ts')
 const TEST_WEBDAV = read('../../server/api/admin/backup/test-webdav.post.ts')
+const GITHUB_HISTORY = read('../../server/api/admin/backup/github-history.get.ts')
+const GITHUB_FILE = read('../../server/api/admin/backup/github-file.get.ts')
+const TEST_GITHUB = read('../../server/api/admin/backup/test-github.post.ts')
 
 test('链路本地/组播/保留段被绝对禁止', () => {
   for (const address of [
@@ -73,9 +76,20 @@ test('地址复核同时覆盖私网开关', () => {
 test('全部调用点等待异步校验', () => {
   assert.match(AUTO_CONFIG_PUT, /await assertSafeOutboundUrl\(config\.methods\?\.s3\?\.endpoint/)
   assert.match(AUTO_CONFIG_PUT, /await assertSafeOutboundUrl\(config\.methods\?\.webdav\?\.url/)
+  assert.match(AUTO_CONFIG_PUT, /await assertSafeOutboundUrl\(github\.apiBase/)
   assert.match(TEST_S3, /await assertSafeOutboundUrl\(endpoint/)
   assert.match(TEST_WEBDAV, /await assertSafeOutboundUrl\(url/)
-  for (const source of [AUTO_CONFIG_PUT, TEST_S3, TEST_WEBDAV]) {
+  assert.match(TEST_GITHUB, /await assertSafeOutboundUrl\(apiBase/)
+  assert.match(GITHUB_HISTORY, /await assertSafeOutboundUrl\(github\.apiBase/)
+  assert.match(GITHUB_FILE, /await assertSafeOutboundUrl\(github\.apiBase/)
+  for (const source of [AUTO_CONFIG_PUT, TEST_S3, TEST_WEBDAV, TEST_GITHUB, GITHUB_HISTORY, GITHUB_FILE]) {
     assert.doesNotMatch(source, /^\s*assertSafeOutboundUrl\(/m, '存在未 await 的调用')
   }
+})
+
+test('仓库备份文件读取限定备份文件名并放宽响应上限', () => {
+  // 只允许已配置目录下的备份产物，避免端点变成仓库任意文件读取器
+  assert.match(GITHUB_FILE, /isSafeBackupFilename\(filename\)/)
+  assert.match(GITHUB_FILE, /github\.path/)
+  assert.match(OUTBOUND_URL, /options\.maxBytes && options\.maxBytes > 0 \? options\.maxBytes : 1024 \* 1024/)
 })

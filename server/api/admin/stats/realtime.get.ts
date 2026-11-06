@@ -5,16 +5,7 @@ import { count, eq, gte, inArray } from 'drizzle-orm'
 import { getBeijingHour, getBeijingStartOfDay } from '~/utils/timeUtils'
 import { resolveAvatarSource } from '~~/server/utils/user-avatar'
 
-export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
-
+export default defineEventHandler(async () => {
   try {
     // 获取当前时间相关的日期
     const now = new Date()

@@ -1,5 +1,8 @@
+import {
+  assertAccountCredentialsWithinOperator,
+  withPermissionTransaction
+} from '~~/server/utils/permission-admin'
 import { eq } from 'drizzle-orm'
-import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { updateUserPassword } from '~~/server/services/userService'
 import {
@@ -11,14 +14,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
 
   // 安全获取ID参数
   const params = event.context.params || {}
@@ -41,58 +37,63 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 查询目标用户用于越级保护
-    const targetUsers = await db
-      .select({ id: users.id, role: users.role })
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1)
-    const targetUser = targetUsers[0]
-    if (!targetUser) {
-      throw createError({
-        statusCode: 404,
-        message: '用户不存在'
-      })
-    }
+    return await withPermissionTransaction(event, async (tx, templates) => {
+      // 查询目标用户用于越级保护
+      const targetUsers = await tx
+        .select({ id: users.id, role: users.role, permissions: users.permissions })
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1)
+      const targetUser = targetUsers[0]
+      if (!targetUser) {
+        throw createError({
+          statusCode: 404,
+          message: '用户不存在'
+        })
+      }
 
-    // 禁止对自身进行密码重置（通过用户管理界面）
-    if (id === user.id) {
-      throw createError({
-        statusCode: 400,
-        message: '禁止在用户管理中重置自己的密码'
-      })
-    }
+      // 禁止对自身进行密码重置（通过用户管理界面）
+      if (id === user.id) {
+        throw createError({
+          statusCode: 400,
+          message: '禁止在用户管理中重置自己的密码'
+        })
+      }
 
-    // 禁止重置系统初始超级管理员 (ID: 1)
-    if (targetUser.id === 1) {
-      throw createError({
-        statusCode: 403,
-        message: '无法重置系统初始超级管理员的密码'
-      })
-    }
+      // 禁止重置系统初始超级管理员 (ID: 1)
+      if (targetUser.id === 1) {
+        throw createError({
+          statusCode: 403,
+          message: '无法重置系统初始超级管理员的密码'
+        })
+      }
 
-    // 越级保护：目标用户是 SUPER_ADMIN 时，操作者必须是 SUPER_ADMIN
-    if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足：普通管理员无法重置超级管理员密码'
-      })
-    }
+      // 越级保护：目标用户是 SUPER_ADMIN 时，操作者必须是 SUPER_ADMIN
+      if (targetUser.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+        throw createError({
+          statusCode: 403,
+          message: '权限不足：普通管理员无法重置超级管理员密码'
+        })
+      }
 
-    // 使用统一服务重置密码 (forceReset = true)
-    await updateUserPassword(id, newPassword, {
-      forceReset: true,
-      auditContext: {
-        action: PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD,
-        actorId: user.id,
-        ...getPasswordAuditContext(event)
+      assertAccountCredentialsWithinOperator(targetUser, templates, user.perms ?? [])
+
+      // 使用统一服务重置密码 (forceReset = true)
+      await updateUserPassword(id, newPassword, {
+        forceReset: true,
+        executor: tx,
+        auditContext: {
+          action: PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD,
+          actorId: user.id,
+          ...getPasswordAuditContext(event)
+        }
+      })
+
+      return {
+        success: true,
+        message: '密码重置成功'
       }
     })
-
-    return {
-      success: true,
-      message: '密码重置成功'
-    }
   } catch (error) {
     await recordPasswordAudit(
       event,

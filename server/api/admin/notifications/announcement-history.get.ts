@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { announcementHistory } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { canSendSystemNotification } from '~~/server/utils/important-notification-policy'
+import { hasAdminPermission } from '~/utils/admin-permissions'
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 100
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '需要登录才能查看公告历史')
   }
 
-  if (!canSendSystemNotification(user.role)) {
+  if (!hasAdminPermission(user, 'notifications:write')) {
     throw createApiError(
       403,
       SERVER_ERROR_CODES.NOTIFICATION_ADMIN_REQUIRED,

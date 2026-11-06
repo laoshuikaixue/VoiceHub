@@ -33,8 +33,11 @@ const lyricCache = new Map<string, Promise<any>>()
 const lyricProgressSubscribers = new Map<string, Set<LyricProgressCallback>>()
 const LYRIC_CACHE_TTL = 60 * 1000
 
-/** AMLL 官方 TTML 接口：按平台 ID 查询，返回 JSON 中的 lyrics 文本 */
+/** AMLL 官方 TTML 接口：按平台 ID 或内部 ID 查询，返回 JSON 中的 lyrics 文本 */
 const AMLL_OFFICIAL_API = 'https://api.amll.dev/v1/lyrics/get'
+
+/** AMLL 官方 TTML 搜索接口：按歌名返回候选条目，仅官方提供，镜像为静态文件服务不含搜索 */
+const AMLL_SEARCH_API = 'https://api.amll.dev/v1/lyrics/search'
 
 /** 解析官方接口响应，取 data.lyrics；格式异常或未收录时返回空串 */
 const parseOfficialAmllResponse = (raw: unknown): string => {
@@ -725,30 +728,79 @@ export const useMusicSources = () => {
           // 模板缺 %s 时无法拼出地址，视为未配置
           const useMirror = mirror.includes('%s')
           const official = !useMirror
-          let url: string
-          if (useMirror) {
-            const dir = platform === 'netease' ? 'ncm-lyrics' : 'qq-lyrics'
-            url = mirror.replace('%p', dir).replace('%s', encodeURIComponent(id.toString()))
-          } else {
-            const key = platform === 'netease' ? 'ncmMusicId' : 'qqMusicId'
-            url = `${AMLL_OFFICIAL_API}?${key}=${encodeURIComponent(id.toString())}`
+
+          // 按平台 ID 查询 TTML，命中返回正文，未命中返回空串
+          const fetchTtmlById = async (): Promise<string> => {
+            let url: string
+            if (useMirror) {
+              const dir = platform === 'netease' ? 'ncm-lyrics' : 'qq-lyrics'
+              url = mirror.replace('%p', dir).replace('%s', encodeURIComponent(id.toString()))
+            } else {
+              const key = platform === 'netease' ? 'ncmMusicId' : 'qqMusicId'
+              url = `${AMLL_OFFICIAL_API}?${key}=${encodeURIComponent(id.toString())}`
+            }
+
+            try {
+              const raw = await $fetch<string>(url, { responseType: 'text', timeout: 8000 })
+              const ttml = official ? parseOfficialAmllResponse(raw) : raw
+              return ttml && ttml.includes('<tt') ? ttml : ''
+            } catch (error: any) {
+              // 未收录返回 404，按无歌词处理，不当作异常
+              const status = error?.statusCode ?? error?.response?.status
+              if (status !== 404) {
+                console.warn('[getLyrics] AMLL TTML 按 ID 获取失败:', error?.message || error)
+              }
+              return ''
+            }
           }
 
-          try {
-            const raw = await $fetch<string>(url, { responseType: 'text', timeout: 8000 })
-            const ttml = official ? parseOfficialAmllResponse(raw) : raw
-            if (ttml && ttml.includes('<tt')) {
-              if ((resultData.lrc || resultData.yrc) && !validateTtml(ttml)) return
-              resultData.ttml = ttml
-              hasResult = true
-              if (!progressive || ttmlValidated) emitProgress('amll')
+          // 官方接口下 ID 未命中时按歌名搜索兜底，覆盖 AMLL 库以另一 ID 收录同曲的情况
+          const searchTtmlByTitle = async (): Promise<string> => {
+            const title = (meta?.title || '').trim()
+            if (!title) return ''
+            try {
+              const query = new URLSearchParams({ musicName: title, pageSize: '50' })
+              const searchRaw = await $fetch<string>(`${AMLL_SEARCH_API}?${query}`, {
+                responseType: 'text',
+                timeout: 8000
+              })
+              const items = JSON.parse(searchRaw)?.data?.items
+              if (!Array.isArray(items) || items.length === 0) return ''
+              // 每个曲名作为独立候选，交由现有权威比对函数按标题/歌手/专辑/版本标记筛选
+              const candidates = items.flatMap((item: any) =>
+                (item.musicNames || []).map((name: string) => ({
+                  title: name,
+                  artist: (item.artistNames || []).join('&'),
+                  album: (item.albumNames || [])[0] || '',
+                  _amllId: item.id
+                }))
+              )
+              const best = pickBestLyricCandidate(candidates, {
+                title: meta?.title,
+                artist: meta?.artist,
+                album: meta?.album,
+                duration: meta?.duration
+              })
+              if (!best?._amllId) return ''
+              const lyricRaw = await $fetch<string>(`${AMLL_OFFICIAL_API}?id=${best._amllId}`, {
+                responseType: 'text',
+                timeout: 8000
+              })
+              const ttml = parseOfficialAmllResponse(lyricRaw)
+              return ttml && ttml.includes('<tt') ? ttml : ''
+            } catch (error: any) {
+              console.warn('[getLyrics] AMLL TTML 按歌名搜索失败:', error?.message || error)
+              return ''
             }
-          } catch (error: any) {
-            // 未收录返回 404，按无歌词处理，不当作异常
-            const status = error?.statusCode ?? error?.response?.status
-            if (status !== 404) {
-              console.warn('[getLyrics] AMLL TTML 获取失败:', error?.message || error)
-            }
+          }
+
+          let ttml = await fetchTtmlById()
+          if (!ttml && official) ttml = await searchTtmlByTitle()
+          if (ttml) {
+            if ((resultData.lrc || resultData.yrc) && !validateTtml(ttml)) return
+            resultData.ttml = ttml
+            hasResult = true
+            if (!progressive || ttmlValidated) emitProgress('amll')
           }
         }
 

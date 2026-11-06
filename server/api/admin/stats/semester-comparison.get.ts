@@ -1,16 +1,7 @@
 import { createError, defineEventHandler } from 'h3'
 import { and, count, db, eq, exists, schedules, semesters, songs, votes } from '~/drizzle/db'
 
-export default defineEventHandler(async (event) => {
-  // 检查认证和权限
-  const user = event.context.user
-  if (!user || !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
-
+export default defineEventHandler(async () => {
   try {
     // 获取所有学期
     const semesterList = await db.select().from(semesters).orderBy(semesters.createdAt)

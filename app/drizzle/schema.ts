@@ -43,6 +43,8 @@ export const users = pgTable('User', {
   remark: text('remark'),
   legalConsentVersion: text('legal_consent_version'),
   legalConsentAt: timestamp('legal_consent_at'),
+  // 后台权限码：NULL 跟随角色模板；数组为显式授予，`!` 前缀为显式拒绝
+  permissions: jsonb('permissions').$type<string[] | null>(),
 }, (table) => [uniqueIndex('User_username_unique').on(table.username)]);
 
 // 登录会话表，id 与 JWT 的 jti 一致
@@ -521,6 +523,8 @@ export const systemSettings = pgTable('SystemSettings', {
   // 平台管理配置（仅内置音源；插件音源由插件管理的启用状态与排序控制，不入库）
   enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),
+  // 角色权限模板：按角色存权限码数组，NULL 时使用 app/utils/admin-permissions 内置默认模板
+  rolePermissionTemplates: jsonb('rolePermissionTemplates').$type<Record<string, string[]> | null>(),
 });
 
 // 歌曲黑名单表

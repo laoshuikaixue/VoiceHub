@@ -129,6 +129,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 平台管理
   enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
   platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
+  // 角色权限模板：null 表示使用 app/utils/admin-permissions 内置默认模板
+  rolePermissionTemplates: null,
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [

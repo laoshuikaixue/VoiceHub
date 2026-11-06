@@ -1,3 +1,4 @@
+import { hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime, getBeijingTimeISOString } from '~/utils/timeUtils'
@@ -137,7 +138,7 @@ export default defineEventHandler(async (event) => {
       ? { success: false, user: null }
       : await verifyUserAuth(event)
     const user = authResult.success ? authResult.user : null
-    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
+    const isAdmin = Boolean(user && hasAdminPermission(user, 'schedule:read'))
     authenticatedUser = user
     authenticatedIsAdmin = isAdmin
 

@@ -9,14 +9,7 @@ import {
 } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '需要管理员权限'
-    })
-  }
 
   const body = await readBody(event)
   const { type, value, reason } = body

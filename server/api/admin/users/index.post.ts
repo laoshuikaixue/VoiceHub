@@ -1,5 +1,10 @@
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { canAssignRole, getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
+import {
+  assertAccountPermissionExpansion,
+  withPermissionTransaction
+} from '~~/server/utils/permission-admin'
 import bcrypt from 'bcryptjs'
-import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
@@ -12,14 +17,7 @@ const normalizeOptionalText = (value: unknown) => {
 }
 
 export default defineEventHandler(async (event) => {
-  // 检查认证和权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '没有权限访问'
-    })
-  }
 
   const body = await readBody(event)
   const normalizedName = normalizeRequiredText(body.name)
@@ -40,87 +38,77 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 检查用户名是否已存在
-    const existingUserResult = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, normalizedUsername))
-      .limit(1)
-    const existingUser = existingUserResult[0]
+    return await withPermissionTransaction(event, async (tx, templates) => {
+      // 检查用户名是否已存在
+      const existingUserResult = await tx
+        .select()
+        .from(users)
+        .where(eq(users.username, normalizedUsername))
+        .limit(1)
+      const existingUser = existingUserResult[0]
 
-    if (existingUser) {
-      throw createError({
-        statusCode: 400,
-        message: '用户名已存在'
-      })
-    }
-
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(initialPassword, 10)
-
-    // 角色权限控制
-    let validRole = 'USER'
-    if (body.role && ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
-      // 超级管理员可以创建任何角色的用户
-      if (user.role === 'SUPER_ADMIN') {
-        validRole = body.role
-      }
-      // 管理员只能创建管理员以下的角色（USER, SONG_ADMIN）
-      else if (user.role === 'ADMIN') {
-        if (['USER', 'SONG_ADMIN'].includes(body.role)) {
-          validRole = body.role
-        } else {
-          throw createError({
-            statusCode: 403,
-            message: '管理员只能创建用户和歌曲管理员角色'
-          })
-        }
-      }
-      // 其他角色不能创建用户
-      else {
+      if (existingUser) {
         throw createError({
-          statusCode: 403,
-          message: '没有权限创建用户'
+          statusCode: 400,
+          message: '用户名已存在'
         })
       }
-    }
 
-    // 状态验证
-    let validStatus = 'active'
-    if (body.status && ['active', 'withdrawn', 'graduate'].includes(body.status)) {
-      validStatus = body.status
-    }
+      // 加密密码
+      const hashedPassword = await bcrypt.hash(initialPassword, 10)
 
-    // 创建用户
-    const newUserResult = await db
-      .insert(users)
-      .values({
-        name: normalizedName,
-        username: normalizedUsername,
-        password: hashedPassword,
-        role: validRole,
-        status: validStatus as 'active' | 'withdrawn' | 'graduate',
-        grade: normalizeOptionalText(body.grade),
-        class: normalizeOptionalText(body.class)
-      })
-      .returning({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-        role: users.role,
-        status: users.status,
-        grade: users.grade,
-        class: users.class,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
-      })
-    const newUser = newUserResult[0]
+      let validRole = 'USER'
+      if (body.role && body.role !== 'USER') {
+        if (!getRoleTemplateKeys(templates).includes(body.role) || !canAssignRole(user, body.role, getRoleTemplateKeys(templates))) {
+          throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有分配该角色的权限')
+        }
+        validRole = body.role
+      }
 
-    return {
-      success: true,
-      user: newUser,
-      message: '用户创建成功'
-    }
+      // 状态验证
+      let validStatus = 'active'
+      if (body.status && ['active', 'withdrawn', 'graduate'].includes(body.status)) {
+        validStatus = body.status
+      }
+
+      assertAccountPermissionExpansion(
+        null,
+        { role: validRole, status: validStatus, permissions: null },
+        templates,
+        user.perms ?? []
+      )
+
+      // 创建用户
+      const newUserResult = await tx
+        .insert(users)
+        .values({
+          name: normalizedName,
+          username: normalizedUsername,
+          password: hashedPassword,
+          role: validRole,
+          status: validStatus as 'active' | 'withdrawn' | 'graduate',
+          grade: normalizeOptionalText(body.grade),
+          class: normalizeOptionalText(body.class)
+        })
+        .returning({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          role: users.role,
+          status: users.status,
+          grade: users.grade,
+          class: users.class,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        })
+      const newUser = newUserResult[0]
+
+      return {
+        success: true,
+        user: newUser,
+        message: '用户创建成功'
+      }
+    })
   } catch (error: any) {
     console.error('创建用户失败:', error)
     if (error?.statusCode) {

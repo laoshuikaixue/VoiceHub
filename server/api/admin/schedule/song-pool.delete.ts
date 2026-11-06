@@ -4,12 +4,9 @@ import { scheduleSongPool } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { fetchPoolCount } from '~~/server/utils/scheduleSongPool'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
-
   const query = getQuery(event)
   const songIdsRaw = query.songIds
 
