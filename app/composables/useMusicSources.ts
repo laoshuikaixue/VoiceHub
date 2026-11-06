@@ -17,7 +17,7 @@ import {
   type SourceStatus
 } from '~/utils/musicSources'
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
-import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
+import { evaluateLyricDataMatch, hasWordTiming } from '~/utils/lyric/lyricMatchQuality'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { getNeteaseCatalogResult } from '~/utils/neteaseCatalog'
 import { getNeteaseQualityLevel } from './useAudioQuality'
@@ -578,6 +578,8 @@ export const useMusicSources = () => {
         if (
           upgraded.data.yrc &&
           LYRIC_FORMAT_RANK.yrc < currentRank &&
+          // 平台偶尔会回传仅有行级时间戳的 YRC/QRC，归入 LRC 同级，不占真逐字的升级窗口
+          hasWordTiming(upgraded.data.yrc) &&
           tryAccept({ yrc: upgraded.data.yrc }, 'yrc')
         ) {
           currentData.yrc = upgraded.data.yrc
