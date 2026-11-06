@@ -89,7 +89,12 @@ const songRequestBodySchema = z.object({
     .optional()
     .nullable(),
   cardCode: z.string().trim().max(100, 'CARD_CODE_TOO_LONG').optional().nullable(),
-  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
+  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional(),
+  // 管理员代他人投稿时指定投稿人（仅管理员可用，其余角色忽略）
+  onBehalfOfUserId: z.preprocess(
+    (value) => (value === null || value === undefined || value === '' ? null : Number(value)),
+    z.number().int().positive('代投稿用户 ID 无效').nullable()
+  ).optional()
 })
 
 export async function requestSongForUser(
@@ -142,6 +147,24 @@ export async function requestSongForUser(
     const isAdmin = hasAdminPermission(permissionUser, 'songs:bypass-limits')
     const restrictionPolicy = resolveSubmissionRestrictionPolicy(systemSettingsData)
     const semesterRestrictionOn = restrictionPolicy.mode === 'semester' && !isAdmin
+
+    // 管理员代他人投稿：校验目标用户存在且可用，并把稿件归属到目标用户名下
+    let requesterId = user.id
+    const onBehalfId = requestBody.onBehalfOfUserId
+    if (['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role) && onBehalfId && onBehalfId !== user.id) {
+      const [targetUser] = await db
+        .select({ id: users.id, status: users.status })
+        .from(users)
+        .where(eq(users.id, onBehalfId))
+        .limit(1)
+      if (!targetUser) {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '被代投稿的用户不存在')
+      }
+      if (targetUser.status !== 'active') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '被代投稿的用户当前不可用')
+      }
+      requesterId = onBehalfId
+    }
 
     const isBilibili =
       requestBody.musicPlatform === 'bilibili' ||
@@ -537,11 +560,11 @@ export async function requestSongForUser(
         await tx
           .select({ id: users.id })
           .from(users)
-          .where(eq(users.id, user.id))
+          .where(eq(users.id, requesterId))
           .for('update')
 
         if (
-          await isLimitReached(tx as any, user.id, limitType, effectiveLimit, {
+          await isLimitReached(tx as any, requesterId, limitType, effectiveLimit, {
             excludeCardCodeRequests: excludeCardCodeRequestsFromLimit
           })
         ) {
@@ -635,7 +658,7 @@ export async function requestSongForUser(
         .values({
           title: requestBody.title,
           artist: requestBody.artist,
-          requesterId: user.id,
+          requesterId,
           preferredPlayTimeId: preferredPlayTime?.id || null,
           preferredPlayDate: playDate,
           semester: currentSemester,

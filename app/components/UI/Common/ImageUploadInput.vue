@@ -61,6 +61,13 @@
       :class="[inputClass, 'mt-2 disabled:cursor-not-allowed disabled:opacity-50']"
       @input="emit('update:modelValue', $event.target.value)"
     />
+    <ProgressBar
+      v-if="progressActive"
+      class="mt-2"
+      :percentage="progressPercentage"
+      :message="progressMessage"
+      :indeterminate="progressIndeterminate"
+    />
   </div>
 </template>
 
@@ -68,6 +75,8 @@
 import { ref } from 'vue'
 import { Upload, Camera, X, Image as ImageIcon } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
+import { useProgress } from '~/composables/useProgress'
+import ProgressBar from '~/components/UI/ProgressBar.vue'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -86,19 +95,39 @@ const toast = useToast()
 const fileInput = ref(null)
 const cameraInput = ref(null)
 
+// 图片处理进度（读取 → 压缩 → 生成）
+const {
+  percentage: progressPercentage,
+  message: progressMessage,
+  active: progressActive,
+  indeterminate: progressIndeterminate,
+  start: startProgress,
+  update: updateProgress,
+  complete: completeProgress,
+  reset: resetProgress
+} = useProgress()
+
 // 压缩为最长边 maxSize 的 PNG，保留透明背景并控制存储体积
 const compressImage = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        updateProgress(Math.min(30, Math.floor((event.loaded / event.total) * 30)), '读取图片...')
+      }
+    }
     reader.onload = () => {
+      updateProgress(35, '解析图片...')
       const img = new Image()
       img.onload = () => {
+        updateProgress(55, '压缩处理...')
         const scale = Math.min(1, props.maxSize / Math.max(img.width, img.height))
         const canvas = document.createElement('canvas')
         canvas.width = Math.max(1, Math.round(img.width * scale))
         canvas.height = Math.max(1, Math.round(img.height * scale))
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        updateProgress(80, '生成图片数据...')
         resolve(canvas.toDataURL('image/png'))
       }
       img.onerror = () => reject(new Error('图片读取失败'))
@@ -122,9 +151,13 @@ const handleFile = async (event) => {
     return
   }
   try {
-    emit('update:modelValue', await compressImage(file))
+    startProgress('处理图片...')
+    const dataUrl = await compressImage(file)
+    emit('update:modelValue', dataUrl)
+    completeProgress('图片处理完成')
   } catch (err) {
     console.error('处理图片失败:', err)
+    resetProgress()
     toast.error('图片处理失败')
   }
 }
