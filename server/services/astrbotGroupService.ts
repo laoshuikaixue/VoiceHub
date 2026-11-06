@@ -84,12 +84,9 @@ export async function enqueueAstrbotGroupEvent(
     }, eventKey)
     if (!umos.length) return 0
     const count = await queueToGroups(umos, title, safeContent, eventKey, settings.throttle)
-    // 仅在 serverless 部署且合并窗口为 0 时，入队后同步冲刷一次：
-    //  - serverless 无常驻定时器，不冲刷则群消息永远卡在队列表发不出去；
-    //  - 合并窗口为 0 ⇒ notifyAfter=入队时刻，刚写入的条目立即可被领取投递，
-    //    否则带未来的 notifyAfter 在 serverless 上无定时器兜底会丢失。
-    // 非 serverless（自托管）仍由后台 15s 定时器统一冲刷，保持原有合并/节流行；
-    // pull 模式 flushAstrbotGroupOutbox 内部早返回，此处调用为 no-op。
+    // serverless 下后台定时器被禁用，故入队后在此同步冲刷一次；
+    // 合并窗口须为 0，否则 notifyAfter 落在未来、无定时器兜底会永久丢失。
+    // 自托管（非 serverless）与 pull 模式不受影响 / 内部早返回。
     if (count > 0 && isServerlessRuntime() && settings.throttle.mergeWindowSeconds === 0) {
       try {
         await flushAstrbotGroupOutbox()
