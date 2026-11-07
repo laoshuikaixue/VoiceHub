@@ -8,6 +8,7 @@ import {
   PRIV_ROLE_TEMPLATE,
   canAccessAdminConsole,
   canAccessAdminPage,
+  canAssignRole,
   canUseAdminPage,
   hasPermission,
 } from '~/utils/admin-permissions'
@@ -45,9 +46,10 @@ export const usePermissions = () => {
   const isAdminOrAbove = computed(() => MANAGER_ROLES.includes(auth.user.value?.role || ''))
   const isSongAdminOrAbove = computed(() => ADMIN_CONSOLE_ROLES.includes(auth.user.value?.role || ''))
 
-  // 角色分配受独立权限码与受保护角色约束。
-  const canManageUserRole = (targetRole: string): boolean =>
-    targetRole !== 'SUPER_ADMIN' && can('users:assign-role')
+  // 角色分配受独立权限码与受保护角色约束，判定口径与后端 canAssignRole 一致
+  // availableRoles 传入含动态角色的完整名单时按其判定
+  const canManageUserRole = (targetRole: string, availableRoles?: readonly string[]): boolean =>
+    canAssignRole(auth.user.value, targetRole, availableRoles)
 
   // 检查是否可以打印排期
   const canPrintSchedule = computed(() => can('schedule:read'))

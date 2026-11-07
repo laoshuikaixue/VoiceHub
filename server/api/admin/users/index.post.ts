@@ -1,9 +1,17 @@
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { canAssignRole, getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
+import {
+  SUPER_ADMIN_ROLE,
+  canAssignRole,
+  getRoleTemplateKeys
+} from '~~/app/utils/admin-permissions'
 import {
   assertAccountPermissionExpansion,
+  assertSuperAdminCountInvariant,
+  assertSuperAdminRoleChangeAllowed,
+  recordSuperAdminRoleChange,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
+import { NEW_ACCOUNT_ID } from '~~/server/utils/permission-policy'
 import bcrypt from 'bcryptjs'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -38,7 +46,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    return await withPermissionTransaction(event, async (tx, templates) => {
+    const result = await withPermissionTransaction(event, async (tx, templates) => {
       // 检查用户名是否已存在
       const existingUserResult = await tx
         .select()
@@ -71,11 +79,27 @@ export default defineEventHandler(async (event) => {
         validStatus = body.status
       }
 
+      // 创建超管只能由现有超管执行，且需处于二次验证窗口内
+      await assertSuperAdminRoleChangeAllowed(event, user, null, validRole)
+
       assertAccountPermissionExpansion(
         null,
         { role: validRole, status: validStatus, permissions: null },
         templates,
         user.perms ?? []
+      )
+
+      await assertSuperAdminCountInvariant(
+        [
+          {
+            targetId: NEW_ACCOUNT_ID,
+            nextRow:
+              validStatus === 'active'
+                ? { id: NEW_ACCOUNT_ID, role: validRole, permissions: null }
+                : null
+          }
+        ],
+        tx
       )
 
       // 创建用户
@@ -87,6 +111,8 @@ export default defineEventHandler(async (event) => {
           password: hashedPassword,
           role: validRole,
           status: validStatus as 'active' | 'withdrawn' | 'graduate',
+          // 超管初始口令必须登录后修改
+          forcePasswordChange: validRole === SUPER_ADMIN_ROLE,
           grade: normalizeOptionalText(body.grade),
           class: normalizeOptionalText(body.class)
         })
@@ -106,9 +132,16 @@ export default defineEventHandler(async (event) => {
       return {
         success: true,
         user: newUser,
-        message: '用户创建成功'
+        grantedSuperAdmin: validRole === SUPER_ADMIN_ROLE
       }
     })
+
+    // 超管留痕与通知必须在事务提交后执行：内部走全局连接，在事务内会占用不上池
+    if (result.grantedSuperAdmin) {
+      await recordSuperAdminRoleChange(event, user, result.user, true)
+    }
+
+    return { success: true, user: result.user, message: '用户创建成功' }
   } catch (error: any) {
     console.error('创建用户失败:', error)
     if (error?.statusCode) {

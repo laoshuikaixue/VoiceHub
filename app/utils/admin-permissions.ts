@@ -27,6 +27,12 @@ export const PROTECTED_PRIV_CODES: readonly string[] = [
 export const ADMIN_CONSOLE_ROLES: readonly string[] = ['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN']
 export const MANAGER_ROLES: readonly string[] = ['ADMIN', 'SUPER_ADMIN']
 
+// 受保护角色：仅现有超级管理员可授予或撤销，且必须通过二次验证
+export const SUPER_ADMIN_ROLE = 'SUPER_ADMIN'
+
+// 活跃超级管理员账号上限，防止全站权限被批量扩散
+export const MAX_SUPER_ADMIN_ACCOUNTS = 3
+
 // 权限码目录：与 server/utils/admin-permission-routes.ts 的接口守卫一一对应
 export const ADMIN_PERMISSION_CODES: readonly string[] = [
   PRIV_ADMIN_CONSOLE,
@@ -474,11 +480,19 @@ export function canAssignRole(
   role: string,
   availableRoles: readonly string[] = ROLE_TEMPLATE_KEYS
 ): boolean {
-  return (
-    hasAdminPermission(user, 'users:assign-role') &&
-    availableRoles.includes(role) &&
-    role !== 'SUPER_ADMIN'
-  )
+  if (!hasAdminPermission(user, 'users:assign-role') || !availableRoles.includes(role)) return false
+  if (role === SUPER_ADMIN_ROLE) return user?.role === SUPER_ADMIN_ROLE
+  return true
+}
+
+// 涉及超级管理员身份的授予或撤销；服务端与 UI 共用此判据决定是否要求二次验证
+// 两端均可传 null：null 分别表示新建账号与账号退出（删除/不再是后台账号）
+export function isSuperAdminRoleTransition(
+  previousRole?: string | null,
+  nextRole?: string | null
+): boolean {
+  if (previousRole === nextRole) return false
+  return previousRole === SUPER_ADMIN_ROLE || nextRole === SUPER_ADMIN_ROLE
 }
 
 // 将用户级通配拒绝拆成具体拒绝，允许逐项恢复用户权限。

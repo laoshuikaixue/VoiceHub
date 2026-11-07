@@ -5,10 +5,13 @@
  */
 import { db } from '~/drizzle/db'
 import { systemSettings, users } from '~/drizzle/schema'
-import { count, eq, sql } from 'drizzle-orm'
+import { and, count, eq, sql } from 'drizzle-orm'
 import { getRequestURL, type H3Event } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import { PASSWORD_AUDIT_ACTIONS, recordPasswordAudit } from '~~/server/services/passwordSecurityService'
+import { createBatchSystemNotifications } from '~~/server/services/notificationService'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import {
   getRolePermissionTemplatesCached,
@@ -22,6 +25,7 @@ import {
   findRoleTemplateChangesBeyondOperator,
   findProtectedCodeLoss,
   findProtectedLossAfterReplacements,
+  findSuperAdminCountViolation,
   validateExplicitGrants,
   validateRoleTemplates
 } from './permission-policy'
@@ -36,15 +40,18 @@ import {
   PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
+  SUPER_ADMIN_ROLE,
   getRoleTemplateKeys,
   groupPermissionCodes,
   hasAllPermissions,
   hasAnyPermission,
   hasPermission,
+  isSuperAdminRoleTransition,
   resolveEffectivePermissions,
   normalizePermissionTokens
 } from '~~/app/utils/admin-permissions'
 import { resolvePermissionRouteGuard } from './admin-permission-routes'
+import { requireStepUp } from './step-up'
 
 export type PermissionTransaction = Pick<
   typeof db,
@@ -245,6 +252,79 @@ export async function assertProtectedCodesAfterAccountChange(
     executor,
     templates
   )
+}
+
+/**
+ * 超管数量不变量：必须在共同事务锁内调用，nextRow 为 null 表示账号退出活跃集合。
+ */
+export async function assertSuperAdminCountInvariant(
+  changes: readonly AccountChange[],
+  executor: PermissionTransaction
+): Promise<void> {
+  if (!changes.length) return
+  const rows = await loadPermissionHolderRows(executor)
+  const violation = findSuperAdminCountViolation(rows, changes)
+  if (violation) rethrow(violation)
+}
+
+export async function assertSuperAdminCountAfterAccountChange(
+  targetId: number,
+  nextRow: PermissionHolderRow | null,
+  executor: PermissionTransaction
+): Promise<void> {
+  await assertSuperAdminCountInvariant([{ targetId, nextRow }], executor)
+}
+
+/**
+ * 超管身份变更的统一准入：仅现有超管可执行，且必须处于二次验证窗口内。
+ * previousRole 为 null 表示新建账号，nextRole 为 null 表示账号退出。
+ */
+export async function assertSuperAdminRoleChangeAllowed(
+  event: H3Event,
+  operator: { role?: string } | null | undefined,
+  previousRole: string | null,
+  nextRole: string | null
+): Promise<void> {
+  if (!isSuperAdminRoleTransition(previousRole, nextRole)) return
+  if (operator?.role !== SUPER_ADMIN_ROLE) {
+    throw createApiError(
+      403,
+      SERVER_ERROR_CODES.PERMISSION_SUPER_ADMIN_OPERATOR_REQUIRED,
+      '超级管理员身份只能由现有超级管理员变更'
+    )
+  }
+  await requireStepUp(event, 'super-admin-role')
+}
+
+/**
+ * 超管身份变更留痕：写入口令审计流水，并通知全部活跃超管与目标账号。
+ * 必须在事务提交后调用：内部走全局连接，在事务内申请第二个连接会阻塞。
+ * 通知失败不回滚已完成的授权变更，只记录服务端告警。
+ */
+export async function recordSuperAdminRoleChange(
+  event: H3Event,
+  actor: { id: number; name?: string | null; username?: string | null },
+  target: { id: number; username: string },
+  granted: boolean
+): Promise<void> {
+  const action = granted
+    ? PASSWORD_AUDIT_ACTIONS.GRANT_SUPER_ADMIN
+    : PASSWORD_AUDIT_ACTIONS.REVOKE_SUPER_ADMIN
+  await recordPasswordAudit(event, target.id, action, true, undefined, actor.id)
+
+  try {
+    const holders = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.role, SUPER_ADMIN_ROLE), eq(users.status, 'active')))
+    const recipients = [...new Set([...holders.map((row) => row.id), actor.id, target.id])]
+    const actorName = actor.name || actor.username || `#${actor.id}`
+    const title = granted ? '已新增超级管理员' : '已撤销超级管理员'
+    const content = `${title}：账号 ${target.username}，操作人 ${actorName}，IP ${getClientIP(event) || '未知'}`
+    await createBatchSystemNotifications(recipients, title, content, true)
+  } catch (error) {
+    console.error('[Permissions] 超管身份变更通知失败:', error)
+  }
 }
 
 // 权限矩阵页数据：模板现状、内置默认、活跃用户持有者数与角色分布

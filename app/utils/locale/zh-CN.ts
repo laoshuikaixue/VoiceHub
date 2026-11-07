@@ -2347,7 +2347,10 @@ export const admin = {
     passwordAuditActions: {
       INITIAL_PASSWORD: '设置初始密码',
       CHANGE_PASSWORD: '修改密码',
-      RESET_PASSWORD: '重置密码'
+      RESET_PASSWORD: '重置密码',
+      STEP_UP: '敏感操作二次验证',
+      GRANT_SUPER_ADMIN: '授予超级管理员',
+      REVOKE_SUPER_ADMIN: '撤销超级管理员'
     },
     bufferCleared: (count: number) => `运行事件缓冲已清空（${count} 条）`,
     serverStarted: '服务进程已启动，全局错误处理器就绪',
@@ -4673,6 +4676,20 @@ export const admin = {
       }
     }
   },
+  stepUpModal: {
+    title: '二次验证',
+    desc: '该操作涉及特权变更，请验证当前账号凭据。',
+    reasons: {
+      'super-admin-role': '该操作会变更超级管理员身份，请验证当前账号凭据。'
+    },
+    password: '当前密码',
+    passwordPlaceholder: '请输入当前登录密码',
+    code: '动态验证码',
+    codePlaceholder: '请输入认证器应用生成的6位验证码',
+    verify: '验证',
+    verifying: '正在验证...',
+    cancel: '取消'
+  },
   userManager: {
     title: '用户管理',
     subtitle: (total: number) => `系统共有 ${total} 位成员 · 权限与账户管理`,
@@ -4794,6 +4811,7 @@ export const admin = {
       passwordPlaceholder: '设置安全访问密码',
       role: '角色权限',
       rolePlaceholder: '请选择角色',
+      superAdminHint: '超级管理员仅可由现有超级管理员变更，需通过二次验证；活跃超管最多 {0} 个，不支持批量导入',
       status: '账户状态',
       statusPlaceholder: '请选择状态',
       grade: '年级',
@@ -4838,8 +4856,10 @@ export const admin = {
       templateFileName: '用户批量导入模板.xlsx',
       supportedRoles: '支持的角色：',
       supportedRolesFull:
-        'USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）',
+        'USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）；超级管理员需在用户管理中单个提升',
       supportedRolesLimited: 'USER（普通用户）、SONG_ADMIN（歌曲管理员）',
+      superAdminSkipped: (count: number) =>
+        `已跳过 ${count} 行超级管理员：不支持批量导入，请在用户管理中单个提升`,
       downloadTemplate: '下载模板',
       chooseFile: '选择数据文件',
       uploadTitle: '点击或拖拽上传 Excel 文件',
@@ -5655,5 +5675,11 @@ export const serverErrors = {
   PERMISSION_LAST_HOLDER_PROTECTED: '不能移除站点级权限 {0} 的最后一个持有者',
   PERMISSION_SELF_LOCKOUT: '不能撤销自己的站点级权限 {0}',
   PERMISSION_SELF_EDIT_FORBIDDEN: '不能修改自己的显式授权',
+  PERMISSION_STEP_UP_REQUIRED: '请先完成二次验证',
+  PERMISSION_STEP_UP_FAILED: '二次验证未通过，请重新输入凭据',
+  PERMISSION_STEP_UP_REASON_INVALID: '不支持的验证场景',
+  PERMISSION_LAST_SUPER_ADMIN_PROTECTED: '必须保留至少一个活跃的超级管理员账号',
+  PERMISSION_SUPER_ADMIN_LIMIT_REACHED: '超级管理员账号最多 {0} 个',
+  PERMISSION_SUPER_ADMIN_OPERATOR_REQUIRED: '超级管理员身份只能由现有超级管理员变更',
   SYSTEM_BOARD_FAILED: '系统看板数据异常，请稍后重试'
 } as const

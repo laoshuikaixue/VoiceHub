@@ -644,7 +644,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 #### 角色类型
 
-- **超级管理员 (SUPER_ADMIN)**：拥有所有系统权限，包括用户管理、系统设置中的凭据与策略配置、备份恢复、数据库管理等
+- **超级管理员 (SUPER_ADMIN)**：拥有所有系统权限，包括用户管理、系统设置中的凭据与策略配置、备份恢复、数据库管理等。可由现有超级管理员在用户管理中授予或撤销，活跃的超级管理员上限 3 个、至少保留 1 个，不参与批量导入
 - **管理员 (ADMIN)**：内容与用户日常管理权限，包括用户管理、排期管理、歌曲管理、点歌券、数据分析，以及投稿与播放限制、限额、卡密、音源平台等运营配置
 - **歌曲管理员 (SONG_ADMIN)**：专门负责歌曲相关管理，包括排期管理、歌曲管理、打印排期等
 - **普通用户 (USER)**：基本的点歌、投票和查看权限
@@ -667,6 +667,15 @@ VoiceHub 实现了细粒度的权限控制系统：
 - 前端基于角色动态显示界面元素和菜单
 - 后端API进行严格的权限验证
 - 支持页面级和功能级的权限控制
+
+#### 敏感操作二次验证
+
+- 授予或撤销超级管理员身份时，操作者需先重新输入当前密码；账号已开启双重认证时还需输入验证器动态码
+- 验证通过后在服务端签发短期特权窗口（按场景 + 用户 + 会话绑定，默认 5 分钟），不返回任何客户端令牌，换会话或换场景均不继承
+- 验证场景为封闭白名单（`server/utils/step-up.ts`），后续接入备份恢复、数据库重置等只需追加场景项
+- 验证失败与超管身份变更均写入口令审计流水，并向全体活跃超级管理员推送系统通知
+- 范围限定于超级管理员身份变更：仅停用超管账号或对其施加显式拒绝不会触发验证（数量下限仍会拦住归零）
+- 从备份恢复是例外：恢复任意备份本身等价于最高权限，其中携带的超管账号不受验证与数量上限约束，恢复后需人工核对超管名单
 
 ## 环境变量说明
 
@@ -796,6 +805,7 @@ VoiceHub/
 │   │   │   ├── SongManagement.vue     # 歌曲管理
 │   │   │   ├── SongSourceReplaceModal.vue # 歌曲换源弹窗（跨音源搜索与替换）
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
+│   │   │   ├── StepUpDialog.vue     # 敏感操作二次验证弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserApprovalModal.vue  # 用户注册审核弹窗
 │   │   │   ├── UserExportModal.vue    # 用户导出弹窗
@@ -933,6 +943,7 @@ VoiceHub/
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSchedulePlaylistSync.ts # 本标签页排期保存后的队列刷新与生命周期
 │   │   ├── useSongs.ts         # 歌曲管理hooks
+│   │   ├── useStepUp.ts        # 敏感操作二次验证弹窗编排hooks
 │   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
 │   │   ├── useTheme.ts         # 主题管理
 │   │   ├── useThemeImage.ts    # 主题图片获取
@@ -1258,6 +1269,7 @@ VoiceHub/
 │   │   │   ├── register.post.ts       # 用户名密码注册
 │   │   │   ├── reset-password.post.ts # 重置密码
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
+│   │   │   ├── step-up.post.ts    # 敏感操作二次验证（签发短期特权窗口）
 │   │   │   ├── unbind.post.ts        # 解绑社交账号
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息
 │   │   ├── bilibili/       # Bilibili相关API
@@ -1550,6 +1562,7 @@ VoiceHub/
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具
 │   │   ├── siteUtils.ts    # 站点工具函数
+│   │   ├── step-up.ts        # 敏感操作二次验证窗口与场景白名单
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── submission-restriction-policy.ts # 重复投稿限制模式判定

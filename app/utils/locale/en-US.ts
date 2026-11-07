@@ -2402,7 +2402,10 @@ export const admin = {
     passwordAuditActions: {
       INITIAL_PASSWORD: 'set initial password',
       CHANGE_PASSWORD: 'changed password',
-      RESET_PASSWORD: 'reset password'
+      RESET_PASSWORD: 'reset password',
+      STEP_UP: 'verified step-up credentials',
+      GRANT_SUPER_ADMIN: 'granted super administrator',
+      REVOKE_SUPER_ADMIN: 'revoked super administrator'
     },
     bufferCleared: (count: number) => `Buffer cleared (${count} entries removed)`,
     serverStarted: 'Server started, global error handler ready',
@@ -4824,6 +4827,20 @@ export const admin = {
       }
     }
   },
+  stepUpModal: {
+    title: 'Verify Again',
+    desc: 'This action changes privileged access. Re-enter your credentials.',
+    reasons: {
+      'super-admin-role': 'This action changes super administrator status. Re-enter your credentials.'
+    },
+    password: 'Current Password',
+    passwordPlaceholder: 'Enter your current password',
+    code: 'Authenticator Code',
+    codePlaceholder: 'Enter the 6-digit code from your authenticator app',
+    verify: 'Verify',
+    verifying: 'Verifying...',
+    cancel: 'Cancel'
+  },
   userManager: {
     title: 'User Management',
     subtitle: (total: number) =>
@@ -4946,6 +4963,8 @@ export const admin = {
       passwordPlaceholder: 'Set a secure password',
       role: 'Role',
       rolePlaceholder: 'Select role',
+      superAdminHint:
+        'Only an existing super administrator can change this role, and step-up verification is required. Up to {0} active super administrator accounts; bulk import is not supported.',
       status: 'Account Status',
       statusPlaceholder: 'Select status',
       grade: 'Grade',
@@ -4991,8 +5010,10 @@ export const admin = {
       templateFileName: 'user-import-template.xlsx',
       supportedRoles: 'Supported roles:',
       supportedRolesFull:
-        'USER (User), ADMIN (Admin), SONG_ADMIN (Song Admin), SUPER_ADMIN (Super Admin)',
+        'USER (User), ADMIN (Admin), SONG_ADMIN (Song Admin); promote super administrators one by one in User Management',
       supportedRolesLimited: 'USER (User), SONG_ADMIN (Song Admin)',
+      superAdminSkipped: (count: number) =>
+        `Skipped ${count} super administrator rows: bulk import is unsupported, promote one by one in User Management`,
       downloadTemplate: 'Download Template',
       chooseFile: 'Choose Data File',
       uploadTitle: 'Click or drag to upload an Excel file',
@@ -5860,5 +5881,11 @@ export const serverErrors = {
   PERMISSION_LAST_HOLDER_PROTECTED: 'Cannot remove {0} from its last holder',
   PERMISSION_SELF_LOCKOUT: 'Cannot revoke your own site-level capability {0}',
   PERMISSION_SELF_EDIT_FORBIDDEN: 'Cannot edit your own explicit grants',
+  PERMISSION_STEP_UP_REQUIRED: 'Complete step-up verification first',
+  PERMISSION_STEP_UP_FAILED: 'Step-up verification failed, re-enter your credentials',
+  PERMISSION_STEP_UP_REASON_INVALID: 'Unsupported verification scenario',
+  PERMISSION_LAST_SUPER_ADMIN_PROTECTED: 'At least one active super administrator account must remain',
+  PERMISSION_SUPER_ADMIN_LIMIT_REACHED: 'At most {0} super administrator accounts are allowed',
+  PERMISSION_SUPER_ADMIN_OPERATOR_REQUIRED: 'Only an existing super administrator can change super administrator status',
   SYSTEM_BOARD_FAILED: 'System board data is unavailable. Please retry later.'
 } as const

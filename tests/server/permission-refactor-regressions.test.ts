@@ -53,11 +53,16 @@ const users = Object.assign(
 )
 const settings = { table: 'settings', rolePermissionTemplates: { key: 'rolePermissionTemplates' } }
 const eq = (field: { key: string }, value: unknown) => (row: any) => row[field.key] === value
+const and =
+  (...predicates: Array<(row: any) => boolean>) =>
+  (row: any) =>
+    predicates.every((predicate) => predicate(row))
 
-function runtime(rows: any[], templates: any = defaults) {
+function runtime(rows: any[], templates: any = defaults, stepUp: 'allow' | 'deny' = 'allow') {
   let state = { users: structuredClone(rows), settings: [{ rolePermissionTemplates: templates }] }
   let tail = Promise.resolve()
   const events: string[] = []
+  const checks: string[] = []
   const executor = (acquire?: () => Promise<void>) => ({
     async execute() {
       assert.ok(acquire)
@@ -168,6 +173,7 @@ function runtime(rows: any[], templates: any = defaults) {
       systemSettings: settings,
       users,
       eq,
+      and,
       sql: () => ({}),
       getRequestURL: (event: any) => new URL(event.path, 'http://localhost'),
       createApiError: apiError,
@@ -175,6 +181,24 @@ function runtime(rows: any[], templates: any = defaults) {
       SYSTEM_SETTINGS_DEFAULTS: {},
       getRolePermissionTemplatesCached: getTemplates,
       getSystemSettingsCached: async () => state.settings[0],
+      requireStepUp: async () => {
+        if (stepUp === 'deny') {
+          throw apiError(403, SERVER_ERROR_CODES.PERMISSION_STEP_UP_REQUIRED, '需要二次验证')
+        }
+        checks.push('step-up')
+      },
+      getClientIP: () => '127.0.0.1',
+      PASSWORD_AUDIT_ACTIONS: {
+        STEP_UP: 'STEP_UP',
+        GRANT_SUPER_ADMIN: 'GRANT_SUPER_ADMIN',
+        REVOKE_SUPER_ADMIN: 'REVOKE_SUPER_ADMIN'
+      },
+      recordPasswordAudit: async () => {
+        checks.push('audit')
+      },
+      createBatchSystemNotifications: async () => {
+        checks.push('notify')
+      },
       ...permissions,
       ...policy,
       resolvePermissionRouteGuard
@@ -188,7 +212,11 @@ function runtime(rows: any[], templates: any = defaults) {
       'normalizeSubmittedGrants',
       'assertAccountPermissionExpansion',
       'assertAccountCredentialsWithinOperator',
-      'assertRoleTemplateExpansionWithinOperator'
+      'assertRoleTemplateExpansionWithinOperator',
+      'assertSuperAdminRoleChangeAllowed',
+      'assertSuperAdminCountInvariant',
+      'assertSuperAdminCountAfterAccountChange',
+      'recordSuperAdminRoleChange'
     ]
   )
   const event = (id: number, path: string, method = 'PUT') => {
@@ -199,7 +227,7 @@ function runtime(rows: any[], templates: any = defaults) {
       context: { user: { ...row, perms: resolveEffectivePermissions(row, templates) } }
     }
   }
-  return { db, admin, getTemplates, event, events, rows: () => state.users }
+  return { db, admin, getTemplates, event, events, checks, rows: () => state.users }
 }
 
 function handler(file: string, deps: Record<string, unknown>) {
@@ -665,4 +693,98 @@ test('动态角色键拒绝非法格式并支持安全角色分配范围', () =>
     true
   )
   assert.equal(permissions.canAssignRole(operator, 'SUPER_ADMIN', ['USER', 'SUPER_ADMIN']), false)
+})
+
+test('超管身份变更只对现有超管开放，并强制二次验证', async () => {
+  const superOperator = { id: 1, role: 'SUPER_ADMIN' }
+
+  // 非超管连验证窗口都不会被询问
+  const r = runtime([
+    { id: 1, role: 'SUPER_ADMIN', status: 'active', permissions: null },
+    { id: 2, role: 'ADMIN', status: 'active', permissions: null }
+  ])
+  await assert.rejects(
+    r.admin.assertSuperAdminRoleChangeAllowed(r.event(1, '/api/admin/users/2'), { role: 'ADMIN' }, 'ADMIN', 'SUPER_ADMIN'),
+    { statusCode: 403, data: { code: SERVER_ERROR_CODES.PERMISSION_SUPER_ADMIN_OPERATOR_REQUIRED } }
+  )
+  assert.equal(r.checks.length, 0)
+
+  // 同角色不算身份变更，不需要验证
+  await r.admin.assertSuperAdminRoleChangeAllowed(r.event(1, '/api/admin/users/2'), superOperator, 'ADMIN', 'ADMIN')
+  assert.equal(r.checks.length, 0)
+
+  // 超管已处于验证窗口内则放行
+  await r.admin.assertSuperAdminRoleChangeAllowed(r.event(1, '/api/admin/users/2'), superOperator, 'ADMIN', 'SUPER_ADMIN')
+  assert.deepEqual(r.checks, ['step-up'])
+
+  // 窗口缺失（含过期）拦住变更
+  const locked = runtime(
+    [{ id: 1, role: 'SUPER_ADMIN', status: 'active', permissions: null }],
+    defaults,
+    'deny'
+  )
+  await assert.rejects(
+    locked.admin.assertSuperAdminRoleChangeAllowed(locked.event(1, '/api/admin/users/2'), superOperator, 'ADMIN', 'SUPER_ADMIN'),
+    { statusCode: 403, data: { code: SERVER_ERROR_CODES.PERMISSION_STEP_UP_REQUIRED } }
+  )
+})
+
+test('超管数量不变量在共同事务锁内拦住归零与越限', async () => {
+  // 普通管理员已持有全部站点级能力，此时只剩超管身份本身需要兜底
+  const templates = {
+    ...defaults,
+    ADMIN: [...defaults.ADMIN, consoleCode, templateCode, grantCode]
+  }
+  const rows = [
+    { id: 1, role: 'SUPER_ADMIN', status: 'active', permissions: null },
+    { id: 2, role: 'ADMIN', status: 'active', permissions: null }
+  ]
+  const r = runtime(rows, templates)
+  await assert.rejects(
+    r.admin.withPermissionTransaction(r.event(2, '/api/admin/users/1'), (tx: any) =>
+      r.admin.assertSuperAdminCountAfterAccountChange(1, null, tx)
+    ),
+    { statusCode: 403, data: { code: SERVER_ERROR_CODES.PERMISSION_LAST_SUPER_ADMIN_PROTECTED } }
+  )
+  assert.ok(r.events.includes('lock'), '不变量必须在事务锁内读取持有者')
+
+  // 提升到超过上限的第四个超管被拦住
+  const many = runtime(
+    [
+      { id: 1, role: 'SUPER_ADMIN', status: 'active', permissions: null },
+      { id: 2, role: 'SUPER_ADMIN', status: 'active', permissions: null },
+      { id: 3, role: 'SUPER_ADMIN', status: 'active', permissions: null },
+      { id: 4, role: 'ADMIN', status: 'active', permissions: null }
+    ],
+    templates
+  )
+  await assert.rejects(
+    many.admin.withPermissionTransaction(many.event(1, '/api/admin/users/4'), (tx: any) =>
+      tx.select().from(users).then(() =>
+        tx.update(users).set({ role: 'SUPER_ADMIN' }).where((row: any) => row.id === 4).then(() =>
+          many.admin.assertSuperAdminCountInvariant(
+            [{ targetId: 4, nextRow: { id: 4, role: 'SUPER_ADMIN', permissions: null } }],
+            tx
+          )
+        )
+      )
+    ),
+    { statusCode: 403, data: { code: SERVER_ERROR_CODES.PERMISSION_SUPER_ADMIN_LIMIT_REACHED, params: ['3'] } }
+  )
+  // 回滚后角色未被写入
+  assert.equal(many.rows().find((row: any) => row.id === 4).role, 'ADMIN')
+})
+
+test('超管身份变更写入审计流水并通知全体超管', async () => {
+  const r = runtime([
+    { id: 1, role: 'SUPER_ADMIN', status: 'active', permissions: null, name: '超级管理员', username: 'admin' },
+    { id: 2, role: 'ADMIN', status: 'active', permissions: null, name: '待提升管理员', username: 'teacher' }
+  ])
+  await r.admin.recordSuperAdminRoleChange(
+    r.event(1, '/api/admin/users/2'),
+    { id: 1, name: '超级管理员', username: 'admin' },
+    { id: 2, username: 'teacher' },
+    true
+  )
+  assert.deepEqual(r.checks, ['audit', 'notify'])
 })

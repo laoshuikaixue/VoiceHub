@@ -714,6 +714,12 @@
                     value-key="name"
                     :placeholder="locale.form.rolePlaceholder"
                   />
+                  <p
+                    v-if="userForm.role === 'SUPER_ADMIN'"
+                    class="text-[10px] text-warning leading-relaxed"
+                  >
+                    {{ formatMessage(locale.form.superAdminHint, superAdminLimit) }}
+                  </p>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
@@ -1169,6 +1175,14 @@
       :user="permissionUser"
       @close="closePermissionsModal"
       @saved="loadUsers"
+    />
+
+    <!-- 敏感操作二次验证弹窗 -->
+    <StepUpDialog
+      v-model:show="showStepUpDialog"
+      :reason="stepUpReason"
+      @verified="settleStepUp(true)"
+      @cancelled="settleStepUp(false)"
     />
 
 <!-- 用户注册审核模态框 -->
@@ -1634,7 +1648,12 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
-import { canAssignRole } from '~/utils/admin-permissions'
+import { STEP_UP_REASON_SUPER_ADMIN, useStepUp } from '~/composables/useStepUp'
+import {
+  MAX_SUPER_ADMIN_ACCOUNTS,
+  canAssignRole,
+  isSuperAdminRoleTransition
+} from '~/utils/admin-permissions'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Check,
@@ -1694,8 +1713,9 @@ import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import UserExportModal from '~/components/Admin/UserExportModal.vue'
 import UserApprovalModal from '~/components/Admin/UserApprovalModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import StepUpDialog from '~/components/Admin/StepUpDialog.vue'
 import { useLocale } from '~/utils/locale'
-import { useServerErrors } from '~/composables/useLocaleText'
+import { extractErrorCode, useServerErrors } from '~/composables/useLocaleText'
 import { getOAuthProviderName, getAggregateOAuthLoginTypeName, getProviderDisplayName } from '~/utils/oauth'
 import { GRADE_ORDER } from '~/utils/gradeClassWeights'
 import { isArchivedStatus } from '~/utils/user-archive'
@@ -1896,6 +1916,14 @@ const passwordForm = ref({
 const auth = useAuth()
 const { can, canGrantPermissions } = usePermissions()
 const { localize } = useServerErrors()
+// 超管身份变更前的二次验证
+const {
+  show: showStepUpDialog,
+  reason: stepUpReason,
+  requestStepUp,
+  settle: settleStepUp
+} = useStepUp()
+const superAdminLimit = MAX_SUPER_ADMIN_ACCOUNTS
 
 // 判断是否为当前登录用户
 const isSelf = (user) => {
@@ -1915,10 +1943,10 @@ const canManageUser = (user, action = 'users:write') => {
 }
 
 const availableRoles = computed(() => {
+  // 超管候选只出现在现有超管的下拉里，判定口径与后端 canAssignRole 一致
   let roles = allRoles.value.filter((role) =>
     role.name === 'USER' ||
-    (role.name !== 'SUPER_ADMIN' &&
-      canAssignRole(auth.user.value, role.name, allRoles.value.map((item) => item.name)))
+    canAssignRole(auth.user.value, role.name, allRoles.value.map((item) => item.name))
   )
   // 保留目标用户当前角色，避免当前值不在选项中时下拉显示裸值
   const currentRole = editingUser.value?.role
@@ -2316,6 +2344,14 @@ const confirmDelete = async () => {
   if (!can('users:delete')) return
   if (!deletingUser.value) return
 
+  // 删除超管账号等于撤销其超管身份，需先通过二次验证
+  if (
+    isSuperAdminRoleTransition(deletingUser.value.role, null) &&
+    !(await requestStepUp(STEP_UP_REASON_SUPER_ADMIN))
+  ) {
+    return
+  }
+
   deleting.value = true
 
   try {
@@ -2510,6 +2546,11 @@ const saveUser = async () => {
     return
   }
 
+  // 超管身份变更（授予或撤销）需先通过二次验证，取消验证则不提交
+  if (isSuperAdminRoleTransition(editingUser.value?.role ?? null, userForm.value.role)) {
+    if (!(await requestStepUp(STEP_UP_REASON_SUPER_ADMIN))) return
+  }
+
   saving.value = true
   formError.value = ''
 
@@ -2527,18 +2568,30 @@ const saveUser = async () => {
       userData.password = userForm.value.password
     }
 
-    if (editingUser.value) {
-      await $fetch(`/api/admin/users/${editingUser.value.id}`, {
-        method: 'PUT',
-        body: can('users:write') ? userData : { role: userForm.value.role },
-        ...auth.getAuthConfig()
-      })
-    } else {
-      await $fetch('/api/admin/users', {
-        method: 'POST',
-        body: userData,
-        ...auth.getAuthConfig()
-      })
+    const sendUserRequest = () =>
+      editingUser.value
+        ? $fetch(`/api/admin/users/${editingUser.value.id}`, {
+            method: 'PUT',
+            body: can('users:write') ? userData : { role: userForm.value.role },
+            ...auth.getAuthConfig()
+          })
+        : $fetch('/api/admin/users', {
+            method: 'POST',
+            body: userData,
+            ...auth.getAuthConfig()
+          })
+
+    try {
+      await sendUserRequest()
+    } catch (error) {
+      // 验证窗口过期：重新验证后只重发一次
+      if (
+        extractErrorCode(error) !== 'PERMISSION_STEP_UP_REQUIRED' ||
+        !(await requestStepUp(STEP_UP_REASON_SUPER_ADMIN))
+      ) {
+        throw error
+      }
+      await sendUserRequest()
     }
 
     // 先缓存是否编辑态：closeModal 会清空 editingUser，通知文案需在清空前判定
@@ -2922,6 +2975,7 @@ const handleFileUpload = async (event) => {
         importStartRow.value = startRow
 
         const userData = []
+        let skippedSuperAdmin = 0
 
         for (let i = startRow; i < jsonData.length; i++) {
           const row = jsonData[i]
@@ -2929,18 +2983,18 @@ const handleFileUpload = async (event) => {
 
           let role = (row[3]?.toString() || '').toUpperCase()
 
-          // 根据当前用户权限过滤角色
-          if (!isSuperAdmin.value) {
-            // 普通管理员只能导入 USER 和 SONG_ADMIN 角色
-            if (role !== 'USER' && role !== 'SONG_ADMIN') {
-              role = 'USER' // 默认设为普通用户
-            }
-          }
-
           // 确保角色有效
           const validRoles = ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN']
           if (!validRoles.includes(role)) {
             role = 'USER'
+          } else if (!isSuperAdmin.value && role !== 'USER' && role !== 'SONG_ADMIN') {
+            // 普通管理员只能导入 USER 和 SONG_ADMIN 角色
+            role = 'USER'
+          }
+          // 超管不参与批量导入，跳过该行而不是让整批失败
+          if (role === 'SUPER_ADMIN') {
+            skippedSuperAdmin++
+            continue
           }
 
           userData.push({
@@ -2951,6 +3005,13 @@ const handleFileUpload = async (event) => {
             grade: row[4]?.toString() || '',
             class: row[5]?.toString() || ''
           })
+        }
+
+        if (skippedSuperAdmin > 0 && window.$showNotification) {
+          window.$showNotification(
+            formatMessage(locale.value.importModal.superAdminSkipped, skippedSuperAdmin),
+            'warning'
+          )
         }
 
         if (userData.length === 0) {
