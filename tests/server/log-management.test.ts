@@ -71,6 +71,7 @@ test('配置缺失或非法时按默认值降级，合法值原样保留', () =>
 test('清理类型只接受 api / audit / all，非法值返回 null', () => {
   assert.equal(parseLogCleanupType('api'), 'api')
   assert.equal(parseLogCleanupType('audit'), 'audit')
+  // all 仍可被解析，但清理接口会显式拒绝，避免顺手抹掉审计记录
   assert.equal(parseLogCleanupType('all'), 'all')
   assert.equal(parseLogCleanupType(undefined), null)
   assert.equal(parseLogCleanupType(null), null)

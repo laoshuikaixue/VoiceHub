@@ -77,11 +77,13 @@
         </button>
 
         <template v-if="canManage && cleanupConfirming">
-          <span class="text-[11px] font-medium text-text-tertiary">{{ locale.cleanupConfirm }}</span>
+          <span class="text-[11px] font-medium text-text-tertiary">
+            {{ cleanupConfirming === 'audit' ? locale.cleanupAuditConfirm : locale.cleanupConfirm }}
+          </span>
           <button
             class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-error-10 border border-error-20 text-error hover:bg-error-20 transition-all disabled:opacity-50"
             :disabled="cleaning"
-            @click="runCleanup"
+            @click="runCleanup(cleanupConfirming)"
           >
             <Trash2 :size="14" />
             {{ cleaning ? locale.cleaning : locale.cleanupConfirmAction }}
@@ -89,20 +91,29 @@
           <button
             class="px-3 py-2 rounded-xl text-[11px] font-bold text-text-tertiary hover:text-text-primary transition-all"
             :disabled="cleaning"
-            @click="cleanupConfirming = false"
+            @click="cleanupConfirming = ''"
           >
             {{ locale.cancel }}
           </button>
         </template>
-        <button
-          v-else-if="canManage"
-          class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all disabled:opacity-50"
-          :disabled="cleaning"
-          @click="cleanupConfirming = true"
-        >
-          <Trash2 :size="14" />
-          {{ locale.cleanup }}
-        </button>
+        <template v-else-if="canManage">
+          <button
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all disabled:opacity-50"
+            :disabled="cleaning"
+            @click="cleanupConfirming = 'api'"
+          >
+            <Trash2 :size="14" />
+            {{ locale.cleanup }}
+          </button>
+          <button
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all disabled:opacity-50"
+            :disabled="cleaning"
+            @click="cleanupConfirming = 'audit'"
+          >
+            <Trash2 :size="14" />
+            {{ locale.cleanupAudit }}
+          </button>
+        </template>
 
         <span class="text-[11px] text-text-disabled">{{ locale.retentionHint }}</span>
       </div>
@@ -317,7 +328,7 @@ const logs = ref([])
 const loading = ref(false)
 const exporting = ref(false)
 const cleaning = ref(false)
-const cleanupConfirming = ref(false)
+const cleanupConfirming = ref('')
 const actionError = ref('')
 const actionNotice = ref('')
 const page = ref(1)
@@ -485,7 +496,7 @@ const exportLogs = async (format) => {
   }
 }
 
-const runCleanup = async () => {
+const runCleanup = async (type) => {
   if (!canManage.value || cleaning.value) return
   cleaning.value = true
   actionError.value = ''
@@ -493,12 +504,14 @@ const runCleanup = async () => {
   try {
     const response = await $fetch('/api/admin/log-management/cleanup', {
       method: 'POST',
-      body: { type: 'all' },
+      body: { type },
       ...auth.getAuthConfig()
     })
-    actionNotice.value = t('cleanupDone', '已清理过期日志', response.apiDeleted, response.auditDeleted)
-    cleanupConfirming.value = false
-    await Promise.all([loadLogs(), loadStats()])
+    actionNotice.value = type === 'audit'
+      ? t('cleanupAuditDone', '已清理 {0} 条审计日志', response.auditDeleted)
+      : t('cleanupApiDone', '已清理 {0} 条访问日志', response.apiDeleted)
+    cleanupConfirming.value = ''
+    if (type === 'api') await Promise.all([loadLogs(), loadStats()])
   } catch (error) {
     actionError.value = localize(error)
   } finally {

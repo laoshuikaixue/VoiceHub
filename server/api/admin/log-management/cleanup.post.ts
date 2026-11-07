@@ -8,11 +8,14 @@ import { parseLogCleanupType, type LogCleanupType } from '~~/server/utils/log-se
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody<Record<string, unknown> | null>(event)
-    // 缺省清理两类；显式传值但非法时拒绝，避免拼写错误导致误清另一类日志
+    // 缺省只清 API 访问日志；审计日志必须显式指定 type=audit 才会清理，避免顺手抹掉追责记录
     const type: LogCleanupType | null =
-      body?.type === undefined || body?.type === null ? 'all' : parseLogCleanupType(body.type)
+      body?.type === undefined || body?.type === null ? 'api' : parseLogCleanupType(body.type)
     if (!type) {
       throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '清理类型无效')
+    }
+    if (type === 'all') {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '不支持同时清理两类日志')
     }
     const settings = await getLogSettings()
 
