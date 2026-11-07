@@ -3,8 +3,10 @@ import { and, count, desc, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { apiKeys, apiLogs } from '~/drizzle/schema'
 import { formatDateTime } from '~/utils/timeUtils'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { createApiError } from '~~/server/utils/apiError'
 import { resolvePagination } from '~~/server/utils/pagination'
-import { buildApiLogConditions } from '~~/server/utils/log-query'
+import { buildApiLogConditions, isUuid, readQueryString } from '~~/server/utils/log-query'
 
 // 列表只返回正文预览，完整内容通过导出获取，避免大字段撑爆响应
 const BODY_PREVIEW_MAX_CHARS = 1000
@@ -17,6 +19,10 @@ function preview(value: string | null): string | null {
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
+    const apiKeyId = readQueryString(query.apiKeyId)
+    if (apiKeyId && !isUuid(apiKeyId)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'API Key ID 无效')
+    }
     const { page, limit, offset } = resolvePagination(query.page, query.limit, 50, 200)
 
     const conditions = buildApiLogConditions(query)

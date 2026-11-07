@@ -4,6 +4,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
+  adminAuditLogs,
   apiKeyPermissions,
   apiKeys,
   apiLogs,
@@ -1907,6 +1908,53 @@ export default defineEventHandler(async (event) => {
               }
             } else {
               await tx.insert(apiLogs).values(apiLogData)
+              stats.created++
+            }
+            break
+          }
+
+          case 'adminAuditLogs': {
+            const auditAction =
+              typeof record.action === 'string' ? record.action.slice(0, 80) : ''
+            if (!auditAction) {
+              stats.warnings.push(`审计日志 ${record.id ?? ''} 缺少动作码，已跳过`)
+              break
+            }
+
+            const auditLogData: any = {
+              actorId: Number.isInteger(record.actorId) ? record.actorId : null,
+              actorName: record.actorName || null,
+              action: auditAction,
+              targetType: record.targetType ? String(record.targetType).slice(0, 50) : null,
+              targetId:
+                record.targetId !== null && record.targetId !== undefined
+                  ? String(record.targetId).slice(0, 200)
+                  : null,
+              summary: record.summary || null,
+              ipAddress: record.ipAddress || null,
+              userAgent: record.userAgent || null,
+              result: record.result === 'FAILURE' ? 'FAILURE' : 'SUCCESS',
+              createdAt: record.createdAt ? new Date(record.createdAt) : getServerDate()
+            }
+
+            if (mode === 'merge') {
+              await tx.insert(adminAuditLogs).values(auditLogData)
+              stats.created++
+            } else if (record.id) {
+              const existingAuditLog = await tx
+                .select({ id: adminAuditLogs.id })
+                .from(adminAuditLogs)
+                .where(eq(adminAuditLogs.id, record.id))
+                .limit(1)
+              if (existingAuditLog.length > 0) {
+                await tx.update(adminAuditLogs).set(auditLogData).where(eq(adminAuditLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(adminAuditLogs).values({ ...auditLogData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(adminAuditLogs).values(auditLogData)
               stats.created++
             }
             break

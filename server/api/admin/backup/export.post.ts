@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { isServerlessRuntime } from '~~/server/utils/serverless-runtime'
 import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
+  adminAuditLogs,
   apiKeys,
   apiKeyPermissions,
   apiLogs,
@@ -398,6 +399,10 @@ export default defineEventHandler(async (event) => {
       apiKeyPermissions: {
         query: () => db.select().from(apiKeyPermissions),
         description: 'API密钥权限'
+      },
+      adminAuditLogs: {
+        query: () => db.select().from(adminAuditLogs),
+        description: '管理员操作审计日志'
       },
       apiLogs: {
         query: async () => {

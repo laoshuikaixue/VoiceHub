@@ -3,6 +3,7 @@ import { pluginBackupTables } from '~~/server/utils/music-source-plugins/backup'
 import {
   backupHistory,
   systemSettings,
+  adminAuditLogs,
   apiKeys,
   apiKeyPermissions,
   apiLogs,
@@ -160,6 +161,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     apiKeys: { query: () => db.select().from(apiKeys), description: 'API密钥' },
     apiKeyPermissions: { query: () => db.select().from(apiKeyPermissions), description: 'API密钥权限' },
     apiLogs: { query: () => db.select().from(apiLogs), description: 'API访问日志' },
+    adminAuditLogs: { query: () => db.select().from(adminAuditLogs), description: '管理员操作审计日志' },
     emailTemplates: { query: () => db.select().from(emailTemplates), description: '邮件模板' },
     systemSettings: {
       query: async () => {

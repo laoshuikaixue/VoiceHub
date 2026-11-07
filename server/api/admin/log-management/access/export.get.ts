@@ -3,7 +3,9 @@ import { and, desc } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { apiLogs } from '~/drizzle/schema'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
-import { buildApiLogConditions } from '~~/server/utils/log-query'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { createApiError } from '~~/server/utils/apiError'
+import { buildApiLogConditions, isUuid, readQueryString } from '~~/server/utils/log-query'
 import {
   buildCsv,
   buildJsonLines,
@@ -32,6 +34,10 @@ const CSV_HEADER = [
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
+    const apiKeyId = readQueryString(query.apiKeyId)
+    if (apiKeyId && !isUuid(apiKeyId)) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'API Key ID 无效')
+    }
     const format = readExportFormat(query.format)
     const conditions = buildApiLogConditions(query)
     const whereClause = conditions.length ? and(...conditions) : undefined

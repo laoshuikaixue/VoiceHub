@@ -9,6 +9,11 @@ import { getBeijingEndOfDay, parseToBeijingTime } from '~/utils/timeUtils'
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const AUDIT_RESULTS = ['SUCCESS', 'FAILURE']
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value)
+}
 
 export function readQueryString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
