@@ -6,7 +6,7 @@
         <p class="text-xs text-text-tertiary font-medium">{{ locale.desc }}</p>
       </div>
       <button
-        class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+        class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary hover:border-border-tertiary transition-all disabled:opacity-50"
         :disabled="loading || configLoading"
         @click="refreshAll"
       >
@@ -49,7 +49,7 @@
             min="0"
             max="3650"
             :disabled="!canManage || !configLoaded"
-            class="w-full px-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary focus:outline-none focus:border-border-tertiary disabled:opacity-60"
+            class="w-full px-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary focus:outline-none focus:border-border-tertiary disabled:opacity-60"
           >
         </label>
         <label class="flex flex-col gap-1">
@@ -60,7 +60,7 @@
             min="0"
             max="3650"
             :disabled="!canManage || !configLoaded"
-            class="w-full px-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary focus:outline-none focus:border-border-tertiary disabled:opacity-60"
+            class="w-full px-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary focus:outline-none focus:border-border-tertiary disabled:opacity-60"
           >
         </label>
       </div>
@@ -96,7 +96,7 @@
         </template>
         <button
           v-else-if="canManage"
-          class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all disabled:opacity-50"
           :disabled="cleaning"
           @click="cleanupConfirming = true"
         >
@@ -138,7 +138,7 @@
             v-model="filters.endpoint"
             type="text"
             :placeholder="locale.filterEndpoint"
-            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
             @keyup.enter="applyFilters"
           >
         </div>
@@ -149,7 +149,7 @@
           min="100"
           max="599"
           :placeholder="locale.filterStatus"
-          class="w-full px-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+          class="w-full px-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
         >
         <div class="relative">
           <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
@@ -157,7 +157,7 @@
             v-model="filters.search"
             type="text"
             :placeholder="locale.filterSearch"
-            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
             @keyup.enter="applyFilters"
           >
         </div>
@@ -182,7 +182,7 @@
             {{ locale.apply }}
           </button>
           <button
-            class="px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all"
+            class="px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all"
             @click="resetFilters"
           >
             {{ locale.reset }}
@@ -193,7 +193,7 @@
       <div class="flex flex-wrap items-center gap-2 border-t border-border-secondary pt-3">
         <button
           v-if="canRead"
-          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all disabled:opacity-50"
           :disabled="exporting"
           @click="exportLogs('csv')"
         >
@@ -202,7 +202,7 @@
         </button>
         <button
           v-if="canRead"
-          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all disabled:opacity-50"
           :disabled="exporting"
           @click="exportLogs('jsonl')"
         >

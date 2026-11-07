@@ -7,7 +7,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
-          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary hover:border-border-tertiary transition-all disabled:opacity-50"
           :disabled="exporting"
           @click="exportLogs('csv')"
         >
@@ -15,7 +15,7 @@
           {{ locale.exportCsv }}
         </button>
         <button
-          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary hover:border-border-tertiary transition-all disabled:opacity-50"
           :disabled="exporting"
           @click="exportLogs('jsonl')"
         >
@@ -23,7 +23,7 @@
           {{ locale.exportRaw }}
         </button>
         <button
-          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary hover:border-border-tertiary transition-all disabled:opacity-50"
           :disabled="loading"
           @click="loadLogs"
         >
@@ -65,7 +65,7 @@
             v-model="filters.actorName"
             type="text"
             :placeholder="locale.filterActor"
-            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
             @keyup.enter="applyFilters"
           >
         </div>
@@ -90,7 +90,7 @@
             {{ locale.apply }}
           </button>
           <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary border border-border-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-quaternary transition-all"
             @click="resetFilters"
           >
             {{ locale.reset }}
