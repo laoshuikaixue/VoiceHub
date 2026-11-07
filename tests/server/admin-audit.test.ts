@@ -23,7 +23,7 @@ function loadAudit(deps: Record<string, unknown>) {
     .replace(/^import[\s\S]*?from\s*['"][^'"]+['"]\s*;?\r?$/gm, '')
     .replace(/^export\s+/gm, '')
     .replace(/^export type .*$/gm, '')
-  return new Function(...Object.keys(deps), `${source}; return { recordAdminAudit, recordAdminAuditFailure, ADMIN_AUDIT_RESULT, ADMIN_AUDIT_SUMMARY_MAX_CHARS };`)(
+  return new Function(...Object.keys(deps), `${source}; return { recordAdminAudit, ADMIN_AUDIT_RESULT, ADMIN_AUDIT_SUMMARY_MAX_CHARS };`)(
     ...Object.values(deps)
   )
 }
@@ -108,20 +108,6 @@ test('recordAdminAudit 写入操作者/IP/UA/结果快照', async () => {
   assert.equal(row.userAgent, 'TestAgent/1.0')
   assert.equal(row.result, 'SUCCESS')
   assert.equal(JSON.parse(row.summary as string).newStatus, 'banned')
-})
-
-test('recordAdminAuditFailure 标记失败结果', async () => {
-  const captured: Record<string, unknown>[] = []
-  const deps = {
-    db: { insert: () => ({ values: (v: Record<string, unknown>) => { captured.push(v) } }) },
-    adminAuditLogs: {},
-    getClientIP: () => 'unknown',
-    getHeader: () => '',
-    sanitizeAstrbotErrorDetail: (t: string) => t
-  }
-  const { recordAdminAuditFailure } = loadAudit(deps)
-  await recordAdminAuditFailure(makeEvent(), 'song.reject', { targetType: 'song', targetId: 7 })
-  assert.equal(captured[0]!.result, 'FAILURE')
 })
 
 test('摘要脱敏：凭据样式内容被替换为占位符', async () => {

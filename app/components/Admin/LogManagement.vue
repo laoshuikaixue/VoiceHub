@@ -309,7 +309,7 @@
     </template>
 
     <!-- 管理员审计日志 -->
-    <AdminAuditLogPanel v-else-if="canAudit" />
+    <AdminAuditLogPanel v-else-if="canAudit" embedded />
   </div>
 </template>
 

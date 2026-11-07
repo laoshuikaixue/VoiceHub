@@ -2,12 +2,11 @@ import { createError, defineEventHandler } from 'h3'
 import { count, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { apiLogs } from '~/drizzle/schema'
-import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
-import { getLogSettings } from '~~/server/utils/log-retention'
+import { formatDateTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   try {
-    const [summaryResult, oldestResult, newestResult, byDay, settings] = await Promise.all([
+    const [summaryResult, oldestResult, newestResult] = await Promise.all([
       db
         .select({
           total: count(),
@@ -20,18 +19,7 @@ export default defineEventHandler(async (event) => {
         .select({ createdAt: apiLogs.createdAt })
         .from(apiLogs)
         .orderBy(sql`${apiLogs.createdAt} DESC`)
-        .limit(1),
-      // 最近 7 天按北京时间日期聚合
-      db
-        .select({
-          day: sql<string>`TO_CHAR((${apiLogs.createdAt} + interval '8 hours')::date, 'YYYY-MM-DD')`,
-          count: count()
-        })
-        .from(apiLogs)
-        .where(sql`${apiLogs.createdAt} >= (now() - interval '7 days')`)
-        .groupBy(sql`((${apiLogs.createdAt} + interval '8 hours')::date)`)
-        .orderBy(sql`((${apiLogs.createdAt} + interval '8 hours')::date)`),
-      getLogSettings()
+        .limit(1)
     ])
 
     const summary = summaryResult[0]
@@ -45,10 +33,7 @@ export default defineEventHandler(async (event) => {
         errors: summary?.errors || 0,
         avgResponseTime: summary?.avgResponseTime || 0,
         oldestAt: oldest ? formatDateTime(oldest) : null,
-        newestAt: newest ? formatDateTime(newest) : null,
-        byDay,
-        settings,
-        generatedAt: formatDateTime(getBeijingTime())
+        newestAt: newest ? formatDateTime(newest) : null
       }
     }
   } catch (error: any) {

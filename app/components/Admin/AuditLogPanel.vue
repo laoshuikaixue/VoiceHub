@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-[1200px] mx-auto space-y-6 pb-20 px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <div class="flex flex-wrap items-start justify-between gap-4">
-      <div class="space-y-1">
+      <div v-if="!embedded" class="space-y-1">
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary font-medium">{{ locale.desc }}</p>
       </div>
@@ -197,6 +197,8 @@ import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
+
+defineProps({ embedded: Boolean })
 
 const auth = useAuth()
 const { admin } = useLocale()

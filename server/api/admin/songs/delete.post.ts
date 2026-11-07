@@ -17,6 +17,8 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    let deletedSongSnapshot: { title?: string; artist?: string } | null = null
+
     // 使用事务确保删除操作的原子性
     const result = await db.transaction(async (tx) => {
       // 在事务中重新检查歌曲是否存在
@@ -63,26 +65,20 @@ export default defineEventHandler(async (event) => {
       const deletedSongData = deletedSong[0]
 
       console.log(`成功删除歌曲: ${deletedSongData?.title}`)
+      deletedSongSnapshot = { title: deletedSongData?.title, artist: deletedSongData?.artist }
 
       return {
         message: '歌曲已成功删除',
         songId: body.songId,
         deletedVotes: true,
-        deletedSchedules: true,
-        song: {
-          title: deletedSongData?.title,
-          artist: deletedSongData?.artist
-        }
+        deletedSchedules: true
       }
     })
 
     await recordAdminAudit(event, 'song.delete', {
       targetType: 'song',
       targetId: body.songId,
-      summary: {
-        title: result.song?.title,
-        artist: result.song?.artist
-      }
+      summary: deletedSongSnapshot ?? {}
     })
 
     return result

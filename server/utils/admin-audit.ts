@@ -103,16 +103,3 @@ export async function recordAdminAudit(
     console.error(`[AdminAudit] 记录审计失败（action=${action}）:`, error)
   }
 }
-
-/** 记录一次失败结果（如写操作异常后的审计）。 */
-export async function recordAdminAuditFailure(
-  event: H3Event,
-  action: string,
-  options: {
-    targetType?: string
-    targetId?: string | number
-    summary?: unknown
-  } = {}
-): Promise<void> {
-  await recordAdminAudit(event, action, { ...options, result: ADMIN_AUDIT_RESULT.FAILURE })
-}

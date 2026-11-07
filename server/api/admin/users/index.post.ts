@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    return await withPermissionTransaction(event, async (tx, templates) => {
+    const newUser = await withPermissionTransaction(event, async (tx, templates) => {
       // 检查用户名是否已存在
       const existingUserResult = await tx
         .select()
@@ -102,20 +102,21 @@ export default defineEventHandler(async (event) => {
           createdAt: users.createdAt,
           updatedAt: users.updatedAt
         })
-      const newUser = newUserResult[0]
-
-      await recordAdminAudit(event, 'user.create', {
-        targetType: 'user',
-        targetId: newUser.id,
-        summary: { username: newUser.username, role: newUser.role }
-      })
-
-      return {
-        success: true,
-        user: newUser,
-        message: '用户创建成功'
-      }
+      return newUserResult[0]
     })
+
+    // 审计写入放在事务提交之后，避免回滚后留下成功记录
+    await recordAdminAudit(event, 'user.create', {
+      targetType: 'user',
+      targetId: newUser.id,
+      summary: { username: newUser.username, role: newUser.role }
+    })
+
+    return {
+      success: true,
+      user: newUser,
+      message: '用户创建成功'
+    }
   } catch (error: any) {
     console.error('创建用户失败:', error)
     if (error?.statusCode) {
