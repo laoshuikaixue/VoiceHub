@@ -146,6 +146,7 @@ function deleteHandler(options: {
       calls.push('revoke-audit')
       h.log.push('revoke-audit')
     },
+    recordAdminAudit: async () => {},
     ...permissions
   })
   const event = { context: { user: options.actor ?? superActor } }

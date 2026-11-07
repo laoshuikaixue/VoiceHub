@@ -2371,8 +2371,6 @@ export const admin = {
     statOldest: 'Oldest',
     statNewest: 'Newest',
     emptyValue: 'None',
-    tabAccess: 'API Access Logs',
-    tabAudit: 'Admin Audit',
     filterEndpoint: 'Endpoint',
     filterMethod: 'Method',
     filterStatus: 'Status code',

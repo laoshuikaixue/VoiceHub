@@ -33,7 +33,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label class="flex flex-col gap-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.colLevel }}</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.colLevel }}</span>
           <CustomSelect
             v-model="config.apiLogLevel"
             :options="levelOptions"
@@ -42,7 +42,7 @@
           />
         </label>
         <label class="flex flex-col gap-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.apiRetention }}</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.apiRetention }}</span>
           <input
             v-model.number="config.apiLogRetentionDays"
             type="number"
@@ -53,7 +53,7 @@
           >
         </label>
         <label class="flex flex-col gap-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.auditRetention }}</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.auditRetention }}</span>
           <input
             v-model.number="config.auditLogRetentionDays"
             type="number"
@@ -111,205 +111,156 @@
     <!-- 统计 -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-4 space-y-1">
-        <p class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.statTotal }}</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.statTotal }}</p>
         <p class="text-lg font-black text-text-primary tabular-nums">{{ stats.total }}</p>
       </div>
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-4 space-y-1">
-        <p class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.statErrors }}</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.statErrors }}</p>
         <p class="text-lg font-black text-error tabular-nums">{{ stats.errors }}</p>
       </div>
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-4 space-y-1">
-        <p class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.statAvg }}</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.statAvg }}</p>
         <p class="text-lg font-black text-text-primary tabular-nums">{{ stats.avgResponseTime }} ms</p>
       </div>
       <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-4 space-y-1">
-        <p class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.statOldest }}</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.statOldest }}</p>
         <p class="text-xs font-bold text-text-primary tabular-nums">{{ stats.oldestAt || locale.emptyValue }}</p>
         <p class="text-[10px] text-text-disabled">{{ locale.statNewest }} {{ stats.newestAt || locale.emptyValue }}</p>
       </div>
     </section>
 
-    <!-- 日志分类 -->
-    <div class="flex items-center gap-2">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        :class="[
-          'px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider border transition-all',
-          activeTab === tab.id
-            ? 'bg-primary text-white border-primary'
-            : 'bg-bg-primary-40 text-text-tertiary border-border-secondary hover:text-text-primary'
-        ]"
-        @click="activeTab = tab.id"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
-
     <!-- API 访问日志 -->
-    <template v-if="activeTab === 'access'">
-      <section class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-4 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="relative">
-            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
-            <input
-              v-model="filters.endpoint"
-              type="text"
-              :placeholder="locale.filterEndpoint"
-              class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
-              @keyup.enter="applyFilters"
-            >
-          </div>
-          <CustomSelect v-model="filters.method" :options="methodOptions" :placeholder="locale.filterMethod" class="w-full" />
+    <section class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-4 space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="relative">
+          <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
           <input
-            v-model="filters.statusCode"
-            type="number"
-            min="100"
-            max="599"
-            :placeholder="locale.filterStatus"
-            class="w-full px-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+            v-model="filters.endpoint"
+            type="text"
+            :placeholder="locale.filterEndpoint"
+            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+            @keyup.enter="applyFilters"
           >
-          <div class="relative">
-            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
-            <input
-              v-model="filters.search"
-              type="text"
-              :placeholder="locale.filterSearch"
-              class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
-              @keyup.enter="applyFilters"
-            >
-          </div>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="flex flex-col gap-1">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.filterStartDate }}</span>
-            <AppDatePicker v-model="filters.startDate" :label="locale.filterStartDate" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.filterEndDate }}</span>
-            <AppDatePicker v-model="filters.endDate" :label="locale.filterEndDate" />
-          </div>
-          <div class="flex items-end gap-2 lg:col-span-2">
-            <button
-              class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-primary text-white hover:bg-primary-hover transition-all disabled:opacity-50"
-              :disabled="loading"
-              @click="applyFilters"
-            >
-              <Search :size="14" />
-              {{ locale.apply }}
-            </button>
-            <button
-              class="px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all"
-              @click="resetFilters"
-            >
-              {{ locale.reset }}
-            </button>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 border-t border-border-secondary pt-3">
-          <button
-            v-if="canRead"
-            class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
-            :disabled="exporting"
-            @click="exportLogs('csv')"
+        <CustomSelect v-model="filters.method" :options="methodOptions" :placeholder="locale.filterMethod" class="w-full" />
+        <input
+          v-model="filters.statusCode"
+          type="number"
+          min="100"
+          max="599"
+          :placeholder="locale.filterStatus"
+          class="w-full px-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+        >
+        <div class="relative">
+          <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
+          <input
+            v-model="filters.search"
+            type="text"
+            :placeholder="locale.filterSearch"
+            class="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-primary-40 border border-border-secondary text-xs text-text-primary placeholder-text-disabled focus:outline-none focus:border-border-tertiary"
+            @keyup.enter="applyFilters"
           >
-            <Download :size="14" />
-            {{ locale.exportCsv }}
-          </button>
-          <button
-            v-if="canRead"
-            class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
-            :disabled="exporting"
-            @click="exportLogs('jsonl')"
-          >
-            <FileText :size="14" />
-            {{ locale.exportRaw }}
-          </button>
-          <span class="text-[11px] text-text-disabled">{{ locale.exportHint }}</span>
         </div>
-      </section>
-
-      <section class="bg-bg-secondary-40 border border-border-secondary rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="border-b border-border-secondary text-[10px] font-bold uppercase tracking-wider text-text-disabled">
-                <th class="px-4 py-3">{{ locale.colTime }}</th>
-                <th class="px-4 py-3">{{ locale.colKey }}</th>
-                <th class="px-4 py-3">{{ locale.colEndpoint }}</th>
-                <th class="px-4 py-3">{{ locale.colMethod }}</th>
-                <th class="px-4 py-3">{{ locale.colStatus }}</th>
-                <th class="px-4 py-3">{{ locale.colDuration }}</th>
-                <th class="px-4 py-3">{{ locale.colIp }}</th>
-                <th class="px-4 py-3">{{ locale.colError }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="loading && !logs.length" class="border-b border-border-secondary">
-                <td :colspan="8" class="px-4 py-12 text-center">
-                  <AppSpinner :size="28" />
-                </td>
-              </tr>
-              <tr v-else-if="!logs.length" class="border-b border-border-secondary">
-                <td :colspan="8" class="px-4 py-12 text-center text-xs text-text-disabled">
-                  {{ locale.emptyAccess }}
-                </td>
-              </tr>
-              <tr
-                v-for="log in logs"
-                :key="log.id"
-                class="border-b border-border-secondary last:border-0 hover:bg-bg-tertiary-30 transition-colors"
-              >
-                <td class="px-4 py-3 text-xs text-text-tertiary font-medium whitespace-nowrap tabular-nums">
-                  {{ log.createdAtDisplay }}
-                </td>
-                <td class="px-4 py-3 text-xs text-text-secondary max-w-[140px]">
-                  <span class="block truncate" :title="log.apiKeyName || log.apiKeyId || ''">
-                    {{ log.apiKeyName || log.apiKeyId || '-' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-xs text-text-primary font-mono max-w-[240px]">
-                  <span class="block truncate" :title="log.endpoint">{{ log.endpoint }}</span>
-                </td>
-                <td class="px-4 py-3 text-xs text-text-tertiary font-mono">{{ log.method }}</td>
-                <td class="px-4 py-3">
-                  <span
-                    :class="[
-                      'inline-block px-2 py-1 rounded-full text-[10px] font-black tabular-nums border',
-                      log.statusCode >= 400
-                        ? 'bg-error-10 text-error border-error-20'
-                        : 'bg-success-10 text-success border-success-20'
-                    ]"
-                  >
-                    {{ log.statusCode }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-xs text-text-tertiary tabular-nums">{{ log.responseTimeMs }} ms</td>
-                <td class="px-4 py-3 text-xs text-text-disabled font-mono whitespace-nowrap">{{ log.ipAddress }}</td>
-                <td class="px-4 py-3 text-xs text-text-tertiary max-w-[220px]">
-                  <span class="block truncate" :title="log.errorMessage || ''">{{ log.errorMessage || '-' }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <div class="flex justify-center">
-        <Pagination
-          :current-page="page"
-          :total-pages="totalPages"
-          :total-items="total"
-          :item-name="locale.items"
-          @change="changePage"
-        />
       </div>
-    </template>
 
-    <!-- 管理员审计日志 -->
-    <AdminAuditLogPanel v-else-if="canAudit" embedded />
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.filterStartDate }}</span>
+          <AppDatePicker v-model="filters.startDate" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.filterEndDate }}</span>
+          <AppDatePicker v-model="filters.endDate" />
+        </div>
+        <div class="flex items-end gap-2 lg:col-span-2">
+          <button
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-primary text-white hover:bg-primary-hover transition-all disabled:opacity-50"
+            :disabled="loading"
+            @click="applyFilters"
+          >
+            <Search :size="14" />
+            {{ locale.apply }}
+          </button>
+          <button
+            class="px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all"
+            @click="resetFilters"
+          >
+            {{ locale.reset }}
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 border-t border-border-secondary pt-3">
+        <button
+          v-if="canRead"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
+          :disabled="exporting"
+          @click="exportLogs('csv')"
+        >
+          <Download :size="14" />
+          {{ locale.exportCsv }}
+        </button>
+        <button
+          v-if="canRead"
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary transition-all disabled:opacity-50"
+          :disabled="exporting"
+          @click="exportLogs('jsonl')"
+        >
+          <FileText :size="14" />
+          {{ locale.exportRaw }}
+        </button>
+        <span class="text-[11px] text-text-disabled">{{ locale.exportHint }}</span>
+      </div>
+    </section>
+
+    <LogTable
+      :columns="accessColumns"
+      :rows="logs"
+      :loading="loading"
+      :empty-text="locale.emptyAccess"
+    >
+      <template #default="{ row: log }">
+        <td class="px-4 py-3 text-xs text-text-tertiary font-medium whitespace-nowrap tabular-nums">
+          {{ log.createdAtDisplay }}
+        </td>
+        <td class="px-4 py-3 text-xs text-text-secondary max-w-[140px]">
+          <span class="block truncate" :title="log.apiKeyName || log.apiKeyId || ''">
+            {{ log.apiKeyName || log.apiKeyId || '-' }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-xs text-text-primary font-mono max-w-[240px]">
+          <span class="block truncate" :title="log.endpoint">{{ log.endpoint }}</span>
+        </td>
+        <td class="px-4 py-3 text-xs text-text-tertiary font-mono">{{ log.method }}</td>
+        <td class="px-4 py-3">
+          <span
+            :class="[
+              'inline-block px-2 py-1 rounded-full text-[10px] font-black tabular-nums border',
+              log.statusCode >= 400
+                ? 'bg-error-10 text-error border-error-20'
+                : 'bg-success-10 text-success border-success-20'
+            ]"
+          >
+            {{ log.statusCode }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-xs text-text-tertiary tabular-nums">{{ log.responseTimeMs }} ms</td>
+        <td class="px-4 py-3 text-xs text-text-disabled font-mono whitespace-nowrap">{{ log.ipAddress }}</td>
+        <td class="px-4 py-3 text-xs text-text-tertiary max-w-[220px]">
+          <span class="block truncate" :title="log.errorMessage || ''">{{ log.errorMessage || '-' }}</span>
+        </td>
+      </template>
+    </LogTable>
+
+    <div class="flex justify-center">
+      <Pagination
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="total"
+        :item-name="locale.items"
+        @change="changePage"
+      />
+    </div>
   </div>
 </template>
 
@@ -328,15 +279,14 @@ import {
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import AdminAuditLogPanel from '~/components/Admin/AuditLogPanel.vue'
+import LogTable from '~/components/Admin/LogTable.vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
-import { PRIV_AUDIT, PRIV_LOGS } from '~/utils/admin-permissions'
+import { PRIV_LOGS } from '~/utils/admin-permissions'
 
 const auth = useAuth()
 const { can } = usePermissions()
@@ -347,7 +297,6 @@ const { t } = useLocaleText(locale)
 
 const canRead = computed(() => can(PRIV_LOGS))
 const canManage = computed(() => can(PRIV_LOGS))
-const canAudit = computed(() => can(PRIV_AUDIT))
 
 // 配置
 const config = reactive({ apiLogLevel: 'all', apiLogRetentionDays: 90, auditLogRetentionDays: 180 })
@@ -364,7 +313,6 @@ const levelOptions = computed(() => [
 const stats = reactive({ total: 0, errors: 0, avgResponseTime: 0, oldestAt: null, newestAt: null })
 
 // 列表
-const activeTab = ref('access')
 const logs = ref([])
 const loading = ref(false)
 const exporting = ref(false)
@@ -390,11 +338,16 @@ const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => 
   label: method
 }))
 
-const tabs = computed(() => {
-  const items = [{ id: 'access', label: locale.value.tabAccess || 'API 访问日志' }]
-  if (canAudit.value) items.push({ id: 'audit', label: locale.value.tabAudit || '管理员审计' })
-  return items
-})
+const accessColumns = computed(() => [
+  locale.value.colTime,
+  locale.value.colKey,
+  locale.value.colEndpoint,
+  locale.value.colMethod,
+  locale.value.colStatus,
+  locale.value.colDuration,
+  locale.value.colIp,
+  locale.value.colError
+])
 
 const buildFilters = () => {
   const query = {}

@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-[1200px] mx-auto space-y-6 pb-20 px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <div class="flex flex-wrap items-start justify-between gap-4">
-      <div v-if="!embedded" class="space-y-1">
+      <div class="space-y-1">
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary font-medium">{{ locale.desc }}</p>
       </div>
@@ -73,12 +73,12 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
         <div class="flex flex-col gap-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.filterStartDate }}</span>
-          <AppDatePicker v-model="filters.startDate" :label="locale.filterStartDate" />
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.filterStartDate }}</span>
+          <AppDatePicker v-model="filters.startDate" />
         </div>
         <div class="flex flex-col gap-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-text-disabled">{{ locale.filterEndDate }}</span>
-          <AppDatePicker v-model="filters.endDate" :label="locale.filterEndDate" />
+          <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.filterEndDate }}</span>
+          <AppDatePicker v-model="filters.endDate" />
         </div>
         <div class="flex items-end gap-2">
           <button
@@ -100,77 +100,51 @@
     </section>
 
     <!-- 审计记录表格 -->
-    <section class="bg-bg-secondary-40 border border-border-secondary rounded-2xl overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left">
-          <thead>
-            <tr class="border-b border-border-secondary text-[10px] font-bold uppercase tracking-wider text-text-disabled">
-              <th class="px-4 py-3">{{ locale.colTime }}</th>
-              <th class="px-4 py-3">{{ locale.colAction }}</th>
-              <th class="px-4 py-3">{{ locale.colActor }}</th>
-              <th class="px-4 py-3">{{ locale.colTarget }}</th>
-              <th class="px-4 py-3">{{ locale.colSummary }}</th>
-              <th class="px-4 py-3">{{ locale.colResult }}</th>
-              <th class="px-4 py-3">{{ locale.colIp }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading && !logs.length" class="border-b border-border-secondary">
-              <td :colspan="7" class="px-4 py-12 text-center">
-                <AppSpinner :size="28" />
-              </td>
-            </tr>
-            <tr v-else-if="!logs.length" class="border-b border-border-secondary">
-              <td :colspan="7" class="px-4 py-12 text-center text-xs text-text-disabled">
-                {{ locale.empty }}
-              </td>
-            </tr>
-            <tr
-              v-for="log in logs"
-              :key="log.id"
-              class="border-b border-border-secondary last:border-0 hover:bg-bg-tertiary-30 transition-colors"
-            >
-              <td class="px-4 py-3 text-xs text-text-tertiary font-medium whitespace-nowrap tabular-nums">
-                {{ log.createdAtDisplay }}
-              </td>
-              <td class="px-4 py-3">
-                <span class="inline-block px-2 py-1 rounded-lg bg-bg-tertiary-40 border border-border-secondary text-[11px] font-mono text-text-primary">
-                  {{ log.action }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-xs text-text-primary font-medium">
-                {{ log.actorName || locale.system }}
-              </td>
-              <td class="px-4 py-3 text-xs text-text-tertiary">
-                <template v-if="log.targetType">
-                  <span class="text-text-secondary font-medium">{{ log.targetType }}</span>
-                  <span v-if="log.targetId" class="text-text-disabled ml-1">#{{ log.targetId }}</span>
-                </template>
-                <span v-else>-</span>
-              </td>
-              <td class="px-4 py-3 text-xs text-text-tertiary max-w-[280px]">
-                <span class="block truncate" :title="log.summary || ''">{{ log.summary || '-' }}</span>
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  :class="[
-                    'inline-block px-2 py-1 rounded-full text-[10px] font-black uppercase border',
-                    log.result === 'SUCCESS'
-                      ? 'bg-success-10 text-success border-success-20'
-                      : 'bg-error-10 text-error border-error-20'
-                  ]"
-                >
-                  {{ log.result === 'SUCCESS' ? locale.success : locale.failure }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-xs text-text-disabled font-mono whitespace-nowrap">
-                {{ log.ipAddress || '-' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <LogTable
+      :columns="auditColumns"
+      :rows="logs"
+      :loading="loading"
+      :empty-text="locale.empty"
+    >
+      <template #default="{ row: log }">
+        <td class="px-4 py-3 text-xs text-text-tertiary font-medium whitespace-nowrap tabular-nums">
+          {{ log.createdAtDisplay }}
+        </td>
+        <td class="px-4 py-3">
+          <span class="inline-block px-2 py-1 rounded-lg bg-bg-tertiary-40 border border-border-secondary text-[11px] font-mono text-text-primary">
+            {{ log.action }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-xs text-text-primary font-medium">
+          {{ log.actorName || locale.system }}
+        </td>
+        <td class="px-4 py-3 text-xs text-text-tertiary">
+          <template v-if="log.targetType">
+            <span class="text-text-secondary font-medium">{{ log.targetType }}</span>
+            <span v-if="log.targetId" class="text-text-disabled ml-1">#{{ log.targetId }}</span>
+          </template>
+          <span v-else>-</span>
+        </td>
+        <td class="px-4 py-3 text-xs text-text-tertiary max-w-[280px]">
+          <span class="block truncate" :title="log.summary || ''">{{ log.summary || '-' }}</span>
+        </td>
+        <td class="px-4 py-3">
+          <span
+            :class="[
+              'inline-block px-2 py-1 rounded-full text-[10px] font-black uppercase border',
+              log.result === 'SUCCESS'
+                ? 'bg-success-10 text-success border-success-20'
+                : 'bg-error-10 text-error border-error-20'
+            ]"
+          >
+            {{ log.result === 'SUCCESS' ? locale.success : locale.failure }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-xs text-text-disabled font-mono whitespace-nowrap">
+          {{ log.ipAddress || '-' }}
+        </td>
+      </template>
+    </LogTable>
 
     <!-- 分页 -->
     <div class="flex justify-center">
@@ -191,14 +165,12 @@ import { AlertCircle, Download, FileText, RefreshCw, Search } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
-import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import LogTable from '~/components/Admin/LogTable.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
-
-defineProps({ embedded: Boolean })
 
 const auth = useAuth()
 const { admin } = useLocale()
@@ -227,6 +199,16 @@ const resultOptions = [
   { value: 'SUCCESS', label: locale.value.success || '成功' },
   { value: 'FAILURE', label: locale.value.failure || '失败' }
 ]
+
+const auditColumns = computed(() => [
+  locale.value.colTime,
+  locale.value.colAction,
+  locale.value.colActor,
+  locale.value.colTarget,
+  locale.value.colSummary,
+  locale.value.colResult,
+  locale.value.colIp
+])
 
 const buildQuery = () => {
   const query = { page: page.value, limit: 50 }

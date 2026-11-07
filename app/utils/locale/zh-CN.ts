@@ -2316,8 +2316,6 @@ export const admin = {
     statOldest: '最早记录',
     statNewest: '最新',
     emptyValue: '无',
-    tabAccess: 'API 访问日志',
-    tabAudit: '管理员审计',
     filterEndpoint: '端点',
     filterMethod: '方法',
     filterStatus: '状态码',

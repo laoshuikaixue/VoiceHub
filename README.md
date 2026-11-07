@@ -768,6 +768,7 @@ VoiceHub/
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── AuditLogPanel.vue      # 管理员操作审计面板
 │   │   │   ├── LogManagement.vue      # 日志管理（级别/保留天数/查询导出清理）
+│   │   │   ├── LogTable.vue           # 日志表格容器（表头/加载态/空状态）
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
@@ -1460,6 +1461,7 @@ VoiceHub/
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   │   ├── custom-css.ts   # 自定义 CSS 注入插件
+│   │   ├── log-retention.ts # 数据库日志定期清理
 │   │   └── statistics-code.ts # 站点统计代码注入插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
