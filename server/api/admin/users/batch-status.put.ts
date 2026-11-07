@@ -16,6 +16,7 @@ import {
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
+    const changeReason = typeof body?.reason === 'string' ? body.reason.trim() : ''
     const result = await withPermissionTransaction(event, async (tx, templates) => {
       const user = event.context.user
 
@@ -237,7 +238,7 @@ export default defineEventHandler(async (event) => {
           userIds: result.data.updatedUsers.map((item) => item.userId),
           oldStatuses: [...new Set(result.data.updatedUsers.map((item) => item.oldStatus))],
           newStatus: result.data.updatedUsers[0]?.newStatus,
-          reason: result.data.updatedUsers.length ? reason.trim() : '',
+          reason: changeReason,
           sourceStatus: result.data.sourceStatus
         }
       })

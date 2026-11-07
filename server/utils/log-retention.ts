@@ -17,7 +17,8 @@ let lastLazyCleanupAt = 0
 let pendingLazyCleanup: Promise<void> | null = null
 
 export async function getLogSettings(): Promise<LogSettings> {
-  return resolveLogSettings(await getSystemSettingsCached())
+  const settings = await getSystemSettingsCached()
+  return resolveLogSettings(settings as Partial<LogSettings> | null)
 }
 
 function retentionCutoff(days: number): Date | null {

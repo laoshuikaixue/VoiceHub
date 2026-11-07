@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    let rejectedSongs = []
+    let rejectedSongs: (typeof songs.$inferSelect)[] = []
 
     // 使用事务确保批量驳回操作的原子性
     await db.transaction(async (tx) => {
