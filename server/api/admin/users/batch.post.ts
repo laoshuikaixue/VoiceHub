@@ -1,5 +1,9 @@
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { canAssignRole, getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
+import {
+  SUPER_ADMIN_ROLE,
+  canAssignRole,
+  getRoleTemplateKeys
+} from '~~/app/utils/admin-permissions'
 import {
   assertAccountPermissionExpansion,
   withPermissionTransaction
@@ -150,6 +154,17 @@ export default defineEventHandler(async (event) => {
         username: userData.username,
         name: userData.name,
         reason: '账号已存在'
+      })
+      continue
+    }
+    // 超管身份不参与批量导入，需在用户管理中逐个经二次验证提升，避免明文口令表格扩散全站权限
+    if (userData.role === SUPER_ADMIN_ROLE) {
+      results.failed++
+      results.errors.push({
+        index: userData.index,
+        username: userData.username,
+        name: userData.name,
+        reason: '超级管理员不支持批量导入，请在用户管理中单个提升'
       })
       continue
     }

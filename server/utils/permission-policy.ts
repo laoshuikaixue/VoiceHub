@@ -7,10 +7,12 @@
  */
 import {
   ADMIN_PERMISSION_CODES,
-  canGrantPermissionToken,
+  MAX_SUPER_ADMIN_ACCOUNTS,
   PRIV_ADMIN_CONSOLE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
+  SUPER_ADMIN_ROLE,
+  canGrantPermissionToken,
   getRoleTemplateKeys,
   isValidRoleKey,
   canAccessAdminConsole,
@@ -206,6 +208,51 @@ export function findProtectedLossAfterReplacement(
   operatorId: number
 ): PolicyViolation | null {
   return findProtectedLossAfterReplacements(rows, templates, [{ targetId, nextRow }], operatorId)
+}
+
+// 新建账号尚未落库，用哨兵 ID 0 参与计数（serial 主键从 1 起）
+export const NEW_ACCOUNT_ID = 0
+
+/**
+ * 超级管理员数量不变量：变更后活跃超管账号不得为零，也不得超过上限。
+ * 站点级能力的安全阀只约束权限码持有者，超管身份本身需要单独兜底。
+ */
+export function findSuperAdminCountViolation(
+  rows: readonly PermissionHolderRow[],
+  changes: readonly AccountChange[],
+  max: number = MAX_SUPER_ADMIN_ACCOUNTS
+): PolicyViolation | null {
+  const changedIds = new Set(changes.map((change) => change.targetId))
+  const nextRows = [
+    ...rows.filter((row) => !changedIds.has(row.id)),
+    ...changes
+      .map((change) => change.nextRow)
+      .filter((row): row is PermissionHolderRow => row !== null)
+  ]
+  // 不涉超管身份的变更不参与计数，避免存量超管为零的站点被所有账号变更拦住
+  const touchesSuperAdmin = changes.some(
+    (change) =>
+      rows.find((row) => row.id === change.targetId)?.role === SUPER_ADMIN_ROLE ||
+      change.nextRow?.role === SUPER_ADMIN_ROLE
+  )
+  if (!touchesSuperAdmin) return null
+  const count = nextRows.filter((row) => row.role === SUPER_ADMIN_ROLE).length
+  if (count === 0) {
+    return {
+      status: 403,
+      code: SERVER_ERROR_CODES.PERMISSION_LAST_SUPER_ADMIN_PROTECTED,
+      message: '必须保留至少一个活跃的超级管理员账号'
+    }
+  }
+  if (count > max) {
+    return {
+      status: 403,
+      code: SERVER_ERROR_CODES.PERMISSION_SUPER_ADMIN_LIMIT_REACHED,
+      message: `超级管理员账号最多 ${max} 个`,
+      params: [String(max)]
+    }
+  }
+  return null
 }
 
 /**

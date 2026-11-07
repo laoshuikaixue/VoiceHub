@@ -205,6 +205,9 @@ test('仅分配角色的接口路径不允许修改资料、状态或密码，�
     },
     assertProtectedCodesAfterAccountChange: async () => { checks.push('protected') },
     assertAccountPermissionExpansion: () => { checks.push('expansion') },
+    assertSuperAdminRoleChangeAllowed: async () => {},
+    assertSuperAdminCountAfterAccountChange: async () => {},
+    recordSuperAdminRoleChange: async () => {},
     createSystemNotification: async () => {},
     recordAdminAudit: async () => {}
   })

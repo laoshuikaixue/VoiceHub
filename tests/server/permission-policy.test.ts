@@ -2,23 +2,28 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   ADMIN_PERMISSION_CODES,
+  MAX_SUPER_ADMIN_ACCOUNTS,
   PRIV_ADMIN_CONSOLE,
   PRIV_GRANT,
   PRIV_ROLE_TEMPLATE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
   ROLE_TEMPLATE_KEYS,
+  canAssignRole,
   groupPermissionCodes,
   hasPermission,
+  isSuperAdminRoleTransition,
   isValidPermissionToken,
   splitGrantTokens
 } from '../../app/utils/admin-permissions.ts'
 import {
+  NEW_ACCOUNT_ID,
   collectCodeHolders,
   findGrantsBeyondOperator,
   findProtectedCodeLoss,
   findProtectedLossAfterReplacement,
   findProtectedLossAfterReplacements,
+  findSuperAdminCountViolation,
   validateExplicitGrants,
   validateRoleTemplates,
   type PolicyResult
@@ -65,7 +70,13 @@ test('新增错误码在常量与中英词典三处同步', () => {
     'PERMISSION_GRANT_TARGET_FORBIDDEN',
     'PERMISSION_LAST_HOLDER_PROTECTED',
     'PERMISSION_SELF_LOCKOUT',
-    'PERMISSION_SELF_EDIT_FORBIDDEN'
+    'PERMISSION_SELF_EDIT_FORBIDDEN',
+    'PERMISSION_STEP_UP_REQUIRED',
+    'PERMISSION_STEP_UP_FAILED',
+    'PERMISSION_STEP_UP_REASON_INVALID',
+    'PERMISSION_LAST_SUPER_ADMIN_PROTECTED',
+    'PERMISSION_SUPER_ADMIN_LIMIT_REACHED',
+    'PERMISSION_SUPER_ADMIN_OPERATOR_REQUIRED'
   ]
   for (const key of keys) {
     assert.ok((SERVER_ERROR_CODES as Record<string, string>)[key], `SERVER_ERROR_CODES 缺 ${key}`)
@@ -356,6 +367,82 @@ test('通配判定：全量通配通过，显式拒绝优先于授予', () => {
   assert.equal(hasPermission(['priv:grant', '!priv:grant'], PRIV_GRANT), false)
 })
 
+test('超管候选仅对现有超管开放，其他角色分配口径不变', () => {
+  const roles = ROLE_TEMPLATE_KEYS
+  const superOperator = { role: 'SUPER_ADMIN', perms: [PRIV_ADMIN_CONSOLE, 'users:assign-role', '*'] }
+  const adminOperator = { role: 'ADMIN', perms: [PRIV_ADMIN_CONSOLE, 'users:assign-role'] }
+  assert.equal(canAssignRole(superOperator, 'SUPER_ADMIN', roles), true)
+  assert.equal(canAssignRole(adminOperator, 'SUPER_ADMIN', roles), false)
+  assert.equal(canAssignRole(adminOperator, 'SONG_ADMIN', roles), true)
+  assert.equal(canAssignRole({ role: 'ADMIN', perms: [PRIV_ADMIN_CONSOLE] }, 'ADMIN', roles), false)
+})
+
+test('超管身份变更判定覆盖新建、提升、降级与删除', () => {
+  assert.equal(isSuperAdminRoleTransition(null, 'SUPER_ADMIN'), true)
+  assert.equal(isSuperAdminRoleTransition('ADMIN', 'SUPER_ADMIN'), true)
+  assert.equal(isSuperAdminRoleTransition('SUPER_ADMIN', 'ADMIN'), true)
+  assert.equal(isSuperAdminRoleTransition('SUPER_ADMIN', null), true)
+  assert.equal(isSuperAdminRoleTransition('SUPER_ADMIN', 'SUPER_ADMIN'), false)
+  assert.equal(isSuperAdminRoleTransition('USER', 'SONG_ADMIN'), false)
+  assert.equal(isSuperAdminRoleTransition(null, null), false)
+})
+
+test('超管数量不变量：归零、越限和被停用均拦住，不涉超管的变更不参与', () => {
+  const SUPER2 = { id: 4, role: 'SUPER_ADMIN', permissions: null }
+  const rows = [SUPER, SUPER2, ADMIN]
+
+  // 删除非超管：不触不变量
+  assert.equal(findSuperAdminCountViolation(rows, [{ targetId: ADMIN.id, nextRow: null }]), null)
+
+  // 删除其中一个超管：仍有持有者且未越限
+  assert.equal(findSuperAdminCountViolation(rows, [{ targetId: SUPER2.id, nextRow: null }]), null)
+
+  // 同时删除两个超管：活跃超管归零
+  const zeroed = findSuperAdminCountViolation(
+    rows,
+    [
+      { targetId: SUPER.id, nextRow: null },
+      { targetId: SUPER2.id, nextRow: null }
+    ]
+  )
+  assert.equal(zeroed?.code, SERVER_ERROR_CODES.PERMISSION_LAST_SUPER_ADMIN_PROTECTED)
+  assert.equal(zeroed?.status, 403)
+
+  // 降级现有超管同样算归零
+  const demoted = findSuperAdminCountViolation(rows, [
+    { targetId: SUPER.id, nextRow: { id: SUPER.id, role: 'ADMIN', permissions: null } },
+    { targetId: SUPER2.id, nextRow: { id: SUPER2.id, role: 'ADMIN', permissions: null } }
+  ])
+  assert.equal(demoted?.code, SERVER_ERROR_CODES.PERMISSION_LAST_SUPER_ADMIN_PROTECTED)
+
+  // 提升至超过上限
+  const overflow = findSuperAdminCountViolation(
+    rows,
+    [
+      { targetId: NEW_ACCOUNT_ID, nextRow: { id: NEW_ACCOUNT_ID, role: 'SUPER_ADMIN', permissions: null } },
+      { targetId: 9, nextRow: { id: 9, role: 'SUPER_ADMIN', permissions: null } }
+    ],
+    MAX_SUPER_ADMIN_ACCOUNTS
+  )
+  assert.equal(overflow?.code, SERVER_ERROR_CODES.PERMISSION_SUPER_ADMIN_LIMIT_REACHED)
+  assert.deepEqual(overflow?.params, [String(MAX_SUPER_ADMIN_ACCOUNTS)])
+
+  // 上限判定按自定义 max 走，不超过则放行
+  assert.equal(
+    findSuperAdminCountViolation(rows, [
+      { targetId: NEW_ACCOUNT_ID, nextRow: { id: NEW_ACCOUNT_ID, role: 'SUPER_ADMIN', permissions: null } }
+    ], MAX_SUPER_ADMIN_ACCOUNTS),
+    null
+  )
+
+  // 存量已无超管的站点，普通账号变更不应被拦住
+  const noSuperRows = [ADMIN, SONG_ADMIN]
+  assert.equal(
+    findSuperAdminCountViolation(noSuperRows, [{ targetId: ADMIN.id, nextRow: null }]),
+    null
+  )
+})
+
 test('中英词典：权限矩阵与按用户授权分区键完全对齐', () => {
   const flatten = (value: unknown, prefix = ''): string[] => {
     if (!value || typeof value !== 'object') return [prefix]
@@ -363,7 +450,7 @@ test('中英词典：权限矩阵与按用户授权分区键完全对齐', () =>
       flatten(child, prefix ? `${prefix}.${key}` : key)
     )
   }
-  for (const partition of ['permissionMatrix', 'userPermissions']) {
+  for (const partition of ['permissionMatrix', 'userPermissions', 'stepUpModal']) {
     const zh = flatten((zhAdmin as any)[partition]).sort()
     const en = flatten((enAdmin as any)[partition]).sort()
     assert.ok(zh.length > 1, `${partition} 分区为空`)

@@ -6,8 +6,12 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import {
   assertProtectedCodesAfterAccountChange,
+  assertSuperAdminCountAfterAccountChange,
+  assertSuperAdminRoleChangeAllowed,
+  recordSuperAdminRoleChange,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
+import { SUPER_ADMIN_ROLE } from '~~/app/utils/admin-permissions'
 
 export default defineEventHandler(async (event) => {
   const actor = event.context.user
@@ -17,7 +21,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '用户 ID 无效')
   }
   try {
-    await withPermissionTransaction(event, async (tx, templates) => {
+    const result = await withPermissionTransaction(event, async (tx, templates) => {
       const [target] = await tx
         .select()
         .from(users)
@@ -36,8 +40,11 @@ export default defineEventHandler(async (event) => {
           '不能删除此账户'
         )
       }
+      // 删除超管账号等于撤销其超管身份，先卡二次验证，再查数量与能力安全阀
+      await assertSuperAdminRoleChangeAllowed(event, actor, target.role, null)
       if (target.status === 'active') {
         await assertProtectedCodesAfterAccountChange(userId, null, actor.id, tx, templates)
+        await assertSuperAdminCountAfterAccountChange(userId, null, tx)
       }
 
       const heldCards = await tx
@@ -86,7 +93,17 @@ export default defineEventHandler(async (event) => {
           )
       }
       await tx.delete(users).where(eq(users.id, userId))
+
+      return { deleted: target }
     })
+    if (result.deleted.role === SUPER_ADMIN_ROLE) {
+      await recordSuperAdminRoleChange(
+        event,
+        { id: actor.id, name: actor.name, username: actor.username },
+        { id: result.deleted.id, username: result.deleted.username },
+        false
+      )
+    }
     return { success: true, message: '用户删除成功' }
   } catch (error: any) {
     if (error.statusCode) throw error

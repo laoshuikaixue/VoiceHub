@@ -1,6 +1,7 @@
 import {
   assertAccountPermissionExpansion,
   assertProtectedCodesAfterAccountChange,
+  assertSuperAdminCountAfterAccountChange,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
 import { createApiError } from '~~/server/utils/apiError'
@@ -197,6 +198,12 @@ export default defineEventHandler(async (event) => {
               currentUser.id,
               tx,
               templates
+            )
+            // 停用超管同样不得让活跃超管归零
+            await assertSuperAdminCountAfterAccountChange(
+              freshTarget.id,
+              updateData.status === 'active' ? nextState : null,
+              tx
             )
           }
           // 更新用户信息

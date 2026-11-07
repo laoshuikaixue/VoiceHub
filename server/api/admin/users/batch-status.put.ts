@@ -8,6 +8,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   assertAccountPermissionExpansion,
   assertProtectedCodesAfterAccountChanges,
+  assertSuperAdminCountInvariant,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
 
@@ -172,18 +173,16 @@ export default defineEventHandler(async (event) => {
       }
       // 整批状态变更与安全阀共用权限事务。
       // 站点级能力安全阀与整批状态变更共用事务锁，避免并发请求同时移除最后持有者。
-      await assertProtectedCodesAfterAccountChanges(
-        usersToUpdate.map((target) => ({
-          targetId: target.id,
-          nextRow:
-            status === 'active'
-              ? { id: target.id, role: target.role, permissions: target.permissions }
-              : null
-        })),
-        user.id,
-        tx,
-        templates
-      )
+      const accountChanges = usersToUpdate.map((target) => ({
+        targetId: target.id,
+        nextRow:
+          status === 'active'
+            ? { id: target.id, role: target.role, permissions: target.permissions }
+            : null
+      }))
+      await assertProtectedCodesAfterAccountChanges(accountChanges, user.id, tx, templates)
+      // 停用超管会让其退出活跃超管集合，数量下限同样要拦住
+      await assertSuperAdminCountInvariant(accountChanges, tx)
       for (const targetUser of usersToUpdate) {
         // 更新用户状态
         await tx
