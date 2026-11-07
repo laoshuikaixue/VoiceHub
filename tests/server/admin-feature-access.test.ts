@@ -121,7 +121,8 @@ function settingsRuntime() {
     createApiError, createError, SERVER_ERROR_CODES, maskSystemSettingsSecrets, SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, parseEsaCaptchaScenes,
     stripSuperAdminOnlySettingFields, findSuperAdminOnlySettingFields, MUSIC_SOURCE_PLATFORMS,
     getAggregateOAuthLoginTypesOrDefault: () => [],
-    smtpStub: { getInstance: () => ({ initializeSmtpConfig: async () => true }) }
+    smtpStub: { getInstance: () => ({ initializeSmtpConfig: async () => true }) },
+    recordAdminAudit: async () => {}
   }
   const readSettings = handler('server/api/admin/system-settings/index.ts', deps)
   const writeSettings = handler('server/api/admin/system-settings/index.post.ts', deps)
@@ -207,7 +208,8 @@ test('仅分配角色的接口路径不允许修改资料、状态或密码，�
     assertSuperAdminRoleChangeAllowed: async () => {},
     assertSuperAdminCountAfterAccountChange: async () => {},
     recordSuperAdminRoleChange: async () => {},
-    createSystemNotification: async () => {}
+    createSystemNotification: async () => {},
+    recordAdminAudit: async () => {}
   })
   for (const extra of [{ name: '篡改' }, { status: 'withdrawn' }, { password: 'new-password' }, { grade: '高三' }]) {
     await assert.rejects(route({ body: { role: 'TEST', ...extra }, context: { user: operator } }), { statusCode: 403 })

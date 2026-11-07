@@ -1,4 +1,4 @@
-import { hasAdminPermission } from '~~/app/utils/admin-permissions'
+import { hasAdminPermission, PRIV_LOGS } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -15,13 +15,16 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'
 import {
   SERVER_ERROR_CODES,
   MUSIC_SOURCE_PLATFORMS,
   DEFAULT_THEMES,
   CAPTCHA_PROVIDERS,
-  ALIYUN_ESA_CAPTCHA_REGIONS
+  ALIYUN_ESA_CAPTCHA_REGIONS,
+  API_LOG_LEVELS,
+  LOG_RETENTION_MAX_DAYS
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
@@ -1447,6 +1450,37 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionRestriction = true
     }
 
+    // 日志管理：记录级别与保留天数（0 = 永久保留）
+    // 未走 logging 模块接口时同样要求私有码，避免用通用配置权限绕过
+    if (!isAdminSettingsScope(scope)) {
+      const logFields = ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays']
+      if (logFields.some((field) => body[field] !== undefined) && !hasAdminPermission(user, PRIV_LOGS)) {
+        throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有修改日志配置的权限')
+      }
+    }
+    if (body.apiLogLevel !== undefined) {
+      if (!(API_LOG_LEVELS as readonly unknown[]).includes(body.apiLogLevel)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_LOG_LEVEL_INVALID,
+          `apiLogLevel 必须是 ${API_LOG_LEVELS.join('、')}`
+        )
+      }
+      updateData.apiLogLevel = body.apiLogLevel
+    }
+    for (const field of ['apiLogRetentionDays', 'auditLogRetentionDays'] as const) {
+      if (body[field] === undefined) continue
+      if (!Number.isInteger(body[field]) || body[field] < 0 || body[field] > LOG_RETENTION_MAX_DAYS) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_LOG_RETENTION_INVALID,
+          `${field} 必须是 0-${LOG_RETENTION_MAX_DAYS} 的整数`,
+          { params: [LOG_RETENTION_MAX_DAYS] }
+        )
+      }
+      updateData[field] = body[field]
+    }
+
     if (isAdminSettingsScope(scope)) {
       updateData = pickScopeSettings(scope, updateData)
     }
@@ -1494,6 +1528,14 @@ export default defineEventHandler(async (event) => {
     }
 
     const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    await recordAdminAudit(event, 'settings.update', {
+      targetType: 'settings',
+      targetId: settings.id,
+      summary: {
+        scope: isAdminSettingsScope(scope) ? scope : 'general',
+        fields: Object.keys(updateData)
+      }
+    })
     if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)
     return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {

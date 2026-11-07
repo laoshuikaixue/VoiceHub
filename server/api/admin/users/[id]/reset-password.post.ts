@@ -12,6 +12,7 @@ import {
 } from '~~/server/services/passwordSecurityService'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -36,11 +37,12 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, violation.code, violation.message)
   }
 
+  let targetUsername = ''
   try {
-    return await withPermissionTransaction(event, async (tx, templates) => {
+    const result = await withPermissionTransaction(event, async (tx, templates) => {
       // 查询目标用户用于越级保护
       const targetUsers = await tx
-        .select({ id: users.id, role: users.role, permissions: users.permissions })
+        .select({ id: users.id, username: users.username, role: users.role, permissions: users.permissions })
         .from(users)
         .where(eq(users.id, id))
         .limit(1)
@@ -89,11 +91,22 @@ export default defineEventHandler(async (event) => {
         }
       })
 
+      targetUsername = targetUser.username
+
       return {
         success: true,
         message: '密码重置成功'
       }
     })
+
+    // 审计写入放在事务提交之后，避免回滚后留下成功记录；摘要记录目标用户而非操作者
+    await recordAdminAudit(event, 'user.reset-password', {
+      targetType: 'user',
+      targetId: id,
+      summary: { username: targetUsername }
+    })
+
+    return result
   } catch (error) {
     await recordPasswordAudit(
       event,

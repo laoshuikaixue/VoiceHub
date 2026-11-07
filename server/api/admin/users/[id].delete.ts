@@ -2,6 +2,7 @@ import { defineEventHandler, getRouterParam } from 'h3'
 import { cardCodeAssignments, cardCodes, users } from '~/drizzle/schema'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import {
@@ -104,6 +105,11 @@ export default defineEventHandler(async (event) => {
         false
       )
     }
+    await recordAdminAudit(event, 'user.delete', {
+      targetType: 'user',
+      targetId: result.deleted.id,
+      summary: { username: result.deleted.username, role: result.deleted.role }
+    })
     return { success: true, message: '用户删除成功' }
   } catch (error: any) {
     if (error.statusCode) throw error

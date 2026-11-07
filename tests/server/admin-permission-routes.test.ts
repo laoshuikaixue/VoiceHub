@@ -13,7 +13,8 @@ import {
   resolveEffectivePermissions,
   resolveRoleTemplate,
   hasPermission,
-  PRIV_ADMIN_CONSOLE
+  PRIV_ADMIN_CONSOLE,
+  PRIVATE_PERMISSION_CODES
 } from '../../app/utils/admin-permissions.ts'
 import {
   ADMIN_ROUTE_RULES,
@@ -106,10 +107,11 @@ test('每个现存后台端点的每个方法都由守卫表显式登记，不�
   assert.deepEqual(unregistered, [], `存在未登记的后台端点方法:\n${unregistered.join('\n')}`)
 })
 
-test('守卫表引用的权限码都在目录内，模板码同样受目录约束', () => {
+test('守卫表引用的权限码都在目录内（超管私有码除外），模板码同样受目录约束', () => {
   const unknown: string[] = []
   for (const rule of ADMIN_ROUTE_RULES) {
     for (const code of rule.any) {
+      if (PRIVATE_PERMISSION_CODES.includes(code)) continue
       if (!ADMIN_PERMISSION_CODES.includes(code)) unknown.push(`${rule.p} → ${code}`)
     }
   }

@@ -10,11 +10,12 @@ import {
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    return await withPermissionTransaction(event, async (tx, templates) => {
+    const updated = await withPermissionTransaction(event, async (tx, templates) => {
       const user = event.context.user
 
       const userId = getRouterParam(event, 'id')
@@ -118,17 +119,37 @@ export default defineEventHandler(async (event) => {
       })
 
       return {
-        success: true,
-        message: `用户状态已更新为${getStatusText(status)}`,
-        data: {
-          userId: parseInt(userId),
-          oldStatus,
-          newStatus: status,
-          changedAt: currentTime,
-          changedBy: user.name
-        }
+        userId: parseInt(userId),
+        oldStatus,
+        newStatus: status,
+        reason: reason.trim(),
+        changedAt: currentTime,
+        changedBy: user.name
       }
     })
+
+    // 审计写入放在事务提交之后，避免回滚后留下成功记录
+    await recordAdminAudit(event, 'user.status', {
+      targetType: 'user',
+      targetId: updated.userId,
+      summary: {
+        oldStatus: updated.oldStatus,
+        newStatus: updated.newStatus,
+        reason: updated.reason
+      }
+    })
+
+    return {
+      success: true,
+      message: `用户状态已更新为${getStatusText(updated.newStatus)}`,
+      data: {
+        userId: updated.userId,
+        oldStatus: updated.oldStatus,
+        newStatus: updated.newStatus,
+        changedAt: updated.changedAt,
+        changedBy: updated.changedBy
+      }
+    }
   } catch (error) {
     console.error('更新用户状态失败:', error)
 

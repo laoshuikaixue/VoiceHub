@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   CARD_CODE_DISPATCH_LIMITS,
@@ -133,6 +134,18 @@ export default defineEventHandler(async (event) => {
   const failures: AssignOutcome[] = result.perUser.flatMap((item) => item.failures)
 
   const generatedCodes = generateMode ? (result as { generatedCodes?: string[] }).generatedCodes || [] : []
+
+  await recordAdminAudit(event, 'card-code.assign', {
+    targetType: 'card-code',
+    summary: {
+      generateMode,
+      assignedCount: result.summary.assignedCount,
+      failedCount: result.summary.failedCount,
+      recipients: result.summary.recipients,
+      generatedCount: generatedCodes.length,
+      note: note || null
+    }
+  })
 
   return {
     success: result.summary.assignedCount > 0,
