@@ -130,6 +130,12 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'audit-logs', m: GET_METHODS, any: ['audit:read'] },
   { p: 'audit-logs/*', m: GET_METHODS, any: ['audit:read'] },
 
+  // 日志管理：查询/导出（logs:read），清理（logs:manage）
+  { p: 'log-management', m: GET_METHODS, any: ['logs:read'] },
+  { p: 'log-management/*', m: GET_METHODS, any: ['logs:read'] },
+  { p: 'log-management/**', m: GET_METHODS, any: ['logs:read'] },
+  { p: 'log-management/cleanup', m: WRITE_METHODS, any: ['logs:manage'] },
+
   // 权限管理：角色权限模板（权限矩阵页）
   { p: 'permissions/matrix', m: GET_METHODS, any: ['priv:role-template'] },
   { p: 'permissions/matrix', m: WRITE_METHODS, any: ['priv:role-template'] },

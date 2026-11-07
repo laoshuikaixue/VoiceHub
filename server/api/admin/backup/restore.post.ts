@@ -1333,7 +1333,10 @@ export default defineEventHandler(async (event) => {
                           'legalConsentDocuments',
                           'enabledPlatforms',
                           'platformOrder',
-                          'rolePermissionTemplates'
+                          'rolePermissionTemplates',
+                          'apiLogLevel',
+                          'apiLogRetentionDays',
+                          'auditLogRetentionDays'
                         ]
 
                         // 只添加备份数据中存在的字段

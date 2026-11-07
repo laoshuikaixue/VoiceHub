@@ -89,6 +89,8 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'system-board:read',
   'system-board:write',
   'audit:read',
+  'logs:read',
+  'logs:manage',
   // 基础设施
   'api-keys:read',
   'api-keys:write',
@@ -125,7 +127,8 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'page:system-board',
   'page:permissions',
   'page:password',
-  'page:audit-log'
+  'page:audit-log',
+  'page:logs'
 ]
 
 const PERMISSION_CODE_SET: ReadonlySet<string> = new Set(ADMIN_PERMISSION_CODES)
@@ -231,6 +234,8 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'music-source:read',
     'music-source:write',
     'audit:read',
+    'logs:read',
+    'logs:manage',
     // 页面入口：站点配置、通知、黑名单、数据库、API 密钥、系统看板不在普通管理员界面
     'page:overview',
     'page:schedule',
@@ -245,7 +250,8 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'page:card-codes',
     'page:music-source',
     'page:password',
-    'page:audit-log'
+    'page:audit-log',
+    'page:logs'
   ],
   SUPER_ADMIN: [PERMISSION_ALL]
 }
@@ -273,7 +279,8 @@ export const ADMIN_PAGE_IDS: readonly string[] = [
   'system-board',
   'permissions',
   'password',
-  'audit-log'
+  'audit-log',
+  'logs'
 ]
 
 export const PAGE_PERMISSIONS: Record<string, readonly string[]> = Object.fromEntries(
@@ -298,6 +305,7 @@ export const PERMISSION_READ_DEPENDENCIES: Record<string, readonly string[]> = {
   'astrbot:read': ['astrbot:write'],
   'email-templates:read': ['email-templates:write', 'email-templates:delete'],
   'system-board:read': ['system-board:write'],
+  'logs:read': ['logs:manage'],
   'api-keys:read': ['api-keys:write'],
   'backup:read': ['backup:write'],
   'database:read': ['database:maintenance', 'database:reset'],
@@ -327,7 +335,8 @@ export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
   'system-board': ['system-board:read'],
   permissions: [PRIV_ROLE_TEMPLATE],
   password: [],
-  'audit-log': ['audit:read']
+  'audit-log': ['audit:read'],
+  logs: ['logs:read']
 }
 
 function isPermissionToken(token: unknown): token is string {

@@ -21,6 +21,11 @@ export const ADMIN_SETTINGS_SCOPES = {
   'music-source': {
     read: ['music-source:read', 'system-settings:read'], write: ['music-source:write', 'system-settings:write'],
     fields: ['enabledPlatforms', 'platformOrder']
+  },
+  // 日志管理：API 访问日志级别与数据库日志保留天数
+  logging: {
+    read: ['logs:read'], write: ['logs:manage'],
+    fields: ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays']
   }
 } as const
 

@@ -495,6 +495,11 @@ export const systemSettings = pgTable('SystemSettings', {
   platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),
   // 角色权限模板：按角色存权限码数组，NULL 时使用 app/utils/admin-permissions 内置默认模板
   rolePermissionTemplates: jsonb('rolePermissionTemplates').$type<Record<string, string[]> | null>(),
+
+  // 日志管理：API 访问日志记录级别（off / errors / all），两类数据库日志保留天数（0 = 永久保留）
+  apiLogLevel: text('apiLogLevel').default('all').notNull(),
+  apiLogRetentionDays: integer('apiLogRetentionDays').default(90).notNull(),
+  auditLogRetentionDays: integer('auditLogRetentionDays').default(180).notNull(),
 });
 
 // 歌曲黑名单表

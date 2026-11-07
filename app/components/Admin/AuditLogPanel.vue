@@ -5,14 +5,32 @@
         <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-text-tertiary font-medium">{{ locale.desc }}</p>
       </div>
-      <button
-        class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
-        :disabled="loading"
-        @click="loadLogs"
-      >
-        <RefreshCw :size="14" :class="loading ? 'animate-spin' : ''" />
-        {{ locale.refresh }}
-      </button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          :disabled="exporting"
+          @click="exportLogs('csv')"
+        >
+          <Download :size="14" />
+          {{ locale.exportCsv }}
+        </button>
+        <button
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          :disabled="exporting"
+          @click="exportLogs('jsonl')"
+        >
+          <FileText :size="14" />
+          {{ locale.exportRaw }}
+        </button>
+        <button
+          class="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider bg-bg-primary-40 border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
+          :disabled="loading"
+          @click="loadLogs"
+        >
+          <RefreshCw :size="14" :class="loading ? 'animate-spin' : ''" />
+          {{ locale.refresh }}
+        </button>
+      </div>
     </div>
 
     <div v-if="loadError" class="flex items-start gap-3 p-4 rounded-2xl bg-error-10 border border-error-20 text-error text-xs font-medium">
@@ -169,7 +187,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { AlertCircle, RefreshCw, Search } from '@lucide/vue'
+import { AlertCircle, Download, FileText, RefreshCw, Search } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
@@ -178,6 +196,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 
 const auth = useAuth()
 const { admin } = useLocale()
@@ -270,6 +289,38 @@ const resetFilters = () => {
 const changePage = (newPage) => {
   page.value = newPage
   loadLogs()
+}
+
+const exporting = ref(false)
+
+const saveBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+const exportLogs = async (format) => {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    const { page: _page, limit: _limit, ...filterQuery } = buildQuery()
+    const blob = await $fetch('/api/admin/audit-logs/export', {
+      query: { ...filterQuery, format },
+      responseType: 'blob',
+      ...auth.getAuthConfig()
+    })
+    const stamp = formatDateTime(getBeijingTime(), 'YYYYMMDD-HHmmss')
+    saveBlob(blob, `voicehub-audit-logs-${stamp}.${format === 'jsonl' ? 'log' : 'csv'}`)
+  } catch (error) {
+    loadError.value = localize(error)
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(() => {

@@ -22,7 +22,9 @@ import {
   MUSIC_SOURCE_PLATFORMS,
   DEFAULT_THEMES,
   CAPTCHA_PROVIDERS,
-  ALIYUN_ESA_CAPTCHA_REGIONS
+  ALIYUN_ESA_CAPTCHA_REGIONS,
+  API_LOG_LEVELS,
+  LOG_RETENTION_MAX_DAYS
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
@@ -1446,6 +1448,30 @@ export default defineEventHandler(async (event) => {
     // 时长>0 且 enable 未显式提交 ⇒ 自动开启，维持"时长与开关自洽"不变量
     if (anyRestrictionHoursPositive && body.enableSubmissionRestriction === undefined) {
       updateData.enableSubmissionRestriction = true
+    }
+
+    // 日志管理：记录级别与保留天数（0 = 永久保留）
+    if (body.apiLogLevel !== undefined) {
+      if (!(API_LOG_LEVELS as readonly unknown[]).includes(body.apiLogLevel)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_LOG_LEVEL_INVALID,
+          `apiLogLevel 必须是 ${API_LOG_LEVELS.join('、')}`
+        )
+      }
+      updateData.apiLogLevel = body.apiLogLevel
+    }
+    for (const field of ['apiLogRetentionDays', 'auditLogRetentionDays'] as const) {
+      if (body[field] === undefined) continue
+      if (!Number.isInteger(body[field]) || body[field] < 0 || body[field] > LOG_RETENTION_MAX_DAYS) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_LOG_RETENTION_INVALID,
+          `${field} 必须是 0-${LOG_RETENTION_MAX_DAYS} 的整数`,
+          { params: [LOG_RETENTION_MAX_DAYS] }
+        )
+      }
+      updateData[field] = body[field]
     }
 
     if (isAdminSettingsScope(scope)) {

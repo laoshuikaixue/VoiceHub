@@ -1,5 +1,5 @@
 {
-  "id": "b81de12c-7df8-42c1-8e31-905f1f7228f0",
+  "id": "a7fd580d-b025-40e9-b693-0d3fd6e1bcb5",
   "prevId": "fd038e2e-970d-4e0e-b44d-75cfd32a302e",
   "version": "7",
   "dialect": "postgresql",
@@ -4008,6 +4008,27 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "apiLogLevel": {
+          "name": "apiLogLevel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'all'"
+        },
+        "apiLogRetentionDays": {
+          "name": "apiLogRetentionDays",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 90
+        },
+        "auditLogRetentionDays": {
+          "name": "auditLogRetentionDays",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 180
         }
       },
       "indexes": {},

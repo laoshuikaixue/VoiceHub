@@ -983,7 +983,10 @@ export default defineEventHandler(async (event) => {
               'legalConsentDocuments',
               'enabledPlatforms',
               'platformOrder',
-              'rolePermissionTemplates'
+              'rolePermissionTemplates',
+              'apiLogLevel',
+              'apiLogRetentionDays',
+              'auditLogRetentionDays'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) {

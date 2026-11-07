@@ -12,6 +12,9 @@ CREATE TABLE "admin_audit_logs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "SystemSettings" ADD COLUMN "apiLogLevel" text DEFAULT 'all' NOT NULL;--> statement-breakpoint
+ALTER TABLE "SystemSettings" ADD COLUMN "apiLogRetentionDays" integer DEFAULT 90 NOT NULL;--> statement-breakpoint
+ALTER TABLE "SystemSettings" ADD COLUMN "auditLogRetentionDays" integer DEFAULT 180 NOT NULL;--> statement-breakpoint
 CREATE INDEX "admin_audit_logs_created_idx" ON "admin_audit_logs" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "admin_audit_logs_actor_idx" ON "admin_audit_logs" USING btree ("actor_id","created_at");--> statement-breakpoint
 CREATE INDEX "admin_audit_logs_action_idx" ON "admin_audit_logs" USING btree ("action","created_at");
