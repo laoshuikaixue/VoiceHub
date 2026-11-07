@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { isSafeBackupFilename } from '~~/server/utils/backup-filename'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -41,6 +42,11 @@ export default defineEventHandler(async (event) => {
     await fs.unlink(filepath)
 
     console.log(`管理员 ${user.username} 删除了备份文件：${filename}`)
+
+    await recordAdminAudit(event, 'backup.delete', {
+      targetType: 'backup',
+      targetId: typeof filename === 'string' ? filename : String(filename)
+    })
 
     return {
       success: true,
