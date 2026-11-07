@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
   await recordAdminAudit(event, 'card-code.recycle', {
     targetType: 'card-code',
-    targetId: assignmentIds.join(','),
+    targetId: `batch:${assignmentIds.length}`,
     summary: {
       recycledCount: succeeded.length,
       failedCount: failures.length,

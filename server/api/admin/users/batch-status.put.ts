@@ -232,7 +232,7 @@ export default defineEventHandler(async (event) => {
     if (result.data.totalUpdated > 0) {
       await recordAdminAudit(event, 'user.batch-status', {
         targetType: 'user',
-        targetId: result.data.updatedUsers.map((item) => item.userId).join(','),
+        targetId: `batch:${result.data.totalUpdated}`,
         summary: {
           count: result.data.totalUpdated,
           userIds: result.data.updatedUsers.map((item) => item.userId),

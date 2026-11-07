@@ -128,7 +128,7 @@ export default defineEventHandler(async (event) => {
 
     await recordAdminAudit(event, 'song.batch-reject', {
       targetType: 'song',
-      targetId: songIds.join(','),
+      targetId: `batch:${songIds.length}`,
       summary: {
         count: rejectedSongs.length,
         songIds: rejectedSongs.map((song) => song.id),

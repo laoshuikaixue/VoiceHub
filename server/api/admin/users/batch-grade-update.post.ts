@@ -151,7 +151,7 @@ export default defineEventHandler(async (event) => {
 
     await recordAdminAudit(event, 'user.batch-grade-update', {
       targetType: 'user',
-      targetId: uniqueUserIds.join(','),
+      targetId: `batch:${uniqueUserIds.length}`,
       summary: {
         updated,
         failed,

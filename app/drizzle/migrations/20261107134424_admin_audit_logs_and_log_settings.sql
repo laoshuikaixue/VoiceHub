@@ -1,10 +1,10 @@
 CREATE TABLE "admin_audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"actor_id" integer,
-	"actor_name" text,
+	"actor_name" varchar(255),
 	"action" varchar(80) NOT NULL,
 	"target_type" varchar(50),
-	"target_id" text,
+	"target_id" varchar(200),
 	"summary" text,
 	"ip_address" text,
 	"user_agent" text,

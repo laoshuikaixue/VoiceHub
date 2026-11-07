@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
     await recordAdminAudit(event, 'card-code.delete', {
       targetType: 'card-code',
-      targetId: ids.join(','),
+      targetId: `batch:${ids.length}`,
       summary: {
         count: deletedRows.length,
         codes: deletedRows.map((row) => row.code).slice(0, 20)

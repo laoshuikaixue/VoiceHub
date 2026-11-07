@@ -558,18 +558,19 @@ export const apiLogs = pgTable('api_logs', {
 // 管理员操作审计日志表（仅记录后台语义化写操作，控制记录量）
 export const adminAuditLogs = pgTable('admin_audit_logs', {
   id: serial('id').primaryKey(),
-  // 审计快照：操作者被删除后仍可追溯
+  // 审计快照：操作者被删除后仍可追溯；长度与 NAME_MAX_LENGTH 对齐
   actorId: integer('actor_id'),
-  actorName: text('actor_name'),
+  actorName: varchar('actor_name', { length: 255 }),
   // 语义动作码，如 schedule.publish、user.status、settings.update
   action: varchar('action', { length: 80 }).notNull(),
   targetType: varchar('target_type', { length: 50 }),
-  targetId: text('target_id'),
+  // 单个目标 ID；批量操作写 batch:<数量>，明细放 summary
+  targetId: varchar('target_id', { length: 200 }),
   // 变更摘要（脱敏后 JSON 字符串）
   summary: text('summary'),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  // SUCCESS / FAILURE
+  // 取值由 ADMIN_AUDIT_RESULT 保证：SUCCESS / FAILURE
   result: varchar('result', { length: 10 }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [

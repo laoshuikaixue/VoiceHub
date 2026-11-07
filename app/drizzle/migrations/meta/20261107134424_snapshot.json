@@ -1,5 +1,5 @@
 {
-  "id": "41b5e572-8398-490f-840b-7cf4af2ebdf0",
+  "id": "26058f5b-05a4-42d7-b02d-c74fb182430e",
   "prevId": "fd038e2e-970d-4e0e-b44d-75cfd32a302e",
   "version": "7",
   "dialect": "postgresql",
@@ -22,7 +22,7 @@
         },
         "actor_name": {
           "name": "actor_name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
@@ -40,7 +40,7 @@
         },
         "target_id": {
           "name": "target_id",
-          "type": "text",
+          "type": "varchar(200)",
           "primaryKey": false,
           "notNull": false
         },

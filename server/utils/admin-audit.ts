@@ -91,7 +91,7 @@ export async function recordAdminAudit(
 
     await db.insert(adminAuditLogs).values({
       actorId: user?.id ?? null,
-      actorName: user?.name || user?.username || null,
+      actorName: (user?.name || user?.username || '').slice(0, 255) || null,
       action: action.slice(0, 80),
       targetType: options.targetType ? options.targetType.slice(0, 50) : null,
       targetId: options.targetId === undefined ? null : String(options.targetId).slice(0, 200),

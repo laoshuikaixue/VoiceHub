@@ -95,8 +95,24 @@ test('recordAdminAudit 写入操作者/IP/UA/结果快照', async () => {
   assert.equal(JSON.parse(row.summary as string).newStatus, 'banned')
 })
 
-test('摘要脱敏：凭据样式内容被替换为占位符', async () => {
+test('操作者名称按列宽截断，与 varchar(255) 对齐', async () => {
   const captured: Record<string, unknown>[] = []
+  const deps = {
+    db: { insert: () => ({ values: (v: Record<string, unknown>) => { captured.push(v) } }) },
+    adminAuditLogs: {},
+    getClientIP: () => 'unknown',
+    getHeader: () => '',
+    redactCredentialPatterns: (t: string) => t,
+    runLazyLogRetentionCleanup: async () => {}
+  }
+  const { recordAdminAudit } = loadAudit(deps)
+  const longName = '名'.repeat(300)
+  await recordAdminAudit(makeEvent({ context: { user: { id: 1, username: 'u', name: longName } } }), 'user.update')
+
+  assert.equal((captured[0]!.actorName as string).length, 255)
+})
+
+test('摘要脱敏：凭据样式内容被替换为占位符', async () => {  const captured: Record<string, unknown>[] = []
   const deps = {
     db: { insert: () => ({ values: (v: Record<string, unknown>) => { captured.push(v) } }) },
     adminAuditLogs: {},

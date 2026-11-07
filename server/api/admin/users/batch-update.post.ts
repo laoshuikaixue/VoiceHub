@@ -270,7 +270,7 @@ export default defineEventHandler(async (event) => {
     if (updateResults.length > 0) {
       await recordAdminAudit(event, 'user.batch-update', {
         targetType: 'user',
-        targetId: updateResults.map((item: any) => item.id).join(','),
+        targetId: `batch:${updateResults.length}`,
         summary: {
           success: updateResults.length,
           failed: errors.length,
