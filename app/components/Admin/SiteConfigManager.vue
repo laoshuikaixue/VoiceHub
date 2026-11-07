@@ -135,39 +135,35 @@
         <div class="space-y-4">
           <div>
             <label :class="labelClass">{{ locale.siteLogoUrl }}</label>
-            <input
+            <ImageUploadInput
               v-model="formData.siteLogoUrl"
-              type="text"
               :placeholder="locale.siteLogoPlaceholder"
-              :class="inputClass"
+              :input-class="inputClass"
             />
           </div>
           <div>
             <label :class="labelClass">{{ locale.schoolLogoHome }}</label>
-            <input
+            <ImageUploadInput
               v-model="formData.schoolLogoHomeDarkUrl"
-              type="text"
               :placeholder="locale.schoolLogoHomePlaceholder"
-              :class="inputClass"
+              :input-class="inputClass"
             />
           </div>
           <div>
             <label :class="labelClass">{{ locale.schoolLogoHomeLight }}</label>
-            <input
+            <ImageUploadInput
               v-model="formData.schoolLogoHomeLightUrl"
-              type="text"
-              :disabled="!String(formData.schoolLogoHomeDarkUrl || '').trim()"
               :placeholder="locale.schoolLogoHomeLightPlaceholder"
-              :class="[inputClass, 'disabled:cursor-not-allowed disabled:opacity-50']"
+              :input-class="[inputClass, 'disabled:cursor-not-allowed disabled:opacity-50']"
+              :disabled="!String(formData.schoolLogoHomeDarkUrl || '').trim()"
             />
           </div>
           <div>
             <label :class="labelClass">{{ locale.schoolLogoPrint }}</label>
-            <input
+            <ImageUploadInput
               v-model="formData.schoolLogoPrintUrl"
-              type="text"
               :placeholder="locale.schoolLogoPrintPlaceholder"
-              :class="inputClass"
+              :input-class="inputClass"
             />
           </div>
         </div>
@@ -1114,6 +1110,7 @@ import {
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import ImageUploadInput from '~/components/UI/Common/ImageUploadInput.vue'
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import EsaCaptchaWidget from '~/components/Auth/EsaCaptchaWidget.vue'
 import { useToast } from '~/composables/useToast'

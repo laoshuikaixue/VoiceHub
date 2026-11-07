@@ -118,6 +118,91 @@
           </div>
         </div>
 
+        <!-- 管理员代他人投稿 -->
+        <div v-if="isAdminUser" class="on-behalf-section">
+          <div class="on-behalf-head">
+            <div class="section-label">{{ locale.onBehalfTitle }}</div>
+            <button
+              v-if="onBehalfUser"
+              class="on-behalf-change"
+              type="button"
+              @click="showOnBehalfSearch = true"
+            >
+              {{ locale.onBehalfChange }}
+            </button>
+            <button
+              v-if="onBehalfUser"
+              class="on-behalf-clear"
+              type="button"
+              @click="clearOnBehalfUser"
+            >
+              <Icon :size="12" name="close" />
+            </button>
+            <span v-if="!onBehalfUser" class="on-behalf-hint">{{ locale.onBehalfHint }}</span>
+          </div>
+
+          <div v-if="!onBehalfUser" class="on-behalf-picker">
+            <button
+              class="add-collaborator-btn"
+              type="button"
+              @click="showOnBehalfSearch = true"
+            >
+              <Icon :size="14" name="user" />
+              {{ locale.onBehalfPick }}
+            </button>
+          </div>
+
+          <div v-else class="on-behalf-detail">
+            <div class="on-behalf-identity">
+              <div class="on-behalf-avatar">
+                {{ (onBehalfUser.name || onBehalfUser.username || '?').slice(0, 1) }}
+              </div>
+              <div class="on-behalf-name-block">
+                <span class="on-behalf-name">{{ onBehalfUser.name || onBehalfUser.username }}</span>
+                <div class="on-behalf-badges">
+                  <span class="on-behalf-badge">{{ roleLabel(onBehalfUser.role) }}</span>
+                  <span
+                    :class="[
+                      'on-behalf-badge',
+                      onBehalfUser.status === 'active' ? 'is-active' : 'is-disabled'
+                    ]"
+                  >
+                    {{
+                      onBehalfUser.status === 'active'
+                        ? locale.onBehalfStatusActive
+                        : locale.onBehalfStatusDisabled
+                    }}
+                  </span>
+                </div>
+              </div>
+              <span v-if="onBehalfLoading" class="on-behalf-loading">{{ locale.processing }}</span>
+            </div>
+
+            <div class="on-behalf-grid">
+              <div class="on-behalf-field">
+                <span class="on-behalf-label">{{ locale.onBehalfUsername }}</span>
+                <span class="on-behalf-value">{{ onBehalfUser.username || '-' }}</span>
+              </div>
+              <div class="on-behalf-field">
+                <span class="on-behalf-label">{{ locale.onBehalfId }}</span>
+                <span class="on-behalf-value">#{{ onBehalfUser.id }}</span>
+              </div>
+              <div class="on-behalf-field">
+                <span class="on-behalf-label">{{ locale.onBehalfGrade }}</span>
+                <span class="on-behalf-value">{{ onBehalfUser.grade || '-' }}</span>
+              </div>
+              <div class="on-behalf-field">
+                <span class="on-behalf-label">{{ locale.onBehalfClass }}</span>
+                <span class="on-behalf-value">{{ onBehalfUser.class || '-' }}</span>
+              </div>
+              <div v-if="onBehalfUser.email" class="on-behalf-field">
+                <span class="on-behalf-label">{{ locale.onBehalfEmail }}</span>
+                <span class="on-behalf-value">{{ onBehalfUser.email }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
           <div v-if="!user" class="submission-status-horizontal login-required-notice">
@@ -821,6 +906,16 @@
       @select="handleUserSelect"
     />
 
+    <!-- 管理员代他人投稿：选择投稿人 -->
+    <UserSearchModal
+      v-if="isAdminUser"
+      v-model:show="showOnBehalfSearch"
+      :exclude-ids="[]"
+      :multiple="false"
+      :title="locale.onBehalfTitle"
+      @select="handleOnBehalfSelect"
+    />
+
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-300 ease-out"
@@ -1387,6 +1482,15 @@ const openPlaylistModal = (platform) => {
 }
 const showUserSearchModal = ref(false)
 const collaborators = ref([])
+
+// 管理员代他人投稿
+const showOnBehalfSearch = ref(false)
+const onBehalfUser = ref(null)
+const onBehalfLoading = ref(false)
+const isAdminUser = computed(
+  () => !!user.value && ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.value.role)
+)
+const roleLabel = (role) => locale.value.roleLabels?.[role] || role || '-'
 
 const songService = useSongs({ compact: true })
 const playTimes = ref([])
@@ -2044,6 +2148,29 @@ const handleUserSelect = (users) => {
 
 const removeCollaborator = (userId) => {
   collaborators.value = collaborators.value.filter((c) => c.id !== userId)
+}
+
+// 选择代投稿用户后，拉取其完整资料展示
+const handleOnBehalfSelect = async (selected) => {
+  const target = Array.isArray(selected) ? selected[0] : selected
+  showOnBehalfSearch.value = false
+  if (!target) {
+    onBehalfUser.value = null
+    return
+  }
+  onBehalfUser.value = target
+  onBehalfLoading.value = true
+  try {
+    const data = await $fetch(`/api/users/submit-target/${target.id}`)
+    if (data?.user) onBehalfUser.value = data.user
+  } catch (error) {
+    console.error('获取代投稿用户信息失败:', error)
+  } finally {
+    onBehalfLoading.value = false
+  }
+}
+const clearOnBehalfUser = () => {
+  onBehalfUser.value = null
 }
 
 // 获取播出时段
@@ -3754,6 +3881,7 @@ const submitSong = async (result, options = {}) => {
       submissionNotePublic: submissionNotePublic.value,
       submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id),
+      onBehalfOfUserId: isAdminUser.value ? (onBehalfUser.value?.id || null) : null,
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
@@ -3822,7 +3950,8 @@ const handleSubmit = async (fromSlotModal = false) => {
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       submissionAnonymous: submissionAnonymous.value,
-      collaborators: collaborators.value.map((u) => u.id)
+      collaborators: collaborators.value.map((u) => u.id),
+      onBehalfOfUserId: isAdminUser.value ? (onBehalfUser.value?.id || null) : null
     }
     if (cardCode.value && cardCode.value.trim()) {
       songData.cardCode = cardCode.value.trim()
@@ -4225,6 +4354,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       submissionAnonymous: submissionAnonymous.value,
+      onBehalfOfUserId: isAdminUser.value ? (onBehalfUser.value?.id || null) : null,
     }
 
     if (cardCode.value && cardCode.value.trim()) {
@@ -4793,6 +4923,159 @@ defineExpose({
   color: var(--text-primary);
   white-space: nowrap;
   flex-shrink: 0; /* 防止标签被压缩 */
+}
+
+.on-behalf-section {
+  flex: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.on-behalf-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.on-behalf-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.on-behalf-picker {
+  display: flex;
+}
+
+.on-behalf-change {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.on-behalf-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 999px;
+  background: var(--overlay-10);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.on-behalf-clear:hover {
+  background: var(--overlay-20);
+}
+
+.on-behalf-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--overlay-10);
+  border-radius: 12px;
+}
+
+.on-behalf-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.on-behalf-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.on-behalf-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.on-behalf-name {
+  font-family: 'MiSans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.on-behalf-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.on-behalf-badge {
+  padding: 0 0.4rem;
+  border-radius: 5px;
+  background: var(--overlay-10);
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 17px;
+}
+
+.on-behalf-badge.is-active {
+  color: var(--success);
+}
+
+.on-behalf-badge.is-disabled {
+  color: var(--danger, #f56c6c);
+}
+
+.on-behalf-loading {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.on-behalf-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem 0.9rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.on-behalf-field {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.on-behalf-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.on-behalf-value {
+  overflow: hidden;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .collaborators-list {

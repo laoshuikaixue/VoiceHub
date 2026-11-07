@@ -18,6 +18,9 @@ export const siteConfig = {
   showBeianIconDesc: 'Show the filing icon before the public security filing number',
   siteDescription: 'Site Description',
   siteDescriptionPlaceholder: 'Enter the site description',
+  announcement: 'Site Announcement',
+  announcementPlaceholder: 'Enter announcement content; leave empty to hide the banner',
+  announcementHint: 'When set, the announcement banner appears below the homepage tabs; leave empty to hide.',
   statisticsCode: 'Site Statistics Code',
   legalConsentTitle: 'Login Terms Confirmation',
   legalConsentDesc: 'Require users to read and agree to terms before login.',
@@ -1936,6 +1939,23 @@ export const pages = {
       submissionOptionItemNote: 'Submission note',
       submissionOptionItemAnonymous: 'Anonymous submission',
       submissionOptionItemCardCode: 'Request card',
+      onBehalfTitle: 'Submit for User',
+      onBehalfPick: 'Select User',
+      onBehalfChange: 'Change',
+      onBehalfHint: 'Admins can submit on behalf of a user; the request belongs to them',
+      onBehalfUsername: 'Username',
+      onBehalfId: 'User ID',
+      onBehalfGrade: 'Grade',
+      onBehalfClass: 'Class',
+      onBehalfEmail: 'Email',
+      onBehalfStatusActive: 'Active',
+      onBehalfStatusDisabled: 'Disabled',
+      roleLabels: {
+        USER: 'User',
+        ADMIN: 'Admin',
+        SONG_ADMIN: 'Song Admin',
+        SUPER_ADMIN: 'Super Admin'
+      },
       cardCodeMyCodes: 'My request cards',
       cardCodeSelectLabel: 'Select a request card',
       cardCodeSelectPlaceholder: 'Pick from my request cards, or enter a code manually',
@@ -4165,11 +4185,51 @@ export const admin = {
   notificationSender: {
     title: 'Send Notifications',
     desc: 'Instantly push announcements, activity updates, or important reminders to selected groups',
+    publishType: 'Publish Type',
+    publishTypes: {
+      announcement: 'Publish Announcement',
+      notification: 'Send Notification'
+    },
+    historyTypes: {
+      notification: 'Notifications',
+      announcement: 'Site Announcements'
+    },
+    announcementContent: 'Announcement Content',
+    announcementPlaceholder: 'Enter the homepage announcement, Markdown is supported...',
+    announcementPreviewHint: 'This is how the announcement looks on the homepage.',
+    clearAnnouncement: 'Clear banner',
+    confirmClearAnnouncement: 'Confirm clear',
     notificationTitle: 'Notification Title',
     titlePlaceholder: 'Enter notification title',
     notificationContent: 'Notification Content',
     contentPlaceholder: 'Enter notification details...',
     markdownHint: 'Markdown is supported and rendered safely in the preview.',
+    announcementTitleLabel: 'Announcement Title',
+    announcementTitlePlaceholder: 'Enter the homepage announcement title',
+    optional: 'Optional',
+    announcementTitleOptionalHint:
+      'Optional. Leave empty to show the content only; in scrolling mode the title scrolls inline.',
+    announcementContentRequired: 'Announcement content is required',
+    displayMode: 'Display Mode',
+    displayModes: {
+      static: 'Static',
+      scroll: 'Scrolling'
+    },
+    displayModeHint:
+      'Static keeps the announcement on a single line; scrolling loops the content horizontally.',
+    scrollSpeed: 'Scroll Speed',
+    scrollSpeedHint:
+      'Seconds needed for one full scroll cycle; a smaller value scrolls faster (8 - 120 seconds).',
+    alignment: 'Alignment',
+    alignments: {
+      left: 'Left',
+      center: 'Center',
+      right: 'Right'
+    },
+    alignmentHint: 'How the content is aligned inside the banner in static mode.',
+    announcementTitleContentRequired: 'Announcement title and content are required',
+    announcementTitleTooLong: (max: number) => `Announcement title cannot exceed ${max} characters`,
+    announcementContentTooLong: (max: number) => `Announcement content cannot exceed ${max} characters`,
     importantToggleTitle: 'Important Pop-up',
     importantToggleDescription: 'Shown in a pop-up after sign-in and marked as read when closed',
     groupForwardToggleTitle: 'Also forward to groups',
@@ -4193,7 +4253,7 @@ export const admin = {
     noUsersSelected: 'No users selected',
     send: 'Send',
     sending: 'Sending...',
-    previewTitle: 'Notification Preview',
+    previewTitle: 'Preview',
     previewSender: 'Administrator',
     senderLabel: 'Sender',
     previewTitlePlaceholder: 'Notification title',
@@ -4217,7 +4277,9 @@ export const admin = {
       selectUsers: 'Select users'
     },
     messages: {
-      sendSuccess: (count: number) => `Notification sent to ${count} users`
+      sendSuccess: (count: number) => `Notification sent to ${count} users`,
+      announcementSuccess: 'Announcement published, the homepage banner is updated',
+      announcementCleared: 'Announcement cleared, the homepage banner is removed'
     },
     errors: {
       adminOnly: 'Only admins can send system notifications',
@@ -4235,6 +4297,48 @@ export const admin = {
     history: {
       title: 'Sending History',
       description: 'Each send appears once; open its details to review recipient read status',
+      announcementTitle: 'Announcement History',
+      announcementDescription: 'Each announcement publish appears once with its sender and group forward status',
+      announcementEmptyDescription: 'Publish an announcement from the left panel and it will be listed here.',
+      announcementHistoryTitle: 'Homepage Announcement History',
+      announcementHistoryDescription:
+        'Each publish appears once; preview the homepage result, edit the content, or delete the record',
+      announcementEmpty: 'No announcements published yet',
+      announcementColumn: 'Announcement',
+      announcementUntitled: 'Untitled announcement',
+      displayModeLabel: 'Display Mode',
+      alignment: 'Alignment',
+      alignments: {
+        left: 'Left',
+        center: 'Center',
+        right: 'Right'
+      },
+      activeLabel: 'Live',
+      setActive: 'Set as Live',
+      setActiveSuccess: 'Announcement is now the live banner',
+      setActiveFailed: 'Failed to switch the live announcement, please retry',
+      previewAction: 'Preview',
+      previewEyebrow: 'Homepage Announcement Preview',
+      previewFooterHint:
+        'This is how the announcement appears in the homepage bar; scrolling mode loops the content horizontally.',
+      scrollSpeedValue: (seconds: number) => `${seconds}s / cycle`,
+      editAnnouncement: 'Edit Announcement',
+      editAnnouncementTitleLabel: 'Announcement Title',
+      editAnnouncementTitlePlaceholder: 'Enter the homepage announcement title',
+      editAnnouncementContent: 'Announcement Content',
+      editAnnouncementContentPlaceholder: 'Enter the Markdown announcement content',
+      deleteAnnouncement: 'Delete Announcement',
+      deleteAnnouncementConfirmation: (title: string, active: boolean) =>
+        active
+          ? `Delete “${title}”? It is currently live on the homepage, so the homepage announcement bar will be removed as well. This cannot be undone.`
+          : `Delete “${title}”? This cannot be undone.`,
+      announcementUpdateSuccess: 'Announcement updated',
+      announcementUpdateFailed: 'Failed to update the announcement, please retry',
+      announcementDeleteSuccess: 'Announcement record deleted',
+      announcementDeleteFailed: 'Failed to delete the announcement record, please retry',
+      announcementItemName: 'announcement records',
+      announcementTotal: (count: number) => `${count} announcement records in total`,
+      groupForwarded: 'Forwarded to groups',
       refresh: 'Refresh',
       refreshing: 'Refreshing...',
       searchPlaceholder: 'Search notification title or content',

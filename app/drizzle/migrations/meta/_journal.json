@@ -421,6 +421,13 @@
       "when": 1793448074583,
       "tag": "20261031120114_add_permission_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1793508139407,
+      "tag": "20261102000000_add_announcement_full",
+      "breakpoints": true
     }
   ]
 }
