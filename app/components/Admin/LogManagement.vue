@@ -336,6 +336,7 @@ import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
+import { PRIV_AUDIT, PRIV_LOGS } from '~/utils/admin-permissions'
 
 const auth = useAuth()
 const { can } = usePermissions()
@@ -344,9 +345,9 @@ const locale = computed(() => useSafeLocale(admin.value?.logManagement || {}))
 const { localize } = useServerErrors()
 const { t } = useLocaleText(locale)
 
-const canRead = computed(() => can('logs:read'))
-const canManage = computed(() => can('logs:manage'))
-const canAudit = computed(() => can('audit:read'))
+const canRead = computed(() => can(PRIV_LOGS))
+const canManage = computed(() => can(PRIV_LOGS))
+const canAudit = computed(() => can(PRIV_AUDIT))
 
 // 配置
 const config = reactive({ apiLogLevel: 'all', apiLogRetentionDays: 90, auditLogRetentionDays: 180 })

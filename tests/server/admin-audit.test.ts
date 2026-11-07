@@ -13,6 +13,7 @@ import {
   hasAdminPermission,
   resolveEffectivePermissions,
   PRIV_ADMIN_CONSOLE,
+  PRIV_AUDIT,
   PERMISSION_ALL
 } from '../../app/utils/admin-permissions.ts'
 
@@ -40,47 +41,29 @@ function makeEvent(overrides: Record<string, unknown> = {}) {
   } as any
 }
 
-test('audit:read 加入权限目录且 ADMIN 模板包含，仅管理员可见审计页', () => {
-  assert.ok(ADMIN_PERMISSION_CODES.includes('audit:read'))
-  assert.ok(ADMIN_PERMISSION_CODES.includes('page:audit-log'))
-  assert.ok(ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('audit:read'))
-  assert.ok(ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('page:audit-log'))
+test('审计能力为超管私有码，不进权限目录与页面码', () => {
+  assert.ok(!ADMIN_PERMISSION_CODES.includes(PRIV_AUDIT))
+  assert.ok(!ADMIN_PERMISSION_CODES.includes('audit:read'))
+  assert.ok(!ADMIN_PERMISSION_CODES.includes('page:audit-log'))
+  assert.ok(!ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes(PRIV_AUDIT))
+  assert.ok(!ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('page:audit-log'))
+  assert.deepEqual(ADMIN_PAGE_CAPABILITIES['audit-log'], [PRIV_AUDIT])
   assert.ok(ADMIN_PAGE_IDS.includes('audit-log'))
-  assert.deepEqual(ADMIN_PAGE_CAPABILITIES['audit-log'], ['audit:read'])
 
-  const admin = resolveEffectivePermissions({ role: 'ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
-  assert.ok(canAccessAdminPage(admin, 'audit-log'))
-  assert.ok(canUseAdminPage(admin, 'audit-log'))
-  assert.equal(canAccessAdminPage(resolveEffectivePermissions({ role: 'SONG_ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT), 'audit-log'), false)
-  assert.equal(canAccessAdminPage(resolveEffectivePermissions({ role: 'USER' }, ROLE_PERMISSION_TEMPLATES_DEFAULT), 'audit-log'), false)
-})
-
-test('仅 audit:read 无后台闸门不可访问，显式拒绝隐藏入口', () => {
-  assert.equal(canAccessAdminPage(['audit:read'], 'audit-log'), false)
-  assert.equal(hasAdminPermission({ perms: ['audit:read'] }, 'audit:read'), false)
-  assert.equal(canAccessAdminPage([PRIV_ADMIN_CONSOLE, 'audit:read'], 'audit-log'), true)
-  assert.equal(hasAdminPermission({ perms: [PRIV_ADMIN_CONSOLE, 'audit:read'] }, 'audit:read'), true)
-
-  // 页面码控制入口（ADMIN 仍持有 page:audit-log），审计读取能力被拒则不可用
-  const denied = resolveEffectivePermissions(
-    { role: 'ADMIN', permissions: ['!audit:read'] },
-    ROLE_PERMISSION_TEMPLATES_DEFAULT
-  )
-  assert.equal(canAccessAdminPage(denied, 'audit-log'), true)
-  assert.equal(canUseAdminPage(denied, 'audit-log'), false)
-
-  const deniedPage = resolveEffectivePermissions(
-    { role: 'ADMIN', permissions: ['!page:audit-log'] },
-    ROLE_PERMISSION_TEMPLATES_DEFAULT
-  )
-  assert.equal(canAccessAdminPage(deniedPage, 'audit-log'), false)
-})
-
-test('超级管理员通配覆盖审计能力', () => {
   const superPerms = resolveEffectivePermissions({ role: 'SUPER_ADMIN' }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
-  assert.ok(superPerms.includes(PERMISSION_ALL))
-  assert.ok(hasAdminPermission({ perms: superPerms }, 'audit:read'))
   assert.ok(canAccessAdminPage(superPerms, 'audit-log'))
+  assert.ok(canUseAdminPage(superPerms, 'audit-log'))
+  for (const role of ['ADMIN', 'SONG_ADMIN', 'USER']) {
+    const perms = resolveEffectivePermissions({ role }, ROLE_PERMISSION_TEMPLATES_DEFAULT)
+    assert.equal(canAccessAdminPage(perms, 'audit-log'), false, role)
+  }
+})
+
+test('私有码不能通过显式授权或域通配获得', () => {
+  assert.equal(hasAdminPermission({ perms: [PRIV_ADMIN_CONSOLE, PRIV_AUDIT] }, PRIV_AUDIT), false)
+  assert.equal(canAccessAdminPage([PRIV_AUDIT], 'audit-log'), false)
+  assert.equal(hasAdminPermission({ perms: [PRIV_ADMIN_CONSOLE, 'priv:*'] }, PRIV_AUDIT), false)
+  assert.equal(hasAdminPermission({ perms: [PRIV_ADMIN_CONSOLE, PERMISSION_ALL] }, PRIV_AUDIT), true)
 })
 
 test('recordAdminAudit 写入操作者/IP/UA/结果快照', async () => {

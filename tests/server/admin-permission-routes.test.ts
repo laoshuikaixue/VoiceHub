@@ -106,10 +106,11 @@ test('每个现存后台端点的每个方法都由守卫表显式登记，不�
   assert.deepEqual(unregistered, [], `存在未登记的后台端点方法:\n${unregistered.join('\n')}`)
 })
 
-test('守卫表引用的权限码都在目录内，模板码同样受目录约束', () => {
+test('守卫表引用的权限码都在目录内（超管私有码除外），模板码同样受目录约束', () => {
   const unknown: string[] = []
   for (const rule of ADMIN_ROUTE_RULES) {
     for (const code of rule.any) {
+      if (PRIVATE_PERMISSION_CODES.includes(code)) continue
       if (!ADMIN_PERMISSION_CODES.includes(code)) unknown.push(`${rule.p} → ${code}`)
     }
   }
@@ -179,7 +180,7 @@ test('普通用户模板不含后台闸门码，无法访问任何后台接口',
 // 内置角色保留既有入口，并显示其业务权限对应的模块。
 const DEFAULT_UI_PAGES: Record<string, readonly string[]> = {
   SONG_ADMIN: ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'],
-  ADMIN: ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source', 'notifications', 'smtp-config', 'blacklist', 'site-config', 'database', 'audit-log', 'logs'],
+  ADMIN: ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source', 'notifications', 'smtp-config', 'blacklist', 'site-config', 'database'],
   SUPER_ADMIN: ADMIN_PAGE_IDS
 }
 

@@ -6,7 +6,7 @@
  * 未登记的后台接口默认拒绝并记录日志。
  * 表与 server/api/admin 下的端点逐一对应，由 tests/server/admin-permission-routes.test.ts 校验等价性。
  */
-import { PRIV_ADMIN_CONSOLE } from '../../app/utils/admin-permissions.ts'
+import { PRIV_ADMIN_CONSOLE, PRIV_AUDIT, PRIV_LOGS } from '../../app/utils/admin-permissions.ts'
 import { ADMIN_SETTINGS_SCOPES } from './admin-settings-scope.ts'
 
 type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -126,15 +126,15 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'system-board/*', m: GET_METHODS, any: ['system-board:read'] },
   { p: 'system-board/*', m: WRITE_METHODS, any: ['system-board:write'] },
 
-  // 审计日志：只读查询
-  { p: 'audit-logs', m: GET_METHODS, any: ['audit:read'] },
-  { p: 'audit-logs/*', m: GET_METHODS, any: ['audit:read'] },
+  // 审计日志：仅超级管理员（私有码，不在权限目录中）
+  { p: 'audit-logs', m: GET_METHODS, any: [PRIV_AUDIT] },
+  { p: 'audit-logs/*', m: GET_METHODS, any: [PRIV_AUDIT] },
 
-  // 日志管理：查询/导出（logs:read），清理（logs:manage）
-  { p: 'log-management', m: GET_METHODS, any: ['logs:read'] },
-  { p: 'log-management/*', m: GET_METHODS, any: ['logs:read'] },
-  { p: 'log-management/**', m: GET_METHODS, any: ['logs:read'] },
-  { p: 'log-management/cleanup', m: WRITE_METHODS, any: ['logs:manage'] },
+  // 日志管理：查询/导出与清理同样仅超级管理员
+  { p: 'log-management', m: GET_METHODS, any: [PRIV_LOGS] },
+  { p: 'log-management/*', m: GET_METHODS, any: [PRIV_LOGS] },
+  { p: 'log-management/**', m: GET_METHODS, any: [PRIV_LOGS] },
+  { p: 'log-management/cleanup', m: WRITE_METHODS, any: [PRIV_LOGS] },
 
   // 权限管理：角色权限模板（权限矩阵页）
   { p: 'permissions/matrix', m: GET_METHODS, any: ['priv:role-template'] },

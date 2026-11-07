@@ -1,4 +1,4 @@
-import { hasAdminPermission } from '~~/app/utils/admin-permissions'
+import { hasAdminPermission, PRIV_LOGS } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -1451,6 +1451,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // 日志管理：记录级别与保留天数（0 = 永久保留）
+    // 未走 logging 模块接口时同样要求私有码，避免用通用配置权限绕过
+    if (!isAdminSettingsScope(scope)) {
+      const logFields = ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays']
+      if (logFields.some((field) => body[field] !== undefined) && !hasAdminPermission(user, PRIV_LOGS)) {
+        throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有修改日志配置的权限')
+      }
+    }
     if (body.apiLogLevel !== undefined) {
       if (!(API_LOG_LEVELS as readonly unknown[]).includes(body.apiLogLevel)) {
         throw createApiError(

@@ -15,6 +15,13 @@ export const PRIV_ADMIN_CONSOLE = 'priv:admin-console'
 export const PRIV_ROLE_TEMPLATE = 'priv:role-template'
 // 站点级：按用户显式授权/拒权
 export const PRIV_GRANT = 'priv:grant'
+// 站点级：管理员审计与日志管理，仅供超级管理员。不进入权限目录，无法被显式授出
+export const PRIV_AUDIT = 'priv:audit'
+export const PRIV_LOGS = 'priv:logs'
+
+// 私有码只在持有全站通配 `*`（即超级管理员模板）时生效；
+// `priv:*` 等域通配不得覆盖，避免把审计能力随通配授权扩散出去。
+const PRIVATE_PERMISSION_CODES: ReadonlySet<string> = new Set([PRIV_AUDIT, PRIV_LOGS])
 
 // 安全阀保护的站点级能力：移出其最后一个持有者会把站点锁死在无人可再授权的状态
 export const PROTECTED_PRIV_CODES: readonly string[] = [
@@ -94,9 +101,6 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'email-templates:delete',
   'system-board:read',
   'system-board:write',
-  'audit:read',
-  'logs:read',
-  'logs:manage',
   // 基础设施
   'api-keys:read',
   'api-keys:write',
@@ -132,9 +136,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'page:database',
   'page:system-board',
   'page:permissions',
-  'page:password',
-  'page:audit-log',
-  'page:logs'
+  'page:password'
 ]
 
 const PERMISSION_CODE_SET: ReadonlySet<string> = new Set(ADMIN_PERMISSION_CODES)
@@ -239,9 +241,6 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'database:maintenance',
     'music-source:read',
     'music-source:write',
-    'audit:read',
-    'logs:read',
-    'logs:manage',
     // 页面入口：站点配置、通知、黑名单、数据库、API 密钥、系统看板不在普通管理员界面
     'page:overview',
     'page:schedule',
@@ -255,9 +254,7 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'page:semesters',
     'page:card-codes',
     'page:music-source',
-    'page:password',
-    'page:audit-log',
-    'page:logs'
+    'page:password'
   ],
   SUPER_ADMIN: [PERMISSION_ALL]
 }
@@ -311,7 +308,6 @@ export const PERMISSION_READ_DEPENDENCIES: Record<string, readonly string[]> = {
   'astrbot:read': ['astrbot:write'],
   'email-templates:read': ['email-templates:write', 'email-templates:delete'],
   'system-board:read': ['system-board:write'],
-  'logs:read': ['logs:manage'],
   'api-keys:read': ['api-keys:write'],
   'backup:read': ['backup:write'],
   'database:read': ['database:maintenance', 'database:reset'],
@@ -341,8 +337,8 @@ export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
   'system-board': ['system-board:read'],
   permissions: [PRIV_ROLE_TEMPLATE],
   password: [],
-  'audit-log': ['audit:read'],
-  logs: ['logs:read']
+  'audit-log': [PRIV_AUDIT],
+  logs: [PRIV_LOGS]
 }
 
 function isPermissionToken(token: unknown): token is string {
@@ -542,6 +538,7 @@ export function isPermissionDenied(perms: readonly string[], code: string): bool
 export function hasPermission(perms: readonly string[], code: string): boolean {
   if (!Array.isArray(perms) || !code) return false
   if (isPermissionDenied(perms, code)) return false
+  if (PRIVATE_PERMISSION_CODES.has(code)) return perms.includes(PERMISSION_ALL)
   const dependencies = PERMISSION_READ_DEPENDENCIES[code]
   return perms.some((token) => !token.startsWith('!') && matchesToken(token, code)) ||
     (Array.isArray(dependencies) && dependencies.some((action) => hasPermission(perms, action)))

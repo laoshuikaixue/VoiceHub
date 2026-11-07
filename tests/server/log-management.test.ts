@@ -23,6 +23,8 @@ import {
 } from '../../server/utils/admin-settings-scope.ts'
 
 const consoleCode = permissions.PRIV_ADMIN_CONSOLE
+const PRIV_AUDIT = permissions.PRIV_AUDIT
+const PRIV_LOGS = permissions.PRIV_LOGS
 
 test('API 日志记录级别按 off / errors / all 门控', () => {
   assert.equal(shouldRecordApiLog('all', 200), true)
@@ -106,26 +108,25 @@ test('导出格式只接受 csv / jsonl，其余回退 csv', () => {
   assert.equal(readExportFormat(undefined), 'csv')
 })
 
-test('日志管理权限码进入目录与 ADMIN 模板', () => {
-  assert.ok(permissions.ADMIN_PERMISSION_CODES.includes('logs:read'))
-  assert.ok(permissions.ADMIN_PERMISSION_CODES.includes('logs:manage'))
-  assert.ok(permissions.ADMIN_PERMISSION_CODES.includes('page:logs'))
+test('日志管理为超管私有码，不进权限目录与 ADMIN 模板', () => {
+  assert.ok(!permissions.ADMIN_PERMISSION_CODES.includes('logs:read'))
+  assert.ok(!permissions.ADMIN_PERMISSION_CODES.includes('logs:manage'))
+  assert.ok(!permissions.ADMIN_PERMISSION_CODES.includes('page:logs'))
   assert.ok(permissions.ADMIN_PAGE_IDS.includes('logs'))
-  assert.deepEqual(permissions.ADMIN_PAGE_CAPABILITIES.logs, ['logs:read'])
-  assert.ok(permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('logs:read'))
-  assert.ok(permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('logs:manage'))
-  assert.ok(permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('page:logs'))
+  assert.deepEqual(permissions.ADMIN_PAGE_CAPABILITIES.logs, [PRIV_LOGS])
+  assert.ok(!permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes(PRIV_LOGS))
+  assert.ok(!permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT.ADMIN.includes('page:logs'))
 })
 
-test('日志管理页面：ADMIN 可见，SONG_ADMIN/USER 不可见', () => {
-  const admin = permissions.resolveEffectivePermissions(
-    { role: 'ADMIN' },
+test('日志管理页面仅超管可见', () => {
+  const superPerms = permissions.resolveEffectivePermissions(
+    { role: 'SUPER_ADMIN' },
     permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT
   )
-  assert.equal(permissions.canAccessAdminPage(admin, 'logs'), true)
-  assert.equal(permissions.canUseAdminPage(admin, 'logs'), true)
+  assert.equal(permissions.canAccessAdminPage(superPerms, 'logs'), true)
+  assert.equal(permissions.canUseAdminPage(superPerms, 'logs'), true)
 
-  for (const role of ['SONG_ADMIN', 'USER']) {
+  for (const role of ['ADMIN', 'SONG_ADMIN', 'USER']) {
     const perms = permissions.resolveEffectivePermissions(
       { role },
       permissions.ROLE_PERMISSION_TEMPLATES_DEFAULT
@@ -134,29 +135,24 @@ test('日志管理页面：ADMIN 可见，SONG_ADMIN/USER 不可见', () => {
   }
 })
 
-test('logs:manage 隐含 logs:read，且都需要后台闸门码', () => {
-  const manageOnly = [consoleCode, 'logs:manage']
-  assert.equal(permissions.hasPermission(manageOnly, 'logs:read'), true)
-  assert.equal(permissions.hasPermission(manageOnly, 'logs:manage'), true)
-
-  assert.equal(permissions.hasPermission(['logs:manage'], 'logs:read'), true)
-  assert.equal(permissions.canAccessAdminPage(['logs:read'], 'logs'), false)
-
-  const readOnly = [consoleCode, 'logs:read']
-  assert.equal(permissions.hasPermission(readOnly, 'logs:manage'), false)
+test('私有码不接受显式授权与域通配', () => {
+  assert.equal(permissions.hasPermission([PRIV_LOGS], PRIV_LOGS), false)
+  assert.equal(permissions.hasPermission([consoleCode, 'priv:*'], PRIV_LOGS), false)
+  assert.equal(permissions.hasPermission([consoleCode, permissions.PERMISSION_ALL], PRIV_LOGS), true)
 })
 
-test('日志接口守卫：查询/导出用 logs:read，清理用 logs:manage', () => {
-  for (const [pathname, method, code] of [
-    ['/api/admin/log-management/access', 'GET', 'logs:read'],
-    ['/api/admin/log-management/access/export', 'GET', 'logs:read'],
-    ['/api/admin/log-management/stats', 'GET', 'logs:read'],
-    ['/api/admin/log-management/cleanup', 'POST', 'logs:manage'],
-    ['/api/admin/audit-logs/export', 'GET', 'audit:read']
+test('日志接口守卫：查询/导出与清理都要求超管私有码', () => {
+  for (const [pathname, method] of [
+    ['/api/admin/log-management/access', 'GET'],
+    ['/api/admin/log-management/access/export', 'GET'],
+    ['/api/admin/log-management/stats', 'GET'],
+    ['/api/admin/log-management/cleanup', 'POST'],
+    ['/api/admin/audit-logs/export', 'GET']
   ] as const) {
     const guard = resolveAdminRouteGuard(pathname, method)
     assert.ok(guard && !guard.deny && !guard.fallback, `${method} ${pathname}`)
-    assert.deepEqual(guard!.any, [code], `${method} ${pathname}`)
+    const expected = pathname.includes('/audit-logs') ? PRIV_AUDIT : PRIV_LOGS
+    assert.deepEqual(guard!.any, [expected], `${method} ${pathname}`)
   }
 
   // 未登记的写操作仍按缺省策略拒绝
@@ -165,18 +161,18 @@ test('日志接口守卫：查询/导出用 logs:read，清理用 logs:manage', 
   assert.equal(unknownWrite?.fallback, true)
 })
 
-test('logging 配置作用域只暴露 3 个字段并按 logs 权限读写', () => {
+test('logging 配置作用域只暴露 3 个字段并要求超管私有码', () => {
   assert.deepEqual([...ADMIN_SETTINGS_SCOPES.logging.fields].sort(), [
     'apiLogLevel',
     'apiLogRetentionDays',
     'auditLogRetentionDays'
   ])
-  assert.deepEqual([...ADMIN_SETTINGS_SCOPES.logging.read], ['logs:read'])
-  assert.deepEqual([...ADMIN_SETTINGS_SCOPES.logging.write], ['logs:manage'])
+  assert.deepEqual([...ADMIN_SETTINGS_SCOPES.logging.read], [PRIV_LOGS])
+  assert.deepEqual([...ADMIN_SETTINGS_SCOPES.logging.write], [PRIV_LOGS])
 
-  assert.equal(canAccessSettingsScope({ perms: [consoleCode, 'logs:read'] }, 'logging'), true)
-  assert.equal(canAccessSettingsScope({ perms: [consoleCode, 'logs:read'] }, 'logging', true), false)
-  assert.equal(canAccessSettingsScope({ perms: [consoleCode, 'logs:manage'] }, 'logging', true), true)
+  assert.equal(canAccessSettingsScope({ perms: [consoleCode, PRIV_LOGS] }, 'logging'), false)
+  assert.equal(canAccessSettingsScope({ perms: [consoleCode, permissions.PERMISSION_ALL] }, 'logging'), true)
+  assert.equal(canAccessSettingsScope({ perms: [consoleCode, permissions.PERMISSION_ALL] }, 'logging', true), true)
 
   assert.deepEqual(invalidScopeFields('logging', { apiLogLevel: 'all' }), [])
   assert.deepEqual(invalidScopeFields('logging', { smtpHost: 'x' }), ['smtpHost'])
@@ -194,8 +190,8 @@ test('logging 配置作用域只暴露 3 个字段并按 logs 权限读写', () 
   })
 
   for (const [method, code] of [
-    ['GET', 'logs:read'],
-    ['POST', 'logs:manage']
+    ['GET', PRIV_LOGS],
+    ['POST', PRIV_LOGS]
   ] as const) {
     const guard = resolveAdminRouteGuard('/api/admin/system-settings/logging', method)
     assert.ok(guard && !guard.deny && !guard.fallback)
