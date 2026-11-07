@@ -442,8 +442,10 @@ export const LOG_CONSTANTS = {
 // 日志管理：API 访问日志记录级别（off=关闭，errors=仅记录失败，all=全部）
 export const API_LOG_LEVELS = ['off', 'errors', 'all'] as const
 export const DEFAULT_API_LOG_LEVEL = 'all'
-// 数据库日志保留天数上限（0 = 永久保留）
+// 数据库日志保留天数上限（0 = 永久保留）与默认值
 export const LOG_RETENTION_MAX_DAYS = 3650
+export const DEFAULT_API_LOG_RETENTION_DAYS = 90
+export const DEFAULT_AUDIT_LOG_RETENTION_DAYS = 180
 
 // 通知设置默认值常量
 export const NOTIFICATION_DEFAULTS = {

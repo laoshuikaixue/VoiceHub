@@ -2354,6 +2354,7 @@ export const admin = {
     levelOff: 'Disabled',
     apiRetention: 'API log retention (days)',
     auditRetention: 'Audit log retention (days)',
+    retentionInvalid: 'Retention must be an integer from 0 to 3650 (0 keeps logs forever)',
     retentionHint: 'Expired logs are cleaned daily',
     saveConfig: 'Save',
     saving: 'Saving',

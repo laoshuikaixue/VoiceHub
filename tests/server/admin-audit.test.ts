@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
+import { redactCredentialPatterns } from '../../server/utils/astrbot-error-telemetry.ts'
 import {
   ADMIN_PERMISSION_CODES,
   ADMIN_PAGE_IDS,
@@ -89,7 +90,7 @@ test('recordAdminAudit 写入操作者/IP/UA/结果快照', async () => {
     adminAuditLogs: {},
     getClientIP: () => '10.0.0.8',
     getHeader: () => 'TestAgent/1.0',
-    sanitizeAstrbotErrorDetail: (t: string) => t
+    redactCredentialPatterns: (t: string) => t
   }
   const { recordAdminAudit } = loadAudit(deps)
   await recordAdminAudit(makeEvent(), 'user.status', {
@@ -117,7 +118,7 @@ test('摘要脱敏：凭据样式内容被替换为占位符', async () => {
     adminAuditLogs: {},
     getClientIP: () => 'unknown',
     getHeader: () => '',
-    sanitizeAstrbotErrorDetail: (t: string) => t.replace(/Bearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, '[已脱敏]')
+    redactCredentialPatterns
   }
   const { recordAdminAudit } = loadAudit(deps)
   await recordAdminAudit(makeEvent(), 'settings.update', {
@@ -134,8 +135,33 @@ test('写入异常静默失败，不抛出', async () => {
     adminAuditLogs: {},
     getClientIP: () => 'unknown',
     getHeader: () => '',
-    sanitizeAstrbotErrorDetail: (t: string) => t
+    redactCredentialPatterns: (t: string) => t
   }
   const { recordAdminAudit } = loadAudit(deps)
   await recordAdminAudit(makeEvent(), 'user.create', { summary: { username: 'x' } })
+})
+
+test('摘要长度上限为 2000 字符，不再沿用群聊摘要的 300 字截断', async () => {
+  const captured: Record<string, unknown>[] = []
+  const deps = {
+    db: { insert: () => ({ values: (v: Record<string, unknown>) => { captured.push(v) } }) },
+    adminAuditLogs: {},
+    getClientIP: () => 'unknown',
+    getHeader: () => '',
+    redactCredentialPatterns: (t: string) => t
+  }
+  const { recordAdminAudit } = loadAudit(deps)
+  const field = 'x'.repeat(500)
+
+  await recordAdminAudit(makeEvent(), 'settings.update', {
+    summary: { first: field, second: field, third: field }
+  })
+  const normal = captured[0]!.summary as string
+  assert.ok(normal.length > 300, `摘要被意外截短: ${normal.length}`)
+  assert.ok(normal.length <= 2000)
+
+  await recordAdminAudit(makeEvent(), 'settings.update', {
+    summary: Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`f${i}`, field]))
+  })
+  assert.equal((captured[1]!.summary as string).length, 2000)
 })

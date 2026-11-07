@@ -1,41 +1,14 @@
 import { lt } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { adminAuditLogs, apiLogs } from '~/drizzle/schema'
-import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults.ts'
 import { getSystemSettingsCached } from './system-settings-helper.ts'
 import { getServerDate } from './serverTime.ts'
-import {
-  normalizeApiLogLevel,
-  normalizeRetentionDays,
-  type ApiLogLevel
-} from './log-settings.ts'
+import { resolveLogSettings, type LogSettings } from './log-settings.ts'
 
 /**
  * 日志保留策略：按配置的保留天数清理数据库中的 API 访问日志与管理员审计日志。
  * 保留天数 0 表示永久保留；配置缺失或非法时回退默认值。
  */
-
-export interface LogSettings {
-  apiLogLevel: ApiLogLevel
-  apiLogRetentionDays: number
-  auditLogRetentionDays: number
-}
-
-export function resolveLogSettings(
-  settings: Partial<LogSettings> | null | undefined
-): LogSettings {
-  return {
-    apiLogLevel: normalizeApiLogLevel(settings?.apiLogLevel),
-    apiLogRetentionDays: normalizeRetentionDays(
-      settings?.apiLogRetentionDays,
-      SYSTEM_SETTINGS_DEFAULTS.apiLogRetentionDays
-    ),
-    auditLogRetentionDays: normalizeRetentionDays(
-      settings?.auditLogRetentionDays,
-      SYSTEM_SETTINGS_DEFAULTS.auditLogRetentionDays
-    )
-  }
-}
 
 export async function getLogSettings(): Promise<LogSettings> {
   return resolveLogSettings(await getSystemSettingsCached())

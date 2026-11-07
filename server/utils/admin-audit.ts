@@ -3,7 +3,7 @@ import type { H3Event } from 'h3'
 import { db } from '~/drizzle/db'
 import { adminAuditLogs } from '~/drizzle/schema'
 import { getClientIP } from '~~/server/utils/ip-utils'
-import { sanitizeAstrbotErrorDetail } from '~~/server/utils/astrbot-error-telemetry'
+import { redactCredentialPatterns } from '~~/server/utils/astrbot-error-telemetry'
 
 /**
  * 管理员操作审计。
@@ -56,7 +56,8 @@ function serializeSummary(summary: unknown): string | null {
   if (normalized === null || normalized === undefined) return null
   try {
     const text = typeof normalized === 'string' ? normalized : JSON.stringify(normalized)
-    const safe = sanitizeAstrbotErrorDetail(text).slice(0, ADMIN_AUDIT_SUMMARY_MAX_CHARS)
+    // 只做凭据脱敏，不套用群聊摘要的 300 字截断，长度由审计自身的上限控制
+    const safe = redactCredentialPatterns(text).slice(0, ADMIN_AUDIT_SUMMARY_MAX_CHARS)
     return safe || null
   } catch {
     return null

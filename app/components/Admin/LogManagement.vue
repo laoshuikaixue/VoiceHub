@@ -423,6 +423,14 @@ const loadConfig = async () => {
 
 const saveConfig = async () => {
   if (!canManage.value) return
+  // 输入框被清空时 Number('') 会得到 0（永久保留），必须在提交前拦截
+  const apiDays = Number(config.apiLogRetentionDays)
+  const auditDays = Number(config.auditLogRetentionDays)
+  const validDays = (days) => Number.isInteger(days) && days >= 0 && days <= 3650
+  if (config.apiLogRetentionDays === '' || config.auditLogRetentionDays === '' || !validDays(apiDays) || !validDays(auditDays)) {
+    actionError.value = locale.value.retentionInvalid || '保留天数必须是 0-3650 的整数'
+    return
+  }
   configSaving.value = true
   actionError.value = ''
   actionNotice.value = ''
@@ -431,8 +439,8 @@ const saveConfig = async () => {
       method: 'POST',
       body: {
         apiLogLevel: config.apiLogLevel,
-        apiLogRetentionDays: Number(config.apiLogRetentionDays),
-        auditLogRetentionDays: Number(config.auditLogRetentionDays)
+        apiLogRetentionDays: apiDays,
+        auditLogRetentionDays: auditDays
       },
       ...auth.getAuthConfig()
     })

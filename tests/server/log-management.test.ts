@@ -3,6 +3,8 @@ import test from 'node:test'
 import {
   normalizeApiLogLevel,
   normalizeRetentionDays,
+  parseLogCleanupType,
+  resolveLogSettings,
   shouldRecordApiLog
 } from '../../server/utils/log-settings.ts'
 import {
@@ -46,6 +48,32 @@ test('非法记录级别回退为 all，保留天数非法值回退默认', () =
   assert.equal(normalizeRetentionDays(-1, 90), 90)
   assert.equal(normalizeRetentionDays(1.5, 90), 90)
   assert.equal(normalizeRetentionDays('abc', 180), 180)
+})
+
+test('配置缺失或非法时按默认值降级，合法值原样保留', () => {
+  assert.deepEqual(resolveLogSettings(null), {
+    apiLogLevel: 'all',
+    apiLogRetentionDays: 90,
+    auditLogRetentionDays: 180
+  })
+  assert.deepEqual(
+    resolveLogSettings({ apiLogLevel: 'bogus', apiLogRetentionDays: -1, auditLogRetentionDays: 9999 }),
+    { apiLogLevel: 'all', apiLogRetentionDays: 90, auditLogRetentionDays: 180 }
+  )
+  assert.deepEqual(
+    resolveLogSettings({ apiLogLevel: 'errors', apiLogRetentionDays: 0, auditLogRetentionDays: 30 }),
+    { apiLogLevel: 'errors', apiLogRetentionDays: 0, auditLogRetentionDays: 30 }
+  )
+})
+
+test('清理类型只接受 api / audit / all，非法值返回 null', () => {
+  assert.equal(parseLogCleanupType('api'), 'api')
+  assert.equal(parseLogCleanupType('audit'), 'audit')
+  assert.equal(parseLogCleanupType('all'), 'all')
+  assert.equal(parseLogCleanupType(undefined), null)
+  assert.equal(parseLogCleanupType(null), null)
+  assert.equal(parseLogCleanupType('apii'), null)
+  assert.equal(parseLogCleanupType(''), null)
 })
 
 test('CSV 导出带 BOM、转义引号并阻止公式注入', () => {

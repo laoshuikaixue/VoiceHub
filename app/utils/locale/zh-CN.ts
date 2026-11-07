@@ -2299,6 +2299,7 @@ export const admin = {
     levelOff: '关闭记录',
     apiRetention: 'API 日志保留天数',
     auditRetention: '审计日志保留天数',
+    retentionInvalid: '保留天数必须是 0-3650 的整数（0 表示永久保留）',
     retentionHint: '系统每日自动清理过期日志',
     saveConfig: '保存配置',
     saving: '保存中',

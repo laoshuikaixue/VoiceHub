@@ -1,6 +1,8 @@
 import {
   API_LOG_LEVELS,
   DEFAULT_API_LOG_LEVEL,
+  DEFAULT_API_LOG_RETENTION_DAYS,
+  DEFAULT_AUDIT_LOG_RETENTION_DAYS,
   LOG_RETENTION_MAX_DAYS
 } from '../config/constants.ts'
 
@@ -23,4 +25,37 @@ export function shouldRecordApiLog(level: ApiLogLevel, statusCode: number): bool
 export function normalizeRetentionDays(value: unknown, fallback: number): number {
   const days = typeof value === 'number' ? value : Number(value)
   return Number.isInteger(days) && days >= 0 && days <= LOG_RETENTION_MAX_DAYS ? days : fallback
+}
+
+export interface LogSettings {
+  apiLogLevel: ApiLogLevel
+  apiLogRetentionDays: number
+  auditLogRetentionDays: number
+}
+
+/** 配置缺失或损坏时按默认值降级，保证日志记录与清理始终有确定口径。 */
+export function resolveLogSettings(
+  settings: Partial<LogSettings> | null | undefined
+): LogSettings {
+  return {
+    apiLogLevel: normalizeApiLogLevel(settings?.apiLogLevel),
+    apiLogRetentionDays: normalizeRetentionDays(
+      settings?.apiLogRetentionDays,
+      DEFAULT_API_LOG_RETENTION_DAYS
+    ),
+    auditLogRetentionDays: normalizeRetentionDays(
+      settings?.auditLogRetentionDays,
+      DEFAULT_AUDIT_LOG_RETENTION_DAYS
+    )
+  }
+}
+
+export const LOG_CLEANUP_TYPES = ['api', 'audit', 'all'] as const
+export type LogCleanupType = (typeof LOG_CLEANUP_TYPES)[number]
+
+/** 未提供或非法时返回 null，由调用方决定默认值或拒绝。 */
+export function parseLogCleanupType(value: unknown): LogCleanupType | null {
+  return (LOG_CLEANUP_TYPES as readonly unknown[]).includes(value)
+    ? (value as LogCleanupType)
+    : null
 }
