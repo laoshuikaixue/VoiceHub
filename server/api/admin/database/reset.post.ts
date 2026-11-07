@@ -24,6 +24,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { ne, sql } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -272,6 +273,15 @@ export default defineEventHandler(async (event) => {
         message: `重置数据库失败：${error.message}`
       })
     }
+
+    // 重置会清空审计表，因此这条记录必须写在清理之后
+    await recordAdminAudit(event, 'database.reset', {
+      targetType: 'database',
+      summary: {
+        tablesCleared: resetResults.details.tablesCleared,
+        recordsDeleted: resetResults.details.recordsDeleted
+      }
+    })
 
     return resetResults
   } catch (error) {

@@ -73,7 +73,8 @@ test('recordAdminAudit 写入操作者/IP/UA/结果快照', async () => {
     adminAuditLogs: {},
     getClientIP: () => '10.0.0.8',
     getHeader: () => 'TestAgent/1.0',
-    redactCredentialPatterns: (t: string) => t
+    redactCredentialPatterns: (t: string) => t,
+    runLazyLogRetentionCleanup: async () => {}
   }
   const { recordAdminAudit } = loadAudit(deps)
   await recordAdminAudit(makeEvent(), 'user.status', {
@@ -101,7 +102,8 @@ test('摘要脱敏：凭据样式内容被替换为占位符', async () => {
     adminAuditLogs: {},
     getClientIP: () => 'unknown',
     getHeader: () => '',
-    redactCredentialPatterns
+    redactCredentialPatterns,
+    runLazyLogRetentionCleanup: async () => {}
   }
   const { recordAdminAudit } = loadAudit(deps)
   await recordAdminAudit(makeEvent(), 'settings.update', {
@@ -118,7 +120,8 @@ test('写入异常静默失败，不抛出', async () => {
     adminAuditLogs: {},
     getClientIP: () => 'unknown',
     getHeader: () => '',
-    redactCredentialPatterns: (t: string) => t
+    redactCredentialPatterns: (t: string) => t,
+    runLazyLogRetentionCleanup: async () => {}
   }
   const { recordAdminAudit } = loadAudit(deps)
   await recordAdminAudit(makeEvent(), 'user.create', { summary: { username: 'x' } })
@@ -131,7 +134,8 @@ test('摘要长度上限为 2000 字符，不再沿用群聊摘要的 300 字截
     adminAuditLogs: {},
     getClientIP: () => 'unknown',
     getHeader: () => '',
-    redactCredentialPatterns: (t: string) => t
+    redactCredentialPatterns: (t: string) => t,
+    runLazyLogRetentionCleanup: async () => {}
   }
   const { recordAdminAudit } = loadAudit(deps)
   const field = 'x'.repeat(500)

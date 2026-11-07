@@ -4,6 +4,7 @@ import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // 单次批量驳回的歌曲数量上限
@@ -124,6 +125,18 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log(`批量驳回操作完成，共 ${rejectedSongs.length} 首`)
+
+    await recordAdminAudit(event, 'song.batch-reject', {
+      targetType: 'song',
+      targetId: songIds.join(','),
+      summary: {
+        count: rejectedSongs.length,
+        songIds: rejectedSongs.map((song) => song.id),
+        titles: rejectedSongs.map((song) => song.title),
+        reason,
+        addToBlacklist
+      }
+    })
 
     return {
       success: true,

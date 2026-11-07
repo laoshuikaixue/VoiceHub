@@ -4,6 +4,7 @@ import { db } from '~/drizzle/db'
 import { adminAuditLogs } from '~/drizzle/schema'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { redactCredentialPatterns } from '~~/server/utils/astrbot-error-telemetry'
+import { runLazyLogRetentionCleanup } from '~~/server/utils/log-retention'
 
 /**
  * 管理员操作审计。
@@ -99,6 +100,9 @@ export async function recordAdminAudit(
       userAgent: (getHeader(event, 'user-agent') || '').slice(0, 500),
       result: options.result ?? ADMIN_AUDIT_RESULT.SUCCESS
     })
+
+    // 后台写操作是稳定的低频时机，顺带按小时节流触发一次过期日志清理
+    void runLazyLogRetentionCleanup()
   } catch (error) {
     // 审计写入失败不得影响主业务
     console.error(`[AdminAudit] 记录审计失败（action=${action}）:`, error)

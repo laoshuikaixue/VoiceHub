@@ -21,7 +21,8 @@ export const PRIV_LOGS = 'priv:logs'
 
 // 私有码只在持有全站通配 `*`（即超级管理员模板）时生效；
 // `priv:*` 等域通配不得覆盖，避免把审计能力随通配授权扩散出去。
-const PRIVATE_PERMISSION_CODES: ReadonlySet<string> = new Set([PRIV_AUDIT, PRIV_LOGS])
+export const PRIVATE_PERMISSION_CODES: readonly string[] = [PRIV_AUDIT, PRIV_LOGS]
+const PRIVATE_PERMISSION_CODE_SET: ReadonlySet<string> = new Set(PRIVATE_PERMISSION_CODES)
 
 // 安全阀保护的站点级能力：移出其最后一个持有者会把站点锁死在无人可再授权的状态
 export const PROTECTED_PRIV_CODES: readonly string[] = [
@@ -538,7 +539,7 @@ export function isPermissionDenied(perms: readonly string[], code: string): bool
 export function hasPermission(perms: readonly string[], code: string): boolean {
   if (!Array.isArray(perms) || !code) return false
   if (isPermissionDenied(perms, code)) return false
-  if (PRIVATE_PERMISSION_CODES.has(code)) return perms.includes(PERMISSION_ALL)
+  if (PRIVATE_PERMISSION_CODE_SET.has(code)) return perms.includes(PERMISSION_ALL)
   const dependencies = PERMISSION_READ_DEPENDENCIES[code]
   return perms.some((token) => !token.startsWith('!') && matchesToken(token, code)) ||
     (Array.isArray(dependencies) && dependencies.some((action) => hasPermission(perms, action)))

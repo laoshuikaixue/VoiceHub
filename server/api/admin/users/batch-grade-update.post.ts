@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -147,6 +148,18 @@ export default defineEventHandler(async (event) => {
       console.error('记录操作日志失败:', logError)
       // 日志记录失败不影响主要操作
     }
+
+    await recordAdminAudit(event, 'user.batch-grade-update', {
+      targetType: 'user',
+      targetId: uniqueUserIds.join(','),
+      summary: {
+        updated,
+        failed,
+        targetGrade,
+        keepClass,
+        accountStatus: accountStatusFilter || null
+      }
+    })
 
     return {
       success: errors.length === 0 || updated > 0,

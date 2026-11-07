@@ -1,5 +1,6 @@
 import { normalizeSubmittedTemplates } from '~~/server/utils/permission-admin'
 import { normalizePermissionTokens } from '~~/app/utils/admin-permissions'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
 import { pluginClearOrder, restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
@@ -2717,6 +2718,16 @@ export default defineEventHandler(async (event) => {
       restoreResults.details.warnings = restoreResults.details.warnings || []
       restoreResults.details.warnings.push('重载SMTP配置失败')
     }
+
+    await recordAdminAudit(event, 'backup.restore', {
+      targetType: 'backup',
+      summary: {
+        clearExisting,
+        tablesProcessed: restoreResults.details.tablesProcessed,
+        recordsRestored: restoreResults.details.recordsRestored,
+        errorCount: restoreResults.details.errors.length
+      }
+    })
 
     return restoreResults
   } catch (error: any) {

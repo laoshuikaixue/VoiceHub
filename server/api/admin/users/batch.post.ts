@@ -9,6 +9,7 @@ import {
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
@@ -245,6 +246,17 @@ export default defineEventHandler(async (event) => {
         reason: error.message || '数据库批量写入失败'
       })
     }
+  }
+
+  if (results.created > 0) {
+    await recordAdminAudit(event, 'user.batch-create', {
+      targetType: 'user',
+      summary: {
+        created: results.created,
+        failed: results.failed,
+        usernames: usersToInsertData.map((item) => item.username).slice(0, 50)
+      }
+    })
   }
 
   return results

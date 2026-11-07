@@ -13,7 +13,8 @@ import {
   resolveEffectivePermissions,
   resolveRoleTemplate,
   hasPermission,
-  PRIV_ADMIN_CONSOLE
+  PRIV_ADMIN_CONSOLE,
+  PRIVATE_PERMISSION_CODES
 } from '../../app/utils/admin-permissions.ts'
 import {
   ADMIN_ROUTE_RULES,

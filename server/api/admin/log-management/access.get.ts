@@ -7,6 +7,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import { resolvePagination } from '~~/server/utils/pagination'
 import { buildApiLogConditions, isUuid, readQueryString } from '~~/server/utils/log-query'
+import { runLazyLogRetentionCleanup } from '~~/server/utils/log-retention'
 
 // 列表只返回正文预览，完整内容通过导出获取，避免大字段撑爆响应
 const BODY_PREVIEW_MAX_CHARS = 1000
@@ -24,6 +25,10 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'API Key ID 无效')
     }
     const { page, limit, offset } = resolvePagination(query.page, query.limit, 50, 200)
+
+    // 打开日志面板顺带按小时节流清理一次过期数据
+    await runLazyLogRetentionCleanup()
+
 
     const conditions = buildApiLogConditions(query)
     const whereClause = conditions.length ? and(...conditions) : undefined
