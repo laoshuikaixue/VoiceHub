@@ -129,7 +129,12 @@ export async function sendMeowNotificationToUser(
     }
 
     // 发送 MeoW 通知
-    const sendResult = await sendMeowNotification(user.meowNickname, fullTitle, enhancedMessage, url)
+    const sendResult = await sendMeowNotification(
+      user.meowNickname,
+      fullTitle,
+      enhancedMessage,
+      url
+    )
     return sendResult.ok
   } catch (error) {
     console.error('发送用户 MeoW 通知失败:', error)
