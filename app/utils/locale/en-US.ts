@@ -2354,7 +2354,8 @@ export const admin = {
     levelOff: 'Disabled',
     apiRetention: 'API log retention (days)',
     auditRetention: 'Audit log retention (days)',
-    retentionInvalid: 'Retention must be an integer from 0 to 3650 (0 keeps logs forever)',
+    retentionInvalid: '"{0}" must be 0 (keep forever) or {1}-{2}',
+    retentionRange: '0 or',
     retentionHint: 'Expired logs are cleaned daily',
     saveConfig: 'Save',
     saving: 'Saving',
@@ -5652,7 +5653,7 @@ export const serverErrors = {
   SETTINGS_CUSTOM_CSS_TOO_LONG: 'Custom CSS cannot exceed {0} characters',
   SETTINGS_CUSTOM_CSS_STYLE_CLOSER: 'Custom CSS cannot contain </style>; it closes the tag early',
   SETTINGS_LOG_LEVEL_INVALID: 'Log level must be off, errors or all',
-  SETTINGS_LOG_RETENTION_INVALID: 'Log retention must be an integer from 0 to {0} (0 keeps logs forever)',
+  SETTINGS_LOG_RETENTION_INVALID: 'Log retention must be 0 (keep forever) or {0}-{1}',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING:
     'Configure grade and class options before enabling this setting',
   SETTINGS_CAPTCHA_PROVIDER_INVALID:

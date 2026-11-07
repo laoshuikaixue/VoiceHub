@@ -2299,7 +2299,8 @@ export const admin = {
     levelOff: '关闭记录',
     apiRetention: 'API 日志保留天数',
     auditRetention: '审计日志保留天数',
-    retentionInvalid: '保留天数必须是 0-3650 的整数（0 表示永久保留）',
+    retentionInvalid: '「{0}」需为 0（永久保留）或 {1}-{2} 的整数',
+    retentionRange: '可填 0 或',
     retentionHint: '系统每日自动清理过期日志',
     saveConfig: '保存配置',
     saving: '保存中',
@@ -5478,7 +5479,7 @@ export const serverErrors = {
   SETTINGS_CUSTOM_CSS_TOO_LONG: '自定义 CSS 不能超过 {0} 个字符',
   SETTINGS_CUSTOM_CSS_STYLE_CLOSER: '自定义 CSS 不能包含 </style>，否则样式标签会被提前闭合',
   SETTINGS_LOG_LEVEL_INVALID: '日志记录级别只能是 off、errors 或 all',
-  SETTINGS_LOG_RETENTION_INVALID: '日志保留天数必须是 0-{0} 的整数（0 表示永久保留）',
+  SETTINGS_LOG_RETENTION_INVALID: '日志保留天数需为 0（永久保留）或 {0}-{1} 的整数',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING: '请先在年级班级管理中配置年级班级，再启用该选项',
   SETTINGS_CAPTCHA_PROVIDER_INVALID:
     '验证类型必须是图形验证码、Cloudflare Turnstile 或阿里云 ESA AI 验证码',

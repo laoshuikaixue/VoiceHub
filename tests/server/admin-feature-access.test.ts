@@ -6,7 +6,14 @@ import test from 'node:test'
 import * as permissions from '../../app/utils/admin-permissions.ts'
 import * as scopes from '../../server/utils/admin-settings-scope.ts'
 import { resolvePermissionRouteGuard } from '../../server/utils/admin-permission-routes.ts'
-import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS } from '../../server/config/constants.ts'
+import {
+  SERVER_ERROR_CODES,
+  MUSIC_SOURCE_PLATFORMS,
+  API_LOG_LEVELS,
+  LOG_RETENTION_MAX_DAYS,
+  MIN_API_LOG_RETENTION_DAYS,
+  MIN_AUDIT_LOG_RETENTION_DAYS
+} from '../../server/config/constants.ts'
 import { createApiError } from '../../server/utils/apiError.ts'
 import { maskSystemSettingsSecrets, SMTP_PASSWORD_MASK, SECRET_FIELD_MASK } from '../../server/api/admin/system-settings/secretMask.ts'
 import { findSuperAdminOnlySettingFields, stripSuperAdminOnlySettingFields } from '../../app/utils/settingsPermissions.ts'
@@ -105,9 +112,11 @@ function settingsRuntime() {
     customOAuthClientSecret: 'oauth-secret', rolePermissionTemplates: { PRIVATE: ['*'] },
     enablePlayTimeSelection: true, playSlotRequired: false, enableRequestTimeLimitation: true,
     forceBlockAllRequests: false, enabledPlatforms: '["netease"]', platformOrder: '["netease"]',
-    sameSongRestrictionHours: 3, enableSubmissionRestriction: true
+    sameSongRestrictionHours: 3, enableSubmissionRestriction: true,
+    apiLogLevel: 'all', apiLogRetentionDays: 90, auditLogRetentionDays: 180
   }
   let writes = 0
+  const audits: Array<{ action: string; options: any }> = []
   const db = {
     select: () => ({ from: () => ({ limit: async () => [{ ...settings }] }) }),
     update: () => ({ set: (patch: any) => ({ where: () => ({ returning: async () => {
@@ -120,15 +129,16 @@ function settingsRuntime() {
     getMethod: (event: any) => event.method, getRouterParam: (event: any) => event.scope,
     createApiError, createError, SERVER_ERROR_CODES, maskSystemSettingsSecrets, SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, parseEsaCaptchaScenes,
     stripSuperAdminOnlySettingFields, findSuperAdminOnlySettingFields, MUSIC_SOURCE_PLATFORMS,
+    API_LOG_LEVELS, LOG_RETENTION_MAX_DAYS, MIN_API_LOG_RETENTION_DAYS, MIN_AUDIT_LOG_RETENTION_DAYS,
     getAggregateOAuthLoginTypesOrDefault: () => [],
     smtpStub: { getInstance: () => ({ initializeSmtpConfig: async () => true }) },
-    recordAdminAudit: async () => {}
+    recordAdminAudit: async (_event: any, action: string, options: any) => { audits.push({ action, options }) }
   }
   const readSettings = handler('server/api/admin/system-settings/index.ts', deps)
   const writeSettings = handler('server/api/admin/system-settings/index.post.ts', deps)
   const scoped = handler('server/api/admin/system-settings/[scope].ts', { ...deps, readSettings, writeSettings })
   const call = (scope: string, method: string, codes: string[], body?: any) => scoped({ scope, method, body, context: { user: { perms: role(...codes) } } })
-  return { call, settings: () => settings, writes: () => writes }
+  return { call, settings: () => settings, writes: () => writes, audits: () => audits }
 }
 
 test('实际模块配置处理器读取和保存均裁剪字段，掩码不能回写成真实密码', async () => {
@@ -142,6 +152,32 @@ test('实际模块配置处理器读取和保存均裁剪字段，掩码不能�
   assert.equal(runtime.settings().astrbotToken, 'bot-secret')
   assert.equal('astrbotToken' in saved, false)
   assert.equal(runtime.writes(), 1)
+})
+
+test('日志保留天数受下限约束，且变更前后值写入审计供取证', async () => {
+  const runtime = settingsRuntime()
+  // 私有码只有全站通配（超级管理员）持有
+  const superAdmin = ['*']
+
+  // 低于下限必须拒绝，防止当天抹掉溯源记录；0 = 永久保留，允许
+  await assert.rejects(runtime.call('logging', 'POST', superAdmin, { auditLogRetentionDays: 1 }), { statusCode: 400 })
+  await assert.rejects(runtime.call('logging', 'POST', superAdmin, { apiLogRetentionDays: 3 }), { statusCode: 400 })
+  assert.equal(runtime.writes(), 0, '被拒绝的提交不应落库')
+  await runtime.call('logging', 'POST', superAdmin, { auditLogRetentionDays: 0 })
+  assert.equal(runtime.settings().auditLogRetentionDays, 0)
+
+  // 合法下限值可保存，且审计记录 from→to
+  await runtime.call('logging', 'POST', superAdmin, { auditLogRetentionDays: 30, apiLogRetentionDays: 7 })
+  assert.deepEqual(
+    runtime.audits().filter((item) => item.action === 'settings.update').pop()!.options.summary.changes,
+    { apiLogRetentionDays: { from: 90, to: 7 }, auditLogRetentionDays: { from: 0, to: 30 } }
+  )
+
+  // 非超管即使持有通用配置权限也不能改日志配置
+  await assert.rejects(
+    runtime.call('logging', 'POST', ['system-settings:write'], { auditLogRetentionDays: 30 }),
+    { statusCode: 403 }
+  )
 })
 
 test('实际配置处理器拒绝跨模块写入、只读写入和其他模块读取，失败时不落库', async () => {

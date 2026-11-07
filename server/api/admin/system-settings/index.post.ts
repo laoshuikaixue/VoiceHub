@@ -24,7 +24,9 @@ import {
   CAPTCHA_PROVIDERS,
   ALIYUN_ESA_CAPTCHA_REGIONS,
   API_LOG_LEVELS,
-  LOG_RETENTION_MAX_DAYS
+  LOG_RETENTION_MAX_DAYS,
+  MIN_API_LOG_RETENTION_DAYS,
+  MIN_AUDIT_LOG_RETENTION_DAYS
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
@@ -208,6 +210,13 @@ export default defineEventHandler(async (event) => {
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
+
+    // 日志配置变更前原值：这三个字段非凭据，可在审计里记录前后值以便取证
+    const previousLogSettings = {
+      apiLogLevel: settings?.apiLogLevel,
+      apiLogRetentionDays: settings?.apiLogRetentionDays,
+      auditLogRetentionDays: settings?.auditLogRetentionDays
+    }
 
     if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
       // 普通管理员提交主题字段已由上方守卫拦截，此处仅处理超级管理员请求
@@ -1468,17 +1477,25 @@ export default defineEventHandler(async (event) => {
       }
       updateData.apiLogLevel = body.apiLogLevel
     }
+    // 保留天数：0 = 永久保留，否则不得低于该类型的下限，防止压到极小后清掉近期日志
+    const retentionMins = {
+      apiLogRetentionDays: MIN_API_LOG_RETENTION_DAYS,
+      auditLogRetentionDays: MIN_AUDIT_LOG_RETENTION_DAYS
+    } as const
     for (const field of ['apiLogRetentionDays', 'auditLogRetentionDays'] as const) {
       if (body[field] === undefined) continue
-      if (!Number.isInteger(body[field]) || body[field] < 0 || body[field] > LOG_RETENTION_MAX_DAYS) {
+      const days = body[field]
+      const minDays = retentionMins[field]
+      const valid = Number.isInteger(days) && (days === 0 || (days >= minDays && days <= LOG_RETENTION_MAX_DAYS))
+      if (!valid) {
         throw createApiError(
           400,
           SERVER_ERROR_CODES.SETTINGS_LOG_RETENTION_INVALID,
-          `${field} 必须是 0-${LOG_RETENTION_MAX_DAYS} 的整数`,
-          { params: [LOG_RETENTION_MAX_DAYS] }
+          `${field} 必须是 0 或 ${minDays}-${LOG_RETENTION_MAX_DAYS} 的整数`,
+          { params: [minDays, LOG_RETENTION_MAX_DAYS] }
         )
       }
-      updateData[field] = body[field]
+      updateData[field] = days
     }
 
     if (isAdminSettingsScope(scope)) {
@@ -1528,12 +1545,25 @@ export default defineEventHandler(async (event) => {
     }
 
     const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    const logSettingFields = ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays'] as const
+    const logSettingsChanged = logSettingFields.filter((field) => field in updateData)
     await recordAdminAudit(event, 'settings.update', {
       targetType: 'settings',
       targetId: settings.id,
       summary: {
         scope: isAdminSettingsScope(scope) ? scope : 'general',
-        fields: Object.keys(updateData)
+        fields: Object.keys(updateData),
+        // 仅日志配置记录前后值：用于证明保留期是否被人为压低
+        ...(logSettingsChanged.length
+          ? {
+              changes: Object.fromEntries(
+                logSettingsChanged.map((field) => [field, {
+                  from: previousLogSettings[field],
+                  to: updateData[field]
+                }])
+              )
+            }
+          : {})
       }
     })
     if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)

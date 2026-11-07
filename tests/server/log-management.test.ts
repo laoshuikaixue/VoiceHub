@@ -43,13 +43,19 @@ test('非法记录级别回退为 all，保留天数非法值回退默认', () =
   assert.equal(normalizeApiLogLevel('bogus'), 'all')
   assert.equal(normalizeApiLogLevel(null), 'all')
 
-  assert.equal(normalizeRetentionDays(0, 90), 0)
-  assert.equal(normalizeRetentionDays(30, 90), 30)
-  assert.equal(normalizeRetentionDays(3650, 90), 3650)
-  assert.equal(normalizeRetentionDays(3651, 90), 90)
-  assert.equal(normalizeRetentionDays(-1, 90), 90)
-  assert.equal(normalizeRetentionDays(1.5, 90), 90)
-  assert.equal(normalizeRetentionDays('abc', 180), 180)
+  // 0 = 永久保留始终允许；否则不得低于该类型下限
+  assert.equal(normalizeRetentionDays(0, 90, 7), 0)
+  assert.equal(normalizeRetentionDays(30, 90, 7), 30)
+  assert.equal(normalizeRetentionDays(3650, 90, 7), 3650)
+  assert.equal(normalizeRetentionDays(3651, 90, 7), 90)
+  assert.equal(normalizeRetentionDays(-1, 90, 7), 90)
+  assert.equal(normalizeRetentionDays(1.5, 90, 7), 90)
+  assert.equal(normalizeRetentionDays('abc', 180, 30), 180)
+  // 低于下限（如 1 天）回退默认，防止改小后清理掉近期日志
+  assert.equal(normalizeRetentionDays(1, 90, 7), 90)
+  assert.equal(normalizeRetentionDays(7, 90, 7), 7)
+  assert.equal(normalizeRetentionDays(29, 180, 30), 180)
+  assert.equal(normalizeRetentionDays(30, 180, 30), 30)
 })
 
 test('配置缺失或非法时按默认值降级，合法值原样保留', () => {
@@ -65,6 +71,15 @@ test('配置缺失或非法时按默认值降级，合法值原样保留', () =>
   assert.deepEqual(
     resolveLogSettings({ apiLogLevel: 'errors', apiLogRetentionDays: 0, auditLogRetentionDays: 30 }),
     { apiLogLevel: 'errors', apiLogRetentionDays: 0, auditLogRetentionDays: 30 }
+  )
+  // 低于下限的保留天数回退默认，避免被改小后清掉近期日志
+  assert.deepEqual(
+    resolveLogSettings({ apiLogRetentionDays: 1, auditLogRetentionDays: 1 }),
+    { apiLogLevel: 'all', apiLogRetentionDays: 90, auditLogRetentionDays: 180 }
+  )
+  assert.deepEqual(
+    resolveLogSettings({ apiLogRetentionDays: 7, auditLogRetentionDays: 30 }),
+    { apiLogLevel: 'all', apiLogRetentionDays: 7, auditLogRetentionDays: 30 }
   )
 })
 

@@ -453,6 +453,9 @@ export const DEFAULT_API_LOG_LEVEL = 'all'
 export const LOG_RETENTION_MAX_DAYS = 3650
 export const DEFAULT_API_LOG_RETENTION_DAYS = 90
 export const DEFAULT_AUDIT_LOG_RETENTION_DAYS = 180
+// 保留天数下限：防止把保留期压到极小后清理掉近期日志，导致无法溯源
+export const MIN_API_LOG_RETENTION_DAYS = 7
+export const MIN_AUDIT_LOG_RETENTION_DAYS = 30
 
 // 通知设置默认值常量
 export const NOTIFICATION_DEFAULTS = {

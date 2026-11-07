@@ -3,7 +3,9 @@ import {
   DEFAULT_API_LOG_LEVEL,
   DEFAULT_API_LOG_RETENTION_DAYS,
   DEFAULT_AUDIT_LOG_RETENTION_DAYS,
-  LOG_RETENTION_MAX_DAYS
+  LOG_RETENTION_MAX_DAYS,
+  MIN_API_LOG_RETENTION_DAYS,
+  MIN_AUDIT_LOG_RETENTION_DAYS
 } from '../config/constants.ts'
 
 /** API 访问日志记录级别：off=关闭，errors=仅失败请求，all=全部。 */
@@ -21,10 +23,15 @@ export function shouldRecordApiLog(level: ApiLogLevel, statusCode: number): bool
   return true
 }
 
-/** 保留天数：0 = 永久保留；非法值回退默认。 */
-export function normalizeRetentionDays(value: unknown, fallback: number): number {
+/**
+ * 保留天数：0 = 永久保留；否则必须落在 [minDays, 上限] 内。
+ * 设下限是为了避免把保留期压到极小后清理掉近期日志，导致无法溯源。
+ * 非法值回退默认。
+ */
+export function normalizeRetentionDays(value: unknown, fallback: number, minDays: number): number {
   const days = typeof value === 'number' ? value : Number(value)
-  return Number.isInteger(days) && days >= 0 && days <= LOG_RETENTION_MAX_DAYS ? days : fallback
+  const valid = days === 0 || (Number.isInteger(days) && days >= minDays && days <= LOG_RETENTION_MAX_DAYS)
+  return valid ? days : fallback
 }
 
 export interface LogSettings {
@@ -41,11 +48,13 @@ export function resolveLogSettings(
     apiLogLevel: normalizeApiLogLevel(settings?.apiLogLevel),
     apiLogRetentionDays: normalizeRetentionDays(
       settings?.apiLogRetentionDays,
-      DEFAULT_API_LOG_RETENTION_DAYS
+      DEFAULT_API_LOG_RETENTION_DAYS,
+      MIN_API_LOG_RETENTION_DAYS
     ),
     auditLogRetentionDays: normalizeRetentionDays(
       settings?.auditLogRetentionDays,
-      DEFAULT_AUDIT_LOG_RETENTION_DAYS
+      DEFAULT_AUDIT_LOG_RETENTION_DAYS,
+      MIN_AUDIT_LOG_RETENTION_DAYS
     )
   }
 }

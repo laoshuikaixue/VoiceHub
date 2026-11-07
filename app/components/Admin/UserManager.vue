@@ -3091,6 +3091,10 @@ const importUsers = async () => {
   let totalCreated = 0
   let totalFailed = 0
   const allErrors = []
+  // 同一次导入的批次标识：审计日志按分片记录，靠它把多行归组回一次导入
+  const importBatchId = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `import-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
   try {
     for (let i = 0; i < dataToImport.length; i += batchSize) {
@@ -3104,7 +3108,10 @@ const importUsers = async () => {
         const result = await $fetch('/api/admin/users/batch', {
           method: 'POST',
           body: {
-            users: batch
+            users: batch,
+            importBatchId,
+            batchIndex: currentBatch,
+            batchTotal: totalBatches
           },
           ...auth.getAuthConfig()
         })

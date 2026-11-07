@@ -254,7 +254,12 @@ export default defineEventHandler(async (event) => {
       summary: {
         created: results.created,
         failed: results.failed,
-        usernames: usersToInsertData.map((item) => item.username).slice(0, 50)
+        // 前端按 50 条分批提交，带上批次标识才能把同一次导入的多条记录归组
+        importBatchId: typeof body.importBatchId === 'string' ? body.importBatchId : null,
+        batchIndex: Number.isInteger(body.batchIndex) ? body.batchIndex : null,
+        batchTotal: Number.isInteger(body.batchTotal) ? body.batchTotal : null,
+        // 摘要数组由审计层截到 20 项，此处同步避免给出错误的完整名单预期
+        usernames: usersToInsertData.map((item) => item.username).slice(0, 20)
       }
     })
   }

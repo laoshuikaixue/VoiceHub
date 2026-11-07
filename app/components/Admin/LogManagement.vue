@@ -41,7 +41,7 @@
             class="w-full"
           />
         </label>
-        <label class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1">
           <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.apiRetention }}</span>
           <input
             v-model.number="config.apiLogRetentionDays"
@@ -51,8 +51,9 @@
             :disabled="!canManage || !configLoaded"
             class="w-full px-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary focus:outline-none focus:border-border-tertiary disabled:opacity-60"
           >
-        </label>
-        <label class="flex flex-col gap-1">
+          <span class="text-[10px] text-text-disabled">{{ locale.retentionRange }} {{ RETENTION_MIN_DAYS.api }}-{{ RETENTION_MAX_DAYS }}</span>
+        </div>
+        <div class="flex flex-col gap-1">
           <span class="text-[10px] font-black uppercase tracking-widest text-text-disabled">{{ locale.auditRetention }}</span>
           <input
             v-model.number="config.auditLogRetentionDays"
@@ -62,7 +63,8 @@
             :disabled="!canManage || !configLoaded"
             class="w-full px-3 py-2 rounded-xl bg-bg-tertiary border border-border-secondary text-xs text-text-primary focus:outline-none focus:border-border-tertiary disabled:opacity-60"
           >
-        </label>
+          <span class="text-[10px] text-text-disabled">{{ locale.retentionRange }} {{ RETENTION_MIN_DAYS.audit }}-{{ RETENTION_MAX_DAYS }}</span>
+        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
@@ -386,16 +388,27 @@ const loadConfig = async () => {
   }
 }
 
+// 与 server/config/constants.ts 的下限保持一致；服务端为权威校验，这里只用于即时提示
+const RETENTION_MIN_DAYS = { api: 7, audit: 30 }
+const RETENTION_MAX_DAYS = 3650
+
 const saveConfig = async () => {
   if (!canManage.value) return
   // 输入框被清空时 Number('') 会得到 0（永久保留），必须在提交前拦截
+  const fields = [
+    { key: 'apiLogRetentionDays', label: locale.value.apiRetention, min: RETENTION_MIN_DAYS.api },
+    { key: 'auditLogRetentionDays', label: locale.value.auditRetention, min: RETENTION_MIN_DAYS.audit }
+  ]
+  for (const { key, label, min } of fields) {
+    const days = Number(config[key])
+    // 0 = 永久保留；否则不得低于该类型下限，防止改小后清掉近期日志
+    if (config[key] === '' || !Number.isInteger(days) || (days !== 0 && (days < min || days > RETENTION_MAX_DAYS))) {
+      actionError.value = t('retentionInvalid', '保留天数需为 0（永久保留）或指定区间内的整数', label, min, RETENTION_MAX_DAYS)
+      return
+    }
+  }
   const apiDays = Number(config.apiLogRetentionDays)
   const auditDays = Number(config.auditLogRetentionDays)
-  const validDays = (days) => Number.isInteger(days) && days >= 0 && days <= 3650
-  if (config.apiLogRetentionDays === '' || config.auditLogRetentionDays === '' || !validDays(apiDays) || !validDays(auditDays)) {
-    actionError.value = locale.value.retentionInvalid || '保留天数必须是 0-3650 的整数'
-    return
-  }
   configSaving.value = true
   actionError.value = ''
   actionNotice.value = ''
